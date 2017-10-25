@@ -16,8 +16,8 @@
 import {
   AbortException, assert, CMapCompressionType, createPromiseCapability,
   FONT_IDENTITY_MATRIX, FormatError, getLookupTableFactory, IDENTITY_MATRIX,
-  ImageKind, info, isArray, isNum, isString, NativeImageDecoding, OPS,
-  TextRenderingMode, UNSUPPORTED_FEATURES, Util, warn
+  ImageKind, info, isNum, isString, NativeImageDecoding, OPS, TextRenderingMode,
+  UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
 import { DecodeStream, JpegStream, Stream } from './stream';
@@ -38,12 +38,12 @@ import {
   getSerifFonts, getStdFontMap, getSymbolsFonts
 } from './standard_fonts';
 import { getTilingPatternIR, Pattern } from './pattern';
-import { isPDFFunction, PDFFunction } from './function';
 import { Lexer, Parser } from './parser';
 import { bidi } from './bidi';
 import { ColorSpace } from './colorspace';
 import { getGlyphsUnicode } from './glyphlist';
 import { getMetrics } from './metrics';
+import { isPDFFunction } from './function';
 import { MurmurHash3_64 } from './murmurhash3';
 import { PDFImage } from './image';
 
@@ -54,24 +54,30 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     disableFontFace: false,
     nativeImageDecoderSupport: NativeImageDecoding.DECODE,
     ignoreErrors: false,
+    isEvalSupported: true,
   };
 
-  function NativeImageDecoder(xref, resources, handler, forceDataSchema) {
+  function NativeImageDecoder({ xref, resources, handler,
+                                forceDataSchema = false,
+                                pdfFunctionFactory, }) {
     this.xref = xref;
     this.resources = resources;
     this.handler = handler;
     this.forceDataSchema = forceDataSchema;
+    this.pdfFunctionFactory = pdfFunctionFactory;
   }
   NativeImageDecoder.prototype = {
     canDecode(image) {
       return image instanceof JpegStream &&
-             NativeImageDecoder.isDecodable(image, this.xref, this.resources);
+             NativeImageDecoder.isDecodable(image, this.xref, this.resources,
+                                            this.pdfFunctionFactory);
     },
     decode(image) {
       // For natively supported JPEGs send them to the main thread for decoding.
       var dict = image.dict;
       var colorSpace = dict.get('ColorSpace', 'CS');
-      colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources);
+      colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources,
+                                    this.pdfFunctionFactory);
       var numComps = colorSpace.numComps;
       var decodePromise = this.handler.sendWithPromise('JpegDecode',
         [image.getIR(this.forceDataSchema), numComps]);
@@ -85,32 +91,35 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
    * Checks if the image can be decoded and displayed by the browser without any
    * further processing such as color space conversions.
    */
-  NativeImageDecoder.isSupported =
-      function NativeImageDecoder_isSupported(image, xref, res) {
+  NativeImageDecoder.isSupported = function(image, xref, res,
+                                            pdfFunctionFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
     }
-    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res);
+    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
+                              pdfFunctionFactory);
     return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
   /**
    * Checks if the image can be decoded by the browser.
    */
-  NativeImageDecoder.isDecodable =
-      function NativeImageDecoder_isDecodable(image, xref, res) {
+  NativeImageDecoder.isDecodable = function(image, xref, res,
+                                            pdfFunctionFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
     }
-    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res);
+    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
+                              pdfFunctionFactory);
     return (cs.numComps === 1 || cs.numComps === 3) &&
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
 
   function PartialEvaluator({ pdfManager, xref, handler, pageIndex, idFactory,
-                              fontCache, builtInCMapCache, options = null, }) {
+                              fontCache, builtInCMapCache, options = null,
+                              pdfFunctionFactory, }) {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
@@ -119,6 +128,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.options = options || DefaultPartialEvaluatorOptions;
+    this.pdfFunctionFactory = pdfFunctionFactory;
 
     this.fetchBuiltInCMap = (name) => {
       var cachedCMap = this.builtInCMapCache[name];
@@ -302,12 +312,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         };
 
         var groupSubtype = group.get('S');
-        var colorSpace;
+        var colorSpace = null;
         if (isName(groupSubtype, 'Transparency')) {
           groupOptions.isolated = (group.get('I') || false);
           groupOptions.knockout = (group.get('K') || false);
-          colorSpace = (group.has('CS') ?
-            ColorSpace.parse(group.get('CS'), this.xref, resources) : null);
+          if (group.has('CS')) {
+            colorSpace = ColorSpace.parse(group.get('CS'), this.xref, resources,
+                                          this.pdfFunctionFactory);
+          }
         }
 
         if (smask && smask.backdrop) {
@@ -367,11 +379,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var bitStrideLength = (width + 7) >> 3;
         var imgArray = image.getBytes(bitStrideLength * height);
         var decode = dict.getArray('Decode', 'D');
-        var inverseDecode = (!!decode && decode[0] > 0);
 
-        imgData = PDFImage.createMask(imgArray, width, height,
-                                      image instanceof DecodeStream,
-                                      inverseDecode);
+        imgData = PDFImage.createMask({
+          imgArray,
+          width,
+          height,
+          imageIsFromDecodeStream: image instanceof DecodeStream,
+          inverseDecode: (!!decode && decode[0] > 0),
+        });
         imgData.cached = true;
         args = [imgData];
         operatorList.addOp(OPS.paintImageMaskXObject, args);
@@ -391,8 +406,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // Inlining small images into the queue as RGB data
       if (inline && !softMask && !mask && !(image instanceof JpegStream) &&
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
-        var imageObj = new PDFImage(this.xref, resources, image,
-                                    inline, null, null);
+        let imageObj = new PDFImage({
+          xref: this.xref,
+          res: resources,
+          image,
+          pdfFunctionFactory: this.pdfFunctionFactory,
+        });
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
         imgData = imageObj.createImageData(/* forceRGBA = */ true);
@@ -409,7 +428,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
           !softMask && !mask && image instanceof JpegStream &&
-          NativeImageDecoder.isSupported(image, this.xref, resources)) {
+          NativeImageDecoder.isSupported(image, this.xref, resources,
+                                         this.pdfFunctionFactory)) {
         // These JPEGs don't need any more processing so we can just send it.
         operatorList.addOp(OPS.paintJpegXObject, args);
         this.handler.send('obj', [objId, this.pageIndex, 'JpegStream',
@@ -428,12 +448,23 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (nativeImageDecoderSupport === NativeImageDecoding.DECODE &&
           (image instanceof JpegStream || mask instanceof JpegStream ||
            softMask instanceof JpegStream)) {
-        nativeImageDecoder = new NativeImageDecoder(this.xref, resources,
-          this.handler, this.options.forceDataSchema);
+        nativeImageDecoder = new NativeImageDecoder({
+          xref: this.xref,
+          resources,
+          handler: this.handler,
+          forceDataSchema: this.options.forceDataSchema,
+          pdfFunctionFactory: this.pdfFunctionFactory,
+        });
       }
 
-      PDFImage.buildImage(this.handler, this.xref, resources, image, inline,
-                          nativeImageDecoder).then((imageObj) => {
+      PDFImage.buildImage({
+        handler: this.handler,
+        xref: this.xref,
+        res: resources,
+        image,
+        nativeDecoder: nativeImageDecoder,
+        pdfFunctionFactory: this.pdfFunctionFactory,
+      }).then((imageObj) => {
         var imgData = imageObj.createImageData(/* forceRGBA = */ false);
         this.handler.send('obj', [objId, this.pageIndex, 'Image', imgData],
           [imgData.data.buffer]);
@@ -464,7 +495,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // we will build a map of integer values in range 0..255 to be fast.
       var transferObj = smask.get('TR');
       if (isPDFFunction(transferObj)) {
-        var transferFn = PDFFunction.parse(this.xref, transferObj);
+        let transferFn = this.pdfFunctionFactory.create(transferObj);
         var transferMap = new Uint8Array(256);
         var tmp = new Float32Array(1);
         for (var i = 0; i < 256; i++) {
@@ -850,7 +881,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var shading = dict.get('Shading');
           var matrix = dict.getArray('Matrix');
           pattern = Pattern.parseShading(shading, matrix, this.xref, resources,
-                                         this.handler);
+                                         this.handler, this.pdfFunctionFactory);
           operatorList.addOp(fn, pattern.getIR());
           return Promise.resolve();
         }
@@ -917,51 +948,65 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.paintXObject:
               // eagerly compile XForm objects
               var name = args[0].name;
-              if (!name) {
-                warn('XObject must be referred to by name.');
-              }
-              if (imageCache[name] !== undefined) {
+              if (name && imageCache[name] !== undefined) {
                 operatorList.addOp(imageCache[name].fn, imageCache[name].args);
                 args = null;
                 continue;
               }
 
-              var xobj = xobjs.get(name);
-              if (xobj) {
+              next(new Promise(function(resolveXObject, rejectXObject) {
+                if (!name) {
+                  // throw new FormatError('XObject must be referred to by name.');
+                }
+
+                let xobj = xobjs.get(name);
+                if (!xobj) {
+                  operatorList.addOp(fn, args);
+                  resolveXObject();
+                  return;
+                }
                 if (!isStream(xobj)) {
                   throw new FormatError('XObject should be a stream');
                 }
 
-                var type = xobj.dict.get('Subtype');
+                let type = xobj.dict.get('Subtype');
                 if (!isName(type)) {
                   throw new FormatError('XObject should have a Name subtype');
                 }
 
                 if (type.name === 'Form') {
                   stateManager.save();
-                  next(self.buildFormXObject(resources, xobj, null,
-                                             operatorList, task,
-                                             stateManager.state.clone()).
-                    then(function () {
+                  self.buildFormXObject(resources, xobj, null, operatorList,
+                                        task, stateManager.state.clone()).
+                    then(function() {
                       stateManager.restore();
-                    }));
+                      resolveXObject();
+                    }, rejectXObject);
                   return;
                 } else if (type.name === 'Image') {
                   self.buildPaintImageXObject(resources, xobj, false,
-                    operatorList, name, imageCache);
-                  args = null;
-                  continue;
+                                              operatorList, name, imageCache);
                 } else if (type.name === 'PS') {
                   // PostScript XObjects are unused when viewing documents.
                   // See section 4.7.1 of Adobe's PDF reference.
                   info('Ignored XObject subtype PS');
-                  continue;
                 } else {
                   throw new FormatError(
                     `Unhandled XObject subtype ${type.name}`);
                 }
-              }
-              break;
+                resolveXObject();
+              }).catch(function(reason) {
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the XObject -- sending unsupported feature
+                  // notification and allow rendering to continue.
+                  self.handler.send('UnsupportedFeature',
+                    { featureId: UNSUPPORTED_FEATURES.unknown, });
+                  warn(`getOperatorList - ignoring XObject: "${reason}".`);
+                  return;
+                }
+                throw reason;
+              }));
+              return;
             case OPS.setFont:
               var fontSize = args[1];
               // eagerly collect all fonts
@@ -1024,11 +1069,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
             case OPS.setFillColorSpace:
               stateManager.state.fillColorSpace =
-                ColorSpace.parse(args[0], xref, resources);
+                ColorSpace.parse(args[0], xref, resources,
+                                 self.pdfFunctionFactory);
               continue;
             case OPS.setStrokeColorSpace:
               stateManager.state.strokeColorSpace =
-                ColorSpace.parse(args[0], xref, resources);
+                ColorSpace.parse(args[0], xref, resources,
+                                 self.pdfFunctionFactory);
               continue;
             case OPS.setFillColor:
               cs = stateManager.state.fillColorSpace;
@@ -1101,7 +1148,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var shadingFill = Pattern.parseShading(shading, null, xref,
-                resources, self.handler);
+                resources, self.handler, self.pdfFunctionFactory);
               var patternIR = shadingFill.getIR();
               args = [patternIR];
               fn = OPS.shadingFill;
@@ -1632,73 +1679,93 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var name = args[0].name;
-              if (name in skipEmptyXObjs) {
+              if (name && skipEmptyXObjs[name] !== undefined) {
                 break;
               }
 
-              var xobj = xobjs.get(name);
-              if (!xobj) {
-                break;
-              }
-              if (!isStream(xobj)) {
-                throw new FormatError('XObject should be a stream');
-              }
-
-              var type = xobj.dict.get('Subtype');
-              if (!isName(type)) {
-                throw new FormatError('XObject should have a Name subtype');
-              }
-
-              if (type.name !== 'Form') {
-                skipEmptyXObjs[name] = true;
-                break;
-              }
-
-              // Use a new `StateManager` to prevent incorrect positioning of
-              // textItems *after* the Form XObject, since errors in the data
-              // can otherwise prevent `restore` operators from being executed.
-              // NOTE: This is only an issue when `options.ignoreErrors = true`.
-              var currentState = stateManager.state.clone();
-              var xObjStateManager = new StateManager(currentState);
-
-              var matrix = xobj.dict.getArray('Matrix');
-              if (isArray(matrix) && matrix.length === 6) {
-                xObjStateManager.transform(matrix);
-              }
-
-              // Enqueue the `textContent` chunk before parsing the /Form
-              // XObject.
-              enqueueChunk();
-              let sinkWrapper = {
-                enqueueInvoked: false,
-
-                enqueue(chunk, size) {
-                  this.enqueueInvoked = true;
-                  sink.enqueue(chunk, size);
-                },
-
-                get desiredSize() {
-                  return sink.desiredSize;
-                },
-
-                get ready() {
-                  return sink.ready;
-                },
-              };
-
-              next(self.getTextContent({
-                stream: xobj,
-                task,
-                resources: xobj.dict.get('Resources') || resources,
-                stateManager: xObjStateManager,
-                normalizeWhitespace,
-                combineTextItems,
-                sink: sinkWrapper,
-                seenStyles,
-              }).then(function() {
-                if (!sinkWrapper.enqueueInvoked) {
-                  skipEmptyXObjs[name] = true;
+              next(new Promise(function(resolveXObject, rejectXObject) {
+                if (!name) {
+                  throw new FormatError('XObject must be referred to by name.');
                 }
+
+                let xobj = xobjs.get(name);
+                if (!xobj) {
+                  resolveXObject();
+                  return;
+                }
+                if (!isStream(xobj)) {
+                  throw new FormatError('XObject should be a stream');
+                }
+
+                let type = xobj.dict.get('Subtype');
+                if (!isName(type)) {
+                  throw new FormatError('XObject should have a Name subtype');
+                }
+
+                if (type.name !== 'Form') {
+                  skipEmptyXObjs[name] = true;
+                  resolveXObject();
+                  return;
+                }
+
+                // Use a new `StateManager` to prevent incorrect positioning of
+                // textItems *after* the Form XObject, since errors in the data
+                // can otherwise prevent `restore` operators from executing.
+                // NOTE: Only an issue when `options.ignoreErrors === true`.
+                let currentState = stateManager.state.clone();
+                let xObjStateManager = new StateManager(currentState);
+
+                let matrix = xobj.dict.getArray('Matrix');
+                if (Array.isArray(matrix) && matrix.length === 6) {
+                  xObjStateManager.transform(matrix);
+                }
+
+                // Enqueue the `textContent` chunk before parsing the /Form
+                // XObject.
+                enqueueChunk();
+                let sinkWrapper = {
+                  enqueueInvoked: false,
+
+                  enqueue(chunk, size) {
+                    this.enqueueInvoked = true;
+                    sink.enqueue(chunk, size);
+                  },
+
+                  get desiredSize() {
+                    return sink.desiredSize;
+                  },
+
+                  get ready() {
+                    return sink.ready;
+                  },
+                };
+
+                self.getTextContent({
+                  stream: xobj,
+                  task,
+                  resources: xobj.dict.get('Resources') || resources,
+                  stateManager: xObjStateManager,
+                  normalizeWhitespace,
+                  combineTextItems,
+                  sink: sinkWrapper,
+                  seenStyles,
+                }).then(function() {
+                  if (!sinkWrapper.enqueueInvoked) {
+                    skipEmptyXObjs[name] = true;
+                  }
+                  resolveXObject();
+                }, rejectXObject);
+              }).catch(function(reason) {
+                if (reason instanceof AbortException) {
+                  return;
+                }
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the XObject -- allow text-extraction to
+                  // continue.
+                  warn(`getTextContent - ignoring XObject: "${reason}".`);
+                  return;
+                }
+                throw reason;
               }));
               return;
             case OPS.setGState:
@@ -2081,14 +2148,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var defaultVMetrics;
       var i, ii, j, jj, start, code, widths;
       if (properties.composite) {
-        defaultWidth = dict.get('DW') || 1000;
+        defaultWidth = dict.has('DW') ? dict.get('DW') : 1000;
 
         widths = dict.get('W');
         if (widths) {
           for (i = 0, ii = widths.length; i < ii; i++) {
             start = xref.fetchIfRef(widths[i++]);
             code = xref.fetchIfRef(widths[i]);
-            if (isArray(code)) {
+            if (Array.isArray(code)) {
               for (j = 0, jj = code.length; j < jj; j++) {
                 glyphsWidths[start++] = xref.fetchIfRef(code[j]);
               }
@@ -2109,7 +2176,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             for (i = 0, ii = vmetrics.length; i < ii; i++) {
               start = xref.fetchIfRef(vmetrics[i++]);
               code = xref.fetchIfRef(vmetrics[i]);
-              if (isArray(code)) {
+              if (Array.isArray(code)) {
                 for (j = 0, jj = code.length; j < jj; j++) {
                   glyphsVMetrics[start++] = [
                     xref.fetchIfRef(code[j++]),
@@ -2257,7 +2324,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (!df) {
           throw new FormatError('Descendant fonts are not specified');
         }
-        dict = (isArray(df) ? this.xref.fetchIfRef(df[0]) : df);
+        dict = (Array.isArray(df) ? this.xref.fetchIfRef(df[0]) : df);
 
         type = dict.get('Subtype');
         if (!isName(type)) {
@@ -2282,7 +2349,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               hash.update(entry.name);
             } else if (isRef(entry)) {
               hash.update(entry.toString());
-            } else if (isArray(entry)) {
+            } else if (Array.isArray(entry)) {
               // 'Differences' array (fixes bug1157493.pdf).
               var diffLength = entry.length, diffBuf = new Array(diffLength);
 

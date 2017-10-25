@@ -9,19 +9,15 @@
 
 var fs = require('fs');
 
-// HACK adding DOMParser to read XMP metadata.
-global.DOMParser = require('./domparsermock.js').DOMParserMock;
-
 // Run `gulp dist-install` to generate 'pdfjs-dist' npm package files.
 var pdfjsLib = require('pdfjs-dist');
 
 // Loading file from file system into typed array
 var pdfPath = process.argv[2] || '../../web/compressed.tracemonkey-pldi-09.pdf';
-var data = new Uint8Array(fs.readFileSync(pdfPath));
 
 // Will be using promises to load document, pages and misc data instead of
 // callback.
-pdfjsLib.getDocument(data).then(function (doc) {
+pdfjsLib.getDocument(pdfPath).then(function (doc) {
   var numPages = doc.numPages;
   console.log('# Document Loaded');
   console.log('Number of Pages: ' + numPages);
@@ -35,7 +31,7 @@ pdfjsLib.getDocument(data).then(function (doc) {
     console.log();
     if (data.metadata) {
       console.log('## Metadata');
-      console.log(JSON.stringify(data.metadata.metadata, null, 2));
+      console.log(JSON.stringify(data.metadata.getAll(), null, 2));
       console.log();
     }
   });

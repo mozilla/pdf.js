@@ -95,6 +95,13 @@ or to build it from source. We supply pre-built versions for usage with NPM and 
 the `pdfjs-dist` name. For more information and examples please refer to the
 [wiki page](https://github.com/mozilla/pdf.js/wiki/Setup-pdf.js-in-a-website) on this subject.
 
+## Including via a CDN
+
+PDF.js is hosted on several free CDNs:
+ - https://www.jsdelivr.com/package/npm/pdfjs-dist
+ - https://cdnjs.com/libraries/pdf.js
+ - https://unpkg.com/pdfjs-dist/
+
 ## Learning
 
 You can play with the PDF.js API directly from your browser using the live demos below:

@@ -14,7 +14,7 @@
  */
 
 import {
-  bytesToString, FormatError, info, isArray, stringToBytes, Util, warn
+  bytesToString, FormatError, info, stringToBytes, Util, warn
 } from '../shared/util';
 import {
   ExpertCharset, ExpertSubsetCharset, ISOAdobeCharset
@@ -413,26 +413,7 @@ var CFFParser = (function CFFParserClosure() {
       var names = [];
       for (var i = 0, ii = index.count; i < ii; ++i) {
         var name = index.get(i);
-        // OTS doesn't allow names to be over 127 characters.
-        var length = Math.min(name.length, 127);
-        var data = [];
-        // OTS also only permits certain characters in the name.
-        for (var j = 0; j < length; ++j) {
-          var c = name[j];
-          if (j === 0 && c === 0) {
-            data[j] = c;
-            continue;
-          }
-          if ((c < 33 || c > 126) || c === 91 /* [ */ || c === 93 /* ] */ ||
-              c === 40 /* ( */ || c === 41 /* ) */ || c === 123 /* { */ ||
-              c === 125 /* } */ || c === 60 /* < */ || c === 62 /* > */ ||
-              c === 47 /* / */ || c === 37 /* % */ || c === 35 /* # */) {
-            data[j] = 95;
-            continue;
-          }
-          data[j] = c;
-        }
-        names.push(bytesToString(data));
+        names.push(bytesToString(name));
       }
       return names;
     },
@@ -676,7 +657,7 @@ var CFFParser = (function CFFParserClosure() {
       }
       var privateOffset = parentDict.getByName('Private');
       // make sure the params are formatted correctly
-      if (!isArray(privateOffset) || privateOffset.length !== 2) {
+      if (!Array.isArray(privateOffset) || privateOffset.length !== 2) {
         parentDict.removeByName('Private');
         return;
       }
@@ -1037,12 +1018,13 @@ var CFFDict = (function CFFDictClosure() {
     };
     for (var i = 0, ii = layout.length; i < ii; ++i) {
       var entry = layout[i];
-      var key = isArray(entry[0]) ? (entry[0][0] << 8) + entry[0][1] : entry[0];
+      var key = Array.isArray(entry[0]) ?
+                (entry[0][0] << 8) + entry[0][1] : entry[0];
       tables.keyToNameMap[key] = entry[1];
       tables.nameToKeyMap[entry[1]] = key;
       tables.types[key] = entry[2];
       tables.defaults[key] = entry[3];
-      tables.opcodes[key] = isArray(entry[0]) ? entry[0] : [entry[0]];
+      tables.opcodes[key] = Array.isArray(entry[0]) ? entry[0] : [entry[0]];
       tables.order.push(key);
     }
     return tables;
@@ -1412,7 +1394,27 @@ var CFFCompiler = (function CFFCompilerClosure() {
     compileNameIndex: function CFFCompiler_compileNameIndex(names) {
       var nameIndex = new CFFIndex();
       for (var i = 0, ii = names.length; i < ii; ++i) {
-        nameIndex.add(stringToBytes(names[i]));
+        var name = names[i];
+        // OTS doesn't allow names to be over 127 characters.
+        var length = Math.min(name.length, 127);
+        var sanitizedName = new Array(length);
+        for (var j = 0; j < length; j++) {
+          // OTS requires chars to be between a range and not certain other
+          // chars.
+          var char = name[j];
+          if (char < '!' || char > '~' || char === '[' || char === ']' ||
+              char === '(' || char === ')' || char === '{' || char === '}' ||
+              char === '<' || char === '>' || char === '/' || char === '%') {
+            char = '_';
+          }
+          sanitizedName[j] = char;
+        }
+        sanitizedName = sanitizedName.join('');
+
+        if (sanitizedName === '') {
+          sanitizedName = 'Bad_Font_Name';
+        }
+        nameIndex.add(stringToBytes(sanitizedName));
       }
       return this.compileIndex(nameIndex);
     },
@@ -1487,10 +1489,10 @@ var CFFCompiler = (function CFFCompilerClosure() {
         }
         var values = dict.values[key];
         var types = dict.types[key];
-        if (!isArray(types)) {
+        if (!Array.isArray(types)) {
           types = [types];
         }
-        if (!isArray(values)) {
+        if (!Array.isArray(values)) {
           values = [values];
         }
 

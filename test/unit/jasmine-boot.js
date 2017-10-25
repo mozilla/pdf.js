@@ -43,6 +43,9 @@
 function initializePDFJS(callback) {
   Promise.all([
     'pdfjs/display/global',
+    'pdfjs/display/api',
+    'pdfjs/display/network',
+    'pdfjs/display/fetch_stream',
     'pdfjs-test/unit/annotation_spec',
     'pdfjs-test/unit/api_spec',
     'pdfjs-test/unit/bidi_spec',
@@ -61,6 +64,7 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/murmurhash3_spec',
     'pdfjs-test/unit/network_spec',
     'pdfjs-test/unit/parser_spec',
+    'pdfjs-test/unit/pdf_history_spec',
     'pdfjs-test/unit/primitives_spec',
     'pdfjs-test/unit/stream_spec',
     'pdfjs-test/unit/type1_parser_spec',
@@ -72,6 +76,17 @@ function initializePDFJS(callback) {
     return SystemJS.import(moduleName);
   })).then(function (modules) {
     var displayGlobal = modules[0];
+    var displayApi = modules[1];
+    var PDFNetworkStream = modules[2].PDFNetworkStream;
+    var PDFFetchStream = modules[3].PDFFetchStream;
+
+    // Set network stream class for unit tests.
+    if (typeof Response !== 'undefined' && 'body' in Response.prototype &&
+        typeof ReadableStream !== 'undefined') {
+      displayApi.setPDFNetworkStreamClass(PDFFetchStream);
+    } else {
+      displayApi.setPDFNetworkStreamClass(PDFNetworkStream);
+    }
 
     // Configure the worker.
     displayGlobal.PDFJS.workerSrc = '../../build/generic/build/pdf.worker.js';

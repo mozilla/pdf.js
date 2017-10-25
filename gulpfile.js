@@ -152,7 +152,7 @@ function createWebpackConfig(defines, output) {
           loader: 'babel-loader',
           exclude: /src\/core\/(glyphlist|unicode)/, // babel is too slow
           options: {
-            presets: pdfjsNext ? undefined : ['es2015'],
+            presets: pdfjsNext ? undefined : ['env'],
             plugins: ['transform-es2015-modules-commonjs'],
           },
         },
@@ -168,17 +168,7 @@ function createWebpackConfig(defines, output) {
     },
     // Avoid shadowing actual Node.js variables with polyfills, by disabling
     // polyfills/mocks - https://webpack.js.org/configuration/node/
-    node: {
-      console: false,
-      global: false,
-      process: false,
-      __filename: false,
-      __dirname: false,
-      Buffer: false,
-      setImmediate: false,
-    },
-    // If we upgrade to Webpack 3.0+, the above can be replaced with:
-    // node: false,
+    node: false,
   };
 }
 
@@ -702,25 +692,27 @@ gulp.task('minified-pre', ['buildnumber', 'locale'], function () {
 });
 
 gulp.task('minified-post', ['minified-pre'], function () {
-  var viewerFiles = [
-    MINIFIED_DIR + BUILD_DIR + 'pdf.js',
-    MINIFIED_DIR + '/web/viewer.js'
-  ];
+  var pdfFile = fs.readFileSync(MINIFIED_DIR + '/build/pdf.js').toString();
+  var pdfWorkerFile =
+    fs.readFileSync(MINIFIED_DIR + '/build/pdf.worker.js').toString();
+  var viewerFiles = {
+    'pdf.js': pdfFile,
+    'viewer.js': fs.readFileSync(MINIFIED_DIR + '/web/viewer.js').toString(),
+  };
 
   console.log();
   console.log('### Minifying js files');
 
-  var UglifyJS = require('uglify-js');
+  var UglifyES = require('uglify-es');
   // V8 chokes on very long sequences. Works around that.
   var optsForHugeFile = { compress: { sequences: false, }, };
 
   fs.writeFileSync(MINIFIED_DIR + '/web/pdf.viewer.js',
-                   UglifyJS.minify(viewerFiles).code);
+                   UglifyES.minify(viewerFiles).code);
   fs.writeFileSync(MINIFIED_DIR + '/build/pdf.min.js',
-                   UglifyJS.minify(MINIFIED_DIR + '/build/pdf.js').code);
+                   UglifyES.minify(pdfFile).code);
   fs.writeFileSync(MINIFIED_DIR + '/build/pdf.worker.min.js',
-                   UglifyJS.minify(MINIFIED_DIR + '/build/pdf.worker.js',
-                                   optsForHugeFile).code);
+                   UglifyES.minify(pdfWorkerFile, optsForHugeFile).code);
 
   console.log();
   console.log('### Cleaning js files');
@@ -1007,7 +999,7 @@ gulp.task('lib', ['buildnumber'], function () {
     content = preprocessor2.preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: 'module',
-      presets: noPreset ? undefined : ['es2015'],
+      presets: noPreset ? undefined : ['env'],
       plugins: [
         'transform-es2015-modules-commonjs',
         babelPluginReplaceNonWebPackRequire,
@@ -1040,7 +1032,7 @@ gulp.task('lib', ['buildnumber'], function () {
   var buildLib = merge([
     gulp.src([
       'src/{core,display}/*.js',
-      'src/shared/{compatibility,util,streams_polyfill}.js',
+      'src/shared/{compatibility,util,streams_polyfill,global_scope}.js',
       'src/{pdf,pdf.worker}.js',
     ], { base: 'src/', }),
     gulp.src([
@@ -1051,7 +1043,7 @@ gulp.task('lib', ['buildnumber'], function () {
       '!web/compatibility.js',
     ], { base: '.', }),
     gulp.src('test/unit/*.js', { base: '.', }),
-  ]).pipe(transform(preprocess))
+  ]).pipe(transform('utf8', preprocess))
     .pipe(gulp.dest('build/lib/'));
   return merge([
     buildLib,
@@ -1083,22 +1075,22 @@ gulp.task('publish', ['generic'], function (done) {
     });
 });
 
-gulp.task('test', ['generic'], function () {
+gulp.task('test', ['generic', 'components'], function () {
   return streamqueue({ objectMode: true, },
     createTestSource('unit'), createTestSource('browser'));
 });
 
-gulp.task('bottest', ['generic'], function () {
+gulp.task('bottest', ['generic', 'components'], function () {
   return streamqueue({ objectMode: true, },
     createTestSource('unit'), createTestSource('font'),
     createTestSource('browser (no reftest)'));
 });
 
-gulp.task('browsertest', ['generic'], function () {
+gulp.task('browsertest', ['generic', 'components'], function () {
   return createTestSource('browser');
 });
 
-gulp.task('unittest', ['generic'], function () {
+gulp.task('unittest', ['generic', 'components'], function () {
   return createTestSource('unit');
 });
 
@@ -1106,11 +1098,11 @@ gulp.task('fonttest', function () {
   return createTestSource('font');
 });
 
-gulp.task('makeref', ['generic'], function (done) {
+gulp.task('makeref', ['generic', 'components'], function (done) {
   makeRef(done);
 });
 
-gulp.task('botmakeref', ['generic'], function (done) {
+gulp.task('botmakeref', ['generic', 'components'], function (done) {
   makeRef(done, true);
 });
 
@@ -1168,7 +1160,8 @@ gulp.task('lint', function (done) {
   console.log('### Linting JS files');
 
   // Ensure that we lint the Firefox specific *.jsm files too.
-  var options = ['node_modules/eslint/bin/eslint', '--ext', '.js,.jsm', '.'];
+  var options = ['node_modules/eslint/bin/eslint', '--ext', '.js,.jsm', '.',
+                 '--report-unused-disable-directives'];
   var esLintProcess = spawn('node', options, { stdio: 'inherit', });
   esLintProcess.on('close', function (code) {
     if (code !== 0) {
@@ -1324,9 +1317,12 @@ gulp.task('dist-pre',
     license: DIST_LICENSE,
     dependencies: {
       'node-ensure': '^0.0.0', // shim for node for require.ensure
-      'worker-loader': '^0.8.0', // used in external/dist/webpack.json
+      'worker-loader': '^1.0.0', // used in external/dist/webpack.json
     },
     browser: {
+      'fs': false,
+      'http': false,
+      'https': false,
       'node-ensure': false,
     },
     format: 'amd', // to not allow system.js to choose 'cjs'

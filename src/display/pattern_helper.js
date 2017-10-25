@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError, info, isArray, Util } from '../shared/util';
+import { FormatError, info, Util } from '../shared/util';
 import { WebGLUtils } from './webgl';
 
 var ShadingIRs = {};
@@ -360,7 +360,7 @@ var TilingPattern = (function TilingPatternClosure() {
       var graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
       graphics.groupLevel = owner.groupLevel;
 
-      this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
+      this.setFillAndStrokeStyleToContext(graphics, paintType, color);
 
       this.setScale(width, height, xstep, ystep);
       this.transformToScale(graphics);
@@ -391,7 +391,7 @@ var TilingPattern = (function TilingPatternClosure() {
     },
 
     clipBbox: function clipBbox(graphics, bbox, x0, y0, x1, y1) {
-      if (isArray(bbox) && bbox.length === 4) {
+      if (Array.isArray(bbox) && bbox.length === 4) {
         var bboxWidth = x1 - x0;
         var bboxHeight = y1 - y0;
         graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
@@ -401,17 +401,23 @@ var TilingPattern = (function TilingPatternClosure() {
     },
 
     setFillAndStrokeStyleToContext:
-      function setFillAndStrokeStyleToContext(context, paintType, color) {
+      function setFillAndStrokeStyleToContext(graphics, paintType, color) {
+        let context = graphics.ctx, current = graphics.current;
         switch (paintType) {
           case PaintType.COLORED:
             var ctx = this.ctx;
             context.fillStyle = ctx.fillStyle;
             context.strokeStyle = ctx.strokeStyle;
+            current.fillColor = ctx.fillStyle;
+            current.strokeColor = ctx.strokeStyle;
             break;
           case PaintType.UNCOLORED:
             var cssColor = Util.makeCssRgb(color[0], color[1], color[2]);
             context.fillStyle = cssColor;
             context.strokeStyle = cssColor;
+            // Set color needed by image masks (fixes issues 3226 and 8741).
+            current.fillColor = cssColor;
+            current.strokeColor = cssColor;
             break;
           default:
             throw new FormatError(`Unsupported paint type: ${paintType}`);

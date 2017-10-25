@@ -14,7 +14,7 @@
  */
 
 import {
-  CFFCompiler, CFFIndex, CFFParser, CFFStrings
+  CFFCompiler, CFFParser, CFFStrings
 } from '../../src/core/cff_parser';
 import { SEAC_ANALYSIS_ENABLED } from '../../src/core/fonts';
 import { Stream } from '../../src/core/stream';
@@ -86,23 +86,6 @@ describe('CFFParser', function() {
     var names = cff.names;
     expect(names.length).toEqual(1);
     expect(names[0]).toEqual('ABCDEF+Times-Roman');
-  });
-
-  it('sanitizes name index', function() {
-    var index = new CFFIndex();
-    index.add(['['.charCodeAt(0), 'a'.charCodeAt(0)]);
-
-    var names = parser.parseNameIndex(index);
-    expect(names).toEqual(['_a']);
-
-    index = new CFFIndex();
-    var longName = [];
-    for (var i = 0; i < 129; i++) {
-      longName.push(0);
-    }
-    index.add(longName);
-    names = parser.parseNameIndex(index);
-    expect(names[0].length).toEqual(127);
   });
 
   it('parses string index', function() {
@@ -368,6 +351,16 @@ describe('CFFParser', function() {
 });
 
 describe('CFFCompiler', function() {
+
+  function testParser(bytes) {
+    bytes = new Uint8Array(bytes);
+    return new CFFParser({
+      getBytes: () => {
+        return bytes;
+      },
+    }, {}, SEAC_ANALYSIS_ENABLED);
+  }
+
   it('encodes integers', function() {
     var c = new CFFCompiler();
     // all the examples from the spec
@@ -386,6 +379,25 @@ describe('CFFCompiler', function() {
     var c = new CFFCompiler();
     expect(c.encodeFloat(-2.25)).toEqual([0x1e, 0xe2, 0xa2, 0x5f]);
     expect(c.encodeFloat(5e-11)).toEqual([0x1e, 0x5c, 0x11, 0xff]);
+  });
+
+  it('sanitizes name index', function() {
+    var c = new CFFCompiler();
+    var nameIndexCompiled = c.compileNameIndex(['[a']);
+    var parser = testParser(nameIndexCompiled);
+    var nameIndex = parser.parseIndex(0);
+    var names = parser.parseNameIndex(nameIndex.obj);
+    expect(names).toEqual(['_a']);
+
+    var longName = '';
+    for (var i = 0; i < 129; i++) {
+      longName += '_';
+    }
+    nameIndexCompiled = c.compileNameIndex([longName]);
+    parser = testParser(nameIndexCompiled);
+    nameIndex = parser.parseIndex(0);
+    names = parser.parseNameIndex(nameIndex.obj);
+    expect(names[0].length).toEqual(127);
   });
 
   // TODO a lot more compiler tests

@@ -14,7 +14,7 @@
  */
 
 import {
-  bytesToString, FormatError, isInt, PasswordException, PasswordResponses,
+  bytesToString, FormatError, PasswordException, PasswordResponses,
   stringToBytes, utf8StringToString, warn
 } from '../shared/util';
 import { isDict, isName, Name } from './primitives';
@@ -1862,9 +1862,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     }
     this.dict = dict;
     var algorithm = dict.get('V');
-    if (!isInt(algorithm) ||
+    if (!Number.isInteger(algorithm) ||
         (algorithm !== 1 && algorithm !== 2 && algorithm !== 4 &&
-        algorithm !== 5)) {
+         algorithm !== 5)) {
       throw new FormatError('unsupported encryption algorithm');
     }
     this.algorithm = algorithm;
@@ -1890,7 +1890,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         }
       }
     }
-    if (!isInt(keyLength) ||
+    if (!Number.isInteger(keyLength) ||
         keyLength < 40 || (keyLength % 8) !== 0) {
       throw new FormatError('invalid key length');
     }

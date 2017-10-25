@@ -19,6 +19,7 @@
 
   "rules": {
     // Possible errors
+    "for-direction": "error",
     "no-cond-assign": ["error", "except-parens"],
     "no-constant-condition": ["error", { "checkLoops": false, }],
     "no-dupe-args": "error",

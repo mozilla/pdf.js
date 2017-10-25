@@ -31,7 +31,17 @@ var pdfjsDisplaySVG = require('./display/svg.js');
 
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  require('./display/network.js');
+  if (pdfjsSharedUtil.isNodeJS()) {
+    var PDFNodeStream = require('./display/node_stream.js').PDFNodeStream;
+    pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFNodeStream);
+  } else if (typeof Response !== 'undefined' && 'body' in Response.prototype &&
+             typeof ReadableStream !== 'undefined') {
+    var PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
+    pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFFetchStream);
+   } else {
+    var PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
+    pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFNetworkStream);
+  }
 }
 
 exports.PDFJS = pdfjsDisplayGlobal.PDFJS;

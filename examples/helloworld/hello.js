@@ -6,7 +6,9 @@ Promise.all([System.import('pdfjs/display/api'),
              System.import('pdfjs/display/network'),
              System.resolve('pdfjs/worker_loader')])
        .then(function (modules) {
-  var api = modules[0], global = modules[1];
+  var api = modules[0], global = modules[1], network = modules[2];
+  api.setPDFNetworkStreamClass(network.PDFNetworkStream);
+
   // In production, change this to point to the built `pdf.worker.js` file.
   global.PDFJS.workerSrc = modules[3];
 
