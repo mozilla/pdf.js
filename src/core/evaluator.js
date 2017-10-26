@@ -20,7 +20,7 @@ import {
   UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
-import { DecodeStream, JpegStream, Stream } from './stream';
+import { DecodeStream, Stream } from './stream';
 import {
   Dict, isCmd, isDict, isEOF, isName, isRef, isStream, Name
 } from './primitives';
@@ -44,6 +44,7 @@ import { ColorSpace } from './colorspace';
 import { getGlyphsUnicode } from './glyphlist';
 import { getMetrics } from './metrics';
 import { isPDFFunction } from './function';
+import { JpegStream } from './jpeg_stream';
 import { MurmurHash3_64 } from './murmurhash3';
 import { PDFImage } from './image';
 

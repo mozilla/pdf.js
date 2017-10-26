@@ -14,9 +14,10 @@
  */
 
 import { assert, FormatError, ImageKind, info, warn } from '../shared/util';
-import { DecodeStream, JpegStream } from './stream';
 import { isStream, Name } from './primitives';
 import { ColorSpace } from './colorspace';
+import { DecodeStream } from './stream';
+import { JpegStream } from './jpeg_stream';
 import { JpxImage } from './jpx';
 
 var PDFImage = (function PDFImageClosure() {
