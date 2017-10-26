@@ -21,15 +21,15 @@ import { JpegImage } from './jpg';
 /**
  * Depending on the type of JPEG a JpegStream is handled in different ways. For
  * JPEG's that are supported natively such as DeviceGray and DeviceRGB the image
- * data is stored and then loaded by the browser.  For unsupported JPEG's we use
+ * data is stored and then loaded by the browser. For unsupported JPEG's we use
  * a library to decode these images and the stream behaves like all the other
  * DecodeStreams.
  */
-var JpegStream = (function JpegStreamClosure() {
+let JpegStream = (function JpegStreamClosure() {
   function JpegStream(stream, maybeLength, dict, params) {
     // Some images may contain 'junk' before the SOI (start-of-image) marker.
     // Note: this seems to mainly affect inline images.
-    var ch;
+    let ch;
     while ((ch = stream.getByte()) !== -1) {
       if (ch === 0xFF) { // Find the first byte of the SOI marker (0xFFD8).
         stream.skip(-1); // Reset the stream position to the SOI.
@@ -48,27 +48,32 @@ var JpegStream = (function JpegStreamClosure() {
 
   Object.defineProperty(JpegStream.prototype, 'bytes', {
     get: function JpegStream_bytes() {
-      // If this.maybeLength is null, we'll get the entire stream.
+      // If `this.maybeLength` is null, we'll get the entire stream.
       return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
     },
     configurable: true,
   });
 
-  JpegStream.prototype.ensureBuffer = function JpegStream_ensureBuffer(req) {
-    if (this.bufferLength) {
+  JpegStream.prototype.ensureBuffer = function(requested) {
+    // No-op, since `this.readBlock` will always parse the entire image and
+    // directly insert all of its data into `this.buffer`.
+  };
+
+  JpegStream.prototype.readBlock = function() {
+    if (this.eof) {
       return;
     }
-    var jpegImage = new JpegImage();
+    let jpegImage = new JpegImage();
 
     // Checking if values need to be transformed before conversion.
-    var decodeArr = this.dict.getArray('Decode', 'D');
+    let decodeArr = this.dict.getArray('Decode', 'D');
     if (this.forceRGB && Array.isArray(decodeArr)) {
-      var bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
-      var decodeArrLength = decodeArr.length;
-      var transform = new Int32Array(decodeArrLength);
-      var transformNeeded = false;
-      var maxValue = (1 << bitsPerComponent) - 1;
-      for (var i = 0; i < decodeArrLength; i += 2) {
+      let bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
+      let decodeArrLength = decodeArr.length;
+      let transform = new Int32Array(decodeArrLength);
+      let transformNeeded = false;
+      let maxValue = (1 << bitsPerComponent) - 1;
+      for (let i = 0; i < decodeArrLength; i += 2) {
         transform[i] = ((decodeArr[i + 1] - decodeArr[i]) * 256) | 0;
         transform[i + 1] = (decodeArr[i] * maxValue) | 0;
         if (transform[i] !== 256 || transform[i + 1] !== 0) {
@@ -81,26 +86,26 @@ var JpegStream = (function JpegStreamClosure() {
     }
     // Fetching the 'ColorTransform' entry, if it exists.
     if (isDict(this.params)) {
-      var colorTransform = this.params.get('ColorTransform');
+      let colorTransform = this.params.get('ColorTransform');
       if (Number.isInteger(colorTransform)) {
         jpegImage.colorTransform = colorTransform;
       }
     }
 
     jpegImage.parse(this.bytes);
-    var data = jpegImage.getData(this.drawWidth, this.drawHeight,
+    let data = jpegImage.getData(this.drawWidth, this.drawHeight,
                                  this.forceRGB);
     this.buffer = data;
     this.bufferLength = data.length;
     this.eof = true;
   };
 
-  JpegStream.prototype.getBytes = function JpegStream_getBytes(length) {
-    this.ensureBuffer();
+  JpegStream.prototype.getBytes = function(length) {
+    this.readBlock();
     return this.buffer;
   };
 
-  JpegStream.prototype.getIR = function JpegStream_getIR(forceDataSchema) {
+  JpegStream.prototype.getIR = function(forceDataSchema = false) {
     return createObjectURL(this.bytes, 'image/jpeg', forceDataSchema);
   };
 
