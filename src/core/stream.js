@@ -14,7 +14,7 @@
  */
 
 import {
-  createObjectURL, FormatError, isSpace, shadow, Util
+  createObjectURL, FormatError, isSpace, shadow, stringToBytes, Util
 } from '../shared/util';
 import { isDict } from './primitives';
 import { JpegImage } from './jpg';
@@ -109,11 +109,7 @@ var Stream = (function StreamClosure() {
 
 var StringStream = (function StringStreamClosure() {
   function StringStream(str) {
-    var length = str.length;
-    var bytes = new Uint8Array(length);
-    for (var n = 0; n < length; ++n) {
-      bytes[n] = str.charCodeAt(n);
-    }
+    let bytes = stringToBytes(str);
     Stream.call(this, bytes);
   }
 
