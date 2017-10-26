@@ -14,6 +14,7 @@
  */
 
 import { GrabToPan } from './grab_to_pan';
+import { MarqueeZoom } from './marquee_zoom';
 
 const CursorTool = {
   SELECT: 0, // The default value.
@@ -33,10 +34,11 @@ class PDFCursorTools {
   /**
    * @param {PDFCursorToolsOptions} options
    */
-  constructor({ container, eventBus, preferences, }) {
+  constructor({ container, eventBus, preferences, overlayManager, pdfViewer }) {
     this.container = container;
     this.eventBus = eventBus;
-
+     this.overlayManager = overlayManager;
+     this.pdfViewer = pdfViewer;
     this.active = CursorTool.SELECT;
     this.activeBeforePresentationMode = null;
 
@@ -44,12 +46,19 @@ class PDFCursorTools {
       element: this.container,
     });
 
+    this.zoomTool = new MarqueeZoom({
+      element: this.container,
+      overlayManager: this.overlayManager,
+      pdfViewer: this.pdfViewer,
+    });
+
     this._addEventListeners();
 
     Promise.all([
       preferences.get('cursorToolOnLoad'),
-      preferences.get('enableHandToolOnLoad')
-    ]).then(([cursorToolPref, handToolPref]) => {
+      preferences.get('enableHandToolOnLoad'),
+      preferences.get('enableZoomToolOnLoad')
+    ]).then(([cursorToolPref, handToolPref, zoomToolPref]) => {
       // If the 'cursorToolOnLoad' preference has not been set to a non-default
       // value, attempt to convert the old 'enableHandToolOnLoad' preference.
       // TODO: Remove this conversion after a suitable number of releases.
@@ -93,7 +102,7 @@ class PDFCursorTools {
           this.handTool.deactivate();
           break;
         case CursorTool.ZOOM:
-          /* falls through */
+          this.zoomTool.deactivate();
       }
     };
 
@@ -106,7 +115,9 @@ class PDFCursorTools {
         this.handTool.activate();
         break;
       case CursorTool.ZOOM:
-        /* falls through */
+        disableActiveTool();
+        this.zoomTool.activate();
+        break;
       default:
         console.error(`switchTool: "${tool}" is an unsupported value.`);
         return;

@@ -379,6 +379,8 @@ let PDFViewerApplication = {
         container,
         eventBus,
         preferences: this.preferences,
+        overlayManager: this.overlayManager,
+        pdfViewer: this.pdfViewer,
       });
 
       this.toolbar = new Toolbar(appConfig.toolbar, container, eventBus,

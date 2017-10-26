@@ -1018,6 +1018,10 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: url(images/secondaryToolbarButton-handTool.png);
 }
 
+.secondaryToolbarButton.zoomTool::before {
+  content: url(images/secondaryToolbarButton-zoomTool.png);
+}
+
 .secondaryToolbarButton.documentProperties::before {
   content: url(images/secondaryToolbarButton-documentProperties.png);
 }
@@ -1555,6 +1559,24 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 #viewer.textLayer-shadow .textLayer > div {
   background-color: rgba(255,255,255, .6);
   color: black;
+}
+
+.marquee-zoom {
+  cursor: -webkit-crosshair !important;
+  cursor: -moz-crosshair !important;
+  cursor: crosshair !important;
+}
+
+.rectangle {
+  cursor: -webkit-crosshair !important;
+  cursor: -moz-crosshair !important;
+  cursor: crosshair !important;
+
+  position: absolute;
+  display: block;
+  border: 1px dotted #000000;
+  overflow: hidden;
+  z-index: 50000; /* should be higher than anything else in PDF.js! */
 }
 
 .grab-to-pan-grab {

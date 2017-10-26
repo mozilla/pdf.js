@@ -44,6 +44,8 @@ import { SCROLLBAR_PADDING } from './ui_utils';
  *   select tool.
  * @property {HTMLButtonElement} cursorHandToolButton - Button to enable the
  *   hand tool.
+ * @property {HTMLButtonElement} cursorZoomToolButton - Button to enable the
+ *   zoom tool.
  * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
  *   the document properties dialog.
  */
@@ -76,6 +78,8 @@ class SecondaryToolbar {
         eventDetails: { tool: CursorTool.SELECT, }, close: true, },
       { element: options.cursorHandToolButton, eventName: 'switchcursortool',
         eventDetails: { tool: CursorTool.HAND, }, close: true, },
+      { element: options.cursorZoomToolButton, eventName: 'switchcursortool',
+        eventDetails: { tool: CursorTool.ZOOM, }, close: true, },
       { element: options.documentPropertiesButton,
         eventName: 'documentproperties', close: true, },
     ];
@@ -160,6 +164,7 @@ class SecondaryToolbar {
     this.eventBus.on('cursortoolchanged', function(evt) {
       buttons.cursorSelectToolButton.classList.remove('toggled');
       buttons.cursorHandToolButton.classList.remove('toggled');
+      buttons.cursorZoomToolButton.classList.remove('toggled');
 
       switch (evt.tool) {
         case CursorTool.SELECT:
@@ -167,6 +172,9 @@ class SecondaryToolbar {
           break;
         case CursorTool.HAND:
           buttons.cursorHandToolButton.classList.add('toggled');
+          break;
+        case CursorTool.ZOOM:
+          buttons.cursorZoomToolButton.classList.add('toggled');
           break;
       }
     });
