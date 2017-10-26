@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, createPromiseCapability } from '../shared/util';
+import { assert, createPromiseCapability, stringToBytes } from '../shared/util';
 import {
   createResponseStatusError, validateRangeRequestCapabilities
 } from './network_utils';
@@ -48,11 +48,7 @@ function getArrayBuffer(xhr) {
   if (typeof data !== 'string') {
     return data;
   }
-  var length = data.length;
-  var array = new Uint8Array(length);
-  for (var i = 0; i < length; i++) {
-    array[i] = data.charCodeAt(i) & 0xFF;
-  }
+  let array = stringToBytes(data);
   return array.buffer;
 }
 
