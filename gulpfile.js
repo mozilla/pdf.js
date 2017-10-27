@@ -81,7 +81,7 @@ var DEFINES = {
   SINGLE_FILE: false,
   COMPONENTS: false,
   LIB: false,
-  PDFJS_NEXT: false,
+  SKIP_BABEL: false,
 };
 
 function safeSpawnSync(command, parameters, options) {
@@ -130,8 +130,8 @@ function createWebpackConfig(defines, output) {
   var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
   var enableSourceMaps = !bundleDefines.FIREFOX && !bundleDefines.MOZCENTRAL &&
                          !bundleDefines.CHROME;
-  var pdfjsNext = bundleDefines.PDFJS_NEXT ||
-                  process.env['PDFJS_NEXT'] === 'true';
+  var skipBabel = bundleDefines.SKIP_BABEL ||
+                  process.env['SKIP_BABEL'] === 'true';
 
   return {
     output: output,
@@ -152,7 +152,7 @@ function createWebpackConfig(defines, output) {
           loader: 'babel-loader',
           exclude: /src\/core\/(glyphlist|unicode)/, // babel is too slow
           options: {
-            presets: pdfjsNext ? undefined : ['env'],
+            presets: skipBabel ? undefined : ['env'],
             plugins: ['transform-es2015-modules-commonjs'],
           },
         },
@@ -732,7 +732,7 @@ gulp.task('minified', ['minified-post']);
 gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building Firefox extension');
-  var defines = builder.merge(DEFINES, { FIREFOX: true, PDFJS_NEXT: true, });
+  var defines = builder.merge(DEFINES, { FIREFOX: true, SKIP_BABEL: true, });
 
   var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR + '/content/',
       FIREFOX_EXTENSION_DIR = 'extensions/firefox/',
@@ -840,7 +840,7 @@ gulp.task('firefox', ['firefox-pre'], function (done) {
 gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building mozilla-central extension');
-  var defines = builder.merge(DEFINES, { MOZCENTRAL: true, PDFJS_NEXT: true, });
+  var defines = builder.merge(DEFINES, { MOZCENTRAL: true, SKIP_BABEL: true, });
 
   var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
       MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/extensions/pdfjs/',
@@ -913,7 +913,7 @@ gulp.task('mozcentral', ['mozcentral-pre']);
 gulp.task('chromium-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building Chromium extension');
-  var defines = builder.merge(DEFINES, { CHROME: true, PDFJS_NEXT: true, });
+  var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: true, });
 
   var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
