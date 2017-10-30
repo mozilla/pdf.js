@@ -649,6 +649,11 @@ var Font = (function FontClosure() {
     return (b0 << 8) + b1;
   }
 
+  function writeSignedInt16(bytes, index, value) {
+    bytes[index + 1] = value;
+    bytes[index] = value >>> 8;
+  }
+
   function signedInt16(b0, b1) {
     var value = (b0 << 8) + b1;
     return value & (1 << 15) ? value - 0x10000 : value;
@@ -1577,8 +1582,11 @@ var Font = (function FontClosure() {
           return glyphProfile;
         }
         var glyf = source.subarray(sourceStart, sourceEnd);
-        var contoursCount = (glyf[0] << 8) | glyf[1];
-        if (contoursCount & 0x8000) {
+        var contoursCount = signedInt16(glyf[0], glyf[1]);
+        if (contoursCount < 0) {
+          // OTS doesn't like contour count to be less than -1.
+          contoursCount = -1;
+          writeSignedInt16(glyf, 0, contoursCount);
           // complex glyph, writing as is
           dest.set(glyf, destStart);
           glyphProfile.length = glyf.length;
