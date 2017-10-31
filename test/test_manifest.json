@@ -711,6 +711,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue9084",
+       "file": "pdfs/issue9084.pdf",
+       "md5": "5570ec01cc869d299fec1b2f68926a08",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue8707",
        "file": "pdfs/issue8707.pdf",
        "md5": "d3dc670adde9ec9fb82c974027033029",
