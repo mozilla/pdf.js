@@ -17,7 +17,6 @@ import { buildGetDocumentParams } from './test_utils';
 import { DOMCanvasFactory } from '../../src/display/dom_utils';
 import { getDocument } from '../../src/display/api';
 import { isNodeJS } from '../../src/shared/util';
-import { PDFJS } from '../../src/display/global';
 
 function getTopLeftPixel(canvasContext) {
   let imgData = canvasContext.getImageData(0, 0, 1, 1);
@@ -38,7 +37,6 @@ describe('custom canvas rendering', function() {
 
   beforeAll(function(done) {
     if (isNodeJS()) {
-      PDFJS.pdfjsNext = true;
       // NOTE: To support running the canvas-related tests in Node.js,
       // a `NodeCanvasFactory` would need to be added (in test_utils.js).
     } else {
