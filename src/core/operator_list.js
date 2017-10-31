@@ -18,13 +18,17 @@ import {
 } from '../shared/util';
 
 var QueueOptimizer = (function QueueOptimizerClosure() {
-  function addState(parentState, pattern, fn) {
+  function addState(parentState, pattern, checkFn, iterateFn, processFn) {
     var state = parentState;
     for (var i = 0, ii = pattern.length - 1; i < ii; i++) {
       var item = pattern[i];
       state = (state[item] || (state[item] = []));
     }
-    state[pattern[pattern.length - 1]] = fn;
+    state[pattern[pattern.length - 1]] = {
+      checkFn,
+      iterateFn,
+      processFn,
+    };
   }
 
   function handlePaintSolidColorImageMask(iFirstSave, count, fnArray,
@@ -54,7 +58,23 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   // sequences with one |paintInlineImageXObjectGroup| operation.
   addState(InitialState,
     [OPS.save, OPS.transform, OPS.paintInlineImageXObject, OPS.restore],
-    function foundInlineImageGroup(context) {
+    null,
+    function iterateInlineImageGroup(context, i) {
+      var fnArray = context.fnArray;
+      var iFirstSave = context.iCurr - 3;
+      var pos = (i - iFirstSave) % 4;
+      switch (pos) {
+        case 0:
+          return fnArray[i] === OPS.save;
+        case 1:
+          return fnArray[i] === OPS.transform;
+        case 2:
+          return fnArray[i] === OPS.paintInlineImageXObject;
+        case 3:
+          return fnArray[i] === OPS.restore;
+      }
+    },
+    function foundInlineImageGroup(context, i) {
       var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
       var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
       var MAX_WIDTH = 1000;
@@ -66,25 +86,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var iFirstTransform = curr - 2;
       var iFirstPIIXO = curr - 1;
 
-      // Look for the quartets.
-      var i = iFirstSave + 4;
-      var ii = fnArray.length;
-      while (i + 3 < ii) {
-        if (fnArray[i] !== OPS.save ||
-            fnArray[i + 1] !== OPS.transform ||
-            fnArray[i + 2] !== OPS.paintInlineImageXObject ||
-            fnArray[i + 3] !== OPS.restore) {
-          break;    // ops don't match
-        }
-        i += 4;
-      }
-
-      // At this point, i is the index of the first op past the last valid
-      // quartet.
-      var count = Math.min((i - iFirstSave) / 4,
+      var count = Math.min(Math.floor((i - iFirstSave) / 4),
                            MAX_IMAGES_IN_INLINE_IMAGES_BLOCK);
       if (count < MIN_IMAGES_IN_INLINE_IMAGES_BLOCK) {
-        return i;
+        return i - (i - iFirstSave) % 4;
       }
 
       // assuming that heights of those image is too small (~1 pixel)
@@ -155,7 +160,23 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   // |paintImageMaskXObjectRepeat| operation.
   addState(InitialState,
     [OPS.save, OPS.transform, OPS.paintImageMaskXObject, OPS.restore],
-    function foundImageMaskGroup(context) {
+    null,
+    function iterateImageMaskGroup(context, i) {
+      var fnArray = context.fnArray;
+      var iFirstSave = context.iCurr - 3;
+      var pos = (i - iFirstSave) % 4;
+      switch (pos) {
+        case 0:
+          return fnArray[i] === OPS.save;
+        case 1:
+          return fnArray[i] === OPS.transform;
+        case 2:
+          return fnArray[i] === OPS.paintImageMaskXObject;
+        case 3:
+          return fnArray[i] === OPS.restore;
+      }
+    },
+    function foundImageMaskGroup(context, i) {
       var MIN_IMAGES_IN_MASKS_BLOCK = 10;
       var MAX_IMAGES_IN_MASKS_BLOCK = 100;
       var MAX_SAME_IMAGES_IN_MASKS_BLOCK = 1000;
@@ -166,26 +187,13 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var iFirstTransform = curr - 2;
       var iFirstPIMXO = curr - 1;
 
-      // Look for the quartets.
-      var i = iFirstSave + 4;
-      var ii = fnArray.length;
-      while (i + 3 < ii) {
-        if (fnArray[i] !== OPS.save ||
-            fnArray[i + 1] !== OPS.transform ||
-            fnArray[i + 2] !== OPS.paintImageMaskXObject ||
-            fnArray[i + 3] !== OPS.restore) {
-          break;    // ops don't match
-        }
-        i += 4;
-      }
-
       // At this point, i is the index of the first op past the last valid
       // quartet.
-      var count = (i - iFirstSave) / 4;
+      var count = Math.floor((i - iFirstSave) / 4);
       count = handlePaintSolidColorImageMask(iFirstSave, count, fnArray,
                                              argsArray);
       if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
-        return i;
+        return i - (i - iFirstSave) % 4;
       }
 
       var q;
@@ -255,6 +263,47 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   addState(InitialState,
     [OPS.save, OPS.transform, OPS.paintImageXObject, OPS.restore],
     function (context) {
+      var argsArray = context.argsArray;
+      var iFirstTransform = context.iCurr - 2;
+      return argsArray[iFirstTransform][1] === 0 &&
+             argsArray[iFirstTransform][2] === 0;
+    },
+    function (context, i) {
+      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var iFirstSave = context.iCurr - 3;
+      var pos = (i - iFirstSave) % 4;
+      switch (pos) {
+        case 0:
+          return fnArray[i] === OPS.save;
+        case 1:
+          if (fnArray[i] !== OPS.transform) {
+            return false;
+          }
+          var iFirstTransform = context.iCurr - 2;
+          var firstTransformArg0 = argsArray[iFirstTransform][0];
+          var firstTransformArg3 = argsArray[iFirstTransform][3];
+          if (argsArray[i][0] !== firstTransformArg0 ||
+              argsArray[i][1] !== 0 ||
+              argsArray[i][2] !== 0 ||
+              argsArray[i][3] !== firstTransformArg3) {
+            return false; // transforms don't match
+          }
+          return true;
+        case 2:
+          if (fnArray[i] !== OPS.paintImageXObject) {
+            return false;
+          }
+          var iFirstPIXO = context.iCurr - 1;
+          var firstPIXOArg0 = argsArray[iFirstPIXO][0];
+          if (argsArray[i][0] !== firstPIXOArg0) {
+            return false; // images don't match
+          }
+          return true;
+        case 3:
+          return fnArray[i] === OPS.restore;
+      }
+    },
+    function (context, i) {
       var MIN_IMAGES_IN_BLOCK = 3;
       var MAX_IMAGES_IN_BLOCK = 1000;
 
@@ -263,43 +312,16 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var iFirstSave = curr - 3;
       var iFirstTransform = curr - 2;
       var iFirstPIXO = curr - 1;
-      var iFirstRestore = curr;
-
-      if (argsArray[iFirstTransform][1] !== 0 ||
-          argsArray[iFirstTransform][2] !== 0) {
-        return iFirstRestore + 1;   // transform has the wrong form
-      }
-
-      // Look for the quartets.
       var firstPIXOArg0 = argsArray[iFirstPIXO][0];
       var firstTransformArg0 = argsArray[iFirstTransform][0];
       var firstTransformArg3 = argsArray[iFirstTransform][3];
-      var i = iFirstSave + 4;
-      var ii = fnArray.length;
-      while (i + 3 < ii) {
-        if (fnArray[i] !== OPS.save ||
-            fnArray[i + 1] !== OPS.transform ||
-            fnArray[i + 2] !== OPS.paintImageXObject ||
-            fnArray[i + 3] !== OPS.restore) {
-          break;    // ops don't match
-        }
-        if (argsArray[i + 1][0] !== firstTransformArg0 ||
-            argsArray[i + 1][1] !== 0 ||
-            argsArray[i + 1][2] !== 0 ||
-            argsArray[i + 1][3] !== firstTransformArg3) {
-          break;    // transforms don't match
-        }
-        if (argsArray[i + 2][0] !== firstPIXOArg0) {
-          break;    // images don't match
-        }
-        i += 4;
-      }
 
       // At this point, i is the index of the first op past the last valid
       // quartet.
-      var count = Math.min((i - iFirstSave) / 4, MAX_IMAGES_IN_BLOCK);
+      var count = Math.min(Math.floor((i - iFirstSave) / 4),
+                           MAX_IMAGES_IN_BLOCK);
       if (count < MIN_IMAGES_IN_BLOCK) {
-        return i;
+        return i - (i - iFirstSave) % 4;
       }
 
       // Extract the (x,y) positions from all of the matching transforms.
@@ -325,7 +347,35 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   // sequences, if the font for each one is the same.
   addState(InitialState,
     [OPS.beginText, OPS.setFont, OPS.setTextMatrix, OPS.showText, OPS.endText],
-    function (context) {
+    null,
+    function (context, i) {
+      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var iFirstSave = context.iCurr - 4;
+      var pos = (i - iFirstSave) % 5;
+      switch (pos) {
+        case 0:
+          return fnArray[i] === OPS.beginText;
+        case 1:
+          return fnArray[i] === OPS.setFont;
+        case 2:
+          return fnArray[i] === OPS.setTextMatrix;
+        case 3:
+          if (fnArray[i] !== OPS.showText) {
+            return false;
+          }
+          var iFirstSetFont = context.iCurr - 3;
+          var firstSetFontArg0 = argsArray[iFirstSetFont][0];
+          var firstSetFontArg1 = argsArray[iFirstSetFont][1];
+          if (argsArray[i][0] !== firstSetFontArg0 ||
+              argsArray[i][1] !== firstSetFontArg1) {
+            return false; // fonts don't match
+          }
+          return true;
+        case 4:
+          return fnArray[i] === OPS.endText;
+      }
+    },
+    function (context, i) {
       var MIN_CHARS_IN_BLOCK = 3;
       var MAX_CHARS_IN_BLOCK = 1000;
 
@@ -336,32 +386,15 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var iFirstSetTextMatrix = curr - 2;
       var iFirstShowText = curr - 1;
       var iFirstEndText = curr;
-
-      // Look for the quintets.
       var firstSetFontArg0 = argsArray[iFirstSetFont][0];
       var firstSetFontArg1 = argsArray[iFirstSetFont][1];
-      var i = iFirstBeginText + 5;
-      var ii = fnArray.length;
-      while (i + 4 < ii) {
-        if (fnArray[i] !== OPS.beginText ||
-            fnArray[i + 1] !== OPS.setFont ||
-            fnArray[i + 2] !== OPS.setTextMatrix ||
-            fnArray[i + 3] !== OPS.showText ||
-            fnArray[i + 4] !== OPS.endText) {
-          break;    // ops don't match
-        }
-        if (argsArray[i + 1][0] !== firstSetFontArg0 ||
-            argsArray[i + 1][1] !== firstSetFontArg1) {
-          break;    // fonts don't match
-        }
-        i += 5;
-      }
 
       // At this point, i is the index of the first op past the last valid
       // quintet.
-      var count = Math.min(((i - iFirstBeginText) / 5), MAX_CHARS_IN_BLOCK);
+      var count = Math.min(Math.floor((i - iFirstBeginText) / 5),
+                           MAX_CHARS_IN_BLOCK);
       if (count < MIN_CHARS_IN_BLOCK) {
-        return i;
+        return i - (i - iFirstBeginText) % 5;
       }
 
       // If the preceding quintet is (<something>, setFont, setTextMatrix,
@@ -390,35 +423,113 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       return iEndText + 1;
     });
 
-  function QueueOptimizer() {}
+  function QueueOptimizer(queue) {
+    this.queue = queue;
+    this.state = null;
+    this.context = {
+      iCurr: 0,
+      fnArray: queue.fnArray,
+      argsArray: queue.argsArray,
+    };
+    this.match = null;
+    this.lastProcessed = 0;
+  }
 
   QueueOptimizer.prototype = {
-    optimize: function QueueOptimizer_optimize(queue) {
-      var fnArray = queue.fnArray, argsArray = queue.argsArray;
-      var context = {
-        iCurr: 0,
-        fnArray,
-        argsArray,
-      };
-      var state;
-      var i = 0, ii = fnArray.length;
-      while (i < ii) {
-        state = (state || InitialState)[fnArray[i]];
-        if (typeof state === 'function') { // we found some handler
-          context.iCurr = i;
-          // state() returns the index of the first non-matching op (if we
-          // didn't match) or the first op past the modified ops (if we did
-          // match and replace).
-          i = state(context);
-          state = undefined;    // reset the state machine
-          ii = context.fnArray.length;
-        } else {
-          i++;
-        }
+    _optimize() {
+      // Process new fnArray item(s) chunk.
+      const fnArray = this.queue.fnArray;
+      let i = this.lastProcessed, ii = fnArray.length;
+      let state = this.state;
+      let match = this.match;
+      if (!state && !match && (i + 1 === ii) && !InitialState[fnArray[i]]) {
+        // Micro-optimization for the common case: last item is not
+        // optimazable, just skipping it.
+        this.lastProcessed = ii;
+        return;
       }
+
+      const context = this.context;
+      while (i < ii) {
+        if (match) {
+          // Already find a block of potetially optimizable items, iterating...
+          const iterate = (0, match.iterateFn)(context, i);
+          if (iterate) {
+            i++;
+            continue;
+          }
+          // Found last items for the block, processing...
+          i = (0, match.processFn)(context, i + 1);
+          ii = fnArray.length;
+          match = null;
+          state = null;
+          if (i >= ii) {
+            break;
+          }
+        }
+        // Find the potetially optimizable items.
+        state = (state || InitialState)[fnArray[i]];
+        if (!state || Array.isArray(state)) {
+          i++;
+          continue;
+        }
+        // Found a start of the block based on addState rules.
+        context.iCurr = i;
+        i++;
+        if (state.checkFn && !(0, state.checkFn)(context)) {
+          // Check failed, continue search...
+          state = null;
+          continue;
+        }
+        match = state;
+        state = null;
+      }
+      this.state = state;
+      this.match = match;
+      this.lastProcessed = i;
+    },
+
+    push(fn, args) {
+      this.queue.fnArray.push(fn);
+      this.queue.argsArray.push(args);
+      this._optimize();
+    },
+
+    flush() {
+      while (this.match) {
+        const length = this.queue.fnArray.length;
+        this.lastProcessed = (0, this.match.processFn)(this.context, length);
+        this.match = null;
+        this.state = null;
+        // Repeat optimization until all chunks are exhausted.
+        this._optimize();
+      }
+    },
+
+    reset() {
+      this.state = null;
+      this.match = null;
+      this.lastProcessed = 0;
     },
   };
   return QueueOptimizer;
+})();
+
+var NullOptimizer = (function NullOptimizerClosure() {
+  function NullOptimizer(queue) {
+    this.queue = queue;
+  }
+
+  NullOptimizer.prototype = {
+    push(fn, args) {
+      this.queue.fnArray.push(fn);
+      this.queue.argsArray.push(args);
+    },
+
+    flush() { },
+  };
+
+  return NullOptimizer;
 })();
 
 var OperatorList = (function OperatorListClosure() {
@@ -447,6 +558,11 @@ var OperatorList = (function OperatorListClosure() {
     this.messageHandler = messageHandler;
     this.fnArray = [];
     this.argsArray = [];
+    if (messageHandler && this.intent !== 'oplist') {
+      this.optimizer = new QueueOptimizer(this);
+    } else {
+      this.optimizer = new NullOptimizer(this);
+    }
     this.dependencies = Object.create(null);
     this._totalLength = 0;
     this.pageIndex = pageIndex;
@@ -467,8 +583,7 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     addOp(fn, args) {
-      this.fnArray.push(fn);
-      this.argsArray.push(args);
+      this.optimizer.push(fn, args);
       if (this.messageHandler) {
         if (this.fnArray.length >= CHUNK_SIZE) {
           this.flush();
@@ -510,9 +625,7 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     flush(lastChunk) {
-      if (this.intent !== 'oplist') {
-        new QueueOptimizer().optimize(this);
-      }
+      this.optimizer.flush();
       var transfers = getTransfers(this);
       var length = this.length;
       this._totalLength += length;
@@ -530,6 +643,7 @@ var OperatorList = (function OperatorListClosure() {
       this.dependencies = Object.create(null);
       this.fnArray.length = 0;
       this.argsArray.length = 0;
+      this.optimizer.reset();
     },
   };
 
