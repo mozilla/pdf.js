@@ -46,22 +46,8 @@ class PDFCursorTools {
 
     this._addEventListeners();
 
-    Promise.all([
-      preferences.get('cursorToolOnLoad'),
-      preferences.get('enableHandToolOnLoad')
-    ]).then(([cursorToolPref, handToolPref]) => {
-      // If the 'cursorToolOnLoad' preference has not been set to a non-default
-      // value, attempt to convert the old 'enableHandToolOnLoad' preference.
-      // TODO: Remove this conversion after a suitable number of releases.
-      if (handToolPref === true) {
-        preferences.set('enableHandToolOnLoad', false);
-
-        if (cursorToolPref === CursorTool.SELECT) {
-          cursorToolPref = CursorTool.HAND;
-          preferences.set('cursorToolOnLoad', cursorToolPref).catch(() => { });
-        }
-      }
-      this.switchTool(cursorToolPref);
+    preferences.get('cursorToolOnLoad').then((value) => {
+      this.switchTool(value);
     }).catch(() => { });
   }
 
