@@ -14,8 +14,34 @@
  */
 /* eslint-disable no-multi-str */
 
-import { getDefaultSetting } from './dom_utils';
 import { shadow } from '../shared/util';
+
+class WebGLContext {
+  constructor({ enable = false, }) {
+    this._enabled = enable === true;
+  }
+
+  get isEnabled() {
+    let enabled = this._enabled;
+    if (enabled) {
+      enabled = WebGLUtils.tryInitGL();
+    }
+    return shadow(this, 'isEnabled', enabled);
+  }
+
+  composeSMask({ layer, mask, properties, }) {
+    return WebGLUtils.composeSMask(layer, mask, properties);
+  }
+
+  drawFigures({ width, height, backgroundColor, figures, context, }) {
+    return WebGLUtils.drawFigures(width, height, backgroundColor, figures,
+                                  context);
+  }
+
+  clear() {
+    WebGLUtils.cleanup();
+  }
+}
 
 var WebGLUtils = (function WebGLUtilsClosure() {
   function loadShader(gl, code, shaderType) {
@@ -405,37 +431,34 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     return canvas;
   }
 
-  function cleanup() {
-    if (smaskCache && smaskCache.canvas) {
-      smaskCache.canvas.width = 0;
-      smaskCache.canvas.height = 0;
-    }
-    if (figuresCache && figuresCache.canvas) {
-      figuresCache.canvas.width = 0;
-      figuresCache.canvas.height = 0;
-    }
-    smaskCache = null;
-    figuresCache = null;
-  }
-
   return {
-    get isEnabled() {
-      if (getDefaultSetting('disableWebGL')) {
-        return false;
-      }
-      var enabled = false;
+    tryInitGL() {
       try {
         generateGL();
-        enabled = !!currentGL;
-      } catch (e) { }
-      return shadow(this, 'isEnabled', enabled);
+        return !!currentGL;
+      } catch (ex) { }
+      return false;
     },
+
     composeSMask,
+
     drawFigures,
-    clear: cleanup,
+
+    cleanup() {
+      if (smaskCache && smaskCache.canvas) {
+        smaskCache.canvas.width = 0;
+        smaskCache.canvas.height = 0;
+      }
+      if (figuresCache && figuresCache.canvas) {
+        figuresCache.canvas.width = 0;
+        figuresCache.canvas.height = 0;
+      }
+      smaskCache = null;
+      figuresCache = null;
+    },
   };
 })();
 
 export {
-  WebGLUtils,
+  WebGLContext,
 };
