@@ -296,20 +296,6 @@ function createComponentsBundle(defines) {
     .pipe(replaceJSRootName(componentsAMDName));
 }
 
-function createCompatibilityBundle(defines) {
-  var compatibilityAMDName = 'pdfjs-dist/web/compatibility';
-  var compatibilityOutputName = 'compatibility.js';
-
-  var compatibilityFileConfig = createWebpackConfig(defines, {
-    filename: compatibilityOutputName,
-    library: compatibilityAMDName,
-    libraryTarget: 'umd',
-    umdNamedDefine: true,
-  });
-  return gulp.src('./web/compatibility.js')
-    .pipe(webpack2Stream(compatibilityFileConfig));
-}
-
 function checkFile(path) {
   try {
     var stat = fs.lstatSync(path);
@@ -642,7 +628,6 @@ gulp.task('components', ['buildnumber'], function () {
 
   return merge([
     createComponentsBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
-    createCompatibilityBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(COMPONENTS_DIR + 'images')),
     preprocessCSS('web/pdf_viewer.css', 'components', defines, true)
         .pipe(gulp.dest(COMPONENTS_DIR)),
@@ -1040,7 +1025,6 @@ gulp.task('lib', ['buildnumber'], function () {
       'web/*.js',
       '!web/pdfjs.js',
       '!web/viewer.js',
-      '!web/compatibility.js',
     ], { base: '.', }),
     gulp.src('test/unit/*.js', { base: '.', }),
   ]).pipe(transform('utf8', preprocess))
