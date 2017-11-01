@@ -567,6 +567,7 @@ var OperatorList = (function OperatorListClosure() {
     this._totalLength = 0;
     this.pageIndex = pageIndex;
     this.intent = intent;
+    this.weight = 0;
   }
 
   OperatorList.prototype = {
@@ -584,10 +585,11 @@ var OperatorList = (function OperatorListClosure() {
 
     addOp(fn, args) {
       this.optimizer.push(fn, args);
+      this.weight++;
       if (this.messageHandler) {
-        if (this.fnArray.length >= CHUNK_SIZE) {
+        if (this.weight >= CHUNK_SIZE) {
           this.flush();
-        } else if (this.fnArray.length >= CHUNK_SIZE_ABOUT &&
+        } else if (this.weight >= CHUNK_SIZE_ABOUT &&
                    (fn === OPS.restore || fn === OPS.endText)) {
           // heuristic to flush on boundary of restore or endText
           this.flush();
@@ -643,6 +645,7 @@ var OperatorList = (function OperatorListClosure() {
       this.dependencies = Object.create(null);
       this.fnArray.length = 0;
       this.argsArray.length = 0;
+      this.weight = 0;
       this.optimizer.reset();
     },
   };
