@@ -39,6 +39,8 @@ import { RenderingStates } from './pdf_rendering_queue';
  * @property {boolean} renderInteractiveForms - Turns on rendering of
  *   interactive form elements. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
+ *   rendering for some operations. The default is `false`.
  * @property {IL10n} l10n - Localization service.
  */
 
@@ -65,6 +67,7 @@ class PDFPageView {
     this.hasRestrictedScaling = false;
     this.enhanceTextSelection = options.enhanceTextSelection || false;
     this.renderInteractiveForms = options.renderInteractiveForms || false;
+    this.enableWebGL = options.enableWebGL || false;
 
     this.eventBus = options.eventBus || getGlobalEventBus();
     this.renderingQueue = options.renderingQueue;
@@ -555,6 +558,7 @@ class PDFPageView {
       canvasContext: ctx,
       transform,
       viewport: this.viewport,
+      enableWebGL: this.enableWebGL,
       renderInteractiveForms: this.renderInteractiveForms,
     };
     let renderTask = this.pdfPage.render(renderContext);

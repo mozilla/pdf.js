@@ -50,6 +50,8 @@ const DEFAULT_CACHE_SIZE = 10;
  *   rotation of pages whose orientation differ from the first page upon
  *   printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
+ *   rendering for some operations. The default is `false`.
  * @property {IL10n} l10n - Localization service.
  */
 
@@ -114,6 +116,7 @@ class BaseViewer {
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
+    this.enableWebGL = options.enableWebGL || false;
     this.l10n = options.l10n || NullL10n;
 
     this.defaultRenderingQueue = !options.renderingQueue;
@@ -380,6 +383,7 @@ class BaseViewer {
           enhanceTextSelection: this.enhanceTextSelection,
           renderInteractiveForms: this.renderInteractiveForms,
           renderer: this.renderer,
+          enableWebGL: this.enableWebGL,
           l10n: this.l10n,
         });
         bindOnAfterAndBeforeDraw(pageView);

@@ -144,6 +144,7 @@ let PDFViewerApplication = {
     disablePageMode: false,
     disablePageLabels: false,
     renderer: 'canvas',
+    enableWebGL: false,
     disableTextLayer: false,
     enhanceTextSelection: false,
     renderInteractiveForms: false,
@@ -200,7 +201,7 @@ let PDFViewerApplication = {
 
     return Promise.all([
       preferences.get('enableWebGL').then(function resolved(value) {
-        PDFJS.disableWebGL = !value;
+        viewerPrefs['enableWebGL'] = value;
       }),
       preferences.get('sidebarViewOnLoad').then(function resolved(value) {
         viewerPrefs['sidebarViewOnLoad'] = value;
@@ -301,7 +302,7 @@ let PDFViewerApplication = {
         PDFJS.disableHistory = (hashParams['disablehistory'] === 'true');
       }
       if ('webgl' in hashParams) {
-        PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
+        viewerPrefs['enableWebGL'] = (hashParams['webgl'] === 'true');
       }
       if ('useonlycsszoom' in hashParams) {
         PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
@@ -398,6 +399,7 @@ let PDFViewerApplication = {
         enhanceTextSelection: viewerPrefs['enhanceTextSelection'],
         renderInteractiveForms: viewerPrefs['renderInteractiveForms'],
         enablePrintAutoRotate: viewerPrefs['enablePrintAutoRotate'],
+        enableWebGL: viewerPrefs['enableWebGL'],
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);
@@ -1157,7 +1159,7 @@ let PDFViewerApplication = {
                   info.PDFFormatVersion + ' ' + (info.Producer || '-').trim() +
                   ' / ' + (info.Creator || '-').trim() + ']' +
                   ' (PDF.js: ' + (version || '-') +
-                  (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
+                  (this.viewerPrefs['enableWebGL'] ? ' [WebGL]' : '') + ')');
 
       let pdfTitle;
       if (metadata && metadata.has('dc:title')) {
