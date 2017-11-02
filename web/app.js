@@ -145,6 +145,7 @@ let PDFViewerApplication = {
     disablePageLabels: false,
     renderer: 'canvas',
     enableWebGL: false,
+    useOnlyCssZoom: false,
     disableTextLayer: false,
     enhanceTextSelection: false,
     renderInteractiveForms: false,
@@ -244,7 +245,7 @@ let PDFViewerApplication = {
         PDFJS.disableFontFace = value;
       }),
       preferences.get('useOnlyCssZoom').then(function resolved(value) {
-        PDFJS.useOnlyCssZoom = value;
+        viewerPrefs['useOnlyCssZoom'] = value;
       }),
       preferences.get('externalLinkTarget').then(function resolved(value) {
         if (PDFJS.isExternalLinkTargetSet()) {
@@ -305,7 +306,7 @@ let PDFViewerApplication = {
         viewerPrefs['enableWebGL'] = (hashParams['webgl'] === 'true');
       }
       if ('useonlycsszoom' in hashParams) {
-        PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
+        viewerPrefs['useOnlyCssZoom'] = hashParams['useonlycsszoom'] === 'true';
       }
       if ('verbosity' in hashParams) {
         PDFJS.verbosity = hashParams['verbosity'] | 0;
@@ -400,6 +401,7 @@ let PDFViewerApplication = {
         renderInteractiveForms: viewerPrefs['renderInteractiveForms'],
         enablePrintAutoRotate: viewerPrefs['enablePrintAutoRotate'],
         enableWebGL: viewerPrefs['enableWebGL'],
+        useOnlyCssZoom: viewerPrefs['useOnlyCssZoom'],
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);

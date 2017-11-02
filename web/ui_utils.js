@@ -74,13 +74,6 @@ PDFJS.disableFullscreen = (PDFJS.disableFullscreen === undefined ?
                            false : PDFJS.disableFullscreen);
 
 /**
- * Enables CSS only zooming.
- * @var {boolean}
- */
-PDFJS.useOnlyCssZoom = (PDFJS.useOnlyCssZoom === undefined ?
-                        false : PDFJS.useOnlyCssZoom);
-
-/**
  * The maximum supported canvas size in total pixels e.g. width * height.
  * The default value is 4096 * 4096. Use -1 for no limit.
  * @var {number}

@@ -52,6 +52,8 @@ const DEFAULT_CACHE_SIZE = 10;
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
  * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
  *   rendering for some operations. The default is `false`.
+ * @property {boolean} useOnlyCssZoom - (optional) Enables CSS only zooming.
+ *   The default is `false`.
  * @property {IL10n} l10n - Localization service.
  */
 
@@ -117,6 +119,7 @@ class BaseViewer {
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
     this.enableWebGL = options.enableWebGL || false;
+    this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.l10n = options.l10n || NullL10n;
 
     this.defaultRenderingQueue = !options.renderingQueue;
@@ -384,6 +387,7 @@ class BaseViewer {
           renderInteractiveForms: this.renderInteractiveForms,
           renderer: this.renderer,
           enableWebGL: this.enableWebGL,
+          useOnlyCssZoom: this.useOnlyCssZoom,
           l10n: this.l10n,
         });
         bindOnAfterAndBeforeDraw(pageView);
