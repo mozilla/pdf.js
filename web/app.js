@@ -311,10 +311,6 @@ let PDFViewerApplication = {
       if ('verbosity' in hashParams) {
         PDFJS.verbosity = hashParams['verbosity'] | 0;
       }
-      if ('ignorecurrentpositiononzoom' in hashParams) {
-        PDFJS.ignoreCurrentPositionOnZoom =
-          (hashParams['ignorecurrentpositiononzoom'] === 'true');
-      }
       if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
           hashParams['disablebcmaps'] === 'true') {
         PDFJS.cMapUrl = '../external/cmaps/';

@@ -88,12 +88,6 @@ PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
 PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
                         false : PDFJS.disableHistory);
 
-/**
- * Disables maintaining the current position in the document when zooming.
- */
-PDFJS.ignoreCurrentPositionOnZoom = (PDFJS.ignoreCurrentPositionOnZoom ===
-  undefined ? false : PDFJS.ignoreCurrentPositionOnZoom);
-
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   /**
