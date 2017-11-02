@@ -14,6 +14,7 @@
  */
 
 import { NullL10n } from './ui_utils';
+import { PDFSidebarResizer } from './pdf_sidebar_resizer';
 import { RenderingStates } from './pdf_rendering_queue';
 
 const UI_NOTIFICATION_CLASS = 'pdfSidebarNotification';
@@ -74,9 +75,13 @@ class PDFSidebar {
     this.pdfOutlineViewer = options.pdfOutlineViewer;
 
     this.mainContainer = options.mainContainer;
+    this.viewerContainer = options.viewerContainer;
     this.outerContainer = options.outerContainer;
     this.eventBus = options.eventBus;
     this.toggleButton = options.toggleButton;
+    this.toolbarSidebar = options.toolbarSidebar;
+    this.sidebarContainer = options.sidebarContainer;
+    this.sidebarContent = options.sidebarContent;
 
     this.thumbnailButton = options.thumbnailButton;
     this.outlineButton = options.outlineButton;
@@ -85,6 +90,19 @@ class PDFSidebar {
     this.thumbnailView = options.thumbnailView;
     this.outlineView = options.outlineView;
     this.attachmentsView = options.attachmentsView;
+
+    this.setWidth = function(width) {
+      var ret = options.setWidth(width);
+      this.eventBus.dispatch('sidebarresize');
+      return ret;
+    };
+
+    this.pdfSidebarResizer = new PDFSidebarResizer({
+      pdfSidebar: this,
+      mainContainer: this.mainContainer,
+      resizer: options.resizer,
+      eventBus: this.eventBus,
+    });
 
     this.disableNotification = options.disableNotification || false;
 
@@ -404,6 +422,13 @@ class PDFSidebar {
       this.switchView(SidebarView.ATTACHMENTS);
     });
 
+    this.eventBus.on('resize', (evt) => {
+      const maxWidth = this.mainContainer.offsetWidth / 2;
+      if (this.width > maxWidth) {
+        this.setWidth(Math.max(200, maxWidth) + 'px');
+      }
+    });
+
     // Disable/enable views.
     this.eventBus.on('outlineloaded', (evt) => {
       let outlineCount = evt.outlineCount;
@@ -453,6 +478,10 @@ class PDFSidebar {
         this._updateThumbnailViewer();
       }
     });
+  }
+
+  get width() {
+    return this.sidebarContainer.offsetWidth;
   }
 }
 
