@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, deprecated } from '../shared/util';
+import { assert } from '../shared/util';
 import { SimpleXMLParser } from './dom_utils';
 
 class Metadata {
@@ -97,11 +97,6 @@ class Metadata {
 
   has(name) {
     return typeof this._metadata[name] !== 'undefined';
-  }
-
-  get metadata() {
-    deprecated('`metadata` getter; use `getAll()` instead.');
-    return this.getAll();
   }
 }
 
