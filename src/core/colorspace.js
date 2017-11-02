@@ -524,7 +524,7 @@ var IndexedCS = (function IndexedCSClosure() {
       for (var i = 0; i < length; ++i) {
         this.lookup[i] = lookup.charCodeAt(i);
       }
-    } else if (lookup instanceof Uint8Array || lookup instanceof Array) {
+    } else if (lookup instanceof Uint8Array) {
       this.lookup = lookup;
     } else {
       throw new FormatError(`Unrecognized lookup table: ${lookup}`);
