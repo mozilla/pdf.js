@@ -561,7 +561,7 @@ class PDFPageView {
     };
     let renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {
-      showCanvas();
+      // showCanvas();
       if (result.onRenderContinue) {
         result.onRenderContinue(cont);
       } else {
@@ -573,7 +573,7 @@ class PDFPageView {
       showCanvas();
       renderCapability.resolve(undefined);
     }, function(error) {
-      showCanvas();
+      // showCanvas();
       renderCapability.reject(error);
     });
     return result;
