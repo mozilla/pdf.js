@@ -96,13 +96,6 @@ PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
                         false : PDFJS.disableHistory);
 
 /**
- * Disables creation of the text layer that used for text selection and search.
- * @var {boolean}
- */
-PDFJS.disableTextLayer = (PDFJS.disableTextLayer === undefined ?
-                          false : PDFJS.disableTextLayer);
-
-/**
  * Disables maintaining the current position in the document when zooming.
  */
 PDFJS.ignoreCurrentPositionOnZoom = (PDFJS.ignoreCurrentPositionOnZoom ===

@@ -54,8 +54,11 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME || GENERIC')) {
   require('./pdf_print_service.js');
 }
 
+let viewerParameters = {};
+
 function getViewerConfiguration() {
   return {
+    viewerParameters,
     appContainer: document.body,
     mainContainer: document.getElementById('viewerContainer'),
     viewerContainer: document.getElementById('viewer'),

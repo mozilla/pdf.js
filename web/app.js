@@ -144,6 +144,7 @@ let PDFViewerApplication = {
     disablePageMode: false,
     disablePageLabels: false,
     renderer: 'canvas',
+    disableTextLayer: false,
     enhanceTextSelection: false,
     renderInteractiveForms: false,
     enablePrintAutoRotate: false,
@@ -195,7 +196,7 @@ let PDFViewerApplication = {
    * @private
    */
   _readPreferences() {
-    let { preferences, viewerPrefs, } = this;
+    let { appConfig, preferences, viewerPrefs, } = this;
 
     return Promise.all([
       preferences.get('enableWebGL').then(function resolved(value) {
@@ -217,10 +218,8 @@ let PDFViewerApplication = {
         viewerPrefs['enhanceTextSelection'] = value;
       }),
       preferences.get('disableTextLayer').then(function resolved(value) {
-        if (PDFJS.disableTextLayer === true) {
-          return;
-        }
-        PDFJS.disableTextLayer = value;
+        viewerPrefs['disableTextLayer'] =
+          appConfig.viewerParameters['disableTextLayer'] || value;
       }),
       preferences.get('disableRange').then(function resolved(value) {
         if (PDFJS.disableRange === true) {
@@ -322,7 +321,7 @@ let PDFViewerApplication = {
       if ('textlayer' in hashParams) {
         switch (hashParams['textlayer']) {
           case 'off':
-            PDFJS.disableTextLayer = true;
+            viewerPrefs['disableTextLayer'] = true;
             break;
           case 'visible':
           case 'shadow':
@@ -395,6 +394,7 @@ let PDFViewerApplication = {
         downloadManager,
         renderer: viewerPrefs['renderer'],
         l10n: this.l10n,
+        disableTextLayer: viewerPrefs['disableTextLayer'],
         enhanceTextSelection: viewerPrefs['enhanceTextSelection'],
         renderInteractiveForms: viewerPrefs['renderInteractiveForms'],
         enablePrintAutoRotate: viewerPrefs['enablePrintAutoRotate'],
