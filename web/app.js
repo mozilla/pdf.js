@@ -21,8 +21,8 @@ import {
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
-  MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
-  UNSUPPORTED_FEATURES, version
+  LinkTarget, MissingPDFException, OPS, PDFJS, shadow,
+  UnexpectedResponseException, UNSUPPORTED_FEATURES, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -148,6 +148,7 @@ let PDFViewerApplication = {
     defaultZoomValue: '',
     disablePageMode: false,
     disablePageLabels: false,
+    externalLinkTarget: LinkTarget.NONE,
     renderer: 'canvas',
     enableWebGL: false,
     useOnlyCssZoom: false,
@@ -189,10 +190,10 @@ let PDFViewerApplication = {
         this.eventBus.dispatch('localized');
       });
 
-      if (this.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
+      if (this.isViewerEmbedded && !this.viewerPrefs['externalLinkTarget']) {
         // Prevent external links from "replacing" the viewer,
         // when it's embedded in e.g. an iframe or an object.
-        PDFJS.externalLinkTarget = PDFJS.LinkTarget.TOP;
+        this.viewerPrefs['externalLinkTarget'] = LinkTarget.TOP;
       }
 
       this.initialized = true;
@@ -253,10 +254,8 @@ let PDFViewerApplication = {
         viewerPrefs['useOnlyCssZoom'] = value;
       }),
       preferences.get('externalLinkTarget').then(function resolved(value) {
-        if (PDFJS.isExternalLinkTargetSet()) {
-          return;
-        }
-        PDFJS.externalLinkTarget = value;
+        viewerPrefs['externalLinkTarget'] =
+          appConfig.viewerParameters['externalLinkTarget'] || value;
       }),
       preferences.get('renderer').then(function resolved(value) {
         viewerPrefs['renderer'] = value;
@@ -381,6 +380,8 @@ let PDFViewerApplication = {
 
       let pdfLinkService = new PDFLinkService({
         eventBus,
+        externalLinkTarget: viewerPrefs['externalLinkTarget'],
+        externalLinkRel: appConfig.viewerParameters['externalLinkRel'],
       });
       this.pdfLinkService = pdfLinkService;
 

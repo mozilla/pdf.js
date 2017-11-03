@@ -62,6 +62,12 @@ let viewerParameters = {
   imageResourcesPath: './images/',
 
   /**
+   * Specifies the `rel` attribute for external links. Defaults to stripping
+   * the referrer.
+   */
+  externalLinkRel: null,
+
+  /**
    * Disables fullscreen support, and by extension Presentation Mode,
    * in browsers which support the fullscreen API.
    */

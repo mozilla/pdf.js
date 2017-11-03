@@ -14,7 +14,7 @@
  */
 
 import {
-  assert, CMapCompressionType, removeNullCharacters, stringToBytes, warn
+  assert, CMapCompressionType, removeNullCharacters, stringToBytes
 } from '../shared/util';
 import globalScope from '../shared/global_scope';
 
@@ -327,15 +327,16 @@ var RenderingCancelledException = (function RenderingCancelledException() {
   return RenderingCancelledException;
 })();
 
-var LinkTarget = {
+const LinkTarget = {
   NONE: 0, // Default value.
   SELF: 1,
   BLANK: 2,
   PARENT: 3,
   TOP: 4,
 };
+const LinkTargetValues = Object.values(LinkTarget);
 
-var LinkTargetStringMap = [
+const LinkTargetStringMap = [
   '',
   '_self',
   '_blank',
@@ -356,22 +357,15 @@ var LinkTargetStringMap = [
  * @param {HTMLLinkElement} link - The link element.
  * @param {ExternalLinkParameters} params
  */
-function addLinkAttributes(link, params) {
-  var url = params && params.url;
+function addLinkAttributes(link, { url, target, rel, } = {}) {
   link.href = link.title = (url ? removeNullCharacters(url) : '');
 
   if (url) {
-    var target = params.target;
-    if (typeof target === 'undefined') {
-      target = getDefaultSetting('externalLinkTarget');
-    }
-    link.target = LinkTargetStringMap[target];
+    let rawTarget =
+      LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
+    link.target = LinkTargetStringMap[rawTarget];
 
-    var rel = params.rel;
-    if (typeof rel === 'undefined') {
-      rel = getDefaultSetting('externalLinkRel');
-    }
-    link.rel = rel;
+    link.rel = typeof rel === 'string' ? rel : DEFAULT_LINK_REL;
   }
 }
 
@@ -418,25 +412,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.maxImageSize : -1;
     case 'isEvalSupported':
       return globalSettings ? globalSettings.isEvalSupported : true;
-    case 'externalLinkTarget':
-      if (!globalSettings) {
-        return LinkTarget.NONE;
-      }
-      switch (globalSettings.externalLinkTarget) {
-        case LinkTarget.NONE:
-        case LinkTarget.SELF:
-        case LinkTarget.BLANK:
-        case LinkTarget.PARENT:
-        case LinkTarget.TOP:
-          return globalSettings.externalLinkTarget;
-      }
-      warn('PDFJS.externalLinkTarget is invalid: ' +
-           globalSettings.externalLinkTarget);
-      // Reset the external link target, to suppress further warnings.
-      globalSettings.externalLinkTarget = LinkTarget.NONE;
-      return LinkTarget.NONE;
-    case 'externalLinkRel':
-      return globalSettings ? globalSettings.externalLinkRel : DEFAULT_LINK_REL;
     case 'enableStats':
       return !!(globalSettings && globalSettings.enableStats);
     default:
@@ -444,24 +419,10 @@ function getDefaultSetting(id) {
   }
 }
 
-function isExternalLinkTargetSet() {
-  var externalLinkTarget = getDefaultSetting('externalLinkTarget');
-  switch (externalLinkTarget) {
-    case LinkTarget.NONE:
-      return false;
-    case LinkTarget.SELF:
-    case LinkTarget.BLANK:
-    case LinkTarget.PARENT:
-    case LinkTarget.TOP:
-      return true;
-  }
-}
-
 export {
   CustomStyle,
   RenderingCancelledException,
   addLinkAttributes,
-  isExternalLinkTargetSet,
   getFilenameFromUrl,
   LinkTarget,
   getDefaultSetting,
