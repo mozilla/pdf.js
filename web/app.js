@@ -43,12 +43,13 @@ import { PDFThumbnailViewer } from './pdf_thumbnail_viewer';
 import { PDFViewer } from './pdf_viewer';
 import { SecondaryToolbar } from './secondary_toolbar';
 import { Toolbar } from './toolbar';
+import { viewerCompatibilityParams } from './viewer_compatibility';
 import { ViewHistory } from './view_history';
 
 const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
-function configure(PDFJS) {
+function configure(appConfig, PDFJS) {
   PDFJS.imageResourcesPath = './images/';
   if (typeof PDFJSDev !== 'undefined' &&
       PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC || CHROME')) {
@@ -61,6 +62,11 @@ function configure(PDFJS) {
     PDFJS.cMapUrl = '../web/cmaps/';
   }
   PDFJS.cMapPacked = true;
+
+  for (let key in viewerCompatibilityParams) {
+    appConfig.viewerParameters[key] =
+      appConfig.viewerParameters[key] || viewerCompatibilityParams[key];
+  }
 }
 
 const DefaultExternalServices = {
@@ -161,7 +167,7 @@ let PDFViewerApplication = {
   initialize(appConfig) {
     this.preferences = this.externalServices.createPreferences();
 
-    configure(PDFJS);
+    configure(appConfig, PDFJS);
     this.appConfig = appConfig;
 
     return this._readPreferences().then(() => {
@@ -300,7 +306,8 @@ let PDFViewerApplication = {
         PDFJS.disableFontFace = (hashParams['disablefontface'] === 'true');
       }
       if ('disablehistory' in hashParams) {
-        PDFJS.disableHistory = (hashParams['disablehistory'] === 'true');
+        appConfig.viewerParameters['disableHistory'] =
+          hashParams['disablehistory'] === 'true';
       }
       if ('webgl' in hashParams) {
         viewerPrefs['enableWebGL'] = (hashParams['webgl'] === 'true');
@@ -340,7 +347,7 @@ let PDFViewerApplication = {
       // It is not possible to change locale for Firefox extension builds.
       if ((typeof PDFJSDev === 'undefined' ||
            !PDFJSDev.test('FIREFOX || MOZCENTRAL')) && 'locale' in hashParams) {
-        PDFJS.locale = hashParams['locale'];
+        appConfig.viewerParameters['locale'] = hashParams['locale'];
       }
     }
 
@@ -398,6 +405,7 @@ let PDFViewerApplication = {
         enablePrintAutoRotate: viewerPrefs['enablePrintAutoRotate'],
         enableWebGL: viewerPrefs['enableWebGL'],
         useOnlyCssZoom: viewerPrefs['useOnlyCssZoom'],
+        maxCanvasPixels: appConfig.viewerParameters['maxCanvasPixels'],
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);
@@ -566,7 +574,7 @@ let PDFViewerApplication = {
         support = false;
       }
     }
-    if (support && PDFJS.disableFullscreen === true) {
+    if (support && this.appConfig.viewerParameters['disableFullscreen']) {
       support = false;
     }
 
@@ -950,6 +958,7 @@ let PDFViewerApplication = {
   },
 
   load(pdfDocument) {
+    let { appConfig, viewerPrefs, } = this;
     this.pdfDocument = pdfDocument;
 
     pdfDocument.getDownloadInfo().then(() => {
@@ -993,12 +1002,13 @@ let PDFViewerApplication = {
     pdfThumbnailViewer.setDocument(pdfDocument);
 
     firstPagePromise.then((pdfPage) => {
-      this.loadingBar.setWidth(this.appConfig.viewerContainer);
+      this.loadingBar.setWidth(appConfig.viewerContainer);
 
-      if (!PDFJS.disableHistory && !this.isViewerEmbedded) {
+      if (!appConfig.viewerParameters['disableHistory'] &&
+          !this.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
-        let resetHistory = !this.viewerPrefs['showPreviousViewOnLoad'];
+        let resetHistory = !viewerPrefs['showPreviousViewOnLoad'];
         this.pdfHistory.initialize(id, resetHistory);
 
         if (this.pdfHistory.initialBookmark) {

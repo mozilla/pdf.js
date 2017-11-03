@@ -459,17 +459,6 @@ PDFJS.compatibilityChecked = true;
   }
 })();
 
-// Checks if navigator.language is supported
-(function checkNavigatorLanguage() {
-  if (typeof navigator === 'undefined') {
-    return;
-  }
-  if ('language' in navigator) {
-    return;
-  }
-  PDFJS.locale = navigator.userLanguage || 'en-US';
-})();
-
 // Support: Safari 6.0+, Android<3.0, Chrome 39/40, iOS
 (function checkRangeRequests() {
   // Safari has issues with cached range requests see:
@@ -485,20 +474,6 @@ PDFJS.compatibilityChecked = true;
   if (isSafari || isAndroidPre3 || isChromeWithRangeBug || isIOS) {
     PDFJS.disableRange = true;
     PDFJS.disableStream = true;
-  }
-})();
-
-// Check if the browser supports manipulation of the history.
-// Support: IE<10, Android<4.2
-(function checkHistoryManipulation() {
-  if (!hasDOM) {
-    return;
-  }
-  // Android 2.x has so buggy pushState support that it was removed in
-  // Android 3.0 and restored as late as in Android 4.2.
-  // Support: Android 2.x
-  if (!history.pushState || isAndroidPre3) {
-    PDFJS.disableHistory = true;
   }
 })();
 
@@ -582,25 +557,6 @@ PDFJS.compatibilityChecked = true;
     return;
   }
   installFakeAnimationFrameFunctions();
-})();
-
-// Support: Android, iOS
-(function checkCanvasSizeLimitation() {
-  if (isIOS || isAndroid) {
-    // 5MP
-    PDFJS.maxCanvasPixels = 5242880;
-  }
-})();
-
-// Disable fullscreen support for certain problematic configurations.
-// Support: IE11+ (when embedded).
-(function checkFullscreenSupport() {
-  if (!hasDOM) {
-    return;
-  }
-  if (isIE && window.parent !== window) {
-    PDFJS.disableFullscreen = true;
-  }
 })();
 
 // Provides document.currentScript support
