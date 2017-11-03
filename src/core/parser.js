@@ -563,7 +563,7 @@ var Parser = (function ParserClosure() {
       // when we can be absolutely certain that it actually is empty.
       if (maybeLength === 0) {
         warn('Empty "' + name + '" stream.');
-        return new NullStream(stream);
+        return new NullStream();
       }
       try {
         var xrefStreamStats = this.xref.stats.streamTypes;
@@ -623,7 +623,7 @@ var Parser = (function ParserClosure() {
           throw ex;
         }
         warn('Invalid stream: \"' + ex + '\"');
-        return new NullStream(stream);
+        return new NullStream();
       }
     },
   };
