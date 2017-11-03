@@ -56,6 +56,12 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME || GENERIC')) {
 
 let viewerParameters = {
   /**
+   * Path for image resources, mainly for annotation icons. Include trailing
+   * slash.
+   */
+  imageResourcesPath: './images/',
+
+  /**
    * Disables fullscreen support, and by extension Presentation Mode,
    * in browsers which support the fullscreen API.
    */
