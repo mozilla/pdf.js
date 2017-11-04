@@ -166,6 +166,7 @@
     "no-useless-computed-key": "error",
     "no-useless-constructor": "error",
     "no-useless-rename": "error",
+    "no-var": "off",
     "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],
