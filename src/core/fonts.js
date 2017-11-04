@@ -2447,7 +2447,6 @@ var Font = (function FontClosure() {
               }
               if (glyphId > 0 && hasGlyph(glyphId)) {
                 charCodeToGlyphId[charCode] = glyphId;
-                found = true;
               }
             }
           }
@@ -3084,7 +3083,6 @@ var Type1Font = (function Type1FontClosure() {
 
     // Get the data block containing glyphs and subrs information
     var headerBlock = getHeaderBlock(file, headerBlockLength);
-    headerBlockLength = headerBlock.length;
     var headerBlockParser = new Type1Parser(headerBlock.stream, false,
                                             SEAC_ANALYSIS_ENABLED);
     headerBlockParser.extractFontHeader(properties);
@@ -3097,7 +3095,6 @@ var Type1Font = (function Type1FontClosure() {
 
     // Decrypt the data blocks and retrieve it's content
     var eexecBlock = getEexecBlock(file, eexecBlockLength);
-    eexecBlockLength = eexecBlock.length;
     var eexecBlockParser = new Type1Parser(eexecBlock.stream, true,
                                            SEAC_ANALYSIS_ENABLED);
     var data = eexecBlockParser.extractFontProgram();
