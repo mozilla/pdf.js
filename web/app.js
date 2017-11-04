@@ -1576,12 +1576,11 @@ function webViewerInitialized() {
     appConfig.toolbar.viewFind.classList.add('hidden');
   }
 
-  appConfig.sidebar.mainContainer.addEventListener('transitionend',
-    function(evt) {
-      if (evt.target === /* mainContainer */ this) {
-        PDFViewerApplication.eventBus.dispatch('resize');
-      }
-    }, true);
+  appConfig.mainContainer.addEventListener('transitionend', function(evt) {
+    if (evt.target === /* mainContainer */ this) {
+      PDFViewerApplication.eventBus.dispatch('resize');
+    }
+  }, true);
 
   appConfig.sidebar.toggleButton.addEventListener('click', function() {
     PDFViewerApplication.pdfSidebar.toggle();
