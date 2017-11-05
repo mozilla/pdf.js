@@ -581,7 +581,7 @@ function isDestArraysEqual(firstDest, secondDest) {
       if (Object.keys(first).length !== Object.keys(second).length) {
         return false;
       }
-      for (var key in first) {
+      for (let key in first) {
         if (!isEntryEqual(first[key], second[key])) {
           return false;
         }
