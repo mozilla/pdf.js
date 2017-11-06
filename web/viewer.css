@@ -15,6 +15,10 @@
 
 @import url(pdf_viewer.css);
 
+:root {
+  --sidebar-width: 200px;
+}
+
 * {
   padding: 0;
   margin: 0;
@@ -145,7 +149,9 @@ select {
   position: absolute;
   top: 32px;
   bottom: 0;
-  width: 200px;
+  width: 200px; /* Here, and elsewhere below, keep the constant value for compatibility
+                   with older browsers that lack support for CSS variables. */
+  width: var(--sidebar-width);
   visibility: hidden;
   z-index: 100;
   border-top: 1px solid #333;
@@ -159,15 +165,26 @@ html[dir='ltr'] #sidebarContainer {
   -webkit-transition-property: left;
   transition-property: left;
   left: -200px;
+  left: calc(-1 * var(--sidebar-width));
 }
 html[dir='rtl'] #sidebarContainer {
   -webkit-transition-property: right;
   transition-property: right;
   right: -200px;
+  right: calc(-1 * var(--sidebar-width));
 }
 
 .loadingInProgress #sidebarContainer {
   top: 36px;
+}
+
+#outerContainer.sidebarResizing #sidebarContainer {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  -webkit-transition-duration: 0s;
+  transition-duration: 0s;
+  /* Prevent e.g. the thumbnails being selected when the sidebar is resized. */
+  -webkit-user-select: none;
+  -moz-user-select: none;
 }
 
 #outerContainer.sidebarMoving #sidebarContainer,
@@ -230,15 +247,23 @@ html[dir='rtl'] #viewerContainer {
   box-shadow: inset -1px 0 0 hsla(0,0%,100%,.05);
 }
 
+#outerContainer.sidebarResizing #viewerContainer {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  -webkit-transition-duration: 0s;
+  transition-duration: 0s;
+}
+
 html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer {
   -webkit-transition-property: left;
   transition-property: left;
   left: 200px;
+  left: var(--sidebar-width);
 }
 html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer {
   -webkit-transition-property: right;
   transition-property: right;
   right: 200px;
+  right: var(--sidebar-width);
 }
 
 .toolbar {
@@ -271,6 +296,21 @@ html[dir='rtl'] #toolbarSidebar {
               inset 0 1px 0 hsla(0,0%,100%,.05),
               0 1px 0 hsla(0,0%,0%,.15),
               0 0 1px hsla(0,0%,0%,.1);
+}
+
+#sidebarResizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  z-index: 200;
+  cursor: ew-resize;
+}
+html[dir='ltr'] #sidebarResizer {
+  right: -6px;
+}
+html[dir='rtl'] #sidebarResizer {
+  left: -6px;
 }
 
 #toolbarContainer, .findbar, .secondaryToolbar {
@@ -1133,8 +1173,13 @@ html[dir='rtl'] .verticalToolbarSeparator {
 }
 
 .thumbnail {
-  float: left;
   margin: 0 10px 5px 10px;
+}
+html[dir='ltr'] .thumbnail {
+  float: left;
+}
+html[dir='rtl'] .thumbnail {
+  float: right;
 }
 
 #thumbnailView > a:last-of-type > .thumbnail {
