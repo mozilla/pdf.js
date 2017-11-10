@@ -1032,7 +1032,7 @@ class PDFPageProxy {
       };
 
       stats.time('Page Request');
-      this._transport.messageHandler.send('RenderPageRequest', {
+      this._pumpOperatorList({
         pageIndex: this.pageNumber - 1,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
@@ -1054,6 +1054,11 @@ class PDFPageProxy {
 
       if (error) {
         internalRenderTask.capability.reject(error);
+
+        this._abortOperatorList({
+          intentState,
+          reason: error,
+        });
       } else {
         internalRenderTask.capability.resolve();
       }
@@ -1135,7 +1140,7 @@ class PDFPageProxy {
       };
 
       this._stats.time('Page Request');
-      this._transport.messageHandler.send('RenderPageRequest', {
+      this._pumpOperatorList({
         pageIndex: this.pageIndex,
         intent: renderingIntent,
       });
@@ -1201,19 +1206,25 @@ class PDFPageProxy {
     this._transport.pageCache[this.pageIndex] = null;
 
     const waitOn = [];
-    Object.keys(this.intentStates).forEach(function(intent) {
+    Object.keys(this.intentStates).forEach((intent) => {
+      const intentState = this.intentStates[intent];
+      this._abortOperatorList({
+        intentState,
+        reason: new Error('Page was destroyed.'),
+        force: true,
+      });
+
       if (intent === 'oplist') {
         // Avoid errors below, since the renderTasks are just stubs.
         return;
       }
-      const intentState = this.intentStates[intent];
       intentState.renderTasks.forEach(function(renderTask) {
         const renderCompleted = renderTask.capability.promise.
           catch(function() {}); // ignoring failures
         waitOn.push(renderCompleted);
         renderTask.cancel();
       });
-    }, this);
+    });
     this.objs.clear();
     this.annotationsPromise = null;
     this.pendingCleanup = false;
@@ -1273,8 +1284,7 @@ class PDFPageProxy {
    * For internal use only.
    * @ignore
    */
-  _renderPageChunk(operatorListChunk, intent) {
-    const intentState = this.intentStates[intent];
+  _renderPageChunk(operatorListChunk, intentState) {
     // Add the new chunk to the current operator list.
     for (let i = 0, ii = operatorListChunk.length; i < ii; i++) {
       intentState.operatorList.fnArray.push(operatorListChunk.fnArray[i]);
@@ -1291,6 +1301,86 @@ class PDFPageProxy {
     if (operatorListChunk.lastChunk) {
       this._tryCleanup();
     }
+  }
+
+  /**
+   * For internal use only.
+   * @ignore
+   */
+  _pumpOperatorList(args) {
+    assert(args.intent,
+           'PDFPageProxy._pumpOperatorList: Expected "intent" argument.');
+
+    const readableStream =
+      this._transport.messageHandler.sendWithStream('GetOperatorList', args);
+    const reader = readableStream.getReader();
+
+    const intentState = this.intentStates[args.intent];
+    intentState.streamReader = reader;
+
+    const pump = () => {
+      reader.read().then(({ value, done, }) => {
+        if (done) {
+          intentState.streamReader = null;
+          return;
+        }
+        if (this._transport.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+        this._renderPageChunk(value.operatorList, intentState);
+        pump();
+      }, (reason) => {
+        intentState.streamReader = null;
+
+        if (this._transport.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+        if (intentState.operatorList) {
+          // Mark operator list as complete.
+          intentState.operatorList.lastChunk = true;
+
+          for (let i = 0; i < intentState.renderTasks.length; i++) {
+            intentState.renderTasks[i].operatorListChanged();
+          }
+          this._tryCleanup();
+        }
+
+        if (intentState.displayReadyCapability) {
+          intentState.displayReadyCapability.reject(reason);
+        } else if (intentState.opListReadCapability) {
+          intentState.opListReadCapability.reject(reason);
+        } else {
+          throw reason;
+        }
+      });
+    };
+    pump();
+  }
+
+  /**
+   * For internal use only.
+   * @ignore
+   */
+  _abortOperatorList({ intentState, reason, force = false, }) {
+    assert(reason instanceof Error,
+           'PDFPageProxy._abortOperatorList: Expected "reason" argument.');
+
+    if (!intentState.streamReader) {
+      return;
+    }
+    if (!force && intentState.renderTasks.length !== 0) {
+      // Ensure that an Error occuring in *only* one `InternalRenderTask`, e.g.
+      // multiple render() calls on the same canvas, won't break all rendering.
+      return;
+    }
+    if (reason instanceof RenderingCancelledException) {
+      // Aborting parsing on the worker-thread when rendering is cancelled will
+      // break subsequent rendering operations. TODO: Remove this restriction.
+      return;
+    }
+    intentState.streamReader.cancel(
+      new AbortException(reason && reason.message));
+    intentState.streamReader = null;
   }
 
   /**
@@ -1955,15 +2045,6 @@ class WorkerTransport {
       page._startRenderPage(data.transparency, data.intent);
     }, this);
 
-    messageHandler.on('RenderPageChunk', function(data) {
-      if (this.destroyed) {
-        return; // Ignore any pending requests if the worker was terminated.
-      }
-
-      const page = this.pageCache[data.pageIndex];
-      page._renderPageChunk(data.operatorList, data.intent);
-    }, this);
-
     messageHandler.on('commonobj', function(data) {
       if (this.destroyed) {
         return; // Ignore any pending requests if the worker was terminated.
@@ -2080,33 +2161,6 @@ class WorkerTransport {
           loaded: data.loaded,
           total: data.total,
         });
-      }
-    }, this);
-
-    messageHandler.on('PageError', function(data) {
-      if (this.destroyed) {
-        return; // Ignore any pending requests if the worker was terminated.
-      }
-
-      const page = this.pageCache[data.pageIndex];
-      const intentState = page.intentStates[data.intent];
-
-      if (intentState.operatorList) {
-        // Mark operator list as complete.
-        intentState.operatorList.lastChunk = true;
-
-        for (let i = 0; i < intentState.renderTasks.length; i++) {
-          intentState.renderTasks[i].operatorListChanged();
-        }
-        page._tryCleanup();
-      }
-
-      if (intentState.displayReadyCapability) {
-        intentState.displayReadyCapability.reject(new Error(data.error));
-      } else if (intentState.opListReadCapability) {
-        intentState.opListReadCapability.reject(new Error(data.error));
-      } else {
-        throw new Error(data.error);
       }
     }, this);
 
