@@ -84,7 +84,20 @@ class PDFThumbnailViewer {
       let first = visibleThumbs.first.id;
       // Account for only one thumbnail being visible.
       let last = (numVisibleThumbs > 1 ? visibleThumbs.last.id : first);
+
+      let shouldScroll = false;
       if (page <= first || page >= last) {
+        shouldScroll = true;
+      } else {
+        visibleThumbs.views.some(function(view) {
+          if (view.id !== page) {
+            return false;
+          }
+          shouldScroll = view.percent < 100;
+          return true;
+        });
+      }
+      if (shouldScroll) {
         scrollIntoView(thumbnail, { top: THUMBNAIL_SCROLL_MARGIN, });
       }
     }
