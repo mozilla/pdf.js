@@ -488,20 +488,6 @@ PDFJS.compatibilityChecked = true;
   }
 })();
 
-// Check if the browser supports manipulation of the history.
-// Support: IE<10, Android<4.2
-(function checkHistoryManipulation() {
-  if (!hasDOM) {
-    return;
-  }
-  // Android 2.x has so buggy pushState support that it was removed in
-  // Android 3.0 and restored as late as in Android 4.2.
-  // Support: Android 2.x
-  if (!history.pushState || isAndroidPre3) {
-    PDFJS.disableHistory = true;
-  }
-})();
-
 // Support: IE<11, Chrome<21, Android<4.4, Safari<6
 (function checkSetPresenceInImageData() {
   if (!hasDOM) {
