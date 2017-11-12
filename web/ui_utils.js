@@ -102,12 +102,6 @@ PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
 PDFJS.disableTextLayer = (PDFJS.disableTextLayer === undefined ?
                           false : PDFJS.disableTextLayer);
 
-/**
- * Disables maintaining the current position in the document when zooming.
- */
-PDFJS.ignoreCurrentPositionOnZoom = (PDFJS.ignoreCurrentPositionOnZoom ===
-  undefined ? false : PDFJS.ignoreCurrentPositionOnZoom);
-
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   /**

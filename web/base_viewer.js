@@ -505,7 +505,7 @@ class BaseViewer {
 
     if (!noScroll) {
       let page = this._currentPageNumber, dest;
-      if (this._location && !PDFJS.ignoreCurrentPositionOnZoom &&
+      if (this._location &&
           !(this.isInPresentationMode || this.isChangingPresentationMode)) {
         page = this._location.pageNumber;
         dest = [null, { name: 'XYZ', }, this._location.left,
