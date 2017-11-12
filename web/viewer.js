@@ -54,8 +54,48 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME || GENERIC')) {
   require('./pdf_print_service.js');
 }
 
+let viewerParameters = {
+  /**
+   * Path for image resources, mainly for annotation icons. Include trailing
+   * slash.
+   */
+  imageResourcesPath: './images/',
+
+  /**
+   * Specifies the `rel` attribute for external links. Defaults to stripping
+   * the referrer.
+   */
+  externalLinkRel: null,
+
+  /**
+   * Disables fullscreen support, and by extension Presentation Mode,
+   * in browsers which support the fullscreen API.
+   */
+  disableFullscreen: false,
+
+  /**
+   * The maximum supported canvas size in total pixels, i.e. width * height.
+   * Use -1 for no limit. The default value is 4096 * 4096 (16 mega-pixels).
+   */
+  maxCanvasPixels: null,
+
+  /**
+   * Disables saving of the last position of the viewed PDF.
+   */
+  disableHistory: false,
+};
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+  /**
+   * Interface locale settings.
+   */
+  viewerParameters.locale = (typeof navigator !== 'undefined' ?
+    navigator.language : null);
+}
+
 function getViewerConfiguration() {
   return {
+    viewerParameters,
     appContainer: document.body,
     mainContainer: document.getElementById('viewerContainer'),
     viewerContainer: document.getElementById('viewer'),
