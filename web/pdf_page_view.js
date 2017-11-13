@@ -36,6 +36,8 @@ import { viewerCompatibilityParams } from './viewer_compatibility';
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
  * @property {boolean} enhanceTextSelection - Turns on the text selection
  *   enhancement. The default is `false`.
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms - Turns on rendering of
  *   interactive form elements. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
@@ -71,6 +73,7 @@ class PDFPageView {
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
     this.enhanceTextSelection = options.enhanceTextSelection || false;
+    this.imageResourcesPath = options.imageResourcesPath || '';
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels || MAX_CANVAS_PIXELS;
@@ -475,7 +478,7 @@ class PDFPageView {
     if (this.annotationLayerFactory) {
       if (!this.annotationLayer) {
         this.annotationLayer = this.annotationLayerFactory.
-          createAnnotationLayerBuilder(div, pdfPage,
+          createAnnotationLayerBuilder(div, pdfPage, this.imageResourcesPath,
                                        this.renderInteractiveForms, this.l10n);
       }
       this.annotationLayer.render(this.viewport, 'display');

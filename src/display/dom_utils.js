@@ -363,8 +363,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.workerSrc : null;
     case 'maxImageSize':
       return globalSettings ? globalSettings.maxImageSize : -1;
-    case 'imageResourcesPath':
-      return globalSettings ? globalSettings.imageResourcesPath : '';
     case 'isEvalSupported':
       return globalSettings ? globalSettings.isEvalSupported : true;
     case 'externalLinkTarget':

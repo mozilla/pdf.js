@@ -62,6 +62,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER,
   },
+  imageResourcesPath: {
+    /** @type {string} */
+    value: './images/',
+    kind: OptionKind.VIEWER,
+  },
   maxCanvasPixels: {
     /** @type {number} */
     value: viewerCompatibilityParams.maxCanvasPixels || 16777216,
