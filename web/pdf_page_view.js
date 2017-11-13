@@ -20,9 +20,9 @@ import {
 import {
   createPromiseCapability, RenderingCancelledException, SVGGraphics
 } from 'pdfjs-lib';
-import { AppOptions } from './app_options';
 import { getGlobalEventBus } from './dom_events';
 import { RenderingStates } from './pdf_rendering_queue';
+import { viewerCompatibilityParams } from './viewer_compatibility';
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -41,8 +41,13 @@ import { RenderingStates } from './pdf_rendering_queue';
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
  * @property {boolean} useOnlyCssZoom - (optional) Enables CSS only zooming.
  *   The default is `false`.
+ * @property {number} maxCanvasPixels - (optional) The maximum supported canvas
+ *   size in total pixels, i.e. width * height. Use -1 for no limit.
+ *   The default value is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
  */
+
+const MAX_CANVAS_PIXELS = viewerCompatibilityParams.maxCanvasPixels || 16777216;
 
 /**
  * @implements {IRenderableView}
@@ -68,6 +73,7 @@ class PDFPageView {
     this.enhanceTextSelection = options.enhanceTextSelection || false;
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
+    this.maxCanvasPixels = options.maxCanvasPixels || MAX_CANVAS_PIXELS;
 
     this.eventBus = options.eventBus || getGlobalEventBus();
     this.renderingQueue = options.renderingQueue;
@@ -212,11 +218,11 @@ class PDFPageView {
     }
 
     let isScalingRestricted = false;
-    if (this.canvas && AppOptions.get('maxCanvasPixels') > 0) {
+    if (this.canvas && this.maxCanvasPixels > 0) {
       let outputScale = this.outputScale;
       if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
           ((Math.floor(this.viewport.height) * outputScale.sy) | 0) >
-          AppOptions.get('maxCanvasPixels')) {
+          this.maxCanvasPixels) {
         isScalingRestricted = true;
       }
     }
@@ -530,10 +536,9 @@ class PDFPageView {
       outputScale.scaled = true;
     }
 
-    if (AppOptions.get('maxCanvasPixels') > 0) {
+    if (this.maxCanvasPixels > 0) {
       let pixelsInViewport = viewport.width * viewport.height;
-      let maxScale = Math.sqrt(
-        AppOptions.get('maxCanvasPixels') / pixelsInViewport);
+      let maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
       if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
         outputScale.sx = maxScale;
         outputScale.sy = maxScale;
