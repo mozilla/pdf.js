@@ -21,7 +21,6 @@ import {
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
-import { AppOptions } from './app_options';
 import { getGlobalEventBus } from './dom_events';
 import { PDFPageView } from './pdf_page_view';
 import { SimpleLinkService } from './pdf_link_service';
@@ -40,7 +39,9 @@ const DEFAULT_CACHE_SIZE = 10;
  * @property {PDFRenderingQueue} renderingQueue - (optional) The rendering
  *   queue object.
  * @property {boolean} removePageBorders - (optional) Removes the border shadow
- *   around the pages. The default is false.
+ *   around the pages. The default is `false`.
+ * @property {boolean} disableTextLayer - (optional) Disables creation of the
+ *   text layer used for selection and searching. The default is `false`.
  * @property {boolean} enhanceTextSelection - (optional) Enables the improved
  *   text selection behaviour. The default is `false`.
  * @property {boolean} renderInteractiveForms - (optional) Enables rendering of
@@ -108,6 +109,7 @@ class BaseViewer {
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
     this.removePageBorders = options.removePageBorders || false;
+    this.disableTextLayer = options.disableTextLayer || false;
     this.enhanceTextSelection = options.enhanceTextSelection || false;
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
@@ -363,7 +365,7 @@ class BaseViewer {
       let viewport = pdfPage.getViewport(scale * CSS_UNITS);
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let textLayerFactory = null;
-        if (!AppOptions.get('disableTextLayer')) {
+        if (!this.disableTextLayer) {
           textLayerFactory = this;
         }
         let pageView = new PDFPageView({
