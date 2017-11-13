@@ -52,6 +52,8 @@ const DEFAULT_CACHE_SIZE = 10;
  *   rotation of pages whose orientation differ from the first page upon
  *   printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
+ *   rendering for some operations. The default is `false`.
  * @property {boolean} useOnlyCssZoom - (optional) Enables CSS only zooming.
  *   The default is `false`.
  * @property {number} maxCanvasPixels - (optional) The maximum supported canvas
@@ -122,6 +124,7 @@ class BaseViewer {
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
+    this.enableWebGL = options.enableWebGL || false;
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels || null;
     this.l10n = options.l10n || NullL10n;
@@ -391,6 +394,7 @@ class BaseViewer {
           imageResourcesPath: this.imageResourcesPath,
           renderInteractiveForms: this.renderInteractiveForms,
           renderer: this.renderer,
+          enableWebGL: this.enableWebGL,
           useOnlyCssZoom: this.useOnlyCssZoom,
           maxCanvasPixels: this.maxCanvasPixels,
           l10n: this.l10n,

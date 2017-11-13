@@ -698,6 +698,8 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  *                                calling of PDFPage.getViewport method.
  * @property {string} intent - Rendering intent, can be 'display' or 'print'
  *                    (default value is 'display').
+ * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
+ *   rendering for some operations. The default value is `false`.
  * @property {boolean} renderInteractiveForms - (optional) Whether or not
  *                     interactive form elements are rendered in the display
  *                     layer. If so, we do not render them on canvas as well.
@@ -820,6 +822,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
       var canvasFactory = params.canvasFactory || new DOMCanvasFactory();
+      // TODO: Rebase this on top of the `WebGLFactory`, once that one lands.
 
       if (!this.intentStates[renderingIntent]) {
         this.intentStates[renderingIntent] = Object.create(null);

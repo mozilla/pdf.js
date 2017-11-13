@@ -41,6 +41,8 @@ import { viewerCompatibilityParams } from './viewer_compatibility';
  * @property {boolean} renderInteractiveForms - Turns on rendering of
  *   interactive form elements. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
+ *   rendering for some operations. The default is `false`.
  * @property {boolean} useOnlyCssZoom - (optional) Enables CSS only zooming.
  *   The default is `false`.
  * @property {number} maxCanvasPixels - (optional) The maximum supported canvas
@@ -75,6 +77,7 @@ class PDFPageView {
     this.enhanceTextSelection = options.enhanceTextSelection || false;
     this.imageResourcesPath = options.imageResourcesPath || '';
     this.renderInteractiveForms = options.renderInteractiveForms || false;
+    this.enableWebGL = options.enableWebGL || false;
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = (Number.isInteger(options.maxCanvasPixels) ?
       options.maxCanvasPixels : MAX_CANVAS_PIXELS);
@@ -568,6 +571,7 @@ class PDFPageView {
       canvasContext: ctx,
       transform,
       viewport: this.viewport,
+      enableWebGL: this.enableWebGL,
       renderInteractiveForms: this.renderInteractiveForms,
     };
     let renderTask = this.pdfPage.render(renderContext);

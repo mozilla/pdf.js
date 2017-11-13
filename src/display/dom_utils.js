@@ -398,8 +398,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.disableFontFace : false;
     case 'disableCreateObjectURL':
       return globalSettings ? globalSettings.disableCreateObjectURL : false;
-    case 'disableWebGL':
-      return globalSettings ? globalSettings.disableWebGL : true;
     case 'cMapUrl':
       return globalSettings ? globalSettings.cMapUrl : null;
     case 'cMapPacked':
