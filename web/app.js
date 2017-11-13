@@ -190,7 +190,7 @@ let PDFViewerApplication = {
 
     return Promise.all([
       preferences.get('enableWebGL').then(function resolved(value) {
-        PDFJS.disableWebGL = !value;
+        AppOptions.set('enableWebGL', value);
       }),
       preferences.get('sidebarViewOnLoad').then(function resolved(value) {
         AppOptions.set('sidebarViewOnLoad', value);
@@ -294,7 +294,7 @@ let PDFViewerApplication = {
                        hashParams['disablehistory'] === 'true');
       }
       if ('webgl' in hashParams) {
-        PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
+        AppOptions.set('enableWebGL', hashParams['webgl'] === 'true');
       }
       if ('useonlycsszoom' in hashParams) {
         AppOptions.set('useOnlyCssZoom',
@@ -391,6 +391,7 @@ let PDFViewerApplication = {
         imageResourcesPath: AppOptions.get('imageResourcesPath'),
         renderInteractiveForms: AppOptions.get('renderInteractiveForms'),
         enablePrintAutoRotate: AppOptions.get('enablePrintAutoRotate'),
+        enableWebGL: AppOptions.get('enableWebGL'),
         useOnlyCssZoom: AppOptions.get('useOnlyCssZoom'),
         maxCanvasPixels: AppOptions.get('maxCanvasPixels'),
       });
@@ -1164,7 +1165,7 @@ let PDFViewerApplication = {
                   info.PDFFormatVersion + ' ' + (info.Producer || '-').trim() +
                   ' / ' + (info.Creator || '-').trim() + ']' +
                   ' (PDF.js: ' + (version || '-') +
-                  (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
+                  (AppOptions.get('enableWebGL') ? ' [WebGL]' : '') + ')');
 
       let pdfTitle;
       if (metadata && metadata.has('dc:title')) {

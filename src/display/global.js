@@ -181,13 +181,6 @@ PDFJS.disableCreateObjectURL = (PDFJS.disableCreateObjectURL === undefined ?
                                 false : PDFJS.disableCreateObjectURL);
 
 /**
- * Disables WebGL usage.
- * @var {boolean}
- */
-PDFJS.disableWebGL = (PDFJS.disableWebGL === undefined ?
-                      true : PDFJS.disableWebGL);
-
-/**
   * Determines if we can eval strings as JS. Primarily used to improve
   * performance for font rendering.
   * @var {boolean}

@@ -57,6 +57,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER,
   },
+  enableWebGL: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
   enhanceTextSelection: {
     /** @type {boolean} */
     value: false,
