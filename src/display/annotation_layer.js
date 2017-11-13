@@ -14,8 +14,7 @@
  */
 
 import {
-  addLinkAttributes, CustomStyle, DOMSVGFactory, getDefaultSetting,
-  getFilenameFromUrl, LinkTarget
+  addLinkAttributes, CustomStyle, DOMSVGFactory, getFilenameFromUrl, LinkTarget
 } from './dom_utils';
 import {
   AnnotationBorderStyleType, AnnotationType, stringToPDFString, Util, warn
@@ -29,7 +28,8 @@ import {
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
- * @property {string} imageResourcesPath
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  * @property {Object} svgFactory
  */
@@ -1167,7 +1167,8 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {Array} annotations
  * @property {PDFPage} page
  * @property {IPDFLinkService} linkService
- * @property {string} imageResourcesPath
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  */
 
@@ -1192,8 +1193,7 @@ class AnnotationLayer {
         viewport: parameters.viewport,
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
-        imageResourcesPath: parameters.imageResourcesPath ||
-                            getDefaultSetting('imageResourcesPath'),
+        imageResourcesPath: parameters.imageResourcesPath || '',
         renderInteractiveForms: parameters.renderInteractiveForms || false,
         svgFactory: new DOMSVGFactory(),
       });

@@ -18,6 +18,7 @@
 
 var WAITING_TIME = 100; // ms
 var PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const IMAGE_RESOURCES_PATH = '/web/images/';
 
 var StatTimer = pdfjsDistBuildPdf.StatTimer;
 
@@ -166,6 +167,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   }
 
   function rasterizeAnnotationLayer(ctx, viewport, annotations, page,
+                                    imageResourcesPath,
                                     renderInteractiveForms) {
     return new Promise(function (resolve) {
       // Building SVG with size of the viewport.
@@ -196,6 +198,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           annotations,
           page,
           linkService: new PDFJS.SimpleLinkService(),
+          imageResourcesPath,
           renderInteractiveForms,
         };
         PDFJS.AnnotationLayer.render(parameters);
@@ -254,7 +257,6 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     PDFJS.cMapPacked = true;
     PDFJS.cMapUrl = '../external/bcmaps/';
     PDFJS.enableStats = true;
-    PDFJS.imageResourcesPath = '/web/images/';
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -509,7 +511,9 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
                     function(annotations) {
                       return rasterizeAnnotationLayer(annotationLayerContext,
                                                       viewport, annotations,
-                                                      page, renderForms);
+                                                      page,
+                                                      IMAGE_RESOURCES_PATH,
+                                                      renderForms);
                   });
               } else {
                 annotationLayerCanvas = null;
