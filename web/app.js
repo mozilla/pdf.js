@@ -384,6 +384,7 @@ let PDFViewerApplication = {
         downloadManager,
         renderer: AppOptions.get('renderer'),
         l10n: this.l10n,
+        disableTextLayer: AppOptions.get('disableTextLayer'),
         enhanceTextSelection: AppOptions.get('enhanceTextSelection'),
         renderInteractiveForms: AppOptions.get('renderInteractiveForms'),
         enablePrintAutoRotate: AppOptions.get('enablePrintAutoRotate'),
