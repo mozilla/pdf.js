@@ -386,6 +386,7 @@ let PDFViewerApplication = {
         renderInteractiveForms: AppOptions.get('renderInteractiveForms'),
         enablePrintAutoRotate: AppOptions.get('enablePrintAutoRotate'),
         useOnlyCssZoom: AppOptions.get('useOnlyCssZoom'),
+        maxCanvasPixels: AppOptions.get('maxCanvasPixels'),
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);
