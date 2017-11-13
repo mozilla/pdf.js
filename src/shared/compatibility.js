@@ -376,17 +376,6 @@ PDFJS.compatibilityChecked = true;
   }
 })();
 
-// Checks if navigator.language is supported
-(function checkNavigatorLanguage() {
-  if (typeof navigator === 'undefined') {
-    return;
-  }
-  if ('language' in navigator) {
-    return;
-  }
-  PDFJS.locale = navigator.userLanguage || 'en-US';
-})();
-
 // Support: Safari 6.0+, iOS
 (function checkRangeRequests() {
   // Safari has issues with cached range requests see:
@@ -447,25 +436,6 @@ PDFJS.compatibilityChecked = true;
       // this closure will be kept referenced, so clear its vars
       contextPrototype = null;
     }
-  }
-})();
-
-// Support: Android, iOS
-(function checkCanvasSizeLimitation() {
-  if (isIOS || isAndroid) {
-    // 5MP
-    PDFJS.maxCanvasPixels = 5242880;
-  }
-})();
-
-// Disable fullscreen support for certain problematic configurations.
-// Support: IE11+ (when embedded).
-(function checkFullscreenSupport() {
-  if (!hasDOM) {
-    return;
-  }
-  if (isIE && window.parent !== window) {
-    PDFJS.disableFullscreen = true;
   }
 })();
 

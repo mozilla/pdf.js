@@ -21,6 +21,7 @@ import {
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
+import { AppOptions } from './app_options';
 import { getGlobalEventBus } from './dom_events';
 import { PDFPageView } from './pdf_page_view';
 import { SimpleLinkService } from './pdf_link_service';
@@ -362,7 +363,7 @@ class BaseViewer {
       let viewport = pdfPage.getViewport(scale * CSS_UNITS);
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let textLayerFactory = null;
-        if (!PDFJS.disableTextLayer) {
+        if (!AppOptions.get('disableTextLayer')) {
           textLayerFactory = this;
         }
         let pageView = new PDFPageView({

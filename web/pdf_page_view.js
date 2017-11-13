@@ -18,9 +18,9 @@ import {
   RendererType, roundToDivide
 } from './ui_utils';
 import {
-  createPromiseCapability, CustomStyle, PDFJS, RenderingCancelledException,
-  SVGGraphics
+  createPromiseCapability, CustomStyle, RenderingCancelledException, SVGGraphics
 } from 'pdfjs-lib';
+import { AppOptions } from './app_options';
 import { getGlobalEventBus } from './dom_events';
 import { RenderingStates } from './pdf_rendering_queue';
 
@@ -209,17 +209,17 @@ class PDFPageView {
     }
 
     let isScalingRestricted = false;
-    if (this.canvas && PDFJS.maxCanvasPixels > 0) {
+    if (this.canvas && AppOptions.get('maxCanvasPixels') > 0) {
       let outputScale = this.outputScale;
       if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
           ((Math.floor(this.viewport.height) * outputScale.sy) | 0) >
-          PDFJS.maxCanvasPixels) {
+          AppOptions.get('maxCanvasPixels')) {
         isScalingRestricted = true;
       }
     }
 
     if (this.canvas) {
-      if (PDFJS.useOnlyCssZoom ||
+      if (AppOptions.get('useOnlyCssZoom') ||
           (this.hasRestrictedScaling && isScalingRestricted)) {
         this.cssTransform(this.canvas, true);
 
@@ -517,7 +517,7 @@ class PDFPageView {
     let outputScale = getOutputScale(ctx);
     this.outputScale = outputScale;
 
-    if (PDFJS.useOnlyCssZoom) {
+    if (AppOptions.get('useOnlyCssZoom')) {
       let actualSizeViewport = viewport.clone({ scale: CSS_UNITS, });
       // Use a scale that makes the canvas have the originally intended size
       // of the page.
@@ -526,9 +526,10 @@ class PDFPageView {
       outputScale.scaled = true;
     }
 
-    if (PDFJS.maxCanvasPixels > 0) {
+    if (AppOptions.get('maxCanvasPixels') > 0) {
       let pixelsInViewport = viewport.width * viewport.height;
-      let maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
+      let maxScale = Math.sqrt(
+        AppOptions.get('maxCanvasPixels') / pixelsInViewport);
       if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
         outputScale.sx = maxScale;
         outputScale.sy = maxScale;

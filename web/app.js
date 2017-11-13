@@ -27,6 +27,7 @@ import {
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { PDFSidebar, SidebarView } from './pdf_sidebar';
+import { AppOptions } from './app_options';
 import { getGlobalEventBus } from './dom_events';
 import { OverlayManager } from './overlay_manager';
 import { PasswordPrompt } from './password_prompt';
@@ -136,18 +137,6 @@ let PDFViewerApplication = {
   l10n: null,
   isInitialViewSet: false,
   downloadComplete: false,
-  viewerPrefs: {
-    sidebarViewOnLoad: SidebarView.NONE,
-    pdfBugEnabled: false,
-    showPreviousViewOnLoad: true,
-    defaultZoomValue: '',
-    disablePageMode: false,
-    disablePageLabels: false,
-    renderer: 'canvas',
-    enhanceTextSelection: false,
-    renderInteractiveForms: false,
-    enablePrintAutoRotate: false,
-  },
   isViewerEmbedded: (window.parent !== window),
   url: '',
   baseUrl: '',
@@ -195,32 +184,32 @@ let PDFViewerApplication = {
    * @private
    */
   _readPreferences() {
-    let { preferences, viewerPrefs, } = this;
+    let { preferences, } = this;
 
     return Promise.all([
       preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
       }),
       preferences.get('sidebarViewOnLoad').then(function resolved(value) {
-        viewerPrefs['sidebarViewOnLoad'] = value;
+        AppOptions.set('sidebarViewOnLoad', value);
       }),
       preferences.get('pdfBugEnabled').then(function resolved(value) {
-        viewerPrefs['pdfBugEnabled'] = value;
+        AppOptions.set('pdfBugEnabled', value);
       }),
       preferences.get('showPreviousViewOnLoad').then(function resolved(value) {
-        viewerPrefs['showPreviousViewOnLoad'] = value;
+        AppOptions.set('showPreviousViewOnLoad', value);
       }),
       preferences.get('defaultZoomValue').then(function resolved(value) {
-        viewerPrefs['defaultZoomValue'] = value;
+        AppOptions.set('defaultZoomValue', value);
       }),
       preferences.get('enhanceTextSelection').then(function resolved(value) {
-        viewerPrefs['enhanceTextSelection'] = value;
+        AppOptions.set('enhanceTextSelection', value);
       }),
       preferences.get('disableTextLayer').then(function resolved(value) {
-        if (PDFJS.disableTextLayer === true) {
+        if (AppOptions.get('disableTextLayer') === true) {
           return;
         }
-        PDFJS.disableTextLayer = value;
+        AppOptions.set('disableTextLayer', value);
       }),
       preferences.get('disableRange').then(function resolved(value) {
         if (PDFJS.disableRange === true) {
@@ -244,7 +233,7 @@ let PDFViewerApplication = {
         PDFJS.disableFontFace = value;
       }),
       preferences.get('useOnlyCssZoom').then(function resolved(value) {
-        PDFJS.useOnlyCssZoom = value;
+        AppOptions.set('useOnlyCssZoom', value);
       }),
       preferences.get('externalLinkTarget').then(function resolved(value) {
         if (PDFJS.isExternalLinkTargetSet()) {
@@ -253,19 +242,19 @@ let PDFViewerApplication = {
         PDFJS.externalLinkTarget = value;
       }),
       preferences.get('renderer').then(function resolved(value) {
-        viewerPrefs['renderer'] = value;
+        AppOptions.set('renderer', value);
       }),
       preferences.get('renderInteractiveForms').then(function resolved(value) {
-        viewerPrefs['renderInteractiveForms'] = value;
+        AppOptions.set('renderInteractiveForms', value);
       }),
       preferences.get('disablePageMode').then(function resolved(value) {
-        viewerPrefs['disablePageMode'] = value;
+        AppOptions.set('disablePageMode', value);
       }),
       preferences.get('disablePageLabels').then(function resolved(value) {
-        viewerPrefs['disablePageLabels'] = value;
+        AppOptions.set('disablePageLabels', value);
       }),
       preferences.get('enablePrintAutoRotate').then(function resolved(value) {
-        viewerPrefs['enablePrintAutoRotate'] = value;
+        AppOptions.set('enablePrintAutoRotate', value);
       }),
     ]).catch(function(reason) { });
   },
@@ -274,11 +263,10 @@ let PDFViewerApplication = {
    * @private
    */
   _parseHashParameters() {
-    let { appConfig, viewerPrefs, } = this;
     let waitOn = [];
 
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ||
-        viewerPrefs['pdfBugEnabled']) {
+        AppOptions.get('pdfBugEnabled')) {
       // Special debugging flags in the hash section of the URL.
       let hash = document.location.hash.substring(1);
       let hashParams = parseQueryString(hash);
@@ -299,13 +287,15 @@ let PDFViewerApplication = {
         PDFJS.disableFontFace = (hashParams['disablefontface'] === 'true');
       }
       if ('disablehistory' in hashParams) {
-        PDFJS.disableHistory = (hashParams['disablehistory'] === 'true');
+        AppOptions.set('disableHistory',
+                       hashParams['disablehistory'] === 'true');
       }
       if ('webgl' in hashParams) {
         PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
       }
       if ('useonlycsszoom' in hashParams) {
-        PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
+        AppOptions.set('useOnlyCssZoom',
+                       hashParams['useonlycsszoom'] === 'true');
       }
       if ('verbosity' in hashParams) {
         PDFJS.verbosity = hashParams['verbosity'] | 0;
@@ -318,12 +308,12 @@ let PDFViewerApplication = {
       if ('textlayer' in hashParams) {
         switch (hashParams['textlayer']) {
           case 'off':
-            PDFJS.disableTextLayer = true;
+            AppOptions.set('disableTextLayer', true);
             break;
           case 'visible':
           case 'shadow':
           case 'hover':
-            let viewer = appConfig.viewerContainer;
+            let viewer = this.appConfig.viewerContainer;
             viewer.classList.add('textLayer-' + hashParams['textlayer']);
             break;
         }
@@ -339,7 +329,7 @@ let PDFViewerApplication = {
       // It is not possible to change locale for Firefox extension builds.
       if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ||
            !PDFJSDev.test('FIREFOX || MOZCENTRAL')) && 'locale' in hashParams) {
-        PDFJS.locale = hashParams['locale'];
+        AppOptions.set('locale', hashParams['locale']);
       }
     }
 
@@ -360,7 +350,7 @@ let PDFViewerApplication = {
    * @private
    */
   _initializeViewerComponents() {
-    let { appConfig, viewerPrefs, } = this;
+    let { appConfig, } = this;
 
     return new Promise((resolve, reject) => {
       this.overlayManager = new OverlayManager();
@@ -389,11 +379,11 @@ let PDFViewerApplication = {
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
         downloadManager,
-        renderer: viewerPrefs['renderer'],
+        renderer: AppOptions.get('renderer'),
         l10n: this.l10n,
-        enhanceTextSelection: viewerPrefs['enhanceTextSelection'],
-        renderInteractiveForms: viewerPrefs['renderInteractiveForms'],
-        enablePrintAutoRotate: viewerPrefs['enablePrintAutoRotate'],
+        enhanceTextSelection: AppOptions.get('enhanceTextSelection'),
+        renderInteractiveForms: AppOptions.get('renderInteractiveForms'),
+        enablePrintAutoRotate: AppOptions.get('enablePrintAutoRotate'),
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);
@@ -562,7 +552,7 @@ let PDFViewerApplication = {
         support = false;
       }
     }
-    if (support && PDFJS.disableFullscreen === true) {
+    if (support && AppOptions.get('disableFullscreen')) {
       support = false;
     }
 
@@ -991,10 +981,10 @@ let PDFViewerApplication = {
     firstPagePromise.then((pdfPage) => {
       this.loadingBar.setWidth(this.appConfig.viewerContainer);
 
-      if (!PDFJS.disableHistory && !this.isViewerEmbedded) {
+      if (!AppOptions.get('disableHistory') && !this.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
-        let resetHistory = !this.viewerPrefs['showPreviousViewOnLoad'];
+        let resetHistory = !AppOptions.get('showPreviousViewOnLoad');
         this.pdfHistory.initialize(id, resetHistory);
 
         if (this.pdfHistory.initialBookmark) {
@@ -1021,19 +1011,19 @@ let PDFViewerApplication = {
       Promise.all([storePromise, pageModePromise]).then(
           ([values = {}, pageMode]) => {
         // Initialize the default values, from user preferences.
-        let hash = this.viewerPrefs['defaultZoomValue'] ?
-          ('zoom=' + this.viewerPrefs['defaultZoomValue']) : null;
+        let hash = AppOptions.get('defaultZoomValue') ?
+          `zoom=${AppOptions.get('defaultZoomValue')}` : null;
         let rotation = null;
-        let sidebarView = this.viewerPrefs['sidebarViewOnLoad'];
+        let sidebarView = AppOptions.get('sidebarViewOnLoad');
 
-        if (values.exists && this.viewerPrefs['showPreviousViewOnLoad']) {
+        if (values.exists && AppOptions.get('showPreviousViewOnLoad')) {
           hash = 'page=' + values.page +
-            '&zoom=' + (this.viewerPrefs['defaultZoomValue'] || values.zoom) +
+            '&zoom=' + (AppOptions.get('defaultZoomValue') || values.zoom) +
             ',' + values.scrollLeft + ',' + values.scrollTop;
           rotation = parseInt(values.rotation, 10);
           sidebarView = sidebarView || (values.sidebarView | 0);
         }
-        if (pageMode && !this.viewerPrefs['disablePageMode']) {
+        if (pageMode && !AppOptions.get('disablePageMode')) {
           // Always let the user preference/history take precedence.
           sidebarView = sidebarView || apiPageModeToSidebarView(pageMode);
         }
@@ -1077,7 +1067,7 @@ let PDFViewerApplication = {
     });
 
     pdfDocument.getPageLabels().then((labels) => {
-      if (!labels || this.viewerPrefs['disablePageLabels']) {
+      if (!labels || AppOptions.get('disablePageLabels')) {
         return;
       }
       let i = 0, numLabels = labels.length;
