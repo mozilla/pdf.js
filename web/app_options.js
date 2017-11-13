@@ -62,6 +62,16 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER,
   },
+  externalLinkRel: {
+    /** @type {string} */
+    value: null,
+    kind: OptionKind.VIEWER,
+  },
+  externalLinkTarget: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
   imageResourcesPath: {
     /** @type {string} */
     value: './images/',

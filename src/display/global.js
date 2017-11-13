@@ -14,10 +14,6 @@
  */
 
 import {
-  addLinkAttributes, DEFAULT_LINK_REL, getFilenameFromUrl,
-  isExternalLinkTargetSet, isValidUrl, LinkTarget
-} from './dom_utils';
-import {
   createBlob, createObjectURL, createPromiseCapability, getVerbosityLevel,
   InvalidPDFException, isLittleEndian, MissingPDFException, OPS, PageViewport,
   PasswordException, PasswordResponses, removeNullCharacters, setVerbosityLevel,
@@ -28,6 +24,7 @@ import {
   getDocument, LoopbackPort, PDFDataRangeTransport, PDFWorker
 } from './api';
 import { AnnotationLayer } from './annotation_layer';
+import { getFilenameFromUrl } from './dom_utils';
 import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
 import { renderTextLayer } from './text_layer';
@@ -67,7 +64,6 @@ Object.defineProperty(PDFJS, 'verbosity', {
 PDFJS.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
 PDFJS.OPS = OPS;
 PDFJS.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
-PDFJS.isValidUrl = isValidUrl;
 PDFJS.shadow = shadow;
 PDFJS.createBlob = createBlob;
 PDFJS.createObjectURL = function PDFJS_createObjectURL(data, contentType) {
@@ -192,27 +188,6 @@ PDFJS.disableWebGL = (PDFJS.disableWebGL === undefined ?
                       true : PDFJS.disableWebGL);
 
 /**
- * Specifies the |target| attribute for external links.
- * The constants from PDFJS.LinkTarget should be used:
- *  - NONE [default]
- *  - SELF
- *  - BLANK
- *  - PARENT
- *  - TOP
- * @var {number}
- */
-PDFJS.externalLinkTarget = (PDFJS.externalLinkTarget === undefined ?
-                            LinkTarget.NONE : PDFJS.externalLinkTarget);
-
-/**
- * Specifies the |rel| attribute for external links. Defaults to stripping
- * the referrer.
- * @var {string}
- */
-PDFJS.externalLinkRel = (PDFJS.externalLinkRel === undefined ?
-                         DEFAULT_LINK_REL : PDFJS.externalLinkRel);
-
-/**
   * Determines if we can eval strings as JS. Primarily used to improve
   * performance for font rendering.
   * @var {boolean}
@@ -225,10 +200,7 @@ PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
 
-PDFJS.LinkTarget = LinkTarget;
-PDFJS.addLinkAttributes = addLinkAttributes;
 PDFJS.getFilenameFromUrl = getFilenameFromUrl;
-PDFJS.isExternalLinkTargetSet = isExternalLinkTargetSet;
 
 PDFJS.AnnotationLayer = AnnotationLayer;
 
