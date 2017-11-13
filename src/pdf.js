@@ -28,6 +28,7 @@ var pdfjsDisplayTextLayer = require('./display/text_layer.js');
 var pdfjsDisplayAnnotationLayer = require('./display/annotation_layer.js');
 var pdfjsDisplayDOMUtils = require('./display/dom_utils.js');
 var pdfjsDisplaySVG = require('./display/svg.js');
+var pdfjsDisplayAPICompatibility = require('./display/api_compatibility.js');
 
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   const isNodeJS = require('./shared/is_node.js');
@@ -92,3 +93,5 @@ exports.RenderingCancelledException =
   pdfjsDisplayDOMUtils.RenderingCancelledException;
 exports.getFilenameFromUrl = pdfjsDisplayDOMUtils.getFilenameFromUrl;
 exports.addLinkAttributes = pdfjsDisplayDOMUtils.addLinkAttributes;
+exports.apiCompatibilityParams =
+  pdfjsDisplayAPICompatibility.apiCompatibilityParams;
