@@ -1001,9 +1001,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     closePath: function SVGGraphics_closePath() {
       var current = this.current;
-      var d = current.path.getAttributeNS(null, 'd');
-      d += 'Z';
-      current.path.setAttributeNS(null, 'd', d);
+      if (current.path) {
+        var d = current.path.getAttributeNS(null, 'd');
+        d += 'Z';
+        current.path.setAttributeNS(null, 'd', d);
+      }
     },
 
     setLeading: function SVGGraphics_setLeading(leading) {
@@ -1058,32 +1060,39 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     fill: function SVGGraphics_fill() {
       var current = this.current;
-      current.element.setAttributeNS(null, 'fill', current.fillColor);
-      current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
+      if (current.element) {
+        current.element.setAttributeNS(null, 'fill', current.fillColor);
+        current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
+      }
     },
 
     stroke: function SVGGraphics_stroke() {
       var current = this.current;
 
-      current.element.setAttributeNS(null, 'stroke', current.strokeColor);
-      current.element.setAttributeNS(null, 'stroke-opacity',
-                                     current.strokeAlpha);
-      current.element.setAttributeNS(null, 'stroke-miterlimit',
-                                     pf(current.miterLimit));
-      current.element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
-      current.element.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
-      current.element.setAttributeNS(null, 'stroke-width',
-                                     pf(current.lineWidth) + 'px');
-      current.element.setAttributeNS(null, 'stroke-dasharray',
-                                     current.dashArray.map(pf).join(' '));
-      current.element.setAttributeNS(null, 'stroke-dashoffset',
-                                     pf(current.dashPhase) + 'px');
+      if (current.element) {
+        current.element.setAttributeNS(null, 'stroke', current.strokeColor);
+        current.element.setAttributeNS(null, 'stroke-opacity',
+                                       current.strokeAlpha);
+        current.element.setAttributeNS(null, 'stroke-miterlimit',
+                                       pf(current.miterLimit));
+        current.element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
+        current.element.setAttributeNS(null, 'stroke-linejoin',
+                                       current.lineJoin);
+        current.element.setAttributeNS(null, 'stroke-width',
+                                       pf(current.lineWidth) + 'px');
+        current.element.setAttributeNS(null, 'stroke-dasharray',
+                                       current.dashArray.map(pf).join(' '));
+        current.element.setAttributeNS(null, 'stroke-dashoffset',
+                                       pf(current.dashPhase) + 'px');
 
-      current.element.setAttributeNS(null, 'fill', 'none');
+        current.element.setAttributeNS(null, 'fill', 'none');
+      }
     },
 
     eoFill: function SVGGraphics_eoFill() {
-      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      if (this.current.element) {
+        this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      }
       this.fill();
     },
 
@@ -1095,7 +1104,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
 
     eoFillStroke: function SVGGraphics_eoFillStroke() {
-      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      if (this.current.element) {
+        this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      }
       this.fillStroke();
     },
 
