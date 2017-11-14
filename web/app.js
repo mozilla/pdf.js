@@ -218,7 +218,7 @@ let PDFViewerApplication = {
         PDFJS.disableStream = value;
       }),
       preferences.get('disableAutoFetch').then(function resolved(value) {
-        PDFJS.disableAutoFetch = value;
+        AppOptions.set('disableAutoFetch', value);
       }),
       preferences.get('disableFontFace').then(function resolved(value) {
         if (AppOptions.get('disableFontFace') === true) {
@@ -275,7 +275,8 @@ let PDFViewerApplication = {
         PDFJS.disableStream = (hashParams['disablestream'] === 'true');
       }
       if ('disableautofetch' in hashParams) {
-        PDFJS.disableAutoFetch = (hashParams['disableautofetch'] === 'true');
+        AppOptions.set('disableAutoFetch',
+                       hashParams['disableautofetch'] === 'true');
       }
       if ('disablefontface' in hashParams) {
         AppOptions.set('disableFontFace',
@@ -926,7 +927,10 @@ let PDFViewerApplication = {
       // the loading bar will not be completely filled, nor will it be hidden.
       // To prevent displaying a partially filled loading bar permanently, we
       // hide it when no data has been loaded during a certain amount of time.
-      if (PDFJS.disableAutoFetch && percent) {
+      let disableAutoFetch = this.pdfDocument ?
+        this.pdfDocument.loadingParams['disableAutoFetch'] :
+        AppOptions.get('disableAutoFetch');
+      if (disableAutoFetch && percent) {
         if (this.disableAutoFetchLoadingBarTimeout) {
           clearTimeout(this.disableAutoFetchLoadingBarTimeout);
           this.disableAutoFetchLoadingBarTimeout = null;

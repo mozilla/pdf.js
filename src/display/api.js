@@ -18,8 +18,8 @@ import {
   assert, createPromiseCapability, getVerbosityLevel, info,
   InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream,
   MessageHandler, MissingPDFException, NativeImageDecoding, PageViewport,
-  PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
-  UnknownErrorException, Util, warn
+  PasswordException, shadow, StatTimer, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, getDefaultSetting,
@@ -150,6 +150,12 @@ function setPDFNetworkStreamClass(cls) {
  *   converted to OpenType fonts and loaded via font face rules. If disabled,
  *   fonts will be rendered using a built-in font renderer that constructs the
  *   glyphs with primitive path commands. The default value is `false`.
+ * @property {boolean} disableAutoFetch - (optional) Disable pre-fetching of PDF
+ *   file data. When range requests are enabled PDF.js will automatically keep
+ *   fetching more data even if it isn't needed to display the current page.
+ *   The default value is `false`.
+ *   NOTE: It is also necessary to disable streaming, see above,
+ *         in order for disabling of pre-fetching to work correctly.
  */
 
 /**
@@ -254,6 +260,10 @@ function getDocument(src) {
     params.disableFontFace = false;
   }
 
+  if (typeof params.disableAutoFetch !== 'boolean') {
+    params.disableAutoFetch = false;
+  }
+
   if (!worker) {
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global settings, using it.
@@ -309,7 +319,6 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
 
   source.disableRange = getDefaultSetting('disableRange');
-  source.disableAutoFetch = getDefaultSetting('disableAutoFetch');
   source.disableStream = getDefaultSetting('disableStream');
   if (pdfDataRangeTransport) {
     source.length = pdfDataRangeTransport.length;
@@ -659,6 +668,10 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      */
     destroy: function PDFDocumentProxy_destroy() {
       return this.loadingTask.destroy();
+    },
+
+    get loadingParams() {
+      return this.transport.loadingParams;
     },
   };
   return PDFDocumentProxy;
@@ -2032,6 +2045,13 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
         this.commonObjs.clear();
         this.fontLoader.clear();
+      });
+    },
+
+    get loadingParams() {
+      let params = this._params;
+      return shadow(this, 'loadingParams', {
+        disableAutoFetch: params.disableAutoFetch,
       });
     },
   };
