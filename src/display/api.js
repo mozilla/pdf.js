@@ -136,6 +136,9 @@ function setPDFNetworkStreamClass(cls) {
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
  *   whatever possible of the data. The default value is `false`.
+ * @property {number} maxImageSize - (optional) The maximum allowed image size
+ *   in total pixels, i.e. width * height. Images above this value will not be
+ *   rendered. Use -1 for no limit, which is also the default value.
  */
 
 /**
@@ -181,7 +184,7 @@ function getDocument(src) {
     source = src;
   }
 
-  var params = {};
+  let params = Object.create(null);
   var rangeTransport = null;
   var worker = null;
   var CMapReaderFactory = DOMCMapReaderFactory;
@@ -216,6 +219,8 @@ function getDocument(src) {
     } else if (key === 'CMapReaderFactory') {
       CMapReaderFactory = source[key];
       continue;
+    } else if (key === 'stopAtErrors') {
+      continue;
     }
     params[key] = source[key];
   }
@@ -223,10 +228,13 @@ function getDocument(src) {
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.ignoreErrors = params.stopAtErrors !== true;
 
-  const nativeImageDecoderValues = Object.values(NativeImageDecoding);
+  const NativeImageDecodingValues = Object.values(NativeImageDecoding);
   if (params.nativeImageDecoderSupport === undefined ||
-      !nativeImageDecoderValues.includes(params.nativeImageDecoderSupport)) {
+      !NativeImageDecodingValues.includes(params.nativeImageDecoderSupport)) {
     params.nativeImageDecoderSupport = NativeImageDecoding.DECODE;
+  }
+  if (!Number.isInteger(params.maxImageSize)) {
+    params.maxImageSize = -1;
   }
 
   if (!worker) {
@@ -301,7 +309,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       rangeChunkSize: source.rangeChunkSize,
       length: source.length,
     },
-    maxImageSize: getDefaultSetting('maxImageSize'),
+    maxImageSize: source.maxImageSize,
     disableFontFace: getDefaultSetting('disableFontFace'),
     disableCreateObjectURL: getDefaultSetting('disableCreateObjectURL'),
     postMessageTransfers: getDefaultSetting('postMessageTransfers') &&

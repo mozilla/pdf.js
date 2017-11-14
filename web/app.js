@@ -726,6 +726,11 @@ let PDFViewerApplication = {
                PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
       parameters.docBaseUrl = this.baseUrl;
     }
+    // Set the necessary API parameters, using the available options.
+    let apiParameters = AppOptions.getAll('api');
+    for (let key in apiParameters) {
+      parameters[key] = apiParameters[key];
+    }
 
     if (args) {
       for (let prop in args) {

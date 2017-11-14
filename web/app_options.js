@@ -117,6 +117,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER,
   },
+  maxImageSize: {
+    /** @type {number} */
+    value: null,
+    kind: OptionKind.API,
+  },
 };
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {

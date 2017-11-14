@@ -23,7 +23,7 @@ if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
 
 var USE_ONLY_CSS_ZOOM = true;
 var DISABLE_TEXT_LAYER = true;
-PDFJS.maxImageSize = 1024 * 1024;
+var MAX_IMAGE_SIZE = 1024 * 1024;
 PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 PDFJS.cMapUrl = '../../node_modules/pdfjs-dist/cmaps/';
 PDFJS.cMapPacked = true;
@@ -60,7 +60,10 @@ var PDFViewerApplication = {
     this.setTitleUsingUrl(url);
 
     // Loading document.
-    var loadingTask = PDFJS.getDocument(url);
+    var loadingTask = PDFJS.getDocument({
+      url: url,
+      maxImageSize: MAX_IMAGE_SIZE,
+    });
     this.pdfLoadingTask = loadingTask;
 
     loadingTask.onProgress = function (progressData) {
