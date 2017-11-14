@@ -128,6 +128,11 @@ const defaultOptions = {
             '../external/bcmaps/' : '../web/cmaps/'),
     kind: OptionKind.API,
   },
+  isEvalSupported: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.API,
+  },
   maxImageSize: {
     /** @type {number} */
     value: null,

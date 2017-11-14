@@ -407,8 +407,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.workerSrc : null;
     case 'disableWorker':
       return globalSettings ? globalSettings.disableWorker : false;
-    case 'isEvalSupported':
-      return globalSettings ? globalSettings.isEvalSupported : true;
     case 'enableStats':
       return !!(globalSettings && globalSettings.enableStats);
     default:
