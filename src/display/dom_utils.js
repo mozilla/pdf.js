@@ -68,8 +68,9 @@ class DOMCMapReaderFactory {
 
   fetch({ name, }) {
     if (!this.baseUrl) {
-      return Promise.reject(new Error('CMap baseUrl must be specified, ' +
-        'see "PDFJS.cMapUrl" (and also "PDFJS.cMapPacked").'));
+      return Promise.reject(new Error(
+        'The CMap "baseUrl" parameter must be specified, ensure that ' +
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.'));
     }
     if (!name) {
       return Promise.reject(new Error('CMap name must be specified.'));
@@ -398,10 +399,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.disableFontFace : false;
     case 'disableCreateObjectURL':
       return globalSettings ? globalSettings.disableCreateObjectURL : false;
-    case 'cMapUrl':
-      return globalSettings ? globalSettings.cMapUrl : null;
-    case 'cMapPacked':
-      return globalSettings ? globalSettings.cMapPacked : false;
     case 'postMessageTransfers':
       return globalSettings ? globalSettings.postMessageTransfers : true;
     case 'workerPort':
