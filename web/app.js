@@ -54,14 +54,9 @@ function configure(PDFJS) {
   if (typeof PDFJSDev !== 'undefined' &&
       PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC || CHROME')) {
     PDFJS.workerSrc = '../build/pdf.worker.js';
-  }
-  if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-    PDFJS.cMapUrl = '../external/bcmaps/';
+  } else if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     PDFJS.workerSrc = '../src/worker_loader.js';
-  } else {
-    PDFJS.cMapUrl = '../web/cmaps/';
   }
-  PDFJS.cMapPacked = true;
 }
 
 const DefaultExternalServices = {
@@ -305,8 +300,8 @@ let PDFViewerApplication = {
       }
       if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
           hashParams['disablebcmaps'] === 'true') {
-        PDFJS.cMapUrl = '../external/cmaps/';
-        PDFJS.cMapPacked = false;
+        AppOptions.set('cMapUrl', '../external/cmaps/');
+        AppOptions.set('cMapPacked', false);
       }
       if ('textlayer' in hashParams) {
         switch (hashParams['textlayer']) {
