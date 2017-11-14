@@ -155,6 +155,9 @@ function setPDFNetworkStreamClass(cls) {
  *   of PDF files. When enabled, and if the server supports partial content
  *   requests, then the PDF will be fetched in chunks.
  *   The default value is `false`.
+ * @property {boolean} disableStream - (optional) Disable streaming of PDF file
+ *   data. By default PDF.js attempts to load PDFs in chunks.
+ *   The default value is `false`.
  * @property {boolean} disableAutoFetch - (optional) Disable pre-fetching of PDF
  *   file data. When range requests are enabled PDF.js will automatically keep
  *   fetching more data even if it isn't needed to display the current page.
@@ -268,6 +271,9 @@ function getDocument(src) {
   if (typeof params.disableRange !== 'boolean') {
     params.disableRange = apiCompatibilityParams.disableRange || false;
   }
+  if (typeof params.disableStream !== 'boolean') {
+    params.disableStream = apiCompatibilityParams.disableStream || false;
+  }
   if (typeof params.disableAutoFetch !== 'boolean') {
     params.disableAutoFetch = false;
   }
@@ -326,7 +332,6 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   let apiVersion =
     typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
 
-  source.disableStream = getDefaultSetting('disableStream');
   if (pdfDataRangeTransport) {
     source.length = pdfDataRangeTransport.length;
     source.initialData = pdfDataRangeTransport.initialData;
@@ -2059,6 +2064,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       let params = this._params;
       return shadow(this, 'loadingParams', {
         disableRange: params.disableRange,
+        disableStream: params.disableStream,
         disableAutoFetch: params.disableAutoFetch,
       });
     },

@@ -389,8 +389,6 @@ function getDefaultSetting(id) {
   switch (id) {
     case 'pdfBug':
       return globalSettings ? globalSettings.pdfBug : false;
-    case 'disableStream':
-      return globalSettings ? globalSettings.disableStream : false;
     case 'disableCreateObjectURL':
       return globalSettings ? globalSettings.disableCreateObjectURL : false;
     case 'postMessageTransfers':

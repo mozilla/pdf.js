@@ -112,14 +112,6 @@ PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
 PDFJS.workerPort = (PDFJS.workerPort === undefined ? null : PDFJS.workerPort);
 
 /**
- * Disable streaming of PDF file data. By default PDF.js attempts to load PDF
- * in chunks. This default behavior can be disabled.
- * @var {boolean}
- */
-PDFJS.disableStream = (PDFJS.disableStream === undefined ?
-                       false : PDFJS.disableStream);
-
-/**
  * Enables special hooks for debugging PDF.js.
  * @var {boolean}
  */

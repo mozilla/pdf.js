@@ -29,7 +29,6 @@ var isAndroidPre5 = /Android\s[0-4][^\d]/.test(userAgent);
 var isChrome = userAgent.indexOf('Chrom') >= 0;
 var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
 var isIE = userAgent.indexOf('Trident') >= 0;
-var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
 var isOpera = userAgent.indexOf('Opera') >= 0;
 var isSafari = /Safari\//.test(userAgent) &&
                !/(Chrome\/|Android\s)/.test(userAgent);
@@ -373,16 +372,6 @@ PDFJS.compatibilityChecked = true;
   // createObjectURL(), see #3977 and #8081
   if (isIE || isIOSChrome) {
     PDFJS.disableCreateObjectURL = true;
-  }
-})();
-
-// Support: Safari 6.0+, iOS
-(function checkRangeRequests() {
-  // Safari has issues with cached range requests see:
-  // https://github.com/mozilla/pdf.js/issues/3260
-  // Last tested with version 6.0.4.
-  if (isSafari || isIOS) {
-    PDFJS.disableStream = true;
   }
 })();
 
