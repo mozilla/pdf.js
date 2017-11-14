@@ -336,8 +336,6 @@ function getDefaultSetting(id) {
   switch (id) {
     case 'pdfBug':
       return globalSettings ? globalSettings.pdfBug : false;
-    case 'disableCreateObjectURL':
-      return globalSettings ? globalSettings.disableCreateObjectURL : false;
     case 'postMessageTransfers':
       return globalSettings ? globalSettings.postMessageTransfers : true;
     case 'workerPort':

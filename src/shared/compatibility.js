@@ -29,10 +29,6 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
 const globalScope = require('./global_scope');
 const isNodeJS = require('./is_node');
 
-var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
-var isIE = userAgent.indexOf('Trident') >= 0;
-
 const hasDOM = typeof window === 'object' && typeof document === 'object';
 
 // Initializing PDFJS global object here, it case if we need to change/disable
@@ -63,16 +59,6 @@ PDFJS.compatibilityChecked = true;
     // eslint-disable-next-line no-undef
     return Buffer.from(input, 'base64').toString('binary');
   };
-})();
-
-// Checks if possible to use URL.createObjectURL()
-// Support: IE, Chrome on iOS
-(function checkOnBlobSupport() {
-  // sometimes IE and Chrome on iOS loosing the data created with
-  // createObjectURL(), see #3977 and #8081
-  if (isIE || isIOSChrome) {
-    PDFJS.disableCreateObjectURL = true;
-  }
 })();
 
 // Provides document.currentScript support
