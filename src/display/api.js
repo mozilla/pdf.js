@@ -26,6 +26,7 @@ import {
   RenderingCancelledException
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
+import { apiCompatibilityParams } from './api_compatibility';
 import { CanvasGraphics } from './canvas';
 import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
@@ -150,6 +151,10 @@ function setPDFNetworkStreamClass(cls) {
  *   converted to OpenType fonts and loaded via font face rules. If disabled,
  *   fonts will be rendered using a built-in font renderer that constructs the
  *   glyphs with primitive path commands. The default value is `false`.
+ * @property {boolean} disableRange - (optional) Disable range request loading
+ *   of PDF files. When enabled, and if the server supports partial content
+ *   requests, then the PDF will be fetched in chunks.
+ *   The default value is `false`.
  * @property {boolean} disableAutoFetch - (optional) Disable pre-fetching of PDF
  *   file data. When range requests are enabled PDF.js will automatically keep
  *   fetching more data even if it isn't needed to display the current page.
@@ -260,6 +265,9 @@ function getDocument(src) {
     params.disableFontFace = false;
   }
 
+  if (typeof params.disableRange !== 'boolean') {
+    params.disableRange = apiCompatibilityParams.disableRange || false;
+  }
   if (typeof params.disableAutoFetch !== 'boolean') {
     params.disableAutoFetch = false;
   }
@@ -318,7 +326,6 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   let apiVersion =
     typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
 
-  source.disableRange = getDefaultSetting('disableRange');
   source.disableStream = getDefaultSetting('disableStream');
   if (pdfDataRangeTransport) {
     source.length = pdfDataRangeTransport.length;
@@ -2051,6 +2058,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     get loadingParams() {
       let params = this._params;
       return shadow(this, 'loadingParams', {
+        disableRange: params.disableRange,
         disableAutoFetch: params.disableAutoFetch,
       });
     },

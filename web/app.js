@@ -206,10 +206,10 @@ let PDFViewerApplication = {
         AppOptions.set('disableTextLayer', value);
       }),
       preferences.get('disableRange').then(function resolved(value) {
-        if (PDFJS.disableRange === true) {
+        if (AppOptions.get('disableRange') === true) {
           return;
         }
-        PDFJS.disableRange = value;
+        AppOptions.set('disableRange', value);
       }),
       preferences.get('disableStream').then(function resolved(value) {
         if (PDFJS.disableStream === true) {
@@ -269,7 +269,7 @@ let PDFViewerApplication = {
         PDFJS.disableWorker = (hashParams['disableworker'] === 'true');
       }
       if ('disablerange' in hashParams) {
-        PDFJS.disableRange = (hashParams['disablerange'] === 'true');
+        AppOptions.set('disableRange', hashParams['disablerange'] === 'true');
       }
       if ('disablestream' in hashParams) {
         PDFJS.disableStream = (hashParams['disablestream'] === 'true');

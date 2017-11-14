@@ -382,7 +382,6 @@ PDFJS.compatibilityChecked = true;
   // https://github.com/mozilla/pdf.js/issues/3260
   // Last tested with version 6.0.4.
   if (isSafari || isIOS) {
-    PDFJS.disableRange = true;
     PDFJS.disableStream = true;
   }
 })();
