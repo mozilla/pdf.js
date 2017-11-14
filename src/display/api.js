@@ -164,6 +164,9 @@ function setPDFNetworkStreamClass(cls) {
  *   The default value is `false`.
  *   NOTE: It is also necessary to disable streaming, see above,
  *         in order for disabling of pre-fetching to work correctly.
+ * @property {boolean} disableCreateObjectURL - (optional) Disable the use of
+ *   `URL.createObjectURL`, for compatibility with older browsers.
+ *   The default value is `false`.
  */
 
 /**
@@ -277,6 +280,10 @@ function getDocument(src) {
   if (typeof params.disableAutoFetch !== 'boolean') {
     params.disableAutoFetch = false;
   }
+  if (typeof params.disableCreateObjectURL !== 'boolean') {
+    params.disableCreateObjectURL =
+      apiCompatibilityParams.disableCreateObjectURL || false;
+  }
 
   if (!worker) {
     // Worker was not provided -- creating and owning our own. If message port
@@ -349,7 +356,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     },
     maxImageSize: source.maxImageSize,
     disableFontFace: source.disableFontFace,
-    disableCreateObjectURL: getDefaultSetting('disableCreateObjectURL'),
+    disableCreateObjectURL: source.disableCreateObjectURL,
     postMessageTransfers: getDefaultSetting('postMessageTransfers') &&
                           !isPostMessageTransfersDisabled,
     docBaseUrl: source.docBaseUrl,
@@ -2066,6 +2073,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         disableRange: params.disableRange,
         disableStream: params.disableStream,
         disableAutoFetch: params.disableAutoFetch,
+        disableCreateObjectURL: params.disableCreateObjectURL,
       });
     },
   };

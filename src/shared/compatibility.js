@@ -27,8 +27,6 @@ var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
 var isAndroid = /Android/.test(userAgent);
 var isAndroidPre5 = /Android\s[0-4][^\d]/.test(userAgent);
 var isChrome = userAgent.indexOf('Chrom') >= 0;
-var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
-var isIE = userAgent.indexOf('Trident') >= 0;
 var isOpera = userAgent.indexOf('Opera') >= 0;
 var isSafari = /Safari\//.test(userAgent) &&
                !/(Chrome\/|Android\s)/.test(userAgent);
@@ -362,16 +360,6 @@ PDFJS.compatibilityChecked = true;
   if (isOpera) {
     // use browser detection since we cannot feature-check this bug
     document.addEventListener('click', ignoreIfTargetDisabled, true);
-  }
-})();
-
-// Checks if possible to use URL.createObjectURL()
-// Support: IE, Chrome on iOS
-(function checkOnBlobSupport() {
-  // sometimes IE and Chrome on iOS loosing the data created with
-  // createObjectURL(), see #3977 and #8081
-  if (isIE || isIOSChrome) {
-    PDFJS.disableCreateObjectURL = true;
   }
 })();
 

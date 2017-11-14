@@ -15,7 +15,6 @@
 
 import { CSS_UNITS, NullL10n } from './ui_utils';
 import { PDFPrintServiceFactory, PDFViewerApplication } from './app';
-import { PDFJS } from 'pdfjs-lib';
 
 let activeService = null;
 let overlayManager = null;
@@ -62,6 +61,8 @@ function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
   this.l10n = l10n || NullL10n;
+  this.disableCreateObjectURL =
+    pdfDocument.loadingParams['disableCreateObjectURL'];
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
   this.scratchCanvas = document.createElement('canvas');
@@ -153,7 +154,7 @@ PDFPrintService.prototype = {
     img.style.height = printItem.height;
 
     let scratchCanvas = this.scratchCanvas;
-    if (('toBlob' in scratchCanvas) && !PDFJS.disableCreateObjectURL) {
+    if (('toBlob' in scratchCanvas) && !this.disableCreateObjectURL) {
       scratchCanvas.toBlob(function(blob) {
         img.src = URL.createObjectURL(blob);
       });

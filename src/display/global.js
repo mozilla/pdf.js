@@ -14,11 +14,11 @@
  */
 
 import {
-  createBlob, createObjectURL, createPromiseCapability, getVerbosityLevel,
-  InvalidPDFException, isLittleEndian, MissingPDFException, OPS, PageViewport,
-  PasswordException, PasswordResponses, removeNullCharacters, setVerbosityLevel,
-  shadow, UnexpectedResponseException, UnknownErrorException,
-  UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS
+  createPromiseCapability, getVerbosityLevel, InvalidPDFException,
+  isLittleEndian, MissingPDFException, OPS, PageViewport, PasswordException,
+  PasswordResponses, removeNullCharacters, setVerbosityLevel, shadow,
+  UnexpectedResponseException, UnknownErrorException, UNSUPPORTED_FEATURES,
+  Util, VERBOSITY_LEVELS
 } from '../shared/util';
 import { CustomStyle, getFilenameFromUrl } from './dom_utils';
 import {
@@ -65,10 +65,6 @@ PDFJS.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
 PDFJS.OPS = OPS;
 PDFJS.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
 PDFJS.shadow = shadow;
-PDFJS.createBlob = createBlob;
-PDFJS.createObjectURL = function PDFJS_createObjectURL(data, contentType) {
-  return createObjectURL(data, contentType, PDFJS.disableCreateObjectURL);
-};
 Object.defineProperty(PDFJS, 'isLittleEndian', {
   configurable: true,
   get: function PDFJS_isLittleEndian() {
@@ -123,13 +119,6 @@ PDFJS.pdfBug = (PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug);
  */
 PDFJS.postMessageTransfers = (PDFJS.postMessageTransfers === undefined ?
                               true : PDFJS.postMessageTransfers);
-
-/**
- * Disables URL.createObjectURL usage.
- * @var {boolean}
- */
-PDFJS.disableCreateObjectURL = (PDFJS.disableCreateObjectURL === undefined ?
-                                false : PDFJS.disableCreateObjectURL);
 
 PDFJS.getDocument = getDocument;
 PDFJS.LoopbackPort = LoopbackPort;
