@@ -87,15 +87,6 @@ PDFJS.PageViewport = PageViewport;
 PDFJS.createPromiseCapability = createPromiseCapability;
 
 /**
- * By default fonts are converted to OpenType fonts and loaded via font face
- * rules. If disabled, the font will be rendered using a built in font
- * renderer that constructs the glyphs with primitive path commands.
- * @var {boolean}
- */
-PDFJS.disableFontFace = (PDFJS.disableFontFace === undefined ?
-                         false : PDFJS.disableFontFace);
-
-/**
  * Path and filename of the worker file. Required when the worker is enabled
  * in development mode. If unspecified in the production build, the worker
  * will be loaded based on the location of the pdf.js file. It is recommended
