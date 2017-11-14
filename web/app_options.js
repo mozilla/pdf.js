@@ -128,6 +128,11 @@ const defaultOptions = {
             '../external/bcmaps/' : '../web/cmaps/'),
     kind: OptionKind.API,
   },
+  disableAutoFetch: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.API,
+  },
   disableFontFace: {
     /** @type {boolean} */
     value: false,
