@@ -1248,12 +1248,17 @@ function validateFileURL(file) {
   }
 }
 //#endif
-
+var cepref = null;
 function webViewerInitialized() {
 //#if GENERIC
   var queryString = document.location.search.substring(1);
   var params = parseQueryString(queryString);
   var file = 'file' in params ? params.file : DEFAULT_URL;
+  cepref = params.cepref;
+  if (params.cepref == 'true') {
+    setCustomViewForCE();
+  }
+
   // validateFileURL(file);
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
@@ -1758,7 +1763,7 @@ window.addEventListener('localized', function localized(evt) {
     // Note: If the window is narrow enough that the zoom box is not visible,
     //       we temporarily show it to be able to adjust its width.
     var container = PDFViewerApplication.appConfig.toolbar.scaleSelectContainer;
-    if (container.clientWidth === 0) {
+    if (container.clientWidth === 0 && cepref !== 'true') {
       container.setAttribute('style', 'display: inherit;');
     }
     if (container.clientWidth > 0) {
@@ -2144,6 +2149,18 @@ window.addEventListener('afterprint', function afterPrint(evt) {
     window.requestAnimationFrame(resolve);
   });
 })();
+
+// set custom styles for CE pdf viewer
+function setCustomViewForCE() {
+  document.getElementById('sidebarToggle').style.display='none';
+  document.getElementById('viewFind').style.display='none';
+  document.getElementsByClassName('splitToolbarButton')[2].style.display='none';
+  document.getElementById('scaleSelectContainer').style.display='none';
+  document.getElementById('print').style.display='none';
+  document.getElementById('download').style.display='none';
+  document.getElementById('viewBookmark').style.display='none';
+  document.getElementsByTagName('body')[0].style.backgroundColor = "#fff";
+}
 
 exports.PDFViewerApplication = PDFViewerApplication;
 exports.DefaultExernalServices = DefaultExernalServices;
