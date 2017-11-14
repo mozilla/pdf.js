@@ -146,6 +146,10 @@ function setPDFNetworkStreamClass(cls) {
  * @property {boolean} isEvalSupported - (optional) Determines if we can eval
  *   strings as JS. Primarily used to improve performance of font rendering,
  *   and when parsing PDF functions. The default value is `true`.
+ * @property {boolean} disableFontFace - (optional) By default fonts are
+ *   converted to OpenType fonts and loaded via font face rules. If disabled,
+ *   fonts will be rendered using a built-in font renderer that constructs the
+ *   glyphs with primitive path commands. The default value is `false`.
  */
 
 /**
@@ -246,6 +250,9 @@ function getDocument(src) {
   if (typeof params.isEvalSupported !== 'boolean') {
     params.isEvalSupported = true;
   }
+  if (typeof params.disableFontFace !== 'boolean') {
+    params.disableFontFace = false;
+  }
 
   if (!worker) {
     // Worker was not provided -- creating and owning our own. If message port
@@ -320,7 +327,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       length: source.length,
     },
     maxImageSize: source.maxImageSize,
-    disableFontFace: getDefaultSetting('disableFontFace'),
+    disableFontFace: source.disableFontFace,
     disableCreateObjectURL: getDefaultSetting('disableCreateObjectURL'),
     postMessageTransfers: getDefaultSetting('postMessageTransfers') &&
                           !isPostMessageTransfersDisabled,
@@ -1765,7 +1772,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             }
             var font = new FontFaceObject(exportedData, {
               isEvalSupported: this._params.isEvalSupported,
-              disableFontFace: getDefaultSetting('disableFontFace'),
+              disableFontFace: this._params.disableFontFace,
               fontRegistry,
             });
             var fontReady = (fontObjs) => {
