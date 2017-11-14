@@ -152,6 +152,9 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @property {number} maxImageSize - (optional) The maximum allowed image size
  *   in total pixels, i.e. width * height. Images above this value will not be
  *   rendered. Use -1 for no limit, which is also the default value.
+ * @property {boolean} isEvalSupported - (optional) Determines if we can eval
+ *   strings as JS. Primarily used to improve performance of font rendering,
+ *   and when parsing PDF functions. The default value is `true`.
  */
 
 /**
@@ -249,6 +252,9 @@ function getDocument(src) {
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
   }
+  if (typeof params.isEvalSupported !== 'boolean') {
+    params.isEvalSupported = true;
+  }
 
   if (!worker) {
     // Worker was not provided -- creating and owning our own. If message port
@@ -330,7 +336,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     docBaseUrl: source.docBaseUrl,
     nativeImageDecoderSupport: source.nativeImageDecoderSupport,
     ignoreErrors: source.ignoreErrors,
-    isEvalSupported: getDefaultSetting('isEvalSupported'),
+    isEvalSupported: source.isEvalSupported,
   }).then(function (workerId) {
     if (worker.destroyed) {
       throw new Error('Worker was destroyed');
@@ -1795,7 +1801,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               };
             }
             var font = new FontFaceObject(exportedData, {
-              isEvalSupported: getDefaultSetting('isEvalSupported'),
+              isEvalSupported: this._params.isEvalSupported,
               disableFontFace: getDefaultSetting('disableFontFace'),
               fontRegistry,
             });
