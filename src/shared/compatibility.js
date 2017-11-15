@@ -531,36 +531,6 @@ PDFJS.compatibilityChecked = true;
   }
 })();
 
-// Support: IE<10, Android<4.0, iOS
-(function checkRequestAnimationFrame() {
-  function installFakeAnimationFrameFunctions() {
-    window.requestAnimationFrame = function (callback) {
-      return window.setTimeout(callback, 20);
-    };
-    window.cancelAnimationFrame = function (timeoutID) {
-      window.clearTimeout(timeoutID);
-    };
-  }
-
-  if (!hasDOM) {
-    return;
-  }
-  if (isIOS) {
-    // requestAnimationFrame on iOS is broken, replacing with fake one.
-    installFakeAnimationFrameFunctions();
-    return;
-  }
-  if ('requestAnimationFrame' in window) {
-    return;
-  }
-  window.requestAnimationFrame = window.mozRequestAnimationFrame ||
-                                 window.webkitRequestAnimationFrame;
-  if (window.requestAnimationFrame) {
-    return;
-  }
-  installFakeAnimationFrameFunctions();
-})();
-
 // Support: Android, iOS
 (function checkCanvasSizeLimitation() {
   if (isIOS || isAndroid) {
