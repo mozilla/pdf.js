@@ -25,10 +25,8 @@ var globalScope = require('./global_scope');
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
 var isAndroid = /Android/.test(userAgent);
-var isAndroidPre3 = /Android\s[0-2][^\d]/.test(userAgent);
 var isAndroidPre5 = /Android\s[0-4][^\d]/.test(userAgent);
 var isChrome = userAgent.indexOf('Chrom') >= 0;
-var isChromeWithRangeBug = /Chrome\/(39|40)\./.test(userAgent);
 var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
 var isIE = userAgent.indexOf('Trident') >= 0;
 var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
@@ -470,35 +468,14 @@ PDFJS.compatibilityChecked = true;
   PDFJS.locale = navigator.userLanguage || 'en-US';
 })();
 
-// Support: Safari 6.0+, Android<3.0, Chrome 39/40, iOS
+// Support: Safari 6.0+, iOS
 (function checkRangeRequests() {
   // Safari has issues with cached range requests see:
   // https://github.com/mozilla/pdf.js/issues/3260
   // Last tested with version 6.0.4.
-
-  // Older versions of Android (pre 3.0) has issues with range requests, see:
-  // https://github.com/mozilla/pdf.js/issues/3381.
-  // Make sure that we only match webkit-based Android browsers,
-  // since Firefox/Fennec works as expected.
-
-  // Range requests are broken in Chrome 39 and 40, https://crbug.com/442318
-  if (isSafari || isAndroidPre3 || isChromeWithRangeBug || isIOS) {
+  if (isSafari || isIOS) {
     PDFJS.disableRange = true;
     PDFJS.disableStream = true;
-  }
-})();
-
-// Check if the browser supports manipulation of the history.
-// Support: IE<10, Android<4.2
-(function checkHistoryManipulation() {
-  if (!hasDOM) {
-    return;
-  }
-  // Android 2.x has so buggy pushState support that it was removed in
-  // Android 3.0 and restored as late as in Android 4.2.
-  // Support: Android 2.x
-  if (!history.pushState || isAndroidPre3) {
-    PDFJS.disableHistory = true;
   }
 })();
 
