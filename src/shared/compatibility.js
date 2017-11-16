@@ -102,23 +102,6 @@ PDFJS.compatibilityChecked = true;
   });
 })();
 
-// Function.prototype.bind?
-// Support: Android<4.0, iOS<6.0
-(function checkFunctionPrototypeBindCompatibility() {
-  if (typeof Function.prototype.bind !== 'undefined') {
-    return;
-  }
-
-  Function.prototype.bind = function functionPrototypeBind(obj) {
-    var fn = this, headArgs = Array.prototype.slice.call(arguments, 1);
-    var bound = function functionPrototypeBindBound() {
-      var args = headArgs.concat(Array.prototype.slice.call(arguments));
-      return fn.apply(obj, args);
-    };
-    return bound;
-  };
-})();
-
 // HTMLElement dataset property
 // Support: IE<11, Safari<5.1, Android<4.0
 (function checkDatasetProperty() {
