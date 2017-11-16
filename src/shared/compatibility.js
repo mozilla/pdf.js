@@ -102,67 +102,6 @@ PDFJS.compatibilityChecked = true;
   });
 })();
 
-// window.btoa (base64 encode function) ?
-// Support: IE<10
-(function checkWindowBtoaCompatibility() {
-  if ('btoa' in globalScope) {
-    return;
-  }
-
-  var digits =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-
-  globalScope.btoa = function (chars) {
-    var buffer = '';
-    var i, n;
-    for (i = 0, n = chars.length; i < n; i += 3) {
-      var b1 = chars.charCodeAt(i) & 0xFF;
-      var b2 = chars.charCodeAt(i + 1) & 0xFF;
-      var b3 = chars.charCodeAt(i + 2) & 0xFF;
-      var d1 = b1 >> 2, d2 = ((b1 & 3) << 4) | (b2 >> 4);
-      var d3 = i + 1 < n ? ((b2 & 0xF) << 2) | (b3 >> 6) : 64;
-      var d4 = i + 2 < n ? (b3 & 0x3F) : 64;
-      buffer += (digits.charAt(d1) + digits.charAt(d2) +
-                 digits.charAt(d3) + digits.charAt(d4));
-    }
-    return buffer;
-  };
-})();
-
-// window.atob (base64 encode function)?
-// Support: IE<10
-(function checkWindowAtobCompatibility() {
-  if ('atob' in globalScope) {
-    return;
-  }
-
-  // https://github.com/davidchambers/Base64.js
-  var digits =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-  globalScope.atob = function (input) {
-    input = input.replace(/=+$/, '');
-    if (input.length % 4 === 1) {
-      throw new Error('bad atob input');
-    }
-    for (
-      // initialize result and counters
-      var bc = 0, bs, buffer, idx = 0, output = '';
-      // get next character
-      (buffer = input.charAt(idx++));
-      // character found in table?
-      // initialize bit storage and add its ascii value
-      ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
-        // and if not first of each 4 characters,
-        // convert the first 8 bits to one ascii character
-        bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
-    ) {
-      // try to find character in table (0-63, not found => -1)
-      buffer = digits.indexOf(buffer);
-    }
-    return output;
-  };
-})();
-
 // Function.prototype.bind?
 // Support: Android<4.0, iOS<6.0
 (function checkFunctionPrototypeBindCompatibility() {
