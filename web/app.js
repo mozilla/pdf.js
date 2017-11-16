@@ -162,6 +162,8 @@ let PDFViewerApplication = {
     this.appConfig = appConfig;
 
     return this._readPreferences().then(() => {
+      return this._parseHashParameters();
+    }).then(() => {
       return this._initializeL10n();
     }).then(() => {
       return this._initializeViewerComponents();
@@ -268,19 +270,86 @@ let PDFViewerApplication = {
     ]).catch(function(reason) { });
   },
 
-  _initializeL10n() {
-    // Locale can be changed only when special debugging flags is present in
-    // the hash section of the URL, or development version of viewer is used.
-    // It is not possible to change locale for Firefox extension builds.
+  /**
+   * @private
+   */
+  _parseHashParameters() {
+    let { appConfig, viewerPrefs, } = this;
+    let waitOn = [];
+
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ||
-        (!PDFJSDev.test('FIREFOX || MOZCENTRAL') &&
-         this.viewerPrefs['pdfBugEnabled'])) {
+        viewerPrefs['pdfBugEnabled']) {
+      // Special debugging flags in the hash section of the URL.
       let hash = document.location.hash.substring(1);
       let hashParams = parseQueryString(hash);
-      if ('locale' in hashParams) {
+
+      if ('disableworker' in hashParams) {
+        PDFJS.disableWorker = (hashParams['disableworker'] === 'true');
+      }
+      if ('disablerange' in hashParams) {
+        PDFJS.disableRange = (hashParams['disablerange'] === 'true');
+      }
+      if ('disablestream' in hashParams) {
+        PDFJS.disableStream = (hashParams['disablestream'] === 'true');
+      }
+      if ('disableautofetch' in hashParams) {
+        PDFJS.disableAutoFetch = (hashParams['disableautofetch'] === 'true');
+      }
+      if ('disablefontface' in hashParams) {
+        PDFJS.disableFontFace = (hashParams['disablefontface'] === 'true');
+      }
+      if ('disablehistory' in hashParams) {
+        PDFJS.disableHistory = (hashParams['disablehistory'] === 'true');
+      }
+      if ('webgl' in hashParams) {
+        PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
+      }
+      if ('useonlycsszoom' in hashParams) {
+        PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
+      }
+      if ('verbosity' in hashParams) {
+        PDFJS.verbosity = hashParams['verbosity'] | 0;
+      }
+      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
+          hashParams['disablebcmaps'] === 'true') {
+        PDFJS.cMapUrl = '../external/cmaps/';
+        PDFJS.cMapPacked = false;
+      }
+      if ('textlayer' in hashParams) {
+        switch (hashParams['textlayer']) {
+          case 'off':
+            PDFJS.disableTextLayer = true;
+            break;
+          case 'visible':
+          case 'shadow':
+          case 'hover':
+            let viewer = appConfig.viewerContainer;
+            viewer.classList.add('textLayer-' + hashParams['textlayer']);
+            break;
+        }
+      }
+      if ('pdfbug' in hashParams) {
+        PDFJS.pdfBug = true;
+        let pdfBug = hashParams['pdfbug'];
+        let enabled = pdfBug.split(',');
+        waitOn.push(loadAndEnablePDFBug(enabled));
+      }
+      // Locale can be changed only when special debugging flags is present in
+      // the hash section of the URL, or development version of viewer is used.
+      // It is not possible to change locale for Firefox extension builds.
+      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ||
+           !PDFJSDev.test('FIREFOX || MOZCENTRAL')) && 'locale' in hashParams) {
         PDFJS.locale = hashParams['locale'];
       }
     }
+
+    return Promise.all(waitOn);
+  },
+
+  /**
+   * @private
+   */
+  _initializeL10n() {
     this.l10n = this.externalServices.createL10n();
     return this.l10n.getDirection().then((dir) => {
       document.getElementsByTagName('html')[0].dir = dir;
@@ -291,7 +360,7 @@ let PDFViewerApplication = {
    * @private
    */
   _initializeViewerComponents() {
-    let appConfig = this.appConfig;
+    let { appConfig, viewerPrefs, } = this;
 
     return new Promise((resolve, reject) => {
       this.overlayManager = new OverlayManager();
@@ -320,11 +389,11 @@ let PDFViewerApplication = {
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
         downloadManager,
-        renderer: this.viewerPrefs['renderer'],
+        renderer: viewerPrefs['renderer'],
         l10n: this.l10n,
-        enhanceTextSelection: this.viewerPrefs['enhanceTextSelection'],
-        renderInteractiveForms: this.viewerPrefs['renderInteractiveForms'],
-        enablePrintAutoRotate: this.viewerPrefs['enablePrintAutoRotate'],
+        enhanceTextSelection: viewerPrefs['enhanceTextSelection'],
+        renderInteractiveForms: viewerPrefs['renderInteractiveForms'],
+        enablePrintAutoRotate: viewerPrefs['enablePrintAutoRotate'],
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);
@@ -1461,7 +1530,6 @@ function webViewerInitialized() {
     file = appConfig.defaultUrl;
   }
 
-  let waitForBeforeOpening = [];
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     let fileInput = document.createElement('input');
     fileInput.id = appConfig.openFileInputName;
@@ -1490,66 +1558,6 @@ function webViewerInitialized() {
   } else {
     appConfig.toolbar.openFile.setAttribute('hidden', 'true');
     appConfig.secondaryToolbar.openFileButton.setAttribute('hidden', 'true');
-  }
-
-  if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) ||
-      PDFViewerApplication.viewerPrefs['pdfBugEnabled']) {
-    // Special debugging flags in the hash section of the URL.
-    let hash = document.location.hash.substring(1);
-    let hashParams = parseQueryString(hash);
-
-    if ('disableworker' in hashParams) {
-      PDFJS.disableWorker = (hashParams['disableworker'] === 'true');
-    }
-    if ('disablerange' in hashParams) {
-      PDFJS.disableRange = (hashParams['disablerange'] === 'true');
-    }
-    if ('disablestream' in hashParams) {
-      PDFJS.disableStream = (hashParams['disablestream'] === 'true');
-    }
-    if ('disableautofetch' in hashParams) {
-      PDFJS.disableAutoFetch = (hashParams['disableautofetch'] === 'true');
-    }
-    if ('disablefontface' in hashParams) {
-      PDFJS.disableFontFace = (hashParams['disablefontface'] === 'true');
-    }
-    if ('disablehistory' in hashParams) {
-      PDFJS.disableHistory = (hashParams['disablehistory'] === 'true');
-    }
-    if ('webgl' in hashParams) {
-      PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
-    }
-    if ('useonlycsszoom' in hashParams) {
-      PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
-    }
-    if ('verbosity' in hashParams) {
-      PDFJS.verbosity = hashParams['verbosity'] | 0;
-    }
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-      if ('disablebcmaps' in hashParams && hashParams['disablebcmaps']) {
-        PDFJS.cMapUrl = '../external/cmaps/';
-        PDFJS.cMapPacked = false;
-      }
-    }
-    if ('textlayer' in hashParams) {
-      switch (hashParams['textlayer']) {
-        case 'off':
-          PDFJS.disableTextLayer = true;
-          break;
-        case 'visible':
-        case 'shadow':
-        case 'hover':
-          let viewer = appConfig.viewerContainer;
-          viewer.classList.add('textLayer-' + hashParams['textlayer']);
-          break;
-      }
-    }
-    if ('pdfbug' in hashParams) {
-      PDFJS.pdfBug = true;
-      let pdfBug = hashParams['pdfbug'];
-      let enabled = pdfBug.split(',');
-      waitForBeforeOpening.push(loadAndEnablePDFBug(enabled));
-    }
   }
 
   if (typeof PDFJSDev !== 'undefined' &&
@@ -1587,11 +1595,11 @@ function webViewerInitialized() {
     PDFViewerApplication.pdfSidebar.toggle();
   });
 
-  Promise.all(waitForBeforeOpening).then(function () {
+  Promise.resolve().then(function() {
     webViewerOpenFileViaURL(file);
-  }).catch(function (reason) {
+  }).catch(function(reason) {
     PDFViewerApplication.l10n.get('loading_error', null,
-        'An error occurred while opening.').then((msg) => {
+        'An error occurred while loading the PDF.').then((msg) => {
       PDFViewerApplication.error(msg, reason);
     });
   });
@@ -1614,10 +1622,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
         xhr.responseType = 'arraybuffer';
         xhr.send();
       } catch (ex) {
-        PDFViewerApplication.l10n.get('loading_error', null,
-            'An error occurred while loading the PDF.').then((msg) => {
-          PDFViewerApplication.error(msg, ex);
-        });
+        throw ex;
       }
       return;
     }
@@ -1632,9 +1637,9 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     PDFViewerApplication.initPassiveLoading();
   };
 } else {
-  webViewerOpenFileViaURL = function webViewerOpenFileURL(file) {
+  webViewerOpenFileViaURL = function webViewerOpenFileViaURL(file) {
     if (file) {
-      throw new Error('Not implemented: webViewerOpenFileURL');
+      throw new Error('Not implemented: webViewerOpenFileViaURL');
     }
   };
 }
