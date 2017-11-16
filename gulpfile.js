@@ -1352,6 +1352,10 @@ gulp.task('dist-pre',
       SINGLE_FILE_DIR + 'build/pdf.combined.js.map',
       SRC_DIR + 'pdf.worker.entry.js',
     ]).pipe(gulp.dest(DIST_DIR + 'build/')),
+    gulp.src([
+      MINIFIED_DIR + '*',
+      MINIFIED_DIR + '**/*',
+    ]).pipe(gulp.dest(DIST_DIR + 'viewer/')),
     gulp.src(MINIFIED_DIR + 'build/pdf.js')
         .pipe(rename('pdf.min.js'))
         .pipe(gulp.dest(DIST_DIR + 'build/')),
