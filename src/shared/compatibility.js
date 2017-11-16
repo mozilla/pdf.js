@@ -30,7 +30,6 @@ var isChrome = userAgent.indexOf('Chrom') >= 0;
 var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
 var isIE = userAgent.indexOf('Trident') >= 0;
 var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
-var isOpera = userAgent.indexOf('Opera') >= 0;
 var isSafari = /Safari\//.test(userAgent) &&
                !/(Chrome\/|Android\s)/.test(userAgent);
 
@@ -141,25 +140,6 @@ PDFJS.compatibilityChecked = true;
     },
     enumerable: true,
   });
-})();
-
-// Check onclick compatibility in Opera
-// Support: Opera<15
-(function checkOnClickCompatibility() {
-  // workaround for reported Opera bug DSK-354448:
-  // onclick fires on disabled buttons with opaque content
-  function ignoreIfTargetDisabled(event) {
-    if (isDisabled(event.target)) {
-      event.stopPropagation();
-    }
-  }
-  function isDisabled(node) {
-    return node.disabled || (node.parentNode && isDisabled(node.parentNode));
-  }
-  if (isOpera) {
-    // use browser detection since we cannot feature-check this bug
-    document.addEventListener('click', ignoreIfTargetDisabled, true);
-  }
 })();
 
 // Checks if possible to use URL.createObjectURL()
