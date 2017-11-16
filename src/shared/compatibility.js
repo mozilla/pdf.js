@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /* eslint-disable no-extend-native */
-/* globals VBArray, PDFJS, global */
+/* globals PDFJS */
 
 // Skip compatibility checks for the extensions and if we already ran
 // this module.
@@ -85,19 +85,6 @@ PDFJS.compatibilityChecked = true;
       }
     },
   });
-
-  // Support: IE9
-  if (typeof VBArray !== 'undefined') {
-    Object.defineProperty(xhrPrototype, 'response', {
-      get: function xmlHttpRequestResponseGet() {
-        if (this.responseType === 'arraybuffer') {
-          return new Uint8Array(new VBArray(this.responseBody).toArray());
-        }
-        return this.responseText;
-      },
-    });
-    return;
-  }
 
   Object.defineProperty(xhrPrototype, 'response', {
     get: function xmlHttpRequestResponseGet() {
