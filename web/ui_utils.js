@@ -52,6 +52,10 @@ function formatL10nValue(text, args) {
  * @implements {IL10n}
  */
 let NullL10n = {
+  getDirection() {
+    return Promise.resolve('ltr');
+  },
+
   get(property, args, fallback) {
     return Promise.resolve(formatL10nValue(fallback, args));
   },
@@ -97,12 +101,6 @@ PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
  */
 PDFJS.disableTextLayer = (PDFJS.disableTextLayer === undefined ?
                           false : PDFJS.disableTextLayer);
-
-/**
- * Disables maintaining the current position in the document when zooming.
- */
-PDFJS.ignoreCurrentPositionOnZoom = (PDFJS.ignoreCurrentPositionOnZoom ===
-  undefined ? false : PDFJS.ignoreCurrentPositionOnZoom);
 
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {

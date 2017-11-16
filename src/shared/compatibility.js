@@ -25,10 +25,8 @@ var globalScope = require('./global_scope');
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
 var isAndroid = /Android/.test(userAgent);
-var isAndroidPre3 = /Android\s[0-2][^\d]/.test(userAgent);
 var isAndroidPre5 = /Android\s[0-4][^\d]/.test(userAgent);
 var isChrome = userAgent.indexOf('Chrom') >= 0;
-var isChromeWithRangeBug = /Chrome\/(39|40)\./.test(userAgent);
 var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
 var isIE = userAgent.indexOf('Trident') >= 0;
 var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
@@ -45,157 +43,6 @@ if (typeof PDFJS === 'undefined') {
 }
 
 PDFJS.compatibilityChecked = true;
-
-// Checking if the typed arrays are supported
-// Support: iOS<6.0 (subarray), IE<10, Android<4.0
-(function checkTypedArrayCompatibility() {
-  if (typeof Uint8ClampedArray === 'undefined') {
-    // Support: IE<11
-    globalScope.Uint8ClampedArray =
-      require('core-js/fn/typed/uint8-clamped-array');
-  }
-
-  if (typeof Uint8Array !== 'undefined') {
-    // Support: iOS<6.0
-    if (typeof Uint8Array.prototype.subarray === 'undefined') {
-      Uint8Array.prototype.subarray = function subarray(start, end) {
-        return new Uint8Array(this.slice(start, end));
-      };
-      Float32Array.prototype.subarray = function subarray(start, end) {
-        return new Float32Array(this.slice(start, end));
-      };
-    }
-
-    // Support: Android<4.1
-    if (typeof Float64Array === 'undefined') {
-      globalScope.Float64Array = Float32Array;
-    }
-    return;
-  }
-
-  function subarray(start, end) {
-    return new TypedArray(this.slice(start, end));
-  }
-
-  function setArrayOffset(array, offset) {
-    if (arguments.length < 2) {
-      offset = 0;
-    }
-    for (var i = 0, n = array.length; i < n; ++i, ++offset) {
-      this[offset] = array[i] & 0xFF;
-    }
-  }
-
-  function Uint32ArrayView(buffer, length) {
-    this.buffer = buffer;
-    this.byteLength = buffer.length;
-    this.length = length;
-    ensureUint32ArrayViewProps(this.length);
-  }
-  Uint32ArrayView.prototype = Object.create(null);
-
-  var uint32ArrayViewSetters = 0;
-  function createUint32ArrayProp(index) {
-    return {
-      get() {
-        var buffer = this.buffer, offset = index << 2;
-        return (buffer[offset] | (buffer[offset + 1] << 8) |
-          (buffer[offset + 2] << 16) | (buffer[offset + 3] << 24)) >>> 0;
-      },
-      set(value) {
-        var buffer = this.buffer, offset = index << 2;
-        buffer[offset] = value & 255;
-        buffer[offset + 1] = (value >> 8) & 255;
-        buffer[offset + 2] = (value >> 16) & 255;
-        buffer[offset + 3] = (value >>> 24) & 255;
-      },
-    };
-  }
-
-  function ensureUint32ArrayViewProps(length) {
-    while (uint32ArrayViewSetters < length) {
-      Object.defineProperty(Uint32ArrayView.prototype,
-        uint32ArrayViewSetters,
-        createUint32ArrayProp(uint32ArrayViewSetters));
-      uint32ArrayViewSetters++;
-    }
-  }
-
-  function TypedArray(arg1) {
-    var result, i, n;
-    if (typeof arg1 === 'number') {
-      result = [];
-      for (i = 0; i < arg1; ++i) {
-        result[i] = 0;
-      }
-    } else if ('slice' in arg1) {
-      result = arg1.slice(0);
-    } else {
-      result = [];
-      for (i = 0, n = arg1.length; i < n; ++i) {
-        result[i] = arg1[i];
-      }
-    }
-
-    result.subarray = subarray;
-    result.buffer = result;
-    result.byteLength = result.length;
-    result.set = setArrayOffset;
-
-    if (typeof arg1 === 'object' && arg1.buffer) {
-      result.buffer = arg1.buffer;
-    }
-    return result;
-  }
-
-  globalScope.Uint8Array = TypedArray;
-  globalScope.Int8Array = TypedArray;
-
-  // we don't need support for set, byteLength for 32-bit array
-  // so we can use the TypedArray as well
-  globalScope.Int32Array = TypedArray;
-  globalScope.Uint16Array = TypedArray;
-  globalScope.Float32Array = TypedArray;
-  globalScope.Float64Array = TypedArray;
-
-  globalScope.Uint32Array = function () {
-    if (arguments.length === 3) {
-      // Building view for buffer, offset, and length
-      if (arguments[1] !== 0) {
-        throw new Error('offset !== 0 is not supported');
-      }
-      return new Uint32ArrayView(arguments[0], arguments[2]);
-    }
-    return TypedArray.apply(this, arguments);
-  };
-})();
-
-// window.CanvasPixelArray.buffer/.byteLength
-// Support: IE9
-(function canvasPixelArrayBuffer() {
-  if (!hasDOM || !window.CanvasPixelArray) {
-    return;
-  }
-  var cpaProto = window.CanvasPixelArray.prototype;
-  if ('buffer' in cpaProto) {
-    return;
-  }
-  // Trying to fake CanvasPixelArray as Uint8ClampedArray.
-  Object.defineProperty(cpaProto, 'buffer', {
-    get() {
-      return this;
-    },
-    enumerable: false,
-    configurable: true,
-  });
-  Object.defineProperty(cpaProto, 'byteLength', {
-    get() {
-      return this.length;
-    },
-    enumerable: false,
-    configurable: true,
-  });
-})();
 
 // URL = URL || webkitURL
 // Support: Safari<7, Android 4.2+
@@ -621,35 +468,14 @@ PDFJS.compatibilityChecked = true;
   PDFJS.locale = navigator.userLanguage || 'en-US';
 })();
 
-// Support: Safari 6.0+, Android<3.0, Chrome 39/40, iOS
+// Support: Safari 6.0+, iOS
 (function checkRangeRequests() {
   // Safari has issues with cached range requests see:
   // https://github.com/mozilla/pdf.js/issues/3260
   // Last tested with version 6.0.4.
-
-  // Older versions of Android (pre 3.0) has issues with range requests, see:
-  // https://github.com/mozilla/pdf.js/issues/3381.
-  // Make sure that we only match webkit-based Android browsers,
-  // since Firefox/Fennec works as expected.
-
-  // Range requests are broken in Chrome 39 and 40, https://crbug.com/442318
-  if (isSafari || isAndroidPre3 || isChromeWithRangeBug || isIOS) {
+  if (isSafari || isIOS) {
     PDFJS.disableRange = true;
     PDFJS.disableStream = true;
-  }
-})();
-
-// Check if the browser supports manipulation of the history.
-// Support: IE<10, Android<4.2
-(function checkHistoryManipulation() {
-  if (!hasDOM) {
-    return;
-  }
-  // Android 2.x has so buggy pushState support that it was removed in
-  // Android 3.0 and restored as late as in Android 4.2.
-  // Support: Android 2.x
-  if (!history.pushState || isAndroidPre3) {
-    PDFJS.disableHistory = true;
   }
 })();
 
@@ -703,36 +529,6 @@ PDFJS.compatibilityChecked = true;
       contextPrototype = null;
     }
   }
-})();
-
-// Support: IE<10, Android<4.0, iOS
-(function checkRequestAnimationFrame() {
-  function installFakeAnimationFrameFunctions() {
-    window.requestAnimationFrame = function (callback) {
-      return window.setTimeout(callback, 20);
-    };
-    window.cancelAnimationFrame = function (timeoutID) {
-      window.clearTimeout(timeoutID);
-    };
-  }
-
-  if (!hasDOM) {
-    return;
-  }
-  if (isIOS) {
-    // requestAnimationFrame on iOS is broken, replacing with fake one.
-    installFakeAnimationFrameFunctions();
-    return;
-  }
-  if ('requestAnimationFrame' in window) {
-    return;
-  }
-  window.requestAnimationFrame = window.mozRequestAnimationFrame ||
-                                 window.webkitRequestAnimationFrame;
-  if (window.requestAnimationFrame) {
-    return;
-  }
-  installFakeAnimationFrameFunctions();
 })();
 
 // Support: Android, iOS

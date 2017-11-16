@@ -20,7 +20,7 @@ import {
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
 import { ColorSpace } from './colorspace';
-import { OperatorList } from './evaluator';
+import { OperatorList } from './operator_list';
 import { Stream } from './stream';
 
 class AnnotationFactory {

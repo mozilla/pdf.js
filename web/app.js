@@ -38,6 +38,7 @@ import { PDFHistory } from './pdf_history';
 import { PDFLinkService } from './pdf_link_service';
 import { PDFOutlineViewer } from './pdf_outline_viewer';
 import { PDFPresentationMode } from './pdf_presentation_mode';
+import { PDFSidebarResizer } from './pdf_sidebar_resizer';
 import { PDFThumbnailViewer } from './pdf_thumbnail_viewer';
 import { PDFViewer } from './pdf_viewer';
 import { SecondaryToolbar } from './secondary_toolbar';
@@ -109,6 +110,8 @@ let PDFViewerApplication = {
   pdfHistory: null,
   /** @type {PDFSidebar} */
   pdfSidebar: null,
+  /** @type {PDFSidebarResizer} */
+  pdfSidebarResizer: null,
   /** @type {PDFOutlineViewer} */
   pdfOutlineViewer: null,
   /** @type {PDFAttachmentViewer} */
@@ -419,6 +422,8 @@ let PDFViewerApplication = {
       this.pdfSidebar = new PDFSidebar(sidebarConfig, this.l10n);
       this.pdfSidebar.onToggled = this.forceRendering.bind(this);
 
+      this.pdfSidebarResizer = new PDFSidebarResizer(appConfig.sidebarResizer,
+                                                     eventBus, this.l10n);
       resolve(undefined);
     });
   },
@@ -1305,7 +1310,7 @@ let PDFViewerApplication = {
     let { eventBus, _boundEvents, } = this;
 
     _boundEvents.windowResize = () => {
-      eventBus.dispatch('resize');
+      eventBus.dispatch('resize', { source: window, });
     };
     _boundEvents.windowHashChange = () => {
       eventBus.dispatch('hashchange', {
@@ -1520,10 +1525,6 @@ function webViewerInitialized() {
     if ('verbosity' in hashParams) {
       PDFJS.verbosity = hashParams['verbosity'] | 0;
     }
-    if ('ignorecurrentpositiononzoom' in hashParams) {
-      PDFJS.ignoreCurrentPositionOnZoom =
-        (hashParams['ignorecurrentpositiononzoom'] === 'true');
-    }
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
       if ('disablebcmaps' in hashParams && hashParams['disablebcmaps']) {
         PDFJS.cMapUrl = '../external/cmaps/';
@@ -1576,12 +1577,11 @@ function webViewerInitialized() {
     appConfig.toolbar.viewFind.classList.add('hidden');
   }
 
-  appConfig.sidebar.mainContainer.addEventListener('transitionend',
-    function(evt) {
-      if (evt.target === /* mainContainer */ this) {
-        PDFViewerApplication.eventBus.dispatch('resize');
-      }
-    }, true);
+  appConfig.mainContainer.addEventListener('transitionend', function(evt) {
+    if (evt.target === /* mainContainer */ this) {
+      PDFViewerApplication.eventBus.dispatch('resize', { source: this, });
+    }
+  }, true);
 
   appConfig.sidebar.toggleButton.addEventListener('click', function() {
     PDFViewerApplication.pdfSidebar.toggle();

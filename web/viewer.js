@@ -105,8 +105,8 @@ function getViewerConfiguration() {
     },
     sidebar: {
       // Divs (and sidebar button)
-      mainContainer: document.getElementById('mainContainer'),
       outerContainer: document.getElementById('outerContainer'),
+      viewerContainer: document.getElementById('viewerContainer'),
       toggleButton: document.getElementById('sidebarToggle'),
       // Buttons
       thumbnailButton: document.getElementById('viewThumbnail'),
@@ -116,6 +116,10 @@ function getViewerConfiguration() {
       thumbnailView: document.getElementById('thumbnailView'),
       outlineView: document.getElementById('outlineView'),
       attachmentsView: document.getElementById('attachmentsView'),
+    },
+    sidebarResizer: {
+      outerContainer: document.getElementById('outerContainer'),
+      resizer: document.getElementById('sidebarResizer'),
     },
     findBar: {
       bar: document.getElementById('findbar'),

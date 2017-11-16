@@ -243,7 +243,6 @@ PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
 
-PDFJS.hasCanvasTypedArrays = true; // compatibility.js ensures this invariant
 PDFJS.CustomStyle = CustomStyle;
 PDFJS.LinkTarget = LinkTarget;
 PDFJS.addLinkAttributes = addLinkAttributes;
