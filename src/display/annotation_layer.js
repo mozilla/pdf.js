@@ -310,6 +310,9 @@ class LinkAnnotationElement extends AnnotationElement {
    * @memberof LinkAnnotationElement
    */
   _bindLink(link, destination) {
+    if (!this.linkService) {
+      return;
+    }
     link.href = this.linkService.getDestinationHash(destination);
     link.onclick = () => {
       if (destination) {
