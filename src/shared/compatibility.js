@@ -52,51 +52,6 @@ PDFJS.compatibilityChecked = true;
   }
 })();
 
-// Object.defineProperty()?
-// Support: Android<4.0, Safari<5.1
-(function checkObjectDefinePropertyCompatibility() {
-  if (typeof Object.defineProperty !== 'undefined') {
-    var definePropertyPossible = true;
-    try {
-      if (hasDOM) {
-        // some browsers (e.g. safari) cannot use defineProperty() on DOM
-        // objects and thus the native version is not sufficient
-        Object.defineProperty(new Image(), 'id', { value: 'test', });
-      }
-      // ... another test for android gb browser for non-DOM objects
-      var Test = function Test() {};
-      Test.prototype = { get id() { }, };
-      Object.defineProperty(new Test(), 'id',
-        { value: '', configurable: true, enumerable: true, writable: false, });
-    } catch (e) {
-      definePropertyPossible = false;
-    }
-    if (definePropertyPossible) {
-      return;
-    }
-  }
-
-  Object.defineProperty = function objectDefineProperty(obj, name, def) {
-    delete obj[name];
-    if ('get' in def) {
-      obj.__defineGetter__(name, def['get']);
-    }
-    if ('set' in def) {
-      obj.__defineSetter__(name, def['set']);
-    }
-    if ('value' in def) {
-      obj.__defineSetter__(name, function objectDefinePropertySetter(value) {
-        this.__defineGetter__(name, function objectDefinePropertyGetter() {
-          return value;
-        });
-        return value;
-      });
-      obj[name] = def.value;
-    }
-  };
-})();
-
-
 // No XMLHttpRequest#response?
 // Support: IE<11, Android <4.0
 (function checkXMLHttpRequestResponseCompatibility() {
