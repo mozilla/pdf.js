@@ -20,7 +20,7 @@
 //#endif
 var DEFAULT_PREFERENCES = {
   showPreviousViewOnLoad: true,
-  defaultZoomValue: '',
+  defaultZoomValue: 'page-width',
   sidebarViewOnLoad: 0,
   enableHandToolOnLoad: false,
   enableWebGL: false,

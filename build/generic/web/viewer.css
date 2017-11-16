@@ -2126,6 +2126,9 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   #scaleSelectContainer, #pageNumberLabel {
     display: none;
   }
+  html[dir='ltr'] #toolbarViewerLeft > * {
+    padding-left: 5px;
+  }
 }
 
 body.browser-ie button#print, body.browser-ie  button#secondaryPrint {
