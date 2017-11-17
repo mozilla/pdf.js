@@ -879,6 +879,45 @@ var PredictorStream = (function PredictorStreamClosure() {
  * DecodeStreams.
  */
 var JpegStream = (function JpegStreamClosure() {
+  /**
+   * Ensures that the width/height of the JPEG file match the given parameters.
+   *
+   * The relevant parts of the JPEG format are documented at section B2.2 of
+   * https://www.w3.org/Graphics/JPEG/itu-t81.pdf
+  */
+  function setJpegDimensions(bytes, width, height) {
+    function getUint16(offset) {
+      return (bytes[offset] << 8) | bytes[offset + 1];
+    }
+    function setUint16(offset, value) {
+      bytes[offset] = (value >> 8) & 0xFF;
+      bytes[offset + 1] = value & 0xFF;
+    }
+    if (getUint16(0) !== 0xFFD8) {
+      return;  // Invalid JPEG header.
+    }
+    var i = 2;  // The segments start right after the leading 0xFFD8.
+    // The minimum size of a SOF frame is 10.
+    var maxIndex = bytes.length - 10;
+    while (i < maxIndex) {
+      if (bytes[i] !== 0xFF) {
+        return;  // Invalid start of SOF marker.
+      }
+      var marker = bytes[i + 1];
+      if (marker === 0xC0 || marker === 0xC2) { // SOF0 or SOF2
+        if (getUint16(i + 5) !== height) {
+          setUint16(i + 5, height);
+        }
+        if (getUint16(i + 7) !== width) {
+          setUint16(i + 7, width);
+        }
+      }
+      // Advance to the next frame marker.
+      i += getUint16(i + 2) + 2;
+    }
+    return bytes;
+  }
+
   function JpegStream(stream, maybeLength, dict, params) {
     // Some images may contain 'junk' before the SOI (start-of-image) marker.
     // Note: this seems to mainly affect inline images.
@@ -902,7 +941,13 @@ var JpegStream = (function JpegStreamClosure() {
   Object.defineProperty(JpegStream.prototype, 'bytes', {
     get: function JpegStream_bytes() {
       // If this.maybeLength is null, we'll get the entire stream.
-      return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
+      var bytes = this.stream.getBytes(this.maybeLength);
+      var width = this.dict.get('Width', 'W');
+      var height = this.dict.get('Height', 'H');
+      if (width && isInt(width) && height && isInt(height)) {
+        setJpegDimensions(bytes, width, height);
+      }
+      return shadow(this, 'bytes', bytes);
     },
     configurable: true,
   });
