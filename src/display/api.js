@@ -251,10 +251,7 @@ function getDocument(src) {
       if (rangeTransport) {
         networkStream = new PDFDataTransportStream(params, rangeTransport);
       } else if (!params.data) {
-        networkStream = new PDFNetworkStream({
-          source: params,
-          disableRange: getDefaultSetting('disableRange'),
-        });
+        networkStream = new PDFNetworkStream(params);
       }
 
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
@@ -286,9 +283,9 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   let apiVersion =
     typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
 
+  source.disableRange = getDefaultSetting('disableRange');
   source.disableAutoFetch = getDefaultSetting('disableAutoFetch');
   source.disableStream = getDefaultSetting('disableStream');
-  source.chunkedViewerLoading = !!pdfDataRangeTransport;
   if (pdfDataRangeTransport) {
     source.length = pdfDataRangeTransport.length;
     source.initialData = pdfDataRangeTransport.initialData;
