@@ -1125,10 +1125,10 @@ var StatTimer = (function StatTimerClosure() {
     }
     return str;
   }
-  function StatTimer() {
+  function StatTimer(enable = true) {
     this.started = Object.create(null);
     this.times = [];
-    this.enabled = true;
+    this.enabled = !!enable;
   }
   StatTimer.prototype = {
     time: function StatTimer_time(name) {

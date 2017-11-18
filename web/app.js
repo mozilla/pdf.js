@@ -315,7 +315,7 @@ let PDFViewerApplication = {
         }
       }
       if ('pdfbug' in hashParams) {
-        PDFJS.pdfBug = true;
+        AppOptions.set('pdfBug', true);
         let pdfBug = hashParams['pdfbug'];
         let enabled = pdfBug.split(',');
         waitOn.push(loadAndEnablePDFBug(enabled));
@@ -1505,7 +1505,6 @@ function loadAndEnablePDFBug(enabledTabs) {
     script.onload = function () {
       PDFBug.enable(enabledTabs);
       PDFBug.init({
-        PDFJS,
         OPS,
       }, appConfig.mainContainer);
       resolve();
@@ -1670,7 +1669,8 @@ function webViewerPageRendered(evt) {
     thumbnailView.setImage(pageView);
   }
 
-  if (PDFJS.pdfBug && Stats.enabled && pageView.stats) {
+  if (AppOptions.get('pdfBug') && typeof Stats !== 'undefined' &&
+      Stats.enabled && pageView.stats) {
     Stats.add(pageNumber, pageView.stats);
   }
 
@@ -1958,10 +1958,11 @@ function webViewerPageChanging(evt) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
   }
 
-  // we need to update stats
-  if (PDFJS.pdfBug && Stats.enabled) {
+  // We need to update stats.
+  if (AppOptions.get('pdfBug') && typeof Stats !== 'undefined' &&
+      Stats.enabled) {
     let pageView = PDFViewerApplication.pdfViewer.getPageView(page - 1);
-    if (pageView.stats) {
+    if (pageView && pageView.stats) {
       Stats.add(page, pageView.stats);
     }
   }
