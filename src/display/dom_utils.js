@@ -334,16 +334,12 @@ function getDefaultSetting(id) {
   // compatibility and shall not be extended or modified. See also global.js.
   var globalSettings = globalScope.PDFJS;
   switch (id) {
-    case 'pdfBug':
-      return globalSettings ? globalSettings.pdfBug : false;
     case 'postMessageTransfers':
       return globalSettings ? globalSettings.postMessageTransfers : true;
     case 'workerPort':
       return globalSettings ? globalSettings.workerPort : null;
     case 'workerSrc':
       return globalSettings ? globalSettings.workerSrc : null;
-    case 'enableStats':
-      return !!(globalSettings && globalSettings.enableStats);
     default:
       throw new Error('Unknown default setting: ' + id);
   }

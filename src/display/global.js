@@ -44,8 +44,6 @@ if (typeof PDFJSDev !== 'undefined') {
   PDFJS.build = PDFJSDev.eval('BUNDLE_BUILD');
 }
 
-PDFJS.pdfBug = false;
-
 if (PDFJS.verbosity !== undefined) {
   setVerbosityLevel(PDFJS.verbosity);
 }
@@ -96,12 +94,6 @@ PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
  * Defines global port for worker process. Overrides `workerSrc` setting.
  */
 PDFJS.workerPort = (PDFJS.workerPort === undefined ? null : PDFJS.workerPort);
-
-/**
- * Enables special hooks for debugging PDF.js.
- * @var {boolean}
- */
-PDFJS.pdfBug = (PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug);
 
 /**
  * Enables transfer usage in postMessage for ArrayBuffers.

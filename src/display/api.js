@@ -176,6 +176,8 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @property {boolean} disableCreateObjectURL - (optional) Disable the use of
  *   `URL.createObjectURL`, for compatibility with older browsers.
  *   The default value is `false`.
+ * @property {boolean} pdfBug - (optional) Enables special hooks for debugging
+ *   PDF.js (see `web/debugger.js`). The default value is `false`.
  */
 
 /**
@@ -264,6 +266,7 @@ function getDocument(src) {
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.ignoreErrors = params.stopAtErrors !== true;
+  params.pdfBug = params.pdfBug === true;
 
   const NativeImageDecodingValues = Object.values(NativeImageDecoding);
   if (params.nativeImageDecoderSupport === undefined ||
@@ -798,12 +801,12 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  * @alias PDFPageProxy
  */
 var PDFPageProxy = (function PDFPageProxyClosure() {
-  function PDFPageProxy(pageIndex, pageInfo, transport) {
+  function PDFPageProxy(pageIndex, pageInfo, transport, pdfBug = false) {
     this.pageIndex = pageIndex;
     this.pageInfo = pageInfo;
     this.transport = transport;
-    this._stats = (getDefaultSetting('enableStats') ?
-                   new StatTimer() : DummyStatTimer);
+    this._stats = (pdfBug ? new StatTimer() : DummyStatTimer);
+    this._pdfBug = pdfBug;
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
     this.cleanupAfterRender = false;
@@ -940,7 +943,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
                                                       intentState.operatorList,
                                                       this.pageNumber,
                                                       canvasFactory,
-                                                      webGLContext);
+                                                      webGLContext,
+                                                      this._pdfBug);
       internalRenderTask.useRequestAnimationFrame = renderingIntent !== 'print';
       if (!intentState.renderTasks) {
         intentState.renderTasks = [];
@@ -1823,6 +1827,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         switch (type) {
           case 'Font':
             var exportedData = data[2];
+            var params = this._params;
 
             if ('error' in exportedData) {
               var exportedError = exportedData.error;
@@ -1831,8 +1836,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
               break;
             }
             var fontRegistry = null;
-            if (getDefaultSetting('pdfBug') && globalScope.FontInspector &&
-                globalScope['FontInspector'].enabled) {
+            if (params.pdfBug && globalScope.FontInspector &&
+                globalScope.FontInspector.enabled) {
               fontRegistry = {
                 registerFont(font, url) {
                   globalScope['FontInspector'].fontAdded(font, url);
@@ -1840,8 +1845,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
               };
             }
             var font = new FontFaceObject(exportedData, {
-              isEvalSupported: this._params.isEvalSupported,
-              disableFontFace: this._params.disableFontFace,
+              isEvalSupported: params.isEvalSupported,
+              disableFontFace: params.disableFontFace,
               fontRegistry,
             });
             var fontReady = (fontObjs) => {
@@ -2038,7 +2043,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         if (this.destroyed) {
           throw new Error('Transport destroyed');
         }
-        var page = new PDFPageProxy(pageIndex, pageInfo, this);
+        var page = new PDFPageProxy(pageIndex, pageInfo, this,
+                                    this._params.pdfBug);
         this.pageCache[pageIndex] = page;
         return page;
       });
@@ -2298,7 +2304,8 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
   let canvasInRendering = new WeakMap();
 
   function InternalRenderTask(callback, params, objs, commonObjs, operatorList,
-                              pageNumber, canvasFactory, webGLContext) {
+                              pageNumber, canvasFactory, webGLContext,
+                              pdfBug = false) {
     this.callback = callback;
     this.params = params;
     this.objs = objs;
@@ -2308,6 +2315,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     this.pageNumber = pageNumber;
     this.canvasFactory = canvasFactory;
     this.webGLContext = webGLContext;
+    this._pdfBug = pdfBug;
 
     this.running = false;
     this.graphicsReadyCallback = null;
@@ -2341,7 +2349,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       if (this.cancelled) {
         return;
       }
-      if (getDefaultSetting('pdfBug') && globalScope.StepperManager &&
+      if (this._pdfBug && globalScope.StepperManager &&
           globalScope.StepperManager.enabled) {
         this.stepper = globalScope.StepperManager.create(this.pageNumber - 1);
         this.stepper.init(this.operatorList);

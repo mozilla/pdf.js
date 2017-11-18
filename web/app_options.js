@@ -163,6 +163,11 @@ const defaultOptions = {
     value: null,
     kind: OptionKind.API,
   },
+  pdfBug: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.API,
+  },
 };
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   defaultOptions.locale = {

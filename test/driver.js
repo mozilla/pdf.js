@@ -254,7 +254,6 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
   function Driver(options) {
     // Configure the global PDFJS object
     PDFJS.workerSrc = '../build/generic/build/pdf.worker.js';
-    PDFJS.enableStats = true;
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -349,6 +348,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
             cMapPacked: CMAP_PACKED,
             disableRange: task.disableRange,
             disableAutoFetch: !task.enableAutoFetch,
+            pdfBug: true,
           }).then((doc) => {
             task.pdfDoc = doc;
             this._nextPage(task, failure);
