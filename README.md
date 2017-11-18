@@ -129,9 +129,9 @@ Check out our FAQs and get answers to common questions:
 
 + https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions
 
-Talk to us on IRC(Internet Relay Chat):
+Talk to us on IRC (Internet Relay Chat):
 
-+ #pdfjs on irc.mozilla.org 
++ #pdfjs on irc.mozilla.org
 
 File an issue:
 
