@@ -798,7 +798,8 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
 
         this.data.options[i] = {
           exportValue: isOptionArray ? xref.fetchIfRef(option[0]) : option,
-          displayValue: isOptionArray ? xref.fetchIfRef(option[1]) : option,
+          displayValue: stringToPDFString(isOptionArray ?
+                                          xref.fetchIfRef(option[1]) : option),
         };
       }
     }
