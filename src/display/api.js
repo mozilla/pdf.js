@@ -1360,13 +1360,6 @@ var PDFWorker = (function PDFWorkerClosure() {
             }
           });
 
-          messageHandler.on('console_log', function (data) {
-            console.log.apply(console, data);
-          });
-          messageHandler.on('console_error', function (data) {
-            console.error.apply(console, data);
-          });
-
           messageHandler.on('ready', (data) => {
             worker.removeEventListener('error', onWorkerError);
             if (this.destroyed) {
