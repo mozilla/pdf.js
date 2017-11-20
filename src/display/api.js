@@ -21,7 +21,7 @@ import {
   UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, getDefaultSetting,
+  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
   RenderingCancelledException, StatTimer
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
@@ -37,7 +37,6 @@ var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
 let isWorkerDisabled = false;
 let workerSrc;
-var isPostMessageTransfersDisabled = false;
 
 const pdfjsFilePath =
   typeof PDFJSDev !== 'undefined' &&
@@ -383,8 +382,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     maxImageSize: source.maxImageSize,
     disableFontFace: source.disableFontFace,
     disableCreateObjectURL: source.disableCreateObjectURL,
-    postMessageTransfers: getDefaultSetting('postMessageTransfers') &&
-                          !isPostMessageTransfersDisabled,
+    postMessageTransfers: worker.postMessageTransfers,
     docBaseUrl: source.docBaseUrl,
     nativeImageDecoderSupport: source.nativeImageDecoderSupport,
     ignoreErrors: source.ignoreErrors,
@@ -1362,7 +1360,7 @@ var PDFWorker = (function PDFWorkerClosure() {
 
     this.name = name;
     this.destroyed = false;
-    this.postMessageTransfers = true;
+    this.postMessageTransfers = !!WorkerOptions.get('postMessageTransfers');
 
     this._readyCapability = createPromiseCapability();
     this._port = null;
@@ -1459,7 +1457,6 @@ var PDFWorker = (function PDFWorkerClosure() {
               this._webWorker = worker;
               if (!data.supportTransfers) {
                 this.postMessageTransfers = false;
-                isPostMessageTransfersDisabled = true;
               }
               this._readyCapability.resolve();
               // Send global setting, e.g. verbosity level.
@@ -1487,11 +1484,8 @@ var PDFWorker = (function PDFWorkerClosure() {
             }
           });
 
-          var sendTest = function () {
-            var postMessageTransfers =
-              getDefaultSetting('postMessageTransfers') &&
-              !isPostMessageTransfersDisabled;
-            var testObj = new Uint8Array([postMessageTransfers ? 255 : 0]);
+          let sendTest = () => {
+            let testObj = new Uint8Array([this.postMessageTransfers ? 255 : 0]);
             // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
             // typed array. Also, checking if we can use transfers.
             try {

@@ -169,6 +169,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API,
   },
+  postMessageTransfers: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.WORKER,
+  },
   workerPort: {
     /** @type {Object} */
     value: null,
