@@ -301,7 +301,7 @@ function getDocument(src) {
   if (!worker) {
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global settings, using it.
-    var workerPort = getDefaultSetting('workerPort');
+    let workerPort = WorkerOptions.get('workerPort');
     worker = workerPort ? PDFWorker.fromPort(workerPort) : new PDFWorker();
     task._worker = worker;
   }

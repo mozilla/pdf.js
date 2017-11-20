@@ -82,11 +82,6 @@ PDFJS.PageViewport = PageViewport;
 PDFJS.createPromiseCapability = createPromiseCapability;
 
 /**
- * Defines global port for worker process. Overrides `workerSrc` setting.
- */
-PDFJS.workerPort = (PDFJS.workerPort === undefined ? null : PDFJS.workerPort);
-
-/**
  * Enables transfer usage in postMessage for ArrayBuffers.
  * @var {boolean}
  */

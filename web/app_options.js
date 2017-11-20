@@ -169,6 +169,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API,
   },
+  workerPort: {
+    /** @type {Object} */
+    value: null,
+    kind: OptionKind.WORKER,
+  },
   workerSrc: {
     /** @type {string} */
     value: (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ?

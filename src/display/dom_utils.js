@@ -336,8 +336,6 @@ function getDefaultSetting(id) {
   switch (id) {
     case 'postMessageTransfers':
       return globalSettings ? globalSettings.postMessageTransfers : true;
-    case 'workerPort':
-      return globalSettings ? globalSettings.workerPort : null;
     default:
       throw new Error('Unknown default setting: ' + id);
   }
