@@ -29,6 +29,7 @@ var pdfjsDisplayAnnotationLayer = require('./display/annotation_layer.js');
 var pdfjsDisplayDOMUtils = require('./display/dom_utils.js');
 var pdfjsDisplaySVG = require('./display/svg.js');
 var pdfjsDisplayAPICompatibility = require('./display/api_compatibility.js');
+var pdfjsDisplayWorkerOptions = require('./display/worker_options.js');
 
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   const isNodeJS = require('./shared/is_node.js');
@@ -96,3 +97,4 @@ exports.LinkTarget = pdfjsDisplayDOMUtils.LinkTarget;
 exports.addLinkAttributes = pdfjsDisplayDOMUtils.addLinkAttributes;
 exports.apiCompatibilityParams =
   pdfjsDisplayAPICompatibility.apiCompatibilityParams;
+exports.WorkerOptions = pdfjsDisplayWorkerOptions.WorkerOptions;

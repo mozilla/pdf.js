@@ -29,6 +29,7 @@ import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
 import { renderTextLayer } from './text_layer';
 import { SVGGraphics } from './svg';
+import { WorkerOptions } from './worker_options';
 
 // The global PDFJS object is now deprecated and will not be supported in
 // the future. The members below are maintained for backward  compatibility
@@ -107,6 +108,7 @@ PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
 
+PDFJS.WorkerOptions = WorkerOptions;
 PDFJS.getFilenameFromUrl = getFilenameFromUrl;
 
 PDFJS.AnnotationLayer = AnnotationLayer;
