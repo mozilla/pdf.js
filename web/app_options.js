@@ -19,6 +19,7 @@ import { viewerCompatibilityParams } from './viewer_compatibility';
 const OptionKind = {
   VIEWER: 'viewer',
   API: 'api',
+  WORKER: 'worker',
 };
 
 const defaultOptions = {
@@ -167,6 +168,12 @@ const defaultOptions = {
     /** @type {boolean} */
     value: false,
     kind: OptionKind.API,
+  },
+  workerSrc: {
+    /** @type {string} */
+    value: (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ?
+            '../src/worker_loader.js' : '../build/pdf.worker.js'),
+    kind: OptionKind.WORKER,
   },
 };
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {

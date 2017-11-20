@@ -16,8 +16,9 @@
 
 'use strict';
 
-var WAITING_TIME = 100; // ms
-var PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const WAITING_TIME = 100; // ms
+const PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const WORKER_SRC = '../build/generic/build/pdf.worker.js';
 const CMAP_URL = '../external/bcmaps/';
 const CMAP_PACKED = true;
 const IMAGE_RESOURCES_PATH = '/web/images/';
@@ -252,8 +253,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
    * @param {DriverOptions} options
    */
   function Driver(options) {
-    // Configure the global PDFJS object
-    PDFJS.workerSrc = '../build/generic/build/pdf.worker.js';
+    // Configure the global Worker options.
+    PDFJS.WorkerOptions.set('workerSrc', WORKER_SRC);
 
     // Set the passed options
     this.inflight = options.inflight;

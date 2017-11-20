@@ -48,7 +48,7 @@ Promise.all([System.import('pdfjs/display/api'),
   });
 
   // In production, change this to point to the built `pdf.worker.js` file.
-  global.PDFJS.workerSrc = modules[4];
+  global.PDFJS.WorkerOptions.set('workerSrc', modules[4]);
 
   // In production, change this to point to where the cMaps are placed.
   var CMAP_URL = '../../external/bcmaps/';

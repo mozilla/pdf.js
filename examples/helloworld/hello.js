@@ -12,7 +12,7 @@ Promise.all([System.import('pdfjs/display/api'),
   });
 
   // In production, change this to point to the built `pdf.worker.js` file.
-  global.PDFJS.workerSrc = modules[3];
+  global.PDFJS.WorkerOptions.set('workerSrc', modules[3]);
 
   // Fetch the PDF document from the URL using promises.
   api.getDocument('helloworld.pdf').then(function (pdf) {

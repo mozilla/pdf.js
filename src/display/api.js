@@ -31,14 +31,15 @@ import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 import { WebGLContext } from './webgl';
+import { WorkerOptions } from './worker_options';
 
 var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
-var isWorkerDisabled = false;
-var workerSrc;
+let isWorkerDisabled = false;
+let workerSrc;
 var isPostMessageTransfersDisabled = false;
 
-var pdfjsFilePath =
+const pdfjsFilePath =
   typeof PDFJSDev !== 'undefined' &&
   PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
   typeof document !== 'undefined' && document.currentScript ?
@@ -47,8 +48,8 @@ var pdfjsFilePath =
 var fakeWorkerFilesLoader = null;
 var useRequireEnsure = false;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
-  // For GENERIC build we need add support of different fake file loaders
-  // for different  frameworks.
+  // For GENERIC build we need to add support for different fake file loaders
+  // for different frameworks.
   if (typeof window === 'undefined') {
     // node.js - disable worker and set require.ensure.
     isWorkerDisabled = true;
@@ -1275,8 +1276,9 @@ var PDFWorker = (function PDFWorkerClosure() {
   let nextFakeWorkerId = 0;
 
   function getWorkerSrc() {
-    if (getDefaultSetting('workerSrc')) {
-      return getDefaultSetting('workerSrc');
+    const workerSrcOption = WorkerOptions.get('workerSrc');
+    if (workerSrcOption) {
+      return workerSrcOption;
     }
     if (typeof workerSrc !== 'undefined') {
       return workerSrc;
@@ -1286,7 +1288,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         pdfjsFilePath) {
       return pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
     }
-    throw new Error('No PDFJS.workerSrc specified');
+    throw new Error('No "WorkerOptions.workerSrc" specified.');
   }
 
   function getMainThreadWorkerMessageHandler() {

@@ -23,7 +23,7 @@ import {
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
   LinkTarget, MissingPDFException, OPS, PDFJS, PDFWorker, shadow,
-  UnexpectedResponseException, UNSUPPORTED_FEATURES, version
+  UnexpectedResponseException, UNSUPPORTED_FEATURES, version, WorkerOptions
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -49,15 +49,6 @@ import { ViewHistory } from './view_history';
 
 const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
-
-function configure(PDFJS) {
-  if (typeof PDFJSDev !== 'undefined' &&
-      PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC || CHROME')) {
-    PDFJS.workerSrc = '../build/pdf.worker.js';
-  } else if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-    PDFJS.workerSrc = '../src/worker_loader.js';
-  }
-}
 
 const DefaultExternalServices = {
   updateFindControlState(data) {},
@@ -142,8 +133,6 @@ let PDFViewerApplication = {
   // Called once when the document is loaded.
   initialize(appConfig) {
     this.preferences = this.externalServices.createPreferences();
-
-    configure(PDFJS);
     this.appConfig = appConfig;
 
     return this._readPreferences().then(() => {
@@ -712,6 +701,11 @@ let PDFViewerApplication = {
         // ... and repeat the open() call.
         return this.open(file, args);
       });
+    }
+    // Set the necessary Worker parameters, using the available options.
+    let workerParameters = AppOptions.getAll('worker');
+    for (let key in workerParameters) {
+      WorkerOptions.set(key, workerParameters[key]);
     }
 
     let parameters = Object.create(null);
@@ -1520,6 +1514,9 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 
 function loadFakeWorker() {
   return new Promise(function(resolve, reject) {
+    if (!WorkerOptions.get('workerSrc')) {
+      WorkerOptions.set('workerSrc', AppOptions.get('workerSrc'));
+    }
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
       if (typeof SystemJS === 'object') {
         SystemJS.import('pdfjs/core/worker').then((worker) => {

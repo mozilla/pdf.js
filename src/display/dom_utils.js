@@ -338,8 +338,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.postMessageTransfers : true;
     case 'workerPort':
       return globalSettings ? globalSettings.workerPort : null;
-    case 'workerSrc':
-      return globalSettings ? globalSettings.workerSrc : null;
     default:
       throw new Error('Unknown default setting: ' + id);
   }
