@@ -174,6 +174,11 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.WORKER,
   },
+  verbosity: {
+    /** @type {number} */
+    value: 1,
+    kind: OptionKind.WORKER,
+  },
   workerPort: {
     /** @type {Object} */
     value: null,

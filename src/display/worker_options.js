@@ -13,12 +13,24 @@
  * limitations under the License.
  */
 
+import { VerbosityLevel } from '../shared/util';
+
 const defaultOptions = {
   /**
    * Enables transfer usage in postMessage for ArrayBuffers.
    * @var {boolean}
    */
   postMessageTransfers: true,
+
+  /**
+   * Controls the logging level.
+   * The constants from {VerbosityLevel} should be used:
+   * - ERRORS
+   * - WARNINGS [default]
+   * - INFOS
+   * @var {number}
+   */
+  verbosity: VerbosityLevel.WARNINGS,
 
   /**
    * Defines global port for worker process. Overrides the `workerSrc` option.

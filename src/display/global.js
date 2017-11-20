@@ -14,11 +14,10 @@
  */
 
 import {
-  createPromiseCapability, getVerbosityLevel, InvalidPDFException,
-  isLittleEndian, MissingPDFException, OPS, PageViewport, PasswordException,
-  PasswordResponses, removeNullCharacters, setVerbosityLevel, shadow,
-  UnexpectedResponseException, UnknownErrorException, UNSUPPORTED_FEATURES,
-  Util, VERBOSITY_LEVELS
+  createPromiseCapability, InvalidPDFException, MissingPDFException, OPS,
+  PageViewport, PasswordException, PasswordResponses, removeNullCharacters,
+  shadow, UnexpectedResponseException, UnknownErrorException,
+  UNSUPPORTED_FEATURES, Util
 } from '../shared/util';
 import {
   getDocument, LoopbackPort, PDFDataRangeTransport, PDFWorker
@@ -45,31 +44,9 @@ if (typeof PDFJSDev !== 'undefined') {
   PDFJS.build = PDFJSDev.eval('BUNDLE_BUILD');
 }
 
-if (PDFJS.verbosity !== undefined) {
-  setVerbosityLevel(PDFJS.verbosity);
-}
-delete PDFJS.verbosity;
-Object.defineProperty(PDFJS, 'verbosity', {
-  get() {
-    return getVerbosityLevel();
-  },
-  set(level) {
-    setVerbosityLevel(level);
-  },
-  enumerable: true,
-  configurable: true,
-});
-
-PDFJS.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
 PDFJS.OPS = OPS;
 PDFJS.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
 PDFJS.shadow = shadow;
-Object.defineProperty(PDFJS, 'isLittleEndian', {
-  configurable: true,
-  get: function PDFJS_isLittleEndian() {
-    return shadow(PDFJS, 'isLittleEndian', isLittleEndian());
-  },
-});
 PDFJS.removeNullCharacters = removeNullCharacters;
 PDFJS.PasswordResponses = PasswordResponses;
 PDFJS.PasswordException = PasswordException;

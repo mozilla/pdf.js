@@ -15,9 +15,9 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isSameOrigin, MessageHandler, MissingPDFException,
-  NativeImageDecoding, PageViewport, PasswordException, shadow, stringToBytes,
+  assert, createPromiseCapability, info, InvalidPDFException, isArrayBuffer,
+  isSameOrigin, MessageHandler, MissingPDFException, NativeImageDecoding,
+  PageViewport, PasswordException, setVerbosityLevel, shadow, stringToBytes,
   UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
 } from '../shared/util';
 import {
@@ -296,6 +296,9 @@ function getDocument(src) {
     params.disableCreateObjectURL =
       apiCompatibilityParams.disableCreateObjectURL || false;
   }
+
+  // Set the main thread verbosity level.
+  setVerbosityLevel(WorkerOptions.get('verbosity'));
 
   if (!worker) {
     // Worker was not provided -- creating and owning our own. If message port
@@ -1461,7 +1464,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               this._readyCapability.resolve();
               // Send global setting, e.g. verbosity level.
               messageHandler.send('configure', {
-                verbosity: getVerbosityLevel(),
+                verbosity: WorkerOptions.get('verbosity'),
               });
             } else {
               this._setupFakeWorker();

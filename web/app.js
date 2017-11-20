@@ -22,7 +22,7 @@ import {
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
-  LinkTarget, MissingPDFException, OPS, PDFJS, PDFWorker, shadow,
+  LinkTarget, MissingPDFException, OPS, PDFWorker, shadow,
   UnexpectedResponseException, UNSUPPORTED_FEATURES, version, WorkerOptions
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
@@ -287,7 +287,7 @@ let PDFViewerApplication = {
                        hashParams['useonlycsszoom'] === 'true');
       }
       if ('verbosity' in hashParams) {
-        PDFJS.verbosity = hashParams['verbosity'] | 0;
+        AppOptions.set('verbosity', hashParams['verbosity'] | 0);
       }
       if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
           hashParams['disablebcmaps'] === 'true') {
