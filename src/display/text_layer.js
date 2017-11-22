@@ -14,7 +14,8 @@
  */
 
 import { AbortException, createPromiseCapability, Util } from '../shared/util';
-import { CustomStyle, getDefaultSetting } from './dom_utils';
+import { CustomStyle } from './dom_utils';
+import globalScope from '../shared/global_scope';
 
 /**
  * Text layer render parameters.
@@ -107,11 +108,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
     textDiv.setAttribute('style', textDivProperties.style);
 
     textDiv.textContent = geom.str;
-    // |fontName| is only used by the Font Inspector. This test will succeed
-    // when e.g. the Font Inspector is off but the Stepper is on, but it's
-    // not worth the effort to do a more accurate test. We only use `dataset`
-    // here to make the font name available for the debugger.
-    if (getDefaultSetting('pdfBug')) {
+    // `fontName` is only used by the FontInspector, and we only use `dataset`
+    // here to make the font name available in the debugger.
+    if (task._fontInspectorEnabled) {
       textDiv.dataset.fontName = geom.fontName;
     }
     if (angle !== 0) {
@@ -479,6 +478,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
     this._enhanceTextSelection = !!enhanceTextSelection;
+    this._fontInspectorEnabled = (globalScope.FontInspector &&
+                                  globalScope.FontInspector.enabled) || false;
 
     this._reader = null;
     this._layoutTextLastFontSize = null;

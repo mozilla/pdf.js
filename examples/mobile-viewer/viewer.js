@@ -21,12 +21,12 @@ if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
         '  `gulp dist-install`');
 }
 
-PDFJS.useOnlyCssZoom = true;
-PDFJS.disableTextLayer = true;
-PDFJS.maxImageSize = 1024 * 1024;
+var USE_ONLY_CSS_ZOOM = true;
+var DISABLE_TEXT_LAYER = true;
+var MAX_IMAGE_SIZE = 1024 * 1024;
 PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
-PDFJS.cMapUrl = '../../node_modules/pdfjs-dist/cmaps/';
-PDFJS.cMapPacked = true;
+var CMAP_URL = '../../node_modules/pdfjs-dist/cmaps/';
+var CMAP_PACKED = true;
 
 var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
 var DEFAULT_SCALE_DELTA = 1.1;
@@ -60,7 +60,12 @@ var PDFViewerApplication = {
     this.setTitleUsingUrl(url);
 
     // Loading document.
-    var loadingTask = PDFJS.getDocument(url);
+    var loadingTask = PDFJS.getDocument({
+      url: url,
+      maxImageSize: MAX_IMAGE_SIZE,
+      cMapUrl: CMAP_URL,
+      cMapPacked: CMAP_PACKED,
+    });
     this.pdfLoadingTask = loadingTask;
 
     loadingTask.onProgress = function (progressData) {
@@ -298,6 +303,8 @@ var PDFViewerApplication = {
       container: container,
       linkService: linkService,
       l10n: this.l10n,
+      disableTextLayer: DISABLE_TEXT_LAYER,
+      useOnlyCssZoom: USE_ONLY_CSS_ZOOM,
     });
     this.pdfViewer = pdfViewer;
     linkService.setViewer(pdfViewer);
