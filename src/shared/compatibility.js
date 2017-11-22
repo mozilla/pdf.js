@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /* eslint-disable no-extend-native */
-/* globals VBArray, PDFJS, global */
+/* globals PDFJS */
 
 // Skip compatibility checks for the extensions and if we already ran
 // this module.
@@ -30,7 +30,6 @@ var isChrome = userAgent.indexOf('Chrom') >= 0;
 var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
 var isIE = userAgent.indexOf('Trident') >= 0;
 var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
-var isOpera = userAgent.indexOf('Opera') >= 0;
 var isSafari = /Safari\//.test(userAgent) &&
                !/(Chrome\/|Android\s)/.test(userAgent);
 
@@ -51,51 +50,6 @@ PDFJS.compatibilityChecked = true;
     globalScope.URL = globalScope.webkitURL;
   }
 })();
-
-// Object.defineProperty()?
-// Support: Android<4.0, Safari<5.1
-(function checkObjectDefinePropertyCompatibility() {
-  if (typeof Object.defineProperty !== 'undefined') {
-    var definePropertyPossible = true;
-    try {
-      if (hasDOM) {
-        // some browsers (e.g. safari) cannot use defineProperty() on DOM
-        // objects and thus the native version is not sufficient
-        Object.defineProperty(new Image(), 'id', { value: 'test', });
-      }
-      // ... another test for android gb browser for non-DOM objects
-      var Test = function Test() {};
-      Test.prototype = { get id() { }, };
-      Object.defineProperty(new Test(), 'id',
-        { value: '', configurable: true, enumerable: true, writable: false, });
-    } catch (e) {
-      definePropertyPossible = false;
-    }
-    if (definePropertyPossible) {
-      return;
-    }
-  }
-
-  Object.defineProperty = function objectDefineProperty(obj, name, def) {
-    delete obj[name];
-    if ('get' in def) {
-      obj.__defineGetter__(name, def['get']);
-    }
-    if ('set' in def) {
-      obj.__defineSetter__(name, def['set']);
-    }
-    if ('value' in def) {
-      obj.__defineSetter__(name, function objectDefinePropertySetter(value) {
-        this.__defineGetter__(name, function objectDefinePropertyGetter() {
-          return value;
-        });
-        return value;
-      });
-      obj[name] = def.value;
-    }
-  };
-})();
-
 
 // No XMLHttpRequest#response?
 // Support: IE<11, Android <4.0
@@ -131,19 +85,6 @@ PDFJS.compatibilityChecked = true;
     },
   });
 
-  // Support: IE9
-  if (typeof VBArray !== 'undefined') {
-    Object.defineProperty(xhrPrototype, 'response', {
-      get: function xmlHttpRequestResponseGet() {
-        if (this.responseType === 'arraybuffer') {
-          return new Uint8Array(new VBArray(this.responseBody).toArray());
-        }
-        return this.responseText;
-      },
-    });
-    return;
-  }
-
   Object.defineProperty(xhrPrototype, 'response', {
     get: function xmlHttpRequestResponseGet() {
       if (this.responseType !== 'arraybuffer') {
@@ -158,84 +99,6 @@ PDFJS.compatibilityChecked = true;
       return result.buffer;
     },
   });
-})();
-
-// window.btoa (base64 encode function) ?
-// Support: IE<10
-(function checkWindowBtoaCompatibility() {
-  if ('btoa' in globalScope) {
-    return;
-  }
-
-  var digits =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-
-  globalScope.btoa = function (chars) {
-    var buffer = '';
-    var i, n;
-    for (i = 0, n = chars.length; i < n; i += 3) {
-      var b1 = chars.charCodeAt(i) & 0xFF;
-      var b2 = chars.charCodeAt(i + 1) & 0xFF;
-      var b3 = chars.charCodeAt(i + 2) & 0xFF;
-      var d1 = b1 >> 2, d2 = ((b1 & 3) << 4) | (b2 >> 4);
-      var d3 = i + 1 < n ? ((b2 & 0xF) << 2) | (b3 >> 6) : 64;
-      var d4 = i + 2 < n ? (b3 & 0x3F) : 64;
-      buffer += (digits.charAt(d1) + digits.charAt(d2) +
-                 digits.charAt(d3) + digits.charAt(d4));
-    }
-    return buffer;
-  };
-})();
-
-// window.atob (base64 encode function)?
-// Support: IE<10
-(function checkWindowAtobCompatibility() {
-  if ('atob' in globalScope) {
-    return;
-  }
-
-  // https://github.com/davidchambers/Base64.js
-  var digits =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-  globalScope.atob = function (input) {
-    input = input.replace(/=+$/, '');
-    if (input.length % 4 === 1) {
-      throw new Error('bad atob input');
-    }
-    for (
-      // initialize result and counters
-      var bc = 0, bs, buffer, idx = 0, output = '';
-      // get next character
-      (buffer = input.charAt(idx++));
-      // character found in table?
-      // initialize bit storage and add its ascii value
-      ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
-        // and if not first of each 4 characters,
-        // convert the first 8 bits to one ascii character
-        bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
-    ) {
-      // try to find character in table (0-63, not found => -1)
-      buffer = digits.indexOf(buffer);
-    }
-    return output;
-  };
-})();
-
-// Function.prototype.bind?
-// Support: Android<4.0, iOS<6.0
-(function checkFunctionPrototypeBindCompatibility() {
-  if (typeof Function.prototype.bind !== 'undefined') {
-    return;
-  }
-
-  Function.prototype.bind = function functionPrototypeBind(obj) {
-    var fn = this, headArgs = Array.prototype.slice.call(arguments, 1);
-    var bound = function functionPrototypeBindBound() {
-      var args = headArgs.concat(Array.prototype.slice.call(arguments));
-      return fn.apply(obj, args);
-    };
-    return bound;
-  };
 })();
 
 // HTMLElement dataset property
@@ -277,93 +140,6 @@ PDFJS.compatibilityChecked = true;
     },
     enumerable: true,
   });
-})();
-
-// HTMLElement classList property
-// Support: IE<10, Android<4.0, iOS<5.0
-(function checkClassListProperty() {
-  function changeList(element, itemName, add, remove) {
-    var s = element.className || '';
-    var list = s.split(/\s+/g);
-    if (list[0] === '') {
-      list.shift();
-    }
-    var index = list.indexOf(itemName);
-    if (index < 0 && add) {
-      list.push(itemName);
-    }
-    if (index >= 0 && remove) {
-      list.splice(index, 1);
-    }
-    element.className = list.join(' ');
-    return (index >= 0);
-  }
-
-  if (!hasDOM) {
-    return;
-  }
-
-  var div = document.createElement('div');
-  if ('classList' in div) {
-    return; // classList property exists
-  }
-
-  var classListPrototype = {
-    add(name) {
-      changeList(this.element, name, true, false);
-    },
-    contains(name) {
-      return changeList(this.element, name, false, false);
-    },
-    remove(name) {
-      changeList(this.element, name, false, true);
-    },
-    toggle(name) {
-      changeList(this.element, name, true, true);
-    },
-  };
-
-  Object.defineProperty(HTMLElement.prototype, 'classList', {
-    get() {
-      if (this._classList) {
-        return this._classList;
-      }
-
-      var classList = Object.create(classListPrototype, {
-        element: {
-          value: this,
-          writable: false,
-          enumerable: true,
-        },
-      });
-      Object.defineProperty(this, '_classList', {
-        value: classList,
-        writable: false,
-        enumerable: false,
-      });
-      return classList;
-    },
-    enumerable: true,
-  });
-})();
-
-// Check onclick compatibility in Opera
-// Support: Opera<15
-(function checkOnClickCompatibility() {
-  // workaround for reported Opera bug DSK-354448:
-  // onclick fires on disabled buttons with opaque content
-  function ignoreIfTargetDisabled(event) {
-    if (isDisabled(event.target)) {
-      event.stopPropagation();
-    }
-  }
-  function isDisabled(node) {
-    return node.disabled || (node.parentNode && isDisabled(node.parentNode));
-  }
-  if (isOpera) {
-    // use browser detection since we cannot feature-check this bug
-    document.addEventListener('click', ignoreIfTargetDisabled, true);
-  }
 })();
 
 // Checks if possible to use URL.createObjectURL()
