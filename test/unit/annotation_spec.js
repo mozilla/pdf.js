@@ -1201,12 +1201,13 @@ describe('annotation', function() {
         { ref: choiceWidgetRef, data: choiceWidgetDict, },
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+                pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
 
-      expect(data.options).toEqual(expected);
+        expect(data.options).toEqual(expected);
+      });
     });
 
     it('should handle array field values', function() {
