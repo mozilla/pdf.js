@@ -44,46 +44,92 @@
 .annotationLayer .textWidgetAnnotation input,
 .annotationLayer .textWidgetAnnotation textarea,
 .annotationLayer .choiceWidgetAnnotation select,
+.annotationLayer .choiceWidgetAnnotation input,
 .annotationLayer .buttonWidgetAnnotation.checkBox input,
 .annotationLayer .buttonWidgetAnnotation.radioButton input {
   background-color: rgba(0, 54, 255, 0.13);
   border: 1px solid transparent;
   box-sizing: border-box;
-  font-size: 9px;
   height: 100%;
   margin: 0;
-  padding: 0 3px;
+  padding: 0 1px;
   vertical-align: top;
   width: 100%;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input,
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  -ms-appearance: none;
+  appearance: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input + span,
+.annotationLayer .buttonWidgetAnnotation.radioButton input + span {
+  cursor: pointer;
+}
+
+.annotationLayer .buttonWidgetAnnotation.radioButton.circle input {
+  border-radius: 50%;
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%);
 }
 
 .annotationLayer .choiceWidgetAnnotation select option {
   padding: 0;
 }
 
-.annotationLayer .buttonWidgetAnnotation.radioButton input {
-  border-radius: 50%;
-}
-
 .annotationLayer .textWidgetAnnotation textarea {
   font: message-box;
-  font-size: 9px;
   resize: none;
 }
 
 .annotationLayer .textWidgetAnnotation input[disabled],
 .annotationLayer .textWidgetAnnotation textarea[disabled],
 .annotationLayer .choiceWidgetAnnotation select[disabled],
+.annotationLayer .choiceWidgetAnnotation input[disabled],
 .annotationLayer .buttonWidgetAnnotation.checkBox input[disabled],
+.annotationLayer .buttonWidgetAnnotation.checkBox input[disabled] + span,
 .annotationLayer .buttonWidgetAnnotation.radioButton input[disabled] {
   background: none;
   border: 1px solid transparent;
   cursor: not-allowed;
 }
 
+.annotationLayer .textWidgetAnnotation input.inset,
+.annotationLayer .textWidgetAnnotation textarea.inset,
+.annotationLayer .choiceWidgetAnnotation select.inset,
+.annotationLayer .choiceWidgetAnnotation input.inset,
+.annotationLayer .buttonWidgetAnnotation.checkBox input.inset,
+.annotationLayer .buttonWidgetAnnotation.radioButton input.inset {
+  border: 1px solid;
+  border-top-color: gray;
+  border-left-color: gray;
+  border-right-color: lightgray;
+  border-bottom-color: lightgray;
+}
+
+.annotationLayer .textWidgetAnnotation input.beveled,
+.annotationLayer .textWidgetAnnotation textarea.beveled,
+.annotationLayer .choiceWidgetAnnotation select.beveled,
+.annotationLayer .choiceWidgetAnnotation input.beveled,
+.annotationLayer .buttonWidgetAnnotation.checkBox input.beveled,
+.annotationLayer .buttonWidgetAnnotation.radioButton input.beveled {
+  border: 1px solid;
+  border-top-color: white;
+  border-left-color: white;
+  border-right-color: gray;
+  border-bottom-color: gray;
+}
+
 .annotationLayer .textWidgetAnnotation input:hover,
 .annotationLayer .textWidgetAnnotation textarea:hover,
 .annotationLayer .choiceWidgetAnnotation select:hover,
+.annotationLayer .choiceWidgetAnnotation input:hover,
 .annotationLayer .buttonWidgetAnnotation.checkBox input:hover,
 .annotationLayer .buttonWidgetAnnotation.radioButton input:hover {
   border: 1px solid #000;
@@ -91,41 +137,16 @@
 
 .annotationLayer .textWidgetAnnotation input:focus,
 .annotationLayer .textWidgetAnnotation textarea:focus,
-.annotationLayer .choiceWidgetAnnotation select:focus {
+.annotationLayer .choiceWidgetAnnotation select:focus,
+.annotationLayer .choiceWidgetAnnotation input:focus {
   background: none;
   border: 1px solid transparent;
 }
 
-.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
-.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after,
-.annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {
-  background-color: #000;
-  content: '';
-  display: block;
-  position: absolute;
-}
-
-.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
-.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after {
-  height: 80%;
-  left: 45%;
-  width: 1px;
-}
-
-.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before {
-  transform: rotate(45deg);
-}
-
-.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after {
-  transform: rotate(-45deg);
-}
-
-.annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {
-  border-radius: 50%;
-  height: 50%;
-  left: 30%;
-  top: 20%;
-  width: 50%;
+.annotationLayer .buttonWidgetAnnotation.checkBox input:focus,
+.annotationLayer .buttonWidgetAnnotation.radioButton input:focus {
+  background-color: transparent;
+  border: 1px solid transparent;
 }
 
 .annotationLayer .textWidgetAnnotation input.comb {
@@ -144,13 +165,64 @@
   width: 115%;
 }
 
-.annotationLayer .buttonWidgetAnnotation.checkBox input,
-.annotationLayer .buttonWidgetAnnotation.radioButton input {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  -ms-appearance: none;
-  appearance: none;
-  padding: 0;
+.annotationLayer .choiceWidgetAnnotation input + span::before {
+  content: '▼';
+  right: 0;
+  font-size: 8pt;
+  top: 60%;
+  transform: translate(0, -60%);
+  position: absolute;
+}
+
+.annotationLayer .choiceWidgetAnnotation .combo {
+  position: relative;
+  display: inline-block;
+}
+
+.annotationLayer .choiceWidgetAnnotation .combo-content {
+  display: none;
+  position: absolute;
+  max-height: 100px;
+  width: 100%;
+  overflow: auto;
+  background-color: #f9f9f9;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.annotationLayer .choiceWidgetAnnotation .combo-content a {
+  text-decoration: none;
+  display: block;
+  white-space: nowrap;
+}
+
+.annotationLayer .choiceWidgetAnnotation .combo-content a:hover {
+  background-color: steelblue;
+  color: white;
+  cursor: default;
+}
+
+.annotationLayer .choiceWidgetAnnotation .show {
+  display: block;
+  margin-top: -3px;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked + span,
+.annotationLayer .buttonWidgetAnnotation.radioButton input:checked + span {
+  font-family: Helvetica, sans-serif;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%); 
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox.check input:checked + span,
+.annotationLayer .buttonWidgetAnnotation.radioButton.check input:checked + span {
+  transform: translate(-50%, -40%); 
 }
 
 .annotationLayer .popupWrapper {

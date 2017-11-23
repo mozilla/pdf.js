@@ -174,11 +174,39 @@ describe('annotation', function() {
       expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
     });
 
+    it('should reject a background color if it is not an array', function() {
+      var annotation = new Annotation({ dict, ref, });
+      annotation.setBackgroundColor('yellow');
+
+      expect(annotation.backgroundColor).toEqual(null);
+    });
+
+    it('should reject a border color if it is not an array', function() {
+      var annotation = new Annotation({ dict, ref, });
+      annotation.setBorderColor('green');
+
+      expect(annotation.borderColor).toEqual(null);
+    });
+
     it('should set and get a transparent color', function() {
       var annotation = new Annotation({ dict, ref, });
       annotation.setColor([]);
 
       expect(annotation.color).toEqual(null);
+    });
+
+    it('should set and get a transparent background color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      annotation.setBackgroundColor([]);
+
+      expect(annotation.backgroundColor).toEqual(null);
+    });
+
+    it('should set and get a transparent border color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      annotation.setBorderColor([]);
+
+      expect(annotation.borderColor).toEqual(null);
     });
 
     it('should set and get a grayscale color', function() {
@@ -188,12 +216,47 @@ describe('annotation', function() {
       expect(annotation.color).toEqual(new Uint8Array([102, 102, 102]));
     });
 
+    it('should set and get a grayscale background color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      dict.set('BG', [0.4]);
+      annotation.setBackgroundColor(dict);
+
+      expect(annotation.backgroundColor).toEqual(
+        new Uint8Array([102, 102, 102]));
+    });
+
+    it('should set and get a grayscale border color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      dict.set('BC', [0.4]);
+      annotation.setBorderColor(dict);
+
+      expect(annotation.borderColor).toEqual(new Uint8Array([102, 102, 102]));
+    });
+
+
     it('should set and get an RGB color', function() {
       var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0, 0, 1]);
 
       expect(annotation.color).toEqual(new Uint8Array([0, 0, 255]));
     });
+
+    it('should set and get an RGB background color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      dict.set('BG', [0, 0, 1]);
+      annotation.setBackgroundColor(dict);
+
+      expect(annotation.backgroundColor).toEqual(new Uint8Array([0, 0, 255]));
+    });
+
+    it('should set and get an RGB border color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      dict.set('BC', [0, 0, 1]);
+      annotation.setBorderColor(dict);
+
+      expect(annotation.borderColor).toEqual(new Uint8Array([0, 0, 255]));
+    });
+
 
     it('should set and get a CMYK color', function() {
       var annotation = new Annotation({ dict, ref, });
@@ -202,11 +265,43 @@ describe('annotation', function() {
       expect(annotation.color).toEqual(new Uint8Array([233, 59, 47]));
     });
 
+    it('should set and get a CMYK background color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      dict.set('BG', [0.1, 0.92, 0.84, 0.02]);
+      annotation.setBackgroundColor(dict);
+
+      expect(annotation.backgroundColor).toEqual(new Uint8Array([233, 59, 47]));
+    });
+
+    it('should set and get a CMYK border color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      dict.set('BC', [0.1, 0.92, 0.84, 0.02]);
+      annotation.setBorderColor(dict);
+
+      expect(annotation.borderColor).toEqual(new Uint8Array([233, 59, 47]));
+    });
+
     it('should not set and get an invalid color', function() {
       var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0.4, 0.6]);
 
       expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
+    });
+
+    it('should not set and get an invalid background color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      dict.set('BG', [0.4, 0.6]);
+      annotation.setBackgroundColor(dict);
+
+      expect(annotation.backgroundColor).toEqual(new Uint8Array([0, 0, 0]));
+    });
+
+    it('should not set and get an invalid border color', function() {
+      var annotation = new Annotation({ dict, ref, });
+      dict.set('BC', [0.4, 0.6]);
+      annotation.setBorderColor(dict);
+
+      expect(annotation.borderColor).toEqual(new Uint8Array([0, 0, 0]));
     });
   });
 

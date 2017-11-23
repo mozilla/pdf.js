@@ -14,8 +14,9 @@
  */
 
 import {
-  AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, OPS, stringToBytes, stringToPDFString, Util, warn
+  AnnotationBorderStyleType, AnnotationCheckboxType, AnnotationFieldFlag,
+  AnnotationFlag, AnnotationType, OPS, stringToBytes, stringToPDFString,
+  Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
@@ -172,18 +173,22 @@ class Annotation {
     this.setFlags(dict.get('F'));
     this.setRectangle(dict.getArray('Rect'));
     this.setColor(dict.getArray('C'));
+    this.setBackgroundColor(dict.get('MK'));
+    this.setBorderColor(dict.get('MK'));
     this.setBorderStyle(dict);
     this.setAppearance(dict);
 
     // Expose public properties using a data object.
     this.data = {
       annotationFlags: this.flags,
+      backgroundColor: this.backgroundColor,
+      borderColor: this.borderColor,
       borderStyle: this.borderStyle,
       color: this.color,
       hasAppearance: !!this.appearance,
       id: params.id,
-      rect: this.rectangle,
       subtype: params.subtype,
+      rect: this.rectangle,
     };
   }
 
@@ -290,29 +295,44 @@ class Annotation {
       return;
     }
 
-    switch (color.length) {
-      case 0: // Transparent, which we indicate with a null value
-        this.color = null;
-        break;
+    this.color = this.getColorFromArray(color);
+  }
 
-      case 1: // Convert grayscale to RGB
-        ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
-        this.color = rgbColor;
-        break;
+  /**
+   * Set the background color and take care of color space conversion.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {Dict} dict - An appearance characteristics dictionary
+   */
+  setBackgroundColor(dict) {
+    this.backgroundColor = null;
 
-      case 3: // Convert RGB percentages to RGB
-        ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
-        this.color = rgbColor;
-        break;
+    if (!isDict(dict)) {
+      return;
+    }
 
-      case 4: // Convert CMYK to RGB
-        ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
-        this.color = rgbColor;
-        break;
+    if (dict.has('BG')) {
+      this.backgroundColor = this.getColorFromArray(dict.getArray('BG'));
+    }
+  }
 
-      default:
-        this.color = rgbColor;
-        break;
+  /**
+   * Set the border color and take care of color space conversion.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {Dict} dict - An appearance characteristic dictionary
+   */
+  setBorderColor(dict) {
+    this.borderColor = null;
+
+    if (!isDict(dict)) {
+      return;
+    }
+
+    if (dict.has('BC')) {
+      this.borderColor = this.getColorFromArray(dict.getArray('BC'));
     }
   }
 
@@ -354,7 +374,9 @@ class Annotation {
       // case, but Adobe Reader did not implement that part of the
       // specification and instead draws no border at all, so we do the same.
       // See also https://github.com/mozilla/pdf.js/issues/6179.
-      this.borderStyle.setWidth(0);
+      // Note: it's a little bit more complicated, Reader draws no border
+      // if its color is transparent.
+      this.borderStyle.setWidth(this.borderColor === null ? 0 : 1);
     }
   }
 
@@ -421,6 +443,33 @@ class Annotation {
         return resources;
       });
     });
+  }
+
+  getColorFromArray(color) {
+    let rgbColor = new Uint8Array(3); // Black in RGB color space (default)
+    if (!Array.isArray(color)) {
+      return null;
+    }
+
+    switch (color.length) {
+      case 0: // Transparent, which we indicate with a null value
+        return null;
+
+      case 1: // Convert grayscale to RGB
+        ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
+        return rgbColor;
+
+      case 3: // Convert RGB percentages to RGB
+        ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
+        return rgbColor;
+
+      case 4: // Convert CMYK to RGB
+        ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
+        return rgbColor;
+
+      default:
+        return rgbColor;
+    }
   }
 
   getOperatorList(evaluator, task, renderForms) {
@@ -598,7 +647,8 @@ class WidgetAnnotation extends Annotation {
     data.fieldName = this._constructFieldName(dict);
     data.fieldValue = Util.getInheritableProperty(dict, 'V',
                                                   /* getArray = */ true);
-    data.alternativeText = stringToPDFString(dict.get('TU') || '');
+    data.alternativeText = stringToPDFString(Util.getInheritableProperty(
+      dict, 'TU') || '');
     data.defaultAppearance = Util.getInheritableProperty(dict, 'DA') || '';
     let fieldType = Util.getInheritableProperty(dict, 'FT');
     data.fieldType = isName(fieldType) ? fieldType.name : null;
@@ -806,10 +856,15 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     this.data.checkBox = !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
                          !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
     if (this.data.checkBox) {
-      if (!isName(this.data.fieldValue)) {
-        return;
+      if (isName(this.data.fieldValue)) {
+        this.data.fieldValue = this.data.fieldValue.name;
       }
-      this.data.fieldValue = this.data.fieldValue.name;
+
+      this.data.checkBoxType = AnnotationCheckboxType.CHECK;
+      let controlType = this._getControlType(params.dict);
+      if (controlType) {
+        this.data.checkBoxType = controlType;
+      }
     }
 
     this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
@@ -827,6 +882,14 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
         }
       }
 
+      this.data.radioButtonType = AnnotationCheckboxType.CIRCLE;
+      let controlType = this._getControlType(params.dict);
+      if (controlType) {
+        this.data.radioButtonType = controlType;
+      }
+    }
+
+    if (this.data.checkBox || this.data.radioButton) {
       // The button's value corresponds to its appearance state.
       let appearanceStates = params.dict.get('AP');
       if (!isDict(appearanceStates)) {
@@ -842,6 +905,32 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
           this.data.buttonValue = keys[i];
           break;
         }
+      }
+    }
+  }
+
+  _getControlType(dict) {
+    let appearanceCharacteristics = dict.get('MK');
+    if (!isDict(appearanceCharacteristics)) {
+      return null;
+    }
+
+    if (appearanceCharacteristics.has('CA')) {
+      switch (appearanceCharacteristics.get('CA')) {
+        case '4':
+          return AnnotationCheckboxType.CHECK;
+        case 'l':
+          return AnnotationCheckboxType.CIRCLE;
+        case '8':
+          return AnnotationCheckboxType.CROSS;
+        case 'u':
+          return AnnotationCheckboxType.DIAMOND;
+        case 'n':
+          return AnnotationCheckboxType.SQUARE;
+        case 'H':
+          return AnnotationCheckboxType.STAR;
+        default:
+          return null;
       }
     }
   }
@@ -887,6 +976,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // Process field flags for the display layer.
     this.data.combo = this.hasFieldFlag(AnnotationFieldFlag.COMBO);
     this.data.multiSelect = this.hasFieldFlag(AnnotationFieldFlag.MULTISELECT);
+    this.data.customText = this.hasFieldFlag(AnnotationFieldFlag.EDIT);
   }
 }
 

@@ -254,7 +254,7 @@ var Page = (function PageClosure() {
         for (i = 0, ii = annotations.length; i < ii; i++) {
           if (isAnnotationRenderable(annotations[i], intent)) {
             opListPromises.push(annotations[i].getOperatorList(
-              partialEvaluator, task, renderInteractiveForms));
+              partialEvaluator, task, true));
           }
         }
 
