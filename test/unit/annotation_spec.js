@@ -1109,14 +1109,8 @@ describe('annotation', function() {
 
       var options = [['foo_export', 'Foo'], optionOneRef];
       var expected = [
-        {
-          exportValue: 'foo_export',
-          displayValue: 'Foo',
-        },
-        {
-          exportValue: 'bar_export',
-          displayValue: 'Bar',
-        }
+        { exportValue: 'foo_export', displayValue: 'Foo', },
+        { exportValue: 'bar_export', displayValue: 'Bar', },
       ];
 
       choiceWidgetDict.set('Opt', options);
@@ -1142,14 +1136,8 @@ describe('annotation', function() {
 
       var options = ['Foo', optionBarRef];
       var expected = [
-        {
-          exportValue: 'Foo',
-          displayValue: 'Foo',
-        },
-        {
-          exportValue: 'Bar',
-          displayValue: 'Bar',
-        }
+        { exportValue: 'Foo', displayValue: 'Foo', },
+        { exportValue: 'Bar', displayValue: 'Bar', },
       ];
 
       choiceWidgetDict.set('Opt', options);
@@ -1194,6 +1182,31 @@ describe('annotation', function() {
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
         expect(data.options).toEqual(expected);
       });
+    });
+
+    it('should sanitize display values in option arrays (issue 8947)',
+        function() {
+      // The option value is a UTF-16BE string. The display value should be
+      // sanitized, but the export value should remain the same since that
+      // may be used as a unique identifier when exporting form values.
+      var options = ['\xFE\xFF\x00F\x00o\x00o'];
+      var expected = [
+        { exportValue: '\xFE\xFF\x00F\x00o\x00o', displayValue: 'Foo', },
+      ];
+
+      choiceWidgetDict.set('Opt', options);
+
+      var choiceWidgetRef = new Ref(984, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, },
+      ]);
+
+      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+
+      expect(data.options).toEqual(expected);
     });
 
     it('should handle array field values', function() {

@@ -20,7 +20,7 @@ import {
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
 import { ColorSpace } from './colorspace';
-import { OperatorList } from './evaluator';
+import { OperatorList } from './operator_list';
 import { Stream } from './stream';
 
 class AnnotationFactory {
@@ -871,7 +871,8 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
 
         this.data.options[i] = {
           exportValue: isOptionArray ? xref.fetchIfRef(option[0]) : option,
-          displayValue: isOptionArray ? xref.fetchIfRef(option[1]) : option,
+          displayValue: stringToPDFString(isOptionArray ?
+                                          xref.fetchIfRef(option[1]) : option),
         };
       }
     }

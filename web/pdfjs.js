@@ -16,7 +16,7 @@
 
 'use strict';
 
-var pdfjsLib;
+let pdfjsLib;
 if (typeof window !== 'undefined' && window['pdfjs-dist/build/pdf']) {
   pdfjsLib = window['pdfjs-dist/build/pdf'];
 } else {

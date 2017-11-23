@@ -76,20 +76,16 @@ describe('node_stream', function() {
 
   it('read both http(s) and filesystem pdf files', function(done) {
     let stream1 = new PDFNodeStream({
-      source: {
-        url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
-        rangeChunkSize: 65536,
-        disableStream: true,
-      },
+      url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
+      rangeChunkSize: 65536,
+      disableStream: true,
       disableRange: true,
     });
 
     let stream2 = new PDFNodeStream({
-      source: {
-        url: pdf,
-        rangeChunkSize: 65536,
-        disableStream: true,
-      },
+      url: pdf,
+      rangeChunkSize: 65536,
+      disableStream: true,
       disableRange: true,
     });
 
@@ -146,21 +142,17 @@ describe('node_stream', function() {
       function(done) {
     let rangeSize = 32768;
     let stream1 = new PDFNodeStream({
-      source: {
-        url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
-        length: pdfLength,
-        rangeChunkSize: rangeSize,
-        disableStream: true,
-      },
+      url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
+      length: pdfLength,
+      rangeChunkSize: rangeSize,
+      disableStream: true,
       disableRange: false,
     });
     let stream2 = new PDFNodeStream({
-      source: {
-        url: pdf,
-        length: pdfLength,
-        rangeChunkSize: rangeSize,
-        disableStream: true,
-      },
+      url: pdf,
+      length: pdfLength,
+      rangeChunkSize: rangeSize,
+      disableStream: true,
       disableRange: false,
     });
 

@@ -19,10 +19,11 @@ import { createPromiseCapability, error, info, isArrayBuffer, isNum,
   stringToPDFString, Util, warn } from '../shared/util';
 import { Dict, isDict, isName, isStream } from './primitives';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
-import { OperatorList, PartialEvaluator } from './evaluator';
 import { AnnotationFactory } from './annotation';
 import { calculateMD5 } from './crypto';
 import { Linearization } from './parser';
+import { OperatorList } from './operator_list';
+import { PartialEvaluator } from './evaluator';
 import { PDFFunctionFactory } from './function';
 
 var Page = (function PageClosure() {
