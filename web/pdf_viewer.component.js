@@ -30,7 +30,7 @@ import { PDFPageView } from './pdf_page_view.js';
 import { PDFSinglePageViewer } from './pdf_single_page_viewer';
 import { PDFViewer } from './pdf_viewer.js';
 
-let { PDFJS, } = pdfjsLib;
+let {PDFJS} = pdfjsLib;
 
 PDFJS.PDFViewer = PDFViewer;
 PDFJS.PDFSinglePageViewer = PDFSinglePageViewer;
