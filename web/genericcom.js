@@ -14,7 +14,6 @@
  */
 
 import { DefaultExternalServices, PDFViewerApplication } from './app';
-import { AppOptions } from './app_options';
 import { BasePreferences } from './preferences';
 import { DownloadManager } from './download_manager';
 import { GenericL10n } from './genericl10n';
@@ -49,8 +48,8 @@ GenericExternalServices.createDownloadManager = function(options) {
 GenericExternalServices.createPreferences = function() {
   return new GenericPreferences();
 };
-GenericExternalServices.createL10n = function () {
-  return new GenericL10n(AppOptions.get('locale'));
+GenericExternalServices.createL10n = function(options) {
+  return new GenericL10n(options.locale);
 };
 PDFViewerApplication.externalServices = GenericExternalServices;
 

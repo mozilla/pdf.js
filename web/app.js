@@ -70,7 +70,7 @@ const DefaultExternalServices = {
   createPreferences() {
     throw new Error('Not implemented: createPreferences');
   },
-  createL10n() {
+  createL10n(options) {
     throw new Error('Not implemented: createL10n');
   },
   supportsIntegratedFind: false,
@@ -339,7 +339,9 @@ let PDFViewerApplication = {
    * @private
    */
   _initializeL10n() {
-    this.l10n = this.externalServices.createL10n();
+    this.l10n = this.externalServices.createL10n({
+      locale: AppOptions.get('locale'),
+    });
     return this.l10n.getDirection().then((dir) => {
       document.getElementsByTagName('html')[0].dir = dir;
     });
