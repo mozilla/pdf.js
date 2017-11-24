@@ -122,9 +122,8 @@ function getDOMWindow(aChannel) {
 }
 
 function getLocalizedStrings(path) {
-  var stringBundle = Cc["@mozilla.org/intl/stringbundle;1"].
-      getService(Ci.nsIStringBundleService).
-      createBundle("chrome://pdf.js/locale/" + path);
+  var stringBundle =
+    Services.strings.createBundle("chrome://pdf.js/locale/" + path);
 
   var map = {};
   var enumerator = stringBundle.getSimpleEnumeration();
@@ -1028,11 +1027,10 @@ PdfStreamConverter.prototype = {
     // We can use the resource principal when data is fetched by the chrome,
     // e.g. useful for NoScript. Make make sure we reuse the origin attributes
     // from the request channel to keep isolation consistent.
-    var ssm = Cc["@mozilla.org/scriptsecuritymanager;1"]
-                .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE);
     var resourcePrincipal =
-      ssm.createCodebasePrincipal(uri, aRequest.loadInfo.originAttributes);
+      Services.scriptSecurityManager.createCodebasePrincipal(uri,
+        aRequest.loadInfo.originAttributes);
     aRequest.owner = resourcePrincipal;
 
     channel.asyncOpen2(proxy);
