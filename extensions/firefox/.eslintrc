@@ -1,8 +1,4 @@
 {
-  "extends": [
-    ../../.eslintrc
-  ],
-
   "parserOptions": {
     "ecmaVersion": 6,
     "sourceType": "script"
@@ -19,6 +15,7 @@
 
   "rules": {
     "mozilla/import-globals": "error",
+    "mozilla/use-services": "error",
 
     // Best Practices
     "consistent-return": "error",
