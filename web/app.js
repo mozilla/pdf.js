@@ -525,10 +525,6 @@ let PDFViewerApplication = {
     return this.pdfDocument ? this.pdfDocument.numPages : 0;
   },
 
-  get pageRotation() {
-    return this.pdfViewer.pagesRotation;
-  },
-
   set page(val) {
     this.pdfViewer.currentPageNumber = val;
   },
