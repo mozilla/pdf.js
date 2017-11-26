@@ -2021,6 +2021,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // Section 9.10.2 Mapping Character Codes to Unicode Values
       if (properties.hasIncludedToUnicodeMap) {
+        // Some fonts contain incomplete ToUnicode data, causing issues with
+        // text-extraction. For simple fonts, containing encoding information,
+        // use a fallback ToUnicode map to improve this (fixes issue8229.pdf).
+        if (!properties.composite && properties.hasEncoding) {
+          properties.fallbackToUnicode =
+            this._buildSimpleFontToUnicode(properties);
+        }
+
         return Promise.resolve(properties.toUnicode);
       }
 
