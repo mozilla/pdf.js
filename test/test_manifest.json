@@ -1438,6 +1438,13 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue8229",
+       "file": "pdfs/issue8229.pdf",
+       "md5": "a729f663782e87ebc1efad0755ebf6a5",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "ShowText-ShadingPattern",
        "file": "pdfs/ShowText-ShadingPattern.pdf",
        "md5": "fe683725db037ffe19d390969610a652",
