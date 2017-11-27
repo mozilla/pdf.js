@@ -732,45 +732,70 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     this.data.checkBox = !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
                          !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    if (this.data.checkBox) {
-      if (!isName(this.data.fieldValue)) {
-        return;
-      }
-      this.data.fieldValue = this.data.fieldValue.name;
-    }
-
     this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
                             !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    if (this.data.radioButton) {
-      this.data.fieldValue = this.data.buttonValue = null;
+    this.data.pushButton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
 
-      // The parent field's `V` entry holds a `Name` object with the appearance
-      // state of whichever child field is currently in the "on" state.
-      let fieldParent = params.dict.get('Parent');
-      if (isDict(fieldParent) && fieldParent.has('V')) {
-        let fieldParentValue = fieldParent.get('V');
-        if (isName(fieldParentValue)) {
-          this.data.fieldValue = fieldParentValue.name;
-        }
-      }
+    if (this.data.checkBox) {
+      this._processCheckBox();
+    } else if (this.data.radioButton) {
+      this._processRadioButton(params);
+    } else if (this.data.pushButton) {
+      this._processPushButton(params);
+    } else {
+      warn('Invalid field flags for button widget annotation');
+    }
+  }
 
-      // The button's value corresponds to its appearance state.
-      let appearanceStates = params.dict.get('AP');
-      if (!isDict(appearanceStates)) {
-        return;
-      }
-      let normalAppearanceState = appearanceStates.get('N');
-      if (!isDict(normalAppearanceState)) {
-        return;
-      }
-      let keys = normalAppearanceState.getKeys();
-      for (let i = 0, ii = keys.length; i < ii; i++) {
-        if (keys[i] !== 'Off') {
-          this.data.buttonValue = keys[i];
-          break;
-        }
+  _processCheckBox() {
+    if (!isName(this.data.fieldValue)) {
+      return;
+    }
+    this.data.fieldValue = this.data.fieldValue.name;
+  }
+
+  _processRadioButton(params) {
+    this.data.fieldValue = this.data.buttonValue = null;
+
+    // The parent field's `V` entry holds a `Name` object with the appearance
+    // state of whichever child field is currently in the "on" state.
+    let fieldParent = params.dict.get('Parent');
+    if (isDict(fieldParent) && fieldParent.has('V')) {
+      let fieldParentValue = fieldParent.get('V');
+      if (isName(fieldParentValue)) {
+        this.data.fieldValue = fieldParentValue.name;
       }
     }
+
+    // The button's value corresponds to its appearance state.
+    let appearanceStates = params.dict.get('AP');
+    if (!isDict(appearanceStates)) {
+      return;
+    }
+    let normalAppearanceState = appearanceStates.get('N');
+    if (!isDict(normalAppearanceState)) {
+      return;
+    }
+    let keys = normalAppearanceState.getKeys();
+    for (let i = 0, ii = keys.length; i < ii; i++) {
+      if (keys[i] !== 'Off') {
+        this.data.buttonValue = keys[i];
+        break;
+      }
+    }
+  }
+
+  _processPushButton(params) {
+    if (!params.dict.has('A')) {
+      warn('Push buttons without action dictionaries are not supported');
+      return;
+    }
+
+    Catalog.parseDestDictionary({
+      destDict: params.dict,
+      resultObj: this.data,
+      docBaseUrl: params.pdfManager.docBaseUrl,
+    });
   }
 }
 
