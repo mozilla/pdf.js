@@ -2017,6 +2017,12 @@
        "type": "eq",
        "about": "Type1 font where Length1/Length2 are several orders of magnitude too large."
     },
+    {  "id": "images_1bit_grayscale",
+       "file": "pdfs/images_1bit_grayscale.pdf",
+       "md5": "e1c36a19563944891bd30cfc0199d07f",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "html5checker",
       "file": "pdfs/html5checker.pdf",
       "md5": "74bbd80d1e7eb5f2951582233ef9ebab",
