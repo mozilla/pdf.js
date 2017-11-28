@@ -30,6 +30,7 @@ import { CanvasGraphics } from './canvas';
 import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
+import { WebGLContext } from './webgl';
 
 var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
@@ -251,10 +252,7 @@ function getDocument(src) {
       if (rangeTransport) {
         networkStream = new PDFDataTransportStream(params, rangeTransport);
       } else if (!params.data) {
-        networkStream = new PDFNetworkStream({
-          source: params,
-          disableRange: getDefaultSetting('disableRange'),
-        });
+        networkStream = new PDFNetworkStream(params);
       }
 
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
@@ -286,9 +284,9 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   let apiVersion =
     typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
 
+  source.disableRange = getDefaultSetting('disableRange');
   source.disableAutoFetch = getDefaultSetting('disableAutoFetch');
   source.disableStream = getDefaultSetting('disableStream');
-  source.chunkedViewerLoading = !!pdfDataRangeTransport;
   if (pdfDataRangeTransport) {
     source.length = pdfDataRangeTransport.length;
     source.initialData = pdfDataRangeTransport.initialData;
@@ -519,7 +517,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * @return {Promise} A promise that is resolved with a {@link PDFPageProxy}
      * object.
      */
-    getPage: function PDFDocumentProxy_getPage(pageNumber) {
+    getPage(pageNumber) {
       return this.transport.getPage(pageNumber);
     },
     /**
@@ -824,6 +822,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
       var canvasFactory = params.canvasFactory || new DOMCanvasFactory();
+      let webGLContext = new WebGLContext({
+        // TODO: When moving this parameter from `PDFJS` to {RenderParameters},
+        //       change its name to `enableWebGL` instead.
+        enable: !getDefaultSetting('disableWebGL'),
+      });
 
       if (!this.intentStates[renderingIntent]) {
         this.intentStates[renderingIntent] = Object.create(null);
@@ -874,7 +877,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
                                                       this.commonObjs,
                                                       intentState.operatorList,
                                                       this.pageNumber,
-                                                      canvasFactory);
+                                                      canvasFactory,
+                                                      webGLContext);
       internalRenderTask.useRequestAnimationFrame = renderingIntent !== 'print';
       if (!intentState.renderTasks) {
         intentState.renderTasks = [];
@@ -1362,13 +1366,6 @@ var PDFWorker = (function PDFWorkerClosure() {
               messageHandler.destroy();
               worker.terminate();
             }
-          });
-
-          messageHandler.on('console_log', function (data) {
-            console.log.apply(console, data);
-          });
-          messageHandler.on('console_error', function (data) {
-            console.error.apply(console, data);
           });
 
           messageHandler.on('ready', (data) => {
@@ -1921,7 +1918,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       return this.messageHandler.sendWithPromise('GetData', null);
     },
 
-    getPage: function WorkerTransport_getPage(pageNumber, capability) {
+    getPage(pageNumber) {
       if (!Number.isInteger(pageNumber) ||
           pageNumber <= 0 || pageNumber > this.numPages) {
         return Promise.reject(new Error('Invalid page request'));
@@ -2185,7 +2182,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
   let canvasInRendering = new WeakMap();
 
   function InternalRenderTask(callback, params, objs, commonObjs, operatorList,
-                              pageNumber, canvasFactory) {
+                              pageNumber, canvasFactory, webGLContext) {
     this.callback = callback;
     this.params = params;
     this.objs = objs;
@@ -2194,6 +2191,8 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     this.operatorList = operatorList;
     this.pageNumber = pageNumber;
     this.canvasFactory = canvasFactory;
+    this.webGLContext = webGLContext;
+
     this.running = false;
     this.graphicsReadyCallback = null;
     this.graphicsReady = false;
@@ -2236,7 +2235,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       var params = this.params;
       this.gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
                                     this.objs, this.canvasFactory,
-                                    params.imageLayer);
+                                    this.webGLContext, params.imageLayer);
 
       this.gfx.beginDrawing({
         transform: params.transform,
