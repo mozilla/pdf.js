@@ -1355,7 +1355,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.moveText(0, this.current.leading);
     },
 
-    paintChar: function CanvasGraphics_paintChar(character, x, y) {
+    paintChar(character, x, y, patternTransform) {
       var ctx = this.ctx;
       var current = this.current;
       var font = current.font;
@@ -1365,17 +1365,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         TextRenderingMode.FILL_STROKE_MASK;
       var isAddToPathSet = !!(textRenderingMode &
         TextRenderingMode.ADD_TO_PATH_FLAG);
+      let patternFill = current.patternFill && font.data;
 
       var addToPath;
-      if (font.disableFontFace || isAddToPathSet) {
+      if (font.disableFontFace || isAddToPathSet || patternFill) {
         addToPath = font.getPathGenerator(this.commonObjs, character);
       }
 
-      if (font.disableFontFace) {
+      if (font.disableFontFace || patternFill) {
         ctx.save();
         ctx.translate(x, y);
         ctx.beginPath();
         addToPath(ctx, fontSize);
+        if (patternTransform) {
+          ctx.setTransform.apply(ctx, patternTransform);
+        }
         if (fillStrokeMode === TextRenderingMode.FILL ||
             fillStrokeMode === TextRenderingMode.FILL_STROKE) {
           ctx.fill();
@@ -1451,17 +1455,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var simpleFillText =
         current.textRenderingMode === TextRenderingMode.FILL &&
-        !font.disableFontFace;
+        !font.disableFontFace && !current.patternFill;
 
       ctx.save();
+      let patternTransform;
+      if (current.patternFill) {
+        // TODO: Patterns are not applied correctly to text if a non-embedded
+        // font is used. E.g. issue 8111 and ShowText-ShadingPattern.pdf.
+        ctx.save();
+        let pattern = current.fillColor.getPattern(ctx, this);
+        patternTransform = ctx.mozCurrentTransform;
+        ctx.restore();
+        ctx.fillStyle = pattern;
+      }
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.translate(current.x, current.y + current.textRise);
-
-      if (current.patternFill) {
-        // TODO: Some shading patterns are not applied correctly to text,
-        //       e.g. issues 3988 and 5432, and ShowText-ShadingPattern.pdf.
-        ctx.fillStyle = current.fillColor.getPattern(ctx, this);
-      }
 
       if (fontDirection > 0) {
         ctx.scale(textHScale, -1);
@@ -1544,11 +1552,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             // common case
             ctx.fillText(character, scaledX, scaledY);
           } else {
-            this.paintChar(character, scaledX, scaledY);
+            this.paintChar(character, scaledX, scaledY, patternTransform);
             if (accent) {
               scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
               scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
-              this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
+              this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY,
+                             patternTransform);
             }
           }
         }
