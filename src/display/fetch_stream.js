@@ -187,13 +187,18 @@ class PDFFetchStreamRangeReader {
     this._headers.append('Range', 'bytes=' + rangeStr);
     let url = this._stream.source.url;
     fetch(url, createFetchOptions(this._headers, this._withCredentials)).
-        then((response) => {
-      if (!validateResponseStatus(response.status)) {
-        throw createResponseStatusError(response.status, url);
-      }
-      this._readCapability.resolve();
-      this._reader = response.body.getReader();
-    });
+      then(
+        (response) => {
+          if (!validateResponseStatus(response.status)) {
+            throw createResponseStatusError(response.status, url);
+          }
+          this._readCapability.resolve();
+          this._reader = response.body.getReader();
+        },
+        (error) => {
+          this._readCapability.reject(error);
+        }
+      );
 
     this.onProgress = null;
   }
