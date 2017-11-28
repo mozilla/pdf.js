@@ -29,21 +29,6 @@ const Cr = Components.results;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-function getBoolPref(pref, def) {
-  try {
-    return Services.prefs.getBoolPref(pref);
-  } catch (ex) {
-    return def;
-  }
-}
-
-function log(str) {
-  if (!getBoolPref(EXT_PREFIX + ".pdfBugEnabled", false)) {
-    return;
-  }
-  dump(str + "\n");
-}
-
 function initializeDefaultPreferences() {
   /* eslint-disable semi */
   var DEFAULT_PREFERENCES =
