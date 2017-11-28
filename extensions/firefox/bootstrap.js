@@ -144,9 +144,7 @@ function startup(aData, aReason) {
   pdfStreamConverterFactory.register(PdfStreamConverter);
 
   try {
-    let globalMM = Cc["@mozilla.org/globalmessagemanager;1"]
-                     .getService(Ci.nsIFrameScriptLoader);
-    globalMM.loadFrameScript("chrome://pdf.js/content/content.js", true);
+    Services.mm.loadFrameScript("chrome://pdf.js/content/content.js", true);
     e10sEnabled = true;
   } catch (ex) {
   }

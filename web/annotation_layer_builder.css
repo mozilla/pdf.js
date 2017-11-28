@@ -17,7 +17,8 @@
   position: absolute;
 }
 
-.annotationLayer .linkAnnotation > a {
+.annotationLayer .linkAnnotation > a,
+.annotationLayer .buttonWidgetAnnotation.pushButton > a {
   position: absolute;
   font-size: 1em;
   top: 0;
@@ -26,11 +27,16 @@
   height: 100%;
 }
 
-.annotationLayer .linkAnnotation > a /* -ms-a */  {
+.annotationLayer .linkAnnotation > a /* -ms-a */ {
   background: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7") 0 0 repeat;
 }
 
-.annotationLayer .linkAnnotation > a:hover {
+.annotationLayer .buttonWidgetAnnotation.pushButton > a /* -ms-a */ {
+  background: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7") 0 0 repeat;
+}
+
+.annotationLayer .linkAnnotation > a:hover,
+.annotationLayer .buttonWidgetAnnotation.pushButton > a:hover {
   opacity: 0.2;
   background: #ff0;
   box-shadow: 0px 2px 10px #ff0;
