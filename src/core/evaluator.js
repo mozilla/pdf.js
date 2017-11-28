@@ -586,7 +586,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var glyphs = font.charsToGlyphs(chars);
       var isAddToPathSet = !!(state.textRenderingMode &
                               TextRenderingMode.ADD_TO_PATH_FLAG);
-      if (font.data && (isAddToPathSet || this.options.disableFontFace)) {
+      if (font.data && (isAddToPathSet || this.options.disableFontFace ||
+                        state.fillColorSpace.name === 'Pattern')) {
         var buildPath = (fontChar) => {
           if (!font.renderer.hasBuiltPath(fontChar)) {
             var path = font.renderer.getPathJs(fontChar);

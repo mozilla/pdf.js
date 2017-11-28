@@ -2704,6 +2704,12 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "pattern_text_embedded_font",
+       "file": "pdfs/pattern_text_embedded_font.pdf",
+       "md5": "763b1b9efaecb2b5aefea71c39233f56",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue6113",
        "file": "pdfs/issue6113.pdf",
        "md5": "365fa2d369c51ee3ff195dae907b6e25",
