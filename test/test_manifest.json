@@ -1438,6 +1438,13 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue8229",
+       "file": "pdfs/issue8229.pdf",
+       "md5": "a729f663782e87ebc1efad0755ebf6a5",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "ShowText-ShadingPattern",
        "file": "pdfs/ShowText-ShadingPattern.pdf",
        "md5": "fe683725db037ffe19d390969610a652",
@@ -2016,6 +2023,12 @@
        "link": false,
        "type": "eq",
        "about": "Type1 font where Length1/Length2 are several orders of magnitude too large."
+    },
+    {  "id": "images_1bit_grayscale",
+       "file": "pdfs/images_1bit_grayscale.pdf",
+       "md5": "e1c36a19563944891bd30cfc0199d07f",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "html5checker",
       "file": "pdfs/html5checker.pdf",
@@ -2703,6 +2716,12 @@
       "md5": "cee0ee8ea3a0643cbd716d57fd44f628",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "pattern_text_embedded_font",
+       "file": "pdfs/pattern_text_embedded_font.pdf",
+       "md5": "763b1b9efaecb2b5aefea71c39233f56",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue6113",
        "file": "pdfs/issue6113.pdf",
