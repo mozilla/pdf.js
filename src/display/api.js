@@ -1629,7 +1629,30 @@ var WorkerTransport = (function WorkerTransportClosure() {
             assert(isArrayBuffer(value));
             sink.enqueue(new Uint8Array(value), 1, [value]);
           }).catch((reason) => {
-            sink.error(reason);
+            // network error: workaround Chrome issue: net::ERR_CACHE_READ_FAILURE
+            console.log(
+              'ERROR: possible Chrome cache fail: ' +
+              'net::ERR_CACHE_READ_FAILURE. Retry with cachebusted url',
+              reason.message
+            );
+            if (reason && reason.message === 'network error') {
+              _rangeReader.cancel(reason);
+              let cachebust = true;
+              _rangeReader = this._networkStream.getRangeReader(data.begin, data.end, cachebust);
+              _rangeReader.read().then(function({ value, done, }) {
+                if (done) {
+                  sink.close();
+                  return;
+                }
+                assert(isArrayBuffer(value));
+                sink.enqueue(new Uint8Array(value), 1, [value]);
+              })
+                .catch(reason => {
+                  sink.error(reason);
+                });
+            } else {
+              sink.error(reason);
+            }
           });
         };
 

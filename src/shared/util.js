@@ -1488,6 +1488,13 @@ MessageHandler.prototype = {
           return;
         }
         this.isCancelled = true;
+        // network error: workaround Chrome issue: net::ERR_CACHE_OPERATION_NOT_SUPPORTED
+        // network error: workaround Chrome issue: net::ERR_CACHE_READ_FAILURE
+        // postMessage can't clone network error
+        if (reason && reason.message === 'network error') {
+          console.error(reason);
+          return;
+        }
         sendStreamRequest({ stream: 'error', reason, });
       },
 

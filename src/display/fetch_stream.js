@@ -47,7 +47,12 @@ class PDFFetchStream {
     return this._fullRequestReader;
   }
 
-  getRangeReader(begin, end) {
+  getRangeReader(begin, end, cachebust) {
+    if (cachebust) {
+      this.source.url = this.source.url.indexOf('?') > -1 ?
+        this.source.url + '&cachebust=' + Date.now() :
+        this.source.url + '?cachebust=' + Date.now();
+    }
     let reader = new PDFFetchStreamRangeReader(this, begin, end);
     this._rangeRequestReaders.push(reader);
     return reader;
@@ -197,7 +202,25 @@ class PDFFetchStreamRangeReader {
           this._reader = response.body.getReader();
         },
         (error) => {
-          this._readCapability.reject(error);
+          // network error: workaround Chrome issue: net::ERR_CACHE_OPERATION_NOT_SUPPORTED
+          console.log(
+            'ERROR: possible Chrome cache fail: ' +
+            'net::ERR_CACHE_OPERATION_NOT_SUPPORTED. Retry with cachebusted url',
+            error.message
+          );
+          let cachebustedUrl = url.indexOf('?') > -1 ?
+            url + '&cachebust=' + Date.now() :
+            url + '?cachebust=' + Date.now();
+          return fetch(cachebustedUrl, createFetchOptions(this._headers, this._withCredentials)).
+            then(
+              (response) => {
+                if (!validateResponseStatus(response.status)) {
+                  throw createResponseStatusError(response.status, url);
+                }
+                this._readCapability.resolve();
+                this._reader = response.body.getReader();
+              }
+            );
         }
       );
 
