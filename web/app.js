@@ -2153,7 +2153,6 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 // set custom styles for CE pdf viewer
 function setCustomViewForCE() {
   document.getElementById('sidebarToggle').style.display='none';
-  document.getElementById('viewFind').style.display='none';
   document.getElementsByClassName('splitToolbarButton')[2].style.display='none';
   document.getElementById('scaleSelectContainer').style.display='none';
   document.getElementById('print').style.display='none';
