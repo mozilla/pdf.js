@@ -574,7 +574,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 }
 
 html[dir='ltr'] .findbar {
-  left: 68px;
+  left: 30px;
 }
 
 html[dir='rtl'] .findbar {
