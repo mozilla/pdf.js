@@ -14,20 +14,19 @@
  */
 
 import {
-  _UnsupportedManager, getDocument, LoopbackPort, PDFDataRangeTransport,
-  PDFWorker
-} from './api';
-import {
   addLinkAttributes, CustomStyle, DEFAULT_LINK_REL, getFilenameFromUrl,
   isExternalLinkTargetSet, isValidUrl, LinkTarget
 } from './dom_utils';
 import {
-  createBlob, createObjectURL, createPromiseCapability, deprecated,
-  getVerbosityLevel, InvalidPDFException, isLittleEndian,
-  MissingPDFException, OPS, PageViewport, PasswordException, PasswordResponses,
-  removeNullCharacters, setVerbosityLevel, shadow, UnexpectedResponseException,
-  UnknownErrorException, UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS, warn
+  createBlob, createObjectURL, createPromiseCapability, getVerbosityLevel,
+  InvalidPDFException, isLittleEndian, MissingPDFException, OPS, PageViewport,
+  PasswordException, PasswordResponses, removeNullCharacters, setVerbosityLevel,
+  shadow, UnexpectedResponseException, UnknownErrorException,
+  UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS
 } from '../shared/util';
+import {
+  getDocument, LoopbackPort, PDFDataRangeTransport, PDFWorker
+} from './api';
 import { AnnotationLayer } from './annotation_layer';
 import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
@@ -239,53 +238,11 @@ PDFJS.externalLinkRel = (PDFJS.externalLinkRel === undefined ?
 PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
                          true : PDFJS.isEvalSupported);
 
-/**
- * Opt-in to backwards incompatible API changes. NOTE:
- * If the `PDFJS_NEXT` build flag is set, it will override this setting.
- * @var {boolean}
- */
-PDFJS.pdfjsNext = (PDFJS.pdfjsNext === undefined) ? false : PDFJS.pdfjsNext;
-
-if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
-  var savedOpenExternalLinksInNewWindow = PDFJS.openExternalLinksInNewWindow;
-  delete PDFJS.openExternalLinksInNewWindow;
-  Object.defineProperty(PDFJS, 'openExternalLinksInNewWindow', {
-    get() {
-      return PDFJS.externalLinkTarget === LinkTarget.BLANK;
-    },
-    set(value) {
-      if (value) {
-        deprecated('PDFJS.openExternalLinksInNewWindow, please use ' +
-          '"PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK" instead.');
-      }
-      if (PDFJS.externalLinkTarget !== LinkTarget.NONE) {
-        warn('PDFJS.externalLinkTarget is already initialized');
-        return;
-      }
-      PDFJS.externalLinkTarget = value ? LinkTarget.BLANK : LinkTarget.NONE;
-    },
-    enumerable: true,
-    configurable: true,
-  });
-  if (savedOpenExternalLinksInNewWindow) {
-    /**
-     * (Deprecated) Opens external links in a new window if enabled.
-     * The default behavior opens external links in the PDF.js window.
-     *
-     * NOTE: This property has been deprecated, please use
-     *       `PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK` instead.
-     * @var {boolean}
-     */
-    PDFJS.openExternalLinksInNewWindow = savedOpenExternalLinksInNewWindow;
-  }
-}
-
 PDFJS.getDocument = getDocument;
 PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
 
-PDFJS.hasCanvasTypedArrays = true; // compatibility.js ensures this invariant
 PDFJS.CustomStyle = CustomStyle;
 PDFJS.LinkTarget = LinkTarget;
 PDFJS.addLinkAttributes = addLinkAttributes;
@@ -299,8 +256,6 @@ PDFJS.renderTextLayer = renderTextLayer;
 PDFJS.Metadata = Metadata;
 
 PDFJS.SVGGraphics = SVGGraphics;
-
-PDFJS.UnsupportedManager = _UnsupportedManager;
 
 export {
   globalScope,

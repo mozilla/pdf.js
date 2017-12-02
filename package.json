@@ -1,6 +1,6 @@
 {
   "name": "pdf.js",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "devDependencies": {
     "acorn": "^5.1.2",
     "babel-core": "^6.26.0",
@@ -9,8 +9,9 @@
     "babel-preset-env": "^1.6.0",
     "core-js": "^2.5.1",
     "escodegen": "^1.9.0",
-    "eslint": "^4.8.0",
-    "eslint-plugin-mozilla": "^0.4.4",
+    "eslint": "^4.10.0",
+    "eslint-plugin-mozilla": "^0.4.9",
+    "eslint-plugin-no-unsanitized": "^2.0.1",
     "gulp": "^3.9.1",
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^0.6.1",

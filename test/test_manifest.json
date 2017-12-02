@@ -419,6 +419,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "PDFJS-7562-reduced",
+       "file": "pdfs/PDFJS-7562-reduced.pdf",
+       "md5": "ddfb96fd492599fe54adbc685493ba3a",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3694_reduced",
        "file": "pdfs/issue3694_reduced.pdf",
        "md5": "c1438c7bad12d70c4cd684f8ce04448f",
@@ -705,6 +711,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue9084",
+       "file": "pdfs/issue9084.pdf",
+       "md5": "5570ec01cc869d299fec1b2f68926a08",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue8707",
        "file": "pdfs/issue8707.pdf",
        "md5": "d3dc670adde9ec9fb82c974027033029",
@@ -769,6 +782,13 @@
     {  "id": "issue5946",
        "file": "pdfs/issue5946.pdf",
        "md5": "1217a3c8e2ee4ceb96d85a2f27e437b4",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue8960_reduced",
+       "file": "pdfs/issue8960_reduced.pdf",
+       "md5": "12ccf71307f4b5bd4148d5f985ffde07",
        "rounds": 1,
        "link": false,
        "type": "eq"
@@ -1418,6 +1438,13 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue8229",
+       "file": "pdfs/issue8229.pdf",
+       "md5": "a729f663782e87ebc1efad0755ebf6a5",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "ShowText-ShadingPattern",
        "file": "pdfs/ShowText-ShadingPattern.pdf",
        "md5": "fe683725db037ffe19d390969610a652",
@@ -1996,6 +2023,12 @@
        "link": false,
        "type": "eq",
        "about": "Type1 font where Length1/Length2 are several orders of magnitude too large."
+    },
+    {  "id": "images_1bit_grayscale",
+       "file": "pdfs/images_1bit_grayscale.pdf",
+       "md5": "e1c36a19563944891bd30cfc0199d07f",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "html5checker",
       "file": "pdfs/html5checker.pdf",
@@ -2683,6 +2716,12 @@
       "md5": "cee0ee8ea3a0643cbd716d57fd44f628",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "pattern_text_embedded_font",
+       "file": "pdfs/pattern_text_embedded_font.pdf",
+       "md5": "763b1b9efaecb2b5aefea71c39233f56",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue6113",
        "file": "pdfs/issue6113.pdf",
@@ -3694,6 +3733,16 @@
        "file": "pdfs/annotation-polyline-polygon.pdf",
        "md5": "e68611602f58c8ca70cc40575ba3b04e",
        "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
+    {  "id": "issue4872",
+       "file": "pdfs/issue4872.pdf",
+       "md5": "21c6cbc682140d6f6017bbeb45892053",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
        "type": "eq",
        "annotations": true
     },

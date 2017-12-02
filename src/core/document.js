@@ -20,10 +20,11 @@ import {
   shadow, stringToBytes, stringToPDFString, Util, warn
 } from '../shared/util';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
-import { OperatorList, PartialEvaluator } from './evaluator';
 import { AnnotationFactory } from './annotation';
 import { calculateMD5 } from './crypto';
 import { Linearization } from './parser';
+import { OperatorList } from './operator_list';
+import { PartialEvaluator } from './evaluator';
 import { PDFFunctionFactory } from './function';
 
 var Page = (function PageClosure() {

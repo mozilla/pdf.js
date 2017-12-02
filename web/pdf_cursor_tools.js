@@ -71,6 +71,8 @@ class PDFCursorTools {
         }
       }
       this.switchTool(cursorToolPref);
+    preferences.get('cursorToolOnLoad').then((value) => {
+      this.switchTool(value);
     }).catch(() => { });
   }
 

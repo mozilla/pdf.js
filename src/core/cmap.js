@@ -588,7 +588,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
             stream.readHex(start, dataSize);
             stream.readHexNumber(end, dataSize);
             addHex(end, start, dataSize);
-            code = stream.readNumber();
+            stream.readNumber(); // code
             // undefined range, skipping
             for (i = 1; i < subitemsCount; i++) {
               incHex(end, dataSize);
@@ -596,7 +596,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
               addHex(start, end, dataSize);
               stream.readHexNumber(end, dataSize);
               addHex(end, start, dataSize);
-              code = stream.readNumber();
+              stream.readNumber(); // code
               // nop
             }
             break;

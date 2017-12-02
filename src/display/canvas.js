@@ -18,7 +18,6 @@ import {
   OPS, shadow, TextRenderingMode, Util, warn
 } from '../shared/util';
 import { getShadingPatternFromIR, TilingPattern } from './pattern_helper';
-import { WebGLUtils } from './webgl';
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -407,7 +406,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   var EXECUTION_STEPS = 10;
 
   function CanvasGraphics(canvasCtx, commonObjs, objs, canvasFactory,
-                          imageLayer) {
+                          webGLContext, imageLayer) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -418,6 +417,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.commonObjs = commonObjs;
     this.objs = objs;
     this.canvasFactory = canvasFactory;
+    this.webGLContext = webGLContext;
     this.imageLayer = imageLayer;
     this.groupStack = [];
     this.processingType3 = null;
@@ -693,7 +693,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
-  function composeSMask(ctx, smask, layerCtx) {
+  function composeSMask(ctx, smask, layerCtx, webGLContext) {
     var mask = smask.canvas;
     var maskCtx = smask.context;
 
@@ -701,9 +701,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                      smask.offsetX, smask.offsetY);
 
     var backdrop = smask.backdrop || null;
-    if (!smask.transferMap && WebGLUtils.isEnabled) {
-      var composed = WebGLUtils.composeSMask(layerCtx.canvas, mask,
-        { subtype: smask.subtype, backdrop, });
+    if (!smask.transferMap && webGLContext.isEnabled) {
+      let composed = webGLContext.composeSMask({
+        layer: layerCtx.canvas,
+        mask,
+        properties: {
+          subtype: smask.subtype,
+          backdrop,
+        },
+      });
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.drawImage(composed, smask.offsetX, smask.offsetY);
       return;
@@ -851,7 +857,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       this.cachedCanvases.clear();
-      WebGLUtils.clear();
+      this.webGLContext.clear();
 
       if (this.imageLayer) {
         this.imageLayer.endLayout();
@@ -988,7 +994,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.groupLevel--;
       this.ctx = this.groupStack.pop();
 
-      composeSMask(this.ctx, this.current.activeSMask, groupCtx);
+      composeSMask(this.ctx, this.current.activeSMask, groupCtx,
+                   this.webGLContext);
       this.ctx.restore();
       this.ctx.save(); // save is needed since SMask will be resumed.
       copyCtxState(groupCtx, this.ctx);
@@ -1023,7 +1030,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.groupLevel--;
       this.ctx = this.groupStack.pop();
 
-      composeSMask(this.ctx, this.current.activeSMask, groupCtx);
+      composeSMask(this.ctx, this.current.activeSMask, groupCtx,
+                   this.webGLContext);
       this.ctx.restore();
       copyCtxState(groupCtx, this.ctx);
       // Transform was changed in the SMask canvas, reflecting this change on
@@ -1347,7 +1355,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.moveText(0, this.current.leading);
     },
 
-    paintChar: function CanvasGraphics_paintChar(character, x, y) {
+    paintChar(character, x, y, patternTransform) {
       var ctx = this.ctx;
       var current = this.current;
       var font = current.font;
@@ -1357,17 +1365,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         TextRenderingMode.FILL_STROKE_MASK;
       var isAddToPathSet = !!(textRenderingMode &
         TextRenderingMode.ADD_TO_PATH_FLAG);
+      let patternFill = current.patternFill && font.data;
 
       var addToPath;
-      if (font.disableFontFace || isAddToPathSet) {
+      if (font.disableFontFace || isAddToPathSet || patternFill) {
         addToPath = font.getPathGenerator(this.commonObjs, character);
       }
 
-      if (font.disableFontFace) {
+      if (font.disableFontFace || patternFill) {
         ctx.save();
         ctx.translate(x, y);
         ctx.beginPath();
         addToPath(ctx, fontSize);
+        if (patternTransform) {
+          ctx.setTransform.apply(ctx, patternTransform);
+        }
         if (fillStrokeMode === TextRenderingMode.FILL ||
             fillStrokeMode === TextRenderingMode.FILL_STROKE) {
           ctx.fill();
@@ -1443,17 +1455,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var simpleFillText =
         current.textRenderingMode === TextRenderingMode.FILL &&
-        !font.disableFontFace;
+        !font.disableFontFace && !current.patternFill;
 
       ctx.save();
+      let patternTransform;
+      if (current.patternFill) {
+        // TODO: Patterns are not applied correctly to text if a non-embedded
+        // font is used. E.g. issue 8111 and ShowText-ShadingPattern.pdf.
+        ctx.save();
+        let pattern = current.fillColor.getPattern(ctx, this);
+        patternTransform = ctx.mozCurrentTransform;
+        ctx.restore();
+        ctx.fillStyle = pattern;
+      }
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.translate(current.x, current.y + current.textRise);
-
-      if (current.patternFill) {
-        // TODO: Some shading patterns are not applied correctly to text,
-        //       e.g. issues 3988 and 5432, and ShowText-ShadingPattern.pdf.
-        ctx.fillStyle = current.fillColor.getPattern(ctx, this);
-      }
 
       if (fontDirection > 0) {
         ctx.scale(textHScale, -1);
@@ -1536,11 +1552,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             // common case
             ctx.fillText(character, scaledX, scaledY);
           } else {
-            this.paintChar(character, scaledX, scaledY);
+            this.paintChar(character, scaledX, scaledY, patternTransform);
             if (accent) {
               scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
               scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
-              this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
+              this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY,
+                             patternTransform);
             }
           }
         }

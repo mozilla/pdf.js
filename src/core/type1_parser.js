@@ -578,7 +578,7 @@ var Type1Parser = (function Type1ParserClosure() {
           case 'Subrs':
             this.readInt(); // num
             this.getToken(); // read in 'array'
-            while ((token = this.getToken()) === 'dup') {
+            while (this.getToken() === 'dup') {
               var index = this.readInt();
               length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'

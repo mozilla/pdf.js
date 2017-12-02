@@ -53,6 +53,7 @@
 !issue8061.pdf
 !issue8088.pdf
 !issue8125.pdf
+!issue8229.pdf
 !issue8372.pdf
 !issue8424.pdf
 !issue8480.pdf
@@ -62,6 +63,7 @@
 !issue8707.pdf
 !issue8798r.pdf
 !issue8823.pdf
+!issue9084.pdf
 !bad-PageLabels.pdf
 !filled-background.pdf
 !ArabicCIDTrueType.pdf
@@ -116,12 +118,15 @@
 !issue4630.pdf
 !issue4909.pdf
 !issue5084.pdf
+!issue8960_reduced.pdf
 !issue5202.pdf
+!images_1bit_grayscale.pdf
 !issue5280.pdf
 !issue5677.pdf
 !issue5954.pdf
 !issue6612.pdf
 !alphatrans.pdf
+!pattern_text_embedded_font.pdf
 !devicen.pdf
 !cmykjpeg.pdf
 !issue840.pdf
@@ -188,6 +193,7 @@
 !issue2840.pdf
 !issue4061.pdf
 !issue4668.pdf
+!PDFJS-7562-reduced.pdf
 !issue5039.pdf
 !issue5070.pdf
 !issue5238.pdf

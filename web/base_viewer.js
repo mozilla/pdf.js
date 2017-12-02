@@ -505,7 +505,7 @@ class BaseViewer {
 
     if (!noScroll) {
       let page = this._currentPageNumber, dest;
-      if (this._location && !PDFJS.ignoreCurrentPositionOnZoom &&
+      if (this._location &&
           !(this.isInPresentationMode || this.isChangingPresentationMode)) {
         page = this._location.pageNumber;
         dest = [null, { name: 'XYZ', }, this._location.left,
@@ -601,11 +601,6 @@ class BaseViewer {
    * @param {ScrollPageIntoViewParameters} params
    */
   scrollPageIntoView(params) {
-    if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
-        (arguments.length > 1 || typeof params === 'number')) {
-      console.error('Call of scrollPageIntoView() with obsolete signature.');
-      return;
-    }
     if (!this.pdfDocument) {
       return;
     }

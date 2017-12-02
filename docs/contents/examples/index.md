@@ -35,7 +35,7 @@ pdf.getPage(1).then(function(page) {
 ```
 
 ### Rendering the Page
-Each PDF page has its own viewport which defines the size in pixels(72DPI) and initial rotation. By default the viewport is scaled to the original size of the PDF, but this can be changed by modifying the viewport. When the viewport is created an initial transformation matrix will also be created that takes into account the desired scale, rotation, and it transforms the coordinate system (the 0,0 point in PDF documents the bottom-left whereas canvas 0,0 is top-left).
+Each PDF page has its own viewport which defines the size in pixels(72DPI) and initial rotation. By default the viewport is scaled to the original size of the PDF, but this can be changed by modifying the viewport. When the viewport is created, an initial transformation matrix will also be created that takes into account the desired scale, rotation, and it transforms the coordinate system (the 0,0 point in PDF documents the bottom-left whereas canvas 0,0 is top-left).
 
 ```js
 var scale = 1.5;
@@ -80,6 +80,6 @@ The PDF.js can accept any decoded base64 data as an array.
 ### Previous/Next example
 
 The same canvas cannot be used to perform to draw two pages at the same time --
-the example demonstrate how to wait on previous operation to be complete.
+the example demonstrates how to wait on previous operation to be complete.
 
 <script async src="//jsfiddle.net/pdfjs/wagvs9Lf/embed/js,html,result/"></script>

@@ -32,11 +32,10 @@ function createFetchOptions(headers, withCredentials) {
 }
 
 class PDFFetchStream {
-  constructor(options) {
-    this.options = options;
-    this.source = options.source;
-    this.isHttp = /^https?:/i.test(this.source.url);
-    this.httpHeaders = (this.isHttp && this.source.httpHeaders) || {};
+  constructor(source) {
+    this.source = source;
+    this.isHttp = /^https?:/i.test(source.url);
+    this.httpHeaders = (this.isHttp && source.httpHeaders) || {};
 
     this._fullRequestReader = null;
     this._rangeRequestReaders = [];
@@ -70,17 +69,18 @@ class PDFFetchStreamReader {
     this._stream = stream;
     this._reader = null;
     this._loaded = 0;
-    this._withCredentials = stream.source.withCredentials;
-    this._contentLength = this._stream.source.length;
+    let source = stream.source;
+    this._withCredentials = source.withCredentials;
+    this._contentLength = source.length;
     this._headersCapability = createPromiseCapability();
-    this._disableRange = this._stream.options.disableRange;
-    this._rangeChunkSize = this._stream.source.rangeChunkSize;
+    this._disableRange = source.disableRange;
+    this._rangeChunkSize = source.rangeChunkSize;
     if (!this._rangeChunkSize && !this._disableRange) {
       this._disableRange = true;
     }
 
-    this._isRangeSupported = !this._stream.options.disableRange;
-    this._isStreamingSupported = !this._stream.source.disableStream;
+    this._isRangeSupported = !source.disableRange;
+    this._isStreamingSupported = !source.disableStream;
 
     this._headers = new Headers();
     for (let property in this._stream.httpHeaders) {
@@ -91,7 +91,7 @@ class PDFFetchStreamReader {
       this._headers.append(property, value);
     }
 
-    let url = this._stream.source.url;
+    let url = source.url;
     fetch(url, createFetchOptions(this._headers, this._withCredentials)).
         then((response) => {
       if (!validateResponseStatus(response.status)) {
@@ -170,9 +170,10 @@ class PDFFetchStreamRangeReader {
     this._stream = stream;
     this._reader = null;
     this._loaded = 0;
-    this._withCredentials = stream.source.withCredentials;
+    let source = stream.source;
+    this._withCredentials = source.withCredentials;
     this._readCapability = createPromiseCapability();
-    this._isStreamingSupported = !stream.source.disableStream;
+    this._isStreamingSupported = !source.disableStream;
 
     this._headers = new Headers();
     for (let property in this._stream.httpHeaders) {
@@ -185,7 +186,7 @@ class PDFFetchStreamRangeReader {
 
     let rangeStr = begin + '-' + (end - 1);
     this._headers.append('Range', 'bytes=' + rangeStr);
-    let url = this._stream.source.url;
+    let url = source.url;
     fetch(url, createFetchOptions(this._headers, this._withCredentials)).
         then((response) => {
       if (!validateResponseStatus(response.status)) {

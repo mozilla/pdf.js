@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, createPromiseCapability } from '../shared/util';
+import { assert, createPromiseCapability, stringToBytes } from '../shared/util';
 import {
   createResponseStatusError, validateRangeRequestCapabilities
 } from './network_utils';
@@ -48,11 +48,7 @@ function getArrayBuffer(xhr) {
   if (typeof data !== 'string') {
     return data;
   }
-  var length = data.length;
-  var array = new Uint8Array(length);
-  for (var i = 0; i < length; i++) {
-    array[i] = data.charCodeAt(i) & 0xFF;
-  }
+  let array = stringToBytes(data);
   return array.buffer;
 }
 
@@ -269,9 +265,8 @@ NetworkManager.prototype = {
 };
 
 /** @implements {IPDFStream} */
-function PDFNetworkStream(options) {
-  this._options = options;
-  var source = options.source;
+function PDFNetworkStream(source) {
+  this._source = source;
   this._manager = new NetworkManager(source.url, {
     httpHeaders: source.httpHeaders,
     withCredentials: source.withCredentials,
@@ -293,7 +288,7 @@ PDFNetworkStream.prototype = {
   getFullReader: function PDFNetworkStream_getFullReader() {
     assert(!this._fullRequestReader);
     this._fullRequestReader =
-      new PDFNetworkStreamFullRequestReader(this._manager, this._options);
+      new PDFNetworkStreamFullRequestReader(this._manager, this._source);
     return this._fullRequestReader;
   },
 
@@ -317,10 +312,9 @@ PDFNetworkStream.prototype = {
 };
 
 /** @implements {IPDFStreamReader} */
-function PDFNetworkStreamFullRequestReader(manager, options) {
+function PDFNetworkStreamFullRequestReader(manager, source) {
   this._manager = manager;
 
-  var source = options.source;
   var args = {
     onHeadersReceived: this._onHeadersReceived.bind(this),
     onProgressiveData: source.disableStream ? null :
@@ -332,7 +326,7 @@ function PDFNetworkStreamFullRequestReader(manager, options) {
   this._url = source.url;
   this._fullRequestId = manager.requestFull(args);
   this._headersReceivedCapability = createPromiseCapability();
-  this._disableRange = options.disableRange || false;
+  this._disableRange = source.disableRange || false;
   this._contentLength = source.length; // optional
   this._rangeChunkSize = source.rangeChunkSize;
   if (!this._rangeChunkSize && !this._disableRange) {

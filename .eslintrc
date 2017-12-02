@@ -119,6 +119,7 @@
     "key-spacing": ["error", { "beforeColon": false, "afterColon": true, "mode": "strict", }],
     "keyword-spacing": ["error", { "before": true, "after": true, }],
     "linebreak-style": ["error", "unix"],
+    "lines-between-class-members": ["error", "always"],
     "max-len": ["error", 80],
     "new-cap": ["error", { "newIsCap": true, "capIsNew": false, }],
     "new-parens": "error",
@@ -165,6 +166,7 @@
     "no-useless-computed-key": "error",
     "no-useless-constructor": "error",
     "no-useless-rename": "error",
+    "no-var": "off",
     "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],

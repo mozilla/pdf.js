@@ -15,7 +15,7 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
+  assert, createPromiseCapability, getVerbosityLevel, info,
   InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream,
   MessageHandler, MissingPDFException, NativeImageDecoding, PageViewport,
   PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
@@ -30,6 +30,7 @@ import { CanvasGraphics } from './canvas';
 import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
+import { WebGLContext } from './webgl';
 
 var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
@@ -120,10 +121,6 @@ function setPDFNetworkStreamClass(cls) {
  * @property {string} docBaseUrl - (optional) The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
- * @property {boolean} disableNativeImageDecoder - (deprecated) Disable decoding
- *   of certain (simple) JPEG images in the browser. This is useful for
- *   environments without DOM image support, such as e.g. Node.js.
- *   The default value is `false`.
  * @property {string} nativeImageDecoderSupport - (optional) Strategy for
  *   decoding certain (simple) JPEG images in the browser. This is useful for
  *   environments without DOM image and canvas support, such as e.g. Node.js.
@@ -160,45 +157,10 @@ function setPDFNetworkStreamClass(cls) {
  * Can be a url to where a PDF is located, a typed array (Uint8Array)
  * already populated with data or parameter object.
  *
- * @param {PDFDataRangeTransport} pdfDataRangeTransport (deprecated) It is used
- * if you want to manually serve range requests for data in the PDF.
- *
- * @param {function} passwordCallback (deprecated) It is used to request a
- * password if wrong or no password was provided. The callback receives two
- * parameters: function that needs to be called with new password and reason
- * (see {PasswordResponses}).
- *
- * @param {function} progressCallback (deprecated) It is used to be able to
- * monitor the loading progress of the PDF file (necessary to implement e.g.
- * a loading bar). The callback receives an {Object} with the properties:
- * {number} loaded and {number} total.
- *
  * @return {PDFDocumentLoadingTask}
  */
-function getDocument(src, pdfDataRangeTransport,
-                     passwordCallback, progressCallback) {
+function getDocument(src) {
   var task = new PDFDocumentLoadingTask();
-
-  // Support of the obsolete arguments (for compatibility with API v1.0)
-  if (arguments.length > 1) {
-    deprecated('getDocument is called with pdfDataRangeTransport, ' +
-               'passwordCallback or progressCallback argument');
-  }
-  if (pdfDataRangeTransport) {
-    if (!(pdfDataRangeTransport instanceof PDFDataRangeTransport)) {
-      // Not a PDFDataRangeTransport instance, trying to add missing properties.
-      pdfDataRangeTransport = Object.create(pdfDataRangeTransport);
-      pdfDataRangeTransport.length = src.length;
-      pdfDataRangeTransport.initialData = src.initialData;
-      if (!pdfDataRangeTransport.abort) {
-        pdfDataRangeTransport.abort = function () {};
-      }
-    }
-    src = Object.create(src);
-    src.range = pdfDataRangeTransport;
-  }
-  task.onPassword = passwordCallback || null;
-  task.onProgress = progressCallback || null;
 
   var source;
   if (typeof src === 'string') {
@@ -262,18 +224,9 @@ function getDocument(src, pdfDataRangeTransport,
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.ignoreErrors = params.stopAtErrors !== true;
 
-  if (params.disableNativeImageDecoder !== undefined) {
-    deprecated('parameter disableNativeImageDecoder, ' +
-      'use nativeImageDecoderSupport instead');
-  }
-  params.nativeImageDecoderSupport = params.nativeImageDecoderSupport ||
-    (params.disableNativeImageDecoder === true ? NativeImageDecoding.NONE :
-      NativeImageDecoding.DECODE);
-  if (params.nativeImageDecoderSupport !== NativeImageDecoding.DECODE &&
-      params.nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
-      params.nativeImageDecoderSupport !== NativeImageDecoding.DISPLAY) {
-    warn('Invalid parameter nativeImageDecoderSupport: ' +
-      'need a state of enum {NativeImageDecoding}');
+  const nativeImageDecoderValues = Object.values(NativeImageDecoding);
+  if (params.nativeImageDecoderSupport === undefined ||
+      !nativeImageDecoderValues.includes(params.nativeImageDecoderSupport)) {
     params.nativeImageDecoderSupport = NativeImageDecoding.DECODE;
   }
 
@@ -299,10 +252,7 @@ function getDocument(src, pdfDataRangeTransport,
       if (rangeTransport) {
         networkStream = new PDFDataTransportStream(params, rangeTransport);
       } else if (!params.data) {
-        networkStream = new PDFNetworkStream({
-          source: params,
-          disableRange: getDefaultSetting('disableRange'),
-        });
+        networkStream = new PDFNetworkStream(params);
       }
 
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
@@ -334,9 +284,9 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   let apiVersion =
     typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
 
+  source.disableRange = getDefaultSetting('disableRange');
   source.disableAutoFetch = getDefaultSetting('disableAutoFetch');
   source.disableStream = getDefaultSetting('disableStream');
-  source.chunkedViewerLoading = !!pdfDataRangeTransport;
   if (pdfDataRangeTransport) {
     source.length = pdfDataRangeTransport.length;
     source.initialData = pdfDataRangeTransport.initialData;
@@ -566,7 +516,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * @return {Promise} A promise that is resolved with a {@link PDFPageProxy}
      * object.
      */
-    getPage: function PDFDocumentProxy_getPage(pageNumber) {
+    getPage(pageNumber) {
       return this.transport.getPage(pageNumber);
     },
     /**
@@ -618,10 +568,10 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getAttachments();
     },
     /**
-     * @return {Promise} A promise that is resolved with an array of all the
-     * JavaScript strings in the name tree.
+     * @return {Promise} A promise that is resolved with an {Array} of all the
+     * JavaScript strings in the name tree, or `null` if no JavaScript exists.
      */
-    getJavaScript: function PDFDocumentProxy_getJavaScript() {
+    getJavaScript() {
       return this.transport.getJavaScript();
     },
     /**
@@ -756,10 +706,6 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  *                    just before viewport transform.
  * @property {Object} imageLayer - (optional) An object that has beginLayout,
  *                    endLayout and appendImage functions.
- * @property {function} continueCallback - (deprecated) A function that will be
- *                      called each time the rendering is paused.  To continue
- *                      rendering call the function that is the first argument
- *                      to the callback.
  * @property {Object} canvasFactory - (optional) The factory that will be used
  *                    when creating canvases. The default value is
  *                    {DOMCanvasFactory}.
@@ -875,6 +821,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
       var canvasFactory = params.canvasFactory || new DOMCanvasFactory();
+      let webGLContext = new WebGLContext({
+        // TODO: When moving this parameter from `PDFJS` to {RenderParameters},
+        //       change its name to `enableWebGL` instead.
+        enable: !getDefaultSetting('disableWebGL'),
+      });
 
       if (!this.intentStates[renderingIntent]) {
         this.intentStates[renderingIntent] = Object.create(null);
@@ -925,19 +876,14 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
                                                       this.commonObjs,
                                                       intentState.operatorList,
                                                       this.pageNumber,
-                                                      canvasFactory);
+                                                      canvasFactory,
+                                                      webGLContext);
       internalRenderTask.useRequestAnimationFrame = renderingIntent !== 'print';
       if (!intentState.renderTasks) {
         intentState.renderTasks = [];
       }
       intentState.renderTasks.push(internalRenderTask);
       var renderTask = internalRenderTask.task;
-
-      // Obsolete parameter support
-      if (params.continueCallback) {
-        deprecated('render is used with continueCallback parameter');
-        renderTask.onContinue = params.continueCallback;
-      }
 
       intentState.displayReadyCapability.promise.then((transparency) => {
         if (this.pendingCleanup) {
@@ -1071,14 +1017,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       this.annotationsPromise = null;
       this.pendingCleanup = false;
       return Promise.all(waitOn);
-    },
-
-    /**
-     * Cleans up resources allocated by the page. (deprecated)
-     */
-    destroy() {
-      deprecated('page destroy method, use cleanup() instead');
-      this.cleanup();
     },
 
     /**
@@ -1427,13 +1365,6 @@ var PDFWorker = (function PDFWorkerClosure() {
               messageHandler.destroy();
               worker.terminate();
             }
-          });
-
-          messageHandler.on('console_log', function (data) {
-            console.log.apply(console, data);
-          });
-          messageHandler.on('console_error', function (data) {
-            console.error.apply(console, data);
           });
 
           messageHandler.on('ready', (data) => {
@@ -1908,17 +1839,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       }, this);
 
-      messageHandler.on('UnsupportedFeature',
-          function transportUnsupportedFeature(data) {
+      messageHandler.on('UnsupportedFeature', function(data) {
         if (this.destroyed) {
           return; // Ignore any pending requests if the worker was terminated.
         }
-        var featureId = data.featureId;
-        var loadingTask = this.loadingTask;
+        let loadingTask = this.loadingTask;
         if (loadingTask.onUnsupportedFeature) {
-          loadingTask.onUnsupportedFeature(featureId);
+          loadingTask.onUnsupportedFeature(data.featureId);
         }
-        _UnsupportedManager.notify(featureId);
       }, this);
 
       messageHandler.on('JpegDecode', function(data) {
@@ -1989,7 +1917,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       return this.messageHandler.sendWithPromise('GetData', null);
     },
 
-    getPage: function WorkerTransport_getPage(pageNumber, capability) {
+    getPage(pageNumber) {
       if (!Number.isInteger(pageNumber) ||
           pageNumber <= 0 || pageNumber > this.numPages) {
         return Promise.reject(new Error('Invalid page request'));
@@ -2253,7 +2181,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
   let canvasInRendering = new WeakMap();
 
   function InternalRenderTask(callback, params, objs, commonObjs, operatorList,
-                              pageNumber, canvasFactory) {
+                              pageNumber, canvasFactory, webGLContext) {
     this.callback = callback;
     this.params = params;
     this.objs = objs;
@@ -2262,6 +2190,8 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     this.operatorList = operatorList;
     this.pageNumber = pageNumber;
     this.canvasFactory = canvasFactory;
+    this.webGLContext = webGLContext;
+
     this.running = false;
     this.graphicsReadyCallback = null;
     this.graphicsReady = false;
@@ -2304,7 +2234,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       var params = this.params;
       this.gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
                                     this.objs, this.canvasFactory,
-                                    params.imageLayer);
+                                    this.webGLContext, params.imageLayer);
 
       this.gfx.beginDrawing({
         transform: params.transform,
@@ -2325,14 +2255,8 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       if (this._canvas) {
         canvasInRendering.delete(this._canvas);
       }
-
-      if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PDFJS_NEXT')) ||
-          getDefaultSetting('pdfjsNext')) {
-        this.callback(new RenderingCancelledException(
-          'Rendering cancelled, page ' + this.pageNumber, 'canvas'));
-      } else {
-        this.callback('cancelled');
-      }
+      this.callback(new RenderingCancelledException(
+        'Rendering cancelled, page ' + this.pageNumber, 'canvas'));
     },
 
     operatorListChanged: function InternalRenderTask_operatorListChanged() {
@@ -2398,26 +2322,6 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
   return InternalRenderTask;
 })();
 
-/**
- * (Deprecated) Global observer of unsupported feature usages. Use
- * onUnsupportedFeature callback of the {PDFDocumentLoadingTask} instance.
- */
-var _UnsupportedManager = (function UnsupportedManagerClosure() {
-  var listeners = [];
-  return {
-    listen(cb) {
-      deprecated('Global UnsupportedManager.listen is used: ' +
-                 ' use PDFDocumentLoadingTask.onUnsupportedFeature instead');
-      listeners.push(cb);
-    },
-    notify(featureId) {
-      for (var i = 0, ii = listeners.length; i < ii; i++) {
-        listeners[i](featureId);
-      }
-    },
-  };
-})();
-
 var version, build;
 if (typeof PDFJSDev !== 'undefined') {
   version = PDFJSDev.eval('BUNDLE_VERSION');
@@ -2432,7 +2336,6 @@ export {
   PDFDocumentProxy,
   PDFPageProxy,
   setPDFNetworkStreamClass,
-  _UnsupportedManager,
   version,
   build,
 };
