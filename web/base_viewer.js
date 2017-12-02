@@ -16,7 +16,7 @@
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, isValidRotation,
   MAX_AUTO_SCALE, NullL10n, PresentationModeState, RendererType,
-  SCROLLBAR_PADDING, UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
+  SCROLLBAR_PADDING, TextLayerMode, UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
@@ -40,10 +40,10 @@ const DEFAULT_CACHE_SIZE = 10;
  *   queue object.
  * @property {boolean} removePageBorders - (optional) Removes the border shadow
  *   around the pages. The default is `false`.
- * @property {boolean} disableTextLayer - (optional) Disables creation of the
- *   text layer used for selection and searching. The default is `false`.
- * @property {boolean} enhanceTextSelection - (optional) Enables the improved
- *   text selection behaviour. The default is `false`.
+ * @property {number} textLayerMode - (optional) Controls if the text layer used
+ *   for selection and searching is created, and if the improved text selection
+ *   behaviour is enabled. The constants from {TextLayerMode} should be used.
+ *   The default value is `TextLayerMode.ENABLE`.
  * @property {string} imageResourcesPath - (optional) Path for image resources,
  *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms - (optional) Enables rendering of
@@ -118,8 +118,8 @@ class BaseViewer {
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
     this.removePageBorders = options.removePageBorders || false;
-    this.disableTextLayer = options.disableTextLayer || false;
-    this.enhanceTextSelection = options.enhanceTextSelection || false;
+    this.textLayerMode = Number.isInteger(options.textLayerMode) ?
+      options.textLayerMode : TextLayerMode.ENABLE;
     this.imageResourcesPath = options.imageResourcesPath || '';
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
@@ -378,7 +378,7 @@ class BaseViewer {
       let viewport = pdfPage.getViewport(scale * CSS_UNITS);
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let textLayerFactory = null;
-        if (!this.disableTextLayer) {
+        if (this.textLayerMode !== TextLayerMode.DISABLE) {
           textLayerFactory = this;
         }
         let pageView = new PDFPageView({
@@ -390,7 +390,7 @@ class BaseViewer {
           renderingQueue: this.renderingQueue,
           textLayerFactory,
           annotationLayerFactory: this,
-          enhanceTextSelection: this.enhanceTextSelection,
+          textLayerMode: this.textLayerMode,
           imageResourcesPath: this.imageResourcesPath,
           renderInteractiveForms: this.renderInteractiveForms,
           renderer: this.renderer,

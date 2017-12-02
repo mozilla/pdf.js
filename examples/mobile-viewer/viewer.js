@@ -22,7 +22,7 @@ if (typeof PDFJS === 'undefined' || !PDFJS.PDFViewer || !PDFJS.getDocument) {
 }
 
 var USE_ONLY_CSS_ZOOM = true;
-var DISABLE_TEXT_LAYER = true;
+var TEXT_LAYER_MODE = 0; // DISABLE
 var MAX_IMAGE_SIZE = 1024 * 1024;
 var WORKER_SRC = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 var CMAP_URL = '../../node_modules/pdfjs-dist/cmaps/';
@@ -305,7 +305,7 @@ var PDFViewerApplication = {
       container: container,
       linkService: linkService,
       l10n: this.l10n,
-      disableTextLayer: DISABLE_TEXT_LAYER,
+      textLayerMode: TEXT_LAYER_MODE,
       useOnlyCssZoom: USE_ONLY_CSS_ZOOM,
     });
     this.pdfViewer = pdfViewer;

@@ -53,22 +53,12 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER,
   },
-  disableTextLayer: {
-    /** @type {boolean} */
-    value: false,
-    kind: OptionKind.VIEWER,
-  },
   enablePrintAutoRotate: {
     /** @type {boolean} */
     value: false,
     kind: OptionKind.VIEWER,
   },
   enableWebGL: {
-    /** @type {boolean} */
-    value: false,
-    kind: OptionKind.VIEWER,
-  },
-  enhanceTextSelection: {
     /** @type {boolean} */
     value: false,
     kind: OptionKind.VIEWER,
@@ -116,6 +106,11 @@ const defaultOptions = {
   sidebarViewOnLoad: {
     /** @type {number} */
     value: 0,
+    kind: OptionKind.VIEWER,
+  },
+  textLayerMode: {
+    /** @type {number} */
+    value: 1,
     kind: OptionKind.VIEWER,
   },
   useOnlyCssZoom: {

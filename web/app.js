@@ -18,7 +18,7 @@ import {
   animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isFileSchema,
   isValidRotation, MAX_SCALE, MIN_SCALE, noContextMenuHandler,
   normalizeWheelEventDelta, parseQueryString, PresentationModeState,
-  ProgressBar, RendererType
+  ProgressBar, RendererType, TextLayerMode
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
@@ -188,14 +188,11 @@ let PDFViewerApplication = {
       preferences.get('defaultZoomValue').then(function resolved(value) {
         AppOptions.set('defaultZoomValue', value);
       }),
-      preferences.get('enhanceTextSelection').then(function resolved(value) {
-        AppOptions.set('enhanceTextSelection', value);
-      }),
-      preferences.get('disableTextLayer').then(function resolved(value) {
-        if (AppOptions.get('disableTextLayer') === true) {
+      preferences.get('textLayerMode').then(function resolved(value) {
+        if (AppOptions.get('textLayerMode') === TextLayerMode.DISABLE) {
           return;
         }
-        AppOptions.set('disableTextLayer', value);
+        AppOptions.set('textLayerMode', value);
       }),
       preferences.get('disableRange').then(function resolved(value) {
         if (AppOptions.get('disableRange') === true) {
@@ -297,7 +294,7 @@ let PDFViewerApplication = {
       if ('textlayer' in hashParams) {
         switch (hashParams['textlayer']) {
           case 'off':
-            AppOptions.set('disableTextLayer', true);
+            AppOptions.set('textLayerMode', TextLayerMode.DISABLE);
             break;
           case 'visible':
           case 'shadow':
@@ -375,8 +372,7 @@ let PDFViewerApplication = {
         downloadManager,
         renderer: AppOptions.get('renderer'),
         l10n: this.l10n,
-        disableTextLayer: AppOptions.get('disableTextLayer'),
-        enhanceTextSelection: AppOptions.get('enhanceTextSelection'),
+        textLayerMode: AppOptions.get('textLayerMode'),
         imageResourcesPath: AppOptions.get('imageResourcesPath'),
         renderInteractiveForms: AppOptions.get('renderInteractiveForms'),
         enablePrintAutoRotate: AppOptions.get('enablePrintAutoRotate'),

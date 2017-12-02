@@ -37,6 +37,12 @@ const RendererType = {
   SVG: 'svg',
 };
 
+const TextLayerMode = {
+  DISABLE: 0,
+  ENABLE: 1,
+  ENABLE_ENHANCE: 2,
+};
+
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
@@ -629,6 +635,7 @@ export {
   cloneObj,
   PresentationModeState,
   RendererType,
+  TextLayerMode,
   mozL10n,
   NullL10n,
   EventBus,
