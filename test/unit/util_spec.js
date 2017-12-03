@@ -14,10 +14,55 @@
  */
 
 import {
-  ReadableStream, removeNullCharacters, stringToPDFString
+  bytesToString, ReadableStream, removeNullCharacters, stringToBytes,
+  stringToPDFString
 } from '../../src/shared/util';
 
 describe('util', function() {
+  describe('bytesToString', function() {
+    it('handles non-array arguments', function() {
+      expect(function() {
+        bytesToString(null);
+      }).toThrow(new Error('Invalid argument for bytesToString'));
+    });
+
+    it('handles array arguments with a length not exceeding the maximum',
+        function() {
+      expect(bytesToString(new Uint8Array([]))).toEqual('');
+      expect(bytesToString(new Uint8Array([102, 111, 111]))).toEqual('foo');
+    });
+
+    it('handles array arguments with a length exceeding the maximum',
+        function() {
+      const length = 10000; // Larger than MAX_ARGUMENT_COUNT = 8192.
+
+      // Create an array with `length` 'a' character codes.
+      let bytes = new Uint8Array(length);
+      for (let i = 0; i < length; i++) {
+        bytes[i] = 'a'.charCodeAt(0);
+      }
+
+      // Create a string with `length` 'a' characters. We need an array of size
+      // `length + 1` since `join` puts the argument between the array elements.
+      let string = Array(length + 1).join('a');
+
+      expect(bytesToString(bytes)).toEqual(string);
+    });
+  });
+
+  describe('stringToBytes', function() {
+    it('handles non-string arguments', function() {
+      expect(function() {
+        stringToBytes(null);
+      }).toThrow(new Error('Invalid argument for stringToBytes'));
+    });
+
+    it('handles string arguments', function() {
+      expect(stringToBytes('')).toEqual(new Uint8Array([]));
+      expect(stringToBytes('foo')).toEqual(new Uint8Array([102, 111, 111]));
+    });
+  });
+
   describe('stringToPDFString', function() {
     it('handles ISO Latin 1 strings', function() {
       let str = '\x8Dstring\x8E';
