@@ -1815,7 +1815,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
             pageProxy.objs.resolve(id, imageData);
 
             // heuristics that will allow not to store large data
-            var MAX_IMAGE_SIZE_TO_STORE = 8000000;
+            var MAX_IMAGE_SIZE_TO_STORE =
+              typeof getDefaultSetting('maxImageSizeToStore') === 'number' ?
+                getDefaultSetting('maxImageSizeToStore') :
+                8000000;
             if (imageData && 'data' in imageData &&
                 imageData.data.length > MAX_IMAGE_SIZE_TO_STORE) {
               pageProxy.cleanupAfterRender = true;
