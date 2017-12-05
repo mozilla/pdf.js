@@ -79,11 +79,13 @@ function isDefaultHandler() {
 }
 
 function initializeDefaultPreferences() {
+  /* eslint-disable semi */
   var DEFAULT_PREFERENCES =
 //#include ../../../web/default_preferences.json
 //#if false
-    "end of DEFAULT_PREFERENCES";
+    "end of DEFAULT_PREFERENCES"
 //#endif
+  /* eslint-enable semi */
 
   var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + ".");
   var defaultValue;
