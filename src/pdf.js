@@ -73,4 +73,4 @@ exports.RenderingCancelledException =
   pdfjsDisplayDOMUtils.RenderingCancelledException;
 exports.getFilenameFromUrl = pdfjsDisplayDOMUtils.getFilenameFromUrl;
 exports.addLinkAttributes = pdfjsDisplayDOMUtils.addLinkAttributes;
-exports.StatTimer = pdfjsSharedUtil.StatTimer;
+exports.StatTimer = pdfjsDisplayDOMUtils.StatTimer;
