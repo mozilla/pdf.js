@@ -463,9 +463,13 @@ function isExternalLinkTargetSet() {
 
 class StatTimer {
   constructor(enable = true) {
+    this.enabled = !!enable;
+    this.reset();
+  }
+
+  reset() {
     this.started = Object.create(null);
     this.times = [];
-    this.enabled = !!enable;
   }
 
   time(name) {
@@ -513,6 +517,30 @@ class StatTimer {
   }
 }
 
+/**
+ * Helps avoid having to initialize {StatTimer} instances, e.g. one for every
+ * page, in cases where the collected stats are not actually being used.
+ * This (dummy) class can thus, since all its methods are `static`, be directly
+ * shared between multiple call-sites without the need to be initialized first.
+ *
+ * NOTE: This must implement the same interface as {StatTimer}.
+ */
+class DummyStatTimer {
+  constructor() {
+    throw new Error('Cannot initialize DummyStatTimer.');
+  }
+
+  static reset() {}
+
+  static time(name) {}
+
+  static timeEnd(name) {}
+
+  static toString() {
+    return '';
+  }
+}
+
 export {
   CustomStyle,
   RenderingCancelledException,
@@ -527,4 +555,5 @@ export {
   DOMSVGFactory,
   SimpleXMLParser,
   StatTimer,
+  DummyStatTimer,
 };
