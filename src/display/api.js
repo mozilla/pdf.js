@@ -21,7 +21,7 @@ import {
   stringToBytes, UnexpectedResponseException, UnknownErrorException, Util, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, getDefaultSetting,
+  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, getDefaultSetting,
   RenderingCancelledException, StatTimer
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
@@ -734,8 +734,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.pageIndex = pageIndex;
     this.pageInfo = pageInfo;
     this.transport = transport;
-    this.stats = new StatTimer();
-    this.stats.enabled = getDefaultSetting('enableStats');
+    this._stats = (getDefaultSetting('enableStats') ?
+                   new StatTimer() : DummyStatTimer);
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
     this.cleanupAfterRender = false;
@@ -811,7 +811,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      *                      is resolved when the page finishes rendering.
      */
     render: function PDFPageProxy_render(params) {
-      var stats = this.stats;
+      let stats = this._stats;
       stats.time('Overall');
 
       // If there was a pending destroy cancel it so no cleanup happens during
@@ -842,7 +842,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           lastChunk: false,
         };
 
-        this.stats.time('Page Request');
+        stats.time('Page Request');
         this.transport.messageHandler.send('RenderPageRequest', {
           pageIndex: this.pageNumber - 1,
           intent: renderingIntent,
@@ -1020,17 +1020,19 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
     /**
      * Cleans up resources allocated by the page.
+     * @param {boolean} resetStats - (optional) Reset page stats, if enabled.
+     *   The default value is `false`.
      */
-    cleanup: function PDFPageProxy_cleanup() {
+    cleanup(resetStats = false) {
       this.pendingCleanup = true;
-      this._tryCleanup();
+      this._tryCleanup(resetStats);
     },
     /**
      * For internal use only. Attempts to clean up if rendering is in a state
      * where that's possible.
      * @ignore
      */
-    _tryCleanup: function PDFPageProxy_tryCleanup() {
+    _tryCleanup(resetStats = false) {
       if (!this.pendingCleanup ||
           Object.keys(this.intentStates).some(function(intent) {
             var intentState = this.intentStates[intent];
@@ -1045,6 +1047,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }, this);
       this.objs.clear();
       this.annotationsPromise = null;
+      if (resetStats) {
+        this._stats.reset();
+      }
       this.pendingCleanup = false;
     },
     /**
@@ -1085,6 +1090,13 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         intentState.receivingOperatorList = false;
         this._tryCleanup();
       }
+    },
+
+    /**
+     * @return {Object} Returns page stats, if enabled.
+     */
+    get stats() {
+      return (this._stats instanceof StatTimer ? this._stats : null);
     },
   };
   return PDFPageProxy;
@@ -1704,7 +1716,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
         var page = this.pageCache[data.pageIndex];
 
-        page.stats.timeEnd('Page Request');
+        page._stats.timeEnd('Page Request');
         page._startRenderPage(data.transparency, data.intent);
       }, this);
 
