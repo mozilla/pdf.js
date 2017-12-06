@@ -15,15 +15,14 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  assert, createPromiseCapability, getVerbosityLevel, info,
-  InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream,
-  MessageHandler, MissingPDFException, NativeImageDecoding, PageViewport,
-  PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
-  UnknownErrorException, Util, warn
+  assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
+  isArrayBuffer, isSameOrigin, loadJpegStream, MessageHandler,
+  MissingPDFException, NativeImageDecoding, PageViewport, PasswordException,
+  stringToBytes, UnexpectedResponseException, UnknownErrorException, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, getDefaultSetting,
-  RenderingCancelledException
+  RenderingCancelledException, StatTimer
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { CanvasGraphics } from './canvas';
