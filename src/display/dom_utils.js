@@ -461,6 +461,86 @@ function isExternalLinkTargetSet() {
   }
 }
 
+class StatTimer {
+  constructor(enable = true) {
+    this.enabled = !!enable;
+    this.reset();
+  }
+
+  reset() {
+    this.started = Object.create(null);
+    this.times = [];
+  }
+
+  time(name) {
+    if (!this.enabled) {
+      return;
+    }
+    if (name in this.started) {
+      warn('Timer is already running for ' + name);
+    }
+    this.started[name] = Date.now();
+  }
+
+  timeEnd(name) {
+    if (!this.enabled) {
+      return;
+    }
+    if (!(name in this.started)) {
+      warn('Timer has not been started for ' + name);
+    }
+    this.times.push({
+      'name': name,
+      'start': this.started[name],
+      'end': Date.now(),
+    });
+    // Remove timer from started so it can be called again.
+    delete this.started[name];
+  }
+
+  toString() {
+    let times = this.times;
+    // Find the longest name for padding purposes.
+    let out = '', longest = 0;
+    for (let i = 0, ii = times.length; i < ii; ++i) {
+      let name = times[i]['name'];
+      if (name.length > longest) {
+        longest = name.length;
+      }
+    }
+    for (let i = 0, ii = times.length; i < ii; ++i) {
+      let span = times[i];
+      let duration = span.end - span.start;
+      out += `${span['name'].padEnd(longest)} ${duration}ms\n`;
+    }
+    return out;
+  }
+}
+
+/**
+ * Helps avoid having to initialize {StatTimer} instances, e.g. one for every
+ * page, in cases where the collected stats are not actually being used.
+ * This (dummy) class can thus, since all its methods are `static`, be directly
+ * shared between multiple call-sites without the need to be initialized first.
+ *
+ * NOTE: This must implement the same interface as {StatTimer}.
+ */
+class DummyStatTimer {
+  constructor() {
+    throw new Error('Cannot initialize DummyStatTimer.');
+  }
+
+  static reset() {}
+
+  static time(name) {}
+
+  static timeEnd(name) {}
+
+  static toString() {
+    return '';
+  }
+}
+
 export {
   CustomStyle,
   RenderingCancelledException,
@@ -474,4 +554,6 @@ export {
   DOMCMapReaderFactory,
   DOMSVGFactory,
   SimpleXMLParser,
+  StatTimer,
+  DummyStatTimer,
 };

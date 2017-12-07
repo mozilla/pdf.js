@@ -19,8 +19,6 @@
 var WAITING_TIME = 100; // ms
 var PDF_TO_CSS_UNITS = 96.0 / 72.0;
 
-var StatTimer = pdfjsDistBuildPdf.StatTimer;
-
 /**
  * @class
  */
@@ -536,9 +534,10 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
               if (annotationLayerCanvas) {
                 ctx.drawImage(annotationLayerCanvas, 0, 0);
               }
-              page.cleanup();
-              task.stats = page.stats;
-              page.stats = new StatTimer();
+              if (page.stats) { // Get the page stats *before* running cleanup.
+                task.stats = page.stats;
+              }
+              page.cleanup(/* resetStats = */ true);
               self._snapshot(task, error);
             });
             initPromise.then(function () {
