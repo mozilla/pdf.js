@@ -33,11 +33,13 @@ XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
                                    "@mozilla.org/mime;1",
                                    "nsIMIMEService");
 
+/* eslint-disable semi */
 var DEFAULT_PREFERENCES =
 //#include ../../../web/default_preferences.json
 //#if false
-  "end of DEFAULT_PREFERENCES";
+  "end of DEFAULT_PREFERENCES"
 //#endif
+/* eslint-enable semi */
 
 var PdfjsChromeUtils = {
   // For security purposes when running remote, we restrict preferences
