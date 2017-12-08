@@ -467,6 +467,8 @@ var ProblematicCharRanges = new Int32Array([
   0x3164, 0x3165,
   // Chars that is used in complex-script shaping.
   0xAA60, 0xAA80,
+  // Unicode high surrogates.
+  0xD800, 0xE000,
   // Specials Unicode block.
   0xFFF0, 0x10000
 ]);

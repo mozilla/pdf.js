@@ -1337,6 +1337,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue2884_reduced",
+       "file": "pdfs/issue2884_reduced.pdf",
+       "md5": "18386542fc82affa2a5d3722549f8211",
+       "rounds": 1,
+       "link": false,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "bug956965",
        "file": "pdfs/bug956965.pdf",
        "md5": "9b2f1176c797ee84e989a507e745f89d",
