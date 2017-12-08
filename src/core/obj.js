@@ -1102,10 +1102,14 @@ var XRef = (function XRefClosure() {
         return skipped;
       }
       var objRegExp = /^(\d+)\s+(\d+)\s+obj\b/;
+      const endobjRegExp = /\bendobj[\b\s]$/;
+      const nestedObjRegExp = /\s+(\d+\s+\d+\s+obj[\b\s])$/;
+      const CHECK_CONTENT_LENGTH = 25;
+
       var trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
       var startxrefBytes = new Uint8Array([115, 116, 97, 114, 116, 120, 114,
                                           101, 102]);
-      var endobjBytes = new Uint8Array([101, 110, 100, 111, 98, 106]);
+      const objBytes = new Uint8Array([111, 98, 106]);
       var xrefBytes = new Uint8Array([47, 88, 82, 101, 102]);
 
       // Clear out any existing entries, since they may be bogus.
@@ -1147,8 +1151,36 @@ var XRef = (function XRefClosure() {
               uncompressed: true,
             };
           }
-          var contentLength = skipUntil(buffer, position, endobjBytes) + 7;
-          var content = buffer.subarray(position, position + contentLength);
+          let contentLength, startPos = position + token.length;
+
+          // Find the next "obj" string, rather than "endobj", to ensure that
+          // we won't skip over a new 'obj' operator in corrupt files where
+          // 'endobj' operators are missing (fixes issue9105_reduced.pdf).
+          while (startPos < buffer.length) {
+            let endPos = startPos + skipUntil(buffer, startPos, objBytes) + 4;
+            contentLength = endPos - position;
+
+            let checkPos = Math.max(endPos - CHECK_CONTENT_LENGTH, startPos);
+            let tokenStr = bytesToString(buffer.subarray(checkPos, endPos));
+
+            // Check if the current object ends with an 'endobj' operator.
+            if (endobjRegExp.test(tokenStr)) {
+              break;
+            } else {
+              // Check if an "obj" occurance is actually a new object,
+              // i.e. the current object is missing the 'endobj' operator.
+              let objToken = nestedObjRegExp.exec(tokenStr);
+
+              if (objToken && objToken[1]) {
+                warn('indexObjects: Found new "obj" inside of another "obj", ' +
+                     'caused by missing "endobj" -- trying to recover.');
+                contentLength -= objToken[1].length;
+                break;
+              }
+            }
+            startPos += contentLength;
+          }
+          let content = buffer.subarray(position, position + contentLength);
 
           // checking XRef stream suspect
           // (it shall have '/XRef' and next char is not a letter)
