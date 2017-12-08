@@ -81,6 +81,7 @@ var PdfjsChromeUtils = {
       // omitting it in prior Firefox versions breaks the addon.
       var ffVersion = parseInt(Services.appinfo.platformVersion);
       if (ffVersion <= 55) {
+        // eslint-disable-next-line mozilla/no-useless-parameters
         Services.obs.addObserver(this, "quit-application", false);
         return;
       }
