@@ -600,13 +600,9 @@ function string32(value) {
                              (value >> 8) & 0xff, value & 0xff);
 }
 
+// NOTE: This name is misleading as it rounds the result up
 function log2(x) {
-  var n = 1, i = 0;
-  while (x > n) {
-    n <<= 1;
-    i++;
-  }
-  return i;
+  return Math.ceil(Math.log(x) * Math.LOG2E);
 }
 
 function readInt8(data, start) {
@@ -912,59 +908,40 @@ var PageViewport = (function PageViewportClosure() {
 
     // creating transform to convert pdf coordinate system to the normal
     // canvas like coordinates taking in account scale and rotation
-    var centerX = (viewBox[2] + viewBox[0]) / 2;
-    var centerY = (viewBox[3] + viewBox[1]) / 2;
-    var rotateA, rotateB, rotateC, rotateD;
     rotation = rotation % 360;
-    rotation = rotation < 0 ? rotation + 360 : rotation;
-    switch (rotation) {
-      case 180:
-        rotateA = -1; rotateB = 0; rotateC = 0; rotateD = 1;
-        break;
-      case 90:
-        rotateA = 0; rotateB = 1; rotateC = 1; rotateD = 0;
-        break;
-      case 270:
-        rotateA = 0; rotateB = -1; rotateC = -1; rotateD = 0;
-        break;
-      // case 0:
-      default:
-        rotateA = 1; rotateB = 0; rotateC = 0; rotateD = -1;
-        break;
+    if (rotation < 0) {
+      rotation = rotation + 360;
     }
-
-    if (dontFlip) {
-      rotateC = -rotateC; rotateD = -rotateD;
-    }
-
-    var offsetCanvasX, offsetCanvasY;
+    var sideways = rotation % 180;
+    var scaleX = rotation < 180 ? scale : -scale;
+    var scaleY = dontFlip ? scaleX : -scaleX;
     var width, height;
-    if (rotateA === 0) {
-      offsetCanvasX = Math.abs(centerY - viewBox[1]) * scale + offsetX;
-      offsetCanvasY = Math.abs(centerX - viewBox[0]) * scale + offsetY;
-      width = Math.abs(viewBox[3] - viewBox[1]) * scale;
-      height = Math.abs(viewBox[2] - viewBox[0]) * scale;
+    if (sideways) {
+      width = scale * Math.abs(viewBox[3] - viewBox[1]);
+      height = scale * Math.abs(viewBox[2] - viewBox[0]);
     } else {
-      offsetCanvasX = Math.abs(centerX - viewBox[0]) * scale + offsetX;
-      offsetCanvasY = Math.abs(centerY - viewBox[1]) * scale + offsetY;
-      width = Math.abs(viewBox[2] - viewBox[0]) * scale;
-      height = Math.abs(viewBox[3] - viewBox[1]) * scale;
+      width = scale * Math.abs(viewBox[2] - viewBox[0]);
+      height = scale * Math.abs(viewBox[3] - viewBox[1]);
     }
+
     // creating transform for the following operations:
     // translate(-centerX, -centerY), rotate and flip vertically,
     // scale, and translate(offsetCanvasX, offsetCanvasY)
-    this.transform = [
-      rotateA * scale,
-      rotateB * scale,
-      rotateC * scale,
-      rotateD * scale,
-      offsetCanvasX - rotateA * scale * centerX - rotateC * scale * centerY,
-      offsetCanvasY - rotateB * scale * centerX - rotateD * scale * centerY
-    ];
+    var centerX = scaleX * (viewBox[2] + viewBox[0]) / 2;
+    var centerY = scaleY * (viewBox[3] + viewBox[1]) / 2;
+
+    if (sideways) {
+      this.transform = [0, scaleX, -scaleY, 0,
+                        offsetX + centerY + width / 2,
+                        offsetY - centerX + height / 2];
+    } else {
+      this.transform = [scaleX, 0, 0, scaleY,
+                        offsetX - centerX + width / 2,
+                        offsetY - centerY + height / 2];
+    }
 
     this.width = width;
     this.height = height;
-    this.fontScale = scale;
   }
   PageViewport.prototype = /** @lends PageViewport.prototype */ {
     /**
