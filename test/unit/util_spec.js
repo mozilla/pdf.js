@@ -15,7 +15,7 @@
 
 import {
   bytesToString, isArrayBuffer, isBool, isEmptyObj, isNum, isSpace, isString,
-  ReadableStream, removeNullCharacters, stringToBytes, stringToPDFString
+  log2, ReadableStream, removeNullCharacters, stringToBytes, stringToPDFString
 } from '../../src/shared/util';
 
 describe('util', function() {
@@ -133,6 +133,20 @@ describe('util', function() {
       expect(isString(1)).toEqual(false);
       expect(isString(null)).toEqual(false);
       expect(isString(undefined)).toEqual(false);
+    });
+  });
+
+  describe('log2', function() {
+    it('handles values smaller than/equal to zero', function() {
+      expect(log2(0)).toEqual(0);
+      expect(log2(-1)).toEqual(0);
+    });
+
+    it('handles values larger than zero', function() {
+      expect(log2(1)).toEqual(0);
+      expect(log2(2)).toEqual(1);
+      expect(log2(3)).toEqual(2);
+      expect(log2(3.14)).toEqual(2);
     });
   });
 
