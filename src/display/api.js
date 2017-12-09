@@ -20,7 +20,7 @@ import {
   InvalidPDFException, isArrayBuffer, isSameOrigin, MissingPDFException,
   NativeImageDecoding, PasswordException, setVerbosityLevel, shadow,
   stringToBytes, UnexpectedResponseException, UnknownErrorException,
-  unreachable, URL, warn
+  unreachable, URL, Util, warn
 } from '../shared/util';
 import {
   deprecated, DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
@@ -891,6 +891,9 @@ class PDFDocumentProxy {
  *                    CSS <color> value, a CanvasGradient object (a linear or
  *                    radial gradient) or a CanvasPattern object (a repetitive
  *                    image). The default value is 'rgb(255,255,255)'.
+ * @property {boolean} resizeLargeImages - (optional) Whether or not large
+ *                     images will be resized before rendering. The default
+ *                     value is true.
  */
 
 /**
@@ -1002,7 +1005,8 @@ class PDFPageProxy {
    */
   render({ canvasContext, viewport, intent = 'display', enableWebGL = false,
            renderInteractiveForms = false, transform = null, imageLayer = null,
-           canvasFactory = null, background = null, }) {
+           canvasFactory = null, background = null,
+           resizeLargeImages = true, }) {
     const stats = this._stats;
     stats.time('Overall');
 
@@ -1015,6 +1019,16 @@ class PDFPageProxy {
     const webGLContext = new WebGLContext({
       enable: enableWebGL,
     });
+
+    let combinedInitialTransform = null;
+    if (resizeLargeImages !== false) {
+      if (transform) {
+        combinedInitialTransform = Util.transform(transform,
+          viewport.transform);
+      } else {
+        combinedInitialTransform = viewport.transform;
+      }
+    }
 
     if (!this.intentStates[renderingIntent]) {
       this.intentStates[renderingIntent] = Object.create(null);
@@ -1036,6 +1050,7 @@ class PDFPageProxy {
         pageIndex: this.pageNumber - 1,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
+        combinedInitialTransform,
       });
     }
 

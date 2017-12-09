@@ -61,11 +61,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     isEvalSupported: true,
   };
 
-  function PartialEvaluator({ xref, handler, pageIndex, idFactory, fontCache,
-                              builtInCMapCache, options = null,
-                              pdfFunctionFactory, }) {
+  function PartialEvaluator({ pdfManager, xref, handler, pageIndex, idFactory,
+                              fontCache, builtInCMapCache, options = null,
+                              pdfFunctionFactory,
+                              combinedInitialTransform = null, }) {
+    this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
+    this.combinedInitialTransform = combinedInitialTransform;
     this.pageIndex = pageIndex;
     this.idFactory = idFactory;
     this.fontCache = fontCache;
@@ -295,7 +298,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     async buildPaintImageXObject({ resources, image, isInline = false,
                                    operatorList, cacheKey, imageCache,
-                                   forceDisableNativeImageDecoder = false, }) {
+                                   forceDisableNativeImageDecoder = false,
+                                   ctm, }) {
       var dict = image.dict;
       var w = dict.get('Width', 'W');
       var h = dict.get('Height', 'H');
@@ -326,10 +330,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                       /* forceClamped = */ true);
         var decode = dict.getArray('Decode', 'D');
 
+        let resizeWidth = width, resizeHeight = height;
+        if (this.combinedInitialTransform) {
+          const combinedTransform =
+            Util.transform(this.combinedInitialTransform, ctm);
+          const scaledDimensions =
+            Util.singularValueDecompose2dScale(combinedTransform);
+          resizeWidth = scaledDimensions[0];
+          resizeHeight = scaledDimensions[1];
+        }
+
         imgData = PDFImage.createMask({
           imgArray,
           width,
           height,
+          resizeWidth,
+          resizeHeight,
           imageIsFromDecodeStream: image instanceof DecodeStream,
           inverseDecode: (!!decode && decode[0] > 0),
         });
@@ -982,6 +998,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     operatorList,
                     cacheKey: name,
                     imageCache,
+                    ctm: stateManager.state.ctm,
                   }).then(resolveXObject, rejectXObject);
                   return;
                 } else if (type.name === 'PS') {
@@ -1038,6 +1055,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 operatorList,
                 cacheKey,
                 imageCache,
+                ctm: stateManager.state.ctm,
               }));
               return;
             case OPS.showText:
@@ -2677,6 +2695,7 @@ var TranslatedFont = (function TranslatedFontClosure() {
       type3Options.nativeImageDecoderSupport = NativeImageDecoding.NONE;
       var type3Evaluator = evaluator.clone(type3Options);
       type3Evaluator.parsingType3Font = true;
+      type3Evaluator.combinedInitialTransform = null;
 
       var translatedFont = this.font;
       var loadCharProcsPromise = Promise.resolve();
