@@ -100,11 +100,6 @@ let JpegStream = (function JpegStreamClosure() {
     this.eof = true;
   };
 
-  JpegStream.prototype.getBytes = function(length) {
-    this.readBlock();
-    return this.buffer;
-  };
-
   JpegStream.prototype.getIR = function(forceDataSchema = false) {
     return createObjectURL(this.bytes, 'image/jpeg', forceDataSchema);
   };
