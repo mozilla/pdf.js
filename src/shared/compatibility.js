@@ -348,6 +348,14 @@ PDFJS.compatibilityChecked = true;
   Array.prototype.includes = require('core-js/fn/array/includes');
 })();
 
+// Provides support for Math.log2 in legacy browsers.
+// Support: IE.
+(function checkMathLog2() {
+  if (Math.log2) {
+    return;
+  }
+  Math.log2 = require('core-js/fn/math/log2');
+})();
 
 // Provides support for Number.isNaN in legacy browsers.
 // Support: IE.
