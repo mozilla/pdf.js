@@ -386,7 +386,11 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 }
 
 html[dir='ltr'] .findbar {
-  left: 30px;
+  left: 68px;
+}
+
+.ce-findbar {
+  left: 30px !important;
 }
 
 html[dir='rtl'] .findbar {

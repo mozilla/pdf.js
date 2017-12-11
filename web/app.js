@@ -2158,6 +2158,7 @@ function setCustomViewForCE() {
   document.getElementById('print').style.display='none';
   document.getElementById('download').style.display='none';
   document.getElementById('viewBookmark').style.display='none';
+  document.getElementById('findbar').classList.add('ce-findbar');
   document.getElementsByTagName('body')[0].style.backgroundColor = "#fff";
 }
 
