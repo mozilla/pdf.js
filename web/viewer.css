@@ -442,6 +442,7 @@ html[dir='rtl'] .findbar {
 }
 #findInput::placeholder {
   font-style: italic;
+  color: #cecece;
 }
 #findInput[data-status="pending"] {
   background-image: url(images/loading-small.png);
