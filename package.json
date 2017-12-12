@@ -44,5 +44,9 @@
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "dependencies": {
+    "g": "^2.0.1",
+    "gulp-cli": "^1.4.0"
+  }
 }
