@@ -60,8 +60,8 @@
   background-color: rgb(0, 100, 0);
 }
 
-.textLayer ::selection { background: rgb(0,0,255); }
-.textLayer ::-moz-selection { background: rgb(0,0,255); }
+.textLayer ::selection { background: rgb(185,234,255); }
+.textLayer ::-moz-selection { background: rgb(185,234,255); }
 
 .textLayer .endOfContent {
   display: block;
