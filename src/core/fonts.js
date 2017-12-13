@@ -28,7 +28,7 @@ import {
 } from './encodings';
 import {
   getGlyphMapForStandardFonts, getNonStdFontMap, getStdFontMap,
-  getSupplementalGlyphMapForArialBlack
+  getSupplementalGlyphMapForArialBlack, getSupplementalGlyphMapForCalibri
 } from './standard_fonts';
 import {
   getUnicodeForGlyph, getUnicodeRangeFor, mapSpecialUnicodeValues
@@ -211,9 +211,9 @@ var Glyph = (function GlyphClosure() {
 })();
 
 var ToUnicodeMap = (function ToUnicodeMapClosure() {
-  function ToUnicodeMap(cmap) {
+  function ToUnicodeMap(cmap = []) {
     // The elements of this._map can be integers or strings, depending on how
-    // |cmap| was created.
+    // `cmap` was created.
     this._map = cmap;
   }
 
@@ -467,6 +467,8 @@ var ProblematicCharRanges = new Int32Array([
   0x3164, 0x3165,
   // Chars that is used in complex-script shaping.
   0xAA60, 0xAA80,
+  // Unicode high surrogates.
+  0xD800, 0xE000,
   // Specials Unicode block.
   0xFFF0, 0x10000
 ]);
@@ -516,6 +518,7 @@ var Font = (function FontClosure() {
     this.defaultEncoding = properties.defaultEncoding;
 
     this.toUnicode = properties.toUnicode;
+    this.fallbackToUnicode = properties.fallbackToUnicode || new ToUnicodeMap();
 
     this.toFontChar = [];
 
@@ -1241,7 +1244,14 @@ var Font = (function FontClosure() {
           for (charCode in SupplementalGlyphMapForArialBlack) {
             map[+charCode] = SupplementalGlyphMapForArialBlack[charCode];
           }
+        } else if (/Calibri/i.test(name)) {
+          let SupplementalGlyphMapForCalibri =
+            getSupplementalGlyphMapForCalibri();
+          for (charCode in SupplementalGlyphMapForCalibri) {
+            map[+charCode] = SupplementalGlyphMapForCalibri[charCode];
+          }
         }
+
         var isIdentityUnicode = this.toUnicode instanceof IdentityToUnicodeMap;
         if (!isIdentityUnicode) {
           this.toUnicode.forEach(function(charCode, unicodeCharCode) {
@@ -2766,7 +2776,8 @@ var Font = (function FontClosure() {
       width = isNum(width) ? width : this.defaultWidth;
       var vmetric = this.vmetrics && this.vmetrics[widthCode];
 
-      var unicode = this.toUnicode.get(charcode) || charcode;
+      let unicode = this.toUnicode.get(charcode) ||
+        this.fallbackToUnicode.get(charcode) || charcode;
       if (typeof unicode === 'number') {
         unicode = String.fromCharCode(unicode);
       }

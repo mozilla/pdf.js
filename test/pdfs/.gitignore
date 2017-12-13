@@ -53,6 +53,7 @@
 !issue8061.pdf
 !issue8088.pdf
 !issue8125.pdf
+!issue8229.pdf
 !issue8372.pdf
 !issue8424.pdf
 !issue8480.pdf
@@ -119,11 +120,13 @@
 !issue5084.pdf
 !issue8960_reduced.pdf
 !issue5202.pdf
+!images_1bit_grayscale.pdf
 !issue5280.pdf
 !issue5677.pdf
 !issue5954.pdf
 !issue6612.pdf
 !alphatrans.pdf
+!pattern_text_embedded_font.pdf
 !devicen.pdf
 !cmykjpeg.pdf
 !issue840.pdf
@@ -219,6 +222,7 @@
 !bug1175962.pdf
 !bug1020226.pdf
 !basicapi.pdf
+!issue2884_reduced.pdf
 !mixedfonts.pdf
 !shading_extend.pdf
 !noembed-identity.pdf

@@ -29,27 +29,14 @@ const Cr = Components.results;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-function getBoolPref(pref, def) {
-  try {
-    return Services.prefs.getBoolPref(pref);
-  } catch (ex) {
-    return def;
-  }
-}
-
-function log(str) {
-  if (!getBoolPref(EXT_PREFIX + ".pdfBugEnabled", false)) {
-    return;
-  }
-  dump(str + "\n");
-}
-
 function initializeDefaultPreferences() {
+  /* eslint-disable semi */
   var DEFAULT_PREFERENCES =
 //#include ../../web/default_preferences.json
 //#if false
-    "end of DEFAULT_PREFERENCES";
+    "end of DEFAULT_PREFERENCES"
 //#endif
+  /* eslint-enable semi */
 
   var defaultBranch = Services.prefs.getDefaultBranch(EXT_PREFIX + ".");
   var defaultValue;

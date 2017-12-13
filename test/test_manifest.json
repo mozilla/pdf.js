@@ -718,6 +718,14 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue9195",
+       "file": "pdfs/issue9195.pdf",
+       "md5": "90e78a11abdc6c5ae79b8b95cfbb1895",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue8707",
        "file": "pdfs/issue8707.pdf",
        "md5": "d3dc670adde9ec9fb82c974027033029",
@@ -1337,6 +1345,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue2884_reduced",
+       "file": "pdfs/issue2884_reduced.pdf",
+       "md5": "18386542fc82affa2a5d3722549f8211",
+       "rounds": 1,
+       "link": false,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "bug956965",
        "file": "pdfs/bug956965.pdf",
        "md5": "9b2f1176c797ee84e989a507e745f89d",
@@ -1434,6 +1450,13 @@
     {  "id": "issue7492-text",
        "file": "pdfs/issue7492.pdf",
        "md5": "7b0b28919c1088a2a5a0aeedbaa4c3ca",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
+    {  "id": "issue8229",
+       "file": "pdfs/issue8229.pdf",
+       "md5": "a729f663782e87ebc1efad0755ebf6a5",
        "rounds": 1,
        "link": false,
        "type": "text"
@@ -2016,6 +2039,12 @@
        "link": false,
        "type": "eq",
        "about": "Type1 font where Length1/Length2 are several orders of magnitude too large."
+    },
+    {  "id": "images_1bit_grayscale",
+       "file": "pdfs/images_1bit_grayscale.pdf",
+       "md5": "e1c36a19563944891bd30cfc0199d07f",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "html5checker",
       "file": "pdfs/html5checker.pdf",
@@ -2703,6 +2732,12 @@
       "md5": "cee0ee8ea3a0643cbd716d57fd44f628",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "pattern_text_embedded_font",
+       "file": "pdfs/pattern_text_embedded_font.pdf",
+       "md5": "763b1b9efaecb2b5aefea71c39233f56",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue6113",
        "file": "pdfs/issue6113.pdf",

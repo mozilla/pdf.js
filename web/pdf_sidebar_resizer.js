@@ -136,6 +136,9 @@ class PDFSidebarResizer {
     _boundEvents.mouseUp = this._mouseUp.bind(this);
 
     this.resizer.addEventListener('mousedown', (evt) => {
+      if (evt.button !== 0) {
+        return;
+      }
       // Disable the `transition-duration` rules when sidebar resizing begins,
       // in order to improve responsiveness and to avoid visual glitches.
       this.outerContainer.classList.add(SIDEBAR_RESIZING_CLASS);
