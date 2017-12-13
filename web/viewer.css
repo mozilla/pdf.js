@@ -389,6 +389,10 @@ html[dir='ltr'] .findbar {
   left: 68px;
 }
 
+.ce-findbar {
+  left: 30px !important;
+}
+
 html[dir='rtl'] .findbar {
   right: 68px;
 }
