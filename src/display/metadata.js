@@ -37,6 +37,20 @@ class Metadata {
       let bytes = codes.replace(/\\([0-3])([0-7])([0-7])/g,
           function(code, d1, d2, d3) {
         return String.fromCharCode(d1 * 64 + d2 * 8 + d3 * 1);
+      }).replace(/&(amp|apos|gt|lt|quot);/g, function(str, name) {
+        switch (name) {
+          case 'amp':
+            return '&';
+          case 'apos':
+            return '\'';
+          case 'gt':
+            return '>';
+          case 'lt':
+            return '<';
+          case 'quot':
+            return '\"';
+        }
+        throw new Error(`_repair: ${name} isn't defined.`);
       });
 
       let chars = '';
