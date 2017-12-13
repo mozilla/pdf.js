@@ -15,7 +15,7 @@
 
 import {
   FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, info, isLittleEndian, isNum,
-  OPS, shadow, TextRenderingMode, Util, warn
+  OPS, shadow, TextRenderingMode, unreachable, Util, warn
 } from '../shared/util';
 import { getShadingPatternFromIR, TilingPattern } from './pattern_helper';
 
@@ -1733,10 +1733,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     // Images
     beginInlineImage: function CanvasGraphics_beginInlineImage() {
-      throw new Error('Should not call beginInlineImage');
+      unreachable('Should not call beginInlineImage');
     },
     beginImageData: function CanvasGraphics_beginImageData() {
-      throw new Error('Should not call beginImageData');
+      unreachable('Should not call beginImageData');
     },
 
     paintFormXObjectBegin: function CanvasGraphics_paintFormXObjectBegin(matrix,

@@ -14,7 +14,8 @@
  */
 
 import {
-  assert, CMapCompressionType, removeNullCharacters, stringToBytes, warn
+  assert, CMapCompressionType, removeNullCharacters, stringToBytes,
+  unreachable, warn
 } from '../shared/util';
 import globalScope from '../shared/global_scope';
 
@@ -527,7 +528,7 @@ class StatTimer {
  */
 class DummyStatTimer {
   constructor() {
-    throw new Error('Cannot initialize DummyStatTimer.');
+    unreachable('Cannot initialize DummyStatTimer.');
   }
 
   static reset() {}
