@@ -15,7 +15,7 @@
 
 import {
   bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info, isNum,
-  isSpace, MissingDataException, readUint32, shadow, string32, warn
+  isSpace, MissingDataException, readUint32, shadow, string32, unreachable, warn
 } from '../shared/util';
 import {
   CFF, CFFCharset, CFFCompiler, CFFHeader, CFFIndex, CFFParser, CFFPrivateDict,
@@ -295,7 +295,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
     },
 
     amend(map) {
-      throw new Error('Should not call amend()');
+      unreachable('Should not call amend()');
     },
   };
 
