@@ -1635,7 +1635,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
               'net::ERR_CACHE_READ_FAILURE. Retry with cachebusted url',
               reason.message
             );
-            if (reason && reason.message === 'network error') {
+            if (
+              reason && reason.message === 'network error' &&
+              // Only cachebust once
+              this._networkStream.source.url.indexOf('cachebust') === -1
+            ) {
               _rangeReader.cancel(reason);
               let cachebust = true;
               _rangeReader = this._networkStream.getRangeReader(data.begin, data.end, cachebust);
