@@ -2715,6 +2715,12 @@
       "rounds": 1,
       "type": "load"
     },
+    {  "id": "issue7074_reduced",
+       "file": "pdfs/issue7074_reduced.pdf",
+       "md5": "46893f8aa33620a05acdc27e3b79469d",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue5540",
       "file": "pdfs/issue5540.pdf",
       "md5": "12b69b19e366232422812ad8b2534f37",
