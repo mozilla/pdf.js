@@ -83,7 +83,7 @@ var checkProblematicCharRanges = function checkProblematicCharRanges() {
 
 describe('Fonts', function() {
   it('checkProblematicCharRanges', function() {
-    var EXPECTED_PERCENTAGE = 45;
+    var EXPECTED_PERCENTAGE = 100;
     var result = checkProblematicCharRanges();
 
     expect(result.percentage).toBeLessThan(EXPECTED_PERCENTAGE);
