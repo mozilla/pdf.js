@@ -1150,6 +1150,27 @@ var XRef = (function XRefClosure() {
           var contentLength = skipUntil(buffer, position, endobjBytes) + 7;
           var content = buffer.subarray(position, position + contentLength);
 
+          // Scan through the 'obj' content, to ensure that we won't miss
+          // any 'obj' operators in corrupt files (fixes issue9105.pdf).
+          let contentPos = token.length;
+          while (contentPos < contentLength) {
+            let contentToken = readToken(content, contentPos);
+
+            if (!contentToken) {
+              contentPos++;
+              continue;
+            }
+            if (objRegExp.exec(contentToken) &&
+                contentToken.trim() !== token.trim()) {
+              warn('indexObjects: found new "obj" inside of another "obj", ' +
+                   'caused by missing "endobj" -- trying to recover.');
+              contentLength = contentPos;
+              content = content.subarray(0, contentLength);
+              break;
+            }
+            contentPos += contentToken.length;
+          }
+
           // checking XRef stream suspect
           // (it shall have '/XRef' and next char is not a letter)
           var xrefTagOffset = skipUntil(content, 0, xrefBytes);
