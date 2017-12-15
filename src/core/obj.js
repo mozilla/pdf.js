@@ -16,7 +16,8 @@
 import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
   info, InvalidPDFException, isBool, isString, MissingDataException, shadow,
-  stringToPDFString, stringToUTF8String, Util, warn, XRefParseException
+  stringToPDFString, stringToUTF8String, unreachable, Util, warn,
+  XRefParseException
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -1474,7 +1475,7 @@ var XRef = (function XRefClosure() {
  */
 var NameOrNumberTree = (function NameOrNumberTreeClosure() {
   function NameOrNumberTree(root, xref) {
-    throw new Error('Cannot initialize NameOrNumberTree.');
+    unreachable('Cannot initialize NameOrNumberTree.');
   }
 
   NameOrNumberTree.prototype = {

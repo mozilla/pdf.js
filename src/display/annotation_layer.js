@@ -18,7 +18,8 @@ import {
   getFilenameFromUrl, LinkTarget
 } from './dom_utils';
 import {
-  AnnotationBorderStyleType, AnnotationType, stringToPDFString, Util, warn
+  AnnotationBorderStyleType, AnnotationType, stringToPDFString, unreachable,
+  Util, warn
 } from '../shared/util';
 
 /**
@@ -261,7 +262,7 @@ class AnnotationElement {
    * @memberof AnnotationElement
    */
   render() {
-    throw new Error('Abstract method `AnnotationElement.render` called');
+    unreachable('Abstract method `AnnotationElement.render` called');
   }
 }
 

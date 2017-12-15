@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { bytesToString, FormatError, Util } from '../shared/util';
+import {
+   bytesToString, FormatError, unreachable, Util
+} from '../shared/util';
 import { CFFParser } from './cff_parser';
 import { getGlyphsUnicode } from './glyphlist';
 import { StandardEncoding } from './encodings';
@@ -628,7 +630,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     },
 
     compileGlyphImpl() {
-      throw new Error('Children classes should implement this.');
+      unreachable('Children classes should implement this.');
     },
 
     hasBuiltPath(unicode) {
