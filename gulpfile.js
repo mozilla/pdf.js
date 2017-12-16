@@ -127,7 +127,8 @@ function createWebpackConfig(defines, output) {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
   });
-  var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
+  var licenseHeaderLibre =
+    fs.readFileSync('./src/license_header_libre.js').toString();
   var enableSourceMaps = !bundleDefines.FIREFOX && !bundleDefines.MOZCENTRAL &&
                          !bundleDefines.CHROME;
   var skipBabel = bundleDefines.SKIP_BABEL ||
@@ -136,7 +137,7 @@ function createWebpackConfig(defines, output) {
   return {
     output: output,
     plugins: [
-      new webpack2.BannerPlugin({ banner: licenseHeader, raw: true, }),
+      new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true, }),
     ],
     resolve: {
       alias: {
@@ -995,7 +996,7 @@ gulp.task('lib', ['buildnumber'], function () {
     content = content.replace(removeCjsSrc, function (all, prefix, suffix) {
       return prefix + suffix;
     });
-    return licenseHeader + content;
+    return licenseHeaderLibre + content;
   }
   var babel = require('babel-core');
   var versionInfo = getVersionJSON();
@@ -1012,7 +1013,8 @@ gulp.task('lib', ['buildnumber'], function () {
       'pdfjs-lib': '../pdf',
     },
   };
-  var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
+  var licenseHeaderLibre =
+    fs.readFileSync('./src/license_header_libre.js').toString();
   var preprocessor2 = require('./external/builder/preprocessor2.js');
   var buildLib = merge([
     gulp.src([
