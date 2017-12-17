@@ -9,3 +9,6 @@ install:
   - npm install -g gulp-cli
   - npm install
   - npm update
+
+after_success:
+  - npm run coveralls
