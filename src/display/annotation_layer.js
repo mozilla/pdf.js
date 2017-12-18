@@ -18,7 +18,8 @@ import {
   getFilenameFromUrl, LinkTarget
 } from './dom_utils';
 import {
-  AnnotationBorderStyleType, AnnotationType, stringToPDFString, Util, warn
+  AnnotationBorderStyleType, AnnotationType, stringToPDFString, unreachable,
+  Util, warn
 } from '../shared/util';
 
 /**
@@ -61,8 +62,7 @@ class AnnotationElementFactory {
             } else if (parameters.data.checkBox) {
               return new CheckboxWidgetAnnotationElement(parameters);
             }
-            warn('Unimplemented button widget annotation: pushbutton');
-            break;
+            return new PushButtonWidgetAnnotationElement(parameters);
           case 'Ch':
             return new ChoiceWidgetAnnotationElement(parameters);
         }
@@ -262,7 +262,7 @@ class AnnotationElement {
    * @memberof AnnotationElement
    */
   render() {
-    throw new Error('Abstract method `AnnotationElement.render` called');
+    unreachable('Abstract method `AnnotationElement.render` called');
   }
 }
 
@@ -540,6 +540,25 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
 
     this.container.appendChild(element);
     return this.container;
+  }
+}
+
+class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
+  /**
+   * Render the push button widget annotation's HTML element
+   * in the empty container.
+   *
+   * @public
+   * @memberof PushButtonWidgetAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    // The rendering and functionality of a push button widget annotation is
+    // equal to that of a link annotation, but may have more functionality, such
+    // as performing actions on form fields (resetting, submitting, et cetera).
+    let container = super.render();
+    container.className = 'buttonWidgetAnnotation pushButton';
+    return container;
   }
 }
 

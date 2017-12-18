@@ -14,8 +14,8 @@
  */
 
 import {
-  Ascii85Stream, AsciiHexStream, CCITTFaxStream, FlateStream, Jbig2Stream,
-  JpegStream, JpxStream, LZWStream, NullStream, PredictorStream, RunLengthStream
+  Ascii85Stream, AsciiHexStream, FlateStream, LZWStream, NullStream,
+  PredictorStream, RunLengthStream
 } from './stream';
 import {
   assert, FormatError, info, isNum, isString, MissingDataException, StreamType,
@@ -24,6 +24,10 @@ import {
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
 } from './primitives';
+import { CCITTFaxStream } from './ccitt_stream';
+import { Jbig2Stream } from './jbig2_stream';
+import { JpegStream } from './jpeg_stream';
+import { JpxStream } from './jpx_stream';
 
 var MAX_LENGTH_TO_CACHE = 1000;
 
@@ -561,7 +565,7 @@ var Parser = (function ParserClosure() {
       // when we can be absolutely certain that it actually is empty.
       if (maybeLength === 0) {
         warn('Empty "' + name + '" stream.');
-        return new NullStream(stream);
+        return new NullStream();
       }
       try {
         var xrefStreamStats = this.xref.stats.streamTypes;
@@ -621,7 +625,7 @@ var Parser = (function ParserClosure() {
           throw ex;
         }
         warn('Invalid stream: \"' + ex + '\"');
-        return new NullStream(stream);
+        return new NullStream();
       }
     },
   };

@@ -57,6 +57,13 @@ $ cd pdf.js
   </div>
 </div>
 
+## Including via a CDN
+
+PDF.js is hosted on several free CDNs:
+ - https://www.jsdelivr.com/package/npm/pdfjs-dist
+ - https://cdnjs.com/libraries/pdf.js
+ - https://unpkg.com/pdfjs-dist/
+
 ## File Layout Overview
 
 ### Prebuilt
@@ -106,8 +113,8 @@ $ cd pdf.js
 
 ## Trying the Viewer
 
-With the prebuilt or source version open `web/viewer.html` in a browser and the test pdf should load. Note: the worker is not enabled for file:// urls, so use a server. If you're using the source build and have node, you can run `gulp server`.
+With the prebuilt or source version, open `web/viewer.html` in a browser and the test pdf should load. Note: the worker is not enabled for file:// urls, so use a server. If you're using the source build and have node, you can run `gulp server`.
 
 ## More Information
 
-For a further walkthrough of a minimal viewer see the hello world example. More documentation can be found in our [wiki](https://github.com/mozilla/pdf.js/wiki) too.
+For a further walkthrough of a minimal viewer, see the hello world example. More documentation can be found in our [wiki](https://github.com/mozilla/pdf.js/wiki) too.

@@ -122,9 +122,8 @@ function getDOMWindow(aChannel) {
 }
 
 function getLocalizedStrings(path) {
-  var stringBundle = Cc["@mozilla.org/intl/stringbundle;1"].
-      getService(Ci.nsIStringBundleService).
-      createBundle("chrome://pdf.js/locale/" + path);
+  var stringBundle =
+    Services.strings.createBundle("chrome://pdf.js/locale/" + path);
 
   var map = {};
   var enumerator = stringBundle.getSimpleEnumeration();
@@ -154,7 +153,7 @@ function getLocalizedString(strings, id, property) {
 // PDF data storage
 function PdfDataListener(length) {
   this.length = length; // less than 0, if length is unknown
-  this.buffer = null;
+  this.buffers = [];
   this.loaded = 0;
 }
 
@@ -162,15 +161,7 @@ PdfDataListener.prototype = {
   append: function PdfDataListener_append(chunk) {
     // In most of the cases we will pass data as we receive it, but at the
     // beginning of the loading we may accumulate some data.
-    if (!this.buffer) {
-      this.buffer = new Uint8Array(chunk);
-    } else {
-      var buffer = this.buffer;
-      var newBuffer = new Uint8Array(buffer.length + chunk.length);
-      newBuffer.set(buffer);
-      newBuffer.set(chunk, buffer.length);
-      this.buffer = newBuffer;
-    }
+    this.buffers.push(chunk);
     this.loaded += chunk.length;
     if (this.length >= 0 && this.length < this.loaded) {
       this.length = -1; // reset the length, server is giving incorrect one
@@ -178,9 +169,26 @@ PdfDataListener.prototype = {
     this.onprogress(this.loaded, this.length >= 0 ? this.length : void 0);
   },
   readData: function PdfDataListener_readData() {
-    var result = this.buffer;
-    this.buffer = null;
-    return result;
+    if (this.buffers.length === 0) {
+      return null;
+    }
+    if (this.buffers.length === 1) {
+      return this.buffers.pop();
+    }
+    // There are multiple buffers that need to be combined into a single
+    // buffer.
+    let combinedLength = 0;
+    for (let buffer of this.buffers) {
+      combinedLength += buffer.length;
+    }
+    let combinedArray = new Uint8Array(combinedLength);
+    let writeOffset = 0;
+    while (this.buffers.length) {
+      let buffer = this.buffers.shift();
+      combinedArray.set(buffer, writeOffset);
+      writeOffset += buffer.length;
+    }
+    return combinedArray;
   },
   finish: function PdfDataListener_finish() {
     this.isDataReady = true;
@@ -888,8 +896,9 @@ PdfStreamConverter.prototype = {
 
     var binaryStream = this.binaryStream;
     binaryStream.setInputStream(aInputStream);
-    var chunk = binaryStream.readByteArray(aCount);
-    this.dataListener.append(chunk);
+    let chunk = new ArrayBuffer(aCount);
+    binaryStream.readArrayBuffer(aCount, chunk);
+    this.dataListener.append(new Uint8Array(chunk));
   },
 
   // nsIRequestObserver::onStartRequest
@@ -1018,11 +1027,10 @@ PdfStreamConverter.prototype = {
     // We can use the resource principal when data is fetched by the chrome,
     // e.g. useful for NoScript. Make make sure we reuse the origin attributes
     // from the request channel to keep isolation consistent.
-    var ssm = Cc["@mozilla.org/scriptsecuritymanager;1"]
-                .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE);
     var resourcePrincipal =
-      ssm.createCodebasePrincipal(uri, aRequest.loadInfo.originAttributes);
+      Services.scriptSecurityManager.createCodebasePrincipal(uri,
+        aRequest.loadInfo.originAttributes);
     aRequest.owner = resourcePrincipal;
 
     channel.asyncOpen2(proxy);

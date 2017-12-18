@@ -136,7 +136,7 @@ class PDFPageView {
   }
 
   reset(keepZoomLayer = false, keepAnnotations = false) {
-    this.cancelRendering();
+    this.cancelRendering(keepAnnotations);
 
     let div = this.div;
     div.style.width = Math.floor(this.viewport.width) + 'px';
@@ -159,7 +159,8 @@ class PDFPageView {
       // Hide the annotation layer until all elements are resized
       // so they are not displayed on the already resized page.
       this.annotationLayer.hide();
-    } else {
+    } else if (this.annotationLayer) {
+      this.annotationLayer.cancel();
       this.annotationLayer = null;
     }
 
@@ -240,7 +241,7 @@ class PDFPageView {
     this.reset(/* keepZoomLayer = */ true, /* keepAnnotations = */ true);
   }
 
-  cancelRendering() {
+  cancelRendering(keepAnnotations = false) {
     if (this.paintTask) {
       this.paintTask.cancel();
       this.paintTask = null;
@@ -251,6 +252,10 @@ class PDFPageView {
     if (this.textLayer) {
       this.textLayer.cancel();
       this.textLayer = null;
+    }
+    if (!keepAnnotations && this.annotationLayer) {
+      this.annotationLayer.cancel();
+      this.annotationLayer = null;
     }
   }
 
@@ -407,9 +412,7 @@ class PDFPageView {
         this.paintTask = null;
       }
 
-      if (((typeof PDFJSDev === 'undefined' ||
-            !PDFJSDev.test('PDFJS_NEXT')) && error === 'cancelled') ||
-          error instanceof RenderingCancelledException) {
+      if (error instanceof RenderingCancelledException) {
         this.error = null;
         return Promise.resolve(undefined);
       }
@@ -589,13 +592,8 @@ class PDFPageView {
     let cancelled = false;
     let ensureNotCancelled = () => {
       if (cancelled) {
-        if ((typeof PDFJSDev !== 'undefined' &&
-             PDFJSDev.test('PDFJS_NEXT')) || PDFJS.pdfjsNext) {
-          throw new RenderingCancelledException(
-            'Rendering cancelled, page ' + this.id, 'svg');
-        } else {
-          throw 'cancelled'; // eslint-disable-line no-throw-literal
-        }
+        throw new RenderingCancelledException(
+          'Rendering cancelled, page ' + this.id, 'svg');
       }
     };
 

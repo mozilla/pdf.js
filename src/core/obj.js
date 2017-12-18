@@ -16,7 +16,8 @@
 import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
   info, InvalidPDFException, isBool, isString, MissingDataException, shadow,
-  stringToPDFString, stringToUTF8String, Util, warn, XRefParseException
+  stringToPDFString, stringToUTF8String, unreachable, Util, warn,
+  XRefParseException
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -371,7 +372,7 @@ var Catalog = (function CatalogClosure() {
       var xref = this.xref;
       var obj = this.catDict.get('Names');
 
-      var javaScript = [];
+      let javaScript = null;
       function appendIfJavaScriptDict(jsDict) {
         var type = jsDict.get('S');
         if (!isName(type, 'JavaScript')) {
@@ -382,6 +383,9 @@ var Catalog = (function CatalogClosure() {
           js = bytesToString(js.getBytes());
         } else if (!isString(js)) {
           return;
+        }
+        if (!javaScript) {
+          javaScript = [];
         }
         javaScript.push(stringToPDFString(js));
       }
@@ -407,6 +411,9 @@ var Catalog = (function CatalogClosure() {
           // but is supported by many PDF readers/writers (including Adobe's).
           var action = openactionDict.get('N');
           if (isName(action, 'Print')) {
+            if (!javaScript) {
+              javaScript = [];
+            }
             javaScript.push('print({});');
           }
         } else {
@@ -1468,7 +1475,7 @@ var XRef = (function XRefClosure() {
  */
 var NameOrNumberTree = (function NameOrNumberTreeClosure() {
   function NameOrNumberTree(root, xref) {
-    throw new Error('Cannot initialize NameOrNumberTree.');
+    unreachable('Cannot initialize NameOrNumberTree.');
   }
 
   NameOrNumberTree.prototype = {

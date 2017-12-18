@@ -81,7 +81,7 @@ var DEFINES = {
   SINGLE_FILE: false,
   COMPONENTS: false,
   LIB: false,
-  PDFJS_NEXT: false,
+  SKIP_BABEL: false,
 };
 
 function safeSpawnSync(command, parameters, options) {
@@ -130,8 +130,8 @@ function createWebpackConfig(defines, output) {
   var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
   var enableSourceMaps = !bundleDefines.FIREFOX && !bundleDefines.MOZCENTRAL &&
                          !bundleDefines.CHROME;
-  var pdfjsNext = bundleDefines.PDFJS_NEXT ||
-                  process.env['PDFJS_NEXT'] === 'true';
+  var skipBabel = bundleDefines.SKIP_BABEL ||
+                  process.env['SKIP_BABEL'] === 'true';
 
   return {
     output: output,
@@ -152,7 +152,7 @@ function createWebpackConfig(defines, output) {
           loader: 'babel-loader',
           exclude: /src\/core\/(glyphlist|unicode)/, // babel is too slow
           options: {
-            presets: pdfjsNext ? undefined : ['es2015'],
+            presets: skipBabel ? undefined : ['env'],
             plugins: ['transform-es2015-modules-commonjs'],
           },
         },
@@ -168,17 +168,7 @@ function createWebpackConfig(defines, output) {
     },
     // Avoid shadowing actual Node.js variables with polyfills, by disabling
     // polyfills/mocks - https://webpack.js.org/configuration/node/
-    node: {
-      console: false,
-      global: false,
-      process: false,
-      __filename: false,
-      __dirname: false,
-      Buffer: false,
-      setImmediate: false,
-    },
-    // If we upgrade to Webpack 3.0+, the above can be replaced with:
-    // node: false,
+    node: false,
   };
 }
 
@@ -304,20 +294,6 @@ function createComponentsBundle(defines) {
     .pipe(webpack2Stream(componentsFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceJSRootName(componentsAMDName));
-}
-
-function createCompatibilityBundle(defines) {
-  var compatibilityAMDName = 'pdfjs-dist/web/compatibility';
-  var compatibilityOutputName = 'compatibility.js';
-
-  var compatibilityFileConfig = createWebpackConfig(defines, {
-    filename: compatibilityOutputName,
-    library: compatibilityAMDName,
-    libraryTarget: 'umd',
-    umdNamedDefine: true,
-  });
-  return gulp.src('./web/compatibility.js')
-    .pipe(webpack2Stream(compatibilityFileConfig));
 }
 
 function checkFile(path) {
@@ -652,7 +628,6 @@ gulp.task('components', ['buildnumber'], function () {
 
   return merge([
     createComponentsBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
-    createCompatibilityBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(COMPONENTS_DIR + 'images')),
     preprocessCSS('web/pdf_viewer.css', 'components', defines, true)
         .pipe(gulp.dest(COMPONENTS_DIR)),
@@ -742,7 +717,7 @@ gulp.task('minified', ['minified-post']);
 gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building Firefox extension');
-  var defines = builder.merge(DEFINES, { FIREFOX: true, PDFJS_NEXT: true, });
+  var defines = builder.merge(DEFINES, { FIREFOX: true, SKIP_BABEL: true, });
 
   var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR + '/content/',
       FIREFOX_EXTENSION_DIR = 'extensions/firefox/',
@@ -850,7 +825,7 @@ gulp.task('firefox', ['firefox-pre'], function (done) {
 gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building mozilla-central extension');
-  var defines = builder.merge(DEFINES, { MOZCENTRAL: true, PDFJS_NEXT: true, });
+  var defines = builder.merge(DEFINES, { MOZCENTRAL: true, SKIP_BABEL: true, });
 
   var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
       MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/extensions/pdfjs/',
@@ -923,7 +898,7 @@ gulp.task('mozcentral', ['mozcentral-pre']);
 gulp.task('chromium-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building Chromium extension');
-  var defines = builder.merge(DEFINES, { CHROME: true, PDFJS_NEXT: true, });
+  var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: true, });
 
   var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
@@ -1009,7 +984,7 @@ gulp.task('lib', ['buildnumber'], function () {
     content = preprocessor2.preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: 'module',
-      presets: noPreset ? undefined : ['es2015'],
+      presets: noPreset ? undefined : ['env'],
       plugins: [
         'transform-es2015-modules-commonjs',
         babelPluginReplaceNonWebPackRequire,
@@ -1050,10 +1025,9 @@ gulp.task('lib', ['buildnumber'], function () {
       'web/*.js',
       '!web/pdfjs.js',
       '!web/viewer.js',
-      '!web/compatibility.js',
     ], { base: '.', }),
     gulp.src('test/unit/*.js', { base: '.', }),
-  ]).pipe(transform(preprocess))
+  ]).pipe(transform('utf8', preprocess))
     .pipe(gulp.dest('build/lib/'));
   return merge([
     buildLib,
@@ -1170,7 +1144,8 @@ gulp.task('lint', function (done) {
   console.log('### Linting JS files');
 
   // Ensure that we lint the Firefox specific *.jsm files too.
-  var options = ['node_modules/eslint/bin/eslint', '--ext', '.js,.jsm', '.'];
+  var options = ['node_modules/eslint/bin/eslint', '--ext', '.js,.jsm', '.',
+                 '--report-unused-disable-directives'];
   var esLintProcess = spawn('node', options, { stdio: 'inherit', });
   esLintProcess.on('close', function (code) {
     if (code !== 0) {
@@ -1326,7 +1301,10 @@ gulp.task('dist-pre',
     license: DIST_LICENSE,
     dependencies: {
       'node-ensure': '^0.0.0', // shim for node for require.ensure
-      'worker-loader': '^0.8.0', // used in external/dist/webpack.json
+      'worker-loader': '^1.1.0', // used in external/dist/webpack.json
+    },
+    peerDependencies: {
+      'webpack': '^2.0.0 || ^3.0.0', // peerDependency of 'worker-loader'
     },
     browser: {
       'fs': false,
