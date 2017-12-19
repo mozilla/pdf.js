@@ -741,6 +741,13 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue9105",
+       "file": "pdfs/issue9105_reduced.pdf",
+       "md5": "f3889f7c7b60e1ab998aac430cc7e08e",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue6289",
        "file": "pdfs/issue6289.pdf",
        "md5": "0869f3d147c734ec484ffd492104095d",
@@ -2714,6 +2721,12 @@
       "md5": "2ac7c68e26a8ef797aead15e4875cc6d",
       "rounds": 1,
       "type": "load"
+    },
+    {  "id": "issue7074_reduced",
+       "file": "pdfs/issue7074_reduced.pdf",
+       "md5": "46893f8aa33620a05acdc27e3b79469d",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue5540",
       "file": "pdfs/issue5540.pdf",

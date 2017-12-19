@@ -15,7 +15,7 @@
 
 import {
   bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info, isNum,
-  isSpace, MissingDataException, readUint32, shadow, string32, warn
+  isSpace, MissingDataException, readUint32, shadow, string32, unreachable, warn
 } from '../shared/util';
 import {
   CFF, CFFCharset, CFFCompiler, CFFHeader, CFFIndex, CFFParser, CFFPrivateDict,
@@ -295,7 +295,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
     },
 
     amend(map) {
-      throw new Error('Should not call amend()');
+      unreachable('Should not call amend()');
     },
   };
 
@@ -1759,6 +1759,11 @@ var Font = (function FontClosure() {
         var locaCount = dupFirstEntry ? numGlyphs - 1 : numGlyphs;
         for (i = 0, j = itemSize; i < locaCount; i++, j += itemSize) {
           var endOffset = itemDecode(locaData, j);
+          // The spec says the offsets should be in ascending order, however
+          // some fonts use the offset of 0 to mark a glyph as missing.
+          if (endOffset === 0) {
+            endOffset = startOffset;
+          }
           if (endOffset > oldGlyfDataLength &&
               ((oldGlyfDataLength + 3) & ~3) === endOffset) {
             // Aspose breaks fonts by aligning the glyphs to the qword, but not

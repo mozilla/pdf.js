@@ -19,7 +19,7 @@ import {
 } from './dom_utils';
 import {
   AnnotationBorderStyleType, AnnotationCheckboxType, AnnotationType,
-  stringToPDFString, Util, warn
+  stringToPDFString, unreachable, Util, warn
 } from '../shared/util';
 
 /**
@@ -264,7 +264,7 @@ class AnnotationElement {
    * @memberof AnnotationElement
    */
   render() {
-    throw new Error('Abstract method `AnnotationElement.render` called');
+    unreachable('Abstract method `AnnotationElement.render` called');
   }
 }
 
