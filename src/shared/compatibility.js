@@ -43,14 +43,6 @@ if (typeof PDFJS === 'undefined') {
 
 PDFJS.compatibilityChecked = true;
 
-// URL = URL || webkitURL
-// Support: Safari<7, Android 4.2+
-(function normalizeURLObject() {
-  if (!globalScope.URL) {
-    globalScope.URL = globalScope.webkitURL;
-  }
-})();
-
 // No XMLHttpRequest#response?
 // Support: IE<11, Android <4.0
 (function checkXMLHttpRequestResponseCompatibility() {
