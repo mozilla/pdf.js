@@ -43,47 +43,6 @@ if (typeof PDFJS === 'undefined') {
 
 PDFJS.compatibilityChecked = true;
 
-// HTMLElement dataset property
-// Support: IE<11, Safari<5.1, Android<4.0
-(function checkDatasetProperty() {
-  if (!hasDOM) {
-    return;
-  }
-  var div = document.createElement('div');
-  if ('dataset' in div) {
-    return; // dataset property exists
-  }
-
-  Object.defineProperty(HTMLElement.prototype, 'dataset', {
-    get() {
-      if (this._dataset) {
-        return this._dataset;
-      }
-
-      var dataset = {};
-      for (var j = 0, jj = this.attributes.length; j < jj; j++) {
-        var attribute = this.attributes[j];
-        if (attribute.name.substring(0, 5) !== 'data-') {
-          continue;
-        }
-        var key = attribute.name.substring(5).replace(/\-([a-z])/g,
-          function(all, ch) {
-            return ch.toUpperCase();
-          });
-        dataset[key] = attribute.value;
-      }
-
-      Object.defineProperty(this, '_dataset', {
-        value: dataset,
-        writable: false,
-        enumerable: false,
-      });
-      return dataset;
-    },
-    enumerable: true,
-  });
-})();
-
 // Checks if possible to use URL.createObjectURL()
 // Support: IE, Chrome on iOS
 (function checkOnBlobSupport() {
