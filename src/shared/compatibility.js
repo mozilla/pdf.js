@@ -111,31 +111,6 @@ PDFJS.compatibilityChecked = true;
   });
 })();
 
-// Provides correct document.readyState value for legacy browsers.
-// Support: IE9,10.
-(function checkDocumentReadyState() {
-  if (!hasDOM) {
-    return;
-  }
-  if (!document.attachEvent) {
-    return;
-  }
-  var documentProto = document.constructor.prototype;
-  var readyStateProto = Object.getOwnPropertyDescriptor(documentProto,
-                                                        'readyState');
-  Object.defineProperty(documentProto, 'readyState', {
-    get() {
-      var value = readyStateProto.get.call(this);
-      return value === 'interactive' ? 'loading' : value;
-    },
-    set(value) {
-      readyStateProto.set.call(this, value);
-    },
-    enumerable: true,
-    configurable: true,
-  });
-})();
-
 // Provides support for ChildNode.remove in legacy browsers.
 // Support: IE.
 (function checkChildNodeRemove() {
