@@ -43,56 +43,6 @@ if (typeof PDFJS === 'undefined') {
 
 PDFJS.compatibilityChecked = true;
 
-// No XMLHttpRequest#response?
-// Support: IE<11, Android <4.0
-(function checkXMLHttpRequestResponseCompatibility() {
-  if (typeof XMLHttpRequest === 'undefined') {
-    return;
-  }
-  var xhrPrototype = XMLHttpRequest.prototype;
-  var xhr = new XMLHttpRequest();
-  if (!('overrideMimeType' in xhr)) {
-    // IE10 might have response, but not overrideMimeType
-    // Support: IE10
-    Object.defineProperty(xhrPrototype, 'overrideMimeType', {
-      value: function xmlHttpRequestOverrideMimeType(mimeType) {},
-    });
-  }
-  if ('responseType' in xhr) {
-    return;
-  }
-
-  Object.defineProperty(xhrPrototype, 'responseType', {
-    get: function xmlHttpRequestGetResponseType() {
-      return this._responseType || 'text';
-    },
-    set: function xmlHttpRequestSetResponseType(value) {
-      if (value === 'text' || value === 'arraybuffer') {
-        this._responseType = value;
-        if (value === 'arraybuffer' &&
-            typeof this.overrideMimeType === 'function') {
-          this.overrideMimeType('text/plain; charset=x-user-defined');
-        }
-      }
-    },
-  });
-
-  Object.defineProperty(xhrPrototype, 'response', {
-    get: function xmlHttpRequestResponseGet() {
-      if (this.responseType !== 'arraybuffer') {
-        return this.responseText;
-      }
-      var text = this.responseText;
-      var i, n = text.length;
-      var result = new Uint8Array(n);
-      for (i = 0; i < n; ++i) {
-        result[i] = text.charCodeAt(i) & 0xFF;
-      }
-      return result.buffer;
-    },
-  });
-})();
-
 // HTMLElement dataset property
 // Support: IE<11, Safari<5.1, Android<4.0
 (function checkDatasetProperty() {
