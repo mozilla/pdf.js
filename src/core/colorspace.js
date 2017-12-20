@@ -258,8 +258,8 @@ var ColorSpace = (function ColorSpaceClosure() {
     }
   };
 
-  ColorSpace.parseToIR = function(cs, xref, res, pdfFunctionFactory) {
-    if (isName(cs)) {
+  ColorSpace.parseToIR = function(cs, xref, res = null, pdfFunctionFactory) {
+    if (res && isName(cs)) {
       var colorSpaces = res.get('ColorSpace');
       if (isDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
@@ -320,7 +320,7 @@ var ColorSpace = (function ColorSpaceClosure() {
           numComps = dict.get('N');
           alt = dict.get('Alternate');
           if (alt) {
-            var altIR = ColorSpace.parseToIR(alt, xref, res,
+            var altIR = ColorSpace.parseToIR(alt, xref, null,
                                              pdfFunctionFactory);
             // Parse the /Alternate CS to ensure that the number of components
             // are correct, and also (indirectly) that it is not a PatternCS.
@@ -341,13 +341,13 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'Pattern':
           var basePatternCS = cs[1] || null;
           if (basePatternCS) {
-            basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res,
+            basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, null,
                                                  pdfFunctionFactory);
           }
           return ['PatternCS', basePatternCS];
         case 'Indexed':
         case 'I':
-          var baseIndexedCS = ColorSpace.parseToIR(cs[1], xref, res,
+          var baseIndexedCS = ColorSpace.parseToIR(cs[1], xref, null,
                                                    pdfFunctionFactory);
           var hiVal = xref.fetchIfRef(cs[2]) + 1;
           var lookup = xref.fetchIfRef(cs[3]);
@@ -359,7 +359,7 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'DeviceN':
           var name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          alt = ColorSpace.parseToIR(cs[2], xref, res, pdfFunctionFactory);
+          alt = ColorSpace.parseToIR(cs[2], xref, null, pdfFunctionFactory);
           let tintFnIR = pdfFunctionFactory.createIR(xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
