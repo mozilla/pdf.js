@@ -258,8 +258,8 @@ var ColorSpace = (function ColorSpaceClosure() {
     }
   };
 
-  ColorSpace.parseToIR = function(cs, xref, res, pdfFunctionFactory) {
-    if (isName(cs)) {
+  ColorSpace.parseToIR = function(cs, xref, res = null, pdfFunctionFactory) {
+    if (res && isName(cs)) {
       var colorSpaces = res.get('ColorSpace');
       if (isDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
