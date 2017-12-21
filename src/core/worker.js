@@ -402,19 +402,15 @@ var WorkerMessageHandler = {
       var loadDocumentCapability = createPromiseCapability();
 
       var parseSuccess = function parseSuccess() {
-        var numPagesPromise = pdfManager.ensureDoc('numPages');
-        var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
-        var encryptedPromise = pdfManager.ensureXRef('encrypt');
-        Promise.all([numPagesPromise, fingerprintPromise,
-                     encryptedPromise]).then(function onDocReady(results) {
-          var doc = {
-            numPages: results[0],
-            fingerprint: results[1],
-            encrypted: !!results[2],
-          };
-          loadDocumentCapability.resolve(doc);
-        },
-        parseFailure);
+        Promise.all([
+          pdfManager.ensureDoc('numPages'),
+          pdfManager.ensureDoc('fingerprint'),
+        ]).then(function([numPages, fingerprint]) {
+          loadDocumentCapability.resolve({
+            numPages,
+            fingerprint,
+          });
+        }, parseFailure);
       };
 
       var parseFailure = function parseFailure(e) {
