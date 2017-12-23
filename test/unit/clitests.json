@@ -16,6 +16,7 @@
     "function_spec.js",
     "metadata_spec.js",
     "murmurhash3_spec.js",
+    "network_utils_spec.js",
     "node_stream_spec.js",
     "parser_spec.js",
     "pdf_history.js",

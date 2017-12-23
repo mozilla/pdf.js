@@ -63,6 +63,7 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/metadata_spec',
     'pdfjs-test/unit/murmurhash3_spec',
     'pdfjs-test/unit/network_spec',
+    'pdfjs-test/unit/network_utils_spec',
     'pdfjs-test/unit/parser_spec',
     'pdfjs-test/unit/pdf_history_spec',
     'pdfjs-test/unit/primitives_spec',
