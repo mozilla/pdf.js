@@ -25,8 +25,6 @@ var globalScope = require('./global_scope');
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
 var isAndroid = /Android/.test(userAgent);
-var isAndroidPre5 = /Android\s[0-4][^\d]/.test(userAgent);
-var isChrome = userAgent.indexOf('Chrom') >= 0;
 var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
 var isIE = userAgent.indexOf('Trident') >= 0;
 var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
@@ -42,105 +40,6 @@ if (typeof PDFJS === 'undefined') {
 }
 
 PDFJS.compatibilityChecked = true;
-
-// URL = URL || webkitURL
-// Support: Safari<7, Android 4.2+
-(function normalizeURLObject() {
-  if (!globalScope.URL) {
-    globalScope.URL = globalScope.webkitURL;
-  }
-})();
-
-// No XMLHttpRequest#response?
-// Support: IE<11, Android <4.0
-(function checkXMLHttpRequestResponseCompatibility() {
-  if (typeof XMLHttpRequest === 'undefined') {
-    return;
-  }
-  var xhrPrototype = XMLHttpRequest.prototype;
-  var xhr = new XMLHttpRequest();
-  if (!('overrideMimeType' in xhr)) {
-    // IE10 might have response, but not overrideMimeType
-    // Support: IE10
-    Object.defineProperty(xhrPrototype, 'overrideMimeType', {
-      value: function xmlHttpRequestOverrideMimeType(mimeType) {},
-    });
-  }
-  if ('responseType' in xhr) {
-    return;
-  }
-
-  Object.defineProperty(xhrPrototype, 'responseType', {
-    get: function xmlHttpRequestGetResponseType() {
-      return this._responseType || 'text';
-    },
-    set: function xmlHttpRequestSetResponseType(value) {
-      if (value === 'text' || value === 'arraybuffer') {
-        this._responseType = value;
-        if (value === 'arraybuffer' &&
-            typeof this.overrideMimeType === 'function') {
-          this.overrideMimeType('text/plain; charset=x-user-defined');
-        }
-      }
-    },
-  });
-
-  Object.defineProperty(xhrPrototype, 'response', {
-    get: function xmlHttpRequestResponseGet() {
-      if (this.responseType !== 'arraybuffer') {
-        return this.responseText;
-      }
-      var text = this.responseText;
-      var i, n = text.length;
-      var result = new Uint8Array(n);
-      for (i = 0; i < n; ++i) {
-        result[i] = text.charCodeAt(i) & 0xFF;
-      }
-      return result.buffer;
-    },
-  });
-})();
-
-// HTMLElement dataset property
-// Support: IE<11, Safari<5.1, Android<4.0
-(function checkDatasetProperty() {
-  if (!hasDOM) {
-    return;
-  }
-  var div = document.createElement('div');
-  if ('dataset' in div) {
-    return; // dataset property exists
-  }
-
-  Object.defineProperty(HTMLElement.prototype, 'dataset', {
-    get() {
-      if (this._dataset) {
-        return this._dataset;
-      }
-
-      var dataset = {};
-      for (var j = 0, jj = this.attributes.length; j < jj; j++) {
-        var attribute = this.attributes[j];
-        if (attribute.name.substring(0, 5) !== 'data-') {
-          continue;
-        }
-        var key = attribute.name.substring(5).replace(/\-([a-z])/g,
-          function(all, ch) {
-            return ch.toUpperCase();
-          });
-        dataset[key] = attribute.value;
-      }
-
-      Object.defineProperty(this, '_dataset', {
-        value: dataset,
-        writable: false,
-        enumerable: false,
-      });
-      return dataset;
-    },
-    enumerable: true,
-  });
-})();
 
 // Checks if possible to use URL.createObjectURL()
 // Support: IE, Chrome on iOS
@@ -171,58 +70,6 @@ PDFJS.compatibilityChecked = true;
   if (isSafari || isIOS) {
     PDFJS.disableRange = true;
     PDFJS.disableStream = true;
-  }
-})();
-
-// Support: IE<11, Chrome<21, Android<4.4, Safari<6
-(function checkSetPresenceInImageData() {
-  if (!hasDOM) {
-    return;
-  }
-  // IE < 11 will use window.CanvasPixelArray which lacks set function.
-  if (window.CanvasPixelArray) {
-    if (typeof window.CanvasPixelArray.prototype.set !== 'function') {
-      window.CanvasPixelArray.prototype.set = function(arr) {
-        for (var i = 0, ii = this.length; i < ii; i++) {
-          this[i] = arr[i];
-        }
-      };
-    }
-  } else {
-    // Old Chrome and Android use an inaccessible CanvasPixelArray prototype.
-    // Because we cannot feature detect it, we rely on user agent parsing.
-    var polyfill = false, versionMatch;
-    if (isChrome) {
-      versionMatch = userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
-      // Chrome < 21 lacks the set function.
-      polyfill = versionMatch && parseInt(versionMatch[2]) < 21;
-    } else if (isAndroid) {
-      // Android < 4.4 lacks the set function.
-      // Android >= 4.4 will contain Chrome in the user agent,
-      // thus pass the Chrome check above and not reach this block.
-      polyfill = isAndroidPre5;
-    } else if (isSafari) {
-      versionMatch = userAgent.
-        match(/Version\/([0-9]+)\.([0-9]+)\.([0-9]+) Safari\//);
-      // Safari < 6 lacks the set function.
-      polyfill = versionMatch && parseInt(versionMatch[1]) < 6;
-    }
-
-    if (polyfill) {
-      var contextPrototype = window.CanvasRenderingContext2D.prototype;
-      var createImageData = contextPrototype.createImageData;
-      contextPrototype.createImageData = function(w, h) {
-        var imageData = createImageData.call(this, w, h);
-        imageData.data.set = function(arr) {
-          for (var i = 0, ii = this.length; i < ii; i++) {
-            this[i] = arr[i];
-          }
-        };
-        return imageData;
-      };
-      // this closure will be kept referenced, so clear its vars
-      contextPrototype = null;
-    }
   }
 })();
 
@@ -258,56 +105,6 @@ PDFJS.compatibilityChecked = true;
     get() {
       var scripts = document.getElementsByTagName('script');
       return scripts[scripts.length - 1];
-    },
-    enumerable: true,
-    configurable: true,
-  });
-})();
-
-// Provides `input.type = 'type'` runtime failure protection.
-// Support: IE9,10.
-(function checkInputTypeNumberAssign() {
-  if (!hasDOM) {
-    return;
-  }
-  var el = document.createElement('input');
-  try {
-    el.type = 'number';
-  } catch (ex) {
-    var inputProto = el.constructor.prototype;
-    var typeProperty = Object.getOwnPropertyDescriptor(inputProto, 'type');
-    Object.defineProperty(inputProto, 'type', {
-      get() {
-        return typeProperty.get.call(this);
-      },
-      set(value) {
-        typeProperty.set.call(this, value === 'number' ? 'text' : value);
-      },
-      enumerable: true,
-      configurable: true,
-    });
-  }
-})();
-
-// Provides correct document.readyState value for legacy browsers.
-// Support: IE9,10.
-(function checkDocumentReadyState() {
-  if (!hasDOM) {
-    return;
-  }
-  if (!document.attachEvent) {
-    return;
-  }
-  var documentProto = document.constructor.prototype;
-  var readyStateProto = Object.getOwnPropertyDescriptor(documentProto,
-                                                        'readyState');
-  Object.defineProperty(documentProto, 'readyState', {
-    get() {
-      var value = readyStateProto.get.call(this);
-      return value === 'interactive' ? 'loading' : value;
-    },
-    set(value) {
-      readyStateProto.set.call(this, value);
     },
     enumerable: true,
     configurable: true,
