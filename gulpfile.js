@@ -87,8 +87,8 @@ var DEFINES = {
 };
 
 var ISTANBUL_PATHS = {
-  "javascript": ["coverage/**/*.js"],
-  tests: ["test/**/*.js"]
+  'javascript': ['coverage/**/*.js'],
+  tests: ['test/**/*.js'],
 };
 
 function safeSpawnSync(command, parameters, options) {
@@ -1178,25 +1178,24 @@ gulp.task('lint', function (done) {
 gulp.task('instrument', function () {
   return gulp.src(['src/**/*.js'])
   // Covering files
-    .pipe(istanbul({
-      coverageVariable: '__coverage__'
+    .pipe(istanbul({ coverageVariable: '__coverage__',
     }))
     // instrumented files will go here
-    .pipe(gulp.dest('coverage/'))
+    .pipe(gulp.dest('coverage/'));
 });
 
 gulp.task('inject', ['instrument'], function (cb) {
   return gulp.src('index.html')
     .pipe(inject(
-      gulp.src(ISTANBUL_PATHS.javascript,{read: false}), {
-        relative: true
+      gulp.src(ISTANBUL_PATHS.javascript, { read: false, }), {
+        relative: true,
       }))
     .pipe(inject(
-      gulp.src(ISTANBUL_PATHS.tests, {read: false}), {
+      gulp.src(ISTANBUL_PATHS.tests, { read: false, }), {
         relative: true,
-        starttag: "<!-- inject:tests:js -->"
+        starttag: '<!-- inject:tests:js -->',
       }))
-    .pipe(gulp.dest('.'))
+    .pipe(gulp.dest('.'));
 });
 
 gulp.task('server', function (done) {
