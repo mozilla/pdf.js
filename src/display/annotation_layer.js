@@ -441,6 +441,25 @@ class WidgetAnnotationElement extends AnnotationElement {
   }
 
   /**
+   * Process duplicate annotations
+   *
+   * @protected
+   * @param {WidgetAnnotationElement} annotation
+   * @param {Function} callback function
+   * @memberof WidgetAnnotationElement
+   */
+  _processDuplicates(annotation, callback) {
+    this.layer.querySelectorAll('[annotation-name="' +
+      annotation.getAttribute('annotation-name') + '"][annotation-value="' +
+      annotation.getAttribute('annotation-value') + '"]')
+        .forEach((a) => {
+          if (a !== annotation) {
+            callback(annotation, a);
+          }
+        });
+  }
+
+  /**
    * Calculate font auto size.
    *
    * @private
@@ -456,7 +475,7 @@ class WidgetAnnotationElement extends AnnotationElement {
 
     let fSize = 2;
     let sizeStep = 0.1;
-    for (fSize = 2; fSize < maxHeight - 2; fSize += sizeStep) {
+    for (fSize = 2; fSize < maxHeight * 0.8; fSize += sizeStep) {
       let m = this._measureText(text,
         (style.fontStyle ? style.fontStyle + ' ' : '') +
         (style.fontWeight ? style.fontWeight + ' ' : '') +
@@ -499,28 +518,6 @@ class WidgetAnnotationElement extends AnnotationElement {
   }
 
   /**
-   * Get all annotations with the same name.
-   *
-   * @private
-   * @param {Object} element
-   * @memberof WidgetAnnotationElement
-   * @returns {Array}
-   */
-  _getAnnotationsByName(element) {
-    let annotations = [];
-    let ctrls = document.getElementsByTagName(element.tagName);
-    for (let index in ctrls) {
-      if (ctrls[index].type === element.type &&
-          ctrls[index].getAttribute('annotation-name') ===
-          element.getAttribute('annotation-name')) {
-        annotations.push(ctrls[index]);
-      }
-    }
-
-    return annotations;
-  }
-
-   /**
    * Get checkmark/radio button symbols.
    *
    * @private
@@ -670,21 +667,16 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       style.fontFamily = fontFamily + fallbackName;
     }
 
-    var self = this;
+    let self = this;
 
     element.onblur = () => {
       if (!style.fontSize && !self.data.multiLine) {
         style.fontSize = self._calculateFontAutoSize(element, element.value);
       }
 
-      let annotations = self._getAnnotationsByName(element);
-      for (let index in annotations) {
-        if (annotations[index] !== element &&
-            annotations[index].getAttribute('annotation-value') ===
-            element.getAttribute('annotation-value')) {
-          annotations[index].value = element.value;
-        }
-      }
+      self._processDuplicates(element, (a, b) => {
+        b.value = a.value;
+      });
     };
 
     // Auto size
@@ -751,25 +743,25 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     span.innerHTML = element.checked ?
       checkMarkSymbols[element.checkBoxType] : '';
 
+    let self = this;
+
     element.onchange = () => {
       span.innerHTML = element.checked ?
         checkMarkSymbols[element.checkBoxType] : '';
 
-      let annotations = this._getAnnotationsByName(element);
-      for (let index in annotations) {
-        if (annotations[index] !== element &&
-            annotations[index].getAttribute('annotation-value') ===
-            element.getAttribute('annotation-value') &&
-            annotations[index].parentElement) {
-          annotations[index].checked = element.checked;
-          var annotationSpans =
-            annotations[index].parentElement.getElementsByTagName('span');
-          if (annotationSpans.length > 0) {
-            annotationSpans[0].innerHTML = element.checked ?
-              checkMarkSymbols[annotations[index].checkBoxType] : '';
+        self._processDuplicates(element, (a, b) => {
+          if (b.parentElement) {
+            b.checked = a.checked;
+
+            let annotationSpans =
+              b.parentElement.getElementsByTagName('span');
+
+              if (annotationSpans.length > 0) {
+                annotationSpans[0].innerHTML = a.checked ?
+                  checkMarkSymbols[b.checkBoxType] : '';
+            }
           }
-        }
-      }
+        });
     };
 
     span.onclick = () => {
@@ -993,19 +985,13 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       }
 
       selectElement.onblur = () => {
-        let annotations = self._getAnnotationsByName(selectElement);
-        for (let index in annotations) {
-          if (annotations[index] !== selectElement &&
-              annotations[index].getAttribute('annotation-value') ===
-              selectElement.getAttribute('annotation-value')) {
-            for (let i = 0; i < selectElement.options.length; i++) {
-              if (i < annotations[index].options.length) {
-                annotations[index].options[i].selected =
-                  selectElement.options[i].selected;
-              }
+        self._processDuplicates(selectElement, (a, b) => {
+          for (let i = 0; i < a.options.length; i++) {
+            if (i < b.options.length) {
+              b.options[i].selected = a.options[i].selected;
             }
           }
-        }
+        });
       };
 
       this.container.appendChild(selectElement);
@@ -1046,14 +1032,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           self.container.style.zIndex = '';
         }
 
-        let annotations = self._getAnnotationsByName(comboElement);
-        for (let index in annotations) {
-          if (annotations[index] !== comboElement &&
-              annotations[index].getAttribute('annotation-value') ===
-              comboElement.getAttribute('annotation-value')) {
-            annotations[index].value = comboElement.value;
-          }
-        }
+        self._processDuplicates(comboElement, (a, b) => {
+          b.value = a.value;
+        });
       };
 
       let spanElement = document.createElement('span');
