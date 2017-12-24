@@ -2264,6 +2264,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue9291",
+       "file": "pdfs/issue9291.pdf",
+       "md5": "8c3f4edff54c1ca0b67700a05ea0ccee",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue5751",
        "file": "pdfs/issue5751.pdf",
        "md5": "9334a52dc85747f1e3422767e0cd3ee9",
