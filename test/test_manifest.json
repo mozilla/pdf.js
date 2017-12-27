@@ -602,6 +602,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue6737",
+       "file": "pdfs/issue6737.pdf",
+       "md5": "6f091967ad15ba63855c56049e86c68b",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue5010",
        "file": "pdfs/issue5010.pdf",
        "md5": "419f4b13403a0871c463ec69d96e342c",

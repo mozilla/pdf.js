@@ -1665,7 +1665,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var canvasGraphicsFactory = {
           createCanvasGraphics: (ctx) => {
             return new CanvasGraphics(ctx, this.commonObjs, this.objs,
-                                      this.canvasFactory);
+                                      this.canvasFactory, this.webGLContext);
           },
         };
         pattern = new TilingPattern(IR, color, this.ctx, canvasGraphicsFactory,
