@@ -1318,7 +1318,8 @@
        "link": true,
        "firstPage": 2,
        "lastPage": 2,
-       "type": "eq"
+       "type": "eq",
+       "nativeImageDecoderSupport": "none"
     },
     {  "id": "issue6071",
        "file": "pdfs/issue6071.pdf",
