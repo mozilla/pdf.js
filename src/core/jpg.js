@@ -235,7 +235,8 @@ var JpegImage = (function JpegImageClosure() {
       var s;
       var rs;
       while (k <= e) {
-        var z = dctZigZag[k];
+        let offsetZ = offset + dctZigZag[k];
+        let sign = component.blockData[offsetZ] < 0 ? -1 : 1;
         switch (successiveACState) {
           case 0: // initial state
             rs = decodeHuffman(component.huffmanTableAC);
@@ -259,8 +260,8 @@ var JpegImage = (function JpegImageClosure() {
             continue;
           case 1: // skipping r zero items
           case 2:
-            if (component.blockData[offset + z]) {
-              component.blockData[offset + z] += (readBit() << successive);
+            if (component.blockData[offsetZ]) {
+              component.blockData[offsetZ] += sign * (readBit() << successive);
             } else {
               r--;
               if (r === 0) {
@@ -269,17 +270,17 @@ var JpegImage = (function JpegImageClosure() {
             }
             break;
           case 3: // set value for a zero item
-            if (component.blockData[offset + z]) {
-              component.blockData[offset + z] += (readBit() << successive);
+            if (component.blockData[offsetZ]) {
+              component.blockData[offsetZ] += sign * (readBit() << successive);
             } else {
-              component.blockData[offset + z] =
+              component.blockData[offsetZ] =
                 successiveACNextValue << successive;
               successiveACState = 0;
             }
             break;
           case 4: // eob
-            if (component.blockData[offset + z]) {
-              component.blockData[offset + z] += (readBit() << successive);
+            if (component.blockData[offsetZ]) {
+              component.blockData[offsetZ] += sign * (readBit() << successive);
             }
             break;
         }
