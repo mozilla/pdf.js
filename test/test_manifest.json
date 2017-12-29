@@ -3589,6 +3589,14 @@
        "type": "eq",
        "nativeImageDecoderSupport": "none"
     },
+    {  "id": "decodeACSuccessive",
+       "file": "pdfs/decodeACSuccessive.pdf",
+       "md5": "7749c032624fe27ab8e8d7d5e9a4a93f",
+       "rounds": 1,
+       "link": false,
+       "type": "eq",
+       "nativeImageDecoderSupport": "none"
+    },
     {  "id": "issue5592",
        "file": "pdfs/issue5592.pdf",
        "md5": "a0750f95afa80c880f7966df7062616c",
