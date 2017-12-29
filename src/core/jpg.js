@@ -237,51 +237,51 @@ var JpegImage = (function JpegImageClosure() {
       while (k <= e) {
         var z = dctZigZag[k];
         switch (successiveACState) {
-        case 0: // initial state
-          rs = decodeHuffman(component.huffmanTableAC);
-          s = rs & 15;
-          r = rs >> 4;
-          if (s === 0) {
-            if (r < 15) {
-              eobrun = receive(r) + (1 << r);
-              successiveACState = 4;
+          case 0: // initial state
+            rs = decodeHuffman(component.huffmanTableAC);
+            s = rs & 15;
+            r = rs >> 4;
+            if (s === 0) {
+              if (r < 15) {
+                eobrun = receive(r) + (1 << r);
+                successiveACState = 4;
+              } else {
+                r = 16;
+                successiveACState = 1;
+              }
             } else {
-              r = 16;
-              successiveACState = 1;
+              if (s !== 1) {
+                throw new JpegError('invalid ACn encoding');
+              }
+              successiveACNextValue = receiveAndExtend(s);
+              successiveACState = r ? 2 : 3;
             }
-          } else {
-            if (s !== 1) {
-              throw new JpegError('invalid ACn encoding');
+            continue;
+          case 1: // skipping r zero items
+          case 2:
+            if (component.blockData[offset + z]) {
+              component.blockData[offset + z] += (readBit() << successive);
+            } else {
+              r--;
+              if (r === 0) {
+                successiveACState = successiveACState === 2 ? 3 : 0;
+              }
             }
-            successiveACNextValue = receiveAndExtend(s);
-            successiveACState = r ? 2 : 3;
-          }
-          continue;
-        case 1: // skipping r zero items
-        case 2:
-          if (component.blockData[offset + z]) {
-            component.blockData[offset + z] += (readBit() << successive);
-          } else {
-            r--;
-            if (r === 0) {
-              successiveACState = successiveACState === 2 ? 3 : 0;
+            break;
+          case 3: // set value for a zero item
+            if (component.blockData[offset + z]) {
+              component.blockData[offset + z] += (readBit() << successive);
+            } else {
+              component.blockData[offset + z] =
+                successiveACNextValue << successive;
+              successiveACState = 0;
             }
-          }
-          break;
-        case 3: // set value for a zero item
-          if (component.blockData[offset + z]) {
-            component.blockData[offset + z] += (readBit() << successive);
-          } else {
-            component.blockData[offset + z] =
-              successiveACNextValue << successive;
-            successiveACState = 0;
-          }
-          break;
-        case 4: // eob
-          if (component.blockData[offset + z]) {
-            component.blockData[offset + z] += (readBit() << successive);
-          }
-          break;
+            break;
+          case 4: // eob
+            if (component.blockData[offset + z]) {
+              component.blockData[offset + z] += (readBit() << successive);
+            }
+            break;
         }
         k++;
       }
