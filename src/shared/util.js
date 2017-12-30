@@ -1177,12 +1177,14 @@ function wrapReason(reason) {
 }
 
 function makeReasonSerializable(reason) {
-  if (!(reason instanceof Error) ||
-      reason instanceof AbortException ||
+  if (!(reason instanceof Error)) {
+    return reason;
+  }
+  if (reason instanceof AbortException ||
       reason instanceof MissingPDFException ||
       reason instanceof UnexpectedResponseException ||
       reason instanceof UnknownErrorException) {
-    return reason;
+    return wrapReason(reason);
   }
   return new UnknownErrorException(reason.message, reason.toString());
 }
@@ -1429,7 +1431,7 @@ MessageHandler.prototype = {
           return;
         }
         this.isCancelled = true;
-        sendStreamRequest({ stream: 'error', reason, });
+        sendStreamRequest({ stream: 'error', reason: wrapReason(reason), });
       },
 
       sinkCapability: capability,
