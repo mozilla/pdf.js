@@ -735,6 +735,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
       var glyphsLength = glyphs.length;
       var vertical = font.vertical;
       var widthAdvanceScale = fontSize * current.fontMatrix[0];
+      var doubleSpace = false;
+      var lastWasSpace = false;
 
       var x = 0, i;
       for (i = 0; i < glyphsLength; ++i) {
@@ -751,6 +753,14 @@ SVGGraphics = (function SVGGraphicsClosure() {
         var width = glyph.width;
         var character = glyph.fontChar;
         var spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
+        if (glyph.isSpace || glyph.fontChar === ' ') {
+          if (lastWasSpace || i === 0 || (i === glyphsLength - 1)) {
+            doubleSpace = true;
+          }
+          lastWasSpace = true;
+        } else {
+          lastWasSpace = false;
+        }
         var charWidth = width * widthAdvanceScale + spacing * fontDirection;
 
         if (!glyph.isInFont && !font.missingFile) {
@@ -799,6 +809,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.txtElement.setAttributeNS(null, 'transform',
                                         pm(textMatrix) + ' scale(1, -1)');
       current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
+      if (doubleSpace) {
+        current.tspan.setAttributeNS(XML_NS, 'xml:space', 'preserve');
+      }
       current.txtElement.appendChild(current.tspan);
       current.txtgrp.appendChild(current.txtElement);
 
