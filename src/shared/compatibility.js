@@ -672,6 +672,11 @@ PDFJS.compatibilityChecked = true;
       base = new JURL(String(base));
     }
 
+    // Issue 8726: Safari needs url to be a String object.
+    // Otherwise, replace() below will produce a blank string.
+    if (isSafari) {
+      url = String(url);
+    }
     this._url = url;
     clear.call(this);
 
@@ -819,6 +824,11 @@ PDFJS.compatibilityChecked = true;
         return '';
       }
       return this._scheme + '://' + host;
+    },
+
+    // Issue 8726: Safari does not fallback to the original URL object.
+    get searchParams() {
+      return new URLSearchParams(this.search);
     },
   };
 
