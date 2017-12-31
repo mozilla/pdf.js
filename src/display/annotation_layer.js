@@ -14,8 +14,8 @@
  */
 
 import {
-  addLinkAttributes, CustomStyle, DOMSVGFactory, getDefaultSetting,
-  getFilenameFromUrl, LinkTarget
+  addLinkAttributes, DOMSVGFactory, getDefaultSetting, getFilenameFromUrl,
+  LinkTarget
 } from './dom_utils';
 import {
   AnnotationBorderStyleType, AnnotationType, stringToPDFString, unreachable,
@@ -153,10 +153,8 @@ class AnnotationElement {
       page.view[3] - data.rect[3] + page.view[1]
     ]);
 
-    CustomStyle.setProp('transform', container,
-                        'matrix(' + viewport.transform.join(',') + ')');
-    CustomStyle.setProp('transformOrigin', container,
-                        -rect[0] + 'px ' + -rect[1] + 'px');
+    container.style.transform = 'matrix(' + viewport.transform.join(',') + ')';
+    container.style.transformOrigin = -rect[0] + 'px ' + -rect[1] + 'px';
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
       container.style.borderWidth = data.borderStyle.width + 'px';
@@ -172,7 +170,7 @@ class AnnotationElement {
       let verticalRadius = data.borderStyle.verticalCornerRadius;
       if (horizontalRadius > 0 || verticalRadius > 0) {
         let radius = horizontalRadius + 'px / ' + verticalRadius + 'px';
-        CustomStyle.setProp('borderRadius', container, radius);
+        container.style.borderRadius = radius;
       }
 
       switch (data.borderStyle.style) {
@@ -652,9 +650,8 @@ class PopupAnnotationElement extends AnnotationElement {
     // PDF viewers ignore a popup annotation's rectangle.
     let parentLeft = parseFloat(parentElement.style.left);
     let parentWidth = parseFloat(parentElement.style.width);
-    CustomStyle.setProp('transformOrigin', this.container,
-                        -(parentLeft + parentWidth) + 'px -' +
-                        parentElement.style.top);
+    this.container.style.transformOrigin =
+      -(parentLeft + parentWidth) + 'px -' + parentElement.style.top;
     this.container.style.left = (parentLeft + parentWidth) + 'px';
 
     this.container.appendChild(popup.render());
@@ -1235,8 +1232,8 @@ class AnnotationLayer {
       let element = parameters.div.querySelector(
         '[data-annotation-id="' + data.id + '"]');
       if (element) {
-        CustomStyle.setProp('transform', element,
-          'matrix(' + parameters.viewport.transform.join(',') + ')');
+        element.style.transform =
+          'matrix(' + parameters.viewport.transform.join(',') + ')';
       }
     }
     parameters.div.removeAttribute('hidden');
