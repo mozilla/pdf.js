@@ -14,7 +14,7 @@
  */
 
 import {
-  addLinkAttributes, CustomStyle, DEFAULT_LINK_REL, getFilenameFromUrl,
+  addLinkAttributes, DEFAULT_LINK_REL, getFilenameFromUrl,
   isExternalLinkTargetSet, isValidUrl, LinkTarget
 } from './dom_utils';
 import {
@@ -243,7 +243,6 @@ PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
 
-PDFJS.CustomStyle = CustomStyle;
 PDFJS.LinkTarget = LinkTarget;
 PDFJS.addLinkAttributes = addLinkAttributes;
 PDFJS.getFilenameFromUrl = getFilenameFromUrl;
