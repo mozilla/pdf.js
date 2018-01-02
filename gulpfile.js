@@ -87,8 +87,10 @@ var DEFINES = {
 };
 
 var ISTANBUL_PATHS = {
-  'javascript': ['coverage/**/*.js'],
+  javascript: ['coverage/**/*.js'],
   tests: ['test/**/*.js'],
+  src: ['build/generic/'],
+  dest: ['coverage/lcov-report/pdf.js/build/generic'],
 };
 
 function safeSpawnSync(command, parameters, options) {
@@ -1176,15 +1178,14 @@ gulp.task('lint', function (done) {
 });
 
 gulp.task('instrument', function () {
-  return gulp.src(['src/**/*.js'])
-  // Covering files
-    .pipe(istanbul({ coverageVariable: '__coverage__',
-    }))
+  return gulp.src([ISTANBUL_PATHS.src])
+
+    .pipe(istanbul({ coverageVariable: '__coverage__',}))
     // instrumented files will go here
-    .pipe(gulp.dest('coverage/'));
+    .pipe(gulp.dest(ISTANBUL_PATHS.dest));
 });
 
-gulp.task('inject', ['instrument'], function (cb) {
+gulp.task('inject', ['instrument'], function (done) {
   return gulp.src('index.html')
     .pipe(inject(
       gulp.src(ISTANBUL_PATHS.javascript, { read: false, }), {
@@ -1196,6 +1197,8 @@ gulp.task('inject', ['instrument'], function (cb) {
         starttag: '<!-- inject:tests:js -->',
       }))
     .pipe(gulp.dest('.'));
+  console.log('Successfully Injected files');
+  done();
 });
 
 gulp.task('server', function (done) {

@@ -582,6 +582,16 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       this._log('Done !');
       this.end.textContent = 'Tests finished. Close this window!';
 
+      var re = new XMLHttpRequest();
+      re.open('POST','/browserTestReports?path=' + escape(this.appPath),false);
+      re.onreadystatechange = function () {
+        if (re.readyState == 4) {
+          var browserTestInfo = JSON.stringify(window.__coverage__);
+          re.send(browserTestInfo);
+        }
+      }
+
+
       // Send the quit request
       var r = new XMLHttpRequest();
       r.open('POST', '/tellMeToQuit?path=' + escape(this.appPath), false);
@@ -591,6 +601,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         }
       };
       r.send(null);
+
     },
 
     _info: function Driver_info(message) {

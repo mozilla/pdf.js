@@ -458,6 +458,19 @@ function checkRefTestResults(browser, id, results) {
   });
 }
 
+function browserTestReportHandler(req,res) {
+  var parsedUrl = url.parse(req.url, true);
+  var pathname = parsedUrl.pathname;
+  if (pathname === '/browserTestReports') {
+    var information = req.body.browserTestInfo;
+    var i = 0;
+    ++i;
+    fs.writeFileSync(path.join('../coverage/lcov-report/browserData/'+i+'.txt'),
+                    information);
+  }
+
+
+}
 function refTestPostHandler(req, res) {
   var parsedUrl = url.parse(req.url, true);
   var pathname = parsedUrl.pathname;

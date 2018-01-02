@@ -14,6 +14,8 @@
     "eslint-plugin-mozilla": "^0.4.9",
     "eslint-plugin-no-unsanitized": "^2.0.1",
     "gulp": "^3.9.1",
+    "gulp-inject": "^4.3.0",
+    "gulp-istanbul": "^1.1.2",
     "gulp-rename": "^1.2.2",
     "gulp-replace": "^0.6.1",
     "gulp-transform": "^3.0.5",
@@ -48,9 +50,5 @@
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
-  "license": "Apache-2.0",
-  "dependencies": {
-    "gulp-inject": "^4.3.0",
-    "gulp-istanbul": "^1.1.2"
-  }
+  "license": "Apache-2.0"
 }
