@@ -34,14 +34,14 @@ var ShadingType = {
 var Pattern = (function PatternClosure() {
   // Constructor should define this.getPattern
   function Pattern() {
-    throw new Error('should not call Pattern constructor');
+    unreachable('should not call Pattern constructor');
   }
 
   Pattern.prototype = {
     // Input: current Canvas context
     // Output: the appropriate fillStyle or strokeStyle
     getPattern: function Pattern_getPattern(ctx) {
-      throw new Error(`Should not call Pattern.getStyle: ${ctx}`);
+      unreachable(`Should not call Pattern.getStyle: ${ctx}`);
     },
   };
 

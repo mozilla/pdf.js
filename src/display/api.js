@@ -18,7 +18,8 @@ import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
   isArrayBuffer, isSameOrigin, loadJpegStream, MessageHandler,
   MissingPDFException, NativeImageDecoding, PageViewport, PasswordException,
-  stringToBytes, UnexpectedResponseException, UnknownErrorException, Util, warn
+  stringToBytes, UnexpectedResponseException, UnknownErrorException,
+  unreachable, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, getDefaultSetting,
@@ -475,7 +476,7 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
 
     requestDataRange:
         function PDFDataRangeTransport_requestDataRange(begin, end) {
-      throw new Error('Abstract method PDFDataRangeTransport.requestDataRange');
+      unreachable('Abstract method PDFDataRangeTransport.requestDataRange');
     },
 
     abort: function PDFDataRangeTransport_abort() {
@@ -1648,9 +1649,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         };
       }, this);
 
-      messageHandler.on('GetDoc', function transportDoc(data) {
-        var pdfInfo = data.pdfInfo;
-        this.numPages = data.pdfInfo.numPages;
+      messageHandler.on('GetDoc', function transportDoc({ pdfInfo, }) {
+        this.numPages = pdfInfo.numPages;
         var loadingTask = this.loadingTask;
         var pdfDocument = new PDFDocumentProxy(pdfInfo, this, loadingTask);
         this.pdfDocument = pdfDocument;

@@ -99,6 +99,7 @@ var getNonStdFontMap = getLookupTableFactory(function (t) {
   t['LucidaConsole-Bold'] = 'Courier-Bold';
   t['LucidaConsole-BoldItalic'] = 'Courier-BoldOblique';
   t['LucidaConsole-Italic'] = 'Courier-Oblique';
+  t['LucidaSans-Demi'] = 'Helvetica-Bold';
   t['MS-Gothic'] = 'MS Gothic';
   t['MS-Gothic-Bold'] = 'MS Gothic-Bold';
   t['MS-Gothic-BoldItalic'] = 'MS Gothic-BoldItalic';

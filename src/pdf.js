@@ -53,7 +53,6 @@ exports.PDFDataRangeTransport = pdfjsDisplayAPI.PDFDataRangeTransport;
 exports.PDFWorker = pdfjsDisplayAPI.PDFWorker;
 exports.renderTextLayer = pdfjsDisplayTextLayer.renderTextLayer;
 exports.AnnotationLayer = pdfjsDisplayAnnotationLayer.AnnotationLayer;
-exports.CustomStyle = pdfjsDisplayDOMUtils.CustomStyle;
 exports.createPromiseCapability = pdfjsSharedUtil.createPromiseCapability;
 exports.PasswordResponses = pdfjsSharedUtil.PasswordResponses;
 exports.InvalidPDFException = pdfjsSharedUtil.InvalidPDFException;

@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { FormatError, info, isString, shadow, warn } from '../shared/util';
+import {
+  FormatError, info, isString, shadow, unreachable, warn
+} from '../shared/util';
 import { isDict, isName, isStream } from './primitives';
 
 var ColorSpace = (function ColorSpaceClosure() {
@@ -54,7 +56,7 @@ var ColorSpace = (function ColorSpaceClosure() {
 
   // Constructor should define this.numComps, this.defaultColor, this.name
   function ColorSpace() {
-    throw new Error('should not call ColorSpace constructor');
+    unreachable('should not call ColorSpace constructor');
   }
 
   ColorSpace.prototype = {
@@ -74,7 +76,7 @@ var ColorSpace = (function ColorSpaceClosure() {
      */
     getRgbItem: function ColorSpace_getRgbItem(src, srcOffset,
                                                dest, destOffset) {
-      throw new Error('Should not call ColorSpace.getRgbItem');
+      unreachable('Should not call ColorSpace.getRgbItem');
     },
     /**
      * Converts the specified number of the color values to the RGB colors.
@@ -88,7 +90,7 @@ var ColorSpace = (function ColorSpaceClosure() {
     getRgbBuffer: function ColorSpace_getRgbBuffer(src, srcOffset, count,
                                                    dest, destOffset, bits,
                                                    alpha01) {
-      throw new Error('Should not call ColorSpace.getRgbBuffer');
+      unreachable('Should not call ColorSpace.getRgbBuffer');
     },
     /**
      * Determines the number of bytes required to store the result of the
@@ -97,7 +99,7 @@ var ColorSpace = (function ColorSpaceClosure() {
      */
     getOutputLength: function ColorSpace_getOutputLength(inputLength,
                                                          alpha01) {
-      throw new Error('Should not call ColorSpace.getOutputLength');
+      unreachable('Should not call ColorSpace.getOutputLength');
     },
     /**
      * Returns true if source data will be equal the result/output data.
