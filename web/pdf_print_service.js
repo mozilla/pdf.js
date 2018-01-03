@@ -200,7 +200,6 @@ PDFPrintService.prototype = {
   },
 };
 
-
 let print = window.print;
 window.print = function print() {
   if (activeService) {

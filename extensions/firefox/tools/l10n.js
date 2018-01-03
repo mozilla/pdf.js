@@ -76,7 +76,6 @@
     }
   }
 
-
   // translate an HTML subtree
   function translateFragment(element) {
     element = element || document.querySelector("html");

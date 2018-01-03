@@ -1351,7 +1351,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           textContentItem.textRunBreakAllowed = false;
         }
 
-
         textContentItem.initialized = true;
         return textContentItem;
       }
