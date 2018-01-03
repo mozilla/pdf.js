@@ -261,5 +261,4 @@ WebBrowser.create = function (desc) {
   return new WebBrowser(name, path);
 };
 
-
 exports.WebBrowser = WebBrowser;

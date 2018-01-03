@@ -676,7 +676,6 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     },
   });
 
-
   return {
     create: function FontRendererFactory_create(font, seacAnalysisEnabled) {
       var data = new Uint8Array(font.data);

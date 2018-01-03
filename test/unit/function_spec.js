@@ -440,7 +440,6 @@ describe('function', function() {
     });
   });
 
-
   describe('PostScriptCompiler', function() {
     function check(code, domain, range, samples) {
       var compiler = new PostScriptCompiler();
