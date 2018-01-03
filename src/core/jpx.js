@@ -185,8 +185,9 @@ var JpxImage = (function JpxImageClosure() {
                   precision: (data[j] & 0x7F) + 1,
                   isSigned: !!(data[j] & 0x80),
                   XRsiz: data[j + 1],
-                  YRsiz: data[j + 1],
+                  YRsiz: data[j + 2],
                 };
+                j += 3;
                 calculateComponentDimensions(component, siz);
                 components.push(component);
               }
