@@ -165,6 +165,24 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   globalScope.WeakMap = require('core-js/fn/weak-map');
 })();
 
+// Provides support for String.codePointAt in legacy browsers.
+// Support: IE11.
+(function checkStringCodePointAt() {
+  if (String.codePointAt) {
+    return;
+  }
+  String.codePointAt = require('core-js/fn/string/code-point-at');
+})();
+
+// Provides support for String.fromCodePoint in legacy browsers.
+// Support: IE11.
+(function checkStringFromCodePoint() {
+  if (String.fromCodePoint) {
+    return;
+  }
+  String.fromCodePoint = require('core-js/fn/string/from-code-point');
+})();
+
 } // End of !PDFJSDev.test('CHROME')
 
 // Provides support for Object.values in legacy browsers.
