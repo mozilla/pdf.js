@@ -122,6 +122,12 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue8795_reduced",
+       "file": "pdfs/issue8795_reduced.pdf",
+       "md5": "3ce58fa4aff351d46c42e0677d582099",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue2391-1",
       "file": "pdfs/issue2391-1.pdf",
       "md5": "25ae9cb959612e7b343b55da63af2716",
@@ -2436,6 +2442,12 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue9278",
+       "file": "pdfs/issue9278.pdf",
+       "md5": "9819c3a5715c1a46ea5a6740f9ead3da",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug894572",
        "file": "pdfs/bug894572.pdf",
        "md5": "e54a6b0451939f685ed37e3d46e16158",
@@ -3460,6 +3472,15 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "bug1425312",
+       "file": "pdfs/bug1425312.pdf",
+       "md5": "5b1e7d3e4ba7792fab2b69d1836df5a9",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 2,
+       "lastPage": 2,
+       "type": "eq"
+    },
     {  "id": "issue3438",
       "file": "pdfs/issue3438.pdf",
       "md5": "5aa3340b0920b65a377f697587668f89",
@@ -3698,6 +3719,12 @@
       "rounds": 1,
       "type": "eq",
       "about": "Image mask in higher resolution than the image itself"
+    },
+    {  "id": "PDFJS-9279-reduced",
+       "file": "pdfs/PDFJS-9279-reduced.pdf",
+       "md5": "a562a25596e9fe571ac6fb5b9f561974",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue4436",
        "file": "pdfs/issue4436r.pdf",

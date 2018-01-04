@@ -60,7 +60,6 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/dom_utils_spec',
     'pdfjs-test/unit/encodings_spec',
     'pdfjs-test/unit/evaluator_spec',
-    'pdfjs-test/unit/fonts_spec',
     'pdfjs-test/unit/function_spec',
     'pdfjs-test/unit/message_handler_spec',
     'pdfjs-test/unit/metadata_spec',
