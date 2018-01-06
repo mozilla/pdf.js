@@ -14,10 +14,11 @@
  */
 /* globals __non_webpack_require__ */
 
-import { isNodeJS, NativeImageDecoding } from '../../src/shared/util';
 import { setStubs, unsetStubs } from '../../examples/node/domstubs';
 import { buildGetDocumentParams } from './test_utils';
 import { getDocument } from '../../src/display/api';
+import isNodeJS from '../../src/shared/is_node';
+import { NativeImageDecoding } from '../../src/shared/util';
 import { SVGGraphics } from '../../src/display/svg';
 
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
