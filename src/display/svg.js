@@ -15,10 +15,11 @@
 /* globals __non_webpack_require__ */
 
 import {
-  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNodeJS,
-  isNum, OPS, Util, warn
+  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNum, OPS,
+  Util, warn
 } from '../shared/util';
 import { DOMSVGFactory } from './dom_utils';
+import isNodeJS from '../shared/is_node';
 
 var SVGGraphics = function() {
   throw new Error('Not implemented: SVGGraphics');

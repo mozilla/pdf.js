@@ -1015,10 +1015,17 @@ gulp.task('lib', ['buildnumber'], function () {
   var licenseHeaderLibre =
     fs.readFileSync('./src/license_header_libre.js').toString();
   var preprocessor2 = require('./external/builder/preprocessor2.js');
+  var sharedFiles = [
+    'compatibility',
+    'global_scope',
+    'is_node',
+    'streams_polyfill',
+    'util',
+  ];
   var buildLib = merge([
     gulp.src([
       'src/{core,display}/*.js',
-      'src/shared/{compatibility,util,streams_polyfill,global_scope}.js',
+      'src/shared/{' + sharedFiles.join() + '}.js',
       'src/{pdf,pdf.worker}.js',
     ], { base: 'src/', }),
     gulp.src([

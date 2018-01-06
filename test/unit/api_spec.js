@@ -17,9 +17,8 @@ import {
   buildGetDocumentParams, NodeFileReaderFactory, TEST_PDFS_PATH
 } from './test_utils';
 import {
-  createPromiseCapability, FontType, InvalidPDFException, isNodeJS,
-  MissingPDFException, PasswordException, PasswordResponses, StreamType,
-  stringToBytes
+  createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
+  PasswordException, PasswordResponses, StreamType, stringToBytes
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException
@@ -27,6 +26,7 @@ import {
 import {
   getDocument, PDFDocumentProxy, PDFPageProxy
 } from '../../src/display/api';
+import isNodeJS from '../../src/shared/is_node';
 import { PDFJS } from '../../src/display/global';
 
 describe('api', function() {
