@@ -269,6 +269,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     this.inFlightRequests = 0;
     this.testFilter = parameters.testFilter ?
       JSON.parse(parameters.testFilter) : [];
+    this.coverageparam = parameters.coverageparam ?
+      JSON.parse(parameters.coverageparam) : [];
 
     // Create a working canvas
     this.canvas = document.createElement('canvas');
@@ -583,14 +585,16 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       this.end.textContent = 'Tests finished. Close this window!';
 
       var re = new XMLHttpRequest();
-      re.open('POST','/browserTestReports?path=' + escape(this.appPath),false);
+      re.open('POST', '/browserTestReports', false);
+      re.responseType = 'arraybuffer';
       re.onreadystatechange = function () {
-        if (re.readyState == 4) {
+        if (re.readyState === XMLHttpRequest.DONE && re.status === 200) {
           var browserTestInfo = JSON.stringify(window.__coverage__);
-          re.send(browserTestInfo);
+          for (let i = 0; i < browserTestInfo.length; i++) {
+            re.send(browserTestInfo[i]);
+          }
         }
-      }
-
+      };
 
       // Send the quit request
       var r = new XMLHttpRequest();

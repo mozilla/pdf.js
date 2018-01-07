@@ -38,7 +38,7 @@ function parseOptions() {
     .boolean(['help', 'masterMode', 'reftest', 'unitTest', 'fontTest',
               'noPrompts', 'noDownload', 'downloadOnly'])
     .string(['manifestFile', 'browser', 'browserManifestFile',
-             'port', 'statsFile', 'statsDelay', 'testfilter'])
+             'port', 'statsFile', 'statsDelay', 'testfilter', 'coverageparam'])
     .alias('browser', 'b').alias('help', 'h').alias('masterMode', 'm')
     .alias('testfilter', 't')
     .describe('help', 'Show this help message')
@@ -54,6 +54,8 @@ function parseOptions() {
     .describe('reftest', 'Automatically start reftest showing comparison ' +
       'test failures, if there are any.')
     .describe('testfilter', 'Run specific reftest(s).')
+    .describe('coverageparam', 'A parameter used for loading files for ' +
+      'browsertests coverage')
     .default('testfilter', [])
     .example('$0 --b=firefox -t=issue5567 -t=issue5909',
       'Run the reftest identified by issue5567 and issue5909 in Firefox.')
@@ -90,6 +92,8 @@ function parseOptions() {
   }
   result.testfilter = Array.isArray(result.testfilter) ?
     result.testfilter : [result.testfilter];
+  result.coverageparam = Array.isArray(result.coverageparam) ?
+    result.coverageparam : [result.coverageparam];
   return result;
 }
 
@@ -299,6 +303,7 @@ function getTestManifest() {
       return;
     }
   }
+  var coverageParam = options.coverageparam.slice(0);
   return manifest;
 }
 
@@ -462,15 +467,21 @@ function browserTestReportHandler(req,res) {
   var parsedUrl = url.parse(req.url, true);
   var pathname = parsedUrl.pathname;
   if (pathname === '/browserTestReports') {
-    var information = req.body.browserTestInfo;
+    // let information = req.body.browserTestInfo;
     var i = 0;
     ++i;
-    fs.writeFileSync(path.join('../coverage/lcov-report/browserData/'+i+'.txt'),
-                    information);
+    const writeableStream = fs.createWriteStream('../coverage/lcov-report/browserData/');
+    const readable = getReadableStreamSomehow();
+    readable.on('data',(dataToWrite) => {
+      writeableStream.write(dataToWrite);
+    }
+
+    readable.on('end',() => {
+      writeableStream.end(null);
+    })
   }
-
-
 }
+
 function refTestPostHandler(req, res) {
   var parsedUrl = url.parse(req.url, true);
   var pathname = parsedUrl.pathname;
@@ -658,6 +669,7 @@ function startBrowsers(url, initSessionCallback) {
       '?browser=' + encodeURIComponent(b.name) +
       '&manifestFile=' + encodeURIComponent('/test/' + options.manifestFile) +
       '&testFilter=' + JSON.stringify(options.testfilter) +
+      '&coverageParam=' + JSON.stringify(options.coverageparam) +
       '&path=' + encodeURIComponent(b.path) +
       '&delay=' + options.statsDelay +
       '&masterMode=' + options.masterMode;
