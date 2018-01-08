@@ -37,7 +37,7 @@ var zip = require('gulp-zip');
 var webpack2 = require('webpack');
 var webpackStream = require('webpack-stream');
 var istanbul = require('gulp-istanbul');
-var inject = require('gulp-inject');
+// var inject = require('gulp-inject');
 var Vinyl = require('vinyl');
 var vfs = require('vinyl-fs');
 
@@ -1186,6 +1186,7 @@ gulp.task('instrument', function () {
     .pipe(gulp.dest(ISTANBUL_PATHS.dest));
 });
 
+/*
 gulp.task('inject', ['instrument'], function (done) {
   return gulp.src('index.html')
     .pipe(inject(
@@ -1197,10 +1198,12 @@ gulp.task('inject', ['instrument'], function (done) {
         relative: true,
         starttag: '<!-- inject:tests:js -->',
       }))
-    .pipe(gulp.dest('.'));
-  console.log('Successfully Injected files');
-  done();
+    .pipe(gulp.dest('.'))
+    .on('end', function() {
+      done();
+    });
 });
+*/
 
 gulp.task('server', function (done) {
   console.log();

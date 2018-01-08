@@ -586,15 +586,15 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
       var re = new XMLHttpRequest();
       re.open('POST', '/browserTestReports', false);
+      re.setRequestHeader('Content-Type', 'application/json');
       re.responseType = 'arraybuffer';
       re.onreadystatechange = function () {
         if (re.readyState === XMLHttpRequest.DONE && re.status === 200) {
           var browserTestInfo = JSON.stringify(window.__coverage__);
-          for (let i = 0; i < browserTestInfo.length; i++) {
-            re.send(browserTestInfo[i]);
+          re.send(browserTestInfo);
+          // re.send(re.response)
           }
-        }
-      };
+        };
 
       // Send the quit request
       var r = new XMLHttpRequest();
@@ -605,7 +605,6 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         }
       };
       r.send(null);
-
     },
 
     _info: function Driver_info(message) {

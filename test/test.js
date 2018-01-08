@@ -36,9 +36,9 @@ function parseOptions() {
   var yargs = require('yargs')
     .usage('Usage: $0')
     .boolean(['help', 'masterMode', 'reftest', 'unitTest', 'fontTest',
-              'noPrompts', 'noDownload', 'downloadOnly'])
+              'noPrompts', 'noDownload', 'downloadOnly', 'coverage'])
     .string(['manifestFile', 'browser', 'browserManifestFile',
-             'port', 'statsFile', 'statsDelay', 'testfilter', 'coverageparam'])
+             'port', 'statsFile', 'statsDelay', 'testfilter'])
     .alias('browser', 'b').alias('help', 'h').alias('masterMode', 'm')
     .alias('testfilter', 't')
     .describe('help', 'Show this help message')
@@ -54,7 +54,7 @@ function parseOptions() {
     .describe('reftest', 'Automatically start reftest showing comparison ' +
       'test failures, if there are any.')
     .describe('testfilter', 'Run specific reftest(s).')
-    .describe('coverageparam', 'A parameter used for loading files for ' +
+    .describe('coverage', 'A parameter used for loading files for ' +
       'browsertests coverage')
     .default('testfilter', [])
     .example('$0 --b=firefox -t=issue5567 -t=issue5909',
@@ -92,8 +92,6 @@ function parseOptions() {
   }
   result.testfilter = Array.isArray(result.testfilter) ?
     result.testfilter : [result.testfilter];
-  result.coverageparam = Array.isArray(result.coverageparam) ?
-    result.coverageparam : [result.coverageparam];
   return result;
 }
 
@@ -303,7 +301,6 @@ function getTestManifest() {
       return;
     }
   }
-  var coverageParam = options.coverageparam.slice(0);
   return manifest;
 }
 
@@ -463,22 +460,24 @@ function checkRefTestResults(browser, id, results) {
   });
 }
 
-function browserTestReportHandler(req,res) {
+function browserTestReportHandler(req, res) {
   var parsedUrl = url.parse(req.url, true);
   var pathname = parsedUrl.pathname;
   if (pathname === '/browserTestReports') {
     // let information = req.body.browserTestInfo;
-    var i = 0;
-    ++i;
-    const writeableStream = fs.createWriteStream('../coverage/lcov-report/browserData/');
-    const readable = getReadableStreamSomehow();
-    readable.on('data',(dataToWrite) => {
+    // var i = 0;
+    // ++i;
+    const writableStream = fs.createWriteStream(
+                           '../coverage/lcov-report/browserData/');
+    // const readable = getReadableStreamSomehow();
+    /* readable.on('data', function(dataToWrite) {
       writeableStream.write(dataToWrite);
-    }
+    })
 
     readable.on('end',() => {
       writeableStream.end(null);
-    })
+    }) */
+    req.pipe(writableStream);
   }
 }
 
@@ -668,8 +667,8 @@ function startBrowsers(url, initSessionCallback) {
     var startUrl = getServerBaseAddress() + url +
       '?browser=' + encodeURIComponent(b.name) +
       '&manifestFile=' + encodeURIComponent('/test/' + options.manifestFile) +
-      '&testFilter=' + JSON.stringify(options.testfilter) +
-      '&coverageParam=' + JSON.stringify(options.coverageparam) +
+      '&testFilter=' + JSON.stringify(options.testfilter +
+      '&coverage=' + options.coverage) +
       '&path=' + encodeURIComponent(b.path) +
       '&delay=' + options.statsDelay +
       '&masterMode=' + options.masterMode;
