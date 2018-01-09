@@ -642,6 +642,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.closeFillStroke:
             this.closeFillStroke();
             break;
+          case OPS.closeEOFillStroke:
+            this.closeEOFillStroke();
+            break;
           case OPS.nextLine:
             this.nextLine();
             break;
@@ -1118,6 +1121,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
     closeFillStroke: function SVGGraphics_closeFillStroke() {
       this.closePath();
       this.fillStroke();
+    },
+
+    closeEOFillStroke() {
+      this.closePath();
+      this.eoFillStroke();
     },
 
     paintSolidColorImageMask:
