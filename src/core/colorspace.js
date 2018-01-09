@@ -14,9 +14,59 @@
  */
 
 import {
-  FormatError, info, isString, shadow, unreachable, warn
+  assert, FormatError, info, isArrayBuffer, isNum, isString, shadow,
+  unreachable, warn
 } from '../shared/util';
-import { isDict, isName, isStream } from './primitives';
+import { isDict, isName, isRef, isStream } from './primitives';
+import { MurmurHash3_64 } from './murmurhash3';
+
+function buildColorSpaceHash(cs) {
+  assert(Array.isArray(cs), 'ColorSpace must be an array.');
+  let hash = new MurmurHash3_64();
+
+  function parseElement(element) {
+    if (isName(element)) {
+      hash.update(element.name);
+    } else if (isRef(element) || isNum(element)) {
+      hash.update(element.toString());
+    } else if (isString(element)) {
+      hash.update(element);
+    } else if (isDict(element)) {
+      if (element.objId) {
+        hash.update(element.objId);
+      } else {
+        let keys = element.getKeys();
+        for (let i = 0, ii = element.length; i < ii; i++) {
+          let key = keys[i];
+          hash.update(key);
+          parseElement(element.getRaw(key));
+        }
+      }
+    } else if (isStream(element)) {
+      if (element.dict) {
+        parseElement(element.dict);
+      }
+      let stream = element.str || element;
+      let typedArray = stream.buffer ?
+        new Uint8Array(stream.buffer.buffer, 0, stream.bufferLength) :
+        new Uint8Array(stream.bytes.buffer,
+                       stream.start, stream.end - stream.start);
+      hash.update(typedArray);
+    } else if (isArrayBuffer(element)) {
+      hash.update(element);
+    } else if (Array.isArray(element)) {
+      for (let i = 0, ii = element.length; i < ii; i++) {
+        parseElement(element[i]);
+      }
+    }
+  }
+
+  // Parse the ColourSpace array.
+  for (let i = 0, ii = cs.length; i < ii; i++) {
+    parseElement(cs[i]);
+  }
+  return hash.hexdigest();
+}
 
 var ColorSpace = (function ColorSpaceClosure() {
   /**
@@ -258,8 +308,9 @@ var ColorSpace = (function ColorSpaceClosure() {
     }
   };
 
-  ColorSpace.parseToIR = function(cs, xref, res, pdfFunctionFactory) {
-    if (isName(cs)) {
+  ColorSpace.parseToIR = function(cs, xref, res = null, pdfFunctionFactory,
+                                  parsedColorSpaceCache) {
+    if (res && isName(cs)) {
       var colorSpaces = res.get('ColorSpace');
       if (isDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
@@ -288,6 +339,20 @@ var ColorSpace = (function ColorSpaceClosure() {
       }
     }
     if (Array.isArray(cs)) {
+      // Keep track of already parsed ColourSpaces, to prevent an infinite loop
+      // when parsing corrupt PDF files where there's a circular dependency
+      // between the ColourSpaces (fixes issue9285.pdf).
+      if (!parsedColorSpaceCache) {
+        parsedColorSpaceCache = Object.create(null);
+      }
+      let hash = buildColorSpaceHash(cs);
+      if (hash) {
+        if (parsedColorSpaceCache[hash]) {
+          throw new FormatError('Circular dependency between ColorSpaces.');
+        }
+        parsedColorSpaceCache[hash] = true;
+      }
+
       var mode = xref.fetchIfRef(cs[0]).name;
       var numComps, params, alt, whitePoint, blackPoint, gamma;
 
@@ -320,13 +385,18 @@ var ColorSpace = (function ColorSpaceClosure() {
           numComps = dict.get('N');
           alt = dict.get('Alternate');
           if (alt) {
-            var altIR = ColorSpace.parseToIR(alt, xref, res,
-                                             pdfFunctionFactory);
-            // Parse the /Alternate CS to ensure that the number of components
-            // are correct, and also (indirectly) that it is not a PatternCS.
-            var altCS = ColorSpace.fromIR(altIR, pdfFunctionFactory);
-            if (altCS.numComps === numComps) {
-              return altIR;
+            try {
+              let altIR = ColorSpace.parseToIR(alt, xref, res,
+                                               pdfFunctionFactory,
+                                               parsedColorSpaceCache);
+              // Parse the /Alternate CS to ensure that the number of components
+              // are correct, and also (indirectly) that it is not a PatternCS.
+              let altCS = ColorSpace.fromIR(altIR, pdfFunctionFactory);
+              if (altCS.numComps === numComps) {
+                return altIR;
+              }
+            } catch (ex) {
+              // Ignore errors here, given the `numComps` fallback below.
             }
             warn('ICCBased color space: Ignoring incorrect /Alternate entry.');
           }
@@ -342,13 +412,15 @@ var ColorSpace = (function ColorSpaceClosure() {
           var basePatternCS = cs[1] || null;
           if (basePatternCS) {
             basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res,
-                                                 pdfFunctionFactory);
+                                                 pdfFunctionFactory,
+                                                 parsedColorSpaceCache);
           }
           return ['PatternCS', basePatternCS];
         case 'Indexed':
         case 'I':
           var baseIndexedCS = ColorSpace.parseToIR(cs[1], xref, res,
-                                                   pdfFunctionFactory);
+                                                   pdfFunctionFactory,
+                                                   parsedColorSpaceCache);
           var hiVal = xref.fetchIfRef(cs[2]) + 1;
           var lookup = xref.fetchIfRef(cs[3]);
           if (isStream(lookup)) {
@@ -359,7 +431,8 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'DeviceN':
           var name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          alt = ColorSpace.parseToIR(cs[2], xref, res, pdfFunctionFactory);
+          alt = ColorSpace.parseToIR(cs[2], xref, res, pdfFunctionFactory,
+                                     parsedColorSpaceCache);
           let tintFnIR = pdfFunctionFactory.createIR(xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
