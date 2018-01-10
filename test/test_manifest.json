@@ -602,6 +602,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue6737",
+       "file": "pdfs/issue6737.pdf",
+       "md5": "6f091967ad15ba63855c56049e86c68b",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue5010",
        "file": "pdfs/issue5010.pdf",
        "md5": "419f4b13403a0871c463ec69d96e342c",
@@ -726,6 +734,13 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue9262",
+       "file": "pdfs/issue9262_reduced.pdf",
+       "md5": "5347ce2d7b3866625c22e115fd90e0de",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue8707",
        "file": "pdfs/issue8707.pdf",
        "md5": "d3dc670adde9ec9fb82c974027033029",
@@ -739,6 +754,13 @@
        "rounds": 1,
        "link": true,
        "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "issue9105",
+       "file": "pdfs/issue9105_reduced.pdf",
+       "md5": "f3889f7c7b60e1ab998aac430cc7e08e",
+       "rounds": 1,
+       "link": false,
        "type": "eq"
     },
     {  "id": "issue6289",
@@ -1303,7 +1325,8 @@
        "link": true,
        "firstPage": 2,
        "lastPage": 2,
-       "type": "eq"
+       "type": "eq",
+       "nativeImageDecoderSupport": "none"
     },
     {  "id": "issue6071",
        "file": "pdfs/issue6071.pdf",
@@ -2257,6 +2280,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue9291",
+       "file": "pdfs/issue9291.pdf",
+       "md5": "8c3f4edff54c1ca0b67700a05ea0ccee",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue5751",
        "file": "pdfs/issue5751.pdf",
        "md5": "9334a52dc85747f1e3422767e0cd3ee9",
@@ -2714,6 +2744,12 @@
       "md5": "2ac7c68e26a8ef797aead15e4875cc6d",
       "rounds": 1,
       "type": "load"
+    },
+    {  "id": "issue7074_reduced",
+       "file": "pdfs/issue7074_reduced.pdf",
+       "md5": "46893f8aa33620a05acdc27e3b79469d",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue5540",
       "file": "pdfs/issue5540.pdf",
@@ -3557,6 +3593,14 @@
        "rounds": 1,
        "link": true,
        "lastPage": 1,
+       "type": "eq",
+       "nativeImageDecoderSupport": "none"
+    },
+    {  "id": "decodeACSuccessive",
+       "file": "pdfs/decodeACSuccessive.pdf",
+       "md5": "7749c032624fe27ab8e8d7d5e9a4a93f",
+       "rounds": 1,
+       "link": false,
        "type": "eq",
        "nativeImageDecoderSupport": "none"
     },

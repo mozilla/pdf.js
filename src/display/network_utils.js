@@ -19,7 +19,7 @@ import {
 
 function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
                                             rangeChunkSize, disableRange, }) {
-  assert(rangeChunkSize > 0);
+  assert(rangeChunkSize > 0, 'Range chunk size must be larger than zero');
   let returnValues = {
     allowRangeRequests: false,
     suggestedLength: undefined,

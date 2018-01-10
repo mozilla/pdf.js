@@ -18,7 +18,8 @@ import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
   isArrayBuffer, isSameOrigin, loadJpegStream, MessageHandler,
   MissingPDFException, NativeImageDecoding, PageViewport, PasswordException,
-  stringToBytes, UnexpectedResponseException, UnknownErrorException, Util, warn
+  stringToBytes, UnexpectedResponseException, UnknownErrorException,
+  unreachable, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, getDefaultSetting,
@@ -491,7 +492,7 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
 
     requestDataRange:
         function PDFDataRangeTransport_requestDataRange(begin, end) {
-      throw new Error('Abstract method PDFDataRangeTransport.requestDataRange');
+      unreachable('Abstract method PDFDataRangeTransport.requestDataRange');
     },
 
     abort: function PDFDataRangeTransport_abort() {
@@ -796,14 +797,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * @param {number} scale The desired scale of the viewport.
      * @param {number} rotate Degrees to rotate the viewport. If omitted this
      * defaults to the page rotation.
+     * @param {boolean} dontFlip (optional) If true, axis Y will not be flipped.
      * @return {PageViewport} Contains 'width' and 'height' properties
      * along with transforms required for rendering.
      */
-    getViewport: function PDFPageProxy_getViewport(scale, rotate) {
-      if (arguments.length < 2) {
-        rotate = this.rotate;
-      }
-      return new PageViewport(this.view, scale, rotate, 0, 0);
+    getViewport(scale, rotate = this.rotate, dontFlip = false) {
+      return new PageViewport(this.view, scale, rotate, 0, 0, dontFlip);
     },
     /**
      * @param {GetAnnotationsParameters} params - Annotation parameters.
@@ -1693,9 +1692,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         };
       }, this);
 
-      messageHandler.on('GetDoc', function transportDoc(data) {
-        var pdfInfo = data.pdfInfo;
-        this.numPages = data.pdfInfo.numPages;
+      messageHandler.on('GetDoc', function transportDoc({ pdfInfo, }) {
+        this.numPages = pdfInfo.numPages;
         var loadingTask = this.loadingTask;
         var pdfDocument = new PDFDocumentProxy(pdfInfo, this, loadingTask);
         this.pdfDocument = pdfDocument;
