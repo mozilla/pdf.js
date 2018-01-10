@@ -583,7 +583,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       this._log('Done !');
       this.end.textContent = 'Tests finished. Close this window!';
 
-      if (this.coverage === true) {
+      if (this.coverage) {
         var re = new XMLHttpRequest();
         re.open('POST', '/browserTestReports', false);
         re.setRequestHeader('Content-Type', 'application/json');
