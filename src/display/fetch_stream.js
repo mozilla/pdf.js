@@ -21,6 +21,21 @@ import {
   validateResponseStatus
 } from './network_utils';
 
+function errorHasKnownResponseCode(error) {
+  if (
+    error && (
+      error.status === 404 ||
+      error.status === 401 ||
+      error.status === 403 ||
+      error.status === 500 ||
+      error.status === 416
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function createFetchOptions(headers, withCredentials) {
   return {
     method: 'GET',
@@ -192,6 +207,7 @@ class PDFFetchStreamRangeReader {
     let rangeStr = begin + '-' + (end - 1);
     this._headers.append('Range', 'bytes=' + rangeStr);
     let url = source.url;
+
     fetch(url, createFetchOptions(this._headers, this._withCredentials)).
       then(
         (response) => {
@@ -202,6 +218,9 @@ class PDFFetchStreamRangeReader {
           this._reader = response.body.getReader();
         },
         (error) => {
+          if (errorHasKnownResponseCode(error)) {
+            throw error;
+          }
           // network error: workaround Chrome issue: net::ERR_CACHE_OPERATION_NOT_SUPPORTED
           console.log(
             'ERROR: possible Chrome cache fail: ' +
@@ -222,7 +241,11 @@ class PDFFetchStreamRangeReader {
               }
             );
         }
-      );
+      )
+      .catch((error) => {
+        console.error(error);
+        this._readCapability.reject(error);
+      });
 
     this.onProgress = null;
   }

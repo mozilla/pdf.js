@@ -82,6 +82,21 @@ if (typeof PDFJSDev !== 'undefined' &&
   }) : null;
 }
 
+function errorHasKnownResponseCode(error) {
+  if (
+    error && (
+      error.status === 404 ||
+      error.status === 401 ||
+      error.status === 403 ||
+      error.status === 500 ||
+      error.status === 416
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /** @type IPDFStream */
 var PDFNetworkStream;
 
@@ -1640,17 +1655,19 @@ var WorkerTransport = (function WorkerTransportClosure() {
             assert(isArrayBuffer(value));
             sink.enqueue(new Uint8Array(value), 1, [value]);
           }).catch((reason) => {
-            // network error: workaround Chrome issue: net::ERR_CACHE_READ_FAILURE
-            console.log(
-              'ERROR: possible Chrome cache fail: ' +
-              'net::ERR_CACHE_READ_FAILURE. Retry with cachebusted url',
-              reason.message
-            );
-            if (
+            if (errorHasKnownResponseCode(reason)) {
+              sink.error(reason);
+            } else if (
               reason && reason.message === 'network error' &&
               // Only cachebust once
               this._networkStream.source.url.indexOf('cachebust') === -1
             ) {
+              // network error: workaround Chrome issue: net::ERR_CACHE_READ_FAILURE
+              console.log(
+                'ERROR: possible Chrome cache fail: ' +
+                'net::ERR_CACHE_READ_FAILURE. Retry with cachebusted url',
+                reason.message
+              );
               _rangeReader.cancel(reason);
               let cachebust = true;
               _rangeReader = this._networkStream.getRangeReader(data.begin, data.end, cachebust);

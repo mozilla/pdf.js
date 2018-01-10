@@ -326,6 +326,9 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
           return; // ignoring any data after abort
         }
         this.onReceiveData({ chunk: data, begin, });
+      })
+      .catch(error => {
+        this.onError(error);
       });
       // TODO check errors
     },

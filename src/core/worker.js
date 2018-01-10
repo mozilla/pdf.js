@@ -461,7 +461,8 @@ var WorkerMessageHandler = {
         contentLength: source.contentLength,
         isStreamingSupported: !source.disableStream,
       };
-      var fullRequest = !source.disableRange && source.contentLength ?
+      const useRangeRequests = !source.disableRange && source.contentLength && (source.contentLength > (source.rangeChunkSize * 2));
+      var fullRequest = useRangeRequests ?
         mockFullRequest :
         pdfStream.getFullReader();
       fullRequest.headersReady.then(function () {
@@ -512,7 +513,7 @@ var WorkerMessageHandler = {
         }
         cachedChunks = [];
       };
-      var readPromise = new Promise(function (resolve, reject) {
+      var readPromise = useRangeRequests ? Promise.resolve() : new Promise(function (resolve, reject) {
         var readChunk = function (chunk) {
           try {
             ensureNotTerminated();
@@ -607,7 +608,7 @@ var WorkerMessageHandler = {
             ensureNotTerminated();
 
             loadDocument(true).then(onSuccess, onFailure);
-          });
+          }).catch(onFailure);
         }, onFailure);
       }
 
@@ -634,7 +635,7 @@ var WorkerMessageHandler = {
         handler.send('PDFManagerReady', null);
         pdfManager.onLoadedStream().then(function(stream) {
           handler.send('DataLoaded', { length: stream.bytes.byteLength, });
-        });
+        }).catch(onFailure);
       }).then(pdfManagerReady, onFailure);
     }
 
