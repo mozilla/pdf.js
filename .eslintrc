@@ -124,7 +124,7 @@
     "new-cap": ["error", { "newIsCap": true, "capIsNew": false, }],
     "new-parens": "error",
     "no-array-constructor": "error",
-    "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 0, "maxBOF": 1, }],
+    "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0, "maxBOF": 1, }],
     "no-new-object": "error",
     "no-tabs": "error",
     "no-trailing-spaces": ["error", { "skipBlankLines": false, }],

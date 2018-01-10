@@ -2202,6 +2202,7 @@ function webViewerKeyDown(evt) {
           handled = true;
         }
         break;
+      case 13: // enter key
       case 40: // down arrow
       case 34: // pg down
       case 32: // spacebar
@@ -2255,6 +2256,7 @@ function webViewerKeyDown(evt) {
 
   if (cmd === 4) { // shift-key
     switch (evt.keyCode) {
+      case 13: // enter key
       case 32: // spacebar
         if (!isViewerInPresentationMode &&
             pdfViewer.currentScaleValue !== 'page-fit') {

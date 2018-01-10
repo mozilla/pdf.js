@@ -57,6 +57,7 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/display_svg_spec',
     'pdfjs-test/unit/document_spec',
     'pdfjs-test/unit/dom_utils_spec',
+    'pdfjs-test/unit/encodings_spec',
     'pdfjs-test/unit/evaluator_spec',
     'pdfjs-test/unit/fonts_spec',
     'pdfjs-test/unit/function_spec',
