@@ -663,7 +663,7 @@ function startBrowsers(url, initSessionCallback) {
       '?browser=' + encodeURIComponent(b.name) +
       '&manifestFile=' + encodeURIComponent('/test/' + options.manifestFile) +
       '&testFilter=' + JSON.stringify(options.testfilter) +
-      '&coverage=' + (options.coverage) +
+      '&coverage=' + options.coverage +
       '&path=' + encodeURIComponent(b.path) +
       '&delay=' + options.statsDelay +
       '&masterMode=' + options.masterMode;

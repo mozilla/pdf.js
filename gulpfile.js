@@ -374,6 +374,9 @@ function createTestSource(testsName) {
         return null;
     }
     args.push('--browserManifestFile=' + PDF_BROWSERS);
+    if (process.env.GENERATE_COVERAGE) {
+      args.push('--browserManifestFile=' + PDF_BROWSERS);
+    }
 
     var testProcess = spawn('node', args, { cwd: TEST_DIR, stdio: 'inherit', });
     testProcess.on('close', function (code) {
@@ -1184,25 +1187,6 @@ gulp.task('instrument', function () {
     // instrumented files will go here
     .pipe(gulp.dest(ISTANBUL_PATHS.dest));
 });
-
-/*
-gulp.task('inject', ['instrument'], function (done) {
-  return gulp.src('index.html')
-    .pipe(inject(
-      gulp.src(ISTANBUL_PATHS.javascript, { read: false, }), {
-        relative: true,
-      }))
-    .pipe(inject(
-      gulp.src(ISTANBUL_PATHS.tests, { read: false, }), {
-        relative: true,
-        starttag: '<!-- inject:tests:js -->',
-      }))
-    .pipe(gulp.dest('.'))
-    .on('end', function() {
-      done();
-    });
-});
-*/
 
 gulp.task('server', function (done) {
   console.log();
