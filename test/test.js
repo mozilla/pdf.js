@@ -218,6 +218,7 @@ function startRefTest(masterMode, showRefImages) {
     startTime = Date.now();
     startServer();
     server.hooks['POST'].push(refTestPostHandler);
+    server.hooks['POST'].push(browserTestReportHandler);
     onAllSessionsClosed = finalize;
 
     startBrowsers('/test/test_slave.html', function (session) {
@@ -464,20 +465,14 @@ function browserTestReportHandler(req, res) {
   var parsedUrl = url.parse(req.url, true);
   var pathname = parsedUrl.pathname;
   if (pathname === '/browserTestReports') {
-    // let information = req.body.browserTestInfo;
-    // var i = 0;
-    // ++i;
-    const writableStream = fs.createWriteStream(
-                           '../coverage/lcov-report/browserData/');
-    // const readable = getReadableStreamSomehow();
-    /* readable.on('data', function(dataToWrite) {
-      writeableStream.write(dataToWrite);
-    })
 
-    readable.on('end',() => {
-      writeableStream.end(null);
-    }) */
+    var writableStream = fs.createWriteStream(
+                           '../coverage/lcov-report/browserData/');
+
     req.pipe(writableStream);
+    writableStream.on('finish',function () {
+      res.end();
+    })
   }
 }
 
@@ -667,8 +662,8 @@ function startBrowsers(url, initSessionCallback) {
     var startUrl = getServerBaseAddress() + url +
       '?browser=' + encodeURIComponent(b.name) +
       '&manifestFile=' + encodeURIComponent('/test/' + options.manifestFile) +
-      '&testFilter=' + JSON.stringify(options.testfilter +
-      '&coverage=' + options.coverage) +
+      '&testFilter=' + JSON.stringify(options.testfilter) +
+      '&coverage=' + (options.coverage) +
       '&path=' + encodeURIComponent(b.path) +
       '&delay=' + options.statsDelay +
       '&masterMode=' + options.masterMode;

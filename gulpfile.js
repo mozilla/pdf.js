@@ -37,7 +37,6 @@ var zip = require('gulp-zip');
 var webpack2 = require('webpack');
 var webpackStream = require('webpack-stream');
 var istanbul = require('gulp-istanbul');
-// var inject = require('gulp-inject');
 var Vinyl = require('vinyl');
 var vfs = require('vinyl-fs');
 
