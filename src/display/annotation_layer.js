@@ -834,7 +834,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     if (this.data.radioButtonType === AnnotationCheckboxType.CIRCLE) {
       element.style.width = this.container.style.width =
         this.container.style.height;
-      CustomStyle.setProp('borderRadius', this.container, '50%');
+      this.container.borderRadius = '50%';
     }
 
     if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {

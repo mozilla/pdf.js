@@ -233,7 +233,6 @@ describe('annotation', function() {
       expect(annotation.borderColor).toEqual(new Uint8Array([102, 102, 102]));
     });
 
-
     it('should set and get an RGB color', function() {
       var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0, 0, 1]);
@@ -256,7 +255,6 @@ describe('annotation', function() {
 
       expect(annotation.borderColor).toEqual(new Uint8Array([0, 0, 255]));
     });
-
 
     it('should set and get a CMYK color', function() {
       var annotation = new Annotation({ dict, ref, });
