@@ -470,9 +470,9 @@ function browserTestReportHandler(req, res) {
                            '../coverage/lcov-report/browserData/');
 
     req.pipe(writableStream);
-    writableStream.on('finish',function () {
+    writableStream.on('finish', function () {
       res.end();
-    })
+    });
   }
 }
 
