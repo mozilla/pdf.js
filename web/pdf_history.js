@@ -133,6 +133,9 @@ class PDFHistory {
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+    if (this._uid > this._maxUid) {
+      this._maxUid = this._uid;
+    }
 
     if (destination.rotation !== undefined) {
       this.initialRotation = destination.rotation;
@@ -510,6 +513,9 @@ class PDFHistory {
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+    if (this._uid > this._maxUid) {
+      this._maxUid = this._uid;
+    }
 
     if (isValidRotation(destination.rotation)) {
       this.linkService.rotation = destination.rotation;
