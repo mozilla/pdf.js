@@ -547,10 +547,10 @@ class PDFHistory {
     _boundEvents.pageHide = (evt) => {
       // Attempt to push the `this._position` into the browser history when
       // navigating away from the document. This is *only* done if the history
-      // is currently empty, since otherwise an existing browser history entry
+      // is empty/temporary, since otherwise an existing browser history entry
       // will end up being overwritten (given that new entries cannot be pushed
       // into the browser history when the 'unload' event has already fired).
-      if (!this._destination) {
+      if (!this._destination || this._destination.temporary) {
         this._tryPushCurrentPosition();
       }
     };
