@@ -83,15 +83,25 @@ if (typeof PDFJSDev !== 'undefined' &&
   }) : null;
 }
 
-/** @type IPDFStream */
-var PDFNetworkStream;
+/**
+ * @typedef {function} IPDFStreamFactory
+ * @param {DocumentInitParameters} params The document initialization
+ * parameters. The "url" key is always present.
+ * @return {IPDFStream}
+ */
+
+/** @type IPDFStreamFactory */
+var createPDFNetworkStream;
 
 /**
- * Sets PDFNetworkStream class to be used as alternative PDF data transport.
- * @param {IPDFStream} cls - the PDF data transport.
+ * Sets the function that instantiates a IPDFStream as an alternative PDF data
+ * transport.
+ * @param {IPDFStreamFactory} pdfNetworkStreamFactory - the factory function
+ * that takes document initialization parameters (including a "url") and returns
+ * an instance of IPDFStream.
  */
-function setPDFNetworkStreamClass(cls) {
-  PDFNetworkStream = cls;
+function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
+  createPDFNetworkStream = pdfNetworkStreamFactory;
 }
 
 /**
@@ -252,7 +262,7 @@ function getDocument(src) {
       if (rangeTransport) {
         networkStream = new PDFDataTransportStream(params, rangeTransport);
       } else if (!params.data) {
-        networkStream = new PDFNetworkStream(params);
+        networkStream = createPDFNetworkStream(params);
       }
 
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
@@ -2344,7 +2354,7 @@ export {
   PDFWorker,
   PDFDocumentProxy,
   PDFPageProxy,
-  setPDFNetworkStreamClass,
+  setPDFNetworkStreamFactory,
   version,
   build,
 };
