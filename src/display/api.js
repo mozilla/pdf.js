@@ -2001,8 +2001,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
         return {
           info: results[0],
           metadata: (results[1] ? new Metadata(results[1]) : null),
+          contentDispositionFileName: (this._fullReader ?
+                                       this._fullReader.fileName : null),
         };
-      });
+      }.bind(this));
     },
 
     getStats: function WorkerTransport_getStats() {

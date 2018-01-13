@@ -17,8 +17,8 @@ import {
   AbortException, assert, createPromiseCapability
 } from '../shared/util';
 import {
-  createResponseStatusError, validateRangeRequestCapabilities,
-  validateResponseStatus
+  createResponseStatusError, extractFilenameFromHeader,
+  validateRangeRequestCapabilities, validateResponseStatus
 } from './network_utils';
 
 function createFetchOptions(headers, withCredentials) {
@@ -67,6 +67,7 @@ class PDFFetchStream {
 class PDFFetchStreamReader {
   constructor(stream) {
     this._stream = stream;
+    this._fileName = null;
     this._reader = null;
     this._loaded = 0;
     let source = stream.source;
@@ -100,11 +101,13 @@ class PDFFetchStreamReader {
       this._reader = response.body.getReader();
       this._headersCapability.resolve();
 
+      const getResponseHeader = (name) => {
+        return response.headers.get(name);
+      };
+
       let { allowRangeRequests, suggestedLength, } =
         validateRangeRequestCapabilities({
-          getResponseHeader: (name) => {
-            return response.headers.get(name);
-          },
+          getResponseHeader,
           isHttp: this._stream.isHttp,
           rangeChunkSize: this._rangeChunkSize,
           disableRange: this._disableRange,
@@ -112,6 +115,7 @@ class PDFFetchStreamReader {
 
       this._contentLength = suggestedLength;
       this._isRangeSupported = allowRangeRequests;
+      this._fileName = extractFilenameFromHeader(getResponseHeader);
 
       // We need to stop reading when range is supported and streaming is
       // disabled.
@@ -129,6 +133,10 @@ class PDFFetchStreamReader {
 
   get contentLength() {
     return this._contentLength;
+  }
+
+  get fileName() {
+    return this._fileName;
   }
 
   get isRangeSupported() {
