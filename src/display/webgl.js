@@ -219,7 +219,6 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var texture = createTexture(gl, layer, gl.TEXTURE0);
     var maskTexture = createTexture(gl, mask, gl.TEXTURE1);
 
-
     // Create a buffer and put a single clipspace rectangle in
     // it (2 triangles)
     var buffer = gl.createBuffer();

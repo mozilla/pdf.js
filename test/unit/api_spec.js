@@ -17,9 +17,8 @@ import {
   buildGetDocumentParams, NodeFileReaderFactory, TEST_PDFS_PATH
 } from './test_utils';
 import {
-  createPromiseCapability, FontType, InvalidPDFException, isNodeJS,
-  MissingPDFException, PasswordException, PasswordResponses, StreamType,
-  stringToBytes
+  createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
+  PasswordException, PasswordResponses, StreamType, stringToBytes
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException
@@ -27,6 +26,7 @@ import {
 import {
   getDocument, PDFDocumentProxy, PDFPageProxy
 } from '../../src/display/api';
+import isNodeJS from '../../src/shared/is_node';
 import { PDFJS } from '../../src/display/global';
 
 describe('api', function() {
@@ -978,6 +978,18 @@ describe('api', function() {
       expect(viewport.transform).toEqual([0, 1.5, 1.5, 0, 0, 0]);
       expect(viewport.width).toEqual(1262.835);
       expect(viewport.height).toEqual(892.92);
+    });
+    it('gets viewport respecting "dontFlip" argument', function () {
+      const scale = 1;
+      const rotation = 135;
+      let viewport = page.getViewport(scale, rotation);
+      let dontFlipViewport = page.getViewport(scale, rotation, true);
+
+      expect(dontFlipViewport).not.toEqual(viewport);
+      expect(dontFlipViewport).toEqual(viewport.clone({ dontFlip: true, }));
+
+      expect(viewport.transform).toEqual([1, 0, 0, -1, 0, 841.89]);
+      expect(dontFlipViewport.transform).toEqual([1, 0, -0, 1, 0, 0]);
     });
     it('gets annotations', function (done) {
       var defaultPromise = page.getAnnotations().then(function (data) {

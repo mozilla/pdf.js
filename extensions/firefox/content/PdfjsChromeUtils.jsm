@@ -33,11 +33,13 @@ XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
                                    "@mozilla.org/mime;1",
                                    "nsIMIMEService");
 
+/* eslint-disable semi */
 var DEFAULT_PREFERENCES =
 //#include ../../../web/default_preferences.json
 //#if false
-  "end of DEFAULT_PREFERENCES";
+  "end of DEFAULT_PREFERENCES"
 //#endif
+/* eslint-enable semi */
 
 var PdfjsChromeUtils = {
   // For security purposes when running remote, we restrict preferences
@@ -79,6 +81,7 @@ var PdfjsChromeUtils = {
       // omitting it in prior Firefox versions breaks the addon.
       var ffVersion = parseInt(Services.appinfo.platformVersion);
       if (ffVersion <= 55) {
+        // eslint-disable-next-line mozilla/no-useless-parameters
         Services.obs.addObserver(this, "quit-application", false);
         return;
       }

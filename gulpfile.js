@@ -18,9 +18,9 @@
 
 'use strict';
 
+var fancylog = require('fancy-log');
 var fs = require('fs');
 var gulp = require('gulp');
-var gutil = require('gulp-util');
 var rename = require('gulp-rename');
 var replace = require('gulp-replace');
 var transform = require('gulp-transform');
@@ -36,7 +36,8 @@ var merge = require('merge-stream');
 var zip = require('gulp-zip');
 var webpack2 = require('webpack');
 var webpackStream = require('webpack-stream');
-var vinyl = require('vinyl-fs');
+var Vinyl = require('vinyl');
+var vfs = require('vinyl-fs');
 
 var BUILD_DIR = 'build/';
 var L10N_DIR = 'l10n/';
@@ -108,9 +109,7 @@ function safeSpawnSync(command, parameters, options) {
 function createStringSource(filename, content) {
   var source = stream.Readable({ objectMode: true, });
   source._read = function () {
-    this.push(new gutil.File({
-      cwd: '',
-      base: '',
+    this.push(new Vinyl({
       path: filename,
       contents: new Buffer(content),
     }));
@@ -127,7 +126,8 @@ function createWebpackConfig(defines, output) {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
   });
-  var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
+  var licenseHeaderLibre =
+    fs.readFileSync('./src/license_header_libre.js').toString();
   var enableSourceMaps = !bundleDefines.FIREFOX && !bundleDefines.MOZCENTRAL &&
                          !bundleDefines.CHROME;
   var skipBabel = bundleDefines.SKIP_BABEL ||
@@ -136,7 +136,7 @@ function createWebpackConfig(defines, output) {
   return {
     output: output,
     plugins: [
-      new webpack2.BannerPlugin({ banner: licenseHeader, raw: true, }),
+      new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true, }),
     ],
     resolve: {
       alias: {
@@ -995,7 +995,7 @@ gulp.task('lib', ['buildnumber'], function () {
     content = content.replace(removeCjsSrc, function (all, prefix, suffix) {
       return prefix + suffix;
     });
-    return licenseHeader + content;
+    return licenseHeaderLibre + content;
   }
   var babel = require('babel-core');
   var versionInfo = getVersionJSON();
@@ -1012,12 +1012,20 @@ gulp.task('lib', ['buildnumber'], function () {
       'pdfjs-lib': '../pdf',
     },
   };
-  var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
+  var licenseHeaderLibre =
+    fs.readFileSync('./src/license_header_libre.js').toString();
   var preprocessor2 = require('./external/builder/preprocessor2.js');
+  var sharedFiles = [
+    'compatibility',
+    'global_scope',
+    'is_node',
+    'streams_polyfill',
+    'util',
+  ];
   var buildLib = merge([
     gulp.src([
       'src/{core,display}/*.js',
-      'src/shared/{compatibility,util,streams_polyfill,global_scope}.js',
+      'src/shared/{' + sharedFiles.join() + '}.js',
       'src/{pdf,pdf.worker}.js',
     ], { base: 'src/', }),
     gulp.src([
@@ -1215,10 +1223,10 @@ gulp.task('gh-pages-prepare', ['web-pre'], function () {
 
   rimraf.sync(GH_PAGES_DIR);
 
-  // 'vinyl' because web/viewer.html needs its BOM.
+  // 'vfs' because web/viewer.html needs its BOM.
   return merge([
-    vinyl.src(GENERIC_DIR + '**/*', { base: GENERIC_DIR, stripBOM: false, })
-         .pipe(gulp.dest(GH_PAGES_DIR)),
+    vfs.src(GENERIC_DIR + '**/*', { base: GENERIC_DIR, stripBOM: false, })
+       .pipe(gulp.dest(GH_PAGES_DIR)),
     gulp.src([FIREFOX_BUILD_DIR + '*.xpi',
               FIREFOX_BUILD_DIR + '*.rdf'])
         .pipe(gulp.dest(GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/')),
@@ -1301,7 +1309,10 @@ gulp.task('dist-pre',
     license: DIST_LICENSE,
     dependencies: {
       'node-ensure': '^0.0.0', // shim for node for require.ensure
-      'worker-loader': '^1.0.0', // used in external/dist/webpack.json
+      'worker-loader': '^1.1.0', // used in external/dist/webpack.json
+    },
+    peerDependencies: {
+      'webpack': '^2.0.0 || ^3.0.0', // peerDependency of 'worker-loader'
     },
     browser: {
       'fs': false,
@@ -1335,9 +1346,9 @@ gulp.task('dist-pre',
       .pipe(gulp.dest('build/dist/')),
     packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
     bowerJsonSrc.pipe(gulp.dest(DIST_DIR)),
-    vinyl.src('external/dist/**/*',
-              { base: 'external/dist', stripBOM: false, })
-         .pipe(gulp.dest(DIST_DIR)),
+    vfs.src('external/dist/**/*',
+            { base: 'external/dist', stripBOM: false, })
+       .pipe(gulp.dest(DIST_DIR)),
     gulp.src(GENERIC_DIR + 'LICENSE')
         .pipe(gulp.dest(DIST_DIR)),
     gulp.src(GENERIC_DIR + 'web/cmaps/**/*',
@@ -1456,10 +1467,10 @@ gulp.task('mozcentraldiff', ['mozcentral', 'mozcentralbaseline'],
 });
 
 gulp.task('externaltest', function () {
-  gutil.log('Running test-fixtures.js');
+  fancylog('Running test-fixtures.js');
   safeSpawnSync('node', ['external/builder/test-fixtures.js'],
                 { stdio: 'inherit', });
-  gutil.log('Running test-fixtures_esprima.js');
+  fancylog('Running test-fixtures_esprima.js');
   safeSpawnSync('node', ['external/builder/test-fixtures_esprima.js'],
                 { stdio: 'inherit', });
 });

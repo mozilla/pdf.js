@@ -197,10 +197,6 @@ DOMElementSerializer.prototype = {
   },
 };
 
-function btoa (chars) {
-  return Buffer.from(chars, 'binary').toString('base64');
-}
-
 const document = {
   childNodes : [],
 
@@ -245,7 +241,6 @@ Image.prototype = {
   }
 }
 
-exports.btoa = btoa;
 exports.document = document;
 exports.Image = Image;
 

@@ -14,7 +14,7 @@
  */
 
 import {
-  FormatError, info, isBool, isEvalSupported, shadow
+  FormatError, info, isBool, isEvalSupported, shadow, unreachable
 } from '../shared/util';
 import { isDict, isStream } from './primitives';
 import { PostScriptLexer, PostScriptParser } from './ps_parser';
@@ -822,7 +822,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.type = type;
   }
   AstNode.prototype.visit = function (visitor) {
-    throw new Error('abstract method');
+    unreachable('abstract method');
   };
 
   function AstArgument(index, min, max) {

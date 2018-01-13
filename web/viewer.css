@@ -433,6 +433,7 @@ html[dir='rtl'] .findbar {
 }
 #findInput::-webkit-input-placeholder {
   font-style: italic;
+  color: hsl(0, 0%, 75%);
 }
 #findInput::-moz-placeholder {
   font-style: italic;

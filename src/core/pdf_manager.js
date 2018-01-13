@@ -15,7 +15,7 @@
 
 import {
   createPromiseCapability, createValidAbsoluteUrl, MissingDataException,
-  NotImplementedException, shadow, Util, warn
+  NotImplementedException, shadow, unreachable, Util, warn
 } from '../shared/util';
 import { ChunkedStreamManager } from './chunked_stream';
 import { PDFDocument } from './document';
@@ -23,7 +23,7 @@ import { Stream } from './stream';
 
 var BasePdfManager = (function BasePdfManagerClosure() {
   function BasePdfManager() {
-    throw new Error('Cannot initialize BaseManagerManager');
+    unreachable('Cannot initialize BaseManagerManager');
   }
 
   BasePdfManager.prototype = {
