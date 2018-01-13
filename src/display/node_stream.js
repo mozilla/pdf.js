@@ -24,6 +24,8 @@ import {
 } from '../shared/util';
 import { validateRangeRequestCapabilities } from './network_utils';
 
+const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
+
 class PDFNodeStream {
   constructor(source) {
     this.source = source;
@@ -362,7 +364,13 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
 class PDFNodeStreamFsFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
+
     let path = decodeURI(this._url.path);
+
+    // Remove the extra slash to get right path from url like `file:///C:/`
+    if (fileUriRegex.test(this._url.href)) {
+      path = path.replace(/^\//, '');
+    }
 
     fs.lstat(path, (error, stat) => {
       if (error) {
@@ -384,8 +392,15 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
   constructor(stream, start, end) {
     super(stream);
 
+    let path = decodeURI(this._url.path);
+
+    // Remove the extra slash to get right path from url like `file:///C:/`
+    if (fileUriRegex.test(this._url.href)) {
+      path = path.replace(/^\//, '');
+    }
+
     this._setReadableStream(
-      fs.createReadStream(decodeURI(this._url.path), { start, end: end - 1, }));
+      fs.createReadStream(path, { start, end: end - 1, }));
   }
 }
 
