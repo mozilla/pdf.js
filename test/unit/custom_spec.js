@@ -16,7 +16,7 @@
 import { buildGetDocumentParams } from './test_utils';
 import { DOMCanvasFactory } from '../../src/display/dom_utils';
 import { getDocument } from '../../src/display/api';
-import { isNodeJS } from '../../src/shared/util';
+import isNodeJS from '../../src/shared/is_node';
 
 function getTopLeftPixel(canvasContext) {
   let imgData = canvasContext.getImageData(0, 0, 1, 1);

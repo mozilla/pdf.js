@@ -31,7 +31,8 @@ var pdfjsDisplaySVG = require('./display/svg.js');
 
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  if (pdfjsSharedUtil.isNodeJS()) {
+  const isNodeJS = require('./shared/is_node.js');
+  if (isNodeJS()) {
     var PDFNodeStream = require('./display/node_stream.js').PDFNodeStream;
     pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFNodeStream);
   } else if (typeof Response !== 'undefined' && 'body' in Response.prototype &&

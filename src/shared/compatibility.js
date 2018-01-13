@@ -22,6 +22,7 @@ if ((typeof PDFJSDev === 'undefined' ||
     (typeof PDFJS === 'undefined' || !PDFJS.compatibilityChecked)) {
 
 var globalScope = require('./global_scope');
+const isNodeJS = require('./is_node');
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
 var isAndroid = /Android/.test(userAgent);
@@ -40,6 +41,28 @@ if (typeof PDFJS === 'undefined') {
 }
 
 PDFJS.compatibilityChecked = true;
+
+// Support: Node.js
+(function checkNodeBtoa() {
+  if (globalScope.btoa || !isNodeJS()) {
+    return;
+  }
+  globalScope.btoa = function(chars) {
+    // eslint-disable-next-line no-undef
+    return Buffer.from(chars, 'binary').toString('base64');
+  };
+})();
+
+// Support: Node.js
+(function checkNodeAtob() {
+  if (globalScope.atob || !isNodeJS()) {
+    return;
+  }
+  globalScope.atob = function(input) {
+    // eslint-disable-next-line no-undef
+    return Buffer.from(input, 'base64').toString('binary');
+  };
+})();
 
 // Checks if possible to use URL.createObjectURL()
 // Support: IE, Chrome on iOS
