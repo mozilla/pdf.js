@@ -154,6 +154,7 @@ let PDFViewerApplication = {
   baseUrl: '',
   externalServices: DefaultExternalServices,
   _boundEvents: {},
+  contentDispositionFileName: null,
 
   // Called once when the document is loaded.
   initialize(appConfig) {
@@ -678,6 +679,7 @@ let PDFViewerApplication = {
     this.downloadComplete = false;
     this.url = '';
     this.baseUrl = '';
+    this.contentDispositionFileName = null;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -801,7 +803,8 @@ let PDFViewerApplication = {
     let url = this.baseUrl;
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
-    let filename = getPDFFileNameFromURL(this.url);
+    let filename = this.contentDispositionFileName ||
+      getPDFFileNameFromURL(this.url);
     let downloadManager = this.downloadManager;
     downloadManager.onerror = (err) => {
       // This error won't really be helpful because it's likely the
@@ -1153,9 +1156,11 @@ let PDFViewerApplication = {
       });
     });
 
-    pdfDocument.getMetadata().then(({ info, metadata, }) => {
+    pdfDocument.getMetadata().then(
+        ({ info, metadata, contentDispositionFileName, }) => {
       this.documentInfo = info;
       this.metadata = metadata;
+      this.contentDispositionFileName = contentDispositionFileName;
 
       // Provides some basic debug information
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
@@ -1179,6 +1184,10 @@ let PDFViewerApplication = {
 
       if (pdfTitle) {
         this.setTitle(pdfTitle + ' - ' + document.title);
+      }
+
+      if (!pdfTitle && contentDispositionFileName) {
+        this.setTitle(contentDispositionFileName);
       }
 
       if (info.IsAcroFormPresent) {
