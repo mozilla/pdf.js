@@ -15,11 +15,12 @@
 
 import {
   arrayByteLength, arraysToBytes, assert, createPromiseCapability, info,
-  InvalidPDFException, isNodeJS, MessageHandler, MissingPDFException,
-  PasswordException, setVerbosityLevel, UnexpectedResponseException,
-  UnknownErrorException, UNSUPPORTED_FEATURES, warn, XRefParseException
+  InvalidPDFException, MessageHandler, MissingPDFException, PasswordException,
+  setVerbosityLevel, UnexpectedResponseException, UnknownErrorException,
+  UNSUPPORTED_FEATURES, warn, XRefParseException
 } from '../shared/util';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
+import isNodeJS from '../shared/is_node';
 import { Ref } from './primitives';
 
 var WorkerTask = (function WorkerTaskClosure() {

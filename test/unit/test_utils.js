@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { CMapCompressionType, isNodeJS } from '../../src/shared/util';
+import { CMapCompressionType } from '../../src/shared/util';
+import isNodeJS from '../../src/shared/is_node';
 import { isRef } from '../../src/core/primitives';
 
 class NodeFileReaderFactory {
