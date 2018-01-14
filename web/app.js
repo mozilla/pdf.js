@@ -15,9 +15,10 @@
 /* globals PDFBug, Stats */
 
 import {
-  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isValidRotation,
-  MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
-  parseQueryString, PresentationModeState, ProgressBar, RendererType
+  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isFileSchema,
+  isValidRotation, MAX_SCALE, MIN_SCALE, noContextMenuHandler,
+  normalizeWheelEventDelta, parseQueryString, PresentationModeState,
+  ProgressBar, RendererType
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
@@ -675,6 +676,8 @@ let PDFViewerApplication = {
     this.store = null;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
+    this.url = '';
+    this.baseUrl = '';
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -735,6 +738,12 @@ let PDFViewerApplication = {
         }
         parameters[prop] = args[prop];
       }
+    }
+
+    if (this.url && isFileSchema(this.url)) {
+      let appConfig = this.appConfig;
+      appConfig.toolbar.download.setAttribute('hidden', 'true');
+      appConfig.secondaryToolbar.downloadButton.setAttribute('hidden', 'true');
     }
 
     let loadingTask = getDocument(parameters);
