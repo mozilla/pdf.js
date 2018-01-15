@@ -467,12 +467,13 @@ function browserTestReportHandler(req, res) {
   if (pathname === '/browserTestReports') {
 
     var writableStream = fs.createWriteStream(
-                           '../coverage/lcov-report/browserData/');
+                           '../coverage/coverageinfo.json');
 
     req.pipe(writableStream);
     writableStream.on('finish', function () {
       res.end();
     });
+    return true;
   }
 }
 
