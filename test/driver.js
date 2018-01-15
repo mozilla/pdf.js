@@ -582,14 +582,11 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     _quit: function Driver_quit() {
       this._log('Done !');
       this.end.textContent = 'Tests finished. Close this window!';
-      console.log(this.coverage);
       if (this.coverage) {
         var re = new XMLHttpRequest();
         re.open('POST', '/browserTestReports', false);
         re.setRequestHeader('Content-Type', 'application/json');
         var coverageResults = JSON.stringify(window.__coverage__);
-        console.log(window.__coverage__);
-        console.log(coverageResults);
         re.send(coverageResults);
       }
       // Send the quit request

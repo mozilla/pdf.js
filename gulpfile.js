@@ -90,7 +90,7 @@ var ISTANBUL_PATHS = {
   javascript: ['coverage/**/*.js'],
   tests: ['test/**/*.js'],
   src: ['build/generic/build/*.js'],
-  dest: ['coverage/lcov-report/pdf.js/build/generic'],
+  dest: 'coverage/pdf.js/build/generic/',
 };
 
 function safeSpawnSync(command, parameters, options) {
@@ -1181,8 +1181,7 @@ gulp.task('lint', function (done) {
 });
 
 gulp.task('instrument', function () {
-  return gulp.src([ISTANBUL_PATHS.src])
-
+  return gulp.src(ISTANBUL_PATHS.src)
     .pipe(istanbul({ coverageVariable: '__coverage__', }))
     // instrumented files will go here
     .pipe(gulp.dest(ISTANBUL_PATHS.dest));
