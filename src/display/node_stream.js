@@ -365,7 +365,7 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
 
-    let path = decodeURI(this._url.path);
+    let path = decodeURIComponent(this._url.path);
 
     // Remove the extra slash to get right path from url like `file:///C:/`
     if (fileUriRegex.test(this._url.href)) {
@@ -392,7 +392,7 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
   constructor(stream, start, end) {
     super(stream);
 
-    let path = decodeURI(this._url.path);
+    let path = decodeURIComponent(this._url.path);
 
     // Remove the extra slash to get right path from url like `file:///C:/`
     if (fileUriRegex.test(this._url.href)) {
