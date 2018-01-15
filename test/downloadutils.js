@@ -43,7 +43,7 @@ function downloadFile(file, url, callback, redirects) {
   protocol.get(url, function (response) {
     var redirectTo;
     if (response.statusCode === 301 || response.statusCode === 302 ||
-        response.statusCode === 307 || response.statusCode === 308) {
+      response.statusCode === 307 || response.statusCode === 308) {
       if (redirects > 10) {
         callback('Too many redirects');
       }
@@ -74,8 +74,8 @@ function downloadFile(file, url, callback, redirects) {
       }
     });
     response.pipe(stream);
-    stream.on('finish', function() {
-      stream.close();
+    stream.on('finish', function () {
+      stream.end();
       if (!completed) {
         completed = true;
         callback();
@@ -84,7 +84,7 @@ function downloadFile(file, url, callback, redirects) {
   }).on('error', function (err) {
     if (!completed) {
       if (typeof err === 'object' && err.errno === 'ENOTFOUND' &&
-          url.indexOf('web.archive.org') < 0) {
+        url.indexOf('web.archive.org') < 0) {
         // trying waybackmachine
         var redirectTo = 'http://web.archive.org/web/' + url;
         downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
@@ -139,7 +139,7 @@ function calculateMD5(file, callback) {
   stream.on('error', function (err) {
     callback(err);
   });
-  stream.on('end', function() {
+  stream.on('end', function () {
     var result = hash.digest('hex');
     callback(null, result);
   });
@@ -154,7 +154,7 @@ function verifyManifestFiles(manifest, callback) {
     var item = manifest[i];
     if (fs.existsSync(item.file + '.error')) {
       console.error('WARNING: File was not downloaded. See "' +
-                    item.file + '.error" file.');
+        item.file + '.error" file.');
       error = true;
       i++;
       verifyNext();
@@ -166,12 +166,12 @@ function verifyManifestFiles(manifest, callback) {
         error = true;
       } else if (!item.md5) {
         console.error('WARNING: Missing md5 for file "' + item.file + '". ' +
-                      'Hash for current file is "' + md5 + '"');
+          'Hash for current file is "' + md5 + '"');
         error = true;
       } else if (md5 !== item.md5) {
         console.error('WARNING: MD5 of file "' + item.file +
-                      '" does not match file. Expected "' +
-                      item.md5 + '" computed "' + md5 + '"');
+          '" does not match file. Expected "' +
+          item.md5 + '" computed "' + md5 + '"');
         error = true;
       }
       i++;
