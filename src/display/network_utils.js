@@ -53,6 +53,18 @@ function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
   return returnValues;
 }
 
+function extractFilenameFromHeader(getResponseHeader) {
+  const contentDisposition = getResponseHeader('Content-Disposition');
+  if (contentDisposition) {
+    let parts =
+      /.+;\s*filename=(?:'|")(.+\.pdf)(?:'|")/gi.exec(contentDisposition);
+    if (parts !== null && parts.length > 1) {
+      return getFilenameFromUrl(parts[1]);
+    }
+  }
+  return null;
+}
+
 function createResponseStatusError(status, url) {
   if (status === 404 || status === 0 && /^file:/.test(url)) {
     return new MissingPDFException('Missing PDF "' + url + '".');
@@ -66,23 +78,9 @@ function validateResponseStatus(status) {
   return status === 200 || status === 206;
 }
 
-function extractFilenameFromHeader(getResponseHeader) {
-  const contentDisposition = getResponseHeader('Content-Disposition');
-
-  if (contentDisposition) {
-    let parts =
-      /.+;\s*filename=(?:"|')(.+\.pdf)(?:"|')/gi.exec(contentDisposition);
-    if (parts !== null && parts.length > 1) {
-      return getFilenameFromUrl(parts[1]);
-    }
-  }
-
-  return null;
-}
-
 export {
   createResponseStatusError,
+  extractFilenameFromHeader,
   validateRangeRequestCapabilities,
   validateResponseStatus,
-  extractFilenameFromHeader,
 };

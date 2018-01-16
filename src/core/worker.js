@@ -104,6 +104,16 @@ IPDFStreamReader.prototype = {
   },
 
   /**
+   * Gets the Content-Disposition filename. It is defined after the headersReady
+   * promise is resolved.
+   * @returns {string|null} The filename, or `null` if the Content-Disposition
+   *                        header is missing/invalid.
+   */
+  get filename() {
+    return null;
+  },
+
+  /**
    * Gets PDF binary data length. It is defined after the headersReady promise
    * is resolved.
    * @returns {number} The data length (or 0 if unknown).

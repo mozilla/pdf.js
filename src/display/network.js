@@ -341,7 +341,7 @@ function PDFNetworkStreamFullRequestReader(manager, source) {
   this._requests = [];
   this._done = false;
   this._storedError = undefined;
-  this._fileName = null;
+  this._filename = null;
 
   this.onProgress = null;
 }
@@ -371,6 +371,8 @@ PDFNetworkStreamFullRequestReader.prototype = {
       this._isRangeSupported = true;
     }
 
+    this._filename = extractFilenameFromHeader(getResponseHeader);
+
     var networkManager = this._manager;
     if (networkManager.isStreamingRequest(fullRequestXhrId)) {
       // We can continue fetching when progressive loading is enabled,
@@ -383,11 +385,6 @@ PDFNetworkStreamFullRequestReader.prototype = {
       // server should not be returning that it can support range
       // requests.
       networkManager.abortRequest(fullRequestXhrId);
-    }
-
-    // Content-Disposition: attachment; filename=Naïve file.txt
-    if (networkManager.isPendingRequest(fullRequestXhrId)) {
-      this._fileName = extractFilenameFromHeader(getResponseHeader);
     }
 
     this._headersReceivedCapability.resolve();
@@ -438,8 +435,8 @@ PDFNetworkStreamFullRequestReader.prototype = {
     }
   },
 
-  get fileName() {
-    return this._fileName;
+  get filename() {
+    return this._filename;
   },
 
   get isRangeSupported() {

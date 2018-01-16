@@ -76,11 +76,11 @@ class BaseFullReader {
     this._done = false;
     this._errored = false;
     this._reason = null;
-    this._fileName = null;
     this.onProgress = null;
     let source = stream.source;
     this._contentLength = source.length; // optional
     this._loaded = 0;
+    this._filename = null;
 
     this._disableRange = source.disableRange || false;
     this._rangeChunkSize = source.rangeChunkSize;
@@ -100,6 +100,10 @@ class BaseFullReader {
     return this._headersCapability.promise;
   }
 
+  get filename() {
+    return this._filename;
+  }
+
   get contentLength() {
     return this._contentLength;
   }
@@ -110,10 +114,6 @@ class BaseFullReader {
 
   get isStreamingSupported() {
     return this._isStreamingSupported;
-  }
-
-  get fileName() {
-    return this._fileName;
   }
 
   read() {
@@ -296,14 +296,13 @@ class PDFNodeStreamFullReader extends BaseFullReader {
         // here: https://nodejs.org/api/http.html#http_message_headers.
         return this._readableStream.headers[name.toLowerCase()];
       };
-
       let { allowRangeRequests, suggestedLength, } =
-      validateRangeRequestCapabilities({
-        getResponseHeader,
-        isHttp: stream.isHttp,
-        rangeChunkSize: this._rangeChunkSize,
-        disableRange: this._disableRange,
-      });
+        validateRangeRequestCapabilities({
+          getResponseHeader,
+          isHttp: stream.isHttp,
+          rangeChunkSize: this._rangeChunkSize,
+          disableRange: this._disableRange,
+        });
 
       if (allowRangeRequests) {
         this._isRangeSupported = true;
@@ -311,8 +310,7 @@ class PDFNodeStreamFullReader extends BaseFullReader {
       // Setting right content length.
       this._contentLength = suggestedLength;
 
-      // Setting the file name from the response header
-      this._fileName = extractFilenameFromHeader(getResponseHeader);
+      this._filename = extractFilenameFromHeader(getResponseHeader);
     };
 
     this._request = null;
