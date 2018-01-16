@@ -794,6 +794,7 @@ describe('api', function() {
         expect(metadata.info['Title']).toEqual('Basic API Test');
         expect(metadata.info['PDFFormatVersion']).toEqual('1.7');
         expect(metadata.metadata.get('dc:title')).toEqual('Basic API Test');
+        expect(metadata.contentDispositionFilename).toEqual(null);
         done();
       }).catch(function (reason) {
         done.fail(reason);

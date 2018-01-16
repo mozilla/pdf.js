@@ -154,7 +154,7 @@ let PDFViewerApplication = {
   baseUrl: '',
   externalServices: DefaultExternalServices,
   _boundEvents: {},
-  contentDispositionFileName: null,
+  contentDispositionFilename: null,
 
   // Called once when the document is loaded.
   initialize(appConfig) {
@@ -679,7 +679,7 @@ let PDFViewerApplication = {
     this.downloadComplete = false;
     this.url = '';
     this.baseUrl = '';
-    this.contentDispositionFileName = null;
+    this.contentDispositionFilename = null;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -803,7 +803,7 @@ let PDFViewerApplication = {
     let url = this.baseUrl;
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
-    let filename = this.contentDispositionFileName ||
+    let filename = this.contentDispositionFilename ||
       getPDFFileNameFromURL(this.url);
     let downloadManager = this.downloadManager;
     downloadManager.onerror = (err) => {
@@ -1157,10 +1157,10 @@ let PDFViewerApplication = {
     });
 
     pdfDocument.getMetadata().then(
-        ({ info, metadata, contentDispositionFileName, }) => {
+        ({ info, metadata, contentDispositionFilename, }) => {
       this.documentInfo = info;
       this.metadata = metadata;
-      this.contentDispositionFileName = contentDispositionFileName;
+      this.contentDispositionFilename = contentDispositionFilename;
 
       // Provides some basic debug information
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
@@ -1183,11 +1183,10 @@ let PDFViewerApplication = {
       }
 
       if (pdfTitle) {
-        this.setTitle(pdfTitle + ' - ' + document.title);
-      }
-
-      if (!pdfTitle && contentDispositionFileName) {
-        this.setTitle(contentDispositionFileName);
+        this.setTitle(
+          `${pdfTitle} - ${contentDispositionFilename || document.title}`);
+      } else if (contentDispositionFilename) {
+        this.setTitle(contentDispositionFilename);
       }
 
       if (info.IsAcroFormPresent) {
