@@ -219,7 +219,7 @@ class PDFFetchStreamRangeReader {
         },
         (error) => {
           if (errorHasKnownResponseCode(error)) {
-            throw error;
+            throw createResponseStatusError(error.status, url);
           }
           // network error: workaround Chrome issue: net::ERR_CACHE_OPERATION_NOT_SUPPORTED
           console.log(
@@ -238,6 +238,9 @@ class PDFFetchStreamRangeReader {
                 }
                 this._readCapability.resolve();
                 this._reader = response.body.getReader();
+              },
+              (error) => {
+                throw createResponseStatusError(error.status, cachebustedUrl);
               }
             );
         }
