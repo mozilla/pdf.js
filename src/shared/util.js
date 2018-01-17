@@ -1394,8 +1394,9 @@ MessageHandler.prototype = {
 
     let sendStreamRequest = ({ stream, chunk, transfers,
                                success, reason, }) => {
+      const serializableErrorReason = makeReasonSerializable(reason);
       this.postMessage({ sourceName, targetName, stream, streamId,
-                         chunk, success, reason, }, transfers);
+                         chunk, success, serializableErrorReason, }, transfers);
     };
 
     let streamSink = {
