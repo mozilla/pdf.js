@@ -46,8 +46,7 @@ var pdfjsFilePath =
 
 var fakeWorkerFilesLoader = null;
 var useRequireEnsure = false;
-if (typeof PDFJSDev !== 'undefined' &&
-    PDFJSDev.test('GENERIC && !SINGLE_FILE')) {
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
   // For GENERIC build we need add support of different fake file loaders
   // for different  frameworks.
   if (typeof window === 'undefined') {
@@ -1243,10 +1242,6 @@ var PDFWorker = (function PDFWorkerClosure() {
         throw new Error(
           'SystemJS or CommonJS must be used to load fake worker.');
       }
-    } else if (PDFJSDev.test('SINGLE_FILE')) {
-      var pdfjsCoreWorker = require('../core/worker.js');
-      WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
-      fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
     } else {
       var loader = fakeWorkerFilesLoader || function (callback) {
         Util.loadScript(getWorkerSrc(), function () {
@@ -1320,9 +1315,8 @@ var PDFWorker = (function PDFWorkerClosure() {
       // all requirements to run parts of pdf.js in a web worker.
       // Right now, the requirement is, that an Uint8Array is still an
       // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
-      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('SINGLE_FILE')) &&
-          !isWorkerDisabled && !getDefaultSetting('disableWorker') &&
-          typeof Worker !== 'undefined') {
+      if (typeof Worker !== 'undefined' && !isWorkerDisabled &&
+          !getDefaultSetting('disableWorker')) {
         var workerSrc = getWorkerSrc();
 
         try {
