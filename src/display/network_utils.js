@@ -16,6 +16,7 @@
 import {
   assert, MissingPDFException, UnexpectedResponseException
 } from '../shared/util';
+import { getFilenameFromUrl } from './dom_utils';
 
 function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
                                             rangeChunkSize, disableRange, }) {
@@ -65,8 +66,23 @@ function validateResponseStatus(status) {
   return status === 200 || status === 206;
 }
 
+function extractFilenameFromHeader(getResponseHeader) {
+  const contentDisposition = getResponseHeader('Content-Disposition');
+
+  if (contentDisposition) {
+    let parts =
+      /.+;\s*filename=(?:"|')(.+\.pdf)(?:"|')/gi.exec(contentDisposition);
+    if (parts !== null && parts.length > 1) {
+      return getFilenameFromUrl(parts[1]);
+    }
+  }
+
+  return null;
+}
+
 export {
   createResponseStatusError,
   validateRangeRequestCapabilities,
   validateResponseStatus,
+  extractFilenameFromHeader,
 };
