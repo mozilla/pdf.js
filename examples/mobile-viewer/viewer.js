@@ -16,7 +16,7 @@
 
 'use strict';
 
-if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
+if (typeof PDFJS === 'undefined' || !PDFJS.PDFViewer || !PDFJS.getDocument) {
   alert('Please build the pdfjs-dist library using\n' +
         '  `gulp dist-install`');
 }
