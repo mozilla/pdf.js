@@ -1997,10 +1997,12 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     getMetadata: function WorkerTransport_getMetadata() {
       return this.messageHandler.sendWithPromise('GetMetadata', null).
-        then(function transportMetadata(results) {
+          then((results) => {
         return {
           info: results[0],
           metadata: (results[1] ? new Metadata(results[1]) : null),
+          contentDispositionFilename: (this._fullReader ?
+                                       this._fullReader.filename : null),
         };
       });
     },

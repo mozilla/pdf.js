@@ -14,8 +14,8 @@
  */
 
 import {
-  createResponseStatusError, validateRangeRequestCapabilities,
-  validateResponseStatus
+  createResponseStatusError, extractFilenameFromHeader,
+  validateRangeRequestCapabilities, validateResponseStatus
 } from '../../src/display/network_utils';
 import {
   MissingPDFException, UnexpectedResponseException
@@ -131,6 +131,84 @@ describe('network_utils', function() {
         allowRangeRequests: true,
         suggestedLength: 8192,
       });
+    });
+  });
+
+  describe('extractFilenameFromHeader', function() {
+    it('returns null when content disposition header is blank', function() {
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return null;
+        }
+      })).toBeNull();
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return undefined;
+        }
+      })).toBeNull();
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return '';
+        }
+      })).toBeNull();
+    });
+
+    it('gets the filename from the response header', function() {
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'inline';
+        }
+      })).toBeNull();
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment';
+        }
+      })).toBeNull();
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename="filename.pdf"';
+        }
+      })).toEqual('filename.pdf');
+    });
+
+    it('returns null when content disposition is form-data', function() {
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'form-data';
+        }
+      })).toBeNull();
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'form-data; name="filename.pdf"';
+        }
+      })).toBeNull();
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'form-data; name="filename.pdf"; filename="file.pdf"';
+        }
+      })).toEqual('file.pdf');
+    });
+
+    it('only extracts filename with pdf extension', function () {
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename="filename.png"';
+        }
+      })).toBeNull();
+    });
+
+    it('extension validation is case insensitive', function () {
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'form-data; name="fieldName"; filename="file.PdF"';
+        }
+      })).toEqual('file.PdF');
     });
   });
 
