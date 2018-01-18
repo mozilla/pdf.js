@@ -364,7 +364,7 @@ var WorkerMessageHandler = {
         var coverageResults = JSON.stringify(self.__coverage__);
         re.send(coverageResults);
       }
-    })
+    });
   },
   createDocumentHandler(docParams, port) {
     // This context is actually holds references on pdfManager and handler,
