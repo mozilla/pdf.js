@@ -119,6 +119,7 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
   function PDFDataTransportStreamReader(stream, queuedChunks) {
     this._stream = stream;
     this._done = false;
+    this._filename = null;
     this._queuedChunks = queuedChunks || [];
     this._requests = [];
     this._headersReady = Promise.resolve();
@@ -141,6 +142,10 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
 
     get headersReady() {
       return this._headersReady;
+    },
+
+    get filename() {
+      return this._filename;
     },
 
     get isRangeSupported() {
