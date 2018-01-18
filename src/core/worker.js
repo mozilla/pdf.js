@@ -355,6 +355,16 @@ var WorkerMessageHandler = {
     handler.on('GetDocRequest', function wphSetupDoc(data) {
       return WorkerMessageHandler.createDocumentHandler(data, port);
     });
+// what listener should I add here? Please suggest.
+    handler.on('', function workerCoverage() {
+      if (this.coverage) {
+        var re = new XMLHttpRequest();
+        re.open('POST', '/browserWorkerTestReports', false);
+        re.setRequestHeader('Content-Type', 'application/json');
+        var coverageResults = JSON.stringify(self.__coverage__);
+        re.send(coverageResults);
+      }
+    })
   },
   createDocumentHandler(docParams, port) {
     // This context is actually holds references on pdfManager and handler,

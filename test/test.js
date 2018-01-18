@@ -24,6 +24,7 @@ var fs = require('fs');
 var os = require('os');
 var url = require('url');
 var testUtils = require('./testutils.js');
+var libCoverage = require('istanbul-lib-coverage');
 
 function parseOptions() {
   function describeCheck(fn, text) {
@@ -464,7 +465,19 @@ function checkRefTestResults(browser, id, results) {
 function browserTestReportHandler(req, res) {
   var parsedUrl = url.parse(req.url, true);
   var pathname = parsedUrl.pathname;
-  if (pathname === '/browserTestReports') {
+  if (pathname === '/browserTestReports' ||
+      pathname === '/browserWorkerTestReports') {
+
+    var map = libCoverage.createCoverageMap('window.__coverage__');
+    var summary = libCoverage.createCoverageSummary();
+
+    map.merge('self.__coverage__');
+
+    map.files().forEach(function (f) {
+      var fc = map.fileCoverageFor(f),
+        s = fc.toSummary();
+      summary.merge(s);
+    });
 
     var writableStream = fs.createWriteStream(
                            '../coverage/coverageinfo.json');

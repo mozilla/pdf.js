@@ -21,6 +21,7 @@
     "gulp-transform": "^3.0.5",
     "gulp-zip": "^4.1.0",
     "istanbul": "^1.0.0-alpha.2",
+    "istanbul-lib-coverage": "^1.1.1",
     "jasmine": "^2.8.0",
     "jasmine-core": "^2.8.0",
     "jsdoc": "^3.5.5",
@@ -50,5 +51,5 @@
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
 }
