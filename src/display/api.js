@@ -1541,6 +1541,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.pageCache = [];
       this.pagePromises = [];
       // We also need to wait for the worker to finish its long running tasks.
+      if (globalScope.__coverage__) {
+        var getCoverageData = this.messageHandler.send('GetCoverageData', null);
+        waitOn.push(getCoverageData);
+      }
+
       var terminated = this.messageHandler.sendWithPromise('Terminate', null);
       waitOn.push(terminated);
       Promise.all(waitOn).then(() => {
@@ -1553,6 +1558,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
           this.messageHandler.destroy();
           this.messageHandler = null;
         }
+
         this.destroyCapability.resolve();
       }, this.destroyCapability.reject);
       return this.destroyCapability.promise;

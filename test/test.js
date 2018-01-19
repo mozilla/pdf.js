@@ -468,10 +468,22 @@ function browserTestReportHandler(req, res) {
   if (pathname === '/browserTestReports' ||
       pathname === '/browserWorkerTestReports') {
 
-    var map = libCoverage.createCoverageMap('window.__coverage__');
+    var writableStream = fs.createWriteStream(
+                           '../coverage/coverageinfo.json');
+    var body = '';
+
+    req.on('data', function(chunk) {
+      body+=chunk;
+      writableStream.write(chunk);
+    });
+    req.on('end', function() {
+      writableStream.end();
+    });
+
+    var map = libCoverage.createCoverageMap(JSON.parse(body));
     var summary = libCoverage.createCoverageSummary();
 
-    map.merge('self.__coverage__');
+    map.merge(summary);
 
     map.files().forEach(function (f) {
       var fc = map.fileCoverageFor(f),
@@ -479,13 +491,10 @@ function browserTestReportHandler(req, res) {
       summary.merge(s);
     });
 
-    var writableStream = fs.createWriteStream(
-                           '../coverage/coverageinfo.json');
-
-    req.pipe(writableStream);
     writableStream.on('finish', function () {
       res.end();
     });
+
     return true;
   }
 }

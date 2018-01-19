@@ -373,7 +373,6 @@ function createTestSource(testsName) {
         this.emit('error', new Error('Unknown name: ' + testsName));
         return null;
     }
-    args.push('--browserManifestFile=' + PDF_BROWSERS);
     if (process.env.GENERATE_COVERAGE) {
       args.push('--browserManifestFile=' + PDF_BROWSERS);
     }
