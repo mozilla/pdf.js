@@ -175,26 +175,6 @@ describe('network_utils', function() {
       })).toEqual('filename.pdf');
     });
 
-    it('returns null when content disposition is form-data', function() {
-      expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'form-data';
-        }
-      })).toBeNull();
-
-      expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'form-data; name="filename.pdf"';
-        }
-      })).toBeNull();
-
-      expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'form-data; name="filename.pdf"; filename="file.pdf"';
-        }
-      })).toEqual('file.pdf');
-    });
-
     it('only extracts filename with pdf extension', function () {
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
