@@ -473,7 +473,7 @@ function browserTestReportHandler(req, res) {
     var body = '';
 
     req.on('data', function(chunk) {
-      body+=chunk;
+      body += chunk;
       writableStream.write(chunk);
     });
     req.on('end', function() {
