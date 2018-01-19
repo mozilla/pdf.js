@@ -120,7 +120,10 @@
     "keyword-spacing": ["error", { "before": true, "after": true, }],
     "linebreak-style": ["error", "unix"],
     "lines-between-class-members": ["error", "always"],
-    "max-len": ["error", 80],
+    "max-len": ["error", {
+      "code": 80,
+      "ignoreUrls": true
+    }],
     "new-cap": ["error", { "newIsCap": true, "capIsNew": false, }],
     "new-parens": "error",
     "no-array-constructor": "error",
