@@ -1216,6 +1216,19 @@ var PDFWorker = (function PDFWorkerClosure() {
     throw new Error('No PDFJS.workerSrc specified');
   }
 
+  function getMainThreadWorkerMessageHandler() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+      return (window.pdfjsNonProductionPdfWorker &&
+              window.pdfjsNonProductionPdfWorker.WorkerMessageHandler);
+    }
+    // PRODUCTION
+    return (window.pdfjsDistBuildPdfWorker &&
+            window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
+  }
+
   let fakeWorkerFilesLoadedCapability;
 
   // Loads worker code into main thread.
@@ -1225,6 +1238,13 @@ var PDFWorker = (function PDFWorkerClosure() {
       return fakeWorkerFilesLoadedCapability.promise;
     }
     fakeWorkerFilesLoadedCapability = createPromiseCapability();
+
+    let mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
+    if (mainWorkerMessageHandler) {
+      // The worker was already loaded using a `<script>` tag.
+      fakeWorkerFilesLoadedCapability.resolve(mainWorkerMessageHandler);
+      return fakeWorkerFilesLoadedCapability.promise;
+    }
     // In the developer build load worker_loader which in turn loads all the
     // other files and resolves the promise. In production only the
     // pdf.worker.js file is needed.
@@ -1316,7 +1336,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       // Right now, the requirement is, that an Uint8Array is still an
       // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
       if (typeof Worker !== 'undefined' && !isWorkerDisabled &&
-          !getDefaultSetting('disableWorker')) {
+          !getMainThreadWorkerMessageHandler()) {
         var workerSrc = getWorkerSrc();
 
         try {
@@ -1427,7 +1447,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     },
 
     _setupFakeWorker: function PDFWorker_setupFakeWorker() {
-      if (!isWorkerDisabled && !getDefaultSetting('disableWorker')) {
+      if (!isWorkerDisabled) {
         warn('Setting up fake worker.');
         isWorkerDisabled = true;
       }

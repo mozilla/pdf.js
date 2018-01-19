@@ -10,9 +10,6 @@ var pdfPath = '../helloworld/helloworld.pdf';
 // Setting worker path to worker bundle.
 PDFJS.workerSrc = '../../build/browserify/pdf.worker.bundle.js';
 
-// It is also possible to disable workers via `PDFJS.disableWorker = true`,
-// however that might degrade the UI performance in web browsers.
-
 // Loading a document.
 var loadingTask = PDFJS.getDocument(pdfPath);
 loadingTask.promise.then(function (pdfDocument) {

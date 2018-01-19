@@ -361,8 +361,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.workerPort : null;
     case 'workerSrc':
       return globalSettings ? globalSettings.workerSrc : null;
-    case 'disableWorker':
-      return globalSettings ? globalSettings.disableWorker : false;
     case 'maxImageSize':
       return globalSettings ? globalSettings.maxImageSize : -1;
     case 'imageResourcesPath':
