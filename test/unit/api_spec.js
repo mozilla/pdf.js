@@ -122,16 +122,14 @@ describe('api', function() {
             path: TEST_PDFS_PATH.node + basicApiFileName,
           });
         } else {
-          var nonBinaryRequest = PDFJS.disableWorker;
-          var request = new XMLHttpRequest();
+          let nonBinaryRequest = false;
+          let request = new XMLHttpRequest();
           request.open('GET', TEST_PDFS_PATH.dom + basicApiFileName, false);
-          if (!nonBinaryRequest) {
-            try {
-              request.responseType = 'arraybuffer';
-              nonBinaryRequest = request.responseType !== 'arraybuffer';
-            } catch (e) {
-              nonBinaryRequest = true;
-            }
+          try {
+            request.responseType = 'arraybuffer';
+            nonBinaryRequest = request.responseType !== 'arraybuffer';
+          } catch (e) {
+            nonBinaryRequest = true;
           }
           if (nonBinaryRequest && request.overrideMimeType) {
             request.overrideMimeType('text/plain; charset=x-user-defined');

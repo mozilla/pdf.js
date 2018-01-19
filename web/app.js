@@ -22,8 +22,8 @@ import {
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
-  MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
-  UNSUPPORTED_FEATURES, version
+  MissingPDFException, OPS, PDFJS, PDFWorker, shadow,
+  UnexpectedResponseException, UNSUPPORTED_FEATURES, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -285,8 +285,9 @@ let PDFViewerApplication = {
       let hash = document.location.hash.substring(1);
       let hashParams = parseQueryString(hash);
 
-      if ('disableworker' in hashParams) {
-        PDFJS.disableWorker = (hashParams['disableworker'] === 'true');
+      if ('disableworker' in hashParams &&
+          hashParams['disableworker'] === 'true') {
+        waitOn.push(loadFakeWorker());
       }
       if ('disablerange' in hashParams) {
         PDFJS.disableRange = (hashParams['disablerange'] === 'true');
@@ -1510,6 +1511,35 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       throw ex;
     }
   };
+}
+
+function loadFakeWorker() {
+  return new Promise(function(resolve, reject) {
+    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+      if (typeof SystemJS === 'object') {
+        SystemJS.import('pdfjs/core/worker').then((worker) => {
+          window.pdfjsNonProductionPdfWorker = worker;
+          resolve();
+        });
+      } else if (typeof require === 'function') {
+        window.pdfjsNonProductionPdfWorker = require('../src/core/worker.js');
+        resolve();
+      } else {
+        reject(new Error(
+          'SystemJS or CommonJS must be used to load fake worker.'));
+      }
+    } else {
+      let script = document.createElement('script');
+      script.src = PDFWorker.getWorkerSrc();
+      script.onload = function() {
+        resolve();
+      };
+      script.onerror = function() {
+        reject(new Error(`Cannot load fake worker at: ${script.src}`));
+      };
+      (document.head || document.documentElement).appendChild(script);
+    }
+  });
 }
 
 function loadAndEnablePDFBug(enabledTabs) {
