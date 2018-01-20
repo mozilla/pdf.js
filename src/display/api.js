@@ -1233,7 +1233,6 @@ var PDFWorker = (function PDFWorkerClosure() {
 
   // Loads worker code into main thread.
   function setupFakeWorkerGlobal() {
-    var WorkerMessageHandler;
     if (fakeWorkerFilesLoadedCapability) {
       return fakeWorkerFilesLoadedCapability.promise;
     }
@@ -1245,26 +1244,24 @@ var PDFWorker = (function PDFWorkerClosure() {
       fakeWorkerFilesLoadedCapability.resolve(mainWorkerMessageHandler);
       return fakeWorkerFilesLoadedCapability.promise;
     }
-    // In the developer build load worker_loader which in turn loads all the
+    // In the developer build load worker_loader.js which in turn loads all the
     // other files and resolves the promise. In production only the
     // pdf.worker.js file is needed.
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
       if (typeof SystemJS === 'object') {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
-          WorkerMessageHandler = worker.WorkerMessageHandler;
-          fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+          fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
         });
       } else if (typeof require === 'function') {
-        var worker = require('../core/worker.js');
-        WorkerMessageHandler = worker.WorkerMessageHandler;
-        fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+        let worker = require('../core/worker.js');
+        fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
       } else {
         throw new Error(
           'SystemJS or CommonJS must be used to load fake worker.');
       }
     } else {
-      var loader = fakeWorkerFilesLoader || function (callback) {
-        Util.loadScript(getWorkerSrc(), function () {
+      let loader = fakeWorkerFilesLoader || function(callback) {
+        Util.loadScript(getWorkerSrc(), function() {
           callback(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
         });
       };
