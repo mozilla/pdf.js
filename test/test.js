@@ -474,21 +474,22 @@ function browserTestReportHandler(req, res) {
 
     req.on('data', function(chunk) {
       body += chunk;
-      writableStream.write(chunk);
     });
+
+    res.on('end', function()  {
+      var map = libCoverage.createCoverageMap(JSON.parse(body));
+      var summary = libCoverage.createCoverageSummary();
+      map.merge(summary);
+
+      map.files().forEach(function (f) {
+        var fc = map.fileCoverageFor(f),
+          s = fc.toSummary();
+        summary.merge(s);
+      writableStream.write(summary);
+    })
+
     req.on('end', function() {
       writableStream.end();
-    });
-
-    var map = libCoverage.createCoverageMap(JSON.parse(body));
-    var summary = libCoverage.createCoverageSummary();
-
-    map.merge(summary);
-
-    map.files().forEach(function (f) {
-      var fc = map.fileCoverageFor(f),
-        s = fc.toSummary();
-      summary.merge(s);
     });
 
     writableStream.on('finish', function () {

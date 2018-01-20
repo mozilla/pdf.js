@@ -135,7 +135,7 @@ PDFJS.imageResourcesPath = (PDFJS.imageResourcesPath === undefined ?
  * @var {boolean}
  */
 PDFJS.disableWorker = (PDFJS.disableWorker === undefined ?
-  false : PDFJS.disableWorker);
+                       false : PDFJS.disableWorker);
 
 /**
  * Path and filename of the worker file. Required when the worker is enabled

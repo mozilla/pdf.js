@@ -357,11 +357,11 @@ var WorkerMessageHandler = {
     });
 
     handler.on('GetCoverageData', function workerCoverage() {
-        var re = new XMLHttpRequest();
-        re.open('POST', '/browserWorkerTestReports', false);
-        re.setRequestHeader('Content-Type', 'application/json');
-        var coverageResults = JSON.stringify(self.__coverage__);
-        re.send(coverageResults);
+      var re = new XMLHttpRequest();
+      re.open('POST', '/browserWorkerTestReports', false);
+      re.setRequestHeader('Content-Type', 'application/json');
+      var coverageResults = JSON.stringify(self.__coverage__);
+      re.send(coverageResults);
     });
   },
   createDocumentHandler(docParams, port) {
