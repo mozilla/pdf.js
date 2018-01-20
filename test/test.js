@@ -489,7 +489,6 @@ function browserTestReportHandler(req, res) {
       });
     });
 
-
     req.on('end', function () {
       writableStream.end();
     });

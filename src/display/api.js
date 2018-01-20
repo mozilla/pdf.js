@@ -1540,9 +1540,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
       this.pageCache = [];
       this.pagePromises = [];
-      // We also need to wait for the worker to finish its long running tasks.
+      // We also need to wait for the worker
+      // to finish its long running tasks.
       if (globalScope.__coverage__) {
-        var reportCoverageData = this.messageHandler.send('ReportCoverageData', null);
+        var reportCoverageData =
+          this.messageHandler.send('ReportCoverageData', null);
         waitOn.push(reportCoverageData);
       }
 
