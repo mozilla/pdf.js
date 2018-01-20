@@ -485,7 +485,7 @@ function browserTestReportHandler(req, res) {
         summary.merge(s);
       });
       fs.writeFileSync(
-        '../coverage/coverageinfo.json',summary);
+        '../coverage/coverageinfo.json', summary);
       res.end();
     });
 
