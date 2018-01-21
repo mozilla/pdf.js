@@ -16,7 +16,9 @@
 import {
   assert, MissingPDFException, UnexpectedResponseException
 } from '../shared/util';
-import { getFilenameFromUrl } from './dom_utils';
+import {
+  getFilenameFromContentDispositionHeader
+} from './content_disposition';
 
 function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
                                             rangeChunkSize, disableRange, }) {
@@ -56,10 +58,9 @@ function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
 function extractFilenameFromHeader(getResponseHeader) {
   const contentDisposition = getResponseHeader('Content-Disposition');
   if (contentDisposition) {
-    let parts =
-      /.+;\s*filename=(?:'|")(.+\.pdf)(?:'|")/gi.exec(contentDisposition);
-    if (parts !== null && parts.length > 1) {
-      return getFilenameFromUrl(parts[1]);
+    let filename = getFilenameFromContentDispositionHeader(contentDisposition);
+    if (/\.pdf$/i.test(filename)) {
+      return filename;
     }
   }
   return null;
