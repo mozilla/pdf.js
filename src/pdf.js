@@ -30,19 +30,39 @@ var pdfjsDisplayDOMUtils = require('./display/dom_utils.js');
 var pdfjsDisplaySVG = require('./display/svg.js');
 
 if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
   const isNodeJS = require('./shared/is_node.js');
   if (isNodeJS()) {
-    var PDFNodeStream = require('./display/node_stream.js').PDFNodeStream;
-    pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFNodeStream);
+    let PDFNodeStream = require('./display/node_stream.js').PDFNodeStream;
+    pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
+      return new PDFNodeStream(params);
+    });
   } else if (typeof Response !== 'undefined' && 'body' in Response.prototype &&
              typeof ReadableStream !== 'undefined') {
-    var PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
-    pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFFetchStream);
+    let PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
+    pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
+      return new PDFFetchStream(params);
+    });
    } else {
-    var PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
-    pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFNetworkStream);
+    let PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
+    pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
+      return new PDFNetworkStream(params);
+    });
   }
+} else if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+  let PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
+  let PDFFetchStream;
+  if (typeof Response !== 'undefined' && 'body' in Response.prototype &&
+      typeof ReadableStream !== 'undefined') {
+    PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
+  }
+  pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
+    if (PDFFetchStream && /^https?:/i.test(params.url)) {
+      // "fetch" is only supported for http(s), not file/ftp.
+      return new PDFFetchStream(params);
+    }
+    return new PDFNetworkStream(params);
+  });
 }
 
 exports.PDFJS = pdfjsDisplayGlobal.PDFJS;
