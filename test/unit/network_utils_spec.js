@@ -173,26 +173,53 @@ describe('network_utils', function() {
           return 'attachment; filename="filename.pdf"';
         }
       })).toEqual('filename.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename=filename.pdf';
+        }
+      })).toEqual('filename.pdf');
     });
 
-    it('returns null when content disposition is form-data', function() {
+    it('gets the filename from the response header (RFC 6266)', function() {
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
-          return 'form-data';
+          return 'attachment; filename*=filename.pdf';
         }
-      })).toBeNull();
+      })).toEqual('filename.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
-          return 'form-data; name="filename.pdf"';
+          return 'attachment; filename*=\'\'filename.pdf';
         }
-      })).toBeNull();
+      })).toEqual('filename.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
-          return 'form-data; name="filename.pdf"; filename="file.pdf"';
+          return 'attachment; filename*=utf-8\'\'filename.pdf';
         }
-      })).toEqual('file.pdf');
+      })).toEqual('filename.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename=no.pdf; filename*=utf-8\'\'filename.pdf';
+        }
+      })).toEqual('filename.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename*=utf-8\'\'filename.pdf; filename=no.pdf';
+        }
+      })).toEqual('filename.pdf');
+    });
+
+    it('gets the filename from the response header (RFC 2231)', function() {
+      // Tests continuations (RFC 2231 section 3, via RFC 5987 section 3.1).
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename*0=filename; filename*1=.pdf';
+        }
+      })).toEqual('filename.pdf');
     });
 
     it('only extracts filename with pdf extension', function () {
