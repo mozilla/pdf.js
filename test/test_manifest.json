@@ -2518,6 +2518,23 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "jbig2_huffman_1",
+       "file": "pdfs/jbig2_huffman_1.pdf",
+       "md5": "93ccd85c5686bea27d3e6c3b41921b21",
+       "lastPage": 1,
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
+    {  "id": "jbig2_huffman_2",
+       "file": "pdfs/jbig2_huffman_2.pdf",
+       "md5": "f019e2722bd64684e2093a0933e390f4",
+       "firstPage": 7,
+       "lastPage": 7,
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "issue1233",
       "file": "pdfs/issue1233.pdf",
       "md5": "2d3565b0a286e29955796c37c66326c1",
