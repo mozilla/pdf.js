@@ -994,6 +994,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
       this.container.appendChild(selectElement);
     } else {
+      let hoverClass = 'hover';
+      let showClass = 'show';
+
       let comboElementDiv = document.createElement('div');
       comboElementDiv.className = 'combo';
       comboElementDiv.style.height = this.container.style.height;
@@ -1023,9 +1026,82 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       let comboContent = document.createElement('div');
       comboContent.className = 'combo-content';
 
+      comboElement.onkeypress = (event) => {
+        if ((event.keyCode ? event.keyCode : event.which) === 13) {
+          comboContent.classList.remove(showClass);
+          return;
+        }
+
+        let filterChar = String.fromCharCode(event.charCode).toUpperCase();
+
+        let items = comboContent.getElementsByTagName('a');
+        let selectedIndex = -1;
+        let firstIndex = -1;
+        let lastIndex = -1;
+        let newIndex = -1;
+
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].classList.contains(hoverClass) &&
+            items[i].text[0].toUpperCase() === filterChar) {
+            selectedIndex = i;
+          }
+
+          if (items[i].text && items[i].text.length > 0 &&
+            items[i].text[0].toUpperCase() === filterChar) {
+            if (firstIndex < 0) {
+              firstIndex = i;
+            }
+
+            lastIndex = i;
+          }
+
+          items[i].classList.remove(hoverClass);
+        }
+
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].text && items[i].text.length > 0 &&
+            items[i].text[0].toUpperCase() === filterChar &&
+            i > selectedIndex) {
+            newIndex = i;
+            break;
+          }
+        }
+
+        let selectedItem = null;
+        let selectedItemIndex = -1;
+        if (newIndex >= 0) {
+          selectedItemIndex = newIndex;
+        } else if (selectedIndex >= 0 && selectedIndex !== lastIndex) {
+          selectedItemIndex = selectedIndex;
+        } else if (firstIndex >= 0) {
+          selectedItemIndex = firstIndex;
+        }
+
+        if (selectedItemIndex >= 0) {
+          selectedItem = items[selectedItemIndex];
+          selectedItem.classList.add(hoverClass);
+          comboElement.value = selectedItem.text;
+
+          let hRatio = comboContent.clientHeight / comboContent.scrollHeight;
+          let pRatio = selectedItemIndex / items.length;
+
+          if (hRatio <= pRatio) {
+            comboContent.scrollTop = pRatio * comboContent.scrollHeight;
+          } else {
+            comboContent.scrollTop = 0;
+          }
+
+          // Auto size
+          if (comboElement.autoSize) {
+            style.fontSize = self._calculateFontAutoSize(
+              comboElement, selectedItem.text, downArrowWidth);
+          }
+        }
+      };
+
       comboElement.onblur = () => {
         if (!comboElement.selected) {
-          comboContent.classList.remove('show');
+          comboContent.classList.remove(showClass);
           self.container.style.position = '';
           self.container.style.zIndex = '';
         }
@@ -1039,7 +1115,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       spanElement.onclick = () => {
         if (!comboElement.disabled) {
           comboElement.focus();
-          comboContent.classList.toggle('show');
+          comboContent.classList.toggle(showClass);
           self.container.style.position = 'absolute';
           self.container.style.zIndex = '100';
         }
@@ -1071,39 +1147,46 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         }
 
         let aElementWidth = self._measureText(aElement.text,
-            (style.fontStyle ? style.fontStyle + ' ' : '') +
-            (style.fontWeight ? style.fontWeight + ' ' : '') +
-            (style.fontSize ? style.fontSize : '9') + 'px ' +
-            (style.fontFamily || self._getDefaultFontName()));
+          (style.fontStyle ? style.fontStyle + ' ' : '') +
+          (style.fontWeight ? style.fontWeight + ' ' : '') +
+          (style.fontSize ? style.fontSize : '9') + 'px ' +
+          (style.fontFamily || self._getDefaultFontName()));
 
         if (aElementWidth.width + downArrowWidth +
-            aElementPadding * 2 > comboWidth) {
+          aElementPadding * 2 > comboWidth) {
           comboWidth = aElementWidth.width;
           increaseComboWidth = true;
         }
 
-        // In ES6 () => syntax causes transpiler conversion of
-        // 'this' into the class reference
-        aElement.onclick = function() {
-          comboElement.value = this.text;
-          comboElement.select();
-          comboContent.classList.remove('show');
+        aElement.onclick = () => {
+          comboElement.value = aElement.text;
+          comboContent.classList.remove(showClass);
           self.container.style.position = '';
           self.container.style.zIndex = '';
 
           // Auto size
           if (comboElement.autoSize) {
             style.fontSize = self._calculateFontAutoSize(
-              comboElement, this.text, downArrowWidth);
+              comboElement, aElement.text, downArrowWidth);
           }
         };
 
         aElement.onmouseover = () => {
           comboElement.selected = true;
+
+          let items = comboContent.getElementsByTagName('a');
+
+          for (let i = 0; i < items.length; i++) {
+            items[i].classList.remove(hoverClass);
+          }
+
+          aElement.classList.add(hoverClass);
         };
 
         aElement.onmouseout = () => {
           comboElement.selected = false;
+
+          aElement.classList.remove(hoverClass);
         };
 
         comboContent.appendChild(aElement);
@@ -1111,7 +1194,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
       if (increaseComboWidth) {
         comboContent.style.width = (comboWidth + downArrowWidth +
-            aElementPadding * 2) + 'px';
+          aElementPadding * 2) + 'px';
       }
 
       if (!style.fontSize) {

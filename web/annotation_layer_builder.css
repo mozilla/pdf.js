@@ -194,7 +194,7 @@
   white-space: nowrap;
 }
 
-.annotationLayer .choiceWidgetAnnotation .combo-content a:hover {
+.annotationLayer .choiceWidgetAnnotation .combo-content .hover {
   background-color: steelblue;
   color: white;
   cursor: default;
