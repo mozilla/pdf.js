@@ -85,9 +85,13 @@ function initializePDFJS(callback) {
     // Set network stream class for unit tests.
     if (typeof Response !== 'undefined' && 'body' in Response.prototype &&
         typeof ReadableStream !== 'undefined') {
-      displayApi.setPDFNetworkStreamClass(PDFFetchStream);
+      displayApi.setPDFNetworkStreamFactory(function(params) {
+        return new PDFFetchStream(params);
+      });
     } else {
-      displayApi.setPDFNetworkStreamClass(PDFNetworkStream);
+      displayApi.setPDFNetworkStreamFactory(function(params) {
+        return new PDFNetworkStream(params);
+      });
     }
 
     // Configure the worker.

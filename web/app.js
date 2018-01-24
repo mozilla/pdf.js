@@ -15,9 +15,10 @@
 /* globals PDFBug, Stats */
 
 import {
-  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isValidRotation,
-  MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
-  parseQueryString, PresentationModeState, ProgressBar, RendererType
+  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isFileSchema,
+  isValidRotation, MAX_SCALE, MIN_SCALE, noContextMenuHandler,
+  normalizeWheelEventDelta, parseQueryString, PresentationModeState,
+  ProgressBar, RendererType
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
@@ -153,6 +154,7 @@ let PDFViewerApplication = {
   baseUrl: '',
   externalServices: DefaultExternalServices,
   _boundEvents: {},
+  contentDispositionFilename: null,
 
   // Called once when the document is loaded.
   initialize(appConfig) {
@@ -675,6 +677,9 @@ let PDFViewerApplication = {
     this.store = null;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
+    this.url = '';
+    this.baseUrl = '';
+    this.contentDispositionFilename = null;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -737,6 +742,12 @@ let PDFViewerApplication = {
       }
     }
 
+    if (this.url && isFileSchema(this.url)) {
+      let appConfig = this.appConfig;
+      appConfig.toolbar.download.setAttribute('hidden', 'true');
+      appConfig.secondaryToolbar.downloadButton.setAttribute('hidden', 'true');
+    }
+
     let loadingTask = getDocument(parameters);
     this.pdfLoadingTask = loadingTask;
 
@@ -792,7 +803,8 @@ let PDFViewerApplication = {
     let url = this.baseUrl;
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
-    let filename = getPDFFileNameFromURL(this.url);
+    let filename = this.contentDispositionFilename ||
+      getPDFFileNameFromURL(this.url);
     let downloadManager = this.downloadManager;
     downloadManager.onerror = (err) => {
       // This error won't really be helpful because it's likely the
@@ -1144,9 +1156,11 @@ let PDFViewerApplication = {
       });
     });
 
-    pdfDocument.getMetadata().then(({ info, metadata, }) => {
+    pdfDocument.getMetadata().then(
+        ({ info, metadata, contentDispositionFilename, }) => {
       this.documentInfo = info;
       this.metadata = metadata;
+      this.contentDispositionFilename = contentDispositionFilename;
 
       // Provides some basic debug information
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
@@ -1169,7 +1183,10 @@ let PDFViewerApplication = {
       }
 
       if (pdfTitle) {
-        this.setTitle(pdfTitle + ' - ' + document.title);
+        this.setTitle(
+          `${pdfTitle} - ${contentDispositionFilename || document.title}`);
+      } else if (contentDispositionFilename) {
+        this.setTitle(contentDispositionFilename);
       }
 
       if (info.IsAcroFormPresent) {

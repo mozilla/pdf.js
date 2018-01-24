@@ -22,7 +22,11 @@ let url = __non_webpack_require__('url');
 import {
   AbortException, assert, createPromiseCapability
 } from '../shared/util';
-import { validateRangeRequestCapabilities } from './network_utils';
+import {
+  extractFilenameFromHeader, validateRangeRequestCapabilities
+} from './network_utils';
+
+const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
 
 class PDFNodeStream {
   constructor(source) {
@@ -76,6 +80,7 @@ class BaseFullReader {
     let source = stream.source;
     this._contentLength = source.length; // optional
     this._loaded = 0;
+    this._filename = null;
 
     this._disableRange = source.disableRange || false;
     this._rangeChunkSize = source.rangeChunkSize;
@@ -93,6 +98,10 @@ class BaseFullReader {
 
   get headersReady() {
     return this._headersCapability.promise;
+  }
+
+  get filename() {
+    return this._filename;
   }
 
   get contentLength() {
@@ -282,23 +291,26 @@ class PDFNodeStreamFullReader extends BaseFullReader {
       this._headersCapability.resolve();
       this._setReadableStream(response);
 
+      const getResponseHeader = (name) => {
+        // Make sure that headers name are in lower case, as mentioned
+        // here: https://nodejs.org/api/http.html#http_message_headers.
+        return this._readableStream.headers[name.toLowerCase()];
+      };
       let { allowRangeRequests, suggestedLength, } =
-      validateRangeRequestCapabilities({
-        getResponseHeader: (name) => {
-          // Make sure that headers name are in lower case, as mentioned
-          // here: https://nodejs.org/api/http.html#http_message_headers.
-          return this._readableStream.headers[name.toLowerCase()];
-        },
-        isHttp: stream.isHttp,
-        rangeChunkSize: this._rangeChunkSize,
-        disableRange: this._disableRange,
-      });
+        validateRangeRequestCapabilities({
+          getResponseHeader,
+          isHttp: stream.isHttp,
+          rangeChunkSize: this._rangeChunkSize,
+          disableRange: this._disableRange,
+        });
 
       if (allowRangeRequests) {
         this._isRangeSupported = true;
       }
       // Setting right content length.
       this._contentLength = suggestedLength;
+
+      this._filename = extractFilenameFromHeader(getResponseHeader);
     };
 
     this._request = null;
@@ -362,7 +374,13 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
 class PDFNodeStreamFsFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
-    let path = decodeURI(this._url.path);
+
+    let path = decodeURIComponent(this._url.path);
+
+    // Remove the extra slash to get right path from url like `file:///C:/`
+    if (fileUriRegex.test(this._url.href)) {
+      path = path.replace(/^\//, '');
+    }
 
     fs.lstat(path, (error, stat) => {
       if (error) {
@@ -384,8 +402,15 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
   constructor(stream, start, end) {
     super(stream);
 
+    let path = decodeURIComponent(this._url.path);
+
+    // Remove the extra slash to get right path from url like `file:///C:/`
+    if (fileUriRegex.test(this._url.href)) {
+      path = path.replace(/^\//, '');
+    }
+
     this._setReadableStream(
-      fs.createReadStream(decodeURI(this._url.path), { start, end: end - 1, }));
+      fs.createReadStream(path, { start, end: end - 1, }));
   }
 }
 
