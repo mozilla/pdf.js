@@ -1026,6 +1026,14 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       let comboContent = document.createElement('div');
       comboContent.className = 'combo-content';
 
+      comboContent.onmouseover = () => {
+        comboElement.selected = true;
+      };
+
+      comboContent.onmouseout = () => {
+        comboElement.selected = false;
+      };
+
       comboElement.onkeypress = (event) => {
         if ((event.keyCode ? event.keyCode : event.which) === 13) {
           comboContent.classList.remove(showClass);
@@ -1083,10 +1091,11 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           comboElement.value = selectedItem.text;
 
           let hRatio = comboContent.clientHeight / comboContent.scrollHeight;
-          let pRatio = selectedItemIndex / items.length;
+          let pRatio = (selectedItemIndex + 1) / items.length;
 
           if (hRatio <= pRatio) {
-            comboContent.scrollTop = pRatio * comboContent.scrollHeight;
+            comboContent.scrollTop = selectedItemIndex / items.length *
+              comboContent.scrollHeight;
           } else {
             comboContent.scrollTop = 0;
           }
@@ -1172,8 +1181,6 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         };
 
         aElement.onmouseover = () => {
-          comboElement.selected = true;
-
           let items = comboContent.getElementsByTagName('a');
 
           for (let i = 0; i < items.length; i++) {
@@ -1184,8 +1191,6 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         };
 
         aElement.onmouseout = () => {
-          comboElement.selected = false;
-
           aElement.classList.remove(hoverClass);
         };
 
