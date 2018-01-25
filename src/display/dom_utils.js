@@ -411,10 +411,6 @@ function isExternalLinkTargetSet() {
 class StatTimer {
   constructor(enable = true) {
     this.enabled = !!enable;
-    this.reset();
-  }
-
-  reset() {
     this.started = Object.create(null);
     this.times = [];
   }
@@ -476,8 +472,6 @@ class DummyStatTimer {
   constructor() {
     unreachable('Cannot initialize DummyStatTimer.');
   }
-
-  static reset() {}
 
   static time(name) {}
 
