@@ -141,31 +141,11 @@ chrome.webRequest.onHeadersReceived.addListener(
   ['blocking', 'responseHeaders']);
 
 chrome.webRequest.onBeforeRequest.addListener(
-  function onBeforeRequestForFTP(details) {
-    if (isPdfDownloadable(details)) {
-      return;
-    }
-    var viewerUrl = getViewerURL(details.url);
-    return { redirectUrl: viewerUrl, };
-  },
-  {
-    urls: [
-      'ftp://*/*.pdf',
-      'ftp://*/*.PDF'
-    ],
-    types: ['main_frame', 'sub_frame'],
-  },
-  ['blocking']);
-
-chrome.webRequest.onBeforeRequest.addListener(
   function(details) {
     if (isPdfDownloadable(details)) {
       return;
     }
 
-    // NOTE: The manifest file has declared an empty content script
-    // at file://*/* to make sure that the viewer can load the PDF file
-    // through XMLHttpRequest. Necessary to deal with http://crbug.com/302548
     var viewerUrl = getViewerURL(details.url);
 
     return { redirectUrl: viewerUrl, };
@@ -173,7 +153,9 @@ chrome.webRequest.onBeforeRequest.addListener(
   {
     urls: [
       'file://*/*.pdf',
-      'file://*/*.PDF'
+      'file://*/*.PDF',
+      'ftp://*/*.pdf',
+      'ftp://*/*.PDF',
     ],
     types: ['main_frame', 'sub_frame'],
   },
