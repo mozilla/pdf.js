@@ -18,7 +18,6 @@ import { DefaultExternalServices, PDFViewerApplication } from './app';
 import { BasePreferences } from './preferences';
 import { DownloadManager } from './download_manager';
 import { GenericL10n } from './genericl10n';
-import { PDFJS } from 'pdfjs-lib';
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
   throw new Error('Module "pdfjs-web/chromecom" shall not be used outside ' +
@@ -65,26 +64,6 @@ let ChromeCom = {
     file = file.replace(/^drive:/i,
         'filesystem:' + location.origin + '/external/');
 
-    if (/^filesystem:/.test(file) && !PDFJS.disableWorker) {
-      // The security origin of filesystem:-URLs are not preserved when the
-      // URL is passed to a Web worker, (http://crbug.com/362061), so we have
-      // to create an intermediate blob:-URL as a work-around.
-      let resolveLocalFileSystemURL = window.resolveLocalFileSystemURL ||
-                                      window.webkitResolveLocalFileSystemURL;
-      resolveLocalFileSystemURL(file, function onResolvedFSURL(fileEntry) {
-        fileEntry.file(function(fileObject) {
-          let blobUrl = URL.createObjectURL(fileObject);
-          callback(blobUrl, fileObject.size);
-        });
-      }, function onFileSystemError(error) {
-        // This should not happen. When it happens, just fall back to the
-        // usual way of getting the File's data (via the Web worker).
-        console.warn('Cannot resolve file ' + file + ', ' + error.name + ' ' +
-                     error.message);
-        callback(file);
-      });
-      return;
-    }
     if (/^https?:/.test(file)) {
       // Assumption: The file being opened is the file that was requested.
       // There is no UI to input a different URL, so this assumption will hold
