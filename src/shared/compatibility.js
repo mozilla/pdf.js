@@ -18,10 +18,16 @@
 // Skip compatibility checks for the extensions and if we already ran
 // this module.
 if ((typeof PDFJSDev === 'undefined' ||
-     !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) &&
+     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) &&
     (typeof PDFJS === 'undefined' || !PDFJS.compatibilityChecked)) {
 
+// In the Chrome extension, most of the polyfills are unnecessary.
+// We support down to Chrome 49, because it's still commonly used by Windows XP
+// users - https://github.com/mozilla/pdf.js/issues/9397
+if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
+
 var globalScope = require('./global_scope');
+
 const isNodeJS = require('./is_node');
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
@@ -75,6 +81,7 @@ PDFJS.compatibilityChecked = true;
 })();
 
 // Checks if navigator.language is supported
+// Support: IE<11
 (function checkNavigatorLanguage() {
   if (typeof navigator === 'undefined') {
     return;
@@ -150,17 +157,8 @@ PDFJS.compatibilityChecked = true;
   };
 })();
 
-// Provides support for Object.values in legacy browsers.
-// Support: IE.
-(function checkObjectValues() {
-  if (Object.values) {
-    return;
-  }
-  Object.values = require('core-js/fn/object/values');
-})();
-
 // Provides support for Array.prototype.includes in legacy browsers.
-// Support: IE.
+// Support: IE, Chrome<47
 (function checkArrayIncludes() {
   if (Array.prototype.includes) {
     return;
@@ -169,7 +167,7 @@ PDFJS.compatibilityChecked = true;
 })();
 
 // Provides support for Math.log2 in legacy browsers.
-// Support: IE.
+// Support: IE, Chrome<38
 (function checkMathLog2() {
   if (Math.log2) {
     return;
@@ -187,7 +185,7 @@ PDFJS.compatibilityChecked = true;
 })();
 
 // Provides support for Number.isInteger in legacy browsers.
-// Support: IE.
+// Support: IE, Chrome<34
 (function checkNumberIsInteger() {
   if (Number.isInteger) {
     return;
@@ -195,6 +193,7 @@ PDFJS.compatibilityChecked = true;
   Number.isInteger = require('core-js/fn/number/is-integer');
 })();
 
+// Support: IE, Safari<8, Chrome<32
 (function checkPromise() {
   if (globalScope.Promise) {
     return;
@@ -202,6 +201,7 @@ PDFJS.compatibilityChecked = true;
   globalScope.Promise = require('core-js/fn/promise');
 })();
 
+// Support: IE<11, Safari<8, Chrome<36
 (function checkWeakMap() {
   if (globalScope.WeakMap) {
     return;
@@ -209,6 +209,7 @@ PDFJS.compatibilityChecked = true;
   globalScope.WeakMap = require('core-js/fn/weak-map');
 })();
 
+// Support: IE, Chrome<32
 // Polyfill from https://github.com/Polymer/URL
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
@@ -859,6 +860,17 @@ PDFJS.compatibilityChecked = true;
   }
 
   globalScope.URL = JURL;
+})();
+
+} // End of !PDFJSDev.test('CHROME')
+
+// Provides support for Object.values in legacy browsers.
+// Support: IE, Chrome<54
+(function checkObjectValues() {
+  if (Object.values) {
+    return;
+  }
+  Object.values = require('core-js/fn/object/values');
 })();
 
 }
