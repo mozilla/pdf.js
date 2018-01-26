@@ -154,6 +154,8 @@ chrome.webRequest.onBeforeRequest.addListener(
     urls: [
       'file://*/*.pdf',
       'file://*/*.PDF',
+      // Note: Chrome 59 has disabled ftp resource loading by default:
+      // https://www.chromestatus.com/feature/5709390967472128
       'ftp://*/*.pdf',
       'ftp://*/*.PDF',
     ],
