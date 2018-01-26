@@ -18,10 +18,16 @@
 // Skip compatibility checks for the extensions and if we already ran
 // this module.
 if ((typeof PDFJSDev === 'undefined' ||
-     !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) &&
+     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) &&
     (typeof PDFJS === 'undefined' || !PDFJS.compatibilityChecked)) {
 
+// In the Chrome extension, most of the polyfills are unnecessary.
+// We support down to Chrome 49, because it's still commonly used by Windows XP
+// users - https://github.com/mozilla/pdf.js/issues/9397
+if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
+
 var globalScope = require('./global_scope');
+
 const isNodeJS = require('./is_node');
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
@@ -149,15 +155,6 @@ PDFJS.compatibilityChecked = true;
       this.parentNode.removeChild(this);
     }
   };
-})();
-
-// Provides support for Object.values in legacy browsers.
-// Support: IE, Chrome<54
-(function checkObjectValues() {
-  if (Object.values) {
-    return;
-  }
-  Object.values = require('core-js/fn/object/values');
 })();
 
 // Provides support for Array.prototype.includes in legacy browsers.
@@ -863,6 +860,17 @@ PDFJS.compatibilityChecked = true;
   }
 
   globalScope.URL = JURL;
+})();
+
+} // End of !PDFJSDev.test('CHROME')
+
+// Provides support for Object.values in legacy browsers.
+// Support: IE, Chrome<54
+(function checkObjectValues() {
+  if (Object.values) {
+    return;
+  }
+  Object.values = require('core-js/fn/object/values');
 })();
 
 }
