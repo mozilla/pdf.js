@@ -1056,8 +1056,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }, this);
       this.objs.clear();
       this.annotationsPromise = null;
-      if (resetStats) {
-        this._stats.reset();
+      if (resetStats && this._stats instanceof StatTimer) {
+        this._stats = new StatTimer();
       }
       this.pendingCleanup = false;
     },
