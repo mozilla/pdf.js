@@ -1,11 +1,21 @@
 language: node_js
 node_js:
-  - node
+- node
 cache:
   directories:
-    - node_modules
+  - node_modules
 install:
-  - npm install -g npm@latest
-  - npm install -g gulp-cli
-  - npm install
-  - npm update
+- npm install -g npm@latest
+- npm install -g gulp-cli
+- npm install
+- npm update
+- gulp publish
+deploy:
+  provider: releases
+  api_key:
+    secure: x0R1eg1aIllwrcrVhDDIVWYUNDADwaexGcHTtfIMq/je0TUODEQoX8qa+25U2IaN5Uf/AWkFp2UFUpm8SnFN0yYbyyZZ8pbm74MRVa37xuFRHxc/XCJcHtRYT00jB2Tmi0rcyy1RRL3kmSwviJI8UrUlICr8LeYuJeS/HdTdutkVhkKPuO0ouqLCxq4iou2G6sz3lHEvBbTkozrsXQVOj1mJjotHTXi/91H8ShivbWVgVs2EHx9U5jAjTdjPxBHunJmGyqJQDv34ZZbn6qdXJUQ95Hqo8uT+U+kZtAg2qGq4HCRQkOQohczUVtP6jS0kZYtl55HWJrYCIJR+SGPQA5SxvwxkBsuZ0/al/LbYsXLPHoRElP/ZcjTj3i7PCyCetCcbCE7xQurYAfBd50FeOt1SEtdfKWJ1B2G3NEhMiLbPjUjb4opme+NDSYpcUVXtJFikD+xdasdhfOFMlz72dgAvg8tce/Zv8GJ8JJwBEUd2XgjC/R+3vxB4OPNOwFvhL8ItoEUY+C3WnH26PhRhUy3wxYdOfhs/FgvLejBKPz2dIbkGmWqzm5+c2P+CsCGfNBn/jnWUPlSuQ78k3qL30+SP/T+MlmOsR7bFP6OpOuaTavS6BTHup2jR2pTYFEEtAvlqKI8mLSFNZxtFpDWCNRfZgPgwJ61ZNSAGC8nrh/M=
+  file_glob: true
+  file: directory/*-dist.zip
+  skip_cleanup: true
+  on:
+    tags: true
