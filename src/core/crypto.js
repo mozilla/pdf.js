@@ -630,6 +630,9 @@ var NullCipher = (function NullCipherClosure() {
 })();
 
 var AES128Cipher = (function AES128CipherClosure() {
+  const CYCLES_OF_REPETITION = 10;
+  const KEY_SIZE = 160; // bits
+
   var rcon = new Uint8Array([
     0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c,
     0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a,
@@ -701,6 +704,7 @@ var AES128Cipher = (function AES128CipherClosure() {
     0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
     0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63,
     0x55, 0x21, 0x0c, 0x7d]);
+
   var mixCol = new Uint8Array(256);
   for (var i = 0; i < 256; i++) {
     if (i < 128) {
@@ -754,7 +758,7 @@ var AES128Cipher = (function AES128CipherClosure() {
     0xf307f2f0, 0xfd0efffb, 0xa779b492, 0xa970b999, 0xbb6bae84, 0xb562a38f,
     0x9f5d80be, 0x91548db5, 0x834f9aa8, 0x8d4697a3]);
 
-  function expandKey128(cipherKey) {
+  function _expandKey(cipherKey) {
     var b = 176, result = new Uint8Array(b);
     result.set(cipherKey);
     for (var j = 16, i = 1; j < b; ++i) {
@@ -782,16 +786,16 @@ var AES128Cipher = (function AES128CipherClosure() {
     return result;
   }
 
-  function decrypt128(input, key) {
+  function _decrypt(input, key) {
     var state = new Uint8Array(16);
     state.set(input);
     var i, j, k;
     var t, u, v;
     // AddRoundKey
-    for (j = 0, k = 160; j < 16; ++j, ++k) {
+    for (j = 0, k = KEY_SIZE; j < 16; ++j, ++k) {
       state[j] ^= key[k];
     }
-    for (i = 9; i >= 1; --i) {
+    for (i = CYCLES_OF_REPETITION - 1; i >= 1; --i) {
       // InvShiftRows
       t = state[13];
       state[13] = state[9];
@@ -822,9 +826,9 @@ var AES128Cipher = (function AES128CipherClosure() {
       // InvMixColumns
       for (j = 0; j < 16; j += 4) {
         var s0 = mix[state[j]], s1 = mix[state[j + 1]],
-          s2 = mix[state[j + 2]], s3 = mix[state[j + 3]];
+            s2 = mix[state[j + 2]], s3 = mix[state[j + 3]];
         t = (s0 ^ (s1 >>> 8) ^ (s1 << 24) ^ (s2 >>> 16) ^ (s2 << 16) ^
-          (s3 >>> 24) ^ (s3 << 8));
+            (s3 >>> 24) ^ (s3 << 8));
         state[j] = (t >>> 24) & 0xFF;
         state[j + 1] = (t >> 16) & 0xFF;
         state[j + 2] = (t >> 8) & 0xFF;
@@ -859,8 +863,8 @@ var AES128Cipher = (function AES128CipherClosure() {
     return state;
   }
 
-  function encrypt128(input, key) {
-    var t, u, v, j, k;
+  function _encrypt(input, key) {
+    var t, u, v, i, j, k;
     var state = new Uint8Array(16);
     state.set(input);
     for (j = 0; j < 16; ++j) {
@@ -868,7 +872,7 @@ var AES128Cipher = (function AES128CipherClosure() {
       state[j] ^= key[j];
     }
 
-    for (i = 1; i < 10; i++) {
+    for (i = 1; i < CYCLES_OF_REPETITION; i++) {
       // SubBytes
       for (j = 0; j < 16; ++j) {
         state[j] = s[state[j]];
@@ -932,22 +936,23 @@ var AES128Cipher = (function AES128CipherClosure() {
     state[11] = u;
     state[15] = t;
     // AddRoundKey
-    for (j = 0, k = 160; j < 16; ++j, ++k) {
+    for (j = 0, k = KEY_SIZE; j < 16; ++j, ++k) {
       state[j] ^= key[k];
     }
     return state;
   }
 
   function AES128Cipher(key) {
-    this.key = expandKey128(key);
+    this.key = _expandKey(key);
     this.buffer = new Uint8Array(16);
     this.bufferPosition = 0;
   }
 
-  function decryptBlock2(data, finalize) {
+  function _decryptBlock2(data, finalize) {
     var i, j, ii, sourceLength = data.length,
         buffer = this.buffer, bufferLength = this.bufferPosition,
         result = [], iv = this.iv;
+
     for (i = 0; i < sourceLength; ++i) {
       buffer[bufferLength] = data[i];
       ++bufferLength;
@@ -955,7 +960,7 @@ var AES128Cipher = (function AES128CipherClosure() {
         continue;
       }
       // buffer is full, decrypting
-      var plain = decrypt128(buffer, this.key);
+      var plain = _decrypt(buffer, this.key);
       // xor-ing the IV vector to get plain text
       for (j = 0; j < 16; ++j) {
         plain[j] ^= iv[j];
@@ -998,7 +1003,7 @@ var AES128Cipher = (function AES128CipherClosure() {
   }
 
   AES128Cipher.prototype = {
-    decryptBlock: function AES128Cipher_decryptBlock(data, finalize) {
+    decryptBlock(data, finalize) {
       var i, sourceLength = data.length;
       var buffer = this.buffer, bufferLength = this.bufferPosition;
       // waiting for IV values -- they are at the start of the stream
@@ -1014,10 +1019,10 @@ var AES128Cipher = (function AES128CipherClosure() {
       this.buffer = new Uint8Array(16);
       this.bufferLength = 0;
       // starting decryption
-      this.decryptBlock = decryptBlock2;
+      this.decryptBlock = _decryptBlock2;
       return this.decryptBlock(data.subarray(16), finalize);
     },
-    encrypt: function AES128Cipher_encrypt(data, iv) {
+    encrypt(data, iv) {
       var i, j, ii, sourceLength = data.length,
           buffer = this.buffer, bufferLength = this.bufferPosition,
           result = [];
@@ -1035,7 +1040,7 @@ var AES128Cipher = (function AES128CipherClosure() {
         }
 
         // buffer is full, encrypting
-        var cipher = encrypt128(buffer, this.key);
+        var cipher = _encrypt(buffer, this.key);
         iv = cipher;
         result.push(cipher);
         buffer = new Uint8Array(16);
@@ -1062,6 +1067,9 @@ var AES128Cipher = (function AES128CipherClosure() {
 })();
 
 var AES256Cipher = (function AES256CipherClosure() {
+  const CYCLES_OF_REPETITION = 14;
+  const KEY_SIZE = 224; // bits
+
   var s = new Uint8Array([
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
     0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0,
@@ -1163,7 +1171,7 @@ var AES256Cipher = (function AES256CipherClosure() {
     0xf307f2f0, 0xfd0efffb, 0xa779b492, 0xa970b999, 0xbb6bae84, 0xb562a38f,
     0x9f5d80be, 0x91548db5, 0x834f9aa8, 0x8d4697a3]);
 
-  function expandKey256(cipherKey) {
+  function _expandKey(cipherKey) {
     var b = 240, result = new Uint8Array(b);
     var r = 1;
 
@@ -1207,16 +1215,16 @@ var AES256Cipher = (function AES256CipherClosure() {
     return result;
   }
 
-  function decrypt256(input, key) {
+  function _decrypt(input, key) {
     var state = new Uint8Array(16);
     state.set(input);
     var i, j, k;
     var t, u, v;
     // AddRoundKey
-    for (j = 0, k = 224; j < 16; ++j, ++k) {
+    for (j = 0, k = KEY_SIZE; j < 16; ++j, ++k) {
       state[j] ^= key[k];
     }
-    for (i = 13; i >= 1; --i) {
+    for (i = CYCLES_OF_REPETITION - 1; i >= 1; --i) {
       // InvShiftRows
       t = state[13];
       state[13] = state[9];
@@ -1284,7 +1292,7 @@ var AES256Cipher = (function AES256CipherClosure() {
     return state;
   }
 
-  function encrypt256(input, key) {
+  function _encrypt(input, key) {
     var t, u, v, i, j, k;
     var state = new Uint8Array(16);
     state.set(input);
@@ -1293,7 +1301,7 @@ var AES256Cipher = (function AES256CipherClosure() {
       state[j] ^= key[j];
     }
 
-    for (i = 1; i < 14; i++) {
+    for (i = 1; i < CYCLES_OF_REPETITION; i++) {
       // SubBytes
       for (j = 0; j < 16; ++j) {
         state[j] = s[state[j]];
@@ -1357,21 +1365,19 @@ var AES256Cipher = (function AES256CipherClosure() {
     state[11] = u;
     state[15] = t;
     // AddRoundKey
-    for (j = 0, k = 224; j < 16; ++j, ++k) {
+    for (j = 0, k = KEY_SIZE; j < 16; ++j, ++k) {
       state[j] ^= key[k];
     }
-
     return state;
-
   }
 
   function AES256Cipher(key) {
-    this.key = expandKey256(key);
+    this.key = _expandKey(key);
     this.buffer = new Uint8Array(16);
     this.bufferPosition = 0;
   }
 
-  function decryptBlock2(data, finalize) {
+  function _decryptBlock2(data, finalize) {
     var i, j, ii, sourceLength = data.length,
         buffer = this.buffer, bufferLength = this.bufferPosition,
         result = [], iv = this.iv;
@@ -1383,7 +1389,7 @@ var AES256Cipher = (function AES256CipherClosure() {
         continue;
       }
       // buffer is full, decrypting
-      var plain = decrypt256(buffer, this.key);
+      var plain = _decrypt(buffer, this.key);
       // xor-ing the IV vector to get plain text
       for (j = 0; j < 16; ++j) {
         plain[j] ^= iv[j];
@@ -1423,11 +1429,10 @@ var AES256Cipher = (function AES256CipherClosure() {
       output.set(result[i], j);
     }
     return output;
-
   }
 
   AES256Cipher.prototype = {
-    decryptBlock: function AES256Cipher_decryptBlock(data, finalize, iv) {
+    decryptBlock(data, finalize, iv) {
       var i, sourceLength = data.length;
       var buffer = this.buffer, bufferLength = this.bufferPosition;
       // if not supplied an IV wait for IV values
@@ -1449,10 +1454,10 @@ var AES256Cipher = (function AES256CipherClosure() {
       this.buffer = new Uint8Array(16);
       this.bufferLength = 0;
       // starting decryption
-      this.decryptBlock = decryptBlock2;
+      this.decryptBlock = _decryptBlock2;
       return this.decryptBlock(data, finalize);
     },
-    encrypt: function AES256Cipher_encrypt(data, iv) {
+    encrypt(data, iv) {
       var i, j, ii, sourceLength = data.length,
           buffer = this.buffer, bufferLength = this.bufferPosition,
           result = [];
@@ -1470,8 +1475,8 @@ var AES256Cipher = (function AES256CipherClosure() {
         }
 
         // buffer is full, encrypting
-        var cipher = encrypt256(buffer, this.key);
-        this.iv = cipher;
+        var cipher = _encrypt(buffer, this.key);
+        iv = cipher;
         result.push(cipher);
         buffer = new Uint8Array(16);
         bufferLength = 0;
