@@ -3,11 +3,14 @@
 // In production, the bundled pdf.js shall be used instead of SystemJS.
 Promise.all([System.import('pdfjs/display/api'),
              System.import('pdfjs/display/global'),
-             System.import('pdfjs/display/network'),
+             System.import('pdfjs/display/fetch_stream'),
              System.resolve('pdfjs/worker_loader')])
        .then(function (modules) {
-  var api = modules[0], global = modules[1], network = modules[2];
-  api.setPDFNetworkStreamClass(network.PDFNetworkStream);
+  var api = modules[0], global = modules[1], fetch_stream = modules[2];
+  let PDFFetchStream = fetch_stream.PDFFetchStream;
+  api.setPDFNetworkStreamFactory((params) => {
+    return new PDFFetchStream(params);
+  });
 
   // In production, change this to point to the built `pdf.worker.js` file.
   global.PDFJS.workerSrc = modules[3];
