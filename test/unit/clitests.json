@@ -1,5 +1,10 @@
 {
   "spec_dir": "build/lib/test/unit",
+
+  "helpers": [
+    "clitests_helper.js"
+  ],
+
   "spec_files": [
     "annotation_spec.js",
     "api_spec.js",
