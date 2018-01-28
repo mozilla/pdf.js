@@ -33,9 +33,7 @@ const TEST_PDFS_PATH = {
 function buildGetDocumentParams(filename, options) {
   let params = Object.create(null);
   if (isNodeJS()) {
-    params.data = NodeFileReaderFactory.fetch({
-      path: TEST_PDFS_PATH.node + filename,
-    });
+    params.url = TEST_PDFS_PATH.node + filename;
   } else {
     params.url = new URL(TEST_PDFS_PATH.dom + filename, window.location).href;
   }

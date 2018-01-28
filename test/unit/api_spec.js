@@ -61,9 +61,6 @@ describe('api', function() {
   describe('PDFJS', function() {
     describe('getDocument', function() {
       it('creates pdf doc from URL', function(done) {
-        if (isNodeJS()) {
-          pending('XMLHttpRequest is not supported in Node.js.');
-        }
         var loadingTask = getDocument(basicApiGetDocumentParams);
 
         var isProgressReportedResolved = false;
@@ -93,9 +90,6 @@ describe('api', function() {
       });
       it('creates pdf doc from URL and aborts before worker initialized',
           function(done) {
-        if (isNodeJS()) {
-          pending('XMLHttpRequest is not supported in Node.js.');
-        }
         var loadingTask = getDocument(basicApiGetDocumentParams);
         let destroyed = loadingTask.destroy();
 
@@ -108,9 +102,6 @@ describe('api', function() {
       });
       it('creates pdf doc from URL and aborts loading after worker initialized',
           function(done) {
-        if (isNodeJS()) {
-          pending('XMLHttpRequest is not supported in Node.js.');
-        }
         var loadingTask = getDocument(basicApiGetDocumentParams);
         // This can be somewhat random -- we cannot guarantee perfect
         // 'Terminate' message to the worker before/after setting up pdfManager.
