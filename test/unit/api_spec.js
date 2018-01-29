@@ -24,7 +24,7 @@ import {
   DOMCanvasFactory, RenderingCancelledException
 } from '../../src/display/dom_utils';
 import {
-  getDocument, PDFDocumentProxy, PDFPageProxy
+  getDocument, PDFDocumentProxy, PDFPageProxy, PDFWorker
 } from '../../src/display/api';
 import isNodeJS from '../../src/shared/is_node';
 import { PDFJS } from '../../src/display/global';
@@ -404,6 +404,11 @@ describe('api', function() {
       }).catch(function (reason) {
         done.fail(reason);
       });
+    });
+    it('gets current workerSrc', function() {
+      let workerSrc = PDFWorker.getWorkerSrc();
+      expect(typeof workerSrc).toEqual('string');
+      expect(workerSrc).toEqual(PDFJS.workerSrc);
     });
   });
   describe('PDFDocument', function() {

@@ -1485,6 +1485,10 @@ var PDFWorker = (function PDFWorkerClosure() {
     return new PDFWorker(null, port);
   };
 
+  PDFWorker.getWorkerSrc = function() {
+    return getWorkerSrc();
+  };
+
   return PDFWorker;
 })();
 
