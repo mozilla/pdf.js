@@ -33,8 +33,8 @@ var Page = (function PageClosure() {
   var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
   function isAnnotationRenderable(annotation, intent) {
-    return (intent === 'display' && annotation.viewable) ||
-           (intent === 'print' && annotation.printable);
+    return (intent === 'display' && annotation && annotation.viewable) ||
+           (intent === 'print' && annotation && annotation.printable);
   }
 
   function Page({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
@@ -194,7 +194,13 @@ var Page = (function PageClosure() {
       });
     },
 
-    getOperatorList({ handler, task, intent, renderInteractiveForms, }) {
+    getOperatorList({
+      handler,
+      task,
+      annotationTask,
+      intent,
+      renderInteractiveForms,
+    }) {
       var contentStreamPromise = this.pdfManager.ensure(this,
                                                         'getContentStream');
       var resourcesPromise = this.loadResources([
@@ -241,7 +247,8 @@ var Page = (function PageClosure() {
 
       // Fetch the page's annotations and add their operator lists to the
       // page's operator list to render them.
-      var annotationsPromise = this.pdfManager.ensure(this, 'annotations');
+      var annotationsPromise = this.annotations ?
+        this.annotations : this.getAnnotations(annotationTask);
       return Promise.all([pageListPromise, annotationsPromise]).then(
           function ([pageOpList, annotations]) {
         if (annotations.length === 0) {
@@ -307,30 +314,59 @@ var Page = (function PageClosure() {
       });
     },
 
-    getAnnotationsData: function Page_getAnnotationsData(intent) {
-      var annotations = this.annotations;
-      var annotationsData = [];
-      for (var i = 0, n = annotations.length; i < n; ++i) {
-        if (!intent || isAnnotationRenderable(annotations[i], intent)) {
-          annotationsData.push(annotations[i].data);
+    getAnnotationsData: function Page_getAnnotationsData(intent, task) {
+      var annotationsPromise = this.annotations ?
+        this.annotations : this.getAnnotations(task);
+      return annotationsPromise.then(function (annotations) {
+        var annotationsData = [];
+        for (var i = 0, n = annotations.length; i < n; ++i) {
+          if (!intent || isAnnotationRenderable(annotations[i], intent)) {
+            annotationsData.push(annotations[i].data);
+          }
         }
-      }
-      return annotationsData;
+        return annotationsData;
+      });
     },
 
-    get annotations() {
-      var annotations = [];
+    getAnnotations: function Page_getAnnotations(task) {
+      var handler = {};
+
+      handler.send = function (actionname, data) {
+      };
+
+      var partialEvaluator = new PartialEvaluator({
+        pdfManager: this.pdfManager,
+        xref: this.xref,
+        handler,
+        pageIndex: this.pageIndex,
+        idFactory: this.idFactory,
+        fontCache: this.fontCache,
+        builtInCMapCache: this.builtInCMapCache,
+        options: this.evaluatorOptions,
+      });
+
       var annotationRefs = this.getInheritedPageProp('Annots') || [];
+      var annotationsPromises = [];
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
-        var annotation = AnnotationFactory.create(this.xref, annotationRef,
-                                                  this.pdfManager,
-                                                  this.idFactory);
-        if (annotation) {
-          annotations.push(annotation);
-        }
+        var annotationPromise = AnnotationFactory.create(
+          this.xref,
+          annotationRef,
+          this.pdfManager,
+          this.idFactory,
+          partialEvaluator,
+          task
+        );
+
+        annotationsPromises.push(annotationPromise);
       }
-      return shadow(this, 'annotations', annotations);
+
+      return shadow(this, 'annotations',
+        Promise.all(annotationsPromises)).then(function (annotations) {
+          return annotations;
+        }, function (reason) {
+          return [];
+        });
     },
   };
 
