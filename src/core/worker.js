@@ -724,8 +724,16 @@ var WorkerMessageHandler = {
     );
 
     handler.on('GetAnnotations', function wphSetupGetAnnotations(data) {
-      return pdfManager.getPage(data.pageIndex).then(function(page) {
-        return pdfManager.ensure(page, 'getAnnotationsData', [data.intent]);
+      var pageIndex = data.pageIndex;
+      return pdfManager.getPage(pageIndex).then(function(page) {
+        var task = new WorkerTask(
+          'GetAnnotationAppereances: page ' + pageIndex);
+        startWorkerTask(task);
+        var annotationsDataPromise = page.getAnnotationsData(data.intent, task);
+        return annotationsDataPromise.then(function (annotationsData) {
+          finishWorkerTask(task);
+          return annotationsData;
+        });
       });
     });
 
@@ -735,22 +743,29 @@ var WorkerMessageHandler = {
         var task = new WorkerTask('RenderPageRequest: page ' + pageIndex);
         startWorkerTask(task);
 
+        var annotationTask = new WorkerTask(
+          'GetAnnotationAppereances: page ' + pageIndex);
+        startWorkerTask(annotationTask);
+
         var pageNum = pageIndex + 1;
         var start = Date.now();
         // Pre compile the pdf page and fetch the fonts/images.
         page.getOperatorList({
           handler,
           task,
+          annotationTask,
           intent: data.intent,
           renderInteractiveForms: data.renderInteractiveForms,
         }).then(function(operatorList) {
           finishWorkerTask(task);
+          finishWorkerTask(annotationTask);
 
           info('page=' + pageNum + ' - getOperatorList: time=' +
                (Date.now() - start) + 'ms, len=' + operatorList.totalLength);
         }, function(e) {
           finishWorkerTask(task);
-          if (task.terminated) {
+          finishWorkerTask(annotationTask);
+          if (task.terminated && annotationTask.terminated) {
             return; // ignoring errors from the terminated thread
           }
 
