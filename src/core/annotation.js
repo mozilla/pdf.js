@@ -31,11 +31,13 @@ class AnnotationFactory {
    * @param {Object} idFactory
    * @returns {Annotation}
    */
-  static create(xref, ref, pdfManager, idFactory) {
+  static create(xref, ref, pdfManager, idFactory, evaluator, task) {
     let dict = xref.fetchIfRef(ref);
+
     if (!isDict(dict)) {
       return;
     }
+
     let id = isRef(ref) ? ref.toString() : 'annot_' + idFactory.createObjId();
 
     // Determine the annotation's subtype.
@@ -50,66 +52,76 @@ class AnnotationFactory {
       subtype,
       id,
       pdfManager,
+      evaluator,
+      task,
     };
 
     switch (subtype) {
       case 'Link':
-        return new LinkAnnotation(parameters);
+        return Promise.resolve(new LinkAnnotation(parameters));
 
       case 'Text':
-        return new TextAnnotation(parameters);
+        return Promise.resolve(new TextAnnotation(parameters));
 
       case 'Widget':
         let fieldType = Util.getInheritableProperty(dict, 'FT');
         fieldType = isName(fieldType) ? fieldType.name : null;
 
+        let widget = new WidgetAnnotation(parameters);
+
         switch (fieldType) {
           case 'Tx':
-            return new TextWidgetAnnotation(parameters);
+            widget = new TextWidgetAnnotation(parameters);
+            break;
           case 'Btn':
-            return new ButtonWidgetAnnotation(parameters);
+            widget = new ButtonWidgetAnnotation(parameters);
+            break;
           case 'Ch':
-            return new ChoiceWidgetAnnotation(parameters);
+            widget = new ChoiceWidgetAnnotation(parameters);
+            break;
+          default:
+            warn('Unimplemented widget field type "' + fieldType + '", ' +
+               'falling back to base field type.');
+            break;
         }
-        warn('Unimplemented widget field type "' + fieldType + '", ' +
-             'falling back to base field type.');
-        return new WidgetAnnotation(parameters);
+
+        return widget.setDefaultAppearance(parameters);
 
       case 'Popup':
-        return new PopupAnnotation(parameters);
+        return Promise.resolve(new PopupAnnotation(parameters));
 
       case 'Line':
-        return new LineAnnotation(parameters);
+        return Promise.resolve(new LineAnnotation(parameters));
 
       case 'Square':
-        return new SquareAnnotation(parameters);
+        return Promise.resolve(new SquareAnnotation(parameters));
 
       case 'Circle':
-        return new CircleAnnotation(parameters);
+        return Promise.resolve(new CircleAnnotation(parameters));
 
       case 'PolyLine':
-        return new PolylineAnnotation(parameters);
+        return Promise.resolve(new PolylineAnnotation(parameters));
 
       case 'Polygon':
-        return new PolygonAnnotation(parameters);
+        return Promise.resolve(new PolygonAnnotation(parameters));
 
       case 'Highlight':
-        return new HighlightAnnotation(parameters);
+        return Promise.resolve(new HighlightAnnotation(parameters));
 
       case 'Underline':
-        return new UnderlineAnnotation(parameters);
+        return Promise.resolve(new UnderlineAnnotation(parameters));
 
       case 'Squiggly':
-        return new SquigglyAnnotation(parameters);
+        return Promise.resolve(new SquigglyAnnotation(parameters));
 
       case 'StrikeOut':
-        return new StrikeOutAnnotation(parameters);
+        return Promise.resolve(new StrikeOutAnnotation(parameters));
 
       case 'Stamp':
-        return new StampAnnotation(parameters);
+        return Promise.resolve(new StampAnnotation(parameters));
 
       case 'FileAttachment':
-        return new FileAttachmentAnnotation(parameters);
+        return Promise.resolve(new FileAttachmentAnnotation(parameters));
 
       default:
         if (!subtype) {
@@ -118,7 +130,7 @@ class AnnotationFactory {
           warn('Unimplemented annotation type "' + subtype + '", ' +
                'falling back to base annotation.');
         }
-        return new Annotation(parameters);
+        return Promise.resolve(new Annotation(parameters));
     }
   }
 }
@@ -661,6 +673,18 @@ class WidgetAnnotation extends Annotation {
     return !!(this.data.fieldFlags & flag);
   }
 
+  /**
+   * Set the default appearance (such as fonts and colors).
+   *
+   * @public
+   * @memberof WidgetAnnotation
+   * @param {number} flag - Hexadecimal representation for an annotation
+   *                        field characteristic
+   */
+  setDefaultAppearance(params) {
+    return Promise.resolve(this);
+  }
+
   getOperatorList(evaluator, task, renderForms) {
     // Do not render form elements on the canvas when interactive forms are
     // enabled. The display layer is responsible for rendering them instead.
@@ -772,10 +796,12 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (!isDict(appearanceStates)) {
       return;
     }
+
     let normalAppearanceState = appearanceStates.get('N');
     if (!isDict(normalAppearanceState)) {
       return;
     }
+
     let keys = normalAppearanceState.getKeys();
     for (let i = 0, ii = keys.length; i < ii; i++) {
       if (keys[i] !== 'Off') {
