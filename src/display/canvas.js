@@ -1951,8 +1951,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           objId,
           left: position[0],
           top: position[1],
-          width: w / currentTransform[0],
-          height: h / currentTransform[3],
+          width: (currentTransform[0] === 0 ? w : w / currentTransform[0]),
+          height: (currentTransform[3] === 0 ? h : h / currentTransform[3]),
         });
       }
       this.restore();
@@ -2159,8 +2159,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           imgData,
           left: position[0],
           top: position[1],
-          width: width / currentTransform[0],
-          height: height / currentTransform[3],
+          width: (currentTransform[0] === 0 ? width : width / currentTransform[0]),
+          height: (currentTransform[3] === 0 ? height : height / currentTransform[3]),
         });
       }
       this.restore();
