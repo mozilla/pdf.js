@@ -3192,7 +3192,8 @@
        "md5": "ad02d4aa374b315bf1766038d002d57a",
        "link": false,
        "rounds": 1,
-       "type": "eq"
+       "type": "eq",
+       "about": "Also tests issue9398."
     },
     {  "id": "issue8613",
        "file": "pdfs/issue8613.pdf",
