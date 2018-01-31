@@ -362,6 +362,7 @@ var WorkerMessageHandler = {
       re.setRequestHeader('Content-Type', 'application/json');
       var coverageResults = JSON.stringify(self.__coverage__);
       re.send(coverageResults);
+      handler.send('ReceivedCoverageData', null);
     });
   },
   createDocumentHandler(docParams, port) {

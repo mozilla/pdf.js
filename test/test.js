@@ -24,7 +24,6 @@ var fs = require('fs');
 var os = require('os');
 var url = require('url');
 var testUtils = require('./testutils.js');
-var libCoverage = require('istanbul-lib-coverage');
 
 function parseOptions() {
   function describeCheck(fn, text) {
@@ -468,28 +467,28 @@ function browserTestReportHandler(req, res) {
   if (pathname === '/browserTestReports' ||
     pathname === '/browserWorkerTestReports') {
 
-    var body = '';
-
-    req.on('data', function (chunk) {
-      body += chunk;
-    });
-
-    req.on('end', function () {
-      var map = libCoverage.createCoverageMap(JSON.parse(body));
-      var summary = libCoverage.createCoverageSummary();
-      map.merge(summary);
-
-      map.files().forEach(function (f) {
-        var fc = map.fileCoverageFor(f),
-          s = fc.toSummary();
-        summary.merge(s);
-      });
-      fs.writeFileSync(
-        '../coverage/coverageinfo.json', summary);
-      res.end();
-    });
-
-    return true;
+    switch (pathname) {
+      case '/browserTestReports' :
+        const pdfWritableStream = fs.createWriteStream('' +
+          '../coverage/coverageInfo-pdf.json');
+        req.pipe(pdfWritableStream);
+          pdfWritableStream.on('finish', function () {
+          res.end();
+        });
+        break;
+      case '/browserWorkerTestReports' :
+        let workerWritableStream = fs.createWriteStream(
+          '../coverage/coverageInfo-pdfWorker.json');
+        req.pipe(workerWritableStream);
+        workerWritableStream.on('finish', function () {
+          res.end();
+        });
+        req.on('ReceivedCoverageData', function () {
+          res.end();
+        });
+        break;
+    }
+      return true;
   }
 }
 
