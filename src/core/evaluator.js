@@ -349,10 +349,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    buildPaintImageXObject:
-        function PartialEvaluator_buildPaintImageXObject(resources, image,
-                                                         inline, operatorList,
-                                                         cacheKey, imageCache) {
+    buildPaintImageXObject({ resources, image, isInline = false, operatorList,
+                             cacheKey, imageCache, }) {
       var dict = image.dict;
       var w = dict.get('Width', 'W');
       var h = dict.get('Height', 'H');
@@ -406,13 +404,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var SMALL_IMAGE_DIMENSIONS = 200;
       // Inlining small images into the queue as RGB data
-      if (inline && !softMask && !mask && !(image instanceof JpegStream) &&
+      if (isInline && !softMask && !mask && !(image instanceof JpegStream) &&
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
         let imageObj = new PDFImage({
           xref: this.xref,
           res: resources,
           image,
-          isInline: inline,
+          isInline,
           pdfFunctionFactory: this.pdfFunctionFactory,
         });
         // We force the use of RGBA_32BPP images here, because we can't handle
@@ -465,7 +463,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         xref: this.xref,
         res: resources,
         image,
-        isInline: inline,
+        isInline,
         nativeDecoder: nativeImageDecoder,
         pdfFunctionFactory: this.pdfFunctionFactory,
       }).then((imageObj) => {
@@ -989,8 +987,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     }, rejectXObject);
                   return;
                 } else if (type.name === 'Image') {
-                  self.buildPaintImageXObject(resources, xobj, false,
-                                              operatorList, name, imageCache);
+                  self.buildPaintImageXObject({
+                    resources,
+                    image: xobj,
+                    operatorList,
+                    cacheKey: name,
+                    imageCache,
+                  });
                 } else if (type.name === 'PS') {
                   // PostScript XObjects are unused when viewing documents.
                   // See section 4.7.1 of Adobe's PDF reference.
@@ -1032,8 +1035,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   continue;
                 }
               }
-              self.buildPaintImageXObject(resources, args[0], true,
-                operatorList, cacheKey, imageCache);
+              self.buildPaintImageXObject({
+                resources,
+                image: args[0],
+                isInline: true,
+                operatorList,
+                cacheKey,
+                imageCache,
+              });
               args = null;
               continue;
             case OPS.showText:
