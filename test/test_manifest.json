@@ -860,6 +860,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue9425",
+       "file": "pdfs/issue9425.pdf",
+       "md5": "cb5e99c9ada308304ca2dfcb7f72e3a0",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",
        "md5": "02cefa0f5e8d96313bb05163b2f88c8c",
