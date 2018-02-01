@@ -1817,22 +1817,22 @@ var WorkerTransport = (function WorkerTransportClosure() {
         switch (type) {
           case 'JpegStream':
             imageData = data[3];
-            new Promise((resolve, reject) => {
+            return new Promise((resolve, reject) => {
               const img = new Image();
               img.onload = function() {
                 resolve(img);
               };
               img.onerror = function() {
                 reject(new Error('Error during JPEG image loading'));
+                // Note that when the browser image loading/decoding fails,
+                // we'll fallback to the built-in PDF.js JPEG decoder; see
+                // `PartialEvaluator.buildPaintImageXObject` in the
+                // `src/core/evaluator.js` file.
               };
               img.src = imageData;
             }).then((img) => {
               pageProxy.objs.resolve(id, img);
-            }, (reason) => {
-              warn(reason);
-              pageProxy.objs.resolve(id, null);
             });
-            break;
           case 'Image':
             imageData = data[3];
             pageProxy.objs.resolve(id, imageData);
