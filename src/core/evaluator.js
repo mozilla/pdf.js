@@ -357,12 +357,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (!(w && isNum(w)) || !(h && isNum(h))) {
         warn('Image dimensions are missing, or not numbers.');
-        return;
+        return Promise.resolve();
       }
       var maxImageSize = this.options.maxImageSize;
       if (maxImageSize !== -1 && w * h > maxImageSize) {
         warn('Image exceeded maximum allowed size and was removed.');
-        return;
+        return Promise.resolve();
       }
 
       var imageMask = (dict.get('ImageMask', 'IM') || false);
@@ -396,7 +396,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             args,
           };
         }
-        return;
+        return Promise.resolve();
       }
 
       var softMask = (dict.get('SMask', 'SM') || false);
@@ -417,7 +417,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // any other kind.
         imgData = imageObj.createImageData(/* forceRGBA = */ true);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
-        return;
+        return Promise.resolve();
       }
 
       var nativeImageDecoderSupport = this.options.nativeImageDecoderSupport;
@@ -441,7 +441,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             args,
           };
         }
-        return;
+        return Promise.resolve();
       }
 
       // Creates native image decoder only if a JPEG image or mask is present.
@@ -482,6 +482,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           args,
         };
       }
+      return Promise.resolve();
     },
 
     handleSMask: function PartialEvaluator_handleSmask(smask, resources,
@@ -993,7 +994,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     operatorList,
                     cacheKey: name,
                     imageCache,
-                  });
+                  }).then(resolveXObject, rejectXObject);
+                  return;
                 } else if (type.name === 'PS') {
                   // PostScript XObjects are unused when viewing documents.
                   // See section 4.7.1 of Adobe's PDF reference.
@@ -1035,16 +1037,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   continue;
                 }
               }
-              self.buildPaintImageXObject({
+              next(self.buildPaintImageXObject({
                 resources,
                 image: args[0],
                 isInline: true,
                 operatorList,
                 cacheKey,
                 imageCache,
-              });
-              args = null;
-              continue;
+              }));
+              return;
             case OPS.showText:
               args[0] = self.handleText(args[0], stateManager.state);
               break;
