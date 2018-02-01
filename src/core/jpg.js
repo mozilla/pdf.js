@@ -369,7 +369,7 @@ var JpegImage = (function JpegImageClosure() {
       // Some bad images seem to pad Scan blocks with e.g. zero bytes, skip past
       // those to attempt to find a valid marker (fixes issue4090.pdf).
       if (fileMarker && fileMarker.invalid) {
-        warn('decodeScan - unexpected MCU data, next marker is: ' +
+        warn('decodeScan - unexpected MCU data, current marker is: ' +
              fileMarker.invalid);
         offset = fileMarker.offset;
       }
@@ -389,7 +389,7 @@ var JpegImage = (function JpegImageClosure() {
     // Some images include more Scan blocks than expected, skip past those and
     // attempt to find the next valid marker (fixes issue8182.pdf).
     if (fileMarker && fileMarker.invalid) {
-      warn('decodeScan - unexpected Scan data, next marker is: ' +
+      warn('decodeScan - unexpected Scan data, current marker is: ' +
            fileMarker.invalid);
       offset = fileMarker.offset;
     }
@@ -601,12 +601,12 @@ var JpegImage = (function JpegImageClosure() {
     return component.blockData;
   }
 
-  function findNextFileMarker(data, currentPos, startPos) {
+  function findNextFileMarker(data, currentPos, startPos = currentPos) {
     function peekUint16(pos) {
       return (data[pos] << 8) | data[pos + 1];
     }
 
-    var maxPos = data.length - 1;
+    const maxPos = data.length - 1;
     var newPos = startPos < currentPos ? startPos : currentPos;
 
     if (currentPos >= maxPos) {
@@ -649,7 +649,7 @@ var JpegImage = (function JpegImageClosure() {
 
         var fileMarker = findNextFileMarker(data, endOffset, offset);
         if (fileMarker && fileMarker.invalid) {
-          warn('readDataBlock - incorrect length, next marker is: ' +
+          warn('readDataBlock - incorrect length, current marker is: ' +
                fileMarker.invalid);
           endOffset = fileMarker.offset;
         }
@@ -872,6 +872,13 @@ var JpegImage = (function JpegImageClosure() {
               // could be incorrect encoding -- last 0xFF byte of the previous
               // block was eaten by the encoder
               offset -= 3;
+              break;
+            }
+            let nextFileMarker = findNextFileMarker(data, offset - 2);
+            if (nextFileMarker && nextFileMarker.invalid) {
+              warn('JpegImage.parse - unexpected data, current marker is: ' +
+                   nextFileMarker.invalid);
+              offset = nextFileMarker.offset;
               break;
             }
             throw new JpegError('unknown marker ' + fileMarker.toString(16));
