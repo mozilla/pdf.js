@@ -80,11 +80,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var colorSpace = dict.get('ColorSpace', 'CS');
       colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources,
                                     this.pdfFunctionFactory);
-      var numComps = colorSpace.numComps;
-      var decodePromise = this.handler.sendWithPromise('JpegDecode',
-        [image.getIR(this.forceDataSchema), numComps]);
-      return decodePromise.then(function (message) {
-        var data = message.data;
+
+      return this.handler.sendWithPromise('JpegDecode', [
+        image.getIR(this.forceDataSchema), colorSpace.numComps
+      ]).then(function({ data, width, height, }) {
         return new Stream(data, 0, data.length, image.dict);
       });
     },
