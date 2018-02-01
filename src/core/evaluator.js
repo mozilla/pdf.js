@@ -349,7 +349,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     buildPaintImageXObject({ resources, image, isInline = false, operatorList,
-                             cacheKey, imageCache, }) {
+                             cacheKey, imageCache,
+                             forceDisableNativeImageDecoder = false, }) {
       var dict = image.dict;
       var w = dict.get('Width', 'W');
       var h = dict.get('Height', 'H');
@@ -419,28 +420,47 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return Promise.resolve();
       }
 
-      var nativeImageDecoderSupport = this.options.nativeImageDecoderSupport;
+      const nativeImageDecoderSupport = forceDisableNativeImageDecoder ?
+        NativeImageDecoding.NONE : this.options.nativeImageDecoderSupport;
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
       var objId = 'img_' + this.idFactory.createObjId();
-      operatorList.addDependency(objId);
-      args = [objId, w, h];
 
       if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
           !softMask && !mask && image instanceof JpegStream &&
           NativeImageDecoder.isSupported(image, this.xref, resources,
                                          this.pdfFunctionFactory)) {
         // These JPEGs don't need any more processing so we can just send it.
-        operatorList.addOp(OPS.paintJpegXObject, args);
-        this.handler.send('obj', [objId, this.pageIndex, 'JpegStream',
-                                  image.getIR(this.options.forceDataSchema)]);
-        if (cacheKey) {
-          imageCache[cacheKey] = {
-            fn: OPS.paintJpegXObject,
-            args,
-          };
-        }
-        return Promise.resolve();
+        return this.handler.sendWithPromise('obj', [
+          objId, this.pageIndex, 'JpegStream',
+          image.getIR(this.options.forceDataSchema)
+        ]).then(function() {
+          // Only add the dependency once we know that the native JPEG decoding
+          // succeeded, to ensure that rendering will always complete.
+          operatorList.addDependency(objId);
+          args = [objId, w, h];
+
+          operatorList.addOp(OPS.paintJpegXObject, args);
+          if (cacheKey) {
+            imageCache[cacheKey] = {
+              fn: OPS.paintJpegXObject,
+              args,
+            };
+          }
+        }, (reason) => {
+          warn('Native JPEG decoding failed -- trying to recover: ' +
+               (reason && reason.message));
+          // Try to decode the JPEG image with the built-in decoder instead.
+          return this.buildPaintImageXObject({
+            resources,
+            image,
+            isInline,
+            operatorList,
+            cacheKey,
+            imageCache,
+            forceDisableNativeImageDecoder: true,
+          });
+        });
       }
 
       // Creates native image decoder only if a JPEG image or mask is present.
@@ -456,6 +476,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           pdfFunctionFactory: this.pdfFunctionFactory,
         });
       }
+
+      // Ensure that the dependency is added before the image is decoded.
+      operatorList.addDependency(objId);
+      args = [objId, w, h];
 
       PDFImage.buildImage({
         handler: this.handler,
