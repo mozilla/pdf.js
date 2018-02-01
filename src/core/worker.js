@@ -358,11 +358,10 @@ var WorkerMessageHandler = {
 
     handler.on('GetCoverageData', function workerCoverage() {
       var re = new XMLHttpRequest();
-      re.open('POST', '/browserWorkerTestReports', false);
+      re.open('POST', '/reportCoverageData?context=worker', false);
       re.setRequestHeader('Content-Type', 'application/json');
       var coverageResults = JSON.stringify(self.__coverage__);
       re.send(coverageResults);
-      handler.send('ReceivedCoverageData', null);
     });
   },
   createDocumentHandler(docParams, port) {

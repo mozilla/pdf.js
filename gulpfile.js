@@ -1179,7 +1179,7 @@ gulp.task('lint', function (done) {
   });
 });
 
-gulp.task('instrument', function () {
+gulp.task('instrument', ['generic'], function () {
   return gulp.src(ISTANBUL_PATHS.src)
     .pipe(istanbul({ coverageVariable: '__coverage__', }))
     // instrumented files will go here

@@ -464,31 +464,14 @@ function checkRefTestResults(browser, id, results) {
 function browserTestReportHandler(req, res) {
   var parsedUrl = url.parse(req.url, true);
   var pathname = parsedUrl.pathname;
-  if (pathname === '/browserTestReports' ||
-    pathname === '/browserWorkerTestReports') {
-
-    switch (pathname) {
-      case '/browserTestReports' :
-        const pdfWritableStream = fs.createWriteStream('' +
-          '../coverage/coverageInfo-pdf.json');
-        req.pipe(pdfWritableStream);
-          pdfWritableStream.on('finish', function () {
-          res.end();
-        });
-        break;
-      case '/browserWorkerTestReports' :
-        let workerWritableStream = fs.createWriteStream(
-          '../coverage/coverageInfo-pdfWorker.json');
-        req.pipe(workerWritableStream);
-        workerWritableStream.on('finish', function () {
-          res.end();
-        });
-        req.on('ReceivedCoverageData', function () {
-          res.end();
-        });
-        break;
-    }
-      return true;
+  if (pathname === '/reportCoverageData') {
+    const pdfWritableStream = fs.createWriteStream(
+      '../coverage/coverage' + parsedUrl.query.context.toString() + '.json');
+    req.pipe(pdfWritableStream);
+    pdfWritableStream.on('finish', function () {
+      res.end();
+    });
+    return true;
   }
 }
 

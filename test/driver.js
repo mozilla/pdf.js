@@ -584,7 +584,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       this.end.textContent = 'Tests finished. Close this window!';
       if (this.coverage) {
         var re = new XMLHttpRequest();
-        re.open('POST', '/browserTestReports', false);
+        re.open('POST', '/reportCoverageData?context=main', false);
         re.setRequestHeader('Content-Type', 'application/json');
         var coverageResults = JSON.stringify(window.__coverage__);
         re.send(coverageResults);
