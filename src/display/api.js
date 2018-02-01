@@ -16,10 +16,9 @@
 
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isSameOrigin, loadJpegStream, MessageHandler,
-  MissingPDFException, NativeImageDecoding, PageViewport, PasswordException,
-  stringToBytes, UnexpectedResponseException, UnknownErrorException,
-  unreachable, Util, warn
+  isArrayBuffer, isSameOrigin, MessageHandler, MissingPDFException,
+  NativeImageDecoding, PageViewport, PasswordException, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, getDefaultSetting,
@@ -1818,7 +1817,21 @@ var WorkerTransport = (function WorkerTransportClosure() {
         switch (type) {
           case 'JpegStream':
             imageData = data[3];
-            loadJpegStream(id, imageData, pageProxy.objs);
+            new Promise((resolve, reject) => {
+              const img = new Image();
+              img.onload = function() {
+                resolve(img);
+              };
+              img.onerror = function() {
+                reject(new Error('Error during JPEG image loading'));
+              };
+              img.src = imageData;
+            }).then((img) => {
+              pageProxy.objs.resolve(id, img);
+            }, (reason) => {
+              warn(reason);
+              pageProxy.objs.resolve(id, null);
+            });
             break;
           case 'Image':
             imageData = data[3];
