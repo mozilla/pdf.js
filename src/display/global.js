@@ -129,15 +129,6 @@ PDFJS.imageResourcesPath = (PDFJS.imageResourcesPath === undefined ?
                             '' : PDFJS.imageResourcesPath);
 
 /**
- * Disable the web worker and run all code on the main thread. This will
- * happen automatically if the browser doesn't support workers or sending
- * typed arrays to workers.
- * @var {boolean}
- */
-PDFJS.disableWorker = (PDFJS.disableWorker === undefined ?
-                       false : PDFJS.disableWorker);
-
-/**
  * Path and filename of the worker file. Required when the worker is enabled
  * in development mode. If unspecified in the production build, the worker
  * will be loaded based on the location of the pdf.js file. It is recommended
@@ -148,8 +139,7 @@ PDFJS.disableWorker = (PDFJS.disableWorker === undefined ?
 PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
 
 /**
- * Defines global port for worker process. Overrides workerSrc and
- * disableWorker setting.
+ * Defines global port for worker process. Overrides `workerSrc` setting.
  */
 PDFJS.workerPort = (PDFJS.workerPort === undefined ? null : PDFJS.workerPort);
 

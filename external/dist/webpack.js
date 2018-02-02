@@ -19,8 +19,6 @@ var PdfjsWorker = require('worker-loader!./build/pdf.worker.js');
 
 if (typeof window !== 'undefined' && 'Worker' in window) {
   pdfjs.PDFJS.workerPort = new PdfjsWorker();
-} else {
-  pdfjs.PDFJS.disableWorker = true;
 }
 
 module.exports = pdfjs;
