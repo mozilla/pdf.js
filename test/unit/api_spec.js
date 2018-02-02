@@ -24,7 +24,7 @@ import {
   DOMCanvasFactory, RenderingCancelledException
 } from '../../src/display/dom_utils';
 import {
-  getDocument, PDFDocumentProxy, PDFPageProxy
+  getDocument, PDFDocumentProxy, PDFPageProxy, PDFWorker
 } from '../../src/display/api';
 import isNodeJS from '../../src/shared/is_node';
 import { PDFJS } from '../../src/display/global';
@@ -122,16 +122,14 @@ describe('api', function() {
             path: TEST_PDFS_PATH.node + basicApiFileName,
           });
         } else {
-          var nonBinaryRequest = PDFJS.disableWorker;
-          var request = new XMLHttpRequest();
+          let nonBinaryRequest = false;
+          let request = new XMLHttpRequest();
           request.open('GET', TEST_PDFS_PATH.dom + basicApiFileName, false);
-          if (!nonBinaryRequest) {
-            try {
-              request.responseType = 'arraybuffer';
-              nonBinaryRequest = request.responseType !== 'arraybuffer';
-            } catch (e) {
-              nonBinaryRequest = true;
-            }
+          try {
+            request.responseType = 'arraybuffer';
+            nonBinaryRequest = request.responseType !== 'arraybuffer';
+          } catch (e) {
+            nonBinaryRequest = true;
           }
           if (nonBinaryRequest && request.overrideMimeType) {
             request.overrideMimeType('text/plain; charset=x-user-defined');
@@ -404,6 +402,11 @@ describe('api', function() {
       }).catch(function (reason) {
         done.fail(reason);
       });
+    });
+    it('gets current workerSrc', function() {
+      let workerSrc = PDFWorker.getWorkerSrc();
+      expect(typeof workerSrc).toEqual('string');
+      expect(workerSrc).toEqual(PDFJS.workerSrc);
     });
   });
   describe('PDFDocument', function() {

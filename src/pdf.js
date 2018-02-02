@@ -29,8 +29,7 @@ var pdfjsDisplayAnnotationLayer = require('./display/annotation_layer.js');
 var pdfjsDisplayDOMUtils = require('./display/dom_utils.js');
 var pdfjsDisplaySVG = require('./display/svg.js');
 
-if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   const isNodeJS = require('./shared/is_node.js');
   if (isNodeJS()) {
     let PDFNodeStream = require('./display/node_stream.js').PDFNodeStream;
@@ -43,7 +42,7 @@ if (typeof PDFJSDev === 'undefined' ||
     pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
       return new PDFFetchStream(params);
     });
-   } else {
+  } else {
     let PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
     pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
       return new PDFNetworkStream(params);

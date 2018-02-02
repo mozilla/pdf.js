@@ -25,8 +25,7 @@ var SVGGraphics = function() {
   throw new Error('Not implemented: SVGGraphics');
 };
 
-if (typeof PDFJSDev === 'undefined' ||
-    PDFJSDev.test('GENERIC || SINGLE_FILE')) {
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
