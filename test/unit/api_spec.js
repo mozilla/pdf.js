@@ -1000,6 +1000,7 @@ describe('api', function() {
           function (data) {
         expect(data.length).toEqual(4);
       });
+
       Promise.all([defaultPromise, displayPromise, printPromise]).then(
           function () {
         done();

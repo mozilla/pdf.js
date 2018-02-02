@@ -18,8 +18,8 @@ import {
   LinkTarget
 } from './dom_utils';
 import {
-  AnnotationBorderStyleType, AnnotationType, stringToPDFString, unreachable,
-  Util, warn
+  AnnotationBorderStyleType, AnnotationCheckboxType, AnnotationType,
+  stringToPDFString, unreachable, Util, warn
 } from '../shared/util';
 
 /**
@@ -156,7 +156,7 @@ class AnnotationElement {
     container.style.transform = 'matrix(' + viewport.transform.join(',') + ')';
     container.style.transformOrigin = -rect[0] + 'px ' + -rect[1] + 'px';
 
-    if (!ignoreBorder && data.borderStyle.width > 0) {
+    if (!ignoreBorder && data.borderStyle.width > 0 && data.borderColor) {
       container.style.borderWidth = data.borderStyle.width + 'px';
       if (data.borderStyle.style !== AnnotationBorderStyleType.UNDERLINE) {
         // Underline styles only have a bottom border, so we do not need
@@ -175,19 +175,15 @@ class AnnotationElement {
 
       switch (data.borderStyle.style) {
         case AnnotationBorderStyleType.SOLID:
+        case AnnotationBorderStyleType.INSET:
+        case AnnotationBorderStyleType.BEVELED:
+          // border styles 'inset' and 'beveled' are applied
+          // to the underlying control
           container.style.borderStyle = 'solid';
           break;
 
         case AnnotationBorderStyleType.DASHED:
           container.style.borderStyle = 'dashed';
-          break;
-
-        case AnnotationBorderStyleType.BEVELED:
-          warn('Unimplemented border style: beveled');
-          break;
-
-        case AnnotationBorderStyleType.INSET:
-          warn('Unimplemented border style: inset');
           break;
 
         case AnnotationBorderStyleType.UNDERLINE:
@@ -198,10 +194,16 @@ class AnnotationElement {
           break;
       }
 
-      if (data.color) {
-        container.style.borderColor = Util.makeCssRgb(data.color[0] | 0,
-                                                      data.color[1] | 0,
-                                                      data.color[2] | 0);
+      if (data.borderColor) {
+        container.style.borderColor =
+          Util.makeCssRgb(data.borderColor[0] | 0,
+                          data.borderColor[1] | 0,
+                          data.borderColor[2] | 0);
+      } else if (data.color) {
+        container.style.borderColor =
+          Util.makeCssRgb(data.color[0] | 0,
+                          data.color[1] | 0,
+                          data.color[2] | 0);
       } else {
         // Transparent (invisible) border, so do not draw it at all.
         container.style.borderWidth = 0;
@@ -385,6 +387,151 @@ class WidgetAnnotationElement extends AnnotationElement {
     // Show only the container for unsupported field types.
     return this.container;
   }
+
+  /**
+   * Set element background color
+   *
+   * @protected
+   * @param {HTMLElement} element
+   * @param {Object} color
+   * @memberof WidgetAnnotationElement
+   */
+  _setBackgroundColor(element, color) {
+    if (color && color.length >= 3) {
+      let bgColor = Util.makeCssRgb(
+        color[0] | 0,
+        color[1] | 0,
+        color[2] | 0);
+
+      element.style.backgroundColor = bgColor;
+    }
+  }
+
+  /**
+   * Get default font namer
+   *
+   * @protected
+   * @memberof WidgetAnnotationElement
+   * @returns {String}
+   */
+  _getDefaultFontName() {
+    return 'Helvetica, sans-serif';
+  }
+
+  /**
+   * Measure annotation's text
+   *
+   * @protected
+   * @param {String} line of text
+   * @param {String} text font
+   * @memberof WidgetAnnotationElement
+   * @returns {TextMetrics}
+   */
+  _measureText(text, font) {
+    let canvas = document.getElementById('page' + this.page.pageNumber);
+    if (canvas) {
+      let ctx = canvas.getContext('2d');
+      ctx.font = font;
+      return ctx.measureText(text);
+    }
+
+    return null;
+  }
+
+  /**
+   * Process duplicate annotations
+   *
+   * @protected
+   * @param {WidgetAnnotationElement} annotation
+   * @param {Function} callback function
+   * @memberof WidgetAnnotationElement
+   */
+  _processDuplicates(annotation, callback) {
+    this.layer.querySelectorAll('[annotation-name="' +
+      annotation.getAttribute('annotation-name') + '"][annotation-value="' +
+      annotation.getAttribute('annotation-value') + '"]')
+        .forEach((a) => {
+          if (a !== annotation) {
+            callback(annotation, a);
+          }
+        });
+  }
+
+  /**
+   * Calculate font auto size.
+   *
+   * @private
+   * @param {HTMLDivElement} element
+   * @param {String} text
+   * @memberof WidgetAnnotationElement
+   * @returns {String}
+   */
+  _calculateFontAutoSize(element, text, offset) {
+    let style = element.style;
+    let maxHeight = parseInt(element.offsetHeight);
+    offset = offset || 0;
+
+    let fSize = 2;
+    let sizeStep = 0.1;
+    for (fSize = 2; fSize < maxHeight * 0.8; fSize += sizeStep) {
+      let m = this._measureText(text,
+        (style.fontStyle ? style.fontStyle + ' ' : '') +
+        (style.fontWeight ? style.fontWeight + ' ' : '') +
+        fSize + 'px ' +
+        (this.fontFamily || this._getDefaultFontName()));
+
+      if (m.width + offset > parseInt(element.offsetWidth)) {
+        break;
+      }
+    }
+
+    return (fSize - sizeStep) + 'px';
+  }
+
+  /**
+   * Get style of the checkbox or radiobutton.
+   *
+   * @private
+   * @param {Object} type
+   * @memberof WidgetAnnotationElement
+   * @returns {String}
+   */
+  _getCheckBoxStyle(type) {
+    switch (type) {
+      case AnnotationCheckboxType.CHECK:
+        return 'check';
+      case AnnotationCheckboxType.CIRCLE:
+        return 'circle';
+      case AnnotationCheckboxType.CROSS:
+        return 'cross';
+      case AnnotationCheckboxType.DIAMOND:
+        return 'diamond';
+      case AnnotationCheckboxType.SQUARE:
+        return 'square';
+      case AnnotationCheckboxType.STAR:
+        return 'star';
+      default:
+        return '';
+    }
+  }
+
+  /**
+   * Get checkmark/radio button symbols.
+   *
+   * @private
+   * @memberof WidgetAnnotationElement
+   * @returns {Array}
+   */
+  _getCheckmarkSymbols() {
+    let checkMarkSymbols = [];
+    checkMarkSymbols[AnnotationCheckboxType.CHECK] = '✓';
+    checkMarkSymbols[AnnotationCheckboxType.CIRCLE] = '●';
+    checkMarkSymbols[AnnotationCheckboxType.CROSS] = '✕';
+    checkMarkSymbols[AnnotationCheckboxType.DIAMOND] = '◆';
+    checkMarkSymbols[AnnotationCheckboxType.SQUARE] = '■';
+    checkMarkSymbols[AnnotationCheckboxType.STAR] = '★';
+    return checkMarkSymbols;
+  }
 }
 
 class TextWidgetAnnotationElement extends WidgetAnnotationElement {
@@ -403,10 +550,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     const TEXT_ALIGNMENT = ['left', 'center', 'right'];
-
     this.container.className = 'textWidgetAnnotation';
 
+    if (!this.data.readOnly) {
+      this.container.title = this.data.alternativeText;
+    }
+
     let element = null;
+    let font = null;
     if (this.renderInteractiveForms) {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
@@ -420,10 +571,21 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.setAttribute('value', this.data.fieldValue);
       }
 
+      element.setAttribute('annotation-name',
+        encodeURIComponent(this.data.fieldName));
+
       element.disabled = this.data.readOnly;
 
       if (this.data.maxLen !== null) {
         element.maxLength = this.data.maxLen;
+      }
+
+      if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
+        element.className = 'inset';
+      }
+
+      if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
+        element.className = 'beveled';
       }
 
       if (this.data.comb) {
@@ -433,22 +595,35 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.classList.add('comb');
         element.style.letterSpacing = 'calc(' + combWidth + 'px - 1ch)';
       }
+
+      if (this.data.fontRefName) {
+        let fonts = this.data.annotationFonts;
+        for (let f = 0; f < fonts.length; f++) {
+          if (fonts[f].length >= 3 &&
+              fonts[f][0] === this.data.fontRefName) {
+            font = fonts[f][2];
+            break;
+          }
+        }
+      }
     } else {
       element = document.createElement('div');
       element.textContent = this.data.fieldValue;
       element.style.verticalAlign = 'middle';
       element.style.display = 'table-cell';
 
-      let font = null;
       if (this.data.fontRefName) {
         font = this.page.commonObjs.getData(this.data.fontRefName);
       }
-      this._setTextStyle(element, font);
     }
+
+    this._setTextStyle(element, font);
 
     if (this.data.textAlignment !== null) {
       element.style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
     }
+
+    this._setBackgroundColor(element, this.data.backgroundColor);
 
     this.container.appendChild(element);
     return this.container;
@@ -465,22 +640,54 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
   _setTextStyle(element, font) {
     // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
     let style = element.style;
-    style.fontSize = this.data.fontSize + 'px';
-    style.direction = (this.data.fontDirection < 0 ? 'rtl' : 'ltr');
 
-    if (!font) {
-      return;
+    if (this.data.fontColor) {
+      style.color = this.data.fontColor;
     }
 
-    style.fontWeight = (font.black ?
-      (font.bold ? '900' : 'bold') :
-      (font.bold ? 'bold' : 'normal'));
-    style.fontStyle = (font.italic ? 'italic' : 'normal');
+    if (this.data.fontSize) {
+      style.fontSize = this.data.fontSize + 'px';
+    }
 
-    // Use a reasonable default font if the font doesn't specify a fallback.
-    let fontFamily = font.loadedName ? '"' + font.loadedName + '", ' : '';
-    let fallbackName = font.fallbackName || 'Helvetica, sans-serif';
-    style.fontFamily = fontFamily + fallbackName;
+    if (this.data.fontDirection) {
+      style.direction = (this.data.fontDirection < 0 ? 'rtl' : 'ltr');
+    }
+
+    if (font) {
+      style.fontWeight = (font.black ?
+        (font.bold ? '900' : 'bold') :
+        (font.bold ? 'bold' : 'normal'));
+      style.fontStyle = (font.italic ? 'italic' : 'normal');
+
+      // Use a reasonable default font if the font doesn't specify a fallback.
+      let fontFamily = font.loadedName ? '"' + font.loadedName + '", ' : '';
+      let fallbackName = font.fallbackName || this._getDefaultFontName();
+      style.fontFamily = fontFamily + fallbackName;
+    }
+
+    let self = this;
+
+    element.onblur = () => {
+      if (!style.fontSize && !self.data.multiLine) {
+        style.fontSize = self._calculateFontAutoSize(element, element.value);
+      }
+
+      self._processDuplicates(element, (a, b) => {
+        b.value = a.value;
+      });
+    };
+
+    // Auto size
+    if (!style.fontSize && !this.data.multiLine) {
+      window.setTimeout((element, self) => {
+        element.style.fontSize =
+          self._calculateFontAutoSize(element, element.value);
+      }, 100, element, this);
+
+      element.onkeypress = () => {
+        style.fontSize = self._calculateFontAutoSize(element, element.value);
+      };
+    }
   }
 }
 
@@ -498,16 +705,95 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'buttonWidgetAnnotation checkBox';
+    this.container.className = 'buttonWidgetAnnotation checkBox ';
+
+    if (!this.data.readOnly) {
+      this.container.title = this.data.alternativeText;
+    }
 
     let element = document.createElement('input');
+    element.setAttribute('annotation-name',
+      encodeURIComponent(this.data.fieldName));
+    element.setAttribute('annotation-value',
+      this.data.buttonValue ? encodeURIComponent(this.data.buttonValue) : '');
     element.disabled = this.data.readOnly;
     element.type = 'checkbox';
-    if (this.data.fieldValue && this.data.fieldValue !== 'Off') {
-      element.setAttribute('checked', true);
+    element.checked = this.data.fieldValue && this.data.fieldValue !== 'Off';
+    element.checkBoxType = this.data.checkBoxType;
+
+    if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
+      element.className = 'inset';
+    }
+
+    if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
+      element.className = 'beveled';
     }
 
     this.container.appendChild(element);
+
+    // We have to create a div with checkbox symbol
+    // in order to deal with background color, when
+    // div with text handles onclick event.
+    let span = document.createElement('span');
+
+    let checkMarkSymbols = this._getCheckmarkSymbols();
+
+    span.innerHTML = element.checked ?
+      checkMarkSymbols[element.checkBoxType] : '';
+
+    let self = this;
+
+    element.onchange = () => {
+      span.innerHTML = element.checked ?
+        checkMarkSymbols[element.checkBoxType] : '';
+
+        self._processDuplicates(element, (a, b) => {
+          if (b.parentElement) {
+            b.checked = a.checked;
+
+            let annotationSpans =
+              b.parentElement.getElementsByTagName('span');
+
+              if (annotationSpans.length > 0) {
+                annotationSpans[0].innerHTML = a.checked ?
+                  checkMarkSymbols[b.checkBoxType] : '';
+            }
+          }
+        });
+    };
+
+    span.onclick = () => {
+      if (!element.disabled) {
+        element.checked = false;
+        element.onchange();
+      }
+    };
+
+    let fontSizeFactor =
+        this.data.checkBoxType === AnnotationCheckboxType.CIRCLE ||
+        this.data.checkBoxType === AnnotationCheckboxType.DIAMOND ||
+        this.data.checkBoxType === AnnotationCheckboxType.SQUARE ? 1.5 :
+        this.data.checkBoxType === AnnotationCheckboxType.STAR ? 0.5 : 1.0;
+
+    let fontSizePadding =
+        this.data.checkBoxType !== AnnotationCheckboxType.STAR &&
+        (this.data.borderStyle.style === AnnotationBorderStyleType.INSET ||
+        this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) ?
+        4 : 0;
+
+    span.style.lineHeight = this.container.style.height;
+
+    span.style.fontSize = (parseFloat(this.container.style.height) *
+      fontSizeFactor - fontSizePadding) + 'px';
+
+    span.style.color = this.data.fontColor;
+    this.container.className +=
+      this._getCheckBoxStyle(this.data.checkBoxType);
+
+    this._setBackgroundColor(element, this.data.backgroundColor);
+
+    this.container.appendChild(span);
+
     return this.container;
   }
 }
@@ -526,17 +812,89 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'buttonWidgetAnnotation radioButton';
+    this.container.className = 'buttonWidgetAnnotation radioButton ';
+
+    if (!this.data.readOnly) {
+      this.container.title = this.data.alternativeText;
+    }
 
     let element = document.createElement('input');
+    element.name = encodeURIComponent(this.data.fieldName);
+    element.setAttribute('annotation-name',
+      encodeURIComponent(this.data.fieldName + '_' +
+      (this.data.buttonValue || '')));
     element.disabled = this.data.readOnly;
     element.type = 'radio';
-    element.name = this.data.fieldName;
     if (this.data.fieldValue === this.data.buttonValue) {
-      element.setAttribute('checked', true);
+      element.checked = true;
+    }
+
+    element.radioButtonType = this.data.radioButtonType;
+
+    if (this.data.radioButtonType === AnnotationCheckboxType.CIRCLE) {
+      element.style.width = this.container.style.width =
+        this.container.style.height;
+      this.container.borderRadius = '50%';
+    }
+
+    if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
+      element.className = 'inset';
+    }
+
+    if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
+      element.className = 'beveled';
     }
 
     this.container.appendChild(element);
+
+    let span = document.createElement('span');
+
+    let checkMarkSymbols = this._getCheckmarkSymbols();
+
+    span.innerHTML = element.checked ?
+      checkMarkSymbols[element.radioButtonType] : '';
+
+    element.onchange = () => {
+      span.innerHTML = checkMarkSymbols[element.radioButtonType];
+
+      let annotations = document.getElementsByName(element.name);
+      for (let index in annotations) {
+        if (annotations[index] !== element &&
+            annotations[index].parentElement) {
+          var annotationSpans =
+            annotations[index].parentElement.getElementsByTagName('span');
+          if (annotationSpans.length > 0) {
+            annotationSpans[0].innerHTML = '';
+          }
+        }
+      }
+    };
+
+    let fontSizeFactor =
+    this.data.radioButtonType === AnnotationCheckboxType.CIRCLE ||
+    this.data.radioButtonType === AnnotationCheckboxType.DIAMOND ||
+    this.data.radioButtonType === AnnotationCheckboxType.SQUARE ? 1.5 :
+    this.data.radioButtonType === AnnotationCheckboxType.STAR ? 0.5 : 1.0;
+
+    let fontSizePadding =
+      this.data.radioButtonType !== AnnotationCheckboxType.STAR &&
+      (this.data.borderStyle.style === AnnotationBorderStyleType.INSET ||
+      this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) ?
+      4 : 0;
+
+    span.style.lineHeight = this.container.style.height;
+
+    span.style.fontSize = (parseFloat(this.container.style.height) *
+      fontSizeFactor - fontSizePadding) + 'px';
+
+    span.style.color = this.data.fontColor;
+    this.container.className +=
+      this._getCheckBoxStyle(this.data.radioButtonType);
+
+    this._setBackgroundColor(element, this.data.backgroundColor);
+
+    this.container.appendChild(span);
+
     return this.container;
   }
 }
@@ -576,35 +934,357 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
   render() {
     this.container.className = 'choiceWidgetAnnotation';
 
-    let selectElement = document.createElement('select');
-    selectElement.disabled = this.data.readOnly;
+    let i, ii, style;
+    let itemName = encodeURIComponent(this.data.fieldName) + '_item';
+
+    let self = this;
 
     if (!this.data.combo) {
+      let selectElement = document.createElement('select');
+      selectElement.setAttribute('annotation-name',
+        encodeURIComponent(this.data.fieldName));
+      selectElement.disabled = this.data.readOnly;
+
+      if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
+        selectElement.className = 'inset';
+      }
+
+      if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
+        selectElement.className = 'beveled';
+      }
+
+      style = selectElement.style;
+
+      this._setElementFont(selectElement);
+
+      this._setBackgroundColor(selectElement, this.data.backgroundColor);
+
       // List boxes have a size and (optionally) multiple selection.
       selectElement.size = this.data.options.length;
 
       if (this.data.multiSelect) {
         selectElement.multiple = true;
       }
-    }
 
-    // Insert the options into the choice field.
-    for (let i = 0, ii = this.data.options.length; i < ii; i++) {
-      let option = this.data.options[i];
+      // Insert the options into the choice field.
+      for (i = 0, ii = this.data.options.length; i < ii; i++) {
+        let option = this.data.options[i];
 
-      let optionElement = document.createElement('option');
-      optionElement.textContent = option.displayValue;
-      optionElement.value = option.exportValue;
+        let optionElement = document.createElement('option');
+        optionElement.textContent = option.displayValue;
+        optionElement.value = option.exportValue;
+        optionElement.setAttribute('name', itemName);
 
-      if (this.data.fieldValue.indexOf(option.displayValue) >= 0) {
-        optionElement.setAttribute('selected', true);
+        if (this.data.fieldValue.indexOf(option.exportValue) >= 0) {
+          optionElement.setAttribute('selected', true);
+        }
+
+        selectElement.appendChild(optionElement);
       }
 
-      selectElement.appendChild(optionElement);
+      selectElement.onblur = () => {
+        self._processDuplicates(selectElement, (a, b) => {
+          for (let i = 0; i < a.options.length; i++) {
+            if (i < b.options.length) {
+              b.options[i].selected = a.options[i].selected;
+            }
+          }
+        });
+      };
+
+      this.container.appendChild(selectElement);
+    } else {
+      let hoverClass = 'hover';
+      let showClass = 'show';
+
+      let comboElementDiv = document.createElement('div');
+      comboElementDiv.className = 'combo';
+      comboElementDiv.style.height = this.container.style.height;
+
+      let comboElement = document.createElement('input');
+      comboElement.type = 'text';
+      comboElement.readOnly = !this.data.customText;
+      comboElement.setAttribute('annotation-name',
+        encodeURIComponent(this.data.fieldName));
+      comboElement.style.height = this.container.style.height;
+      comboElement.style.width = this.container.style.width;
+
+      if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
+        comboElement.className = 'inset';
+      }
+
+      if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
+        comboElement.className = 'beveled';
+      }
+
+      style = comboElement.style;
+
+      this._setElementFont(comboElement);
+
+      this._setBackgroundColor(comboElement, this.data.backgroundColor);
+
+      let comboContent = document.createElement('div');
+      comboContent.className = 'combo-content';
+
+      comboContent.onmouseover = () => {
+        comboElement.selected = true;
+      };
+
+      comboContent.onmouseout = () => {
+        comboElement.selected = false;
+      };
+
+      comboElement.onkeypress = (event) => {
+        if ((event.keyCode ? event.keyCode : event.which) === 13) {
+          comboContent.classList.remove(showClass);
+          return;
+        }
+
+        let filterChar = String.fromCharCode(event.charCode).toUpperCase();
+
+        let items = comboContent.getElementsByTagName('a');
+        let selectedIndex = -1;
+        let firstIndex = -1;
+        let lastIndex = -1;
+        let newIndex = -1;
+
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].classList.contains(hoverClass) &&
+            items[i].text[0].toUpperCase() === filterChar) {
+            selectedIndex = i;
+          }
+
+          if (items[i].text && items[i].text.length > 0 &&
+            items[i].text[0].toUpperCase() === filterChar) {
+            if (firstIndex < 0) {
+              firstIndex = i;
+            }
+
+            lastIndex = i;
+          }
+
+          items[i].classList.remove(hoverClass);
+        }
+
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].text && items[i].text.length > 0 &&
+            items[i].text[0].toUpperCase() === filterChar &&
+            i > selectedIndex) {
+            newIndex = i;
+            break;
+          }
+        }
+
+        let selectedItem = null;
+        let selectedItemIndex = -1;
+        if (newIndex >= 0) {
+          selectedItemIndex = newIndex;
+        } else if (selectedIndex >= 0 && selectedIndex !== lastIndex) {
+          selectedItemIndex = selectedIndex;
+        } else if (firstIndex >= 0) {
+          selectedItemIndex = firstIndex;
+        }
+
+        if (selectedItemIndex >= 0) {
+          selectedItem = items[selectedItemIndex];
+          selectedItem.classList.add(hoverClass);
+          comboElement.value = selectedItem.text;
+
+          let hRatio = comboContent.clientHeight / comboContent.scrollHeight;
+          let pRatio = (selectedItemIndex + 1) / items.length;
+
+          if (hRatio <= pRatio) {
+            comboContent.scrollTop = selectedItemIndex / items.length *
+              comboContent.scrollHeight;
+          } else {
+            comboContent.scrollTop = 0;
+          }
+
+          // Auto size
+          if (comboElement.autoSize) {
+            style.fontSize = self._calculateFontAutoSize(
+              comboElement, selectedItem.text, downArrowWidth);
+          }
+        }
+      };
+
+      comboElement.onblur = () => {
+        if (!comboElement.selected) {
+          comboContent.classList.remove(showClass);
+          self.container.style.position = '';
+          self.container.style.zIndex = '';
+        }
+
+        self._processDuplicates(comboElement, (a, b) => {
+          b.value = a.value;
+        });
+      };
+
+      let spanElement = document.createElement('span');
+      spanElement.onclick = () => {
+        if (!comboElement.disabled) {
+          comboElement.focus();
+          comboContent.classList.toggle(showClass);
+          self.container.style.position = 'absolute';
+          self.container.style.zIndex = '100';
+        }
+      };
+
+      let comboWidth = parseFloat(self.container.style.width);
+      let increaseComboWidth = false;
+
+      let aElementPadding = 2;
+      let downArrowWidth = self._measureText('▼',
+      ('8pt ' + self._getDefaultFontName())).width;
+
+      for (i = 0, ii = this.data.options.length; i < ii; i++) {
+        let optionItem = this.data.options[i];
+
+        let aElement = document.createElement('a');
+        aElement.setAttribute('value', optionItem.exportValue);
+        aElement.text = optionItem.displayValue;
+        aElement.name = itemName;
+        aElement.style.padding = aElementPadding + 'px';
+        if (!style.fontSize) {
+          aElement.style.fontSize = '9px';
+        } else {
+          aElement.style.fontSize = style.fontSize;
+        }
+
+        if (this.data.fieldValue.indexOf(optionItem.exportValue) >= 0) {
+          comboElement.value = optionItem.displayValue;
+        }
+
+        let aElementWidth = self._measureText(aElement.text,
+          (style.fontStyle ? style.fontStyle + ' ' : '') +
+          (style.fontWeight ? style.fontWeight + ' ' : '') +
+          (style.fontSize ? style.fontSize : '9') + 'px ' +
+          (style.fontFamily || self._getDefaultFontName()));
+
+        if (aElementWidth.width + downArrowWidth +
+          aElementPadding * 2 > comboWidth) {
+          comboWidth = aElementWidth.width;
+          increaseComboWidth = true;
+        }
+
+        aElement.onclick = () => {
+          comboElement.value = aElement.text;
+          comboContent.classList.remove(showClass);
+          self.container.style.position = '';
+          self.container.style.zIndex = '';
+
+          // Auto size
+          if (comboElement.autoSize) {
+            style.fontSize = self._calculateFontAutoSize(
+              comboElement, aElement.text, downArrowWidth);
+          }
+        };
+
+        aElement.onmouseover = () => {
+          let items = comboContent.getElementsByTagName('a');
+
+          for (let i = 0; i < items.length; i++) {
+            items[i].classList.remove(hoverClass);
+          }
+
+          aElement.classList.add(hoverClass);
+        };
+
+        aElement.onmouseout = () => {
+          aElement.classList.remove(hoverClass);
+        };
+
+        comboContent.appendChild(aElement);
+      }
+
+      if (increaseComboWidth) {
+        comboContent.style.width = (comboWidth + downArrowWidth +
+          aElementPadding * 2) + 'px';
+      }
+
+      if (!style.fontSize) {
+        comboElement.autoSize = true;
+
+        window.setTimeout(function(element, self, downArrowWidth) {
+          element.style.fontSize =
+            self._calculateFontAutoSize(element, element.value,
+              downArrowWidth);
+        }, 100, comboElement, this, downArrowWidth);
+      }
+
+      comboElementDiv.appendChild(comboElement);
+
+      if (!this.data.readOnly) {
+        comboElementDiv.appendChild(spanElement);
+        comboElementDiv.appendChild(comboContent);
+      }
+
+      this.container.appendChild(comboElementDiv);
     }
 
-    this.container.appendChild(selectElement);
+    let styleExpression = '';
+
+    if (this.data.backgroundColor) {
+      let bgColor = Util.makeCssRgb(
+        this.data.backgroundColor[0] | 0,
+        this.data.backgroundColor[1] | 0,
+        this.data.backgroundColor[2] | 0);
+
+      styleExpression = 'background-color:' + bgColor + ';';
+    }
+
+    styleExpression +=
+      (style.color ? 'color:' + style.color + ';' : '') +
+      (style.fontSize ? 'font-size:' + style.fontSize + ';' : '') +
+      (style.fontWeight ? 'font-weight:' + style.fontWeight + ';' : '') +
+      (style.fontStyle ? 'font-style:' + style.fontStyle + ';' : '') +
+      (style.fontFamily ? 'font-family:' + style.fontFamily + ';' : '');
+
+    let cssClass = document.createElement('style');
+    cssClass.innerHTML =
+      '.' + this.layer.className + ' .' + this.container.className +
+      ' [name="' + itemName + '"]{' + styleExpression + '}';
+
+    document.body.appendChild(cssClass);
+
     return this.container;
+  }
+
+  /**
+   * Set element font.
+   *
+   * @private
+   * @param {HTMLElement} element
+   * @memberof ChoiceWidgetAnnotationElement
+   */
+  _setElementFont(element) {
+    let style = element.style;
+
+    if (this.data.fontColor) {
+      style.color = this.data.fontColor;
+    }
+
+    if (this.data.fontSize) {
+      style.fontSize = this.data.fontSize + 'px';
+    }
+
+    if (this.data.fontRefName) {
+      let fonts = this.data.annotationFonts;
+      for (let f = 0; f < fonts.length; f++) {
+        if (fonts[f].length >= 3 && fonts[f][0] === this.data.fontRefName) {
+          let font = fonts[f][2];
+
+          style.fontWeight = font.black ? font.bold ? '900' :
+                               'bold' : font.bold ? 'bold' : 'normal';
+          style.fontStyle = font.italic ? 'italic' : 'normal';
+          let fontFamily = font.loadedName ? '"' +
+                             font.loadedName + '", ' : '';
+          let fallbackName = font.fallbackName || this._getDefaultFontName();
+          style.fontFamily = fontFamily + fallbackName;
+          break;
+        }
+      }
+    }
   }
 }
 
@@ -1201,6 +1881,7 @@ class AnnotationLayer {
       if (!data) {
         continue;
       }
+
       let element = AnnotationElementFactory.create({
         data,
         layer: parameters.div,

@@ -115,6 +115,15 @@ var AnnotationBorderStyleType = {
   UNDERLINE: 5,
 };
 
+var AnnotationCheckboxType = {
+  CHECK: 1,
+  CIRCLE: 2,
+  CROSS: 3,
+  DIAMOND: 4,
+  SQUARE: 5,
+  STAR: 6,
+};
+
 var StreamType = {
   UNKNOWN: 0,
   FLATE: 1,
@@ -1588,6 +1597,7 @@ export {
   VERBOSITY_LEVELS,
   UNSUPPORTED_FEATURES,
   AnnotationBorderStyleType,
+  AnnotationCheckboxType,
   AnnotationFieldFlag,
   AnnotationFlag,
   AnnotationType,
