@@ -14,10 +14,11 @@
  */
 
 import { Catalog, ObjectLoader, XRef } from './obj';
-import { createPromiseCapability, error, info, isArrayBuffer, isNum,
-  isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
-  stringToPDFString, Util, warn } from '../shared/util';
 import { Dict, isDict, isName, isStream } from './primitives';
+import {
+  info, isArrayBuffer, isNum, isSpace, isString, MissingDataException,
+  OPS, shadow, stringToBytes, stringToPDFString, Util, warn
+} from '../shared/util';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
 import { AnnotationFactory } from './annotation';
 import { calculateMD5 } from './crypto';
@@ -25,6 +26,7 @@ import { Linearization } from './parser';
 import { OperatorList } from './operator_list';
 import { PartialEvaluator } from './evaluator';
 import { PDFFunctionFactory } from './function';
+import { WorkerTask } from './worker';
 
 var Page = (function PageClosure() {
 
@@ -32,8 +34,8 @@ var Page = (function PageClosure() {
   var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
   function isAnnotationRenderable(annotation, intent) {
-    return (intent === 'display' && annotation.viewable) ||
-           (intent === 'print' && annotation.printable);
+    return (intent === 'display' && annotation && annotation.viewable) ||
+           (intent === 'print' && annotation && annotation.printable);
   }
 
   function Page({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
@@ -320,36 +322,6 @@ var Page = (function PageClosure() {
     },
 
     get annotations() {
-      var AnnotationWorkerTask = (function AnnotationWorkerTaskClosure() {
-        function AnnotationWorkerTask(name) {
-          this.name = name;
-          this.terminated = false;
-          this.capability = createPromiseCapability();
-        }
-
-        AnnotationWorkerTask.prototype = {
-          get finished() {
-            return this.capability.promise;
-          },
-
-          finish() {
-            this.capability.resolve();
-          },
-
-          terminate() {
-            this.terminated = true;
-          },
-
-          ensureNotTerminated() {
-            if (this.terminated) {
-              throw new Error('Annotation worker task was terminated');
-            }
-          },
-        };
-
-        return AnnotationWorkerTask;
-      })();
-
       // create a blank annotation fonts array
       // if it's not initialized yet
       if (this.pdfManager && this.pdfManager.pdfDocument &&
@@ -358,7 +330,7 @@ var Page = (function PageClosure() {
         this.pdfManager.pdfDocument.acroForm.annotationFonts = [];
       }
 
-      var task = new AnnotationWorkerTask(
+      var task = new WorkerTask(
         'GetAnnotationAppereances: page ' + this.pageIndex);
 
       var handler = {};
@@ -372,9 +344,6 @@ var Page = (function PageClosure() {
         }
       };
 
-      var pageNum = this.pageIndex + 1;
-      var start = Date.now();
-
       var partialEvaluator = new PartialEvaluator({
         pdfManager: this.pdfManager,
         xref: this.xref,
@@ -387,30 +356,28 @@ var Page = (function PageClosure() {
       });
 
       var annotationRefs = this.getInheritedPageProp('Annots') || [];
-      var annotationsPromise = [];
+      var annotationsPromises = [];
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
-          annotationsPromise.push(AnnotationFactory.create(
+        var annotationPromise = AnnotationFactory.create(
           this.xref,
           annotationRef,
           this.pdfManager,
           this.idFactory,
           partialEvaluator,
           task
-        ));
+        );
+
+        annotationsPromises.push(annotationPromise);
       }
 
       return shadow(this, 'annotations',
-        Promise.all(annotationsPromise)).then(function (annotations) {
+        Promise.all(annotationsPromises)).then(function (annotations) {
 
         task.finish();
-        info('page=' + pageNum + ' - annotations: time=' +
-          (Date.now() - start) +
-          'ms, len=' + annotations.length);
 
         return annotations;
       }, function (reason) {
-        error('page=' + pageNum + 'error: ' + reason);
         return [];
       });
     },

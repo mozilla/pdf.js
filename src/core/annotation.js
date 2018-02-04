@@ -33,10 +33,6 @@ class AnnotationFactory {
    * @returns {Annotation}
    */
   static create(xref, ref, pdfManager, idFactory, evaluator, task) {
-    if (!xref) {
-      return;
-    }
-
     let dict = xref.fetchIfRef(ref);
 
     if (!isDict(dict)) {
@@ -90,7 +86,7 @@ class AnnotationFactory {
             break;
         }
 
-        return widget.parseAppearance(parameters);
+        return widget.setDefaultAppearance(parameters);
 
       case 'Popup':
         return Promise.resolve(new PopupAnnotation(parameters));
@@ -99,16 +95,16 @@ class AnnotationFactory {
         return Promise.resolve(new LineAnnotation(parameters));
 
       case 'Square':
-        return new SquareAnnotation(parameters);
+        return Promise.resolve(new SquareAnnotation(parameters));
 
       case 'Circle':
-        return new CircleAnnotation(parameters);
+        return Promise.resolve(new CircleAnnotation(parameters));
 
       case 'PolyLine':
-        return new PolylineAnnotation(parameters);
+        return Promise.resolve(new PolylineAnnotation(parameters));
 
       case 'Polygon':
-        return new PolygonAnnotation(parameters);
+        return Promise.resolve(new PolygonAnnotation(parameters));
 
       case 'Highlight':
         return Promise.resolve(new HighlightAnnotation(parameters));
@@ -123,7 +119,7 @@ class AnnotationFactory {
         return Promise.resolve(new StrikeOutAnnotation(parameters));
 
       case 'Stamp':
-        return new StampAnnotation(parameters);
+        return Promise.resolve(new StampAnnotation(parameters));
 
       case 'FileAttachment':
         return Promise.resolve(new FileAttachmentAnnotation(parameters));
@@ -728,7 +724,7 @@ class WidgetAnnotation extends Annotation {
   }
 
   /**
-   * Parse widget annotation appearance and extract font infromation.
+   * Set the default appearance (such as fonts and colors).
    *
    * @public
    * @memberof WidgetAnnotation
@@ -736,7 +732,7 @@ class WidgetAnnotation extends Annotation {
    *                        field characteristic
    * @return {Promise}
    */
-  parseAppearance(params) {
+  setDefaultAppearance(params) {
     if (!params.pdfManager || !params.pdfManager.pdfDocument) {
       return Promise.resolve(this);
     }

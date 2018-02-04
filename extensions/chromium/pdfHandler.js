@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* import-globals-from feature-detect.js */
 /* import-globals-from preserve-referer.js */
 
 'use strict';
@@ -131,21 +130,7 @@ chrome.webRequest.onHeadersReceived.addListener(
     // Implemented in preserve-referer.js
     saveReferer(details);
 
-    // Replace frame with viewer
-    if (Features.webRequestRedirectUrl) {
-      return { redirectUrl: viewerUrl, };
-    }
-    // Aww.. redirectUrl is not yet supported, so we have to use a different
-    // method as fallback (Chromium <35).
-
-    if (details.frameId === 0) {
-      // Main frame. Just replace the tab and be done!
-      chrome.tabs.update(details.tabId, {
-        url: viewerUrl,
-      });
-      return { cancel: true, };
-    }
-    console.warn('Child frames are not supported in ancient Chrome builds!');
+    return { redirectUrl: viewerUrl, };
   },
   {
     urls: [
@@ -156,35 +141,11 @@ chrome.webRequest.onHeadersReceived.addListener(
   ['blocking', 'responseHeaders']);
 
 chrome.webRequest.onBeforeRequest.addListener(
-  function onBeforeRequestForFTP(details) {
-    if (!Features.extensionSupportsFTP) {
-      chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequestForFTP);
-      return;
-    }
-    if (isPdfDownloadable(details)) {
-      return;
-    }
-    var viewerUrl = getViewerURL(details.url);
-    return { redirectUrl: viewerUrl, };
-  },
-  {
-    urls: [
-      'ftp://*/*.pdf',
-      'ftp://*/*.PDF'
-    ],
-    types: ['main_frame', 'sub_frame'],
-  },
-  ['blocking']);
-
-chrome.webRequest.onBeforeRequest.addListener(
   function(details) {
     if (isPdfDownloadable(details)) {
       return;
     }
 
-    // NOTE: The manifest file has declared an empty content script
-    // at file://*/* to make sure that the viewer can load the PDF file
-    // through XMLHttpRequest. Necessary to deal with http://crbug.com/302548
     var viewerUrl = getViewerURL(details.url);
 
     return { redirectUrl: viewerUrl, };
@@ -192,7 +153,11 @@ chrome.webRequest.onBeforeRequest.addListener(
   {
     urls: [
       'file://*/*.pdf',
-      'file://*/*.PDF'
+      'file://*/*.PDF',
+      // Note: Chrome 59 has disabled ftp resource loading by default:
+      // https://www.chromestatus.com/feature/5709390967472128
+      'ftp://*/*.pdf',
+      'ftp://*/*.PDF',
     ],
     types: ['main_frame', 'sub_frame'],
   },
@@ -271,3 +236,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     }
   }
 });
+
+// Remove keys from storage that were once part of the deleted feature-detect.js
+chrome.storage.local.remove([
+  'featureDetectLastUA',
+  'webRequestRedirectUrl',
+  'extensionSupportsFTP',
+]);
