@@ -258,7 +258,7 @@ var PdfjsChromeUtils = {
   _ensurePreferenceAllowed(aPrefName) {
     let unPrefixedName = aPrefName.split(PREF_PREFIX + ".");
     if (unPrefixedName[0] !== "" ||
-        this._allowedPrefNames.indexOf(unPrefixedName[1]) === -1) {
+        !this._allowedPrefNames.includes(unPrefixedName[1])) {
       let msg = "\"" + aPrefName + "\" " +
                 "can't be accessed from content. See PdfjsChromeUtils.";
       throw new Error(msg);
