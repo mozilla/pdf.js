@@ -93,11 +93,6 @@ function getIntPref(pref, def) {
 
 function getStringPref(pref, def) {
   try {
-//#if !MOZCENTRAL
-    if (!Services.prefs.getStringPref) {
-      return Services.prefs.getComplexValue(pref, Ci.nsISupportsString).data;
-    }
-//#endif
     return Services.prefs.getStringPref(pref);
   } catch (ex) {
     return def;
@@ -325,11 +320,6 @@ class ChromeActions {
   }
 
   getLocale() {
-//#if !MOZCENTRAL
-    if (!Services.locale.getRequestedLocale) {
-      return getStringPref("general.useragent.locale", "en-US");
-    }
-//#endif
     return Services.locale.getRequestedLocale() || "en-US";
   }
 
