@@ -25,8 +25,8 @@
   const Cu = Components.utils;
   const Cr = Components.results;
 
-  Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-  Cu.import("resource://gre/modules/Services.jsm");
+  ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+  ChromeUtils.import("resource://gre/modules/Services.jsm");
 
   var isRemote = Services.appinfo.processType ===
     Services.appinfo.PROCESS_TYPE_CONTENT;
@@ -72,10 +72,10 @@
   var pdfStreamConverterFactory = new Factory();
 
   function startup() {
-    Cu.import("resource://pdf.js/PdfjsContentUtils.jsm");
+    ChromeUtils.import("resource://pdf.js/PdfjsContentUtils.jsm");
     PdfjsContentUtils.init();
 
-    Cu.import("resource://pdf.js/PdfStreamConverter.jsm");
+    ChromeUtils.import("resource://pdf.js/PdfStreamConverter.jsm");
     pdfStreamConverterFactory.register(PdfStreamConverter);
   }
 

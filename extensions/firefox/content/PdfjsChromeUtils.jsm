@@ -25,8 +25,8 @@ const Cu = Components.utils;
 const PREF_PREFIX = "PDFJSSCRIPT_PREF_PREFIX";
 const PDF_CONTENT_TYPE = "application/pdf";
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
