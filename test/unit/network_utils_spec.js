@@ -176,7 +176,25 @@ describe('network_utils', function() {
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
+          return 'attachment; filename="filename.pdf and spaces.pdf"';
+        }
+      })).toEqual('filename.pdf and spaces.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename="tl;dr.pdf"';
+        }
+      })).toEqual('tl;dr.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
           return 'attachment; filename=filename.pdf';
+        }
+      })).toEqual('filename.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename=filename.pdf someotherparam';
         }
       })).toEqual('filename.pdf');
     });
