@@ -243,7 +243,7 @@ var PdfJs = {
       types = stringTypes.split(",");
     }
 
-    if (types.indexOf(PDF_CONTENT_TYPE) === -1) {
+    if (!types.includes(PDF_CONTENT_TYPE)) {
       types.push(PDF_CONTENT_TYPE);
     }
     prefs.setCharPref(PREF_DISABLED_PLUGIN_TYPES, types.join(","));
@@ -271,7 +271,7 @@ var PdfJs = {
     if (Services.prefs.prefHasUserValue(PREF_DISABLED_PLUGIN_TYPES)) {
       let disabledPluginTypes =
         Services.prefs.getCharPref(PREF_DISABLED_PLUGIN_TYPES).split(",");
-      if (disabledPluginTypes.indexOf(PDF_CONTENT_TYPE) >= 0) {
+      if (disabledPluginTypes.includes(PDF_CONTENT_TYPE)) {
         return true;
       }
     }

@@ -229,7 +229,7 @@ class SimpleXMLParser {
   }
 
   _decodeXML(text) {
-    if (text.indexOf('&') < 0) {
+    if (!text.includes('&')) {
       return text;
     }
 

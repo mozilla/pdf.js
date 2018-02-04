@@ -1316,7 +1316,7 @@ var Font = (function FontClosure() {
 
         for (let i = 0; i < numTables; i++) {
           let table = readTableEntry(font);
-          if (VALID_TABLES.indexOf(table.tag) < 0) {
+          if (!VALID_TABLES.includes(table.tag)) {
             continue; // skipping table if it's not a required or optional table
           }
           if (table.length === 0) {
@@ -2113,7 +2113,7 @@ var Font = (function FontClosure() {
               if (funcId in ttContext.functionsStackDeltas) {
                 stack.length += ttContext.functionsStackDeltas[funcId];
               } else if (funcId in ttContext.functionsDefined &&
-                         functionsCalled.indexOf(funcId) < 0) {
+                         !functionsCalled.includes(funcId)) {
                 callstack.push({ data, i, stackTop: stack.length - 1, });
                 functionsCalled.push(funcId);
                 pc = ttContext.functionsDefined[funcId];
