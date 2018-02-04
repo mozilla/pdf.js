@@ -26,8 +26,8 @@ const Cm = Components.manager;
 const Cu = Components.utils;
 const Cr = Components.results;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function initializeDefaultPreferences() {
   /* eslint-disable semi */
@@ -120,14 +120,14 @@ function startup(aData, aReason) {
 
   pdfBaseUrl = aData.resourceURI.spec;
 
-  Cu.import(pdfBaseUrl + "content/PdfjsChromeUtils.jsm");
+  ChromeUtils.import(pdfBaseUrl + "content/PdfjsChromeUtils.jsm");
   PdfjsChromeUtils.init();
-  Cu.import(pdfBaseUrl + "content/PdfjsContentUtils.jsm");
+  ChromeUtils.import(pdfBaseUrl + "content/PdfjsContentUtils.jsm");
   PdfjsContentUtils.init();
 
   // Load the component and register it.
   var pdfStreamConverterUrl = pdfBaseUrl + "content/PdfStreamConverter.jsm";
-  Cu.import(pdfStreamConverterUrl);
+  ChromeUtils.import(pdfStreamConverterUrl);
   pdfStreamConverterFactory.register(PdfStreamConverter);
 
   try {
