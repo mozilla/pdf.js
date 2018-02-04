@@ -942,7 +942,7 @@ var CMapFactory = (function CMapFactoryClosure() {
     } else if (name === 'Identity-V') {
       return Promise.resolve(new IdentityCMap(true, 2));
     }
-    if (BUILT_IN_CMAPS.indexOf(name) === -1) {
+    if (!BUILT_IN_CMAPS.includes(name)) {
       return Promise.reject(new Error('Unknown CMap name: ' + name));
     }
     if (!fetchBuiltInCMap) {

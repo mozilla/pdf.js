@@ -596,7 +596,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
 
-      if (this.data.fieldValue.indexOf(option.displayValue) >= 0) {
+      if (this.data.fieldValue.includes(option.displayValue)) {
         optionElement.setAttribute('selected', true);
       }
 
@@ -628,7 +628,7 @@ class PopupAnnotationElement extends AnnotationElement {
 
     this.container.className = 'popupAnnotation';
 
-    if (IGNORE_TYPES.indexOf(this.data.parentType) >= 0) {
+    if (IGNORE_TYPES.includes(this.data.parentType)) {
       return this.container;
     }
 
