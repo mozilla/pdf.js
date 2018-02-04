@@ -131,7 +131,7 @@ function createWebpackConfig(defines, output) {
   var skipBabel = bundleDefines.SKIP_BABEL ||
                   process.env['SKIP_BABEL'] === 'true';
 
-  return {
+  return Object.assign({
     output: output,
     plugins: [
       new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true, }),
@@ -167,7 +167,7 @@ function createWebpackConfig(defines, output) {
     // Avoid shadowing actual Node.js variables with polyfills, by disabling
     // polyfills/mocks - https://webpack.js.org/configuration/node/
     node: false,
-  };
+  }, require('./webpack.overwrite').overwrite);
 }
 
 function webpack2Stream(config) {
