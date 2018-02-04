@@ -1131,7 +1131,7 @@ class LoopbackPort {
       var buffer;
       if ((buffer = value.buffer) && isArrayBuffer(buffer)) {
         // We found object with ArrayBuffer (typed array).
-        var transferable = transfers && transfers.indexOf(buffer) >= 0;
+        var transferable = transfers && transfers.includes(buffer);
         if (value === buffer) {
           // Special case when we are faking typed arrays in compatibility.js.
           result = value;

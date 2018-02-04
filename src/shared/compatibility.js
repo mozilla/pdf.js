@@ -157,6 +157,15 @@ PDFJS.compatibilityChecked = true;
   };
 })();
 
+// Provides support for String.prototype.includes in legacy browsers.
+// Support: IE, Chrome<41
+(function checkStringIncludes() {
+  if (String.prototype.includes) {
+    return;
+  }
+  String.prototype.includes = require('core-js/fn/string/includes');
+})();
+
 // Provides support for Array.prototype.includes in legacy browsers.
 // Support: IE, Chrome<47
 (function checkArrayIncludes() {
