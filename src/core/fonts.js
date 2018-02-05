@@ -14,8 +14,9 @@
  */
 
 import {
-  bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info, isNum,
-  isSpace, MissingDataException, readUint32, shadow, string32, unreachable, warn
+  assert, bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info,
+  isNum, isSpace, MissingDataException, readUint32, shadow, string32,
+  unreachable, warn
 } from '../shared/util';
 import {
   CFF, CFFCharset, CFFCompiler, CFFHeader, CFFIndex, CFFParser, CFFPrivateDict,
@@ -681,6 +682,11 @@ var Font = (function FontClosure() {
     return readUint32(header, 0) === 0x00010000;
   }
 
+  function isTrueTypeCollectionFile(file) {
+    let header = file.peekBytes(4);
+    return bytesToString(header) === 'ttcf';
+  }
+
   function isOpenTypeFile(file) {
     var header = file.peekBytes(4);
     return bytesToString(header) === 'OTTO';
@@ -1294,6 +1300,33 @@ var Font = (function FontClosure() {
     },
 
     checkAndRepair: function Font_checkAndRepair(name, font, properties) {
+      const VALID_TABLES = ['OS/2', 'cmap', 'head', 'hhea', 'hmtx', 'maxp',
+        'name', 'post', 'loca', 'glyf', 'fpgm', 'prep', 'cvt ', 'CFF '];
+
+      function readTables(file, numTables) {
+        let tables = Object.create(null);
+        tables['OS/2'] = null;
+        tables['cmap'] = null;
+        tables['head'] = null;
+        tables['hhea'] = null;
+        tables['hmtx'] = null;
+        tables['maxp'] = null;
+        tables['name'] = null;
+        tables['post'] = null;
+
+        for (let i = 0; i < numTables; i++) {
+          let table = readTableEntry(font);
+          if (!VALID_TABLES.includes(table.tag)) {
+            continue; // skipping table if it's not a required or optional table
+          }
+          if (table.length === 0) {
+            continue; // skipping empty tables
+          }
+          tables[table.tag] = table;
+        }
+        return tables;
+      }
+
       function readTableEntry(file) {
         var tag = bytesToString(file.getBytes(4));
 
@@ -1331,6 +1364,68 @@ var Font = (function FontClosure() {
           entrySelector: ttf.getUint16(),
           rangeShift: ttf.getUint16(),
         };
+      }
+
+      function readTrueTypeCollectionHeader(ttc) {
+        let ttcTag = bytesToString(ttc.getBytes(4));
+        assert(ttcTag === 'ttcf', 'Must be a TrueType Collection font.');
+
+        let majorVersion = ttc.getUint16();
+        let minorVersion = ttc.getUint16();
+        let numFonts = ttc.getInt32() >>> 0;
+        let offsetTable = [];
+        for (let i = 0; i < numFonts; i++) {
+          offsetTable.push(ttc.getInt32() >>> 0);
+        }
+
+        let header = {
+          ttcTag,
+          majorVersion,
+          minorVersion,
+          numFonts,
+          offsetTable,
+        };
+        switch (majorVersion) {
+          case 1:
+            return header;
+          case 2:
+            header.dsigTag = ttc.getInt32() >>> 0;
+            header.dsigLength = ttc.getInt32() >>> 0;
+            header.dsigOffset = ttc.getInt32() >>> 0;
+            return header;
+        }
+        throw new FormatError(
+          `Invalid TrueType Collection majorVersion: ${majorVersion}.`);
+      }
+
+      function readTrueTypeCollectionData(ttc, fontName) {
+        let { numFonts, offsetTable, } = readTrueTypeCollectionHeader(ttc);
+
+        for (let i = 0; i < numFonts; i++) {
+          ttc.pos = (ttc.start || 0) + offsetTable[i];
+          let potentialHeader = readOpenTypeHeader(ttc);
+          let potentialTables = readTables(ttc, potentialHeader.numTables);
+
+          if (!potentialTables['name']) {
+            throw new FormatError(
+              'TrueType Collection font must contain a "name" table.');
+          }
+          let nameTable = readNameTable(potentialTables['name']);
+
+          for (let j = 0, jj = nameTable.length; j < jj; j++) {
+            for (let k = 0, kk = nameTable[j].length; k < kk; k++) {
+              let nameEntry = nameTable[j][k];
+              if (nameEntry && nameEntry.replace(/\s/g, '') === fontName) {
+                return {
+                  header: potentialHeader,
+                  tables: potentialTables,
+                };
+              }
+            }
+          }
+        }
+        throw new FormatError(
+          `TrueType Collection does not contain "${fontName}" font.`);
       }
 
       /**
@@ -2018,7 +2113,7 @@ var Font = (function FontClosure() {
               if (funcId in ttContext.functionsStackDeltas) {
                 stack.length += ttContext.functionsStackDeltas[funcId];
               } else if (funcId in ttContext.functionsDefined &&
-                         functionsCalled.indexOf(funcId) < 0) {
+                         !functionsCalled.includes(funcId)) {
                 callstack.push({ data, i, stackTop: stack.length - 1, });
                 functionsCalled.push(funcId);
                 pc = ttContext.functionsDefined[funcId];
@@ -2189,34 +2284,16 @@ var Font = (function FontClosure() {
       // The following steps modify the original font data, making copy
       font = new Stream(new Uint8Array(font.getBytes()));
 
-      var VALID_TABLES = ['OS/2', 'cmap', 'head', 'hhea', 'hmtx', 'maxp',
-        'name', 'post', 'loca', 'glyf', 'fpgm', 'prep', 'cvt ', 'CFF '];
-
-      var header = readOpenTypeHeader(font);
-      var numTables = header.numTables;
-      var cff, cffFile;
-
-      var tables = Object.create(null);
-      tables['OS/2'] = null;
-      tables['cmap'] = null;
-      tables['head'] = null;
-      tables['hhea'] = null;
-      tables['hmtx'] = null;
-      tables['maxp'] = null;
-      tables['name'] = null;
-      tables['post'] = null;
-
-      var table;
-      for (var i = 0; i < numTables; i++) {
-        table = readTableEntry(font);
-        if (VALID_TABLES.indexOf(table.tag) < 0) {
-          continue; // skipping table if it's not a required or optional table
-        }
-        if (table.length === 0) {
-          continue; // skipping empty tables
-        }
-        tables[table.tag] = table;
+      let header, tables;
+      if (isTrueTypeCollectionFile(font)) {
+        let ttcData = readTrueTypeCollectionData(font, this.name);
+        header = ttcData.header;
+        tables = ttcData.tables;
+      } else {
+        header = readOpenTypeHeader(font);
+        tables = readTables(font, header.numTables);
       }
+      let cff, cffFile;
 
       var isTrueType = !tables['CFF '];
       if (!isTrueType) {
@@ -2444,7 +2521,7 @@ var Font = (function FontClosure() {
             }
 
             var found = false;
-            for (i = 0; i < cmapMappingsLength; ++i) {
+            for (let i = 0; i < cmapMappingsLength; ++i) {
               if (cmapMappings[i].charCode !== unicodeOrCharCode) {
                 continue;
               }
@@ -2467,7 +2544,7 @@ var Font = (function FontClosure() {
           }
         } else if (cmapPlatformId === 0 && cmapEncodingId === 0) {
           // Default Unicode semantics, use the charcodes as is.
-          for (i = 0; i < cmapMappingsLength; ++i) {
+          for (let i = 0; i < cmapMappingsLength; ++i) {
             charCodeToGlyphId[cmapMappings[i].charCode] =
               cmapMappings[i].glyphId;
           }
@@ -2483,7 +2560,7 @@ var Font = (function FontClosure() {
           // special range since some PDFs have char codes outside of this range
           // (e.g. 0x2013) which when masked would overwrite other values in the
           // cmap.
-          for (i = 0; i < cmapMappingsLength; ++i) {
+          for (let i = 0; i < cmapMappingsLength; ++i) {
             charCode = cmapMappings[i].charCode;
             if (cmapPlatformId === 3 &&
                 charCode >= 0xF000 && charCode <= 0xF0FF) {

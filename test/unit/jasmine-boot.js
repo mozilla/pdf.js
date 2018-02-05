@@ -46,6 +46,7 @@ function initializePDFJS(callback) {
     'pdfjs/display/api',
     'pdfjs/display/network',
     'pdfjs/display/fetch_stream',
+    'pdfjs/shared/is_node',
     'pdfjs-test/unit/annotation_spec',
     'pdfjs-test/unit/api_spec',
     'pdfjs-test/unit/bidi_spec',
@@ -81,13 +82,22 @@ function initializePDFJS(callback) {
     var displayApi = modules[1];
     var PDFNetworkStream = modules[2].PDFNetworkStream;
     var PDFFetchStream = modules[3].PDFFetchStream;
+    const isNodeJS = modules[4];
 
-    // Set network stream class for unit tests.
+    if (isNodeJS()) {
+      throw new Error('The `gulp unittest` command cannot be used in ' +
+                      'Node.js environments.');
+    }
+    // Set the network stream factory for unit-tests.
     if (typeof Response !== 'undefined' && 'body' in Response.prototype &&
         typeof ReadableStream !== 'undefined') {
-      displayApi.setPDFNetworkStreamClass(PDFFetchStream);
+      displayApi.setPDFNetworkStreamFactory(function(params) {
+        return new PDFFetchStream(params);
+      });
     } else {
-      displayApi.setPDFNetworkStreamClass(PDFNetworkStream);
+      displayApi.setPDFNetworkStreamFactory(function(params) {
+        return new PDFNetworkStream(params);
+      });
     }
 
     // Configure the worker.

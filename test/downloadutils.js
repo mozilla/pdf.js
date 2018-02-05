@@ -75,7 +75,7 @@ function downloadFile(file, url, callback, redirects) {
     });
     response.pipe(stream);
     stream.on('finish', function() {
-      stream.close();
+      stream.end();
       if (!completed) {
         completed = true;
         callback();

@@ -49,7 +49,6 @@ var BASELINE_DIR = BUILD_DIR + 'baseline/';
 var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline/';
 var GENERIC_DIR = BUILD_DIR + 'generic/';
 var COMPONENTS_DIR = BUILD_DIR + 'components/';
-var SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/';
 var MINIFIED_DIR = BUILD_DIR + 'minified/';
 var FIREFOX_BUILD_DIR = BUILD_DIR + 'firefox/';
 var CHROME_BUILD_DIR = BUILD_DIR + 'chromium/';
@@ -80,7 +79,6 @@ var DEFINES = {
   MOZCENTRAL: false,
   CHROME: false,
   MINIFIED: false,
-  SINGLE_FILE: false,
   COMPONENTS: false,
   LIB: false,
   SKIP_BABEL: false,
@@ -243,10 +241,6 @@ function createBundle(defines) {
 
   var mainAMDName = 'pdfjs-dist/build/pdf';
   var mainOutputName = 'pdf.js';
-  if (defines.SINGLE_FILE) {
-    mainAMDName = 'pdfjs-dist/build/pdf.combined';
-    mainOutputName = 'pdf.combined.js';
-  }
 
   var mainFileConfig = createWebpackConfig(defines, {
     filename: mainOutputName,
@@ -258,9 +252,6 @@ function createBundle(defines) {
     .pipe(webpack2Stream(mainFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceJSRootName(mainAMDName));
-  if (defines.SINGLE_FILE) {
-    return mainOutput; // don't need a worker file.
-  }
 
   var workerAMDName = 'pdfjs-dist/build/pdf.worker';
   var workerOutputName = 'pdf.worker.js';
@@ -644,18 +635,6 @@ gulp.task('components', ['buildnumber'], function () {
   ]);
 });
 
-gulp.task('singlefile', ['buildnumber'], function () {
-  console.log();
-  console.log('### Creating singlefile build');
-  var defines = builder.merge(DEFINES, { SINGLE_FILE: true, });
-
-  var SINGLE_FILE_BUILD_DIR = SINGLE_FILE_DIR + 'build/';
-
-  rimraf.sync(SINGLE_FILE_DIR);
-
-  return createBundle(defines).pipe(gulp.dest(SINGLE_FILE_BUILD_DIR));
-});
-
 gulp.task('minified-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Creating minified viewer');
@@ -1025,10 +1004,17 @@ gulp.task('lib', ['buildnumber'], function () {
   var licenseHeaderLibre =
     fs.readFileSync('./src/license_header_libre.js').toString();
   var preprocessor2 = require('./external/builder/preprocessor2.js');
+  var sharedFiles = [
+    'compatibility',
+    'global_scope',
+    'is_node',
+    'streams_polyfill',
+    'util',
+  ];
   var buildLib = merge([
     gulp.src([
       'src/{core,display}/*.js',
-      'src/shared/{compatibility,util,streams_polyfill,global_scope}.js',
+      'src/shared/{' + sharedFiles.join() + '}.js',
       'src/{pdf,pdf.worker}.js',
     ], { base: 'src/', }),
     gulp.src([
@@ -1285,9 +1271,7 @@ gulp.task('gh-pages-git', ['gh-pages-prepare', 'wintersmith'], function () {
 
 gulp.task('web', ['gh-pages-prepare', 'wintersmith', 'gh-pages-git']);
 
-gulp.task('dist-pre',
-          ['generic', 'singlefile', 'components', 'lib', 'minified'],
-          function () {
+gulp.task('dist-pre', ['generic', 'components', 'lib', 'minified'], function() {
   var VERSION = getVersionJSON().version;
 
   console.log();
@@ -1369,8 +1353,6 @@ gulp.task('dist-pre',
       GENERIC_DIR + 'build/pdf.js.map',
       GENERIC_DIR + 'build/pdf.worker.js',
       GENERIC_DIR + 'build/pdf.worker.js.map',
-      SINGLE_FILE_DIR + 'build/pdf.combined.js',
-      SINGLE_FILE_DIR + 'build/pdf.combined.js.map',
       SRC_DIR + 'pdf.worker.entry.js',
     ]).pipe(gulp.dest(DIST_DIR + 'build/')),
     gulp.src(MINIFIED_DIR + 'build/pdf.js')

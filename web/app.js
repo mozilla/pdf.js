@@ -15,14 +15,15 @@
 /* globals PDFBug, Stats */
 
 import {
-  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isValidRotation,
-  MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
-  parseQueryString, PresentationModeState, ProgressBar, RendererType
+  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isFileSchema,
+  isValidRotation, MAX_SCALE, MIN_SCALE, noContextMenuHandler,
+  normalizeWheelEventDelta, parseQueryString, PresentationModeState,
+  ProgressBar, RendererType
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
-  MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
-  UNSUPPORTED_FEATURES, version
+  MissingPDFException, OPS, PDFJS, PDFWorker, shadow,
+  UnexpectedResponseException, UNSUPPORTED_FEATURES, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -153,6 +154,7 @@ let PDFViewerApplication = {
   baseUrl: '',
   externalServices: DefaultExternalServices,
   _boundEvents: {},
+  contentDispositionFilename: null,
 
   // Called once when the document is loaded.
   initialize(appConfig) {
@@ -283,8 +285,9 @@ let PDFViewerApplication = {
       let hash = document.location.hash.substring(1);
       let hashParams = parseQueryString(hash);
 
-      if ('disableworker' in hashParams) {
-        PDFJS.disableWorker = (hashParams['disableworker'] === 'true');
+      if ('disableworker' in hashParams &&
+          hashParams['disableworker'] === 'true') {
+        waitOn.push(loadFakeWorker());
       }
       if ('disablerange' in hashParams) {
         PDFJS.disableRange = (hashParams['disablerange'] === 'true');
@@ -675,6 +678,9 @@ let PDFViewerApplication = {
     this.store = null;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
+    this.url = '';
+    this.baseUrl = '';
+    this.contentDispositionFilename = null;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -737,6 +743,12 @@ let PDFViewerApplication = {
       }
     }
 
+    if (this.url && isFileSchema(this.url)) {
+      let appConfig = this.appConfig;
+      appConfig.toolbar.download.setAttribute('hidden', 'true');
+      appConfig.secondaryToolbar.downloadButton.setAttribute('hidden', 'true');
+    }
+
     let loadingTask = getDocument(parameters);
     this.pdfLoadingTask = loadingTask;
 
@@ -792,7 +804,8 @@ let PDFViewerApplication = {
     let url = this.baseUrl;
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
-    let filename = getPDFFileNameFromURL(this.url);
+    let filename = this.contentDispositionFilename ||
+      getPDFFileNameFromURL(this.url);
     let downloadManager = this.downloadManager;
     downloadManager.onerror = (err) => {
       // This error won't really be helpful because it's likely the
@@ -1144,9 +1157,11 @@ let PDFViewerApplication = {
       });
     });
 
-    pdfDocument.getMetadata().then(({ info, metadata, }) => {
+    pdfDocument.getMetadata().then(
+        ({ info, metadata, contentDispositionFilename, }) => {
       this.documentInfo = info;
       this.metadata = metadata;
+      this.contentDispositionFilename = contentDispositionFilename;
 
       // Provides some basic debug information
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
@@ -1169,7 +1184,10 @@ let PDFViewerApplication = {
       }
 
       if (pdfTitle) {
-        this.setTitle(pdfTitle + ' - ' + document.title);
+        this.setTitle(
+          `${pdfTitle} - ${contentDispositionFilename || document.title}`);
+      } else if (contentDispositionFilename) {
+        this.setTitle(contentDispositionFilename);
       }
 
       if (info.IsAcroFormPresent) {
@@ -1493,6 +1511,35 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       throw ex;
     }
   };
+}
+
+function loadFakeWorker() {
+  return new Promise(function(resolve, reject) {
+    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+      if (typeof SystemJS === 'object') {
+        SystemJS.import('pdfjs/core/worker').then((worker) => {
+          window.pdfjsNonProductionPdfWorker = worker;
+          resolve();
+        });
+      } else if (typeof require === 'function') {
+        window.pdfjsNonProductionPdfWorker = require('../src/core/worker.js');
+        resolve();
+      } else {
+        reject(new Error(
+          'SystemJS or CommonJS must be used to load fake worker.'));
+      }
+    } else {
+      let script = document.createElement('script');
+      script.src = PDFWorker.getWorkerSrc();
+      script.onload = function() {
+        resolve();
+      };
+      script.onerror = function() {
+        reject(new Error(`Cannot load fake worker at: ${script.src}`));
+      };
+      (document.head || document.documentElement).appendChild(script);
+    }
+  });
 }
 
 function loadAndEnablePDFBug(enabledTabs) {
@@ -2202,6 +2249,7 @@ function webViewerKeyDown(evt) {
           handled = true;
         }
         break;
+      case 13: // enter key
       case 40: // down arrow
       case 34: // pg down
       case 32: // spacebar
@@ -2255,6 +2303,7 @@ function webViewerKeyDown(evt) {
 
   if (cmd === 4) { // shift-key
     switch (evt.keyCode) {
+      case 13: // enter key
       case 32: // spacebar
         if (!isViewerInPresentationMode &&
             pdfViewer.currentScaleValue !== 'page-fit') {

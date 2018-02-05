@@ -39,8 +39,8 @@ const TOPIC_PLUGINS_LIST_UPDATED = "plugins-list-updated";
 const TOPIC_PLUGIN_INFO_UPDATED = "plugin-info-updated";
 const PDF_CONTENT_TYPE = "application/pdf";
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
@@ -49,9 +49,9 @@ XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
 XPCOMUtils.defineLazyServiceGetter(Svc, "pluginHost",
                                    "@mozilla.org/plugin/host;1",
                                    "nsIPluginHost");
-XPCOMUtils.defineLazyModuleGetter(this, "PdfjsChromeUtils",
+ChromeUtils.defineModuleGetter(this, "PdfjsChromeUtils",
                                   "resource://pdf.js/PdfjsChromeUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PdfjsContentUtils",
+ChromeUtils.defineModuleGetter(this, "PdfjsContentUtils",
                                   "resource://pdf.js/PdfjsContentUtils.jsm");
 
 function getBoolPref(aPref, aDefaultValue) {
@@ -243,7 +243,7 @@ var PdfJs = {
       types = stringTypes.split(",");
     }
 
-    if (types.indexOf(PDF_CONTENT_TYPE) === -1) {
+    if (!types.includes(PDF_CONTENT_TYPE)) {
       types.push(PDF_CONTENT_TYPE);
     }
     prefs.setCharPref(PREF_DISABLED_PLUGIN_TYPES, types.join(","));
@@ -271,7 +271,7 @@ var PdfJs = {
     if (Services.prefs.prefHasUserValue(PREF_DISABLED_PLUGIN_TYPES)) {
       let disabledPluginTypes =
         Services.prefs.getCharPref(PREF_DISABLED_PLUGIN_TYPES).split(",");
-      if (disabledPluginTypes.indexOf(PDF_CONTENT_TYPE) >= 0) {
+      if (disabledPluginTypes.includes(PDF_CONTENT_TYPE)) {
         return true;
       }
     }
@@ -314,7 +314,7 @@ var PdfJs = {
 
     this.updateRegistration();
     let jsm = "resource://pdf.js/PdfjsChromeUtils.jsm";
-    let PdfjsChromeUtils = Components.utils.import(jsm, {}).PdfjsChromeUtils;
+    let PdfjsChromeUtils = ChromeUtils.import(jsm, {}).PdfjsChromeUtils;
     PdfjsChromeUtils.notifyChildOfSettingsChange(this.enabled);
   },
 
@@ -342,7 +342,7 @@ var PdfJs = {
       return;
     }
     this._pdfStreamConverterFactory = new Factory();
-    Cu.import("resource://pdf.js/PdfStreamConverter.jsm");
+    ChromeUtils.import("resource://pdf.js/PdfStreamConverter.jsm");
     this._pdfStreamConverterFactory.register(PdfStreamConverter);
 
     this._registered = true;

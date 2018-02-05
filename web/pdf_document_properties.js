@@ -71,24 +71,26 @@ class PDFDocumentProperties {
         return;
       }
       // Get the document properties.
-      this.pdfDocument.getMetadata().then(({ info, metadata, }) => {
+      this.pdfDocument.getMetadata().then(
+          ({ info, metadata, contentDispositionFilename, }) => {
         return Promise.all([
           info,
           metadata,
+          contentDispositionFilename || getPDFFileNameFromURL(this.url),
           this._parseFileSize(this.maybeFileSize),
           this._parseDate(info.CreationDate),
           this._parseDate(info.ModDate)
         ]);
-      }).then(([info, metadata, fileSize, creationDate, modificationDate]) => {
+      }).then(([info, metadata, fileName, fileSize, creationDate, modDate]) => {
         freezeFieldData({
-          'fileName': getPDFFileNameFromURL(this.url),
+          'fileName': fileName,
           'fileSize': fileSize,
           'title': info.Title,
           'author': info.Author,
           'subject': info.Subject,
           'keywords': info.Keywords,
           'creationDate': creationDate,
-          'modificationDate': modificationDate,
+          'modificationDate': modDate,
           'creator': info.Creator,
           'producer': info.Producer,
           'version': info.PDFFormatVersion,

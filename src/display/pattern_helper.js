@@ -251,7 +251,6 @@ ShadingIRs.Mesh = {
           }
         }
 
-
         // Rasterizing on the main thread since sending/queue large canvases
         // might cause OOM.
         var temporaryPatternCanvas = createMeshCanvas(bounds, scale, coords,

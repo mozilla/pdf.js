@@ -1089,11 +1089,6 @@ function isSpace(ch) {
   return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
 }
 
-function isNodeJS() {
-  // eslint-disable-next-line no-undef
-  return typeof process === 'object' && process + '' === '[object process]';
-}
-
 /**
  * Promise Capability object.
  *
@@ -1633,7 +1628,6 @@ export {
   isNum,
   isString,
   isSpace,
-  isNodeJS,
   isSameOrigin,
   createValidAbsoluteUrl,
   isLittleEndian,

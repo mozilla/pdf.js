@@ -31,9 +31,6 @@ if (typeof ReadableStream !== 'undefined') {
 if (isReadableStreamSupported) {
   exports.ReadableStream = ReadableStream;
 } else {
-  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
-    throw new Error('ReadableStream polyfill is not found for Chrome bundle');
-  }
   exports.ReadableStream =
     require('../../external/streams/streams-lib').ReadableStream;
 }

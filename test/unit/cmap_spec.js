@@ -15,7 +15,7 @@
 
 import { CMap, CMapFactory, IdentityCMap } from '../../src/core/cmap';
 import { DOMCMapReaderFactory } from '../../src/display/dom_utils';
-import { isNodeJS } from '../../src/shared/util';
+import isNodeJS from '../../src/shared/is_node';
 import { Name } from '../../src/core/primitives';
 import { NodeCMapReaderFactory } from './test_utils';
 import { StringStream } from '../../src/core/stream';

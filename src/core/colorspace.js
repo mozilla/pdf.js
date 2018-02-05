@@ -258,17 +258,7 @@ var ColorSpace = (function ColorSpaceClosure() {
     }
   };
 
-  ColorSpace.parseToIR = function(cs, xref, res, pdfFunctionFactory) {
-    if (isName(cs)) {
-      var colorSpaces = res.get('ColorSpace');
-      if (isDict(colorSpaces)) {
-        var refcs = colorSpaces.get(cs.name);
-        if (refcs) {
-          cs = refcs;
-        }
-      }
-    }
-
+  ColorSpace.parseToIR = function(cs, xref, res = null, pdfFunctionFactory) {
     cs = xref.fetchIfRef(cs);
     if (isName(cs)) {
       switch (cs.name) {
@@ -284,6 +274,20 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'Pattern':
           return ['PatternCS', null];
         default:
+          if (isDict(res)) {
+            let colorSpaces = res.get('ColorSpace');
+            if (isDict(colorSpaces)) {
+              let resCS = colorSpaces.get(cs.name);
+              if (resCS) {
+                if (isName(resCS)) {
+                  return ColorSpace.parseToIR(resCS, xref, res,
+                                              pdfFunctionFactory);
+                }
+                cs = resCS;
+                break;
+              }
+            }
+          }
           throw new FormatError(`unrecognized colorspace ${cs.name}`);
       }
     }

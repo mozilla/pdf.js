@@ -46,8 +46,7 @@ var pdfjsFilePath =
 
 var fakeWorkerFilesLoader = null;
 var useRequireEnsure = false;
-if (typeof PDFJSDev !== 'undefined' &&
-    PDFJSDev.test('GENERIC && !SINGLE_FILE')) {
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
   // For GENERIC build we need add support of different fake file loaders
   // for different  frameworks.
   if (typeof window === 'undefined') {
@@ -83,15 +82,25 @@ if (typeof PDFJSDev !== 'undefined' &&
   }) : null;
 }
 
-/** @type IPDFStream */
-var PDFNetworkStream;
+/**
+ * @typedef {function} IPDFStreamFactory
+ * @param {DocumentInitParameters} params The document initialization
+ * parameters. The "url" key is always present.
+ * @return {IPDFStream}
+ */
+
+/** @type IPDFStreamFactory */
+var createPDFNetworkStream;
 
 /**
- * Sets PDFNetworkStream class to be used as alternative PDF data transport.
- * @param {IPDFStream} cls - the PDF data transport.
+ * Sets the function that instantiates a IPDFStream as an alternative PDF data
+ * transport.
+ * @param {IPDFStreamFactory} pdfNetworkStreamFactory - the factory function
+ * that takes document initialization parameters (including a "url") and returns
+ * an instance of IPDFStream.
  */
-function setPDFNetworkStreamClass(cls) {
-  PDFNetworkStream = cls;
+function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
+  createPDFNetworkStream = pdfNetworkStreamFactory;
 }
 
 /**
@@ -252,7 +261,7 @@ function getDocument(src) {
       if (rangeTransport) {
         networkStream = new PDFDataTransportStream(params, rangeTransport);
       } else if (!params.data) {
-        networkStream = new PDFNetworkStream(params);
+        networkStream = createPDFNetworkStream(params);
       }
 
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
@@ -781,14 +790,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * @param {number} scale The desired scale of the viewport.
      * @param {number} rotate Degrees to rotate the viewport. If omitted this
      * defaults to the page rotation.
+     * @param {boolean} dontFlip (optional) If true, axis Y will not be flipped.
      * @return {PageViewport} Contains 'width' and 'height' properties
      * along with transforms required for rendering.
      */
-    getViewport: function PDFPageProxy_getViewport(scale, rotate) {
-      if (arguments.length < 2) {
-        rotate = this.rotate;
-      }
-      return new PageViewport(this.view, scale, rotate, 0, 0);
+    getViewport(scale, rotate = this.rotate, dontFlip = false) {
+      return new PageViewport(this.view, scale, rotate, 0, 0, dontFlip);
     },
     /**
      * @param {GetAnnotationsParameters} params - Annotation parameters.
@@ -1048,8 +1055,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }, this);
       this.objs.clear();
       this.annotationsPromise = null;
-      if (resetStats) {
-        this._stats.reset();
+      if (resetStats && this._stats instanceof StatTimer) {
+        this._stats = new StatTimer();
       }
       this.pendingCleanup = false;
     },
@@ -1124,7 +1131,7 @@ class LoopbackPort {
       var buffer;
       if ((buffer = value.buffer) && isArrayBuffer(buffer)) {
         // We found object with ArrayBuffer (typed array).
-        var transferable = transfers && transfers.indexOf(buffer) >= 0;
+        var transferable = transfers && transfers.includes(buffer);
         if (value === buffer) {
           // Special case when we are faking typed arrays in compatibility.js.
           result = value;
@@ -1209,39 +1216,52 @@ var PDFWorker = (function PDFWorkerClosure() {
     throw new Error('No PDFJS.workerSrc specified');
   }
 
+  function getMainThreadWorkerMessageHandler() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+      return (window.pdfjsNonProductionPdfWorker &&
+              window.pdfjsNonProductionPdfWorker.WorkerMessageHandler);
+    }
+    // PRODUCTION
+    return (window.pdfjsDistBuildPdfWorker &&
+            window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
+  }
+
   let fakeWorkerFilesLoadedCapability;
 
   // Loads worker code into main thread.
   function setupFakeWorkerGlobal() {
-    var WorkerMessageHandler;
     if (fakeWorkerFilesLoadedCapability) {
       return fakeWorkerFilesLoadedCapability.promise;
     }
     fakeWorkerFilesLoadedCapability = createPromiseCapability();
-    // In the developer build load worker_loader which in turn loads all the
+
+    let mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
+    if (mainWorkerMessageHandler) {
+      // The worker was already loaded using a `<script>` tag.
+      fakeWorkerFilesLoadedCapability.resolve(mainWorkerMessageHandler);
+      return fakeWorkerFilesLoadedCapability.promise;
+    }
+    // In the developer build load worker_loader.js which in turn loads all the
     // other files and resolves the promise. In production only the
     // pdf.worker.js file is needed.
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
       if (typeof SystemJS === 'object') {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
-          WorkerMessageHandler = worker.WorkerMessageHandler;
-          fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+          fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
         });
       } else if (typeof require === 'function') {
-        var worker = require('../core/worker.js');
-        WorkerMessageHandler = worker.WorkerMessageHandler;
-        fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+        let worker = require('../core/worker.js');
+        fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
       } else {
         throw new Error(
           'SystemJS or CommonJS must be used to load fake worker.');
       }
-    } else if (PDFJSDev.test('SINGLE_FILE')) {
-      var pdfjsCoreWorker = require('../core/worker.js');
-      WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
-      fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
     } else {
-      var loader = fakeWorkerFilesLoader || function (callback) {
-        Util.loadScript(getWorkerSrc(), function () {
+      let loader = fakeWorkerFilesLoader || function(callback) {
+        Util.loadScript(getWorkerSrc(), function() {
           callback(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
         });
       };
@@ -1312,9 +1332,8 @@ var PDFWorker = (function PDFWorkerClosure() {
       // all requirements to run parts of pdf.js in a web worker.
       // Right now, the requirement is, that an Uint8Array is still an
       // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
-      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('SINGLE_FILE')) &&
-          !isWorkerDisabled && !getDefaultSetting('disableWorker') &&
-          typeof Worker !== 'undefined') {
+      if (typeof Worker !== 'undefined' && !isWorkerDisabled &&
+          !getMainThreadWorkerMessageHandler()) {
         var workerSrc = getWorkerSrc();
 
         try {
@@ -1425,7 +1444,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     },
 
     _setupFakeWorker: function PDFWorker_setupFakeWorker() {
-      if (!isWorkerDisabled && !getDefaultSetting('disableWorker')) {
+      if (!isWorkerDisabled) {
         warn('Setting up fake worker.');
         isWorkerDisabled = true;
       }
@@ -1481,6 +1500,10 @@ var PDFWorker = (function PDFWorkerClosure() {
       return pdfWorkerPorts.get(port);
     }
     return new PDFWorker(null, port);
+  };
+
+  PDFWorker.getWorkerSrc = function() {
+    return getWorkerSrc();
   };
 
   return PDFWorker;
@@ -2005,10 +2028,12 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     getMetadata: function WorkerTransport_getMetadata() {
       return this.messageHandler.sendWithPromise('GetMetadata', null).
-        then(function transportMetadata(results) {
+          then((results) => {
         return {
           info: results[0],
           metadata: (results[1] ? new Metadata(results[1]) : null),
+          contentDispositionFilename: (this._fullReader ?
+                                       this._fullReader.filename : null),
         };
       });
     },
@@ -2352,7 +2377,7 @@ export {
   PDFWorker,
   PDFDocumentProxy,
   PDFPageProxy,
-  setPDFNetworkStreamClass,
+  setPDFNetworkStreamFactory,
   version,
   build,
 };
