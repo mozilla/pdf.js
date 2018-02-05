@@ -229,7 +229,7 @@ class SimpleXMLParser {
   }
 
   _decodeXML(text) {
-    if (text.indexOf('&') < 0) {
+    if (!text.includes('&')) {
       return text;
     }
 
@@ -361,8 +361,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.workerPort : null;
     case 'workerSrc':
       return globalSettings ? globalSettings.workerSrc : null;
-    case 'disableWorker':
-      return globalSettings ? globalSettings.disableWorker : false;
     case 'maxImageSize':
       return globalSettings ? globalSettings.maxImageSize : -1;
     case 'imageResourcesPath':
@@ -411,10 +409,6 @@ function isExternalLinkTargetSet() {
 class StatTimer {
   constructor(enable = true) {
     this.enabled = !!enable;
-    this.reset();
-  }
-
-  reset() {
     this.started = Object.create(null);
     this.times = [];
   }
@@ -476,8 +470,6 @@ class DummyStatTimer {
   constructor() {
     unreachable('Cannot initialize DummyStatTimer.');
   }
-
-  static reset() {}
 
   static time(name) {}
 

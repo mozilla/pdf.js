@@ -15,17 +15,17 @@
 /* globals __non_webpack_require__ */
 
 import {
-  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNodeJS,
-  isNum, OPS, Util, warn
+  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNum, OPS,
+  Util, warn
 } from '../shared/util';
 import { DOMSVGFactory } from './dom_utils';
+import isNodeJS from '../shared/is_node';
 
 var SVGGraphics = function() {
   throw new Error('Not implemented: SVGGraphics');
 };
 
-if (typeof PDFJSDev === 'undefined' ||
-    PDFJSDev.test('GENERIC || SINGLE_FILE')) {
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
@@ -642,6 +642,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.closeFillStroke:
             this.closeFillStroke();
             break;
+          case OPS.closeEOFillStroke:
+            this.closeEOFillStroke();
+            break;
           case OPS.nextLine:
             this.nextLine();
             break;
@@ -1118,6 +1121,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
     closeFillStroke: function SVGGraphics_closeFillStroke() {
       this.closePath();
       this.fillStroke();
+    },
+
+    closeEOFillStroke() {
+      this.closePath();
+      this.eoFillStroke();
     },
 
     paintSolidColorImageMask:

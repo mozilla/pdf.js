@@ -17,16 +17,16 @@ import {
   buildGetDocumentParams, NodeFileReaderFactory, TEST_PDFS_PATH
 } from './test_utils';
 import {
-  createPromiseCapability, FontType, InvalidPDFException, isNodeJS,
-  MissingPDFException, PasswordException, PasswordResponses, StreamType,
-  stringToBytes
+  createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
+  PasswordException, PasswordResponses, StreamType, stringToBytes
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException
 } from '../../src/display/dom_utils';
 import {
-  getDocument, PDFDocumentProxy, PDFPageProxy
+  getDocument, PDFDocumentProxy, PDFPageProxy, PDFWorker
 } from '../../src/display/api';
+import isNodeJS from '../../src/shared/is_node';
 import { PDFJS } from '../../src/display/global';
 
 describe('api', function() {
@@ -61,9 +61,6 @@ describe('api', function() {
   describe('PDFJS', function() {
     describe('getDocument', function() {
       it('creates pdf doc from URL', function(done) {
-        if (isNodeJS()) {
-          pending('XMLHttpRequest is not supported in Node.js.');
-        }
         var loadingTask = getDocument(basicApiGetDocumentParams);
 
         var isProgressReportedResolved = false;
@@ -93,9 +90,6 @@ describe('api', function() {
       });
       it('creates pdf doc from URL and aborts before worker initialized',
           function(done) {
-        if (isNodeJS()) {
-          pending('XMLHttpRequest is not supported in Node.js.');
-        }
         var loadingTask = getDocument(basicApiGetDocumentParams);
         let destroyed = loadingTask.destroy();
 
@@ -108,9 +102,6 @@ describe('api', function() {
       });
       it('creates pdf doc from URL and aborts loading after worker initialized',
           function(done) {
-        if (isNodeJS()) {
-          pending('XMLHttpRequest is not supported in Node.js.');
-        }
         var loadingTask = getDocument(basicApiGetDocumentParams);
         // This can be somewhat random -- we cannot guarantee perfect
         // 'Terminate' message to the worker before/after setting up pdfManager.
@@ -131,16 +122,14 @@ describe('api', function() {
             path: TEST_PDFS_PATH.node + basicApiFileName,
           });
         } else {
-          var nonBinaryRequest = PDFJS.disableWorker;
-          var request = new XMLHttpRequest();
+          let nonBinaryRequest = false;
+          let request = new XMLHttpRequest();
           request.open('GET', TEST_PDFS_PATH.dom + basicApiFileName, false);
-          if (!nonBinaryRequest) {
-            try {
-              request.responseType = 'arraybuffer';
-              nonBinaryRequest = request.responseType !== 'arraybuffer';
-            } catch (e) {
-              nonBinaryRequest = true;
-            }
+          try {
+            request.responseType = 'arraybuffer';
+            nonBinaryRequest = request.responseType !== 'arraybuffer';
+          } catch (e) {
+            nonBinaryRequest = true;
           }
           if (nonBinaryRequest && request.overrideMimeType) {
             request.overrideMimeType('text/plain; charset=x-user-defined');
@@ -413,6 +402,11 @@ describe('api', function() {
       }).catch(function (reason) {
         done.fail(reason);
       });
+    });
+    it('gets current workerSrc', function() {
+      let workerSrc = PDFWorker.getWorkerSrc();
+      expect(typeof workerSrc).toEqual('string');
+      expect(workerSrc).toEqual(PDFJS.workerSrc);
     });
   });
   describe('PDFDocument', function() {
@@ -794,6 +788,7 @@ describe('api', function() {
         expect(metadata.info['Title']).toEqual('Basic API Test');
         expect(metadata.info['PDFFormatVersion']).toEqual('1.7');
         expect(metadata.metadata.get('dc:title')).toEqual('Basic API Test');
+        expect(metadata.contentDispositionFilename).toEqual(null);
         done();
       }).catch(function (reason) {
         done.fail(reason);
@@ -978,6 +973,18 @@ describe('api', function() {
       expect(viewport.transform).toEqual([0, 1.5, 1.5, 0, 0, 0]);
       expect(viewport.width).toEqual(1262.835);
       expect(viewport.height).toEqual(892.92);
+    });
+    it('gets viewport respecting "dontFlip" argument', function () {
+      const scale = 1;
+      const rotation = 135;
+      let viewport = page.getViewport(scale, rotation);
+      let dontFlipViewport = page.getViewport(scale, rotation, true);
+
+      expect(dontFlipViewport).not.toEqual(viewport);
+      expect(dontFlipViewport).toEqual(viewport.clone({ dontFlip: true, }));
+
+      expect(viewport.transform).toEqual([1, 0, 0, -1, 0, 841.89]);
+      expect(dontFlipViewport.transform).toEqual([1, 0, -0, 1, 0, 0]);
     });
     it('gets annotations', function (done) {
       var defaultPromise = page.getAnnotations().then(function (data) {

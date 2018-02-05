@@ -16,7 +16,7 @@
 import {
   DOMSVGFactory, getFilenameFromUrl, isExternalLinkTargetSet, LinkTarget
 } from '../../src/display/dom_utils';
-import { isNodeJS } from '../../src/shared/util';
+import isNodeJS from '../../src/shared/is_node';
 import { PDFJS } from '../../src/display/global';
 
 describe('dom_utils', function() {

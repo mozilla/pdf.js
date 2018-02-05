@@ -133,6 +133,9 @@ class PDFHistory {
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+    if (this._uid > this._maxUid) {
+      this._maxUid = this._uid;
+    }
 
     if (destination.rotation !== undefined) {
       this.initialRotation = destination.rotation;
@@ -278,23 +281,10 @@ class PDFHistory {
     this._updateInternalState(destination, newState.uid);
 
     if (shouldReplace) {
-      if (typeof PDFJSDev !== 'undefined' &&
-          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        // Providing the third argument causes a SecurityError for file:// URLs.
-        window.history.replaceState(newState, '');
-      } else {
-        window.history.replaceState(newState, '', document.URL);
-      }
+      window.history.replaceState(newState, '');
     } else {
       this._maxUid = this._uid;
-
-      if (typeof PDFJSDev !== 'undefined' &&
-          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        // Providing the third argument causes a SecurityError for file:// URLs.
-        window.history.pushState(newState, '');
-      } else {
-        window.history.pushState(newState, '', document.URL);
-      }
+      window.history.pushState(newState, '');
     }
 
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
@@ -510,6 +500,9 @@ class PDFHistory {
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+    if (this._uid > this._maxUid) {
+      this._maxUid = this._uid;
+    }
 
     if (isValidRotation(destination.rotation)) {
       this.linkService.rotation = destination.rotation;
@@ -541,10 +534,10 @@ class PDFHistory {
     _boundEvents.pageHide = (evt) => {
       // Attempt to push the `this._position` into the browser history when
       // navigating away from the document. This is *only* done if the history
-      // is currently empty, since otherwise an existing browser history entry
+      // is empty/temporary, since otherwise an existing browser history entry
       // will end up being overwritten (given that new entries cannot be pushed
       // into the browser history when the 'unload' event has already fired).
-      if (!this._destination) {
+      if (!this._destination || this._destination.temporary) {
         this._tryPushCurrentPosition();
       }
     };

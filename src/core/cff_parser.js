@@ -96,7 +96,6 @@ var CFFStandardStrings = [
   'Black', 'Bold', 'Book', 'Light', 'Medium', 'Regular', 'Roman', 'Semibold'
 ];
 
-
 var CFFParser = (function CFFParserClosure() {
   var CharstringValidationData = [
     null,

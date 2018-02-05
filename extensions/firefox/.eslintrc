@@ -7,17 +7,6 @@
   ],
 
   "parserOptions": {
-    // Note: Remove the ecmaVersion line when Gecko 52 is no longer supported
-    // to pick up the eslint-plugin-mozilla version (or at least update to
-    // ecmaVersion 8).
-    "ecmaVersion": 6,
-    "ecmaFeatures": {
-      // Note: We turn this off as it was only added in Gecko 55 (Bug 1339395)
-      // and we still need to support older versions (eslint-plugin-mozilla turns
-      // it on).
-      "experimentalObjectRestSpread": false
-    },
-
     "sourceType": "script",
   },
 
@@ -27,9 +16,6 @@
 
   "rules": {
     // Items different from the mozilla/recommended configuration.
-
-    // Being enabled soon.
-    "mozilla/use-services": "error",
 
     // Other rules mozilla/recommended hasn't enabled yet.
     "no-shadow": "error",

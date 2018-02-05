@@ -412,6 +412,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           xref: this.xref,
           res: resources,
           image,
+          isInline: inline,
           pdfFunctionFactory: this.pdfFunctionFactory,
         });
         // We force the use of RGBA_32BPP images here, because we can't handle
@@ -464,6 +465,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         xref: this.xref,
         res: resources,
         image,
+        isInline: inline,
         nativeDecoder: nativeImageDecoder,
         pdfFunctionFactory: this.pdfFunctionFactory,
       }).then((imageObj) => {
@@ -1350,7 +1352,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           textContentItem.fakeMultiSpaceMax = 0;
           textContentItem.textRunBreakAllowed = false;
         }
-
 
         textContentItem.initialized = true;
         return textContentItem;

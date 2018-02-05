@@ -15,11 +15,12 @@
 
 import {
   arrayByteLength, arraysToBytes, assert, createPromiseCapability, info,
-  InvalidPDFException, isNodeJS, MessageHandler, MissingPDFException,
-  PasswordException, setVerbosityLevel, UnexpectedResponseException,
-  UnknownErrorException, UNSUPPORTED_FEATURES, warn, XRefParseException
+  InvalidPDFException, MessageHandler, MissingPDFException, PasswordException,
+  setVerbosityLevel, UnexpectedResponseException, UnknownErrorException,
+  UNSUPPORTED_FEATURES, warn, XRefParseException
 } from '../shared/util';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
+import isNodeJS from '../shared/is_node';
 import { Ref } from './primitives';
 
 var WorkerTask = (function WorkerTaskClosure() {
@@ -99,6 +100,16 @@ IPDFStreamReader.prototype = {
    * @returns {Promise}
    */
   get headersReady() {
+    return null;
+  },
+
+  /**
+   * Gets the Content-Disposition filename. It is defined after the headersReady
+   * promise is resolved.
+   * @returns {string|null} The filename, or `null` if the Content-Disposition
+   *                        header is missing/invalid.
+   */
+  get filename() {
     return null;
   },
 
