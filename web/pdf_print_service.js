@@ -301,7 +301,7 @@ if (hasAttachEvent) {
 
 if ('onbeforeprint' in window) {
   // Do not propagate before/afterprint events when they are not triggered
-  // from within this polyfill. (FF/IE).
+  // from within this polyfill. (FF /IE / Chrome 63+).
   let stopPropagationIfNeeded = function(event) {
     if (event.detail !== 'custom' && event.stopImmediatePropagation) {
       event.stopImmediatePropagation();
