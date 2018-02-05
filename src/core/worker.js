@@ -356,7 +356,7 @@ var WorkerMessageHandler = {
       return WorkerMessageHandler.createDocumentHandler(data, port);
     });
 
-    handler.on('GetCoverageData', function workerCoverage() {
+    handler.on('ReportCoverageData', function wphReportCoverageData() {
       var re = new XMLHttpRequest();
       re.open('POST', '/reportCoverageData?context=worker', false);
       re.setRequestHeader('Content-Type', 'application/json');

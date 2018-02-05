@@ -464,9 +464,10 @@ function checkRefTestResults(browser, id, results) {
 function browserTestReportHandler(req, res) {
   var parsedUrl = url.parse(req.url, true);
   var pathname = parsedUrl.pathname;
-  if (pathname === '/reportCoverageData') {
+  if (pathname === '/reportCoverageData' &&
+    (parsedUrl.query.context === 'main' || parsedUrl.query.context === 'worker')) {
     const pdfWritableStream = fs.createWriteStream(
-      '../coverage/coverage' + parsedUrl.query.context.toString() + '.json');
+      '../coverage/coverage' + parsedUrl.query.context + '.json');
     req.pipe(pdfWritableStream);
     pdfWritableStream.on('finish', function () {
       res.end();
