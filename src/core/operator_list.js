@@ -554,7 +554,7 @@ var OperatorList = (function OperatorListClosure() {
     return transfers;
   }
 
-  function OperatorList(intent, messageHandler, pageIndex) {
+  function OperatorList(intent, messageHandler, pageIndex, acroForm) {
     this.messageHandler = messageHandler;
     this.fnArray = [];
     this.argsArray = [];
@@ -568,6 +568,7 @@ var OperatorList = (function OperatorListClosure() {
     this.pageIndex = pageIndex;
     this.intent = intent;
     this.weight = 0;
+    this.acroForm = acroForm;
   }
 
   OperatorList.prototype = {

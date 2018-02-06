@@ -329,14 +329,6 @@ var Page = (function PageClosure() {
     },
 
     getAnnotations: function Page_getAnnotations(task) {
-      // create a blank annotation fonts array
-      // if it's not initialized yet
-      if (this.pdfManager && this.pdfManager.pdfDocument &&
-          this.pdfManager.pdfDocument.acroForm &&
-          !this.pdfManager.pdfDocument.acroForm.annotationFonts) {
-        this.pdfManager.pdfDocument.acroForm.annotationFonts = [];
-      }
-
       var handler = {};
 
       var self = this;
@@ -473,6 +465,7 @@ var PDFDocument = (function PDFDocumentClosure() {
         this.acroForm = this.catalog.catDict.get('AcroForm');
         if (this.acroForm) {
           this.xfa = this.acroForm.get('XFA');
+          this.acroForm.annotationFonts = [];
           var fields = this.acroForm.get('Fields');
           if ((!fields || !Array.isArray(fields) || fields.length === 0) &&
               !this.xfa) {

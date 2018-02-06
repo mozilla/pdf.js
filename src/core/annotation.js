@@ -185,6 +185,10 @@ class Annotation {
       id: params.id,
       subtype: params.subtype,
       rect: this.rectangle,
+      annotationFonts: [],
+      fontRefName: null,
+      fontSize: 0,
+      fontColor: null,
     };
   }
 
@@ -738,45 +742,46 @@ class WidgetAnnotation extends Annotation {
     }
 
     let data = this.data;
-    let self = this;
+    let pdfDocument = params.pdfManager.pdfDocument;
 
-    let opList = new OperatorList();
+    let opList = new OperatorList(null, null, null, pdfDocument.acroForm);
     let appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
-    let formFonts = params.pdfManager.pdfDocument.acroForm.get('DR');
-    opList.acroForm = params.pdfManager.pdfDocument.acroForm;
+    let formFonts = pdfDocument.acroForm.get('DR');
     return params.evaluator.getOperatorList({
       stream: appearanceStream,
       task: params.task,
       resources: formFonts,
       operatorList: opList,
     }).then(() => {
-      let a = opList.argsArray;
-      let i;
-      for (i = 0; i < opList.fnArray.length; i++) {
+      let args = opList.argsArray;
+      for (let i = 0, ii = opList.fnArray.length; i < ii; i++) {
         let fn = opList.fnArray[i];
         switch (fn | 0) {
           case OPS.setFont:
             data.annotationFonts = opList.acroForm.annotationFonts;
-            data.fontRefName = a[i][0];
-            data.fontSize = a[i][1];
+            data.fontRefName = args[i][0];
+            data.fontSize = args[i][1];
             break;
           case OPS.setGrayFill:
-            if (a[i].length >= 1) {
-              let gray = Math.round(a[i][0] * 0x100);
+            if (args[i].length < 1) {
+              warn('Incorrect annotation gray color length');
+            } else {
+              let gray = Math.round(args[i][0] * 0x100);
               data.fontColor = Util.makeCssRgb(gray, gray, gray);
             }
-
             break;
           case OPS.setFillRGBColor:
-            if (a[i].length >= 3) {
-              data.fontColor = Util.makeCssRgb(a[i][0], a[i][1], a[i][2]);
+            if (args[i].length < 3) {
+              warn('Incorrect annotation RGB color length');
+            } else {
+              data.fontColor = Util.makeCssRgb(
+                args[i][0], args[i][1], args[i][2]);
             }
-
             break;
         }
       }
 
-      return self;
+      return this;
     });
   }
 
