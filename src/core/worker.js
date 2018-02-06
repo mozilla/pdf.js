@@ -765,7 +765,7 @@ var WorkerMessageHandler = {
         }, function(e) {
           finishWorkerTask(task);
           finishWorkerTask(annotationTask);
-          if (task.terminated && task.terminated) {
+          if (task.terminated && annotationTask.terminated) {
             return; // ignoring errors from the terminated thread
           }
 
