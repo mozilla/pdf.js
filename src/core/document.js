@@ -26,7 +26,6 @@ import { Linearization } from './parser';
 import { OperatorList } from './operator_list';
 import { PartialEvaluator } from './evaluator';
 import { PDFFunctionFactory } from './function';
-import { WorkerTask } from './worker';
 
 var Page = (function PageClosure() {
 
@@ -195,7 +194,13 @@ var Page = (function PageClosure() {
       });
     },
 
-    getOperatorList({ handler, task, intent, renderInteractiveForms, }) {
+    getOperatorList({
+      handler,
+      task,
+      annotationTask,
+      intent,
+      renderInteractiveForms,
+    }) {
       var contentStreamPromise = this.pdfManager.ensure(this,
                                                         'getContentStream');
       var resourcesPromise = this.loadResources([
@@ -242,7 +247,8 @@ var Page = (function PageClosure() {
 
       // Fetch the page's annotations and add their operator lists to the
       // page's operator list to render them.
-      var annotationsPromise = this.annotations;
+      var annotationsPromise = this.annotations ?
+        this.annotations : this.getAnnotations(annotationTask);
       return Promise.all([pageListPromise, annotationsPromise]).then(
           function ([pageOpList, annotations]) {
         if (annotations.length === 0) {
@@ -308,8 +314,9 @@ var Page = (function PageClosure() {
       });
     },
 
-    getAnnotationsData: function Page_getAnnotationsData(intent) {
-      var annotationsPromise = this.annotations;
+    getAnnotationsData: function Page_getAnnotationsData(intent, task) {
+      var annotationsPromise = this.annotations ?
+        this.annotations : this.getAnnotations(task);
       return annotationsPromise.then(function (annotations) {
         var annotationsData = [];
         for (var i = 0, n = annotations.length; i < n; ++i) {
@@ -321,7 +328,7 @@ var Page = (function PageClosure() {
       });
     },
 
-    get annotations() {
+    getAnnotations: function Page_getAnnotations(task) {
       // create a blank annotation fonts array
       // if it's not initialized yet
       if (this.pdfManager && this.pdfManager.pdfDocument &&
@@ -329,9 +336,6 @@ var Page = (function PageClosure() {
           !this.pdfManager.pdfDocument.acroForm.annotationFonts) {
         this.pdfManager.pdfDocument.acroForm.annotationFonts = [];
       }
-
-      var task = new WorkerTask(
-        'GetAnnotationAppereances: page ' + this.pageIndex);
 
       var handler = {};
 
@@ -373,13 +377,10 @@ var Page = (function PageClosure() {
 
       return shadow(this, 'annotations',
         Promise.all(annotationsPromises)).then(function (annotations) {
-
-        task.finish();
-
-        return annotations;
-      }, function (reason) {
-        return [];
-      });
+          return annotations;
+        }, function (reason) {
+          return [];
+        });
     },
   };
 
