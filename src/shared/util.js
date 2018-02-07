@@ -1182,9 +1182,18 @@ function makeReasonSerializable(reason) {
       reason instanceof MissingPDFException ||
       reason instanceof UnexpectedResponseException ||
       reason instanceof UnknownErrorException) {
-    return reason;
+    // Angular adds zone/promise related logic to the Error class making it non serializable
+    try {
+      // strip all functions from object
+      return JSON.parse(JSON.stringify(reason));
+    } catch (e) {
+      return reason;
+    }
   }
-  return new UnknownErrorException(reason.message, reason.toString());
+  const unknownErrorException =
+    new UnknownErrorException(reason.message, reason.toString());
+
+  return JSON.parse(JSON.stringify(unknownErrorException));
 }
 
 function resolveOrReject(capability, success, reason) {
@@ -1396,7 +1405,7 @@ MessageHandler.prototype = {
                                success, reason, }) => {
       const serializableErrorReason = makeReasonSerializable(reason);
       this.postMessage({ sourceName, targetName, stream, streamId,
-                         chunk, success, serializableErrorReason, }, transfers);
+                         chunk, success, reason: serializableErrorReason, }, transfers);
     };
 
     let streamSink = {
