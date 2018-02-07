@@ -20,11 +20,7 @@
 const RESOURCE_NAME = "pdf.js";
 const EXT_PREFIX = "extensions.uriloader@pdf.js";
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
 const Cm = Components.manager;
-const Cu = Components.utils;
-const Cr = Components.results;
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
