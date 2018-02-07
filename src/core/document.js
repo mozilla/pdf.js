@@ -323,11 +323,16 @@ var Page = (function PageClosure() {
       var annotationRefs = this.getInheritedPageProp('Annots') || [];
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
-        var annotation = AnnotationFactory.create(this.xref, annotationRef,
-                                                  this.pdfManager,
-                                                  this.idFactory);
-        if (annotation) {
-          annotations.push(annotation);
+        
+        try {
+          var annotation = AnnotationFactory.create(this.xref, annotationRef,
+                                                    this.pdfManager,
+                                                    this.idFactory);
+          if (annotation) {
+            annotations.push(annotation);
+          }
+        } catch (ex) {
+          console.error('PDFDocument: cannot create annotation', ex);
         }
       }
       return shadow(this, 'annotations', annotations);
