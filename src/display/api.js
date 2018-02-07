@@ -1202,11 +1202,11 @@ var PDFWorker = (function PDFWorkerClosure() {
   let nextFakeWorkerId = 0;
 
   function getWorkerSrc() {
-    if (typeof workerSrc !== 'undefined') {
-      return workerSrc;
-    }
     if (getDefaultSetting('workerSrc')) {
       return getDefaultSetting('workerSrc');
+    }
+    if (typeof workerSrc !== 'undefined') {
+      return workerSrc;
     }
     if (typeof PDFJSDev !== 'undefined' &&
         PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
