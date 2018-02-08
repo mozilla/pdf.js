@@ -934,12 +934,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             break;
           case 'BM':
             this.ctx.globalCompositeOperation = value;
-            // We only manually blend if the mode is not 'source-over'
-            // which is the only supported blend mode does no blending
-            // See issue https://github.com/mozilla/pdf.js/issues/5264
-            this.blendModeFallback =
-              this.ctx.globalCompositeOperation !== value &&
-              value !== 'source-over';
             break;
           case 'SMask':
             if (this.current.activeSMask) {
@@ -963,9 +957,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         }
       }
 
-      if (this.blendModeFallback) {
-        this.ctx.globalAlpha = 0.5;
-        this.blendModeFallback = false;
+      if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+        // See checkBlendModeSupport() in compatiblity.js
+        if (this.ctx.blendModeFallback) {
+          // 0.5 is chosen to allow equal visibility for top and bottom content
+          this.ctx.globalAlpha = 0.5;
+          this.ctx.blendModeFallback = false;
+        }
       }
     },
     beginSMaskGroup: function CanvasGraphics_beginSMaskGroup() {
