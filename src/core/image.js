@@ -27,7 +27,11 @@ var PDFImage = (function PDFImageClosure() {
    */
   function handleImageData(image, nativeDecoder) {
     if (nativeDecoder && nativeDecoder.canDecode(image)) {
-      return nativeDecoder.decode(image);
+      return nativeDecoder.decode(image).catch((reason) => {
+        warn('Native image decoding failed -- trying to recover: ' +
+             (reason && reason.message));
+        return image;
+      });
     }
     return Promise.resolve(image);
   }

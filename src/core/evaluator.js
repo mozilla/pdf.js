@@ -80,11 +80,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var colorSpace = dict.get('ColorSpace', 'CS');
       colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources,
                                     this.pdfFunctionFactory);
-      var numComps = colorSpace.numComps;
-      var decodePromise = this.handler.sendWithPromise('JpegDecode',
-        [image.getIR(this.forceDataSchema), numComps]);
-      return decodePromise.then(function (message) {
-        var data = message.data;
+
+      return this.handler.sendWithPromise('JpegDecode', [
+        image.getIR(this.forceDataSchema), colorSpace.numComps
+      ]).then(function({ data, width, height, }) {
         return new Stream(data, 0, data.length, image.dict);
       });
     },
@@ -349,22 +348,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    buildPaintImageXObject:
-        function PartialEvaluator_buildPaintImageXObject(resources, image,
-                                                         inline, operatorList,
-                                                         cacheKey, imageCache) {
+    buildPaintImageXObject({ resources, image, isInline = false, operatorList,
+                             cacheKey, imageCache,
+                             forceDisableNativeImageDecoder = false, }) {
       var dict = image.dict;
       var w = dict.get('Width', 'W');
       var h = dict.get('Height', 'H');
 
       if (!(w && isNum(w)) || !(h && isNum(h))) {
         warn('Image dimensions are missing, or not numbers.');
-        return;
+        return Promise.resolve();
       }
       var maxImageSize = this.options.maxImageSize;
       if (maxImageSize !== -1 && w * h > maxImageSize) {
         warn('Image exceeded maximum allowed size and was removed.');
-        return;
+        return Promise.resolve();
       }
 
       var imageMask = (dict.get('ImageMask', 'IM') || false);
@@ -398,7 +396,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             args,
           };
         }
-        return;
+        return Promise.resolve();
       }
 
       var softMask = (dict.get('SMask', 'SM') || false);
@@ -406,44 +404,63 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var SMALL_IMAGE_DIMENSIONS = 200;
       // Inlining small images into the queue as RGB data
-      if (inline && !softMask && !mask && !(image instanceof JpegStream) &&
+      if (isInline && !softMask && !mask && !(image instanceof JpegStream) &&
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
         let imageObj = new PDFImage({
           xref: this.xref,
           res: resources,
           image,
-          isInline: inline,
+          isInline,
           pdfFunctionFactory: this.pdfFunctionFactory,
         });
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
         imgData = imageObj.createImageData(/* forceRGBA = */ true);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
-        return;
+        return Promise.resolve();
       }
 
-      var nativeImageDecoderSupport = this.options.nativeImageDecoderSupport;
+      const nativeImageDecoderSupport = forceDisableNativeImageDecoder ?
+        NativeImageDecoding.NONE : this.options.nativeImageDecoderSupport;
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
       var objId = 'img_' + this.idFactory.createObjId();
-      operatorList.addDependency(objId);
-      args = [objId, w, h];
 
       if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
           !softMask && !mask && image instanceof JpegStream &&
           NativeImageDecoder.isSupported(image, this.xref, resources,
                                          this.pdfFunctionFactory)) {
         // These JPEGs don't need any more processing so we can just send it.
-        operatorList.addOp(OPS.paintJpegXObject, args);
-        this.handler.send('obj', [objId, this.pageIndex, 'JpegStream',
-                                  image.getIR(this.options.forceDataSchema)]);
-        if (cacheKey) {
-          imageCache[cacheKey] = {
-            fn: OPS.paintJpegXObject,
-            args,
-          };
-        }
-        return;
+        return this.handler.sendWithPromise('obj', [
+          objId, this.pageIndex, 'JpegStream',
+          image.getIR(this.options.forceDataSchema)
+        ]).then(function() {
+          // Only add the dependency once we know that the native JPEG decoding
+          // succeeded, to ensure that rendering will always complete.
+          operatorList.addDependency(objId);
+          args = [objId, w, h];
+
+          operatorList.addOp(OPS.paintJpegXObject, args);
+          if (cacheKey) {
+            imageCache[cacheKey] = {
+              fn: OPS.paintJpegXObject,
+              args,
+            };
+          }
+        }, (reason) => {
+          warn('Native JPEG decoding failed -- trying to recover: ' +
+               (reason && reason.message));
+          // Try to decode the JPEG image with the built-in decoder instead.
+          return this.buildPaintImageXObject({
+            resources,
+            image,
+            isInline,
+            operatorList,
+            cacheKey,
+            imageCache,
+            forceDisableNativeImageDecoder: true,
+          });
+        });
       }
 
       // Creates native image decoder only if a JPEG image or mask is present.
@@ -460,12 +477,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         });
       }
 
+      // Ensure that the dependency is added before the image is decoded.
+      operatorList.addDependency(objId);
+      args = [objId, w, h];
+
       PDFImage.buildImage({
         handler: this.handler,
         xref: this.xref,
         res: resources,
         image,
-        isInline: inline,
+        isInline,
         nativeDecoder: nativeImageDecoder,
         pdfFunctionFactory: this.pdfFunctionFactory,
       }).then((imageObj) => {
@@ -484,6 +505,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           args,
         };
       }
+      return Promise.resolve();
     },
 
     handleSMask: function PartialEvaluator_handleSmask(smask, resources,
@@ -989,8 +1011,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     }, rejectXObject);
                   return;
                 } else if (type.name === 'Image') {
-                  self.buildPaintImageXObject(resources, xobj, false,
-                                              operatorList, name, imageCache);
+                  self.buildPaintImageXObject({
+                    resources,
+                    image: xobj,
+                    operatorList,
+                    cacheKey: name,
+                    imageCache,
+                  }).then(resolveXObject, rejectXObject);
+                  return;
                 } else if (type.name === 'PS') {
                   // PostScript XObjects are unused when viewing documents.
                   // See section 4.7.1 of Adobe's PDF reference.
@@ -1032,10 +1060,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   continue;
                 }
               }
-              self.buildPaintImageXObject(resources, args[0], true,
-                operatorList, cacheKey, imageCache);
-              args = null;
-              continue;
+              next(self.buildPaintImageXObject({
+                resources,
+                image: args[0],
+                isInline: true,
+                operatorList,
+                cacheKey,
+                imageCache,
+              }));
+              return;
             case OPS.showText:
               args[0] = self.handleText(args[0], stateManager.state);
               break;
