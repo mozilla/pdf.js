@@ -3201,6 +3201,14 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue8614",
+       "file": "pdfs/issue8614.pdf",
+       "md5": "7e8b66cf674ac2b79d6b267d0c6f2fa2",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "bug1108753",
        "file": "pdfs/bug1108753.pdf",
        "md5": "a7aaf92d55b4602afb0ca3d75198b56b",
