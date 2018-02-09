@@ -130,12 +130,6 @@ class PDFThumbnailView {
     div.setAttribute('data-page-number', this.id);
     this.div = div;
 
-    if (id === 1) {
-      // Highlight the thumbnail of the first page when no page number is
-      // specified (or exists in cache) when the document is loaded.
-      div.classList.add('selected');
-    }
-
     let ring = document.createElement('div');
     ring.className = 'thumbnailSelectionRing';
     let borderAdjustment = 2 * THUMBNAIL_CANVAS_BORDER_WIDTH;
