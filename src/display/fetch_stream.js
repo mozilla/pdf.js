@@ -74,14 +74,14 @@ class PDFFetchStreamReader {
     this._withCredentials = source.withCredentials;
     this._contentLength = source.length;
     this._headersCapability = createPromiseCapability();
-    this._disableRange = source.disableRange;
+    this._disableRange = source.disableRange || false;
     this._rangeChunkSize = source.rangeChunkSize;
     if (!this._rangeChunkSize && !this._disableRange) {
       this._disableRange = true;
     }
 
-    this._isRangeSupported = !source.disableRange;
     this._isStreamingSupported = !source.disableStream;
+    this._isRangeSupported = !source.disableRange;
 
     this._headers = new Headers();
     for (let property in this._stream.httpHeaders) {
@@ -112,8 +112,9 @@ class PDFFetchStreamReader {
           disableRange: this._disableRange,
         });
 
-      this._contentLength = suggestedLength;
       this._isRangeSupported = allowRangeRequests;
+      // Setting right content length.
+      this._contentLength = suggestedLength || this._contentLength;
 
       this._filename = extractFilenameFromHeader(getResponseHeader);
 
