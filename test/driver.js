@@ -367,8 +367,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         while (styleSheet.cssRules.length > 0) {
           styleSheet.deleteRule(0);
         }
-        let ownerNode = styleSheet.ownerNode;
-        ownerNode.parentNode.removeChild(ownerNode);
+        styleSheet.ownerNode.remove();
       }
       let body = document.body;
       while (body.lastChild !== this.end) {

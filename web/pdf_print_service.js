@@ -111,8 +111,8 @@ PDFPrintService.prototype = {
       return;
     }
     this.printContainer.textContent = '';
-    if (this.pageStyleSheet && this.pageStyleSheet.parentNode) {
-      this.pageStyleSheet.parentNode.removeChild(this.pageStyleSheet);
+    if (this.pageStyleSheet) {
+      this.pageStyleSheet.remove();
       this.pageStyleSheet = null;
     }
     this.scratchCanvas.width = this.scratchCanvas.height = 0;
