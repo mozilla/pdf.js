@@ -17,11 +17,6 @@
 
 var EXPORTED_SYMBOLS = ["PdfStreamConverter"];
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cr = Components.results;
-const Cu = Components.utils;
-
 const PDFJS_EVENT_ID = "pdf.js.message";
 const PREF_PREFIX = "PDFJSSCRIPT_PREF_PREFIX";
 const PDF_VIEWER_WEB_PAGE = "resource://pdf.js/web/viewer.html";
@@ -111,7 +106,7 @@ function getDOMWindow(aChannel) {
   var requestor = aChannel.notificationCallbacks ?
                   aChannel.notificationCallbacks :
                   aChannel.loadGroup.notificationCallbacks;
-  var win = requestor.getInterface(Components.interfaces.nsIDOMWindow);
+  var win = requestor.getInterface(Ci.nsIDOMWindow);
   return win;
 }
 

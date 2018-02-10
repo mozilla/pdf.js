@@ -17,11 +17,7 @@
 
 var EXPORTED_SYMBOLS = ["PdfJs"];
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cr = Components.results;
 const Cm = Components.manager;
-const Cu = Components.utils;
 
 const PREF_PREFIX = "pdfjs";
 const PREF_DISABLED = PREF_PREFIX + ".disabled";
@@ -50,9 +46,9 @@ XPCOMUtils.defineLazyServiceGetter(Svc, "pluginHost",
                                    "@mozilla.org/plugin/host;1",
                                    "nsIPluginHost");
 ChromeUtils.defineModuleGetter(this, "PdfjsChromeUtils",
-                                  "resource://pdf.js/PdfjsChromeUtils.jsm");
+                               "resource://pdf.js/PdfjsChromeUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "PdfjsContentUtils",
-                                  "resource://pdf.js/PdfjsContentUtils.jsm");
+                               "resource://pdf.js/PdfjsContentUtils.jsm");
 
 function getBoolPref(aPref, aDefaultValue) {
   try {

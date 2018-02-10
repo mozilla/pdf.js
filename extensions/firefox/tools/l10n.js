@@ -112,7 +112,7 @@
       // use the short language code for "full" codes like 'ar-sa' (issue 5440)
       var shortCode = gLanguage.split("-")[0];
 
-      return (rtlList.indexOf(shortCode) >= 0) ? "rtl" : "ltr";
+      return (rtlList.includes(shortCode) ? "rtl" : "ltr");
     },
 
     getReadyState() {
