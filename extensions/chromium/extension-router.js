@@ -46,7 +46,7 @@ limitations under the License.
       return;
     }
     var scheme = url.slice(0, schemeIndex).toLowerCase();
-    if (schemes.indexOf(scheme) >= 0) {
+    if (schemes.includes(scheme)) {
       url = url.split('#')[0];
       if (url.charAt(schemeIndex) === ':') {
         url = encodeURIComponent(url);

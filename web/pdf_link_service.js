@@ -192,7 +192,7 @@ class PDFLinkService {
    */
   setHash(hash) {
     let pageNumber, dest;
-    if (hash.indexOf('=') >= 0) {
+    if (hash.includes('=')) {
       let params = parseQueryString(hash);
       if ('search' in params) {
         this.eventBus.dispatch('findfromurlhash', {
@@ -215,7 +215,7 @@ class PDFLinkService {
         let zoomArg = zoomArgs[0];
         let zoomArgNumber = parseFloat(zoomArg);
 
-        if (zoomArg.indexOf('Fit') === -1) {
+        if (!zoomArg.includes('Fit')) {
           // If the zoomArg is a number, it has to get divided by 100. If it's
           // a string, it should stay as it is.
           dest = [null, { name: 'XYZ', },

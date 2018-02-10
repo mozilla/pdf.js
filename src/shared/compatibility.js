@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-extend-native */
+/* eslint-disable no-extend-native, mozilla/use-includes-instead-of-indexOf */
 /* globals PDFJS */
 
 // Skip compatibility checks for the extensions and if we already ran
