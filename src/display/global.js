@@ -39,11 +39,6 @@ if (!globalScope.PDFJS) {
 }
 var PDFJS = globalScope.PDFJS;
 
-if (typeof PDFJSDev !== 'undefined') {
-  PDFJS.version = PDFJSDev.eval('BUNDLE_VERSION');
-  PDFJS.build = PDFJSDev.eval('BUNDLE_BUILD');
-}
-
 PDFJS.OPS = OPS;
 PDFJS.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
 PDFJS.shadow = shadow;
