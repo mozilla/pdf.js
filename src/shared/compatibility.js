@@ -152,6 +152,7 @@ PDFJS.compatibilityChecked = true;
   }
   Element.prototype.remove = function () {
     if (this.parentNode) {
+      // eslint-disable-next-line mozilla/avoid-removeChild
       this.parentNode.removeChild(this);
     }
   };

@@ -43,7 +43,7 @@ function download(blobUrl, filename) {
     // (otherwise .click() is ignored)
     (document.body || document.documentElement).appendChild(a);
     a.click();
-    a.parentNode.removeChild(a);
+    a.remove();
   } else {
     if (window.top === window &&
         blobUrl.split('#')[0] === window.location.href.split('#')[0]) {
