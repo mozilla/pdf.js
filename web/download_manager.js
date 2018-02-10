@@ -49,7 +49,7 @@ function download(blobUrl, filename) {
         blobUrl.split('#')[0] === window.location.href.split('#')[0]) {
       // If _parent == self, then opening an identical URL with different
       // location hash will only cause a navigation, not a download.
-      let padCharacter = blobUrl.indexOf('?') === -1 ? '?' : '&';
+      let padCharacter = blobUrl.includes('?') ? '&' : '?';
       blobUrl = blobUrl.replace(/#|$/, padCharacter + '$&');
     }
     window.open(blobUrl, '_parent');

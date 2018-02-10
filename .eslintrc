@@ -24,6 +24,7 @@
   "rules": {
     // Plugins
     "mozilla/avoid-removeChild": "error",
+    "mozilla/use-includes-instead-of-indexOf": "error",
 
     // Possible errors
     "for-direction": "error",
