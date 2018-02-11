@@ -86,6 +86,47 @@ class PDFFindController {
     });
   }
 
+  executeCommand(cmd, state) {
+    if (this.state === null || cmd !== 'findagain') {
+      this.dirtyMatch = true;
+    }
+    this.state = state;
+    this._updateUIState(FindState.PENDING);
+
+    this._firstPagePromise.then(() => {
+      this._extractText();
+
+      clearTimeout(this.findTimeout);
+      if (cmd === 'find') {
+        // Trigger the find action with a small delay to avoid starting the
+        // search when the user is still typing (saving resources).
+        this.findTimeout = setTimeout(this._nextMatch.bind(this), FIND_TIMEOUT);
+      } else {
+        this._nextMatch();
+      }
+    });
+  }
+
+  /**
+   * Called from the text layer when match presentation is updated.
+   *
+   * @param {number} pageIndex - The index of the page.
+   * @param {number} matchIndex - The index of the match.
+   * @param {Array} elements - Text layer `div` elements.
+   * @param {number} beginIdx - Start index of the `div` array for the match.
+   */
+  updateMatchPosition(pageIndex, matchIndex, elements, beginIdx) {
+    if (this.selected.matchIdx === matchIndex &&
+        this.selected.pageIdx === pageIndex) {
+      let spot = {
+        top: FIND_SCROLL_OFFSET_TOP,
+        left: FIND_SCROLL_OFFSET_LEFT,
+      };
+      scrollIntoView(elements[beginIdx], spot,
+                     /* skipOverflowHiddenElements = */ true);
+    }
+  }
+
   _normalize(text) {
     return text.replace(this.normalizationRegex, function (ch) {
       return CHARACTERS_TO_NORMALIZE[ch];
@@ -261,27 +302,6 @@ class PDFFindController {
     }
   }
 
-  executeCommand(cmd, state) {
-    if (this.state === null || cmd !== 'findagain') {
-      this.dirtyMatch = true;
-    }
-    this.state = state;
-    this._updateUIState(FindState.PENDING);
-
-    this._firstPagePromise.then(() => {
-      this._extractText();
-
-      clearTimeout(this.findTimeout);
-      if (cmd === 'find') {
-        // Trigger the find action with a small delay to avoid starting the
-        // search when the user is still typing (saving resources).
-        this.findTimeout = setTimeout(this._nextMatch.bind(this), FIND_TIMEOUT);
-      } else {
-        this._nextMatch();
-      }
-    });
-  }
-
   _updatePage(index) {
     if (this.selected.pageIdx === index) {
       // If the page is selected, scroll the page into view, which triggers
@@ -392,26 +412,6 @@ class PDFFindController {
     }
     // Matches were not found (and searching is not done).
     return false;
-  }
-
-  /**
-   * Called from the text layer when match presentation is updated.
-   *
-   * @param {number} pageIndex - The index of the page.
-   * @param {number} matchIndex - The index of the match.
-   * @param {Array} elements - Text layer `div` elements.
-   * @param {number} beginIdx - Start index of the `div` array for the match.
-   */
-  updateMatchPosition(pageIndex, matchIndex, elements, beginIdx) {
-    if (this.selected.matchIdx === matchIndex &&
-        this.selected.pageIdx === pageIndex) {
-      let spot = {
-        top: FIND_SCROLL_OFFSET_TOP,
-        left: FIND_SCROLL_OFFSET_LEFT,
-      };
-      scrollIntoView(elements[beginIdx], spot,
-                     /* skipOverflowHiddenElements = */ true);
-    }
   }
 
   _nextPageMatch() {
