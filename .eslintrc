@@ -4,6 +4,10 @@
     "sourceType": "module",
   },
 
+  "plugins": [
+    "mozilla"
+  ],
+
   "env": {
     "browser": true,
     "es6": true,
@@ -18,6 +22,10 @@
   },
 
   "rules": {
+    // Plugins
+    "mozilla/avoid-removeChild": "error",
+    "mozilla/use-includes-instead-of-indexOf": "error",
+
     // Possible errors
     "for-direction": "error",
     "no-cond-assign": ["error", "except-parens"],

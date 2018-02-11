@@ -1,3 +1,5 @@
+/* eslint-disable mozilla/use-includes-instead-of-indexOf */
+
 'use strict';
 
 var fs = require('fs');
