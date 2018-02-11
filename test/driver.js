@@ -305,7 +305,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
           self.manifest = JSON.parse(r.responseText);
           if (self.testFilter && self.testFilter.length) {
             self.manifest = self.manifest.filter(function(item) {
-              return self.testFilter.indexOf(item.id) !== -1;
+              return self.testFilter.includes(item.id);
             });
           }
           self.currentTask = 0;
@@ -367,8 +367,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         while (styleSheet.cssRules.length > 0) {
           styleSheet.deleteRule(0);
         }
-        let ownerNode = styleSheet.ownerNode;
-        ownerNode.parentNode.removeChild(ownerNode);
+        styleSheet.ownerNode.remove();
       }
       let body = document.body;
       while (body.lastChild !== this.end) {
@@ -434,7 +433,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         }
       }
 
-      if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
+      if (task.skipPages && task.skipPages.includes(task.pageNum)) {
         this._log(' Skipping page ' + task.pageNum + '/' +
                   task.pdfDoc.numPages + '...\n');
         task.pageNum++;

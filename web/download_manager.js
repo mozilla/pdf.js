@@ -43,13 +43,13 @@ function download(blobUrl, filename) {
     // (otherwise .click() is ignored)
     (document.body || document.documentElement).appendChild(a);
     a.click();
-    a.parentNode.removeChild(a);
+    a.remove();
   } else {
     if (window.top === window &&
         blobUrl.split('#')[0] === window.location.href.split('#')[0]) {
       // If _parent == self, then opening an identical URL with different
       // location hash will only cause a navigation, not a download.
-      let padCharacter = blobUrl.indexOf('?') === -1 ? '?' : '&';
+      let padCharacter = blobUrl.includes('?') ? '&' : '?';
       blobUrl = blobUrl.replace(/#|$/, padCharacter + '$&');
     }
     window.open(blobUrl, '_parent');

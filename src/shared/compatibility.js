@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-extend-native */
+/* eslint-disable no-extend-native, mozilla/use-includes-instead-of-indexOf */
 /* globals PDFJS */
 
 // Skip compatibility checks for the extensions and if we already ran
@@ -152,6 +152,7 @@ PDFJS.compatibilityChecked = true;
   }
   Element.prototype.remove = function () {
     if (this.parentNode) {
+      // eslint-disable-next-line mozilla/avoid-removeChild
       this.parentNode.removeChild(this);
     }
   };

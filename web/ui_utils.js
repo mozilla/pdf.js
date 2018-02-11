@@ -420,7 +420,7 @@ function getPDFFileNameFromURL(url, defaultFilename = 'document.pdf') {
                           reFilename.exec(splitURI[3]);
   if (suggestedFilename) {
     suggestedFilename = suggestedFilename[0];
-    if (suggestedFilename.indexOf('%') !== -1) {
+    if (suggestedFilename.includes('%')) {
       // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
       try {
         suggestedFilename =
