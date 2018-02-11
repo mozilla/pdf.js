@@ -355,7 +355,6 @@ PDFNetworkStreamFullRequestReader.prototype = {
     const getResponseHeader = (name) => {
       return fullRequestXhr.getResponseHeader(name);
     };
-
     let { allowRangeRequests, suggestedLength, } =
       validateRangeRequestCapabilities({
         getResponseHeader,
@@ -364,12 +363,11 @@ PDFNetworkStreamFullRequestReader.prototype = {
         disableRange: this._disableRange,
       });
 
-    // Setting right content length.
-    this._contentLength = suggestedLength || this._contentLength;
-
     if (allowRangeRequests) {
       this._isRangeSupported = true;
     }
+    // Setting right content length.
+    this._contentLength = suggestedLength || this._contentLength;
 
     this._filename = extractFilenameFromHeader(getResponseHeader);
 
