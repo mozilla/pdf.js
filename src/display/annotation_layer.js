@@ -281,17 +281,21 @@ class LinkAnnotationElement extends AnnotationElement {
   render() {
     this.container.className = 'linkAnnotation';
 
+    let { data, linkService, } = this;
     let link = document.createElement('a');
+
     addLinkAttributes(link, {
-      url: this.data.url,
-      target: (this.data.newWindow ? LinkTarget.BLANK : undefined),
+      url: data.url,
+      target: (data.newWindow ?
+               LinkTarget.BLANK : linkService.externalLinkTarget),
+      rel: linkService.externalLinkRel,
     });
 
-    if (!this.data.url) {
-      if (this.data.action) {
-        this._bindNamedAction(link, this.data.action);
+    if (!data.url) {
+      if (data.action) {
+        this._bindNamedAction(link, data.action);
       } else {
-        this._bindLink(link, this.data.dest);
+        this._bindLink(link, data.dest);
       }
     }
 

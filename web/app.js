@@ -22,7 +22,7 @@ import {
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
-  MissingPDFException, OPS, PDFJS, PDFWorker, shadow,
+  LinkTarget, MissingPDFException, OPS, PDFJS, PDFWorker, shadow,
   UnexpectedResponseException, UNSUPPORTED_FEATURES, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
@@ -184,10 +184,11 @@ let PDFViewerApplication = {
         this.eventBus.dispatch('localized');
       });
 
-      if (this.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
+      if (this.isViewerEmbedded &&
+          PDFJS.externalLinkTarget === LinkTarget.NONE) {
         // Prevent external links from "replacing" the viewer,
         // when it's embedded in e.g. an iframe or an object.
-        PDFJS.externalLinkTarget = PDFJS.LinkTarget.TOP;
+        PDFJS.externalLinkTarget = LinkTarget.TOP;
       }
 
       this.initialized = true;
@@ -250,7 +251,7 @@ let PDFViewerApplication = {
         PDFJS.useOnlyCssZoom = value;
       }),
       preferences.get('externalLinkTarget').then(function resolved(value) {
-        if (PDFJS.isExternalLinkTargetSet()) {
+        if (PDFJS.externalLinkTarget !== LinkTarget.NONE) {
           return;
         }
         PDFJS.externalLinkTarget = value;
@@ -378,6 +379,8 @@ let PDFViewerApplication = {
 
       let pdfLinkService = new PDFLinkService({
         eventBus,
+        externalLinkTarget: PDFJS.externalLinkTarget,
+        externalLinkRel: PDFJS.externalLinkRel,
       });
       this.pdfLinkService = pdfLinkService;
 
