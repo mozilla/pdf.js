@@ -398,6 +398,7 @@ let PDFViewerApplication = {
         enhanceTextSelection: viewerPrefs['enhanceTextSelection'],
         renderInteractiveForms: viewerPrefs['renderInteractiveForms'],
         enablePrintAutoRotate: viewerPrefs['enablePrintAutoRotate'],
+        useOnlyCssZoom: PDFJS.useOnlyCssZoom,
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);

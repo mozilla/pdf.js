@@ -21,7 +21,7 @@ if (typeof PDFJS === 'undefined' || !PDFJS.PDFViewer || !PDFJS.getDocument) {
         '  `gulp dist-install`');
 }
 
-PDFJS.useOnlyCssZoom = true;
+var USE_ONLY_CSS_ZOOM = true;
 PDFJS.disableTextLayer = true;
 PDFJS.maxImageSize = 1024 * 1024;
 PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
@@ -298,6 +298,7 @@ var PDFViewerApplication = {
       container: container,
       linkService: linkService,
       l10n: this.l10n,
+      useOnlyCssZoom: USE_ONLY_CSS_ZOOM,
     });
     this.pdfViewer = pdfViewer;
     linkService.setViewer(pdfViewer);

@@ -38,6 +38,8 @@ import { RenderingStates } from './pdf_rendering_queue';
  * @property {boolean} renderInteractiveForms - Turns on rendering of
  *   interactive form elements. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {boolean} useOnlyCssZoom - (optional) Enables CSS only zooming.
+ *   The default value is `false`.
  * @property {IL10n} l10n - Localization service.
  */
 
@@ -64,6 +66,7 @@ class PDFPageView {
     this.hasRestrictedScaling = false;
     this.enhanceTextSelection = options.enhanceTextSelection || false;
     this.renderInteractiveForms = options.renderInteractiveForms || false;
+    this.useOnlyCssZoom = options.useOnlyCssZoom || false;
 
     this.eventBus = options.eventBus || getGlobalEventBus();
     this.renderingQueue = options.renderingQueue;
@@ -218,7 +221,7 @@ class PDFPageView {
     }
 
     if (this.canvas) {
-      if (PDFJS.useOnlyCssZoom ||
+      if (this.useOnlyCssZoom ||
           (this.hasRestrictedScaling && isScalingRestricted)) {
         this.cssTransform(this.canvas, true);
 
@@ -517,7 +520,7 @@ class PDFPageView {
     let outputScale = getOutputScale(ctx);
     this.outputScale = outputScale;
 
-    if (PDFJS.useOnlyCssZoom) {
+    if (this.useOnlyCssZoom) {
       let actualSizeViewport = viewport.clone({ scale: CSS_UNITS, });
       // Use a scale that makes the canvas have the originally intended size
       // of the page.
