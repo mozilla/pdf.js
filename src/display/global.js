@@ -181,13 +181,6 @@ PDFJS.disableCreateObjectURL = (PDFJS.disableCreateObjectURL === undefined ?
                                 false : PDFJS.disableCreateObjectURL);
 
 /**
- * Disables WebGL usage.
- * @var {boolean}
- */
-PDFJS.disableWebGL = (PDFJS.disableWebGL === undefined ?
-                      true : PDFJS.disableWebGL);
-
-/**
  * Specifies the |target| attribute for external links.
  * The constants from {LinkTarget} should be used:
  *  - NONE [default]

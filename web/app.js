@@ -139,6 +139,7 @@ let PDFViewerApplication = {
   isInitialViewSet: false,
   downloadComplete: false,
   viewerPrefs: {
+    enableWebGL: false,
     sidebarViewOnLoad: SidebarView.NONE,
     pdfBugEnabled: false,
     showPreviousViewOnLoad: true,
@@ -203,7 +204,7 @@ let PDFViewerApplication = {
 
     return Promise.all([
       preferences.get('enableWebGL').then(function resolved(value) {
-        PDFJS.disableWebGL = !value;
+        viewerPrefs['enableWebGL'] = value;
       }),
       preferences.get('sidebarViewOnLoad').then(function resolved(value) {
         viewerPrefs['sidebarViewOnLoad'] = value;
@@ -304,7 +305,7 @@ let PDFViewerApplication = {
         PDFJS.disableHistory = (hashParams['disablehistory'] === 'true');
       }
       if ('webgl' in hashParams) {
-        PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
+        viewerPrefs['enableWebGL'] = (hashParams['webgl'] === 'true');
       }
       if ('useonlycsszoom' in hashParams) {
         PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
@@ -394,6 +395,7 @@ let PDFViewerApplication = {
         linkService: pdfLinkService,
         downloadManager,
         renderer: viewerPrefs['renderer'],
+        enableWebGL: viewerPrefs['enableWebGL'],
         l10n: this.l10n,
         textLayerMode: viewerPrefs['textLayerMode'],
         imageResourcesPath: PDFJS.imageResourcesPath,
@@ -1172,7 +1174,7 @@ let PDFViewerApplication = {
                   info.PDFFormatVersion + ' ' + (info.Producer || '-').trim() +
                   ' / ' + (info.Creator || '-').trim() + ']' +
                   ' (PDF.js: ' + (version || '-') +
-                  (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
+                  (this.viewerPrefs['enableWebGL'] ? ' [WebGL]' : '') + ')');
 
       let pdfTitle;
       if (metadata && metadata.has('dc:title')) {
