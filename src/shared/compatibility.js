@@ -26,19 +26,10 @@ if ((typeof PDFJSDev === 'undefined' ||
 // users - https://github.com/mozilla/pdf.js/issues/9397
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
 
-var globalScope = require('./global_scope');
-
+const globalScope = require('./global_scope');
 const isNodeJS = require('./is_node');
 
-var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-var isAndroid = /Android/.test(userAgent);
-var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
-var isIE = userAgent.indexOf('Trident') >= 0;
-var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
-var isSafari = /Safari\//.test(userAgent) &&
-               !/(Chrome\/|Android\s)/.test(userAgent);
-
-var hasDOM = typeof window === 'object' && typeof document === 'object';
+const hasDOM = typeof window === 'object' && typeof document === 'object';
 
 // Initializing PDFJS global object here, it case if we need to change/disable
 // some PDF.js features, e.g. range requests
@@ -68,58 +59,6 @@ PDFJS.compatibilityChecked = true;
     // eslint-disable-next-line no-undef
     return Buffer.from(input, 'base64').toString('binary');
   };
-})();
-
-// Checks if possible to use URL.createObjectURL()
-// Support: IE, Chrome on iOS
-(function checkOnBlobSupport() {
-  // sometimes IE and Chrome on iOS loosing the data created with
-  // createObjectURL(), see #3977 and #8081
-  if (isIE || isIOSChrome) {
-    PDFJS.disableCreateObjectURL = true;
-  }
-})();
-
-// Checks if navigator.language is supported
-// Support: IE<11
-(function checkNavigatorLanguage() {
-  if (typeof navigator === 'undefined') {
-    return;
-  }
-  if ('language' in navigator) {
-    return;
-  }
-  PDFJS.locale = navigator.userLanguage || 'en-US';
-})();
-
-// Support: Safari 6.0+, iOS
-(function checkRangeRequests() {
-  // Safari has issues with cached range requests see:
-  // https://github.com/mozilla/pdf.js/issues/3260
-  // Last tested with version 6.0.4.
-  if (isSafari || isIOS) {
-    PDFJS.disableRange = true;
-    PDFJS.disableStream = true;
-  }
-})();
-
-// Support: Android, iOS
-(function checkCanvasSizeLimitation() {
-  if (isIOS || isAndroid) {
-    // 5MP
-    PDFJS.maxCanvasPixels = 5242880;
-  }
-})();
-
-// Disable fullscreen support for certain problematic configurations.
-// Support: IE11+ (when embedded).
-(function checkFullscreenSupport() {
-  if (!hasDOM) {
-    return;
-  }
-  if (isIE && window.parent !== window) {
-    PDFJS.disableFullscreen = true;
-  }
 })();
 
 // Provides document.currentScript support

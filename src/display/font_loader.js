@@ -336,13 +336,17 @@ var IsEvalSupportedCached = {
 };
 
 var FontFaceObject = (function FontFaceObjectClosure() {
-  function FontFaceObject(translatedData, options) {
+  function FontFaceObject(translatedData, { isEvalSupported = true,
+                                            disableFontFace = false,
+                                            fontRegistry = null, }) {
     this.compiledGlyphs = Object.create(null);
     // importing translated data
     for (var i in translatedData) {
       this[i] = translatedData[i];
     }
-    this.options = options;
+    this.isEvalSupported = isEvalSupported !== false;
+    this.disableFontFace = disableFontFace === true;
+    this.fontRegistry = fontRegistry;
   }
   FontFaceObject.prototype = {
     createNativeFontFace: function FontFaceObject_createNativeFontFace() {
@@ -350,30 +354,20 @@ var FontFaceObject = (function FontFaceObjectClosure() {
         throw new Error('Not implemented: createNativeFontFace');
       }
 
-      if (!this.data) {
-        return null;
-      }
-
-      if (this.options.disableFontFace) {
-        this.disableFontFace = true;
+      if (!this.data || this.disableFontFace) {
         return null;
       }
 
       var nativeFontFace = new FontFace(this.loadedName, this.data, {});
 
-      if (this.options.fontRegistry) {
-        this.options.fontRegistry.registerFont(this);
+      if (this.fontRegistry) {
+        this.fontRegistry.registerFont(this);
       }
       return nativeFontFace;
     },
 
     createFontFaceRule: function FontFaceObject_createFontFaceRule() {
-      if (!this.data) {
-        return null;
-      }
-
-      if (this.options.disableFontFace) {
-        this.disableFontFace = true;
+      if (!this.data || this.disableFontFace) {
         return null;
       }
 
@@ -384,8 +378,8 @@ var FontFaceObject = (function FontFaceObjectClosure() {
       var url = ('url(data:' + this.mimetype + ';base64,' + btoa(data) + ');');
       var rule = '@font-face { font-family:"' + fontName + '";src:' + url + '}';
 
-      if (this.options.fontRegistry) {
-        this.options.fontRegistry.registerFont(this, url);
+      if (this.fontRegistry) {
+        this.fontRegistry.registerFont(this, url);
       }
 
       return rule;
@@ -398,7 +392,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
         var current, i, len;
 
         // If we can, compile cmds into JS for MAXIMUM SPEED
-        if (this.options.isEvalSupported && IsEvalSupportedCached.value) {
+        if (this.isEvalSupported && IsEvalSupportedCached.value) {
           var args, js = '';
           for (i = 0, len = cmds.length; i < len; i++) {
             current = cmds[i];

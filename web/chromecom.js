@@ -336,13 +336,13 @@ ChromeExternalServices.initPassiveLoading = function(callbacks) {
     callbacks.onOpenWithURL(url, length, originalURL);
   });
 };
-ChromeExternalServices.createDownloadManager = function() {
-  return new DownloadManager();
+ChromeExternalServices.createDownloadManager = function(options) {
+  return new DownloadManager(options);
 };
 ChromeExternalServices.createPreferences = function() {
   return new ChromePreferences();
 };
-ChromeExternalServices.createL10n = function() {
+ChromeExternalServices.createL10n = function(options) {
   return new GenericL10n(navigator.language);
 };
 PDFViewerApplication.externalServices = ChromeExternalServices;

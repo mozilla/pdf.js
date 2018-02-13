@@ -16,8 +16,12 @@
 
 'use strict';
 
-var WAITING_TIME = 100; // ms
-var PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const WAITING_TIME = 100; // ms
+const PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const WORKER_SRC = '../build/generic/build/pdf.worker.js';
+const CMAP_URL = '../external/bcmaps/';
+const CMAP_PACKED = true;
+const IMAGE_RESOURCES_PATH = '/web/images/';
 
 /**
  * @class
@@ -164,6 +168,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   }
 
   function rasterizeAnnotationLayer(ctx, viewport, annotations, page,
+                                    imageResourcesPath,
                                     renderInteractiveForms) {
     return new Promise(function (resolve) {
       // Building SVG with size of the viewport.
@@ -194,6 +199,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           annotations,
           page,
           linkService: new PDFJS.SimpleLinkService(),
+          imageResourcesPath,
           renderInteractiveForms,
         };
         PDFJS.AnnotationLayer.render(parameters);
@@ -247,12 +253,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
    * @param {DriverOptions} options
    */
   function Driver(options) {
-    // Configure the global PDFJS object
-    PDFJS.workerSrc = '../build/generic/build/pdf.worker.js';
-    PDFJS.cMapPacked = true;
-    PDFJS.cMapUrl = '../external/bcmaps/';
-    PDFJS.enableStats = true;
-    PDFJS.imageResourcesPath = '/web/images/';
+    // Configure the global Worker options.
+    PDFJS.WorkerOptions.set('workerSrc', WORKER_SRC);
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -338,13 +340,16 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         this._log('Loading file "' + task.file + '"\n');
 
         let absoluteUrl = new URL(task.file, window.location).href;
-        PDFJS.disableRange = task.disableRange;
-        PDFJS.disableAutoFetch = !task.enableAutoFetch;
         try {
           PDFJS.getDocument({
             url: absoluteUrl,
             password: task.password,
             nativeImageDecoderSupport: task.nativeImageDecoderSupport,
+            cMapUrl: CMAP_URL,
+            cMapPacked: CMAP_PACKED,
+            disableRange: task.disableRange,
+            disableAutoFetch: !task.enableAutoFetch,
+            pdfBug: true,
           }).then((doc) => {
             task.pdfDoc = doc;
             this._nextPage(task, failure);
@@ -506,7 +511,9 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
                     function(annotations) {
                       return rasterizeAnnotationLayer(annotationLayerContext,
                                                       viewport, annotations,
-                                                      page, renderForms);
+                                                      page,
+                                                      IMAGE_RESOURCES_PATH,
+                                                      renderForms);
                   });
               } else {
                 annotationLayerCanvas = null;

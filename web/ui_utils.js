@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
+import { createPromiseCapability } from 'pdfjs-lib';
 
 const CSS_UNITS = 96.0 / 72.0;
 const DEFAULT_SCALE_VALUE = 'auto';
@@ -35,6 +35,12 @@ const PresentationModeState = {
 const RendererType = {
   CANVAS: 'canvas',
   SVG: 'svg',
+};
+
+const TextLayerMode = {
+  DISABLE: 0,
+  ENABLE: 1,
+  ENABLE_ENHANCE: 2,
 };
 
 // Replaces {{arguments}} with their values.
@@ -64,54 +70,6 @@ let NullL10n = {
     return Promise.resolve();
   },
 };
-
-/**
- * Disables fullscreen support, and by extension Presentation Mode,
- * in browsers which support the fullscreen API.
- * @var {boolean}
- */
-PDFJS.disableFullscreen = (PDFJS.disableFullscreen === undefined ?
-                           false : PDFJS.disableFullscreen);
-
-/**
- * Enables CSS only zooming.
- * @var {boolean}
- */
-PDFJS.useOnlyCssZoom = (PDFJS.useOnlyCssZoom === undefined ?
-                        false : PDFJS.useOnlyCssZoom);
-
-/**
- * The maximum supported canvas size in total pixels e.g. width * height.
- * The default value is 4096 * 4096. Use -1 for no limit.
- * @var {number}
- */
-PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
-                         16777216 : PDFJS.maxCanvasPixels);
-
-/**
- * Disables saving of the last position of the viewed PDF.
- * @var {boolean}
- */
-PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
-                        false : PDFJS.disableHistory);
-
-/**
- * Disables creation of the text layer that used for text selection and search.
- * @var {boolean}
- */
-PDFJS.disableTextLayer = (PDFJS.disableTextLayer === undefined ?
-                          false : PDFJS.disableTextLayer);
-
-if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  /**
-   * Interface locale settings.
-   * @var {string}
-   */
-  PDFJS.locale =
-    (PDFJS.locale === undefined && typeof navigator !== 'undefined' ?
-     navigator.language : PDFJS.locale);
-}
 
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
@@ -677,6 +635,7 @@ export {
   cloneObj,
   PresentationModeState,
   RendererType,
+  TextLayerMode,
   mozL10n,
   NullL10n,
   EventBus,
