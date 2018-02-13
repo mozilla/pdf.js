@@ -359,8 +359,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.maxImageSize : -1;
     case 'isEvalSupported':
       return globalSettings ? globalSettings.isEvalSupported : true;
-    case 'enableStats':
-      return !!(globalSettings && globalSettings.enableStats);
     default:
       throw new Error('Unknown default setting: ' + id);
   }
