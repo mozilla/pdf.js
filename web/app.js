@@ -353,7 +353,9 @@ let PDFViewerApplication = {
    * @private
    */
   _initializeL10n() {
-    this.l10n = this.externalServices.createL10n();
+    this.l10n = this.externalServices.createL10n({
+      locale: PDFJS.locale,
+    });
     return this.l10n.getDirection().then((dir) => {
       document.getElementsByTagName('html')[0].dir = dir;
     });
