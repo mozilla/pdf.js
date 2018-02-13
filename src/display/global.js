@@ -14,16 +14,13 @@
  */
 
 import {
-  addLinkAttributes, DEFAULT_LINK_REL, getFilenameFromUrl,
-  isExternalLinkTargetSet, isValidUrl, LinkTarget
-} from './dom_utils';
-import {
   createBlob, createObjectURL, createPromiseCapability, getVerbosityLevel,
   InvalidPDFException, isLittleEndian, MissingPDFException, OPS, PageViewport,
   PasswordException, PasswordResponses, removeNullCharacters, setVerbosityLevel,
   shadow, UnexpectedResponseException, UnknownErrorException,
   UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS
 } from '../shared/util';
+import { DEFAULT_LINK_REL, getFilenameFromUrl, LinkTarget } from './dom_utils';
 import {
   getDocument, LoopbackPort, PDFDataRangeTransport, PDFWorker
 } from './api';
@@ -67,7 +64,6 @@ Object.defineProperty(PDFJS, 'verbosity', {
 PDFJS.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
 PDFJS.OPS = OPS;
 PDFJS.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
-PDFJS.isValidUrl = isValidUrl;
 PDFJS.shadow = shadow;
 PDFJS.createBlob = createBlob;
 PDFJS.createObjectURL = function PDFJS_createObjectURL(data, contentType) {
@@ -193,7 +189,7 @@ PDFJS.disableWebGL = (PDFJS.disableWebGL === undefined ?
 
 /**
  * Specifies the |target| attribute for external links.
- * The constants from PDFJS.LinkTarget should be used:
+ * The constants from {LinkTarget} should be used:
  *  - NONE [default]
  *  - SELF
  *  - BLANK
@@ -225,10 +221,7 @@ PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
 
-PDFJS.LinkTarget = LinkTarget;
-PDFJS.addLinkAttributes = addLinkAttributes;
 PDFJS.getFilenameFromUrl = getFilenameFromUrl;
-PDFJS.isExternalLinkTargetSet = isExternalLinkTargetSet;
 
 PDFJS.AnnotationLayer = AnnotationLayer;
 
