@@ -18,7 +18,7 @@ import {
   animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isFileSchema,
   isValidRotation, MAX_SCALE, MIN_SCALE, noContextMenuHandler,
   normalizeWheelEventDelta, parseQueryString, PresentationModeState,
-  ProgressBar, RendererType
+  ProgressBar, RendererType, TextLayerMode
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
@@ -146,7 +146,7 @@ let PDFViewerApplication = {
     disablePageMode: false,
     disablePageLabels: false,
     renderer: 'canvas',
-    enhanceTextSelection: false,
+    textLayerMode: TextLayerMode.ENABLE,
     renderInteractiveForms: false,
     enablePrintAutoRotate: false,
   },
@@ -217,14 +217,11 @@ let PDFViewerApplication = {
       preferences.get('defaultZoomValue').then(function resolved(value) {
         viewerPrefs['defaultZoomValue'] = value;
       }),
-      preferences.get('enhanceTextSelection').then(function resolved(value) {
-        viewerPrefs['enhanceTextSelection'] = value;
-      }),
-      preferences.get('disableTextLayer').then(function resolved(value) {
-        if (PDFJS.disableTextLayer === true) {
+      preferences.get('textLayerMode').then(function resolved(value) {
+        if (viewerPrefs['textLayerMode'] === TextLayerMode.DISABLE) {
           return;
         }
-        PDFJS.disableTextLayer = value;
+        viewerPrefs['textLayerMode'] = value;
       }),
       preferences.get('disableRange').then(function resolved(value) {
         if (PDFJS.disableRange === true) {
@@ -323,7 +320,7 @@ let PDFViewerApplication = {
       if ('textlayer' in hashParams) {
         switch (hashParams['textlayer']) {
           case 'off':
-            PDFJS.disableTextLayer = true;
+            viewerPrefs['textLayerMode'] = TextLayerMode.DISABLE;
             break;
           case 'visible':
           case 'shadow':
@@ -398,7 +395,7 @@ let PDFViewerApplication = {
         downloadManager,
         renderer: viewerPrefs['renderer'],
         l10n: this.l10n,
-        enhanceTextSelection: viewerPrefs['enhanceTextSelection'],
+        textLayerMode: viewerPrefs['textLayerMode'],
         imageResourcesPath: PDFJS.imageResourcesPath,
         renderInteractiveForms: viewerPrefs['renderInteractiveForms'],
         enablePrintAutoRotate: viewerPrefs['enablePrintAutoRotate'],
