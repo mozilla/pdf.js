@@ -75,11 +75,16 @@
       "type": "boolean",
       "default": false
     },
-    "disableTextLayer": {
-      "title": "Disable text selection layer",
-      "description": "Whether to disable the text selection layer.",
-      "type": "boolean",
-      "default": false
+    "textLayerMode": {
+      "title": "Text layer mode",
+      "description": "Controls if the text layer is enabled, and the selection mode that is used.\n 0 = Disabled.\n 1 = Enabled.\n 2 = (Experimental) Enabled, with enhanced text selection.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "default": 1
     },
     "useOnlyCssZoom": {
       "type": "boolean",
@@ -110,10 +115,6 @@
       "title": "Disable telemetry",
       "type": "boolean",
       "description": "Whether to prevent the extension from reporting the extension and browser version to the extension developers.",
-      "default": false
-    },
-    "enhanceTextSelection": {
-      "type": "boolean",
       "default": false
     },
     "renderer": {

@@ -37,6 +37,12 @@ const RendererType = {
   SVG: 'svg',
 };
 
+const TextLayerMode = {
+  DISABLE: 0,
+  ENABLE: 1,
+  ENABLE_ENHANCE: 2,
+};
+
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
@@ -86,13 +92,6 @@ PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
  */
 PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
                         false : PDFJS.disableHistory);
-
-/**
- * Disables creation of the text layer that used for text selection and search.
- * @var {boolean}
- */
-PDFJS.disableTextLayer = (PDFJS.disableTextLayer === undefined ?
-                          false : PDFJS.disableTextLayer);
 
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
@@ -669,6 +668,7 @@ export {
   cloneObj,
   PresentationModeState,
   RendererType,
+  TextLayerMode,
   mozL10n,
   NullL10n,
   EventBus,

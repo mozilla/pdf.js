@@ -15,7 +15,7 @@
 
 import {
   approximateFraction, CSS_UNITS, DEFAULT_SCALE, getOutputScale, NullL10n,
-  RendererType, roundToDivide
+  RendererType, roundToDivide, TextLayerMode
 } from './ui_utils';
 import {
   createPromiseCapability, RenderingCancelledException, SVGGraphics
@@ -33,9 +33,11 @@ import { viewerCompatibilityParams } from './viewer_compatibility';
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IPDFTextLayerFactory} textLayerFactory
+ * @property {number} textLayerMode - (optional) Controls if the text layer used
+ *   for selection and searching is created, and if the improved text selection
+ *   behaviour is enabled. The constants from {TextLayerMode} should be used.
+ *   The default value is `TextLayerMode.ENABLE`.
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
- * @property {boolean} enhanceTextSelection - Turns on the text selection
- *   enhancement. The default is `false`.
  * @property {string} imageResourcesPath - (optional) Path for image resources,
  *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms - Turns on rendering of
@@ -72,7 +74,8 @@ class PDFPageView {
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
-    this.enhanceTextSelection = options.enhanceTextSelection || false;
+    this.textLayerMode = Number.isInteger(options.textLayerMode) ?
+      options.textLayerMode : TextLayerMode.ENABLE;
     this.imageResourcesPath = options.imageResourcesPath || '';
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
@@ -384,7 +387,7 @@ class PDFPageView {
     }
 
     let textLayer = null;
-    if (this.textLayerFactory) {
+    if (this.textLayerMode !== TextLayerMode.DISABLE && this.textLayerFactory) {
       let textLayerDiv = document.createElement('div');
       textLayerDiv.className = 'textLayer';
       textLayerDiv.style.width = canvasWrapper.style.width;
@@ -398,7 +401,7 @@ class PDFPageView {
 
       textLayer = this.textLayerFactory.
         createTextLayerBuilder(textLayerDiv, this.id - 1, this.viewport,
-                               this.enhanceTextSelection);
+            this.textLayerMode === TextLayerMode.ENABLE_ENHANCE);
     }
     this.textLayer = textLayer;
 
