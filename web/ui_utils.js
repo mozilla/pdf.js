@@ -66,14 +66,6 @@ let NullL10n = {
 };
 
 /**
- * Disables fullscreen support, and by extension Presentation Mode,
- * in browsers which support the fullscreen API.
- * @var {boolean}
- */
-PDFJS.disableFullscreen = (PDFJS.disableFullscreen === undefined ?
-                           false : PDFJS.disableFullscreen);
-
-/**
  * Enables CSS only zooming.
  * @var {boolean}
  */
@@ -110,7 +102,7 @@ if (typeof PDFJSDev === 'undefined' ||
    */
   PDFJS.locale =
     (PDFJS.locale === undefined && typeof navigator !== 'undefined' ?
-     navigator.language : PDFJS.locale);
+     navigator.language : PDFJS.locale) || 'en-US';
 }
 
 /**

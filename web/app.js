@@ -44,6 +44,7 @@ import { PDFThumbnailViewer } from './pdf_thumbnail_viewer';
 import { PDFViewer } from './pdf_viewer';
 import { SecondaryToolbar } from './secondary_toolbar';
 import { Toolbar } from './toolbar';
+import { viewerCompatibilityParams } from './viewer_compatibility';
 import { ViewHistory } from './view_history';
 
 const DEFAULT_SCALE_DELTA = 1.1;
@@ -561,7 +562,7 @@ let PDFViewerApplication = {
         support = false;
       }
     }
-    if (support && PDFJS.disableFullscreen === true) {
+    if (support && viewerCompatibilityParams['disableFullscreen'] === true) {
       support = false;
     }
 
