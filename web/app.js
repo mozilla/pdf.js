@@ -333,8 +333,7 @@ let PDFViewerApplication = {
       }
       if ('pdfbug' in hashParams) {
         PDFJS.pdfBug = true;
-        let pdfBug = hashParams['pdfbug'];
-        let enabled = pdfBug.split(',');
+        let enabled = hashParams['pdfbug'].split(',');
         waitOn.push(loadAndEnablePDFBug(enabled));
       }
       // Locale can be changed only when special debugging flags is present in
@@ -1558,7 +1557,6 @@ function loadAndEnablePDFBug(enabledTabs) {
     script.onload = function () {
       PDFBug.enable(enabledTabs);
       PDFBug.init({
-        PDFJS,
         OPS,
       }, appConfig.mainContainer);
       resolve();
@@ -1723,8 +1721,7 @@ function webViewerPageRendered(evt) {
     thumbnailView.setImage(pageView);
   }
 
-  if (PDFJS.pdfBug && typeof Stats !== 'undefined' && Stats.enabled &&
-      pageView.stats) {
+  if (typeof Stats !== 'undefined' && Stats.enabled && pageView.stats) {
     Stats.add(pageNumber, pageView.stats);
   }
 
@@ -2013,7 +2010,7 @@ function webViewerPageChanging(evt) {
   }
 
   // we need to update stats
-  if (PDFJS.pdfBug && typeof Stats !== 'undefined' && Stats.enabled) {
+  if (typeof Stats !== 'undefined' && Stats.enabled) {
     let pageView = PDFViewerApplication.pdfViewer.getPageView(page - 1);
     if (pageView && pageView.stats) {
       Stats.add(page, pageView.stats);

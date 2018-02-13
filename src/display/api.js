@@ -745,7 +745,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.pageIndex = pageIndex;
     this.pageInfo = pageInfo;
     this.transport = transport;
-    this._stats = (getDefaultSetting('enableStats') ?
+    this._stats = (getDefaultSetting('pdfBug') ?
                    new StatTimer() : DummyStatTimer);
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();

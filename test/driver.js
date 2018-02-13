@@ -254,7 +254,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     PDFJS.workerSrc = '../build/generic/build/pdf.worker.js';
     PDFJS.cMapPacked = true;
     PDFJS.cMapUrl = '../external/bcmaps/';
-    PDFJS.enableStats = true;
+    PDFJS.pdfBug = true;
 
     // Set the passed options
     this.inflight = options.inflight;
