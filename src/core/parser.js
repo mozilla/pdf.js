@@ -29,7 +29,22 @@ import { Jbig2Stream } from './jbig2_stream';
 import { JpegStream } from './jpeg_stream';
 import { JpxStream } from './jpx_stream';
 
-var MAX_LENGTH_TO_CACHE = 1000;
+const MAX_LENGTH_TO_CACHE = 1000;
+const MAX_ADLER32_LENGTH = 5552;
+
+function computeAdler32(bytes) {
+  let bytesLength = bytes.length;
+  if (bytesLength >= MAX_ADLER32_LENGTH) {
+    throw new Error('computeAdler32: The input is too large.');
+  }
+  let a = 1, b = 0;
+  for (let i = 0; i < bytesLength; ++i) {
+    // No modulo required in the loop if `bytesLength < 5552`.
+    a += bytes[i] & 0xFF;
+    b += a;
+  }
+  return ((b % 65521) << 16) | (a % 65521);
+}
 
 var Parser = (function ParserClosure() {
   function Parser(lexer, allowStreams, xref, recoveryMode) {
@@ -371,7 +386,7 @@ var Parser = (function ParserClosure() {
       var stream = lexer.stream;
 
       // Parse dictionary.
-      var dict = new Dict(this.xref);
+      let dict = new Dict(this.xref), dictLength;
       while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
         if (!isName(this.buf1)) {
           throw new FormatError('Dictionary key must be a name object');
@@ -382,6 +397,9 @@ var Parser = (function ParserClosure() {
           break;
         }
         dict.set(key, this.getObj(cipherTransform));
+      }
+      if (lexer.beginInlineImagePos !== -1) {
+        dictLength = stream.pos - lexer.beginInlineImagePos;
       }
 
       // Extract the name of the first (i.e. the current) image filter.
@@ -396,7 +414,7 @@ var Parser = (function ParserClosure() {
       }
 
       // Parse image stream.
-      var startPos = stream.pos, length, i, ii;
+      let startPos = stream.pos, length;
       if (filterName === 'DCTDecode' || filterName === 'DCT') {
         length = this.findDCTDecodeInlineStreamEnd(stream);
       } else if (filterName === 'ASCII85Decode' || filterName === 'A85') {
@@ -410,21 +428,22 @@ var Parser = (function ParserClosure() {
 
       // Cache all images below the MAX_LENGTH_TO_CACHE threshold by their
       // adler32 checksum.
-      var adler32;
-      if (length < MAX_LENGTH_TO_CACHE) {
+      let cacheKey;
+      if (length < MAX_LENGTH_TO_CACHE && dictLength < MAX_ADLER32_LENGTH) {
         var imageBytes = imageStream.getBytes();
         imageStream.reset();
 
-        var a = 1;
-        var b = 0;
-        for (i = 0, ii = imageBytes.length; i < ii; ++i) {
-          // No modulo required in the loop if imageBytes.length < 5552.
-          a += imageBytes[i] & 0xff;
-          b += a;
-        }
-        adler32 = ((b % 65521) << 16) | (a % 65521);
+        const initialStreamPos = stream.pos;
+        // Set the stream position to the beginning of the dictionary data...
+        stream.pos = lexer.beginInlineImagePos;
+        // ... and fetch the bytes of the *entire* dictionary.
+        let dictBytes = stream.getBytes(dictLength);
+        // Finally, don't forget to reset the stream position.
+        stream.pos = initialStreamPos;
 
-        let cacheEntry = this.imageCache[adler32];
+        cacheKey = computeAdler32(imageBytes) + '_' + computeAdler32(dictBytes);
+
+        let cacheEntry = this.imageCache[cacheKey];
         if (cacheEntry !== undefined) {
           this.buf2 = Cmd.get('EI');
           this.shift();
@@ -440,9 +459,9 @@ var Parser = (function ParserClosure() {
 
       imageStream = this.filter(imageStream, dict, length);
       imageStream.dict = dict;
-      if (adler32 !== undefined) {
-        imageStream.cacheKey = 'inline_' + length + '_' + adler32;
-        this.imageCache[adler32] = imageStream;
+      if (cacheKey !== undefined) {
+        imageStream.cacheKey = 'inline_' + length + '_' + cacheKey;
+        this.imageCache[cacheKey] = imageStream;
       }
 
       this.buf2 = Cmd.get('EI');
@@ -653,6 +672,8 @@ var Lexer = (function LexerClosure() {
     // 'fa', 'fal', 'fals'. The prefixes are not needed, if the command has no
     // other commands or literals as a prefix. The knowCommands is optional.
     this.knownCommands = knownCommands;
+
+    this.beginInlineImagePos = -1;
   }
 
   // A '1' in this array means the character is white space. A '1' or
@@ -1047,6 +1068,13 @@ var Lexer = (function LexerClosure() {
       if (str === 'null') {
         return null;
       }
+
+      if (str === 'BI') {
+        // Keep track of the current stream position, since it's needed in order
+        // to correctly cache inline images; see `Parser.makeInlineImage`.
+        this.beginInlineImagePos = this.stream.pos;
+      }
+
       return Cmd.get(str);
     },
     skipToNextLine: function Lexer_skipToNextLine() {
