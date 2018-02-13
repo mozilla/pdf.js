@@ -396,6 +396,7 @@ let PDFViewerApplication = {
         renderer: viewerPrefs['renderer'],
         l10n: this.l10n,
         enhanceTextSelection: viewerPrefs['enhanceTextSelection'],
+        imageResourcesPath: PDFJS.imageResourcesPath,
         renderInteractiveForms: viewerPrefs['renderInteractiveForms'],
         enablePrintAutoRotate: viewerPrefs['enablePrintAutoRotate'],
         useOnlyCssZoom: PDFJS.useOnlyCssZoom,

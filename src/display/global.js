@@ -121,14 +121,6 @@ PDFJS.disableFontFace = (PDFJS.disableFontFace === undefined ?
                          false : PDFJS.disableFontFace);
 
 /**
- * Path for image resources, mainly for annotation icons. Include trailing
- * slash.
- * @var {string}
- */
-PDFJS.imageResourcesPath = (PDFJS.imageResourcesPath === undefined ?
-                            '' : PDFJS.imageResourcesPath);
-
-/**
  * Path and filename of the worker file. Required when the worker is enabled
  * in development mode. If unspecified in the production build, the worker
  * will be loaded based on the location of the pdf.js file. It is recommended
