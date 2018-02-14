@@ -8,7 +8,8 @@ require('pdfjs-dist');
 var pdfPath = '../helloworld/helloworld.pdf';
 
 // Setting worker path to worker bundle.
-PDFJS.workerSrc = '../../build/browserify/pdf.worker.bundle.js';
+PDFJS.GlobalWorkerOptions.workerSrc =
+  '../../build/browserify/pdf.worker.bundle.js';
 
 // Loading a document.
 var loadingTask = PDFJS.getDocument(pdfPath);

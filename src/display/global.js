@@ -113,16 +113,6 @@ PDFJS.disableFontFace = (PDFJS.disableFontFace === undefined ?
                          false : PDFJS.disableFontFace);
 
 /**
- * Path and filename of the worker file. Required when the worker is enabled
- * in development mode. If unspecified in the production build, the worker
- * will be loaded based on the location of the pdf.js file. It is recommended
- * that the workerSrc is set in a custom application to prevent issues caused
- * by third-party frameworks and libraries.
- * @var {string}
- */
-PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
-
-/**
  * Disable range request loading of PDF files. When enabled and if the server
  * supports partial content requests then the PDF will be fetched in chunks.
  * Enabled (false) by default.
