@@ -125,8 +125,8 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @property {number}     rangeChunkSize - Optional parameter to specify
  *   maximum number of bytes fetched per range request. The default value is
  *   2^16 = 65536.
- * @property {PDFWorker}  worker - The worker that will be used for the loading
- *   and parsing of the PDF data.
+ * @property {PDFWorker}  worker - (optional) The worker that will be used for
+ *   the loading and parsing of the PDF data.
  * @property {string} docBaseUrl - (optional) The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
@@ -193,7 +193,7 @@ function getDocument(src) {
 
   var params = {};
   var rangeTransport = null;
-  var worker = null;
+  let worker = null;
   var CMapReaderFactory = DOMCMapReaderFactory;
 
   for (var key in source) {
@@ -240,10 +240,17 @@ function getDocument(src) {
   }
 
   if (!worker) {
+    const workerParams = {
+    };
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global worker options, using it.
     let workerPort = GlobalWorkerOptions.workerPort;
-    worker = workerPort ? PDFWorker.fromPort(workerPort) : new PDFWorker();
+    if (workerPort) {
+      workerParams.port = workerPort;
+      worker = PDFWorker.fromPort(workerParams);
+    } else {
+      worker = new PDFWorker(workerParams);
+    }
     task._worker = worker;
   }
   var docId = task.docId;
@@ -1193,8 +1200,14 @@ class LoopbackPort {
 }
 
 /**
+ * @typedef {Object} PDFWorkerParameters
+ * @property {string} name - (optional) The name of the worker.
+ * @property {Object} port - (optional) The `workerPort`.
+ */
+
+/**
  * PDF.js web worker abstraction, it controls instantiation of PDF documents and
- * WorkerTransport for them.  If creation of a web worker is not possible,
+ * WorkerTransport for them. If creation of a web worker is not possible,
  * a "fake" worker will be used instead.
  * @class
  */
@@ -1280,7 +1293,10 @@ var PDFWorker = (function PDFWorkerClosure() {
 
   let pdfWorkerPorts = new WeakMap();
 
-  function PDFWorker(name, port) {
+  /**
+   * @param {PDFWorkerParameters} params - The worker initialization parameters.
+   */
+  function PDFWorker({ name = null, port = null, } = {}) {
     if (port && pdfWorkerPorts.has(port)) {
       throw new Error('Cannot use more than one PDFWorker per port');
     }
@@ -1495,11 +1511,14 @@ var PDFWorker = (function PDFWorkerClosure() {
     },
   };
 
-  PDFWorker.fromPort = function (port) {
-    if (pdfWorkerPorts.has(port)) {
-      return pdfWorkerPorts.get(port);
+  /**
+   * @param {PDFWorkerParameters} params - The worker initialization parameters.
+   */
+  PDFWorker.fromPort = function(params) {
+    if (pdfWorkerPorts.has(params.port)) {
+      return pdfWorkerPorts.get(params.port);
     }
-    return new PDFWorker(null, port);
+    return new PDFWorker(params);
   };
 
   PDFWorker.getWorkerSrc = function() {

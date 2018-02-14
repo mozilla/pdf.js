@@ -324,7 +324,7 @@ describe('api', function() {
     }
 
     it('worker created or destroyed', function (done) {
-      var worker = new PDFWorker('test1');
+      var worker = new PDFWorker({ name: 'test1', });
       worker.promise.then(function () {
         expect(worker.name).toEqual('test1');
         expect(!!worker.port).toEqual(true);
@@ -361,7 +361,7 @@ describe('api', function() {
       });
     });
     it('worker created and can be used in getDocument', function (done) {
-      var worker = new PDFWorker('test1');
+      var worker = new PDFWorker({ name: 'test1', });
       var loadingTask = getDocument(
         buildGetDocumentParams(basicApiFileName, {
           worker,
@@ -386,9 +386,9 @@ describe('api', function() {
       });
     });
     it('creates more than one worker', function (done) {
-      var worker1 = new PDFWorker('test1');
-      var worker2 = new PDFWorker('test2');
-      var worker3 = new PDFWorker('test3');
+      var worker1 = new PDFWorker({ name: 'test1', });
+      var worker2 = new PDFWorker({ name: 'test2', });
+      var worker3 = new PDFWorker({ name: 'test3', });
       var ready = Promise.all([worker1.promise, worker2.promise,
         worker3.promise]);
       ready.then(function () {
