@@ -26,6 +26,7 @@ import {
 } from './api';
 import { AnnotationLayer } from './annotation_layer';
 import globalScope from '../shared/global_scope';
+import { GlobalWorkerOptions } from './worker_options';
 import { Metadata } from './metadata';
 import { renderTextLayer } from './text_layer';
 import { SVGGraphics } from './svg';
@@ -208,6 +209,7 @@ PDFJS.getDocument = getDocument;
 PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
+PDFJS.GlobalWorkerOptions = GlobalWorkerOptions;
 
 PDFJS.getFilenameFromUrl = getFilenameFromUrl;
 
