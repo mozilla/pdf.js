@@ -351,8 +351,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.cMapPacked : false;
     case 'postMessageTransfers':
       return globalSettings ? globalSettings.postMessageTransfers : true;
-    case 'workerSrc':
-      return globalSettings ? globalSettings.workerSrc : null;
     case 'maxImageSize':
       return globalSettings ? globalSettings.maxImageSize : -1;
     case 'isEvalSupported':

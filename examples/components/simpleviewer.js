@@ -22,7 +22,8 @@ if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
 
 // The workerSrc property shall be specified.
 //
-PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+PDFJS.GlobalWorkerOptions.workerSrc =
+  '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
 // Some PDFs need external cmaps.
 //

@@ -33,7 +33,8 @@
   // pdf.js's one, or the pdf.js is executed via eval(), the workerSrc property
   // shall be specified.
   //
-  // PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+  // PDFJS.GlobalWorkerOptions.workerSrc =
+  //   '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
   var pdfDoc = null,
       pageNum = 1,
