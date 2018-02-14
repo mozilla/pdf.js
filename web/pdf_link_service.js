@@ -90,6 +90,13 @@ class PDFLinkService {
   }
 
   /**
+   * @param {Object} link - HTML link element
+   */
+  handleURILink(link, data) {
+    this.eventBus.dispatch('uriclicked', { uri: data.unsafeUrl, });
+  }
+
+  /**
    * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
   navigateTo(dest) {
@@ -432,6 +439,11 @@ class SimpleLinkService {
    * @param {number} value
    */
   set rotation(value) {}
+
+  /**
+   * @param {Object} link - HTML link element
+   */
+  handleURILink(link, data) {}
 
   /**
    * @param dest - The PDF destination object.
