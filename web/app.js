@@ -740,6 +740,8 @@ let PDFViewerApplication = {
                PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
       parameters.docBaseUrl = this.baseUrl;
     }
+    // TODO: Remove this once all options are moved from the `PDFJS` object.
+    parameters.verbosity = PDFJS.verbosity;
 
     if (args) {
       for (let prop in args) {

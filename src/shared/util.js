@@ -142,10 +142,10 @@ var FontType = {
   MMTYPE1: 10,
 };
 
-var VERBOSITY_LEVELS = {
-  errors: 0,
-  warnings: 1,
-  infos: 5,
+const VerbosityLevel = {
+  ERRORS: 0,
+  WARNINGS: 1,
+  INFOS: 5,
 };
 
 var CMapCompressionType = {
@@ -251,10 +251,12 @@ var OPS = {
   constructPath: 91,
 };
 
-var verbosity = VERBOSITY_LEVELS.warnings;
+let verbosity = VerbosityLevel.WARNINGS;
 
 function setVerbosityLevel(level) {
-  verbosity = level;
+  if (Number.isInteger(level)) {
+    verbosity = level;
+  }
 }
 
 function getVerbosityLevel() {
@@ -265,19 +267,19 @@ function getVerbosityLevel() {
 // as warning that Workers were disabled, which is important to devs but not
 // end users.
 function info(msg) {
-  if (verbosity >= VERBOSITY_LEVELS.infos) {
+  if (verbosity >= VerbosityLevel.INFOS) {
     console.log('Info: ' + msg);
   }
 }
 
 // Non-fatal warnings.
 function warn(msg) {
-  if (verbosity >= VERBOSITY_LEVELS.warnings) {
+  if (verbosity >= VerbosityLevel.WARNINGS) {
     console.log('Warning: ' + msg);
   }
 }
 
-// Deprecated API function -- display regardless of the PDFJS.verbosity setting.
+// Deprecated API function -- display regardless of the `verbosity` setting.
 function deprecated(details) {
   console.log('Deprecated API usage: ' + details);
 }
@@ -1573,7 +1575,7 @@ export {
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   OPS,
-  VERBOSITY_LEVELS,
+  VerbosityLevel,
   UNSUPPORTED_FEATURES,
   AnnotationBorderStyleType,
   AnnotationFieldFlag,

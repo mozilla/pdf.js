@@ -16,9 +16,10 @@
 
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isSameOrigin, MessageHandler, MissingPDFException,
-  NativeImageDecoding, PageViewport, PasswordException, stringToBytes,
-  UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
+  isArrayBuffer, isNum, isSameOrigin, MessageHandler, MissingPDFException,
+  NativeImageDecoding, PageViewport, PasswordException, setVerbosityLevel,
+  stringToBytes, UnexpectedResponseException, UnknownErrorException,
+  unreachable, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, getDefaultSetting,
@@ -128,6 +129,8 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   the loading and parsing of the PDF data.
  * @property {boolean} postMessageTransfers - (optional) Enables transfer usage
  *   in postMessage for ArrayBuffers. The default value is `true`.
+ * @property {number} verbosity - (optional) Controls the logging level; the
+ *   constants from {VerbosityLevel} should be used.
  * @property {string} docBaseUrl - (optional) The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
@@ -240,9 +243,13 @@ function getDocument(src) {
     params.nativeImageDecoderSupport = NativeImageDecoding.DECODE;
   }
 
+  // Set the main-thread verbosity level.
+  setVerbosityLevel(params.verbosity);
+
   if (!worker) {
     const workerParams = {
       postMessageTransfers: params.postMessageTransfers,
+      verbosity: params.verbosity,
     };
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global worker options, using it.
@@ -1206,6 +1213,8 @@ class LoopbackPort {
  * @property {Object} port - (optional) The `workerPort`.
  * @property {boolean} postMessageTransfers - (optional) Enables transfer usage
  *   in postMessage for ArrayBuffers. The default value is `true`.
+ * @property {number} verbosity - (optional) Controls the logging level; the
+ *   constants from {VerbosityLevel} should be used.
  */
 
 /**
@@ -1300,7 +1309,7 @@ var PDFWorker = (function PDFWorkerClosure() {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
   function PDFWorker({ name = null, port = null,
-                       postMessageTransfers = true, } = {}) {
+                       postMessageTransfers = true, verbosity = null, } = {}) {
     if (port && pdfWorkerPorts.has(port)) {
       throw new Error('Cannot use more than one PDFWorker per port');
     }
@@ -1308,6 +1317,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     this.name = name;
     this.destroyed = false;
     this.postMessageTransfers = postMessageTransfers !== false;
+    this.verbosity = (isNum(verbosity) ? verbosity : getVerbosityLevel());
 
     this._readyCapability = createPromiseCapability();
     this._port = null;
@@ -1408,7 +1418,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               this._readyCapability.resolve();
               // Send global setting, e.g. verbosity level.
               messageHandler.send('configure', {
-                verbosity: getVerbosityLevel(),
+                verbosity: this.verbosity,
               });
             } else {
               this._setupFakeWorker();
