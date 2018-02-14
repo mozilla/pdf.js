@@ -274,7 +274,7 @@ var RenderingCancelledException = (function RenderingCancelledException() {
   return RenderingCancelledException;
 })();
 
-var LinkTarget = {
+const LinkTarget = {
   NONE: 0, // Default value.
   SELF: 1,
   BLANK: 2,
@@ -282,7 +282,7 @@ var LinkTarget = {
   TOP: 4,
 };
 
-var LinkTargetStringMap = [
+const LinkTargetStringMap = [
   '',
   '_self',
   '_blank',
@@ -294,8 +294,10 @@ var LinkTargetStringMap = [
  * @typedef ExternalLinkParameters
  * @typedef {Object} ExternalLinkParameters
  * @property {string} url - An absolute URL.
- * @property {LinkTarget} target - The link target.
- * @property {string} rel - The link relationship.
+ * @property {LinkTarget} target - (optional) The link target.
+ *   The default value is `LinkTarget.NONE`.
+ * @property {string} rel - (optional) The link relationship.
+ *   The default value is `DEFAULT_LINK_REL`.
  */
 
 /**
@@ -303,22 +305,16 @@ var LinkTargetStringMap = [
  * @param {HTMLLinkElement} link - The link element.
  * @param {ExternalLinkParameters} params
  */
-function addLinkAttributes(link, params) {
-  var url = params && params.url;
+function addLinkAttributes(link, { url, target, rel, } = {}) {
   link.href = link.title = (url ? removeNullCharacters(url) : '');
 
   if (url) {
-    var target = params.target;
-    if (typeof target === 'undefined') {
-      target = getDefaultSetting('externalLinkTarget');
-    }
-    link.target = LinkTargetStringMap[target];
+    const LinkTargetValues = Object.values(LinkTarget);
+    let targetIndex =
+      LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
+    link.target = LinkTargetStringMap[targetIndex];
 
-    var rel = params.rel;
-    if (typeof rel === 'undefined') {
-      rel = getDefaultSetting('externalLinkRel');
-    }
-    link.rel = rel;
+    link.rel = (typeof rel === 'string' ? rel : DEFAULT_LINK_REL);
   }
 }
 
@@ -349,8 +345,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.disableFontFace : false;
     case 'disableCreateObjectURL':
       return globalSettings ? globalSettings.disableCreateObjectURL : false;
-    case 'disableWebGL':
-      return globalSettings ? globalSettings.disableWebGL : true;
     case 'cMapUrl':
       return globalSettings ? globalSettings.cMapUrl : null;
     case 'cMapPacked':
@@ -363,46 +357,10 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.workerSrc : null;
     case 'maxImageSize':
       return globalSettings ? globalSettings.maxImageSize : -1;
-    case 'imageResourcesPath':
-      return globalSettings ? globalSettings.imageResourcesPath : '';
     case 'isEvalSupported':
       return globalSettings ? globalSettings.isEvalSupported : true;
-    case 'externalLinkTarget':
-      if (!globalSettings) {
-        return LinkTarget.NONE;
-      }
-      switch (globalSettings.externalLinkTarget) {
-        case LinkTarget.NONE:
-        case LinkTarget.SELF:
-        case LinkTarget.BLANK:
-        case LinkTarget.PARENT:
-        case LinkTarget.TOP:
-          return globalSettings.externalLinkTarget;
-      }
-      warn('PDFJS.externalLinkTarget is invalid: ' +
-           globalSettings.externalLinkTarget);
-      // Reset the external link target, to suppress further warnings.
-      globalSettings.externalLinkTarget = LinkTarget.NONE;
-      return LinkTarget.NONE;
-    case 'externalLinkRel':
-      return globalSettings ? globalSettings.externalLinkRel : DEFAULT_LINK_REL;
-    case 'enableStats':
-      return !!(globalSettings && globalSettings.enableStats);
     default:
       throw new Error('Unknown default setting: ' + id);
-  }
-}
-
-function isExternalLinkTargetSet() {
-  var externalLinkTarget = getDefaultSetting('externalLinkTarget');
-  switch (externalLinkTarget) {
-    case LinkTarget.NONE:
-      return false;
-    case LinkTarget.SELF:
-    case LinkTarget.BLANK:
-    case LinkTarget.PARENT:
-    case LinkTarget.TOP:
-      return true;
   }
 }
 
@@ -483,7 +441,6 @@ class DummyStatTimer {
 export {
   RenderingCancelledException,
   addLinkAttributes,
-  isExternalLinkTargetSet,
   getFilenameFromUrl,
   LinkTarget,
   getDefaultSetting,
