@@ -14,11 +14,10 @@
  */
 
 import {
-  createBlob, createObjectURL, createPromiseCapability, getVerbosityLevel,
-  InvalidPDFException, isLittleEndian, MissingPDFException, OPS, PageViewport,
-  PasswordException, PasswordResponses, removeNullCharacters, setVerbosityLevel,
-  shadow, UnexpectedResponseException, UnknownErrorException,
-  UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS
+  createBlob, createObjectURL, createPromiseCapability, InvalidPDFException,
+  isLittleEndian, MissingPDFException, OPS, PageViewport, PasswordException,
+  PasswordResponses, removeNullCharacters, shadow, UnexpectedResponseException,
+  UnknownErrorException, UNSUPPORTED_FEATURES, Util
 } from '../shared/util';
 import { DEFAULT_LINK_REL, getFilenameFromUrl, LinkTarget } from './dom_utils';
 import {
@@ -42,22 +41,6 @@ var PDFJS = globalScope.PDFJS;
 
 PDFJS.pdfBug = false;
 
-if (PDFJS.verbosity !== undefined) {
-  setVerbosityLevel(PDFJS.verbosity);
-}
-delete PDFJS.verbosity;
-Object.defineProperty(PDFJS, 'verbosity', {
-  get() {
-    return getVerbosityLevel();
-  },
-  set(level) {
-    setVerbosityLevel(level);
-  },
-  enumerable: true,
-  configurable: true,
-});
-
-PDFJS.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
 PDFJS.OPS = OPS;
 PDFJS.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
 PDFJS.shadow = shadow;

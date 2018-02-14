@@ -83,6 +83,7 @@ exports.NativeImageDecoding = pdfjsSharedUtil.NativeImageDecoding;
 exports.UnexpectedResponseException =
   pdfjsSharedUtil.UnexpectedResponseException;
 exports.OPS = pdfjsSharedUtil.OPS;
+exports.VerbosityLevel = pdfjsSharedUtil.VerbosityLevel;
 exports.UNSUPPORTED_FEATURES = pdfjsSharedUtil.UNSUPPORTED_FEATURES;
 exports.createValidAbsoluteUrl = pdfjsSharedUtil.createValidAbsoluteUrl;
 exports.createObjectURL = pdfjsSharedUtil.createObjectURL;
