@@ -27,6 +27,7 @@ import {
 import { FontFaceObject, FontLoader } from './font_loader';
 import { CanvasGraphics } from './canvas';
 import globalScope from '../shared/global_scope';
+import { GlobalWorkerOptions } from './worker_options';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 import { WebGLContext } from './webgl';
@@ -240,8 +241,8 @@ function getDocument(src) {
 
   if (!worker) {
     // Worker was not provided -- creating and owning our own. If message port
-    // is specified in global settings, using it.
-    var workerPort = getDefaultSetting('workerPort');
+    // is specified in global worker options, using it.
+    let workerPort = GlobalWorkerOptions.workerPort;
     worker = workerPort ? PDFWorker.fromPort(workerPort) : new PDFWorker();
     task._worker = worker;
   }
