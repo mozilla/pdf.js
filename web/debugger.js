@@ -462,7 +462,6 @@ var Stats = (function Stats() {
     manager: null,
     init(pdfjsLib) {
       this.panel.setAttribute('style', 'padding: 5px;');
-      pdfjsLib.PDFJS.enableStats = true;
     },
     enabled: false,
     active: false,

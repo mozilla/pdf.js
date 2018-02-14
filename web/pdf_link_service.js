@@ -19,6 +19,11 @@ import { parseQueryString } from './ui_utils';
 /**
  * @typedef {Object} PDFLinkServiceOptions
  * @property {EventBus} eventBus - The application event bus.
+ * @property {number} externalLinkTarget - (optional) Specifies the `target`
+ *   attribute for external links. Must use one of the values from {LinkTarget}.
+ *   Defaults to using no target.
+ * @property {string} externalLinkRel - (optional) Specifies the `rel` attribute
+ *   for external links. Defaults to stripping the referrer.
  */
 
 /**
@@ -30,8 +35,12 @@ class PDFLinkService {
   /**
    * @param {PDFLinkServiceOptions} options
    */
-  constructor({ eventBus, } = {}) {
+  constructor({ eventBus, externalLinkTarget = null,
+                externalLinkRel = null, } = {}) {
     this.eventBus = eventBus || getGlobalEventBus();
+    this.externalLinkTarget = externalLinkTarget;
+    this.externalLinkRel = externalLinkRel;
+
     this.baseUrl = null;
     this.pdfDocument = null;
     this.pdfViewer = null;
@@ -409,6 +418,11 @@ function isValidExplicitDestination(dest) {
 }
 
 class SimpleLinkService {
+  constructor() {
+    this.externalLinkTarget = null;
+    this.externalLinkRel = null;
+  }
+
   /**
    * @returns {number}
    */

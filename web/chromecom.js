@@ -342,7 +342,7 @@ ChromeExternalServices.createDownloadManager = function() {
 ChromeExternalServices.createPreferences = function() {
   return new ChromePreferences();
 };
-ChromeExternalServices.createL10n = function() {
+ChromeExternalServices.createL10n = function(options) {
   return new GenericL10n(navigator.language);
 };
 PDFViewerApplication.externalServices = ChromeExternalServices;

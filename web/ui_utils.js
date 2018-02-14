@@ -37,6 +37,12 @@ const RendererType = {
   SVG: 'svg',
 };
 
+const TextLayerMode = {
+  DISABLE: 0,
+  ENABLE: 1,
+  ENABLE_ENHANCE: 2,
+};
+
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
@@ -66,14 +72,6 @@ let NullL10n = {
 };
 
 /**
- * Disables fullscreen support, and by extension Presentation Mode,
- * in browsers which support the fullscreen API.
- * @var {boolean}
- */
-PDFJS.disableFullscreen = (PDFJS.disableFullscreen === undefined ?
-                           false : PDFJS.disableFullscreen);
-
-/**
  * Enables CSS only zooming.
  * @var {boolean}
  */
@@ -95,13 +93,6 @@ PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
 PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
                         false : PDFJS.disableHistory);
 
-/**
- * Disables creation of the text layer that used for text selection and search.
- * @var {boolean}
- */
-PDFJS.disableTextLayer = (PDFJS.disableTextLayer === undefined ?
-                          false : PDFJS.disableTextLayer);
-
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   /**
@@ -110,7 +101,7 @@ if (typeof PDFJSDev === 'undefined' ||
    */
   PDFJS.locale =
     (PDFJS.locale === undefined && typeof navigator !== 'undefined' ?
-     navigator.language : PDFJS.locale);
+     navigator.language : PDFJS.locale) || 'en-US';
 }
 
 /**
@@ -677,6 +668,7 @@ export {
   cloneObj,
   PresentationModeState,
   RendererType,
+  TextLayerMode,
   mozL10n,
   NullL10n,
   EventBus,
