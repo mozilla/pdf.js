@@ -349,8 +349,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.cMapUrl : null;
     case 'cMapPacked':
       return globalSettings ? globalSettings.cMapPacked : false;
-    case 'postMessageTransfers':
-      return globalSettings ? globalSettings.postMessageTransfers : true;
     case 'maxImageSize':
       return globalSettings ? globalSettings.maxImageSize : -1;
     case 'isEvalSupported':

@@ -148,13 +148,6 @@ PDFJS.disableAutoFetch = (PDFJS.disableAutoFetch === undefined ?
 PDFJS.pdfBug = (PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug);
 
 /**
- * Enables transfer usage in postMessage for ArrayBuffers.
- * @var {boolean}
- */
-PDFJS.postMessageTransfers = (PDFJS.postMessageTransfers === undefined ?
-                              true : PDFJS.postMessageTransfers);
-
-/**
  * Disables URL.createObjectURL usage.
  * @var {boolean}
  */
