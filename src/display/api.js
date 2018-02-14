@@ -36,7 +36,6 @@ var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
 let isWorkerDisabled = false;
 let workerSrc;
-var isPostMessageTransfersDisabled = false;
 
 const pdfjsFilePath =
   typeof PDFJSDev !== 'undefined' &&
@@ -127,6 +126,8 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   2^16 = 65536.
  * @property {PDFWorker}  worker - (optional) The worker that will be used for
  *   the loading and parsing of the PDF data.
+ * @property {boolean} postMessageTransfers - (optional) Enables transfer usage
+ *   in postMessage for ArrayBuffers. The default value is `true`.
  * @property {string} docBaseUrl - (optional) The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
@@ -241,6 +242,7 @@ function getDocument(src) {
 
   if (!worker) {
     const workerParams = {
+      postMessageTransfers: params.postMessageTransfers,
     };
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global worker options, using it.
@@ -321,8 +323,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     maxImageSize: getDefaultSetting('maxImageSize'),
     disableFontFace: getDefaultSetting('disableFontFace'),
     disableCreateObjectURL: getDefaultSetting('disableCreateObjectURL'),
-    postMessageTransfers: getDefaultSetting('postMessageTransfers') &&
-                          !isPostMessageTransfersDisabled,
+    postMessageTransfers: worker.postMessageTransfers,
     docBaseUrl: source.docBaseUrl,
     nativeImageDecoderSupport: source.nativeImageDecoderSupport,
     ignoreErrors: source.ignoreErrors,
@@ -1203,6 +1204,8 @@ class LoopbackPort {
  * @typedef {Object} PDFWorkerParameters
  * @property {string} name - (optional) The name of the worker.
  * @property {Object} port - (optional) The `workerPort`.
+ * @property {boolean} postMessageTransfers - (optional) Enables transfer usage
+ *   in postMessage for ArrayBuffers. The default value is `true`.
  */
 
 /**
@@ -1296,14 +1299,15 @@ var PDFWorker = (function PDFWorkerClosure() {
   /**
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
-  function PDFWorker({ name = null, port = null, } = {}) {
+  function PDFWorker({ name = null, port = null,
+                       postMessageTransfers = true, } = {}) {
     if (port && pdfWorkerPorts.has(port)) {
       throw new Error('Cannot use more than one PDFWorker per port');
     }
 
     this.name = name;
     this.destroyed = false;
-    this.postMessageTransfers = true;
+    this.postMessageTransfers = postMessageTransfers !== false;
 
     this._readyCapability = createPromiseCapability();
     this._port = null;
@@ -1400,7 +1404,6 @@ var PDFWorker = (function PDFWorkerClosure() {
               this._webWorker = worker;
               if (!data.supportTransfers) {
                 this.postMessageTransfers = false;
-                isPostMessageTransfersDisabled = true;
               }
               this._readyCapability.resolve();
               // Send global setting, e.g. verbosity level.
@@ -1428,11 +1431,8 @@ var PDFWorker = (function PDFWorkerClosure() {
             }
           });
 
-          var sendTest = function () {
-            var postMessageTransfers =
-              getDefaultSetting('postMessageTransfers') &&
-              !isPostMessageTransfersDisabled;
-            var testObj = new Uint8Array([postMessageTransfers ? 255 : 0]);
+          const sendTest = () => {
+            let testObj = new Uint8Array([this.postMessageTransfers ? 255 : 0]);
             // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
             // typed array. Also, checking if we can use transfers.
             try {
