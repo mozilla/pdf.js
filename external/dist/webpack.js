@@ -18,7 +18,7 @@ var pdfjs = require('./build/pdf.js');
 var PdfjsWorker = require('worker-loader!./build/pdf.worker.js');
 
 if (typeof window !== 'undefined' && 'Worker' in window) {
-  pdfjs.PDFJS.workerPort = new PdfjsWorker();
+  pdfjs.GlobalWorkerOptions.workerPort = new PdfjsWorker();
 }
 
 module.exports = pdfjs;
