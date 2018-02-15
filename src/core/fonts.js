@@ -1225,7 +1225,8 @@ var Font = (function FontClosure() {
         !!(nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]);
       fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
 
-      this.bold = (fontName.search(/bold/gi) !== -1);
+      this.bold = ((fontName.search(/bold/gi) !== -1) ||
+                   (fontName.search(/-bd/gi) !== -1));
       this.italic = ((fontName.search(/oblique/gi) !== -1) ||
                      (fontName.search(/italic/gi) !== -1));
 
