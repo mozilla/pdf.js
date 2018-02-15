@@ -45,12 +45,16 @@ class AnnotationElementFactory {
 
     switch (subtype) {
       case AnnotationType.LINK:
+        let elem;
         let data = parameters.data;
-        if (data.unsafeUrl !== undefined && data.url === undefined && data.dest === undefined) {
-          return new URIAnnotationElement(parameters);
+        if (data.unsafeUrl !== undefined &&
+            data.url === undefined &&
+            data.dest === undefined) {
+          elem = new URIAnnotationElement(parameters);
         } else {
-          return new LinkAnnotationElement(parameters);
+          elem = new LinkAnnotationElement(parameters);
         }
+        return elem;
 
       case AnnotationType.TEXT:
         return new TextAnnotationElement(parameters);
