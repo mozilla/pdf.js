@@ -44,7 +44,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
 
   function rasterizeTextLayer(ctx, viewport, textContent,
                               enhanceTextSelection) {
-    return new Promise(function (resolve) {
+    return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, 'svg:svg');
       svg.setAttribute('width', viewport.width + 'px');
@@ -85,6 +85,9 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
         img.onload = function () {
           ctx.drawImage(img, 0, 0);
           resolve();
+        };
+        img.onerror = function(e) {
+          reject(new Error('Error rasterizing text layer ' + e));
         };
       });
     });
@@ -127,11 +130,14 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
 
     // Load the style files and cache the results.
     for (let key in styles) {
-      styles[key].promise = new Promise(function(resolve) {
+      styles[key].promise = new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest();
         xhr.open('GET', styles[key].file);
         xhr.onload = function() {
           resolve(xhr.responseText);
+        };
+        xhr.onerror = function(e) {
+          reject(new Error('Error fetching annotation style ' + e));
         };
         xhr.send(null);
       });
@@ -143,7 +149,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   function inlineAnnotationImages(images) {
     var imagePromises = [];
     for (var i = 0, ii = images.length; i < ii; i++) {
-      var imagePromise = new Promise(function(resolve) {
+      var imagePromise = new Promise(function(resolve, reject) {
         var xhr = new XMLHttpRequest();
         xhr.responseType = 'blob';
         xhr.onload = function() {
@@ -153,8 +159,8 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           };
           reader.readAsDataURL(xhr.response);
         };
-        xhr.onerror = function() {
-          resolve('');
+        xhr.onerror = function(e) {
+          reject(new Error('Error fetching inline annotation image ' + e));
         };
         xhr.open('GET', images[i].src);
         xhr.send();
@@ -167,7 +173,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   function rasterizeAnnotationLayer(ctx, viewport, annotations, page,
                                     imageResourcesPath,
                                     renderInteractiveForms) {
-    return new Promise(function (resolve) {
+    return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, 'svg:svg');
       svg.setAttribute('width', viewport.width + 'px');
@@ -205,9 +211,17 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
         var images = div.getElementsByTagName('img');
         var imagePromises = inlineAnnotationImages(images);
         var converted = Promise.all(imagePromises).then(function(data) {
+          var loadedPromises = [];
           for (var i = 0, ii = data.length; i < ii; i++) {
             images[i].src = data[i];
+            loadedPromises.push(new Promise(function (resolve, reject) {
+              images[i].onload = resolve;
+              images[i].onerror = function(e) {
+                reject(new Error('Error loading image ' + e));
+              };
+            }));
           }
+          return loadedPromises;
         });
 
         foreignObject.appendChild(div);
@@ -222,6 +236,9 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           img.onload = function () {
             ctx.drawImage(img, 0, 0);
             resolve();
+          };
+          img.onerror = function(e) {
+            reject(new Error('Error rasterizing annotation layer ' + e));
           };
         });
       });
@@ -544,12 +561,11 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
               self._snapshot(task, error);
             });
             initPromise.then(function () {
-              page.render(renderContext).promise.then(function() {
+              return page.render(renderContext).promise.then(function() {
                 completeRender(false);
-              },
-              function(error) {
-                completeRender('render : ' + error);
               });
+            }).catch(function (error) {
+              completeRender('render : ' + error);
             });
           },
           function(error) {
