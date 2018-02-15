@@ -45,7 +45,16 @@ class AnnotationElementFactory {
 
     switch (subtype) {
       case AnnotationType.LINK:
-        return new LinkAnnotationElement(parameters);
+        let elem;
+        let data = parameters.data;
+        if (data.unsafeUrl !== undefined &&
+            data.url === undefined &&
+            data.dest === undefined) {
+          elem = new URIAnnotationElement(parameters);
+        } else {
+          elem = new LinkAnnotationElement(parameters);
+        }
+        return elem;
 
       case AnnotationType.TEXT:
         return new TextAnnotationElement(parameters);
@@ -339,6 +348,43 @@ class LinkAnnotationElement extends AnnotationElement {
       return false;
     };
     link.className = 'internalLink';
+  }
+}
+
+class URIAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    super(parameters, true);
+  }
+
+  /**
+   * Render the link annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof URIAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = 'uriAnnotation';
+
+    let link = document.createElement('a');
+    this._bindURILink(link, this.data);
+
+    this.container.appendChild(link);
+    return this.container;
+  }
+
+  /**
+   * Bind event handler to external links
+   *
+   * @private
+   * @param {Object} link
+   * @memberof LinkAnnotationElement
+   */
+  _bindURILink(link, data) {
+    link.onclick = () => {
+      this.linkService.handleURILink(link, data);
+      return false;
+    };
   }
 }
 
