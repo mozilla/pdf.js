@@ -14,16 +14,13 @@
  */
 
 import {
-  addLinkAttributes, DEFAULT_LINK_REL, getFilenameFromUrl,
-  isExternalLinkTargetSet, isValidUrl, LinkTarget
-} from './dom_utils';
-import {
   createBlob, createObjectURL, createPromiseCapability, getVerbosityLevel,
   InvalidPDFException, isLittleEndian, MissingPDFException, OPS, PageViewport,
   PasswordException, PasswordResponses, removeNullCharacters, setVerbosityLevel,
   shadow, UnexpectedResponseException, UnknownErrorException,
   UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS
 } from '../shared/util';
+import { DEFAULT_LINK_REL, getFilenameFromUrl, LinkTarget } from './dom_utils';
 import {
   getDocument, LoopbackPort, PDFDataRangeTransport, PDFWorker
 } from './api';
@@ -41,11 +38,6 @@ if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
 var PDFJS = globalScope.PDFJS;
-
-if (typeof PDFJSDev !== 'undefined') {
-  PDFJS.version = PDFJSDev.eval('BUNDLE_VERSION');
-  PDFJS.build = PDFJSDev.eval('BUNDLE_BUILD');
-}
 
 PDFJS.pdfBug = false;
 
@@ -67,7 +59,6 @@ Object.defineProperty(PDFJS, 'verbosity', {
 PDFJS.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
 PDFJS.OPS = OPS;
 PDFJS.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
-PDFJS.isValidUrl = isValidUrl;
 PDFJS.shadow = shadow;
 PDFJS.createBlob = createBlob;
 PDFJS.createObjectURL = function PDFJS_createObjectURL(data, contentType) {
@@ -121,23 +112,6 @@ PDFJS.disableFontFace = (PDFJS.disableFontFace === undefined ?
                          false : PDFJS.disableFontFace);
 
 /**
- * Path for image resources, mainly for annotation icons. Include trailing
- * slash.
- * @var {string}
- */
-PDFJS.imageResourcesPath = (PDFJS.imageResourcesPath === undefined ?
-                            '' : PDFJS.imageResourcesPath);
-
-/**
- * Disable the web worker and run all code on the main thread. This will
- * happen automatically if the browser doesn't support workers or sending
- * typed arrays to workers.
- * @var {boolean}
- */
-PDFJS.disableWorker = (PDFJS.disableWorker === undefined ?
-                       false : PDFJS.disableWorker);
-
-/**
  * Path and filename of the worker file. Required when the worker is enabled
  * in development mode. If unspecified in the production build, the worker
  * will be loaded based on the location of the pdf.js file. It is recommended
@@ -148,8 +122,7 @@ PDFJS.disableWorker = (PDFJS.disableWorker === undefined ?
 PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
 
 /**
- * Defines global port for worker process. Overrides workerSrc and
- * disableWorker setting.
+ * Defines global port for worker process. Overrides `workerSrc` setting.
  */
 PDFJS.workerPort = (PDFJS.workerPort === undefined ? null : PDFJS.workerPort);
 
@@ -203,15 +176,8 @@ PDFJS.disableCreateObjectURL = (PDFJS.disableCreateObjectURL === undefined ?
                                 false : PDFJS.disableCreateObjectURL);
 
 /**
- * Disables WebGL usage.
- * @var {boolean}
- */
-PDFJS.disableWebGL = (PDFJS.disableWebGL === undefined ?
-                      true : PDFJS.disableWebGL);
-
-/**
  * Specifies the |target| attribute for external links.
- * The constants from PDFJS.LinkTarget should be used:
+ * The constants from {LinkTarget} should be used:
  *  - NONE [default]
  *  - SELF
  *  - BLANK
@@ -243,10 +209,7 @@ PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
 
-PDFJS.LinkTarget = LinkTarget;
-PDFJS.addLinkAttributes = addLinkAttributes;
 PDFJS.getFilenameFromUrl = getFilenameFromUrl;
-PDFJS.isExternalLinkTargetSet = isExternalLinkTargetSet;
 
 PDFJS.AnnotationLayer = AnnotationLayer;
 

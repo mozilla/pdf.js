@@ -19,6 +19,11 @@ import { parseQueryString } from './ui_utils';
 /**
  * @typedef {Object} PDFLinkServiceOptions
  * @property {EventBus} eventBus - The application event bus.
+ * @property {number} externalLinkTarget - (optional) Specifies the `target`
+ *   attribute for external links. Must use one of the values from {LinkTarget}.
+ *   Defaults to using no target.
+ * @property {string} externalLinkRel - (optional) Specifies the `rel` attribute
+ *   for external links. Defaults to stripping the referrer.
  */
 
 /**
@@ -30,8 +35,12 @@ class PDFLinkService {
   /**
    * @param {PDFLinkServiceOptions} options
    */
-  constructor({ eventBus, } = {}) {
+  constructor({ eventBus, externalLinkTarget = null,
+                externalLinkRel = null, } = {}) {
     this.eventBus = eventBus || getGlobalEventBus();
+    this.externalLinkTarget = externalLinkTarget;
+    this.externalLinkRel = externalLinkRel;
+
     this.baseUrl = null;
     this.pdfDocument = null;
     this.pdfViewer = null;
@@ -192,7 +201,7 @@ class PDFLinkService {
    */
   setHash(hash) {
     let pageNumber, dest;
-    if (hash.indexOf('=') >= 0) {
+    if (hash.includes('=')) {
       let params = parseQueryString(hash);
       if ('search' in params) {
         this.eventBus.dispatch('findfromurlhash', {
@@ -215,7 +224,7 @@ class PDFLinkService {
         let zoomArg = zoomArgs[0];
         let zoomArgNumber = parseFloat(zoomArg);
 
-        if (zoomArg.indexOf('Fit') === -1) {
+        if (!zoomArg.includes('Fit')) {
           // If the zoomArg is a number, it has to get divided by 100. If it's
           // a string, it should stay as it is.
           dest = [null, { name: 'XYZ', },
@@ -409,6 +418,11 @@ function isValidExplicitDestination(dest) {
 }
 
 class SimpleLinkService {
+  constructor() {
+    this.externalLinkTarget = null;
+    this.externalLinkRel = null;
+  }
+
   /**
    * @returns {number}
    */

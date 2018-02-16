@@ -21,8 +21,8 @@
  * running remote. It will only be run when PdfJs.enable is true.
  */
 
-Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://pdf.js/PdfJs.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://pdf.js/PdfJs.jsm");
 
 if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
   // register various pdfjs factories that hook us into content loading.

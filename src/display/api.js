@@ -16,10 +16,9 @@
 
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isSameOrigin, loadJpegStream, MessageHandler,
-  MissingPDFException, NativeImageDecoding, PageViewport, PasswordException,
-  stringToBytes, UnexpectedResponseException, UnknownErrorException,
-  unreachable, Util, warn
+  isArrayBuffer, isSameOrigin, MessageHandler, MissingPDFException,
+  NativeImageDecoding, PageViewport, PasswordException, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, getDefaultSetting,
@@ -46,8 +45,7 @@ var pdfjsFilePath =
 
 var fakeWorkerFilesLoader = null;
 var useRequireEnsure = false;
-if (typeof PDFJSDev !== 'undefined' &&
-    PDFJSDev.test('GENERIC && !SINGLE_FILE')) {
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
   // For GENERIC build we need add support of different fake file loaders
   // for different  frameworks.
   if (typeof window === 'undefined') {
@@ -709,6 +707,8 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  *                                calling of PDFPage.getViewport method.
  * @property {string} intent - Rendering intent, can be 'display' or 'print'
  *                    (default value is 'display').
+ * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
+ *   rendering for some operations. The default value is `false`.
  * @property {boolean} renderInteractiveForms - (optional) Whether or not
  *                     interactive form elements are rendered in the display
  *                     layer. If so, we do not render them on canvas as well.
@@ -745,7 +745,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.pageIndex = pageIndex;
     this.pageInfo = pageInfo;
     this.transport = transport;
-    this._stats = (getDefaultSetting('enableStats') ?
+    this._stats = (getDefaultSetting('pdfBug') ?
                    new StatTimer() : DummyStatTimer);
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
@@ -830,9 +830,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
       var canvasFactory = params.canvasFactory || new DOMCanvasFactory();
       let webGLContext = new WebGLContext({
-        // TODO: When moving this parameter from `PDFJS` to {RenderParameters},
-        //       change its name to `enableWebGL` instead.
-        enable: !getDefaultSetting('disableWebGL'),
+        enable: params.enableWebGL,
       });
 
       if (!this.intentStates[renderingIntent]) {
@@ -1132,7 +1130,7 @@ class LoopbackPort {
       var buffer;
       if ((buffer = value.buffer) && isArrayBuffer(buffer)) {
         // We found object with ArrayBuffer (typed array).
-        var transferable = transfers && transfers.indexOf(buffer) >= 0;
+        var transferable = transfers && transfers.includes(buffer);
         if (value === buffer) {
           // Special case when we are faking typed arrays in compatibility.js.
           result = value;
@@ -1203,11 +1201,11 @@ var PDFWorker = (function PDFWorkerClosure() {
   let nextFakeWorkerId = 0;
 
   function getWorkerSrc() {
-    if (typeof workerSrc !== 'undefined') {
-      return workerSrc;
-    }
     if (getDefaultSetting('workerSrc')) {
       return getDefaultSetting('workerSrc');
+    }
+    if (typeof workerSrc !== 'undefined') {
+      return workerSrc;
     }
     if (typeof PDFJSDev !== 'undefined' &&
         PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
@@ -1217,39 +1215,52 @@ var PDFWorker = (function PDFWorkerClosure() {
     throw new Error('No PDFJS.workerSrc specified');
   }
 
+  function getMainThreadWorkerMessageHandler() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+      return (window.pdfjsNonProductionPdfWorker &&
+              window.pdfjsNonProductionPdfWorker.WorkerMessageHandler);
+    }
+    // PRODUCTION
+    return (window.pdfjsDistBuildPdfWorker &&
+            window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
+  }
+
   let fakeWorkerFilesLoadedCapability;
 
   // Loads worker code into main thread.
   function setupFakeWorkerGlobal() {
-    var WorkerMessageHandler;
     if (fakeWorkerFilesLoadedCapability) {
       return fakeWorkerFilesLoadedCapability.promise;
     }
     fakeWorkerFilesLoadedCapability = createPromiseCapability();
-    // In the developer build load worker_loader which in turn loads all the
+
+    let mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
+    if (mainWorkerMessageHandler) {
+      // The worker was already loaded using a `<script>` tag.
+      fakeWorkerFilesLoadedCapability.resolve(mainWorkerMessageHandler);
+      return fakeWorkerFilesLoadedCapability.promise;
+    }
+    // In the developer build load worker_loader.js which in turn loads all the
     // other files and resolves the promise. In production only the
     // pdf.worker.js file is needed.
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
       if (typeof SystemJS === 'object') {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
-          WorkerMessageHandler = worker.WorkerMessageHandler;
-          fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+          fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
         });
       } else if (typeof require === 'function') {
-        var worker = require('../core/worker.js');
-        WorkerMessageHandler = worker.WorkerMessageHandler;
-        fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+        let worker = require('../core/worker.js');
+        fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
       } else {
         throw new Error(
           'SystemJS or CommonJS must be used to load fake worker.');
       }
-    } else if (PDFJSDev.test('SINGLE_FILE')) {
-      var pdfjsCoreWorker = require('../core/worker.js');
-      WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
-      fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
     } else {
-      var loader = fakeWorkerFilesLoader || function (callback) {
-        Util.loadScript(getWorkerSrc(), function () {
+      let loader = fakeWorkerFilesLoader || function(callback) {
+        Util.loadScript(getWorkerSrc(), function() {
           callback(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
         });
       };
@@ -1320,9 +1331,8 @@ var PDFWorker = (function PDFWorkerClosure() {
       // all requirements to run parts of pdf.js in a web worker.
       // Right now, the requirement is, that an Uint8Array is still an
       // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
-      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('SINGLE_FILE')) &&
-          !isWorkerDisabled && !getDefaultSetting('disableWorker') &&
-          typeof Worker !== 'undefined') {
+      if (typeof Worker !== 'undefined' && !isWorkerDisabled &&
+          !getMainThreadWorkerMessageHandler()) {
         var workerSrc = getWorkerSrc();
 
         try {
@@ -1433,7 +1443,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     },
 
     _setupFakeWorker: function PDFWorker_setupFakeWorker() {
-      if (!isWorkerDisabled && !getDefaultSetting('disableWorker')) {
+      if (!isWorkerDisabled) {
         warn('Setting up fake worker.');
         isWorkerDisabled = true;
       }
@@ -1489,6 +1499,10 @@ var PDFWorker = (function PDFWorkerClosure() {
       return pdfWorkerPorts.get(port);
     }
     return new PDFWorker(null, port);
+  };
+
+  PDFWorker.getWorkerSrc = function() {
+    return getWorkerSrc();
   };
 
   return PDFWorker;
@@ -1803,8 +1817,22 @@ var WorkerTransport = (function WorkerTransportClosure() {
         switch (type) {
           case 'JpegStream':
             imageData = data[3];
-            loadJpegStream(id, imageData, pageProxy.objs);
-            break;
+            return new Promise((resolve, reject) => {
+              const img = new Image();
+              img.onload = function() {
+                resolve(img);
+              };
+              img.onerror = function() {
+                reject(new Error('Error during JPEG image loading'));
+                // Note that when the browser image loading/decoding fails,
+                // we'll fallback to the built-in PDF.js JPEG decoder; see
+                // `PartialEvaluator.buildPaintImageXObject` in the
+                // `src/core/evaluator.js` file.
+              };
+              img.src = imageData;
+            }).then((img) => {
+              pageProxy.objs.resolve(id, img);
+            });
           case 'Image':
             imageData = data[3];
             pageProxy.objs.resolve(id, imageData);

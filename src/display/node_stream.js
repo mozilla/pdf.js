@@ -304,11 +304,9 @@ class PDFNodeStreamFullReader extends BaseFullReader {
           disableRange: this._disableRange,
         });
 
-      if (allowRangeRequests) {
-        this._isRangeSupported = true;
-      }
+      this._isRangeSupported = allowRangeRequests;
       // Setting right content length.
-      this._contentLength = suggestedLength;
+      this._contentLength = suggestedLength || this._contentLength;
 
       this._filename = extractFilenameFromHeader(getResponseHeader);
     };

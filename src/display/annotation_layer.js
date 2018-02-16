@@ -14,8 +14,7 @@
  */
 
 import {
-  addLinkAttributes, DOMSVGFactory, getDefaultSetting, getFilenameFromUrl,
-  LinkTarget
+  addLinkAttributes, DOMSVGFactory, getFilenameFromUrl, LinkTarget
 } from './dom_utils';
 import {
   AnnotationBorderStyleType, AnnotationCheckboxType, AnnotationType,
@@ -30,7 +29,8 @@ import {
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
- * @property {string} imageResourcesPath
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  * @property {Object} svgFactory
  */
@@ -283,17 +283,21 @@ class LinkAnnotationElement extends AnnotationElement {
   render() {
     this.container.className = 'linkAnnotation';
 
+    let { data, linkService, } = this;
     let link = document.createElement('a');
+
     addLinkAttributes(link, {
-      url: this.data.url,
-      target: (this.data.newWindow ? LinkTarget.BLANK : undefined),
+      url: data.url,
+      target: (data.newWindow ?
+               LinkTarget.BLANK : linkService.externalLinkTarget),
+      rel: linkService.externalLinkRel,
     });
 
-    if (!this.data.url) {
-      if (this.data.action) {
-        this._bindNamedAction(link, this.data.action);
+    if (!data.url) {
+      if (data.action) {
+        this._bindNamedAction(link, data.action);
       } else {
-        this._bindLink(link, this.data.dest);
+        this._bindLink(link, data.dest);
       }
     }
 
@@ -1308,7 +1312,7 @@ class PopupAnnotationElement extends AnnotationElement {
 
     this.container.className = 'popupAnnotation';
 
-    if (IGNORE_TYPES.indexOf(this.data.parentType) >= 0) {
+    if (IGNORE_TYPES.includes(this.data.parentType)) {
       return this.container;
     }
 
@@ -1863,7 +1867,9 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {Array} annotations
  * @property {PDFPage} page
  * @property {IPDFLinkService} linkService
- * @property {string} imageResourcesPath
+ * @property {DownloadManager} downloadManager
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  */
 
@@ -1889,8 +1895,7 @@ class AnnotationLayer {
         viewport: parameters.viewport,
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
-        imageResourcesPath: parameters.imageResourcesPath ||
-                            getDefaultSetting('imageResourcesPath'),
+        imageResourcesPath: parameters.imageResourcesPath || '',
         renderInteractiveForms: parameters.renderInteractiveForms || false,
         svgFactory: new DOMSVGFactory(),
       });

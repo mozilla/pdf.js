@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-extend-native */
+/* eslint-disable no-extend-native, mozilla/use-includes-instead-of-indexOf */
 /* globals PDFJS */
 
 // Skip compatibility checks for the extensions and if we already ran
@@ -26,12 +26,10 @@ if ((typeof PDFJSDev === 'undefined' ||
 // users - https://github.com/mozilla/pdf.js/issues/9397
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
 
-var globalScope = require('./global_scope');
-
+const globalScope = require('./global_scope');
 const isNodeJS = require('./is_node');
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-var isAndroid = /Android/.test(userAgent);
 var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
 var isIE = userAgent.indexOf('Trident') >= 0;
 var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
@@ -80,18 +78,6 @@ PDFJS.compatibilityChecked = true;
   }
 })();
 
-// Checks if navigator.language is supported
-// Support: IE<11
-(function checkNavigatorLanguage() {
-  if (typeof navigator === 'undefined') {
-    return;
-  }
-  if ('language' in navigator) {
-    return;
-  }
-  PDFJS.locale = navigator.userLanguage || 'en-US';
-})();
-
 // Support: Safari 6.0+, iOS
 (function checkRangeRequests() {
   // Safari has issues with cached range requests see:
@@ -100,25 +86,6 @@ PDFJS.compatibilityChecked = true;
   if (isSafari || isIOS) {
     PDFJS.disableRange = true;
     PDFJS.disableStream = true;
-  }
-})();
-
-// Support: Android, iOS
-(function checkCanvasSizeLimitation() {
-  if (isIOS || isAndroid) {
-    // 5MP
-    PDFJS.maxCanvasPixels = 5242880;
-  }
-})();
-
-// Disable fullscreen support for certain problematic configurations.
-// Support: IE11+ (when embedded).
-(function checkFullscreenSupport() {
-  if (!hasDOM) {
-    return;
-  }
-  if (isIE && window.parent !== window) {
-    PDFJS.disableFullscreen = true;
   }
 })();
 
@@ -152,9 +119,19 @@ PDFJS.compatibilityChecked = true;
   }
   Element.prototype.remove = function () {
     if (this.parentNode) {
+      // eslint-disable-next-line mozilla/avoid-removeChild
       this.parentNode.removeChild(this);
     }
   };
+})();
+
+// Provides support for String.prototype.includes in legacy browsers.
+// Support: IE, Chrome<41
+(function checkStringIncludes() {
+  if (String.prototype.includes) {
+    return;
+  }
+  String.prototype.includes = require('core-js/fn/string/includes');
 })();
 
 // Provides support for Array.prototype.includes in legacy browsers.

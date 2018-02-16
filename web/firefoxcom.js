@@ -264,7 +264,7 @@ PDFViewerApplication.externalServices = {
     return new FirefoxPreferences();
   },
 
-  createL10n() {
+  createL10n(options) {
     let mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
     return new MozL10n(mozL10n);

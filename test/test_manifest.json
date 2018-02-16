@@ -712,6 +712,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue9458",
+       "file": "pdfs/issue9458.pdf",
+       "md5": "ee54358d8b2fdc75dc8da5220cf8e8da",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue5501",
        "file": "pdfs/issue5501.pdf",
        "md5": "55a60699728fc92f491a2d7d490474e4",
@@ -855,6 +862,14 @@
     {  "id": "issue8182",
        "file": "pdfs/issue8182.pdf",
        "md5": "e295ae13dcbefd449f9a4957aed5e582",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "issue9425",
+       "file": "pdfs/issue9425.pdf",
+       "md5": "cb5e99c9ada308304ca2dfcb7f72e3a0",
        "rounds": 1,
        "link": true,
        "lastPage": 1,
@@ -3177,13 +3192,22 @@
        "md5": "ad02d4aa374b315bf1766038d002d57a",
        "link": false,
        "rounds": 1,
-       "type": "eq"
+       "type": "eq",
+       "about": "Also tests issue9398."
     },
     {  "id": "issue8613",
        "file": "pdfs/issue8613.pdf",
        "md5": "bc7ad2db75710aa9916c5769e0c02123",
        "rounds": 1,
        "link": true,
+       "type": "eq"
+    },
+    {  "id": "issue8614",
+       "file": "pdfs/issue8614.pdf",
+       "md5": "7e8b66cf674ac2b79d6b267d0c6f2fa2",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
        "type": "eq"
     },
     {  "id": "bug1108753",

@@ -18,13 +18,13 @@ import {
 } from './test_utils';
 import {
   createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
-  PasswordException, PasswordResponses, StreamType, stringToBytes
+  OPS, PasswordException, PasswordResponses, StreamType, stringToBytes
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException
 } from '../../src/display/dom_utils';
 import {
-  getDocument, PDFDocumentProxy, PDFPageProxy
+  getDocument, PDFDocumentProxy, PDFPageProxy, PDFWorker
 } from '../../src/display/api';
 import isNodeJS from '../../src/shared/is_node';
 import { PDFJS } from '../../src/display/global';
@@ -122,16 +122,14 @@ describe('api', function() {
             path: TEST_PDFS_PATH.node + basicApiFileName,
           });
         } else {
-          var nonBinaryRequest = PDFJS.disableWorker;
-          var request = new XMLHttpRequest();
+          let nonBinaryRequest = false;
+          let request = new XMLHttpRequest();
           request.open('GET', TEST_PDFS_PATH.dom + basicApiFileName, false);
-          if (!nonBinaryRequest) {
-            try {
-              request.responseType = 'arraybuffer';
-              nonBinaryRequest = request.responseType !== 'arraybuffer';
-            } catch (e) {
-              nonBinaryRequest = true;
-            }
+          try {
+            request.responseType = 'arraybuffer';
+            nonBinaryRequest = request.responseType !== 'arraybuffer';
+          } catch (e) {
+            nonBinaryRequest = true;
           }
           if (nonBinaryRequest && request.overrideMimeType) {
             request.overrideMimeType('text/plain; charset=x-user-defined');
@@ -404,6 +402,11 @@ describe('api', function() {
       }).catch(function (reason) {
         done.fail(reason);
       });
+    });
+    it('gets current workerSrc', function() {
+      let workerSrc = PDFWorker.getWorkerSrc();
+      expect(typeof workerSrc).toEqual('string');
+      expect(workerSrc).toEqual(PDFJS.workerSrc);
     });
   });
   describe('PDFDocument', function() {
@@ -1098,6 +1101,25 @@ describe('api', function() {
         expect(!!oplist.argsArray).toEqual(true);
         expect(oplist.lastChunk).toEqual(true);
         done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+    it('gets operatorList with JPEG image (issue 4888)', function(done) {
+      let loadingTask = getDocument(buildGetDocumentParams('cmykjpeg.pdf'));
+
+      loadingTask.promise.then((pdfDoc) => {
+        pdfDoc.getPage(1).then((pdfPage) => {
+          pdfPage.getOperatorList().then((opList) => {
+            let imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
+            let imgArgs = opList.argsArray[imgIndex];
+            let { data: imgData, } = pdfPage.objs.get(imgArgs[0]);
+
+            expect(imgData instanceof Uint8ClampedArray).toEqual(true);
+            expect(imgData.length).toEqual(90000);
+            done();
+          });
+        });
       }).catch(function (reason) {
         done.fail(reason);
       });
