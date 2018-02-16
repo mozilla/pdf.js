@@ -1083,7 +1083,8 @@ var JpegImage = (function JpegImageClosure() {
                0.116935020465145) +
           k * (-0.000343531996510555 * k + 0.24165260232407);
       }
-      return data;
+      // Ensure that only the converted RGB data is returned.
+      return data.subarray(0, offset);
     },
 
     _convertYcckToCmyk: function convertYcckToCmyk(data) {
@@ -1140,7 +1141,8 @@ var JpegImage = (function JpegImageClosure() {
                193.58209356861505) -
           k * (22.33816807309886 * k + 180.12613974708367);
       }
-      return data;
+      // Ensure that only the converted RGB data is returned.
+      return data.subarray(0, offset);
     },
 
     getData: function getData(width, height, forceRGBoutput) {

@@ -18,7 +18,7 @@ import {
 } from './test_utils';
 import {
   createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
-  PasswordException, PasswordResponses, StreamType, stringToBytes
+  OPS, PasswordException, PasswordResponses, StreamType, stringToBytes
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException
@@ -1100,6 +1100,25 @@ describe('api', function() {
         expect(!!oplist.argsArray).toEqual(true);
         expect(oplist.lastChunk).toEqual(true);
         done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+    it('gets operatorList with JPEG image (issue 4888)', function(done) {
+      let loadingTask = getDocument(buildGetDocumentParams('cmykjpeg.pdf'));
+
+      loadingTask.promise.then((pdfDoc) => {
+        pdfDoc.getPage(1).then((pdfPage) => {
+          pdfPage.getOperatorList().then((opList) => {
+            let imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
+            let imgArgs = opList.argsArray[imgIndex];
+            let { data: imgData, } = pdfPage.objs.get(imgArgs[0]);
+
+            expect(imgData instanceof Uint8ClampedArray).toEqual(true);
+            expect(imgData.length).toEqual(90000);
+            done();
+          });
+        });
       }).catch(function (reason) {
         done.fail(reason);
       });
