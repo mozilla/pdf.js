@@ -16,18 +16,18 @@
 
 'use strict';
 
-let DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
-
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+  var defaultUrl; // eslint-disable-line no-var
+
   (function rewriteUrlClosure() {
     // Run this code outside DOMContentLoaded to make sure that the URL
     // is rewritten as soon as possible.
     let queryString = document.location.search.slice(1);
     let m = /(^|&)file=([^&]*)/.exec(queryString);
-    DEFAULT_URL = m ? decodeURIComponent(m[2]) : '';
+    defaultUrl = m ? decodeURIComponent(m[2]) : '';
 
     // Example: chrome-extension://.../http://example.com/file.pdf
-    let humanReadableUrl = '/' + DEFAULT_URL + location.hash;
+    let humanReadableUrl = '/' + defaultUrl + location.hash;
     history.replaceState(history.state, '', humanReadableUrl);
     if (top === window) {
       chrome.runtime.sendMessage('showPageAction');
@@ -172,7 +172,6 @@ function getViewerConfiguration() {
     printContainer: document.getElementById('printContainer'),
     openFileInputName: 'fileInput',
     debuggerScriptPath: './debugger.js',
-    defaultUrl: DEFAULT_URL,
   };
 }
 
@@ -190,6 +189,10 @@ function webViewerLoad() {
       app.PDFViewerApplication.run(config);
     });
   } else {
+    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+      pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
+    }
+
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
     window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
     pdfjsWebApp.PDFViewerApplication.run(config);
