@@ -15,14 +15,14 @@
 
 'use strict';
 
-if (!PDFJS.PDFSinglePageViewer || !PDFJS.getDocument) {
+if (!pdfjsDistBuildPdf.getDocument || !pdfjsDistWebPdfViewer.PDFSinglePageViewer) {
   alert('Please build the pdfjs-dist library using\n' +
         '  `gulp dist-install`');
 }
 
 // The workerSrc property shall be specified.
 //
-PDFJS.GlobalWorkerOptions.workerSrc =
+pdfjsDistBuildPdf.GlobalWorkerOptions.workerSrc =
   '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
 // Some PDFs need external cmaps.
@@ -36,17 +36,17 @@ var SEARCH_FOR = ''; // try 'Mozilla';
 var container = document.getElementById('viewerContainer');
 
 // (Optionally) enable hyperlinks within PDF files.
-var pdfLinkService = new PDFJS.PDFLinkService();
+var pdfLinkService = new pdfjsDistWebPdfViewer.PDFLinkService();
 
-var pdfSinglePageViewer = new PDFJS.PDFSinglePageViewer({
+var pdfSinglePageViewer = new pdfjsDistWebPdfViewer.PDFSinglePageViewer({
   container: container,
   linkService: pdfLinkService,
 });
 pdfLinkService.setViewer(pdfSinglePageViewer);
 
 // (Optionally) enable find controller.
-var pdfFindController = new PDFJS.PDFFindController({
-  pdfViewer: pdfSinglePageViewer
+var pdfFindController = new pdfjsDistWebPdfViewer.PDFFindController({
+  pdfViewer: pdfSinglePageViewer,
 });
 pdfSinglePageViewer.setFindController(pdfFindController);
 
@@ -60,7 +60,7 @@ container.addEventListener('pagesinit', function () {
 });
 
 // Loading document.
-PDFJS.getDocument({
+pdfjsDistBuildPdf.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,

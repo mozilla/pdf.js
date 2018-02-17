@@ -13,31 +13,25 @@
  * limitations under the License.
  */
 /* eslint-disable mozilla/use-includes-instead-of-indexOf */
-/* globals PDFJS */
+
+const globalScope = require('./global_scope');
 
 // Skip compatibility checks for the extensions and if we already ran
 // this module.
 if ((typeof PDFJSDev === 'undefined' ||
      !PDFJSDev.test('FIREFOX || MOZCENTRAL')) &&
-    (typeof PDFJS === 'undefined' || !PDFJS.compatibilityChecked)) {
+    !globalScope._pdfjsCompatibilityChecked) {
+
+globalScope._pdfjsCompatibilityChecked = true;
 
 // In the Chrome extension, most of the polyfills are unnecessary.
 // We support down to Chrome 49, because it's still commonly used by Windows XP
 // users - https://github.com/mozilla/pdf.js/issues/9397
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
 
-const globalScope = require('./global_scope');
 const isNodeJS = require('./is_node');
 
 const hasDOM = typeof window === 'object' && typeof document === 'object';
-
-// Initializing PDFJS global object here, it case if we need to change/disable
-// some PDF.js features, e.g. range requests
-if (typeof PDFJS === 'undefined') {
-  globalScope.PDFJS = {};
-}
-
-PDFJS.compatibilityChecked = true;
 
 // Support: Node.js
 (function checkNodeBtoa() {

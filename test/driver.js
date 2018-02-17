@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, pdfjsDistBuildPdf */
+/* globals pdfjsDistBuildPdf, pdfjsDistWebPdfViewer */
 
 'use strict';
 
@@ -69,7 +69,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       foreignObject.appendChild(div);
 
       // Rendering text layer as HTML.
-      var task = PDFJS.renderTextLayer({
+      var task = pdfjsDistBuildPdf.renderTextLayer({
         textContent,
         container: div,
         viewport,
@@ -204,11 +204,11 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           div,
           annotations,
           page,
-          linkService: new PDFJS.SimpleLinkService(),
+          linkService: new pdfjsDistWebPdfViewer.SimpleLinkService(),
           imageResourcesPath,
           renderInteractiveForms,
         };
-        PDFJS.AnnotationLayer.render(parameters);
+        pdfjsDistBuildPdf.AnnotationLayer.render(parameters);
 
         // Inline SVG images from text annotations.
         var images = div.getElementsByTagName('img');
@@ -271,7 +271,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
    */
   function Driver(options) {
     // Configure the global worker options.
-    PDFJS.GlobalWorkerOptions.workerSrc = WORKER_SRC;
+    pdfjsDistBuildPdf.GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -358,7 +358,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
         let absoluteUrl = new URL(task.file, window.location).href;
         try {
-          PDFJS.getDocument({
+          pdfjsDistBuildPdf.getDocument({
             url: absoluteUrl,
             password: task.password,
             nativeImageDecoderSupport: task.nativeImageDecoderSupport,
