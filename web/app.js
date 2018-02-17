@@ -201,10 +201,10 @@ let PDFViewerApplication = {
         AppOptions.set('disableRange', value);
       }),
       preferences.get('disableStream').then(function resolved(value) {
-        if (PDFJS.disableStream === true) {
+        if (AppOptions.get('disableStream') === true) {
           return;
         }
-        PDFJS.disableStream = value;
+        AppOptions.set('disableStream', value);
       }),
       preferences.get('disableAutoFetch').then(function resolved(value) {
         AppOptions.set('disableAutoFetch', value);
@@ -263,7 +263,7 @@ let PDFViewerApplication = {
         AppOptions.set('disableRange', hashParams['disablerange'] === 'true');
       }
       if ('disablestream' in hashParams) {
-        PDFJS.disableStream = (hashParams['disablestream'] === 'true');
+        AppOptions.set('disableStream', hashParams['disablestream'] === 'true');
       }
       if ('disableautofetch' in hashParams) {
         AppOptions.set('disableAutoFetch',
