@@ -155,6 +155,11 @@ const defaultOptions = {
     value: apiCompatibilityParams.disableRange || false,
     kind: OptionKind.API,
   },
+  disableStream: {
+    /** @type {boolean} */
+    value: apiCompatibilityParams.disableStream || false,
+    kind: OptionKind.API,
+  },
   isEvalSupported: {
     /** @type {boolean} */
     value: true,
