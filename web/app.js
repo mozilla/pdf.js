@@ -22,8 +22,8 @@ import {
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
-  InvalidPDFException, LinkTarget, MissingPDFException, OPS, PDFJS, PDFWorker,
-  shadow, UnexpectedResponseException, UNSUPPORTED_FEATURES, version
+  InvalidPDFException, LinkTarget, MissingPDFException, OPS, PDFWorker, shadow,
+  UnexpectedResponseException, UNSUPPORTED_FEATURES, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -306,7 +306,7 @@ let PDFViewerApplication = {
         }
       }
       if ('pdfbug' in hashParams) {
-        PDFJS.pdfBug = true;
+        AppOptions.set('pdfBug', true);
         let enabled = hashParams['pdfbug'].split(',');
         waitOn.push(loadAndEnablePDFBug(enabled));
       }
@@ -2005,7 +2005,7 @@ function webViewerPageChanging(evt) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
   }
 
-  // we need to update stats
+  // We need to update stats.
   if (typeof Stats !== 'undefined' && Stats.enabled) {
     let pageView = PDFViewerApplication.pdfViewer.getPageView(page - 1);
     if (pageView && pageView.stats) {
