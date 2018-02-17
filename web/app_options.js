@@ -127,6 +127,29 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER,
   },
+
+  postMessageTransfers: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.API,
+  },
+  verbosity: {
+    /** @type {number} */
+    value: 1,
+    kind: OptionKind.API,
+  },
+
+  workerPort: {
+    /** @type {Object} */
+    value: null,
+    kind: OptionKind.WORKER,
+  },
+  workerSrc: {
+    /** @type {string} */
+    value: (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ?
+            '../src/worker_loader.js' : '../build/pdf.worker.js'),
+    kind: OptionKind.WORKER,
+  },
 };
 
 const userOptions = Object.create(null);
