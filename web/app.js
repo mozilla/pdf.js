@@ -1568,12 +1568,12 @@ function webViewerInitialized() {
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     let queryString = document.location.search.substring(1);
     let params = parseQueryString(queryString);
-    file = 'file' in params ? params.file : appConfig.defaultUrl;
+    file = 'file' in params ? params.file : AppOptions.get('defaultUrl');
     validateFileURL(file);
   } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     file = window.location.href.split('#')[0];
   } else if (PDFJSDev.test('CHROME')) {
-    file = appConfig.defaultUrl;
+    file = AppOptions.get('defaultUrl');
   }
 
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
