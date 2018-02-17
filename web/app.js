@@ -50,15 +50,6 @@ import { ViewHistory } from './view_history';
 const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
-function configure(PDFJS) {
-  if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-    PDFJS.cMapUrl = '../external/bcmaps/';
-  } else {
-    PDFJS.cMapUrl = '../web/cmaps/';
-  }
-  PDFJS.cMapPacked = true;
-}
-
 const DefaultExternalServices = {
   updateFindControlState(data) {},
   initPassiveLoading(callbacks) {},
@@ -142,8 +133,6 @@ let PDFViewerApplication = {
   // Called once when the document is loaded.
   initialize(appConfig) {
     this.preferences = this.externalServices.createPreferences();
-
-    configure(PDFJS);
     this.appConfig = appConfig;
 
     return this._readPreferences().then(() => {
@@ -298,8 +287,8 @@ let PDFViewerApplication = {
       }
       if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
           hashParams['disablebcmaps'] === 'true') {
-        PDFJS.cMapUrl = '../external/cmaps/';
-        PDFJS.cMapPacked = false;
+        AppOptions.set('cMapUrl', '../external/cmaps/');
+        AppOptions.set('cMapPacked', false);
       }
       if ('textlayer' in hashParams) {
         switch (hashParams['textlayer']) {

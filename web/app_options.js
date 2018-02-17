@@ -128,6 +128,17 @@ const defaultOptions = {
     kind: OptionKind.VIEWER,
   },
 
+  cMapPacked: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.API,
+  },
+  cMapUrl: {
+    /** @type {string} */
+    value: (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ?
+            '../external/bcmaps/' : '../web/cmaps/'),
+    kind: OptionKind.API,
+  },
   maxImageSize: {
     /** @type {number} */
     value: -1,

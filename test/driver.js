@@ -18,6 +18,8 @@
 
 const WAITING_TIME = 100; // ms
 const PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const CMAP_URL = '../external/bcmaps/';
+const CMAP_PACKED = true;
 const IMAGE_RESOURCES_PATH = '/web/images/';
 const WORKER_SRC = '../build/generic/build/pdf.worker.js';
 
@@ -271,8 +273,6 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     // Configure the global worker options.
     PDFJS.GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
-    PDFJS.cMapPacked = true;
-    PDFJS.cMapUrl = '../external/bcmaps/';
     PDFJS.pdfBug = true;
 
     // Set the passed options
@@ -366,6 +366,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
             url: absoluteUrl,
             password: task.password,
             nativeImageDecoderSupport: task.nativeImageDecoderSupport,
+            cMapUrl: CMAP_URL,
+            cMapPacked: CMAP_PACKED,
           }).then((doc) => {
             task.pdfDoc = doc;
             this._nextPage(task, failure);
