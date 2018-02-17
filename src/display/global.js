@@ -66,15 +66,6 @@ PDFJS.PageViewport = PageViewport;
 PDFJS.createPromiseCapability = createPromiseCapability;
 
 /**
- * By default fonts are converted to OpenType fonts and loaded via font face
- * rules. If disabled, the font will be rendered using a built in font
- * renderer that constructs the glyphs with primitive path commands.
- * @var {boolean}
- */
-PDFJS.disableFontFace = (PDFJS.disableFontFace === undefined ?
-                         false : PDFJS.disableFontFace);
-
-/**
  * Disable range request loading of PDF files. When enabled and if the server
  * supports partial content requests then the PDF will be fetched in chunks.
  * Enabled (false) by default.
