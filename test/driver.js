@@ -359,7 +359,6 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         this._log('Loading file "' + task.file + '"\n');
 
         let absoluteUrl = new URL(task.file, window.location).href;
-        PDFJS.disableRange = task.disableRange;
         try {
           PDFJS.getDocument({
             url: absoluteUrl,
@@ -367,6 +366,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
             nativeImageDecoderSupport: task.nativeImageDecoderSupport,
             cMapUrl: CMAP_URL,
             cMapPacked: CMAP_PACKED,
+            disableRange: task.disableRange,
             disableAutoFetch: !task.enableAutoFetch,
           }).then((doc) => {
             task.pdfDoc = doc;

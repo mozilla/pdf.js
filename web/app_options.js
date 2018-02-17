@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { apiCompatibilityParams } from 'pdfjs-lib';
 import { viewerCompatibilityParams } from './viewer_compatibility';
 
 const OptionKind = {
@@ -147,6 +148,11 @@ const defaultOptions = {
   disableFontFace: {
     /** @type {boolean} */
     value: false,
+    kind: OptionKind.API,
+  },
+  disableRange: {
+    /** @type {boolean} */
+    value: apiCompatibilityParams.disableRange || false,
     kind: OptionKind.API,
   },
   isEvalSupported: {
