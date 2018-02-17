@@ -142,6 +142,10 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   with limited image support through stubs (useful for SVG conversion),
  *   and 'none' where JPEG images will be decoded entirely by PDF.js.
  *   The default value is 'decode'.
+ * @property {string} cMapUrl - (optional) The URL where the predefined
+ *   Adobe CMaps are located. Include trailing slash.
+ * @property {boolean} cMapPacked - (optional) Specifies if the Adobe CMaps are
+ *   binary packed.
  * @property {Object} CMapReaderFactory - (optional) The factory that will be
  *   used when reading built-in CMap files. Providing a custom factory is useful
  *   for environments without `XMLHttpRequest` support, such as e.g. Node.js.
@@ -201,7 +205,7 @@ function getDocument(src) {
   let params = Object.create(null);
   var rangeTransport = null;
   let worker = null;
-  var CMapReaderFactory = DOMCMapReaderFactory;
+  let CMapReaderFactory = DOMCMapReaderFactory;
 
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
@@ -289,7 +293,7 @@ function getDocument(src) {
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
       messageHandler.postMessageTransfers = worker.postMessageTransfers;
       var transport = new WorkerTransport(messageHandler, task, networkStream,
-                                          CMapReaderFactory);
+                                          params, CMapReaderFactory);
       task._transport = transport;
       messageHandler.send('Ready', null);
     });
@@ -1550,14 +1554,15 @@ var PDFWorker = (function PDFWorkerClosure() {
  */
 var WorkerTransport = (function WorkerTransportClosure() {
   function WorkerTransport(messageHandler, loadingTask, networkStream,
-                           CMapReaderFactory) {
+                           params, CMapReaderFactory) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
     this.commonObjs = new PDFObjects();
     this.fontLoader = new FontLoader(loadingTask.docId);
+    this._params = params;
     this.CMapReaderFactory = new CMapReaderFactory({
-      baseUrl: getDefaultSetting('cMapUrl'),
-      isCompressed: getDefaultSetting('cMapPacked'),
+      baseUrl: params.cMapUrl,
+      isCompressed: params.cMapPacked,
     });
 
     this.destroyed = false;

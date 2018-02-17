@@ -27,8 +27,8 @@ PDFJS.GlobalWorkerOptions.workerSrc =
 
 // Some PDFs need external cmaps.
 //
-// PDFJS.cMapUrl = '../../node_modules/pdfjs-dist/cmaps/';
-// PDFJS.cMapPacked = true;
+var CMAP_URL = '../../node_modules/pdfjs-dist/cmaps/';
+var CMAP_PACKED = true;
 
 var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
 var SEARCH_FOR = ''; // try 'Mozilla';
@@ -60,7 +60,11 @@ container.addEventListener('pagesinit', function () {
 });
 
 // Loading document.
-PDFJS.getDocument(DEFAULT_URL).then(function (pdfDocument) {
+PDFJS.getDocument({
+  url: DEFAULT_URL,
+  cMapUrl: CMAP_URL,
+  cMapPacked: CMAP_PACKED,
+}).then(function(pdfDocument) {
   // Document loaded, specifying document for the viewer and
   // the (optional) linkService.
   pdfSinglePageViewer.setDocument(pdfDocument);
