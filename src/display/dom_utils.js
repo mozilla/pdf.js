@@ -17,7 +17,6 @@ import {
   assert, CMapCompressionType, removeNullCharacters, stringToBytes,
   unreachable, warn
 } from '../shared/util';
-import globalScope from '../shared/global_scope';
 
 const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -329,18 +328,6 @@ function getFilenameFromUrl(url) {
   return url.substring(url.lastIndexOf('/', end) + 1, end);
 }
 
-function getDefaultSetting(id) {
-  // The list of the settings and their default is maintained for backward
-  // compatibility and shall not be extended or modified. See also global.js.
-  var globalSettings = globalScope.PDFJS;
-  switch (id) {
-    case 'pdfBug':
-      return globalSettings ? globalSettings.pdfBug : false;
-    default:
-      throw new Error('Unknown default setting: ' + id);
-  }
-}
-
 class StatTimer {
   constructor(enable = true) {
     this.enabled = !!enable;
@@ -420,7 +407,6 @@ export {
   addLinkAttributes,
   getFilenameFromUrl,
   LinkTarget,
-  getDefaultSetting,
   DEFAULT_LINK_REL,
   DOMCanvasFactory,
   DOMCMapReaderFactory,

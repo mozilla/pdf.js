@@ -273,8 +273,6 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     // Configure the global worker options.
     PDFJS.GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
-    PDFJS.pdfBug = true;
-
     // Set the passed options
     this.inflight = options.inflight;
     this.disableScrolling = options.disableScrolling;
@@ -368,6 +366,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
             cMapPacked: CMAP_PACKED,
             disableRange: task.disableRange,
             disableAutoFetch: !task.enableAutoFetch,
+            pdfBug: true,
           }).then((doc) => {
             task.pdfDoc = doc;
             this._nextPage(task, failure);

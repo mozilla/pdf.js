@@ -39,8 +39,6 @@ if (!globalScope.PDFJS) {
 }
 var PDFJS = globalScope.PDFJS;
 
-PDFJS.pdfBug = false;
-
 PDFJS.OPS = OPS;
 PDFJS.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
 PDFJS.shadow = shadow;
@@ -61,12 +59,6 @@ PDFJS.UnexpectedResponseException = UnexpectedResponseException;
 PDFJS.Util = Util;
 PDFJS.PageViewport = PageViewport;
 PDFJS.createPromiseCapability = createPromiseCapability;
-
-/**
- * Enables special hooks for debugging PDF.js.
- * @var {boolean}
- */
-PDFJS.pdfBug = (PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug);
 
 PDFJS.getDocument = getDocument;
 PDFJS.LoopbackPort = LoopbackPort;
