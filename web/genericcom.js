@@ -42,8 +42,8 @@ class GenericPreferences extends BasePreferences {
 }
 
 let GenericExternalServices = Object.create(DefaultExternalServices);
-GenericExternalServices.createDownloadManager = function() {
-  return new DownloadManager();
+GenericExternalServices.createDownloadManager = function(options) {
+  return new DownloadManager(options);
 };
 GenericExternalServices.createPreferences = function() {
   return new GenericPreferences();

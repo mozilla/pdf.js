@@ -336,8 +336,6 @@ function getDefaultSetting(id) {
   switch (id) {
     case 'pdfBug':
       return globalSettings ? globalSettings.pdfBug : false;
-    case 'disableCreateObjectURL':
-      return globalSettings ? globalSettings.disableCreateObjectURL : false;
     default:
       throw new Error('Unknown default setting: ' + id);
   }

@@ -55,7 +55,7 @@ const DefaultExternalServices = {
   initPassiveLoading(callbacks) {},
   fallback(data, callback) {},
   reportTelemetry(data) {},
-  createDownloadManager() {
+  createDownloadManager(options) {
     throw new Error('Not implemented: createDownloadManager');
   },
   createPreferences() {
@@ -357,7 +357,9 @@ let PDFViewerApplication = {
       });
       this.pdfLinkService = pdfLinkService;
 
-      let downloadManager = this.externalServices.createDownloadManager();
+      let downloadManager = this.externalServices.createDownloadManager({
+        disableCreateObjectURL: AppOptions.get('disableCreateObjectURL'),
+      });
       this.downloadManager = downloadManager;
 
       let container = appConfig.mainContainer;
@@ -1873,7 +1875,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   webViewerFileInputChange = function webViewerFileInputChange(evt) {
     let file = evt.fileInput.files[0];
 
-    if (!PDFJS.disableCreateObjectURL && URL.createObjectURL) {
+    if (URL.createObjectURL && !AppOptions.get('disableCreateObjectURL')) {
       PDFViewerApplication.open(URL.createObjectURL(file));
     } else {
       // Read the local file into a Uint8Array.
