@@ -66,14 +66,6 @@ PDFJS.PageViewport = PageViewport;
 PDFJS.createPromiseCapability = createPromiseCapability;
 
 /**
- * The maximum allowed image size in total pixels e.g. width * height. Images
- * above this value will not be drawn. Use -1 for no limit.
- * @var {number}
- */
-PDFJS.maxImageSize = (PDFJS.maxImageSize === undefined ?
-                      -1 : PDFJS.maxImageSize);
-
-/**
  * The url of where the predefined Adobe CMaps are located. Include trailing
  * slash.
  * @var {string}

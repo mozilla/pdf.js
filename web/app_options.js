@@ -128,6 +128,11 @@ const defaultOptions = {
     kind: OptionKind.VIEWER,
   },
 
+  maxImageSize: {
+    /** @type {number} */
+    value: -1,
+    kind: OptionKind.API,
+  },
   postMessageTransfers: {
     /** @type {boolean} */
     value: true,
