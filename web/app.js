@@ -51,13 +51,8 @@ const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
 function configure(PDFJS) {
-  if (typeof PDFJSDev !== 'undefined' &&
-      PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC || CHROME')) {
-    GlobalWorkerOptions.workerSrc = '../build/pdf.worker.js';
-  }
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     PDFJS.cMapUrl = '../external/bcmaps/';
-    GlobalWorkerOptions.workerSrc = '../src/worker_loader.js';
   } else {
     PDFJS.cMapUrl = '../web/cmaps/';
   }
@@ -299,7 +294,7 @@ let PDFViewerApplication = {
                        hashParams['useonlycsszoom'] === 'true');
       }
       if ('verbosity' in hashParams) {
-        PDFJS.verbosity = hashParams['verbosity'] | 0;
+        AppOptions.set('verbosity', hashParams['verbosity'] | 0);
       }
       if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
           hashParams['disablebcmaps'] === 'true') {
@@ -711,6 +706,11 @@ let PDFViewerApplication = {
         return this.open(file, args);
       });
     }
+    // Set the necessary global worker parameters, using the available options.
+    const workerParameters = AppOptions.getAll('worker');
+    for (let key in workerParameters) {
+      GlobalWorkerOptions[key] = workerParameters[key];
+    }
 
     let parameters = Object.create(null);
     if (typeof file === 'string') { // URL
@@ -728,8 +728,11 @@ let PDFViewerApplication = {
                PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
       parameters.docBaseUrl = this.baseUrl;
     }
-    // TODO: Remove this once all options are moved from the `PDFJS` object.
-    parameters.verbosity = PDFJS.verbosity;
+    // Set the necessary API parameters, using the available options.
+    const apiParameters = AppOptions.getAll('api');
+    for (let key in apiParameters) {
+      parameters[key] = apiParameters[key];
+    }
 
     if (args) {
       for (let prop in args) {
@@ -1515,6 +1518,9 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 
 function loadFakeWorker() {
   return new Promise(function(resolve, reject) {
+    if (!GlobalWorkerOptions.workerSrc) {
+      GlobalWorkerOptions.workerSrc = AppOptions.get('workerSrc');
+    }
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
       if (typeof SystemJS === 'object') {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
