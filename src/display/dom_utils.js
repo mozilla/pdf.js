@@ -342,8 +342,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.disableStream : false;
     case 'disableRange':
       return globalSettings ? globalSettings.disableRange : false;
-    case 'disableFontFace':
-      return globalSettings ? globalSettings.disableFontFace : false;
     case 'disableCreateObjectURL':
       return globalSettings ? globalSettings.disableCreateObjectURL : false;
     default:

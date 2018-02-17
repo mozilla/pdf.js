@@ -210,10 +210,10 @@ let PDFViewerApplication = {
         PDFJS.disableAutoFetch = value;
       }),
       preferences.get('disableFontFace').then(function resolved(value) {
-        if (PDFJS.disableFontFace === true) {
+        if (AppOptions.get('disableFontFace') === true) {
           return;
         }
-        PDFJS.disableFontFace = value;
+        AppOptions.set('disableFontFace', value);
       }),
       preferences.get('useOnlyCssZoom').then(function resolved(value) {
         AppOptions.set('useOnlyCssZoom', value);
@@ -269,7 +269,8 @@ let PDFViewerApplication = {
         PDFJS.disableAutoFetch = (hashParams['disableautofetch'] === 'true');
       }
       if ('disablefontface' in hashParams) {
-        PDFJS.disableFontFace = (hashParams['disablefontface'] === 'true');
+        AppOptions.set('disableFontFace',
+                       hashParams['disablefontface'] === 'true');
       }
       if ('disablehistory' in hashParams) {
         AppOptions.set('disableHistory',
@@ -1604,7 +1605,7 @@ function webViewerInitialized() {
   if (typeof PDFJSDev !== 'undefined' &&
       PDFJSDev.test('FIREFOX || MOZCENTRAL') &&
       !PDFViewerApplication.supportsDocumentFonts) {
-    PDFJS.disableFontFace = true;
+    AppOptions.set('disableFontFace', true);
     PDFViewerApplication.l10n.get('web_fonts_disabled', null,
       'Web fonts are disabled: unable to use embedded PDF fonts.').
         then((msg) => {

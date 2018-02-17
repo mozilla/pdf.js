@@ -139,6 +139,11 @@ const defaultOptions = {
             '../external/bcmaps/' : '../web/cmaps/'),
     kind: OptionKind.API,
   },
+  disableFontFace: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.API,
+  },
   isEvalSupported: {
     /** @type {boolean} */
     value: true,
