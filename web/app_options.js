@@ -145,6 +145,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API,
   },
+  disableCreateObjectURL: {
+    /** @type {boolean} */
+    value: apiCompatibilityParams.disableCreateObjectURL || false,
+    kind: OptionKind.API,
+  },
   disableFontFace: {
     /** @type {boolean} */
     value: false,
