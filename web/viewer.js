@@ -35,9 +35,10 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
   })();
 }
 
-let pdfjsWebApp;
+let pdfjsWebApp, pdfjsWebAppOptions;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
   pdfjsWebApp = require('./app.js');
+  pdfjsWebAppOptions = require('./app_options.js');
 }
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
@@ -180,14 +181,17 @@ function webViewerLoad() {
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     Promise.all([
       SystemJS.import('pdfjs-web/app'),
+      SystemJS.import('pdfjs-web/app_options'),
       SystemJS.import('pdfjs-web/genericcom'),
       SystemJS.import('pdfjs-web/pdf_print_service'),
-    ]).then(function([app, ...otherModules]) {
+    ]).then(function([app, appOptions, ...otherModules]) {
       window.PDFViewerApplication = app.PDFViewerApplication;
+      window.PDFViewerApplicationOptions = appOptions.AppOptions;
       app.PDFViewerApplication.run(config);
     });
   } else {
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
+    window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
     pdfjsWebApp.PDFViewerApplication.run(config);
   }
 }
