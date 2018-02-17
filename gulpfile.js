@@ -934,7 +934,6 @@ gulp.task('jsdoc', function (done) {
   var JSDOC_FILES = [
     'src/doc_helper.js',
     'src/display/api.js',
-    'src/display/global.js',
     'src/shared/util.js',
     'src/core/annotation.js'
   ];

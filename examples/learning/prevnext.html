@@ -33,8 +33,8 @@
   // pdf.js's one, or the pdf.js is executed via eval(), the workerSrc property
   // shall be specified.
   //
-  // PDFJS.GlobalWorkerOptions.workerSrc =
-  //   '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+  pdfjsDistBuildPdf.GlobalWorkerOptions.workerSrc =
+    '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
   var pdfDoc = null,
       pageNum = 1,
@@ -117,7 +117,7 @@
   /**
    * Asynchronously downloads PDF.
    */
-  PDFJS.getDocument(url).then(function (pdfDoc_) {
+  pdfjsDistBuildPdf.getDocument(url).then(function (pdfDoc_) {
     pdfDoc = pdfDoc_;
     document.getElementById('page_count').textContent = pdfDoc.numPages;
 

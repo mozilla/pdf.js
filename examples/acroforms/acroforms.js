@@ -15,7 +15,7 @@
 
 'use strict';
 
-PDFJS.GlobalWorkerOptions.workerSrc =
+pdfjsDistBuildPdf.GlobalWorkerOptions.workerSrc =
   '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
 var DEFAULT_URL = '../../test/pdfs/f1040.pdf';
@@ -24,7 +24,7 @@ var DEFAULT_SCALE = 1.0;
 var container = document.getElementById('pageContainer');
 
 // Fetch the PDF document from the URL using promises.
-PDFJS.getDocument(DEFAULT_URL).then(function (doc) {
+pdfjsDistBuildPdf.getDocument(DEFAULT_URL).then(function (doc) {
   // Use a promise to fetch and render the next page.
   var promise = Promise.resolve();
 
@@ -32,12 +32,12 @@ PDFJS.getDocument(DEFAULT_URL).then(function (doc) {
     promise = promise.then(function (pageNum) {
       return doc.getPage(pageNum).then(function (pdfPage) {
         // Create the page view.
-        var pdfPageView = new PDFJS.PDFPageView({
+        var pdfPageView = new pdfjsDistWebPdfViewer.PDFPageView({
           container: container,
           id: pageNum,
           scale: DEFAULT_SCALE,
           defaultViewport: pdfPage.getViewport(DEFAULT_SCALE),
-          annotationLayerFactory: new PDFJS.DefaultAnnotationLayerFactory(),
+          annotationLayerFactory: new pdfjsDistWebPdfViewer.DefaultAnnotationLayerFactory(),
           renderInteractiveForms: true,
         });
 

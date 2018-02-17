@@ -12,13 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
+/* globals pdfjsDistBuildPdf, pdfjsDistWebPdfViewer */
 
 'use strict';
 
-if (typeof PDFJS === 'undefined' || !PDFJS.PDFViewer || !PDFJS.getDocument) {
-  alert('Please build the pdfjs-dist library using\n' +
-        '  `gulp dist-install`');
+if (!pdfjsDistBuildPdf.getDocument || !pdfjsDistWebPdfViewer.PDFViewer) {
+  alert('Please build the pdfjs-dist library using\n `gulp dist-install`');
 }
 
 var USE_ONLY_CSS_ZOOM = true;
@@ -27,7 +26,7 @@ var MAX_IMAGE_SIZE = 1024 * 1024;
 var CMAP_URL = '../../node_modules/pdfjs-dist/cmaps/';
 var CMAP_PACKED = true;
 
-PDFJS.GlobalWorkerOptions.workerSrc =
+pdfjsDistBuildPdf.GlobalWorkerOptions.workerSrc =
   '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
 var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
@@ -62,7 +61,7 @@ var PDFViewerApplication = {
     this.setTitleUsingUrl(url);
 
     // Loading document.
-    var loadingTask = PDFJS.getDocument({
+    var loadingTask = pdfjsDistBuildPdf.getDocument({
       url: url,
       maxImageSize: MAX_IMAGE_SIZE,
       cMapUrl: CMAP_URL,
@@ -88,15 +87,15 @@ var PDFViewerApplication = {
       var l10n = self.l10n;
       var loadingErrorMessage;
 
-      if (exception instanceof PDFJS.InvalidPDFException) {
+      if (exception instanceof pdfjsDistBuildPdf.InvalidPDFException) {
         // change error message also for other builds
         loadingErrorMessage = l10n.get('invalid_file_error', null,
           'Invalid or corrupted PDF file.');
-      } else if (exception instanceof PDFJS.MissingPDFException) {
+      } else if (exception instanceof pdfjsDistBuildPdf.MissingPDFException) {
         // special message for missing PDFs
         loadingErrorMessage = l10n.get('missing_file_error', null,
           'Missing PDF file.');
-      } else if (exception instanceof PDFJS.UnexpectedResponseException) {
+      } else if (exception instanceof pdfjsDistBuildPdf.UnexpectedResponseException) {
         loadingErrorMessage = l10n.get('unexpected_response_error', null,
           'Unexpected server response.');
       } else {
@@ -138,14 +137,14 @@ var PDFViewerApplication = {
   },
 
   get loadingBar() {
-    var bar = new PDFJS.ProgressBar('#loadingBar', {});
+    var bar = new pdfjsDistWebPdfViewer.ProgressBar('#loadingBar', {});
 
-    return PDFJS.shadow(this, 'loadingBar', bar);
+    return pdfjsDistBuildPdf.shadow(this, 'loadingBar', bar);
   },
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
-    var title = PDFJS.getFilenameFromUrl(url) || url;
+    var title = pdfjsDistBuildPdf.getFilenameFromUrl(url) || url;
     try {
       title = decodeURIComponent(title);
     } catch (e) {
@@ -166,8 +165,7 @@ var PDFViewerApplication = {
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
                   info.PDFFormatVersion + ' ' + (info.Producer || '-').trim() +
                   ' / ' + (info.Creator || '-').trim() + ']' +
-                  ' (PDF.js: ' + (PDFJS.version || '-') +
-                  (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
+                  ' (PDF.js: ' + (pdfjsDistBuildPdf.version || '-') + ')');
 
       var pdfTitle;
       if (metadata && metadata.has('dc:title')) {
@@ -197,7 +195,8 @@ var PDFViewerApplication = {
   error: function pdfViewError(message, moreInfo) {
     var l10n = this.l10n;
     var moreInfoText = [l10n.get('error_version_info',
-      {version: PDFJS.version || '?', build: PDFJS.build || '?'},
+      { version: pdfjsDistBuildPdf.version || '?',
+        build: pdfjsDistBuildPdf.build || '?' },
       'PDF.js v{{version}} (build: {{build}})')];
 
     if (moreInfo) {
@@ -295,13 +294,13 @@ var PDFViewerApplication = {
   },
 
   initUI: function pdfViewInitUI() {
-    var linkService = new PDFJS.PDFLinkService();
+    var linkService = new pdfjsDistWebPdfViewer.PDFLinkService();
     this.pdfLinkService = linkService;
 
-    this.l10n = PDFJS.NullL10n;
+    this.l10n = pdfjsDistWebPdfViewer.NullL10n;
 
     var container = document.getElementById('viewerContainer');
-    var pdfViewer = new PDFJS.PDFViewer({
+    var pdfViewer = new pdfjsDistWebPdfViewer.PDFViewer({
       container: container,
       linkService: linkService,
       l10n: this.l10n,
@@ -311,7 +310,7 @@ var PDFViewerApplication = {
     this.pdfViewer = pdfViewer;
     linkService.setViewer(pdfViewer);
 
-    this.pdfHistory = new PDFJS.PDFHistory({
+    this.pdfHistory = new pdfjsDistWebPdfViewer.PDFHistory({
       linkService: linkService
     });
     linkService.setHistory(this.pdfHistory);
