@@ -346,8 +346,6 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.disableFontFace : false;
     case 'disableCreateObjectURL':
       return globalSettings ? globalSettings.disableCreateObjectURL : false;
-    case 'isEvalSupported':
-      return globalSettings ? globalSettings.isEvalSupported : true;
     default:
       throw new Error('Unknown default setting: ' + id);
   }
