@@ -19,11 +19,11 @@ import {
   PasswordResponses, removeNullCharacters, shadow, UnexpectedResponseException,
   UnknownErrorException, UNSUPPORTED_FEATURES, Util
 } from '../shared/util';
-import { DEFAULT_LINK_REL, getFilenameFromUrl, LinkTarget } from './dom_utils';
 import {
   getDocument, LoopbackPort, PDFDataRangeTransport, PDFWorker
 } from './api';
 import { AnnotationLayer } from './annotation_layer';
+import { getFilenameFromUrl } from './dom_utils';
 import globalScope from '../shared/global_scope';
 import { GlobalWorkerOptions } from './worker_options';
 import { Metadata } from './metadata';
@@ -136,27 +136,6 @@ PDFJS.pdfBug = (PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug);
  */
 PDFJS.disableCreateObjectURL = (PDFJS.disableCreateObjectURL === undefined ?
                                 false : PDFJS.disableCreateObjectURL);
-
-/**
- * Specifies the |target| attribute for external links.
- * The constants from {LinkTarget} should be used:
- *  - NONE [default]
- *  - SELF
- *  - BLANK
- *  - PARENT
- *  - TOP
- * @var {number}
- */
-PDFJS.externalLinkTarget = (PDFJS.externalLinkTarget === undefined ?
-                            LinkTarget.NONE : PDFJS.externalLinkTarget);
-
-/**
- * Specifies the |rel| attribute for external links. Defaults to stripping
- * the referrer.
- * @var {string}
- */
-PDFJS.externalLinkRel = (PDFJS.externalLinkRel === undefined ?
-                         DEFAULT_LINK_REL : PDFJS.externalLinkRel);
 
 /**
   * Determines if we can eval strings as JS. Primarily used to improve
