@@ -48,8 +48,8 @@ GenericExternalServices.createDownloadManager = function() {
 GenericExternalServices.createPreferences = function() {
   return new GenericPreferences();
 };
-GenericExternalServices.createL10n = function(options) {
-  return new GenericL10n(options.locale);
+GenericExternalServices.createL10n = function({ locale = 'en-US', }) {
+  return new GenericL10n(locale);
 };
 PDFViewerApplication.externalServices = GenericExternalServices;
 

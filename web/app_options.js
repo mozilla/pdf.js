@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { viewerCompatibilityParams } from './viewer_compatibility';
+
 const OptionKind = {
   VIEWER: 'viewer',
   API: 'api',
@@ -25,6 +27,101 @@ const OptionKind = {
  *              compare with the format of `default_preferences.json`.
  */
 const defaultOptions = {
+  defaultZoomValue: {
+    /** @type {string} */
+    value: '',
+    kind: OptionKind.VIEWER,
+  },
+  disableFullscreen: {
+    /** @type {boolean} */
+    value: viewerCompatibilityParams.disableFullscreen || false,
+    kind: OptionKind.VIEWER,
+  },
+  disableHistory: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
+  disablePageLabels: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
+  disablePageMode: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
+  enablePrintAutoRotate: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
+  enableWebGL: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
+  externalLinkRel: {
+    /** @type {string} */
+    value: 'noopener noreferrer nofollow',
+    kind: OptionKind.VIEWER,
+  },
+  externalLinkTarget: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
+  imageResourcesPath: {
+    /** @type {string} */
+    value: './images/',
+    kind: OptionKind.VIEWER,
+  },
+  locale: {
+    /** @type {string} */
+    value: (typeof navigator !== 'undefined' ? navigator.language : 'en-US'),
+    kind: OptionKind.VIEWER,
+  },
+  maxCanvasPixels: {
+    /** @type {number} */
+    value: viewerCompatibilityParams.maxCanvasPixels || 16777216,
+    kind: OptionKind.VIEWER,
+  },
+  pdfBugEnabled: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
+  renderer: {
+    /** @type {string} */
+    value: 'canvas',
+    kind: OptionKind.VIEWER,
+  },
+  renderInteractiveForms: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
+  showPreviousViewOnLoad: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.VIEWER,
+  },
+  sidebarViewOnLoad: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
+  textLayerMode: {
+    /** @type {number} */
+    value: 1,
+    kind: OptionKind.VIEWER,
+  },
+  useOnlyCssZoom: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
 };
 
 const userOptions = Object.create(null);
