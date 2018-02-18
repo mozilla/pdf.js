@@ -16,8 +16,8 @@
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream } from './primitives';
 import {
-  info, isArrayBuffer, isNum, isSpace, isString, MissingDataException, OPS,
-  shadow, stringToBytes, stringToPDFString, Util, warn
+  getInheritableProperty, info, isArrayBuffer, isNum, isSpace, isString,
+  MissingDataException, OPS, shadow, stringToBytes, stringToPDFString, Util
 } from '../shared/util';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
 import { AnnotationFactory } from './annotation';
@@ -62,33 +62,19 @@ var Page = (function PageClosure() {
   }
 
   Page.prototype = {
-    getInheritedPageProp: function Page_getInheritedPageProp(key, getArray) {
-      var dict = this.pageDict, valueArray = null, loopCount = 0;
-      var MAX_LOOP_COUNT = 100;
-      getArray = getArray || false;
-      // Always walk up the entire parent chain, to be able to find
-      // e.g. \Resources placed on multiple levels of the tree.
-      while (dict) {
-        var value = getArray ? dict.getArray(key) : dict.get(key);
-        if (value !== undefined) {
-          if (!valueArray) {
-            valueArray = [];
-          }
-          valueArray.push(value);
-        }
-        if (++loopCount > MAX_LOOP_COUNT) {
-          warn('getInheritedPageProp: maximum loop count exceeded for ' + key);
-          return valueArray ? valueArray[0] : undefined;
-        }
-        dict = dict.get('Parent');
+    /**
+     * @private
+     */
+    _getInheritableProperty(key, getArray = false) {
+      let value = getInheritableProperty({ dict: this.pageDict, key, getArray,
+                                           stopWhenFound: false, });
+      if (!Array.isArray(value)) {
+        return value;
       }
-      if (!valueArray) {
-        return undefined;
+      if (value.length === 1 || !isDict(value[0])) {
+        return value[0];
       }
-      if (valueArray.length === 1 || !isDict(valueArray[0])) {
-        return valueArray[0];
-      }
-      return Dict.merge(this.xref, valueArray);
+      return Dict.merge(this.xref, value);
     },
 
     get content() {
@@ -100,11 +86,12 @@ var Page = (function PageClosure() {
       // present, but can be empty. Some document omit it still, in this case
       // we return an empty dictionary.
       return shadow(this, 'resources',
-                    this.getInheritedPageProp('Resources') || Dict.empty);
+                    this._getInheritableProperty('Resources') || Dict.empty);
     },
 
     get mediaBox() {
-      var mediaBox = this.getInheritedPageProp('MediaBox', true);
+      var mediaBox = this._getInheritableProperty('MediaBox',
+                                                  /* getArray = */ true);
       // Reset invalid media box to letter size.
       if (!Array.isArray(mediaBox) || mediaBox.length !== 4) {
         return shadow(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
@@ -113,7 +100,8 @@ var Page = (function PageClosure() {
     },
 
     get cropBox() {
-      var cropBox = this.getInheritedPageProp('CropBox', true);
+      var cropBox = this._getInheritableProperty('CropBox',
+                                                 /* getArray = */ true);
       // Reset invalid crop box to media box.
       if (!Array.isArray(cropBox) || cropBox.length !== 4) {
         return shadow(this, 'cropBox', this.mediaBox);
@@ -143,7 +131,7 @@ var Page = (function PageClosure() {
     },
 
     get rotate() {
-      var rotate = this.getInheritedPageProp('Rotate') || 0;
+      var rotate = this._getInheritableProperty('Rotate') || 0;
       // Normalize rotation so it's a multiple of 90 and between 0 and 270
       if (rotate % 90 !== 0) {
         rotate = 0;
@@ -180,7 +168,7 @@ var Page = (function PageClosure() {
 
     loadResources: function Page_loadResources(keys) {
       if (!this.resourcesPromise) {
-        // TODO: add async getInheritedPageProp and remove this.
+        // TODO: add async `_getInheritableProperty` and remove this.
         this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
       }
       return this.resourcesPromise.then(() => {
@@ -316,7 +304,7 @@ var Page = (function PageClosure() {
 
     get annotations() {
       var annotations = [];
-      var annotationRefs = this.getInheritedPageProp('Annots') || [];
+      var annotationRefs = this._getInheritableProperty('Annots') || [];
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
         var annotation = AnnotationFactory.create(this.xref, annotationRef,
