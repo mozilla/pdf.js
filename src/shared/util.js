@@ -644,6 +644,53 @@ function isEvalSupported() {
   }
 }
 
+/**
+ * Get the value of an inheritable property.
+ *
+ * If the PDF specification explicitly lists a property in a dictionary as
+ * inheritable, then the value of the property may be present in the dictionary
+ * itself or in one or more parents of the dictionary.
+ *
+ * If the key is not found in the tree, `undefined` is returned. Otherwise,
+ * the value for the key is returned or, if `stopWhenFound` is `false`, a list
+ * of values is returned. To avoid infinite loops, the traversal is stopped when
+ * the loop limit is reached.
+ *
+ * @param {Dict} dict - Dictionary from where to start the traversal.
+ * @param {string} key - The key of the property to find the value for.
+ * @param {boolean} getArray - Whether or not the value should be fetched as an
+ *   array. The default value is `false`.
+ * @param {boolean} stopWhenFound - Whether or not to stop the traversal when
+ *   the key is found. If set to `false`, we always walk up the entire parent
+ *   chain, for example to be able to find `\Resources` placed on multiple
+ *   levels of the tree. The default value is `true`.
+ */
+function getInheritableProperty({ dict, key, getArray = false,
+                                  stopWhenFound = true, }) {
+  const LOOP_LIMIT = 100;
+  let loopCount = 0;
+  let values;
+
+  while (dict) {
+    const value = getArray ? dict.getArray(key) : dict.get(key);
+    if (value !== undefined) {
+      if (stopWhenFound) {
+        return value;
+      }
+      if (!values) {
+        values = [];
+      }
+      values.push(value);
+    }
+    if (++loopCount > LOOP_LIMIT) {
+      warn(`getInheritableProperty: maximum loop count exceeded for "${key}"`);
+      break;
+    }
+    dict = dict.get('Parent');
+  }
+  return values;
+}
+
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
 var Util = (function UtilClosure() {
@@ -851,17 +898,6 @@ var Util = (function UtilClosure() {
     for (var key in obj2) {
       obj1[key] = obj2[key];
     }
-  };
-
-  Util.getInheritableProperty =
-      function Util_getInheritableProperty(dict, name, getArray) {
-    while (dict && !dict.has(name)) {
-      dict = dict.get('Parent');
-    }
-    if (!dict) {
-      return null;
-    }
-    return getArray ? dict.getArray(name) : dict.get(name);
   };
 
   Util.inherit = function Util_inherit(sub, base, prototype) {
@@ -1609,6 +1645,7 @@ export {
   createPromiseCapability,
   createObjectURL,
   deprecated,
+  getInheritableProperty,
   getLookupTableFactory,
   getVerbosityLevel,
   info,
