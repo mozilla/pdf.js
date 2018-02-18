@@ -16,9 +16,10 @@
 
 'use strict';
 
-var WAITING_TIME = 100; // ms
-var PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const WAITING_TIME = 100; // ms
+const PDF_TO_CSS_UNITS = 96.0 / 72.0;
 const IMAGE_RESOURCES_PATH = '/web/images/';
+const WORKER_SRC = '../build/generic/build/pdf.worker.js';
 
 /**
  * @class
@@ -267,8 +268,9 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
    * @param {DriverOptions} options
    */
   function Driver(options) {
-    // Configure the global PDFJS object
-    PDFJS.workerSrc = '../build/generic/build/pdf.worker.js';
+    // Configure the global worker options.
+    PDFJS.GlobalWorkerOptions.workerSrc = WORKER_SRC;
+
     PDFJS.cMapPacked = true;
     PDFJS.cMapUrl = '../external/bcmaps/';
     PDFJS.pdfBug = true;

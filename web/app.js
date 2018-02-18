@@ -21,9 +21,9 @@ import {
   ProgressBar, RendererType, TextLayerMode
 } from './ui_utils';
 import {
-  build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
-  LinkTarget, MissingPDFException, OPS, PDFJS, PDFWorker, shadow,
-  UnexpectedResponseException, UNSUPPORTED_FEATURES, version
+  build, createBlob, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
+  InvalidPDFException, LinkTarget, MissingPDFException, OPS, PDFJS, PDFWorker,
+  shadow, UnexpectedResponseException, UNSUPPORTED_FEATURES, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -54,11 +54,11 @@ function configure(PDFJS) {
   PDFJS.imageResourcesPath = './images/';
   if (typeof PDFJSDev !== 'undefined' &&
       PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC || CHROME')) {
-    PDFJS.workerSrc = '../build/pdf.worker.js';
+    GlobalWorkerOptions.workerSrc = '../build/pdf.worker.js';
   }
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     PDFJS.cMapUrl = '../external/bcmaps/';
-    PDFJS.workerSrc = '../src/worker_loader.js';
+    GlobalWorkerOptions.workerSrc = '../src/worker_loader.js';
   } else {
     PDFJS.cMapUrl = '../web/cmaps/';
   }
@@ -740,6 +740,8 @@ let PDFViewerApplication = {
                PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
       parameters.docBaseUrl = this.baseUrl;
     }
+    // TODO: Remove this once all options are moved from the `PDFJS` object.
+    parameters.verbosity = PDFJS.verbosity;
 
     if (args) {
       for (let prop in args) {
