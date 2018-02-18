@@ -62,10 +62,6 @@ var Page = (function PageClosure() {
   }
 
   Page.prototype = {
-    getPageProp: function Page_getPageProp(key) {
-      return this.pageDict.get(key);
-    },
-
     getInheritedPageProp: function Page_getInheritedPageProp(key, getArray) {
       var dict = this.pageDict, valueArray = null, loopCount = 0;
       var MAX_LOOP_COUNT = 100;
@@ -96,7 +92,7 @@ var Page = (function PageClosure() {
     },
 
     get content() {
-      return this.getPageProp('Contents');
+      return this.pageDict.get('Contents');
     },
 
     get resources() {
@@ -126,7 +122,7 @@ var Page = (function PageClosure() {
     },
 
     get userUnit() {
-      var obj = this.getPageProp('UserUnit');
+      var obj = this.pageDict.get('UserUnit');
       if (!isNum(obj) || obj <= 0) {
         obj = DEFAULT_USER_UNIT;
       }
