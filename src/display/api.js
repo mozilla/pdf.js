@@ -16,9 +16,10 @@
 
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isSameOrigin, MessageHandler, MissingPDFException,
-  NativeImageDecoding, PageViewport, PasswordException, stringToBytes,
-  UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
+  isArrayBuffer, isNum, isSameOrigin, MessageHandler, MissingPDFException,
+  NativeImageDecoding, PageViewport, PasswordException, setVerbosityLevel,
+  stringToBytes, UnexpectedResponseException, UnknownErrorException,
+  unreachable, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, getDefaultSetting,
@@ -27,17 +28,17 @@ import {
 import { FontFaceObject, FontLoader } from './font_loader';
 import { CanvasGraphics } from './canvas';
 import globalScope from '../shared/global_scope';
+import { GlobalWorkerOptions } from './worker_options';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 import { WebGLContext } from './webgl';
 
 var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
-var isWorkerDisabled = false;
-var workerSrc;
-var isPostMessageTransfersDisabled = false;
+let isWorkerDisabled = false;
+let workerSrc;
 
-var pdfjsFilePath =
+const pdfjsFilePath =
   typeof PDFJSDev !== 'undefined' &&
   PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
   typeof document !== 'undefined' && document.currentScript ?
@@ -46,8 +47,8 @@ var pdfjsFilePath =
 var fakeWorkerFilesLoader = null;
 var useRequireEnsure = false;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
-  // For GENERIC build we need add support of different fake file loaders
-  // for different  frameworks.
+  // For GENERIC build we need to add support for different fake file loaders
+  // for different frameworks.
   if (typeof window === 'undefined') {
     // node.js - disable worker and set require.ensure.
     isWorkerDisabled = true;
@@ -124,8 +125,12 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @property {number}     rangeChunkSize - Optional parameter to specify
  *   maximum number of bytes fetched per range request. The default value is
  *   2^16 = 65536.
- * @property {PDFWorker}  worker - The worker that will be used for the loading
- *   and parsing of the PDF data.
+ * @property {PDFWorker}  worker - (optional) The worker that will be used for
+ *   the loading and parsing of the PDF data.
+ * @property {boolean} postMessageTransfers - (optional) Enables transfer usage
+ *   in postMessage for ArrayBuffers. The default value is `true`.
+ * @property {number} verbosity - (optional) Controls the logging level; the
+ *   constants from {VerbosityLevel} should be used.
  * @property {string} docBaseUrl - (optional) The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
@@ -192,7 +197,7 @@ function getDocument(src) {
 
   var params = {};
   var rangeTransport = null;
-  var worker = null;
+  let worker = null;
   var CMapReaderFactory = DOMCMapReaderFactory;
 
   for (var key in source) {
@@ -238,11 +243,23 @@ function getDocument(src) {
     params.nativeImageDecoderSupport = NativeImageDecoding.DECODE;
   }
 
+  // Set the main-thread verbosity level.
+  setVerbosityLevel(params.verbosity);
+
   if (!worker) {
+    const workerParams = {
+      postMessageTransfers: params.postMessageTransfers,
+      verbosity: params.verbosity,
+    };
     // Worker was not provided -- creating and owning our own. If message port
-    // is specified in global settings, using it.
-    var workerPort = getDefaultSetting('workerPort');
-    worker = workerPort ? PDFWorker.fromPort(workerPort) : new PDFWorker();
+    // is specified in global worker options, using it.
+    let workerPort = GlobalWorkerOptions.workerPort;
+    if (workerPort) {
+      workerParams.port = workerPort;
+      worker = PDFWorker.fromPort(workerParams);
+    } else {
+      worker = new PDFWorker(workerParams);
+    }
     task._worker = worker;
   }
   var docId = task.docId;
@@ -313,8 +330,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     maxImageSize: getDefaultSetting('maxImageSize'),
     disableFontFace: getDefaultSetting('disableFontFace'),
     disableCreateObjectURL: getDefaultSetting('disableCreateObjectURL'),
-    postMessageTransfers: getDefaultSetting('postMessageTransfers') &&
-                          !isPostMessageTransfersDisabled,
+    postMessageTransfers: worker.postMessageTransfers,
     docBaseUrl: source.docBaseUrl,
     nativeImageDecoderSupport: source.nativeImageDecoderSupport,
     ignoreErrors: source.ignoreErrors,
@@ -1192,8 +1208,18 @@ class LoopbackPort {
 }
 
 /**
+ * @typedef {Object} PDFWorkerParameters
+ * @property {string} name - (optional) The name of the worker.
+ * @property {Object} port - (optional) The `workerPort`.
+ * @property {boolean} postMessageTransfers - (optional) Enables transfer usage
+ *   in postMessage for ArrayBuffers. The default value is `true`.
+ * @property {number} verbosity - (optional) Controls the logging level; the
+ *   constants from {VerbosityLevel} should be used.
+ */
+
+/**
  * PDF.js web worker abstraction, it controls instantiation of PDF documents and
- * WorkerTransport for them.  If creation of a web worker is not possible,
+ * WorkerTransport for them. If creation of a web worker is not possible,
  * a "fake" worker will be used instead.
  * @class
  */
@@ -1201,8 +1227,8 @@ var PDFWorker = (function PDFWorkerClosure() {
   let nextFakeWorkerId = 0;
 
   function getWorkerSrc() {
-    if (getDefaultSetting('workerSrc')) {
-      return getDefaultSetting('workerSrc');
+    if (GlobalWorkerOptions.workerSrc) {
+      return GlobalWorkerOptions.workerSrc;
     }
     if (typeof workerSrc !== 'undefined') {
       return workerSrc;
@@ -1212,7 +1238,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         pdfjsFilePath) {
       return pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
     }
-    throw new Error('No PDFJS.workerSrc specified');
+    throw new Error('No "GlobalWorkerOptions.workerSrc" specified.');
   }
 
   function getMainThreadWorkerMessageHandler() {
@@ -1279,14 +1305,19 @@ var PDFWorker = (function PDFWorkerClosure() {
 
   let pdfWorkerPorts = new WeakMap();
 
-  function PDFWorker(name, port) {
+  /**
+   * @param {PDFWorkerParameters} params - The worker initialization parameters.
+   */
+  function PDFWorker({ name = null, port = null,
+                       postMessageTransfers = true, verbosity = null, } = {}) {
     if (port && pdfWorkerPorts.has(port)) {
       throw new Error('Cannot use more than one PDFWorker per port');
     }
 
     this.name = name;
     this.destroyed = false;
-    this.postMessageTransfers = true;
+    this.postMessageTransfers = postMessageTransfers !== false;
+    this.verbosity = (isNum(verbosity) ? verbosity : getVerbosityLevel());
 
     this._readyCapability = createPromiseCapability();
     this._port = null;
@@ -1383,12 +1414,11 @@ var PDFWorker = (function PDFWorkerClosure() {
               this._webWorker = worker;
               if (!data.supportTransfers) {
                 this.postMessageTransfers = false;
-                isPostMessageTransfersDisabled = true;
               }
               this._readyCapability.resolve();
               // Send global setting, e.g. verbosity level.
               messageHandler.send('configure', {
-                verbosity: getVerbosityLevel(),
+                verbosity: this.verbosity,
               });
             } else {
               this._setupFakeWorker();
@@ -1411,11 +1441,8 @@ var PDFWorker = (function PDFWorkerClosure() {
             }
           });
 
-          var sendTest = function () {
-            var postMessageTransfers =
-              getDefaultSetting('postMessageTransfers') &&
-              !isPostMessageTransfersDisabled;
-            var testObj = new Uint8Array([postMessageTransfers ? 255 : 0]);
+          const sendTest = () => {
+            let testObj = new Uint8Array([this.postMessageTransfers ? 255 : 0]);
             // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
             // typed array. Also, checking if we can use transfers.
             try {
@@ -1494,11 +1521,14 @@ var PDFWorker = (function PDFWorkerClosure() {
     },
   };
 
-  PDFWorker.fromPort = function (port) {
-    if (pdfWorkerPorts.has(port)) {
-      return pdfWorkerPorts.get(port);
+  /**
+   * @param {PDFWorkerParameters} params - The worker initialization parameters.
+   */
+  PDFWorker.fromPort = function(params) {
+    if (pdfWorkerPorts.has(params.port)) {
+      return pdfWorkerPorts.get(params.port);
     }
-    return new PDFWorker(null, port);
+    return new PDFWorker(params);
   };
 
   PDFWorker.getWorkerSrc = function() {

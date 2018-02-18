@@ -14,11 +14,10 @@
  */
 
 import {
-  createBlob, createObjectURL, createPromiseCapability, getVerbosityLevel,
-  InvalidPDFException, isLittleEndian, MissingPDFException, OPS, PageViewport,
-  PasswordException, PasswordResponses, removeNullCharacters, setVerbosityLevel,
-  shadow, UnexpectedResponseException, UnknownErrorException,
-  UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS
+  createBlob, createObjectURL, createPromiseCapability, InvalidPDFException,
+  isLittleEndian, MissingPDFException, OPS, PageViewport, PasswordException,
+  PasswordResponses, removeNullCharacters, shadow, UnexpectedResponseException,
+  UnknownErrorException, UNSUPPORTED_FEATURES, Util
 } from '../shared/util';
 import { DEFAULT_LINK_REL, getFilenameFromUrl, LinkTarget } from './dom_utils';
 import {
@@ -26,6 +25,7 @@ import {
 } from './api';
 import { AnnotationLayer } from './annotation_layer';
 import globalScope from '../shared/global_scope';
+import { GlobalWorkerOptions } from './worker_options';
 import { Metadata } from './metadata';
 import { renderTextLayer } from './text_layer';
 import { SVGGraphics } from './svg';
@@ -41,22 +41,6 @@ var PDFJS = globalScope.PDFJS;
 
 PDFJS.pdfBug = false;
 
-if (PDFJS.verbosity !== undefined) {
-  setVerbosityLevel(PDFJS.verbosity);
-}
-delete PDFJS.verbosity;
-Object.defineProperty(PDFJS, 'verbosity', {
-  get() {
-    return getVerbosityLevel();
-  },
-  set(level) {
-    setVerbosityLevel(level);
-  },
-  enumerable: true,
-  configurable: true,
-});
-
-PDFJS.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
 PDFJS.OPS = OPS;
 PDFJS.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
 PDFJS.shadow = shadow;
@@ -112,21 +96,6 @@ PDFJS.disableFontFace = (PDFJS.disableFontFace === undefined ?
                          false : PDFJS.disableFontFace);
 
 /**
- * Path and filename of the worker file. Required when the worker is enabled
- * in development mode. If unspecified in the production build, the worker
- * will be loaded based on the location of the pdf.js file. It is recommended
- * that the workerSrc is set in a custom application to prevent issues caused
- * by third-party frameworks and libraries.
- * @var {string}
- */
-PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
-
-/**
- * Defines global port for worker process. Overrides `workerSrc` setting.
- */
-PDFJS.workerPort = (PDFJS.workerPort === undefined ? null : PDFJS.workerPort);
-
-/**
  * Disable range request loading of PDF files. When enabled and if the server
  * supports partial content requests then the PDF will be fetched in chunks.
  * Enabled (false) by default.
@@ -160,13 +129,6 @@ PDFJS.disableAutoFetch = (PDFJS.disableAutoFetch === undefined ?
  * @var {boolean}
  */
 PDFJS.pdfBug = (PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug);
-
-/**
- * Enables transfer usage in postMessage for ArrayBuffers.
- * @var {boolean}
- */
-PDFJS.postMessageTransfers = (PDFJS.postMessageTransfers === undefined ?
-                              true : PDFJS.postMessageTransfers);
 
 /**
  * Disables URL.createObjectURL usage.
@@ -208,6 +170,7 @@ PDFJS.getDocument = getDocument;
 PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
+PDFJS.GlobalWorkerOptions = GlobalWorkerOptions;
 
 PDFJS.getFilenameFromUrl = getFilenameFromUrl;
 

@@ -24,10 +24,10 @@ import {
   DOMCanvasFactory, RenderingCancelledException
 } from '../../src/display/dom_utils';
 import {
-  getDocument, PDFDocumentProxy, PDFPageProxy, PDFWorker
+  getDocument, PDFDataRangeTransport, PDFDocumentProxy, PDFPageProxy, PDFWorker
 } from '../../src/display/api';
+import { GlobalWorkerOptions } from '../../src/display/worker_options';
 import isNodeJS from '../../src/shared/is_node';
-import { PDFJS } from '../../src/display/global';
 
 describe('api', function() {
   let basicApiFileName = 'basicapi.pdf';
@@ -324,7 +324,7 @@ describe('api', function() {
     }
 
     it('worker created or destroyed', function (done) {
-      var worker = new PDFJS.PDFWorker('test1');
+      var worker = new PDFWorker({ name: 'test1', });
       worker.promise.then(function () {
         expect(worker.name).toEqual('test1');
         expect(!!worker.port).toEqual(true);
@@ -361,7 +361,7 @@ describe('api', function() {
       });
     });
     it('worker created and can be used in getDocument', function (done) {
-      var worker = new PDFJS.PDFWorker('test1');
+      var worker = new PDFWorker({ name: 'test1', });
       var loadingTask = getDocument(
         buildGetDocumentParams(basicApiFileName, {
           worker,
@@ -386,9 +386,9 @@ describe('api', function() {
       });
     });
     it('creates more than one worker', function (done) {
-      var worker1 = new PDFJS.PDFWorker('test1');
-      var worker2 = new PDFJS.PDFWorker('test2');
-      var worker3 = new PDFJS.PDFWorker('test3');
+      var worker1 = new PDFWorker({ name: 'test1', });
+      var worker2 = new PDFWorker({ name: 'test2', });
+      var worker3 = new PDFWorker({ name: 'test3', });
       var ready = Promise.all([worker1.promise, worker2.promise,
         worker3.promise]);
       ready.then(function () {
@@ -406,7 +406,7 @@ describe('api', function() {
     it('gets current workerSrc', function() {
       let workerSrc = PDFWorker.getWorkerSrc();
       expect(typeof workerSrc).toEqual('string');
-      expect(workerSrc).toEqual(PDFJS.workerSrc);
+      expect(workerSrc).toEqual(GlobalWorkerOptions.workerSrc);
     });
   });
   describe('PDFDocument', function() {
@@ -1305,7 +1305,7 @@ describe('api', function() {
       var fetches = 0;
       var getDocumentPromise = getDocumentData().then(function (data) {
         var initialData = data.subarray(0, initialDataLength);
-        transport = new PDFJS.PDFDataRangeTransport(data.length, initialData);
+        transport = new PDFDataRangeTransport(data.length, initialData);
         transport.requestDataRange = function (begin, end) {
           fetches++;
           waitSome(function () {
@@ -1339,7 +1339,7 @@ describe('api', function() {
       var fetches = 0;
       var getDocumentPromise = getDocumentData().then(function (data) {
         var initialData = data.subarray(0, initialDataLength);
-        transport = new PDFJS.PDFDataRangeTransport(data.length, initialData);
+        transport = new PDFDataRangeTransport(data.length, initialData);
         transport.requestDataRange = function (begin, end) {
           fetches++;
           if (fetches === 1) {

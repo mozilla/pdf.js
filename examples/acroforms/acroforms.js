@@ -15,7 +15,8 @@
 
 'use strict';
 
-PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+PDFJS.GlobalWorkerOptions.workerSrc =
+  '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
 var DEFAULT_URL = '../../test/pdfs/f1040.pdf';
 var DEFAULT_SCALE = 1.0;
