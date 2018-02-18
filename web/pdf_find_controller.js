@@ -128,9 +128,53 @@ class PDFFindController {
   }
 
   _normalize(text) {
-    return text.replace(this.normalizationRegex, function (ch) {
-      return CHARACTERS_TO_NORMALIZE[ch];
+    // Normalize the text and also track an array of [origIdx, lengthChange]
+    // pairs for cases where the replacement length is different from the
+    // original length
+    const diffs = [];
+    const text2 = text.replace(this.normalizationRegex, (match, matchIdx) => {
+      const replacement = CHARACTERS_TO_NORMALIZE[match];
+      if (replacement.length !== match.length) {
+        diffs.push([matchIdx, replacement.length - match.length]);
+      }
+      return replacement;
     });
+
+    return [text2, diffs];
+  }
+
+  /**
+   * During content and query normalization, some single characters are
+   * replaced with multiple characters, e.g. ¼ => 1/4. Searching uses this
+   * normalized string, but the match highlighting uses the original string.
+   * Match indexes in the normalized string need to be normalized to indexes
+   * in the original string.
+   */
+  _fixMatchIdx(diffs, matchIdx) {
+    // Iterate through the offset array, adjusting matchIdx as needed
+    let accumulatedChange = 0;
+
+    for (let [origIdx, change] of diffs) {
+      // Get the bounds in the normalized string that map to this
+      // original index in the original string
+      let normIdxStart = origIdx + accumulatedChange;
+
+      if (matchIdx <= normIdxStart) {
+        // If the match is before this offset replacement, use previous
+        // accumulated change
+        break;
+      } else if (matchIdx < normIdxStart + change) {
+        // The match is in the middle of a longer replacement that
+        // maps to a single original char
+        accumulatedChange += matchIdx - normIdxStart;
+        break;
+      } else {
+        // The match is after this offset, so accumulate the total change
+        accumulatedChange += change;
+      }
+    }
+
+    return matchIdx - accumulatedChange;
   }
 
   /**
@@ -184,7 +228,8 @@ class PDFFindController {
     }
   }
 
-  _calculatePhraseMatch(query, pageIndex, pageContent) {
+  _calculatePhraseMatch(query, pageIndex, pageContent, pageContentDiffs) {
+    let matchesLengths = [];
     let matches = [];
     let queryLen = query.length;
     let matchIdx = -queryLen;
@@ -193,12 +238,24 @@ class PDFFindController {
       if (matchIdx === -1) {
         break;
       }
-      matches.push(matchIdx);
+
+      let matchIdx2 = this._fixMatchIdx(pageContentDiffs, matchIdx);
+      let matchEnd = matchIdx + queryLen - 1;
+      let matchEnd2 = this._fixMatchIdx(pageContentDiffs, matchEnd);
+
+      matches.push(matchIdx2);
+      matchesLengths.push(matchEnd2 - matchIdx2 + 1);
     }
+
+    // Prepare arrays for storing the matches.
+    if (!this.pageMatchesLength) {
+      this.pageMatchesLength = [];
+    }
+    this.pageMatchesLength[pageIndex] = matchesLengths;
     this.pageMatches[pageIndex] = matches;
   }
 
-  _calculateWordMatch(query, pageIndex, pageContent) {
+  _calculateWordMatch(query, pageIndex, pageContent, pageContentDiffs) {
     let matchesWithLength = [];
     // Divide the query into pieces and search for text in each piece.
     let queryArray = query.match(/\S+/g);
@@ -211,10 +268,16 @@ class PDFFindController {
         if (matchIdx === -1) {
           break;
         }
-        // Other searches do not, so we store the length.
+
+        // Get the original (pre-normalization) match start index and
+        // match end index
+        let matchIdx2 = this._fixMatchIdx(pageContentDiffs, matchIdx);
+        let matchEnd = matchIdx + subqueryLen - 1;
+        let matchEnd2 = this._fixMatchIdx(pageContentDiffs, matchEnd);
+
         matchesWithLength.push({
-          match: matchIdx,
-          matchLength: subqueryLen,
+          match: matchIdx2,
+          matchLength: matchEnd2 - matchIdx2 + 1,
           skipped: false,
         });
       }
@@ -234,8 +297,9 @@ class PDFFindController {
   }
 
   _calculateMatch(pageIndex) {
-    let pageContent = this._normalize(this.pageContents[pageIndex]);
-    let query = this._normalize(this.state.query);
+    let pageContentOrig = this.pageContents[pageIndex];
+    let [pageContent, pageContentDiffs] = this._normalize(pageContentOrig);
+    let [query] = this._normalize(this.state.query);
     let caseSensitive = this.state.caseSensitive;
     let phraseSearch = this.state.phraseSearch;
     let queryLen = query.length;
@@ -251,9 +315,10 @@ class PDFFindController {
     }
 
     if (phraseSearch) {
-      this._calculatePhraseMatch(query, pageIndex, pageContent);
+      this._calculatePhraseMatch(query, pageIndex, pageContent,
+                                 pageContentDiffs);
     } else {
-      this._calculateWordMatch(query, pageIndex, pageContent);
+      this._calculateWordMatch(query, pageIndex, pageContent, pageContentDiffs);
     }
 
     this._updatePage(pageIndex);
