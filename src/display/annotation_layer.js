@@ -979,7 +979,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         optionElement.value = option.exportValue;
         optionElement.setAttribute('name', itemName);
 
-        if (this.data.fieldValue.indexOf(option.exportValue) >= 0) {
+        if (this.data.fieldValue.includes(option.exportValue) >= 0) {
           optionElement.setAttribute('selected', true);
         }
 
@@ -1155,7 +1155,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           aElement.style.fontSize = style.fontSize;
         }
 
-        if (this.data.fieldValue.indexOf(optionItem.exportValue) >= 0) {
+        if (this.data.fieldValue.includes(optionItem.exportValue) >= 0) {
           comboElement.value = optionItem.displayValue;
         }
 
