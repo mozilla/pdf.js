@@ -308,16 +308,43 @@ class ChromePreferences extends BasePreferences {
         // Get preferences as set by the system administrator.
         // See extensions/chromium/preferences_schema.json for more information.
         // These preferences can be overridden by the user.
-        chrome.storage.managed.get(this.defaults, function(items) {
-          // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
+
+        // Deprecated preferences are removed from web/default_preferences.json,
+        // but kept in extensions/chromium/preferences_schema.json for backwards
+        // compatibility with managed preferences.
+        let defaultManagedPrefs = Object.assign({
+          enableHandToolOnLoad: false,
+          disableTextLayer: false,
+          enhanceTextSelection: false,
+        }, this.defaults);
+
+        chrome.storage.managed.get(defaultManagedPrefs, function(items) {
+          items = items || defaultManagedPrefs;
+          // Migration logic for deprecated preferences: If the new preference
+          // is not defined by an administrator (i.e. the value is the same as
+          // the default value), and a deprecated preference is set with a
+          // non-default value, migrate the deprecated preference value to the
+          // new preference value.
           // Never remove this, because we have no means of modifying managed
           // preferences.
-          if (items && items.enableHandToolOnLoad && !items.cursorToolOnLoad) {
-            // if the old enableHandToolOnLoad has a non-default value,
-            // and cursorToolOnLoad has a default value, migrate.
-            items.enableHandToolOnLoad = false;
+
+          // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
+          if (items.enableHandToolOnLoad && !items.cursorToolOnLoad) {
             items.cursorToolOnLoad = 1;
           }
+          delete items.enableHandToolOnLoad;
+
+          // Migration code for https://github.com/mozilla/pdf.js/pull/9479.
+          if (items.textLayerMode !== 1) {
+            if (items.disableTextLayer) {
+              items.textLayerMode = 0;
+            } else if (items.enhanceTextSelection) {
+              items.textLayerMode = 2;
+            }
+          }
+          delete items.disableTextLayer;
+          delete items.enhanceTextSelection;
+
           getPreferences(items);
         });
       } else {
