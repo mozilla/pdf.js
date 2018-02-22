@@ -578,7 +578,8 @@ let PDFViewerApplication = {
       // Embedded PDF viewers should not be changing their parent page's title.
       return;
     }
-    document.title = title;
+    var documentTitle = _ui_utils.getDocumentTitle();
+    document.title = documentTitle;
   },
 
   /**
@@ -721,6 +722,7 @@ let PDFViewerApplication = {
   },
 
   download() {
+    return; // Dont allow download of Basic MC Reference PDF
     function downloadByUrl() {
       downloadManager.downloadUrl(url, filename);
     }
@@ -1095,7 +1097,7 @@ let PDFViewerApplication = {
       }
 
       if (pdfTitle) {
-        this.setTitle(pdfTitle + ' - ' + document.title);
+        this.setTitle(document.title);
       }
 
       if (info.IsAcroFormPresent) {

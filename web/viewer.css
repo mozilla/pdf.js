@@ -833,17 +833,13 @@ html[dir="rtl"] .secondaryToolbarButton::before {
 }
 
 html[dir='ltr'] .toolbarButton#sidebarToggle::before {
-  content: url(images/toolbarButton-sidebarToggle.png);
 }
 html[dir='rtl'] .toolbarButton#sidebarToggle::before {
-  content: url(images/toolbarButton-sidebarToggle-rtl.png);
 }
 
 html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
-  content: url(images/toolbarButton-secondaryToolbarToggle.png);
 }
 html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
-  content: url(images/toolbarButton-secondaryToolbarToggle-rtl.png);
 }
 
 html[dir='ltr'] .toolbarButton.findPrevious::before {
@@ -861,30 +857,23 @@ html[dir='rtl'] .toolbarButton.findNext::before {
 }
 
 html[dir='ltr'] .toolbarButton.pageUp::before {
-  content: url(images/toolbarButton-pageUp.png);
 }
 html[dir='rtl'] .toolbarButton.pageUp::before {
-  content: url(images/toolbarButton-pageUp-rtl.png);
 }
 
 html[dir='ltr'] .toolbarButton.pageDown::before {
-  content: url(images/toolbarButton-pageDown.png);
 }
 html[dir='rtl'] .toolbarButton.pageDown::before {
-  content: url(images/toolbarButton-pageDown-rtl.png);
 }
 
 .toolbarButton.zoomOut::before {
-  content: url(images/toolbarButton-zoomOut.png);
 }
 
 .toolbarButton.zoomIn::before {
-  content: url(images/toolbarButton-zoomIn.png);
 }
 
 .toolbarButton.presentationMode::before,
 .secondaryToolbarButton.presentationMode::before {
-  content: url(images/toolbarButton-presentationMode.png);
 }
 
 .toolbarButton.print::before,
@@ -941,7 +930,6 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
 }
 
 #viewFind.toolbarButton::before {
-  content: url(images/toolbarButton-search.png);
 }
 
 .toolbarButton.pdfSidebarNotification::after {
@@ -1630,17 +1618,13 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 
   html[dir='ltr'] .toolbarButton#sidebarToggle::before {
-    content: url(images/toolbarButton-sidebarToggle@2x.png);
   }
   html[dir='rtl'] .toolbarButton#sidebarToggle::before {
-    content: url(images/toolbarButton-sidebarToggle-rtl@2x.png);
   }
 
   html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
-    content: url(images/toolbarButton-secondaryToolbarToggle@2x.png);
   }
   html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
-    content: url(images/toolbarButton-secondaryToolbarToggle-rtl@2x.png);
   }
 
   html[dir='ltr'] .toolbarButton.findPrevious::before {
@@ -1672,16 +1656,13 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 
   .toolbarButton.zoomIn::before {
-    content: url(images/toolbarButton-zoomIn@2x.png);
   }
 
   .toolbarButton.zoomOut::before {
-    content: url(images/toolbarButton-zoomOut@2x.png);
   }
 
   .toolbarButton.presentationMode::before,
   .secondaryToolbarButton.presentationMode::before {
-    content: url(images/toolbarButton-presentationMode@2x.png);
   }
 
   .toolbarButton.print::before,
@@ -1720,7 +1701,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 
   #viewFind.toolbarButton::before {
-    content: url(images/toolbarButton-search@2x.png);
   }
 
   .secondaryToolbarButton.firstPage::before {
@@ -1952,3 +1932,51 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     display: none;
   }
 }
+
+.mcOpenSans {
+  font-family: 'Open Sans', san-serif !important;
+}
+
+.mcWatermark {
+  margin:50% auto;
+  opacity: 0.6;
+  font-size: 650%;
+  text-align: center;
+  font-weight: bold;
+  transform: rotate(45deg);
+}
+
+.mcToolbar {
+  background-image: none !important;
+  background-color: #34495d !important;
+}
+
+.mcToolbar option{
+  background-image: none !important;
+  background-color: #34495d !important
+}
+
+
+.mcViewer {
+  background-color: #243340 !important;
+}
+
+.mcViewer .page {
+  border-image: none;
+}
+
+.mcSidebar {
+  background-color: #202C37 !important;
+}
+
+@media print {
+  body {
+    display: none !important;
+  }
+}
+
+body {
+  box-shadow: none !important;
+}
+
+

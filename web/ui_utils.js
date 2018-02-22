@@ -384,6 +384,26 @@ function isDataSchema(url) {
   return url.substr(i, 5).toLowerCase() === 'data:';
 }
 
+function getParameterByName(name, url) {
+  if (!url) { url = window.location.href;}
+  name = name.replace(/[\[\]]/g, '\\$&');
+  var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+    results = regex.exec(url);
+  if (!results) {return null;}
+  if (!results[2]) {return '';}
+  return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
+function getWatermarkText() {
+  var defaultWatermark = 'REFERENCE ONLY';
+  return getParameterByName('watermark') || defaultWatermark;
+}
+
+function getDocumentTitle() {
+  var defaultTitle = 'PDF Viewer';
+  return getParameterByName('documentTitle') || defaultTitle;
+}
+
 /**
  * Returns the filename or guessed filename from the url (see issue 3455).
  * @param {string} url - The original PDF location.
@@ -605,6 +625,8 @@ export {
   NullL10n,
   EventBus,
   ProgressBar,
+  getDocumentTitle,
+  getWatermarkText,
   getPDFFileNameFromURL,
   noContextMenuHandler,
   parseQueryString,

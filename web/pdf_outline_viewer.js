@@ -17,7 +17,7 @@ import {
   addLinkAttributes, PDFJS, removeNullCharacters
 } from 'pdfjs-lib';
 
-const DEFAULT_TITLE = '\u2013';
+const DEFAULT_TITLE = '';
 
 /**
  * @typedef {Object} PDFOutlineViewerOptions

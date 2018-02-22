@@ -372,6 +372,13 @@ class PDFPageView {
       textLayerDiv.className = 'textLayer';
       textLayerDiv.style.width = canvasWrapper.style.width;
       textLayerDiv.style.height = canvasWrapper.style.height;
+
+      var textLayerWatermark = document.createElement('p');
+      var waterMarkText = _ui_utils.getWatermarkText();
+      textLayerWatermark.className = 'mcWatermark';
+      textLayerWatermark.innerHTML = waterMarkText;
+      textLayerDiv.appendChild(textLayerWatermark);
+
       if (this.annotationLayer && this.annotationLayer.div) {
         // The annotation layer needs to stay on top.
         div.insertBefore(textLayerDiv, this.annotationLayer.div);
