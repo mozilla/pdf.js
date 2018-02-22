@@ -26,6 +26,11 @@
       ],
       "default": 0
     },
+    "enableHandToolOnLoad": {
+      "description": "DEPRECATED. Set cursorToolOnLoad to 1 to enable the hand tool by default.",
+      "type": "boolean",
+      "default": false
+    },
     "cursorToolOnLoad": {
       "title": "Cursor tool on load",
       "description": "The cursor tool that is enabled upon load.\n 0 = Text selection tool.\n 1 = Hand tool.",
@@ -67,6 +72,16 @@
     "disableFontFace": {
       "title": "Disable @font-face",
       "description": "Whether to disable @font-face and fall back to canvas rendering (this is more resource-intensive).",
+      "type": "boolean",
+      "default": false
+    },
+    "disableTextLayer": {
+      "description": "DEPRECATED. Set textLayerMode to 0 to disable the text selection layer by default.",
+      "type": "boolean",
+      "default": false
+    },
+    "enhanceTextSelection": {
+      "description": "DEPRECATED. Set textLayerMode to 2 to use the enhanced text selection layer by default.",
       "type": "boolean",
       "default": false
     },

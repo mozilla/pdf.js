@@ -192,6 +192,13 @@ function getVersionJSON() {
 function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
   var chromePrefs = JSON.parse(fs.readFileSync(chromePrefsPath).toString());
   var chromePrefsKeys = Object.keys(chromePrefs.properties);
+  chromePrefsKeys = chromePrefsKeys.filter(function (key) {
+    var description = chromePrefs.properties[key].description;
+    // Deprecated keys are allowed in the managed preferences file.
+    // The code maintained is responsible for adding migration logic to
+    // extensions/chromium/options/migration.js and web/chromecom.js .
+    return !description || !description.startsWith('DEPRECATED.');
+  });
   chromePrefsKeys.sort();
   var webPrefs = JSON.parse(fs.readFileSync(webPrefsPath).toString());
   var webPrefsKeys = Object.keys(webPrefs);
