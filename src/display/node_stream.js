@@ -28,14 +28,30 @@ import {
 
 const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
 
+function parseUrl(sourceUrl) {
+  let parsedUrl = url.parse(sourceUrl);
+  if (parsedUrl.protocol === 'file:' || parsedUrl.host) {
+    return parsedUrl;
+  }
+  // Prepending 'file:///' to Windows absolute path.
+  if (/^[a-z]:[/\\]/i.test(sourceUrl)) {
+    return url.parse(`file:///${sourceUrl}`);
+  }
+  // Changes protocol to 'file:' if url refers to filesystem.
+  if (!parsedUrl.host) {
+    parsedUrl.protocol = 'file:';
+  }
+  return parsedUrl;
+}
+
 class PDFNodeStream {
   constructor(source) {
     this.source = source;
-    this.url = url.parse(source.url);
+    this.url = parseUrl(source.url);
     this.isHttp = this.url.protocol === 'http:' ||
                   this.url.protocol === 'https:';
     // Check if url refers to filesystem.
-    this.isFsUrl = this.url.protocol === 'file:' || !this.url.host;
+    this.isFsUrl = this.url.protocol === 'file:';
     this.httpHeaders = (this.isHttp && source.httpHeaders) || {};
 
     this._fullRequest = null;
