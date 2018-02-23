@@ -68,7 +68,7 @@ class AnnotationFactory {
         let fieldType = Util.getInheritableProperty(dict, 'FT');
         fieldType = isName(fieldType) ? fieldType.name : null;
 
-        let widget = new WidgetAnnotation(parameters);
+        let widget;
 
         switch (fieldType) {
           case 'Tx':
@@ -81,8 +81,9 @@ class AnnotationFactory {
             widget = new ChoiceWidgetAnnotation(parameters);
             break;
           default:
+            widget = new WidgetAnnotation(parameters);
             warn('Unimplemented widget field type "' + fieldType + '", ' +
-               'falling back to base field type.');
+                 'falling back to base field type.');
             break;
         }
 

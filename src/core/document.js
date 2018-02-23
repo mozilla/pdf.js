@@ -33,8 +33,8 @@ var Page = (function PageClosure() {
   var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
   function isAnnotationRenderable(annotation, intent) {
-    return (intent === 'display' && annotation && annotation.viewable) ||
-           (intent === 'print' && annotation && annotation.printable);
+    return (intent === 'display' && annotation.viewable) ||
+           (intent === 'print' && annotation.printable);
   }
 
   function Page({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
