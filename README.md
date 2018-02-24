@@ -16,7 +16,7 @@ First make sure the version is correct in pdfjs.config. Please make sure you don
 
     $ gulp mc-deploy
     
-The console output will instruct you to `git push` so that the tag gets pushed to the repository. Please do that.
+The console output will instruct you to `git push` so that the tag gets pushed to the repository. Please don't forget to do that.
 
 #ORIGINAL README BELOW
 # PDF.js
