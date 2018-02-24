@@ -15,8 +15,8 @@
 /* globals PDFBug, Stats */
 
 import {
-  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, MAX_SCALE,
-  MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
+  animationStarted, DEFAULT_SCALE_VALUE, getDocumentTitle, getPDFFileNameFromURL,
+  MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
   parseQueryString, ProgressBar, RendererType, UNKNOWN_SCALE
 } from './ui_utils';
 import {
@@ -578,7 +578,7 @@ let PDFViewerApplication = {
       // Embedded PDF viewers should not be changing their parent page's title.
       return;
     }
-    var documentTitle = _ui_utils.getDocumentTitle();
+    var documentTitle = getDocumentTitle();
     document.title = documentTitle;
   },
 
