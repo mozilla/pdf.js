@@ -1,3 +1,24 @@
+#MasterControl Fork info
+We forked PDF.js so that we could apply a few customizations to their viewer. We're working from a branch called mc-master. We've also added some gulp tasks to build and deploy to our artifactory instance. Follow the instructions from the original README below to install dependencies after you've checked out our branch. 
+
+###Building during development
+To build for use in MasterControl during developmental testing you can run
+
+    $ gulp mc-build
+    
+This will build PDF.js in a minified form and zip it up in a file named `mcPDFjs-<version>.zip`.
+   
+
+###Deploying to Artifactory
+This will deploy straight to our libs-release-local repo, **you have been warned**.
+
+First make sure the version is correct in pdfjs.config. Please make sure you don't have any uncommitted changes. The deploy task will commit all tracked files and create a tag with the current version. Create the following environment variables with your artifactory credentials. The password could use your artifactory API key.  `artifactory_username` and `artifactory_password`. Then run:
+
+    $ gulp mc-deploy
+    
+The console output will instruct you to `git push` so that the tag gets pushed to the repository. Please do that.
+
+#ORIGINAL README BELOW
 # PDF.js
 
 PDF.js is a Portable Document Format (PDF) viewer that is built with HTML5.
