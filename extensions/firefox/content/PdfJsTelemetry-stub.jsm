@@ -15,9 +15,9 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["PdfJsTelemetry"];
+var EXPORTED_SYMBOLS = ["PdfJsTelemetry"];
 
-this.PdfJsTelemetry = {
+var PdfJsTelemetry = {
   onViewerIsUsed() {
   },
   onFallback() {
