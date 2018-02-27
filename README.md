@@ -12,7 +12,7 @@ This will build PDF.js in a minified form and zip it up in a file named `mcPDFjs
 ### Deploying to Artifactory
 This will deploy straight to our libs-release-local repo, **you have been warned**.
 
-First make sure the version is correct in pdfjs.config. Please make sure you don't have any uncommitted changes as they'd be zipped and deployed in the realease version too. Create the following environment variables with your artifactory credentials. The password could use your artifactory API key.  `artifactory_username` and `artifactory_password`. Then run:
+First make sure the version is correct in pdfjs.config. Please make sure you don't have any uncommitted changes as they'd be zipped and deployed in the release version too. Create the following environment variables with your artifactory credentials. The password could use your artifactory API key.  `artifactory_username` and `artifactory_password`. Then run:
 
     $ gulp mc-deploy
     
