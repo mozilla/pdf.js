@@ -66,7 +66,6 @@ var MOZCENTRAL_DIFF_FILE = 'mozcentral.diff';
 
 var REPO = 'git@github.com:mozilla/pdf.js.git';
 var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
-var FORK_REPO = 'https://github.com/MasterControlInc/pdf.js.git';
 var ARTIFACTORY_REPO_URL = 'https://labs.mastercontrol.com/artifactory/libs-release-local/';
 
 var builder = require('./external/builder/builder.js');
@@ -212,24 +211,6 @@ function getTargetName() {
 function getDeployUrl() {
   var version = getVersionJSON().version;
   return ARTIFACTORY_REPO_URL + 'com/mastercontrol/mcPDFjs/' + version;
-}
-
-function commitAndTag() {
-  var VERSION = getVersionJSON().version;
-
-  console.log();
-  console.log('### Committing changes');
-
-  var reason = process.env['PDFJS_UPDATE_REASON'];
-  var message = 'mcPDF.js version ' + VERSION + (reason ? ' - ' + reason : '');
-  safeSpawnSync('git', ['add', '-u']);
-  safeSpawnSync('git', ['commit', '-am', message]);
-  safeSpawnSync('git', ['tag', '-a', 'v' + VERSION, '-m', message]);
-
-  console.log();
-  console.log('Done. Push with');
-  console.log('  git push --tags ' + FORK_REPO + ' mc-master');
-  console.log();
 }
 
 function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
@@ -1110,9 +1091,9 @@ gulp.task('publish', ['generic'], function (done) {
     });
 });
 
-gulp.task('mc-build', ['minified'], function() {
+gulp.task('mc-build', ['minified'], function(done) {
   var targetName = getTargetName();
-  return gulp.src(BUILD_DIR + 'minified/**')
+  gulp.src(BUILD_DIR + 'minified/**')
     .pipe(gulp.dest(MC_DIR))
     .on('end', function () {
       gulp.src(MC_DIR + '**', { base: BUILD_DIR, })
@@ -1120,19 +1101,26 @@ gulp.task('mc-build', ['minified'], function() {
         .pipe(gulp.dest(BUILD_DIR))
         .on('end', function () {
           console.log('Built distribution file: ' + targetName);
-        })});
+          done();
+        });
+    });
 });
 
 gulp.task('mc-deploy', ['mc-build'], function(done) {
   var deployUrl = getDeployUrl();
-  commitAndTag();
-  return gulp.src(BUILD_DIR + getTargetName())
+  console.log('### Deploying ' + getTargetName() + ' to ' + deployUrl)
+  gulp.src(BUILD_DIR + getTargetName())
     .pipe(artifactoryUpload({
       url: deployUrl,
       username: process.env.artifactory_username,
       password: process.env.artifactory_password,
     }))
-    .on('error', gutil.log);
+    .on('error', gutil.log)
+    .on('end', function() {
+      console.log('Done uploading ' + getTargetName() + ' to ' + deployUrl);
+      console.log('### Please make sure to tag and push!');
+      done();
+    });
 });
 
 gulp.task('test', ['generic'], function () {
