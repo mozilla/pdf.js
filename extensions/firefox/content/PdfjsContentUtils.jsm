@@ -35,8 +35,7 @@ var PdfjsContentUtils = {
     // child *process* mm, or when loaded into the parent for in-content
     // support the psuedo child process mm 'child PPMM'.
     if (!this._mm) {
-      this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].
-        getService(Ci.nsISyncMessageSender);
+      this._mm = Services.cpmm;
       this._mm.addMessageListener("PDFJS:Child:updateSettings", this);
 
       Services.obs.addObserver(this, "quit-application");
