@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-extend-native, mozilla/use-includes-instead-of-indexOf */
+/* eslint-disable mozilla/use-includes-instead-of-indexOf */
 /* globals PDFJS */
 
 // Skip compatibility checks for the extensions and if we already ran
@@ -131,7 +131,7 @@ PDFJS.compatibilityChecked = true;
   if (String.prototype.includes) {
     return;
   }
-  String.prototype.includes = require('core-js/fn/string/includes');
+  require('core-js/fn/string/includes');
 })();
 
 // Provides support for Array.prototype.includes in legacy browsers.
@@ -140,7 +140,7 @@ PDFJS.compatibilityChecked = true;
   if (Array.prototype.includes) {
     return;
   }
-  Array.prototype.includes = require('core-js/fn/array/includes');
+  require('core-js/fn/array/includes');
 })();
 
 // Provides support for Math.log2 in legacy browsers.
