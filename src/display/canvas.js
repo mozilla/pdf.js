@@ -956,6 +956,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             break;
         }
       }
+
+      if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+        // See checkBlendModeSupport() in compatiblity.js.
+        if (this.ctx.blendModeFallback && this.ctx.globalAlpha === 1) {
+          // 0.5 is chosen to allow equal visibility for top and bottom content.
+          this.ctx.globalAlpha = 0.5;
+          this.ctx.blendModeFallback = false;
+        }
+      }
     },
     beginSMaskGroup: function CanvasGraphics_beginSMaskGroup() {
 

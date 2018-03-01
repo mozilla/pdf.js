@@ -89,6 +89,38 @@ PDFJS.compatibilityChecked = true;
   }
 })();
 
+// Provides a partial workaround when blend modes are not supported.
+// See issue https://github.com/mozilla/pdf.js/issues/5264.
+// NOTE: This is not a blend mode polyfill, but a way to see blended content
+// that would otherwise be unviewable.
+// Support: IE11
+(function checkBlendModeSupport() {
+  if (!hasDOM) {
+    return;
+  }
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.globalCompositeOperation = 'multiply';
+
+  // Check to see if the current browser supports globalCompositeOperation.
+  if (ctx.globalCompositeOperation === 'multiply') {
+    return;
+  }
+
+  /* eslint-disable, accessor-pairs, object-shorthand */
+  Object.defineProperty(CanvasRenderingContext2D.prototype,
+    'globalCompositeOperation', {
+    set: function(value) {
+      // We only manually blend if the mode is not 'source-over'
+      // which is the only supported blend mode that does no blending.
+      if (value !== 'source-over') {
+        this.blendModeFallback = true;
+      }
+    },
+  });
+  /* eslint-enable, object-shorthand */
+})();
+
 // Provides document.currentScript support
 // Support: IE, Chrome<29.
 (function checkCurrentScript() {
