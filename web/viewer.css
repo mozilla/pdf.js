@@ -1933,10 +1933,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 }
 
-.mcOpenSans {
-  font-family: 'Open Sans', san-serif !important;
-}
-
 .mcWatermark {
   margin:50% auto;
   opacity: 0.6;
@@ -1951,9 +1947,13 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   background-color: #34495d !important;
 }
 
+.mcToolbar * button {
+  box-sizing: border-box !important;
+}
+
 .mcToolbar option{
   background-image: none !important;
-  background-color: #34495d !important
+  background-color: #34495d !important;
 }
 
 
@@ -1965,8 +1965,20 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   border-image: none;
 }
 
+.mcToolbar:after{
+  border-bottom-color: #34495d;
+}
+
 .mcSidebar {
   background-color: #202C37 !important;
+}
+
+.mcThumbnail {
+  padding: 0px !important;
+  margin-bottom: 0px !important;
+  line-height: 0 !important;
+  background-color: #202C37 !important;
+  border: none !important;
 }
 
 @media print {
@@ -1975,8 +1987,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 }
 
-body {
-  box-shadow: none !important;
+* {
+  box-sizing: initial !important;
 }
-
 
