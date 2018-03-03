@@ -42,14 +42,14 @@ class GenericPreferences extends BasePreferences {
 }
 
 let GenericExternalServices = Object.create(DefaultExternalServices);
-GenericExternalServices.createDownloadManager = function() {
-  return new DownloadManager();
+GenericExternalServices.createDownloadManager = function(options) {
+  return new DownloadManager(options);
 };
 GenericExternalServices.createPreferences = function() {
   return new GenericPreferences();
 };
-GenericExternalServices.createL10n = function(options) {
-  return new GenericL10n(options.locale);
+GenericExternalServices.createL10n = function({ locale = 'en-US', }) {
+  return new GenericL10n(locale);
 };
 PDFViewerApplication.externalServices = GenericExternalServices;
 

@@ -19,15 +19,6 @@
 */
 
 /**
- * PDFJS scope object that contains all functions, objects and variables related
- * to the PDF.js.
- * @constructor
- */
-function PDFJS() { // eslint-disable-line no-unused-vars
-  // Mock class constructor. See src/display/api.js.
-}
-
-/**
  * Represents the eventual result of an asynchronous operation.
  * @external Promise
  * @see {@link http://promisesaplus.com/ Promise/A+}

@@ -17,7 +17,6 @@ import {
   assert, CMapCompressionType, removeNullCharacters, stringToBytes,
   unreachable, warn
 } from '../shared/util';
-import globalScope from '../shared/global_scope';
 
 const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -69,8 +68,9 @@ class DOMCMapReaderFactory {
 
   fetch({ name, }) {
     if (!this.baseUrl) {
-      return Promise.reject(new Error('CMap baseUrl must be specified, ' +
-        'see "PDFJS.cMapUrl" (and also "PDFJS.cMapPacked").'));
+      return Promise.reject(new Error(
+        'The CMap "baseUrl" parameter must be specified, ensure that ' +
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.'));
     }
     if (!name) {
       return Promise.reject(new Error('CMap name must be specified.'));
@@ -328,36 +328,6 @@ function getFilenameFromUrl(url) {
   return url.substring(url.lastIndexOf('/', end) + 1, end);
 }
 
-function getDefaultSetting(id) {
-  // The list of the settings and their default is maintained for backward
-  // compatibility and shall not be extended or modified. See also global.js.
-  var globalSettings = globalScope.PDFJS;
-  switch (id) {
-    case 'pdfBug':
-      return globalSettings ? globalSettings.pdfBug : false;
-    case 'disableAutoFetch':
-      return globalSettings ? globalSettings.disableAutoFetch : false;
-    case 'disableStream':
-      return globalSettings ? globalSettings.disableStream : false;
-    case 'disableRange':
-      return globalSettings ? globalSettings.disableRange : false;
-    case 'disableFontFace':
-      return globalSettings ? globalSettings.disableFontFace : false;
-    case 'disableCreateObjectURL':
-      return globalSettings ? globalSettings.disableCreateObjectURL : false;
-    case 'cMapUrl':
-      return globalSettings ? globalSettings.cMapUrl : null;
-    case 'cMapPacked':
-      return globalSettings ? globalSettings.cMapPacked : false;
-    case 'maxImageSize':
-      return globalSettings ? globalSettings.maxImageSize : -1;
-    case 'isEvalSupported':
-      return globalSettings ? globalSettings.isEvalSupported : true;
-    default:
-      throw new Error('Unknown default setting: ' + id);
-  }
-}
-
 class StatTimer {
   constructor(enable = true) {
     this.enabled = !!enable;
@@ -437,7 +407,6 @@ export {
   addLinkAttributes,
   getFilenameFromUrl,
   LinkTarget,
-  getDefaultSetting,
   DEFAULT_LINK_REL,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
