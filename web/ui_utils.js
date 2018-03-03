@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
+import { createPromiseCapability } from 'pdfjs-lib';
 
 const CSS_UNITS = 96.0 / 72.0;
 const DEFAULT_SCALE_VALUE = 'auto';
@@ -70,39 +70,6 @@ let NullL10n = {
     return Promise.resolve();
   },
 };
-
-/**
- * Enables CSS only zooming.
- * @var {boolean}
- */
-PDFJS.useOnlyCssZoom = (PDFJS.useOnlyCssZoom === undefined ?
-                        false : PDFJS.useOnlyCssZoom);
-
-/**
- * The maximum supported canvas size in total pixels e.g. width * height.
- * The default value is 4096 * 4096. Use -1 for no limit.
- * @var {number}
- */
-PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
-                         16777216 : PDFJS.maxCanvasPixels);
-
-/**
- * Disables saving of the last position of the viewed PDF.
- * @var {boolean}
- */
-PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
-                        false : PDFJS.disableHistory);
-
-if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  /**
-   * Interface locale settings.
-   * @var {string}
-   */
-  PDFJS.locale =
-    (PDFJS.locale === undefined && typeof navigator !== 'undefined' ?
-     navigator.language : PDFJS.locale) || 'en-US';
-}
 
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.

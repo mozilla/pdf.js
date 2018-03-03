@@ -13,38 +13,25 @@
  * limitations under the License.
  */
 /* eslint-disable mozilla/use-includes-instead-of-indexOf */
-/* globals PDFJS */
+
+const globalScope = require('./global_scope');
 
 // Skip compatibility checks for the extensions and if we already ran
 // this module.
 if ((typeof PDFJSDev === 'undefined' ||
      !PDFJSDev.test('FIREFOX || MOZCENTRAL')) &&
-    (typeof PDFJS === 'undefined' || !PDFJS.compatibilityChecked)) {
+    !globalScope._pdfjsCompatibilityChecked) {
+
+globalScope._pdfjsCompatibilityChecked = true;
 
 // In the Chrome extension, most of the polyfills are unnecessary.
 // We support down to Chrome 49, because it's still commonly used by Windows XP
 // users - https://github.com/mozilla/pdf.js/issues/9397
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
 
-const globalScope = require('./global_scope');
 const isNodeJS = require('./is_node');
 
-var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
-var isIE = userAgent.indexOf('Trident') >= 0;
-var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
-var isSafari = /Safari\//.test(userAgent) &&
-               !/(Chrome\/|Android\s)/.test(userAgent);
-
-var hasDOM = typeof window === 'object' && typeof document === 'object';
-
-// Initializing PDFJS global object here, it case if we need to change/disable
-// some PDF.js features, e.g. range requests
-if (typeof PDFJS === 'undefined') {
-  globalScope.PDFJS = {};
-}
-
-PDFJS.compatibilityChecked = true;
+const hasDOM = typeof window === 'object' && typeof document === 'object';
 
 // Support: Node.js
 (function checkNodeBtoa() {
@@ -66,27 +53,6 @@ PDFJS.compatibilityChecked = true;
     // eslint-disable-next-line no-undef
     return Buffer.from(input, 'base64').toString('binary');
   };
-})();
-
-// Checks if possible to use URL.createObjectURL()
-// Support: IE, Chrome on iOS
-(function checkOnBlobSupport() {
-  // sometimes IE and Chrome on iOS loosing the data created with
-  // createObjectURL(), see #3977 and #8081
-  if (isIE || isIOSChrome) {
-    PDFJS.disableCreateObjectURL = true;
-  }
-})();
-
-// Support: Safari 6.0+, iOS
-(function checkRangeRequests() {
-  // Safari has issues with cached range requests see:
-  // https://github.com/mozilla/pdf.js/issues/3260
-  // Last tested with version 6.0.4.
-  if (isSafari || isIOS) {
-    PDFJS.disableRange = true;
-    PDFJS.disableStream = true;
-  }
 })();
 
 // Provides document.currentScript support

@@ -281,8 +281,9 @@ describe('cmap', function() {
       done.fail('No CMap should be loaded');
     }, function (reason) {
       expect(reason instanceof Error).toEqual(true);
-      expect(reason.message).toEqual('CMap baseUrl must be specified, ' +
-        'see "PDFJS.cMapUrl" (and also "PDFJS.cMapPacked").');
+      expect(reason.message).toEqual(
+        'The CMap "baseUrl" parameter must be specified, ensure that ' +
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.');
       done();
     });
   });

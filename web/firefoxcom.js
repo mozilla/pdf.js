@@ -84,6 +84,10 @@ let FirefoxCom = (function FirefoxComClosure() {
 })();
 
 class DownloadManager {
+  constructor(options) {
+    this.disableCreateObjectURL = false;
+  }
+
   downloadUrl(url, filename) {
     FirefoxCom.request('download', {
       originalUrl: url,
@@ -92,7 +96,7 @@ class DownloadManager {
   }
 
   downloadData(data, filename, contentType) {
-    let blobUrl = createObjectURL(data, contentType, false);
+    let blobUrl = createObjectURL(data, contentType);
 
     FirefoxCom.request('download', {
       blobUrl,
@@ -256,8 +260,8 @@ PDFViewerApplication.externalServices = {
     FirefoxCom.request('reportTelemetry', JSON.stringify(data));
   },
 
-  createDownloadManager() {
-    return new DownloadManager();
+  createDownloadManager(options) {
+    return new DownloadManager(options);
   },
 
   createPreferences() {

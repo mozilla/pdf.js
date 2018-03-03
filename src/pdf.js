@@ -22,13 +22,13 @@ var pdfjsBuild =
   typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_BUILD') : void 0;
 
 var pdfjsSharedUtil = require('./shared/util.js');
-var pdfjsDisplayGlobal = require('./display/global.js');
 var pdfjsDisplayAPI = require('./display/api.js');
 var pdfjsDisplayTextLayer = require('./display/text_layer.js');
 var pdfjsDisplayAnnotationLayer = require('./display/annotation_layer.js');
 var pdfjsDisplayDOMUtils = require('./display/dom_utils.js');
 var pdfjsDisplaySVG = require('./display/svg.js');
 let pdfjsDisplayWorkerOptions = require('./display/worker_options.js');
+let pdfjsDisplayAPICompatibility = require('./display/api_compatibility.js');
 
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   const isNodeJS = require('./shared/is_node.js');
@@ -65,7 +65,6 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   });
 }
 
-exports.PDFJS = pdfjsDisplayGlobal.PDFJS;
 exports.build = pdfjsDisplayAPI.build;
 exports.version = pdfjsDisplayAPI.version;
 exports.getDocument = pdfjsDisplayAPI.getDocument;
@@ -90,9 +89,12 @@ exports.createObjectURL = pdfjsSharedUtil.createObjectURL;
 exports.removeNullCharacters = pdfjsSharedUtil.removeNullCharacters;
 exports.shadow = pdfjsSharedUtil.shadow;
 exports.createBlob = pdfjsSharedUtil.createBlob;
+exports.Util = pdfjsSharedUtil.Util;
 exports.RenderingCancelledException =
   pdfjsDisplayDOMUtils.RenderingCancelledException;
 exports.getFilenameFromUrl = pdfjsDisplayDOMUtils.getFilenameFromUrl;
 exports.LinkTarget = pdfjsDisplayDOMUtils.LinkTarget;
 exports.addLinkAttributes = pdfjsDisplayDOMUtils.addLinkAttributes;
 exports.GlobalWorkerOptions = pdfjsDisplayWorkerOptions.GlobalWorkerOptions;
+exports.apiCompatibilityParams =
+  pdfjsDisplayAPICompatibility.apiCompatibilityParams;

@@ -15,20 +15,20 @@
 
 'use strict';
 
-if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
+if (!pdfjsDistBuildPdf.getDocument || !pdfjsDistWebPdfViewer.PDFViewer)  {
   alert('Please build the pdfjs-dist library using\n' +
         '  `gulp dist-install`');
 }
 
 // The workerSrc property shall be specified.
 //
-PDFJS.GlobalWorkerOptions.workerSrc =
+pdfjsDistBuildPdf.GlobalWorkerOptions.workerSrc =
   '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
 // Some PDFs need external cmaps.
 //
-// PDFJS.cMapUrl = '../../node_modules/pdfjs-dist/cmaps/';
-// PDFJS.cMapPacked = true;
+var CMAP_URL = '../../node_modules/pdfjs-dist/cmaps/';
+var CMAP_PACKED = true;
 
 var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
 var SEARCH_FOR = ''; // try 'Mozilla';
@@ -36,17 +36,17 @@ var SEARCH_FOR = ''; // try 'Mozilla';
 var container = document.getElementById('viewerContainer');
 
 // (Optionally) enable hyperlinks within PDF files.
-var pdfLinkService = new PDFJS.PDFLinkService();
+var pdfLinkService = new pdfjsDistWebPdfViewer.PDFLinkService();
 
-var pdfViewer = new PDFJS.PDFViewer({
+var pdfViewer = new pdfjsDistWebPdfViewer.PDFViewer({
   container: container,
   linkService: pdfLinkService,
 });
 pdfLinkService.setViewer(pdfViewer);
 
 // (Optionally) enable find controller.
-var pdfFindController = new PDFJS.PDFFindController({
-  pdfViewer: pdfViewer
+var pdfFindController = new pdfjsDistWebPdfViewer.PDFFindController({
+  pdfViewer: pdfViewer,
 });
 pdfViewer.setFindController(pdfFindController);
 
@@ -60,7 +60,11 @@ container.addEventListener('pagesinit', function () {
 });
 
 // Loading document.
-PDFJS.getDocument(DEFAULT_URL).then(function (pdfDocument) {
+pdfjsDistBuildPdf.getDocument({
+  url: DEFAULT_URL,
+  cMapUrl: CMAP_URL,
+  cMapPacked: CMAP_PACKED,
+}).then(function(pdfDocument) {
   // Document loaded, specifying document for the viewer and
   // the (optional) linkService.
   pdfViewer.setDocument(pdfDocument);
