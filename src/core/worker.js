@@ -724,10 +724,9 @@ var WorkerMessageHandler = {
     );
 
     handler.on('GetAnnotations', function wphSetupGetAnnotations(data) {
-      var pageIndex = data.pageIndex;
-      return pdfManager.getPage(pageIndex).then(function(page) {
+      return pdfManager.getPage(data.pageIndex).then(function(page) {
         var task = new WorkerTask(
-          'GetAnnotationAppereances: page ' + pageIndex);
+          'GetAnnotationAppereances: page ' + data.pageIndex);
         startWorkerTask(task);
         var annotationsDataPromise = page.getAnnotationsData(data.intent, task);
         return annotationsDataPromise.then(function (annotationsData) {

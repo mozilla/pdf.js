@@ -612,7 +612,7 @@ describe('annotation', function() {
         expect(data.url).toEqual(new URL('http://www.example.com/test.pdf#' +
                                  '[14,{"name":"XYZ"},null,298.043,null]').href);
         expect(data.unsafeUrl).toEqual('http://www.example.com/test.pdf#' +
-                                     '[14,{"name":"XYZ"},null,298.043,null]');
+                                       '[14,{"name":"XYZ"},null,298.043,null]');
         expect(data.dest).toBeUndefined();
         expect(data.newWindow).toBeFalsy();
       });
@@ -782,7 +782,7 @@ describe('annotation', function() {
         expect(data.url).toBeUndefined();
         expect(data.unsafeUrl).toBeUndefined();
         expect(data.dest).toEqual([{ num: 17, gen: 0, }, { name: 'XYZ', },
-                                 0, 841.89, null]);
+                                   0, 841.89, null]);
       });
     });
 

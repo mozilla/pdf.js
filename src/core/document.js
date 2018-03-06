@@ -315,9 +315,7 @@ var Page = (function PageClosure() {
     },
 
     getAnnotationsData: function Page_getAnnotationsData(intent, task) {
-      var annotationsPromise = this.annotations ?
-        this.annotations : this.getAnnotations(task);
-      return annotationsPromise.then(function (annotations) {
+      return this.getAnnotations(task).then(function (annotations) {
         var annotationsData = [];
         for (var i = 0, n = annotations.length; i < n; ++i) {
           if (!intent || isAnnotationRenderable(annotations[i], intent)) {
@@ -329,6 +327,10 @@ var Page = (function PageClosure() {
     },
 
     getAnnotations: function Page_getAnnotations(task) {
+      if (this._annotations) {
+        return this._annotations;
+      }
+
       var handler = {};
 
       var self = this;
@@ -352,7 +354,7 @@ var Page = (function PageClosure() {
       });
 
       var annotationRefs = this.getInheritedPageProp('Annots') || [];
-      var annotationsPromises = [];
+      var annotationPromises = [];
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
         var annotationPromise = AnnotationFactory.create(
@@ -364,15 +366,19 @@ var Page = (function PageClosure() {
           task
         );
 
-        annotationsPromises.push(annotationPromise);
+        if (annotationPromise) {
+          annotationPromises.push(annotationPromise);
+        }
       }
 
-      return shadow(this, 'annotations',
-        Promise.all(annotationsPromises)).then(function (annotations) {
+      this._annotations =
+        Promise.all(annotationPromises).then(function (annotations) {
           return annotations;
         }, function (reason) {
           return [];
         });
+
+      return this._annotations;
     },
   };
 
