@@ -41,6 +41,8 @@ ChromeUtils.defineModuleGetter(this, "PdfJsTelemetry",
 ChromeUtils.defineModuleGetter(this, "PdfjsContentUtils",
   "resource://pdf.js/PdfjsContentUtils.jsm");
 
+Cu.importGlobalProperties(["XMLHttpRequest"]);
+
 var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
                                    "@mozilla.org/mime;1",
@@ -593,8 +595,6 @@ class RangedChromeActions extends ChromeActions {
       }
     };
     var getXhr = function getXhr() {
-      const XMLHttpRequest = Components.Constructor(
-          "@mozilla.org/xmlextras/xmlhttprequest;1");
       var xhr = new XMLHttpRequest();
       xhr.addEventListener("readystatechange", xhr_onreadystatechange);
       return xhr;

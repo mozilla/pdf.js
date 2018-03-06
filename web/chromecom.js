@@ -363,8 +363,8 @@ ChromeExternalServices.initPassiveLoading = function(callbacks) {
     callbacks.onOpenWithURL(url, length, originalURL);
   });
 };
-ChromeExternalServices.createDownloadManager = function() {
-  return new DownloadManager();
+ChromeExternalServices.createDownloadManager = function(options) {
+  return new DownloadManager(options);
 };
 ChromeExternalServices.createPreferences = function() {
   return new ChromePreferences();

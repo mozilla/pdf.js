@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, isValidRotation,
   MAX_AUTO_SCALE, NullL10n, PresentationModeState, RendererType,
@@ -21,6 +20,7 @@ import {
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
+import { createPromiseCapability } from 'pdfjs-lib';
 import { getGlobalEventBus } from './dom_events';
 import { PDFPageView } from './pdf_page_view';
 import { SimpleLinkService } from './pdf_link_service';
@@ -408,7 +408,7 @@ class BaseViewer {
       // starts to create the correct size canvas. Wait until one page is
       // rendered so we don't tie up too many resources early on.
       onePageRenderedCapability.promise.then(() => {
-        if (PDFJS.disableAutoFetch) {
+        if (pdfDocument.loadingParams['disableAutoFetch']) {
           // XXX: Printing is semi-broken with auto fetch disabled.
           pagesCapability.resolve();
           return;

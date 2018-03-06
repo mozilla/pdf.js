@@ -78,10 +78,10 @@ class PDFOutlineViewer {
       return;
     }
 
-    element.href = this.linkService.getDestinationHash(dest);
+    element.href = linkService.getDestinationHash(dest);
     element.onclick = () => {
       if (dest) {
-        this.linkService.navigateTo(dest);
+        linkService.navigateTo(dest);
       }
       return false;
     };

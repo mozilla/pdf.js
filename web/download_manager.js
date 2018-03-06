@@ -13,12 +13,17 @@
  * limitations under the License.
  */
 
-import { createObjectURL, createValidAbsoluteUrl, PDFJS } from 'pdfjs-lib';
+import {
+  apiCompatibilityParams, createObjectURL, createValidAbsoluteUrl
+} from 'pdfjs-lib';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
   throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
                   'outside CHROME and GENERIC builds.');
 }
+
+const DISABLE_CREATE_OBJECT_URL =
+  apiCompatibilityParams.disableCreateObjectURL || false;
 
 function download(blobUrl, filename) {
   let a = document.createElement('a');
@@ -40,6 +45,10 @@ function download(blobUrl, filename) {
 }
 
 class DownloadManager {
+  constructor({ disableCreateObjectURL = DISABLE_CREATE_OBJECT_URL, }) {
+    this.disableCreateObjectURL = disableCreateObjectURL;
+  }
+
   downloadUrl(url, filename) {
     if (!createValidAbsoluteUrl(url, 'http://example.com')) {
       return; // restricted/invalid URL
@@ -53,7 +62,7 @@ class DownloadManager {
                                   filename);
     }
     let blobUrl = createObjectURL(data, contentType,
-                                  PDFJS.disableCreateObjectURL);
+                                  this.disableCreateObjectURL);
     download(blobUrl, filename);
   }
 
@@ -66,7 +75,7 @@ class DownloadManager {
       return;
     }
 
-    if (PDFJS.disableCreateObjectURL) {
+    if (this.disableCreateObjectURL) {
       // URL.createObjectURL is not supported
       this.downloadUrl(url, filename);
       return;
