@@ -15,6 +15,7 @@
 /* globals chrome */
 
 import { DefaultExternalServices, PDFViewerApplication } from './app';
+import { AppOptions } from './app_options';
 import { BasePreferences } from './preferences';
 import { DownloadManager } from './download_manager';
 import { GenericL10n } from './genericl10n';
@@ -357,8 +358,9 @@ class ChromePreferences extends BasePreferences {
 
 let ChromeExternalServices = Object.create(DefaultExternalServices);
 ChromeExternalServices.initPassiveLoading = function(callbacks) {
-  let { appConfig, overlayManager, } = PDFViewerApplication;
-  ChromeCom.resolvePDFFile(appConfig.defaultUrl, overlayManager,
+  let { overlayManager, } = PDFViewerApplication;
+  // defaultUrl is set in viewer.js
+  ChromeCom.resolvePDFFile(AppOptions.get('defaultUrl'), overlayManager,
       function(url, length, originalURL) {
     callbacks.onOpenWithURL(url, length, originalURL);
   });
