@@ -79,9 +79,14 @@ class PDFDocumentProperties {
           contentDispositionFilename || getPDFFileNameFromURL(this.url),
           this._parseFileSize(this.maybeFileSize),
           this._parseDate(info.CreationDate),
-          this._parseDate(info.ModDate)
+          this._parseDate(info.ModDate),
+          this.pdfDocument.getPageSizeInches().then((pageSizeInches) => {
+            return this._parsePageSize(pageSizeInches);
+          }),
+
         ]);
-      }).then(([info, metadata, fileName, fileSize, creationDate, modDate]) => {
+      }).then(([info, metadata, fileName, fileSize,
+                creationDate, modDate, pageSize]) => {
         freezeFieldData({
           'fileName': fileName,
           'fileSize': fileSize,
@@ -95,6 +100,8 @@ class PDFDocumentProperties {
           'producer': info.Producer,
           'version': info.PDFFormatVersion,
           'pageCount': this.pdfDocument.numPages,
+          'pageSizeInch': pageSize.inch,
+          'pageSizeMM': pageSize.mm,
         });
         this._updateUI();
 
@@ -210,6 +217,33 @@ class PDFDocumentProperties {
       size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
       size_b: fileSize.toLocaleString(),
     }, '{{size_mb}} MB ({{size_b}} bytes)');
+  }
+
+  /**
+   * @private
+   */
+  _parsePageSize(pageSizeInches) {
+    if (!pageSizeInches) {
+      return Promise.resolve([undefined, undefined]);
+    }
+    const sizes_two_units = {
+      'width_in': Math.round(pageSizeInches.width * 100) / 100,
+      'height_in': Math.round(pageSizeInches.height * 100) / 100,
+      // 1in = 25.4mm; no need to round to 2 decimals for mm
+      'width_mm': Math.round(pageSizeInches.width * 25.4 * 10) / 10,
+      'height_mm': Math.round(pageSizeInches.height * 25.4 * 10) / 10,
+    };
+    return Promise.all([
+      this.l10n.get('document_properties_page_size_in',
+        sizes_two_units, '{{width_in}} in × {{height_in}} in'),
+      this.l10n.get('document_properties_page_size_mm',
+        sizes_two_units, '{{width_mm}} mm × {{height_mm}} mm'),
+    ]).then(([parsedPageSizeInches, parsedPageSizeMM]) => {
+      return Promise.resolve({
+        inch: parsedPageSizeInches,
+        mm: parsedPageSizeMM,
+      });
+    });
   }
 
   /**
