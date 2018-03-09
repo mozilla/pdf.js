@@ -52,8 +52,21 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 } else if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
   let PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
   let PDFFetchStream;
+  let isChromeWithFetchCredentials = function() {
+    // fetch does not include credentials until Chrome 61.0.3138.0 and later.
+    // https://chromium.googlesource.com/chromium/src/+/2e231cf052ca5e68e22baf0008ac9e5e29121707
+    try {
+      // Indexed properties on window are read-only in Chrome 61.0.3151.0+
+      // https://chromium.googlesource.com/chromium/src.git/+/58ab4a971b06dec13e4edf9de8382ca6847f6190
+      window[999] = 123; // should throw. Note: JS strict mode MUST be enabled.
+      delete window[999];
+      return false;
+    } catch (e) {
+      return true;
+    }
+  };
   if (typeof Response !== 'undefined' && 'body' in Response.prototype &&
-      typeof ReadableStream !== 'undefined') {
+      typeof ReadableStream !== 'undefined' && isChromeWithFetchCredentials()) {
     PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
   }
   pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
