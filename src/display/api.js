@@ -693,6 +693,23 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getMetadata();
     },
     /**
+     * @param {number} pageNumber The page number to get the page size from.
+     * The first page is 1, which is also the default page used.
+     * @return {Promise} A promise that is resolved with an dict containing the
+     * width and height in inches.
+     */
+    getPageSizeInches(pageNumber) {
+      pageNumber = pageNumber || 1;
+      return this.getPage(pageNumber).then((page) => {
+        const [x1, y1, x2, y2] = page.view;
+        // convert values from user units to inches
+        return {
+          width: (x2 - x1) / 72 * page.userUnit,
+          height: (y2 - y1) / 72 * page.userUnit,
+        };
+      });
+    },
+    /**
      * @return {Promise} A promise that is resolved with a TypedArray that has
      * the raw data from the PDF.
      */

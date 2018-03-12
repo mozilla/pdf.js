@@ -15,7 +15,8 @@
 
 import {
   AnnotationBorderStyleType, AnnotationCheckboxType, AnnotationFieldFlag,
-  AnnotationFlag, AnnotationType, OPS, stringToBytes, stringToPDFString,
+  AnnotationFlag, AnnotationType, getInheritableProperty, OPS, stringToBytes,
+  stringToPDFString,
   Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
@@ -65,7 +66,7 @@ class AnnotationFactory {
         return Promise.resolve(new TextAnnotation(parameters));
 
       case 'Widget':
-        let fieldType = Util.getInheritableProperty(dict, 'FT');
+        let fieldType = getInheritableProperty({ dict, key: 'FT', });
         fieldType = isName(fieldType) ? fieldType.name : null;
 
         let widget;
@@ -646,16 +647,16 @@ class WidgetAnnotation extends Annotation {
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
-    data.fieldValue = Util.getInheritableProperty(dict, 'V',
-                                                  /* getArray = */ true);
-    data.alternativeText = stringToPDFString(Util.getInheritableProperty(
-      dict, 'TU') || '');
-    data.defaultAppearance = Util.getInheritableProperty(dict, 'DA') || '';
-    let fieldType = Util.getInheritableProperty(dict, 'FT');
+    data.fieldValue = getInheritableProperty({ dict, key: 'V',
+                                               getArray: true, });
+    data.alternativeText = stringToPDFString(dict.get('TU') || '');
+    data.defaultAppearance = getInheritableProperty({ dict, key: 'DA', }) || '';
+    let fieldType = getInheritableProperty({ dict, key: 'FT', });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
-    this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
+    this.fieldResources = getInheritableProperty({ dict, key: 'DR', }) ||
+                          Dict.empty;
 
-    data.fieldFlags = Util.getInheritableProperty(dict, 'Ff');
+    data.fieldFlags = getInheritableProperty({ dict, key: 'Ff', });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
       data.fieldFlags = 0;
     }
@@ -800,18 +801,20 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
 
+    const dict = params.dict;
+
     // The field value is always a string.
     this.data.fieldValue = stringToPDFString(this.data.fieldValue || '');
 
     // Determine the alignment of text in the field.
-    let alignment = Util.getInheritableProperty(params.dict, 'Q');
+    let alignment = getInheritableProperty({ dict, key: 'Q', });
     if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
       alignment = null;
     }
     this.data.textAlignment = alignment;
 
     // Determine the maximum length of text in the field.
-    let maximumLength = Util.getInheritableProperty(params.dict, 'MaxLen');
+    let maximumLength = getInheritableProperty({ dict, key: 'MaxLen', });
     if (!Number.isInteger(maximumLength) || maximumLength < 0) {
       maximumLength = null;
     }
@@ -984,7 +987,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // inherit the options from a parent annotation (issue 8094).
     this.data.options = [];
 
-    let options = Util.getInheritableProperty(params.dict, 'Opt');
+    let options = getInheritableProperty({ dict: params.dict, key: 'Opt', });
     if (Array.isArray(options)) {
       let xref = params.xref;
       for (let i = 0, ii = options.length; i < ii; i++) {
