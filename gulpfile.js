@@ -225,11 +225,8 @@ function replaceWebpackRequire() {
   return replace('__webpack_require__', '__w_pdfjs_require__');
 }
 
-function replaceJSRootName(amdName) {
+function replaceJSRootName(amdName, jsName) {
   // Saving old-style JS module name.
-  var jsName = amdName.replace(/[\-_\.\/]\w/g, function (all) {
-    return all[1].toUpperCase();
-  });
   return replace('root["' + amdName + '"] = factory()',
                  'root["' + amdName + '"] = root.' + jsName + ' = factory()');
 }
@@ -250,7 +247,7 @@ function createBundle(defines) {
   var mainOutput = gulp.src('./src/pdf.js')
     .pipe(webpack2Stream(mainFileConfig))
     .pipe(replaceWebpackRequire())
-    .pipe(replaceJSRootName(mainAMDName));
+    .pipe(replaceJSRootName(mainAMDName, 'pdfjsLib'));
 
   var workerAMDName = 'pdfjs-dist/build/pdf.worker';
   var workerOutputName = 'pdf.worker.js';
@@ -261,10 +258,11 @@ function createBundle(defines) {
     libraryTarget: 'umd',
     umdNamedDefine: true,
   });
+
   var workerOutput = gulp.src('./src/pdf.worker.js')
     .pipe(webpack2Stream(workerFileConfig))
     .pipe(replaceWebpackRequire())
-    .pipe(replaceJSRootName(workerAMDName));
+    .pipe(replaceJSRootName(workerAMDName, 'pdfjsWorker'));
   return merge([mainOutput, workerOutput]);
 }
 
@@ -291,7 +289,7 @@ function createComponentsBundle(defines) {
   return gulp.src('./web/pdf_viewer.component.js')
     .pipe(webpack2Stream(componentsFileConfig))
     .pipe(replaceWebpackRequire())
-    .pipe(replaceJSRootName(componentsAMDName));
+    .pipe(replaceJSRootName(componentsAMDName, 'pdfjsViewer'));
 }
 
 function checkFile(path) {
