@@ -797,10 +797,13 @@ gulp.task('firefox', ['firefox-pre'], function (done) {
     env: { 'TZ': 'UTC', },
   };
 
-  exec('zip -r ' + FIREFOX_EXTENSION_NAME + ' ' +
+  var exe = process.platform === 'win32' && fs.existsSync('/Program Files/7-Zip/7z.exe')
+    ? '"\\Program Files\\7-Zip\\7z.exe" a'
+    : 'zip';
+  exec(`${exe} -r ` + FIREFOX_EXTENSION_NAME + ' ' +
        FIREFOX_EXTENSION_FILES.join(' '), zipExecOptions, function (err) {
     if (err) {
-      done(new Error('Cannot exec zip: ' + err));
+      done(new Error(`Cannot exec ${exe}: ${err}`));
       return;
     }
     console.log('extension created: ' + FIREFOX_EXTENSION_NAME);
