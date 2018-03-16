@@ -49,6 +49,8 @@ ChromeUtils.defineModuleGetter(this, "PdfjsChromeUtils",
                                "resource://pdf.js/PdfjsChromeUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "PdfjsContentUtils",
                                "resource://pdf.js/PdfjsContentUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "PdfJsDefaultPreferences",
+  "resource://pdf.js/PdfJsDefaultPreferences.jsm");
 
 function getBoolPref(aPref, aDefaultValue) {
   try {
@@ -75,18 +77,10 @@ function isDefaultHandler() {
 }
 
 function initializeDefaultPreferences() {
-  /* eslint-disable semi */
-  var DEFAULT_PREFERENCES =
-//#include ../../../web/default_preferences.json
-//#if false
-    "end of DEFAULT_PREFERENCES"
-//#endif
-  /* eslint-enable semi */
-
   var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + ".");
   var defaultValue;
-  for (var key in DEFAULT_PREFERENCES) {
-    defaultValue = DEFAULT_PREFERENCES[key];
+  for (var key in PdfJsDefaultPreferences) {
+    defaultValue = PdfJsDefaultPreferences[key];
     switch (typeof defaultValue) {
       case "boolean":
         defaultBranch.setBoolPref(key, defaultValue);
