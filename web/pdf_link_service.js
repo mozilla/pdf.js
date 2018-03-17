@@ -354,6 +354,9 @@ class PDFLinkService {
    * @param {Object} pageRef - reference to the page.
    */
   cachePageRef(pageNum, pageRef) {
+    if (!pageRef) {
+      return;
+    }
     let refStr = pageRef.num + ' ' + pageRef.gen + ' R';
     this._pagesRefCache[refStr] = pageNum;
   }
