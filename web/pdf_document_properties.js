@@ -80,13 +80,12 @@ class PDFDocumentProperties {
           this._parseFileSize(this.maybeFileSize),
           this._parseDate(info.CreationDate),
           this._parseDate(info.ModDate),
-          this.pdfDocument.getPageSizeInches().then((pageSizeInches) => {
-            return this._parsePageSize(pageSizeInches);
+          this.pdfDocument.getPage(1).then((pdfPage) => {
+            return this._parsePageSize(pdfPage.pageSizeInches);
           }),
-
         ]);
-      }).then(([info, metadata, fileName, fileSize,
-                creationDate, modDate, pageSize]) => {
+      }).then(([info, metadata, fileName, fileSize, creationDate, modDate,
+                pageSizes]) => {
         freezeFieldData({
           'fileName': fileName,
           'fileSize': fileSize,
@@ -100,8 +99,8 @@ class PDFDocumentProperties {
           'producer': info.Producer,
           'version': info.PDFFormatVersion,
           'pageCount': this.pdfDocument.numPages,
-          'pageSizeInch': pageSize.inch,
-          'pageSizeMM': pageSize.mm,
+          'pageSizeInch': pageSizes.inch,
+          'pageSizeMM': pageSizes.mm,
         });
         this._updateUI();
 
@@ -224,25 +223,25 @@ class PDFDocumentProperties {
    */
   _parsePageSize(pageSizeInches) {
     if (!pageSizeInches) {
-      return Promise.resolve([undefined, undefined]);
+      return Promise.resolve({ inch: undefined, mm: undefined, });
     }
-    const sizes_two_units = {
-      'width_in': Math.round(pageSizeInches.width * 100) / 100,
-      'height_in': Math.round(pageSizeInches.height * 100) / 100,
-      // 1in = 25.4mm; no need to round to 2 decimals for mm
-      'width_mm': Math.round(pageSizeInches.width * 25.4 * 10) / 10,
-      'height_mm': Math.round(pageSizeInches.height * 25.4 * 10) / 10,
-    };
+    const { width, height, } = pageSizeInches;
+
     return Promise.all([
-      this.l10n.get('document_properties_page_size_in',
-        sizes_two_units, '{{width_in}} in × {{height_in}} in'),
-      this.l10n.get('document_properties_page_size_mm',
-        sizes_two_units, '{{width_mm}} mm × {{height_mm}} mm'),
-    ]).then(([parsedPageSizeInches, parsedPageSizeMM]) => {
-      return Promise.resolve({
-        inch: parsedPageSizeInches,
-        mm: parsedPageSizeMM,
-      });
+      this.l10n.get('document_properties_page_size_in', {
+          width_in: Math.round(width * 100) / 100,
+          height_in: Math.round(height * 100) / 100,
+        }, '{{width_in}}in × {{height_in}}in'),
+      // 1in = 25.4mm; no need to round to 2 decimals for millimeters.
+      this.l10n.get('document_properties_page_size_mm', {
+          width_mm: Math.round(width * 25.4 * 10) / 10,
+          height_mm: Math.round(height * 25.4 * 10) / 10,
+        }, '{{width_mm}}mm × {{height_mm}}mm'),
+    ]).then((sizes) => {
+      return {
+        inch: sizes[0],
+        mm: sizes[1],
+      };
     });
   }
 
