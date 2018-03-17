@@ -30,10 +30,11 @@ class PDFDocumentProperties {
   /**
    * @param {PDFDocumentPropertiesOptions} options
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
+   * @param {EventBus} eventBus - The application event bus.
    * @param {IL10n} l10n - Localization service.
    */
   constructor({ overlayName, fields, container, closeButton, },
-              overlayManager, l10n = NullL10n) {
+              overlayManager, eventBus, l10n = NullL10n) {
     this.overlayName = overlayName;
     this.fields = fields;
     this.container = container;
@@ -47,6 +48,12 @@ class PDFDocumentProperties {
     }
     this.overlayManager.register(this.overlayName, this.container,
                                  this.close.bind(this));
+
+    if (eventBus) {
+      eventBus.on('pagechanging', (evt) => {
+        this._currentPageNumber = evt.pageNumber;
+      });
+    }
   }
 
   /**
@@ -64,12 +71,16 @@ class PDFDocumentProperties {
 
     Promise.all([this.overlayManager.open(this.overlayName),
                  this._dataAvailableCapability.promise]).then(() => {
+      const currentPageNumber = this._currentPageNumber;
+
       // If the document properties were previously fetched (for this PDF file),
       // just update the dialog immediately to avoid redundant lookups.
-      if (this.fieldData) {
+      if (this.fieldData &&
+          currentPageNumber === this.fieldData['_currentPageNumber']) {
         this._updateUI();
         return;
       }
+
       // Get the document properties.
       this.pdfDocument.getMetadata().then(
           ({ info, metadata, contentDispositionFilename, }) => {
@@ -80,7 +91,7 @@ class PDFDocumentProperties {
           this._parseFileSize(this.maybeFileSize),
           this._parseDate(info.CreationDate),
           this._parseDate(info.ModDate),
-          this.pdfDocument.getPage(1).then((pdfPage) => {
+          this.pdfDocument.getPage(currentPageNumber).then((pdfPage) => {
             return this._parsePageSize(pdfPage.pageSizeInches);
           }),
         ]);
@@ -101,6 +112,7 @@ class PDFDocumentProperties {
           'pageCount': this.pdfDocument.numPages,
           'pageSizeInch': pageSizes.inch,
           'pageSizeMM': pageSizes.mm,
+          '_currentPageNumber': currentPageNumber,
         });
         this._updateUI();
 
@@ -176,6 +188,7 @@ class PDFDocumentProperties {
     this.maybeFileSize = 0;
     delete this.fieldData;
     this._dataAvailableCapability = createPromiseCapability();
+    this._currentPageNumber = 1;
   }
 
   /**
