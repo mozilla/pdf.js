@@ -228,15 +228,15 @@ class PDFDocumentProperties {
     const { width, height, } = pageSizeInches;
 
     return Promise.all([
-      this.l10n.get('document_properties_page_size_in', {
-          width_in: Math.round(width * 100) / 100,
-          height_in: Math.round(height * 100) / 100,
-        }, '{{width_in}}in × {{height_in}}in'),
+      this.l10n.get('document_properties_page_size_in_2', {
+          width: (Math.round(width * 100) / 100).toLocaleString(),
+          height: (Math.round(height * 100) / 100).toLocaleString(),
+        }, '{{width}} × {{height}} in'),
       // 1in = 25.4mm; no need to round to 2 decimals for millimeters.
-      this.l10n.get('document_properties_page_size_mm', {
-          width_mm: Math.round(width * 25.4 * 10) / 10,
-          height_mm: Math.round(height * 25.4 * 10) / 10,
-        }, '{{width_mm}}mm × {{height_mm}}mm'),
+      this.l10n.get('document_properties_page_size_mm_2', {
+          width: (Math.round(width * 25.4 * 10) / 10).toLocaleString(),
+          height: (Math.round(height * 25.4 * 10) / 10).toLocaleString(),
+        }, '{{width}} × {{height}} mm'),
     ]).then((sizes) => {
       return {
         inch: sizes[0],
