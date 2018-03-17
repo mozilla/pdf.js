@@ -108,8 +108,12 @@ class PDFDocumentProperties {
         // `this.setFileSize` wasn't called) or may be incorrectly set.
         return this.pdfDocument.getDownloadInfo();
       }).then(({ length, }) => {
+        this.maybeFileSize = length;
         return this._parseFileSize(length);
       }).then((fileSize) => {
+        if (fileSize === this.fieldData['fileSize']) {
+          return; // The fileSize has already been correctly set.
+        }
         let data = cloneObj(this.fieldData);
         data['fileSize'] = fileSize;
 
@@ -157,7 +161,7 @@ class PDFDocumentProperties {
    * @param {number} fileSize - The file size of the PDF document.
    */
   setFileSize(fileSize) {
-    if (typeof fileSize === 'number' && fileSize > 0) {
+    if (Number.isInteger(fileSize) && fileSize > 0) {
       this.maybeFileSize = fileSize;
     }
   }
