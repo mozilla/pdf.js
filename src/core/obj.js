@@ -501,20 +501,35 @@ var Catalog = (function CatalogClosure() {
           }
 
           count = currentNode.get('Count');
-          // Cache the Kids count, since it can reduce redundant lookups in long
-          // documents where all nodes are found at *one* level of the tree.
-          var objId = currentNode.objId;
-          if (objId && !pageKidsCountCache.has(objId)) {
-            pageKidsCountCache.put(objId, count);
-          }
-          // Skip nodes where the page can't be.
-          if (currentPageIndex + count <= pageIndex) {
-            currentPageIndex += count;
-            continue;
+          if (Number.isInteger(count) && count >= 0) {
+            // Cache the Kids count, since it can reduce redundant lookups in
+            // documents where all nodes are found at *one* level of the tree.
+            var objId = currentNode.objId;
+            if (objId && !pageKidsCountCache.has(objId)) {
+              pageKidsCountCache.put(objId, count);
+            }
+            // Skip nodes where the page can't be.
+            if (currentPageIndex + count <= pageIndex) {
+              currentPageIndex += count;
+              continue;
+            }
           }
 
           var kids = currentNode.get('Kids');
           if (!Array.isArray(kids)) {
+            // Prevent errors in corrupt PDF documents that violate the
+            // specification by *inlining* Page dicts directly in the Kids
+            // array, rather than using indirect objects (fixes issue9540.pdf).
+            if (isName(currentNode.get('Type'), 'Page') ||
+                (!currentNode.has('Type') && currentNode.has('Contents'))) {
+              if (currentPageIndex === pageIndex) {
+                capability.resolve([currentNode, null]);
+                return;
+              }
+              currentPageIndex++;
+              continue;
+            }
+
             capability.reject(new FormatError(
               'page dictionary kids object is not an array'));
             return;
@@ -574,11 +589,14 @@ var Catalog = (function CatalogClosure() {
             if (!isRef(kid)) {
               throw new FormatError('kid must be a Ref.');
             }
-            if (kid.num === kidRef.num) {
+            if (isRefsEqual(kid, kidRef)) {
               found = true;
               break;
             }
             kidPromises.push(xref.fetchAsync(kid).then(function (kid) {
+              if (!isDict(kid)) {
+                throw new FormatError('kid node must be a Dict.');
+              }
               if (kid.has('Count')) {
                 var count = kid.get('Count');
                 total += count;
