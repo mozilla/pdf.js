@@ -30,10 +30,11 @@ class PDFDocumentProperties {
   /**
    * @param {PDFDocumentPropertiesOptions} options
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
+   * @param {EventBus} eventBus - The application event bus.
    * @param {IL10n} l10n - Localization service.
    */
   constructor({ overlayName, fields, container, closeButton, },
-              overlayManager, l10n = NullL10n) {
+              overlayManager, eventBus, l10n = NullL10n) {
     this.overlayName = overlayName;
     this.fields = fields;
     this.container = container;
@@ -47,6 +48,12 @@ class PDFDocumentProperties {
     }
     this.overlayManager.register(this.overlayName, this.container,
                                  this.close.bind(this));
+
+    if (eventBus) {
+      eventBus.on('pagechanging', (evt) => {
+        this._currentPageNumber = evt.pageNumber;
+      });
+    }
   }
 
   /**
@@ -64,12 +71,16 @@ class PDFDocumentProperties {
 
     Promise.all([this.overlayManager.open(this.overlayName),
                  this._dataAvailableCapability.promise]).then(() => {
+      const currentPageNumber = this._currentPageNumber;
+
       // If the document properties were previously fetched (for this PDF file),
       // just update the dialog immediately to avoid redundant lookups.
-      if (this.fieldData) {
+      if (this.fieldData &&
+          currentPageNumber === this.fieldData['_currentPageNumber']) {
         this._updateUI();
         return;
       }
+
       // Get the document properties.
       this.pdfDocument.getMetadata().then(
           ({ info, metadata, contentDispositionFilename, }) => {
@@ -80,13 +91,12 @@ class PDFDocumentProperties {
           this._parseFileSize(this.maybeFileSize),
           this._parseDate(info.CreationDate),
           this._parseDate(info.ModDate),
-          this.pdfDocument.getPageSizeInches().then((pageSizeInches) => {
-            return this._parsePageSize(pageSizeInches);
+          this.pdfDocument.getPage(currentPageNumber).then((pdfPage) => {
+            return this._parsePageSize(pdfPage.pageSizeInches);
           }),
-
         ]);
-      }).then(([info, metadata, fileName, fileSize,
-                creationDate, modDate, pageSize]) => {
+      }).then(([info, metadata, fileName, fileSize, creationDate, modDate,
+                pageSizes]) => {
         freezeFieldData({
           'fileName': fileName,
           'fileSize': fileSize,
@@ -100,8 +110,9 @@ class PDFDocumentProperties {
           'producer': info.Producer,
           'version': info.PDFFormatVersion,
           'pageCount': this.pdfDocument.numPages,
-          'pageSizeInch': pageSize.inch,
-          'pageSizeMM': pageSize.mm,
+          'pageSizeInch': pageSizes.inch,
+          'pageSizeMM': pageSizes.mm,
+          '_currentPageNumber': currentPageNumber,
         });
         this._updateUI();
 
@@ -109,8 +120,12 @@ class PDFDocumentProperties {
         // `this.setFileSize` wasn't called) or may be incorrectly set.
         return this.pdfDocument.getDownloadInfo();
       }).then(({ length, }) => {
+        this.maybeFileSize = length;
         return this._parseFileSize(length);
       }).then((fileSize) => {
+        if (fileSize === this.fieldData['fileSize']) {
+          return; // The fileSize has already been correctly set.
+        }
         let data = cloneObj(this.fieldData);
         data['fileSize'] = fileSize;
 
@@ -158,7 +173,7 @@ class PDFDocumentProperties {
    * @param {number} fileSize - The file size of the PDF document.
    */
   setFileSize(fileSize) {
-    if (typeof fileSize === 'number' && fileSize > 0) {
+    if (Number.isInteger(fileSize) && fileSize > 0) {
       this.maybeFileSize = fileSize;
     }
   }
@@ -173,6 +188,7 @@ class PDFDocumentProperties {
     this.maybeFileSize = 0;
     delete this.fieldData;
     this._dataAvailableCapability = createPromiseCapability();
+    this._currentPageNumber = 1;
   }
 
   /**
@@ -224,25 +240,25 @@ class PDFDocumentProperties {
    */
   _parsePageSize(pageSizeInches) {
     if (!pageSizeInches) {
-      return Promise.resolve([undefined, undefined]);
+      return Promise.resolve({ inch: undefined, mm: undefined, });
     }
-    const sizes_two_units = {
-      'width_in': Math.round(pageSizeInches.width * 100) / 100,
-      'height_in': Math.round(pageSizeInches.height * 100) / 100,
-      // 1in = 25.4mm; no need to round to 2 decimals for mm
-      'width_mm': Math.round(pageSizeInches.width * 25.4 * 10) / 10,
-      'height_mm': Math.round(pageSizeInches.height * 25.4 * 10) / 10,
-    };
+    const { width, height, } = pageSizeInches;
+
     return Promise.all([
-      this.l10n.get('document_properties_page_size_in',
-        sizes_two_units, '{{width_in}} in × {{height_in}} in'),
-      this.l10n.get('document_properties_page_size_mm',
-        sizes_two_units, '{{width_mm}} mm × {{height_mm}} mm'),
-    ]).then(([parsedPageSizeInches, parsedPageSizeMM]) => {
-      return Promise.resolve({
-        inch: parsedPageSizeInches,
-        mm: parsedPageSizeMM,
-      });
+      this.l10n.get('document_properties_page_size_in_2', {
+          width: (Math.round(width * 100) / 100).toLocaleString(),
+          height: (Math.round(height * 100) / 100).toLocaleString(),
+        }, '{{width}} × {{height}} in'),
+      // 1in = 25.4mm; no need to round to 2 decimals for millimeters.
+      this.l10n.get('document_properties_page_size_mm_2', {
+          width: (Math.round(width * 25.4 * 10) / 10).toLocaleString(),
+          height: (Math.round(height * 25.4 * 10) / 10).toLocaleString(),
+        }, '{{width}} × {{height}} mm'),
+    ]).then((sizes) => {
+      return {
+        inch: sizes[0],
+        mm: sizes[1],
+      };
     });
   }
 
