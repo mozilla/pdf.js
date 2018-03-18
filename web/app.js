@@ -429,7 +429,7 @@ let PDFViewerApplication = {
 
       this.pdfDocumentProperties =
         new PDFDocumentProperties(appConfig.documentProperties,
-                                  this.overlayManager, this.l10n);
+                                  this.overlayManager, eventBus, this.l10n);
 
       this.pdfCursorTools = new PDFCursorTools({
         container,
