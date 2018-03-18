@@ -46,7 +46,7 @@ function downloadLanguageFiles(root, langCode, callback) {
   // Constants for constructing the URLs. Translations are taken from the
   // Nightly channel as those are the most recent ones.
   var MOZ_CENTRAL_ROOT = 'https://hg.mozilla.org/l10n-central/';
-  var MOZ_CENTRAL_PDFJS_DIR = '/raw-file/tip/browser/pdfviewer/';
+  var MOZ_CENTRAL_PDFJS_DIR = '/raw-file/default/browser/pdfviewer/';
 
   // Defines which files to download for each language.
   var files = ['chrome.properties', 'viewer.properties'];
@@ -63,18 +63,27 @@ function downloadLanguageFiles(root, langCode, callback) {
     var url = MOZ_CENTRAL_ROOT + langCode + MOZ_CENTRAL_PDFJS_DIR + fileName;
 
     https.get(url, function(response) {
-      var content = '';
-      response.setEncoding('utf8');
-      response.on('data', function(chunk) {
-        content += chunk;
-      });
-      response.on('end', function() {
-        fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
+      // Not all files exist for each language. Files without translations have
+      // been removed (https://bugzilla.mozilla.org/show_bug.cgi?id=1443175).
+      if (response.statusCode === 200) {
+        var content = '';
+        response.setEncoding('utf8');
+        response.on('data', function(chunk) {
+          content += chunk;
+        });
+        response.on('end', function() {
+          fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
+          downloadsLeft--;
+          if (downloadsLeft === 0) {
+            callback();
+          }
+        });
+      } else {
         downloadsLeft--;
         if (downloadsLeft === 0) {
           callback();
         }
-      });
+      }
     });
   });
 }
