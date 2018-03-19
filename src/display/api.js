@@ -875,19 +875,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     },
 
     /**
-     * The size of the current page, converted from PDF units to inches.
-     * @return {Object} An Object containing the properties: {number} `width`
-     *   and {number} `height`, given in inches.
-     */
-    get pageSizeInches() {
-      const [x1, y1, x2, y2] = this.view, userUnit = this.userUnit;
-      return {
-        width: (x2 - x1) / 72 * userUnit,
-        height: (y2 - y1) / 72 * userUnit,
-      };
-    },
-
-    /**
      * @param {number} scale The desired scale of the viewport.
      * @param {number} rotate Degrees to rotate the viewport. If omitted this
      * defaults to the page rotation.
