@@ -9,6 +9,9 @@ template: layout.jade
 
 PDF.js heavily relies on the use of [Promises](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise). If promises are new to you, it's recommended you become familiar with them before continuing on.
 
+This tutorial shows how PDF.js can be used as a library in a web browser.
+[examples/](https://github.com/mozilla/pdf.js/tree/master/examples) provides more examples, including usage in Node.js (at [examples/node/](https://github.com/mozilla/pdf.js/tree/master/examples/node)).
+
 ### Document
 
 The object structure of PDF.js loosely follows the structure of an actual PDF. At the top level there is a document object. From the document, more information and individual pages can be fetched. To get the document:
