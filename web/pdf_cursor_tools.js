@@ -25,15 +25,16 @@ const CursorTool = {
  * @typedef {Object} PDFCursorToolsOptions
  * @property {HTMLDivElement} container - The document container.
  * @property {EventBus} eventBus - The application event bus.
- * @property {BasePreferences} preferences - Object for reading/writing
- *                                           persistent settings.
+ * @property {number} cursorToolOnLoad - (optional) The cursor tool that will be
+ *   enabled on load; the constants from {CursorTool} should be used.
+ *   The default value is `CursorTool.SELECT`.
  */
 
 class PDFCursorTools {
   /**
    * @param {PDFCursorToolsOptions} options
    */
-  constructor({ container, eventBus, preferences, }) {
+  constructor({ container, eventBus, cursorToolOnLoad = CursorTool.SELECT, }) {
     this.container = container;
     this.eventBus = eventBus;
 
@@ -46,9 +47,9 @@ class PDFCursorTools {
 
     this._addEventListeners();
 
-    preferences.get('cursorToolOnLoad').then((value) => {
-      this.switchTool(value);
-    }).catch(() => { });
+    Promise.resolve().then(() => {
+      this.switchTool(cursorToolOnLoad);
+    });
   }
 
   /**
