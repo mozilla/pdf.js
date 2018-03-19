@@ -28,6 +28,11 @@ const OptionKind = {
  *              compare with the format of `default_preferences.json`.
  */
 const defaultOptions = {
+  cursorToolOnLoad: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
   defaultUrl: {
     /** @type {string} */
     value: 'compressed.tracemonkey-pldi-09.pdf',

@@ -179,6 +179,9 @@ let PDFViewerApplication = {
       preferences.get('sidebarViewOnLoad').then(function resolved(value) {
         AppOptions.set('sidebarViewOnLoad', value);
       }),
+      preferences.get('cursorToolOnLoad').then(function resolved(value) {
+        AppOptions.set('cursorToolOnLoad', value);
+      }),
       preferences.get('pdfBugEnabled').then(function resolved(value) {
         AppOptions.set('pdfBugEnabled', value);
       }),
@@ -434,7 +437,7 @@ let PDFViewerApplication = {
       this.pdfCursorTools = new PDFCursorTools({
         container,
         eventBus,
-        preferences: this.preferences,
+        cursorToolOnLoad: AppOptions.get('cursorToolOnLoad'),
       });
 
       this.toolbar = new Toolbar(appConfig.toolbar, container, eventBus,
