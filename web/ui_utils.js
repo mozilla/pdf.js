@@ -492,16 +492,6 @@ let animationStarted = new Promise(function (resolve) {
 });
 
 /**
- * (deprecated) External localization service.
- */
-let mozL10n;
-
-/**
- * (deprecated) Promise that is resolved when UI localization is finished.
- */
-let localized = Promise.resolve();
-
-/**
  * Simple event bus for an application. Listeners are attached using the
  * `on` and `off` methods. To raise an event, the `dispatch` method shall be
  * used.
@@ -636,7 +626,6 @@ export {
   PresentationModeState,
   RendererType,
   TextLayerMode,
-  mozL10n,
   NullL10n,
   EventBus,
   ProgressBar,
@@ -652,7 +641,6 @@ export {
   binarySearchFirstItem,
   normalizeWheelEventDelta,
   animationStarted,
-  localized,
   WaitOnType,
   waitOnEventOrTimeout,
 };
