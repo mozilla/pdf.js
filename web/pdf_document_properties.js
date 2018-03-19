@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { cloneObj, getPDFFileNameFromURL, NullL10n } from './ui_utils';
+import {
+  cloneObj, getPageSizeInches, getPDFFileNameFromURL, NullL10n
+} from './ui_utils';
 import { createPromiseCapability } from 'pdfjs-lib';
 
 const DEFAULT_FIELD_CONTENT = '-';
@@ -92,7 +94,7 @@ class PDFDocumentProperties {
           this._parseDate(info.CreationDate),
           this._parseDate(info.ModDate),
           this.pdfDocument.getPage(currentPageNumber).then((pdfPage) => {
-            return this._parsePageSize(pdfPage.pageSizeInches);
+            return this._parsePageSize(getPageSizeInches(pdfPage));
           }),
         ]);
       }).then(([info, metadata, fileName, fileSize, creationDate, modDate,
