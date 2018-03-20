@@ -55,6 +55,9 @@ class PDFDocumentProperties {
       eventBus.on('pagechanging', (evt) => {
         this._currentPageNumber = evt.pageNumber;
       });
+      eventBus.on('rotationchanging', (evt) => {
+        this._pagesRotation = evt.pagesRotation;
+      });
     }
   }
 
@@ -74,11 +77,13 @@ class PDFDocumentProperties {
     Promise.all([this.overlayManager.open(this.overlayName),
                  this._dataAvailableCapability.promise]).then(() => {
       const currentPageNumber = this._currentPageNumber;
+      const pagesRotation = this._pagesRotation;
 
       // If the document properties were previously fetched (for this PDF file),
       // just update the dialog immediately to avoid redundant lookups.
       if (this.fieldData &&
-          currentPageNumber === this.fieldData['_currentPageNumber']) {
+          currentPageNumber === this.fieldData['_currentPageNumber'] &&
+          pagesRotation === this.fieldData['_pagesRotation']) {
         this._updateUI();
         return;
       }
@@ -94,7 +99,8 @@ class PDFDocumentProperties {
           this._parseDate(info.CreationDate),
           this._parseDate(info.ModDate),
           this.pdfDocument.getPage(currentPageNumber).then((pdfPage) => {
-            return this._parsePageSize(getPageSizeInches(pdfPage));
+            return this._parsePageSize(getPageSizeInches(pdfPage),
+                                       pagesRotation);
           }),
         ]);
       }).then(([info, metadata, fileName, fileSize, creationDate, modDate,
@@ -115,6 +121,7 @@ class PDFDocumentProperties {
           'pageSizeInch': pageSizes.inch,
           'pageSizeMM': pageSizes.mm,
           '_currentPageNumber': currentPageNumber,
+          '_pagesRotation': pagesRotation,
         });
         this._updateUI();
 
@@ -191,6 +198,7 @@ class PDFDocumentProperties {
     delete this.fieldData;
     this._dataAvailableCapability = createPromiseCapability();
     this._currentPageNumber = 1;
+    this._pagesRotation = 0;
   }
 
   /**
@@ -240,9 +248,16 @@ class PDFDocumentProperties {
   /**
    * @private
    */
-  _parsePageSize(pageSizeInches) {
+  _parsePageSize(pageSizeInches, pagesRotation) {
     if (!pageSizeInches) {
       return Promise.resolve({ inch: undefined, mm: undefined, });
+    }
+    // Take the viewer rotation into account as well; compare with Adobe Reader.
+    if (pagesRotation % 180 !== 0) {
+      pageSizeInches = {
+        width: pageSizeInches.height,
+        height: pageSizeInches.width,
+      };
     }
     const { width, height, } = pageSizeInches;
 
