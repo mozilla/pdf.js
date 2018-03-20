@@ -24,6 +24,24 @@ const DEFAULT_FIELD_CONTENT = '-';
 // See https://en.wikibooks.org/wiki/Lentis/Conversion_to_the_Metric_Standard_in_the_United_States
 const NON_METRIC_LOCALES = ['en-us', 'en-lr', 'my'];
 
+// Should use the format: `width x height`, in portrait orientation.
+// See https://en.wikipedia.org/wiki/Paper_size
+const US_PAGE_NAMES = {
+  '8.5x11': 'Letter',
+  '8.5x14': 'Legal',
+};
+const METRIC_PAGE_NAMES = {
+  '297x420': 'A3',
+  '210x297': 'A4',
+};
+
+function getPageName(size, isPortrait, pageNames) {
+  const width = (isPortrait ? size.width : size.height);
+  const height = (isPortrait ? size.height : size.width);
+
+  return pageNames[`${width}x${height}`];
+}
+
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
  * @property {string} overlayName - Name/identifier for the overlay.
@@ -279,21 +297,33 @@ class PDFDocumentProperties {
       height: Math.round(pageSizeInches.height * 25.4 * 10) / 10,
     };
 
+    let pageName = null;
+    const name = getPageName(sizeInches, isPortrait, US_PAGE_NAMES) ||
+                 getPageName(sizeMillimeters, isPortrait, METRIC_PAGE_NAMES);
+    if (name) {
+      pageName = this.l10n.get('document_properties_page_size_name_' +
+                               name.toLowerCase(), null, name);
+    }
+
     return Promise.all([
       (this._isNonMetricLocale ? sizeInches : sizeMillimeters),
       this.l10n.get('document_properties_page_size_unit_' +
                     (this._isNonMetricLocale ? 'inches' : 'millimeters'), null,
                     this._isNonMetricLocale ? 'in' : 'mm'),
+      pageName,
       this.l10n.get('document_properties_page_size_orientation_' +
                     (isPortrait ? 'portrait' : 'landscape'), null,
                     isPortrait ? 'portrait' : 'landscape'),
-    ]).then(([{ width, height, }, unit, orientation]) => {
-      return this.l10n.get('document_properties_page_size_dimension_string', {
+    ]).then(([{ width, height, }, unit, name, orientation]) => {
+      return this.l10n.get('document_properties_page_size_dimension_' +
+                           (name ? 'name_' : '') + 'string', {
           width: width.toLocaleString(),
           height: height.toLocaleString(),
           unit,
+          name,
           orientation,
-        }, '{{width}} × {{height}} {{unit}} ({{orientation}})');
+        }, '{{width}} × {{height}} {{unit}} (' +
+           (name ? '{{name}}, ' : '') + '{{orientation}})');
     });
   }
 
