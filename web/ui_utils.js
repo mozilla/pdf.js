@@ -58,6 +58,10 @@ function formatL10nValue(text, args) {
  * @implements {IL10n}
  */
 let NullL10n = {
+  getLanguage() {
+    return Promise.resolve('en-us');
+  },
+
   getDirection() {
     return Promise.resolve('ltr');
   },
