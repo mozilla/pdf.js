@@ -439,6 +439,10 @@ function isValidRotation(angle) {
   return Number.isInteger(angle) && angle % 90 === 0;
 }
 
+function isPortraitOrientation(size) {
+  return size.width <= size.height;
+}
+
 function cloneObj(obj) {
   let result = Object.create(null);
   for (let i in obj) {
@@ -642,6 +646,7 @@ export {
   SCROLLBAR_PADDING,
   VERTICAL_PADDING,
   isValidRotation,
+  isPortraitOrientation,
   isFileSchema,
   cloneObj,
   PresentationModeState,
