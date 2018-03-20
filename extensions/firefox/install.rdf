@@ -18,15 +18,6 @@
      </Description>
     </em:targetApplication>
 
-    <!-- SeaMonkey -->
-    <em:targetApplication>
-      <Description>
-       <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
-       <em:minVersion>2.46</em:minVersion>
-       <em:maxVersion>2.51a1</em:maxVersion>
-     </Description>
-    </em:targetApplication>
-
     <!-- Android -->
     <em:targetApplication>
       <Description>
