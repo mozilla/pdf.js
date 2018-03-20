@@ -14,7 +14,8 @@
  */
 
 import {
-  cloneObj, getPageSizeInches, getPDFFileNameFromURL, NullL10n
+  cloneObj, getPageSizeInches, getPDFFileNameFromURL, isPortraitOrientation,
+  NullL10n
 } from './ui_utils';
 import { createPromiseCapability } from 'pdfjs-lib';
 
@@ -266,6 +267,7 @@ class PDFDocumentProperties {
         height: pageSizeInches.width,
       };
     }
+    const isPortrait = isPortraitOrientation(pageSizeInches);
 
     const sizeInches = {
       width: Math.round(pageSizeInches.width * 100) / 100,
@@ -282,12 +284,16 @@ class PDFDocumentProperties {
       this.l10n.get('document_properties_page_size_unit_' +
                     (this._isNonMetricLocale ? 'inches' : 'millimeters'), null,
                     this._isNonMetricLocale ? 'in' : 'mm'),
-    ]).then(([{ width, height, }, unit]) => {
+      this.l10n.get('document_properties_page_size_orientation_' +
+                    (isPortrait ? 'portrait' : 'landscape'), null,
+                    isPortrait ? 'portrait' : 'landscape'),
+    ]).then(([{ width, height, }, unit, orientation]) => {
       return this.l10n.get('document_properties_page_size_dimension_string', {
           width: width.toLocaleString(),
           height: height.toLocaleString(),
           unit,
-        }, '{{width}} × {{height}} {{unit}}');
+          orientation,
+        }, '{{width}} × {{height}} {{unit}} ({{orientation}})');
     });
   }
 
