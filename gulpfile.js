@@ -710,7 +710,7 @@ function preprocessDefaultPreferences(content) {
     defines: DEFINES,
   }, content);
 
-  return licenseHeader + '\n' + MODIFICATION_WARNING + '\n' + content;
+  return licenseHeader + '\n' + MODIFICATION_WARNING + '\n' + content + '\n';
 }
 
 gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
