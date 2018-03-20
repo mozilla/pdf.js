@@ -22,13 +22,13 @@
   //
   // The workerSrc property shall be specified.
   //
-  pdfjsDistBuildPdf.GlobalWorkerOptions.workerSrc =
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
     '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
   //
   // Asynchronous download PDF
   //
-  pdfjsDistBuildPdf.getDocument(url).then(function getPdfHelloWorld(pdf) {
+  pdfjsLib.getDocument(url).then(function getPdfHelloWorld(pdf) {
     //
     // Fetch the first page
     //

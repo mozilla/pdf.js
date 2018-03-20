@@ -1335,8 +1335,8 @@ var PDFWorker = (function PDFWorkerClosure() {
               window.pdfjsNonProductionPdfWorker.WorkerMessageHandler);
     }
     // PRODUCTION
-    return (window.pdfjsDistBuildPdfWorker &&
-            window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
+    return (window.pdfjsWorker &&
+            window.pdfjsWorker.WorkerMessageHandler);
   }
 
   let fakeWorkerFilesLoadedCapability;
@@ -1372,7 +1372,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     } else {
       let loader = fakeWorkerFilesLoader || function(callback) {
         Util.loadScript(getWorkerSrc(), function() {
-          callback(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
+          callback(window.pdfjsWorker.WorkerMessageHandler);
         });
       };
       loader(fakeWorkerFilesLoadedCapability.resolve);
