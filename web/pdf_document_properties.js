@@ -20,6 +20,9 @@ import { createPromiseCapability } from 'pdfjs-lib';
 
 const DEFAULT_FIELD_CONTENT = '-';
 
+// See https://en.wikibooks.org/wiki/Lentis/Conversion_to_the_Metric_Standard_in_the_United_States
+const NON_METRIC_LOCALES = ['en-us', 'en-lr', 'my'];
+
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
  * @property {string} overlayName - Name/identifier for the overlay.
@@ -59,6 +62,11 @@ class PDFDocumentProperties {
         this._pagesRotation = evt.pagesRotation;
       });
     }
+
+    this._isNonMetricLocale = true; // The default viewer locale is 'en-us'.
+    l10n.getLanguage().then((locale) => {
+      this._isNonMetricLocale = NON_METRIC_LOCALES.includes(locale);
+    });
   }
 
   /**
@@ -104,7 +112,7 @@ class PDFDocumentProperties {
           }),
         ]);
       }).then(([info, metadata, fileName, fileSize, creationDate, modDate,
-                pageSizes]) => {
+                pageSize]) => {
         freezeFieldData({
           'fileName': fileName,
           'fileSize': fileSize,
@@ -118,8 +126,7 @@ class PDFDocumentProperties {
           'producer': info.Producer,
           'version': info.PDFFormatVersion,
           'pageCount': this.pdfDocument.numPages,
-          'pageSizeInch': pageSizes.inch,
-          'pageSizeMM': pageSizes.mm,
+          'pageSize': pageSize,
           '_currentPageNumber': currentPageNumber,
           '_pagesRotation': pagesRotation,
         });
@@ -250,7 +257,7 @@ class PDFDocumentProperties {
    */
   _parsePageSize(pageSizeInches, pagesRotation) {
     if (!pageSizeInches) {
-      return Promise.resolve({ inch: undefined, mm: undefined, });
+      return Promise.resolve(undefined);
     }
     // Take the viewer rotation into account as well; compare with Adobe Reader.
     if (pagesRotation % 180 !== 0) {
@@ -259,28 +266,28 @@ class PDFDocumentProperties {
         height: pageSizeInches.width,
       };
     }
-    const { width, height, } = pageSizeInches;
+
+    const sizeInches = {
+      width: Math.round(pageSizeInches.width * 100) / 100,
+      height: Math.round(pageSizeInches.height * 100) / 100,
+    };
+    // 1in == 25.4mm; no need to round to 2 decimals for millimeters.
+    const sizeMillimeters = {
+      width: Math.round(pageSizeInches.width * 25.4 * 10) / 10,
+      height: Math.round(pageSizeInches.height * 25.4 * 10) / 10,
+    };
 
     return Promise.all([
-      this.l10n.get('document_properties_page_size_unit_inches', null, 'in'),
-      this.l10n.get('document_properties_page_size_unit_millimeters', null,
-                    'mm'),
-    ]).then(([unitInches, unitMillimeters]) => {
-      return Promise.all([
-        this.l10n.get('document_properties_page_size_dimension_string', {
-            width: (Math.round(width * 100) / 100).toLocaleString(),
-            height: (Math.round(height * 100) / 100).toLocaleString(),
-            unit: unitInches,
-          }, '{{width}} × {{height}} {{unit}}'),
-        // 1in == 25.4mm; no need to round to 2 decimals for millimeters.
-        this.l10n.get('document_properties_page_size_dimension_string', {
-            width: (Math.round(width * 25.4 * 10) / 10).toLocaleString(),
-            height: (Math.round(height * 25.4 * 10) / 10).toLocaleString(),
-            unit: unitMillimeters,
-          }, '{{width}} × {{height}} {{unit}}'),
-      ]);
-    }).then((sizes) => {
-      return { inch: sizes[0], mm: sizes[1], };
+      (this._isNonMetricLocale ? sizeInches : sizeMillimeters),
+      this.l10n.get('document_properties_page_size_unit_' +
+                    (this._isNonMetricLocale ? 'inches' : 'millimeters'), null,
+                    this._isNonMetricLocale ? 'in' : 'mm'),
+    ]).then(([{ width, height, }, unit]) => {
+      return this.l10n.get('document_properties_page_size_dimension_string', {
+          width: width.toLocaleString(),
+          height: height.toLocaleString(),
+          unit,
+        }, '{{width}} × {{height}} {{unit}}');
     });
   }
 
