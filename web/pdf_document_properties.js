@@ -287,19 +287,50 @@ class PDFDocumentProperties {
     }
     const isPortrait = isPortraitOrientation(pageSizeInches);
 
-    const sizeInches = {
+    let sizeInches = {
       width: Math.round(pageSizeInches.width * 100) / 100,
       height: Math.round(pageSizeInches.height * 100) / 100,
     };
     // 1in == 25.4mm; no need to round to 2 decimals for millimeters.
-    const sizeMillimeters = {
+    let sizeMillimeters = {
       width: Math.round(pageSizeInches.width * 25.4 * 10) / 10,
       height: Math.round(pageSizeInches.height * 25.4 * 10) / 10,
     };
 
     let pageName = null;
-    const name = getPageName(sizeInches, isPortrait, US_PAGE_NAMES) ||
-                 getPageName(sizeMillimeters, isPortrait, METRIC_PAGE_NAMES);
+    let name = getPageName(sizeInches, isPortrait, US_PAGE_NAMES) ||
+               getPageName(sizeMillimeters, isPortrait, METRIC_PAGE_NAMES);
+
+    if (!name && !(Number.isInteger(sizeMillimeters.width) &&
+                   Number.isInteger(sizeMillimeters.height))) {
+      // Attempt to improve the page name detection by falling back to fuzzy
+      // matching of the metric dimensions, to account for e.g. rounding errors
+      // and/or PDF files that define the page sizes in an imprecise manner.
+      const exactMillimeters = {
+        width: pageSizeInches.width * 25.4,
+        height: pageSizeInches.height * 25.4,
+      };
+      const intMillimeters = {
+        width: Math.round(sizeMillimeters.width),
+        height: Math.round(sizeMillimeters.height),
+      };
+
+      // Try to avoid false positives, by only considering "small" differences.
+      if (Math.abs(exactMillimeters.width - intMillimeters.width) < 0.1 &&
+          Math.abs(exactMillimeters.height - intMillimeters.height) < 0.1) {
+
+        name = getPageName(intMillimeters, isPortrait, METRIC_PAGE_NAMES);
+        if (name) {
+          // Update *both* sizes, computed above, to ensure that the displayed
+          // dimensions always correspond to the detected page name.
+          sizeInches = {
+            width: Math.round(intMillimeters.width / 25.4 * 100) / 100,
+            height: Math.round(intMillimeters.height / 25.4 * 100) / 100,
+          };
+          sizeMillimeters = intMillimeters;
+        }
+      }
+    }
     if (name) {
       pageName = this.l10n.get('document_properties_page_size_name_' +
                                name.toLowerCase(), null, name);
