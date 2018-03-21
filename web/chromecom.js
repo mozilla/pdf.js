@@ -91,7 +91,7 @@ let ChromeCom = {
           if (isAllowedAccess) {
             callback(file);
           } else {
-            requestAccessToLocalFile(file, overlayManager);
+            requestAccessToLocalFile(file, overlayManager, callback);
           }
         });
       });
@@ -137,7 +137,7 @@ function reloadIfRuntimeIsUnavailable() {
 }
 
 let chromeFileAccessOverlayPromise;
-function requestAccessToLocalFile(fileUrl, overlayManager) {
+function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
   let onCloseOverlay = null;
   if (top !== window) {
     // When the extension reloads after receiving new permissions, the pages
@@ -196,6 +196,29 @@ function requestAccessToLocalFile(fileUrl, overlayManager) {
     // Show which file is being opened to help the user with understanding
     // why this permission request is shown.
     document.getElementById('chrome-url-of-local-file').textContent = fileUrl;
+
+    document.getElementById('chrome-file-fallback').onchange = function() {
+      let file = this.files[0];
+      if (file) {
+        let originalFilename = decodeURIComponent(fileUrl.split('/').pop());
+        let originalURL = fileUrl;
+        if (originalFilename !== file.name) {
+          let msg = 'The selected file does not match the original file.' +
+            '\nOriginal: ' + originalFilename +
+            '\nSelected: ' + file.name +
+            '\nDo you want to open the selected file?';
+          if (!confirm(msg)) {
+            this.value = '';
+            return;
+          }
+          // There is no way to retrieve the original URL from the File object.
+          // So just generate a fake path.
+          originalURL = 'file:///fakepath/to/' + encodeURIComponent(file.name);
+        }
+        callback(URL.createObjectURL(file), file.size, originalURL);
+        overlayManager.close('chromeFileAccessOverlay');
+      }
+    };
 
     overlayManager.open('chromeFileAccessOverlay');
   });
