@@ -70,12 +70,13 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
 
-      expect(data.id).toEqual('10R');
+        expect(data.id).toEqual('10R');
+      });
     });
 
     it('should handle, and get fallback id\'s for, annotations that are not ' +
@@ -90,16 +91,19 @@ describe('annotation', function() {
         startObjId: 0,
       });
 
-      var annotation1 = AnnotationFactory.create(xref, annotationDict,
-                                                 pdfManagerMock, idFactory);
-      var annotation2 = AnnotationFactory.create(xref, annotationDict,
-                                                 pdfManagerMock, idFactory);
-      var data1 = annotation1.data, data2 = annotation2.data;
-      expect(data1.annotationType).toEqual(AnnotationType.LINK);
-      expect(data2.annotationType).toEqual(AnnotationType.LINK);
+      AnnotationFactory.create(xref, annotationDict,
+          pdfManagerMock, idFactory).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.id).toEqual('annot_p0_1');
+      });
 
-      expect(data1.id).toEqual('annot_p0_1');
-      expect(data2.id).toEqual('annot_p0_2');
+      AnnotationFactory.create(xref, annotationDict,
+          pdfManagerMock, idFactory).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.id).toEqual('annot_p0_2');
+      });
     });
 
     it('should handle missing /Subtype', function () {
@@ -111,10 +115,11 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toBeUndefined();
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toBeUndefined();
+      });
     });
   });
 
@@ -296,15 +301,16 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
 
-      expect(data.url).toEqual('http://www.ctan.org/tex-archive/info/lshort');
-      expect(data.unsafeUrl).toEqual(
-        'http://www.ctan.org/tex-archive/info/lshort');
-      expect(data.dest).toBeUndefined();
+        expect(data.url).toEqual('http://www.ctan.org/tex-archive/info/lshort');
+        expect(data.unsafeUrl).toEqual(
+          'http://www.ctan.org/tex-archive/info/lshort');
+        expect(data.dest).toBeUndefined();
+      });
     });
 
     it('should correctly parse a URI action, where the URI entry ' +
@@ -324,14 +330,14 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toEqual('http://www.hmrc.gov.uk/');
-      expect(data.unsafeUrl).toEqual('http://www.hmrc.gov.uk');
-      expect(data.dest).toBeUndefined();
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toEqual('http://www.hmrc.gov.uk/');
+        expect(data.unsafeUrl).toEqual('http://www.hmrc.gov.uk');
+        expect(data.dest).toBeUndefined();
+      });
     });
 
     it('should correctly parse a URI action, where the URI entry ' +
@@ -357,18 +363,18 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toEqual(
-        new URL(stringToUTF8String(
-          'http://www.example.com/\xC3\xBC\xC3\xB6\xC3\xA4')).href);
-      expect(data.unsafeUrl).toEqual(
-        stringToUTF8String(
-          'http://www.example.com/\xC3\xBC\xC3\xB6\xC3\xA4'));
-      expect(data.dest).toBeUndefined();
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toEqual(
+          new URL(stringToUTF8String(
+            'http://www.example.com/\xC3\xBC\xC3\xB6\xC3\xA4')).href);
+        expect(data.unsafeUrl).toEqual(
+          stringToUTF8String(
+            'http://www.example.com/\xC3\xBC\xC3\xB6\xC3\xA4'));
+        expect(data.dest).toBeUndefined();
+      });
     });
 
     it('should correctly parse a GoTo action', function() {
@@ -387,14 +393,14 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toBeUndefined();
-      expect(data.unsafeUrl).toBeUndefined();
-      expect(data.dest).toEqual('page.157');
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toBeUndefined();
+        expect(data.unsafeUrl).toBeUndefined();
+        expect(data.dest).toEqual('page.157');
+      });
     });
 
     it('should correctly parse a GoToR action, where the FileSpec entry ' +
@@ -416,15 +422,15 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toBeUndefined();
-      expect(data.unsafeUrl).toEqual('../../0013/001346/134685E.pdf#4.3');
-      expect(data.dest).toBeUndefined();
-      expect(data.newWindow).toEqual(true);
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toBeUndefined();
+        expect(data.unsafeUrl).toEqual('../../0013/001346/134685E.pdf#4.3');
+        expect(data.dest).toBeUndefined();
+        expect(data.newWindow).toEqual(true);
+      });
     });
 
     it('should correctly parse a GoToR action, containing a relative URL, ' +
@@ -448,15 +454,15 @@ describe('annotation', function() {
         docBaseUrl: 'http://www.example.com/test/pdfs/qwerty.pdf',
       });
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManager, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toEqual(
-        'http://www.example.com/0013/001346/134685E.pdf#4.3');
-      expect(data.unsafeUrl).toEqual('../../0013/001346/134685E.pdf#4.3');
-      expect(data.dest).toBeUndefined();
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManager, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toEqual(
+          'http://www.example.com/0013/001346/134685E.pdf#4.3');
+        expect(data.unsafeUrl).toEqual('../../0013/001346/134685E.pdf#4.3');
+        expect(data.dest).toBeUndefined();
+      });
     });
 
     it('should correctly parse a GoToR action, with named destination',
@@ -477,15 +483,15 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toEqual('http://www.example.com/test.pdf#15');
-      expect(data.unsafeUrl).toEqual('http://www.example.com/test.pdf#15');
-      expect(data.dest).toBeUndefined();
-      expect(data.newWindow).toBeFalsy();
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toEqual('http://www.example.com/test.pdf#15');
+        expect(data.unsafeUrl).toEqual('http://www.example.com/test.pdf#15');
+        expect(data.dest).toBeUndefined();
+        expect(data.newWindow).toBeFalsy();
+      });
     });
 
     it('should correctly parse a GoToR action, with explicit destination array',
@@ -506,17 +512,17 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toEqual(new URL('http://www.example.com/test.pdf#' +
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toEqual(new URL('http://www.example.com/test.pdf#' +
                                  '[14,{"name":"XYZ"},null,298.043,null]').href);
-      expect(data.unsafeUrl).toEqual('http://www.example.com/test.pdf#' +
-                                     '[14,{"name":"XYZ"},null,298.043,null]');
-      expect(data.dest).toBeUndefined();
-      expect(data.newWindow).toBeFalsy();
+        expect(data.unsafeUrl).toEqual('http://www.example.com/test.pdf#' +
+                                       '[14,{"name":"XYZ"},null,298.043,null]');
+        expect(data.dest).toBeUndefined();
+        expect(data.newWindow).toBeFalsy();
+      });
     });
 
     it('should correctly parse a Launch action, where the FileSpec dict ' +
@@ -546,16 +552,16 @@ describe('annotation', function() {
         docBaseUrl: 'http://www.example.com/test/pdfs/qwerty.pdf',
       });
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManager, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toEqual(
-        new URL('http://www.example.com/test/pdfs/Part II/Part II.pdf').href);
-      expect(data.unsafeUrl).toEqual('Part II/Part II.pdf');
-      expect(data.dest).toBeUndefined();
-      expect(data.newWindow).toEqual(true);
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManager, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toEqual(
+          new URL('http://www.example.com/test/pdfs/Part II/Part II.pdf').href);
+        expect(data.unsafeUrl).toEqual('Part II/Part II.pdf');
+        expect(data.dest).toBeUndefined();
+        expect(data.newWindow).toEqual(true);
+      });
     });
 
     it('should recover valid URLs from JavaScript actions having certain ' +
@@ -581,16 +587,15 @@ describe('annotation', function() {
           { ref: annotationRef, data: annotationDict, }
         ]);
 
-        var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                  pdfManagerMock,
-                                                  idFactoryMock);
-        var data = annotation.data;
-        expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-        expect(data.url).toEqual(expectedUrl);
-        expect(data.unsafeUrl).toEqual(expectedUnsafeUrl);
-        expect(data.dest).toBeUndefined();
-        expect(data.newWindow).toEqual(expectedNewWindow);
+        AnnotationFactory.create(xref, annotationRef,
+            pdfManagerMock, idFactoryMock).then((annotation) => {
+          var data = annotation.data;
+          expect(data.annotationType).toEqual(AnnotationType.LINK);
+          expect(data.url).toEqual(expectedUrl);
+          expect(data.unsafeUrl).toEqual(expectedUnsafeUrl);
+          expect(data.dest).toBeUndefined();
+          expect(data.newWindow).toEqual(expectedNewWindow);
+        });
       }
 
       // Check that we reject a 'JS' entry containing arbitrary JavaScript.
@@ -633,14 +638,14 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toBeUndefined();
-      expect(data.unsafeUrl).toBeUndefined();
-      expect(data.action).toEqual('GoToPage');
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toBeUndefined();
+        expect(data.unsafeUrl).toBeUndefined();
+        expect(data.action).toEqual('GoToPage');
+      });
     });
 
     it('should correctly parse a simple Dest', function() {
@@ -654,14 +659,14 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toBeUndefined();
-      expect(data.unsafeUrl).toBeUndefined();
-      expect(data.dest).toEqual('LI0');
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toBeUndefined();
+        expect(data.unsafeUrl).toBeUndefined();
+        expect(data.dest).toEqual('LI0');
+      });
     });
 
     it('should correctly parse a simple Dest, with explicit destination array',
@@ -677,15 +682,15 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toBeUndefined();
-      expect(data.unsafeUrl).toBeUndefined();
-      expect(data.dest).toEqual([{ num: 17, gen: 0, }, { name: 'XYZ', },
-                                 0, 841.89, null]);
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toBeUndefined();
+        expect(data.unsafeUrl).toBeUndefined();
+        expect(data.dest).toEqual([{ num: 17, gen: 0, }, { name: 'XYZ', },
+                                   0, 841.89, null]);
+      });
     });
 
     it('should correctly parse a Dest, which violates the specification ' +
@@ -707,14 +712,14 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      let annotation = AnnotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      let data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
-
-      expect(data.url).toBeUndefined();
-      expect(data.unsafeUrl).toBeUndefined();
-      expect(data.dest).toEqual('page.157');
+      AnnotationFactory.create(xref, annotationRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        let data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toBeUndefined();
+        expect(data.unsafeUrl).toBeUndefined();
+        expect(data.dest).toEqual('page.157');
+      });
     });
 
   });
@@ -740,12 +745,12 @@ describe('annotation', function() {
         { ref: widgetRef, data: widgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, widgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.fieldName).toEqual('');
+      AnnotationFactory.create(xref, widgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.fieldName).toEqual('');
+      });
     });
 
     it('should construct the field name when there are no ancestors',
@@ -757,12 +762,12 @@ describe('annotation', function() {
         { ref: widgetRef, data: widgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, widgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.fieldName).toEqual('foo');
+      AnnotationFactory.create(xref, widgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.fieldName).toEqual('foo');
+      });
     });
 
     it('should construct the field name when there are ancestors', function() {
@@ -781,12 +786,12 @@ describe('annotation', function() {
         { ref: widgetRef, data: widgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, widgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.fieldName).toEqual('foo.bar.baz');
+      AnnotationFactory.create(xref, widgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.fieldName).toEqual('foo.bar.baz');
+      });
     });
 
     it('should construct the field name if a parent is not a dictionary ' +
@@ -803,12 +808,12 @@ describe('annotation', function() {
         { ref: widgetRef, data: widgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, widgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.fieldName).toEqual('foo.bar');
+      AnnotationFactory.create(xref, widgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.fieldName).toEqual('foo.bar');
+      });
     });
   });
 
@@ -835,16 +840,16 @@ describe('annotation', function() {
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, textWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.textAlignment).toEqual(null);
-      expect(data.maxLen).toEqual(null);
-      expect(data.readOnly).toEqual(false);
-      expect(data.multiLine).toEqual(false);
-      expect(data.comb).toEqual(false);
+      AnnotationFactory.create(xref, textWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.textAlignment).toEqual(null);
+        expect(data.maxLen).toEqual(null);
+        expect(data.readOnly).toEqual(false);
+        expect(data.multiLine).toEqual(false);
+        expect(data.comb).toEqual(false);
+      });
     });
 
     it('should not set invalid text alignment, maximum length and flags',
@@ -858,16 +863,16 @@ describe('annotation', function() {
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, textWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.textAlignment).toEqual(null);
-      expect(data.maxLen).toEqual(null);
-      expect(data.readOnly).toEqual(false);
-      expect(data.multiLine).toEqual(false);
-      expect(data.comb).toEqual(false);
+      AnnotationFactory.create(xref, textWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.textAlignment).toEqual(null);
+        expect(data.maxLen).toEqual(null);
+        expect(data.readOnly).toEqual(false);
+        expect(data.multiLine).toEqual(false);
+        expect(data.comb).toEqual(false);
+      });
     });
 
     it('should set valid text alignment, maximum length and flags',
@@ -882,15 +887,15 @@ describe('annotation', function() {
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, textWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.textAlignment).toEqual(1);
-      expect(data.maxLen).toEqual(20);
-      expect(data.readOnly).toEqual(true);
-      expect(data.multiLine).toEqual(true);
+      AnnotationFactory.create(xref, textWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.textAlignment).toEqual(1);
+        expect(data.maxLen).toEqual(20);
+        expect(data.readOnly).toEqual(true);
+        expect(data.multiLine).toEqual(true);
+      });
     });
 
     it('should reject comb fields without a maximum length', function() {
@@ -901,12 +906,12 @@ describe('annotation', function() {
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, textWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.comb).toEqual(false);
+      AnnotationFactory.create(xref, textWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.comb).toEqual(false);
+      });
     });
 
     it('should accept comb fields with a maximum length', function() {
@@ -918,17 +923,18 @@ describe('annotation', function() {
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, textWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.comb).toEqual(true);
+      AnnotationFactory.create(xref, textWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.comb).toEqual(true);
+      });
     });
 
     it('should only accept comb fields when the flags are valid', function() {
       var invalidFieldFlags = [
-        AnnotationFieldFlag.MULTILINE, AnnotationFieldFlag.PASSWORD,
+        AnnotationFieldFlag.MULTILINE,
+        AnnotationFieldFlag.PASSWORD,
         AnnotationFieldFlag.FILESELECT
       ];
 
@@ -937,29 +943,40 @@ describe('annotation', function() {
       var flags = AnnotationFieldFlag.COMB + AnnotationFieldFlag.MULTILINE +
                   AnnotationFieldFlag.PASSWORD + AnnotationFieldFlag.FILESELECT;
 
-      for (var i = 0, ii = invalidFieldFlags.length; i <= ii; i++) {
+      var xref;
+
+      for (var i = 0, ii = invalidFieldFlags.length; i < ii; i++) {
         textWidgetDict.set('MaxLen', 20);
         textWidgetDict.set('Ff', flags);
 
         var textWidgetRef = new Ref(93, 0);
-        var xref = new XRefMock([
+        xref = new XRefMock([
           { ref: textWidgetRef, data: textWidgetDict, }
         ]);
 
-        var annotation = AnnotationFactory.create(xref, textWidgetRef,
-                                                  pdfManagerMock,
-                                                  idFactoryMock);
+        AnnotationFactory.create(xref, textWidgetRef,
+            pdfManagerMock, idFactoryMock).then((annotation) => {
+          var data = annotation.data;
+          expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+          expect(data.comb).toEqual(false);
+        });
+
+        flags -= invalidFieldFlags.splice(-1, 1);
+      }
+
+      textWidgetDict.set('Ff', flags);
+
+      xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict, }
+      ]);
+
+      AnnotationFactory.create(xref, textWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
         var data = annotation.data;
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
 
-        var valid = (invalidFieldFlags.length === 0);
-        expect(data.comb).toEqual(valid);
-
-        // Remove the last invalid flag for the next iteration.
-        if (!valid) {
-          flags -= invalidFieldFlags.splice(-1, 1);
-        }
-      }
+        expect(data.comb).toEqual(true);
+      });
     });
   });
 
@@ -987,14 +1004,14 @@ describe('annotation', function() {
         { ref: buttonWidgetRef, data: buttonWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, buttonWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.checkBox).toEqual(true);
-      expect(data.fieldValue).toEqual('1');
-      expect(data.radioButton).toEqual(false);
+      AnnotationFactory.create(xref, buttonWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.checkBox).toEqual(true);
+        expect(data.fieldValue).toEqual('1');
+        expect(data.radioButton).toEqual(false);
+      });
     });
 
     it('should handle radio buttons with a field value', function() {
@@ -1016,15 +1033,15 @@ describe('annotation', function() {
         { ref: buttonWidgetRef, data: buttonWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, buttonWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.checkBox).toEqual(false);
-      expect(data.radioButton).toEqual(true);
-      expect(data.fieldValue).toEqual('1');
-      expect(data.buttonValue).toEqual('2');
+      AnnotationFactory.create(xref, buttonWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.checkBox).toEqual(false);
+        expect(data.radioButton).toEqual(true);
+        expect(data.fieldValue).toEqual('1');
+        expect(data.buttonValue).toEqual('2');
+      });
     });
 
     it('should handle radio buttons without a field value', function() {
@@ -1042,15 +1059,15 @@ describe('annotation', function() {
         { ref: buttonWidgetRef, data: buttonWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, buttonWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.checkBox).toEqual(false);
-      expect(data.radioButton).toEqual(true);
-      expect(data.fieldValue).toEqual(null);
-      expect(data.buttonValue).toEqual('2');
+      AnnotationFactory.create(xref, buttonWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.checkBox).toEqual(false);
+        expect(data.radioButton).toEqual(true);
+        expect(data.fieldValue).toEqual(null);
+        expect(data.buttonValue).toEqual('2');
+      });
     });
   });
 
@@ -1076,12 +1093,12 @@ describe('annotation', function() {
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.options).toEqual([]);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.options).toEqual([]);
+      });
     });
 
     it('should handle option arrays with array elements', function() {
@@ -1105,12 +1122,12 @@ describe('annotation', function() {
         { ref: optionOneRef, data: optionOneArr, },
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.options).toEqual(expected);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.options).toEqual(expected);
+      });
     });
 
     it('should handle option arrays with string elements', function() {
@@ -1131,12 +1148,12 @@ describe('annotation', function() {
         { ref: optionBarRef, data: optionBarStr, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.options).toEqual(expected);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.options).toEqual(expected);
+      });
     });
 
     it('should handle inherited option arrays (issue 8094)', function() {
@@ -1159,12 +1176,12 @@ describe('annotation', function() {
         { ref: choiceWidgetRef, data: choiceWidgetDict, },
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.options).toEqual(expected);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.options).toEqual(expected);
+      });
     });
 
     it('should sanitize display values in option arrays (issue 8947)',
@@ -1184,12 +1201,13 @@ describe('annotation', function() {
         { ref: choiceWidgetRef, data: choiceWidgetDict, },
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
 
-      expect(data.options).toEqual(expected);
+        expect(data.options).toEqual(expected);
+      });
     });
 
     it('should handle array field values', function() {
@@ -1202,12 +1220,12 @@ describe('annotation', function() {
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.fieldValue).toEqual(fieldValue);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.fieldValue).toEqual(fieldValue);
+      });
     });
 
     it('should handle string field values', function() {
@@ -1220,12 +1238,12 @@ describe('annotation', function() {
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.fieldValue).toEqual([fieldValue]);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.fieldValue).toEqual([fieldValue]);
+      });
     });
 
     it('should handle unknown flags', function() {
@@ -1234,14 +1252,14 @@ describe('annotation', function() {
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.readOnly).toEqual(false);
-      expect(data.combo).toEqual(false);
-      expect(data.multiSelect).toEqual(false);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.readOnly).toEqual(false);
+        expect(data.combo).toEqual(false);
+        expect(data.multiSelect).toEqual(false);
+      });
     });
 
     it('should not set invalid flags', function() {
@@ -1252,14 +1270,14 @@ describe('annotation', function() {
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.readOnly).toEqual(false);
-      expect(data.combo).toEqual(false);
-      expect(data.multiSelect).toEqual(false);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.readOnly).toEqual(false);
+        expect(data.combo).toEqual(false);
+        expect(data.multiSelect).toEqual(false);
+      });
     });
 
     it('should set valid flags', function() {
@@ -1272,14 +1290,14 @@ describe('annotation', function() {
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, choiceWidgetRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-
-      expect(data.readOnly).toEqual(true);
-      expect(data.combo).toEqual(true);
-      expect(data.multiSelect).toEqual(true);
+      AnnotationFactory.create(xref, choiceWidgetRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.readOnly).toEqual(true);
+        expect(data.combo).toEqual(true);
+        expect(data.multiSelect).toEqual(true);
+      });
     });
   });
 
@@ -1295,12 +1313,12 @@ describe('annotation', function() {
         { ref: lineRef, data: lineDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, lineRef, pdfManagerMock,
-                                                idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINE);
-
-      expect(data.lineCoordinates).toEqual([1, 2, 3, 4]);
+      AnnotationFactory.create(xref, lineRef, pdfManagerMock,
+          idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINE);
+        expect(data.lineCoordinates).toEqual([1, 2, 3, 4]);
+      });
     });
   });
 
@@ -1348,13 +1366,13 @@ describe('annotation', function() {
       fileSpecDict.assignXref(xref);
       fileAttachmentDict.assignXref(xref);
 
-      var annotation = AnnotationFactory.create(xref, fileAttachmentRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.FILEATTACHMENT);
-
-      expect(data.file.filename).toEqual('Test.txt');
-      expect(data.file.content).toEqual(stringToBytes('Test attachment'));
+      AnnotationFactory.create(xref, fileAttachmentRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.FILEATTACHMENT);
+        expect(data.file.filename).toEqual('Test.txt');
+        expect(data.file.content).toEqual(stringToBytes('Test attachment'));
+      });
     });
   });
 
@@ -1377,15 +1395,16 @@ describe('annotation', function() {
         { ref: popupRef, data: popupDict, }
       ]);
 
-      var annotation = AnnotationFactory.create(xref, popupRef,
-                                                pdfManagerMock, idFactoryMock);
-      var data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.POPUP);
-
-      // Should not modify the `annotationFlags` returned e.g. through the API.
-      expect(data.annotationFlags).toEqual(25);
-      // The Popup should inherit the `viewable` property of the parent.
-      expect(annotation.viewable).toEqual(true);
+      AnnotationFactory.create(xref, popupRef,
+          pdfManagerMock, idFactoryMock).then((annotation) => {
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.POPUP);
+        // Should not modify the `annotationFlags` returned e.g.
+        // through the API.
+        expect(data.annotationFlags).toEqual(25);
+        // The Popup should inherit the `viewable` property of the parent.
+        expect(annotation.viewable).toEqual(true);
+      });
     });
   });
 });

@@ -55,62 +55,71 @@ class AnnotationFactory {
 
     switch (subtype) {
       case 'Link':
-        return new LinkAnnotation(parameters);
+        return Promise.resolve(new LinkAnnotation(parameters));
 
       case 'Text':
-        return new TextAnnotation(parameters);
+        return Promise.resolve(new TextAnnotation(parameters));
 
       case 'Widget':
         let fieldType = getInheritableProperty({ dict, key: 'FT', });
         fieldType = isName(fieldType) ? fieldType.name : null;
 
+        let widget;
+
         switch (fieldType) {
           case 'Tx':
-            return new TextWidgetAnnotation(parameters);
+            widget = new TextWidgetAnnotation(parameters);
+            break;
           case 'Btn':
-            return new ButtonWidgetAnnotation(parameters);
+            widget = new ButtonWidgetAnnotation(parameters);
+            break;
           case 'Ch':
-            return new ChoiceWidgetAnnotation(parameters);
+            widget = new ChoiceWidgetAnnotation(parameters);
+            break;
+          default:
+            widget = new WidgetAnnotation(parameters);
+            warn('Unimplemented widget field type "' + fieldType + '", ' +
+                 'falling back to base field type.');
+            break;
         }
-        warn('Unimplemented widget field type "' + fieldType + '", ' +
-             'falling back to base field type.');
-        return new WidgetAnnotation(parameters);
+
+        return Promise.resolve(widget);
 
       case 'Popup':
-        return new PopupAnnotation(parameters);
+        return Promise.resolve(new PopupAnnotation(parameters));
 
       case 'Line':
-        return new LineAnnotation(parameters);
+        return Promise.resolve(new LineAnnotation(parameters));
 
       case 'Square':
-        return new SquareAnnotation(parameters);
+        return Promise.resolve(new SquareAnnotation(parameters));
 
       case 'Circle':
-        return new CircleAnnotation(parameters);
+        return Promise.resolve(new CircleAnnotation(parameters));
 
       case 'PolyLine':
-        return new PolylineAnnotation(parameters);
+        return Promise.resolve(new PolylineAnnotation(parameters));
 
       case 'Polygon':
-        return new PolygonAnnotation(parameters);
+        return Promise.resolve(new PolygonAnnotation(parameters));
 
       case 'Highlight':
-        return new HighlightAnnotation(parameters);
+        return Promise.resolve(new HighlightAnnotation(parameters));
 
       case 'Underline':
-        return new UnderlineAnnotation(parameters);
+        return Promise.resolve(new UnderlineAnnotation(parameters));
 
       case 'Squiggly':
-        return new SquigglyAnnotation(parameters);
+        return Promise.resolve(new SquigglyAnnotation(parameters));
 
       case 'StrikeOut':
-        return new StrikeOutAnnotation(parameters);
+        return Promise.resolve(new StrikeOutAnnotation(parameters));
 
       case 'Stamp':
-        return new StampAnnotation(parameters);
+        return Promise.resolve(new StampAnnotation(parameters));
 
       case 'FileAttachment':
-        return new FileAttachmentAnnotation(parameters);
+        return Promise.resolve(new FileAttachmentAnnotation(parameters));
 
       default:
         if (!subtype) {
@@ -119,7 +128,7 @@ class AnnotationFactory {
           warn('Unimplemented annotation type "' + subtype + '", ' +
                'falling back to base annotation.');
         }
-        return new Annotation(parameters);
+        return Promise.resolve(new Annotation(parameters));
     }
   }
 }
