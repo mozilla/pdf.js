@@ -26,13 +26,25 @@ import { Stream } from './stream';
 
 class AnnotationFactory {
   /**
+   * Create an `Annotation` object of the correct type for the given reference
+   * to an annotation dictionary. This yields a promise that is resolved when
+   * the `Annotation` object is constructed.
+   *
    * @param {XRef} xref
    * @param {Object} ref
    * @param {PDFManager} pdfManager
    * @param {Object} idFactory
-   * @returns {Annotation}
+   * @return {Promise} A promise that is resolved with an {Annotation} instance.
    */
   static create(xref, ref, pdfManager, idFactory) {
+    return pdfManager.ensure(this, '_create',
+                             [xref, ref, pdfManager, idFactory]);
+  }
+
+  /**
+   * @private
+   */
+  static _create(xref, ref, pdfManager, idFactory) {
     let dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
