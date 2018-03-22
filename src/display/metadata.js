@@ -14,7 +14,7 @@
  */
 
 import { assert } from '../shared/util';
-import { SimpleXMLParser } from './dom_utils';
+import { SimpleXMLParser } from './xml_parser';
 
 class Metadata {
   constructor(data) {
@@ -23,13 +23,15 @@ class Metadata {
     // Ghostscript may produce invalid metadata, so try to repair that first.
     data = this._repair(data);
 
-    // Convert the string to a DOM `Document`.
+    // Convert the string to an XML document.
     let parser = new SimpleXMLParser();
-    data = parser.parseFromString(data);
+    const xmlDocument = parser.parseFromString(data);
 
     this._metadata = Object.create(null);
 
-    this._parse(data);
+    if (xmlDocument) {
+      this._parse(xmlDocument);
+    }
   }
 
   _repair(data) {
@@ -68,8 +70,8 @@ class Metadata {
     });
   }
 
-  _parse(domDocument) {
-    let rdf = domDocument.documentElement;
+  _parse(xmlDocument) {
+    let rdf = xmlDocument.documentElement;
 
     if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') { // Wrapped in <xmpmeta>
       rdf = rdf.firstChild;
