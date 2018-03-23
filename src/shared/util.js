@@ -41,6 +41,7 @@ var ImageKind = {
   GRAYSCALE_1BPP: 1,
   RGB_24BPP: 2,
   RGBA_32BPP: 3,
+  GRAYSCALE_8BPP: 4,
 };
 
 var AnnotationType = {
