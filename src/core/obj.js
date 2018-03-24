@@ -263,33 +263,45 @@ var Catalog = (function CatalogClosure() {
 
       for (var i = 0, ii = this.numPages; i < ii; i++) {
         if (i in nums) {
-          var labelDict = nums[i];
+          const labelDict = nums[i];
           if (!isDict(labelDict)) {
             throw new FormatError('The PageLabel is not a dictionary.');
           }
 
-          var type = labelDict.get('Type');
-          if (type && !isName(type, 'PageLabel')) {
+          if (labelDict.has('Type') &&
+              !isName(labelDict.get('Type'), 'PageLabel')) {
             throw new FormatError('Invalid type in PageLabel dictionary.');
           }
 
-          var s = labelDict.get('S');
-          if (s && !isName(s)) {
-            throw new FormatError('Invalid style in PageLabel dictionary.');
+          if (labelDict.has('S')) {
+            const s = labelDict.get('S');
+            if (!isName(s)) {
+              throw new FormatError('Invalid style in PageLabel dictionary.');
+            }
+            style = s.name;
+          } else {
+            style = null;
           }
-          style = s ? s.name : null;
 
-          var p = labelDict.get('P');
-          if (p && !isString(p)) {
-            throw new FormatError('Invalid prefix in PageLabel dictionary.');
+          if (labelDict.has('P')) {
+            const p = labelDict.get('P');
+            if (!isString(p)) {
+              throw new FormatError('Invalid prefix in PageLabel dictionary.');
+            }
+            prefix = stringToPDFString(p);
+          } else {
+            prefix = '';
           }
-          prefix = p ? stringToPDFString(p) : '';
 
-          var st = labelDict.get('St');
-          if (st && !(Number.isInteger(st) && st >= 1)) {
-            throw new FormatError('Invalid start in PageLabel dictionary.');
+          if (labelDict.has('St')) {
+            const st = labelDict.get('St');
+            if (!(Number.isInteger(st) && st >= 1)) {
+              throw new FormatError('Invalid start in PageLabel dictionary.');
+            }
+            currentIndex = st;
+          } else {
+            currentIndex = 1;
           }
-          currentIndex = st || 1;
         }
 
         switch (style) {
@@ -320,10 +332,10 @@ var Catalog = (function CatalogClosure() {
               throw new FormatError(
                 `Invalid style "${style}" in PageLabel dictionary.`);
             }
+            currentLabel = '';
         }
-        pageLabels[i] = prefix + currentLabel;
 
-        currentLabel = '';
+        pageLabels[i] = prefix + currentLabel;
         currentIndex++;
       }
       return pageLabels;
