@@ -27,6 +27,12 @@ class GenericL10n {
     });
   }
 
+  getLanguage() {
+    return this._ready.then((l10n) => {
+      return l10n.getLanguage();
+    });
+  }
+
   getDirection() {
     return this._ready.then((l10n) => {
       return l10n.getDirection();

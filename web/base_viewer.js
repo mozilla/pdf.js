@@ -14,9 +14,10 @@
  */
 
 import {
-  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, isValidRotation,
-  MAX_AUTO_SCALE, NullL10n, PresentationModeState, RendererType,
-  SCROLLBAR_PADDING, TextLayerMode, UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
+  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, isPortraitOrientation,
+  isValidRotation, MAX_AUTO_SCALE, NullL10n, PresentationModeState,
+  RendererType, SCROLLBAR_PADDING, TextLayerMode, UNKNOWN_SCALE,
+  VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
@@ -92,10 +93,6 @@ function isSameScale(oldScale, newScale) {
     return true;
   }
   return false;
-}
-
-function isPortraitOrientation(size) {
-  return size.width <= size.height;
 }
 
 /**
@@ -578,11 +575,10 @@ class BaseViewer {
           scale = Math.min(pageWidthScale, pageHeightScale);
           break;
         case 'auto':
-          let isLandscape = (currentPage.width > currentPage.height);
           // For pages in landscape mode, fit the page height to the viewer
           // *unless* the page would thus become too wide to fit horizontally.
-          let horizontalScale = isLandscape ?
-            Math.min(pageHeightScale, pageWidthScale) : pageWidthScale;
+          let horizontalScale = isPortraitOrientation(currentPage) ?
+            pageWidthScale : Math.min(pageHeightScale, pageWidthScale);
           scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
           break;
         default:

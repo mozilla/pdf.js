@@ -14,11 +14,33 @@
  */
 
 import {
-  cloneObj, getPageSizeInches, getPDFFileNameFromURL, NullL10n
+  cloneObj, getPageSizeInches, getPDFFileNameFromURL, isPortraitOrientation,
+  NullL10n
 } from './ui_utils';
 import { createPromiseCapability } from 'pdfjs-lib';
 
 const DEFAULT_FIELD_CONTENT = '-';
+
+// See https://en.wikibooks.org/wiki/Lentis/Conversion_to_the_Metric_Standard_in_the_United_States
+const NON_METRIC_LOCALES = ['en-us', 'en-lr', 'my'];
+
+// Should use the format: `width x height`, in portrait orientation.
+// See https://en.wikipedia.org/wiki/Paper_size
+const US_PAGE_NAMES = {
+  '8.5x11': 'Letter',
+  '8.5x14': 'Legal',
+};
+const METRIC_PAGE_NAMES = {
+  '297x420': 'A3',
+  '210x297': 'A4',
+};
+
+function getPageName(size, isPortrait, pageNames) {
+  const width = (isPortrait ? size.width : size.height);
+  const height = (isPortrait ? size.height : size.width);
+
+  return pageNames[`${width}x${height}`];
+}
 
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
@@ -55,7 +77,15 @@ class PDFDocumentProperties {
       eventBus.on('pagechanging', (evt) => {
         this._currentPageNumber = evt.pageNumber;
       });
+      eventBus.on('rotationchanging', (evt) => {
+        this._pagesRotation = evt.pagesRotation;
+      });
     }
+
+    this._isNonMetricLocale = true; // The default viewer locale is 'en-us'.
+    l10n.getLanguage().then((locale) => {
+      this._isNonMetricLocale = NON_METRIC_LOCALES.includes(locale);
+    });
   }
 
   /**
@@ -74,11 +104,13 @@ class PDFDocumentProperties {
     Promise.all([this.overlayManager.open(this.overlayName),
                  this._dataAvailableCapability.promise]).then(() => {
       const currentPageNumber = this._currentPageNumber;
+      const pagesRotation = this._pagesRotation;
 
       // If the document properties were previously fetched (for this PDF file),
       // just update the dialog immediately to avoid redundant lookups.
       if (this.fieldData &&
-          currentPageNumber === this.fieldData['_currentPageNumber']) {
+          currentPageNumber === this.fieldData['_currentPageNumber'] &&
+          pagesRotation === this.fieldData['_pagesRotation']) {
         this._updateUI();
         return;
       }
@@ -94,11 +126,12 @@ class PDFDocumentProperties {
           this._parseDate(info.CreationDate),
           this._parseDate(info.ModDate),
           this.pdfDocument.getPage(currentPageNumber).then((pdfPage) => {
-            return this._parsePageSize(getPageSizeInches(pdfPage));
+            return this._parsePageSize(getPageSizeInches(pdfPage),
+                                       pagesRotation);
           }),
         ]);
       }).then(([info, metadata, fileName, fileSize, creationDate, modDate,
-                pageSizes]) => {
+                pageSize]) => {
         freezeFieldData({
           'fileName': fileName,
           'fileSize': fileSize,
@@ -112,9 +145,9 @@ class PDFDocumentProperties {
           'producer': info.Producer,
           'version': info.PDFFormatVersion,
           'pageCount': this.pdfDocument.numPages,
-          'pageSizeInch': pageSizes.inch,
-          'pageSizeMM': pageSizes.mm,
+          'pageSize': pageSize,
           '_currentPageNumber': currentPageNumber,
+          '_pagesRotation': pagesRotation,
         });
         this._updateUI();
 
@@ -191,6 +224,7 @@ class PDFDocumentProperties {
     delete this.fieldData;
     this._dataAvailableCapability = createPromiseCapability();
     this._currentPageNumber = 1;
+    this._pagesRotation = 0;
   }
 
   /**
@@ -240,27 +274,87 @@ class PDFDocumentProperties {
   /**
    * @private
    */
-  _parsePageSize(pageSizeInches) {
+  _parsePageSize(pageSizeInches, pagesRotation) {
     if (!pageSizeInches) {
-      return Promise.resolve({ inch: undefined, mm: undefined, });
+      return Promise.resolve(undefined);
     }
-    const { width, height, } = pageSizeInches;
+    // Take the viewer rotation into account as well; compare with Adobe Reader.
+    if (pagesRotation % 180 !== 0) {
+      pageSizeInches = {
+        width: pageSizeInches.height,
+        height: pageSizeInches.width,
+      };
+    }
+    const isPortrait = isPortraitOrientation(pageSizeInches);
+
+    let sizeInches = {
+      width: Math.round(pageSizeInches.width * 100) / 100,
+      height: Math.round(pageSizeInches.height * 100) / 100,
+    };
+    // 1in == 25.4mm; no need to round to 2 decimals for millimeters.
+    let sizeMillimeters = {
+      width: Math.round(pageSizeInches.width * 25.4 * 10) / 10,
+      height: Math.round(pageSizeInches.height * 25.4 * 10) / 10,
+    };
+
+    let pageName = null;
+    let name = getPageName(sizeInches, isPortrait, US_PAGE_NAMES) ||
+               getPageName(sizeMillimeters, isPortrait, METRIC_PAGE_NAMES);
+
+    if (!name && !(Number.isInteger(sizeMillimeters.width) &&
+                   Number.isInteger(sizeMillimeters.height))) {
+      // Attempt to improve the page name detection by falling back to fuzzy
+      // matching of the metric dimensions, to account for e.g. rounding errors
+      // and/or PDF files that define the page sizes in an imprecise manner.
+      const exactMillimeters = {
+        width: pageSizeInches.width * 25.4,
+        height: pageSizeInches.height * 25.4,
+      };
+      const intMillimeters = {
+        width: Math.round(sizeMillimeters.width),
+        height: Math.round(sizeMillimeters.height),
+      };
+
+      // Try to avoid false positives, by only considering "small" differences.
+      if (Math.abs(exactMillimeters.width - intMillimeters.width) < 0.1 &&
+          Math.abs(exactMillimeters.height - intMillimeters.height) < 0.1) {
+
+        name = getPageName(intMillimeters, isPortrait, METRIC_PAGE_NAMES);
+        if (name) {
+          // Update *both* sizes, computed above, to ensure that the displayed
+          // dimensions always correspond to the detected page name.
+          sizeInches = {
+            width: Math.round(intMillimeters.width / 25.4 * 100) / 100,
+            height: Math.round(intMillimeters.height / 25.4 * 100) / 100,
+          };
+          sizeMillimeters = intMillimeters;
+        }
+      }
+    }
+    if (name) {
+      pageName = this.l10n.get('document_properties_page_size_name_' +
+                               name.toLowerCase(), null, name);
+    }
 
     return Promise.all([
-      this.l10n.get('document_properties_page_size_in_2', {
-          width: (Math.round(width * 100) / 100).toLocaleString(),
-          height: (Math.round(height * 100) / 100).toLocaleString(),
-        }, '{{width}} × {{height}} in'),
-      // 1in = 25.4mm; no need to round to 2 decimals for millimeters.
-      this.l10n.get('document_properties_page_size_mm_2', {
-          width: (Math.round(width * 25.4 * 10) / 10).toLocaleString(),
-          height: (Math.round(height * 25.4 * 10) / 10).toLocaleString(),
-        }, '{{width}} × {{height}} mm'),
-    ]).then((sizes) => {
-      return {
-        inch: sizes[0],
-        mm: sizes[1],
-      };
+      (this._isNonMetricLocale ? sizeInches : sizeMillimeters),
+      this.l10n.get('document_properties_page_size_unit_' +
+                    (this._isNonMetricLocale ? 'inches' : 'millimeters'), null,
+                    this._isNonMetricLocale ? 'in' : 'mm'),
+      pageName,
+      this.l10n.get('document_properties_page_size_orientation_' +
+                    (isPortrait ? 'portrait' : 'landscape'), null,
+                    isPortrait ? 'portrait' : 'landscape'),
+    ]).then(([{ width, height, }, unit, name, orientation]) => {
+      return this.l10n.get('document_properties_page_size_dimension_' +
+                           (name ? 'name_' : '') + 'string', {
+          width: width.toLocaleString(),
+          height: height.toLocaleString(),
+          unit,
+          name,
+          orientation,
+        }, '{{width}} × {{height}} {{unit}} (' +
+           (name ? '{{name}}, ' : '') + '{{orientation}})');
     });
   }
 

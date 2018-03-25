@@ -15,7 +15,7 @@
 
 import {
   binarySearchFirstItem, EventBus, getPageSizeInches, getPDFFileNameFromURL,
-  isValidRotation, waitOnEventOrTimeout, WaitOnType
+  isPortraitOrientation, isValidRotation, waitOnEventOrTimeout, WaitOnType
 } from '../../web/ui_utils';
 import { createObjectURL } from '../../src/shared/util';
 import isNodeJS from '../../src/shared/is_node';
@@ -282,6 +282,27 @@ describe('ui_utils', function() {
       expect(isValidRotation(90)).toEqual(true);
       expect(isValidRotation(-270)).toEqual(true);
       expect(isValidRotation(540)).toEqual(true);
+    });
+  });
+
+  describe('isPortraitOrientation', function() {
+    it('should be portrait orientation', function() {
+      expect(isPortraitOrientation({
+        width: 200,
+        height: 400,
+      })).toEqual(true);
+
+      expect(isPortraitOrientation({
+        width: 500,
+        height: 500,
+      })).toEqual(true);
+    });
+
+    it('should be landscape orientation', function() {
+      expect(isPortraitOrientation({
+        width: 600,
+        height: 300,
+      })).toEqual(false);
     });
   });
 

@@ -58,6 +58,10 @@ function formatL10nValue(text, args) {
  * @implements {IL10n}
  */
 let NullL10n = {
+  getLanguage() {
+    return Promise.resolve('en-us');
+  },
+
   getDirection() {
     return Promise.resolve('ltr');
   },
@@ -439,6 +443,10 @@ function isValidRotation(angle) {
   return Number.isInteger(angle) && angle % 90 === 0;
 }
 
+function isPortraitOrientation(size) {
+  return size.width <= size.height;
+}
+
 function cloneObj(obj) {
   let result = Object.create(null);
   for (let i in obj) {
@@ -642,6 +650,7 @@ export {
   SCROLLBAR_PADDING,
   VERTICAL_PADDING,
   isValidRotation,
+  isPortraitOrientation,
   isFileSchema,
   cloneObj,
   PresentationModeState,
