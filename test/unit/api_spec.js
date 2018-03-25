@@ -980,14 +980,6 @@ describe('api', function() {
     it('gets view', function () {
       expect(page.view).toEqual([0, 0, 595.28, 841.89]);
     });
-
-    it('gets page size (in inches)', function() {
-      const { width, height, } = page.pageSizeInches;
-
-      expect(+width.toPrecision(3)).toEqual(8.27);
-      expect(+height.toPrecision(4)).toEqual(11.69);
-    });
-
     it('gets viewport', function () {
       var viewport = page.getViewport(1.5, 90);
       expect(viewport.viewBox).toEqual(page.view);
