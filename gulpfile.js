@@ -1313,7 +1313,7 @@ gulp.task('dist-pre', ['generic', 'components', 'lib', 'minified'], function() {
     license: DIST_LICENSE,
     dependencies: {
       'node-ensure': '^0.0.0', // shim for node for require.ensure
-      'worker-loader': '^1.1.0', // used in external/dist/webpack.json
+      'worker-loader': '^1.1.1', // used in external/dist/webpack.json
     },
     peerDependencies: {
       'webpack': '^2.0.0 || ^3.0.0', // peerDependency of 'worker-loader'

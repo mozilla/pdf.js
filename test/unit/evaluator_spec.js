@@ -83,7 +83,7 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle one operations', function(done) {
+    it('should handle one operation', function(done) {
       var stream = new StringStream('Q');
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function(result) {
@@ -108,7 +108,7 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle tree glued operations', function(done) {
+    it('should handle three glued operations', function(done) {
       var stream = new StringStream('fff');
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
