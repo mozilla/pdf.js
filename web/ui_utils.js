@@ -270,6 +270,27 @@ function roundToDivide(x, div) {
 }
 
 /**
+ * Gets the size of the specified page, converted from PDF units to inches.
+ * @param {Object} An Object containing the properties: {Array} `view`,
+ *   {number} `userUnit`, and {number} `rotate`.
+ * @return {Object} An Object containing the properties: {number} `width`
+ *   and {number} `height`, given in inches.
+ */
+function getPageSizeInches({ view, userUnit, rotate, }) {
+  const [x1, y1, x2, y2] = view;
+  // We need to take the page rotation into account as well.
+  const changeOrientation = rotate % 180 !== 0;
+
+  const width = (x2 - x1) / 72 * userUnit;
+  const height = (y2 - y1) / 72 * userUnit;
+
+  return {
+    width: (changeOrientation ? height : width),
+    height: (changeOrientation ? width : height),
+  };
+}
+
+/**
  * Generic helper to find out what elements are visible within a scroll pane.
  */
 function getVisibleElements(scrollEl, views, sortByVisibility = false) {
@@ -634,6 +655,7 @@ export {
   parseQueryString,
   getVisibleElements,
   roundToDivide,
+  getPageSizeInches,
   approximateFraction,
   getOutputScale,
   scrollIntoView,
