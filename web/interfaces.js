@@ -161,6 +161,11 @@ class IPDFAnnotationLayerFactory {
  */
 class IL10n {
   /**
+   * @returns {Promise<string>} - Resolves to the current locale.
+   */
+  getLanguage() {}
+
+  /**
    * @returns {Promise<string>} - Resolves to 'rtl' or 'ltr'.
    */
   getDirection() {}
