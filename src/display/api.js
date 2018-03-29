@@ -1317,13 +1317,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     if (typeof window === 'undefined') {
       return null;
     }
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-      return (window.pdfjsNonProductionPdfWorker &&
-              window.pdfjsNonProductionPdfWorker.WorkerMessageHandler);
-    }
-    // PRODUCTION
-    return (window.pdfjsWorker &&
-            window.pdfjsWorker.WorkerMessageHandler);
+    return (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler);
   }
 
   let fakeWorkerFilesLoadedCapability;
