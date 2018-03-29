@@ -1524,11 +1524,11 @@ function loadFakeWorker() {
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
       if (typeof SystemJS === 'object') {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
-          window.pdfjsNonProductionPdfWorker = worker;
+          window.pdfjsWorker = worker;
           resolve();
         });
       } else if (typeof require === 'function') {
-        window.pdfjsNonProductionPdfWorker = require('../src/core/worker.js');
+        window.pdfjsWorker = require('../src/core/worker.js');
         resolve();
       } else {
         reject(new Error(
