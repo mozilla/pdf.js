@@ -47,7 +47,7 @@ var SKIP_PRIVATE_USE_RANGE_F000_TO_F01F = false;
 // except for Type 3 fonts
 var PDF_GLYPH_SPACE_UNITS = 1000;
 
-// Accented charactars are not displayed properly on Windows, using this flag
+// Accented characters are not displayed properly on Windows, using this flag
 // to control analysis of seac charstrings.
 var SEAC_ANALYSIS_ENABLED = false;
 
@@ -2107,7 +2107,7 @@ var Font = (function FontClosure() {
             }
           } else if (op === 0x2B && !tooComplexToFollowFunctions) { // CALL
             if (!inFDEF && !inELSE) {
-              // collecting inforamtion about which functions are used
+              // collecting information about which functions are used
               funcId = stack[stack.length - 1];
               ttContext.functionsUsed[funcId] = true;
               if (funcId in ttContext.functionsStackDeltas) {
@@ -2132,7 +2132,7 @@ var Font = (function FontClosure() {
               tooComplexToFollowFunctions = true;
             }
             inFDEF = true;
-            // collecting inforamtion about which functions are defined
+            // collecting information about which functions are defined
             lastDeff = i;
             funcId = stack.pop();
             ttContext.functionsDefined[funcId] = { data, i, };

@@ -1197,7 +1197,7 @@ var XRef = (function XRefClosure() {
             if (endobjRegExp.test(tokenStr)) {
               break;
             } else {
-              // Check if an "obj" occurance is actually a new object,
+              // Check if an "obj" occurrence is actually a new object,
               // i.e. the current object is missing the 'endobj' operator.
               let objToken = nestedObjRegExp.exec(tokenStr);
 

@@ -35,7 +35,7 @@ const SWIPE_ANGLE_THRESHOLD = Math.PI / 6;
  * @property {HTMLDivElement} viewer - (optional) The viewer element.
  * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {EventBus} eventBus - The application event bus.
- * @property {Array} contextMenuItems - (optional) The menuitems that are added
+ * @property {Array} contextMenuItems - (optional) The menu items that are added
  *   to the context menu in Presentation Mode.
  */
 

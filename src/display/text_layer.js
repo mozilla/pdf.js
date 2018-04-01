@@ -48,7 +48,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     return !NonWhitespaceRegexp.test(str);
   }
 
-  // Text layers may contain many thousand div's, and using `styleBuf` avoids
+  // Text layers may contain many thousands of divs, and using `styleBuf` avoids
   // creating many intermediate strings when building their 'style' properties.
   var styleBuf = ['left: ', 0, 'px; top: ', 0, 'px; font-size: ', 0,
                   'px; font-family: ', '', ';'];
@@ -340,7 +340,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         var xNew;
         if (affectedBoundary.x2 > boundary.x1) {
           // In the middle of the previous element, new x shall be at the
-          // boundary start. Extending if further if the affected bondary
+          // boundary start. Extending if further if the affected boundary
           // placed on top of the current one.
           xNew = affectedBoundary.index > boundary.index ?
             affectedBoundary.x1New : boundary.x1;
