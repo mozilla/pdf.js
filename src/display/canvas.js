@@ -212,7 +212,7 @@ function compileType3Glyph(imgData) {
     }
   }
 
-  // finding iteresting points: every point is located between mask pixels,
+  // finding interesting points: every point is located between mask pixels,
   // so there will be points of the (width + 1)x(height + 1) grid. Every point
   // will have flags assigned based on neighboring mask pixels:
   //   4 | 8

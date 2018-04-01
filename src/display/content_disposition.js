@@ -163,7 +163,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     // Decodes "ext-value" from RFC 5987.
     let encodingend = extvalue.indexOf('\'');
     if (encodingend === -1) {
-      // Some servers send "filename*=" without encoding'language' prefix,
+      // Some servers send "filename*=" without encoding 'language' prefix,
       // e.g. in https://github.com/Rob--W/open-in-browser/issues/26
       // Let's accept the value like Firefox (57) (Chrome 62 rejects it).
       return extvalue;

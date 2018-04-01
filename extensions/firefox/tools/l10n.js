@@ -1,6 +1,6 @@
 "use strict";
 
-// Small subset of the webL10n API by Fabien Cazenave for pdf.js extension.
+// Small subset of the webL10n API by Fabien Cazenave for PDF.js extension.
 (function(window) {
   var gLanguage = "";
   var gExternalLocalizerServices = null;
