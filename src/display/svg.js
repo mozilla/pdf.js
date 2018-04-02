@@ -530,6 +530,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.beginText:
             this.beginText();
             break;
+          case OPS.dependency:
+            // Handled in loadDependencies, warning should not be thrown
+            break;
           case OPS.setLeading:
             this.setLeading(args);
             break;
