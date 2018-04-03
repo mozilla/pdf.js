@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { CMapCompressionType, isNodeJS } from '../../src/shared/util';
+import { CMapCompressionType } from '../../src/shared/util';
+import isNodeJS from '../../src/shared/is_node';
 import { isRef } from '../../src/core/primitives';
 
 class NodeFileReaderFactory {
@@ -32,9 +33,7 @@ const TEST_PDFS_PATH = {
 function buildGetDocumentParams(filename, options) {
   let params = Object.create(null);
   if (isNodeJS()) {
-    params.data = NodeFileReaderFactory.fetch({
-      path: TEST_PDFS_PATH.node + filename,
-    });
+    params.url = TEST_PDFS_PATH.node + filename;
   } else {
     params.url = new URL(TEST_PDFS_PATH.dom + filename, window.location).href;
   }
@@ -52,8 +51,9 @@ class NodeCMapReaderFactory {
 
   fetch({ name, }) {
     if (!this.baseUrl) {
-      return Promise.reject(new Error('CMap baseUrl must be specified, ' +
-        'see "PDFJS.cMapUrl" (and also "PDFJS.cMapPacked").'));
+      return Promise.reject(new Error(
+        'The CMap "baseUrl" parameter must be specified, ensure that ' +
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.'));
     }
     if (!name) {
       return Promise.reject(new Error('CMap name must be specified.'));

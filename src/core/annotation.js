@@ -15,12 +15,13 @@
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, OPS, stringToBytes, stringToPDFString, Util, warn
+  AnnotationType, getInheritableProperty, OPS, stringToBytes, stringToPDFString,
+  Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
 import { ColorSpace } from './colorspace';
-import { OperatorList } from './evaluator';
+import { OperatorList } from './operator_list';
 import { Stream } from './stream';
 
 class AnnotationFactory {
@@ -60,7 +61,7 @@ class AnnotationFactory {
         return new TextAnnotation(parameters);
 
       case 'Widget':
-        let fieldType = Util.getInheritableProperty(dict, 'FT');
+        let fieldType = getInheritableProperty({ dict, key: 'FT', });
         fieldType = isName(fieldType) ? fieldType.name : null;
 
         switch (fieldType) {
@@ -580,15 +581,16 @@ class WidgetAnnotation extends Annotation {
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
-    data.fieldValue = Util.getInheritableProperty(dict, 'V',
-                                                  /* getArray = */ true);
+    data.fieldValue = getInheritableProperty({ dict, key: 'V',
+                                               getArray: true, });
     data.alternativeText = stringToPDFString(dict.get('TU') || '');
-    data.defaultAppearance = Util.getInheritableProperty(dict, 'DA') || '';
-    let fieldType = Util.getInheritableProperty(dict, 'FT');
+    data.defaultAppearance = getInheritableProperty({ dict, key: 'DA', }) || '';
+    let fieldType = getInheritableProperty({ dict, key: 'FT', });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
-    this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
+    this.fieldResources = getInheritableProperty({ dict, key: 'DR', }) ||
+                          Dict.empty;
 
-    data.fieldFlags = Util.getInheritableProperty(dict, 'Ff');
+    data.fieldFlags = getInheritableProperty({ dict, key: 'Ff', });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
       data.fieldFlags = 0;
     }
@@ -675,18 +677,20 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
 
+    const dict = params.dict;
+
     // The field value is always a string.
     this.data.fieldValue = stringToPDFString(this.data.fieldValue || '');
 
     // Determine the alignment of text in the field.
-    let alignment = Util.getInheritableProperty(params.dict, 'Q');
+    let alignment = getInheritableProperty({ dict, key: 'Q', });
     if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
       alignment = null;
     }
     this.data.textAlignment = alignment;
 
     // Determine the maximum length of text in the field.
-    let maximumLength = Util.getInheritableProperty(params.dict, 'MaxLen');
+    let maximumLength = getInheritableProperty({ dict, key: 'MaxLen', });
     if (!Number.isInteger(maximumLength) || maximumLength < 0) {
       maximumLength = null;
     }
@@ -732,45 +736,70 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     this.data.checkBox = !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
                          !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    if (this.data.checkBox) {
-      if (!isName(this.data.fieldValue)) {
-        return;
-      }
-      this.data.fieldValue = this.data.fieldValue.name;
-    }
-
     this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
                             !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    if (this.data.radioButton) {
-      this.data.fieldValue = this.data.buttonValue = null;
+    this.data.pushButton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
 
-      // The parent field's `V` entry holds a `Name` object with the appearance
-      // state of whichever child field is currently in the "on" state.
-      let fieldParent = params.dict.get('Parent');
-      if (isDict(fieldParent) && fieldParent.has('V')) {
-        let fieldParentValue = fieldParent.get('V');
-        if (isName(fieldParentValue)) {
-          this.data.fieldValue = fieldParentValue.name;
-        }
-      }
+    if (this.data.checkBox) {
+      this._processCheckBox();
+    } else if (this.data.radioButton) {
+      this._processRadioButton(params);
+    } else if (this.data.pushButton) {
+      this._processPushButton(params);
+    } else {
+      warn('Invalid field flags for button widget annotation');
+    }
+  }
 
-      // The button's value corresponds to its appearance state.
-      let appearanceStates = params.dict.get('AP');
-      if (!isDict(appearanceStates)) {
-        return;
-      }
-      let normalAppearanceState = appearanceStates.get('N');
-      if (!isDict(normalAppearanceState)) {
-        return;
-      }
-      let keys = normalAppearanceState.getKeys();
-      for (let i = 0, ii = keys.length; i < ii; i++) {
-        if (keys[i] !== 'Off') {
-          this.data.buttonValue = keys[i];
-          break;
-        }
+  _processCheckBox() {
+    if (!isName(this.data.fieldValue)) {
+      return;
+    }
+    this.data.fieldValue = this.data.fieldValue.name;
+  }
+
+  _processRadioButton(params) {
+    this.data.fieldValue = this.data.buttonValue = null;
+
+    // The parent field's `V` entry holds a `Name` object with the appearance
+    // state of whichever child field is currently in the "on" state.
+    let fieldParent = params.dict.get('Parent');
+    if (isDict(fieldParent) && fieldParent.has('V')) {
+      let fieldParentValue = fieldParent.get('V');
+      if (isName(fieldParentValue)) {
+        this.data.fieldValue = fieldParentValue.name;
       }
     }
+
+    // The button's value corresponds to its appearance state.
+    let appearanceStates = params.dict.get('AP');
+    if (!isDict(appearanceStates)) {
+      return;
+    }
+    let normalAppearanceState = appearanceStates.get('N');
+    if (!isDict(normalAppearanceState)) {
+      return;
+    }
+    let keys = normalAppearanceState.getKeys();
+    for (let i = 0, ii = keys.length; i < ii; i++) {
+      if (keys[i] !== 'Off') {
+        this.data.buttonValue = keys[i];
+        break;
+      }
+    }
+  }
+
+  _processPushButton(params) {
+    if (!params.dict.has('A')) {
+      warn('Push buttons without action dictionaries are not supported');
+      return;
+    }
+
+    Catalog.parseDestDictionary({
+      destDict: params.dict,
+      resultObj: this.data,
+      docBaseUrl: params.pdfManager.docBaseUrl,
+    });
   }
 }
 
@@ -789,7 +818,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // inherit the options from a parent annotation (issue 8094).
     this.data.options = [];
 
-    let options = Util.getInheritableProperty(params.dict, 'Opt');
+    let options = getInheritableProperty({ dict: params.dict, key: 'Opt', });
     if (Array.isArray(options)) {
       let xref = params.xref;
       for (let i = 0, ii = options.length; i < ii; i++) {
@@ -798,7 +827,8 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
 
         this.data.options[i] = {
           exportValue: isOptionArray ? xref.fetchIfRef(option[0]) : option,
-          displayValue: isOptionArray ? xref.fetchIfRef(option[1]) : option,
+          displayValue: stringToPDFString(isOptionArray ?
+                                          xref.fetchIfRef(option[1]) : option),
         };
       }
     }

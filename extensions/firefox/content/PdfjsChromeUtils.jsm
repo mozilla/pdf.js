@@ -17,32 +17,24 @@
 
 var EXPORTED_SYMBOLS = ["PdfjsChromeUtils"];
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cr = Components.results;
-const Cu = Components.utils;
-
 const PREF_PREFIX = "PDFJSSCRIPT_PREF_PREFIX";
 const PDF_CONTENT_TYPE = "application/pdf";
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+ChromeUtils.defineModuleGetter(this, "PdfJsDefaultPreferences",
+  "resource://pdf.js/PdfJsDefaultPreferences.jsm");
 
 var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
                                    "@mozilla.org/mime;1",
                                    "nsIMIMEService");
 
-var DEFAULT_PREFERENCES =
-//#include ../../../web/default_preferences.json
-//#if false
-  "end of DEFAULT_PREFERENCES";
-//#endif
-
 var PdfjsChromeUtils = {
   // For security purposes when running remote, we restrict preferences
   // content can access.
-  _allowedPrefNames: Object.keys(DEFAULT_PREFERENCES),
+  _allowedPrefNames: Object.keys(PdfJsDefaultPreferences),
   _ppmm: null,
   _mmg: null,
 
@@ -54,8 +46,7 @@ var PdfjsChromeUtils = {
     this._browsers = new WeakSet();
     if (!this._ppmm) {
       // global parent process message manager (PPMM)
-      this._ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"].
-        getService(Ci.nsIMessageBroadcaster);
+      this._ppmm = Services.ppmm;
       this._ppmm.addMessageListener("PDFJS:Parent:clearUserPref", this);
       this._ppmm.addMessageListener("PDFJS:Parent:setIntPref", this);
       this._ppmm.addMessageListener("PDFJS:Parent:setBoolPref", this);
@@ -64,25 +55,13 @@ var PdfjsChromeUtils = {
       this._ppmm.addMessageListener("PDFJS:Parent:isDefaultHandlerApp", this);
 
       // global dom message manager (MMg)
-      this._mmg = Cc["@mozilla.org/globalmessagemanager;1"].
-        getService(Ci.nsIMessageListenerManager);
+      this._mmg = Services.mm;
       this._mmg.addMessageListener("PDFJS:Parent:displayWarning", this);
 
       this._mmg.addMessageListener("PDFJS:Parent:addEventListener", this);
       this._mmg.addMessageListener("PDFJS:Parent:removeEventListener", this);
       this._mmg.addMessageListener("PDFJS:Parent:updateControlState", this);
 
-//#if !MOZCENTRAL
-      // The signature of `Services.obs.addObserver` changed in Firefox 55,
-      // see https://bugzilla.mozilla.org/show_bug.cgi?id=1355216.
-      // PLEASE NOTE: While the third parameter is now optional,
-      // omitting it in prior Firefox versions breaks the addon.
-      var ffVersion = parseInt(Services.appinfo.platformVersion);
-      if (ffVersion <= 55) {
-        Services.obs.addObserver(this, "quit-application", false);
-        return;
-      }
-//#endif
       // Observer to handle shutdown.
       Services.obs.addObserver(this, "quit-application");
     }
@@ -255,7 +234,7 @@ var PdfjsChromeUtils = {
   _ensurePreferenceAllowed(aPrefName) {
     let unPrefixedName = aPrefName.split(PREF_PREFIX + ".");
     if (unPrefixedName[0] !== "" ||
-        this._allowedPrefNames.indexOf(unPrefixedName[1]) === -1) {
+        !this._allowedPrefNames.includes(unPrefixedName[1])) {
       let msg = "\"" + aPrefName + "\" " +
                 "can't be accessed from content. See PdfjsChromeUtils.";
       throw new Error(msg);
@@ -284,15 +263,6 @@ var PdfjsChromeUtils = {
 
   _setStringPref(aPrefName, aPrefValue) {
     this._ensurePreferenceAllowed(aPrefName);
-//#if !MOZCENTRAL
-    if (!Services.prefs.setStringPref) {
-      let str = Cc["@mozilla.org/supports-string;1"]
-                  .createInstance(Ci.nsISupportsString);
-      str.data = aPrefValue;
-      Services.prefs.setComplexValue(aPrefName, Ci.nsISupportsString, str);
-      return;
-    }
-//#endif
     Services.prefs.setStringPref(aPrefName, aPrefValue);
   },
 

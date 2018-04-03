@@ -14,8 +14,9 @@
  */
 
 import {
-  bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info, isNum,
-  isSpace, MissingDataException, readUint32, shadow, string32, warn
+  assert, bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info,
+  isNum, isSpace, MissingDataException, readUint32, shadow, string32,
+  unreachable, warn
 } from '../shared/util';
 import {
   CFF, CFFCharset, CFFCompiler, CFFHeader, CFFIndex, CFFParser, CFFPrivateDict,
@@ -28,7 +29,7 @@ import {
 } from './encodings';
 import {
   getGlyphMapForStandardFonts, getNonStdFontMap, getStdFontMap,
-  getSupplementalGlyphMapForArialBlack
+  getSupplementalGlyphMapForArialBlack, getSupplementalGlyphMapForCalibri
 } from './standard_fonts';
 import {
   getUnicodeForGlyph, getUnicodeRangeFor, mapSpecialUnicodeValues
@@ -46,7 +47,7 @@ var SKIP_PRIVATE_USE_RANGE_F000_TO_F01F = false;
 // except for Type 3 fonts
 var PDF_GLYPH_SPACE_UNITS = 1000;
 
-// Accented charactars are not displayed properly on Windows, using this flag
+// Accented characters are not displayed properly on Windows, using this flag
 // to control analysis of seac charstrings.
 var SEAC_ANALYSIS_ENABLED = false;
 
@@ -211,9 +212,9 @@ var Glyph = (function GlyphClosure() {
 })();
 
 var ToUnicodeMap = (function ToUnicodeMapClosure() {
-  function ToUnicodeMap(cmap) {
+  function ToUnicodeMap(cmap = []) {
     // The elements of this._map can be integers or strings, depending on how
-    // |cmap| was created.
+    // `cmap` was created.
     this._map = cmap;
   }
 
@@ -295,7 +296,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
     },
 
     amend(map) {
-      throw new Error('Should not call amend()');
+      unreachable('Should not call amend()');
     },
   };
 
@@ -467,6 +468,8 @@ var ProblematicCharRanges = new Int32Array([
   0x3164, 0x3165,
   // Chars that is used in complex-script shaping.
   0xAA60, 0xAA80,
+  // Unicode high surrogates.
+  0xD800, 0xE000,
   // Specials Unicode block.
   0xFFF0, 0x10000
 ]);
@@ -516,6 +519,7 @@ var Font = (function FontClosure() {
     this.defaultEncoding = properties.defaultEncoding;
 
     this.toUnicode = properties.toUnicode;
+    this.fallbackToUnicode = properties.fallbackToUnicode || new ToUnicodeMap();
 
     this.toFontChar = [];
 
@@ -649,6 +653,11 @@ var Font = (function FontClosure() {
     return (b0 << 8) + b1;
   }
 
+  function writeSignedInt16(bytes, index, value) {
+    bytes[index + 1] = value;
+    bytes[index] = value >>> 8;
+  }
+
   function signedInt16(b0, b1) {
     var value = (b0 << 8) + b1;
     return value & (1 << 15) ? value - 0x10000 : value;
@@ -671,6 +680,11 @@ var Font = (function FontClosure() {
   function isTrueTypeFile(file) {
     var header = file.peekBytes(4);
     return readUint32(header, 0) === 0x00010000;
+  }
+
+  function isTrueTypeCollectionFile(file) {
+    let header = file.peekBytes(4);
+    return bytesToString(header) === 'ttcf';
   }
 
   function isOpenTypeFile(file) {
@@ -1236,7 +1250,14 @@ var Font = (function FontClosure() {
           for (charCode in SupplementalGlyphMapForArialBlack) {
             map[+charCode] = SupplementalGlyphMapForArialBlack[charCode];
           }
+        } else if (/Calibri/i.test(name)) {
+          let SupplementalGlyphMapForCalibri =
+            getSupplementalGlyphMapForCalibri();
+          for (charCode in SupplementalGlyphMapForCalibri) {
+            map[+charCode] = SupplementalGlyphMapForCalibri[charCode];
+          }
         }
+
         var isIdentityUnicode = this.toUnicode instanceof IdentityToUnicodeMap;
         if (!isIdentityUnicode) {
           this.toUnicode.forEach(function(charCode, unicodeCharCode) {
@@ -1279,6 +1300,33 @@ var Font = (function FontClosure() {
     },
 
     checkAndRepair: function Font_checkAndRepair(name, font, properties) {
+      const VALID_TABLES = ['OS/2', 'cmap', 'head', 'hhea', 'hmtx', 'maxp',
+        'name', 'post', 'loca', 'glyf', 'fpgm', 'prep', 'cvt ', 'CFF '];
+
+      function readTables(file, numTables) {
+        let tables = Object.create(null);
+        tables['OS/2'] = null;
+        tables['cmap'] = null;
+        tables['head'] = null;
+        tables['hhea'] = null;
+        tables['hmtx'] = null;
+        tables['maxp'] = null;
+        tables['name'] = null;
+        tables['post'] = null;
+
+        for (let i = 0; i < numTables; i++) {
+          let table = readTableEntry(font);
+          if (!VALID_TABLES.includes(table.tag)) {
+            continue; // skipping table if it's not a required or optional table
+          }
+          if (table.length === 0) {
+            continue; // skipping empty tables
+          }
+          tables[table.tag] = table;
+        }
+        return tables;
+      }
+
       function readTableEntry(file) {
         var tag = bytesToString(file.getBytes(4));
 
@@ -1316,6 +1364,68 @@ var Font = (function FontClosure() {
           entrySelector: ttf.getUint16(),
           rangeShift: ttf.getUint16(),
         };
+      }
+
+      function readTrueTypeCollectionHeader(ttc) {
+        let ttcTag = bytesToString(ttc.getBytes(4));
+        assert(ttcTag === 'ttcf', 'Must be a TrueType Collection font.');
+
+        let majorVersion = ttc.getUint16();
+        let minorVersion = ttc.getUint16();
+        let numFonts = ttc.getInt32() >>> 0;
+        let offsetTable = [];
+        for (let i = 0; i < numFonts; i++) {
+          offsetTable.push(ttc.getInt32() >>> 0);
+        }
+
+        let header = {
+          ttcTag,
+          majorVersion,
+          minorVersion,
+          numFonts,
+          offsetTable,
+        };
+        switch (majorVersion) {
+          case 1:
+            return header;
+          case 2:
+            header.dsigTag = ttc.getInt32() >>> 0;
+            header.dsigLength = ttc.getInt32() >>> 0;
+            header.dsigOffset = ttc.getInt32() >>> 0;
+            return header;
+        }
+        throw new FormatError(
+          `Invalid TrueType Collection majorVersion: ${majorVersion}.`);
+      }
+
+      function readTrueTypeCollectionData(ttc, fontName) {
+        let { numFonts, offsetTable, } = readTrueTypeCollectionHeader(ttc);
+
+        for (let i = 0; i < numFonts; i++) {
+          ttc.pos = (ttc.start || 0) + offsetTable[i];
+          let potentialHeader = readOpenTypeHeader(ttc);
+          let potentialTables = readTables(ttc, potentialHeader.numTables);
+
+          if (!potentialTables['name']) {
+            throw new FormatError(
+              'TrueType Collection font must contain a "name" table.');
+          }
+          let nameTable = readNameTable(potentialTables['name']);
+
+          for (let j = 0, jj = nameTable.length; j < jj; j++) {
+            for (let k = 0, kk = nameTable[j].length; k < kk; k++) {
+              let nameEntry = nameTable[j][k];
+              if (nameEntry && nameEntry.replace(/\s/g, '') === fontName) {
+                return {
+                  header: potentialHeader,
+                  tables: potentialTables,
+                };
+              }
+            }
+          }
+        }
+        throw new FormatError(
+          `TrueType Collection does not contain "${fontName}" font.`);
       }
 
       /**
@@ -1577,8 +1687,11 @@ var Font = (function FontClosure() {
           return glyphProfile;
         }
         var glyf = source.subarray(sourceStart, sourceEnd);
-        var contoursCount = (glyf[0] << 8) | glyf[1];
-        if (contoursCount & 0x8000) {
+        var contoursCount = signedInt16(glyf[0], glyf[1]);
+        if (contoursCount < 0) {
+          // OTS doesn't like contour count to be less than -1.
+          contoursCount = -1;
+          writeSignedInt16(glyf, 0, contoursCount);
           // complex glyph, writing as is
           dest.set(glyf, destStart);
           glyphProfile.length = glyf.length;
@@ -1741,6 +1854,11 @@ var Font = (function FontClosure() {
         var locaCount = dupFirstEntry ? numGlyphs - 1 : numGlyphs;
         for (i = 0, j = itemSize; i < locaCount; i++, j += itemSize) {
           var endOffset = itemDecode(locaData, j);
+          // The spec says the offsets should be in ascending order, however
+          // some fonts use the offset of 0 to mark a glyph as missing.
+          if (endOffset === 0) {
+            endOffset = startOffset;
+          }
           if (endOffset > oldGlyfDataLength &&
               ((oldGlyfDataLength + 3) & ~3) === endOffset) {
             // Aspose breaks fonts by aligning the glyphs to the qword, but not
@@ -1989,13 +2107,13 @@ var Font = (function FontClosure() {
             }
           } else if (op === 0x2B && !tooComplexToFollowFunctions) { // CALL
             if (!inFDEF && !inELSE) {
-              // collecting inforamtion about which functions are used
+              // collecting information about which functions are used
               funcId = stack[stack.length - 1];
               ttContext.functionsUsed[funcId] = true;
               if (funcId in ttContext.functionsStackDeltas) {
                 stack.length += ttContext.functionsStackDeltas[funcId];
               } else if (funcId in ttContext.functionsDefined &&
-                         functionsCalled.indexOf(funcId) < 0) {
+                         !functionsCalled.includes(funcId)) {
                 callstack.push({ data, i, stackTop: stack.length - 1, });
                 functionsCalled.push(funcId);
                 pc = ttContext.functionsDefined[funcId];
@@ -2014,7 +2132,7 @@ var Font = (function FontClosure() {
               tooComplexToFollowFunctions = true;
             }
             inFDEF = true;
-            // collecting inforamtion about which functions are defined
+            // collecting information about which functions are defined
             lastDeff = i;
             funcId = stack.pop();
             ttContext.functionsDefined[funcId] = { data, i, };
@@ -2166,34 +2284,16 @@ var Font = (function FontClosure() {
       // The following steps modify the original font data, making copy
       font = new Stream(new Uint8Array(font.getBytes()));
 
-      var VALID_TABLES = ['OS/2', 'cmap', 'head', 'hhea', 'hmtx', 'maxp',
-        'name', 'post', 'loca', 'glyf', 'fpgm', 'prep', 'cvt ', 'CFF '];
-
-      var header = readOpenTypeHeader(font);
-      var numTables = header.numTables;
-      var cff, cffFile;
-
-      var tables = Object.create(null);
-      tables['OS/2'] = null;
-      tables['cmap'] = null;
-      tables['head'] = null;
-      tables['hhea'] = null;
-      tables['hmtx'] = null;
-      tables['maxp'] = null;
-      tables['name'] = null;
-      tables['post'] = null;
-
-      var table;
-      for (var i = 0; i < numTables; i++) {
-        table = readTableEntry(font);
-        if (VALID_TABLES.indexOf(table.tag) < 0) {
-          continue; // skipping table if it's not a required or optional table
-        }
-        if (table.length === 0) {
-          continue; // skipping empty tables
-        }
-        tables[table.tag] = table;
+      let header, tables;
+      if (isTrueTypeCollectionFile(font)) {
+        let ttcData = readTrueTypeCollectionData(font, this.name);
+        header = ttcData.header;
+        tables = ttcData.tables;
+      } else {
+        header = readOpenTypeHeader(font);
+        tables = readTables(font, header.numTables);
       }
+      let cff, cffFile;
 
       var isTrueType = !tables['CFF '];
       if (!isTrueType) {
@@ -2251,7 +2351,7 @@ var Font = (function FontClosure() {
         }
         font.pos += 4;
         maxFunctionDefs = font.getUint16();
-        font.pos += 6;
+        font.pos += 4;
         maxSizeOfInstructions = font.getUint16();
       }
 
@@ -2421,7 +2521,7 @@ var Font = (function FontClosure() {
             }
 
             var found = false;
-            for (i = 0; i < cmapMappingsLength; ++i) {
+            for (let i = 0; i < cmapMappingsLength; ++i) {
               if (cmapMappings[i].charCode !== unicodeOrCharCode) {
                 continue;
               }
@@ -2439,13 +2539,12 @@ var Font = (function FontClosure() {
               }
               if (glyphId > 0 && hasGlyph(glyphId)) {
                 charCodeToGlyphId[charCode] = glyphId;
-                found = true;
               }
             }
           }
         } else if (cmapPlatformId === 0 && cmapEncodingId === 0) {
           // Default Unicode semantics, use the charcodes as is.
-          for (i = 0; i < cmapMappingsLength; ++i) {
+          for (let i = 0; i < cmapMappingsLength; ++i) {
             charCodeToGlyphId[cmapMappings[i].charCode] =
               cmapMappings[i].glyphId;
           }
@@ -2461,7 +2560,7 @@ var Font = (function FontClosure() {
           // special range since some PDFs have char codes outside of this range
           // (e.g. 0x2013) which when masked would overwrite other values in the
           // cmap.
-          for (i = 0; i < cmapMappingsLength; ++i) {
+          for (let i = 0; i < cmapMappingsLength; ++i) {
             charCode = cmapMappings[i].charCode;
             if (cmapPlatformId === 3 &&
                 charCode >= 0xF000 && charCode <= 0xF0FF) {
@@ -2759,7 +2858,8 @@ var Font = (function FontClosure() {
       width = isNum(width) ? width : this.defaultWidth;
       var vmetric = this.vmetrics && this.vmetrics[widthCode];
 
-      var unicode = this.toUnicode.get(charcode) || charcode;
+      let unicode = this.toUnicode.get(charcode) ||
+        this.fallbackToUnicode.get(charcode) || charcode;
       if (typeof unicode === 'number') {
         unicode = String.fromCharCode(unicode);
       }
@@ -3076,7 +3176,6 @@ var Type1Font = (function Type1FontClosure() {
 
     // Get the data block containing glyphs and subrs information
     var headerBlock = getHeaderBlock(file, headerBlockLength);
-    headerBlockLength = headerBlock.length;
     var headerBlockParser = new Type1Parser(headerBlock.stream, false,
                                             SEAC_ANALYSIS_ENABLED);
     headerBlockParser.extractFontHeader(properties);
@@ -3089,7 +3188,6 @@ var Type1Font = (function Type1FontClosure() {
 
     // Decrypt the data blocks and retrieve it's content
     var eexecBlock = getEexecBlock(file, eexecBlockLength);
-    eexecBlockLength = eexecBlock.length;
     var eexecBlockParser = new Type1Parser(eexecBlock.stream, true,
                                            SEAC_ANALYSIS_ENABLED);
     var data = eexecBlockParser.extractFontProgram();

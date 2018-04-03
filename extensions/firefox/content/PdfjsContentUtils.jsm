@@ -17,13 +17,7 @@
 
 var EXPORTED_SYMBOLS = ["PdfjsContentUtils"];
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cr = Components.results;
-const Cu = Components.utils;
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var PdfjsContentUtils = {
   _mm: null,
@@ -41,21 +35,9 @@ var PdfjsContentUtils = {
     // child *process* mm, or when loaded into the parent for in-content
     // support the psuedo child process mm 'child PPMM'.
     if (!this._mm) {
-      this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].
-        getService(Ci.nsISyncMessageSender);
+      this._mm = Services.cpmm;
       this._mm.addMessageListener("PDFJS:Child:updateSettings", this);
 
-//#if !MOZCENTRAL
-      // The signature of `Services.obs.addObserver` changed in Firefox 55,
-      // see https://bugzilla.mozilla.org/show_bug.cgi?id=1355216.
-      // PLEASE NOTE: While the third parameter is now optional,
-      // omitting it in prior Firefox versions breaks the addon.
-      var ffVersion = parseInt(Services.appinfo.platformVersion);
-      if (ffVersion <= 55) {
-        Services.obs.addObserver(this, "quit-application", false);
-        return;
-      }
-//#endif
       Services.obs.addObserver(this, "quit-application");
     }
   },
@@ -142,7 +124,7 @@ var PdfjsContentUtils = {
         if (Services.appinfo.processType ===
             Services.appinfo.PROCESS_TYPE_CONTENT) {
           let jsm = "resource://pdf.js/PdfJs.jsm";
-          let pdfjs = Components.utils.import(jsm, {}).PdfJs;
+          let pdfjs = ChromeUtils.import(jsm, {}).PdfJs;
           if (aMsg.data.enabled) {
             pdfjs.ensureRegistered();
           } else {

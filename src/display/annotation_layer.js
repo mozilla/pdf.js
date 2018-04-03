@@ -14,11 +14,11 @@
  */
 
 import {
-  addLinkAttributes, CustomStyle, DOMSVGFactory, getDefaultSetting,
-  getFilenameFromUrl, LinkTarget
+  addLinkAttributes, DOMSVGFactory, getFilenameFromUrl, LinkTarget
 } from './dom_utils';
 import {
-  AnnotationBorderStyleType, AnnotationType, stringToPDFString, Util, warn
+  AnnotationBorderStyleType, AnnotationType, stringToPDFString, unreachable,
+  Util, warn
 } from '../shared/util';
 
 /**
@@ -29,7 +29,8 @@ import {
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
- * @property {string} imageResourcesPath
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  * @property {Object} svgFactory
  */
@@ -61,8 +62,7 @@ class AnnotationElementFactory {
             } else if (parameters.data.checkBox) {
               return new CheckboxWidgetAnnotationElement(parameters);
             }
-            warn('Unimplemented button widget annotation: pushbutton');
-            break;
+            return new PushButtonWidgetAnnotationElement(parameters);
           case 'Ch':
             return new ChoiceWidgetAnnotationElement(parameters);
         }
@@ -153,10 +153,8 @@ class AnnotationElement {
       page.view[3] - data.rect[3] + page.view[1]
     ]);
 
-    CustomStyle.setProp('transform', container,
-                        'matrix(' + viewport.transform.join(',') + ')');
-    CustomStyle.setProp('transformOrigin', container,
-                        -rect[0] + 'px ' + -rect[1] + 'px');
+    container.style.transform = 'matrix(' + viewport.transform.join(',') + ')';
+    container.style.transformOrigin = -rect[0] + 'px ' + -rect[1] + 'px';
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
       container.style.borderWidth = data.borderStyle.width + 'px';
@@ -172,7 +170,7 @@ class AnnotationElement {
       let verticalRadius = data.borderStyle.verticalCornerRadius;
       if (horizontalRadius > 0 || verticalRadius > 0) {
         let radius = horizontalRadius + 'px / ' + verticalRadius + 'px';
-        CustomStyle.setProp('borderRadius', container, radius);
+        container.style.borderRadius = radius;
       }
 
       switch (data.borderStyle.style) {
@@ -262,7 +260,7 @@ class AnnotationElement {
    * @memberof AnnotationElement
    */
   render() {
-    throw new Error('Abstract method `AnnotationElement.render` called');
+    unreachable('Abstract method `AnnotationElement.render` called');
   }
 }
 
@@ -283,17 +281,21 @@ class LinkAnnotationElement extends AnnotationElement {
   render() {
     this.container.className = 'linkAnnotation';
 
+    let { data, linkService, } = this;
     let link = document.createElement('a');
+
     addLinkAttributes(link, {
-      url: this.data.url,
-      target: (this.data.newWindow ? LinkTarget.BLANK : undefined),
+      url: data.url,
+      target: (data.newWindow ?
+               LinkTarget.BLANK : linkService.externalLinkTarget),
+      rel: linkService.externalLinkRel,
     });
 
-    if (!this.data.url) {
-      if (this.data.action) {
-        this._bindNamedAction(link, this.data.action);
+    if (!data.url) {
+      if (data.action) {
+        this._bindNamedAction(link, data.action);
       } else {
-        this._bindLink(link, this.data.dest);
+        this._bindLink(link, data.dest);
       }
     }
 
@@ -543,6 +545,25 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
   }
 }
 
+class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
+  /**
+   * Render the push button widget annotation's HTML element
+   * in the empty container.
+   *
+   * @public
+   * @memberof PushButtonWidgetAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    // The rendering and functionality of a push button widget annotation is
+    // equal to that of a link annotation, but may have more functionality, such
+    // as performing actions on form fields (resetting, submitting, et cetera).
+    let container = super.render();
+    container.className = 'buttonWidgetAnnotation pushButton';
+    return container;
+  }
+}
+
 class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
     super(parameters, parameters.renderInteractiveForms);
@@ -579,7 +600,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
 
-      if (this.data.fieldValue.indexOf(option.displayValue) >= 0) {
+      if (this.data.fieldValue.includes(option.displayValue)) {
         optionElement.setAttribute('selected', true);
       }
 
@@ -611,7 +632,7 @@ class PopupAnnotationElement extends AnnotationElement {
 
     this.container.className = 'popupAnnotation';
 
-    if (IGNORE_TYPES.indexOf(this.data.parentType) >= 0) {
+    if (IGNORE_TYPES.includes(this.data.parentType)) {
       return this.container;
     }
 
@@ -633,9 +654,8 @@ class PopupAnnotationElement extends AnnotationElement {
     // PDF viewers ignore a popup annotation's rectangle.
     let parentLeft = parseFloat(parentElement.style.left);
     let parentWidth = parseFloat(parentElement.style.width);
-    CustomStyle.setProp('transformOrigin', this.container,
-                        -(parentLeft + parentWidth) + 'px -' +
-                        parentElement.style.top);
+    this.container.style.transformOrigin =
+      -(parentLeft + parentWidth) + 'px -' + parentElement.style.top;
     this.container.style.left = (parentLeft + parentWidth) + 'px';
 
     this.container.appendChild(popup.render());
@@ -1167,7 +1187,9 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {Array} annotations
  * @property {PDFPage} page
  * @property {IPDFLinkService} linkService
- * @property {string} imageResourcesPath
+ * @property {DownloadManager} downloadManager
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  */
 
@@ -1192,8 +1214,7 @@ class AnnotationLayer {
         viewport: parameters.viewport,
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
-        imageResourcesPath: parameters.imageResourcesPath ||
-                            getDefaultSetting('imageResourcesPath'),
+        imageResourcesPath: parameters.imageResourcesPath || '',
         renderInteractiveForms: parameters.renderInteractiveForms || false,
         svgFactory: new DOMSVGFactory(),
       });
@@ -1216,8 +1237,8 @@ class AnnotationLayer {
       let element = parameters.div.querySelector(
         '[data-annotation-id="' + data.id + '"]');
       if (element) {
-        CustomStyle.setProp('transform', element,
-          'matrix(' + parameters.viewport.transform.join(',') + ')');
+        element.style.transform =
+          'matrix(' + parameters.viewport.transform.join(',') + ')';
       }
     }
     parameters.div.removeAttribute('hidden');

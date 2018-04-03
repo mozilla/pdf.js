@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand */
+/* eslint-disable object-shorthand, mozilla/use-includes-instead-of-indexOf */
 
 'use strict';
 
@@ -260,6 +260,5 @@ WebBrowser.create = function (desc) {
   }
   return new WebBrowser(name, path);
 };
-
 
 exports.WebBrowser = WebBrowser;

@@ -14,10 +14,9 @@
  */
 
 import {
-  assert, CMapCompressionType, createValidAbsoluteUrl, deprecated,
-  removeNullCharacters, stringToBytes, warn
+  assert, CMapCompressionType, removeNullCharacters, stringToBytes,
+  unreachable, warn
 } from '../shared/util';
-import globalScope from '../shared/global_scope';
 
 const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -69,8 +68,9 @@ class DOMCMapReaderFactory {
 
   fetch({ name, }) {
     if (!this.baseUrl) {
-      return Promise.reject(new Error('CMap baseUrl must be specified, ' +
-        'see "PDFJS.cMapUrl" (and also "PDFJS.cMapPacked").'));
+      return Promise.reject(new Error(
+        'The CMap "baseUrl" parameter must be specified, ensure that ' +
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.'));
     }
     if (!name) {
       return Promise.reject(new Error('CMap name must be specified.'));
@@ -135,186 +135,6 @@ class DOMSVGFactory {
   }
 }
 
-class SimpleDOMNode {
-  constructor(nodeName, nodeValue) {
-    this.nodeName = nodeName;
-    this.nodeValue = nodeValue;
-
-    Object.defineProperty(this, 'parentNode', { value: null, writable: true, });
-  }
-
-  get firstChild() {
-    return this.childNodes[0];
-  }
-
-  get nextSibling() {
-    let index = this.parentNode.childNodes.indexOf(this);
-    return this.parentNode.childNodes[index + 1];
-  }
-
-  get textContent() {
-    if (!this.childNodes) {
-      return this.nodeValue || '';
-    }
-    return this.childNodes.map(function(child) {
-      return child.textContent;
-    }).join('');
-  }
-
-  hasChildNodes() {
-    return this.childNodes && this.childNodes.length > 0;
-  }
-}
-
-class SimpleXMLParser {
-  parseFromString(data) {
-    let nodes = [];
-
-    // Remove all comments and processing instructions.
-    data = data.replace(/<\?[\s\S]*?\?>|<!--[\s\S]*?-->/g, '').trim();
-    data = data.replace(/<!DOCTYPE[^>\[]+(\[[^\]]+)?[^>]+>/g, '').trim();
-
-    // Extract all text nodes and replace them with a numeric index in
-    // the nodes.
-    data = data.replace(/>([^<][\s\S]*?)</g, (all, text) => {
-      let length = nodes.length;
-      let node = new SimpleDOMNode('#text', this._decodeXML(text));
-      nodes.push(node);
-      if (node.textContent.trim().length === 0) {
-        return '><'; // Ignore whitespace.
-      }
-      return '>' + length + ',<';
-    });
-
-    // Extract all CDATA nodes.
-    data = data.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,
-        function(all, text) {
-      let length = nodes.length;
-      let node = new SimpleDOMNode('#text', text);
-      nodes.push(node);
-      return length + ',';
-    });
-
-    // Until nodes without '<' and '>' content are present, replace them
-    // with a numeric index in the nodes.
-    let regex =
-      /<([\w\:]+)((?:[\s\w:=]|'[^']*'|"[^"]*")*)(?:\/>|>([\d,]*)<\/[^>]+>)/g;
-    let lastLength;
-    do {
-      lastLength = nodes.length;
-      data = data.replace(regex, function(all, name, attrs, data) {
-        let length = nodes.length;
-        let node = new SimpleDOMNode(name);
-        let children = [];
-        if (data) {
-          data = data.split(',');
-          data.pop();
-          data.forEach(function(child) {
-            let childNode = nodes[+child];
-            childNode.parentNode = node;
-            children.push(childNode);
-          });
-        }
-
-        node.childNodes = children;
-        nodes.push(node);
-        return length + ',';
-      });
-    } while (lastLength < nodes.length);
-
-    // We should only have one root index left, which will be last in the nodes.
-    return {
-      documentElement: nodes.pop(),
-    };
-  }
-
-  _decodeXML(text) {
-    if (text.indexOf('&') < 0) {
-      return text;
-    }
-
-    return text.replace(/&(#(x[0-9a-f]+|\d+)|\w+);/gi,
-        function(all, entityName, number) {
-      if (number) {
-        if (number[0] === 'x') {
-          number = parseInt(number.substring(1), 16);
-        } else {
-          number = +number;
-        }
-        return String.fromCharCode(number);
-      }
-
-      switch (entityName) {
-        case 'amp':
-          return '&';
-        case 'lt':
-          return '<';
-        case 'gt':
-          return '>';
-        case 'quot':
-          return '\"';
-        case 'apos':
-          return '\'';
-      }
-      return '&' + entityName + ';';
-    });
-  }
-}
-
-/**
- * Optimised CSS custom property getter/setter.
- * @class
- */
-var CustomStyle = (function CustomStyleClosure() {
-
-  // As noted on: http://www.zachstronaut.com/posts/2009/02/17/
-  //              animate-css-transforms-firefox-webkit.html
-  // in some versions of IE9 it is critical that ms appear in this list
-  // before Moz
-  var prefixes = ['ms', 'Moz', 'Webkit', 'O'];
-  var _cache = Object.create(null);
-
-  function CustomStyle() {}
-
-  CustomStyle.getProp = function get(propName, element) {
-    // check cache only when no element is given
-    if (arguments.length === 1 && typeof _cache[propName] === 'string') {
-      return _cache[propName];
-    }
-
-    element = element || document.documentElement;
-    var style = element.style, prefixed, uPropName;
-
-    // test standard property first
-    if (typeof style[propName] === 'string') {
-      return (_cache[propName] = propName);
-    }
-
-    // capitalize
-    uPropName = propName.charAt(0).toUpperCase() + propName.slice(1);
-
-    // test vendor specific properties
-    for (var i = 0, l = prefixes.length; i < l; i++) {
-      prefixed = prefixes[i] + uPropName;
-      if (typeof style[prefixed] === 'string') {
-        return (_cache[propName] = prefixed);
-      }
-    }
-
-    // If all fails then set to undefined.
-    return (_cache[propName] = 'undefined');
-  };
-
-  CustomStyle.setProp = function set(propName, element, str) {
-    var prop = this.getProp(propName);
-    if (prop !== 'undefined') {
-      element.style[prop] = str;
-    }
-  };
-
-  return CustomStyle;
-})();
-
 var RenderingCancelledException = (function RenderingCancelledException() {
   function RenderingCancelledException(msg, type) {
     this.message = msg;
@@ -328,7 +148,7 @@ var RenderingCancelledException = (function RenderingCancelledException() {
   return RenderingCancelledException;
 })();
 
-var LinkTarget = {
+const LinkTarget = {
   NONE: 0, // Default value.
   SELF: 1,
   BLANK: 2,
@@ -336,7 +156,7 @@ var LinkTarget = {
   TOP: 4,
 };
 
-var LinkTargetStringMap = [
+const LinkTargetStringMap = [
   '',
   '_self',
   '_blank',
@@ -348,8 +168,10 @@ var LinkTargetStringMap = [
  * @typedef ExternalLinkParameters
  * @typedef {Object} ExternalLinkParameters
  * @property {string} url - An absolute URL.
- * @property {LinkTarget} target - The link target.
- * @property {string} rel - The link relationship.
+ * @property {LinkTarget} target - (optional) The link target.
+ *   The default value is `LinkTarget.NONE`.
+ * @property {string} rel - (optional) The link relationship.
+ *   The default value is `DEFAULT_LINK_REL`.
  */
 
 /**
@@ -357,22 +179,16 @@ var LinkTargetStringMap = [
  * @param {HTMLLinkElement} link - The link element.
  * @param {ExternalLinkParameters} params
  */
-function addLinkAttributes(link, params) {
-  var url = params && params.url;
+function addLinkAttributes(link, { url, target, rel, } = {}) {
   link.href = link.title = (url ? removeNullCharacters(url) : '');
 
   if (url) {
-    var target = params.target;
-    if (typeof target === 'undefined') {
-      target = getDefaultSetting('externalLinkTarget');
-    }
-    link.target = LinkTargetStringMap[target];
+    const LinkTargetValues = Object.values(LinkTarget);
+    let targetIndex =
+      LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
+    link.target = LinkTargetStringMap[targetIndex];
 
-    var rel = params.rel;
-    if (typeof rel === 'undefined') {
-      rel = getDefaultSetting('externalLinkRel');
-    }
-    link.rel = rel;
+    link.rel = (typeof rel === 'string' ? rel : DEFAULT_LINK_REL);
   }
 }
 
@@ -386,102 +202,89 @@ function getFilenameFromUrl(url) {
   return url.substring(url.lastIndexOf('/', end) + 1, end);
 }
 
-function getDefaultSetting(id) {
-  // The list of the settings and their default is maintained for backward
-  // compatibility and shall not be extended or modified. See also global.js.
-  var globalSettings = globalScope.PDFJS;
-  switch (id) {
-    case 'pdfBug':
-      return globalSettings ? globalSettings.pdfBug : false;
-    case 'disableAutoFetch':
-      return globalSettings ? globalSettings.disableAutoFetch : false;
-    case 'disableStream':
-      return globalSettings ? globalSettings.disableStream : false;
-    case 'disableRange':
-      return globalSettings ? globalSettings.disableRange : false;
-    case 'disableFontFace':
-      return globalSettings ? globalSettings.disableFontFace : false;
-    case 'disableCreateObjectURL':
-      return globalSettings ? globalSettings.disableCreateObjectURL : false;
-    case 'disableWebGL':
-      return globalSettings ? globalSettings.disableWebGL : true;
-    case 'cMapUrl':
-      return globalSettings ? globalSettings.cMapUrl : null;
-    case 'cMapPacked':
-      return globalSettings ? globalSettings.cMapPacked : false;
-    case 'postMessageTransfers':
-      return globalSettings ? globalSettings.postMessageTransfers : true;
-    case 'workerPort':
-      return globalSettings ? globalSettings.workerPort : null;
-    case 'workerSrc':
-      return globalSettings ? globalSettings.workerSrc : null;
-    case 'disableWorker':
-      return globalSettings ? globalSettings.disableWorker : false;
-    case 'maxImageSize':
-      return globalSettings ? globalSettings.maxImageSize : -1;
-    case 'imageResourcesPath':
-      return globalSettings ? globalSettings.imageResourcesPath : '';
-    case 'isEvalSupported':
-      return globalSettings ? globalSettings.isEvalSupported : true;
-    case 'externalLinkTarget':
-      if (!globalSettings) {
-        return LinkTarget.NONE;
+class StatTimer {
+  constructor(enable = true) {
+    this.enabled = !!enable;
+    this.started = Object.create(null);
+    this.times = [];
+  }
+
+  time(name) {
+    if (!this.enabled) {
+      return;
+    }
+    if (name in this.started) {
+      warn('Timer is already running for ' + name);
+    }
+    this.started[name] = Date.now();
+  }
+
+  timeEnd(name) {
+    if (!this.enabled) {
+      return;
+    }
+    if (!(name in this.started)) {
+      warn('Timer has not been started for ' + name);
+    }
+    this.times.push({
+      'name': name,
+      'start': this.started[name],
+      'end': Date.now(),
+    });
+    // Remove timer from started so it can be called again.
+    delete this.started[name];
+  }
+
+  toString() {
+    let times = this.times;
+    // Find the longest name for padding purposes.
+    let out = '', longest = 0;
+    for (let i = 0, ii = times.length; i < ii; ++i) {
+      let name = times[i]['name'];
+      if (name.length > longest) {
+        longest = name.length;
       }
-      switch (globalSettings.externalLinkTarget) {
-        case LinkTarget.NONE:
-        case LinkTarget.SELF:
-        case LinkTarget.BLANK:
-        case LinkTarget.PARENT:
-        case LinkTarget.TOP:
-          return globalSettings.externalLinkTarget;
-      }
-      warn('PDFJS.externalLinkTarget is invalid: ' +
-           globalSettings.externalLinkTarget);
-      // Reset the external link target, to suppress further warnings.
-      globalSettings.externalLinkTarget = LinkTarget.NONE;
-      return LinkTarget.NONE;
-    case 'externalLinkRel':
-      return globalSettings ? globalSettings.externalLinkRel : DEFAULT_LINK_REL;
-    case 'enableStats':
-      return !!(globalSettings && globalSettings.enableStats);
-    case 'pdfjsNext':
-      return !!(globalSettings && globalSettings.pdfjsNext);
-    default:
-      throw new Error('Unknown default setting: ' + id);
+    }
+    for (let i = 0, ii = times.length; i < ii; ++i) {
+      let span = times[i];
+      let duration = span.end - span.start;
+      out += `${span['name'].padEnd(longest)} ${duration}ms\n`;
+    }
+    return out;
   }
 }
 
-function isExternalLinkTargetSet() {
-  var externalLinkTarget = getDefaultSetting('externalLinkTarget');
-  switch (externalLinkTarget) {
-    case LinkTarget.NONE:
-      return false;
-    case LinkTarget.SELF:
-    case LinkTarget.BLANK:
-    case LinkTarget.PARENT:
-    case LinkTarget.TOP:
-      return true;
+/**
+ * Helps avoid having to initialize {StatTimer} instances, e.g. one for every
+ * page, in cases where the collected stats are not actually being used.
+ * This (dummy) class can thus, since all its methods are `static`, be directly
+ * shared between multiple call-sites without the need to be initialized first.
+ *
+ * NOTE: This must implement the same interface as {StatTimer}.
+ */
+class DummyStatTimer {
+  constructor() {
+    unreachable('Cannot initialize DummyStatTimer.');
   }
-}
 
-function isValidUrl(url, allowRelative) {
-  deprecated('isValidUrl(), please use createValidAbsoluteUrl() instead.');
-  var baseUrl = allowRelative ? 'http://example.com' : null;
-  return createValidAbsoluteUrl(url, baseUrl) !== null;
+  static time(name) {}
+
+  static timeEnd(name) {}
+
+  static toString() {
+    return '';
+  }
 }
 
 export {
-  CustomStyle,
   RenderingCancelledException,
   addLinkAttributes,
-  isExternalLinkTargetSet,
-  isValidUrl,
   getFilenameFromUrl,
   LinkTarget,
-  getDefaultSetting,
   DEFAULT_LINK_REL,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
   DOMSVGFactory,
-  SimpleXMLParser,
+  StatTimer,
+  DummyStatTimer,
 };

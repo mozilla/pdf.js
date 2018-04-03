@@ -14,13 +14,13 @@
  */
 
 import {
-  AbortException, arrayByteLength, arraysToBytes, assert,
-  createPromiseCapability, info, InvalidPDFException, isNodeJS, MessageHandler,
-  MissingPDFException, PasswordException, setVerbosityLevel,
-  UnexpectedResponseException, UnknownErrorException, UNSUPPORTED_FEATURES,
-  warn, XRefParseException
+  arrayByteLength, arraysToBytes, assert, createPromiseCapability, info,
+  InvalidPDFException, MessageHandler, MissingPDFException, PasswordException,
+  setVerbosityLevel, UnexpectedResponseException, UnknownErrorException,
+  UNSUPPORTED_FEATURES, warn, XRefParseException
 } from '../shared/util';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
+import isNodeJS from '../shared/is_node';
 import { Ref } from './primitives';
 
 var WorkerTask = (function WorkerTaskClosure() {
@@ -100,6 +100,16 @@ IPDFStreamReader.prototype = {
    * @returns {Promise}
    */
   get headersReady() {
+    return null;
+  },
+
+  /**
+   * Gets the Content-Disposition filename. It is defined after the headersReady
+   * promise is resolved.
+   * @returns {string|null} The filename, or `null` if the Content-Disposition
+   *                        header is missing/invalid.
+   */
+  get filename() {
     return null;
   },
 
@@ -403,19 +413,15 @@ var WorkerMessageHandler = {
       var loadDocumentCapability = createPromiseCapability();
 
       var parseSuccess = function parseSuccess() {
-        var numPagesPromise = pdfManager.ensureDoc('numPages');
-        var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
-        var encryptedPromise = pdfManager.ensureXRef('encrypt');
-        Promise.all([numPagesPromise, fingerprintPromise,
-                     encryptedPromise]).then(function onDocReady(results) {
-          var doc = {
-            numPages: results[0],
-            fingerprint: results[1],
-            encrypted: !!results[2],
-          };
-          loadDocumentCapability.resolve(doc);
-        },
-        parseFailure);
+        Promise.all([
+          pdfManager.ensureDoc('numPages'),
+          pdfManager.ensureDoc('fingerprint'),
+        ]).then(function([numPages, fingerprint]) {
+          loadDocumentCapability.resolve({
+            numPages,
+            fingerprint,
+          });
+        }, parseFailure);
       };
 
       var parseFailure = function parseFailure(e) {
@@ -608,7 +614,7 @@ var WorkerMessageHandler = {
 
       var evaluatorOptions = {
         forceDataSchema: data.disableCreateObjectURL,
-        maxImageSize: data.maxImageSize === undefined ? -1 : data.maxImageSize,
+        maxImageSize: data.maxImageSize,
         disableFontFace: data.disableFontFace,
         nativeImageDecoderSupport: data.nativeImageDecoderSupport,
         ignoreErrors: data.ignoreErrors,
@@ -842,7 +848,7 @@ var WorkerMessageHandler = {
       return Promise.all(waitOn).then(function () {
         // Notice that even if we destroying handler, resolved response promise
         // must be sent back.
-        handler.close(new AbortException('Worker was terminated'));
+        handler.destroy();
         handler = null;
       });
     });

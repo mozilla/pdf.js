@@ -38,19 +38,31 @@ function renderDocument(pdf, svgLib) {
 
 Promise.all([System.import('pdfjs/display/api'),
              System.import('pdfjs/display/svg'),
-             System.import('pdfjs/display/global'),
+             System.import('pdfjs/display/worker_options'),
+             System.import('pdfjs/display/network'),
              System.resolve('pdfjs/worker_loader')])
        .then(function (modules) {
-  var api = modules[0], svg = modules[1], global = modules[2];
+  var api = modules[0];
+  var svg = modules[1];
+  var GlobalWorkerOptions = modules[2].GlobalWorkerOptions;
+  var network = modules[3];
+  api.setPDFNetworkStreamFactory((params) => {
+    return new network.PDFNetworkStream(params);
+  });
+
   // In production, change this to point to the built `pdf.worker.js` file.
-  global.PDFJS.workerSrc = modules[3];
+  GlobalWorkerOptions.workerSrc = modules[4];
 
   // In production, change this to point to where the cMaps are placed.
-  global.PDFJS.cMapUrl = '../../external/bcmaps/';
-  global.PDFJS.cMapPacked = true;
+  var CMAP_URL = '../../external/bcmaps/';
+  var CMAP_PACKED = true;
 
   // Fetch the PDF document from the URL using promises.
-  api.getDocument(url).then(function (doc) {
+  api.getDocument({
+    url: url,
+    cMapUrl: CMAP_URL,
+    cMapPacked: CMAP_PACKED,
+  }).then(function(doc) {
     renderDocument(doc, svg);
   });
 });

@@ -12,14 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, pdfjsDistBuildPdf */
+/* globals pdfjsLib, pdfjsViewer */
 
 'use strict';
 
-var WAITING_TIME = 100; // ms
-var PDF_TO_CSS_UNITS = 96.0 / 72.0;
-
-var StatTimer = pdfjsDistBuildPdf.StatTimer;
+const WAITING_TIME = 100; // ms
+const PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const CMAP_URL = '../external/bcmaps/';
+const CMAP_PACKED = true;
+const IMAGE_RESOURCES_PATH = '/web/images/';
+const WORKER_SRC = '../build/generic/build/pdf.worker.js';
 
 /**
  * @class
@@ -45,7 +47,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
 
   function rasterizeTextLayer(ctx, viewport, textContent,
                               enhanceTextSelection) {
-    return new Promise(function (resolve) {
+    return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, 'svg:svg');
       svg.setAttribute('width', viewport.width + 'px');
@@ -67,7 +69,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       foreignObject.appendChild(div);
 
       // Rendering text layer as HTML.
-      var task = PDFJS.renderTextLayer({
+      var task = pdfjsLib.renderTextLayer({
         textContent,
         container: div,
         viewport,
@@ -86,6 +88,9 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
         img.onload = function () {
           ctx.drawImage(img, 0, 0);
           resolve();
+        };
+        img.onerror = function(e) {
+          reject(new Error('Error rasterizing text layer ' + e));
         };
       });
     });
@@ -128,11 +133,14 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
 
     // Load the style files and cache the results.
     for (let key in styles) {
-      styles[key].promise = new Promise(function(resolve) {
+      styles[key].promise = new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest();
         xhr.open('GET', styles[key].file);
         xhr.onload = function() {
           resolve(xhr.responseText);
+        };
+        xhr.onerror = function(e) {
+          reject(new Error('Error fetching annotation style ' + e));
         };
         xhr.send(null);
       });
@@ -144,7 +152,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   function inlineAnnotationImages(images) {
     var imagePromises = [];
     for (var i = 0, ii = images.length; i < ii; i++) {
-      var imagePromise = new Promise(function(resolve) {
+      var imagePromise = new Promise(function(resolve, reject) {
         var xhr = new XMLHttpRequest();
         xhr.responseType = 'blob';
         xhr.onload = function() {
@@ -154,8 +162,8 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           };
           reader.readAsDataURL(xhr.response);
         };
-        xhr.onerror = function() {
-          resolve('');
+        xhr.onerror = function(e) {
+          reject(new Error('Error fetching inline annotation image ' + e));
         };
         xhr.open('GET', images[i].src);
         xhr.send();
@@ -166,8 +174,9 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   }
 
   function rasterizeAnnotationLayer(ctx, viewport, annotations, page,
+                                    imageResourcesPath,
                                     renderInteractiveForms) {
-    return new Promise(function (resolve) {
+    return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, 'svg:svg');
       svg.setAttribute('width', viewport.width + 'px');
@@ -195,18 +204,27 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           div,
           annotations,
           page,
-          linkService: new PDFJS.SimpleLinkService(),
+          linkService: new pdfjsViewer.SimpleLinkService(),
+          imageResourcesPath,
           renderInteractiveForms,
         };
-        PDFJS.AnnotationLayer.render(parameters);
+        pdfjsLib.AnnotationLayer.render(parameters);
 
         // Inline SVG images from text annotations.
         var images = div.getElementsByTagName('img');
         var imagePromises = inlineAnnotationImages(images);
         var converted = Promise.all(imagePromises).then(function(data) {
+          var loadedPromises = [];
           for (var i = 0, ii = data.length; i < ii; i++) {
             images[i].src = data[i];
+            loadedPromises.push(new Promise(function (resolve, reject) {
+              images[i].onload = resolve;
+              images[i].onerror = function(e) {
+                reject(new Error('Error loading image ' + e));
+              };
+            }));
           }
+          return loadedPromises;
         });
 
         foreignObject.appendChild(div);
@@ -221,6 +239,9 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           img.onload = function () {
             ctx.drawImage(img, 0, 0);
             resolve();
+          };
+          img.onerror = function(e) {
+            reject(new Error('Error rasterizing annotation layer ' + e));
           };
         });
       });
@@ -249,14 +270,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
    * @param {DriverOptions} options
    */
   function Driver(options) {
-    // Configure the global PDFJS object
-    PDFJS.workerSrc = '../build/generic/build/pdf.worker.js';
-    PDFJS.cMapPacked = true;
-    PDFJS.cMapUrl = '../external/bcmaps/';
-    PDFJS.enableStats = true;
-    PDFJS.imageResourcesPath = '/web/images/';
-    // Opt-in to using the latest API.
-    PDFJS.pdfjsNext = true;
+    // Configure the global worker options.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -309,7 +324,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
           self.manifest = JSON.parse(r.responseText);
           if (self.testFilter && self.testFilter.length) {
             self.manifest = self.manifest.filter(function(item) {
-              return self.testFilter.indexOf(item.id) !== -1;
+              return self.testFilter.includes(item.id);
             });
           }
           self.currentTask = 0;
@@ -342,13 +357,16 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         this._log('Loading file "' + task.file + '"\n');
 
         let absoluteUrl = new URL(task.file, window.location).href;
-        PDFJS.disableRange = task.disableRange;
-        PDFJS.disableAutoFetch = !task.enableAutoFetch;
         try {
-          PDFJS.getDocument({
+          pdfjsLib.getDocument({
             url: absoluteUrl,
             password: task.password,
             nativeImageDecoderSupport: task.nativeImageDecoderSupport,
+            cMapUrl: CMAP_URL,
+            cMapPacked: CMAP_PACKED,
+            disableRange: task.disableRange,
+            disableAutoFetch: !task.enableAutoFetch,
+            pdfBug: true,
           }).then((doc) => {
             task.pdfDoc = doc;
             this._nextPage(task, failure);
@@ -371,8 +389,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         while (styleSheet.cssRules.length > 0) {
           styleSheet.deleteRule(0);
         }
-        let ownerNode = styleSheet.ownerNode;
-        ownerNode.parentNode.removeChild(ownerNode);
+        styleSheet.ownerNode.remove();
       }
       let body = document.body;
       while (body.lastChild !== this.end) {
@@ -438,7 +455,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         }
       }
 
-      if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
+      if (task.skipPages && task.skipPages.includes(task.pageNum)) {
         this._log(' Skipping page ' + task.pageNum + '/' +
                   task.pdfDoc.numPages + '...\n');
         task.pageNum++;
@@ -511,7 +528,9 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
                     function(annotations) {
                       return rasterizeAnnotationLayer(annotationLayerContext,
                                                       viewport, annotations,
-                                                      page, renderForms);
+                                                      page,
+                                                      IMAGE_RESOURCES_PATH,
+                                                      renderForms);
                   });
               } else {
                 annotationLayerCanvas = null;
@@ -538,18 +557,18 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
               if (annotationLayerCanvas) {
                 ctx.drawImage(annotationLayerCanvas, 0, 0);
               }
-              page.cleanup();
-              task.stats = page.stats;
-              page.stats = new StatTimer();
+              if (page.stats) { // Get the page stats *before* running cleanup.
+                task.stats = page.stats;
+              }
+              page.cleanup(/* resetStats = */ true);
               self._snapshot(task, error);
             });
             initPromise.then(function () {
-              page.render(renderContext).promise.then(function() {
+              return page.render(renderContext).promise.then(function() {
                 completeRender(false);
-              },
-              function(error) {
-                completeRender('render : ' + error);
               });
+            }).catch(function (error) {
+              completeRender('render : ' + error);
             });
           },
           function(error) {

@@ -14,9 +14,10 @@
  */
 
 import { assert, FormatError, ImageKind, info, warn } from '../shared/util';
-import { DecodeStream, JpegStream } from './stream';
 import { isStream, Name } from './primitives';
 import { ColorSpace } from './colorspace';
+import { DecodeStream } from './stream';
+import { JpegStream } from './jpeg_stream';
 import { JpxImage } from './jpx';
 
 var PDFImage = (function PDFImageClosure() {
@@ -26,7 +27,11 @@ var PDFImage = (function PDFImageClosure() {
    */
   function handleImageData(image, nativeDecoder) {
     if (nativeDecoder && nativeDecoder.canDecode(image)) {
-      return nativeDecoder.decode(image);
+      return nativeDecoder.decode(image).catch((reason) => {
+        warn('Native image decoding failed -- trying to recover: ' +
+             (reason && reason.message));
+        return image;
+      });
     }
     return Promise.resolve(image);
   }
@@ -74,8 +79,8 @@ var PDFImage = (function PDFImageClosure() {
     return dest;
   }
 
-  function PDFImage({ xref, res, image, smask = null, mask = null,
-                      isMask = false, pdfFunctionFactory, }) {
+  function PDFImage({ xref, res, image, isInline = false, smask = null,
+                      mask = null, isMask = false, pdfFunctionFactory, }) {
     this.image = image;
     var dict = image.dict;
     if (dict.has('Filter')) {
@@ -138,7 +143,8 @@ var PDFImage = (function PDFImageClosure() {
                             'color components not supported.');
         }
       }
-      this.colorSpace = ColorSpace.parse(colorSpace, xref, res,
+      let resources = isInline ? res : null;
+      this.colorSpace = ColorSpace.parse(colorSpace, xref, resources,
                                          pdfFunctionFactory);
       this.numComps = this.colorSpace.numComps;
     }
@@ -166,6 +172,7 @@ var PDFImage = (function PDFImageClosure() {
         xref,
         res,
         image: smask,
+        isInline,
         pdfFunctionFactory,
       });
     } else if (mask) {
@@ -178,6 +185,7 @@ var PDFImage = (function PDFImageClosure() {
             xref,
             res,
             image: mask,
+            isInline,
             isMask: true,
             pdfFunctionFactory,
           });
@@ -192,7 +200,7 @@ var PDFImage = (function PDFImageClosure() {
    * Handles processing of image data and returns the Promise that is resolved
    * with a PDFImage when the image is ready to be used.
    */
-  PDFImage.buildImage = function({ handler, xref, res, image,
+  PDFImage.buildImage = function({ handler, xref, res, image, isInline = false,
                                    nativeDecoder = null,
                                    pdfFunctionFactory, }) {
     var imagePromise = handleImageData(image, nativeDecoder);
@@ -226,6 +234,7 @@ var PDFImage = (function PDFImageClosure() {
           xref,
           res,
           image: imageData,
+          isInline,
           smask: smaskData,
           mask: maskData,
           pdfFunctionFactory,
@@ -545,14 +554,21 @@ var PDFImage = (function PDFImageClosure() {
           }
           return imgData;
         }
-        if (this.image instanceof JpegStream && !this.smask && !this.mask &&
-            (this.colorSpace.name === 'DeviceGray' ||
-             this.colorSpace.name === 'DeviceRGB' ||
-             this.colorSpace.name === 'DeviceCMYK')) {
-          imgData.kind = ImageKind.RGB_24BPP;
-          imgData.data = this.getImageBytes(originalHeight * rowBytes,
-                                            drawWidth, drawHeight, true);
-          return imgData;
+        if (this.image instanceof JpegStream && !this.smask && !this.mask) {
+          let imageLength = originalHeight * rowBytes;
+          switch (this.colorSpace.name) {
+            case 'DeviceGray':
+              // Avoid truncating the image, since `JpegImage.getData`
+              // will expand the image data when `forceRGB === true`.
+              imageLength *= 3;
+              /* falls through */
+            case 'DeviceRGB':
+            case 'DeviceCMYK':
+              imgData.kind = ImageKind.RGB_24BPP;
+              imgData.data = this.getImageBytes(imageLength,
+                drawWidth, drawHeight, /* forceRGB = */ true);
+              return imgData;
+          }
         }
       }
 

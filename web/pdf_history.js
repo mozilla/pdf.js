@@ -109,7 +109,7 @@ class PDFHistory {
     this._currentHash = getCurrentHash();
     this._numPositionUpdates = 0;
 
-    this._currentUid = this._uid = 0;
+    this._uid = this._maxUid = 0;
     this._destination = null;
     this._position = null;
 
@@ -133,6 +133,9 @@ class PDFHistory {
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+    if (this._uid > this._maxUid) {
+      this._maxUid = this._uid;
+    }
 
     if (destination.rotation !== undefined) {
       this.initialRotation = destination.rotation;
@@ -177,8 +180,8 @@ class PDFHistory {
 
     let forceReplace = false;
     if (this._destination &&
-        (this._destination.hash === hash ||
-         isDestsEqual(this._destination.dest, explicitDest))) {
+        (isDestHashesEqual(this._destination.hash, hash) ||
+         isDestArraysEqual(this._destination.dest, explicitDest))) {
       // When the new destination is identical to `this._destination`, and
       // its `page` is undefined, replace the current browser history entry.
       // NOTE: This can only occur if `this._destination` was set either:
@@ -245,7 +248,7 @@ class PDFHistory {
       return;
     }
     let state = window.history.state;
-    if (this._isValidState(state) && state.uid < (this._uid - 1)) {
+    if (this._isValidState(state) && state.uid < this._maxUid) {
       window.history.forward();
     }
   }
@@ -266,7 +269,7 @@ class PDFHistory {
     let shouldReplace = forceReplace || !this._destination;
     let newState = {
       fingerprint: this.fingerprint,
-      uid: shouldReplace ? this._currentUid : this._uid,
+      uid: shouldReplace ? this._uid : (this._uid + 1),
       destination,
     };
 
@@ -278,21 +281,10 @@ class PDFHistory {
     this._updateInternalState(destination, newState.uid);
 
     if (shouldReplace) {
-      if (typeof PDFJSDev !== 'undefined' &&
-          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        // Providing the third argument causes a SecurityError for file:// URLs.
-        window.history.replaceState(newState, '');
-      } else {
-        window.history.replaceState(newState, '', document.URL);
-      }
+      window.history.replaceState(newState, '');
     } else {
-      if (typeof PDFJSDev !== 'undefined' &&
-          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        // Providing the third argument causes a SecurityError for file:// URLs.
-        window.history.pushState(newState, '');
-      } else {
-        window.history.pushState(newState, '', document.URL);
-      }
+      this._maxUid = this._uid;
+      window.history.pushState(newState, '');
     }
 
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
@@ -392,8 +384,7 @@ class PDFHistory {
       delete destination.temporary;
     }
     this._destination = destination;
-    this._currentUid = uid;
-    this._uid = this._currentUid + 1;
+    this._uid = uid;
     // This should always be reset when `this._destination` is updated.
     this._numPositionUpdates = 0;
   }
@@ -468,7 +459,7 @@ class PDFHistory {
         (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
          state.chromecomState && !this._isValidState(state))) {
       // This case corresponds to the user changing the hash of the document.
-      this._currentUid = this._uid;
+      this._uid++;
 
       let { hash, page, rotation, } = parseCurrentHash(this.linkService);
       this._pushOrReplaceState({ hash, page, rotation, },
@@ -509,6 +500,9 @@ class PDFHistory {
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+    if (this._uid > this._maxUid) {
+      this._maxUid = this._uid;
+    }
 
     if (isValidRotation(destination.rotation)) {
       this.linkService.rotation = destination.rotation;
@@ -540,10 +534,10 @@ class PDFHistory {
     _boundEvents.pageHide = (evt) => {
       // Attempt to push the `this._position` into the browser history when
       // navigating away from the document. This is *only* done if the history
-      // is currently empty, since otherwise an existing browser history entry
+      // is empty/temporary, since otherwise an existing browser history entry
       // will end up being overwritten (given that new entries cannot be pushed
       // into the browser history when the 'unload' event has already fired).
-      if (!this._destination) {
+      if (!this._destination || this._destination.temporary) {
         this._tryPushCurrentPosition();
       }
     };
@@ -554,7 +548,21 @@ class PDFHistory {
   }
 }
 
-function isDestsEqual(firstDest, secondDest) {
+function isDestHashesEqual(destHash, pushHash) {
+  if (typeof destHash !== 'string' || typeof pushHash !== 'string') {
+    return false;
+  }
+  if (destHash === pushHash) {
+    return true;
+  }
+  let { nameddest, } = parseQueryString(destHash);
+  if (nameddest === pushHash) {
+    return true;
+  }
+  return false;
+}
+
+function isDestArraysEqual(firstDest, secondDest) {
   function isEntryEqual(first, second) {
     if (typeof first !== typeof second) {
       return false;
@@ -566,7 +574,7 @@ function isDestsEqual(firstDest, secondDest) {
       if (Object.keys(first).length !== Object.keys(second).length) {
         return false;
       }
-      for (var key in first) {
+      for (let key in first) {
         if (!isEntryEqual(first[key], second[key])) {
           return false;
         }
@@ -592,5 +600,6 @@ function isDestsEqual(firstDest, secondDest) {
 
 export {
   PDFHistory,
-  isDestsEqual,
+  isDestHashesEqual,
+  isDestArraysEqual,
 };

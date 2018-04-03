@@ -2,15 +2,19 @@
 
 // In production, the bundled pdf.js shall be used instead of SystemJS.
 Promise.all([System.import('pdfjs/display/api'),
-             System.import('pdfjs/display/global'),
+             System.import('pdfjs/display/worker_options'),
              System.import('pdfjs/display/network'),
              System.resolve('pdfjs/worker_loader')])
        .then(function (modules) {
-  var api = modules[0], global = modules[1], network = modules[2];
-  api.setPDFNetworkStreamClass(network.PDFNetworkStream);
+  var api = modules[0];
+  var GlobalWorkerOptions = modules[1].GlobalWorkerOptions;
+  var network = modules[2];
+  api.setPDFNetworkStreamFactory((params) => {
+    return new network.PDFNetworkStream(params);
+  });
 
   // In production, change this to point to the built `pdf.worker.js` file.
-  global.PDFJS.workerSrc = modules[3];
+  GlobalWorkerOptions.workerSrc = modules[3];
 
   // Fetch the PDF document from the URL using promises.
   api.getDocument('helloworld.pdf').then(function (pdf) {

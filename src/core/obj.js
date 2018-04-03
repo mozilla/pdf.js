@@ -16,7 +16,8 @@
 import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
   info, InvalidPDFException, isBool, isString, MissingDataException, shadow,
-  stringToPDFString, stringToUTF8String, Util, warn, XRefParseException
+  stringToPDFString, stringToUTF8String, unreachable, Util, warn,
+  XRefParseException
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -262,33 +263,45 @@ var Catalog = (function CatalogClosure() {
 
       for (var i = 0, ii = this.numPages; i < ii; i++) {
         if (i in nums) {
-          var labelDict = nums[i];
+          const labelDict = nums[i];
           if (!isDict(labelDict)) {
             throw new FormatError('The PageLabel is not a dictionary.');
           }
 
-          var type = labelDict.get('Type');
-          if (type && !isName(type, 'PageLabel')) {
+          if (labelDict.has('Type') &&
+              !isName(labelDict.get('Type'), 'PageLabel')) {
             throw new FormatError('Invalid type in PageLabel dictionary.');
           }
 
-          var s = labelDict.get('S');
-          if (s && !isName(s)) {
-            throw new FormatError('Invalid style in PageLabel dictionary.');
+          if (labelDict.has('S')) {
+            const s = labelDict.get('S');
+            if (!isName(s)) {
+              throw new FormatError('Invalid style in PageLabel dictionary.');
+            }
+            style = s.name;
+          } else {
+            style = null;
           }
-          style = s ? s.name : null;
 
-          var p = labelDict.get('P');
-          if (p && !isString(p)) {
-            throw new FormatError('Invalid prefix in PageLabel dictionary.');
+          if (labelDict.has('P')) {
+            const p = labelDict.get('P');
+            if (!isString(p)) {
+              throw new FormatError('Invalid prefix in PageLabel dictionary.');
+            }
+            prefix = stringToPDFString(p);
+          } else {
+            prefix = '';
           }
-          prefix = p ? stringToPDFString(p) : '';
 
-          var st = labelDict.get('St');
-          if (st && !(Number.isInteger(st) && st >= 1)) {
-            throw new FormatError('Invalid start in PageLabel dictionary.');
+          if (labelDict.has('St')) {
+            const st = labelDict.get('St');
+            if (!(Number.isInteger(st) && st >= 1)) {
+              throw new FormatError('Invalid start in PageLabel dictionary.');
+            }
+            currentIndex = st;
+          } else {
+            currentIndex = 1;
           }
-          currentIndex = st || 1;
         }
 
         switch (style) {
@@ -319,10 +332,10 @@ var Catalog = (function CatalogClosure() {
               throw new FormatError(
                 `Invalid style "${style}" in PageLabel dictionary.`);
             }
+            currentLabel = '';
         }
-        pageLabels[i] = prefix + currentLabel;
 
-        currentLabel = '';
+        pageLabels[i] = prefix + currentLabel;
         currentIndex++;
       }
       return pageLabels;
@@ -371,7 +384,7 @@ var Catalog = (function CatalogClosure() {
       var xref = this.xref;
       var obj = this.catDict.get('Names');
 
-      var javaScript = [];
+      let javaScript = null;
       function appendIfJavaScriptDict(jsDict) {
         var type = jsDict.get('S');
         if (!isName(type, 'JavaScript')) {
@@ -382,6 +395,9 @@ var Catalog = (function CatalogClosure() {
           js = bytesToString(js.getBytes());
         } else if (!isString(js)) {
           return;
+        }
+        if (!javaScript) {
+          javaScript = [];
         }
         javaScript.push(stringToPDFString(js));
       }
@@ -407,6 +423,9 @@ var Catalog = (function CatalogClosure() {
           // but is supported by many PDF readers/writers (including Adobe's).
           var action = openactionDict.get('N');
           if (isName(action, 'Print')) {
+            if (!javaScript) {
+              javaScript = [];
+            }
             javaScript.push('print({});');
           }
         } else {
@@ -494,20 +513,35 @@ var Catalog = (function CatalogClosure() {
           }
 
           count = currentNode.get('Count');
-          // Cache the Kids count, since it can reduce redundant lookups in long
-          // documents where all nodes are found at *one* level of the tree.
-          var objId = currentNode.objId;
-          if (objId && !pageKidsCountCache.has(objId)) {
-            pageKidsCountCache.put(objId, count);
-          }
-          // Skip nodes where the page can't be.
-          if (currentPageIndex + count <= pageIndex) {
-            currentPageIndex += count;
-            continue;
+          if (Number.isInteger(count) && count >= 0) {
+            // Cache the Kids count, since it can reduce redundant lookups in
+            // documents where all nodes are found at *one* level of the tree.
+            var objId = currentNode.objId;
+            if (objId && !pageKidsCountCache.has(objId)) {
+              pageKidsCountCache.put(objId, count);
+            }
+            // Skip nodes where the page can't be.
+            if (currentPageIndex + count <= pageIndex) {
+              currentPageIndex += count;
+              continue;
+            }
           }
 
           var kids = currentNode.get('Kids');
           if (!Array.isArray(kids)) {
+            // Prevent errors in corrupt PDF documents that violate the
+            // specification by *inlining* Page dicts directly in the Kids
+            // array, rather than using indirect objects (fixes issue9540.pdf).
+            if (isName(currentNode.get('Type'), 'Page') ||
+                (!currentNode.has('Type') && currentNode.has('Contents'))) {
+              if (currentPageIndex === pageIndex) {
+                capability.resolve([currentNode, null]);
+                return;
+              }
+              currentPageIndex++;
+              continue;
+            }
+
             capability.reject(new FormatError(
               'page dictionary kids object is not an array'));
             return;
@@ -567,11 +601,14 @@ var Catalog = (function CatalogClosure() {
             if (!isRef(kid)) {
               throw new FormatError('kid must be a Ref.');
             }
-            if (kid.num === kidRef.num) {
+            if (isRefsEqual(kid, kidRef)) {
               found = true;
               break;
             }
             kidPromises.push(xref.fetchAsync(kid).then(function (kid) {
+              if (!isDict(kid)) {
+                throw new FormatError('kid node must be a Dict.');
+              }
               if (kid.has('Count')) {
                 var count = kid.get('Count');
                 total += count;
@@ -1095,10 +1132,14 @@ var XRef = (function XRefClosure() {
         return skipped;
       }
       var objRegExp = /^(\d+)\s+(\d+)\s+obj\b/;
+      const endobjRegExp = /\bendobj[\b\s]$/;
+      const nestedObjRegExp = /\s+(\d+\s+\d+\s+obj[\b\s])$/;
+      const CHECK_CONTENT_LENGTH = 25;
+
       var trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
       var startxrefBytes = new Uint8Array([115, 116, 97, 114, 116, 120, 114,
                                           101, 102]);
-      var endobjBytes = new Uint8Array([101, 110, 100, 111, 98, 106]);
+      const objBytes = new Uint8Array([111, 98, 106]);
       var xrefBytes = new Uint8Array([47, 88, 82, 101, 102]);
 
       // Clear out any existing entries, since they may be bogus.
@@ -1140,8 +1181,36 @@ var XRef = (function XRefClosure() {
               uncompressed: true,
             };
           }
-          var contentLength = skipUntil(buffer, position, endobjBytes) + 7;
-          var content = buffer.subarray(position, position + contentLength);
+          let contentLength, startPos = position + token.length;
+
+          // Find the next "obj" string, rather than "endobj", to ensure that
+          // we won't skip over a new 'obj' operator in corrupt files where
+          // 'endobj' operators are missing (fixes issue9105_reduced.pdf).
+          while (startPos < buffer.length) {
+            let endPos = startPos + skipUntil(buffer, startPos, objBytes) + 4;
+            contentLength = endPos - position;
+
+            let checkPos = Math.max(endPos - CHECK_CONTENT_LENGTH, startPos);
+            let tokenStr = bytesToString(buffer.subarray(checkPos, endPos));
+
+            // Check if the current object ends with an 'endobj' operator.
+            if (endobjRegExp.test(tokenStr)) {
+              break;
+            } else {
+              // Check if an "obj" occurrence is actually a new object,
+              // i.e. the current object is missing the 'endobj' operator.
+              let objToken = nestedObjRegExp.exec(tokenStr);
+
+              if (objToken && objToken[1]) {
+                warn('indexObjects: Found new "obj" inside of another "obj", ' +
+                     'caused by missing "endobj" -- trying to recover.');
+                contentLength -= objToken[1].length;
+                break;
+              }
+            }
+            startPos += contentLength;
+          }
+          let content = buffer.subarray(position, position + contentLength);
 
           // checking XRef stream suspect
           // (it shall have '/XRef' and next char is not a letter)
@@ -1468,7 +1537,7 @@ var XRef = (function XRefClosure() {
  */
 var NameOrNumberTree = (function NameOrNumberTreeClosure() {
   function NameOrNumberTree(root, xref) {
-    throw new Error('Cannot initialize NameOrNumberTree.');
+    unreachable('Cannot initialize NameOrNumberTree.');
   }
 
   NameOrNumberTree.prototype = {

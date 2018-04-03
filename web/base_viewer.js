@@ -13,14 +13,15 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
 import {
-  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, isValidRotation,
-  MAX_AUTO_SCALE, NullL10n, PresentationModeState, RendererType,
-  SCROLLBAR_PADDING, UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
+  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, isPortraitOrientation,
+  isValidRotation, MAX_AUTO_SCALE, NullL10n, PresentationModeState,
+  RendererType, SCROLLBAR_PADDING, TextLayerMode, UNKNOWN_SCALE,
+  VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
+import { createPromiseCapability } from 'pdfjs-lib';
 import { getGlobalEventBus } from './dom_events';
 import { PDFPageView } from './pdf_page_view';
 import { SimpleLinkService } from './pdf_link_service';
@@ -39,15 +40,26 @@ const DEFAULT_CACHE_SIZE = 10;
  * @property {PDFRenderingQueue} renderingQueue - (optional) The rendering
  *   queue object.
  * @property {boolean} removePageBorders - (optional) Removes the border shadow
- *   around the pages. The default is false.
- * @property {boolean} enhanceTextSelection - (optional) Enables the improved
- *   text selection behaviour. The default is `false`.
+ *   around the pages. The default value is `false`.
+ * @property {number} textLayerMode - (optional) Controls if the text layer used
+ *   for selection and searching is created, and if the improved text selection
+ *   behaviour is enabled. The constants from {TextLayerMode} should be used.
+ *   The default value is `TextLayerMode.ENABLE`.
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms - (optional) Enables rendering of
  *   interactive form elements. The default is `false`.
  * @property {boolean} enablePrintAutoRotate - (optional) Enables automatic
  *   rotation of pages whose orientation differ from the first page upon
  *   printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
+ *   rendering for some operations. The default value is `false`.
+ * @property {boolean} useOnlyCssZoom - (optional) Enables CSS only zooming.
+ *   The default value is `false`.
+ * @property {number} maxCanvasPixels - (optional) The maximum supported canvas
+ *   size in total pixels, i.e. width * height. Use -1 for no limit.
+ *   The default value is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
  */
 
@@ -83,10 +95,6 @@ function isSameScale(oldScale, newScale) {
   return false;
 }
 
-function isPortraitOrientation(size) {
-  return size.width <= size.height;
-}
-
 /**
  * Simple viewer control to display PDF content/pages.
  * @implements {IRenderableView}
@@ -107,10 +115,16 @@ class BaseViewer {
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
     this.removePageBorders = options.removePageBorders || false;
+    this.textLayerMode = Number.isInteger(options.textLayerMode) ?
+      options.textLayerMode : TextLayerMode.ENABLE;
     this.enhanceTextSelection = options.enhanceTextSelection || false;
+    this.imageResourcesPath = options.imageResourcesPath || '';
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
+    this.enableWebGL = options.enableWebGL || false;
+    this.useOnlyCssZoom = options.useOnlyCssZoom || false;
+    this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
 
     this.defaultRenderingQueue = !options.renderingQueue;
@@ -362,7 +376,7 @@ class BaseViewer {
       let viewport = pdfPage.getViewport(scale * CSS_UNITS);
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let textLayerFactory = null;
-        if (!PDFJS.disableTextLayer) {
+        if (this.textLayerMode !== TextLayerMode.DISABLE) {
           textLayerFactory = this;
         }
         let pageView = new PDFPageView({
@@ -373,10 +387,14 @@ class BaseViewer {
           defaultViewport: viewport.clone(),
           renderingQueue: this.renderingQueue,
           textLayerFactory,
+          textLayerMode: this.textLayerMode,
           annotationLayerFactory: this,
-          enhanceTextSelection: this.enhanceTextSelection,
+          imageResourcesPath: this.imageResourcesPath,
           renderInteractiveForms: this.renderInteractiveForms,
           renderer: this.renderer,
+          enableWebGL: this.enableWebGL,
+          useOnlyCssZoom: this.useOnlyCssZoom,
+          maxCanvasPixels: this.maxCanvasPixels,
           l10n: this.l10n,
         });
         bindOnAfterAndBeforeDraw(pageView);
@@ -387,7 +405,7 @@ class BaseViewer {
       // starts to create the correct size canvas. Wait until one page is
       // rendered so we don't tie up too many resources early on.
       onePageRenderedCapability.promise.then(() => {
-        if (PDFJS.disableAutoFetch) {
+        if (pdfDocument.loadingParams['disableAutoFetch']) {
           // XXX: Printing is semi-broken with auto fetch disabled.
           pagesCapability.resolve();
           return;
@@ -505,7 +523,7 @@ class BaseViewer {
 
     if (!noScroll) {
       let page = this._currentPageNumber, dest;
-      if (this._location && !PDFJS.ignoreCurrentPositionOnZoom &&
+      if (this._location &&
           !(this.isInPresentationMode || this.isChangingPresentationMode)) {
         page = this._location.pageNumber;
         dest = [null, { name: 'XYZ', }, this._location.left,
@@ -557,11 +575,10 @@ class BaseViewer {
           scale = Math.min(pageWidthScale, pageHeightScale);
           break;
         case 'auto':
-          let isLandscape = (currentPage.width > currentPage.height);
           // For pages in landscape mode, fit the page height to the viewer
           // *unless* the page would thus become too wide to fit horizontally.
-          let horizontalScale = isLandscape ?
-            Math.min(pageHeightScale, pageWidthScale) : pageWidthScale;
+          let horizontalScale = isPortraitOrientation(currentPage) ?
+            pageWidthScale : Math.min(pageHeightScale, pageWidthScale);
           scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
           break;
         default:
@@ -601,11 +618,6 @@ class BaseViewer {
    * @param {ScrollPageIntoViewParameters} params
    */
   scrollPageIntoView(params) {
-    if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
-        (arguments.length > 1 || typeof params === 'number')) {
-      console.error('Call of scrollPageIntoView() with obsolete signature.');
-      return;
-    }
     if (!this.pdfDocument) {
       return;
     }
@@ -877,15 +889,19 @@ class BaseViewer {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {string} imageResourcesPath - (optional) Path for image resources,
+   *   mainly for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(pageDiv, pdfPage, renderInteractiveForms = false,
+  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = '',
+                               renderInteractiveForms = false,
                                l10n = NullL10n) {
     return new AnnotationLayerBuilder({
       pageDiv,
       pdfPage,
+      imageResourcesPath,
       renderInteractiveForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,

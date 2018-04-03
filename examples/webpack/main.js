@@ -8,10 +8,8 @@ var pdfjsLib = require('pdfjs-dist');
 var pdfPath = '../helloworld/helloworld.pdf';
 
 // Setting worker path to worker bundle.
-pdfjsLib.PDFJS.workerSrc = '../../build/webpack/pdf.worker.bundle.js';
-
-// It is also possible to disable workers via `PDFJS.disableWorker = true`,
-// however that might degrade the UI performance in web browsers.
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  '../../build/webpack/pdf.worker.bundle.js';
 
 // Loading a document.
 var loadingTask = pdfjsLib.getDocument(pdfPath);

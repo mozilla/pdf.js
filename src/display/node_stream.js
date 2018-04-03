@@ -22,18 +22,37 @@ let url = __non_webpack_require__('url');
 import {
   AbortException, assert, createPromiseCapability
 } from '../shared/util';
-import { validateRangeRequestCapabilities } from './network_utils';
+import {
+  extractFilenameFromHeader, validateRangeRequestCapabilities
+} from './network_utils';
+
+const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
+
+function parseUrl(sourceUrl) {
+  let parsedUrl = url.parse(sourceUrl);
+  if (parsedUrl.protocol === 'file:' || parsedUrl.host) {
+    return parsedUrl;
+  }
+  // Prepending 'file:///' to Windows absolute path.
+  if (/^[a-z]:[/\\]/i.test(sourceUrl)) {
+    return url.parse(`file:///${sourceUrl}`);
+  }
+  // Changes protocol to 'file:' if url refers to filesystem.
+  if (!parsedUrl.host) {
+    parsedUrl.protocol = 'file:';
+  }
+  return parsedUrl;
+}
 
 class PDFNodeStream {
-  constructor(options) {
-    this.options = options;
-    this.source = options.source;
-    this.url = url.parse(this.source.url);
+  constructor(source) {
+    this.source = source;
+    this.url = parseUrl(source.url);
     this.isHttp = this.url.protocol === 'http:' ||
                   this.url.protocol === 'https:';
     // Check if url refers to filesystem.
-    this.isFsUrl = this.url.protocol === 'file:' || !this.url.host;
-    this.httpHeaders = (this.isHttp && this.source.httpHeaders) || {};
+    this.isFsUrl = this.url.protocol === 'file:';
+    this.httpHeaders = (this.isHttp && source.httpHeaders) || {};
 
     this._fullRequest = null;
     this._rangeRequestReaders = [];
@@ -74,17 +93,19 @@ class BaseFullReader {
     this._errored = false;
     this._reason = null;
     this.onProgress = null;
-    this._contentLength = stream.source.length; // optional
+    let source = stream.source;
+    this._contentLength = source.length; // optional
     this._loaded = 0;
+    this._filename = null;
 
-    this._disableRange = stream.options.disableRange || false;
-    this._rangeChunkSize = stream.source.rangeChunkSize;
+    this._disableRange = source.disableRange || false;
+    this._rangeChunkSize = source.rangeChunkSize;
     if (!this._rangeChunkSize && !this._disableRange) {
       this._disableRange = true;
     }
 
-    this._isStreamingSupported = !stream.source.disableStream;
-    this._isRangeSupported = !stream.options.disableRange;
+    this._isStreamingSupported = !source.disableStream;
+    this._isRangeSupported = !source.disableRange;
 
     this._readableStream = null;
     this._readCapability = createPromiseCapability();
@@ -93,6 +114,10 @@ class BaseFullReader {
 
   get headersReady() {
     return this._headersCapability.promise;
+  }
+
+  get filename() {
+    return this._filename;
   }
 
   get contentLength() {
@@ -190,8 +215,8 @@ class BaseRangeReader {
     this._loaded = 0;
     this._readableStream = null;
     this._readCapability = createPromiseCapability();
-
-    this._isStreamingSupported = !stream.source.disableStream;
+    let source = stream.source;
+    this._isStreamingSupported = !source.disableStream;
   }
 
   get isStreamingSupported() {
@@ -282,32 +307,35 @@ class PDFNodeStreamFullReader extends BaseFullReader {
       this._headersCapability.resolve();
       this._setReadableStream(response);
 
+      const getResponseHeader = (name) => {
+        // Make sure that headers name are in lower case, as mentioned
+        // here: https://nodejs.org/api/http.html#http_message_headers.
+        return this._readableStream.headers[name.toLowerCase()];
+      };
       let { allowRangeRequests, suggestedLength, } =
-      validateRangeRequestCapabilities({
-        getResponseHeader: (name) => {
-          // Make sure that headers name are in lower case, as mentioned
-          // here: https://nodejs.org/api/http.html#http_message_headers.
-          return this._readableStream.headers[name.toLowerCase()];
-        },
-        isHttp: stream.isHttp,
-        rangeChunkSize: this._rangeChunkSize,
-        disableRange: this._disableRange,
-      });
+        validateRangeRequestCapabilities({
+          getResponseHeader,
+          isHttp: stream.isHttp,
+          rangeChunkSize: this._rangeChunkSize,
+          disableRange: this._disableRange,
+        });
 
-      if (allowRangeRequests) {
-        this._isRangeSupported = true;
-      }
+      this._isRangeSupported = allowRangeRequests;
       // Setting right content length.
-      this._contentLength = suggestedLength;
+      this._contentLength = suggestedLength || this._contentLength;
+
+      this._filename = extractFilenameFromHeader(getResponseHeader);
     };
 
     this._request = null;
     if (this._url.protocol === 'http:') {
-      this._request = http.request(createRequestOptions(
-        this._url, stream.httpHeaders), handleResponse);
+      this._request = http.request(
+        createRequestOptions(this._url, stream.httpHeaders),
+        handleResponse);
     } else {
-      this._request = https.request(createRequestOptions(
-        this._url, stream.httpHeaders), handleResponse);
+      this._request = https.request(
+        createRequestOptions(this._url, stream.httpHeaders),
+        handleResponse);
     }
 
     this._request.on('error', (reason) => {
@@ -360,7 +388,13 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
 class PDFNodeStreamFsFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
-    let path = decodeURI(this._url.path);
+
+    let path = decodeURIComponent(this._url.path);
+
+    // Remove the extra slash to get right path from url like `file:///C:/`
+    if (fileUriRegex.test(this._url.href)) {
+      path = path.replace(/^\//, '');
+    }
 
     fs.lstat(path, (error, stat) => {
       if (error) {
@@ -382,8 +416,15 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
   constructor(stream, start, end) {
     super(stream);
 
+    let path = decodeURIComponent(this._url.path);
+
+    // Remove the extra slash to get right path from url like `file:///C:/`
+    if (fileUriRegex.test(this._url.href)) {
+      path = path.replace(/^\//, '');
+    }
+
     this._setReadableStream(
-      fs.createReadStream(decodeURI(this._url.path), { start, end: end - 1, }));
+      fs.createReadStream(path, { start, end: end - 1, }));
   }
 }
 

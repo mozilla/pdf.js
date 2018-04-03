@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 
 'use strict';
 
@@ -337,7 +338,7 @@ var Stepper = (function StepperClosure() {
         line.className = 'line';
         line.dataset.idx = i;
         chunk.appendChild(line);
-        var checked = this.breakPoints.indexOf(i) !== -1;
+        var checked = this.breakPoints.includes(i);
         var args = operatorList.argsArray[i] || [];
 
         var breakCell = c('td');
@@ -461,7 +462,6 @@ var Stats = (function Stats() {
     manager: null,
     init(pdfjsLib) {
       this.panel.setAttribute('style', 'padding: 5px;');
-      pdfjsLib.PDFJS.enableStats = true;
     },
     enabled: false,
     active: false,
@@ -520,7 +520,7 @@ window.PDFBug = (function PDFBugClosure() {
       }
       for (var i = 0; i < tools.length; ++i) {
         var tool = tools[i];
-        if (all || ids.indexOf(tool.id) !== -1) {
+        if (all || ids.includes(tool.id)) {
           tool.enabled = true;
         }
       }

@@ -84,6 +84,10 @@ let FirefoxCom = (function FirefoxComClosure() {
 })();
 
 class DownloadManager {
+  constructor(options) {
+    this.disableCreateObjectURL = false;
+  }
+
   downloadUrl(url, filename) {
     FirefoxCom.request('download', {
       originalUrl: url,
@@ -92,7 +96,7 @@ class DownloadManager {
   }
 
   downloadData(data, filename, contentType) {
-    let blobUrl = createObjectURL(data, contentType, false);
+    let blobUrl = createObjectURL(data, contentType);
 
     FirefoxCom.request('download', {
       blobUrl,
@@ -139,6 +143,10 @@ class FirefoxPreferences extends BasePreferences {
 class MozL10n {
   constructor(mozL10n) {
     this.mozL10n = mozL10n;
+  }
+
+  getLanguage() {
+    return Promise.resolve(this.mozL10n.getLanguage());
   }
 
   getDirection() {
@@ -256,15 +264,15 @@ PDFViewerApplication.externalServices = {
     FirefoxCom.request('reportTelemetry', JSON.stringify(data));
   },
 
-  createDownloadManager() {
-    return new DownloadManager();
+  createDownloadManager(options) {
+    return new DownloadManager(options);
   },
 
   createPreferences() {
     return new FirefoxPreferences();
   },
 
-  createL10n() {
+  createL10n(options) {
     let mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
     return new MozL10n(mozL10n);

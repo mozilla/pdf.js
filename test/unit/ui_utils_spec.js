@@ -14,10 +14,11 @@
  */
 
 import {
-  binarySearchFirstItem, EventBus, getPDFFileNameFromURL, isValidRotation,
-  waitOnEventOrTimeout, WaitOnType
+  binarySearchFirstItem, EventBus, getPageSizeInches, getPDFFileNameFromURL,
+  isPortraitOrientation, isValidRotation, waitOnEventOrTimeout, WaitOnType
 } from '../../web/ui_utils';
-import { createObjectURL, isNodeJS } from '../../src/shared/util';
+import { createObjectURL } from '../../src/shared/util';
+import isNodeJS from '../../src/shared/is_node';
 
 describe('ui_utils', function() {
   describe('binary search', function() {
@@ -284,6 +285,27 @@ describe('ui_utils', function() {
     });
   });
 
+  describe('isPortraitOrientation', function() {
+    it('should be portrait orientation', function() {
+      expect(isPortraitOrientation({
+        width: 200,
+        height: 400,
+      })).toEqual(true);
+
+      expect(isPortraitOrientation({
+        width: 500,
+        height: 500,
+      })).toEqual(true);
+    });
+
+    it('should be landscape orientation', function() {
+      expect(isPortraitOrientation({
+        width: 600,
+        height: 300,
+      })).toEqual(false);
+    });
+  });
+
   describe('waitOnEventOrTimeout', function() {
     let eventBus;
 
@@ -395,6 +417,34 @@ describe('ui_utils', function() {
         expect(type).toEqual(WaitOnType.TIMEOUT);
         done();
       }, done.fail);
+    });
+  });
+
+  describe('getPageSizeInches', function () {
+    it('gets page size (in inches)', function() {
+      const page = {
+        view: [0, 0, 595.28, 841.89],
+        userUnit: 1.0,
+        rotate: 0,
+      };
+      const { width, height, } = getPageSizeInches(page);
+
+      expect(+width.toPrecision(3)).toEqual(8.27);
+      expect(+height.toPrecision(4)).toEqual(11.69);
+    });
+
+    it('gets page size (in inches), for non-default /Rotate entry', function() {
+      const pdfPage1 = { view: [0, 0, 612, 792], userUnit: 1, rotate: 0, };
+      const { width: width1, height: height1, } = getPageSizeInches(pdfPage1);
+
+      expect(width1).toEqual(8.5);
+      expect(height1).toEqual(11);
+
+      const pdfPage2 = { view: [0, 0, 612, 792], userUnit: 1, rotate: 90, };
+      const { width: width2, height: height2, } = getPageSizeInches(pdfPage2);
+
+      expect(width2).toEqual(11);
+      expect(height2).toEqual(8.5);
     });
   });
 });

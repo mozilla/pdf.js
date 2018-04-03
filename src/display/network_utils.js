@@ -16,10 +16,13 @@
 import {
   assert, MissingPDFException, UnexpectedResponseException
 } from '../shared/util';
+import {
+  getFilenameFromContentDispositionHeader
+} from './content_disposition';
 
 function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
                                             rangeChunkSize, disableRange, }) {
-  assert(rangeChunkSize > 0);
+  assert(rangeChunkSize > 0, 'Range chunk size must be larger than zero');
   let returnValues = {
     allowRangeRequests: false,
     suggestedLength: undefined,
@@ -52,6 +55,17 @@ function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
   return returnValues;
 }
 
+function extractFilenameFromHeader(getResponseHeader) {
+  const contentDisposition = getResponseHeader('Content-Disposition');
+  if (contentDisposition) {
+    let filename = getFilenameFromContentDispositionHeader(contentDisposition);
+    if (/\.pdf$/i.test(filename)) {
+      return filename;
+    }
+  }
+  return null;
+}
+
 function createResponseStatusError(status, url) {
   if (status === 404 || status === 0 && /^file:/.test(url)) {
     return new MissingPDFException('Missing PDF "' + url + '".');
@@ -67,6 +81,7 @@ function validateResponseStatus(status) {
 
 export {
   createResponseStatusError,
+  extractFilenameFromHeader,
   validateRangeRequestCapabilities,
   validateResponseStatus,
 };

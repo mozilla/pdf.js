@@ -142,10 +142,10 @@ var FontType = {
   MMTYPE1: 10,
 };
 
-var VERBOSITY_LEVELS = {
-  errors: 0,
-  warnings: 1,
-  infos: 5,
+const VerbosityLevel = {
+  ERRORS: 0,
+  WARNINGS: 1,
+  INFOS: 5,
 };
 
 var CMapCompressionType = {
@@ -251,10 +251,12 @@ var OPS = {
   constructPath: 91,
 };
 
-var verbosity = VERBOSITY_LEVELS.warnings;
+let verbosity = VerbosityLevel.WARNINGS;
 
 function setVerbosityLevel(level) {
-  verbosity = level;
+  if (Number.isInteger(level)) {
+    verbosity = level;
+  }
 }
 
 function getVerbosityLevel() {
@@ -265,19 +267,19 @@ function getVerbosityLevel() {
 // as warning that Workers were disabled, which is important to devs but not
 // end users.
 function info(msg) {
-  if (verbosity >= VERBOSITY_LEVELS.infos) {
+  if (verbosity >= VerbosityLevel.INFOS) {
     console.log('Info: ' + msg);
   }
 }
 
 // Non-fatal warnings.
 function warn(msg) {
-  if (verbosity >= VERBOSITY_LEVELS.warnings) {
+  if (verbosity >= VerbosityLevel.WARNINGS) {
     console.log('Warning: ' + msg);
   }
 }
 
-// Deprecated API function -- display regardless of the PDFJS.verbosity setting.
+// Deprecated API function -- display regardless of the `verbosity` setting.
 function deprecated(details) {
   console.log('Deprecated API usage: ' + details);
 }
@@ -600,13 +602,14 @@ function string32(value) {
                              (value >> 8) & 0xff, value & 0xff);
 }
 
+// Calculate the base 2 logarithm of the number `x`. This differs from the
+// native function in the sense that it returns the ceiling value and that it
+// returns 0 instead of `Infinity`/`NaN` for `x` values smaller than/equal to 0.
 function log2(x) {
-  var n = 1, i = 0;
-  while (x > n) {
-    n <<= 1;
-    i++;
+  if (x <= 0) {
+    return 0;
   }
-  return i;
+  return Math.ceil(Math.log2(x));
 }
 
 function readInt8(data, start) {
@@ -639,6 +642,53 @@ function isEvalSupported() {
   } catch (e) {
     return false;
   }
+}
+
+/**
+ * Get the value of an inheritable property.
+ *
+ * If the PDF specification explicitly lists a property in a dictionary as
+ * inheritable, then the value of the property may be present in the dictionary
+ * itself or in one or more parents of the dictionary.
+ *
+ * If the key is not found in the tree, `undefined` is returned. Otherwise,
+ * the value for the key is returned or, if `stopWhenFound` is `false`, a list
+ * of values is returned. To avoid infinite loops, the traversal is stopped when
+ * the loop limit is reached.
+ *
+ * @param {Dict} dict - Dictionary from where to start the traversal.
+ * @param {string} key - The key of the property to find the value for.
+ * @param {boolean} getArray - Whether or not the value should be fetched as an
+ *   array. The default value is `false`.
+ * @param {boolean} stopWhenFound - Whether or not to stop the traversal when
+ *   the key is found. If set to `false`, we always walk up the entire parent
+ *   chain, for example to be able to find `\Resources` placed on multiple
+ *   levels of the tree. The default value is `true`.
+ */
+function getInheritableProperty({ dict, key, getArray = false,
+                                  stopWhenFound = true, }) {
+  const LOOP_LIMIT = 100;
+  let loopCount = 0;
+  let values;
+
+  while (dict) {
+    const value = getArray ? dict.getArray(key) : dict.get(key);
+    if (value !== undefined) {
+      if (stopWhenFound) {
+        return value;
+      }
+      if (!values) {
+        values = [];
+      }
+      values.push(value);
+    }
+    if (++loopCount > LOOP_LIMIT) {
+      warn(`getInheritableProperty: maximum loop count exceeded for "${key}"`);
+      break;
+    }
+    dict = dict.get('Parent');
+  }
+  return values;
 }
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
@@ -848,17 +898,6 @@ var Util = (function UtilClosure() {
     for (var key in obj2) {
       obj1[key] = obj2[key];
     }
-  };
-
-  Util.getInheritableProperty =
-      function Util_getInheritableProperty(dict, name, getArray) {
-    while (dict && !dict.has(name)) {
-      dict = dict.get('Parent');
-    }
-    if (!dict) {
-      return null;
-    }
-    return getArray ? dict.getArray(name) : dict.get(name);
   };
 
   Util.inherit = function Util_inherit(sub, base, prototype) {
@@ -1088,11 +1127,6 @@ function isSpace(ch) {
   return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
 }
 
-function isNodeJS() {
-  // eslint-disable-next-line no-undef
-  return typeof process === 'object' && process + '' === '[object process]';
-}
-
 /**
  * Promise Capability object.
  *
@@ -1117,66 +1151,6 @@ function createPromiseCapability() {
   });
   return capability;
 }
-
-var StatTimer = (function StatTimerClosure() {
-  function rpad(str, pad, length) {
-    while (str.length < length) {
-      str += pad;
-    }
-    return str;
-  }
-  function StatTimer() {
-    this.started = Object.create(null);
-    this.times = [];
-    this.enabled = true;
-  }
-  StatTimer.prototype = {
-    time: function StatTimer_time(name) {
-      if (!this.enabled) {
-        return;
-      }
-      if (name in this.started) {
-        warn('Timer is already running for ' + name);
-      }
-      this.started[name] = Date.now();
-    },
-    timeEnd: function StatTimer_timeEnd(name) {
-      if (!this.enabled) {
-        return;
-      }
-      if (!(name in this.started)) {
-        warn('Timer has not been started for ' + name);
-      }
-      this.times.push({
-        'name': name,
-        'start': this.started[name],
-        'end': Date.now(),
-      });
-      // Remove timer from started so it can be called again.
-      delete this.started[name];
-    },
-    toString: function StatTimer_toString() {
-      var i, ii;
-      var times = this.times;
-      var out = '';
-      // Find the longest name for padding purposes.
-      var longest = 0;
-      for (i = 0, ii = times.length; i < ii; ++i) {
-        var name = times[i]['name'];
-        if (name.length > longest) {
-          longest = name.length;
-        }
-      }
-      for (i = 0, ii = times.length; i < ii; ++i) {
-        var span = times[i];
-        var duration = span.end - span.start;
-        out += rpad(span['name'], ' ', longest) + ' ' + duration + 'ms\n';
-      }
-      return out;
-    },
-  };
-  return StatTimer;
-})();
 
 var createBlob = function createBlob(data, contentType) {
   if (typeof Blob !== 'undefined') {
@@ -1628,53 +1602,16 @@ MessageHandler.prototype = {
     }
   },
 
-  close(reason) {
+  destroy() {
     this.comObj.removeEventListener('message', this._onComObjOnMessage);
-
-    // Reject all promises and streams.
-    for (let i in this.callbacksCapabilities) {
-      const callbackCapability = this.callbacksCapabilities[i];
-      callbackCapability.reject(reason);
-    }
-    for (let i in this.streamSinks) {
-      const sink = this.streamSinks[i];
-      sink.sinkCapability.reject(reason);
-    }
-    for (let i in this.streamControllers) {
-      const controller = this.streamControllers[i];
-      if (!controller.isClosed) {
-        controller.controller.error(reason);
-      }
-      if (controller.startCall) {
-        controller.startCall.reject(reason);
-      }
-      if (controller.pullCall) {
-        controller.pullCall.reject(reason);
-      }
-      if (controller.cancelCall) {
-        controller.cancelCall.reject(reason);
-      }
-    }
   },
 };
-
-function loadJpegStream(id, imageUrl, objs) {
-  var img = new Image();
-  img.onload = (function loadJpegStream_onloadClosure() {
-    objs.resolve(id, img);
-  });
-  img.onerror = (function loadJpegStream_onerrorClosure() {
-    objs.resolve(id, null);
-    warn('Error during JPEG image loading');
-  });
-  img.src = imageUrl;
-}
 
 export {
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   OPS,
-  VERBOSITY_LEVELS,
+  VerbosityLevel,
   UNSUPPORTED_FEATURES,
   AnnotationBorderStyleType,
   AnnotationFieldFlag,
@@ -1693,7 +1630,6 @@ export {
   PageViewport,
   PasswordException,
   PasswordResponses,
-  StatTimer,
   StreamType,
   TextRenderingMode,
   UnexpectedResponseException,
@@ -1709,6 +1645,7 @@ export {
   createPromiseCapability,
   createObjectURL,
   deprecated,
+  getInheritableProperty,
   getLookupTableFactory,
   getVerbosityLevel,
   info,
@@ -1718,12 +1655,10 @@ export {
   isNum,
   isString,
   isSpace,
-  isNodeJS,
   isSameOrigin,
   createValidAbsoluteUrl,
   isLittleEndian,
   isEvalSupported,
-  loadJpegStream,
   log2,
   readInt8,
   readUint16,

@@ -14,7 +14,8 @@
  */
 
 import {
-  CMapCompressionType, FormatError, isString, MissingDataException, Util, warn
+  CMapCompressionType, FormatError, isString, MissingDataException,
+  unreachable, Util, warn
 } from '../shared/util';
 import { isCmd, isEOF, isName, isStream } from './primitives';
 import { Lexer } from './parser';
@@ -353,19 +354,19 @@ var IdentityCMap = (function IdentityCMapClosure() {
     addCodespaceRange: CMap.prototype.addCodespaceRange,
 
     mapCidRange(low, high, dstLow) {
-      throw new Error('should not call mapCidRange');
+      unreachable('should not call mapCidRange');
     },
 
     mapBfRange(low, high, dstLow) {
-      throw new Error('should not call mapBfRange');
+      unreachable('should not call mapBfRange');
     },
 
     mapBfRangeToArray(low, high, array) {
-      throw new Error('should not call mapBfRangeToArray');
+      unreachable('should not call mapBfRangeToArray');
     },
 
     mapOne(src, dst) {
-      throw new Error('should not call mapCidOne');
+      unreachable('should not call mapCidOne');
     },
 
     lookup(code) {
@@ -402,7 +403,7 @@ var IdentityCMap = (function IdentityCMapClosure() {
     },
 
     get isIdentityCMap() {
-      throw new Error('should not access .isIdentityCMap');
+      unreachable('should not access .isIdentityCMap');
     },
   };
 
@@ -588,7 +589,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
             stream.readHex(start, dataSize);
             stream.readHexNumber(end, dataSize);
             addHex(end, start, dataSize);
-            code = stream.readNumber();
+            stream.readNumber(); // code
             // undefined range, skipping
             for (i = 1; i < subitemsCount; i++) {
               incHex(end, dataSize);
@@ -596,7 +597,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
               addHex(start, end, dataSize);
               stream.readHexNumber(end, dataSize);
               addHex(end, start, dataSize);
-              code = stream.readNumber();
+              stream.readNumber(); // code
               // nop
             }
             break;
@@ -852,7 +853,7 @@ var CMapFactory = (function CMapFactoryClosure() {
 
   function parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap) {
     var previous;
-    var embededUseCMap;
+    var embeddedUseCMap;
     objLoop: while (true) {
       try {
         var obj = lexer.getObj();
@@ -871,7 +872,7 @@ var CMapFactory = (function CMapFactoryClosure() {
               break objLoop;
             case 'usecmap':
               if (isName(previous)) {
-                embededUseCMap = previous.name;
+                embeddedUseCMap = previous.name;
               }
               break;
             case 'begincodespacerange':
@@ -900,10 +901,10 @@ var CMapFactory = (function CMapFactoryClosure() {
       }
     }
 
-    if (!useCMap && embededUseCMap) {
-      // Load the usecmap definition from the file only if there wasn't one
+    if (!useCMap && embeddedUseCMap) {
+      // Load the useCMap definition from the file only if there wasn't one
       // specified.
-      useCMap = embededUseCMap;
+      useCMap = embeddedUseCMap;
     }
     if (useCMap) {
       return extendCMap(cMap, fetchBuiltInCMap, useCMap);
@@ -941,7 +942,7 @@ var CMapFactory = (function CMapFactoryClosure() {
     } else if (name === 'Identity-V') {
       return Promise.resolve(new IdentityCMap(true, 2));
     }
-    if (BUILT_IN_CMAPS.indexOf(name) === -1) {
+    if (!BUILT_IN_CMAPS.includes(name)) {
       return Promise.reject(new Error('Unknown CMap name: ' + name));
     }
     if (!fetchBuiltInCMap) {

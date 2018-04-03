@@ -34,14 +34,14 @@ var ShadingType = {
 var Pattern = (function PatternClosure() {
   // Constructor should define this.getPattern
   function Pattern() {
-    throw new Error('should not call Pattern constructor');
+    unreachable('should not call Pattern constructor');
   }
 
   Pattern.prototype = {
     // Input: current Canvas context
     // Output: the appropriate fillStyle or strokeStyle
     getPattern: function Pattern_getPattern(ctx) {
-      throw new Error(`Should not call Pattern.getStyle: ${ctx}`);
+      unreachable(`Should not call Pattern.getStyle: ${ctx}`);
     },
   };
 
@@ -142,7 +142,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
 
     var colorStops = this.colorStops = [];
 
-    // Protect against bad domains so we don't end up in an infinte loop below.
+    // Protect against bad domains so we don't end up in an infinite loop below.
     if (t0 >= t1 || step <= 0) {
       // Acrobat doesn't seem to handle these cases so we'll ignore for
       // now.

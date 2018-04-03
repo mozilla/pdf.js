@@ -31,20 +31,15 @@
     'MDAwIG4gCjAwMDAwMDAzODAgMDAwMDAgbiAKdHJhaWxlcgo8PAogIC9TaXplIDYKICAvUm9v' +
     'dCAxIDAgUgo+PgpzdGFydHhyZWYKNDkyCiUlRU9G');
 
-  // Disable workers to avoid yet another cross-origin issue (workers need
-  // the URL of the script to be loaded, and dynamically loading a cross-origin
-  // script does not work).
-  //
-  // PDFJS.disableWorker = true;
-
   //
   // The workerSrc property shall be specified.
   //
-  PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
   // Opening PDF by passing its binary data as a string. It is still preferable
   // to use Uint8Array, but string or array-like structure will work too.
-  PDFJS.getDocument({data: pdfData}).then(function getPdfHelloWorld(pdf) {
+  pdfjsLib.getDocument({data: pdfData}).then(function getPdfHelloWorld(pdf) {
     // Fetch the first page.
     pdf.getPage(1).then(function getPageHelloWorld(page) {
       var scale = 1.5;

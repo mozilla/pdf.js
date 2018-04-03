@@ -15,7 +15,7 @@
 
 import { CMap, CMapFactory, IdentityCMap } from '../../src/core/cmap';
 import { DOMCMapReaderFactory } from '../../src/display/dom_utils';
-import { isNodeJS } from '../../src/shared/util';
+import isNodeJS from '../../src/shared/is_node';
 import { Name } from '../../src/core/primitives';
 import { NodeCMapReaderFactory } from './test_utils';
 import { StringStream } from '../../src/core/stream';
@@ -281,8 +281,9 @@ describe('cmap', function() {
       done.fail('No CMap should be loaded');
     }, function (reason) {
       expect(reason instanceof Error).toEqual(true);
-      expect(reason.message).toEqual('CMap baseUrl must be specified, ' +
-        'see "PDFJS.cMapUrl" (and also "PDFJS.cMapPacked").');
+      expect(reason.message).toEqual(
+        'The CMap "baseUrl" parameter must be specified, ensure that ' +
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.');
       done();
     });
   });

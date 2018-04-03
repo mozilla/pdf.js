@@ -30,10 +30,10 @@ const SidebarView = {
  * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {PDFThumbnailViewer} pdfThumbnailViewer - The thumbnail viewer.
  * @property {PDFOutlineViewer} pdfOutlineViewer - The outline viewer.
- * @property {HTMLDivElement} mainContainer - The main container
- *   (in which the viewer element is placed).
  * @property {HTMLDivElement} outerContainer - The outer container
  *   (encasing both the viewer and sidebar elements).
+ * @property {HTMLDivElement} viewerContainer - The viewer container
+ *   (in which the viewer element is placed).
  * @property {EventBus} eventBus - The application event bus.
  * @property {HTMLButtonElement} toggleButton - The button used for
  *   opening/closing the sidebar.
@@ -73,8 +73,8 @@ class PDFSidebar {
     this.pdfThumbnailViewer = options.pdfThumbnailViewer;
     this.pdfOutlineViewer = options.pdfOutlineViewer;
 
-    this.mainContainer = options.mainContainer;
     this.outerContainer = options.outerContainer;
+    this.viewerContainer = options.viewerContainer;
     this.eventBus = options.eventBus;
     this.toggleButton = options.toggleButton;
 
@@ -382,8 +382,8 @@ class PDFSidebar {
    * @private
    */
   _addEventListeners() {
-    this.mainContainer.addEventListener('transitionend', (evt) => {
-      if (evt.target === this.mainContainer) {
+    this.viewerContainer.addEventListener('transitionend', (evt) => {
+      if (evt.target === this.viewerContainer) {
         this.outerContainer.classList.remove('sidebarMoving');
       }
     });

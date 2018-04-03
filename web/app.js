@@ -15,18 +15,20 @@
 /* globals PDFBug, Stats */
 
 import {
-  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isValidRotation,
-  MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
-  parseQueryString, PresentationModeState, ProgressBar, RendererType
+  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isFileSchema,
+  isValidRotation, MAX_SCALE, MIN_SCALE, noContextMenuHandler,
+  normalizeWheelEventDelta, parseQueryString, PresentationModeState,
+  ProgressBar, RendererType, TextLayerMode
 } from './ui_utils';
 import {
-  build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
-  MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
-  UNSUPPORTED_FEATURES, version
+  build, createBlob, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
+  InvalidPDFException, LinkTarget, MissingPDFException, OPS, PDFWorker, shadow,
+  UnexpectedResponseException, UNSUPPORTED_FEATURES, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { PDFSidebar, SidebarView } from './pdf_sidebar';
+import { AppOptions } from './app_options';
 import { getGlobalEventBus } from './dom_events';
 import { OverlayManager } from './overlay_manager';
 import { PasswordPrompt } from './password_prompt';
@@ -38,6 +40,7 @@ import { PDFHistory } from './pdf_history';
 import { PDFLinkService } from './pdf_link_service';
 import { PDFOutlineViewer } from './pdf_outline_viewer';
 import { PDFPresentationMode } from './pdf_presentation_mode';
+import { PDFSidebarResizer } from './pdf_sidebar_resizer';
 import { PDFThumbnailViewer } from './pdf_thumbnail_viewer';
 import { PDFViewer } from './pdf_viewer';
 import { SecondaryToolbar } from './secondary_toolbar';
@@ -47,35 +50,18 @@ import { ViewHistory } from './view_history';
 const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
-function configure(PDFJS) {
-  PDFJS.imageResourcesPath = './images/';
-  if (typeof PDFJSDev !== 'undefined' &&
-      PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC || CHROME')) {
-    PDFJS.workerSrc = '../build/pdf.worker.js';
-  }
-  if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-    PDFJS.cMapUrl = '../external/bcmaps/';
-    PDFJS.cMapPacked = true;
-    PDFJS.workerSrc = '../src/worker_loader.js';
-    PDFJS.pdfjsNext = true;
-  } else {
-    PDFJS.cMapUrl = '../web/cmaps/';
-    PDFJS.cMapPacked = true;
-  }
-}
-
 const DefaultExternalServices = {
   updateFindControlState(data) {},
   initPassiveLoading(callbacks) {},
   fallback(data, callback) {},
   reportTelemetry(data) {},
-  createDownloadManager() {
+  createDownloadManager(options) {
     throw new Error('Not implemented: createDownloadManager');
   },
   createPreferences() {
     throw new Error('Not implemented: createPreferences');
   },
-  createL10n() {
+  createL10n(options) {
     throw new Error('Not implemented: createL10n');
   },
   supportsIntegratedFind: false,
@@ -111,6 +97,8 @@ let PDFViewerApplication = {
   pdfHistory: null,
   /** @type {PDFSidebar} */
   pdfSidebar: null,
+  /** @type {PDFSidebarResizer} */
+  pdfSidebarResizer: null,
   /** @type {PDFOutlineViewer} */
   pdfOutlineViewer: null,
   /** @type {PDFAttachmentViewer} */
@@ -135,32 +123,21 @@ let PDFViewerApplication = {
   l10n: null,
   isInitialViewSet: false,
   downloadComplete: false,
-  viewerPrefs: {
-    sidebarViewOnLoad: SidebarView.NONE,
-    pdfBugEnabled: false,
-    showPreviousViewOnLoad: true,
-    defaultZoomValue: '',
-    disablePageMode: false,
-    disablePageLabels: false,
-    renderer: 'canvas',
-    enhanceTextSelection: false,
-    renderInteractiveForms: false,
-    enablePrintAutoRotate: false,
-  },
   isViewerEmbedded: (window.parent !== window),
   url: '',
   baseUrl: '',
   externalServices: DefaultExternalServices,
   _boundEvents: {},
+  contentDispositionFilename: null,
 
   // Called once when the document is loaded.
   initialize(appConfig) {
     this.preferences = this.externalServices.createPreferences();
-
-    configure(PDFJS);
     this.appConfig = appConfig;
 
     return this._readPreferences().then(() => {
+      return this._parseHashParameters();
+    }).then(() => {
       return this._initializeL10n();
     }).then(() => {
       return this._initializeViewerComponents();
@@ -178,10 +155,11 @@ let PDFViewerApplication = {
         this.eventBus.dispatch('localized');
       });
 
-      if (this.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
+      if (this.isViewerEmbedded &&
+          AppOptions.get('externalLinkTarget') === LinkTarget.NONE) {
         // Prevent external links from "replacing" the viewer,
         // when it's embedded in e.g. an iframe or an object.
-        PDFJS.externalLinkTarget = PDFJS.LinkTarget.TOP;
+        AppOptions.set('externalLinkTarget', LinkTarget.TOP);
       }
 
       this.initialized = true;
@@ -192,95 +170,168 @@ let PDFViewerApplication = {
    * @private
    */
   _readPreferences() {
-    let { preferences, viewerPrefs, } = this;
+    let { preferences, } = this;
 
     return Promise.all([
       preferences.get('enableWebGL').then(function resolved(value) {
-        PDFJS.disableWebGL = !value;
+        AppOptions.set('enableWebGL', value);
       }),
       preferences.get('sidebarViewOnLoad').then(function resolved(value) {
-        viewerPrefs['sidebarViewOnLoad'] = value;
+        AppOptions.set('sidebarViewOnLoad', value);
+      }),
+      preferences.get('cursorToolOnLoad').then(function resolved(value) {
+        AppOptions.set('cursorToolOnLoad', value);
       }),
       preferences.get('pdfBugEnabled').then(function resolved(value) {
-        viewerPrefs['pdfBugEnabled'] = value;
+        AppOptions.set('pdfBugEnabled', value);
       }),
       preferences.get('showPreviousViewOnLoad').then(function resolved(value) {
-        viewerPrefs['showPreviousViewOnLoad'] = value;
+        AppOptions.set('showPreviousViewOnLoad', value);
       }),
       preferences.get('defaultZoomValue').then(function resolved(value) {
-        viewerPrefs['defaultZoomValue'] = value;
+        AppOptions.set('defaultZoomValue', value);
       }),
-      preferences.get('enhanceTextSelection').then(function resolved(value) {
-        viewerPrefs['enhanceTextSelection'] = value;
-      }),
-      preferences.get('disableTextLayer').then(function resolved(value) {
-        if (PDFJS.disableTextLayer === true) {
+      preferences.get('textLayerMode').then(function resolved(value) {
+        if (AppOptions.get('textLayerMode') === TextLayerMode.DISABLE) {
           return;
         }
-        PDFJS.disableTextLayer = value;
+        AppOptions.set('textLayerMode', value);
       }),
       preferences.get('disableRange').then(function resolved(value) {
-        if (PDFJS.disableRange === true) {
+        if (AppOptions.get('disableRange') === true) {
           return;
         }
-        PDFJS.disableRange = value;
+        AppOptions.set('disableRange', value);
       }),
       preferences.get('disableStream').then(function resolved(value) {
-        if (PDFJS.disableStream === true) {
+        if (AppOptions.get('disableStream') === true) {
           return;
         }
-        PDFJS.disableStream = value;
+        AppOptions.set('disableStream', value);
       }),
       preferences.get('disableAutoFetch').then(function resolved(value) {
-        PDFJS.disableAutoFetch = value;
+        AppOptions.set('disableAutoFetch', value);
       }),
       preferences.get('disableFontFace').then(function resolved(value) {
-        if (PDFJS.disableFontFace === true) {
+        if (AppOptions.get('disableFontFace') === true) {
           return;
         }
-        PDFJS.disableFontFace = value;
+        AppOptions.set('disableFontFace', value);
       }),
       preferences.get('useOnlyCssZoom').then(function resolved(value) {
-        PDFJS.useOnlyCssZoom = value;
+        AppOptions.set('useOnlyCssZoom', value);
       }),
       preferences.get('externalLinkTarget').then(function resolved(value) {
-        if (PDFJS.isExternalLinkTargetSet()) {
+        if (AppOptions.get('externalLinkTarget') !== LinkTarget.NONE) {
           return;
         }
-        PDFJS.externalLinkTarget = value;
+        AppOptions.set('externalLinkTarget', value);
       }),
       preferences.get('renderer').then(function resolved(value) {
-        viewerPrefs['renderer'] = value;
+        AppOptions.set('renderer', value);
       }),
       preferences.get('renderInteractiveForms').then(function resolved(value) {
-        viewerPrefs['renderInteractiveForms'] = value;
+        AppOptions.set('renderInteractiveForms', value);
       }),
       preferences.get('disablePageMode').then(function resolved(value) {
-        viewerPrefs['disablePageMode'] = value;
+        AppOptions.set('disablePageMode', value);
       }),
       preferences.get('disablePageLabels').then(function resolved(value) {
-        viewerPrefs['disablePageLabels'] = value;
+        AppOptions.set('disablePageLabels', value);
       }),
       preferences.get('enablePrintAutoRotate').then(function resolved(value) {
-        viewerPrefs['enablePrintAutoRotate'] = value;
+        AppOptions.set('enablePrintAutoRotate', value);
       }),
     ]).catch(function(reason) { });
   },
 
-  _initializeL10n() {
-    // Locale can be changed only when special debugging flags is present in
-    // the hash section of the URL, or development version of viewer is used.
-    // It is not possible to change locale for Firefox extension builds.
+  /**
+   * @private
+   */
+  _parseHashParameters() {
+    let { appConfig, } = this;
+    let waitOn = [];
+
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ||
-        (!PDFJSDev.test('FIREFOX || MOZCENTRAL') &&
-         this.viewerPrefs['pdfBugEnabled'])) {
+        AppOptions.get('pdfBugEnabled')) {
+      // Special debugging flags in the hash section of the URL.
       let hash = document.location.hash.substring(1);
       let hashParams = parseQueryString(hash);
-      if ('locale' in hashParams) {
-        PDFJS.locale = hashParams['locale'];
+
+      if ('disableworker' in hashParams &&
+          hashParams['disableworker'] === 'true') {
+        waitOn.push(loadFakeWorker());
+      }
+      if ('disablerange' in hashParams) {
+        AppOptions.set('disableRange', hashParams['disablerange'] === 'true');
+      }
+      if ('disablestream' in hashParams) {
+        AppOptions.set('disableStream', hashParams['disablestream'] === 'true');
+      }
+      if ('disableautofetch' in hashParams) {
+        AppOptions.set('disableAutoFetch',
+                       hashParams['disableautofetch'] === 'true');
+      }
+      if ('disablefontface' in hashParams) {
+        AppOptions.set('disableFontFace',
+                       hashParams['disablefontface'] === 'true');
+      }
+      if ('disablehistory' in hashParams) {
+        AppOptions.set('disableHistory',
+                       hashParams['disablehistory'] === 'true');
+      }
+      if ('webgl' in hashParams) {
+        AppOptions.set('enableWebGL', hashParams['webgl'] === 'true');
+      }
+      if ('useonlycsszoom' in hashParams) {
+        AppOptions.set('useOnlyCssZoom',
+                       hashParams['useonlycsszoom'] === 'true');
+      }
+      if ('verbosity' in hashParams) {
+        AppOptions.set('verbosity', hashParams['verbosity'] | 0);
+      }
+      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
+          hashParams['disablebcmaps'] === 'true') {
+        AppOptions.set('cMapUrl', '../external/cmaps/');
+        AppOptions.set('cMapPacked', false);
+      }
+      if ('textlayer' in hashParams) {
+        switch (hashParams['textlayer']) {
+          case 'off':
+            AppOptions.set('textLayerMode', TextLayerMode.DISABLE);
+            break;
+          case 'visible':
+          case 'shadow':
+          case 'hover':
+            let viewer = appConfig.viewerContainer;
+            viewer.classList.add('textLayer-' + hashParams['textlayer']);
+            break;
+        }
+      }
+      if ('pdfbug' in hashParams) {
+        AppOptions.set('pdfBug', true);
+        let enabled = hashParams['pdfbug'].split(',');
+        waitOn.push(loadAndEnablePDFBug(enabled));
+      }
+      // Locale can be changed only when special debugging flags is present in
+      // the hash section of the URL, or development version of viewer is used.
+      // It is not possible to change locale for Firefox extension builds.
+      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ||
+           !PDFJSDev.test('FIREFOX || MOZCENTRAL')) && 'locale' in hashParams) {
+        AppOptions.set('locale', hashParams['locale']);
       }
     }
-    this.l10n = this.externalServices.createL10n();
+
+    return Promise.all(waitOn);
+  },
+
+  /**
+   * @private
+   */
+  _initializeL10n() {
+    this.l10n = this.externalServices.createL10n({
+      locale: AppOptions.get('locale'),
+    });
     return this.l10n.getDirection().then((dir) => {
       document.getElementsByTagName('html')[0].dir = dir;
     });
@@ -290,7 +341,7 @@ let PDFViewerApplication = {
    * @private
    */
   _initializeViewerComponents() {
-    let appConfig = this.appConfig;
+    let { appConfig, } = this;
 
     return new Promise((resolve, reject) => {
       this.overlayManager = new OverlayManager();
@@ -304,10 +355,14 @@ let PDFViewerApplication = {
 
       let pdfLinkService = new PDFLinkService({
         eventBus,
+        externalLinkTarget: AppOptions.get('externalLinkTarget'),
+        externalLinkRel: AppOptions.get('externalLinkRel'),
       });
       this.pdfLinkService = pdfLinkService;
 
-      let downloadManager = this.externalServices.createDownloadManager();
+      let downloadManager = this.externalServices.createDownloadManager({
+        disableCreateObjectURL: AppOptions.get('disableCreateObjectURL'),
+      });
       this.downloadManager = downloadManager;
 
       let container = appConfig.mainContainer;
@@ -319,11 +374,15 @@ let PDFViewerApplication = {
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
         downloadManager,
-        renderer: this.viewerPrefs['renderer'],
+        renderer: AppOptions.get('renderer'),
+        enableWebGL: AppOptions.get('enableWebGL'),
         l10n: this.l10n,
-        enhanceTextSelection: this.viewerPrefs['enhanceTextSelection'],
-        renderInteractiveForms: this.viewerPrefs['renderInteractiveForms'],
-        enablePrintAutoRotate: this.viewerPrefs['enablePrintAutoRotate'],
+        textLayerMode: AppOptions.get('textLayerMode'),
+        imageResourcesPath: AppOptions.get('imageResourcesPath'),
+        renderInteractiveForms: AppOptions.get('renderInteractiveForms'),
+        enablePrintAutoRotate: AppOptions.get('enablePrintAutoRotate'),
+        useOnlyCssZoom: AppOptions.get('useOnlyCssZoom'),
+        maxCanvasPixels: AppOptions.get('maxCanvasPixels'),
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);
@@ -373,12 +432,12 @@ let PDFViewerApplication = {
 
       this.pdfDocumentProperties =
         new PDFDocumentProperties(appConfig.documentProperties,
-                                  this.overlayManager, this.l10n);
+                                  this.overlayManager, eventBus, this.l10n);
 
       this.pdfCursorTools = new PDFCursorTools({
         container,
         eventBus,
-        preferences: this.preferences,
+        cursorToolOnLoad: AppOptions.get('cursorToolOnLoad'),
       });
 
       this.toolbar = new Toolbar(appConfig.toolbar, container, eventBus,
@@ -421,6 +480,8 @@ let PDFViewerApplication = {
       this.pdfSidebar = new PDFSidebar(sidebarConfig, this.l10n);
       this.pdfSidebar.onToggled = this.forceRendering.bind(this);
 
+      this.pdfSidebarResizer = new PDFSidebarResizer(appConfig.sidebarResizer,
+                                                     eventBus, this.l10n);
       resolve(undefined);
     });
   },
@@ -451,10 +512,6 @@ let PDFViewerApplication = {
 
   get pagesCount() {
     return this.pdfDocument ? this.pdfDocument.numPages : 0;
-  },
-
-  get pageRotation() {
-    return this.pdfViewer.pagesRotation;
   },
 
   set page(val) {
@@ -490,7 +547,7 @@ let PDFViewerApplication = {
         support = false;
       }
     }
-    if (support && PDFJS.disableFullscreen === true) {
+    if (support && AppOptions.get('disableFullscreen') === true) {
       support = false;
     }
 
@@ -607,6 +664,9 @@ let PDFViewerApplication = {
     this.store = null;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
+    this.url = '';
+    this.baseUrl = '';
+    this.contentDispositionFilename = null;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -633,11 +693,6 @@ let PDFViewerApplication = {
    *                      is opened.
    */
   open(file, args) {
-    if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
-        (arguments.length > 2 || typeof args === 'number')) {
-      return Promise.reject(
-        new Error('Call of open() with obsolete signature.'));
-    }
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
       return this.close().then(() => {
@@ -646,6 +701,11 @@ let PDFViewerApplication = {
         // ... and repeat the open() call.
         return this.open(file, args);
       });
+    }
+    // Set the necessary global worker parameters, using the available options.
+    const workerParameters = AppOptions.getAll('worker');
+    for (let key in workerParameters) {
+      GlobalWorkerOptions[key] = workerParameters[key];
     }
 
     let parameters = Object.create(null);
@@ -664,19 +724,25 @@ let PDFViewerApplication = {
                PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
       parameters.docBaseUrl = this.baseUrl;
     }
+    // Set the necessary API parameters, using the available options.
+    const apiParameters = AppOptions.getAll('api');
+    for (let key in apiParameters) {
+      parameters[key] = apiParameters[key];
+    }
 
     if (args) {
       for (let prop in args) {
-        if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PDFJS_NEXT')) &&
-            !PDFJS.pdfjsNext && prop === 'scale') {
-          console.error('Call of open() with obsolete "scale" argument, ' +
-            'please use the "defaultZoomValue" preference instead.');
-          continue;
-        } else if (prop === 'length') {
+        if (prop === 'length') {
           this.pdfDocumentProperties.setFileSize(args[prop]);
         }
         parameters[prop] = args[prop];
       }
+    }
+
+    if (this.url && isFileSchema(this.url)) {
+      let appConfig = this.appConfig;
+      appConfig.toolbar.download.setAttribute('hidden', 'true');
+      appConfig.secondaryToolbar.downloadButton.setAttribute('hidden', 'true');
     }
 
     let loadingTask = getDocument(parameters);
@@ -697,6 +763,10 @@ let PDFViewerApplication = {
     return loadingTask.promise.then((pdfDocument) => {
       this.load(pdfDocument);
     }, (exception) => {
+      if (loadingTask !== this.pdfLoadingTask) {
+        return; // Ignore errors for previously opened PDF files.
+      }
+
       let message = exception && exception.message;
       let loadingErrorMessage;
       if (exception instanceof InvalidPDFException) {
@@ -730,7 +800,8 @@ let PDFViewerApplication = {
     let url = this.baseUrl;
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
-    let filename = getPDFFileNameFromURL(this.url);
+    let filename = this.contentDispositionFilename ||
+      getPDFFileNameFromURL(this.url);
     let downloadManager = this.downloadManager;
     downloadManager.onerror = (err) => {
       // This error won't really be helpful because it's likely the
@@ -868,7 +939,11 @@ let PDFViewerApplication = {
       // the loading bar will not be completely filled, nor will it be hidden.
       // To prevent displaying a partially filled loading bar permanently, we
       // hide it when no data has been loaded during a certain amount of time.
-      if (PDFJS.disableAutoFetch && percent) {
+      const disableAutoFetch = this.pdfDocument ?
+        this.pdfDocument.loadingParams['disableAutoFetch'] :
+        AppOptions.get('disableAutoFetch');
+
+      if (disableAutoFetch && percent) {
         if (this.disableAutoFetchLoadingBarTimeout) {
           clearTimeout(this.disableAutoFetchLoadingBarTimeout);
           this.disableAutoFetchLoadingBarTimeout = null;
@@ -929,10 +1004,10 @@ let PDFViewerApplication = {
     firstPagePromise.then((pdfPage) => {
       this.loadingBar.setWidth(this.appConfig.viewerContainer);
 
-      if (!PDFJS.disableHistory && !this.isViewerEmbedded) {
+      if (!AppOptions.get('disableHistory') && !this.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
-        let resetHistory = !this.viewerPrefs['showPreviousViewOnLoad'];
+        let resetHistory = !AppOptions.get('showPreviousViewOnLoad');
         this.pdfHistory.initialize(id, resetHistory);
 
         if (this.pdfHistory.initialBookmark) {
@@ -959,19 +1034,19 @@ let PDFViewerApplication = {
       Promise.all([storePromise, pageModePromise]).then(
           ([values = {}, pageMode]) => {
         // Initialize the default values, from user preferences.
-        let hash = this.viewerPrefs['defaultZoomValue'] ?
-          ('zoom=' + this.viewerPrefs['defaultZoomValue']) : null;
+        let hash = AppOptions.get('defaultZoomValue') ?
+          ('zoom=' + AppOptions.get('defaultZoomValue')) : null;
         let rotation = null;
-        let sidebarView = this.viewerPrefs['sidebarViewOnLoad'];
+        let sidebarView = AppOptions.get('sidebarViewOnLoad');
 
-        if (values.exists && this.viewerPrefs['showPreviousViewOnLoad']) {
+        if (values.exists && AppOptions.get('showPreviousViewOnLoad')) {
           hash = 'page=' + values.page +
-            '&zoom=' + (this.viewerPrefs['defaultZoomValue'] || values.zoom) +
+            '&zoom=' + (AppOptions.get('defaultZoomValue') || values.zoom) +
             ',' + values.scrollLeft + ',' + values.scrollTop;
           rotation = parseInt(values.rotation, 10);
           sidebarView = sidebarView || (values.sidebarView | 0);
         }
-        if (pageMode && !this.viewerPrefs['disablePageMode']) {
+        if (pageMode && !AppOptions.get('disablePageMode')) {
           // Always let the user preference/history take precedence.
           sidebarView = sidebarView || apiPageModeToSidebarView(pageMode);
         }
@@ -1015,7 +1090,7 @@ let PDFViewerApplication = {
     });
 
     pdfDocument.getPageLabels().then((labels) => {
-      if (!labels || this.viewerPrefs['disablePageLabels']) {
+      if (!labels || AppOptions.get('disablePageLabels')) {
         return;
       }
       let i = 0, numLabels = labels.length;
@@ -1047,10 +1122,18 @@ let PDFViewerApplication = {
         return;
       }
       pdfDocument.getJavaScript().then((javaScript) => {
-        if (javaScript.length) {
+        if (!javaScript) {
+          return;
+        }
+        javaScript.some((js) => {
+          if (!js) { // Don't warn/fallback for empty JavaScript actions.
+            return false;
+          }
           console.warn('Warning: JavaScript is not supported');
           this.fallback(UNSUPPORTED_FEATURES.javaScript);
-        }
+          return true;
+        });
+
         // Hack to support auto printing.
         let regex = /\bprint\s*\(/;
         for (let i = 0, ii = javaScript.length; i < ii; i++) {
@@ -1074,16 +1157,18 @@ let PDFViewerApplication = {
       });
     });
 
-    pdfDocument.getMetadata().then(({ info, metadata, }) => {
+    pdfDocument.getMetadata().then(
+        ({ info, metadata, contentDispositionFilename, }) => {
       this.documentInfo = info;
       this.metadata = metadata;
+      this.contentDispositionFilename = contentDispositionFilename;
 
       // Provides some basic debug information
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
                   info.PDFFormatVersion + ' ' + (info.Producer || '-').trim() +
                   ' / ' + (info.Creator || '-').trim() + ']' +
                   ' (PDF.js: ' + (version || '-') +
-                  (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
+                  (AppOptions.get('enableWebGL') ? ' [WebGL]' : '') + ')');
 
       let pdfTitle;
       if (metadata && metadata.has('dc:title')) {
@@ -1099,7 +1184,10 @@ let PDFViewerApplication = {
       }
 
       if (pdfTitle) {
-        this.setTitle(pdfTitle + ' - ' + document.title);
+        this.setTitle(
+          `${pdfTitle} - ${contentDispositionFilename || document.title}`);
+      } else if (contentDispositionFilename) {
+        this.setTitle(contentDispositionFilename);
       }
 
       if (info.IsAcroFormPresent) {
@@ -1120,7 +1208,7 @@ let PDFViewerApplication = {
         ];
         if (info.Producer) {
           KNOWN_GENERATORS.some(function (generator, s, i) {
-            if (generator.indexOf(s) < 0) {
+            if (!generator.includes(s)) {
               return false;
             }
             generatorId = i + 1;
@@ -1309,7 +1397,7 @@ let PDFViewerApplication = {
     let { eventBus, _boundEvents, } = this;
 
     _boundEvents.windowResize = () => {
-      eventBus.dispatch('resize');
+      eventBus.dispatch('resize', { source: window, });
     };
     _boundEvents.windowHashChange = () => {
       eventBus.dispatch('hashchange', {
@@ -1402,15 +1490,18 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     }
     try {
       let viewerOrigin = new URL(window.location.href).origin || 'null';
-      if (HOSTED_VIEWER_ORIGINS.indexOf(viewerOrigin) >= 0) {
+      if (HOSTED_VIEWER_ORIGINS.includes(viewerOrigin)) {
         // Hosted or local viewer, allow for any file locations
         return;
       }
-      let fileOrigin = new URL(file, window.location.href).origin;
+      let { origin, protocol, } = new URL(file, window.location.href);
       // Removing of the following line will not guarantee that the viewer will
       // start accepting URLs from foreign origin -- CORS headers on the remote
       // server must be properly configured.
-      if (fileOrigin !== viewerOrigin) {
+      // IE10 / IE11 does not include an origin in `blob:`-URLs. So don't block
+      // any blob:-URL. The browser's same-origin policy will block requests to
+      // blob:-URLs from other origins, so this is safe.
+      if (origin !== viewerOrigin && protocol !== 'blob:') {
         throw new Error('file origin does not match viewer\'s');
       }
     } catch (ex) {
@@ -1425,6 +1516,38 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   };
 }
 
+function loadFakeWorker() {
+  return new Promise(function(resolve, reject) {
+    if (!GlobalWorkerOptions.workerSrc) {
+      GlobalWorkerOptions.workerSrc = AppOptions.get('workerSrc');
+    }
+    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+      if (typeof SystemJS === 'object') {
+        SystemJS.import('pdfjs/core/worker').then((worker) => {
+          window.pdfjsWorker = worker;
+          resolve();
+        });
+      } else if (typeof require === 'function') {
+        window.pdfjsWorker = require('../src/core/worker.js');
+        resolve();
+      } else {
+        reject(new Error(
+          'SystemJS or CommonJS must be used to load fake worker.'));
+      }
+    } else {
+      let script = document.createElement('script');
+      script.src = PDFWorker.getWorkerSrc();
+      script.onload = function() {
+        resolve();
+      };
+      script.onerror = function() {
+        reject(new Error(`Cannot load fake worker at: ${script.src}`));
+      };
+      (document.head || document.documentElement).appendChild(script);
+    }
+  });
+}
+
 function loadAndEnablePDFBug(enabledTabs) {
   return new Promise(function (resolve, reject) {
     let appConfig = PDFViewerApplication.appConfig;
@@ -1433,7 +1556,6 @@ function loadAndEnablePDFBug(enabledTabs) {
     script.onload = function () {
       PDFBug.enable(enabledTabs);
       PDFBug.init({
-        PDFJS,
         OPS,
       }, appConfig.mainContainer);
       resolve();
@@ -1452,15 +1574,14 @@ function webViewerInitialized() {
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     let queryString = document.location.search.substring(1);
     let params = parseQueryString(queryString);
-    file = 'file' in params ? params.file : appConfig.defaultUrl;
+    file = 'file' in params ? params.file : AppOptions.get('defaultUrl');
     validateFileURL(file);
   } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     file = window.location.href.split('#')[0];
   } else if (PDFJSDev.test('CHROME')) {
-    file = appConfig.defaultUrl;
+    file = AppOptions.get('defaultUrl');
   }
 
-  let waitForBeforeOpening = [];
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     let fileInput = document.createElement('input');
     fileInput.id = appConfig.openFileInputName;
@@ -1491,74 +1612,10 @@ function webViewerInitialized() {
     appConfig.secondaryToolbar.openFileButton.setAttribute('hidden', 'true');
   }
 
-  if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) ||
-      PDFViewerApplication.viewerPrefs['pdfBugEnabled']) {
-    // Special debugging flags in the hash section of the URL.
-    let hash = document.location.hash.substring(1);
-    let hashParams = parseQueryString(hash);
-
-    if ('disableworker' in hashParams) {
-      PDFJS.disableWorker = (hashParams['disableworker'] === 'true');
-    }
-    if ('disablerange' in hashParams) {
-      PDFJS.disableRange = (hashParams['disablerange'] === 'true');
-    }
-    if ('disablestream' in hashParams) {
-      PDFJS.disableStream = (hashParams['disablestream'] === 'true');
-    }
-    if ('disableautofetch' in hashParams) {
-      PDFJS.disableAutoFetch = (hashParams['disableautofetch'] === 'true');
-    }
-    if ('disablefontface' in hashParams) {
-      PDFJS.disableFontFace = (hashParams['disablefontface'] === 'true');
-    }
-    if ('disablehistory' in hashParams) {
-      PDFJS.disableHistory = (hashParams['disablehistory'] === 'true');
-    }
-    if ('webgl' in hashParams) {
-      PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
-    }
-    if ('useonlycsszoom' in hashParams) {
-      PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
-    }
-    if ('verbosity' in hashParams) {
-      PDFJS.verbosity = hashParams['verbosity'] | 0;
-    }
-    if ('ignorecurrentpositiononzoom' in hashParams) {
-      PDFJS.ignoreCurrentPositionOnZoom =
-        (hashParams['ignorecurrentpositiononzoom'] === 'true');
-    }
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-      if ('disablebcmaps' in hashParams && hashParams['disablebcmaps']) {
-        PDFJS.cMapUrl = '../external/cmaps/';
-        PDFJS.cMapPacked = false;
-      }
-    }
-    if ('textlayer' in hashParams) {
-      switch (hashParams['textlayer']) {
-        case 'off':
-          PDFJS.disableTextLayer = true;
-          break;
-        case 'visible':
-        case 'shadow':
-        case 'hover':
-          let viewer = appConfig.viewerContainer;
-          viewer.classList.add('textLayer-' + hashParams['textlayer']);
-          break;
-      }
-    }
-    if ('pdfbug' in hashParams) {
-      PDFJS.pdfBug = true;
-      let pdfBug = hashParams['pdfbug'];
-      let enabled = pdfBug.split(',');
-      waitForBeforeOpening.push(loadAndEnablePDFBug(enabled));
-    }
-  }
-
   if (typeof PDFJSDev !== 'undefined' &&
       PDFJSDev.test('FIREFOX || MOZCENTRAL') &&
       !PDFViewerApplication.supportsDocumentFonts) {
-    PDFJS.disableFontFace = true;
+    AppOptions.set('disableFontFace', true);
     PDFViewerApplication.l10n.get('web_fonts_disabled', null,
       'Web fonts are disabled: unable to use embedded PDF fonts.').
         then((msg) => {
@@ -1580,22 +1637,21 @@ function webViewerInitialized() {
     appConfig.toolbar.viewFind.classList.add('hidden');
   }
 
-  appConfig.sidebar.mainContainer.addEventListener('transitionend',
-    function(evt) {
-      if (evt.target === /* mainContainer */ this) {
-        PDFViewerApplication.eventBus.dispatch('resize');
-      }
-    }, true);
+  appConfig.mainContainer.addEventListener('transitionend', function(evt) {
+    if (evt.target === /* mainContainer */ this) {
+      PDFViewerApplication.eventBus.dispatch('resize', { source: this, });
+    }
+  }, true);
 
   appConfig.sidebar.toggleButton.addEventListener('click', function() {
     PDFViewerApplication.pdfSidebar.toggle();
   });
 
-  Promise.all(waitForBeforeOpening).then(function () {
+  Promise.resolve().then(function() {
     webViewerOpenFileViaURL(file);
-  }).catch(function (reason) {
+  }).catch(function(reason) {
     PDFViewerApplication.l10n.get('loading_error', null,
-        'An error occurred while opening.').then((msg) => {
+        'An error occurred while loading the PDF.').then((msg) => {
       PDFViewerApplication.error(msg, reason);
     });
   });
@@ -1618,10 +1674,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
         xhr.responseType = 'arraybuffer';
         xhr.send();
       } catch (ex) {
-        PDFViewerApplication.l10n.get('loading_error', null,
-            'An error occurred while loading the PDF.').then((msg) => {
-          PDFViewerApplication.error(msg, ex);
-        });
+        throw ex;
       }
       return;
     }
@@ -1636,9 +1689,9 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     PDFViewerApplication.initPassiveLoading();
   };
 } else {
-  webViewerOpenFileViaURL = function webViewerOpenFileURL(file) {
+  webViewerOpenFileViaURL = function webViewerOpenFileViaURL(file) {
     if (file) {
-      throw new Error('Not implemented: webViewerOpenFileURL');
+      throw new Error('Not implemented: webViewerOpenFileViaURL');
     }
   };
 }
@@ -1667,7 +1720,7 @@ function webViewerPageRendered(evt) {
     thumbnailView.setImage(pageView);
   }
 
-  if (PDFJS.pdfBug && Stats.enabled && pageView.stats) {
+  if (typeof Stats !== 'undefined' && Stats.enabled && pageView.stats) {
     Stats.add(pageNumber, pageView.stats);
   }
 
@@ -1825,7 +1878,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   webViewerFileInputChange = function webViewerFileInputChange(evt) {
     let file = evt.fileInput.files[0];
 
-    if (!PDFJS.disableCreateObjectURL && URL.createObjectURL) {
+    if (URL.createObjectURL && !AppOptions.get('disableCreateObjectURL')) {
       PDFViewerApplication.open(URL.createObjectURL(file));
     } else {
       // Read the local file into a Uint8Array.
@@ -1955,10 +2008,10 @@ function webViewerPageChanging(evt) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
   }
 
-  // we need to update stats
-  if (PDFJS.pdfBug && Stats.enabled) {
+  // We need to update stats.
+  if (typeof Stats !== 'undefined' && Stats.enabled) {
     let pageView = PDFViewerApplication.pdfViewer.getPageView(page - 1);
-    if (pageView.stats) {
+    if (pageView && pageView.stats) {
       Stats.add(page, pageView.stats);
     }
   }
@@ -2200,6 +2253,7 @@ function webViewerKeyDown(evt) {
           handled = true;
         }
         break;
+      case 13: // enter key
       case 40: // down arrow
       case 34: // pg down
       case 32: // spacebar
@@ -2253,6 +2307,7 @@ function webViewerKeyDown(evt) {
 
   if (cmd === 4) { // shift-key
     switch (evt.keyCode) {
+      case 13: // enter key
       case 32: // spacebar
         if (!isViewerInPresentationMode &&
             pdfViewer.currentScaleValue !== 'page-fit') {

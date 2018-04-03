@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
+import { createPromiseCapability } from 'pdfjs-lib';
 
 const CSS_UNITS = 96.0 / 72.0;
 const DEFAULT_SCALE_VALUE = 'auto';
 const DEFAULT_SCALE = 1.0;
-const MIN_SCALE = 0.25;
+const MIN_SCALE = 0.10;
 const MAX_SCALE = 10.0;
 const UNKNOWN_SCALE = 0;
 const MAX_AUTO_SCALE = 1.25;
@@ -37,6 +37,12 @@ const RendererType = {
   SVG: 'svg',
 };
 
+const TextLayerMode = {
+  DISABLE: 0,
+  ENABLE: 1,
+  ENABLE_ENHANCE: 2,
+};
+
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
@@ -48,10 +54,18 @@ function formatL10nValue(text, args) {
 }
 
 /**
- * No-op implemetation of the localization service.
+ * No-op implementation of the localization service.
  * @implements {IL10n}
  */
 let NullL10n = {
+  getLanguage() {
+    return Promise.resolve('en-us');
+  },
+
+  getDirection() {
+    return Promise.resolve('ltr');
+  },
+
   get(property, args, fallback) {
     return Promise.resolve(formatL10nValue(fallback, args));
   },
@@ -60,60 +74,6 @@ let NullL10n = {
     return Promise.resolve();
   },
 };
-
-/**
- * Disables fullscreen support, and by extension Presentation Mode,
- * in browsers which support the fullscreen API.
- * @var {boolean}
- */
-PDFJS.disableFullscreen = (PDFJS.disableFullscreen === undefined ?
-                           false : PDFJS.disableFullscreen);
-
-/**
- * Enables CSS only zooming.
- * @var {boolean}
- */
-PDFJS.useOnlyCssZoom = (PDFJS.useOnlyCssZoom === undefined ?
-                        false : PDFJS.useOnlyCssZoom);
-
-/**
- * The maximum supported canvas size in total pixels e.g. width * height.
- * The default value is 4096 * 4096. Use -1 for no limit.
- * @var {number}
- */
-PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
-                         16777216 : PDFJS.maxCanvasPixels);
-
-/**
- * Disables saving of the last position of the viewed PDF.
- * @var {boolean}
- */
-PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
-                        false : PDFJS.disableHistory);
-
-/**
- * Disables creation of the text layer that used for text selection and search.
- * @var {boolean}
- */
-PDFJS.disableTextLayer = (PDFJS.disableTextLayer === undefined ?
-                          false : PDFJS.disableTextLayer);
-
-/**
- * Disables maintaining the current position in the document when zooming.
- */
-PDFJS.ignoreCurrentPositionOnZoom = (PDFJS.ignoreCurrentPositionOnZoom ===
-  undefined ? false : PDFJS.ignoreCurrentPositionOnZoom);
-
-if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  /**
-   * Interface locale settings.
-   * @var {string}
-   */
-  PDFJS.locale =
-    (PDFJS.locale === undefined && typeof navigator !== 'undefined' ?
-     navigator.language : PDFJS.locale);
-}
 
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
@@ -314,6 +274,27 @@ function roundToDivide(x, div) {
 }
 
 /**
+ * Gets the size of the specified page, converted from PDF units to inches.
+ * @param {Object} An Object containing the properties: {Array} `view`,
+ *   {number} `userUnit`, and {number} `rotate`.
+ * @return {Object} An Object containing the properties: {number} `width`
+ *   and {number} `height`, given in inches.
+ */
+function getPageSizeInches({ view, userUnit, rotate, }) {
+  const [x1, y1, x2, y2] = view;
+  // We need to take the page rotation into account as well.
+  const changeOrientation = rotate % 180 !== 0;
+
+  const width = (x2 - x1) / 72 * userUnit;
+  const height = (y2 - y1) / 72 * userUnit;
+
+  return {
+    width: (changeOrientation ? height : width),
+    height: (changeOrientation ? width : height),
+  };
+}
+
+/**
  * Generic helper to find out what elements are visible within a scroll pane.
  */
 function getVisibleElements(scrollEl, views, sortByVisibility = false) {
@@ -383,6 +364,14 @@ function noContextMenuHandler(evt) {
   evt.preventDefault();
 }
 
+function isFileSchema(url) {
+  let i = 0, ii = url.length;
+  while (i < ii && url[i].trim() === '') {
+    i++;
+  }
+  return url.substr(i, 7).toLowerCase() === 'file://';
+}
+
 function isDataSchema(url) {
   let i = 0, ii = url.length;
   while (i < ii && url[i].trim() === '') {
@@ -414,7 +403,7 @@ function getPDFFileNameFromURL(url, defaultFilename = 'document.pdf') {
                           reFilename.exec(splitURI[3]);
   if (suggestedFilename) {
     suggestedFilename = suggestedFilename[0];
-    if (suggestedFilename.indexOf('%') !== -1) {
+    if (suggestedFilename.includes('%')) {
       // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
       try {
         suggestedFilename =
@@ -454,6 +443,10 @@ function isValidRotation(angle) {
   return Number.isInteger(angle) && angle % 90 === 0;
 }
 
+function isPortraitOrientation(size) {
+  return size.width <= size.height;
+}
+
 function cloneObj(obj) {
   let result = Object.create(null);
   for (let i in obj) {
@@ -490,7 +483,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0, }) {
   if (typeof target !== 'object' || !(name && typeof name === 'string') ||
       !(Number.isInteger(delay) && delay >= 0)) {
     return Promise.reject(
-      new Error('waitOnEventOrTimeout - invalid paramaters.'));
+      new Error('waitOnEventOrTimeout - invalid parameters.'));
   }
   let capability = createPromiseCapability();
 
@@ -526,16 +519,6 @@ function waitOnEventOrTimeout({ target, name, delay = 0, }) {
 let animationStarted = new Promise(function (resolve) {
   window.requestAnimationFrame(resolve);
 });
-
-/**
- * (deprecated) External localization service.
- */
-let mozL10n;
-
-/**
- * (deprecated) Promise that is resolved when UI localization is finished.
- */
-let localized = Promise.resolve();
 
 /**
  * Simple event bus for an application. Listeners are attached using the
@@ -667,10 +650,12 @@ export {
   SCROLLBAR_PADDING,
   VERTICAL_PADDING,
   isValidRotation,
+  isPortraitOrientation,
+  isFileSchema,
   cloneObj,
   PresentationModeState,
   RendererType,
-  mozL10n,
+  TextLayerMode,
   NullL10n,
   EventBus,
   ProgressBar,
@@ -679,6 +664,7 @@ export {
   parseQueryString,
   getVisibleElements,
   roundToDivide,
+  getPageSizeInches,
   approximateFraction,
   getOutputScale,
   scrollIntoView,
@@ -686,7 +672,6 @@ export {
   binarySearchFirstItem,
   normalizeWheelEventDelta,
   animationStarted,
-  localized,
   WaitOnType,
   waitOnEventOrTimeout,
 };

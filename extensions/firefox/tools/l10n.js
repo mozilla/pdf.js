@@ -1,6 +1,6 @@
 "use strict";
 
-// Small subset of the webL10n API by Fabien Cazenave for pdf.js extension.
+// Small subset of the webL10n API by Fabien Cazenave for PDF.js extension.
 (function(window) {
   var gLanguage = "";
   var gExternalLocalizerServices = null;
@@ -76,7 +76,6 @@
     }
   }
 
-
   // translate an HTML subtree
   function translateFragment(element) {
     element = element || document.querySelector("html");
@@ -113,7 +112,7 @@
       // use the short language code for "full" codes like 'ar-sa' (issue 5440)
       var shortCode = gLanguage.split("-")[0];
 
-      return (rtlList.indexOf(shortCode) >= 0) ? "rtl" : "ltr";
+      return (rtlList.includes(shortCode) ? "rtl" : "ltr");
     },
 
     getReadyState() {

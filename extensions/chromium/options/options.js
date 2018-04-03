@@ -81,6 +81,8 @@ Promise.all([
       renderPreference = renderSidebarViewOnLoad(prefSchema.title);
     } else if (prefName === 'cursorToolOnLoad') {
       renderPreference = renderCursorToolOnLoad(prefSchema.title);
+    } else if (prefName === 'textLayerMode') {
+      renderPreference = renderTextLayerMode(prefSchema.title);
     } else if (prefName === 'externalLinkTarget') {
       renderPreference = renderExternalLinkTarget(prefSchema.title);
     } else {
@@ -206,6 +208,23 @@ function renderCursorToolOnLoad(shortDescription) {
   select.onchange = function() {
     storageArea.set({
       cursorToolOnLoad: parseInt(this.value),
+    });
+  };
+  wrapper.querySelector('span').textContent = shortDescription;
+  document.getElementById('settings-boxes').appendChild(wrapper);
+
+  function renderPreference(value) {
+    select.value = value;
+  }
+  return renderPreference;
+}
+
+function renderTextLayerMode(shortDescription) {
+  var wrapper = importTemplate('textLayerMode-template');
+  var select = wrapper.querySelector('select');
+  select.onchange = function() {
+    storageArea.set({
+      textLayerMode: parseInt(this.value),
     });
   };
   wrapper.querySelector('span').textContent = shortDescription;

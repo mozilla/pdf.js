@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand */
+/* eslint-disable object-shorthand, mozilla/use-includes-instead-of-indexOf */
 
 'use strict';
 
@@ -75,7 +75,7 @@ function downloadFile(file, url, callback, redirects) {
     });
     response.pipe(stream);
     stream.on('finish', function() {
-      stream.close();
+      stream.end();
       if (!completed) {
         completed = true;
         callback();
