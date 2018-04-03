@@ -65,19 +65,8 @@
   background: url('images/loading-icon.gif') center no-repeat;
 }
 
-.pdfPresentationMode:-webkit-full-screen .pdfViewer .page {
-  margin-bottom: 100%;
-  border: 0;
-}
-
-.pdfPresentationMode:-moz-full-screen .pdfViewer .page {
-  margin-bottom: 100%;
-  border: 0;
-}
-
 .pdfPresentationMode:-ms-fullscreen .pdfViewer .page {
   margin-bottom: 100% !important;
-  border: 0;
 }
 
 .pdfPresentationMode:fullscreen .pdfViewer .page {
