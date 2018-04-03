@@ -142,7 +142,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
 
     var colorStops = this.colorStops = [];
 
-    // Protect against bad domains so we don't end up in an infinte loop below.
+    // Protect against bad domains so we don't end up in an infinite loop below.
     if (t0 >= t1 || step <= 0) {
       // Acrobat doesn't seem to handle these cases so we'll ignore for
       // now.

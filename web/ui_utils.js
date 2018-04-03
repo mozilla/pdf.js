@@ -54,7 +54,7 @@ function formatL10nValue(text, args) {
 }
 
 /**
- * No-op implemetation of the localization service.
+ * No-op implementation of the localization service.
  * @implements {IL10n}
  */
 let NullL10n = {
@@ -483,7 +483,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0, }) {
   if (typeof target !== 'object' || !(name && typeof name === 'string') ||
       !(Number.isInteger(delay) && delay >= 0)) {
     return Promise.reject(
-      new Error('waitOnEventOrTimeout - invalid paramaters.'));
+      new Error('waitOnEventOrTimeout - invalid parameters.'));
   }
   let capability = createPromiseCapability();
 
