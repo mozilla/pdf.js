@@ -313,7 +313,7 @@ var JpxImage = (function JpxImageClosure() {
               cod.selectiveArithmeticCodingBypass = !!(blockStyle & 1);
               cod.resetContextProbabilities = !!(blockStyle & 2);
               cod.terminationOnEachCodingPass = !!(blockStyle & 4);
-              cod.verticalyStripe = !!(blockStyle & 8);
+              cod.verticallyStripe = !!(blockStyle & 8);
               cod.predictableTermination = !!(blockStyle & 16);
               cod.segmentationSymbolUsed = !!(blockStyle & 32);
               cod.reversibleTransformation = data[j++];
@@ -338,8 +338,8 @@ var JpxImage = (function JpxImageClosure() {
               if (cod.terminationOnEachCodingPass) {
                 unsupported.push('terminationOnEachCodingPass');
               }
-              if (cod.verticalyStripe) {
-                unsupported.push('verticalyStripe');
+              if (cod.verticallyStripe) {
+                unsupported.push('verticallyStripe');
               }
               if (cod.predictableTermination) {
                 unsupported.push('predictableTermination');
