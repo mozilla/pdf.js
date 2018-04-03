@@ -18,9 +18,11 @@
 
 'use strict';
 
+var autoprefixer = require('autoprefixer');
 var fancylog = require('fancy-log');
 var fs = require('fs');
 var gulp = require('gulp');
+var postcss = require('gulp-postcss');
 var rename = require('gulp-rename');
 var replace = require('gulp-replace');
 var transform = require('gulp-transform');
@@ -577,6 +579,7 @@ gulp.task('generic', ['buildnumber', 'locale'], function () {
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'generic', defines, true)
+        .pipe(postcss([autoprefixer()]))
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
 
     gulp.src('web/compressed.tracemonkey-pldi-09.pdf')
@@ -602,6 +605,7 @@ gulp.task('components', ['buildnumber'], function () {
     createComponentsBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(COMPONENTS_DIR + 'images')),
     preprocessCSS('web/pdf_viewer.css', 'components', defines, true)
+        .pipe(postcss([autoprefixer()]))
         .pipe(gulp.dest(COMPONENTS_DIR)),
   ]);
 });
@@ -629,6 +633,7 @@ gulp.task('minified-pre', ['buildnumber', 'locale'], function () {
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(MINIFIED_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'minified', defines, true)
+        .pipe(postcss([autoprefixer()]))
         .pipe(gulp.dest(MINIFIED_DIR + 'web')),
 
     gulp.src('web/compressed.tracemonkey-pldi-09.pdf')
@@ -719,6 +724,7 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'mozcentral', defines, true)
+        .pipe(postcss([autoprefixer()]))
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
 
     gulp.src(FIREFOX_EXTENSION_DIR + 'locale/en-US/*.properties')
@@ -766,6 +772,7 @@ gulp.task('chromium-pre', ['buildnumber', 'locale'], function () {
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'chrome', defines, true)
+        .pipe(postcss([autoprefixer()]))
         .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + 'web')),
 
     gulp.src('LICENSE').pipe(gulp.dest(CHROME_BUILD_DIR)),
