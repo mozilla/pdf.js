@@ -2261,6 +2261,12 @@
       "link": true,
       "type": "eq"
     },
+    { "id": "text_clip_cff_cid",
+      "file": "pdfs/text_clip_cff_cid.pdf",
+      "md5": "92d4920586f177cc0e83326e5b5d2ee1",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "preistabelle",
       "file": "pdfs/preistabelle.pdf",
       "md5": "d2f0b2086160d4f3d325c79a5dc1fb4d",
