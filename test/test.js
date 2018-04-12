@@ -140,7 +140,9 @@ function examineRefImages() {
   startServer();
   var startUrl = 'http://' + server.host + ':' + server.port +
                  '/test/resources/reftest-analyzer.html#web=/test/eq.log';
-  var browser = WebBrowser.create(sessions[0].config);
+  var config = Object.assign({}, sessions[0].config);
+  config['headless'] = false;
+  var browser = WebBrowser.create(config);
   browser.start(startUrl);
 }
 
