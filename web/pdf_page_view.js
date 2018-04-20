@@ -87,6 +87,7 @@ class PDFPageView {
     this.renderingQueue = options.renderingQueue;
     this.textLayerFactory = options.textLayerFactory;
     this.annotationLayerFactory = options.annotationLayerFactory;
+    this.imageLayer = options.imageLayer;
     this.renderer = options.renderer || RendererType.CANVAS;
     this.enableWebGL = options.enableWebGL || false;
     this.l10n = options.l10n || NullL10n;
@@ -576,6 +577,7 @@ class PDFPageView {
       viewport: this.viewport,
       enableWebGL: this.enableWebGL,
       renderInteractiveForms: this.renderInteractiveForms,
+      imageLayer: this.imageLayer
     };
     let renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {
