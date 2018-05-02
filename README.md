@@ -50,7 +50,7 @@ Next, install Node.js via the [official package](http://nodejs.org) or via
 [nvm](https://github.com/creationix/nvm). You need to install the gulp package
 globally (see also [gulp's getting started](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md#getting-started)):
 
-    $ npm install -g gulp-cli
+    $ sudo npm install -g gulp-cli       # install as root
 
 If everything worked out, install all dependencies for PDF.js:
 
