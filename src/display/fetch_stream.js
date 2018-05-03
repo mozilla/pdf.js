@@ -21,10 +21,11 @@ import {
   validateRangeRequestCapabilities, validateResponseStatus
 } from './network_utils';
 
-function createFetchOptions(headers, withCredentials) {
+function createFetchOptions(headers, withCredentials, abortController) {
   return {
     method: 'GET',
     headers,
+    signal: abortController && abortController.signal,
     mode: 'cors',
     credentials: withCredentials ? 'include' : 'same-origin',
     redirect: 'follow',
@@ -80,6 +81,9 @@ class PDFFetchStreamReader {
       this._disableRange = true;
     }
 
+    if (typeof AbortController !== 'undefined') {
+      this._abortController = new AbortController();
+    }
     this._isStreamingSupported = !source.disableStream;
     this._isRangeSupported = !source.disableRange;
 
@@ -93,8 +97,8 @@ class PDFFetchStreamReader {
     }
 
     let url = source.url;
-    fetch(url, createFetchOptions(this._headers, this._withCredentials)).
-        then((response) => {
+    fetch(url, createFetchOptions(this._headers, this._withCredentials,
+        this._abortController)).then((response) => {
       if (!validateResponseStatus(response.status)) {
         throw createResponseStatusError(response.status, url);
       }
@@ -171,6 +175,9 @@ class PDFFetchStreamReader {
     if (this._reader) {
       this._reader.cancel(reason);
     }
+    if (this._abortController) {
+      this._abortController.abort();
+    }
   }
 }
 
@@ -184,6 +191,10 @@ class PDFFetchStreamRangeReader {
     this._readCapability = createPromiseCapability();
     this._isStreamingSupported = !source.disableStream;
 
+    if (typeof AbortController !== 'undefined') {
+      this._abortController = new AbortController();
+    }
+
     this._headers = new Headers();
     for (let property in this._stream.httpHeaders) {
       let value = this._stream.httpHeaders[property];
@@ -196,8 +207,8 @@ class PDFFetchStreamRangeReader {
     let rangeStr = begin + '-' + (end - 1);
     this._headers.append('Range', 'bytes=' + rangeStr);
     let url = source.url;
-    fetch(url, createFetchOptions(this._headers, this._withCredentials)).
-        then((response) => {
+    fetch(url, createFetchOptions(this._headers, this._withCredentials,
+        this._abortController)).then((response) => {
       if (!validateResponseStatus(response.status)) {
         throw createResponseStatusError(response.status, url);
       }
@@ -231,6 +242,9 @@ class PDFFetchStreamRangeReader {
   cancel(reason) {
     if (this._reader) {
       this._reader.cancel(reason);
+    }
+    if (this._abortController) {
+      this._abortController.abort();
     }
   }
 }
