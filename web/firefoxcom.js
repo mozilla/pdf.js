@@ -171,7 +171,7 @@ class MozL10n {
     'findcasesensitivitychange'
   ];
   let handleEvent = function(evt) {
-    if (!PDFViewerApplication.initialized) {
+    if (!PDFViewerApplication.initialized || !PDFViewerApplication.supportsIntegratedFind) {
       return;
     }
     PDFViewerApplication.eventBus.dispatch('find', {
