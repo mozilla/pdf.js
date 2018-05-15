@@ -51,9 +51,8 @@ var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline/';
 var GENERIC_DIR = BUILD_DIR + 'generic/';
 var COMPONENTS_DIR = BUILD_DIR + 'components/';
 var MINIFIED_DIR = BUILD_DIR + 'minified/';
-var FIREFOX_BUILD_DIR = BUILD_DIR + 'firefox/';
-var CHROME_BUILD_DIR = BUILD_DIR + 'chromium/';
 var SEAMONKEY_BUILD_DIR = BUILD_DIR + 'seamonkey/';
+var CHROME_BUILD_DIR = BUILD_DIR + 'chromium/';
 var JSDOC_BUILD_DIR = BUILD_DIR + 'jsdoc/';
 var GH_PAGES_DIR = BUILD_DIR + 'gh-pages/';
 var SRC_DIR = 'src/';
@@ -861,15 +860,6 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
         ]))
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
 
-    gulp.src(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry.jsm')
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
-    gulp.src(FIREFOX_CONTENT_DIR + 'pdfjschildbootstrap.js')
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
-    gulp.src(FIREFOX_CONTENT_DIR + 'pdfjschildbootstrap-enabled.js')
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
-    gulp.src(FIREFOX_EXTENSION_DIR + 'chrome-mozcentral.manifest')
-        .pipe(rename('chrome.manifest'))
-        .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + 'locale/en-US/*.properties')
         .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + 'README.mozilla')
@@ -877,22 +867,8 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
         .pipe(replace(/\bPDFJSSCRIPT_COMMIT\b/g, commit))
         .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
     gulp.src('LICENSE').pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
-
-    preprocessJS(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', defines, true)
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
-    preprocessJS(FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm', defines, true)
-        .pipe(replace(/\bPDFJSSCRIPT_STREAM_CONVERTER_ID\b/g,
-                      MOZCENTRAL_STREAM_CONVERTER_ID))
-        .pipe(replace(/\bPDFJSSCRIPT_STREAM_CONVERTER2_ID\b/g,
-                      MOZCENTRAL_STREAM_CONVERTER2_ID))
-        .pipe(replace(/\bPDFJSSCRIPT_PREF_PREFIX\b/g, MOZCENTRAL_PREF_PREFIX))
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
-    preprocessJS(FIREFOX_CONTENT_DIR + 'PdfJsNetwork.jsm', defines, true)
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
-    preprocessJS(FIREFOX_CONTENT_DIR + 'PdfjsContentUtils.jsm', defines, true)
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
-    preprocessJS(FIREFOX_CONTENT_DIR + 'PdfjsChromeUtils.jsm', defines, true)
-        .pipe(replace(/\bPDFJSSCRIPT_PREF_PREFIX\b/g, MOZCENTRAL_PREF_PREFIX))
+    gulp.src(FIREFOX_CONTENT_DIR + 'PdfJsDefaultPreferences.jsm')
+        .pipe(transform('utf8', preprocessDefaultPreferences))
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
   ]);
 });
