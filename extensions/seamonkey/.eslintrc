@@ -1,0 +1,28 @@
+{
+  // Note: The root .eslintrc file will define the base rules,
+  // but mozilla/recommended will override them for the rules it sets. Finally,
+  // the rules in this file will take precedence.
+  "extends": [
+    "plugin:mozilla/recommended",
+  ],
+
+  "parserOptions": {
+    "sourceType": "script",
+  },
+
+  "plugins": [
+    "mozilla"
+  ],
+
+  "rules": {
+    // Items different from the mozilla/recommended configuration.
+
+    // Other rules mozilla/recommended hasn't enabled yet.
+    "no-shadow": "error",
+    "arrow-body-style": ["error", "as-needed"],
+    "arrow-parens": ["error", "always"],
+    "constructor-super": "error",
+    "no-confusing-arrow": "error",
+    "no-useless-constructor": "error",
+  },
+}

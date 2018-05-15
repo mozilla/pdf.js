@@ -53,6 +53,7 @@ var COMPONENTS_DIR = BUILD_DIR + 'components/';
 var MINIFIED_DIR = BUILD_DIR + 'minified/';
 var FIREFOX_BUILD_DIR = BUILD_DIR + 'firefox/';
 var CHROME_BUILD_DIR = BUILD_DIR + 'chromium/';
+var SEAMONKEY_BUILD_DIR = BUILD_DIR + 'seamonkey/';
 var JSDOC_BUILD_DIR = BUILD_DIR + 'jsdoc/';
 var GH_PAGES_DIR = BUILD_DIR + 'gh-pages/';
 var SRC_DIR = 'src/';
@@ -423,7 +424,7 @@ gulp.task('default', function() {
   });
 });
 
-gulp.task('extension', ['firefox', 'chromium']);
+gulp.task('extension', ['seamonkey', 'chromium']);
 
 gulp.task('buildnumber', function (done) {
   console.log();
@@ -460,8 +461,8 @@ gulp.task('buildnumber', function (done) {
 
 gulp.task('locale', function () {
   var VIEWER_LOCALE_OUTPUT = 'web/locale/';
-  var METADATA_OUTPUT = 'extensions/firefox/';
-  var EXTENSION_LOCALE_OUTPUT = 'extensions/firefox/locale/';
+  var METADATA_OUTPUT = 'extensions/seamonkey/';
+  var EXTENSION_LOCALE_OUTPUT = 'extensions/seamonkey/locale/';
 
   console.log();
   console.log('### Building localization files');
@@ -717,20 +718,20 @@ gulp.task('minified-post', ['minified-pre'], function () {
 
 gulp.task('minified', ['minified-post']);
 
-gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
+gulp.task('seamonkey-pre', ['buildnumber', 'locale'], function () {
   console.log();
-  console.log('### Building Firefox extension');
+  console.log('### Building SeaMonkey extension');
   var defines = builder.merge(DEFINES, { FIREFOX: true, SKIP_BABEL: true, });
 
-  var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR + '/content/',
-      FIREFOX_EXTENSION_DIR = 'extensions/firefox/',
-      FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
+  var FIREFOX_BUILD_CONTENT_DIR = SEAMONKEY_BUILD_DIR + '/content/',
+      FIREFOX_EXTENSION_DIR = 'extensions/seamonkey/',
+      FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/seamonkey/content/',
       FIREFOX_PREF_PREFIX = 'extensions.uriloader@pdf.js',
       FIREFOX_STREAM_CONVERTER_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb1',
       FIREFOX_STREAM_CONVERTER2_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb2';
 
-  // Clear out everything in the firefox extension build directory
-  rimraf.sync(FIREFOX_BUILD_DIR);
+  // Clear out everything in the seamonkey extension build directory
+  rimraf.sync(SEAMONKEY_BUILD_DIR);
 
   var localizedMetadata =
     fs.readFileSync(FIREFOX_EXTENSION_DIR + 'metadata.inc').toString();
@@ -745,14 +746,14 @@ gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
         .pipe(gulp.dest(FIREFOX_BUILD_CONTENT_DIR + 'web')),
     gulp.src(FIREFOX_EXTENSION_DIR + 'locale/**/*.properties',
              { base: FIREFOX_EXTENSION_DIR, })
-        .pipe(gulp.dest(FIREFOX_BUILD_DIR)),
+        .pipe(gulp.dest(SEAMONKEY_BUILD_DIR)),
     gulp.src(['external/bcmaps/*.bcmap', 'external/bcmaps/LICENSE'],
              { base: 'external/bcmaps', })
         .pipe(gulp.dest(FIREFOX_BUILD_CONTENT_DIR + 'web/cmaps')),
 
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(FIREFOX_BUILD_CONTENT_DIR + 'web')),
-    preprocessCSS('web/viewer.css', 'firefox', defines, true)
+    preprocessCSS('web/viewer.css', 'seamonkey', defines, true)
         .pipe(gulp.dest(FIREFOX_BUILD_CONTENT_DIR + 'web')),
 
     gulp.src(FIREFOX_CONTENT_DIR + 'PdfJs-stub.jsm')
@@ -762,19 +763,19 @@ gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
         .pipe(rename('PdfJsTelemetry.jsm'))
         .pipe(gulp.dest(FIREFOX_BUILD_CONTENT_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + '*.png')
-        .pipe(gulp.dest(FIREFOX_BUILD_DIR)),
+        .pipe(gulp.dest(SEAMONKEY_BUILD_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + 'chrome.manifest')
         .pipe(replace(/#.*PDFJS_SUPPORTED_LOCALES.*\n/, chromeManifestLocales))
-        .pipe(gulp.dest(FIREFOX_BUILD_DIR)),
+        .pipe(gulp.dest(SEAMONKEY_BUILD_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + '*.rdf')
         .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
         .pipe(replace(/.*<!--\s*PDFJS_LOCALIZED_METADATA\s*-->.*\n/,
                       localizedMetadata))
-        .pipe(gulp.dest(FIREFOX_BUILD_DIR)),
+        .pipe(gulp.dest(SEAMONKEY_BUILD_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + 'chrome/content.js',
              { base: FIREFOX_EXTENSION_DIR, })
-        .pipe(gulp.dest(FIREFOX_BUILD_DIR)),
-    gulp.src('LICENSE').pipe(gulp.dest(FIREFOX_BUILD_DIR)),
+        .pipe(gulp.dest(SEAMONKEY_BUILD_DIR)),
+    gulp.src('LICENSE').pipe(gulp.dest(SEAMONKEY_BUILD_DIR)),
 
     preprocessJS(FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm', defines, true)
         .pipe(replace(/\bPDFJSSCRIPT_STREAM_CONVERTER_ID\b/g,
@@ -791,11 +792,11 @@ gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
         .pipe(replace(/\bPDFJSSCRIPT_PREF_PREFIX\b/g, FIREFOX_PREF_PREFIX))
         .pipe(gulp.dest(FIREFOX_BUILD_CONTENT_DIR)),
     preprocessJS(FIREFOX_EXTENSION_DIR + 'bootstrap.js', defines, true)
-        .pipe(gulp.dest(FIREFOX_BUILD_DIR)),
+        .pipe(gulp.dest(SEAMONKEY_BUILD_DIR)),
   ]);
 });
 
-gulp.task('firefox', ['firefox-pre'], function (done) {
+gulp.task('seamonkey', ['seamonkey-pre'], function (done) {
   var FIREFOX_EXTENSION_FILES =
         ['bootstrap.js',
          'install.rdf',
@@ -809,7 +810,7 @@ gulp.task('firefox', ['firefox-pre'], function (done) {
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi';
 
   var zipExecOptions = {
-    cwd: FIREFOX_BUILD_DIR,
+    cwd: SEAMONKEY_BUILD_DIR,
     // Set timezone to UTC before calling zip to get reproducible results.
     env: { 'TZ': 'UTC', },
   };
@@ -1230,9 +1231,9 @@ gulp.task('gh-pages-prepare', ['web-pre'], function () {
   return merge([
     vfs.src(GENERIC_DIR + '**/*', { base: GENERIC_DIR, stripBOM: false, })
        .pipe(gulp.dest(GH_PAGES_DIR)),
-    gulp.src([FIREFOX_BUILD_DIR + '*.xpi',
-              FIREFOX_BUILD_DIR + '*.rdf'])
-        .pipe(gulp.dest(GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/')),
+    gulp.src([SEAMONKEY_BUILD_DIR + '*.xpi',
+              SEAMONKEY_BUILD_DIR + '*.rdf'])
+        .pipe(gulp.dest(GH_PAGES_DIR + EXTENSION_SRC_DIR + 'seamonkey/')),
     gulp.src(CHROME_BUILD_DIR + '*.crx')
         .pipe(gulp.dest(GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/')),
     gulp.src('test/features/**/*', { base: 'test/', })
