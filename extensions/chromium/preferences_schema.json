@@ -144,6 +144,28 @@
       "description": "When enabled, pages whose orientation differ from the first page are rotated when printed.",
       "type": "boolean",
       "default": false
+    },
+    "scrollModeOnLoad": {
+      "title": "Scroll mode on load",
+      "description": "Controls how the viewer scrolls upon load.\n 0 = Vertical scrolling.\n 1 = Horizontal scrolling.\n 2 = Wrapped scrolling.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "default": 0
+    },
+    "spreadModeOnLoad": {
+      "title": "Spread mode on load",
+      "description": "Whether the viewer should join pages into spreads upon load.\n 0 = No spreads.\n 1 = Odd spreads.\n 2 = Even spreads.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "default": 0
     }
   }
 }
