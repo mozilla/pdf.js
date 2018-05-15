@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+
+  <Description about="urn:mozilla:install-manifest">
+    <em:id>viewer@pdf.js</em:id>
+    <!-- PDFJS_LOCALIZED_METADATA -->
+    <em:name>PDF Viewer</em:name>
+    <em:version>PDFJSSCRIPT_VERSION</em:version>
+
+    <!-- Firefox -->
+    <em:targetApplication>
+      <Description>
+       <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+       <em:minVersion>45.0</em:minVersion>
+       <em:maxVersion>54.0a1</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+
+    <!-- SeaMonkey -->
+    <em:targetApplication>
+      <Description>
+       <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
+       <em:minVersion>2.46</em:minVersion>
+       <em:maxVersion>2.51a1</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+
+    <!-- Android -->
+    <em:targetApplication>
+      <Description>
+       <em:id>{aa3c5121-dab2-40e2-81ca-7ea25febc110}</em:id>
+       <em:minVersion>45.0</em:minVersion>
+       <em:maxVersion>54.0a1</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+
+    <!-- Conkeror -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{a79fe89b-6662-4ff4-8e88-09950ad4dfde}</em:id>
+        <em:minVersion>0.1</em:minVersion>
+        <em:maxVersion>9.9</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
+    <em:bootstrap>true</em:bootstrap>
+    <em:multiprocessCompatible>true</em:multiprocessCompatible>
+    <em:creator>Mozilla</em:creator>
+    <em:description>Uses HTML5 to display PDF files directly in Firefox.</em:description>
+    <em:homepageURL>https://github.com/mozilla/pdf.js/</em:homepageURL>
+    <em:type>2</em:type>
+    <!-- Use the raw link for updates so we we can use SSL. -->
+    <em:updateURL>https://github.com/mozilla/pdf.js/raw/gh-pages/extensions/firefox/update.rdf</em:updateURL>
+  </Description>
+</RDF>
