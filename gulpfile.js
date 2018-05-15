@@ -18,9 +18,11 @@
 
 'use strict';
 
+var autoprefixer = require('autoprefixer');
 var fancylog = require('fancy-log');
 var fs = require('fs');
 var gulp = require('gulp');
+var postcss = require('gulp-postcss');
 var rename = require('gulp-rename');
 var replace = require('gulp-replace');
 var transform = require('gulp-transform');
@@ -69,6 +71,20 @@ var builder = require('./external/builder/builder.js');
 
 var CONFIG_FILE = 'pdfjs.config';
 var config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
+
+// Default Autoprefixer config used for generic, components, minifed-pre
+var AUTOPREFIXER_CONFIG = {
+  browsers: [
+    'last 2 versions',
+    'Chrome >= 49', // Last supported on Windows XP
+    'Firefox >= 52', // Last supported on Windows XP
+    'Firefox ESR',
+    'IE >= 11',
+    'Safari >= 8',
+    '> 0.5%',
+    'not dead',
+  ],
+};
 
 var DEFINES = {
   PRODUCTION: true,
@@ -601,6 +617,7 @@ gulp.task('generic', ['buildnumber', 'locale'], function () {
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'generic', defines, true)
+        .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
 
     gulp.src('web/compressed.tracemonkey-pldi-09.pdf')
@@ -626,6 +643,7 @@ gulp.task('components', ['buildnumber'], function () {
     createComponentsBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(COMPONENTS_DIR + 'images')),
     preprocessCSS('web/pdf_viewer.css', 'components', defines, true)
+        .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
         .pipe(gulp.dest(COMPONENTS_DIR)),
   ]);
 });
@@ -653,6 +671,7 @@ gulp.task('minified-pre', ['buildnumber', 'locale'], function () {
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(MINIFIED_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'minified', defines, true)
+        .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
         .pipe(gulp.dest(MINIFIED_DIR + 'web')),
 
     gulp.src('web/compressed.tracemonkey-pldi-09.pdf')
@@ -836,6 +855,9 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'mozcentral', defines, true)
+        .pipe(postcss([
+            autoprefixer({ browsers: ['last 1 firefox versions'], })
+        ]))
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
 
     gulp.src(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry.jsm')
@@ -906,6 +928,7 @@ gulp.task('chromium-pre', ['buildnumber', 'locale'], function () {
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'chrome', defines, true)
+        .pipe(postcss([autoprefixer({ browsers: ['chrome >= 49'], })]))
         .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + 'web')),
 
     gulp.src('LICENSE').pipe(gulp.dest(CHROME_BUILD_DIR)),

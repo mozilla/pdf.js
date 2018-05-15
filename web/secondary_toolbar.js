@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { ScrollMode, SpreadMode } from './base_viewer';
 import { CursorTool } from './pdf_cursor_tools';
 import { SCROLLBAR_PADDING } from './ui_utils';
 
@@ -76,6 +77,18 @@ class SecondaryToolbar {
         eventDetails: { tool: CursorTool.SELECT, }, close: true, },
       { element: options.cursorHandToolButton, eventName: 'switchcursortool',
         eventDetails: { tool: CursorTool.HAND, }, close: true, },
+      { element: options.scrollVerticalButton, eventName: 'switchscrollmode',
+        eventDetails: { mode: ScrollMode.VERTICAL, }, close: true, },
+      { element: options.scrollHorizontalButton, eventName: 'switchscrollmode',
+        eventDetails: { mode: ScrollMode.HORIZONTAL, }, close: true, },
+      { element: options.scrollWrappedButton, eventName: 'switchscrollmode',
+        eventDetails: { mode: ScrollMode.WRAPPED, }, close: true, },
+      { element: options.spreadNoneButton, eventName: 'switchspreadmode',
+        eventDetails: { mode: SpreadMode.NONE, }, close: true, },
+      { element: options.spreadOddButton, eventName: 'switchspreadmode',
+        eventDetails: { mode: SpreadMode.ODD, }, close: true, },
+      { element: options.spreadEvenButton, eventName: 'switchspreadmode',
+        eventDetails: { mode: SpreadMode.EVEN, }, close: true, },
       { element: options.documentPropertiesButton,
         eventName: 'documentproperties', close: true, },
     ];
@@ -95,9 +108,12 @@ class SecondaryToolbar {
 
     this.reset();
 
-    // Bind the event listeners for click and cursor tool actions.
+    // Bind the event listeners for click, cursor tool, and scroll/spread mode
+    // actions.
     this._bindClickListeners();
     this._bindCursorToolsListener(options);
+    this._bindScrollModeListener(options);
+    this._bindSpreadModeListener(options);
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
     this.eventBus.on('resize', this._setMaxHeight.bind(this));
@@ -169,6 +185,28 @@ class SecondaryToolbar {
           buttons.cursorHandToolButton.classList.add('toggled');
           break;
       }
+    });
+  }
+
+  _bindScrollModeListener(buttons) {
+    this.eventBus.on('scrollmodechanged', function(evt) {
+      buttons.scrollVerticalButton.classList.toggle('toggled',
+        evt.mode === ScrollMode.VERTICAL);
+      buttons.scrollHorizontalButton.classList.toggle('toggled',
+        evt.mode === ScrollMode.HORIZONTAL);
+      buttons.scrollWrappedButton.classList.toggle('toggled',
+        evt.mode === ScrollMode.WRAPPED);
+    });
+  }
+
+  _bindSpreadModeListener(buttons) {
+    this.eventBus.on('spreadmodechanged', function(evt) {
+      buttons.spreadNoneButton.classList.toggle('toggled',
+        evt.mode === SpreadMode.NONE);
+      buttons.spreadOddButton.classList.toggle('toggled',
+        evt.mode === SpreadMode.ODD);
+      buttons.spreadEvenButton.classList.toggle('toggled',
+        evt.mode === SpreadMode.EVEN);
     });
   }
 
