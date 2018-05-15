@@ -1029,6 +1029,8 @@ let PDFViewerApplication = {
         scrollTop: '0',
         rotation: null,
         sidebarView: SidebarView.NONE,
+        scrollMode: null,
+        spreadMode: null,
       }).catch(() => { /* Unable to read from storage; ignoring errors. */ });
 
       Promise.all([storePromise, pageModePromise]).then(
@@ -1038,6 +1040,8 @@ let PDFViewerApplication = {
           ('zoom=' + AppOptions.get('defaultZoomValue')) : null;
         let rotation = null;
         let sidebarView = AppOptions.get('sidebarViewOnLoad');
+        let scrollMode = null;
+        let spreadMode = null;
 
         if (values.exists && AppOptions.get('showPreviousViewOnLoad')) {
           hash = 'page=' + values.page +
@@ -1045,6 +1049,12 @@ let PDFViewerApplication = {
             ',' + values.scrollLeft + ',' + values.scrollTop;
           rotation = parseInt(values.rotation, 10);
           sidebarView = sidebarView || (values.sidebarView | 0);
+          if (values.scrollMode !== null) {
+            scrollMode = values.scrollMode;
+          }
+          if (values.spreadMode !== null) {
+            spreadMode = values.spreadMode;
+          }
         }
         if (pageMode && !AppOptions.get('disablePageMode')) {
           // Always let the user preference/history take precedence.
@@ -1054,12 +1064,16 @@ let PDFViewerApplication = {
           hash,
           rotation,
           sidebarView,
+          scrollMode,
+          spreadMode,
         };
-      }).then(({ hash, rotation, sidebarView, }) => {
+      }).then(({ hash, rotation, sidebarView, scrollMode, spreadMode, }) => {
         initialParams.bookmark = this.initialBookmark;
         initialParams.hash = hash;
 
-        this.setInitialView(hash, { rotation, sidebarView, });
+        this.setInitialView(hash, {
+          rotation, sidebarView, scrollMode, spreadMode,
+        });
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
@@ -1227,12 +1241,20 @@ let PDFViewerApplication = {
     });
   },
 
-  setInitialView(storedHash, { rotation, sidebarView, } = {}) {
+  setInitialView(storedHash, values = {}) {
+    let { rotation, sidebarView, scrollMode, spreadMode, } = values;
     let setRotation = (angle) => {
       if (isValidRotation(angle)) {
         this.pdfViewer.pagesRotation = angle;
       }
     };
+    if (Number.isInteger(scrollMode)) {
+      this.pdfViewer.setScrollMode(scrollMode);
+    }
+    if (Number.isInteger(spreadMode)) {
+      this.pdfViewer.setSpreadMode(spreadMode);
+    }
+
     this.isInitialViewSet = true;
     this.pdfSidebar.setInitialView(sidebarView);
 
@@ -1386,7 +1408,9 @@ let PDFViewerApplication = {
     eventBus.on('rotatecw', webViewerRotateCw);
     eventBus.on('rotateccw', webViewerRotateCcw);
     eventBus.on('switchscrollmode', webViewerSwitchScrollMode);
+    eventBus.on('scrollmodechanged', webViewerScrollModeChanged);
     eventBus.on('switchspreadmode', webViewerSwitchSpreadMode);
+    eventBus.on('spreadmodechanged', webViewerSpreadModeChanged);
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
     eventBus.on('findfromurlhash', webViewerFindFromUrlHash);
@@ -1454,7 +1478,9 @@ let PDFViewerApplication = {
     eventBus.off('rotatecw', webViewerRotateCw);
     eventBus.off('rotateccw', webViewerRotateCcw);
     eventBus.off('switchscrollmode', webViewerSwitchScrollMode);
+    eventBus.off('scrollmodechanged', webViewerScrollModeChanged);
     eventBus.off('switchspreadmode', webViewerSwitchSpreadMode);
+    eventBus.off('spreadmodechanged', webViewerSpreadModeChanged);
     eventBus.off('documentproperties', webViewerDocumentProperties);
     eventBus.off('find', webViewerFind);
     eventBus.off('findfromurlhash', webViewerFindFromUrlHash);
@@ -1848,6 +1874,22 @@ function webViewerUpdateViewarea(evt) {
     PDFViewerApplication.pdfViewer.getPageView(PDFViewerApplication.page - 1);
   let loading = currentPage.renderingState !== RenderingStates.FINISHED;
   PDFViewerApplication.toolbar.updateLoadingIndicatorState(loading);
+}
+
+function webViewerScrollModeChanged(evt) {
+  let store = PDFViewerApplication.store;
+  if (store && PDFViewerApplication.isInitialViewSet) {
+    // Only update the storage when the document has been loaded *and* rendered.
+    store.set('scrollMode', evt.mode).catch(function() { });
+  }
+}
+
+function webViewerSpreadModeChanged(evt) {
+  let store = PDFViewerApplication.store;
+  if (store && PDFViewerApplication.isInitialViewSet) {
+    // Only update the storage when the document has been loaded *and* rendered.
+    store.set('spreadMode', evt.mode).catch(function() { });
+  }
 }
 
 function webViewerResize() {
