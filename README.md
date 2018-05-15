@@ -31,6 +31,14 @@ Feel free to stop by #pdfjs on irc.mozilla.org for questions or guidance.
 
 PDF.js is built into version 19+ of Firefox.
 
+#### SeaMonkey
+
+The SeaMonkey extension is maintained by [@IsaacSchemm](https://github.com/IsaacSchemm).
+It is available as an .xpi file from [addons.mozilla.org](https://addons.mozilla.org/en-US/seamonkey/addon/pdf-js-for-seamonkey/)
+and supports SeaMonkey 2.49 through 2.53.
+
+To build it yourself, get the code as explained below and issue `gulp seamonkey`.
+
 #### Chrome
 
 + The official extension for Chrome can be installed from the [Chrome Web Store](https://chrome.google.com/webstore/detail/pdf-viewer/oemmndcbldboiebfnladdacbdfmadadm).
