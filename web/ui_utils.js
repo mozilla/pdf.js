@@ -115,7 +115,8 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   }
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
-  while (parent.clientHeight === parent.scrollHeight ||
+  while ((parent.clientHeight === parent.scrollHeight &&
+          parent.clientWidth === parent.scrollWidth) ||
          (skipOverflowHiddenElements &&
           getComputedStyle(parent).overflow === 'hidden')) {
     if (parent.dataset._scaleY) {
