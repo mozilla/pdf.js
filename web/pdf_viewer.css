@@ -46,29 +46,40 @@
   border: none;
 }
 
-.pdfViewer.scrollHorizontal, .pdfViewer.scrollWrapped {
+.pdfViewer.scrollHorizontal, .pdfViewer.scrollWrapped, .spread {
   margin-left: 3.5px;
   margin-right: 3.5px;
   text-align: center;
 }
 
-.pdfViewer.scrollHorizontal {
+.pdfViewer.scrollHorizontal, .spread {
   white-space: nowrap;
 }
 
-.pdfViewer.removePageBorders {
+.pdfViewer.removePageBorders,
+.pdfViewer.scrollHorizontal .spread,
+.pdfViewer.scrollWrapped .spread {
   margin-left: 0;
   margin-right: 0;
 }
 
+.spread .page,
 .pdfViewer.scrollHorizontal .page,
-.pdfViewer.scrollWrapped .page {
+.pdfViewer.scrollWrapped .page,
+.pdfViewer.scrollHorizontal .spread,
+.pdfViewer.scrollWrapped .spread {
   display: inline-block;
-  margin-left: -3.5px;
-  margin-right: -3.5px;
   vertical-align: middle;
 }
 
+.spread .page,
+.pdfViewer.scrollHorizontal .page,
+.pdfViewer.scrollWrapped .page {
+  margin-left: -3.5px;
+  margin-right: -3.5px;
+}
+
+.pdfViewer.removePageBorders .spread .page,
 .pdfViewer.removePageBorders.scrollHorizontal .page,
 .pdfViewer.removePageBorders.scrollWrapped .page {
   margin-left: 5px;
@@ -99,7 +110,8 @@
   margin-right: 0;
 }
 
-.pdfPresentationMode .pdfViewer .page {
+.pdfPresentationMode .pdfViewer .page,
+.pdfPresentationMode .pdfViewer .spread {
   display: block;
 }
 

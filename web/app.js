@@ -1386,6 +1386,7 @@ let PDFViewerApplication = {
     eventBus.on('rotatecw', webViewerRotateCw);
     eventBus.on('rotateccw', webViewerRotateCcw);
     eventBus.on('switchscrollmode', webViewerSwitchScrollMode);
+    eventBus.on('switchspreadmode', webViewerSwitchSpreadMode);
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
     eventBus.on('findfromurlhash', webViewerFindFromUrlHash);
@@ -1453,6 +1454,7 @@ let PDFViewerApplication = {
     eventBus.off('rotatecw', webViewerRotateCw);
     eventBus.off('rotateccw', webViewerRotateCcw);
     eventBus.off('switchscrollmode', webViewerSwitchScrollMode);
+    eventBus.off('switchspreadmode', webViewerSwitchSpreadMode);
     eventBus.off('documentproperties', webViewerDocumentProperties);
     eventBus.off('find', webViewerFind);
     eventBus.off('findfromurlhash', webViewerFindFromUrlHash);
@@ -1964,6 +1966,9 @@ function webViewerRotateCcw() {
 }
 function webViewerSwitchScrollMode(evt) {
   PDFViewerApplication.pdfViewer.setScrollMode(evt.mode);
+}
+function webViewerSwitchSpreadMode(evt) {
+  PDFViewerApplication.pdfViewer.setSpreadMode(evt.mode);
 }
 function webViewerDocumentProperties() {
   PDFViewerApplication.pdfDocumentProperties.open();
