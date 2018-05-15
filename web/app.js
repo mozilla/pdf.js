@@ -242,6 +242,12 @@ let PDFViewerApplication = {
       preferences.get('enablePrintAutoRotate').then(function resolved(value) {
         AppOptions.set('enablePrintAutoRotate', value);
       }),
+      preferences.get('scrollModeOnLoad').then(function resolved(value) {
+        AppOptions.set('scrollModeOnLoad', value);
+      }),
+      preferences.get('spreadModeOnLoad').then(function resolved(value) {
+        AppOptions.set('spreadModeOnLoad', value);
+      }),
     ]).catch(function(reason) { });
   },
 
@@ -1029,6 +1035,8 @@ let PDFViewerApplication = {
         scrollTop: '0',
         rotation: null,
         sidebarView: SidebarView.NONE,
+        scrollMode: null,
+        spreadMode: null,
       }).catch(() => { /* Unable to read from storage; ignoring errors. */ });
 
       Promise.all([storePromise, pageModePromise]).then(
@@ -1038,6 +1046,8 @@ let PDFViewerApplication = {
           ('zoom=' + AppOptions.get('defaultZoomValue')) : null;
         let rotation = null;
         let sidebarView = AppOptions.get('sidebarViewOnLoad');
+        let scrollMode = AppOptions.get('scrollModeOnLoad');
+        let spreadMode = AppOptions.get('spreadModeOnLoad');
 
         if (values.exists && AppOptions.get('showPreviousViewOnLoad')) {
           hash = 'page=' + values.page +
@@ -1045,6 +1055,12 @@ let PDFViewerApplication = {
             ',' + values.scrollLeft + ',' + values.scrollTop;
           rotation = parseInt(values.rotation, 10);
           sidebarView = sidebarView || (values.sidebarView | 0);
+          if (values.scrollMode !== null) {
+            scrollMode = values.scrollMode;
+          }
+          if (values.spreadMode !== null) {
+            spreadMode = values.spreadMode;
+          }
         }
         if (pageMode && !AppOptions.get('disablePageMode')) {
           // Always let the user preference/history take precedence.
@@ -1054,12 +1070,16 @@ let PDFViewerApplication = {
           hash,
           rotation,
           sidebarView,
+          scrollMode,
+          spreadMode,
         };
-      }).then(({ hash, rotation, sidebarView, }) => {
+      }).then(({ hash, rotation, sidebarView, scrollMode, spreadMode, }) => {
         initialParams.bookmark = this.initialBookmark;
         initialParams.hash = hash;
 
-        this.setInitialView(hash, { rotation, sidebarView, });
+        this.setInitialView(hash, {
+          rotation, sidebarView, scrollMode, spreadMode,
+        });
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
@@ -1227,12 +1247,24 @@ let PDFViewerApplication = {
     });
   },
 
-  setInitialView(storedHash, { rotation, sidebarView, } = {}) {
+  setInitialView(storedHash, values = {}) {
+    let { rotation, sidebarView, scrollMode, spreadMode, } = values;
     let setRotation = (angle) => {
       if (isValidRotation(angle)) {
         this.pdfViewer.pagesRotation = angle;
       }
     };
+
+    // Putting these before isInitialViewSet = true prevents these values from
+    // being stored in the document history (and overriding any future changes
+    // made to the corresponding global preferences), just this once.
+    if (Number.isInteger(scrollMode)) {
+      this.pdfViewer.setScrollMode(scrollMode);
+    }
+    if (Number.isInteger(spreadMode)) {
+      this.pdfViewer.setSpreadMode(spreadMode);
+    }
+
     this.isInitialViewSet = true;
     this.pdfSidebar.setInitialView(sidebarView);
 
@@ -1385,6 +1417,10 @@ let PDFViewerApplication = {
     eventBus.on('scalechanged', webViewerScaleChanged);
     eventBus.on('rotatecw', webViewerRotateCw);
     eventBus.on('rotateccw', webViewerRotateCcw);
+    eventBus.on('switchscrollmode', webViewerSwitchScrollMode);
+    eventBus.on('scrollmodechanged', webViewerScrollModeChanged);
+    eventBus.on('switchspreadmode', webViewerSwitchSpreadMode);
+    eventBus.on('spreadmodechanged', webViewerSpreadModeChanged);
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
     eventBus.on('findfromurlhash', webViewerFindFromUrlHash);
@@ -1451,6 +1487,10 @@ let PDFViewerApplication = {
     eventBus.off('scalechanged', webViewerScaleChanged);
     eventBus.off('rotatecw', webViewerRotateCw);
     eventBus.off('rotateccw', webViewerRotateCcw);
+    eventBus.off('switchscrollmode', webViewerSwitchScrollMode);
+    eventBus.off('scrollmodechanged', webViewerScrollModeChanged);
+    eventBus.off('switchspreadmode', webViewerSwitchSpreadMode);
+    eventBus.off('spreadmodechanged', webViewerSpreadModeChanged);
     eventBus.off('documentproperties', webViewerDocumentProperties);
     eventBus.off('find', webViewerFind);
     eventBus.off('findfromurlhash', webViewerFindFromUrlHash);
@@ -1846,6 +1886,22 @@ function webViewerUpdateViewarea(evt) {
   PDFViewerApplication.toolbar.updateLoadingIndicatorState(loading);
 }
 
+function webViewerScrollModeChanged(evt) {
+  let store = PDFViewerApplication.store;
+  if (store && PDFViewerApplication.isInitialViewSet) {
+    // Only update the storage when the document has been loaded *and* rendered.
+    store.set('scrollMode', evt.mode).catch(function() { });
+  }
+}
+
+function webViewerSpreadModeChanged(evt) {
+  let store = PDFViewerApplication.store;
+  if (store && PDFViewerApplication.isInitialViewSet) {
+    // Only update the storage when the document has been loaded *and* rendered.
+    store.set('spreadMode', evt.mode).catch(function() { });
+  }
+}
+
 function webViewerResize() {
   let { pdfDocument, pdfViewer, } = PDFViewerApplication;
   if (!pdfDocument) {
@@ -1959,6 +2015,12 @@ function webViewerRotateCw() {
 }
 function webViewerRotateCcw() {
   PDFViewerApplication.rotatePages(-90);
+}
+function webViewerSwitchScrollMode(evt) {
+  PDFViewerApplication.pdfViewer.setScrollMode(evt.mode);
+}
+function webViewerSwitchSpreadMode(evt) {
+  PDFViewerApplication.pdfViewer.setSpreadMode(evt.mode);
 }
 function webViewerDocumentProperties() {
   PDFViewerApplication.pdfDocumentProperties.open();
@@ -2219,28 +2281,31 @@ function webViewerKeyDown(evt) {
   }
 
   if (cmd === 0) { // no control key pressed at all.
+    let turnPage = 0, turnOnlyIfPageFit = false;
     switch (evt.keyCode) {
       case 38: // up arrow
       case 33: // pg up
-      case 8: // backspace
-        if (!isViewerInPresentationMode &&
-            pdfViewer.currentScaleValue !== 'page-fit') {
-          break;
+        // vertical scrolling using arrow/pg keys
+        if (pdfViewer.isVerticalScrollbarEnabled) {
+          turnOnlyIfPageFit = true;
         }
-        /* in presentation mode */
-        /* falls through */
+        turnPage = -1;
+        break;
+      case 8: // backspace
+        if (!isViewerInPresentationMode) {
+          turnOnlyIfPageFit = true;
+        }
+        turnPage = -1;
+        break;
       case 37: // left arrow
         // horizontal scrolling using arrow keys
         if (pdfViewer.isHorizontalScrollbarEnabled) {
-          break;
+          turnOnlyIfPageFit = true;
         }
         /* falls through */
       case 75: // 'k'
       case 80: // 'p'
-        if (PDFViewerApplication.page > 1) {
-          PDFViewerApplication.page--;
-        }
-        handled = true;
+        turnPage = -1;
         break;
       case 27: // esc key
         if (PDFViewerApplication.secondaryToolbar.isOpen) {
@@ -2253,27 +2318,30 @@ function webViewerKeyDown(evt) {
           handled = true;
         }
         break;
-      case 13: // enter key
       case 40: // down arrow
       case 34: // pg down
-      case 32: // spacebar
-        if (!isViewerInPresentationMode &&
-            pdfViewer.currentScaleValue !== 'page-fit') {
-          break;
+        // vertical scrolling using arrow/pg keys
+        if (pdfViewer.isVerticalScrollbarEnabled) {
+          turnOnlyIfPageFit = true;
         }
-        /* falls through */
+        turnPage = 1;
+        break;
+      case 13: // enter key
+      case 32: // spacebar
+        if (!isViewerInPresentationMode) {
+          turnOnlyIfPageFit = true;
+        }
+        turnPage = 1;
+        break;
       case 39: // right arrow
         // horizontal scrolling using arrow keys
         if (pdfViewer.isHorizontalScrollbarEnabled) {
-          break;
+          turnOnlyIfPageFit = true;
         }
         /* falls through */
       case 74: // 'j'
       case 78: // 'n'
-        if (PDFViewerApplication.page < PDFViewerApplication.pagesCount) {
-          PDFViewerApplication.page++;
-        }
-        handled = true;
+        turnPage = 1;
         break;
 
       case 36: // home
@@ -2302,6 +2370,20 @@ function webViewerKeyDown(evt) {
       case 82: // 'r'
         PDFViewerApplication.rotatePages(90);
         break;
+    }
+
+    if (turnPage !== 0 &&
+        (!turnOnlyIfPageFit || pdfViewer.currentScaleValue === 'page-fit')) {
+      if (turnPage > 0) {
+        if (PDFViewerApplication.page < PDFViewerApplication.pagesCount) {
+          PDFViewerApplication.page++;
+        }
+      } else {
+        if (PDFViewerApplication.page > 1) {
+          PDFViewerApplication.page--;
+        }
+      }
+      handled = true;
     }
   }
 
