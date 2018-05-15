@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { BaseViewer, ScrollMode } from './base_viewer';
 import { getVisibleElements, scrollIntoView } from './ui_utils';
-import { BaseViewer } from './base_viewer';
 import { shadow } from 'pdfjs-lib';
 
 class PDFViewer extends BaseViewer {
@@ -23,12 +23,16 @@ class PDFViewer extends BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, }) {
+    if (!pageSpot && this.scrollMode === ScrollMode.HORIZONTAL) {
+      pageSpot = { left: 0, top: 0, };
+    }
     scrollIntoView(pageDiv, pageSpot);
   }
 
   _getVisiblePages() {
     if (!this.isInPresentationMode) {
-      return getVisibleElements(this.container, this._pages, true);
+      return getVisibleElements(this.container, this._pages, true,
+                                this.scrollMode === ScrollMode.HORIZONTAL);
     }
     // The algorithm in getVisibleElements doesn't work in all browsers and
     // configurations when presentation mode is active.
@@ -44,7 +48,7 @@ class PDFViewer extends BaseViewer {
     if (numVisiblePages === 0) {
       return;
     }
-    this._resizeBuffer(numVisiblePages);
+    this._resizeBuffer(numVisiblePages, visiblePages);
 
     this.renderingQueue.renderHighestPriority(visible);
 
