@@ -2229,28 +2229,31 @@ function webViewerKeyDown(evt) {
   }
 
   if (cmd === 0) { // no control key pressed at all.
+    let turnPage = 0, turnOnlyIfPageFit = false;
     switch (evt.keyCode) {
       case 38: // up arrow
       case 33: // pg up
-      case 8: // backspace
-        if (!isViewerInPresentationMode &&
-            pdfViewer.currentScaleValue !== 'page-fit') {
-          break;
+        // vertical scrolling using arrow/pg keys
+        if (pdfViewer.isVerticalScrollbarEnabled) {
+          turnOnlyIfPageFit = true;
         }
-        /* in presentation mode */
-        /* falls through */
+        turnPage = -1;
+        break;
+      case 8: // backspace
+        if (!isViewerInPresentationMode) {
+          turnOnlyIfPageFit = true;
+        }
+        turnPage = -1;
+        break;
       case 37: // left arrow
         // horizontal scrolling using arrow keys
         if (pdfViewer.isHorizontalScrollbarEnabled) {
-          break;
+          turnOnlyIfPageFit = true;
         }
         /* falls through */
       case 75: // 'k'
       case 80: // 'p'
-        if (PDFViewerApplication.page > 1) {
-          PDFViewerApplication.page--;
-        }
-        handled = true;
+        turnPage = -1;
         break;
       case 27: // esc key
         if (PDFViewerApplication.secondaryToolbar.isOpen) {
@@ -2263,27 +2266,30 @@ function webViewerKeyDown(evt) {
           handled = true;
         }
         break;
-      case 13: // enter key
       case 40: // down arrow
       case 34: // pg down
-      case 32: // spacebar
-        if (!isViewerInPresentationMode &&
-            pdfViewer.currentScaleValue !== 'page-fit') {
-          break;
+        // vertical scrolling using arrow/pg keys
+        if (pdfViewer.isVerticalScrollbarEnabled) {
+          turnOnlyIfPageFit = true;
         }
-        /* falls through */
+        turnPage = 1;
+        break;
+      case 13: // enter key
+      case 32: // spacebar
+        if (!isViewerInPresentationMode) {
+          turnOnlyIfPageFit = true;
+        }
+        turnPage = 1;
+        break;
       case 39: // right arrow
         // horizontal scrolling using arrow keys
         if (pdfViewer.isHorizontalScrollbarEnabled) {
-          break;
+          turnOnlyIfPageFit = true;
         }
         /* falls through */
       case 74: // 'j'
       case 78: // 'n'
-        if (PDFViewerApplication.page < PDFViewerApplication.pagesCount) {
-          PDFViewerApplication.page++;
-        }
-        handled = true;
+        turnPage = 1;
         break;
 
       case 36: // home
@@ -2312,6 +2318,20 @@ function webViewerKeyDown(evt) {
       case 82: // 'r'
         PDFViewerApplication.rotatePages(90);
         break;
+    }
+
+    if (turnPage !== 0 &&
+        (!turnOnlyIfPageFit || pdfViewer.currentScaleValue === 'page-fit')) {
+      if (turnPage > 0) {
+        if (PDFViewerApplication.page < PDFViewerApplication.pagesCount) {
+          PDFViewerApplication.page++;
+        }
+      } else {
+        if (PDFViewerApplication.page > 1) {
+          PDFViewerApplication.page--;
+        }
+      }
+      handled = true;
     }
   }
 

@@ -845,6 +845,11 @@ class BaseViewer {
       false : (this.container.scrollWidth > this.container.clientWidth));
   }
 
+  get isVerticalScrollbarEnabled() {
+    return (this.isInPresentationMode ?
+      false : (this.container.scrollHeight > this.container.clientHeight));
+  }
+
   _getVisiblePages() {
     throw new Error('Not implemented: _getVisiblePages');
   }
