@@ -46,6 +46,35 @@
   border: none;
 }
 
+.pdfViewer.scrollHorizontal, .pdfViewer.scrollWrapped {
+  margin-left: 3.5px;
+  margin-right: 3.5px;
+  text-align: center;
+}
+
+.pdfViewer.scrollHorizontal {
+  white-space: nowrap;
+}
+
+.pdfViewer.removePageBorders {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.pdfViewer.scrollHorizontal .page,
+.pdfViewer.scrollWrapped .page {
+  display: inline-block;
+  margin-left: -3.5px;
+  margin-right: -3.5px;
+  vertical-align: middle;
+}
+
+.pdfViewer.removePageBorders.scrollHorizontal .page,
+.pdfViewer.removePageBorders.scrollWrapped .page {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
 .pdfViewer .page canvas {
   margin: 0;
   display: block;
@@ -63,6 +92,21 @@
   right: 0;
   bottom: 0;
   background: url('images/loading-icon.gif') center no-repeat;
+}
+
+.pdfPresentationMode .pdfViewer {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.pdfPresentationMode .pdfViewer .page {
+  display: block;
+}
+
+.pdfPresentationMode .pdfViewer .page,
+.pdfPresentationMode .pdfViewer.removePageBorders .page {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .pdfPresentationMode:-ms-fullscreen .pdfViewer .page {

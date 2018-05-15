@@ -1385,6 +1385,7 @@ let PDFViewerApplication = {
     eventBus.on('scalechanged', webViewerScaleChanged);
     eventBus.on('rotatecw', webViewerRotateCw);
     eventBus.on('rotateccw', webViewerRotateCcw);
+    eventBus.on('switchscrollmode', webViewerSwitchScrollMode);
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
     eventBus.on('findfromurlhash', webViewerFindFromUrlHash);
@@ -1451,6 +1452,7 @@ let PDFViewerApplication = {
     eventBus.off('scalechanged', webViewerScaleChanged);
     eventBus.off('rotatecw', webViewerRotateCw);
     eventBus.off('rotateccw', webViewerRotateCcw);
+    eventBus.off('switchscrollmode', webViewerSwitchScrollMode);
     eventBus.off('documentproperties', webViewerDocumentProperties);
     eventBus.off('find', webViewerFind);
     eventBus.off('findfromurlhash', webViewerFindFromUrlHash);
@@ -1959,6 +1961,9 @@ function webViewerRotateCw() {
 }
 function webViewerRotateCcw() {
   PDFViewerApplication.rotatePages(-90);
+}
+function webViewerSwitchScrollMode(evt) {
+  PDFViewerApplication.pdfViewer.setScrollMode(evt.mode);
 }
 function webViewerDocumentProperties() {
   PDFViewerApplication.pdfDocumentProperties.open();
