@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { BaseViewer, ScrollMode } from './base_viewer';
+import { BaseViewer, ScrollMode, SpreadMode } from './base_viewer';
 import { getVisibleElements, scrollIntoView } from './ui_utils';
 import { shadow } from 'pdfjs-lib';
 
@@ -23,8 +23,14 @@ class PDFViewer extends BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, }) {
-    if (!pageSpot && this.scrollMode === ScrollMode.HORIZONTAL) {
-      pageSpot = { left: 0, top: 0, };
+    if (!pageSpot) {
+      const left = pageDiv.offsetLeft + pageDiv.clientLeft;
+      const right = left + pageDiv.clientWidth;
+      const { scrollLeft, clientWidth, } = this.container;
+      if (this.scrollMode === ScrollMode.HORIZONTAL ||
+          left < scrollLeft || right > scrollLeft + clientWidth) {
+        pageSpot = { left: 0, top: 0, };
+      }
     }
     scrollIntoView(pageDiv, pageSpot);
   }
@@ -79,6 +85,34 @@ class PDFViewer extends BaseViewer {
       source: this,
       location: this._location,
     });
+  }
+
+  _regroupSpreads() {
+    const container = this._setDocumentViewerElement, pages = this._pages;
+    while (container.firstChild) {
+      container.firstChild.remove();
+    }
+    if (this.spreadMode === SpreadMode.NONE) {
+      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
+        container.appendChild(pages[i].div);
+      }
+    } else {
+      const parity = this.spreadMode - 1;
+      let spread = null;
+      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
+        if (spread === null) {
+          spread = document.createElement('div');
+          spread.className = 'spread';
+          container.appendChild(spread);
+        } else if (i % 2 === parity) {
+          spread = spread.cloneNode(false);
+          container.appendChild(spread);
+        }
+        spread.appendChild(pages[i].div);
+      }
+    }
+    this.scrollPageIntoView({ pageNumber: this._currentPageNumber, });
+    this.update();
   }
 }
 

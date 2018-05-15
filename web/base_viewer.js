@@ -35,6 +35,12 @@ const ScrollMode = {
   WRAPPED: 2,
 };
 
+const SpreadMode = {
+  NONE: 0, // The default value.
+  ODD: 1,
+  EVEN: 2,
+};
+
 /**
  * @typedef {Object} PDFViewerOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
@@ -71,6 +77,10 @@ const ScrollMode = {
  *   document pages should be laid out within the scrolling container. The
  *   constants from {ScrollMode} should be used. The default value is
  *   `ScrollMode.VERTICAL`.
+ * @property {number} spreadMode - (optional) If not `SpreadMode.NONE`, groups
+ *   pages into spreads, starting with odd- or even-numbered pages. The
+ *   constants from {SpreadMode} should be used. The default value is
+ *   `SpreadMode.NONE`.
  */
 
 function PDFPageViewBuffer(size) {
@@ -153,6 +163,7 @@ class BaseViewer {
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
     this.scrollMode = options.scrollMode || ScrollMode.VERTICAL;
+    this.spreadMode = options.spreadMode || SpreadMode.NONE;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -427,6 +438,9 @@ class BaseViewer {
         });
         bindOnAfterAndBeforeDraw(pageView);
         this._pages.push(pageView);
+      }
+      if (this.spreadMode !== SpreadMode.NONE) {
+        this._regroupSpreads();
       }
 
       // Fetch all the pages since the viewport is needed before printing
@@ -1020,9 +1034,20 @@ class BaseViewer {
     classList.toggle('scrollHorizontal', mode === ScrollMode.HORIZONTAL);
     classList.toggle('scrollWrapped', mode === ScrollMode.WRAPPED);
   }
+
+  setSpreadMode(mode) {
+    if (mode !== this.spreadMode) {
+      this.spreadMode = mode;
+      this.eventBus.dispatch('spreadmodechanged', { mode, });
+      this._regroupSpreads();
+    }
+  }
+
+  _regroupSpreads() {}
 }
 
 export {
   BaseViewer,
   ScrollMode,
+  SpreadMode,
 };

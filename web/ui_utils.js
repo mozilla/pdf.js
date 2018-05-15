@@ -316,9 +316,10 @@ function getPageSizeInches({ view, userUnit, rotate, }) {
  */
 function backtrackBeforeAllVisibleElements(index, views, top) {
   // binarySearchFirstItem's assumption is that the input is ordered, with only
-  // one index where the conditions flips from false to true:
-  // [false ..., true...]. With wrapped scrolling, it is possible to have
-  // [false ..., true, false, true ...].
+  // one index where the conditions flips from false to true: [false ...,
+  // true...]. With vertical scrolling and spreads, it is possible to have
+  // [false ..., true, false, true ...]. With wrapped scrolling we can have a
+  // similar sequence, with many more mixed true and false in the middle.
   //
   // So there is no guarantee that the binary search yields the index of the
   // first visible element. It could have been any of the other visible elements
@@ -451,10 +452,11 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
                                               isElementBottomAfterViewTop);
 
   if (views.length > 0 && !horizontal) {
-    // In wrapped scrolling, with some page sizes, isElementBottomAfterViewTop
-    // doesn't satisfy the binary search condition: there can be pages with
-    // bottoms above the view top between pages with bottoms below. This
-    // function detects and corrects that error; see it for more comments.
+    // In wrapped scrolling (or vertical scrolling with spreads), with some page
+    // sizes, isElementBottomAfterViewTop doesn't satisfy the binary search
+    // condition: there can be pages with bottoms above the view top between
+    // pages with bottoms below. This function detects and corrects that error;
+    // see it for more comments.
     firstVisibleElementInd =
       backtrackBeforeAllVisibleElements(firstVisibleElementInd, views, top);
   }
@@ -462,11 +464,11 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   // lastEdge acts as a cutoff for us to stop looping, because we know all
   // subsequent pages will be hidden.
   //
-  // When using wrapped scrolling, we can't simply stop the first time we reach
-  // a page below the bottom of the view; the tops of subsequent pages on the
-  // same row could still be visible. In horizontal scrolling, we don't have
-  // that issue, so we can stop as soon as we pass `right`, without needing the
-  // code below that handles the -1 case.
+  // When using wrapped scrolling or vertical scrolling with spreads, we can't
+  // simply stop the first time we reach a page below the bottom of the view;
+  // the tops of subsequent pages on the same row could still be visible. In
+  // horizontal scrolling, we don't have that issue, so we can stop as soon as
+  // we pass `right`, without needing the code below that handles the -1 case.
   let lastEdge = horizontal ? right : -1;
 
   for (let i = firstVisibleElementInd, ii = views.length; i < ii; i++) {
