@@ -242,6 +242,12 @@ let PDFViewerApplication = {
       preferences.get('enablePrintAutoRotate').then(function resolved(value) {
         AppOptions.set('enablePrintAutoRotate', value);
       }),
+      preferences.get('scrollModeOnLoad').then(function resolved(value) {
+        AppOptions.set('scrollModeOnLoad', value);
+      }),
+      preferences.get('spreadModeOnLoad').then(function resolved(value) {
+        AppOptions.set('spreadModeOnLoad', value);
+      }),
     ]).catch(function(reason) { });
   },
 
@@ -1040,8 +1046,8 @@ let PDFViewerApplication = {
           ('zoom=' + AppOptions.get('defaultZoomValue')) : null;
         let rotation = null;
         let sidebarView = AppOptions.get('sidebarViewOnLoad');
-        let scrollMode = null;
-        let spreadMode = null;
+        let scrollMode = AppOptions.get('scrollModeOnLoad');
+        let spreadMode = AppOptions.get('spreadModeOnLoad');
 
         if (values.exists && AppOptions.get('showPreviousViewOnLoad')) {
           hash = 'page=' + values.page +
@@ -1248,6 +1254,10 @@ let PDFViewerApplication = {
         this.pdfViewer.pagesRotation = angle;
       }
     };
+
+    // Putting these before isInitialViewSet = true prevents these values from
+    // being stored in the document history (and overriding any future changes
+    // made to the corresponding global preferences), just this once.
     if (Number.isInteger(scrollMode)) {
       this.pdfViewer.setScrollMode(scrollMode);
     }
