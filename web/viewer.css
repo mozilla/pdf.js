@@ -966,6 +966,30 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: url(images/secondaryToolbarButton-handTool.png);
 }
 
+.secondaryToolbarButton.scrollVertical::before {
+  content: url(images/secondaryToolbarButton-scrollVertical.png);
+}
+
+.secondaryToolbarButton.scrollHorizontal::before {
+  content: url(images/secondaryToolbarButton-scrollHorizontal.png);
+}
+
+.secondaryToolbarButton.scrollWrapped::before {
+  content: url(images/secondaryToolbarButton-scrollWrapped.png);
+}
+
+.secondaryToolbarButton.spreadNone::before {
+  content: url(images/secondaryToolbarButton-spreadNone.png);
+}
+
+.secondaryToolbarButton.spreadOdd::before {
+  content: url(images/secondaryToolbarButton-spreadOdd.png);
+}
+
+.secondaryToolbarButton.spreadEven::before {
+  content: url(images/secondaryToolbarButton-spreadEven.png);
+}
+
 .secondaryToolbarButton.documentProperties::before {
   content: url(images/secondaryToolbarButton-documentProperties.png);
 }
@@ -1687,6 +1711,30 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
   .secondaryToolbarButton.handTool::before {
     content: url(images/secondaryToolbarButton-handTool@2x.png);
+  }
+
+  .secondaryToolbarButton.scrollVertical::before {
+    content: url(images/secondaryToolbarButton-scrollVertical@2x.png);
+  }
+
+  .secondaryToolbarButton.scrollHorizontal::before {
+    content: url(images/secondaryToolbarButton-scrollHorizontal@2x.png);
+  }
+
+  .secondaryToolbarButton.scrollWrapped::before {
+    content: url(images/secondaryToolbarButton-scrollWrapped@2x.png);
+  }
+
+  .secondaryToolbarButton.spreadNone::before {
+    content: url(images/secondaryToolbarButton-spreadNone@2x.png);
+  }
+
+  .secondaryToolbarButton.spreadOdd::before {
+    content: url(images/secondaryToolbarButton-spreadOdd@2x.png);
+  }
+
+  .secondaryToolbarButton.spreadEven::before {
+    content: url(images/secondaryToolbarButton-spreadEven@2x.png);
   }
 
   .secondaryToolbarButton.documentProperties::before {
