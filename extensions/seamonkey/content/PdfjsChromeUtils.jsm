@@ -19,7 +19,6 @@ var EXPORTED_SYMBOLS = ["PdfjsChromeUtils"];
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
-const Cr = Components.results;
 const Cu = Components.utils;
 
 const PREF_PREFIX = "PDFJSSCRIPT_PREF_PREFIX";

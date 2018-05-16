@@ -19,7 +19,6 @@
 (function contentScriptClosure() {
   // we need to use closure here -- we are running in the global context
 
-  const Cc = Components.classes;
   const Ci = Components.interfaces;
   const Cm = Components.manager;
   const Cu = Components.utils;

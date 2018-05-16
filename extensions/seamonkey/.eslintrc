@@ -24,5 +24,10 @@
     "constructor-super": "error",
     "no-confusing-arrow": "error",
     "no-useless-constructor": "error",
+
+    // Rules disabled for SeaMonkey extension
+    "mozilla/no-define-cc-etc": "off",
+    "mozilla/use-cc-etc": "off",
+    "mozilla/use-chromeutils-import": "off",
   },
 }
