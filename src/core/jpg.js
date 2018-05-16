@@ -94,9 +94,9 @@ var JpegImage = (function JpegImageClosure() {
   var dctSqrt2 =  5793;   // sqrt(2)
   var dctSqrt1d2 = 2896;  // sqrt(2) / 2
 
-  function JpegImage() {
-    this.decodeTransform = null;
-    this.colorTransform = -1;
+  function JpegImage({ decodeTransform = null, colorTransform = -1, } = {}) {
+    this._decodeTransform = decodeTransform;
+    this._colorTransform = colorTransform;
   }
 
   function buildHuffmanTable(codeLengths, values) {
@@ -1013,7 +1013,7 @@ var JpegImage = (function JpegImageClosure() {
       }
 
       // decodeTransform contains pairs of multiplier (-256..256) and additive
-      var transform = this.decodeTransform;
+      const transform = this._decodeTransform;
       if (transform) {
         for (i = 0; i < dataLength;) {
           for (j = 0, k = 0; j < numComponents; j++, i++, k += 2) {
@@ -1030,7 +1030,7 @@ var JpegImage = (function JpegImageClosure() {
         return !!this.adobe.transformCode;
       }
       if (this.numComponents === 3) {
-        if (this.colorTransform === 0) {
+        if (this._colorTransform === 0) {
           // If the Adobe transform marker is not present and the image
           // dictionary has a 'ColorTransform' entry, explicitly set to `0`,
           // then the colours should *not* be transformed.
@@ -1039,7 +1039,7 @@ var JpegImage = (function JpegImageClosure() {
         return true;
       }
       // `this.numComponents !== 3`
-      if (this.colorTransform === 1) {
+      if (this._colorTransform === 1) {
         // If the Adobe transform marker is not present and the image
         // dictionary has a 'ColorTransform' entry, explicitly set to `1`,
         // then the colours should be transformed.
