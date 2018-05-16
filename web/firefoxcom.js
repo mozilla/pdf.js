@@ -174,6 +174,9 @@ class MozL10n {
     if (!PDFViewerApplication.initialized) {
       return;
     }
+    if (!PDFViewerApplication.supportsIntegratedFind) {
+      return;
+    }
     PDFViewerApplication.eventBus.dispatch('find', {
       source: window,
       type: evt.type.substring('find'.length),

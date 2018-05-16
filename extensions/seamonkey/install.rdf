@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+
+  <Description about="urn:mozilla:install-manifest">
+    <em:id>pdf.js-seamonkey@lakora.us</em:id>
+    <!-- PDFJS_LOCALIZED_METADATA -->
+    <em:name>PDF Viewer</em:name>
+    <em:version>PDFJSSCRIPT_VERSION</em:version>
+
+    <!-- Firefox -->
+    <em:targetApplication>
+      <Description>
+       <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+       <em:minVersion>52.0</em:minVersion>
+       <em:maxVersion>56.0</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+
+    <!-- SeaMonkey -->
+    <em:targetApplication>
+      <Description>
+       <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
+       <em:minVersion>2.49</em:minVersion>
+       <em:maxVersion>*</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+
+    <!-- Android -->
+    <em:targetApplication>
+      <Description>
+       <em:id>{aa3c5121-dab2-40e2-81ca-7ea25febc110}</em:id>
+       <em:minVersion>52.0</em:minVersion>
+       <em:maxVersion>56.0</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+
+    <em:bootstrap>true</em:bootstrap>
+    <em:multiprocessCompatible>true</em:multiprocessCompatible>
+    <em:creator>Mozilla; Isaac Schemm</em:creator>
+    <em:description>Uses HTML5 to display PDF files directly in SeaMonkey.</em:description>
+    <em:homepageURL>https://github.com/IsaacSchemm/seamonkey-pdf.js/</em:homepageURL>
+    <em:type>2</em:type>
+  </Description>
+</RDF>
