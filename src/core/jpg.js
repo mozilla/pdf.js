@@ -41,6 +41,18 @@ let DNLMarkerError = (function DNLMarkerErrorClosure() {
   return DNLMarkerError;
 })();
 
+let EOIMarkerError = (function EOIMarkerErrorClosure() {
+  function EOIMarkerError(message) {
+    this.message = message;
+  }
+
+  EOIMarkerError.prototype = new Error();
+  EOIMarkerError.prototype.name = 'EOIMarkerError';
+  EOIMarkerError.constructor = EOIMarkerError;
+
+  return EOIMarkerError;
+})();
+
 /**
  * This code was forked from https://github.com/notmasteryet/jpgjs.
  * The original version was created by GitHub user notmasteryet.
@@ -148,6 +160,9 @@ var JpegImage = (function JpegImageClosure() {
               throw new DNLMarkerError(
                 'Found DNL marker (0xFFDC) while parsing scan data', scanLines);
             }
+          } else if (nextByte === 0xD9) { // EOI == 0xFFD9
+            throw new EOIMarkerError(
+              'Found EOI marker (0xFFD9) while parsing scan data');
           }
           throw new JpegError(
             `unexpected marker ${((bitsData << 8) | nextByte).toString(16)}`);
@@ -716,7 +731,7 @@ var JpegImage = (function JpegImageClosure() {
       }
 
       fileMarker = readUint16();
-      while (fileMarker !== 0xFFD9) { // EOI (End of image)
+      markerLoop: while (fileMarker !== 0xFFD9) { // EOI (End of image)
         var i, j, l;
         switch (fileMarker) {
           case 0xFFE0: // APP0 (Application Specific)
@@ -895,6 +910,9 @@ var JpegImage = (function JpegImageClosure() {
                 warn('Attempting to re-parse JPEG image using "scanLines" ' +
                      'parameter found in DNL marker (0xFFDC) segment.');
                 return this.parse(data, { dnlScanLines: ex.scanLines, });
+              } else if (ex instanceof EOIMarkerError) {
+                warn(`${ex.message} -- ignoring the rest of the image data.`);
+                break markerLoop;
               }
               throw ex;
             }
