@@ -186,7 +186,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       domain = toMultiArray(domain);
       range = toMultiArray(range);
 
-      var size = toNumberArray(dict.get('Size'));
+      var size = toNumberArray(dict.getArray('Size'));
       var bps = dict.get('BitsPerSample');
       var order = dict.get('Order') || 1;
       if (order !== 1) {
