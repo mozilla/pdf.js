@@ -35,7 +35,7 @@
     "uglify-es": "^3.3.9",
     "vinyl": "^2.1.0",
     "vinyl-fs": "^3.0.3",
-    "webpack": "^3.12.0",
+    "webpack": "^4.10.2",
     "webpack-stream": "^4.0.3",
     "wintersmith": "^2.4.1",
     "yargs": "^11.0.0"
