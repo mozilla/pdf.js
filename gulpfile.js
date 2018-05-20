@@ -124,7 +124,7 @@ function createStringSource(filename, content) {
   source._read = function () {
     this.push(new Vinyl({
       path: filename,
-      contents: new Buffer(content),
+      contents: Buffer.from(content),
     }));
     this.push(null);
   };
