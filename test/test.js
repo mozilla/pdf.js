@@ -207,7 +207,7 @@ function startRefTest(masterMode, showRefImages) {
     }
 
     if (fs.existsSync(eqLog)) {
-      fs.unlink(eqLog);
+      fs.unlinkSync(eqLog);
     }
     if (fs.existsSync(testResultDir)) {
       testUtils.removeDirSync(testResultDir);
