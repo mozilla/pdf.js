@@ -533,7 +533,7 @@ var Type1Parser = (function Type1ParserClosure() {
           'privateData': privateData,
         },
       };
-      var token, length, data, lenIV, encoded;
+      var token, length, lenIV, encoded;
       while ((token = this.getToken()) !== null) {
         if (token !== '/') {
           continue;
@@ -559,11 +559,8 @@ var Type1Parser = (function Type1ParserClosure() {
               var glyph = this.getToken();
               length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
-              data = stream.makeSubStream(stream.pos, length);
               lenIV = program.properties.privateData['lenIV'];
-              encoded = this.readCharStrings(data.getBytes(), lenIV);
-              // Skip past the required space and binary data.
-              stream.skip(length);
+              encoded = this.readCharStrings(stream.getBytes(length), lenIV);
               this.nextChar();
               token = this.getToken(); // read in 'ND' or '|-'
               if (token === 'noaccess') {
@@ -582,11 +579,8 @@ var Type1Parser = (function Type1ParserClosure() {
               var index = this.readInt();
               length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
-              data = stream.makeSubStream(stream.pos, length);
               lenIV = program.properties.privateData['lenIV'];
-              encoded = this.readCharStrings(data.getBytes(), lenIV);
-              // Skip past the required space and binary data.
-              stream.skip(length);
+              encoded = this.readCharStrings(stream.getBytes(length), lenIV);
               this.nextChar();
               token = this.getToken(); // read in 'NP' or '|'
               if (token === 'noaccess') {
