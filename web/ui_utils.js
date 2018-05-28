@@ -536,14 +536,6 @@ function noContextMenuHandler(evt) {
   evt.preventDefault();
 }
 
-function isFileSchema(url) {
-  let i = 0, ii = url.length;
-  while (i < ii && url[i].trim() === '') {
-    i++;
-  }
-  return url.substr(i, 7).toLowerCase() === 'file://';
-}
-
 function isDataSchema(url) {
   let i = 0, ii = url.length;
   while (i < ii && url[i].trim() === '') {
@@ -843,7 +835,6 @@ export {
   VERTICAL_PADDING,
   isValidRotation,
   isPortraitOrientation,
-  isFileSchema,
   cloneObj,
   PresentationModeState,
   RendererType,
