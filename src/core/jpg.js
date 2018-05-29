@@ -907,8 +907,7 @@ var JpegImage = (function JpegImageClosure() {
               offset += processed;
             } catch (ex) {
               if (ex instanceof DNLMarkerError) {
-                warn('Attempting to re-parse JPEG image using "scanLines" ' +
-                     'parameter found in DNL marker (0xFFDC) segment.');
+                warn(`${ex.message} -- attempting to re-parse the JPEG image.`);
                 return this.parse(data, { dnlScanLines: ex.scanLines, });
               } else if (ex instanceof EOIMarkerError) {
                 warn(`${ex.message} -- ignoring the rest of the image data.`);
