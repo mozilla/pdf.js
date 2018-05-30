@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FindState } from './pdf_find_controller';
+import { FindState, PDFFindController } from './pdf_find_controller';
 import { NullL10n } from './ui_utils';
 
 /**
@@ -189,6 +189,7 @@ class PDFFindBar {
 
   toggle() {
     if (this.opened) {
+      PDFFindController.reset();  // To reset the Input Bar when Search Button closed
       this.close();
     } else {
       this.open();
