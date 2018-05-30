@@ -150,7 +150,8 @@ function createWebpackConfig(defines, output) {
       loaders: [
         {
           loader: 'babel-loader',
-          exclude: /src\/core\/(glyphlist|unicode)/, // babel is too slow
+          // babel is too slow
+          exclude: /src[\\\/]core[\\\/](glyphlist|unicode)/,
           options: {
             presets: pdfjsNext ? undefined : ['env'],
             plugins: ['transform-es2015-modules-commonjs'],
