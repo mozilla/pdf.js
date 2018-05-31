@@ -3223,6 +3223,13 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue9679",
+       "file": "pdfs/issue9679.pdf",
+       "md5": "3077d06add3875705aa1021c7b116023",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "bug1108753",
        "file": "pdfs/bug1108753.pdf",
        "md5": "a7aaf92d55b4602afb0ca3d75198b56b",
