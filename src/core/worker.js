@@ -574,9 +574,9 @@ var WorkerMessageHandler = {
             finishWorkerTask(task);
             pdfManager.updatePassword(data.password);
             pdfManagerReady();
-          }).catch(function (ex) {
+          }).catch(function (boundException) {
             finishWorkerTask(task);
-            handler.send('PasswordException', ex);
+            handler.send('PasswordException', boundException);
           }.bind(null, e));
         } else if (e instanceof InvalidPDFException) {
           handler.send('InvalidPDF', e);
