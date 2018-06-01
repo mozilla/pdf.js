@@ -56,14 +56,8 @@ var pdfURL = '../../../web/compressed.tracemonkey-pldi-09.pdf';
 // Read the PDF file into a typed array so PDF.js can load it.
 var rawData = new Uint8Array(fs.readFileSync(pdfURL));
 
-// Load the PDF file. The `disableFontFace` and `nativeImageDecoderSupport`
-// options must be passed because Node.js has no native `@font-face` and
-// `Image` support.
-pdfjsLib.getDocument({
-  data: rawData,
-  disableFontFace: true,
-  nativeImageDecoderSupport: 'none',
-}).then(function (pdfDocument) {
+// Load the PDF file.
+pdfjsLib.getDocument(rawData).then(function (pdfDocument) {
   console.log('# PDF document loaded.');
 
   // Get the first page.
