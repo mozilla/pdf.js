@@ -1788,7 +1788,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
               password,
             });
           };
-          loadingTask.onPassword(updatePassword, exception.code);
+          try {
+            loadingTask.onPassword(updatePassword, exception.code);
+          } catch (ex) {
+            this._passwordCapability.reject(ex);
+          }
         } else {
           this._passwordCapability.reject(
             new PasswordException(exception.message, exception.code));
