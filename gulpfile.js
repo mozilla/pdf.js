@@ -413,8 +413,6 @@ gulp.task('default', function() {
   });
 });
 
-gulp.task('extension', ['chromium']);
-
 gulp.task('buildnumber', function (done) {
   console.log();
   console.log('### Getting extension build number');
@@ -908,7 +906,7 @@ gulp.task('lib', ['buildnumber'], function () {
   ]);
 });
 
-gulp.task('web-pre', ['generic', 'extension', 'jsdoc']);
+gulp.task('web-pre', ['generic', 'jsdoc']);
 
 gulp.task('publish', ['generic'], function (done) {
   var version = JSON.parse(
