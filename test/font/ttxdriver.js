@@ -69,7 +69,7 @@ exports.translateFont = function translateFont(content, registerOnCancel,
 
   fs.writeFileSync(fontPath, buffer);
   runTtx(ttxResourcesHome, fontPath, registerOnCancel, function (err) {
-    fs.unlink(fontPath);
+    fs.unlinkSync(fontPath);
     if (err) {
       console.error(err);
       callback(err);
@@ -77,7 +77,7 @@ exports.translateFont = function translateFont(content, registerOnCancel,
       callback('Output was not generated');
     } else {
       callback(null, fs.readFileSync(resultPath));
-      fs.unlink(resultPath);
+      fs.unlinkSync(resultPath);
     }
   });
 };
