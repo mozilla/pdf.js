@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { setVerbosityLevel, VerbosityLevel } from '../../src/shared/util';
 import isNodeJS from '../../src/shared/is_node';
 import { PDFNodeStream } from '../../src/display/node_stream';
 import { setPDFNetworkStreamFactory } from '../../src/display/api';
@@ -22,6 +23,10 @@ if (!isNodeJS()) {
   throw new Error('The `gulp unittestcli` command can only be used in ' +
                   'Node.js environments.');
 }
+
+// Reduce the amount of console "spam", by ignoring `info`/`warn` calls,
+// when running the unit-tests in Node.js/Travis.
+setVerbosityLevel(VerbosityLevel.ERRORS);
 
 // Set the network stream factory for the unit-tests.
 setPDFNetworkStreamFactory(function(params) {
