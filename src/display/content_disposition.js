@@ -78,24 +78,27 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   }
   function textdecode(encoding, value) {
     if (encoding) {
-      if (!/^[^\x00-\xFF]+$/.test(value)) {
+      if (!/^[\x00-\xFF]+$/.test(value)) {
         return value;
       }
       try {
         let decoder = new TextDecoder(encoding, { fatal: true, });
         let bytes = new Array(value.length);
         for (let i = 0; i < value.length; ++i) {
-          bytes[i] = value.charCodeAt(0);
+          bytes[i] = value.charCodeAt(i);
         }
         value = decoder.decode(new Uint8Array(bytes));
         needsEncodingFixup = false;
       } catch (e) {
         // TextDecoder constructor threw - unrecognized encoding.
-        // Or TextDecoder API is not available.
+        // Or TextDecoder API is not available (in IE / Edge).
         if (/^utf-?8$/i.test(encoding)) {
           // UTF-8 is commonly used, try to support it in another way:
-          value = decodeURIComponent(escape(value));
-          needsEncodingFixup = false;
+          try {
+            value = decodeURIComponent(escape(value));
+            needsEncodingFixup = false;
+          } catch (err) {
+          }
         }
       }
     }
