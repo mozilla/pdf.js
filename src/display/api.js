@@ -274,7 +274,9 @@ function getDocument(src) {
   const NativeImageDecoderValues = Object.values(NativeImageDecoding);
   if (params.nativeImageDecoderSupport === undefined ||
       !NativeImageDecoderValues.includes(params.nativeImageDecoderSupport)) {
-    params.nativeImageDecoderSupport = NativeImageDecoding.DECODE;
+    params.nativeImageDecoderSupport =
+      (apiCompatibilityParams.nativeImageDecoderSupport ||
+       NativeImageDecoding.DECODE);
   }
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
@@ -283,7 +285,7 @@ function getDocument(src) {
     params.isEvalSupported = true;
   }
   if (typeof params.disableFontFace !== 'boolean') {
-    params.disableFontFace = false;
+    params.disableFontFace = apiCompatibilityParams.disableFontFace || false;
   }
 
   if (typeof params.disableRange !== 'boolean') {
@@ -1786,7 +1788,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
               password,
             });
           };
-          loadingTask.onPassword(updatePassword, exception.code);
+          try {
+            loadingTask.onPassword(updatePassword, exception.code);
+          } catch (ex) {
+            this._passwordCapability.reject(ex);
+          }
         } else {
           this._passwordCapability.reject(
             new PasswordException(exception.message, exception.code));
@@ -2168,6 +2174,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         disableStream: params.disableStream,
         disableAutoFetch: params.disableAutoFetch,
         disableCreateObjectURL: params.disableCreateObjectURL,
+        disableFontFace: params.disableFontFace,
+        nativeImageDecoderSupport: params.nativeImageDecoderSupport,
       });
     },
   };
