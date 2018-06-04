@@ -16,13 +16,12 @@
 
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isNum, isSameOrigin, MessageHandler, MissingPDFException,
-  NativeImageDecoding, PageViewport, PasswordException, setVerbosityLevel,
-  shadow, stringToBytes, UnexpectedResponseException, UnknownErrorException,
-  unreachable, Util, warn
+  isArrayBuffer, isNum, isSameOrigin, MissingPDFException, NativeImageDecoding,
+  PasswordException, setVerbosityLevel, shadow, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
+  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, PageViewport,
   RenderingCancelledException, StatTimer
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
@@ -30,6 +29,7 @@ import { apiCompatibilityParams } from './api_compatibility';
 import { CanvasGraphics } from './canvas';
 import globalScope from '../shared/global_scope';
 import { GlobalWorkerOptions } from './worker_options';
+import { MessageHandler } from '../shared/message_handler';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 import { WebGLContext } from './webgl';
@@ -885,7 +885,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * along with transforms required for rendering.
      */
     getViewport(scale, rotate = this.rotate, dontFlip = false) {
-      return new PageViewport(this.view, scale, rotate, 0, 0, dontFlip);
+      return new PageViewport({
+        viewBox: this.view,
+        scale,
+        rotation: rotate,
+        dontFlip,
+      });
     },
     /**
      * @param {GetAnnotationsParameters} params - Annotation parameters.
@@ -1200,7 +1205,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 })();
 
 class LoopbackPort {
-  constructor(defer) {
+  constructor(defer = true) {
     this._listeners = [];
     this._defer = defer;
     this._deferred = Promise.resolve(undefined);
