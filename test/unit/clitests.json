@@ -20,6 +20,7 @@
     "evaluator_spec.js",
     "fonts_spec.js",
     "function_spec.js",
+    "message_handler_spec.js",
     "metadata_spec.js",
     "murmurhash3_spec.js",
     "network_utils_spec.js",
@@ -31,7 +32,6 @@
     "type1_parser_spec.js",
     "ui_utils_spec.js",
     "unicode_spec.js",
-    "util_spec.js",
-    "util_stream_spec.js"
+    "util_spec.js"
   ]
 }
