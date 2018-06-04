@@ -51,7 +51,6 @@ var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline/';
 var GENERIC_DIR = BUILD_DIR + 'generic/';
 var COMPONENTS_DIR = BUILD_DIR + 'components/';
 var MINIFIED_DIR = BUILD_DIR + 'minified/';
-var CHROME_BUILD_DIR = BUILD_DIR + 'chromium/';
 var JSDOC_BUILD_DIR = BUILD_DIR + 'jsdoc/';
 var GH_PAGES_DIR = BUILD_DIR + 'gh-pages/';
 var SRC_DIR = 'src/';
@@ -1096,8 +1095,6 @@ gulp.task('gh-pages-prepare', ['web-pre'], function () {
   return merge([
     vfs.src(GENERIC_DIR + '**/*', { base: GENERIC_DIR, stripBOM: false, })
        .pipe(gulp.dest(GH_PAGES_DIR)),
-    gulp.src(CHROME_BUILD_DIR + '*.crx')
-        .pipe(gulp.dest(GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/')),
     gulp.src('test/features/**/*', { base: 'test/', })
         .pipe(gulp.dest(GH_PAGES_DIR)),
     gulp.src(JSDOC_BUILD_DIR + '**/*', { base: JSDOC_BUILD_DIR, })
