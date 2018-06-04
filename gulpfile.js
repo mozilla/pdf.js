@@ -883,24 +883,16 @@ gulp.task('lib', ['buildnumber'], function () {
   var licenseHeaderLibre =
     fs.readFileSync('./src/license_header_libre.js').toString();
   var preprocessor2 = require('./external/builder/preprocessor2.js');
-  var sharedFiles = [
-    'compatibility',
-    'global_scope',
-    'is_node',
-    'streams_polyfill',
-    'util',
-  ];
   var buildLib = merge([
     gulp.src([
-      'src/{core,display}/*.js',
-      'src/shared/{' + sharedFiles.join() + '}.js',
+      'src/{core,display,shared}/*.js',
+      '!src/shared/{cffStandardStrings,fonts_utils}.js',
       'src/{pdf,pdf.worker}.js',
     ], { base: 'src/', }),
     gulp.src([
       'examples/node/domstubs.js',
       'web/*.js',
-      '!web/pdfjs.js',
-      '!web/viewer.js',
+      '!web/{pdfjs,viewer}.js',
     ], { base: '.', }),
     gulp.src('test/unit/*.js', { base: '.', }),
   ]).pipe(transform('utf8', preprocess))

@@ -13,39 +13,11 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, MessageHandler } from '../../src/shared/util';
+import { createPromiseCapability } from '../../src/shared/util';
+import { LoopbackPort } from '../../src/display/api';
+import { MessageHandler } from '../../src/shared/message_handler';
 
-describe('util_stream', function () {
-  // Temporary fake port for sending messages between main and worker.
-  class FakePort {
-    constructor() {
-      this._listeners = [];
-      this._deferred = Promise.resolve(undefined);
-    }
-
-    postMessage(obj) {
-      let event = { data: obj, };
-      this._deferred.then(() => {
-        this._listeners.forEach(function (listener) {
-          listener.call(this, event);
-        }, this);
-      });
-    }
-
-    addEventListener(name, listener) {
-      this._listeners.push(listener);
-    }
-
-    removeEventListener(name, listener) {
-      let i = this._listeners.indexOf(listener);
-      this._listeners.splice(i, 1);
-    }
-
-    terminate() {
-      this._listeners = [];
-    }
-  }
-
+describe('message_handler', function () {
   // Sleep function to wait for sometime, similar to setTimeout but faster.
   function sleep(ticks) {
     return Promise.resolve().then(() => {
@@ -55,7 +27,7 @@ describe('util_stream', function () {
 
   describe('sendWithStream', function () {
     it('should return a ReadableStream', function () {
-      let port = new FakePort();
+      let port = new LoopbackPort();
       let messageHandler1 = new MessageHandler('main', 'worker', port);
       let readable = messageHandler1.sendWithStream('fakeHandler');
       // Check if readable is an instance of ReadableStream.
@@ -65,7 +37,7 @@ describe('util_stream', function () {
 
     it('should read using a reader', function (done) {
       let log = '';
-      let port = new FakePort();
+      let port = new LoopbackPort();
       let messageHandler1 = new MessageHandler('main', 'worker', port);
       let messageHandler2 = new MessageHandler('worker', 'main', port);
       messageHandler2.on('fakeHandler', (data, sink) => {
@@ -109,7 +81,7 @@ describe('util_stream', function () {
 
     it('should not read any data when cancelled', function (done) {
       let log = '';
-      let port = new FakePort();
+      let port = new LoopbackPort();
       let messageHandler2 = new MessageHandler('worker', 'main', port);
       messageHandler2.on('fakeHandler', (data, sink) => {
         sink.onPull = function () {
@@ -161,7 +133,7 @@ describe('util_stream', function () {
 
     it('should not read when errored', function(done) {
       let log = '';
-      let port = new FakePort();
+      let port = new LoopbackPort();
       let messageHandler2 = new MessageHandler('worker', 'main', port);
       messageHandler2.on('fakeHandler', (data, sink) => {
         sink.onPull = function () {
@@ -204,7 +176,7 @@ describe('util_stream', function () {
 
     it('should read data with blocking promise', function (done) {
       let log = '';
-      let port = new FakePort();
+      let port = new LoopbackPort();
       let messageHandler2 = new MessageHandler('worker', 'main', port);
       messageHandler2.on('fakeHandler', (data, sink) => {
         sink.onPull = function () {
@@ -265,7 +237,7 @@ describe('util_stream', function () {
     it('should read data with blocking promise and buffer whole data' +
        ' into stream', function (done) {
       let log = '';
-      let port = new FakePort();
+      let port = new LoopbackPort();
       let messageHandler2 = new MessageHandler('worker', 'main', port);
       messageHandler2.on('fakeHandler', (data, sink) => {
         sink.onPull = function () {
@@ -325,7 +297,7 @@ describe('util_stream', function () {
 
     it('should ignore any pull after close is called', function (done) {
       let log = '';
-      let port = new FakePort();
+      let port = new LoopbackPort();
       let capability = createPromiseCapability();
       let messageHandler2 = new MessageHandler('worker', 'main', port);
       messageHandler2.on('fakeHandler', (data, sink) => {
