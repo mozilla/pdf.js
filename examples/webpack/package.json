@@ -5,7 +5,8 @@
     "build": "webpack"
   },
   "devDependencies": {
-    "webpack": "~1.12.9",
+    "webpack": "^4.10.2",
+    "webpack-cli": "^2.1.4",
     "pdfjs-dist": "../../node_modules/pdfjs-dist"
   }
 }
