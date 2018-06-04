@@ -17,12 +17,12 @@
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
   isArrayBuffer, isNum, isSameOrigin, MessageHandler, MissingPDFException,
-  NativeImageDecoding, PageViewport, PasswordException, setVerbosityLevel,
-  shadow, stringToBytes, UnexpectedResponseException, UnknownErrorException,
+  NativeImageDecoding, PasswordException, setVerbosityLevel, shadow,
+  stringToBytes, UnexpectedResponseException, UnknownErrorException,
   unreachable, Util, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
+  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, PageViewport,
   RenderingCancelledException, StatTimer
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
