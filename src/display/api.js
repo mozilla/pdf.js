@@ -885,7 +885,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * along with transforms required for rendering.
      */
     getViewport(scale, rotate = this.rotate, dontFlip = false) {
-      return new PageViewport(this.view, scale, rotate, 0, 0, dontFlip);
+      return new PageViewport({
+        viewBox: this.view,
+        scale,
+        rotation: rotate,
+        dontFlip,
+      });
     },
     /**
      * @param {GetAnnotationsParameters} params - Annotation parameters.
