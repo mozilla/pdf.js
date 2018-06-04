@@ -146,8 +146,15 @@ function createWebpackConfig(defines, output) {
   var skipBabel = bundleDefines.SKIP_BABEL ||
                   process.env['SKIP_BABEL'] === 'true';
 
+  // Required to expose e.g., the `window` object.
+  output.globalObject = 'this';
+
   return {
+    mode: 'none',
     output: output,
+    performance: {
+      hints: false, // Disable messages about larger file sizes.
+    },
     plugins: [
       new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true, }),
     ],
@@ -160,7 +167,7 @@ function createWebpackConfig(defines, output) {
     },
     devtool: enableSourceMaps ? 'source-map' : undefined,
     module: {
-      loaders: [
+      rules: [
         {
           loader: 'babel-loader',
           // babel is too slow
@@ -1166,10 +1173,10 @@ gulp.task('dist-pre', ['generic', 'components', 'lib', 'minified'], function() {
     license: DIST_LICENSE,
     dependencies: {
       'node-ensure': '^0.0.0', // shim for node for require.ensure
-      'worker-loader': '^1.1.1', // used in external/dist/webpack.json
+      'worker-loader': '^2.0.0', // used in external/dist/webpack.json
     },
     peerDependencies: {
-      'webpack': '^2.0.0 || ^3.0.0', // peerDependency of 'worker-loader'
+      'webpack': '^3.0.0 || ^4.0.0-alpha.0 || ^4.0.0', // from 'worker-loader'
     },
     browser: {
       'fs': false,
