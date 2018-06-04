@@ -16,10 +16,9 @@
 
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isNum, isSameOrigin, MessageHandler, MissingPDFException,
-  NativeImageDecoding, PasswordException, setVerbosityLevel, shadow,
-  stringToBytes, UnexpectedResponseException, UnknownErrorException,
-  unreachable, Util, warn
+  isArrayBuffer, isNum, isSameOrigin, MissingPDFException, NativeImageDecoding,
+  PasswordException, setVerbosityLevel, shadow, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, PageViewport,
@@ -30,6 +29,7 @@ import { apiCompatibilityParams } from './api_compatibility';
 import { CanvasGraphics } from './canvas';
 import globalScope from '../shared/global_scope';
 import { GlobalWorkerOptions } from './worker_options';
+import { MessageHandler } from '../shared/message_handler';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 import { WebGLContext } from './webgl';

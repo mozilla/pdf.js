@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, MessageHandler } from '../../src/shared/util';
+import { createPromiseCapability } from '../../src/shared/util';
+import { MessageHandler } from '../../src/shared/message_handler';
 
-describe('util_stream', function () {
+describe('message_handler', function () {
   // Temporary fake port for sending messages between main and worker.
   class FakePort {
     constructor() {
