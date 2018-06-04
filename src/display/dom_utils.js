@@ -212,7 +212,6 @@ var PageViewport = (function PageViewportClosure() {
 
     this.width = width;
     this.height = height;
-    this.fontScale = scale;
   }
   PageViewport.prototype = /** @lends PageViewport.prototype */ {
     /**
