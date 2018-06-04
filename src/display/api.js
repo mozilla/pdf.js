@@ -1205,7 +1205,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 })();
 
 class LoopbackPort {
-  constructor(defer) {
+  constructor(defer = true) {
     this._listeners = [];
     this._defer = defer;
     this._deferred = Promise.resolve(undefined);
