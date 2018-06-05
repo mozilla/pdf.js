@@ -231,7 +231,6 @@ function getDocument(src) {
   let params = Object.create(null);
   var rangeTransport = null;
   let worker = null;
-  let CMapReaderFactory = DOMCMapReaderFactory;
 
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
@@ -260,14 +259,12 @@ function getDocument(src) {
                         'data property.');
       }
       continue;
-    } else if (key === 'CMapReaderFactory') {
-      CMapReaderFactory = source[key];
-      continue;
     }
     params[key] = source[key];
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
+  params.CMapReaderFactory = params.CMapReaderFactory || DOMCMapReaderFactory;
   params.ignoreErrors = params.stopAtErrors !== true;
   params.pdfBug = params.pdfBug === true;
 
@@ -355,7 +352,7 @@ function getDocument(src) {
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
       messageHandler.postMessageTransfers = worker.postMessageTransfers;
       var transport = new WorkerTransport(messageHandler, task, networkStream,
-                                          params, CMapReaderFactory);
+                                          params);
       task._transport = transport;
       messageHandler.send('Ready', null);
     });
@@ -387,7 +384,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     docId,
     apiVersion: (typeof PDFJSDev !== 'undefined' ?
                  PDFJSDev.eval('BUNDLE_VERSION') : null),
-    source: {
+    source: { // Only send the required properties, and *not* the entire object.
       data: source.data,
       url: source.url,
       password: source.password,
@@ -1614,14 +1611,13 @@ var PDFWorker = (function PDFWorkerClosure() {
  * @ignore
  */
 var WorkerTransport = (function WorkerTransportClosure() {
-  function WorkerTransport(messageHandler, loadingTask, networkStream,
-                           params, CMapReaderFactory) {
+  function WorkerTransport(messageHandler, loadingTask, networkStream, params) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
     this.commonObjs = new PDFObjects();
     this.fontLoader = new FontLoader(loadingTask.docId);
     this._params = params;
-    this.CMapReaderFactory = new CMapReaderFactory({
+    this.CMapReaderFactory = new params.CMapReaderFactory({
       baseUrl: params.cMapUrl,
       isCompressed: params.cMapPacked,
     });
