@@ -1553,12 +1553,7 @@ var PDFWorker = (function PDFWorkerClosure() {
           this._readyCapability.reject(new Error('Worker was destroyed'));
           return;
         }
-
-        // We cannot turn on proper fake port simulation (this includes
-        // structured cloning) when typed arrays are not supported. Relying
-        // on a chance that messages will be sent in proper order.
-        var isTypedArraysPresent = Uint8Array !== Float32Array;
-        var port = new LoopbackPort(isTypedArraysPresent);
+        let port = new LoopbackPort();
         this._port = port;
 
         // All fake workers use the same port, making id unique.
