@@ -335,7 +335,7 @@ var WorkerMessageHandler = {
 
       // check if Uint8Array can be sent to worker
       if (!(data instanceof Uint8Array)) {
-        handler.send('test', 'main', false);
+        handler.send('test', false);
         return;
       }
       // making sure postMessage transfers are working
