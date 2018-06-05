@@ -1834,9 +1834,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.downloadInfoCapability.resolve(data);
       }, this);
 
-      messageHandler.on('PDFManagerReady', function transportPage(data) {
-      }, this);
-
       messageHandler.on('StartRenderPage', function transportRender(data) {
         if (this.destroyed) {
           return; // Ignore any pending requests if the worker was terminated.
