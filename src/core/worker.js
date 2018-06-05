@@ -639,19 +639,17 @@ var WorkerMessageHandler = {
 
     handler.on('GetPage', function wphSetupGetPage(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
-        var rotatePromise = pdfManager.ensure(page, 'rotate');
-        var refPromise = pdfManager.ensure(page, 'ref');
-        var userUnitPromise = pdfManager.ensure(page, 'userUnit');
-        var viewPromise = pdfManager.ensure(page, 'view');
-
         return Promise.all([
-          rotatePromise, refPromise, userUnitPromise, viewPromise
-        ]).then(function(results) {
+          pdfManager.ensure(page, 'rotate'),
+          pdfManager.ensure(page, 'ref'),
+          pdfManager.ensure(page, 'userUnit'),
+          pdfManager.ensure(page, 'view'),
+        ]).then(function([rotate, ref, userUnit, view]) {
           return {
-            rotate: results[0],
-            ref: results[1],
-            userUnit: results[2],
-            view: results[3],
+            rotate,
+            ref,
+            userUnit,
+            view,
           };
         });
       });
