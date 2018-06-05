@@ -16,7 +16,7 @@
 
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isNum, isSameOrigin, MissingPDFException, NativeImageDecoding,
+  isArrayBuffer, isSameOrigin, MissingPDFException, NativeImageDecoding,
   PasswordException, setVerbosityLevel, shadow, stringToBytes,
   UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
 } from '../shared/util';
@@ -1382,7 +1382,8 @@ var PDFWorker = (function PDFWorkerClosure() {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
   function PDFWorker({ name = null, port = null,
-                       postMessageTransfers = true, verbosity = null, } = {}) {
+                       postMessageTransfers = true,
+                       verbosity = getVerbosityLevel(), } = {}) {
     if (port && pdfWorkerPorts.has(port)) {
       throw new Error('Cannot use more than one PDFWorker per port');
     }
@@ -1390,7 +1391,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     this.name = name;
     this.destroyed = false;
     this.postMessageTransfers = postMessageTransfers !== false;
-    this.verbosity = (isNum(verbosity) ? verbosity : getVerbosityLevel());
+    this.verbosity = verbosity;
 
     this._readyCapability = createPromiseCapability();
     this._port = null;
