@@ -585,7 +585,7 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
  */
 var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   function PDFDocumentProxy(pdfInfo, transport, loadingTask) {
-    this.pdfInfo = pdfInfo;
+    this._pdfInfo = pdfInfo;
     this.transport = transport;
     this.loadingTask = loadingTask;
   }
@@ -594,14 +594,14 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * @return {number} Total number of pages the PDF contains.
      */
     get numPages() {
-      return this.pdfInfo.numPages;
+      return this._pdfInfo.numPages;
     },
     /**
      * @return {string} A unique ID to identify a PDF. Not guaranteed to be
      * unique.
      */
     get fingerprint() {
-      return this.pdfInfo.fingerprint;
+      return this._pdfInfo.fingerprint;
     },
     /**
      * @param {number} pageNumber The page number to get. The first page is 1.
