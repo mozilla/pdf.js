@@ -390,8 +390,8 @@ var WorkerMessageHandler = {
     var workerHandlerName = docParams.docId + '_worker';
     var handler = new MessageHandler(workerHandlerName, docId, port);
 
-    // Ensure that postMessage transfers are correctly enabled/disabled,
-    // to prevent "DataCloneError" in older versions of IE (see issue 6957).
+    // Ensure that postMessage transfers are always correctly enabled/disabled,
+    // to prevent "DataCloneError" in browsers without transfers support.
     handler.postMessageTransfers = docParams.postMessageTransfers;
 
     function ensureNotTerminated() {
