@@ -831,7 +831,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
 var PDFPageProxy = (function PDFPageProxyClosure() {
   function PDFPageProxy(pageIndex, pageInfo, transport, pdfBug = false) {
     this.pageIndex = pageIndex;
-    this.pageInfo = pageInfo;
+    this._pageInfo = pageInfo;
     this.transport = transport;
     this._stats = (pdfBug ? new StatTimer() : DummyStatTimer);
     this._pdfBug = pdfBug;
@@ -853,27 +853,27 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * @return {number} The number of degrees the page is rotated clockwise.
      */
     get rotate() {
-      return this.pageInfo.rotate;
+      return this._pageInfo.rotate;
     },
     /**
      * @return {Object} The reference that points to this page. It has 'num' and
      * 'gen' properties.
      */
     get ref() {
-      return this.pageInfo.ref;
+      return this._pageInfo.ref;
     },
     /**
      * @return {number} The default size of units in 1/72nds of an inch.
      */
     get userUnit() {
-      return this.pageInfo.userUnit;
+      return this._pageInfo.userUnit;
     },
     /**
      * @return {Array} An array of the visible portion of the PDF page in the
      * user space units - [x1, y1, x2, y2].
      */
     get view() {
-      return this.pageInfo.view;
+      return this._pageInfo.view;
     },
 
     /**
