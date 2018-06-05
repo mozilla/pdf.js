@@ -629,9 +629,8 @@ var WorkerMessageHandler = {
           newPdfManager.terminate();
           throw new Error('Worker was terminated');
         }
-
         pdfManager = newPdfManager;
-        handler.send('PDFManagerReady', null);
+
         pdfManager.onLoadedStream().then(function(stream) {
           handler.send('DataLoaded', { length: stream.bytes.byteLength, });
         });
