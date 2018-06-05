@@ -1593,6 +1593,9 @@ var PDFWorker = (function PDFWorkerClosure() {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
   PDFWorker.fromPort = function(params) {
+    if (!params || !params.port) {
+      throw new Error('PDFWorker.fromPort - invalid method signature.');
+    }
     if (pdfWorkerPorts.has(params.port)) {
       return pdfWorkerPorts.get(params.port);
     }
