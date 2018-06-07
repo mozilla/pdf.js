@@ -21,8 +21,8 @@ import {
   UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, PageViewport,
-  RenderingCancelledException, StatTimer
+  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
+  PageViewport, RenderingCancelledException, StatTimer
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
@@ -1356,7 +1356,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       }
     } else {
       let loader = fakeWorkerFilesLoader || function(callback) {
-        Util.loadScript(getWorkerSrc(), function() {
+        loadScript(getWorkerSrc()).then(function() {
           callback(window.pdfjsWorker.WorkerMessageHandler);
         });
       };
