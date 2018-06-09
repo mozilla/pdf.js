@@ -1075,7 +1075,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
               return;
             }
             Util.extendObj(textContent.styles, value.styles);
-            Util.appendToArray(textContent.items, value.items);
+            textContent.items.push(...value.items);
             pump();
           }, reject);
         }
