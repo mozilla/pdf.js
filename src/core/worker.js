@@ -335,7 +335,7 @@ var WorkerMessageHandler = {
 
       // check if Uint8Array can be sent to worker
       if (!(data instanceof Uint8Array)) {
-        handler.send('test', 'main', false);
+        handler.send('test', false);
         return;
       }
       // making sure postMessage transfers are working
@@ -390,8 +390,8 @@ var WorkerMessageHandler = {
     var workerHandlerName = docParams.docId + '_worker';
     var handler = new MessageHandler(workerHandlerName, docId, port);
 
-    // Ensure that postMessage transfers are correctly enabled/disabled,
-    // to prevent "DataCloneError" in older versions of IE (see issue 6957).
+    // Ensure that postMessage transfers are always correctly enabled/disabled,
+    // to prevent "DataCloneError" in browsers without transfers support.
     handler.postMessageTransfers = docParams.postMessageTransfers;
 
     function ensureNotTerminated() {
@@ -629,9 +629,8 @@ var WorkerMessageHandler = {
           newPdfManager.terminate();
           throw new Error('Worker was terminated');
         }
-
         pdfManager = newPdfManager;
-        handler.send('PDFManagerReady', null);
+
         pdfManager.onLoadedStream().then(function(stream) {
           handler.send('DataLoaded', { length: stream.bytes.byteLength, });
         });
@@ -640,19 +639,17 @@ var WorkerMessageHandler = {
 
     handler.on('GetPage', function wphSetupGetPage(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
-        var rotatePromise = pdfManager.ensure(page, 'rotate');
-        var refPromise = pdfManager.ensure(page, 'ref');
-        var userUnitPromise = pdfManager.ensure(page, 'userUnit');
-        var viewPromise = pdfManager.ensure(page, 'view');
-
         return Promise.all([
-          rotatePromise, refPromise, userUnitPromise, viewPromise
-        ]).then(function(results) {
+          pdfManager.ensure(page, 'rotate'),
+          pdfManager.ensure(page, 'ref'),
+          pdfManager.ensure(page, 'userUnit'),
+          pdfManager.ensure(page, 'view'),
+        ]).then(function([rotate, ref, userUnit, view]) {
           return {
-            rotate: results[0],
-            ref: results[1],
-            userUnit: results[2],
-            view: results[3],
+            rotate,
+            ref,
+            userUnit,
+            view,
           };
         });
       });
