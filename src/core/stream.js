@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError, isSpace, stringToBytes, Util } from '../shared/util';
+import { FormatError, isSpace, stringToBytes } from '../shared/util';
 import { isDict } from './primitives';
 
 var Stream = (function StreamClosure() {
@@ -274,7 +274,7 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
     for (var i = 0, ii = this.streams.length; i < ii; i++) {
       var stream = this.streams[i];
       if (stream.getBaseStreams) {
-        Util.appendToArray(baseStreams, stream.getBaseStreams());
+        baseStreams.push(...stream.getBaseStreams());
       }
     }
     return baseStreams;
