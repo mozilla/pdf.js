@@ -22,8 +22,8 @@ import {
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
-  InvalidPDFException, LinkTarget, MissingPDFException, OPS, PDFWorker, shadow,
-  UnexpectedResponseException, UNSUPPORTED_FEATURES, version
+  InvalidPDFException, LinkTarget, loadScript, MissingPDFException, OPS,
+  PDFWorker, shadow, UnexpectedResponseException, UNSUPPORTED_FEATURES, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -1551,11 +1551,11 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 }
 
 function loadFakeWorker() {
-  return new Promise(function(resolve, reject) {
-    if (!GlobalWorkerOptions.workerSrc) {
-      GlobalWorkerOptions.workerSrc = AppOptions.get('workerSrc');
-    }
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+  if (!GlobalWorkerOptions.workerSrc) {
+    GlobalWorkerOptions.workerSrc = AppOptions.get('workerSrc');
+  }
+  if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+    return new Promise(function(resolve, reject) {
       if (typeof SystemJS === 'object') {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
           window.pdfjsWorker = worker;
@@ -1568,37 +1568,18 @@ function loadFakeWorker() {
         reject(new Error(
           'SystemJS or CommonJS must be used to load fake worker.'));
       }
-    } else {
-      let script = document.createElement('script');
-      script.src = PDFWorker.getWorkerSrc();
-      script.onload = function() {
-        resolve();
-      };
-      script.onerror = function() {
-        reject(new Error(`Cannot load fake worker at: ${script.src}`));
-      };
-      (document.head || document.documentElement).appendChild(script);
-    }
-  });
+    });
+  }
+  return loadScript(PDFWorker.getWorkerSrc());
 }
 
 function loadAndEnablePDFBug(enabledTabs) {
-  return new Promise(function (resolve, reject) {
-    let appConfig = PDFViewerApplication.appConfig;
-    let script = document.createElement('script');
-    script.src = appConfig.debuggerScriptPath;
-    script.onload = function () {
-      PDFBug.enable(enabledTabs);
-      PDFBug.init({
-        OPS,
-      }, appConfig.mainContainer);
-      resolve();
-    };
-    script.onerror = function () {
-      reject(new Error('Cannot load debugger at ' + script.src));
-    };
-    (document.getElementsByTagName('head')[0] || document.body).
-      appendChild(script);
+  let appConfig = PDFViewerApplication.appConfig;
+  return loadScript(appConfig.debuggerScriptPath).then(function() {
+    PDFBug.enable(enabledTabs);
+    PDFBug.init({
+      OPS,
+    }, appConfig.mainContainer);
   });
 }
 

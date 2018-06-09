@@ -16,13 +16,13 @@
 
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isNum, isSameOrigin, MissingPDFException, NativeImageDecoding,
+  isArrayBuffer, isSameOrigin, MissingPDFException, NativeImageDecoding,
   PasswordException, setVerbosityLevel, shadow, stringToBytes,
   UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, PageViewport,
-  RenderingCancelledException, StatTimer
+  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
+  PageViewport, RenderingCancelledException, StatTimer
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
@@ -231,7 +231,6 @@ function getDocument(src) {
   let params = Object.create(null);
   var rangeTransport = null;
   let worker = null;
-  let CMapReaderFactory = DOMCMapReaderFactory;
 
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
@@ -260,14 +259,12 @@ function getDocument(src) {
                         'data property.');
       }
       continue;
-    } else if (key === 'CMapReaderFactory') {
-      CMapReaderFactory = source[key];
-      continue;
     }
     params[key] = source[key];
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
+  params.CMapReaderFactory = params.CMapReaderFactory || DOMCMapReaderFactory;
   params.ignoreErrors = params.stopAtErrors !== true;
   params.pdfBug = params.pdfBug === true;
 
@@ -355,7 +352,7 @@ function getDocument(src) {
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
       messageHandler.postMessageTransfers = worker.postMessageTransfers;
       var transport = new WorkerTransport(messageHandler, task, networkStream,
-                                          params, CMapReaderFactory);
+                                          params);
       task._transport = transport;
       messageHandler.send('Ready', null);
     });
@@ -387,7 +384,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     docId,
     apiVersion: (typeof PDFJSDev !== 'undefined' ?
                  PDFJSDev.eval('BUNDLE_VERSION') : null),
-    source: {
+    source: { // Only send the required properties, and *not* the entire object.
       data: source.data,
       url: source.url,
       password: source.password,
@@ -585,7 +582,7 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
  */
 var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   function PDFDocumentProxy(pdfInfo, transport, loadingTask) {
-    this.pdfInfo = pdfInfo;
+    this._pdfInfo = pdfInfo;
     this.transport = transport;
     this.loadingTask = loadingTask;
   }
@@ -594,14 +591,14 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * @return {number} Total number of pages the PDF contains.
      */
     get numPages() {
-      return this.pdfInfo.numPages;
+      return this._pdfInfo.numPages;
     },
     /**
      * @return {string} A unique ID to identify a PDF. Not guaranteed to be
      * unique.
      */
     get fingerprint() {
-      return this.pdfInfo.fingerprint;
+      return this._pdfInfo.fingerprint;
     },
     /**
      * @param {number} pageNumber The page number to get. The first page is 1.
@@ -831,7 +828,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
 var PDFPageProxy = (function PDFPageProxyClosure() {
   function PDFPageProxy(pageIndex, pageInfo, transport, pdfBug = false) {
     this.pageIndex = pageIndex;
-    this.pageInfo = pageInfo;
+    this._pageInfo = pageInfo;
     this.transport = transport;
     this._stats = (pdfBug ? new StatTimer() : DummyStatTimer);
     this._pdfBug = pdfBug;
@@ -853,27 +850,27 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * @return {number} The number of degrees the page is rotated clockwise.
      */
     get rotate() {
-      return this.pageInfo.rotate;
+      return this._pageInfo.rotate;
     },
     /**
      * @return {Object} The reference that points to this page. It has 'num' and
      * 'gen' properties.
      */
     get ref() {
-      return this.pageInfo.ref;
+      return this._pageInfo.ref;
     },
     /**
      * @return {number} The default size of units in 1/72nds of an inch.
      */
     get userUnit() {
-      return this.pageInfo.userUnit;
+      return this._pageInfo.userUnit;
     },
     /**
      * @return {Array} An array of the visible portion of the PDF page in the
      * user space units - [x1, y1, x2, y2].
      */
     get view() {
-      return this.pageInfo.view;
+      return this._pageInfo.view;
     },
 
     /**
@@ -1359,7 +1356,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       }
     } else {
       let loader = fakeWorkerFilesLoader || function(callback) {
-        Util.loadScript(getWorkerSrc(), function() {
+        loadScript(getWorkerSrc()).then(function() {
           callback(window.pdfjsWorker.WorkerMessageHandler);
         });
       };
@@ -1382,7 +1379,8 @@ var PDFWorker = (function PDFWorkerClosure() {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
   function PDFWorker({ name = null, port = null,
-                       postMessageTransfers = true, verbosity = null, } = {}) {
+                       postMessageTransfers = true,
+                       verbosity = getVerbosityLevel(), } = {}) {
     if (port && pdfWorkerPorts.has(port)) {
       throw new Error('Cannot use more than one PDFWorker per port');
     }
@@ -1390,7 +1388,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     this.name = name;
     this.destroyed = false;
     this.postMessageTransfers = postMessageTransfers !== false;
-    this.verbosity = (isNum(verbosity) ? verbosity : getVerbosityLevel());
+    this.verbosity = verbosity;
 
     this._readyCapability = createPromiseCapability();
     this._port = null;
@@ -1480,8 +1478,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               terminateEarly();
               return; // worker was destroyed
             }
-            var supportTypedArray = data && data.supportTypedArray;
-            if (supportTypedArray) {
+            if (data && data.supportTypedArray) {
               this._messageHandler = messageHandler;
               this._port = worker;
               this._webWorker = worker;
@@ -1553,12 +1550,7 @@ var PDFWorker = (function PDFWorkerClosure() {
           this._readyCapability.reject(new Error('Worker was destroyed'));
           return;
         }
-
-        // We cannot turn on proper fake port simulation (this includes
-        // structured cloning) when typed arrays are not supported. Relying
-        // on a chance that messages will be sent in proper order.
-        var isTypedArraysPresent = Uint8Array !== Float32Array;
-        var port = new LoopbackPort(isTypedArraysPresent);
+        let port = new LoopbackPort();
         this._port = port;
 
         // All fake workers use the same port, making id unique.
@@ -1598,6 +1590,9 @@ var PDFWorker = (function PDFWorkerClosure() {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
   PDFWorker.fromPort = function(params) {
+    if (!params || !params.port) {
+      throw new Error('PDFWorker.fromPort - invalid method signature.');
+    }
     if (pdfWorkerPorts.has(params.port)) {
       return pdfWorkerPorts.get(params.port);
     }
@@ -1616,14 +1611,13 @@ var PDFWorker = (function PDFWorkerClosure() {
  * @ignore
  */
 var WorkerTransport = (function WorkerTransportClosure() {
-  function WorkerTransport(messageHandler, loadingTask, networkStream,
-                           params, CMapReaderFactory) {
+  function WorkerTransport(messageHandler, loadingTask, networkStream, params) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
     this.commonObjs = new PDFObjects();
     this.fontLoader = new FontLoader(loadingTask.docId);
     this._params = params;
-    this.CMapReaderFactory = new CMapReaderFactory({
+    this.CMapReaderFactory = new params.CMapReaderFactory({
       baseUrl: params.cMapUrl,
       isCompressed: params.cMapPacked,
     });
@@ -1837,9 +1831,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.downloadInfoCapability.resolve(data);
       }, this);
 
-      messageHandler.on('PDFManagerReady', function transportPage(data) {
-      }, this);
-
       messageHandler.on('StartRenderPage', function transportRender(data) {
         if (this.destroyed) {
           return; // Ignore any pending requests if the worker was terminated.
@@ -2030,7 +2021,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             var height = img.height;
             var size = width * height;
             var rgbaLength = size * 4;
-            var buf = new Uint8Array(size * components);
+            var buf = new Uint8ClampedArray(size * components);
             var tmpCanvas = document.createElement('canvas');
             tmpCanvas.width = width;
             tmpCanvas.height = height;

@@ -428,6 +428,19 @@ class DummyStatTimer {
   }
 }
 
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    let script = document.createElement('script');
+    script.src = src;
+
+    script.onload = resolve;
+    script.onerror = function() {
+      reject(new Error(`Cannot load script at: ${script.src}`));
+    };
+    (document.head || document.documentElement).appendChild(script);
+  });
+}
+
 export {
   PageViewport,
   RenderingCancelledException,
@@ -440,4 +453,5 @@ export {
   DOMSVGFactory,
   StatTimer,
   DummyStatTimer,
+  loadScript,
 };
