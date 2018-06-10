@@ -1622,6 +1622,24 @@ function webViewerInitialized() {
         fileInput: evt.target,
       });
     });
+
+    // Enable draging-and-dropping a new PDF file onto the viewerContainer.
+    appConfig.mainContainer.addEventListener('dragover', function(evt) {
+      evt.preventDefault();
+
+      evt.dataTransfer.dropEffect = 'move';
+    });
+    appConfig.mainContainer.addEventListener('drop', function(evt) {
+      evt.preventDefault();
+
+      const files = evt.dataTransfer.files;
+      if (!files || files.length === 0) {
+        return;
+      }
+      PDFViewerApplication.eventBus.dispatch('fileinputchange', {
+        fileInput: evt.dataTransfer,
+      });
+    });
   } else {
     appConfig.toolbar.openFile.setAttribute('hidden', 'true');
     appConfig.secondaryToolbar.openFileButton.setAttribute('hidden', 'true');
