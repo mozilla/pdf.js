@@ -698,6 +698,7 @@ let PDFViewerApplication = {
    * @returns {Promise} - Returns the promise, which is resolved when document
    *                      is opened.
    */
+
   open(file, args) {
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
@@ -790,7 +791,7 @@ let PDFViewerApplication = {
         throw new Error(msg);
       });
     });
-  },
+  }, // open closes
 
   download() {
     function downloadByUrl() {

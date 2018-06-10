@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!--
 Copyright 2012 Mozilla Foundation
 
@@ -60,10 +60,8 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
   </head>
-
   <body tabindex="1" class="loadingInProgress">
     <div id="outerContainer">
-
       <div id="sidebarContainer">
         <div id="toolbarSidebar">
           <div class="splitToolbarButton toggled">
@@ -382,19 +380,19 @@ See https://github.com/adobe-type-tools/cmap-resources
               <button id="documentPropertiesClose" class="overlayButton"><span data-l10n-id="document_properties_close">Close</span></button>
             </div>
           </div>
-        </div>
-<!--#if !(FIREFOX || MOZCENTRAL)-->
-        <div id="printServiceOverlay" class="container hidden">
-          <div class="dialog">
-            <div class="row">
-              <span data-l10n-id="print_progress_message">Preparing document for printing…</span>
-            </div>
-            <div class="row">
-              <progress value="0" max="100"></progress>
-              <span data-l10n-id="print_progress_percent" data-l10n-args='{ "progress": 0 }' class="relative-progress">0%</span>
-            </div>
-            <div class="buttonRow">
-              <button id="printCancel" class="overlayButton"><span data-l10n-id="print_progress_close">Cancel</span></button>
+  <!--#if !(FIREFOX || MOZCENTRAL)-->
+          <div id="printServiceOverlay" class="container hidden">
+            <div class="dialog">
+              <div class="row">
+                <span data-l10n-id="print_progress_message">Preparing document for printing…</span>
+              </div>
+              <div class="row">
+                <progress value="0" max="100"></progress>
+                <span data-l10n-id="print_progress_percent" data-l10n-args='{ "progress": 0 }' class="relative-progress">0%</span>
+              </div>
+              <div class="buttonRow">
+                <button id="printCancel" class="overlayButton"><span data-l10n-id="print_progress_close">Cancel</span></button>
+              </div>
             </div>
           </div>
         </div>
@@ -403,7 +401,6 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#include viewer-snippet-chrome-overlays.html-->
 <!--#endif-->
       </div>  <!-- overlayContainer -->
-
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
   </body>
