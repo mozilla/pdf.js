@@ -578,10 +578,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
               return;
             }
 
-            Util.extendObj(styleCache, value.styles);
+            Object.assign(styleCache, value.styles);
             this._processItems(value.items, styleCache);
             pump();
-
           }, capability.reject);
         };
 
