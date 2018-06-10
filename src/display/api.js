@@ -18,7 +18,7 @@ import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
   isArrayBuffer, isSameOrigin, MissingPDFException, NativeImageDecoding,
   PasswordException, setVerbosityLevel, shadow, stringToBytes,
-  UnexpectedResponseException, UnknownErrorException, unreachable, Util, warn
+  UnexpectedResponseException, UnknownErrorException, unreachable, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
@@ -1074,7 +1074,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
               resolve(textContent);
               return;
             }
-            Util.extendObj(textContent.styles, value.styles);
+            Object.assign(textContent.styles, value.styles);
             textContent.items.push(...value.items);
             pump();
           }, reject);

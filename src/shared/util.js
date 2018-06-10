@@ -886,12 +886,6 @@ var Util = (function UtilClosure() {
     return (lowerCase ? romanStr.toLowerCase() : romanStr);
   };
 
-  Util.extendObj = function extendObj(obj1, obj2) {
-    for (var key in obj2) {
-      obj1[key] = obj2[key];
-    }
-  };
-
   Util.inherit = function Util_inherit(sub, base, prototype) {
     sub.prototype = Object.create(base.prototype);
     sub.prototype.constructor = sub;

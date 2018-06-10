@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  ImageKind, OPS, Util
-} from '../shared/util';
+import { ImageKind, OPS } from '../shared/util';
 
 var QueueOptimizer = (function QueueOptimizerClosure() {
   function addState(parentState, pattern, checkFn, iterateFn, processFn) {
@@ -612,7 +610,7 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     addOpList(opList) {
-      Util.extendObj(this.dependencies, opList.dependencies);
+      Object.assign(this.dependencies, opList.dependencies);
       for (var i = 0, ii = opList.length; i < ii; i++) {
         this.addOp(opList.fnArray[i], opList.argsArray[i]);
       }
