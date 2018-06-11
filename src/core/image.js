@@ -244,6 +244,11 @@ var PDFImage = (function PDFImageClosure() {
 
   PDFImage.createMask = function({ imgArray, width, height,
                                    imageIsFromDecodeStream, inverseDecode, }) {
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(imgArray instanceof Uint8ClampedArray,
+             'PDFImage.createMask: Unsupported "imgArray" type.');
+    }
     // |imgArray| might not contain full data for every pixel of the mask, so
     // we need to distinguish between |computedLength| and |actualLength|.
     // In particular, if inverseDecode is true, then the array we return must
@@ -399,6 +404,11 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     fillOpacity(rgbaBuf, width, height, actualHeight, image) {
+      if (typeof PDFJSDev === 'undefined' ||
+          PDFJSDev.test('!PRODUCTION || TESTING')) {
+        assert(rgbaBuf instanceof Uint8ClampedArray,
+               'PDFImage.fillOpacity: Unsupported "rgbaBuf" type.');
+      }
       var smask = this.smask;
       var mask = this.mask;
       var alphaBuf, sw, sh, i, ii, j;
@@ -465,6 +475,11 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     undoPreblend(buffer, width, height) {
+      if (typeof PDFJSDev === 'undefined' ||
+          PDFJSDev.test('!PRODUCTION || TESTING')) {
+        assert(buffer instanceof Uint8ClampedArray,
+               'PDFImage.undoPreblend: Unsupported "buffer" type.');
+      }
       var matte = this.smask && this.smask.matte;
       if (!matte) {
         return;
@@ -544,7 +559,8 @@ var PDFImage = (function PDFImageClosure() {
           }
           if (this.needsDecode) {
             // Invert the buffer (which must be grayscale if we reached here).
-            assert(kind === ImageKind.GRAYSCALE_1BPP);
+            assert(kind === ImageKind.GRAYSCALE_1BPP,
+                   'PDFImage.createImageData: The image must be grayscale.');
             var buffer = imgData.data;
             for (var i = 0, ii = buffer.length; i < ii; i++) {
               buffer[i] ^= 0xff;
@@ -610,6 +626,11 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     fillGrayBuffer(buffer) {
+      if (typeof PDFJSDev === 'undefined' ||
+          PDFJSDev.test('!PRODUCTION || TESTING')) {
+        assert(buffer instanceof Uint8ClampedArray,
+               'PDFImage.fillGrayBuffer: Unsupported "buffer" type.');
+      }
       var numComps = this.numComps;
       if (numComps !== 1) {
         throw new FormatError(
