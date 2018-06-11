@@ -22,15 +22,14 @@ var ColorSpace = (function ColorSpaceClosure() {
   /**
    * Resizes an RGB image with 3 components.
    * @param {TypedArray} src - The source buffer.
-   * @param {Number} bpc - Number of bits per component.
+   * @param {TypedArray} dest - The destination buffer.
    * @param {Number} w1 - Original width.
    * @param {Number} h1 - Original height.
    * @param {Number} w2 - New width.
    * @param {Number} h2 - New height.
    * @param {Number} alpha01 - Size reserved for the alpha channel.
-   * @param {TypedArray} dest - The destination buffer.
    */
-  function resizeRgbImage(src, bpc, w1, h1, w2, h2, alpha01, dest) {
+  function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
     var COMPONENTS = 3;
     alpha01 = alpha01 !== 1 ? 0 : alpha01;
     var xRatio = w1 / w2;
@@ -174,8 +173,8 @@ var ColorSpace = (function ColorSpaceClosure() {
 
       if (rgbBuf) {
         if (needsResizing) {
-          resizeRgbImage(rgbBuf, bpc, originalWidth, originalHeight,
-                         width, height, alpha01, dest);
+          resizeRgbImage(rgbBuf, dest, originalWidth, originalHeight,
+                         width, height, alpha01);
         } else {
           rgbPos = 0;
           destPos = 0;
