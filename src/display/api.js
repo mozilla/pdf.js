@@ -2457,7 +2457,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       if (this.useRequestAnimationFrame && typeof window !== 'undefined') {
         window.requestAnimationFrame(this._nextBound);
       } else {
-        Promise.resolve(undefined).then(this._nextBound);
+        Promise.resolve().then(this._nextBound).catch(this.callback);
       }
     },
 
