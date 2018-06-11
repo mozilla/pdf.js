@@ -34,8 +34,10 @@ const MAX_ADLER32_LENGTH = 5552;
 
 function computeAdler32(bytes) {
   let bytesLength = bytes.length;
-  if (bytesLength >= MAX_ADLER32_LENGTH) {
-    throw new Error('computeAdler32: The input is too large.');
+  if (typeof PDFJSDev === 'undefined' ||
+      PDFJSDev.test('!PRODUCTION || TESTING')) {
+    assert(bytesLength < MAX_ADLER32_LENGTH,
+           'computeAdler32: Unsupported "bytes" length.');
   }
   let a = 1, b = 0;
   for (let i = 0; i < bytesLength; ++i) {

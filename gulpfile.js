@@ -86,6 +86,7 @@ var AUTOPREFIXER_CONFIG = {
 
 var DEFINES = {
   PRODUCTION: true,
+  TESTING: false,
   // The main build targets:
   GENERIC: false,
   FIREFOX: false,
@@ -137,6 +138,7 @@ function createWebpackConfig(defines, output) {
   var bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
+    TESTING: (defines.TESTING || process.env['TESTING'] === 'true'),
   });
   var licenseHeaderLibre =
     fs.readFileSync('./src/license_header_libre.js').toString();
@@ -875,6 +877,7 @@ gulp.task('lib', ['buildnumber'], function () {
       LIB: true,
       BUNDLE_VERSION: versionInfo.version,
       BUNDLE_BUILD: versionInfo.commit,
+      TESTING: process.env['TESTING'] === 'true',
     }),
     map: {
       'pdfjs-lib': '../pdf',
@@ -927,34 +930,39 @@ gulp.task('publish', ['generic'], function (done) {
     });
 });
 
-gulp.task('test', ['generic', 'components'], function () {
+gulp.task('testing-pre', function() {
+  process.env['TESTING'] = 'true';
+});
+
+gulp.task('test', ['testing-pre', 'generic', 'components'], function() {
   return streamqueue({ objectMode: true, },
     createTestSource('unit'), createTestSource('browser'));
 });
 
-gulp.task('bottest', ['generic', 'components'], function () {
+gulp.task('bottest', ['testing-pre', 'generic', 'components'], function() {
   return streamqueue({ objectMode: true, },
     createTestSource('unit'), createTestSource('font'),
     createTestSource('browser (no reftest)'));
 });
 
-gulp.task('browsertest', ['generic', 'components'], function () {
+gulp.task('browsertest', ['testing-pre', 'generic', 'components'], function() {
   return createTestSource('browser');
 });
 
-gulp.task('unittest', ['generic', 'components'], function () {
+gulp.task('unittest', ['testing-pre', 'generic', 'components'], function() {
   return createTestSource('unit');
 });
 
-gulp.task('fonttest', function () {
+gulp.task('fonttest', ['testing-pre'], function() {
   return createTestSource('font');
 });
 
-gulp.task('makeref', ['generic', 'components'], function (done) {
+gulp.task('makeref', ['testing-pre', 'generic', 'components'], function(done) {
   makeRef(done);
 });
 
-gulp.task('botmakeref', ['generic', 'components'], function (done) {
+gulp.task('botmakeref', ['testing-pre', 'generic', 'components'],
+    function(done) {
   makeRef(done, true);
 });
 
@@ -994,7 +1002,7 @@ gulp.task('baseline', function (done) {
   });
 });
 
-gulp.task('unittestcli', ['lib'], function (done) {
+gulp.task('unittestcli', ['testing-pre', 'lib'], function(done) {
   var args = ['JASMINE_CONFIG_PATH=test/unit/clitests.json'];
   var testProcess = spawn('node_modules/.bin/jasmine', args,
                           { stdio: 'inherit', });
