@@ -377,7 +377,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var width = dict.get('Width', 'W');
         var height = dict.get('Height', 'H');
         var bitStrideLength = (width + 7) >> 3;
-        var imgArray = image.getBytes(bitStrideLength * height);
+        var imgArray = image.getBytes(bitStrideLength * height,
+                                      /* forceClamped = */ true);
         var decode = dict.getArray('Decode', 'D');
 
         imgData = PDFImage.createMask({
