@@ -1995,7 +1995,7 @@ function webViewerPageNumberChanged(evt) {
   // Ensure that the page number input displays the correct value, even if the
   // value entered by the user was invalid (e.g. a floating point number).
   if (evt.value !== pdfViewer.currentPageNumber.toString() &&
-      evt.value !== pdfViewer.currentPageLabel) {
+      Number.isNaN(evt.value)) {
     PDFViewerApplication.toolbar.setPageNumber(
       pdfViewer.currentPageNumber, pdfViewer.currentPageLabel);
   }
