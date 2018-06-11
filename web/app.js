@@ -1925,6 +1925,10 @@ function webViewerHashchange(evt) {
 let webViewerFileInputChange;
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   webViewerFileInputChange = function webViewerFileInputChange(evt) {
+    if (PDFViewerApplication.pdfViewer &&
+        PDFViewerApplication.pdfViewer.isInPresentationMode) {
+      return; // Opening a new PDF file isn't supported in Presentation Mode.
+    }
     let file = evt.fileInput.files[0];
 
     if (URL.createObjectURL && !AppOptions.get('disableCreateObjectURL')) {
