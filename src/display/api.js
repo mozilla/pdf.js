@@ -1884,6 +1884,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             var font = new FontFaceObject(exportedData, {
               isEvalSupported: params.isEvalSupported,
               disableFontFace: params.disableFontFace,
+              ignoreErrors: params.ignoreErrors,
               fontRegistry,
             });
             var fontReady = (fontObjs) => {
