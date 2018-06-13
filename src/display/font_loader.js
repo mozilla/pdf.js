@@ -338,6 +338,7 @@ var IsEvalSupportedCached = {
 var FontFaceObject = (function FontFaceObjectClosure() {
   function FontFaceObject(translatedData, { isEvalSupported = true,
                                             disableFontFace = false,
+                                            ignoreErrors = false,
                                             fontRegistry = null, }) {
     this.compiledGlyphs = Object.create(null);
     // importing translated data
@@ -346,6 +347,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
     }
     this.isEvalSupported = isEvalSupported !== false;
     this.disableFontFace = disableFontFace === true;
+    this.ignoreErrors = ignoreErrors === true;
     this.fontRegistry = fontRegistry;
   }
   FontFaceObject.prototype = {
@@ -390,7 +392,19 @@ var FontFaceObject = (function FontFaceObjectClosure() {
         return this.compiledGlyphs[character];
       }
 
-      let cmds = objs.get(this.loadedName + '_path_' + character), current;
+      let cmds, current;
+      try {
+        cmds = objs.get(this.loadedName + '_path_' + character);
+      } catch (ex) {
+        if (!this.ignoreErrors) {
+          throw ex;
+        }
+        warn(`getPathGenerator - ignoring character: "${ex}".`);
+
+        return this.compiledGlyphs[character] = function(c, size) {
+          // No-op function, to allow rendering to continue.
+        };
+      }
 
       // If we can, compile cmds into JS for MAXIMUM SPEED...
       if (this.isEvalSupported && IsEvalSupportedCached.value) {
