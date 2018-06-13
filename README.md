@@ -21,6 +21,12 @@ Feel free to stop by #pdfjs on irc.mozilla.org for questions or guidance.
 
 ## Getting Started
 
+### Install via npm
+
+```
+npm install pdfjs-dist
+```
+
 ### Online demo
 
 + https://mozilla.github.io/pdf.js/web/viewer.html
