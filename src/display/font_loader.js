@@ -14,7 +14,8 @@
  */
 
 import {
-  assert, bytesToString, isEvalSupported, shadow, string32, warn
+  assert, bytesToString, isEvalSupported, shadow, string32,
+  UNSUPPORTED_FEATURES, warn
 } from '../shared/util';
 
 function FontLoader(docId) {
@@ -339,6 +340,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
   function FontFaceObject(translatedData, { isEvalSupported = true,
                                             disableFontFace = false,
                                             ignoreErrors = false,
+                                            onUnsupportedFeature = null,
                                             fontRegistry = null, }) {
     this.compiledGlyphs = Object.create(null);
     // importing translated data
@@ -348,6 +350,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
     this.isEvalSupported = isEvalSupported !== false;
     this.disableFontFace = disableFontFace === true;
     this.ignoreErrors = ignoreErrors === true;
+    this._onUnsupportedFeature = onUnsupportedFeature;
     this.fontRegistry = fontRegistry;
   }
   FontFaceObject.prototype = {
@@ -398,6 +401,9 @@ var FontFaceObject = (function FontFaceObjectClosure() {
       } catch (ex) {
         if (!this.ignoreErrors) {
           throw ex;
+        }
+        if (this._onUnsupportedFeature) {
+          this._onUnsupportedFeature({ featureId: UNSUPPORTED_FEATURES.font, });
         }
         warn(`getPathGenerator - ignoring character: "${ex}".`);
 

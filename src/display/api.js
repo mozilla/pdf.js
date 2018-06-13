@@ -1885,6 +1885,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               isEvalSupported: params.isEvalSupported,
               disableFontFace: params.disableFontFace,
               ignoreErrors: params.ignoreErrors,
+              onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
               fontRegistry,
             });
             var fontReady = (fontObjs) => {
@@ -1987,15 +1988,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       }, this);
 
-      messageHandler.on('UnsupportedFeature', function(data) {
-        if (this.destroyed) {
-          return; // Ignore any pending requests if the worker was terminated.
-        }
-        let loadingTask = this.loadingTask;
-        if (loadingTask.onUnsupportedFeature) {
-          loadingTask.onUnsupportedFeature(data.featureId);
-        }
-      }, this);
+      messageHandler.on('UnsupportedFeature', this._onUnsupportedFeature, this);
 
       messageHandler.on('JpegDecode', function(data) {
         if (this.destroyed) {
@@ -2059,6 +2052,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
           name: data.name,
         });
       }, this);
+    },
+
+    _onUnsupportedFeature({ featureId, }) {
+      if (this.destroyed) {
+        return; // Ignore any pending requests if the worker was terminated.
+      }
+      let loadingTask = this.loadingTask;
+      if (loadingTask.onUnsupportedFeature) {
+        loadingTask.onUnsupportedFeature(featureId);
+      }
     },
 
     getData: function WorkerTransport_getData() {
