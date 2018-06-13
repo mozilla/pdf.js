@@ -423,24 +423,29 @@ class SimpleLinkService {
   get page() {
     return 0;
   }
+
   /**
    * @param {number} value
    */
   set page(value) {}
+
   /**
    * @returns {number}
    */
   get rotation() {
     return 0;
   }
+
   /**
    * @param {number} value
    */
   set rotation(value) {}
+
   /**
    * @param dest - The PDF destination object.
    */
   navigateTo(dest) {}
+
   /**
    * @param dest - The PDF destination object.
    * @returns {string} The hyperlink to the PDF object.
@@ -448,6 +453,7 @@ class SimpleLinkService {
   getDestinationHash(dest) {
     return '#';
   }
+
   /**
    * @param hash - The PDF parameters/hash.
    * @returns {string} The hyperlink to the PDF object.
@@ -455,18 +461,22 @@ class SimpleLinkService {
   getAnchorUrl(hash) {
     return '#';
   }
+
   /**
    * @param {string} hash
    */
   setHash(hash) {}
+
   /**
    * @param {string} action
    */
   executeNamedAction(action) {}
+
   /**
    * @param {Object} params
    */
   onFileAttachmentAnnotation({ id, filename, content, }) {}
+
   /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
