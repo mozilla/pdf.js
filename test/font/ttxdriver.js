@@ -62,7 +62,7 @@ function runTtx(ttxResourcesHome, fontPath, registerOnCancel, callback) {
 
 exports.translateFont = function translateFont(content, registerOnCancel,
                                                callback) {
-  var buffer = new Buffer(content, 'base64');
+  var buffer = Buffer.from(content, 'base64');
   var taskId = (nextTTXTaskId++).toString();
   var fontPath = path.join(ttxResourcesHome, taskId + '.otf');
   var resultPath = path.join(ttxResourcesHome, taskId + '.ttx');
