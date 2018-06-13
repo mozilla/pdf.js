@@ -2455,30 +2455,34 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
 
     _scheduleNext: function InternalRenderTask__scheduleNext() {
       if (this.useRequestAnimationFrame && typeof window !== 'undefined') {
-        window.requestAnimationFrame(this._nextBound);
+        window.requestAnimationFrame(() => {
+          this._nextBound().catch(this.callback);
+        });
       } else {
         Promise.resolve().then(this._nextBound).catch(this.callback);
       }
     },
 
     _next: function InternalRenderTask__next() {
-      if (this.cancelled) {
-        return;
-      }
-      this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
-                                        this.operatorListIdx,
-                                        this._continueBound,
-                                        this.stepper);
-      if (this.operatorListIdx === this.operatorList.argsArray.length) {
-        this.running = false;
-        if (this.operatorList.lastChunk) {
-          this.gfx.endDrawing();
-          if (this._canvas) {
-            canvasInRendering.delete(this._canvas);
-          }
-          this.callback();
+      return new Promise(() => {
+        if (this.cancelled) {
+          return;
         }
-      }
+        this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
+                                          this.operatorListIdx,
+                                          this._continueBound,
+                                          this.stepper);
+        if (this.operatorListIdx === this.operatorList.argsArray.length) {
+          this.running = false;
+          if (this.operatorList.lastChunk) {
+            this.gfx.endDrawing();
+            if (this._canvas) {
+              canvasInRendering.delete(this._canvas);
+            }
+            this.callback();
+          }
+        }
+      });
     },
 
   };
