@@ -553,10 +553,6 @@ let PDFViewerApplication = {
         support = false;
       }
     }
-    if (support && AppOptions.get('disableFullscreen') === true) {
-      support = false;
-    }
-
     return shadow(this, 'supportsFullscreen', support);
   },
 

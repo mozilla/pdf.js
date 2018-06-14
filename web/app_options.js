@@ -43,11 +43,6 @@ const defaultOptions = {
     value: '',
     kind: OptionKind.VIEWER,
   },
-  disableFullscreen: {
-    /** @type {boolean} */
-    value: viewerCompatibilityParams.disableFullscreen || false,
-    kind: OptionKind.VIEWER,
-  },
   disableHistory: {
     /** @type {boolean} */
     value: false,
