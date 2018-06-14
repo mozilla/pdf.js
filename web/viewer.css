@@ -175,7 +175,8 @@ html[dir='rtl'] #sidebarContent {
   bottom: 0;
   left: 0;
   outline: none;
-
+}
+#viewerContainer:not(.pdfPresentationMode) {
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
@@ -191,12 +192,12 @@ html[dir='rtl'] #viewerContainer {
   transition-duration: 0s;
 }
 
-html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer {
+html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
   transition-property: left;
   left: 200px;
   left: var(--sidebar-width);
 }
-html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer {
+html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
   transition-property: right;
   right: 200px;
   right: var(--sidebar-width);
