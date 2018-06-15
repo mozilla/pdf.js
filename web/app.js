@@ -599,7 +599,7 @@ let PDFViewerApplication = {
           args = { length, };
         }
         if (originalURL !== undefined) {
-          file = { file: url, originalURL, };
+          file = { url, originalURL, };
         }
         PDFViewerApplication.open(file, args);
       },
