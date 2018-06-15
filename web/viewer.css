@@ -1847,10 +1847,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 
   html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer {
-    left: 0px;
+    left: 0px !important;
   }
   html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer {
-    right: 0px;
+    right: 0px !important;
   }
 
   #outerContainer .hiddenLargeView,
