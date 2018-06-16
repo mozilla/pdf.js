@@ -1884,6 +1884,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
             var font = new FontFaceObject(exportedData, {
               isEvalSupported: params.isEvalSupported,
               disableFontFace: params.disableFontFace,
+              ignoreErrors: params.ignoreErrors,
+              onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
               fontRegistry,
             });
             var fontReady = (fontObjs) => {
@@ -1986,15 +1988,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       }, this);
 
-      messageHandler.on('UnsupportedFeature', function(data) {
-        if (this.destroyed) {
-          return; // Ignore any pending requests if the worker was terminated.
-        }
-        let loadingTask = this.loadingTask;
-        if (loadingTask.onUnsupportedFeature) {
-          loadingTask.onUnsupportedFeature(data.featureId);
-        }
-      }, this);
+      messageHandler.on('UnsupportedFeature', this._onUnsupportedFeature, this);
 
       messageHandler.on('JpegDecode', function(data) {
         if (this.destroyed) {
@@ -2058,6 +2052,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
           name: data.name,
         });
       }, this);
+    },
+
+    _onUnsupportedFeature({ featureId, }) {
+      if (this.destroyed) {
+        return; // Ignore any pending requests if the worker was terminated.
+      }
+      let loadingTask = this.loadingTask;
+      if (loadingTask.onUnsupportedFeature) {
+        loadingTask.onUnsupportedFeature(featureId);
+      }
     },
 
     getData: function WorkerTransport_getData() {
@@ -2455,30 +2459,34 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
 
     _scheduleNext: function InternalRenderTask__scheduleNext() {
       if (this.useRequestAnimationFrame && typeof window !== 'undefined') {
-        window.requestAnimationFrame(this._nextBound);
+        window.requestAnimationFrame(() => {
+          this._nextBound().catch(this.callback);
+        });
       } else {
         Promise.resolve().then(this._nextBound).catch(this.callback);
       }
     },
 
     _next: function InternalRenderTask__next() {
-      if (this.cancelled) {
-        return;
-      }
-      this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
-                                        this.operatorListIdx,
-                                        this._continueBound,
-                                        this.stepper);
-      if (this.operatorListIdx === this.operatorList.argsArray.length) {
-        this.running = false;
-        if (this.operatorList.lastChunk) {
-          this.gfx.endDrawing();
-          if (this._canvas) {
-            canvasInRendering.delete(this._canvas);
-          }
-          this.callback();
+      return new Promise(() => {
+        if (this.cancelled) {
+          return;
         }
-      }
+        this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
+                                          this.operatorListIdx,
+                                          this._continueBound,
+                                          this.stepper);
+        if (this.operatorListIdx === this.operatorList.argsArray.length) {
+          this.running = false;
+          if (this.operatorList.lastChunk) {
+            this.gfx.endDrawing();
+            if (this._canvas) {
+              canvasInRendering.delete(this._canvas);
+            }
+            this.callback();
+          }
+        }
+      });
     },
 
   };
