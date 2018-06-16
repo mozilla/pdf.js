@@ -2267,6 +2267,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue4244",
+       "file": "pdfs/issue4244.pdf",
+       "md5": "26845274a32a537182ced1fd693a38b2",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "preistabelle",
       "file": "pdfs/preistabelle.pdf",
       "md5": "d2f0b2086160d4f3d325c79a5dc1fb4d",
