@@ -379,8 +379,10 @@ var WorkerMessageHandler = {
     let apiVersion = docParams.apiVersion;
     let workerVersion =
       typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
-    // The `apiVersion !== null` check is needed to avoid errors during testing.
-    if (apiVersion !== null && apiVersion !== workerVersion) {
+    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING')) &&
+        apiVersion === null) {
+      warn('Ignoring apiVersion/workerVersion check in TESTING builds.');
+    } else if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` +
                       `the Worker version "${workerVersion}".`);
     }

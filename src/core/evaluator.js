@@ -377,7 +377,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var width = dict.get('Width', 'W');
         var height = dict.get('Height', 'H');
         var bitStrideLength = (width + 7) >> 3;
-        var imgArray = image.getBytes(bitStrideLength * height);
+        var imgArray = image.getBytes(bitStrideLength * height,
+                                      /* forceClamped = */ true);
         var decode = dict.getArray('Decode', 'D');
 
         imgData = PDFImage.createMask({
@@ -1260,7 +1261,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // notification and allow rendering to continue.
           this.handler.send('UnsupportedFeature',
                             { featureId: UNSUPPORTED_FEATURES.unknown, });
-          warn('getOperatorList - ignoring errors during task: ' + task.name);
+          warn(`getOperatorList - ignoring errors during "${task.name}" ` +
+               `task: "${reason}".`);
 
           closePendingRestoreOPS();
           return;
@@ -1845,7 +1847,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         if (this.options.ignoreErrors) {
           // Error(s) in the TextContent -- allow text-extraction to continue.
-          warn('getTextContent - ignoring errors during task: ' + task.name);
+          warn(`getTextContent - ignoring errors during "${task.name}" ` +
+               `task: "${reason}".`);
 
           flushTextContentItem();
           enqueueChunk();

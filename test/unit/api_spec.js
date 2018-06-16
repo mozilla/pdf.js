@@ -764,7 +764,7 @@ describe('api', function() {
 
         expect(outlineItem.bold).toEqual(true);
         expect(outlineItem.italic).toEqual(false);
-        expect(outlineItem.color).toEqual(new Uint8Array([0, 64, 128]));
+        expect(outlineItem.color).toEqual(new Uint8ClampedArray([0, 64, 128]));
 
         expect(outlineItem.items.length).toEqual(1);
         expect(outlineItem.items[0].title).toEqual('Paragraph 1.1');
@@ -791,7 +791,8 @@ describe('api', function() {
           var outlineItemOne = outline[1];
           expect(outlineItemOne.bold).toEqual(false);
           expect(outlineItemOne.italic).toEqual(true);
-          expect(outlineItemOne.color).toEqual(new Uint8Array([0, 0, 0]));
+          expect(outlineItemOne.color).toEqual(
+            new Uint8ClampedArray([0, 0, 0]));
 
           loadingTask.destroy().then(done);
         });

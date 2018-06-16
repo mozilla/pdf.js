@@ -181,16 +181,17 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
 
-    // returns subarray of original buffer
-    // should only be read
-    getBytes: function ChunkedStream_getBytes(length) {
+    // Returns subarray of original buffer, should only be read.
+    getBytes(length, forceClamped = false) {
       var bytes = this.bytes;
       var pos = this.pos;
       var strEnd = this.end;
 
       if (!length) {
         this.ensureRange(pos, strEnd);
-        return bytes.subarray(pos, strEnd);
+        let subarray = bytes.subarray(pos, strEnd);
+        // `this.bytes` is always a `Uint8Array` here.
+        return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
       }
 
       var end = pos + length;
@@ -200,7 +201,9 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       this.ensureRange(pos, end);
 
       this.pos = end;
-      return bytes.subarray(pos, end);
+      let subarray = bytes.subarray(pos, end);
+      // `this.bytes` is always a `Uint8Array` here.
+      return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
     },
 
     peekByte: function ChunkedStream_peekByte() {
@@ -209,8 +212,8 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       return peekedByte;
     },
 
-    peekBytes: function ChunkedStream_peekBytes(length) {
-      var bytes = this.getBytes(length);
+    peekBytes(length, forceClamped = false) {
+      var bytes = this.getBytes(length, forceClamped);
       this.pos -= bytes.length;
       return bytes;
     },

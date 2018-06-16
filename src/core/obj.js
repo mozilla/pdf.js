@@ -114,7 +114,7 @@ var Catalog = (function CatalogClosure() {
       // To avoid recursion, keep track of the already processed items.
       var processed = new RefSet();
       processed.put(obj);
-      var xref = this.xref, blackColor = new Uint8Array(3);
+      var xref = this.xref, blackColor = new Uint8ClampedArray(3);
 
       while (queue.length > 0) {
         var i = queue.shift();
