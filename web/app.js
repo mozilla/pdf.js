@@ -593,13 +593,13 @@ let PDFViewerApplication = {
       onOpenWithData(data) {
         PDFViewerApplication.open(data);
       },
-      onOpenWithURL(url, length, originalURL) {
+      onOpenWithURL(url, length, originalUrl) {
         let file = url, args = null;
         if (length !== undefined) {
           args = { length, };
         }
-        if (originalURL !== undefined) {
-          file = { url, originalURL, };
+        if (originalUrl !== undefined) {
+          file = { url, originalUrl, };
         }
         PDFViewerApplication.open(file, args);
       },
