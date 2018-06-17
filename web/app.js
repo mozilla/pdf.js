@@ -615,7 +615,7 @@ let PDFViewerApplication = {
     });
   },
 
-  setTitleUsingUrl(url) {
+  setTitleUsingUrl(url = '') {
     this.url = url;
     this.baseUrl = url.split('#')[0];
     let title = getPDFFileNameFromURL(url, '');
@@ -1928,8 +1928,13 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     let file = evt.fileInput.files[0];
 
     if (URL.createObjectURL && !AppOptions.get('disableCreateObjectURL')) {
-      PDFViewerApplication.open(URL.createObjectURL(file));
+      let url = URL.createObjectURL(file);
+      if (file.name) {
+        url = { url, originalUrl: file.name, };
+      }
+      PDFViewerApplication.open(url);
     } else {
+      PDFViewerApplication.setTitleUsingUrl(file.name);
       // Read the local file into a Uint8Array.
       let fileReader = new FileReader();
       fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
@@ -1938,8 +1943,6 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       };
       fileReader.readAsArrayBuffer(file);
     }
-
-    PDFViewerApplication.setTitleUsingUrl(file.name);
 
     // URL does not reflect proper document location - hiding some icons.
     let appConfig = PDFViewerApplication.appConfig;
