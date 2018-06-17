@@ -201,7 +201,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
       let file = this.files[0];
       if (file) {
         let originalFilename = decodeURIComponent(fileUrl.split('/').pop());
-        let originalURL = fileUrl;
+        let originalUrl = fileUrl;
         if (originalFilename !== file.name) {
           let msg = 'The selected file does not match the original file.' +
             '\nOriginal: ' + originalFilename +
@@ -213,9 +213,9 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
           }
           // There is no way to retrieve the original URL from the File object.
           // So just generate a fake path.
-          originalURL = 'file:///fakepath/to/' + encodeURIComponent(file.name);
+          originalUrl = 'file:///fakepath/to/' + encodeURIComponent(file.name);
         }
-        callback(URL.createObjectURL(file), file.size, originalURL);
+        callback(URL.createObjectURL(file), file.size, originalUrl);
         overlayManager.close('chromeFileAccessOverlay');
       }
     };
@@ -384,8 +384,8 @@ ChromeExternalServices.initPassiveLoading = function(callbacks) {
   let { overlayManager, } = PDFViewerApplication;
   // defaultUrl is set in viewer.js
   ChromeCom.resolvePDFFile(AppOptions.get('defaultUrl'), overlayManager,
-      function(url, length, originalURL) {
-    callbacks.onOpenWithURL(url, length, originalURL);
+      function(url, length, originalUrl) {
+    callbacks.onOpenWithURL(url, length, originalUrl);
   });
 };
 ChromeExternalServices.createDownloadManager = function(options) {
