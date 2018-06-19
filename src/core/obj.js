@@ -1208,7 +1208,7 @@ var XRef = (function XRefClosure() {
                 break;
               }
             }
-            startPos += contentLength;
+            startPos = endPos;
           }
           let content = buffer.subarray(position, position + contentLength);
 
