@@ -734,15 +734,15 @@ var Lexer = (function LexerClosure() {
       } else if (ch === 0x2B) { // '+'
         ch = this.nextChar();
       }
-      if (ch === 0x2E) { // '.'
-        divideBy = 10;
-        ch = this.nextChar();
-      }
       if (ch === 0x0A || ch === 0x0D) { // LF, CR
         // Ignore line-breaks (this is consistent with Adobe Reader).
         do {
           ch = this.nextChar();
         } while (ch === 0x0A || ch === 0x0D);
+      }
+      if (ch === 0x2E) { // '.'
+        divideBy = 10;
+        ch = this.nextChar();
       }
       if (ch < 0x30 || ch > 0x39) { // '0' - '9'
         throw new FormatError(

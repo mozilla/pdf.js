@@ -58,11 +58,15 @@ describe('parser', function() {
 
     it('should ignore line-breaks between operator and digit in number',
         function() {
-      var input = new StringStream('-\r\n205.88');
-      var lexer = new Lexer(input);
-      var result = lexer.getNumber();
+      let minusInput = new StringStream('-\r\n205.88');
+      let minusLexer = new Lexer(minusInput);
 
-      expect(result).toEqual(-205.88);
+      expect(minusLexer.getNumber()).toEqual(-205.88);
+
+      let plusInput = new StringStream('+\r\n205.88');
+      let plusLexer = new Lexer(plusInput);
+
+      expect(plusLexer.getNumber()).toEqual(205.88);
     });
 
     it('should handle glued numbers and operators', function() {
