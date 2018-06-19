@@ -877,8 +877,22 @@ var XRef = (function XRefClosure() {
                                                   this.pdfManager.password);
       }
 
-      // get the root dictionary (catalog) object
-      if (!(this.root = trailerDict.get('Root'))) {
+      // Get the root dictionary (catalog) object, and do some basic validation.
+      let root;
+      try {
+        root = trailerDict.get('Root');
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        warn(`XRef.parse - Invalid "Root" reference: "${ex}".`);
+      }
+      if (isDict(root) && root.has('Pages')) {
+        this.root = root;
+      } else {
+        if (!recoveryMode) {
+          throw new XRefParseException();
+        }
         throw new FormatError('Invalid root reference');
       }
     },
