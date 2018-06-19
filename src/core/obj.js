@@ -855,7 +855,16 @@ var XRef = (function XRefClosure() {
       }
       trailerDict.assignXref(this);
       this.trailer = trailerDict;
-      var encrypt = trailerDict.get('Encrypt');
+
+      let encrypt;
+      try {
+        encrypt = trailerDict.get('Encrypt');
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        warn(`XRef.parse - Invalid "Encrypt" reference: "${ex}".`);
+      }
       if (isDict(encrypt)) {
         var ids = trailerDict.get('ID');
         var fileId = (ids && ids.length) ? ids[0] : '';
