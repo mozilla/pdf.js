@@ -109,6 +109,15 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   require('core-js/fn/array/includes');
 })();
 
+// Provides support for Object.assign in legacy browsers.
+// Support: IE
+(function checkObjectAssign() {
+  if (Object.assign) {
+    return;
+  }
+  require('core-js/fn/object/assign');
+})();
+
 // Provides support for Math.log2 in legacy browsers.
 // Support: IE, Chrome<38
 (function checkMathLog2() {
