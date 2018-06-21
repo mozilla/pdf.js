@@ -286,10 +286,10 @@ function getDocument(src) {
   }
 
   if (typeof params.disableRange !== 'boolean') {
-    params.disableRange = apiCompatibilityParams.disableRange || false;
+    params.disableRange = false;
   }
   if (typeof params.disableStream !== 'boolean') {
-    params.disableStream = apiCompatibilityParams.disableStream || false;
+    params.disableStream = false;
   }
   if (typeof params.disableAutoFetch !== 'boolean') {
     params.disableAutoFetch = false;
