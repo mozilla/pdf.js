@@ -23,7 +23,7 @@ class PDFViewer extends BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, }) {
-    if (!pageSpot) {
+    if (!pageSpot && !this.isInPresentationMode) {
       const left = pageDiv.offsetLeft + pageDiv.clientLeft;
       const right = left + pageDiv.clientWidth;
       const { scrollLeft, clientWidth, } = this.container;
@@ -85,6 +85,13 @@ class PDFViewer extends BaseViewer {
       source: this,
       location: this._location,
     });
+  }
+
+  get _isScrollModeHorizontal() {
+    // Used to ensure that pre-rendering of the next/previous page works
+    // correctly, since Scroll/Spread modes are ignored in Presentation Mode.
+    return (this.isInPresentationMode ?
+            false : this.scrollMode === ScrollMode.HORIZONTAL);
   }
 
   setScrollMode(mode) {

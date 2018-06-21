@@ -597,11 +597,11 @@ class BaseViewer {
       if (!currentPage) {
         return;
       }
-      let hPadding = (this.isInPresentationMode || this.removePageBorders) ?
-        0 : SCROLLBAR_PADDING;
-      let vPadding = (this.isInPresentationMode || this.removePageBorders) ?
-        0 : VERTICAL_PADDING;
-      if (this.scrollMode === ScrollMode.HORIZONTAL) {
+      const noPadding = (this.isInPresentationMode || this.removePageBorders);
+      let hPadding = noPadding ? 0 : SCROLLBAR_PADDING;
+      let vPadding = noPadding ? 0 : VERTICAL_PADDING;
+
+      if (!noPadding && this._isScrollModeHorizontal) {
         const temp = hPadding;
         hPadding = vPadding;
         vPadding = temp;
@@ -834,6 +834,10 @@ class BaseViewer {
     this.container.focus();
   }
 
+  get _isScrollModeHorizontal() {
+    throw new Error('Not implemented: _isScrollModeHorizontal');
+  }
+
   get isInPresentationMode() {
     return this.presentationModeState === PresentationModeState.FULLSCREEN;
   }
@@ -906,8 +910,8 @@ class BaseViewer {
 
   forceRendering(currentlyVisiblePages) {
     let visiblePages = currentlyVisiblePages || this._getVisiblePages();
-    let scrollAhead = this.scrollMode === ScrollMode.HORIZONTAL ?
-      this.scroll.right : this.scroll.down;
+    let scrollAhead = (this._isScrollModeHorizontal ?
+                       this.scroll.right : this.scroll.down);
     let pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                           this._pages,
                                                           scrollAhead);
