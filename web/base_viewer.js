@@ -1035,9 +1035,18 @@ class BaseViewer {
   }
 
   _updateScrollModeClasses() {
-    const mode = this.scrollMode, { classList, } = this.viewer;
-    classList.toggle('scrollHorizontal', mode === ScrollMode.HORIZONTAL);
-    classList.toggle('scrollWrapped', mode === ScrollMode.WRAPPED);
+    const { scrollMode, viewer, } = this;
+
+    if (scrollMode === ScrollMode.HORIZONTAL) {
+      viewer.classList.add('scrollHorizontal');
+    } else {
+      viewer.classList.remove('scrollHorizontal');
+    }
+    if (scrollMode === ScrollMode.WRAPPED) {
+      viewer.classList.add('scrollWrapped');
+    } else {
+      viewer.classList.remove('scrollWrapped');
+    }
   }
 
   setSpreadMode(mode) {
