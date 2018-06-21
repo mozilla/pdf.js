@@ -181,7 +181,9 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add('removePageBorders');
     }
-    this._updateScrollModeClasses();
+    if (this.scrollMode !== ScrollMode.VERTICAL) {
+      this._updateScrollModeClasses();
+    }
   }
 
   get pagesCount() {
@@ -1018,20 +1020,26 @@ class BaseViewer {
   }
 
   setScrollMode(mode) {
-    if (mode !== this.scrollMode) {
-      this.scrollMode = mode;
-      this._updateScrollModeClasses();
-      this.eventBus.dispatch('scrollmodechanged', { mode, });
-      const pageNumber = this._currentPageNumber;
-      // Non-numeric scale modes can be sensitive to the scroll orientation.
-      // Call this before re-scrolling to the current page, to ensure that any
-      // changes in scale don't move the current page.
-      if (isNaN(this._currentScaleValue)) {
-        this._setScale(this._currentScaleValue, this.isInPresentationMode);
-      }
-      this.scrollPageIntoView({ pageNumber, });
-      this.update();
+    if (mode === this.scrollMode) {
+      return;
     }
+    if (!Number.isInteger(mode) || !Object.values(ScrollMode).includes(mode)) {
+      throw new Error(`Invalid scroll mode: ${mode}`);
+    }
+
+    this.scrollMode = mode;
+    this._updateScrollModeClasses();
+    this.eventBus.dispatch('scrollmodechanged', { mode, });
+
+    const pageNumber = this._currentPageNumber;
+    // Non-numeric scale modes can be sensitive to the scroll orientation.
+    // Call this before re-scrolling to the current page, to ensure that any
+    // changes in scale don't move the current page.
+    if (isNaN(this._currentScaleValue)) {
+      this._setScale(this._currentScaleValue, this.isInPresentationMode);
+    }
+    this.scrollPageIntoView({ pageNumber, });
+    this.update();
   }
 
   _updateScrollModeClasses() {
@@ -1050,11 +1058,16 @@ class BaseViewer {
   }
 
   setSpreadMode(mode) {
-    if (mode !== this.spreadMode) {
-      this.spreadMode = mode;
-      this.eventBus.dispatch('spreadmodechanged', { mode, });
-      this._regroupSpreads();
+    if (mode === this.spreadMode) {
+      return;
     }
+    if (!Number.isInteger(mode) || !Object.values(SpreadMode).includes(mode)) {
+      throw new Error(`Invalid spread mode: ${mode}`);
+    }
+
+    this.spreadMode = mode;
+    this.eventBus.dispatch('spreadmodechanged', { mode, });
+    this._regroupSpreads();
   }
 
   _regroupSpreads() {}
