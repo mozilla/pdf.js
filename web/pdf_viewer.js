@@ -87,6 +87,26 @@ class PDFViewer extends BaseViewer {
     });
   }
 
+  setScrollMode(mode) {
+    if (mode === this.scrollMode) {
+      return;
+    }
+    super.setScrollMode(mode);
+
+    this.eventBus.dispatch('scrollmodechanged', { mode, });
+    this._updateScrollModeClasses();
+
+    const pageNumber = this._currentPageNumber;
+    // Non-numeric scale modes can be sensitive to the scroll orientation.
+    // Call this before re-scrolling to the current page, to ensure that any
+    // changes in scale don't move the current page.
+    if (isNaN(this._currentScaleValue)) {
+      this._setScale(this._currentScaleValue, this.isInPresentationMode);
+    }
+    this.scrollPageIntoView({ pageNumber, });
+    this.update();
+  }
+
   _updateScrollModeClasses() {
     const { scrollMode, viewer, } = this;
 
@@ -100,6 +120,16 @@ class PDFViewer extends BaseViewer {
     } else {
       viewer.classList.remove('scrollWrapped');
     }
+  }
+
+  setSpreadMode(mode) {
+    if (mode === this.spreadMode) {
+      return;
+    }
+    super.setSpreadMode(mode);
+
+    this.eventBus.dispatch('spreadmodechanged', { mode, });
+    this._regroupSpreads();
   }
 
   _regroupSpreads() {
