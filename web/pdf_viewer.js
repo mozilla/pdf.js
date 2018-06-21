@@ -88,13 +88,13 @@ class PDFViewer extends BaseViewer {
   }
 
   _regroupSpreads() {
-    const container = this._setDocumentViewerElement, pages = this._pages;
-    while (container.firstChild) {
-      container.firstChild.remove();
-    }
+    const viewer = this.viewer, pages = this._pages;
+    // Temporarily remove all the pages from the DOM.
+    viewer.textContent = '';
+
     if (this.spreadMode === SpreadMode.NONE) {
       for (let i = 0, iMax = pages.length; i < iMax; ++i) {
-        container.appendChild(pages[i].div);
+        viewer.appendChild(pages[i].div);
       }
     } else {
       const parity = this.spreadMode - 1;
@@ -103,10 +103,10 @@ class PDFViewer extends BaseViewer {
         if (spread === null) {
           spread = document.createElement('div');
           spread.className = 'spread';
-          container.appendChild(spread);
+          viewer.appendChild(spread);
         } else if (i % 2 === parity) {
           spread = spread.cloneNode(false);
-          container.appendChild(spread);
+          viewer.appendChild(spread);
         }
         spread.appendChild(pages[i].div);
       }
