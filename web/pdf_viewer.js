@@ -87,6 +87,21 @@ class PDFViewer extends BaseViewer {
     });
   }
 
+  _updateScrollModeClasses() {
+    const { scrollMode, viewer, } = this;
+
+    if (scrollMode === ScrollMode.HORIZONTAL) {
+      viewer.classList.add('scrollHorizontal');
+    } else {
+      viewer.classList.remove('scrollHorizontal');
+    }
+    if (scrollMode === ScrollMode.WRAPPED) {
+      viewer.classList.add('scrollWrapped');
+    } else {
+      viewer.classList.remove('scrollWrapped');
+    }
+  }
+
   _regroupSpreads() {
     const viewer = this.viewer, pages = this._pages;
     // Temporarily remove all the pages from the DOM.

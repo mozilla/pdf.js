@@ -1043,18 +1043,7 @@ class BaseViewer {
   }
 
   _updateScrollModeClasses() {
-    const { scrollMode, viewer, } = this;
-
-    if (scrollMode === ScrollMode.HORIZONTAL) {
-      viewer.classList.add('scrollHorizontal');
-    } else {
-      viewer.classList.remove('scrollHorizontal');
-    }
-    if (scrollMode === ScrollMode.WRAPPED) {
-      viewer.classList.add('scrollWrapped');
-    } else {
-      viewer.classList.remove('scrollWrapped');
-    }
+    // No-op in the base class.
   }
 
   setSpreadMode(mode) {
@@ -1070,7 +1059,9 @@ class BaseViewer {
     this._regroupSpreads();
   }
 
-  _regroupSpreads() {}
+  _regroupSpreads() {
+    // No-op in the base class.
+  }
 }
 
 export {
