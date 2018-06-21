@@ -14,6 +14,7 @@
  */
 
 import { Lexer, Linearization } from '../../src/core/parser';
+import { FormatError } from '../../src/shared/util';
 import { Name } from '../../src/core/primitives';
 import { StringStream } from '../../src/core/stream';
 
@@ -58,11 +59,32 @@ describe('parser', function() {
 
     it('should ignore line-breaks between operator and digit in number',
         function() {
-      var input = new StringStream('-\r\n205.88');
-      var lexer = new Lexer(input);
-      var result = lexer.getNumber();
+      let minusInput = new StringStream('-\r\n205.88');
+      let minusLexer = new Lexer(minusInput);
 
-      expect(result).toEqual(-205.88);
+      expect(minusLexer.getNumber()).toEqual(-205.88);
+
+      let plusInput = new StringStream('+\r\n205.88');
+      let plusLexer = new Lexer(plusInput);
+
+      expect(plusLexer.getNumber()).toEqual(205.88);
+    });
+
+    it('should treat a single decimal point as zero', function() {
+      let input = new StringStream('.');
+      let lexer = new Lexer(input);
+
+      expect(lexer.getNumber()).toEqual(0);
+
+      let numbers = ['..', '-.', '+.', '-\r\n.', '+\r\n.'];
+      for (let number of numbers) {
+        let input = new StringStream(number);
+        let lexer = new Lexer(input);
+
+        expect(function() {
+          return lexer.getNumber();
+        }).toThrowError(FormatError, /^Invalid number:\s/);
+      }
     });
 
     it('should handle glued numbers and operators', function() {

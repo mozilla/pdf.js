@@ -855,7 +855,16 @@ var XRef = (function XRefClosure() {
       }
       trailerDict.assignXref(this);
       this.trailer = trailerDict;
-      var encrypt = trailerDict.get('Encrypt');
+
+      let encrypt;
+      try {
+        encrypt = trailerDict.get('Encrypt');
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        warn(`XRef.parse - Invalid "Encrypt" reference: "${ex}".`);
+      }
       if (isDict(encrypt)) {
         var ids = trailerDict.get('ID');
         var fileId = (ids && ids.length) ? ids[0] : '';
@@ -868,8 +877,22 @@ var XRef = (function XRefClosure() {
                                                   this.pdfManager.password);
       }
 
-      // get the root dictionary (catalog) object
-      if (!(this.root = trailerDict.get('Root'))) {
+      // Get the root dictionary (catalog) object, and do some basic validation.
+      let root;
+      try {
+        root = trailerDict.get('Root');
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        warn(`XRef.parse - Invalid "Root" reference: "${ex}".`);
+      }
+      if (isDict(root) && root.has('Pages')) {
+        this.root = root;
+      } else {
+        if (!recoveryMode) {
+          throw new XRefParseException();
+        }
         throw new FormatError('Invalid root reference');
       }
     },
@@ -1208,7 +1231,7 @@ var XRef = (function XRefClosure() {
                 break;
               }
             }
-            startPos += contentLength;
+            startPos = endPos;
           }
           let content = buffer.subarray(position, position + contentLength);
 
@@ -1237,7 +1260,7 @@ var XRef = (function XRefClosure() {
         this.readXRef(/* recoveryMode */ true);
       }
       // finding main trailer
-      var dict;
+      let trailerDict;
       for (i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
         var parser = new Parser(new Lexer(stream), /* allowStreams = */ true,
@@ -1247,18 +1270,33 @@ var XRef = (function XRefClosure() {
           continue;
         }
         // read the trailer dictionary
-        dict = parser.getObj();
+        let dict = parser.getObj();
         if (!isDict(dict)) {
+          continue;
+        }
+        // Do some basic validation of the trailer/root dictionary candidate.
+        let rootDict;
+        try {
+          rootDict = dict.get('Root');
+        } catch (ex) {
+          if (ex instanceof MissingDataException) {
+            throw ex;
+          }
+          continue;
+        }
+        if (!isDict(rootDict) || !rootDict.has('Pages')) {
           continue;
         }
         // taking the first one with 'ID'
         if (dict.has('ID')) {
           return dict;
         }
+        // The current dictionary is a candidate, but continue searching.
+        trailerDict = dict;
       }
-      // no tailer with 'ID', taking last one (if exists)
-      if (dict) {
-        return dict;
+      // No trailer with 'ID', taking last one (if exists).
+      if (trailerDict) {
+        return trailerDict;
       }
       // nothing helps
       throw new InvalidPDFException('Invalid PDF structure');
