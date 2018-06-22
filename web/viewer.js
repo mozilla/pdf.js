@@ -212,3 +212,17 @@ if (document.readyState === 'interactive' ||
 } else {
   document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 }
+
+document.addEventListener('textlayerrendered', function (e) {
+  if (e.detail.pageNumber === PDFViewerApplication.page) {
+    print();
+    if (isIOS() && pdfjsLib.progress == 100) {
+      document.getElementById('printCancel').innerHTML = 'Done';
+    }
+  }
+}, true);
+
+function isIOS() { 
+  let iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  return iOS; 
+}
