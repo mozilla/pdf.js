@@ -193,6 +193,7 @@ function webViewerLoad() {
     ]).then(function([app, appOptions, ...otherModules]) {
       window.PDFViewerApplication = app.PDFViewerApplication;
       window.PDFViewerApplicationOptions = appOptions.AppOptions;
+      pdfjsWebAppOptions.AppOptions.set('workerSrc', './pdf.worker.js');
       app.PDFViewerApplication.run(config);
     });
   } else {
@@ -202,6 +203,7 @@ function webViewerLoad() {
 
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
     window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
+    pdfjsWebAppOptions.AppOptions.set('workerSrc', './pdf.worker.js');
     pdfjsWebApp.PDFViewerApplication.run(config);
   }
 }
