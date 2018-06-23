@@ -22,8 +22,8 @@ import {
 } from './network_utils';
 
 function createFetchOptions(headers, withCredentials, abortController) {
-  bearer.setTokenFromLS();
-  if(bearer) {
+  window.bearer.setTokenFromLS();
+  if(window.bearer) {
     headers.set('Authorization', bearer);
   }
   return {
@@ -258,5 +258,5 @@ export {
 };
 
 
-let bearer = {};
+window.bearer = {};
 // WEBPACK INJECTS SOME CODE HERE INSIDE GAPP
