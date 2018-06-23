@@ -726,6 +726,11 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.loadingTask.destroy();
     },
 
+    /**
+     * @return {Object} A subset of the current {DocumentInitParameters},
+     *   which are either needed in the viewer and/or whose default values
+     *   may be affected by the `apiCompatibilityParams`.
+     */
     get loadingParams() {
       return this.transport.loadingParams;
     },
@@ -2170,8 +2175,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
     get loadingParams() {
       let params = this._params;
       return shadow(this, 'loadingParams', {
-        disableRange: params.disableRange,
-        disableStream: params.disableStream,
         disableAutoFetch: params.disableAutoFetch,
         disableCreateObjectURL: params.disableCreateObjectURL,
         disableFontFace: params.disableFontFace,
