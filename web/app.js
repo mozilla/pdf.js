@@ -319,11 +319,9 @@ let PDFViewerApplication = {
         let enabled = hashParams['pdfbug'].split(',');
         waitOn.push(loadAndEnablePDFBug(enabled));
       }
-      // Locale can be changed only when special debugging flags is present in
-      // the hash section of the URL, or development version of viewer is used.
-      // It is not possible to change locale for Firefox extension builds.
-      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ||
-           !PDFJSDev.test('FIREFOX || MOZCENTRAL')) && 'locale' in hashParams) {
+      // It is not possible to change locale for the (various) extension builds.
+      if ((typeof PDFJSDev === 'undefined' ||
+           PDFJSDev.test('!PRODUCTION || GENERIC')) && 'locale' in hashParams) {
         AppOptions.set('locale', hashParams['locale']);
       }
     }
