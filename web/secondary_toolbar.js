@@ -190,23 +190,41 @@ class SecondaryToolbar {
 
   _bindScrollModeListener(buttons) {
     this.eventBus.on('scrollmodechanged', function(evt) {
-      buttons.scrollVerticalButton.classList.toggle('toggled',
-        evt.mode === ScrollMode.VERTICAL);
-      buttons.scrollHorizontalButton.classList.toggle('toggled',
-        evt.mode === ScrollMode.HORIZONTAL);
-      buttons.scrollWrappedButton.classList.toggle('toggled',
-        evt.mode === ScrollMode.WRAPPED);
+      buttons.scrollVerticalButton.classList.remove('toggled');
+      buttons.scrollHorizontalButton.classList.remove('toggled');
+      buttons.scrollWrappedButton.classList.remove('toggled');
+
+      switch (evt.mode) {
+        case ScrollMode.VERTICAL:
+          buttons.scrollVerticalButton.classList.add('toggled');
+          break;
+        case ScrollMode.HORIZONTAL:
+          buttons.scrollHorizontalButton.classList.add('toggled');
+          break;
+        case ScrollMode.WRAPPED:
+          buttons.scrollWrappedButton.classList.add('toggled');
+          break;
+      }
     });
   }
 
   _bindSpreadModeListener(buttons) {
     this.eventBus.on('spreadmodechanged', function(evt) {
-      buttons.spreadNoneButton.classList.toggle('toggled',
-        evt.mode === SpreadMode.NONE);
-      buttons.spreadOddButton.classList.toggle('toggled',
-        evt.mode === SpreadMode.ODD);
-      buttons.spreadEvenButton.classList.toggle('toggled',
-        evt.mode === SpreadMode.EVEN);
+      buttons.spreadNoneButton.classList.remove('toggled');
+      buttons.spreadOddButton.classList.remove('toggled');
+      buttons.spreadEvenButton.classList.remove('toggled');
+
+      switch (evt.mode) {
+        case SpreadMode.NONE:
+          buttons.spreadNoneButton.classList.add('toggled');
+          break;
+        case SpreadMode.ODD:
+          buttons.spreadOddButton.classList.add('toggled');
+          break;
+        case SpreadMode.EVEN:
+          buttons.spreadEvenButton.classList.add('toggled');
+          break;
+      }
     });
   }
 

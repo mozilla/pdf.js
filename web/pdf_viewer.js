@@ -23,7 +23,7 @@ class PDFViewer extends BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, }) {
-    if (!pageSpot) {
+    if (!pageSpot && !this.isInPresentationMode) {
       const left = pageDiv.offsetLeft + pageDiv.clientLeft;
       const right = left + pageDiv.clientWidth;
       const { scrollLeft, clientWidth, } = this.container;
@@ -87,14 +87,72 @@ class PDFViewer extends BaseViewer {
     });
   }
 
-  _regroupSpreads() {
-    const container = this._setDocumentViewerElement, pages = this._pages;
-    while (container.firstChild) {
-      container.firstChild.remove();
+  get _isScrollModeHorizontal() {
+    // Used to ensure that pre-rendering of the next/previous page works
+    // correctly, since Scroll/Spread modes are ignored in Presentation Mode.
+    return (this.isInPresentationMode ?
+            false : this.scrollMode === ScrollMode.HORIZONTAL);
+  }
+
+  setScrollMode(mode) {
+    if (mode === this.scrollMode) {
+      return;
     }
+    super.setScrollMode(mode);
+
+    this.eventBus.dispatch('scrollmodechanged', { mode, });
+    this._updateScrollModeClasses();
+
+    if (!this.pdfDocument) {
+      return;
+    }
+    const pageNumber = this._currentPageNumber;
+    // Non-numeric scale modes can be sensitive to the scroll orientation.
+    // Call this before re-scrolling to the current page, to ensure that any
+    // changes in scale don't move the current page.
+    if (isNaN(this._currentScaleValue)) {
+      this._setScale(this._currentScaleValue, true);
+    }
+    this.scrollPageIntoView({ pageNumber, });
+    this.update();
+  }
+
+  _updateScrollModeClasses() {
+    const { scrollMode, viewer, } = this;
+
+    if (scrollMode === ScrollMode.HORIZONTAL) {
+      viewer.classList.add('scrollHorizontal');
+    } else {
+      viewer.classList.remove('scrollHorizontal');
+    }
+    if (scrollMode === ScrollMode.WRAPPED) {
+      viewer.classList.add('scrollWrapped');
+    } else {
+      viewer.classList.remove('scrollWrapped');
+    }
+  }
+
+  setSpreadMode(mode) {
+    if (mode === this.spreadMode) {
+      return;
+    }
+    super.setSpreadMode(mode);
+
+    this.eventBus.dispatch('spreadmodechanged', { mode, });
+    this._regroupSpreads();
+  }
+
+  _regroupSpreads() {
+    if (!this.pdfDocument) {
+      return;
+    }
+    const viewer = this.viewer, pages = this._pages;
+    // Temporarily remove all the pages from the DOM.
+    viewer.textContent = '';
+
     if (this.spreadMode === SpreadMode.NONE) {
       for (let i = 0, iMax = pages.length; i < iMax; ++i) {
-        container.appendChild(pages[i].div);
+        viewer.appendChild(pages[i].div);
       }
     } else {
       const parity = this.spreadMode - 1;
@@ -103,10 +161,10 @@ class PDFViewer extends BaseViewer {
         if (spread === null) {
           spread = document.createElement('div');
           spread.className = 'spread';
-          container.appendChild(spread);
+          viewer.appendChild(spread);
         } else if (i % 2 === parity) {
           spread = spread.cloneNode(false);
-          container.appendChild(spread);
+          viewer.appendChild(spread);
         }
         spread.appendChild(pages[i].div);
       }

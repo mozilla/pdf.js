@@ -181,7 +181,9 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add('removePageBorders');
     }
-    this._updateScrollModeClasses();
+    if (this.scrollMode !== ScrollMode.VERTICAL) {
+      this._updateScrollModeClasses();
+    }
   }
 
   get pagesCount() {
@@ -595,11 +597,11 @@ class BaseViewer {
       if (!currentPage) {
         return;
       }
-      let hPadding = (this.isInPresentationMode || this.removePageBorders) ?
-        0 : SCROLLBAR_PADDING;
-      let vPadding = (this.isInPresentationMode || this.removePageBorders) ?
-        0 : VERTICAL_PADDING;
-      if (this.scrollMode === ScrollMode.HORIZONTAL) {
+      const noPadding = (this.isInPresentationMode || this.removePageBorders);
+      let hPadding = noPadding ? 0 : SCROLLBAR_PADDING;
+      let vPadding = noPadding ? 0 : VERTICAL_PADDING;
+
+      if (!noPadding && this._isScrollModeHorizontal) {
         const temp = hPadding;
         hPadding = vPadding;
         vPadding = temp;
@@ -832,6 +834,10 @@ class BaseViewer {
     this.container.focus();
   }
 
+  get _isScrollModeHorizontal() {
+    throw new Error('Not implemented: _isScrollModeHorizontal');
+  }
+
   get isInPresentationMode() {
     return this.presentationModeState === PresentationModeState.FULLSCREEN;
   }
@@ -904,8 +910,8 @@ class BaseViewer {
 
   forceRendering(currentlyVisiblePages) {
     let visiblePages = currentlyVisiblePages || this._getVisiblePages();
-    let scrollAhead = this.scrollMode === ScrollMode.HORIZONTAL ?
-      this.scroll.right : this.scroll.down;
+    let scrollAhead = (this._isScrollModeHorizontal ?
+                       this.scroll.right : this.scroll.down);
     let pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                           this._pages,
                                                           scrollAhead);
@@ -1018,37 +1024,26 @@ class BaseViewer {
   }
 
   setScrollMode(mode) {
-    if (mode !== this.scrollMode) {
-      this.scrollMode = mode;
-      this._updateScrollModeClasses();
-      this.eventBus.dispatch('scrollmodechanged', { mode, });
-      const pageNumber = this._currentPageNumber;
-      // Non-numeric scale modes can be sensitive to the scroll orientation.
-      // Call this before re-scrolling to the current page, to ensure that any
-      // changes in scale don't move the current page.
-      if (isNaN(this._currentScaleValue)) {
-        this._setScale(this._currentScaleValue, this.isInPresentationMode);
-      }
-      this.scrollPageIntoView({ pageNumber, });
-      this.update();
+    if (!Number.isInteger(mode) || !Object.values(ScrollMode).includes(mode)) {
+      throw new Error(`Invalid scroll mode: ${mode}`);
     }
+    this.scrollMode = mode;
   }
 
   _updateScrollModeClasses() {
-    const mode = this.scrollMode, { classList, } = this.viewer;
-    classList.toggle('scrollHorizontal', mode === ScrollMode.HORIZONTAL);
-    classList.toggle('scrollWrapped', mode === ScrollMode.WRAPPED);
+    // No-op in the base class.
   }
 
   setSpreadMode(mode) {
-    if (mode !== this.spreadMode) {
-      this.spreadMode = mode;
-      this.eventBus.dispatch('spreadmodechanged', { mode, });
-      this._regroupSpreads();
+    if (!Number.isInteger(mode) || !Object.values(SpreadMode).includes(mode)) {
+      throw new Error(`Invalid spread mode: ${mode}`);
     }
+    this.spreadMode = mode;
   }
 
-  _regroupSpreads() {}
+  _regroupSpreads() {
+    // No-op in the base class.
+  }
 }
 
 export {
