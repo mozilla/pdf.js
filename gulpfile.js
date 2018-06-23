@@ -78,7 +78,7 @@ var AUTOPREFIXER_CONFIG = {
     'Firefox >= 52', // Last supported on Windows XP
     'Firefox ESR',
     'IE >= 11',
-    'Safari >= 8',
+    'Safari >= 9',
     '> 0.5%',
     'not dead',
   ],

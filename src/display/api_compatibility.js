@@ -20,10 +20,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   const userAgent =
     (typeof navigator !== 'undefined' && navigator.userAgent) || '';
   const isIE = /Trident/.test(userAgent);
-  const isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
   const isIOSChrome = /CriOS/.test(userAgent);
-  const isSafari = /Safari\//.test(userAgent) &&
-                   !/(Chrome\/|Android\s)/.test(userAgent);
 
   // Checks if possible to use URL.createObjectURL()
   // Support: IE, Chrome on iOS
@@ -32,16 +29,6 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     // createObjectURL(), see issues #3977 and #8081.
     if (isIE || isIOSChrome) {
       compatibilityParams.disableCreateObjectURL = true;
-    }
-  })();
-
-  // Support: Safari 6.0+, iOS
-  (function checkRangeRequests() {
-    // Safari has issues with cached range requests, see issue #3260.
-    // Last tested with version 6.0.4.
-    if (isSafari || isIOS) {
-      compatibilityParams.disableRange = true;
-      compatibilityParams.disableStream = true;
     }
   })();
 
