@@ -103,6 +103,9 @@ class PDFViewer extends BaseViewer {
     this.eventBus.dispatch('scrollmodechanged', { mode, });
     this._updateScrollModeClasses();
 
+    if (!this.pdfDocument) {
+      return;
+    }
     const pageNumber = this._currentPageNumber;
     // Non-numeric scale modes can be sensitive to the scroll orientation.
     // Call this before re-scrolling to the current page, to ensure that any
@@ -140,6 +143,9 @@ class PDFViewer extends BaseViewer {
   }
 
   _regroupSpreads() {
+    if (!this.pdfDocument) {
+      return;
+    }
     const viewer = this.viewer, pages = this._pages;
     // Temporarily remove all the pages from the DOM.
     viewer.textContent = '';
