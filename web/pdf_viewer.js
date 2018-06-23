@@ -111,7 +111,7 @@ class PDFViewer extends BaseViewer {
     // Call this before re-scrolling to the current page, to ensure that any
     // changes in scale don't move the current page.
     if (isNaN(this._currentScaleValue)) {
-      this._setScale(this._currentScaleValue, this.isInPresentationMode);
+      this._setScale(this._currentScaleValue, true);
     }
     this.scrollPageIntoView({ pageNumber, });
     this.update();
