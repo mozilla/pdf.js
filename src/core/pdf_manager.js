@@ -15,7 +15,7 @@
 
 import {
   createPromiseCapability, createValidAbsoluteUrl, MissingDataException,
-  NotImplementedException, shadow, unreachable, Util, warn
+  shadow, unreachable, Util, warn
 } from '../shared/util';
 import { ChunkedStreamManager } from './chunked_stream';
 import { PDFDocument } from './document';
@@ -49,7 +49,7 @@ var BasePdfManager = (function BasePdfManagerClosure() {
     },
 
     onLoadedStream: function BasePdfManager_onLoadedStream() {
-      throw new NotImplementedException();
+      unreachable('Abstract method `onLoadedStream` called');
     },
 
     ensureDoc: function BasePdfManager_ensureDoc(prop, args) {
@@ -73,19 +73,19 @@ var BasePdfManager = (function BasePdfManagerClosure() {
     },
 
     ensure: function BasePdfManager_ensure(obj, prop, args) {
-      return new NotImplementedException();
+      unreachable('Abstract method `ensure` called');
     },
 
     requestRange: function BasePdfManager_requestRange(begin, end) {
-      return new NotImplementedException();
+      unreachable('Abstract method `requestRange` called');
     },
 
     requestLoadedStream: function BasePdfManager_requestLoadedStream() {
-      return new NotImplementedException();
+      unreachable('Abstract method `requestLoadedStream` called');
     },
 
     sendProgressiveData: function BasePdfManager_sendProgressiveData(chunk) {
-      return new NotImplementedException();
+      unreachable('Abstract method `sendProgressiveData` called');
     },
 
     updatePassword: function BasePdfManager_updatePassword(password) {
@@ -93,7 +93,7 @@ var BasePdfManager = (function BasePdfManagerClosure() {
     },
 
     terminate: function BasePdfManager_terminate() {
-      return new NotImplementedException();
+      unreachable('Abstract method `terminate` called');
     },
   };
 

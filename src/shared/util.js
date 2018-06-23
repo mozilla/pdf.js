@@ -443,18 +443,6 @@ var UnexpectedResponseException =
   return UnexpectedResponseException;
 })();
 
-var NotImplementedException = (function NotImplementedExceptionClosure() {
-  function NotImplementedException(msg) {
-    this.message = msg;
-  }
-
-  NotImplementedException.prototype = new Error();
-  NotImplementedException.prototype.name = 'NotImplementedException';
-  NotImplementedException.constructor = NotImplementedException;
-
-  return NotImplementedException;
-})();
-
 var MissingDataException = (function MissingDataExceptionClosure() {
   function MissingDataException(begin, end) {
     this.begin = begin;
@@ -1037,7 +1025,6 @@ export {
   MissingDataException,
   MissingPDFException,
   NativeImageDecoding,
-  NotImplementedException,
   PasswordException,
   PasswordResponses,
   StreamType,
