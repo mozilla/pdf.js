@@ -193,11 +193,15 @@ function webViewerLoad() {
     ]).then(function([app, appOptions, ...otherModules]) {
       window.PDFViewerApplication = app.PDFViewerApplication;
       window.PDFViewerApplicationOptions = appOptions.AppOptions;
+
+      // COMMENT THIS LINE FOR PDFJS GULP SERVER
       pdfjsWebAppOptions.AppOptions.set('workerSrc', './pdf.worker.js');
       app.PDFViewerApplication.run(config);
     });
   } else {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+      
+      // COMMENT THIS LINE FOR PDFJS GULP SERVER
       pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
     }
 
