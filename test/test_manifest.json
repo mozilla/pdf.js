@@ -126,14 +126,22 @@
       "file": "pdfs/issue2391-1.pdf",
       "md5": "25ae9cb959612e7b343b55da63af2716",
       "rounds": 1,
-      "lastPage": 1,
-      "type": "load"
+      "type": "eq"
     },
     {  "id": "issue2391-2",
       "file": "pdfs/issue2391-2.pdf",
       "md5": "7e68756d11021a087383eaac95ba45dd",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "bug1443140",
+       "file": "pdfs/bug1443140.pdf",
+       "md5": "8f9347b0d5620537850b24b8385b0982",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 4,
+       "lastPage": 4,
+       "type": "eq"
     },
     {  "id": "issue2531",
       "file": "pdfs/issue2531.pdf",
