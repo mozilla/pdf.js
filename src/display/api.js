@@ -1037,6 +1037,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           lastChunk: false,
         };
 
+        this._stats.time('Page Request');
         this.transport.messageHandler.send('RenderPageRequest', {
           pageIndex: this.pageIndex,
           intent: renderingIntent,
