@@ -21,7 +21,7 @@ import {
   OPS, PasswordException, PasswordResponses, StreamType, stringToBytes
 } from '../../src/shared/util';
 import {
-  DOMCanvasFactory, RenderingCancelledException
+  DOMCanvasFactory, RenderingCancelledException, StatTimer
 } from '../../src/display/dom_utils';
 import {
   getDocument, PDFDataRangeTransport, PDFDocumentProxy, PDFPageProxy, PDFWorker
@@ -831,7 +831,7 @@ describe('api', function() {
         done.fail(reason);
       });
     });
-    it('gets stats', function(done) {
+    it('gets document stats', function(done) {
       var promise = doc.getStats();
       promise.then(function (stats) {
         expect(stats).toEqual({ streamTypes: [], fontTypes: [], });
@@ -1141,7 +1141,7 @@ describe('api', function() {
         done.fail(reason);
       });
     });
-    it('gets stats after parsing page', function (done) {
+    it('gets document stats after parsing page', function(done) {
       var promise = page.getOperatorList().then(function () {
         return pdfDocument.getStats();
       });
@@ -1158,6 +1158,77 @@ describe('api', function() {
       }).catch(function (reason) {
         done.fail(reason);
       });
+    });
+
+    it('gets page stats after parsing page, without `pdfBug` set',
+        function(done) {
+      page.getOperatorList().then((opList) => {
+        return page.stats;
+      }).then((stats) => {
+        expect(stats).toEqual(null);
+        done();
+      }, done.fail);
+    });
+    it('gets page stats after parsing page, with `pdfBug` set', function(done) {
+      let loadingTask = getDocument(
+        buildGetDocumentParams(basicApiFileName, { pdfBug: true, }));
+
+      loadingTask.promise.then((pdfDoc) => {
+        return pdfDoc.getPage(1).then((pdfPage) => {
+          return pdfPage.getOperatorList().then((opList) => {
+            return pdfPage.stats;
+          });
+        });
+      }).then((stats) => {
+        expect(stats instanceof StatTimer).toEqual(true);
+        expect(stats.times.length).toEqual(1);
+
+        let [statEntry] = stats.times;
+        expect(statEntry.name).toEqual('Page Request');
+        expect(statEntry.end - statEntry.start).toBeGreaterThan(0);
+
+        loadingTask.destroy().then(done);
+      }, done.fail);
+    });
+    it('gets page stats after rendering page, with `pdfBug` set',
+        function(done) {
+      if (isNodeJS()) {
+        pending('TODO: Support Canvas testing in Node.js.');
+      }
+      let loadingTask = getDocument(
+        buildGetDocumentParams(basicApiFileName, { pdfBug: true, }));
+      let canvasAndCtx;
+
+      loadingTask.promise.then((pdfDoc) => {
+        return pdfDoc.getPage(1).then((pdfPage) => {
+          let viewport = pdfPage.getViewport(1);
+          canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+          let renderTask = pdfPage.render({
+            canvasContext: canvasAndCtx.context,
+            viewport,
+          });
+          return renderTask.promise.then(() => {
+            return pdfPage.stats;
+          });
+        });
+      }).then((stats) => {
+        expect(stats instanceof StatTimer).toEqual(true);
+        expect(stats.times.length).toEqual(3);
+
+        let [statEntryOne, statEntryTwo, statEntryThree] = stats.times;
+        expect(statEntryOne.name).toEqual('Page Request');
+        expect(statEntryOne.end - statEntryOne.start).toBeGreaterThan(0);
+
+        expect(statEntryTwo.name).toEqual('Rendering');
+        expect(statEntryTwo.end - statEntryTwo.start).toBeGreaterThan(0);
+
+        expect(statEntryThree.name).toEqual('Overall');
+        expect(statEntryThree.end - statEntryThree.start).toBeGreaterThan(0);
+
+        CanvasFactory.destroy(canvasAndCtx);
+        loadingTask.destroy().then(done);
+      }, done.fail);
     });
 
     it('cancels rendering of page', function(done) {
