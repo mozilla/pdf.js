@@ -76,7 +76,7 @@ function createResponseStatusError(status, url) {
 }
 
 function validateResponseStatus(status) {
-  return status === 200 || status === 206;
+  return status === 200 || status === 201 || status === 206;
 }
 
 export {

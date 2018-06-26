@@ -53,7 +53,7 @@ class PDFNodeStream {
     // Check if url refers to filesystem.
     this.isFsUrl = this.url.protocol === 'file:';
     this.httpHeaders = (this.isHttp && source.httpHeaders) || {};
-
+    
     this._fullRequest = null;
     this._rangeRequestReaders = [];
   }
