@@ -22,6 +22,10 @@ import {
 } from './network_utils';
 
 function createFetchOptions(headers, withCredentials, abortController) {
+  if(bearer && bearer.setTokenFromLS) {
+    bearer.setTokenFromLS();
+    headers.set('Authorization', bearer.token);
+  }
   return {
     method: 'GET',
     headers,
@@ -37,7 +41,6 @@ class PDFFetchStream {
     this.source = source;
     this.isHttp = /^https?:/i.test(source.url);
     this.httpHeaders = (this.isHttp && source.httpHeaders) || {};
-
     this._fullRequestReader = null;
     this._rangeRequestReaders = [];
   }
@@ -97,8 +100,8 @@ class PDFFetchStreamReader {
     }
 
     let url = source.url;
-    fetch(url, createFetchOptions(this._headers, this._withCredentials,
-        this._abortController)).then((response) => {
+    let headers = createFetchOptions(this._headers, this._withCredentials, this._abortController);
+    fetch(url, headers).then((response) => {
       if (!validateResponseStatus(response.status)) {
         throw createResponseStatusError(response.status, url);
       }
@@ -121,7 +124,6 @@ class PDFFetchStreamReader {
       this._contentLength = suggestedLength || this._contentLength;
 
       this._filename = extractFilenameFromHeader(getResponseHeader);
-
       // We need to stop reading when range is supported and streaming is
       // disabled.
       if (!this._isStreamingSupported && this._isRangeSupported) {
@@ -209,6 +211,7 @@ class PDFFetchStreamRangeReader {
     let url = source.url;
     fetch(url, createFetchOptions(this._headers, this._withCredentials,
         this._abortController)).then((response) => {
+          debugger;
       if (!validateResponseStatus(response.status)) {
         throw createResponseStatusError(response.status, url);
       }
@@ -252,3 +255,7 @@ class PDFFetchStreamRangeReader {
 export {
   PDFFetchStream,
 };
+
+
+window.bearer = {};
+// WEBPACK INJECTS SOME CODE HERE INSIDE GAPP

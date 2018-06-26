@@ -159,7 +159,6 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
     this._docBaseUrl = docBaseUrl;
     this.msgHandler = args.msgHandler;
     this.evaluatorOptions = evaluatorOptions;
-
     var params = {
       msgHandler: args.msgHandler,
       url: args.url,

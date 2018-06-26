@@ -1,0 +1,4 @@
+# Ignore everything:
+*
+# Except for the build directory:
+!build/**/*
