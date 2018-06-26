@@ -173,21 +173,44 @@ PDFPrintService.prototype = {
   },
 
   performPrint() {
-    this.throwIfInactive();
-    return new Promise((resolve) => {
-      // Push window.print in the macrotask queue to avoid being affected by
-      // the deprecation of running print() code in a microtask, see
-      // https://github.com/mozilla/pdf.js/issues/7547.
-      setTimeout(() => {
+    function isIOS() { 
+      let iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      return iOS; 
+    }
+    if(isIOS()) {
+      this.throwIfInactive();
+      return new Promise(function (resolve) {
+       setTimeout(function () {
         if (!this.active) {
-          resolve();
-          return;
+         resolve();
+         return;
         }
         print.call(window);
-        // Delay promise resolution in case print() was not synchronous.
-        setTimeout(resolve, 20);  // Tidy-up.
-      }, 0);
-    });
+        var printEvent = window.matchMedia('print');
+        printEvent.addListener(function(printEnd) {
+          if (!printEnd.matches) {
+            resolve();
+          };
+        });
+       }.bind(this), 0);
+      }.bind(this));
+    } else {
+      this.throwIfInactive();
+      return new Promise((resolve) => {
+        // Push window.print in the macrotask queue to avoid being affected by
+        // the deprecation of running print() code in a microtask, see
+        // https://github.com/mozilla/pdf.js/issues/7547.
+        setTimeout(() => {
+          if (!this.active) {
+            resolve();
+            return;
+          }
+          print.call(window);
+          // Delay promise resolution in case print() was not synchronous.
+          setTimeout(resolve, 20);  // Tidy-up.
+        }, 0);
+      });
+    }
   },
 
   get active() {
