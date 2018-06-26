@@ -193,15 +193,22 @@ function webViewerLoad() {
     ]).then(function([app, appOptions, ...otherModules]) {
       window.PDFViewerApplication = app.PDFViewerApplication;
       window.PDFViewerApplicationOptions = appOptions.AppOptions;
+
+      if(pdfjsWebAppOptions) {
+        pdfjsWebAppOptions.AppOptions.set('workerSrc', './pdf.worker.js');
+      }
       app.PDFViewerApplication.run(config);
     });
   } else {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
-      pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
+      if(pdfjsWebAppOptions) {
+        pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
+      }
     }
 
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
     window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
+    pdfjsWebAppOptions.AppOptions.set('workerSrc', './pdf.worker.js');
     pdfjsWebApp.PDFViewerApplication.run(config);
   }
 }
@@ -211,4 +218,18 @@ if (document.readyState === 'interactive' ||
   webViewerLoad();
 } else {
   document.addEventListener('DOMContentLoaded', webViewerLoad, true);
+}
+
+document.addEventListener('textlayerrendered', function (e) {
+  if (e.detail.pageNumber === PDFViewerApplication.page) {
+    print();
+    if (isIOS() && pdfjsLib.progress == 100) {
+      document.getElementById('printCancel').innerHTML = 'Done';
+    }
+  }
+}, true);
+
+function isIOS() { 
+  let iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  return iOS; 
 }
