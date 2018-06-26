@@ -201,7 +201,6 @@ function webViewerLoad() {
     });
   } else {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
-      
       if(pdfjsWebAppOptions) {
         pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
       }

@@ -225,7 +225,7 @@ function getDocument(src) {
         'Invalid parameter object: need either .data, .range or .url');
     }
     if(window['env']) {
-      source = windowEnv.api_host + '/doc-doc/v1/documents/' + src.url + '/export/pdf/latest';
+      source = 'https://' + windowEnv.api_host + '/doc-doc/v1/documents/' + src.url + '/export/pdf/latest';
     } else {
       source = src;
     }
