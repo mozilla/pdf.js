@@ -1029,17 +1029,18 @@ let PDFViewerApplication = {
       Promise.all([storePromise, pageModePromise]).then(
           ([values = {}, pageMode]) => {
         // Initialize the default values, from user preferences.
-        let hash = AppOptions.get('defaultZoomValue') ?
-          ('zoom=' + AppOptions.get('defaultZoomValue')) : null;
+        const zoom = AppOptions.get('defaultZoomValue');
+        let hash = zoom ? `zoom=${zoom}` : null;
+
         let rotation = null;
         let sidebarView = AppOptions.get('sidebarViewOnLoad');
         let scrollMode = AppOptions.get('scrollModeOnLoad');
         let spreadMode = AppOptions.get('spreadModeOnLoad');
 
         if (values.page && AppOptions.get('showPreviousViewOnLoad')) {
-          hash = 'page=' + values.page +
-            '&zoom=' + (AppOptions.get('defaultZoomValue') || values.zoom) +
+          hash = 'page=' + values.page + '&zoom=' + (zoom || values.zoom) +
             ',' + values.scrollLeft + ',' + values.scrollTop;
+
           rotation = parseInt(values.rotation, 10);
           sidebarView = sidebarView || (values.sidebarView | 0);
           if (values.scrollMode !== null) {
