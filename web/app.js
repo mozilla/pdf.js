@@ -48,7 +48,8 @@ import { Toolbar } from './toolbar';
 import { ViewHistory } from './view_history';
 
 const DEFAULT_SCALE_DELTA = 1.1;
-const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
+const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
+const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 
 const DefaultExternalServices = {
   updateFindControlState(data) {},
@@ -1074,10 +1075,20 @@ let PDFViewerApplication = {
         if (!this.isViewerEmbedded) {
           pdfViewer.focus();
         }
-        return pagesPromise;
+
+        return Promise.race([
+          pagesPromise,
+          new Promise((resolve) => {
+            setTimeout(resolve, FORCE_PAGES_LOADED_TIMEOUT);
+          }),
+        ]);
       }).then(() => {
         // For documents with different page sizes, once all pages are resolved,
         // ensure that the correct location becomes visible on load.
+        // To reduce the risk, in very large and/or slow loading documents,
+        // that the location changes *after* the user has started interacting
+        // with the viewer, wait for either `pagesPromise` or a timeout above.
+
         if (!initialParams.bookmark && !initialParams.hash) {
           return;
         }
