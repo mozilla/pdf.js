@@ -1016,8 +1016,7 @@ let PDFViewerApplication = {
         hash: null,
       };
       let storePromise = store.getMultiple({
-        exists: false,
-        page: '1',
+        page: null,
         zoom: DEFAULT_SCALE_VALUE,
         scrollLeft: '0',
         scrollTop: '0',
@@ -1037,7 +1036,7 @@ let PDFViewerApplication = {
         let scrollMode = AppOptions.get('scrollModeOnLoad');
         let spreadMode = AppOptions.get('spreadModeOnLoad');
 
-        if (values.exists && AppOptions.get('showPreviousViewOnLoad')) {
+        if (values.page && AppOptions.get('showPreviousViewOnLoad')) {
           hash = 'page=' + values.page +
             '&zoom=' + (AppOptions.get('defaultZoomValue') || values.zoom) +
             ',' + values.scrollLeft + ',' + values.scrollTop;
@@ -1852,7 +1851,6 @@ function webViewerUpdateViewarea(evt) {
 
   if (store && PDFViewerApplication.isInitialViewSet) {
     store.setMultiple({
-      'exists': true,
       'page': location.pageNumber,
       'zoom': location.scale,
       'scrollLeft': location.left,
