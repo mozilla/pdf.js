@@ -33,11 +33,12 @@ class ViewHistory {
       let database = JSON.parse(databaseStr || '{}');
       if (!('files' in database)) {
         database.files = [];
+      } else {
+        while (database.files.length >= this.cacheSize) {
+          database.files.shift();
+        }
       }
-      if (database.files.length >= this.cacheSize) {
-        database.files.shift();
-      }
-      let index;
+      let index = -1;
       for (let i = 0, length = database.files.length; i < length; i++) {
         let branch = database.files[i];
         if (branch.fingerprint === this.fingerprint) {
@@ -45,7 +46,7 @@ class ViewHistory {
           break;
         }
       }
-      if (typeof index !== 'number') {
+      if (index === -1) {
         index = database.files.push({ fingerprint: this.fingerprint, }) - 1;
       }
       this.file = database.files[index];
