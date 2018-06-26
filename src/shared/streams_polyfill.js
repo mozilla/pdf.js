@@ -31,6 +31,17 @@ if (typeof ReadableStream !== 'undefined') {
 if (isReadableStreamSupported) {
   exports.ReadableStream = ReadableStream;
 } else {
-  exports.ReadableStream =
-    require('../../external/streams/streams-lib').ReadableStream;
+  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('IMAGE_DECODERS')) {
+    class DummyReadableStream {
+      constructor() {
+        throw new Error('The current image decoders are synchronous, ' +
+                        'hence `ReadableStream` shouldn\'t need to be ' +
+                        'polyfilled for the IMAGE_DECODERS build target.');
+      }
+    }
+    exports.ReadableStream = DummyReadableStream;
+  } else {
+    exports.ReadableStream =
+      require('../../external/streams/streams-lib').ReadableStream;
+  }
 }
