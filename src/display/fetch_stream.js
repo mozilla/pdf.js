@@ -22,9 +22,9 @@ import {
 } from './network_utils';
 
 function createFetchOptions(headers, withCredentials, abortController) {
-  window.bearer.setTokenFromLS();
-  if(window.bearer) {
-    headers.set('Authorization', bearer);
+  bearer.setTokenFromLS();
+  if(bearer) {
+    headers.set('Authorization', bearer.token);
   }
   return {
     method: 'GET',
