@@ -48,7 +48,8 @@ import { Toolbar } from './toolbar';
 import { ViewHistory } from './view_history';
 
 const DEFAULT_SCALE_DELTA = 1.1;
-const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
+const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
+const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 
 const DefaultExternalServices = {
   updateFindControlState(data) {},
@@ -1016,8 +1017,7 @@ let PDFViewerApplication = {
         hash: null,
       };
       let storePromise = store.getMultiple({
-        exists: false,
-        page: '1',
+        page: null,
         zoom: DEFAULT_SCALE_VALUE,
         scrollLeft: '0',
         scrollTop: '0',
@@ -1030,17 +1030,18 @@ let PDFViewerApplication = {
       Promise.all([storePromise, pageModePromise]).then(
           ([values = {}, pageMode]) => {
         // Initialize the default values, from user preferences.
-        let hash = AppOptions.get('defaultZoomValue') ?
-          ('zoom=' + AppOptions.get('defaultZoomValue')) : null;
+        const zoom = AppOptions.get('defaultZoomValue');
+        let hash = zoom ? `zoom=${zoom}` : null;
+
         let rotation = null;
         let sidebarView = AppOptions.get('sidebarViewOnLoad');
         let scrollMode = AppOptions.get('scrollModeOnLoad');
         let spreadMode = AppOptions.get('spreadModeOnLoad');
 
-        if (values.exists && AppOptions.get('showPreviousViewOnLoad')) {
-          hash = 'page=' + values.page +
-            '&zoom=' + (AppOptions.get('defaultZoomValue') || values.zoom) +
+        if (values.page && AppOptions.get('showPreviousViewOnLoad')) {
+          hash = 'page=' + values.page + '&zoom=' + (zoom || values.zoom) +
             ',' + values.scrollLeft + ',' + values.scrollTop;
+
           rotation = parseInt(values.rotation, 10);
           sidebarView = sidebarView || (values.sidebarView | 0);
           if (values.scrollMode !== null) {
@@ -1074,10 +1075,20 @@ let PDFViewerApplication = {
         if (!this.isViewerEmbedded) {
           pdfViewer.focus();
         }
-        return pagesPromise;
+
+        return Promise.race([
+          pagesPromise,
+          new Promise((resolve) => {
+            setTimeout(resolve, FORCE_PAGES_LOADED_TIMEOUT);
+          }),
+        ]);
       }).then(() => {
         // For documents with different page sizes, once all pages are resolved,
         // ensure that the correct location becomes visible on load.
+        // To reduce the risk, in very large and/or slow loading documents,
+        // that the location changes *after* the user has started interacting
+        // with the viewer, wait for either `pagesPromise` or a timeout above.
+
         if (!initialParams.bookmark && !initialParams.hash) {
           return;
         }
@@ -1852,7 +1863,6 @@ function webViewerUpdateViewarea(evt) {
 
   if (store && PDFViewerApplication.isInitialViewSet) {
     store.setMultiple({
-      'exists': true,
       'page': location.pageNumber,
       'zoom': location.scale,
       'scrollLeft': location.left,
