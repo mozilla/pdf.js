@@ -147,6 +147,11 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
 
 // Support: IE, Safari<8, Chrome<32
 (function checkPromise() {
+  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('IMAGE_DECODERS')) {
+    // The current image decoders are synchronous, hence `Promise` shouldn't
+    // need to be polyfilled for the IMAGE_DECODERS build target.
+    return;
+  }
   if (globalScope.Promise) {
     return;
   }
@@ -166,6 +171,11 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 (function checkURLConstructor() {
+  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('IMAGE_DECODERS')) {
+    // The current image decoders doesn't utilize the `URL` constructor, hence
+    // it shouldn't need to be polyfilled for the IMAGE_DECODERS build target.
+    return;
+  }
   // feature detect for URL constructor
   var hasWorkingUrl = false;
   try {
