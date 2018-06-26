@@ -224,8 +224,11 @@ function getDocument(src) {
       throw new Error(
         'Invalid parameter object: need either .data, .range or .url');
     }
-
-    source = src;
+    if(window['env']) {
+      source = windowEnv.api_host + '/doc-doc/v1/documents/' + src.url + '/export/pdf/latest';
+    } else {
+      source = src;
+    }
   }
 
   let params = Object.create(null);

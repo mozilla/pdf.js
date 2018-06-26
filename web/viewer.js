@@ -194,15 +194,17 @@ function webViewerLoad() {
       window.PDFViewerApplication = app.PDFViewerApplication;
       window.PDFViewerApplicationOptions = appOptions.AppOptions;
 
-      // COMMENT THIS LINE FOR PDFJS GULP SERVER
-      pdfjsWebAppOptions.AppOptions.set('workerSrc', './pdf.worker.js');
+      if(pdfjsWebAppOptions) {
+        pdfjsWebAppOptions.AppOptions.set('workerSrc', './pdf.worker.js');
+      }
       app.PDFViewerApplication.run(config);
     });
   } else {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
       
-      // COMMENT THIS LINE FOR PDFJS GULP SERVER
-      pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
+      if(pdfjsWebAppOptions) {
+        pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
+      }
     }
 
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;

@@ -22,8 +22,8 @@ import {
 } from './network_utils';
 
 function createFetchOptions(headers, withCredentials, abortController) {
-  bearer.setTokenFromLS();
-  if(bearer) {
+  if(bearer && bearer.setTokenFromLS) {
+    bearer.setTokenFromLS();
     headers.set('Authorization', bearer.token);
   }
   return {
@@ -124,7 +124,6 @@ class PDFFetchStreamReader {
       this._contentLength = suggestedLength || this._contentLength;
 
       this._filename = extractFilenameFromHeader(getResponseHeader);
-
       // We need to stop reading when range is supported and streaming is
       // disabled.
       if (!this._isStreamingSupported && this._isRangeSupported) {
