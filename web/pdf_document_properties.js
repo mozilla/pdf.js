@@ -14,8 +14,7 @@
  */
 
 import {
-  cloneObj, getPageSizeInches, getPDFFileNameFromURL, isPortraitOrientation,
-  NullL10n
+  getPageSizeInches, getPDFFileNameFromURL, isPortraitOrientation, NullL10n
 } from './ui_utils';
 import { createPromiseCapability } from 'pdfjs-lib';
 
@@ -161,7 +160,7 @@ class PDFDocumentProperties {
         if (fileSize === this.fieldData['fileSize']) {
           return; // The fileSize has already been correctly set.
         }
-        let data = cloneObj(this.fieldData);
+        let data = Object.assign(Object.create(null), this.fieldData);
         data['fileSize'] = fileSize;
 
         freezeFieldData(data);

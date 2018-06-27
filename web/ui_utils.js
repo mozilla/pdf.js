@@ -611,16 +611,6 @@ function isPortraitOrientation(size) {
   return size.width <= size.height;
 }
 
-function cloneObj(obj) {
-  let result = Object.create(null);
-  for (let i in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, i)) {
-      result[i] = obj[i];
-    }
-  }
-  return result;
-}
-
 const WaitOnType = {
   EVENT: 'event',
   TIMEOUT: 'timeout',
@@ -842,7 +832,6 @@ export {
   VERTICAL_PADDING,
   isValidRotation,
   isPortraitOrientation,
-  cloneObj,
   PresentationModeState,
   RendererType,
   TextLayerMode,
