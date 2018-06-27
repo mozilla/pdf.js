@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-import { cloneObj } from './ui_utils';
-
 let defaultPreferences = null;
 function getDefaultPreferences() {
   if (!defaultPreferences) {
@@ -60,7 +58,7 @@ class BasePreferences {
         configurable: false,
       });
 
-      this.prefs = cloneObj(defaults);
+      this.prefs = Object.assign(Object.create(null), defaults);
       return this._readFromStorage(defaults);
     }).then((prefObj) => {
       if (prefObj) {
@@ -96,7 +94,7 @@ class BasePreferences {
    */
   reset() {
     return this._initializedPromise.then(() => {
-      this.prefs = cloneObj(this.defaults);
+      this.prefs = Object.assign(Object.create(null), this.defaults);
       return this._writeToStorage(this.defaults);
     });
   }

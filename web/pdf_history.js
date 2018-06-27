@@ -14,7 +14,7 @@
  */
 
 import {
-  cloneObj, isValidRotation, parseQueryString, waitOnEventOrTimeout
+  isValidRotation, parseQueryString, waitOnEventOrTimeout
 } from './ui_utils';
 import { getGlobalEventBus } from './dom_events';
 
@@ -303,7 +303,7 @@ class PDFHistory {
     }
     let position = this._position;
     if (temporary) {
-      position = cloneObj(this._position);
+      position = Object.assign(Object.create(null), this._position);
       position.temporary = true;
     }
 
