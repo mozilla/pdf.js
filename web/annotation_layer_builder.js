@@ -35,7 +35,7 @@ class AnnotationLayerBuilder {
    */
   constructor({ pageDiv, pdfPage, linkService, downloadManager,
                 imageResourcesPath = '', renderInteractiveForms = false,
-                l10n = NullL10n, }) {
+                l10n = NullL10n, customAnnotationElements, }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
     this.linkService = linkService;
@@ -43,6 +43,7 @@ class AnnotationLayerBuilder {
     this.imageResourcesPath = imageResourcesPath;
     this.renderInteractiveForms = renderInteractiveForms;
     this.l10n = l10n;
+    this.customAnnotationElements = customAnnotationElements || {};
 
     this.div = null;
     this._cancelled = false;
@@ -67,6 +68,7 @@ class AnnotationLayerBuilder {
         renderInteractiveForms: this.renderInteractiveForms,
         linkService: this.linkService,
         downloadManager: this.downloadManager,
+        customAnnotationElements: this.customAnnotationElements,
       };
 
       if (this.div) {
@@ -106,6 +108,10 @@ class AnnotationLayerBuilder {
  * @implements IPDFAnnotationLayerFactory
  */
 class DefaultAnnotationLayerFactory {
+  constructor({ customAnnotationElements, }) {
+    this.customAnnotationElements = customAnnotationElements;
+  }
+
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
@@ -113,6 +119,7 @@ class DefaultAnnotationLayerFactory {
    *   mainly for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
+   * @param {Object} customAnnotationElements
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = '',
@@ -125,6 +132,7 @@ class DefaultAnnotationLayerFactory {
       renderInteractiveForms,
       linkService: new SimpleLinkService(),
       l10n,
+      customAnnotationElements: this.customAnnotationElements,
     });
   }
 }
