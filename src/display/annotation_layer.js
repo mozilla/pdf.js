@@ -33,79 +33,184 @@ import {
  *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  * @property {Object} svgFactory
+ * @property {Object} customElements
  */
 
 class AnnotationElementFactory {
   /**
+   * @param {customAnnotationElements} options
+   */
+  constructor(options) {
+    this.customElements = options.customAnnotationElements || {};
+  }
+
+  /**
    * @param {AnnotationElementParameters} parameters
    * @returns {AnnotationElement}
    */
-  static create(parameters) {
+  create(parameters) {
     let subtype = parameters.data.annotationType;
 
     switch (subtype) {
-      case AnnotationType.LINK:
-        return new LinkAnnotationElement(parameters);
+      case AnnotationType.LINK: {
+        let ElementConstructor =
+          this.customElements.LinkAnnotationElement || LinkAnnotationElement;
 
-      case AnnotationType.TEXT:
-        return new TextAnnotationElement(parameters);
+        return new ElementConstructor(parameters);
+      }
 
-      case AnnotationType.WIDGET:
+      case AnnotationType.TEXT: {
+        let ElementConstructor =
+          this.customElements.TextAnnotationElement || TextAnnotationElement;
+
+        return new ElementConstructor(parameters);
+      }
+
+      case AnnotationType.WIDGET: {
         let fieldType = parameters.data.fieldType;
 
         switch (fieldType) {
-          case 'Tx':
-            return new TextWidgetAnnotationElement(parameters);
-          case 'Btn':
+          case 'Tx': {
+            let ElementConstructor =
+              this.customElements.TextWidgetAnnotationElement ||
+              TextWidgetAnnotationElement;
+
+            return new ElementConstructor(parameters);
+          }
+
+          case 'Btn': {
             if (parameters.data.radioButton) {
-              return new RadioButtonWidgetAnnotationElement(parameters);
+              let ElementConstructor =
+                this.customElements.RadioButtonWidgetAnnotationElement ||
+                RadioButtonWidgetAnnotationElement;
+
+              return new ElementConstructor(parameters);
             } else if (parameters.data.checkBox) {
-              return new CheckboxWidgetAnnotationElement(parameters);
+              let ElementConstructor =
+                this.customElements.CheckboxWidgetAnnotationElement ||
+                CheckboxWidgetAnnotationElement;
+
+              return new ElementConstructor(parameters);
             }
-            return new PushButtonWidgetAnnotationElement(parameters);
-          case 'Ch':
-            return new ChoiceWidgetAnnotationElement(parameters);
+
+            let ElementConstructor =
+              this.customElements.PushButtonWidgetAnnotationElement ||
+              PushButtonWidgetAnnotationElement;
+
+            return new ElementConstructor(parameters);
+          }
+
+          case 'Ch': {
+            let ElementConstructor =
+              this.customElements.ChoiceWidgetAnnotationElement ||
+              ChoiceWidgetAnnotationElement;
+
+            return new ElementConstructor(parameters);
+          }
         }
-        return new WidgetAnnotationElement(parameters);
 
-      case AnnotationType.POPUP:
-        return new PopupAnnotationElement(parameters);
+        let ElementConstructor = this.customElements.WidgetAnnotationElement ||
+          WidgetAnnotationElement;
 
-      case AnnotationType.LINE:
-        return new LineAnnotationElement(parameters);
+        return new ElementConstructor(parameters);
+      }
 
-      case AnnotationType.SQUARE:
-        return new SquareAnnotationElement(parameters);
+      case AnnotationType.POPUP: {
+        let ElementConstructor = this.customElements.PopupAnnotationElement ||
+          PopupAnnotationElement;
 
-      case AnnotationType.CIRCLE:
-        return new CircleAnnotationElement(parameters);
+        return new ElementConstructor(parameters);
+      }
 
-      case AnnotationType.POLYLINE:
-        return new PolylineAnnotationElement(parameters);
+      case AnnotationType.LINE: {
+        let ElementConstructor = this.customElements.LineAnnotationElement ||
+          LineAnnotationElement;
 
-      case AnnotationType.POLYGON:
-        return new PolygonAnnotationElement(parameters);
+        return new ElementConstructor(parameters);
+      }
 
-      case AnnotationType.HIGHLIGHT:
-        return new HighlightAnnotationElement(parameters);
+      case AnnotationType.SQUARE: {
+        let ElementConstructor = this.customElements.SquareAnnotationElement ||
+          SquareAnnotationElement;
 
-      case AnnotationType.UNDERLINE:
-        return new UnderlineAnnotationElement(parameters);
+        return new ElementConstructor(parameters);
+      }
 
-      case AnnotationType.SQUIGGLY:
-        return new SquigglyAnnotationElement(parameters);
+      case AnnotationType.CIRCLE: {
+        let ElementConstructor = this.customElements.CircleAnnotationElement ||
+          CircleAnnotationElement;
 
-      case AnnotationType.STRIKEOUT:
-        return new StrikeOutAnnotationElement(parameters);
+        return new ElementConstructor(parameters);
+      }
 
-      case AnnotationType.STAMP:
-        return new StampAnnotationElement(parameters);
+      case AnnotationType.POLYLINE: {
+        let ElementConstructor =
+          this.customElements.PolylineAnnotationElement ||
+          PolylineAnnotationElement;
 
-      case AnnotationType.FILEATTACHMENT:
-        return new FileAttachmentAnnotationElement(parameters);
+        return new ElementConstructor(parameters);
+      }
 
-      default:
-        return new AnnotationElement(parameters);
+      case AnnotationType.POLYGON: {
+        let ElementConstructor = this.customElements.PolygonAnnotationElement ||
+          PolygonAnnotationElement;
+
+        return new ElementConstructor(parameters);
+      }
+
+      case AnnotationType.HIGHLIGHT: {
+        let ElementConstructor =
+          this.customElements.HighlightAnnotationElement ||
+          HighlightAnnotationElement;
+
+        return new ElementConstructor(parameters);
+      }
+
+      case AnnotationType.UNDERLINE: {
+        let ElementConstructor =
+          this.customElements.UnderlineAnnotationElement ||
+          UnderlineAnnotationElement;
+
+        return new ElementConstructor(parameters);
+      }
+
+      case AnnotationType.SQUIGGLY: {
+        let ElementConstructor =
+          this.customElements.SquigglyAnnotationElement ||
+          SquigglyAnnotationElement;
+
+        return new ElementConstructor(parameters);
+      }
+
+      case AnnotationType.STRIKEOUT: {
+        let ElementConstructor =
+          this.customElements.StrikeOutAnnotationElement ||
+          StrikeOutAnnotationElement;
+
+        return new ElementConstructor(parameters);
+      }
+
+      case AnnotationType.STAMP: {
+        let ElementConstructor = this.customElements.StampAnnotationElement ||
+          StampAnnotationElement;
+
+        return new ElementConstructor(parameters);
+      }
+
+      case AnnotationType.FILEATTACHMENT: {
+        let ElementConstructor =
+          this.customElements.FileAttachmentAnnotationElement ||
+          FileAttachmentAnnotationElement;
+
+        return new ElementConstructor(parameters);
+      }
+
+      default: {
+        let ElementConstructor = this.customElements.AnnotationElement ||
+          AnnotationElement;
+
+        return new ElementConstructor(parameters);
+      }
     }
   }
 }
@@ -394,7 +499,8 @@ class WidgetAnnotationElement extends AnnotationElement {
 class TextWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
     let isRenderable = parameters.renderInteractiveForms ||
-      (!parameters.data.hasAppearance && !!parameters.data.fieldValue);
+                       (!parameters.data.hasAppearance &&
+                        !!parameters.data.fieldValue);
     super(parameters, isRenderable);
   }
 
@@ -1202,12 +1308,18 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static render(parameters) {
+    var factory = new AnnotationElementFactory({
+      customAnnotationElements: parameters.customAnnotationElements,
+    });
+
     for (let i = 0, ii = parameters.annotations.length; i < ii; i++) {
       let data = parameters.annotations[i];
+
       if (!data) {
         continue;
       }
-      let element = AnnotationElementFactory.create({
+
+      let element = factory.create({
         data,
         layer: parameters.div,
         page: parameters.page,
@@ -1218,6 +1330,7 @@ class AnnotationLayer {
         renderInteractiveForms: parameters.renderInteractiveForms || false,
         svgFactory: new DOMSVGFactory(),
       });
+
       if (element.isRenderable) {
         parameters.div.appendChild(element.render());
       }
