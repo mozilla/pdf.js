@@ -1253,6 +1253,37 @@ describe('api', function() {
         done();
       });
     });
+
+    it('re-render page, using the same canvas, after cancelling rendering',
+        function(done) {
+      if (isNodeJS()) {
+        pending('TODO: Support Canvas testing in Node.js.');
+      }
+      let viewport = page.getViewport(1);
+      let canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+      let renderTask = page.render({
+        canvasContext: canvasAndCtx.context,
+        viewport,
+      });
+      renderTask.cancel();
+
+      renderTask.promise.then(() => {
+        throw new Error('shall cancel rendering');
+      }, (reason) => {
+        expect(reason instanceof RenderingCancelledException).toEqual(true);
+      }).then(() => {
+        let reRenderTask = page.render({
+          canvasContext: canvasAndCtx.context,
+          viewport,
+        });
+        return reRenderTask.promise;
+      }).then(() => {
+        CanvasFactory.destroy(canvasAndCtx);
+        done();
+      }, done.fail);
+    });
+
     it('multiple render() on the same canvas', function(done) {
       if (isNodeJS()) {
         pending('TODO: Support Canvas testing in Node.js.');
