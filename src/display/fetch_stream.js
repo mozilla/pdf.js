@@ -255,7 +255,3 @@ class PDFFetchStreamRangeReader {
 export {
   PDFFetchStream,
 };
-
-
-window.bearer = {};
-// WEBPACK INJECTS SOME CODE HERE INSIDE GAPP

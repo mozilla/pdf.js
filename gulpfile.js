@@ -603,8 +603,8 @@ gulp.task('generic', ['buildnumber', 'locale'], function () {
         .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
 
-    gulp.src('web/compressed.tracemonkey-pldi-09.pdf')
-        .pipe(gulp.dest(GENERIC_DIR + 'web')),
+    // gulp.src('web/compressed.tracemonkey-pldi-09.pdf')
+        // .pipe(gulp.dest(GENERIC_DIR + 'web')),
   ]);
 });
 
