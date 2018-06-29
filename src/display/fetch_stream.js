@@ -22,9 +22,10 @@ import {
 } from './network_utils';
 
 function createFetchOptions(headers, withCredentials, abortController) {
-  if(bearer && bearer.setTokenFromLS) {
-    bearer.setTokenFromLS();
-    headers.set('Authorization', bearer.token);
+  // window required for Firefox with this stack =3
+  if(window.bearer && window.bearer.setTokenFromLS) {
+    window.bearer.setTokenFromLS();
+    headers.set('Authorization', window.bearer.token);
   }
   return {
     method: 'GET',
