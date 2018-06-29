@@ -182,7 +182,7 @@ class BaseViewer {
       this.viewer.classList.add('removePageBorders');
     }
     if (this._scrollMode !== ScrollMode.VERTICAL) {
-      this._updateScrollModeClasses();
+      this._updateScrollMode();
     }
   }
 
@@ -442,7 +442,7 @@ class BaseViewer {
         this._pages.push(pageView);
       }
       if (this._spreadMode !== SpreadMode.NONE) {
-        this._regroupSpreads();
+        this._updateSpreadMode();
       }
 
       // Fetch all the pages since the viewport is needed before printing
@@ -1045,16 +1045,30 @@ class BaseViewer {
     this._scrollMode = mode;
     this.eventBus.dispatch('scrollmodechanged', { source: this, mode, });
 
-    this._updateScrollModeClasses();
+    this._updateScrollMode(/* pageNumber = */ this._currentPageNumber);
+  }
 
-    if (!this.pdfDocument) {
+  _updateScrollMode(pageNumber = null) {
+    const scrollMode = this._scrollMode, viewer = this.viewer;
+
+    if (scrollMode === ScrollMode.HORIZONTAL) {
+      viewer.classList.add('scrollHorizontal');
+    } else {
+      viewer.classList.remove('scrollHorizontal');
+    }
+    if (scrollMode === ScrollMode.WRAPPED) {
+      viewer.classList.add('scrollWrapped');
+    } else {
+      viewer.classList.remove('scrollWrapped');
+    }
+
+    if (!this.pdfDocument || !pageNumber) {
       return;
     }
-    const pageNumber = this._currentPageNumber;
     // Non-numeric scale values can be sensitive to the scroll orientation.
     // Call this before re-scrolling to the current page, to ensure that any
     // changes in scale don't move the current page.
-    if (isNaN(this._currentScaleValue)) {
+    if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
       this._setScale(this._currentScaleValue, true);
     }
     this.scrollPageIntoView({ pageNumber, });
@@ -1063,10 +1077,6 @@ class BaseViewer {
 
   setScrollMode(mode) {
     this.scrollMode = mode;
-  }
-
-  _updateScrollModeClasses() {
-    // No-op in the base class.
   }
 
   /**
@@ -1091,15 +1101,46 @@ class BaseViewer {
     this._spreadMode = mode;
     this.eventBus.dispatch('spreadmodechanged', { source: this, mode, });
 
-    this._regroupSpreads();
+    this._updateSpreadMode(/* pageNumber = */ this._currentPageNumber);
+  }
+
+  _updateSpreadMode(pageNumber = null) {
+    if (!this.pdfDocument) {
+      return;
+    }
+    const viewer = this.viewer, pages = this._pages;
+    // Temporarily remove all the pages from the DOM.
+    viewer.textContent = '';
+
+    if (this._spreadMode === SpreadMode.NONE) {
+      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
+        viewer.appendChild(pages[i].div);
+      }
+    } else {
+      const parity = this._spreadMode - 1;
+      let spread = null;
+      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
+        if (spread === null) {
+          spread = document.createElement('div');
+          spread.className = 'spread';
+          viewer.appendChild(spread);
+        } else if (i % 2 === parity) {
+          spread = spread.cloneNode(false);
+          viewer.appendChild(spread);
+        }
+        spread.appendChild(pages[i].div);
+      }
+    }
+
+    if (!pageNumber) {
+      return;
+    }
+    this.scrollPageIntoView({ pageNumber, });
+    this.update();
   }
 
   setSpreadMode(mode) {
     this.spreadMode = mode;
-  }
-
-  _regroupSpreads() {
-    // No-op in the base class.
   }
 }
 

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { BaseViewer, ScrollMode, SpreadMode } from './base_viewer';
+import { BaseViewer, ScrollMode } from './base_viewer';
 import { getVisibleElements, scrollIntoView } from './ui_utils';
 import { shadow } from 'pdfjs-lib';
 
@@ -92,52 +92,6 @@ class PDFViewer extends BaseViewer {
     // correctly, since Scroll/Spread modes are ignored in Presentation Mode.
     return (this.isInPresentationMode ?
             false : this._scrollMode === ScrollMode.HORIZONTAL);
-  }
-
-  _updateScrollModeClasses() {
-    const scrollMode = this._scrollMode, viewer = this.viewer;
-
-    if (scrollMode === ScrollMode.HORIZONTAL) {
-      viewer.classList.add('scrollHorizontal');
-    } else {
-      viewer.classList.remove('scrollHorizontal');
-    }
-    if (scrollMode === ScrollMode.WRAPPED) {
-      viewer.classList.add('scrollWrapped');
-    } else {
-      viewer.classList.remove('scrollWrapped');
-    }
-  }
-
-  _regroupSpreads() {
-    if (!this.pdfDocument) {
-      return;
-    }
-    const viewer = this.viewer, pages = this._pages;
-    // Temporarily remove all the pages from the DOM.
-    viewer.textContent = '';
-
-    if (this._spreadMode === SpreadMode.NONE) {
-      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
-        viewer.appendChild(pages[i].div);
-      }
-    } else {
-      const parity = this._spreadMode - 1;
-      let spread = null;
-      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
-        if (spread === null) {
-          spread = document.createElement('div');
-          spread.className = 'spread';
-          viewer.appendChild(spread);
-        } else if (i % 2 === parity) {
-          spread = spread.cloneNode(false);
-          viewer.appendChild(spread);
-        }
-        spread.appendChild(pages[i].div);
-      }
-    }
-    this.scrollPageIntoView({ pageNumber: this._currentPageNumber, });
-    this.update();
   }
 }
 
