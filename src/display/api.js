@@ -2380,9 +2380,10 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
 
   InternalRenderTask.prototype = {
 
-    initializeGraphics:
-        function InternalRenderTask_initializeGraphics(transparency) {
-
+    initializeGraphics(transparency) {
+      if (this.cancelled) {
+        return;
+      }
       if (this._canvas) {
         if (canvasInRendering.has(this._canvas)) {
           throw new Error(
@@ -2393,9 +2394,6 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
         canvasInRendering.set(this._canvas, this);
       }
 
-      if (this.cancelled) {
-        return;
-      }
       if (this._pdfBug && globalScope.StepperManager &&
           globalScope.StepperManager.enabled) {
         this.stepper = globalScope.StepperManager.create(this.pageNumber - 1);
