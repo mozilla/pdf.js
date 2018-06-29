@@ -1250,10 +1250,10 @@ let PDFViewerApplication = {
     };
     let setViewerModes = (scroll, spread) => {
       if (Number.isInteger(scroll)) {
-        this.pdfViewer.setScrollMode(scroll);
+        this.pdfViewer.scrollMode = scroll;
       }
       if (Number.isInteger(spread)) {
-        this.pdfViewer.setSpreadMode(spread);
+        this.pdfViewer.spreadMode = spread;
       }
     };
 
@@ -2019,10 +2019,10 @@ function webViewerRotateCcw() {
   PDFViewerApplication.rotatePages(-90);
 }
 function webViewerSwitchScrollMode(evt) {
-  PDFViewerApplication.pdfViewer.setScrollMode(evt.mode);
+  PDFViewerApplication.pdfViewer.scrollMode = evt.mode;
 }
 function webViewerSwitchSpreadMode(evt) {
-  PDFViewerApplication.pdfViewer.setSpreadMode(evt.mode);
+  PDFViewerApplication.pdfViewer.spreadMode = evt.mode;
 }
 function webViewerDocumentProperties() {
   PDFViewerApplication.pdfDocumentProperties.open();

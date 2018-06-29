@@ -94,29 +94,6 @@ class PDFViewer extends BaseViewer {
             false : this._scrollMode === ScrollMode.HORIZONTAL);
   }
 
-  setScrollMode(mode) {
-    if (mode === this._scrollMode) {
-      return;
-    }
-    super.setScrollMode(mode);
-
-    this.eventBus.dispatch('scrollmodechanged', { mode, });
-    this._updateScrollModeClasses();
-
-    if (!this.pdfDocument) {
-      return;
-    }
-    const pageNumber = this._currentPageNumber;
-    // Non-numeric scale modes can be sensitive to the scroll orientation.
-    // Call this before re-scrolling to the current page, to ensure that any
-    // changes in scale don't move the current page.
-    if (isNaN(this._currentScaleValue)) {
-      this._setScale(this._currentScaleValue, true);
-    }
-    this.scrollPageIntoView({ pageNumber, });
-    this.update();
-  }
-
   _updateScrollModeClasses() {
     const scrollMode = this._scrollMode, viewer = this.viewer;
 
@@ -130,16 +107,6 @@ class PDFViewer extends BaseViewer {
     } else {
       viewer.classList.remove('scrollWrapped');
     }
-  }
-
-  setSpreadMode(mode) {
-    if (mode === this._spreadMode) {
-      return;
-    }
-    super.setSpreadMode(mode);
-
-    this.eventBus.dispatch('spreadmodechanged', { mode, });
-    this._regroupSpreads();
   }
 
   _regroupSpreads() {
