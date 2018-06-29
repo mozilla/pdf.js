@@ -973,8 +973,7 @@ let PDFViewerApplication = {
     this.toolbar.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar.setPagesCount(pdfDocument.numPages);
 
-    let id = this.documentFingerprint = pdfDocument.fingerprint;
-    let store = this.store = new ViewHistory(id);
+    const store = this.store = new ViewHistory(pdfDocument.fingerprint);
 
     let baseDocumentUrl;
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
@@ -1003,7 +1002,7 @@ let PDFViewerApplication = {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
         let resetHistory = !AppOptions.get('showPreviousViewOnLoad');
-        this.pdfHistory.initialize(id, resetHistory);
+        this.pdfHistory.initialize(pdfDocument.fingerprint, resetHistory);
 
         if (this.pdfHistory.initialBookmark) {
           this.initialBookmark = this.pdfHistory.initialBookmark;
