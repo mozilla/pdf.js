@@ -22,10 +22,9 @@ import {
 } from './network_utils';
 
 function createFetchOptions(headers, withCredentials, abortController) {
-  // window required for Firefox with this stack =3
-  if(window.bearer && window.bearer.setTokenFromLS) {
-    window.bearer.setTokenFromLS();
-    headers.set('Authorization', window.bearer.token);
+  let info = JSON.parse(localStorage.getItem('RL-App-State'));
+  if(info && info.accessToken) {
+    headers.set('Authorization', 'bearer ' + info.accessToken);
   }
   return {
     method: 'GET',
