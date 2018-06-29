@@ -1043,12 +1043,8 @@ let PDFViewerApplication = {
 
           rotation = parseInt(values.rotation, 10);
           sidebarView = sidebarView || (values.sidebarView | 0);
-          if (values.scrollMode !== null) {
-            scrollMode = values.scrollMode;
-          }
-          if (values.spreadMode !== null) {
-            spreadMode = values.spreadMode;
-          }
+          scrollMode = scrollMode || (values.scrollMode | 0);
+          spreadMode = spreadMode || (values.spreadMode | 0);
         }
         if (pageMode && !AppOptions.get('disablePageMode')) {
           // Always let the user preference/history take precedence.
@@ -1245,23 +1241,26 @@ let PDFViewerApplication = {
     });
   },
 
-  setInitialView(storedHash, values = {}) {
-    let { rotation, sidebarView, scrollMode, spreadMode, } = values;
+  setInitialView(storedHash, { rotation, sidebarView,
+                               scrollMode, spreadMode, } = {}) {
     let setRotation = (angle) => {
       if (isValidRotation(angle)) {
         this.pdfViewer.pagesRotation = angle;
+      }
+    };
+    let setViewerModes = (scroll, spread) => {
+      if (Number.isInteger(scroll)) {
+        this.pdfViewer.setScrollMode(scroll);
+      }
+      if (Number.isInteger(spread)) {
+        this.pdfViewer.setSpreadMode(spread);
       }
     };
 
     // Putting these before isInitialViewSet = true prevents these values from
     // being stored in the document history (and overriding any future changes
     // made to the corresponding global preferences), just this once.
-    if (Number.isInteger(scrollMode)) {
-      this.pdfViewer.setScrollMode(scrollMode);
-    }
-    if (Number.isInteger(spreadMode)) {
-      this.pdfViewer.setSpreadMode(spreadMode);
-    }
+    setViewerModes(scrollMode, spreadMode);
 
     this.isInitialViewSet = true;
     this.pdfSidebar.setInitialView(sidebarView);
