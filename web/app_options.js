@@ -116,6 +116,16 @@ const defaultOptions = {
     value: 0,
     kind: OptionKind.VIEWER,
   },
+  scrollModeOnLoad: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
+  spreadModeOnLoad: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
   textLayerMode: {
     /** @type {number} */
     value: 1,
