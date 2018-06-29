@@ -147,6 +147,10 @@ class PDFSinglePageViewer extends BaseViewer {
     // The Scroll/Spread modes are never used in `PDFSinglePageViewer`.
     return shadow(this, '_isScrollModeHorizontal', false);
   }
+
+  _updateScrollMode() { }
+
+  _updateSpreadMode() { }
 }
 
 export {
