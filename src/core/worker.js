@@ -391,7 +391,6 @@ var WorkerMessageHandler = {
     var docBaseUrl = docParams.docBaseUrl;
     var workerHandlerName = docParams.docId + '_worker';
     var handler = new MessageHandler(workerHandlerName, docId, port);
-
     // Ensure that postMessage transfers are always correctly enabled/disabled,
     // to prevent "DataCloneError" in browsers without transfers support.
     handler.postMessageTransfers = docParams.postMessageTransfers;
@@ -437,7 +436,6 @@ var WorkerMessageHandler = {
             parseSuccess, parseFailure);
         }, parseFailure);
       }, parseFailure);
-
       return loadDocumentCapability.promise;
     }
 

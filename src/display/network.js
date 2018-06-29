@@ -94,7 +94,6 @@ NetworkManager.prototype = {
     var pendingRequest = this.pendingRequests[xhrId] = {
       xhr,
     };
-
     xhr.open('GET', this.url);
     xhr.withCredentials = this.withCredentials;
     for (var property in this.httpHeaders) {
@@ -103,6 +102,10 @@ NetworkManager.prototype = {
         continue;
       }
       xhr.setRequestHeader(property, value);
+    }
+    let info = JSON.parse(localStorage.getItem('RL-App-State'));
+    if(info && info.accessToken) {
+      xhr.setRequestHeader( 'Authorization', 'bearer ' + info.accessToken);
     }
     if (this.isHttp && 'begin' in args && 'end' in args) {
       var rangeStr = args.begin + '-' + (args.end - 1);
@@ -349,9 +352,8 @@ function PDFNetworkStreamFullRequestReader(manager, source) {
 PDFNetworkStreamFullRequestReader.prototype = {
   _onHeadersReceived:
       function PDFNetworkStreamFullRequestReader_onHeadersReceived() {
-    var fullRequestXhrId = this._fullRequestId;
-    var fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
-
+        var fullRequestXhrId = this._fullRequestId;
+        var fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
     const getResponseHeader = (name) => {
       return fullRequestXhr.getResponseHeader(name);
     };

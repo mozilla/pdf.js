@@ -173,21 +173,76 @@ PDFPrintService.prototype = {
   },
 
   performPrint() {
-    this.throwIfInactive();
-    return new Promise((resolve) => {
-      // Push window.print in the macrotask queue to avoid being affected by
-      // the deprecation of running print() code in a microtask, see
-      // https://github.com/mozilla/pdf.js/issues/7547.
-      setTimeout(() => {
-        if (!this.active) {
-          resolve();
-          return;
-        }
-        print.call(window);
-        // Delay promise resolution in case print() was not synchronous.
-        setTimeout(resolve, 20);  // Tidy-up.
-      }, 0);
-    });
+    function isIOS() { 
+      let iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      return iOS; 
+    }
+    function iOSversion() {
+      if (/iP(hone|od|ad)/.test(navigator.platform)) {
+        // supports iOS 2.0 and later: <http://bit.ly/TJjs1V>
+        var v = (navigator.appVersion).match(/OS (\d+)_(\d+)_?(\d+)?/);
+        return [parseInt(v[1], 10), parseInt(v[2], 10), parseInt(v[3] || 0, 10)];
+      }
+    }
+    if(isIOS()) {
+      let iOSVersion = iOSversion();
+      // iOS > 9.3.5
+      if(iOSVersion[0]>9 ||
+        (iOSVersion[0]==9 
+          &&  iOSVersion[1] > 3  
+          || (iOSVersion[1] == 3 && iOSVersion[2] > 5))) {
+        this.throwIfInactive();
+        return new Promise(function (resolve) {
+         setTimeout(function () {
+          if (!this.active) {
+          //  resolve();
+           return;
+          }
+          print.call(window);
+          var printEvent = window.matchMedia('print');
+          printEvent.addListener(function(printEnd) {
+            if (!printEnd.matches) {
+              // resolve();
+            };
+          });
+         }.bind(this), 0);
+        }.bind(this));
+      // iOS < 9.3.5  
+      } else {
+        this.throwIfInactive();
+        return new Promise(function (resolve) {
+         setTimeout(function () {
+          if (!this.active) {
+           resolve();
+           return;
+          }
+          print.call(window);
+          var printEvent = window.matchMedia('print');
+          printEvent.addListener(function(printEnd) {
+            if (!printEnd.matches) {
+              resolve();
+            };
+          });
+         }.bind(this), 0);
+        }.bind(this));
+      }   
+    } else {
+      this.throwIfInactive();
+      return new Promise((resolve) => {
+        // Push window.print in the macrotask queue to avoid being affected by
+        // the deprecation of running print() code in a microtask, see
+        // https://github.com/mozilla/pdf.js/issues/7547.
+        setTimeout(() => {
+          if (!this.active) {
+            resolve();
+            return;
+          }
+          print.call(window);
+          // Delay promise resolution in case print() was not synchronous.
+          setTimeout(resolve, 20);  // Tidy-up.
+        }, 0);
+      });
+    }
   },
 
   get active() {
