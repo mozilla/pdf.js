@@ -1023,22 +1023,79 @@ class BaseViewer {
     });
   }
 
-  setScrollMode(mode) {
+  /**
+   * @return {number} One of the values in {ScrollMode}.
+   */
+  get scrollMode() {
+    return this._scrollMode;
+  }
+
+  /**
+   * @param {number} mode - The direction in which the document pages should be
+   *   laid out within the scrolling container.
+   *   The constants from {ScrollMode} should be used.
+   */
+  set scrollMode(mode) {
+    if (this._scrollMode === mode) {
+      return; // The Scroll mode didn't change.
+    }
     if (!Number.isInteger(mode) || !Object.values(ScrollMode).includes(mode)) {
       throw new Error(`Invalid scroll mode: ${mode}`);
     }
     this._scrollMode = mode;
+    this.eventBus.dispatch('scrollmodechanged', { source: this, mode, });
+
+    this._updateScrollModeClasses();
+
+    if (!this.pdfDocument) {
+      return;
+    }
+    const pageNumber = this._currentPageNumber;
+    // Non-numeric scale values can be sensitive to the scroll orientation.
+    // Call this before re-scrolling to the current page, to ensure that any
+    // changes in scale don't move the current page.
+    if (isNaN(this._currentScaleValue)) {
+      this._setScale(this._currentScaleValue, true);
+    }
+    this.scrollPageIntoView({ pageNumber, });
+    this.update();
+  }
+
+  setScrollMode(mode) {
+    this.scrollMode = mode;
   }
 
   _updateScrollModeClasses() {
     // No-op in the base class.
   }
 
-  setSpreadMode(mode) {
+  /**
+   * @return {number} One of the values in {SpreadMode}.
+   */
+  get spreadMode() {
+    return this._spreadMode;
+  }
+
+  /**
+   * @param {number} mode - Group the pages in spreads, starting with odd- or
+   *   even-number pages (unless `SpreadMode.NONE` is used).
+   *   The constants from {SpreadMode} should be used.
+   */
+  set spreadMode(mode) {
+    if (this._spreadMode === mode) {
+      return; // The Spread mode didn't change.
+    }
     if (!Number.isInteger(mode) || !Object.values(SpreadMode).includes(mode)) {
       throw new Error(`Invalid spread mode: ${mode}`);
     }
     this._spreadMode = mode;
+    this.eventBus.dispatch('spreadmodechanged', { source: this, mode, });
+
+    this._regroupSpreads();
+  }
+
+  setSpreadMode(mode) {
+    this.spreadMode = mode;
   }
 
   _regroupSpreads() {
