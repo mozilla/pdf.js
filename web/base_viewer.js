@@ -162,8 +162,8 @@ class BaseViewer {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
-    this.scrollMode = options.scrollMode || ScrollMode.VERTICAL;
-    this.spreadMode = options.spreadMode || SpreadMode.NONE;
+    this._scrollMode = options.scrollMode || ScrollMode.VERTICAL;
+    this._spreadMode = options.spreadMode || SpreadMode.NONE;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -181,7 +181,7 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add('removePageBorders');
     }
-    if (this.scrollMode !== ScrollMode.VERTICAL) {
+    if (this._scrollMode !== ScrollMode.VERTICAL) {
       this._updateScrollModeClasses();
     }
   }
@@ -441,7 +441,7 @@ class BaseViewer {
         bindOnAfterAndBeforeDraw(pageView);
         this._pages.push(pageView);
       }
-      if (this.spreadMode !== SpreadMode.NONE) {
+      if (this._spreadMode !== SpreadMode.NONE) {
         this._regroupSpreads();
       }
 
@@ -1027,7 +1027,7 @@ class BaseViewer {
     if (!Number.isInteger(mode) || !Object.values(ScrollMode).includes(mode)) {
       throw new Error(`Invalid scroll mode: ${mode}`);
     }
-    this.scrollMode = mode;
+    this._scrollMode = mode;
   }
 
   _updateScrollModeClasses() {
@@ -1038,7 +1038,7 @@ class BaseViewer {
     if (!Number.isInteger(mode) || !Object.values(SpreadMode).includes(mode)) {
       throw new Error(`Invalid spread mode: ${mode}`);
     }
-    this.spreadMode = mode;
+    this._spreadMode = mode;
   }
 
   _regroupSpreads() {
