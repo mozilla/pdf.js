@@ -73,14 +73,6 @@ const SpreadMode = {
  *   size in total pixels, i.e. width * height. Use -1 for no limit.
  *   The default value is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
- * @property {number} scrollMode - (optional) The direction in which the
- *   document pages should be laid out within the scrolling container. The
- *   constants from {ScrollMode} should be used. The default value is
- *   `ScrollMode.VERTICAL`.
- * @property {number} spreadMode - (optional) If not `SpreadMode.NONE`, groups
- *   pages into spreads, starting with odd- or even-numbered pages. The
- *   constants from {SpreadMode} should be used. The default value is
- *   `SpreadMode.NONE`.
  */
 
 function PDFPageViewBuffer(size) {
@@ -162,8 +154,6 @@ class BaseViewer {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
-    this._scrollMode = options.scrollMode || ScrollMode.VERTICAL;
-    this._spreadMode = options.spreadMode || SpreadMode.NONE;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -181,8 +171,17 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add('removePageBorders');
     }
-    if (this._scrollMode !== ScrollMode.VERTICAL) {
-      this._updateScrollMode();
+
+    if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
+        ('scrollMode' in options || 'spreadMode' in options)) {
+      console.error(`The ${this._name} constructor options ` +
+        '`scrollMode`/`spreadMode` are deprecated, use the setters instead.');
+      if (options.scrollMode !== undefined) {
+        this.scrollMode = options.scrollMode;
+      }
+      if (options.spreadMode !== undefined) {
+        this.spreadMode = options.spreadMode;
+      }
     }
   }
 
@@ -524,9 +523,13 @@ class BaseViewer {
     this._pagesRotation = 0;
     this._pagesRequests = [];
     this._pageViewsReady = false;
+    this._scrollMode = ScrollMode.VERTICAL;
+    this._spreadMode = SpreadMode.NONE;
 
-    // Remove the pages from the DOM.
+    // Remove the pages from the DOM...
     this.viewer.textContent = '';
+    // ... and reset the Scroll mode CSS class(es) afterwards.
+    this._updateScrollMode();
   }
 
   _scrollUpdate() {
@@ -1076,7 +1079,11 @@ class BaseViewer {
   }
 
   setScrollMode(mode) {
-    this.scrollMode = mode;
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+      console.error(`${this._name}.setScrollMode() is deprecated, ` +
+                    `use the ${this._name}.scrollMode setter instead.`);
+      this.scrollMode = mode;
+    }
   }
 
   /**
@@ -1140,7 +1147,11 @@ class BaseViewer {
   }
 
   setSpreadMode(mode) {
-    this.spreadMode = mode;
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+      console.error(`${this._name}.setSpreadMode() is deprecated, ` +
+                    `use the ${this._name}.spreadMode setter instead.`);
+      this.spreadMode = mode;
+    }
   }
 }
 
