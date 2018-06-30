@@ -2,6 +2,8 @@
 
 PDF.js is a Portable Document Format (PDF) viewer that is built with HTML5.
 
+[![Maintainability](https://api.codeclimate.com/v1/badges/ca43606d83b10e6ba04d/maintainability)](https://codeclimate.com/github/Shoobx/pdf.js/maintainability)
+
 PDF.js is community-driven and supported by Mozilla Labs. Our goal is to
 create a general-purpose, web standards-based platform for parsing and
 rendering PDFs.
