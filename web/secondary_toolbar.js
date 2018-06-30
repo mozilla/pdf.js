@@ -140,6 +140,10 @@ class SecondaryToolbar {
     this.pageNumber = 0;
     this.pagesCount = 0;
     this._updateUIState();
+
+    // Reset the Scroll/Spread buttons too, since they're document specific.
+    this.eventBus.dispatch('resetscrollmode', { source: this, });
+    this.eventBus.dispatch('resetspreadmode', { source: this, });
   }
 
   _updateUIState() {
@@ -189,7 +193,7 @@ class SecondaryToolbar {
   }
 
   _bindScrollModeListener(buttons) {
-    this.eventBus.on('scrollmodechanged', function(evt) {
+    function scrollModeChanged(evt) {
       buttons.scrollVerticalButton.classList.remove('toggled');
       buttons.scrollHorizontalButton.classList.remove('toggled');
       buttons.scrollWrappedButton.classList.remove('toggled');
@@ -205,11 +209,18 @@ class SecondaryToolbar {
           buttons.scrollWrappedButton.classList.add('toggled');
           break;
       }
+    }
+    this.eventBus.on('scrollmodechanged', scrollModeChanged);
+
+    this.eventBus.on('resetscrollmode', (evt) => {
+      if (evt.source === this) {
+        scrollModeChanged({ mode: ScrollMode.VERTICAL, });
+      }
     });
   }
 
   _bindSpreadModeListener(buttons) {
-    this.eventBus.on('spreadmodechanged', function(evt) {
+    function spreadModeChanged(evt) {
       buttons.spreadNoneButton.classList.remove('toggled');
       buttons.spreadOddButton.classList.remove('toggled');
       buttons.spreadEvenButton.classList.remove('toggled');
@@ -224,6 +235,13 @@ class SecondaryToolbar {
         case SpreadMode.EVEN:
           buttons.spreadEvenButton.classList.add('toggled');
           break;
+      }
+    }
+    this.eventBus.on('spreadmodechanged', spreadModeChanged);
+
+    this.eventBus.on('resetspreadmode', (evt) => {
+      if (evt.source === this) {
+        spreadModeChanged({ mode: SpreadMode.NONE, });
       }
     });
   }
