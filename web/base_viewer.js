@@ -479,10 +479,6 @@ class BaseViewer {
       if (this.defaultRenderingQueue) {
         this.update();
       }
-
-      if (this.findController) {
-        this.findController.resolveFirstPage();
-      }
     }).catch((reason) => {
       console.error('Unable to initialize viewer', reason);
     });
