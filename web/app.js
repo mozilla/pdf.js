@@ -409,6 +409,7 @@ let PDFViewerApplication = {
 
       this.findController = new PDFFindController({
         pdfViewer: this.pdfViewer,
+        eventBus,
       });
       this.findController.onUpdateResultsCount = (matchCount) => {
         if (this.supportsIntegratedFind) {
