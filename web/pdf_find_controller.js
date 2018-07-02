@@ -14,6 +14,7 @@
  */
 
 import { createPromiseCapability } from 'pdfjs-lib';
+import { getGlobalEventBus } from './dom_events';
 import { scrollIntoView } from './ui_utils';
 
 const FindState = {
@@ -45,8 +46,9 @@ const CHARACTERS_TO_NORMALIZE = {
  * Provides search functionality to find a given string in a PDF document.
  */
 class PDFFindController {
-  constructor({ pdfViewer, }) {
+  constructor({ pdfViewer, eventBus = getGlobalEventBus(), }) {
     this.pdfViewer = pdfViewer;
+    this.eventBus = eventBus;
 
     this.onUpdateResultsCount = null;
     this.onUpdateState = null;
@@ -82,7 +84,11 @@ class PDFFindController {
     this.findTimeout = null;
 
     this._firstPagePromise = new Promise((resolve) => {
-      this.resolveFirstPage = resolve;
+      const eventBus = this.eventBus;
+      eventBus.on('pagesinit', function onPagesInit() {
+        eventBus.off('pagesinit', onPagesInit);
+        resolve();
+      });
     });
   }
 
