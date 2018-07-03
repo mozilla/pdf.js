@@ -18,7 +18,7 @@ import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
   isArrayBuffer, isSameOrigin, MissingPDFException, NativeImageDecoding,
   PasswordException, setVerbosityLevel, shadow, stringToBytes,
-  UnexpectedResponseException, UnknownErrorException, unreachable, warn
+  UnexpectedResponseException, UnknownErrorException, unreachable, URL, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
