@@ -15,6 +15,7 @@
 
 import './compatibility';
 import { ReadableStream } from './streams_polyfill';
+import { URL } from './url_polyfill';
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
@@ -1075,6 +1076,7 @@ export {
   readUint32,
   removeNullCharacters,
   ReadableStream,
+  URL,
   setVerbosityLevel,
   shadow,
   string32,

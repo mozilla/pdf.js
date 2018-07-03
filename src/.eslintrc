@@ -10,8 +10,5 @@
       "URL",
       "WritableStream",
     ],
-
-    // ECMAScript 6
-    "no-var": "error",
   },
 }
