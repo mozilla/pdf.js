@@ -225,7 +225,7 @@ var Page = (function PageClosure() {
 
       // Fetch the page's annotations and add their operator lists to the
       // page's operator list to render them.
-      var annotationsPromise = this.pdfManager.ensure(this, 'annotations');
+      const annotationsPromise = this.getAnnotations();
       return Promise.all([pageListPromise, annotationsPromise]).then(
           function ([pageOpList, annotations]) {
         if (annotations.length === 0) {
@@ -292,29 +292,46 @@ var Page = (function PageClosure() {
     },
 
     getAnnotationsData: function Page_getAnnotationsData(intent) {
-      var annotations = this.annotations;
-      var annotationsData = [];
-      for (var i = 0, n = annotations.length; i < n; ++i) {
-        if (!intent || isAnnotationRenderable(annotations[i], intent)) {
-          annotationsData.push(annotations[i].data);
+      return this.getAnnotations().then(function (annotations) {
+        var annotationsData = [];
+        for (var i = 0, n = annotations.length; i < n; ++i) {
+          if (!intent || isAnnotationRenderable(annotations[i], intent)) {
+            annotationsData.push(annotations[i].data);
+          }
         }
-      }
-      return annotationsData;
+        return annotationsData;
+      });
     },
 
-    get annotations() {
-      var annotations = [];
+    getAnnotations: function Page_getAnnotations() {
+      if (this._annotations) {
+        return this._annotations;
+      }
+
       var annotationRefs = this._getInheritableProperty('Annots') || [];
+      var annotationPromises = [];
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
-        var annotation = AnnotationFactory.create(this.xref, annotationRef,
-                                                  this.pdfManager,
-                                                  this.idFactory);
-        if (annotation) {
-          annotations.push(annotation);
+        var annotationPromise = AnnotationFactory.create(
+          this.xref,
+          annotationRef,
+          this.pdfManager,
+          this.idFactory
+        );
+
+        if (annotationPromise) {
+          annotationPromises.push(annotationPromise);
         }
       }
-      return shadow(this, 'annotations', annotations);
+
+      this._annotations =
+        Promise.all(annotationPromises).then(function (annotations) {
+          return annotations;
+        }, function (reason) {
+          return [];
+        });
+
+      return this._annotations;
     },
   };
 
