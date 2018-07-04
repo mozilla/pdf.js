@@ -853,7 +853,7 @@ var CMapFactory = (function CMapFactoryClosure() {
 
   function parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap) {
     var previous;
-    var embededUseCMap;
+    var embeddedUseCMap;
     objLoop: while (true) {
       try {
         var obj = lexer.getObj();
@@ -872,7 +872,7 @@ var CMapFactory = (function CMapFactoryClosure() {
               break objLoop;
             case 'usecmap':
               if (isName(previous)) {
-                embededUseCMap = previous.name;
+                embeddedUseCMap = previous.name;
               }
               break;
             case 'begincodespacerange':
@@ -901,10 +901,10 @@ var CMapFactory = (function CMapFactoryClosure() {
       }
     }
 
-    if (!useCMap && embededUseCMap) {
-      // Load the usecmap definition from the file only if there wasn't one
+    if (!useCMap && embeddedUseCMap) {
+      // Load the useCMap definition from the file only if there wasn't one
       // specified.
-      useCMap = embededUseCMap;
+      useCMap = embeddedUseCMap;
     }
     if (useCMap) {
       return extendCMap(cMap, fetchBuiltInCMap, useCMap);

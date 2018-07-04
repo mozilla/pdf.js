@@ -62,6 +62,7 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/evaluator_spec',
     'pdfjs-test/unit/fonts_spec',
     'pdfjs-test/unit/function_spec',
+    'pdfjs-test/unit/message_handler_spec',
     'pdfjs-test/unit/metadata_spec',
     'pdfjs-test/unit/murmurhash3_spec',
     'pdfjs-test/unit/network_spec',
@@ -74,7 +75,6 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/ui_utils_spec',
     'pdfjs-test/unit/unicode_spec',
     'pdfjs-test/unit/util_spec',
-    'pdfjs-test/unit/util_stream_spec',
   ].map(function (moduleName) {
     return SystemJS.import(moduleName);
   })).then(function(modules) {
@@ -124,9 +124,9 @@ function initializePDFJS(callback) {
     },
   });
 
-  var catchingExceptions = queryString.getParam('catch');
-  env.catchExceptions(typeof catchingExceptions === 'undefined' ?
-                      true : catchingExceptions);
+  var stoppingOnSpecFailure = queryString.getParam('failFast');
+  env.stopOnSpecFailure(typeof stoppingOnSpecFailure === 'undefined' ?
+                        false : stoppingOnSpecFailure);
 
   var throwingExpectationFailures = queryString.getParam('throwFailures');
   env.throwOnExpectationFailure(throwingExpectationFailures);
@@ -142,8 +142,9 @@ function initializePDFJS(callback) {
   // Reporters
   var htmlReporter = new jasmine.HtmlReporter({
     env,
-    onRaiseExceptionsClick() {
-      queryString.navigateWithNewParam('catch', !env.catchingExceptions());
+    onStopExecutionClick() {
+      queryString.navigateWithNewParam('failFast',
+                                       env.stoppingOnSpecFailure());
     },
     onThrowExpectationsClick() {
       queryString.navigateWithNewParam('throwFailures',

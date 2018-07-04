@@ -83,7 +83,7 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle one operations', function(done) {
+    it('should handle one operation', function(done) {
       var stream = new StringStream('Q');
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function(result) {
@@ -108,7 +108,7 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle tree glued operations', function(done) {
+    it('should handle three glued operations', function(done) {
       var stream = new StringStream('fff');
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
@@ -216,6 +216,34 @@ describe('evaluator', function() {
         done();
       });
     });
+
+    it('should error if (many) path operators have too few arguments ' +
+       '(bug 1443140)', function(done) {
+      const NUM_INVALID_OPS = 25;
+      const tempArr = new Array(NUM_INVALID_OPS + 1);
+
+      // Non-path operators, should be ignored.
+      const invalidMoveText = tempArr.join('10 Td\n');
+      const moveTextStream = new StringStream(invalidMoveText);
+      runOperatorListCheck(partialEvaluator, moveTextStream,
+                           new ResourcesMock(), function(result) {
+        expect(result.argsArray).toEqual([]);
+        expect(result.fnArray).toEqual([]);
+        done();
+      });
+
+      // Path operators, should throw error.
+      const invalidLineTo = tempArr.join('20 l\n');
+      const lineToStream = new StringStream(invalidLineTo);
+      runOperatorListCheck(partialEvaluator, lineToStream, new ResourcesMock(),
+          function(error) {
+        expect(error instanceof FormatError).toEqual(true);
+        expect(error.message).toEqual(
+          'Invalid command l: expected 2 args, but received 1 args.');
+        done();
+      });
+    });
+
     it('should close opened saves', function(done) {
       var stream = new StringStream('qq');
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),

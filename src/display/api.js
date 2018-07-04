@@ -16,20 +16,20 @@
 
 import {
   assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isNum, isSameOrigin, MessageHandler, MissingPDFException,
-  NativeImageDecoding, PageViewport, PasswordException, setVerbosityLevel,
-  shadow, stringToBytes, UnexpectedResponseException, UnknownErrorException,
-  unreachable, Util, warn
+  isArrayBuffer, isSameOrigin, MissingPDFException, NativeImageDecoding,
+  PasswordException, setVerbosityLevel, shadow, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, unreachable, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
-  RenderingCancelledException, StatTimer
+  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
+  PageViewport, RenderingCancelledException, StatTimer
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
 import { CanvasGraphics } from './canvas';
 import globalScope from '../shared/global_scope';
 import { GlobalWorkerOptions } from './worker_options';
+import { MessageHandler } from '../shared/message_handler';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 import { WebGLContext } from './webgl';
@@ -231,7 +231,6 @@ function getDocument(src) {
   let params = Object.create(null);
   var rangeTransport = null;
   let worker = null;
-  let CMapReaderFactory = DOMCMapReaderFactory;
 
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
@@ -260,21 +259,21 @@ function getDocument(src) {
                         'data property.');
       }
       continue;
-    } else if (key === 'CMapReaderFactory') {
-      CMapReaderFactory = source[key];
-      continue;
     }
     params[key] = source[key];
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
+  params.CMapReaderFactory = params.CMapReaderFactory || DOMCMapReaderFactory;
   params.ignoreErrors = params.stopAtErrors !== true;
   params.pdfBug = params.pdfBug === true;
 
   const NativeImageDecoderValues = Object.values(NativeImageDecoding);
   if (params.nativeImageDecoderSupport === undefined ||
       !NativeImageDecoderValues.includes(params.nativeImageDecoderSupport)) {
-    params.nativeImageDecoderSupport = NativeImageDecoding.DECODE;
+    params.nativeImageDecoderSupport =
+      (apiCompatibilityParams.nativeImageDecoderSupport ||
+       NativeImageDecoding.DECODE);
   }
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
@@ -283,14 +282,14 @@ function getDocument(src) {
     params.isEvalSupported = true;
   }
   if (typeof params.disableFontFace !== 'boolean') {
-    params.disableFontFace = false;
+    params.disableFontFace = apiCompatibilityParams.disableFontFace || false;
   }
 
   if (typeof params.disableRange !== 'boolean') {
-    params.disableRange = apiCompatibilityParams.disableRange || false;
+    params.disableRange = false;
   }
   if (typeof params.disableStream !== 'boolean') {
-    params.disableStream = apiCompatibilityParams.disableStream || false;
+    params.disableStream = false;
   }
   if (typeof params.disableAutoFetch !== 'boolean') {
     params.disableAutoFetch = false;
@@ -353,7 +352,7 @@ function getDocument(src) {
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
       messageHandler.postMessageTransfers = worker.postMessageTransfers;
       var transport = new WorkerTransport(messageHandler, task, networkStream,
-                                          params, CMapReaderFactory);
+                                          params);
       task._transport = transport;
       messageHandler.send('Ready', null);
     });
@@ -385,7 +384,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     docId,
     apiVersion: (typeof PDFJSDev !== 'undefined' ?
                  PDFJSDev.eval('BUNDLE_VERSION') : null),
-    source: {
+    source: { // Only send the required properties, and *not* the entire object.
       data: source.data,
       url: source.url,
       password: source.password,
@@ -583,7 +582,7 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
  */
 var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   function PDFDocumentProxy(pdfInfo, transport, loadingTask) {
-    this.pdfInfo = pdfInfo;
+    this._pdfInfo = pdfInfo;
     this.transport = transport;
     this.loadingTask = loadingTask;
   }
@@ -592,14 +591,14 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * @return {number} Total number of pages the PDF contains.
      */
     get numPages() {
-      return this.pdfInfo.numPages;
+      return this._pdfInfo.numPages;
     },
     /**
      * @return {string} A unique ID to identify a PDF. Not guaranteed to be
      * unique.
      */
     get fingerprint() {
-      return this.pdfInfo.fingerprint;
+      return this._pdfInfo.fingerprint;
     },
     /**
      * @param {number} pageNumber The page number to get. The first page is 1.
@@ -672,7 +671,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      *   title: string,
      *   bold: boolean,
      *   italic: boolean,
-     *   color: rgb Uint8Array,
+     *   color: rgb Uint8ClampedArray,
      *   dest: dest obj,
      *   url: string,
      *   items: array of more items like this
@@ -727,6 +726,11 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.loadingTask.destroy();
     },
 
+    /**
+     * @return {Object} A subset of the current {DocumentInitParameters},
+     *   which are either needed in the viewer and/or whose default values
+     *   may be affected by the `apiCompatibilityParams`.
+     */
     get loadingParams() {
       return this.transport.loadingParams;
     },
@@ -829,7 +833,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
 var PDFPageProxy = (function PDFPageProxyClosure() {
   function PDFPageProxy(pageIndex, pageInfo, transport, pdfBug = false) {
     this.pageIndex = pageIndex;
-    this.pageInfo = pageInfo;
+    this._pageInfo = pageInfo;
     this.transport = transport;
     this._stats = (pdfBug ? new StatTimer() : DummyStatTimer);
     this._pdfBug = pdfBug;
@@ -851,40 +855,27 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * @return {number} The number of degrees the page is rotated clockwise.
      */
     get rotate() {
-      return this.pageInfo.rotate;
+      return this._pageInfo.rotate;
     },
     /**
      * @return {Object} The reference that points to this page. It has 'num' and
      * 'gen' properties.
      */
     get ref() {
-      return this.pageInfo.ref;
+      return this._pageInfo.ref;
     },
     /**
      * @return {number} The default size of units in 1/72nds of an inch.
      */
     get userUnit() {
-      return this.pageInfo.userUnit;
+      return this._pageInfo.userUnit;
     },
     /**
      * @return {Array} An array of the visible portion of the PDF page in the
      * user space units - [x1, y1, x2, y2].
      */
     get view() {
-      return this.pageInfo.view;
-    },
-
-    /**
-     * The size of the current page, converted from PDF units to inches.
-     * @return {Object} An Object containing the properties: {number} `width`
-     *   and {number} `height`, given in inches.
-     */
-    get pageSizeInches() {
-      const [x1, y1, x2, y2] = this.view, userUnit = this.userUnit;
-      return {
-        width: (x2 - x1) / 72 * userUnit,
-        height: (y2 - y1) / 72 * userUnit,
-      };
+      return this._pageInfo.view;
     },
 
     /**
@@ -896,7 +887,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * along with transforms required for rendering.
      */
     getViewport(scale, rotate = this.rotate, dontFlip = false) {
-      return new PageViewport(this.view, scale, rotate, 0, 0, dontFlip);
+      return new PageViewport({
+        viewBox: this.view,
+        scale,
+        rotation: rotate,
+        dontFlip,
+      });
     },
     /**
      * @param {GetAnnotationsParameters} params - Annotation parameters.
@@ -1041,6 +1037,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           lastChunk: false,
         };
 
+        this._stats.time('Page Request');
         this.transport.messageHandler.send('RenderPageRequest', {
           pageIndex: this.pageIndex,
           intent: renderingIntent,
@@ -1083,8 +1080,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
               resolve(textContent);
               return;
             }
-            Util.extendObj(textContent.styles, value.styles);
-            Util.appendToArray(textContent.items, value.items);
+            Object.assign(textContent.styles, value.styles);
+            textContent.items.push(...value.items);
             pump();
           }, reject);
         }
@@ -1211,7 +1208,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 })();
 
 class LoopbackPort {
-  constructor(defer) {
+  constructor(defer = true) {
     this._listeners = [];
     this._defer = defer;
     this._deferred = Promise.resolve(undefined);
@@ -1330,13 +1327,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     if (typeof window === 'undefined') {
       return null;
     }
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-      return (window.pdfjsNonProductionPdfWorker &&
-              window.pdfjsNonProductionPdfWorker.WorkerMessageHandler);
-    }
-    // PRODUCTION
-    return (window.pdfjsWorker &&
-            window.pdfjsWorker.WorkerMessageHandler);
+    return (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler);
   }
 
   let fakeWorkerFilesLoadedCapability;
@@ -1371,7 +1362,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       }
     } else {
       let loader = fakeWorkerFilesLoader || function(callback) {
-        Util.loadScript(getWorkerSrc(), function() {
+        loadScript(getWorkerSrc()).then(function() {
           callback(window.pdfjsWorker.WorkerMessageHandler);
         });
       };
@@ -1394,7 +1385,8 @@ var PDFWorker = (function PDFWorkerClosure() {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
   function PDFWorker({ name = null, port = null,
-                       postMessageTransfers = true, verbosity = null, } = {}) {
+                       postMessageTransfers = true,
+                       verbosity = getVerbosityLevel(), } = {}) {
     if (port && pdfWorkerPorts.has(port)) {
       throw new Error('Cannot use more than one PDFWorker per port');
     }
@@ -1402,7 +1394,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     this.name = name;
     this.destroyed = false;
     this.postMessageTransfers = postMessageTransfers !== false;
-    this.verbosity = (isNum(verbosity) ? verbosity : getVerbosityLevel());
+    this.verbosity = verbosity;
 
     this._readyCapability = createPromiseCapability();
     this._port = null;
@@ -1492,8 +1484,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               terminateEarly();
               return; // worker was destroyed
             }
-            var supportTypedArray = data && data.supportTypedArray;
-            if (supportTypedArray) {
+            if (data && data.supportTypedArray) {
               this._messageHandler = messageHandler;
               this._port = worker;
               this._webWorker = worker;
@@ -1565,12 +1556,7 @@ var PDFWorker = (function PDFWorkerClosure() {
           this._readyCapability.reject(new Error('Worker was destroyed'));
           return;
         }
-
-        // We cannot turn on proper fake port simulation (this includes
-        // structured cloning) when typed arrays are not supported. Relying
-        // on a chance that messages will be sent in proper order.
-        var isTypedArraysPresent = Uint8Array !== Float32Array;
-        var port = new LoopbackPort(isTypedArraysPresent);
+        let port = new LoopbackPort();
         this._port = port;
 
         // All fake workers use the same port, making id unique.
@@ -1610,6 +1596,9 @@ var PDFWorker = (function PDFWorkerClosure() {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
   PDFWorker.fromPort = function(params) {
+    if (!params || !params.port) {
+      throw new Error('PDFWorker.fromPort - invalid method signature.');
+    }
     if (pdfWorkerPorts.has(params.port)) {
       return pdfWorkerPorts.get(params.port);
     }
@@ -1628,14 +1617,13 @@ var PDFWorker = (function PDFWorkerClosure() {
  * @ignore
  */
 var WorkerTransport = (function WorkerTransportClosure() {
-  function WorkerTransport(messageHandler, loadingTask, networkStream,
-                           params, CMapReaderFactory) {
+  function WorkerTransport(messageHandler, loadingTask, networkStream, params) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
     this.commonObjs = new PDFObjects();
     this.fontLoader = new FontLoader(loadingTask.docId);
     this._params = params;
-    this.CMapReaderFactory = new CMapReaderFactory({
+    this.CMapReaderFactory = new params.CMapReaderFactory({
       baseUrl: params.cMapUrl,
       isCompressed: params.cMapPacked,
     });
@@ -1805,7 +1793,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
               password,
             });
           };
-          loadingTask.onPassword(updatePassword, exception.code);
+          try {
+            loadingTask.onPassword(updatePassword, exception.code);
+          } catch (ex) {
+            this._passwordCapability.reject(ex);
+          }
         } else {
           this._passwordCapability.reject(
             new PasswordException(exception.message, exception.code));
@@ -1843,9 +1835,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       messageHandler.on('DataLoaded', function transportPage(data) {
         this.downloadInfoCapability.resolve(data);
-      }, this);
-
-      messageHandler.on('PDFManagerReady', function transportPage(data) {
       }, this);
 
       messageHandler.on('StartRenderPage', function transportRender(data) {
@@ -1901,6 +1890,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
             var font = new FontFaceObject(exportedData, {
               isEvalSupported: params.isEvalSupported,
               disableFontFace: params.disableFontFace,
+              ignoreErrors: params.ignoreErrors,
+              onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
               fontRegistry,
             });
             var fontReady = (fontObjs) => {
@@ -2003,15 +1994,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       }, this);
 
-      messageHandler.on('UnsupportedFeature', function(data) {
-        if (this.destroyed) {
-          return; // Ignore any pending requests if the worker was terminated.
-        }
-        let loadingTask = this.loadingTask;
-        if (loadingTask.onUnsupportedFeature) {
-          loadingTask.onUnsupportedFeature(data.featureId);
-        }
-      }, this);
+      messageHandler.on('UnsupportedFeature', this._onUnsupportedFeature, this);
 
       messageHandler.on('JpegDecode', function(data) {
         if (this.destroyed) {
@@ -2038,7 +2021,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             var height = img.height;
             var size = width * height;
             var rgbaLength = size * 4;
-            var buf = new Uint8Array(size * components);
+            var buf = new Uint8ClampedArray(size * components);
             var tmpCanvas = document.createElement('canvas');
             tmpCanvas.width = width;
             tmpCanvas.height = height;
@@ -2075,6 +2058,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
           name: data.name,
         });
       }, this);
+    },
+
+    _onUnsupportedFeature({ featureId, }) {
+      if (this.destroyed) {
+        return; // Ignore any pending requests if the worker was terminated.
+      }
+      let loadingTask = this.loadingTask;
+      if (loadingTask.onUnsupportedFeature) {
+        loadingTask.onUnsupportedFeature(featureId);
+      }
     },
 
     getData: function WorkerTransport_getData() {
@@ -2183,10 +2176,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
     get loadingParams() {
       let params = this._params;
       return shadow(this, 'loadingParams', {
-        disableRange: params.disableRange,
-        disableStream: params.disableStream,
         disableAutoFetch: params.disableAutoFetch,
         disableCreateObjectURL: params.disableCreateObjectURL,
+        disableFontFace: params.disableFontFace,
+        nativeImageDecoderSupport: params.nativeImageDecoderSupport,
       });
     },
   };
@@ -2387,9 +2380,10 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
 
   InternalRenderTask.prototype = {
 
-    initializeGraphics:
-        function InternalRenderTask_initializeGraphics(transparency) {
-
+    initializeGraphics(transparency) {
+      if (this.cancelled) {
+        return;
+      }
       if (this._canvas) {
         if (canvasInRendering.has(this._canvas)) {
           throw new Error(
@@ -2400,9 +2394,6 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
         canvasInRendering.set(this._canvas, this);
       }
 
-      if (this.cancelled) {
-        return;
-      }
       if (this._pdfBug && globalScope.StepperManager &&
           globalScope.StepperManager.enabled) {
         this.stepper = globalScope.StepperManager.create(this.pageNumber - 1);
@@ -2470,30 +2461,34 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
 
     _scheduleNext: function InternalRenderTask__scheduleNext() {
       if (this.useRequestAnimationFrame && typeof window !== 'undefined') {
-        window.requestAnimationFrame(this._nextBound);
+        window.requestAnimationFrame(() => {
+          this._nextBound().catch(this.callback);
+        });
       } else {
-        Promise.resolve(undefined).then(this._nextBound);
+        Promise.resolve().then(this._nextBound).catch(this.callback);
       }
     },
 
     _next: function InternalRenderTask__next() {
-      if (this.cancelled) {
-        return;
-      }
-      this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
-                                        this.operatorListIdx,
-                                        this._continueBound,
-                                        this.stepper);
-      if (this.operatorListIdx === this.operatorList.argsArray.length) {
-        this.running = false;
-        if (this.operatorList.lastChunk) {
-          this.gfx.endDrawing();
-          if (this._canvas) {
-            canvasInRendering.delete(this._canvas);
-          }
-          this.callback();
+      return new Promise(() => {
+        if (this.cancelled) {
+          return;
         }
-      }
+        this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
+                                          this.operatorListIdx,
+                                          this._continueBound,
+                                          this.stepper);
+        if (this.operatorListIdx === this.operatorList.argsArray.length) {
+          this.running = false;
+          if (this.operatorList.lastChunk) {
+            this.gfx.endDrawing();
+            if (this._canvas) {
+              canvasInRendering.delete(this._canvas);
+            }
+            this.callback();
+          }
+        }
+      });
     },
 
   };

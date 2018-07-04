@@ -41,6 +41,18 @@ let DNLMarkerError = (function DNLMarkerErrorClosure() {
   return DNLMarkerError;
 })();
 
+let EOIMarkerError = (function EOIMarkerErrorClosure() {
+  function EOIMarkerError(message) {
+    this.message = message;
+  }
+
+  EOIMarkerError.prototype = new Error();
+  EOIMarkerError.prototype.name = 'EOIMarkerError';
+  EOIMarkerError.constructor = EOIMarkerError;
+
+  return EOIMarkerError;
+})();
+
 /**
  * This code was forked from https://github.com/notmasteryet/jpgjs.
  * The original version was created by GitHub user notmasteryet.
@@ -82,9 +94,9 @@ var JpegImage = (function JpegImageClosure() {
   var dctSqrt2 =  5793;   // sqrt(2)
   var dctSqrt1d2 = 2896;  // sqrt(2) / 2
 
-  function JpegImage() {
-    this.decodeTransform = null;
-    this.colorTransform = -1;
+  function JpegImage({ decodeTransform = null, colorTransform = -1, } = {}) {
+    this._decodeTransform = decodeTransform;
+    this._colorTransform = colorTransform;
   }
 
   function buildHuffmanTable(codeLengths, values) {
@@ -148,6 +160,9 @@ var JpegImage = (function JpegImageClosure() {
               throw new DNLMarkerError(
                 'Found DNL marker (0xFFDC) while parsing scan data', scanLines);
             }
+          } else if (nextByte === 0xD9) { // EOI == 0xFFD9
+            throw new EOIMarkerError(
+              'Found EOI marker (0xFFD9) while parsing scan data');
           }
           throw new JpegError(
             `unexpected marker ${((bitsData << 8) | nextByte).toString(16)}`);
@@ -716,7 +731,7 @@ var JpegImage = (function JpegImageClosure() {
       }
 
       fileMarker = readUint16();
-      while (fileMarker !== 0xFFD9) { // EOI (End of image)
+      markerLoop: while (fileMarker !== 0xFFD9) { // EOI (End of image)
         var i, j, l;
         switch (fileMarker) {
           case 0xFFE0: // APP0 (Application Specific)
@@ -892,9 +907,11 @@ var JpegImage = (function JpegImageClosure() {
               offset += processed;
             } catch (ex) {
               if (ex instanceof DNLMarkerError) {
-                warn('Attempting to re-parse JPEG image using "scanLines" ' +
-                     'parameter found in DNL marker (0xFFDC) segment.');
+                warn(`${ex.message} -- attempting to re-parse the JPEG image.`);
                 return this.parse(data, { dnlScanLines: ex.scanLines, });
+              } else if (ex instanceof EOIMarkerError) {
+                warn(`${ex.message} -- ignoring the rest of the image data.`);
+                break markerLoop;
               }
               throw ex;
             }
@@ -996,7 +1013,7 @@ var JpegImage = (function JpegImageClosure() {
       }
 
       // decodeTransform contains pairs of multiplier (-256..256) and additive
-      var transform = this.decodeTransform;
+      const transform = this._decodeTransform;
       if (transform) {
         for (i = 0; i < dataLength;) {
           for (j = 0, k = 0; j < numComponents; j++, i++, k += 2) {
@@ -1013,7 +1030,7 @@ var JpegImage = (function JpegImageClosure() {
         return !!this.adobe.transformCode;
       }
       if (this.numComponents === 3) {
-        if (this.colorTransform === 0) {
+        if (this._colorTransform === 0) {
           // If the Adobe transform marker is not present and the image
           // dictionary has a 'ColorTransform' entry, explicitly set to `0`,
           // then the colours should *not* be transformed.
@@ -1022,7 +1039,7 @@ var JpegImage = (function JpegImageClosure() {
         return true;
       }
       // `this.numComponents !== 3`
-      if (this.colorTransform === 1) {
+      if (this._colorTransform === 1) {
         // If the Adobe transform marker is not present and the image
         // dictionary has a 'ColorTransform' entry, explicitly set to `1`,
         // then the colours should be transformed.

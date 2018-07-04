@@ -76,9 +76,9 @@ function initializePDFJS(callback) {
     },
   });
 
-  var catchingExceptions = queryString.getParam('catch');
-  env.catchExceptions(typeof catchingExceptions === 'undefined' ?
-                      true : catchingExceptions);
+  var stoppingOnSpecFailure = queryString.getParam('failFast');
+  env.stopOnSpecFailure(typeof stoppingOnSpecFailure === 'undefined' ?
+                        false : stoppingOnSpecFailure);
 
   var throwingExpectationFailures = queryString.getParam('throwFailures');
   env.throwOnExpectationFailure(throwingExpectationFailures);
@@ -94,8 +94,9 @@ function initializePDFJS(callback) {
   // Reporters
   var htmlReporter = new jasmine.HtmlReporter({
     env,
-    onRaiseExceptionsClick() {
-      queryString.navigateWithNewParam('catch', !env.catchingExceptions());
+    onStopExecutionClick() {
+      queryString.navigateWithNewParam('failFast',
+                                       env.stoppingOnSpecFailure());
     },
     onThrowExpectationsClick() {
       queryString.navigateWithNewParam('throwFailures',
