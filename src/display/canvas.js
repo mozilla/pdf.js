@@ -212,7 +212,7 @@ function compileType3Glyph(imgData) {
     }
   }
 
-  // finding iteresting points: every point is located between mask pixels,
+  // finding interesting points: every point is located between mask pixels,
   // so there will be points of the (width + 1)x(height + 1) grid. Every point
   // will have flags assigned based on neighboring mask pixels:
   //   4 | 8
@@ -2112,8 +2112,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var heightScale = Math.max(Math.sqrt(c * c + d * d), 1);
 
       var imgToPaint, tmpCanvas;
-      // instanceof HTMLElement does not work in jsdom node.js module
-      if (imgData instanceof HTMLElement || !imgData.data) {
+      // typeof check is needed due to node.js support, see issue #8489
+      if ((typeof HTMLElement === 'function' &&
+           imgData instanceof HTMLElement) || !imgData.data) {
         imgToPaint = imgData;
       } else {
         tmpCanvas = this.cachedCanvases.getCanvas('inlineImage',

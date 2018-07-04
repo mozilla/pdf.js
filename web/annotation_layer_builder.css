@@ -163,6 +163,7 @@
   width: 115%;
 }
 
+<<<<<<< HEAD
 .annotationLayer .choiceWidgetAnnotation input + span::before {
   content: '▼';
   right: 0;
@@ -220,7 +221,7 @@
 
 .annotationLayer .buttonWidgetAnnotation.checkBox.check input:checked + span,
 .annotationLayer .buttonWidgetAnnotation.radioButton.check input:checked + span {
-  transform: translate(-50%, -40%); 
+  transform: translate(-50%, -40%);
 }
 
 .annotationLayer .popupWrapper {

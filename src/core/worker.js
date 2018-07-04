@@ -15,12 +15,13 @@
 
 import {
   arrayByteLength, arraysToBytes, assert, createPromiseCapability, info,
-  InvalidPDFException, MessageHandler, MissingPDFException, PasswordException,
+  InvalidPDFException, MissingPDFException, PasswordException,
   setVerbosityLevel, UnexpectedResponseException, UnknownErrorException,
   UNSUPPORTED_FEATURES, warn, XRefParseException
 } from '../shared/util';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
 import isNodeJS from '../shared/is_node';
+import { MessageHandler } from '../shared/message_handler';
 import { Ref } from './primitives';
 
 var WorkerTask = (function WorkerTaskClosure() {
@@ -334,7 +335,7 @@ var WorkerMessageHandler = {
 
       // check if Uint8Array can be sent to worker
       if (!(data instanceof Uint8Array)) {
-        handler.send('test', 'main', false);
+        handler.send('test', false);
         return;
       }
       // making sure postMessage transfers are working
@@ -378,8 +379,10 @@ var WorkerMessageHandler = {
     let apiVersion = docParams.apiVersion;
     let workerVersion =
       typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
-    // The `apiVersion !== null` check is needed to avoid errors during testing.
-    if (apiVersion !== null && apiVersion !== workerVersion) {
+    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING')) &&
+        apiVersion === null) {
+      warn('Ignoring apiVersion/workerVersion check in TESTING builds.');
+    } else if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` +
                       `the Worker version "${workerVersion}".`);
     }
@@ -389,8 +392,8 @@ var WorkerMessageHandler = {
     var workerHandlerName = docParams.docId + '_worker';
     var handler = new MessageHandler(workerHandlerName, docId, port);
 
-    // Ensure that postMessage transfers are correctly enabled/disabled,
-    // to prevent "DataCloneError" in older versions of IE (see issue 6957).
+    // Ensure that postMessage transfers are always correctly enabled/disabled,
+    // to prevent "DataCloneError" in browsers without transfers support.
     handler.postMessageTransfers = docParams.postMessageTransfers;
 
     function ensureNotTerminated() {
@@ -574,9 +577,9 @@ var WorkerMessageHandler = {
             finishWorkerTask(task);
             pdfManager.updatePassword(data.password);
             pdfManagerReady();
-          }).catch(function (ex) {
+          }).catch(function (boundException) {
             finishWorkerTask(task);
-            handler.send('PasswordException', ex);
+            handler.send('PasswordException', boundException);
           }.bind(null, e));
         } else if (e instanceof InvalidPDFException) {
           handler.send('InvalidPDF', e);
@@ -628,9 +631,8 @@ var WorkerMessageHandler = {
           newPdfManager.terminate();
           throw new Error('Worker was terminated');
         }
-
         pdfManager = newPdfManager;
-        handler.send('PDFManagerReady', null);
+
         pdfManager.onLoadedStream().then(function(stream) {
           handler.send('DataLoaded', { length: stream.bytes.byteLength, });
         });
@@ -639,19 +641,17 @@ var WorkerMessageHandler = {
 
     handler.on('GetPage', function wphSetupGetPage(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
-        var rotatePromise = pdfManager.ensure(page, 'rotate');
-        var refPromise = pdfManager.ensure(page, 'ref');
-        var userUnitPromise = pdfManager.ensure(page, 'userUnit');
-        var viewPromise = pdfManager.ensure(page, 'view');
-
         return Promise.all([
-          rotatePromise, refPromise, userUnitPromise, viewPromise
-        ]).then(function(results) {
+          pdfManager.ensure(page, 'rotate'),
+          pdfManager.ensure(page, 'ref'),
+          pdfManager.ensure(page, 'userUnit'),
+          pdfManager.ensure(page, 'view'),
+        ]).then(function([rotate, ref, userUnit, view]) {
           return {
-            rotate: results[0],
-            ref: results[1],
-            userUnit: results[2],
-            view: results[3],
+            rotate,
+            ref,
+            userUnit,
+            view,
           };
         });
       });

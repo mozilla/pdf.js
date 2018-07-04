@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { ScrollMode, SpreadMode } from './base_viewer';
 import { CursorTool } from './pdf_cursor_tools';
 import { SCROLLBAR_PADDING } from './ui_utils';
 
@@ -76,6 +77,18 @@ class SecondaryToolbar {
         eventDetails: { tool: CursorTool.SELECT, }, close: true, },
       { element: options.cursorHandToolButton, eventName: 'switchcursortool',
         eventDetails: { tool: CursorTool.HAND, }, close: true, },
+      { element: options.scrollVerticalButton, eventName: 'switchscrollmode',
+        eventDetails: { mode: ScrollMode.VERTICAL, }, close: true, },
+      { element: options.scrollHorizontalButton, eventName: 'switchscrollmode',
+        eventDetails: { mode: ScrollMode.HORIZONTAL, }, close: true, },
+      { element: options.scrollWrappedButton, eventName: 'switchscrollmode',
+        eventDetails: { mode: ScrollMode.WRAPPED, }, close: true, },
+      { element: options.spreadNoneButton, eventName: 'switchspreadmode',
+        eventDetails: { mode: SpreadMode.NONE, }, close: true, },
+      { element: options.spreadOddButton, eventName: 'switchspreadmode',
+        eventDetails: { mode: SpreadMode.ODD, }, close: true, },
+      { element: options.spreadEvenButton, eventName: 'switchspreadmode',
+        eventDetails: { mode: SpreadMode.EVEN, }, close: true, },
       { element: options.documentPropertiesButton,
         eventName: 'documentproperties', close: true, },
     ];
@@ -95,9 +108,12 @@ class SecondaryToolbar {
 
     this.reset();
 
-    // Bind the event listeners for click and cursor tool actions.
+    // Bind the event listeners for click, cursor tool, and scroll/spread mode
+    // actions.
     this._bindClickListeners();
     this._bindCursorToolsListener(options);
+    this._bindScrollModeListener(options);
+    this._bindSpreadModeListener(options);
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
     this.eventBus.on('resize', this._setMaxHeight.bind(this));
@@ -124,6 +140,10 @@ class SecondaryToolbar {
     this.pageNumber = 0;
     this.pagesCount = 0;
     this._updateUIState();
+
+    // Reset the Scroll/Spread buttons too, since they're document specific.
+    this.eventBus.dispatch('resetscrollmode', { source: this, });
+    this.eventBus.dispatch('resetspreadmode', { source: this, });
   }
 
   _updateUIState() {
@@ -168,6 +188,60 @@ class SecondaryToolbar {
         case CursorTool.HAND:
           buttons.cursorHandToolButton.classList.add('toggled');
           break;
+      }
+    });
+  }
+
+  _bindScrollModeListener(buttons) {
+    function scrollModeChanged(evt) {
+      buttons.scrollVerticalButton.classList.remove('toggled');
+      buttons.scrollHorizontalButton.classList.remove('toggled');
+      buttons.scrollWrappedButton.classList.remove('toggled');
+
+      switch (evt.mode) {
+        case ScrollMode.VERTICAL:
+          buttons.scrollVerticalButton.classList.add('toggled');
+          break;
+        case ScrollMode.HORIZONTAL:
+          buttons.scrollHorizontalButton.classList.add('toggled');
+          break;
+        case ScrollMode.WRAPPED:
+          buttons.scrollWrappedButton.classList.add('toggled');
+          break;
+      }
+    }
+    this.eventBus.on('scrollmodechanged', scrollModeChanged);
+
+    this.eventBus.on('resetscrollmode', (evt) => {
+      if (evt.source === this) {
+        scrollModeChanged({ mode: ScrollMode.VERTICAL, });
+      }
+    });
+  }
+
+  _bindSpreadModeListener(buttons) {
+    function spreadModeChanged(evt) {
+      buttons.spreadNoneButton.classList.remove('toggled');
+      buttons.spreadOddButton.classList.remove('toggled');
+      buttons.spreadEvenButton.classList.remove('toggled');
+
+      switch (evt.mode) {
+        case SpreadMode.NONE:
+          buttons.spreadNoneButton.classList.add('toggled');
+          break;
+        case SpreadMode.ODD:
+          buttons.spreadOddButton.classList.add('toggled');
+          break;
+        case SpreadMode.EVEN:
+          buttons.spreadEvenButton.classList.add('toggled');
+          break;
+      }
+    }
+    this.eventBus.on('spreadmodechanged', spreadModeChanged);
+
+    this.eventBus.on('resetspreadmode', (evt) => {
+      if (evt.source === this) {
+        spreadModeChanged({ mode: SpreadMode.NONE, });
       }
     });
   }

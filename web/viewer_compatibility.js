@@ -18,16 +18,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   const userAgent =
     (typeof navigator !== 'undefined' && navigator.userAgent) || '';
   const isAndroid = /Android/.test(userAgent);
-  const isIE = /Trident/.test(userAgent);
   const isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
-
-  // Disable fullscreen support for certain problematic configurations.
-  // Support: IE11+ (when embedded).
-  (function checkFullscreenSupport() {
-    if (isIE && window.parent !== window) {
-      compatibilityParams.disableFullscreen = true;
-    }
-  })();
 
   // Limit canvas size to 5 mega-pixels on mobile.
   // Support: Android, iOS
@@ -37,8 +28,5 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     }
   })();
 }
-const viewerCompatibilityParams = Object.freeze(compatibilityParams);
 
-export {
-  viewerCompatibilityParams,
-};
+exports.viewerCompatibilityParams = Object.freeze(compatibilityParams);

@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  ImageKind, OPS, Util
-} from '../shared/util';
+import { ImageKind, OPS } from '../shared/util';
 
 var QueueOptimizer = (function QueueOptimizerClosure() {
   function addState(parentState, pattern, checkFn, iterateFn, processFn) {
@@ -444,7 +442,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       let match = this.match;
       if (!state && !match && (i + 1 === ii) && !InitialState[fnArray[i]]) {
         // Micro-optimization for the common case: last item is not
-        // optimazable, just skipping it.
+        // optimizable, just skipping it.
         this.lastProcessed = ii;
         return;
       }
@@ -452,7 +450,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       const context = this.context;
       while (i < ii) {
         if (match) {
-          // Already find a block of potetially optimizable items, iterating...
+          // Already find a block of potentially optimizable items, iterating...
           const iterate = (0, match.iterateFn)(context, i);
           if (iterate) {
             i++;
@@ -467,7 +465,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
             break;
           }
         }
-        // Find the potetially optimizable items.
+        // Find the potentially optimizable items.
         state = (state || InitialState)[fnArray[i]];
         if (!state || Array.isArray(state)) {
           i++;
@@ -613,7 +611,7 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     addOpList(opList) {
-      Util.extendObj(this.dependencies, opList.dependencies);
+      Object.assign(this.dependencies, opList.dependencies);
       for (var i = 0, ii = opList.length; i < ii; i++) {
         this.addOp(opList.fnArray[i], opList.argsArray[i]);
       }

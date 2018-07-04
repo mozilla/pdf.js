@@ -140,7 +140,9 @@ function examineRefImages() {
   startServer();
   var startUrl = 'http://' + server.host + ':' + server.port +
                  '/test/resources/reftest-analyzer.html#web=/test/eq.log';
-  var browser = WebBrowser.create(sessions[0].config);
+  var config = Object.assign({}, sessions[0].config);
+  config['headless'] = false;
+  var browser = WebBrowser.create(config);
   browser.start(startUrl);
 }
 
@@ -207,7 +209,7 @@ function startRefTest(masterMode, showRefImages) {
     }
 
     if (fs.existsSync(eqLog)) {
-      fs.unlink(eqLog);
+      fs.unlinkSync(eqLog);
     }
     if (fs.existsSync(testResultDir)) {
       testUtils.removeDirSync(testResultDir);
@@ -318,7 +320,7 @@ function checkEq(task, results, browser, masterMode) {
     }
     var testSnapshot = pageResults[page].snapshot;
     if (testSnapshot && testSnapshot.indexOf('data:image/png;base64,') === 0) {
-      testSnapshot = new Buffer(testSnapshot.substring(22), 'base64');
+      testSnapshot = Buffer.from(testSnapshot.substring(22), 'base64');
     } else {
       console.error('Valid snapshot was not found.');
     }

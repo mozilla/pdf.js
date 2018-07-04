@@ -18,8 +18,8 @@ import {
   PredictorStream, RunLengthStream
 } from './stream';
 import {
-  assert, FormatError, info, isNum, isString, MissingDataException, StreamType,
-  warn
+  assert, FormatError, info, isNum, isSpace, isString, MissingDataException,
+  StreamType, warn
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
@@ -34,8 +34,10 @@ const MAX_ADLER32_LENGTH = 5552;
 
 function computeAdler32(bytes) {
   let bytesLength = bytes.length;
-  if (bytesLength >= MAX_ADLER32_LENGTH) {
-    throw new Error('computeAdler32: The input is too large.');
+  if (typeof PDFJSDev === 'undefined' ||
+      PDFJSDev.test('!PRODUCTION || TESTING')) {
+    assert(bytesLength < MAX_ADLER32_LENGTH,
+           'computeAdler32: Unsupported "bytes" length.');
   }
   let a = 1, b = 0;
   for (let i = 0; i < bytesLength; ++i) {
@@ -719,7 +721,7 @@ var Lexer = (function LexerClosure() {
       var ch = this.currentChar;
       var eNotation = false;
       var divideBy = 0; // different from 0 if it's a floating point value
-      var sign = 1;
+      var sign = 0;
 
       if (ch === 0x2D) { // '-'
         sign = -1;
@@ -730,10 +732,7 @@ var Lexer = (function LexerClosure() {
           ch = this.nextChar();
         }
       } else if (ch === 0x2B) { // '+'
-        ch = this.nextChar();
-      }
-      if (ch === 0x2E) { // '.'
-        divideBy = 10;
+        sign = 1;
         ch = this.nextChar();
       }
       if (ch === 0x0A || ch === 0x0D) { // LF, CR
@@ -742,11 +741,22 @@ var Lexer = (function LexerClosure() {
           ch = this.nextChar();
         } while (ch === 0x0A || ch === 0x0D);
       }
+      if (ch === 0x2E) { // '.'
+        divideBy = 10;
+        ch = this.nextChar();
+      }
       if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+        if (divideBy === 10 && sign === 0 &&
+            (isSpace(ch) || ch === /* EOF = */ -1)) {
+          // This is consistent with Adobe Reader (fixes issue9252.pdf).
+          warn('Lexer.getNumber - treating a single decimal point as zero.');
+          return 0;
+        }
         throw new FormatError(
           `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`);
       }
 
+      sign = sign || 1;
       var baseValue = ch - 0x30; // '0'
       var powerValue = 0;
       var powerValueSign = 1;

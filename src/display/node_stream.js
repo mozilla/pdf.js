@@ -90,8 +90,7 @@ class BaseFullReader {
   constructor(stream) {
     this._url = stream.url;
     this._done = false;
-    this._errored = false;
-    this._reason = null;
+    this._storedError = null;
     this.onProgress = null;
     let source = stream.source;
     this._contentLength = source.length; // optional
@@ -137,8 +136,8 @@ class BaseFullReader {
       if (this._done) {
         return Promise.resolve({ value: undefined, done: true, });
       }
-      if (this._errored) {
-        return Promise.reject(this._reason);
+      if (this._storedError) {
+        return Promise.reject(this._storedError);
       }
 
       let chunk = this._readableStream.read();
@@ -170,8 +169,7 @@ class BaseFullReader {
   }
 
   _error(reason) {
-    this._errored = true;
-    this._reason = reason;
+    this._storedError = reason;
     this._readCapability.resolve();
   }
 
@@ -199,8 +197,8 @@ class BaseFullReader {
     }
 
     // Destroy ReadableStream if already in errored state.
-    if (this._errored) {
-      this._readableStream.destroy(this._reason);
+    if (this._storedError) {
+      this._readableStream.destroy(this._storedError);
     }
   }
 }
@@ -209,8 +207,7 @@ class BaseRangeReader {
   constructor(stream) {
     this._url = stream.url;
     this._done = false;
-    this._errored = false;
-    this._reason = null;
+    this._storedError = null;
     this.onProgress = null;
     this._loaded = 0;
     this._readableStream = null;
@@ -228,8 +225,8 @@ class BaseRangeReader {
       if (this._done) {
         return Promise.resolve({ value: undefined, done: true, });
       }
-      if (this._errored) {
-        return Promise.reject(this._reason);
+      if (this._storedError) {
+        return Promise.reject(this._storedError);
       }
 
       let chunk = this._readableStream.read();
@@ -258,8 +255,7 @@ class BaseRangeReader {
   }
 
   _error(reason) {
-    this._errored = true;
-    this._reason = reason;
+    this._storedError = reason;
     this._readCapability.resolve();
   }
 
@@ -281,8 +277,8 @@ class BaseRangeReader {
     });
 
     // Destroy readableStream if already in errored state.
-    if (this._errored) {
-      this._readableStream.destroy(this._reason);
+    if (this._storedError) {
+      this._readableStream.destroy(this._storedError);
     }
   }
 }
@@ -339,8 +335,7 @@ class PDFNodeStreamFullReader extends BaseFullReader {
     }
 
     this._request.on('error', (reason) => {
-      this._errored = true;
-      this._reason = reason;
+      this._storedError = reason;
       this._headersCapability.reject(reason);
     });
     // Note: `request.end(data)` is used to write `data` to request body
@@ -378,8 +373,7 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
     }
 
     this._request.on('error', (reason) => {
-      this._errored = true;
-      this._reason = reason;
+      this._storedError = reason;
     });
     this._request.end();
   }
@@ -398,8 +392,7 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
 
     fs.lstat(path, (error, stat) => {
       if (error) {
-        this._errored = true;
-        this._reason = error;
+        this._storedError = error;
         this._headersCapability.reject(error);
         return;
       }

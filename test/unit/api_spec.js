@@ -21,7 +21,7 @@ import {
   OPS, PasswordException, PasswordResponses, StreamType, stringToBytes
 } from '../../src/shared/util';
 import {
-  DOMCanvasFactory, RenderingCancelledException
+  DOMCanvasFactory, RenderingCancelledException, StatTimer
 } from '../../src/display/dom_utils';
 import {
   getDocument, PDFDataRangeTransport, PDFDocumentProxy, PDFPageProxy, PDFWorker
@@ -164,7 +164,9 @@ describe('api', function() {
     });
     it('creates pdf doc from non-existent URL', function(done) {
       if (isNodeJS()) {
-        pending('XMLHttpRequest is not supported in Node.js.');
+        pending('Fix `src/display/node_stream.js` to actually throw ' +
+                'a `MissingPDFException` in all cases where a PDF file ' +
+                'cannot be found, such that this test-case can be enabled.');
       }
       var loadingTask = getDocument(
         buildGetDocumentParams('non-existent.pdf'));
@@ -318,11 +320,11 @@ describe('api', function() {
   });
 
   describe('PDFWorker', function() {
-    if (isNodeJS()) {
-      pending('Worker is not supported in Node.js.');
-    }
-
     it('worker created or destroyed', function (done) {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       var worker = new PDFWorker({ name: 'test1', });
       worker.promise.then(function () {
         expect(worker.name).toEqual('test1');
@@ -340,6 +342,10 @@ describe('api', function() {
       });
     });
     it('worker created or destroyed by getDocument', function (done) {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       var loadingTask = getDocument(basicApiGetDocumentParams);
       var worker;
       loadingTask.promise.then(function () {
@@ -360,6 +366,10 @@ describe('api', function() {
       });
     });
     it('worker created and can be used in getDocument', function (done) {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       var worker = new PDFWorker({ name: 'test1', });
       var loadingTask = getDocument(
         buildGetDocumentParams(basicApiFileName, {
@@ -385,6 +395,10 @@ describe('api', function() {
       });
     });
     it('creates more than one worker', function (done) {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       var worker1 = new PDFWorker({ name: 'test1', });
       var worker2 = new PDFWorker({ name: 'test2', });
       var worker3 = new PDFWorker({ name: 'test3', });
@@ -403,6 +417,10 @@ describe('api', function() {
       });
     });
     it('gets current workerSrc', function() {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       let workerSrc = PDFWorker.getWorkerSrc();
       expect(typeof workerSrc).toEqual('string');
       expect(workerSrc).toEqual(GlobalWorkerOptions.workerSrc);
@@ -746,7 +764,7 @@ describe('api', function() {
 
         expect(outlineItem.bold).toEqual(true);
         expect(outlineItem.italic).toEqual(false);
-        expect(outlineItem.color).toEqual(new Uint8Array([0, 64, 128]));
+        expect(outlineItem.color).toEqual(new Uint8ClampedArray([0, 64, 128]));
 
         expect(outlineItem.items.length).toEqual(1);
         expect(outlineItem.items[0].title).toEqual('Paragraph 1.1');
@@ -773,7 +791,8 @@ describe('api', function() {
           var outlineItemOne = outline[1];
           expect(outlineItemOne.bold).toEqual(false);
           expect(outlineItemOne.italic).toEqual(true);
-          expect(outlineItemOne.color).toEqual(new Uint8Array([0, 0, 0]));
+          expect(outlineItemOne.color).toEqual(
+            new Uint8ClampedArray([0, 0, 0]));
 
           loadingTask.destroy().then(done);
         });
@@ -812,7 +831,7 @@ describe('api', function() {
         done.fail(reason);
       });
     });
-    it('gets stats', function(done) {
+    it('gets document stats', function(done) {
       var promise = doc.getStats();
       promise.then(function (stats) {
         expect(stats).toEqual({ streamTypes: [], fontTypes: [], });
@@ -1123,7 +1142,7 @@ describe('api', function() {
         done.fail(reason);
       });
     });
-    it('gets stats after parsing page', function (done) {
+    it('gets document stats after parsing page', function(done) {
       var promise = page.getOperatorList().then(function () {
         return pdfDocument.getStats();
       });
@@ -1140,6 +1159,77 @@ describe('api', function() {
       }).catch(function (reason) {
         done.fail(reason);
       });
+    });
+
+    it('gets page stats after parsing page, without `pdfBug` set',
+        function(done) {
+      page.getOperatorList().then((opList) => {
+        return page.stats;
+      }).then((stats) => {
+        expect(stats).toEqual(null);
+        done();
+      }, done.fail);
+    });
+    it('gets page stats after parsing page, with `pdfBug` set', function(done) {
+      let loadingTask = getDocument(
+        buildGetDocumentParams(basicApiFileName, { pdfBug: true, }));
+
+      loadingTask.promise.then((pdfDoc) => {
+        return pdfDoc.getPage(1).then((pdfPage) => {
+          return pdfPage.getOperatorList().then((opList) => {
+            return pdfPage.stats;
+          });
+        });
+      }).then((stats) => {
+        expect(stats instanceof StatTimer).toEqual(true);
+        expect(stats.times.length).toEqual(1);
+
+        let [statEntry] = stats.times;
+        expect(statEntry.name).toEqual('Page Request');
+        expect(statEntry.end - statEntry.start).toBeGreaterThan(0);
+
+        loadingTask.destroy().then(done);
+      }, done.fail);
+    });
+    it('gets page stats after rendering page, with `pdfBug` set',
+        function(done) {
+      if (isNodeJS()) {
+        pending('TODO: Support Canvas testing in Node.js.');
+      }
+      let loadingTask = getDocument(
+        buildGetDocumentParams(basicApiFileName, { pdfBug: true, }));
+      let canvasAndCtx;
+
+      loadingTask.promise.then((pdfDoc) => {
+        return pdfDoc.getPage(1).then((pdfPage) => {
+          let viewport = pdfPage.getViewport(1);
+          canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+          let renderTask = pdfPage.render({
+            canvasContext: canvasAndCtx.context,
+            viewport,
+          });
+          return renderTask.promise.then(() => {
+            return pdfPage.stats;
+          });
+        });
+      }).then((stats) => {
+        expect(stats instanceof StatTimer).toEqual(true);
+        expect(stats.times.length).toEqual(3);
+
+        let [statEntryOne, statEntryTwo, statEntryThree] = stats.times;
+        expect(statEntryOne.name).toEqual('Page Request');
+        expect(statEntryOne.end - statEntryOne.start).toBeGreaterThan(0);
+
+        expect(statEntryTwo.name).toEqual('Rendering');
+        expect(statEntryTwo.end - statEntryTwo.start).toBeGreaterThan(0);
+
+        expect(statEntryThree.name).toEqual('Overall');
+        expect(statEntryThree.end - statEntryThree.start).toBeGreaterThan(0);
+
+        CanvasFactory.destroy(canvasAndCtx);
+        loadingTask.destroy().then(done);
+      }, done.fail);
     });
 
     it('cancels rendering of page', function(done) {
@@ -1164,6 +1254,37 @@ describe('api', function() {
         done();
       });
     });
+
+    it('re-render page, using the same canvas, after cancelling rendering',
+        function(done) {
+      if (isNodeJS()) {
+        pending('TODO: Support Canvas testing in Node.js.');
+      }
+      let viewport = page.getViewport(1);
+      let canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+      let renderTask = page.render({
+        canvasContext: canvasAndCtx.context,
+        viewport,
+      });
+      renderTask.cancel();
+
+      renderTask.promise.then(() => {
+        throw new Error('shall cancel rendering');
+      }, (reason) => {
+        expect(reason instanceof RenderingCancelledException).toEqual(true);
+      }).then(() => {
+        let reRenderTask = page.render({
+          canvasContext: canvasAndCtx.context,
+          viewport,
+        });
+        return reRenderTask.promise;
+      }).then(() => {
+        CanvasFactory.destroy(canvasAndCtx);
+        done();
+      }, done.fail);
+    });
+
     it('multiple render() on the same canvas', function(done) {
       if (isNodeJS()) {
         pending('TODO: Support Canvas testing in Node.js.');
@@ -1191,10 +1312,7 @@ describe('api', function() {
       ]).then(done);
     });
   });
-  describe('Multiple PDFJS instances', function() {
-    if (isNodeJS()) {
-      pending('TODO: Support Canvas testing in Node.js.');
-    }
+  describe('Multiple `getDocument` instances', function() {
     // Regression test for https://github.com/mozilla/pdf.js/issues/6205
     // A PDF using the Helvetica font.
     var pdf1 = buildGetDocumentParams('tracemonkey.pdf');
@@ -1248,6 +1366,10 @@ describe('api', function() {
     });
 
     it('should correctly render PDFs in parallel', function(done) {
+      if (isNodeJS()) {
+        pending('TODO: Support Canvas testing in Node.js.');
+      }
+
       var baseline1, baseline2, baseline3;
       var promiseDone = renderPDF(pdf1).then(function(data1) {
         baseline1 = data1;
@@ -1276,12 +1398,9 @@ describe('api', function() {
     });
   });
   describe('PDFDataRangeTransport', function () {
-    if (isNodeJS()) {
-      pending('XMLHttpRequest is not supported in Node.js.');
-    }
-    var pdfPath = new URL('../pdfs/tracemonkey.pdf', window.location).href;
     var loadPromise;
     function getDocumentData() {
+      const pdfPath = new URL('../pdfs/tracemonkey.pdf', window.location).href;
       if (loadPromise) {
         return loadPromise;
       }
@@ -1300,6 +1419,10 @@ describe('api', function() {
       return loadPromise;
     }
     it('should fetch document info and page using ranges', function (done) {
+      if (isNodeJS()) {
+        pending('XMLHttpRequest is not supported in Node.js.');
+      }
+
       var transport;
       var initialDataLength = 4000;
       var fetches = 0;
@@ -1334,6 +1457,10 @@ describe('api', function() {
     });
     it('should fetch document info and page using range and streaming',
         function (done) {
+      if (isNodeJS()) {
+        pending('XMLHttpRequest is not supported in Node.js.');
+      }
+
       var transport;
       var initialDataLength = 4000;
       var fetches = 0;

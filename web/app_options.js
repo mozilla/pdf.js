@@ -28,6 +28,11 @@ const OptionKind = {
  *              compare with the format of `default_preferences.json`.
  */
 const defaultOptions = {
+  cursorToolOnLoad: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
   defaultUrl: {
     /** @type {string} */
     value: 'compressed.tracemonkey-pldi-09.pdf',
@@ -36,11 +41,6 @@ const defaultOptions = {
   defaultZoomValue: {
     /** @type {string} */
     value: '',
-    kind: OptionKind.VIEWER,
-  },
-  disableFullscreen: {
-    /** @type {boolean} */
-    value: viewerCompatibilityParams.disableFullscreen || false,
     kind: OptionKind.VIEWER,
   },
   disableHistory: {
@@ -83,11 +83,9 @@ const defaultOptions = {
     value: './images/',
     kind: OptionKind.VIEWER,
   },
-  locale: {
-    /** @type {string} */
-    value: (typeof navigator !== 'undefined' ? navigator.language : 'en-US'),
-    kind: OptionKind.VIEWER,
-  },
+  /**
+   * The `locale` is, conditionally, defined below.
+   */
   maxCanvasPixels: {
     /** @type {number} */
     value: viewerCompatibilityParams.maxCanvasPixels || 16777216,
@@ -114,6 +112,16 @@ const defaultOptions = {
     kind: OptionKind.VIEWER,
   },
   sidebarViewOnLoad: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
+  scrollModeOnLoad: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
+  spreadModeOnLoad: {
     /** @type {number} */
     value: 0,
     kind: OptionKind.VIEWER,
@@ -157,12 +165,12 @@ const defaultOptions = {
   },
   disableRange: {
     /** @type {boolean} */
-    value: apiCompatibilityParams.disableRange || false,
+    value: false,
     kind: OptionKind.API,
   },
   disableStream: {
     /** @type {boolean} */
-    value: apiCompatibilityParams.disableStream || false,
+    value: false,
     kind: OptionKind.API,
   },
   isEvalSupported: {
@@ -203,6 +211,14 @@ const defaultOptions = {
     kind: OptionKind.WORKER,
   },
 };
+if (typeof PDFJSDev === 'undefined' ||
+    PDFJSDev.test('!PRODUCTION || GENERIC')) {
+  defaultOptions.locale = {
+    /** @type {string} */
+    value: (typeof navigator !== 'undefined' ? navigator.language : 'en-US'),
+    kind: OptionKind.VIEWER,
+  };
+}
 
 const userOptions = Object.create(null);
 

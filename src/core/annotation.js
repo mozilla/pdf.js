@@ -283,6 +283,7 @@ class Annotation {
 
   /**
    * Set the color and take care of color space conversion.
+   * The default value is black, in RGB color space.
    *
    * @public
    * @memberof Annotation
@@ -291,7 +292,7 @@ class Annotation {
    *                        4 (CMYK) elements
    */
   setColor(color) {
-    let rgbColor = new Uint8Array(3); // Black in RGB color space (default)
+    let rgbColor = new Uint8ClampedArray(3);
     if (!Array.isArray(color)) {
       this.color = rgbColor;
       return;
@@ -448,7 +449,8 @@ class Annotation {
   }
 
   getColorFromArray(color) {
-    let rgbColor = new Uint8Array(3); // Black in RGB color space (default)
+    // Black in RGB color space (default)
+    let rgbColor = new Uint8ClampedArray(3);
     if (!Array.isArray(color)) {
       return null;
     }
