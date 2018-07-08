@@ -15,6 +15,7 @@
 
 import { ScrollMode, SpreadMode } from './base_viewer';
 import { CursorTool } from './pdf_cursor_tools';
+import { PDFSinglePageViewer } from './pdf_single_page_viewer';
 import { SCROLLBAR_PADDING } from './ui_utils';
 
 /**
@@ -117,6 +118,18 @@ class SecondaryToolbar {
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
     this.eventBus.on('resize', this._setMaxHeight.bind(this));
+
+    // Hide the Scroll/Spread mode buttons, when they're not applicable to the
+    // current `BaseViewer` instance (in particular `PDFSinglePageViewer`).
+    this.eventBus.on('baseviewerinit', (evt) => {
+      if (evt.source instanceof PDFSinglePageViewer) {
+        this.toolbarButtonContainer.classList.add('hiddenScrollModeButtons');
+        this.toolbarButtonContainer.classList.add('hiddenSpreadModeButtons');
+      } else {
+        this.toolbarButtonContainer.classList.remove('hiddenScrollModeButtons');
+        this.toolbarButtonContainer.classList.remove('hiddenSpreadModeButtons');
+      }
+    });
   }
 
   /**
@@ -142,8 +155,7 @@ class SecondaryToolbar {
     this._updateUIState();
 
     // Reset the Scroll/Spread buttons too, since they're document specific.
-    this.eventBus.dispatch('resetscrollmode', { source: this, });
-    this.eventBus.dispatch('resetspreadmode', { source: this, });
+    this.eventBus.dispatch('secondarytoolbarreset', { source: this, });
   }
 
   _updateUIState() {
@@ -209,10 +221,17 @@ class SecondaryToolbar {
           buttons.scrollWrappedButton.classList.add('toggled');
           break;
       }
+
+      // Temporarily *disable* the Spread buttons when horizontal scrolling is
+      // enabled, since the non-default Spread modes doesn't affect the layout.
+      const isScrollModeHorizontal = (evt.mode === ScrollMode.HORIZONTAL);
+      buttons.spreadNoneButton.disabled = isScrollModeHorizontal;
+      buttons.spreadOddButton.disabled = isScrollModeHorizontal;
+      buttons.spreadEvenButton.disabled = isScrollModeHorizontal;
     }
     this.eventBus.on('scrollmodechanged', scrollModeChanged);
 
-    this.eventBus.on('resetscrollmode', (evt) => {
+    this.eventBus.on('secondarytoolbarreset', (evt) => {
       if (evt.source === this) {
         scrollModeChanged({ mode: ScrollMode.VERTICAL, });
       }
@@ -239,7 +258,7 @@ class SecondaryToolbar {
     }
     this.eventBus.on('spreadmodechanged', spreadModeChanged);
 
-    this.eventBus.on('resetspreadmode', (evt) => {
+    this.eventBus.on('secondarytoolbarreset', (evt) => {
       if (evt.source === this) {
         spreadModeChanged({ mode: SpreadMode.NONE, });
       }

@@ -394,6 +394,11 @@ html[dir='rtl'] .secondaryToolbar {
   margin-bottom: -4px;
 }
 
+#secondaryToolbarButtonContainer.hiddenScrollModeButtons > .scrollModeButtons,
+#secondaryToolbarButtonContainer.hiddenSpreadModeButtons > .spreadModeButtons {
+  display: none !important;
+}
+
 .doorHanger,
 .doorHangerRight {
   border: 1px solid hsla(0,0%,0%,.5);
