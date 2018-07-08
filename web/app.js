@@ -21,9 +21,10 @@ import {
   TextLayerMode
 } from './ui_utils';
 import {
-  build, createBlob, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
-  InvalidPDFException, LinkTarget, loadScript, MissingPDFException, OPS,
-  PDFWorker, shadow, UnexpectedResponseException, UNSUPPORTED_FEATURES, version
+  build, createBlob, createObjectURL, getDocument, getFilenameFromUrl,
+  GlobalWorkerOptions, InvalidPDFException, LinkTarget, loadScript,
+  MissingPDFException, OPS, PDFWorker, shadow, UnexpectedResponseException,
+  UNSUPPORTED_FEATURES, URL, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -1583,6 +1584,7 @@ function loadAndEnablePDFBug(enabledTabs) {
     PDFBug.enable(enabledTabs);
     PDFBug.init({
       OPS,
+      createObjectURL,
     }, appConfig.mainContainer);
   });
 }
