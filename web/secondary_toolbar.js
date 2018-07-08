@@ -142,8 +142,7 @@ class SecondaryToolbar {
     this._updateUIState();
 
     // Reset the Scroll/Spread buttons too, since they're document specific.
-    this.eventBus.dispatch('resetscrollmode', { source: this, });
-    this.eventBus.dispatch('resetspreadmode', { source: this, });
+    this.eventBus.dispatch('secondarytoolbarreset', { source: this, });
   }
 
   _updateUIState() {
@@ -212,7 +211,7 @@ class SecondaryToolbar {
     }
     this.eventBus.on('scrollmodechanged', scrollModeChanged);
 
-    this.eventBus.on('resetscrollmode', (evt) => {
+    this.eventBus.on('secondarytoolbarreset', (evt) => {
       if (evt.source === this) {
         scrollModeChanged({ mode: ScrollMode.VERTICAL, });
       }
@@ -239,7 +238,7 @@ class SecondaryToolbar {
     }
     this.eventBus.on('spreadmodechanged', spreadModeChanged);
 
-    this.eventBus.on('resetspreadmode', (evt) => {
+    this.eventBus.on('secondarytoolbarreset', (evt) => {
       if (evt.source === this) {
         spreadModeChanged({ mode: SpreadMode.NONE, });
       }
