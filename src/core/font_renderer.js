@@ -616,7 +616,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     parse(code);
   }
 
-  var noop = '';
+  const NOOP = [];
 
   function CompiledFont(fontMatrix) {
     this.compiledGlyphs = Object.create(null);
@@ -639,7 +639,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
     compileGlyph(code, glyphId) {
       if (!code || code.length === 0 || code[0] === 14) {
-        return noop;
+        return NOOP;
       }
 
       let fontMatrix = this.fontMatrix;
