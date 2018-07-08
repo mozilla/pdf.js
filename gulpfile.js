@@ -941,6 +941,8 @@ gulp.task('lib', ['buildnumber'], function () {
     buildLib,
     gulp.src('external/streams/streams-lib.js', { base: '.', })
       .pipe(gulp.dest('build/')),
+    gulp.src('external/url/url-lib.js', { base: '.', })
+      .pipe(gulp.dest('build/')),
   ]);
 });
 
@@ -1242,6 +1244,8 @@ gulp.task('dist-pre',
 
   return merge([
     gulp.src('external/streams/streams-lib.js', { base: '.', })
+      .pipe(gulp.dest('build/dist/')),
+    gulp.src('external/url/url-lib.js', { base: '.', })
       .pipe(gulp.dest('build/dist/')),
     packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
     bowerJsonSrc.pipe(gulp.dest(DIST_DIR)),
