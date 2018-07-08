@@ -221,6 +221,13 @@ class SecondaryToolbar {
           buttons.scrollWrappedButton.classList.add('toggled');
           break;
       }
+
+      // Temporarily *disable* the Spread buttons when horizontal scrolling is
+      // enabled, since the non-default Spread modes doesn't affect the layout.
+      const isScrollModeHorizontal = (evt.mode === ScrollMode.HORIZONTAL);
+      buttons.spreadNoneButton.disabled = isScrollModeHorizontal;
+      buttons.spreadOddButton.disabled = isScrollModeHorizontal;
+      buttons.spreadEvenButton.disabled = isScrollModeHorizontal;
     }
     this.eventBus.on('scrollmodechanged', scrollModeChanged);
 
