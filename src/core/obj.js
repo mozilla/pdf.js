@@ -1573,145 +1573,130 @@ var XRef = (function XRefClosure() {
  * see the specification (7.9.6 and 7.9.7) for additional details.
  * TODO: implement all the Dict functions and make this more efficient.
  */
-var NameOrNumberTree = (function NameOrNumberTreeClosure() {
-  function NameOrNumberTree(root, xref) {
-    unreachable('Cannot initialize NameOrNumberTree.');
+class NameOrNumberTree {
+  constructor(root, xref, type) {
+    if (this.constructor === NameOrNumberTree) {
+      unreachable('Cannot initialize NameOrNumberTree.');
+    }
+    this.root = root;
+    this.xref = xref;
+    this._type = type;
   }
 
-  NameOrNumberTree.prototype = {
-    getAll: function NameOrNumberTree_getAll() {
-      var dict = Object.create(null);
-      if (!this.root) {
-        return dict;
-      }
-      var xref = this.xref;
-      // Reading Name/Number tree.
-      var processed = new RefSet();
-      processed.put(this.root);
-      var queue = [this.root];
-      while (queue.length > 0) {
-        var i, n;
-        var obj = xref.fetchIfRef(queue.shift());
-        if (!isDict(obj)) {
-          continue;
-        }
-        if (obj.has('Kids')) {
-          var kids = obj.get('Kids');
-          for (i = 0, n = kids.length; i < n; i++) {
-            var kid = kids[i];
-            if (processed.has(kid)) {
-              throw new FormatError(`Duplicate entry in "${this._type}" tree.`);
-            }
-            queue.push(kid);
-            processed.put(kid);
-          }
-          continue;
-        }
-        var entries = obj.get(this._type);
-        if (Array.isArray(entries)) {
-          for (i = 0, n = entries.length; i < n; i += 2) {
-            dict[xref.fetchIfRef(entries[i])] = xref.fetchIfRef(entries[i + 1]);
-          }
-        }
-      }
+  getAll() {
+    const dict = Object.create(null);
+    if (!this.root) {
       return dict;
-    },
+    }
+    const xref = this.xref;
+    // Reading Name/Number tree.
+    const processed = new RefSet();
+    processed.put(this.root);
+    const queue = [this.root];
+    while (queue.length > 0) {
+      const obj = xref.fetchIfRef(queue.shift());
+      if (!isDict(obj)) {
+        continue;
+      }
+      if (obj.has('Kids')) {
+        const kids = obj.get('Kids');
+        for (let i = 0, ii = kids.length; i < ii; i++) {
+          const kid = kids[i];
+          if (processed.has(kid)) {
+            throw new FormatError(`Duplicate entry in "${this._type}" tree.`);
+          }
+          queue.push(kid);
+          processed.put(kid);
+        }
+        continue;
+      }
+      const entries = obj.get(this._type);
+      if (Array.isArray(entries)) {
+        for (let i = 0, ii = entries.length; i < ii; i += 2) {
+          dict[xref.fetchIfRef(entries[i])] = xref.fetchIfRef(entries[i + 1]);
+        }
+      }
+    }
+    return dict;
+  }
 
-    get: function NameOrNumberTree_get(key) {
-      if (!this.root) {
+  get(key) {
+    if (!this.root) {
+      return null;
+    }
+    const xref = this.xref;
+    let kidsOrEntries = xref.fetchIfRef(this.root);
+    let loopCount = 0;
+    const MAX_LEVELS = 10;
+
+    // Perform a binary search to quickly find the entry that
+    // contains the key we are looking for.
+    while (kidsOrEntries.has('Kids')) {
+      if (++loopCount > MAX_LEVELS) {
+        warn('Search depth limit reached for "' + this._type + '" tree.');
         return null;
       }
 
-      var xref = this.xref;
-      var kidsOrEntries = xref.fetchIfRef(this.root);
-      var loopCount = 0;
-      var MAX_LEVELS = 10;
-      var l, r, m;
-
-      // Perform a binary search to quickly find the entry that
-      // contains the key we are looking for.
-      while (kidsOrEntries.has('Kids')) {
-        if (++loopCount > MAX_LEVELS) {
-          warn('Search depth limit reached for "' + this._type + '" tree.');
-          return null;
-        }
-
-        var kids = kidsOrEntries.get('Kids');
-        if (!Array.isArray(kids)) {
-          return null;
-        }
-
-        l = 0;
-        r = kids.length - 1;
-        while (l <= r) {
-          m = (l + r) >> 1;
-          var kid = xref.fetchIfRef(kids[m]);
-          var limits = kid.get('Limits');
-
-          if (key < xref.fetchIfRef(limits[0])) {
-            r = m - 1;
-          } else if (key > xref.fetchIfRef(limits[1])) {
-            l = m + 1;
-          } else {
-            kidsOrEntries = xref.fetchIfRef(kids[m]);
-            break;
-          }
-        }
-        if (l > r) {
-          return null;
-        }
+      const kids = kidsOrEntries.get('Kids');
+      if (!Array.isArray(kids)) {
+        return null;
       }
 
-      // If we get here, then we have found the right entry. Now go through the
-      // entries in the dictionary until we find the key we're looking for.
-      var entries = kidsOrEntries.get(this._type);
-      if (Array.isArray(entries)) {
-        // Perform a binary search to reduce the lookup time.
-        l = 0;
-        r = entries.length - 2;
-        while (l <= r) {
-          // Check only even indices (0, 2, 4, ...) because the
-          // odd indices contain the actual data.
-          m = (l + r) & ~1;
-          var currentKey = xref.fetchIfRef(entries[m]);
-          if (key < currentKey) {
-            r = m - 2;
-          } else if (key > currentKey) {
-            l = m + 2;
-          } else {
-            return xref.fetchIfRef(entries[m + 1]);
-          }
+      let l = 0, r = kids.length - 1;
+      while (l <= r) {
+        const m = (l + r) >> 1;
+        const kid = xref.fetchIfRef(kids[m]);
+        const limits = kid.get('Limits');
+
+        if (key < xref.fetchIfRef(limits[0])) {
+          r = m - 1;
+        } else if (key > xref.fetchIfRef(limits[1])) {
+          l = m + 1;
+        } else {
+          kidsOrEntries = xref.fetchIfRef(kids[m]);
+          break;
         }
       }
-      return null;
-    },
-  };
-  return NameOrNumberTree;
-})();
+      if (l > r) {
+        return null;
+      }
+    }
 
-var NameTree = (function NameTreeClosure() {
-  function NameTree(root, xref) {
-    this.root = root;
-    this.xref = xref;
-    this._type = 'Names';
+    // If we get here, then we have found the right entry. Now go through the
+    // entries in the dictionary until we find the key we're looking for.
+    const entries = kidsOrEntries.get(this._type);
+    if (Array.isArray(entries)) {
+      // Perform a binary search to reduce the lookup time.
+      let l = 0, r = entries.length - 2;
+      while (l <= r) {
+        // Check only even indices (0, 2, 4, ...) because the
+        // odd indices contain the actual data.
+        const m = (l + r) & ~1;
+        const currentKey = xref.fetchIfRef(entries[m]);
+        if (key < currentKey) {
+          r = m - 2;
+        } else if (key > currentKey) {
+          l = m + 2;
+        } else {
+          return xref.fetchIfRef(entries[m + 1]);
+        }
+      }
+    }
+    return null;
   }
+}
 
-  Util.inherit(NameTree, NameOrNumberTree, {});
-
-  return NameTree;
-})();
-
-var NumberTree = (function NumberTreeClosure() {
-  function NumberTree(root, xref) {
-    this.root = root;
-    this.xref = xref;
-    this._type = 'Nums';
+class NameTree extends NameOrNumberTree {
+  constructor(root, xref) {
+    super(root, xref, 'Names');
   }
+}
 
-  Util.inherit(NumberTree, NameOrNumberTree, {});
-
-  return NumberTree;
-})();
+class NumberTree extends NameOrNumberTree {
+  constructor(root, xref) {
+    super(root, xref, 'Nums');
+  }
+}
 
 /**
  * "A PDF file can refer to the contents of another file by using a File
