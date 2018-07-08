@@ -15,6 +15,7 @@
 
 import { ScrollMode, SpreadMode } from './base_viewer';
 import { CursorTool } from './pdf_cursor_tools';
+import { PDFSinglePageViewer } from './pdf_single_page_viewer';
 import { SCROLLBAR_PADDING } from './ui_utils';
 
 /**
@@ -117,6 +118,18 @@ class SecondaryToolbar {
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
     this.eventBus.on('resize', this._setMaxHeight.bind(this));
+
+    // Hide the Scroll/Spread mode buttons, when they're not applicable to the
+    // current `BaseViewer` instance (in particular `PDFSinglePageViewer`).
+    this.eventBus.on('baseviewerinit', (evt) => {
+      if (evt.source instanceof PDFSinglePageViewer) {
+        this.toolbarButtonContainer.classList.add('hiddenScrollModeButtons');
+        this.toolbarButtonContainer.classList.add('hiddenSpreadModeButtons');
+      } else {
+        this.toolbarButtonContainer.classList.remove('hiddenScrollModeButtons');
+        this.toolbarButtonContainer.classList.remove('hiddenSpreadModeButtons');
+      }
+    });
   }
 
   /**
