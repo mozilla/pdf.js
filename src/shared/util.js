@@ -875,14 +875,6 @@ var Util = (function UtilClosure() {
     return (lowerCase ? romanStr.toLowerCase() : romanStr);
   };
 
-  Util.inherit = function Util_inherit(sub, base, prototype) {
-    sub.prototype = Object.create(base.prototype);
-    sub.prototype.constructor = sub;
-    for (var prop in prototype) {
-      sub.prototype[prop] = prototype[prop];
-    }
-  };
-
   return Util;
 })();
 
