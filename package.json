@@ -13,6 +13,7 @@
     "eslint": "^5.1.0",
     "eslint-plugin-mozilla": "^0.14.0",
     "eslint-plugin-no-unsanitized": "^3.0.2",
+    "eslint-plugin-unicorn": "^4.0.3",
     "fancy-log": "^1.3.2",
     "gulp": "^3.9.1",
     "gulp-postcss": "^7.0.1",
