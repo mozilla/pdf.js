@@ -16,7 +16,7 @@
 import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
   info, InvalidPDFException, isBool, isString, MissingDataException, shadow,
-  stringToPDFString, stringToUTF8String, unreachable, Util, warn,
+  stringToPDFString, stringToUTF8String, toRomanNumerals, unreachable, warn,
   XRefParseException
 } from '../shared/util';
 import {
@@ -310,7 +310,7 @@ var Catalog = (function CatalogClosure() {
             break;
           case 'R':
           case 'r':
-            currentLabel = Util.toRoman(currentIndex, style === 'r');
+            currentLabel = toRomanNumerals(currentIndex, style === 'r');
             break;
           case 'A':
           case 'a':
