@@ -14,7 +14,7 @@
  */
 
 import {
-  bytesToString, FONT_IDENTITY_MATRIX, FormatError, unreachable, Util, warn
+  bytesToString, FONT_IDENTITY_MATRIX, FormatError, unreachable, warn
 } from '../shared/util';
 import { CFFParser } from './cff_parser';
 import { getGlyphsUnicode } from './glyphlist';
@@ -616,17 +616,22 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     parse(code);
   }
 
-  var noop = '';
+  const NOOP = [];
 
-  function CompiledFont(fontMatrix) {
-    this.compiledGlyphs = Object.create(null);
-    this.compiledCharCodeToGlyphId = Object.create(null);
-    this.fontMatrix = fontMatrix;
-  }
-  CompiledFont.prototype = {
+  class CompiledFont {
+    constructor(fontMatrix) {
+      if (this.constructor === CompiledFont) {
+        unreachable('Cannot initialize CompiledFont.');
+      }
+      this.fontMatrix = fontMatrix;
+
+      this.compiledGlyphs = Object.create(null);
+      this.compiledCharCodeToGlyphId = Object.create(null);
+    }
+
     getPathJs(unicode) {
-      var cmap = lookupCmap(this.cmap, unicode);
-      var fn = this.compiledGlyphs[cmap.glyphId];
+      const cmap = lookupCmap(this.cmap, unicode);
+      let fn = this.compiledGlyphs[cmap.glyphId];
       if (!fn) {
         fn = this.compileGlyph(this.glyphs[cmap.glyphId], cmap.glyphId);
         this.compiledGlyphs[cmap.glyphId] = fn;
@@ -635,11 +640,11 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         this.compiledCharCodeToGlyphId[cmap.charCode] = cmap.glyphId;
       }
       return fn;
-    },
+    }
 
     compileGlyph(code, glyphId) {
       if (!code || code.length === 0 || code[0] === 14) {
-        return noop;
+        return NOOP;
       }
 
       let fontMatrix = this.fontMatrix;
@@ -655,7 +660,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         }
       }
 
-      var cmds = [];
+      const cmds = [];
       cmds.push({ cmd: 'save', });
       cmds.push({ cmd: 'transform', args: fontMatrix.slice(), });
       cmds.push({ cmd: 'scale', args: ['size', '-size'], });
@@ -665,58 +670,56 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       cmds.push({ cmd: 'restore', });
 
       return cmds;
-    },
+    }
 
     compileGlyphImpl() {
       unreachable('Children classes should implement this.');
-    },
+    }
 
     hasBuiltPath(unicode) {
-      var cmap = lookupCmap(this.cmap, unicode);
+      const cmap = lookupCmap(this.cmap, unicode);
       return (this.compiledGlyphs[cmap.glyphId] !== undefined &&
               this.compiledCharCodeToGlyphId[cmap.charCode] !== undefined);
-    },
-  };
-
-  function TrueTypeCompiled(glyphs, cmap, fontMatrix) {
-    fontMatrix = fontMatrix || [0.000488, 0, 0, 0.000488, 0, 0];
-    CompiledFont.call(this, fontMatrix);
-
-    this.glyphs = glyphs;
-    this.cmap = cmap;
+    }
   }
 
-  Util.inherit(TrueTypeCompiled, CompiledFont, {
+  class TrueTypeCompiled extends CompiledFont {
+    constructor(glyphs, cmap, fontMatrix) {
+      super(fontMatrix || [0.000488, 0, 0, 0.000488, 0, 0]);
+
+      this.glyphs = glyphs;
+      this.cmap = cmap;
+    }
+
     compileGlyphImpl(code, cmds) {
       compileGlyf(code, cmds, this);
-    },
-  });
-
-  function Type2Compiled(cffInfo, cmap, fontMatrix, glyphNameMap) {
-    fontMatrix = fontMatrix || [0.001, 0, 0, 0.001, 0, 0];
-    CompiledFont.call(this, fontMatrix);
-
-    this.glyphs = cffInfo.glyphs;
-    this.gsubrs = cffInfo.gsubrs || [];
-    this.subrs = cffInfo.subrs || [];
-    this.cmap = cmap;
-    this.glyphNameMap = glyphNameMap || getGlyphsUnicode();
-
-    this.gsubrsBias = (this.gsubrs.length < 1240 ?
-                       107 : (this.gsubrs.length < 33900 ? 1131 : 32768));
-    this.subrsBias = (this.subrs.length < 1240 ?
-                      107 : (this.subrs.length < 33900 ? 1131 : 32768));
-
-    this.isCFFCIDFont = cffInfo.isCFFCIDFont;
-    this.fdSelect = cffInfo.fdSelect;
-    this.fdArray = cffInfo.fdArray;
+    }
   }
 
-  Util.inherit(Type2Compiled, CompiledFont, {
+  class Type2Compiled extends CompiledFont {
+    constructor(cffInfo, cmap, fontMatrix, glyphNameMap) {
+      super(fontMatrix || [0.001, 0, 0, 0.001, 0, 0]);
+
+      this.glyphs = cffInfo.glyphs;
+      this.gsubrs = cffInfo.gsubrs || [];
+      this.subrs = cffInfo.subrs || [];
+      this.cmap = cmap;
+      this.glyphNameMap = glyphNameMap || getGlyphsUnicode();
+
+      this.gsubrsBias = (this.gsubrs.length < 1240 ?
+                         107 : (this.gsubrs.length < 33900 ? 1131 : 32768));
+      this.subrsBias = (this.subrs.length < 1240 ?
+                        107 : (this.subrs.length < 33900 ? 1131 : 32768));
+
+      this.isCFFCIDFont = cffInfo.isCFFCIDFont;
+      this.fdSelect = cffInfo.fdSelect;
+      this.fdArray = cffInfo.fdArray;
+    }
+
     compileGlyphImpl(code, cmds, glyphId) {
       compileCharString(code, cmds, this, glyphId);
-    },
-  });
+    }
+  }
 
   return {
     create: function FontRendererFactory_create(font, seacAnalysisEnabled) {
