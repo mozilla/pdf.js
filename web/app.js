@@ -1094,6 +1094,7 @@ let PDFViewerApplication = {
         }
         this.initialBookmark = initialParams.bookmark;
 
+        // eslint-disable-next-line no-self-assign
         pdfViewer.currentScaleValue = pdfViewer.currentScaleValue;
         this.setInitialView(initialParams.hash);
       }).then(function() {

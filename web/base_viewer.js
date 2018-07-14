@@ -499,7 +499,7 @@ class BaseViewer {
     }
     if (!labels) {
       this._pageLabels = null;
-    } else if (!(labels instanceof Array &&
+    } else if (!(Array.isArray(labels) &&
                  this.pdfDocument.numPages === labels.length)) {
       this._pageLabels = null;
       console.error(`${this._name}.setPageLabels: Invalid page labels.`);
