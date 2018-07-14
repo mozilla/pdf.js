@@ -839,52 +839,45 @@ var Util = (function UtilClosure() {
     return result;
   };
 
-  var ROMAN_NUMBER_MAP = [
-    '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
-    '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
-    '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'
-  ];
-  /**
-   * Converts positive integers to (upper case) Roman numerals.
-   * @param {integer} number - The number that should be converted.
-   * @param {boolean} lowerCase - Indicates if the result should be converted
-   *   to lower case letters. The default is false.
-   * @return {string} The resulting Roman number.
-   */
-  Util.toRoman = function Util_toRoman(number, lowerCase) {
-    assert(Number.isInteger(number) && number > 0,
-           'The number should be a positive integer.');
-    var pos, romanBuf = [];
-    // Thousands
-    while (number >= 1000) {
-      number -= 1000;
-      romanBuf.push('M');
-    }
-    // Hundreds
-    pos = (number / 100) | 0;
-    number %= 100;
-    romanBuf.push(ROMAN_NUMBER_MAP[pos]);
-    // Tens
-    pos = (number / 10) | 0;
-    number %= 10;
-    romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
-    // Ones
-    romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
-
-    var romanStr = romanBuf.join('');
-    return (lowerCase ? romanStr.toLowerCase() : romanStr);
-  };
-
-  Util.inherit = function Util_inherit(sub, base, prototype) {
-    sub.prototype = Object.create(base.prototype);
-    sub.prototype.constructor = sub;
-    for (var prop in prototype) {
-      sub.prototype[prop] = prototype[prop];
-    }
-  };
-
   return Util;
 })();
+
+const ROMAN_NUMBER_MAP = [
+  '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
+  '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
+  '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'
+];
+
+/**
+ * Converts positive integers to (upper case) Roman numerals.
+ * @param {integer} number - The number that should be converted.
+ * @param {boolean} lowerCase - Indicates if the result should be converted
+ *   to lower case letters. The default value is `false`.
+ * @return {string} The resulting Roman number.
+ */
+function toRomanNumerals(number, lowerCase = false) {
+  assert(Number.isInteger(number) && number > 0,
+         'The number should be a positive integer.');
+  let pos, romanBuf = [];
+  // Thousands
+  while (number >= 1000) {
+    number -= 1000;
+    romanBuf.push('M');
+  }
+  // Hundreds
+  pos = (number / 100) | 0;
+  number %= 100;
+  romanBuf.push(ROMAN_NUMBER_MAP[pos]);
+  // Tens
+  pos = (number / 10) | 0;
+  number %= 10;
+  romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
+  // Ones
+  romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
+
+  const romanStr = romanBuf.join('');
+  return (lowerCase ? romanStr.toLowerCase() : romanStr);
+}
 
 var PDFStringTranslateTable = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1033,6 +1026,7 @@ export {
   UnexpectedResponseException,
   UnknownErrorException,
   Util,
+  toRomanNumerals,
   XRefParseException,
   FormatError,
   arrayByteLength,
