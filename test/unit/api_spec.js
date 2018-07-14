@@ -752,12 +752,12 @@ describe('api', function() {
       var promise = doc.getOutline();
       promise.then(function(outline) {
         // Two top level entries.
-        expect(outline instanceof Array).toEqual(true);
+        expect(Array.isArray(outline)).toEqual(true);
         expect(outline.length).toEqual(2);
         // Make sure some basic attributes are set.
         var outlineItem = outline[1];
         expect(outlineItem.title).toEqual('Chapter 1');
-        expect(outlineItem.dest instanceof Array).toEqual(true);
+        expect(Array.isArray(outlineItem.dest)).toEqual(true);
         expect(outlineItem.url).toEqual(null);
         expect(outlineItem.unsafeUrl).toBeUndefined();
         expect(outlineItem.newWindow).toBeUndefined();
@@ -778,7 +778,7 @@ describe('api', function() {
 
       loadingTask.promise.then(function (pdfDocument) {
         pdfDocument.getOutline().then(function (outline) {
-          expect(outline instanceof Array).toEqual(true);
+          expect(Array.isArray(outline)).toEqual(true);
           expect(outline.length).toEqual(5);
 
           var outlineItemTwo = outline[2];
