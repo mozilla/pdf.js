@@ -2109,21 +2109,32 @@ var Font = (function FontClosure() {
             if (!inFDEF && !inELSE) {
               // collecting information about which functions are used
               funcId = stack[stack.length - 1];
-              ttContext.functionsUsed[funcId] = true;
-              if (funcId in ttContext.functionsStackDeltas) {
-                stack.length += ttContext.functionsStackDeltas[funcId];
-              } else if (funcId in ttContext.functionsDefined &&
-                         !functionsCalled.includes(funcId)) {
-                callstack.push({ data, i, stackTop: stack.length - 1, });
-                functionsCalled.push(funcId);
-                pc = ttContext.functionsDefined[funcId];
-                if (!pc) {
-                  warn('TT: CALL non-existent function');
-                  ttContext.hintsValid = false;
-                  return;
+              if (isNaN(funcId)) {
+                info('TT: CALL empty stack (or invalid entry).');
+              } else {
+                ttContext.functionsUsed[funcId] = true;
+                if (funcId in ttContext.functionsStackDeltas) {
+                  let newStackLength = stack.length +
+                                       ttContext.functionsStackDeltas[funcId];
+                  if (newStackLength < 0) {
+                    warn('TT: CALL invalid functions stack delta.');
+                    ttContext.hintsValid = false;
+                    return;
+                  }
+                  stack.length = newStackLength;
+                } else if (funcId in ttContext.functionsDefined &&
+                           !functionsCalled.includes(funcId)) {
+                  callstack.push({ data, i, stackTop: stack.length - 1, });
+                  functionsCalled.push(funcId);
+                  pc = ttContext.functionsDefined[funcId];
+                  if (!pc) {
+                    warn('TT: CALL non-existent function');
+                    ttContext.hintsValid = false;
+                    return;
+                  }
+                  data = pc.data;
+                  i = pc.i;
                 }
-                data = pc.data;
-                i = pc.i;
               }
             }
           } else if (op === 0x2C && !tooComplexToFollowFunctions) { // FDEF
