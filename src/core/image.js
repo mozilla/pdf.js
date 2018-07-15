@@ -14,7 +14,7 @@
  */
 
 import { assert, FormatError, ImageKind, info, warn } from '../shared/util';
-import { isStream, Name } from './primitives';
+import { isName, isStream, Name } from './primitives';
 import { ColorSpace } from './colorspace';
 import { DecodeStream } from './stream';
 import { JpegStream } from './jpeg_stream';
@@ -84,16 +84,23 @@ var PDFImage = (function PDFImageClosure() {
     this.image = image;
     var dict = image.dict;
     if (dict.has('Filter')) {
-      var filter = dict.get('Filter').name;
-      if (filter === 'JPXDecode') {
-        var jpxImage = new JpxImage();
-        jpxImage.parseImageProperties(image.stream);
-        image.stream.reset();
-        image.bitsPerComponent = jpxImage.bitsPerComponent;
-        image.numComps = jpxImage.componentsCount;
-      } else if (filter === 'JBIG2Decode') {
-        image.bitsPerComponent = 1;
-        image.numComps = 1;
+      const filter = dict.get('Filter');
+      if (isName(filter)) {
+        switch (filter.name) {
+          case 'JPXDecode':
+            var jpxImage = new JpxImage();
+            jpxImage.parseImageProperties(image.stream);
+            image.stream.reset();
+            image.bitsPerComponent = jpxImage.bitsPerComponent;
+            image.numComps = jpxImage.componentsCount;
+            break;
+          case 'JBIG2Decode':
+            image.bitsPerComponent = 1;
+            image.numComps = 1;
+            break;
+        }
+      } else {
+        warn(`PDFImage - invalid /Filter entry in dictionary: "${filter}".`);
       }
     }
     // TODO cache rendered images?
@@ -139,7 +146,7 @@ var PDFImage = (function PDFImageClosure() {
             colorSpace = Name.get('DeviceCMYK');
             break;
           default:
-            throw new Error(`JPX images with ${this.numComps} ` +
+            throw new Error(`JPX images with ${image.numComps} ` +
                             'color components not supported.');
         }
       }
