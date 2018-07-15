@@ -354,7 +354,11 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   // (case 1, 2, or 4), which means finding a page that is above the current
   // page's top. If the found page is partially visible, we're definitely not in
   // case 3, and this assumption is correct.
-  let elt = views[index].div;
+  let elt = views[index] && views[index].div;
+
+  if (!elt) {
+    return 0;
+  }
   let pageTop = elt.offsetTop + elt.clientTop;
 
   if (pageTop >= top) {
