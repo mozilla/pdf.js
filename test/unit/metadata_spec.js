@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { isEmptyObj } from '../../src/shared/util';
 import { Metadata } from '../../src/display/metadata';
 
 describe('metadata', function() {
@@ -95,5 +96,35 @@ describe('metadata', function() {
       'dc:title': 'L\'Odissee thématique logo Odisséé - décembre 2008.pub',
       'xap:creatortool': 'PDFCreator Version 0.9.6',
     });
+  });
+
+  it('should gracefully handle incomplete tags (issue 8884)', function() {
+    let data = '<?xpacket begin="Ã¯Â»Â¿" id="W5M0MpCehiHzreSzNTczkc9d' +
+      '<x:xmpmeta xmlns:x="adobe:ns:meta/">' +
+      '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
+      '<rdf:Description rdf:about=""' +
+      'xmlns:pdfx="http://ns.adobe.com/pdfx/1.3/">' +
+      '</rdf:Description>' +
+      '<rdf:Description rdf:about=""' +
+      'xmlns:xap="http://ns.adobe.com/xap/1.0/">' +
+      '<xap:ModifyDate>2010-03-25T11:20:09-04:00</xap:ModifyDate>' +
+      '<xap:CreateDate>2010-03-25T11:20:09-04:00</xap:CreateDate>' +
+      '<xap:MetadataDate>2010-03-25T11:20:09-04:00</xap:MetadataDate>' +
+      '</rdf:Description>' +
+      '<rdf:Description rdf:about=""' +
+      'xmlns:dc="http://purl.org/dc/elements/1.1/">' +
+      '<dc:format>application/pdf</dc:format>' +
+      '</rdf:Description>' +
+      '<rdf:Description rdf:about=""' +
+      'xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/">' +
+      '<pdfaid:part>1</pdfaid:part>' +
+      '<pdfaid:conformance>A</pdfaid:conformance>' +
+      '</rdf:Description>' +
+      '</rdf:RDF>' +
+      '</x:xmpmeta>' +
+      '<?xpacket end="w"?>';
+    let metadata = new Metadata(data);
+
+    expect(isEmptyObj(metadata.getAll())).toEqual(true);
   });
 });
