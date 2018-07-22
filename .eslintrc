@@ -100,7 +100,20 @@
     "no-catch-shadow": "error",
     "no-delete-var": "error",
     "no-label-var": "error",
-    "no-restricted-globals": "off",
+    "no-restricted-globals": ["error",
+      {
+        "name": "ReadableStream",
+        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
+      },
+      {
+        "name": "URL",
+        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
+      },
+      {
+        "name": "WritableStream",
+        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
+      },
+    ],
     "no-shadow-restricted-names": "error",
     "no-shadow": "off",
     "no-undef-init": "error",
