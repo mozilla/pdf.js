@@ -1,68 +1,75 @@
+/* Copyright 2014 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
-var DEFAULT_SCALE = 1.5;
-
-// Parse query string to extract some parameters (it can fail for some input)
-var query = document.location.href.replace(/^[^?]*(\?([^#]*))?(#.*)?/, '$2');
-var queryParams = query ? JSON.parse('{' + query.split('&').map(function (a) {
-  return a.split('=').map(decodeURIComponent).map(JSON.stringify).join(': ');
-}).join(',') + '}') : {};
-
-var url = queryParams.file || '../../web/compressed.tracemonkey-pldi-09.pdf';
-
-function renderDocument(pdf, svgLib) {
-  var promise = Promise.resolve();
-  for (var i = 1; i <= pdf.numPages; i++) {
-    // Using promise to fetch and render the next page
-    promise = promise.then(function (pageNum) {
-      return pdf.getPage(pageNum).then(function (page) {
-        var viewport = page.getViewport(DEFAULT_SCALE);
-
-        var container = document.createElement('div');
-        container.id = 'pageContainer' + pageNum;
-        container.className = 'pageContainer';
-        container.style.width = viewport.width + 'px';
-        container.style.height = viewport.height + 'px';
-        document.body.appendChild(container);
-
-        return page.getOperatorList().then(function (opList) {
-          var svgGfx = new svgLib.SVGGraphics(page.commonObjs, page.objs);
-          return svgGfx.getSVG(opList, viewport).then(function (svg) {
-            container.appendChild(svg);
-          });
-        });
-      });
-    }.bind(null, i));
-  }
+if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer)  {
+  alert('Please build the pdfjs-dist library using\n' +
+        '  `gulp dist-install`');
 }
 
-Promise.all([System.import('pdfjs/display/api'),
-             System.import('pdfjs/display/svg'),
-             System.import('pdfjs/display/worker_options'),
-             System.import('pdfjs/display/network'),
-             System.resolve('pdfjs/worker_loader')])
-       .then(function (modules) {
-  var api = modules[0];
-  var svg = modules[1];
-  var GlobalWorkerOptions = modules[2].GlobalWorkerOptions;
-  var network = modules[3];
-  api.setPDFNetworkStreamFactory((params) => {
-    return new network.PDFNetworkStream(params);
-  });
+// The workerSrc property shall be specified.
+//
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
-  // In production, change this to point to the built `pdf.worker.js` file.
-  GlobalWorkerOptions.workerSrc = modules[4];
+// Some PDFs need external cmaps.
+//
+var CMAP_URL = '../../node_modules/pdfjs-dist/cmaps/';
+var CMAP_PACKED = true;
 
-  // In production, change this to point to where the cMaps are placed.
-  var CMAP_URL = '../../external/bcmaps/';
-  var CMAP_PACKED = true;
+var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
+var SEARCH_FOR = ''; // try 'Mozilla';
 
-  // Fetch the PDF document from the URL using promises.
-  api.getDocument({
-    url: url,
-    cMapUrl: CMAP_URL,
-    cMapPacked: CMAP_PACKED,
-  }).then(function(doc) {
-    renderDocument(doc, svg);
-  });
+var container = document.getElementById('viewerContainer');
+
+// (Optionally) enable hyperlinks within PDF files.
+var pdfLinkService = new pdfjsViewer.PDFLinkService();
+
+var pdfViewer = new pdfjsViewer.PDFViewer({
+  container: container,
+  linkService: pdfLinkService,
+  renderer: 'svg',
+  textLayerMode: 0,
+});
+pdfLinkService.setViewer(pdfViewer);
+
+// (Optionally) enable find controller.
+var pdfFindController = new pdfjsViewer.PDFFindController({
+  pdfViewer: pdfViewer,
+});
+pdfViewer.setFindController(pdfFindController);
+
+container.addEventListener('pagesinit', function () {
+  // We can use pdfViewer now, e.g. let's change default scale.
+  pdfViewer.currentScaleValue = 'page-width';
+
+  if (SEARCH_FOR) { // We can try search for things
+    pdfFindController.executeCommand('find', {query: SEARCH_FOR});
+  }
+});
+
+// Loading document.
+pdfjsLib.getDocument({
+  url: DEFAULT_URL,
+  cMapUrl: CMAP_URL,
+  cMapPacked: CMAP_PACKED,
+}).then(function(pdfDocument) {
+  // Document loaded, specifying document for the viewer and
+  // the (optional) linkService.
+  pdfViewer.setDocument(pdfDocument);
+
+  pdfLinkService.setDocument(pdfDocument, null);
 });

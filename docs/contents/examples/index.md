@@ -5,7 +5,7 @@ template: layout.jade
 
 ## Hello World Walkthrough
 
-[Full source](https://github.com/mozilla/pdf.js/tree/master/examples/helloworld)
+[Full source](https://github.com/mozilla/pdf.js/blob/master/examples/learning/helloworld.html)
 
 PDF.js heavily relies on the use of [Promises](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise). If promises are new to you, it's recommended you become familiar with them before continuing on.
 
