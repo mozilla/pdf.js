@@ -142,6 +142,12 @@ let PDFViewerApplication = {
     }).then(() => {
       return this._initializeL10n();
     }).then(() => {
+      if (this.isViewerEmbedded &&
+          AppOptions.get('externalLinkTarget') === LinkTarget.NONE) {
+        // Prevent external links from "replacing" the viewer,
+        // when it's embedded in e.g. an <iframe> or an <object>.
+        AppOptions.set('externalLinkTarget', LinkTarget.TOP);
+      }
       return this._initializeViewerComponents();
     }).then(() => {
       // Bind the various event handlers *after* the viewer has been
@@ -156,13 +162,6 @@ let PDFViewerApplication = {
         // has been fully initialized and translated.
         this.eventBus.dispatch('localized');
       });
-
-      if (this.isViewerEmbedded &&
-          AppOptions.get('externalLinkTarget') === LinkTarget.NONE) {
-        // Prevent external links from "replacing" the viewer,
-        // when it's embedded in e.g. an iframe or an object.
-        AppOptions.set('externalLinkTarget', LinkTarget.TOP);
-      }
 
       this.initialized = true;
     });
