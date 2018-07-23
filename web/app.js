@@ -223,9 +223,6 @@ let PDFViewerApplication = {
         AppOptions.set('useOnlyCssZoom', value);
       }),
       preferences.get('externalLinkTarget').then(function resolved(value) {
-        if (AppOptions.get('externalLinkTarget') !== LinkTarget.NONE) {
-          return;
-        }
         AppOptions.set('externalLinkTarget', value);
       }),
       preferences.get('renderer').then(function resolved(value) {
