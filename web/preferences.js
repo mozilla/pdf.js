@@ -170,6 +170,17 @@ class BasePreferences {
       return defaultValue;
     });
   }
+
+  /**
+   * Get the values of all preferences.
+   * @return {Promise} A promise that is resolved with an {Object} containing
+   *                   the values of all preferences.
+   */
+  getAll() {
+    return this._initializedPromise.then(() => {
+      return Object.assign(Object.create(null), this.defaults, this.prefs);
+    });
+  }
 }
 
 export {
