@@ -171,90 +171,30 @@ let PDFViewerApplication = {
    * @private
    */
   _readPreferences() {
-    let { preferences, } = this;
+    // A subset of the Preferences that `AppOptions`, for compatibility reasons,
+    // is allowed to override if the `AppOptions` values matches the ones below.
+    const OVERRIDES = {
+      disableFontFace: true,
+      disableRange: true,
+      disableStream: true,
+      textLayerMode: TextLayerMode.DISABLE,
+    };
 
-    return Promise.all([
-      preferences.get('enableWebGL').then(function resolved(value) {
-        AppOptions.set('enableWebGL', value);
-      }),
-      preferences.get('sidebarViewOnLoad').then(function resolved(value) {
-        AppOptions.set('sidebarViewOnLoad', value);
-      }),
-      preferences.get('cursorToolOnLoad').then(function resolved(value) {
-        AppOptions.set('cursorToolOnLoad', value);
-      }),
-      preferences.get('pdfBugEnabled').then(function resolved(value) {
-        AppOptions.set('pdfBugEnabled', value);
-      }),
-      preferences.get('showPreviousViewOnLoad').then(function resolved(value) {
-        AppOptions.set('showPreviousViewOnLoad', value);
-      }),
-      preferences.get('defaultZoomValue').then(function resolved(value) {
-        AppOptions.set('defaultZoomValue', value);
-      }),
-      preferences.get('textLayerMode').then(function resolved(value) {
-        if (AppOptions.get('textLayerMode') === TextLayerMode.DISABLE) {
-          return;
+    return this.preferences.getAll().then(function(prefs) {
+      for (let name in prefs) {
+        if ((name in OVERRIDES) && AppOptions.get(name) === OVERRIDES[name]) {
+          continue;
         }
-        AppOptions.set('textLayerMode', value);
-      }),
-      preferences.get('disableRange').then(function resolved(value) {
-        if (AppOptions.get('disableRange') === true) {
-          return;
-        }
-        AppOptions.set('disableRange', value);
-      }),
-      preferences.get('disableStream').then(function resolved(value) {
-        if (AppOptions.get('disableStream') === true) {
-          return;
-        }
-        AppOptions.set('disableStream', value);
-      }),
-      preferences.get('disableAutoFetch').then(function resolved(value) {
-        AppOptions.set('disableAutoFetch', value);
-      }),
-      preferences.get('disableFontFace').then(function resolved(value) {
-        if (AppOptions.get('disableFontFace') === true) {
-          return;
-        }
-        AppOptions.set('disableFontFace', value);
-      }),
-      preferences.get('useOnlyCssZoom').then(function resolved(value) {
-        AppOptions.set('useOnlyCssZoom', value);
-      }),
-      preferences.get('externalLinkTarget').then(function resolved(value) {
-        AppOptions.set('externalLinkTarget', value);
-      }),
-      preferences.get('renderer').then(function resolved(value) {
-        AppOptions.set('renderer', value);
-      }),
-      preferences.get('renderInteractiveForms').then(function resolved(value) {
-        AppOptions.set('renderInteractiveForms', value);
-      }),
-      preferences.get('disablePageMode').then(function resolved(value) {
-        AppOptions.set('disablePageMode', value);
-      }),
-      preferences.get('disablePageLabels').then(function resolved(value) {
-        AppOptions.set('disablePageLabels', value);
-      }),
-      preferences.get('enablePrintAutoRotate').then(function resolved(value) {
-        AppOptions.set('enablePrintAutoRotate', value);
-      }),
-      preferences.get('scrollModeOnLoad').then(function resolved(value) {
-        AppOptions.set('scrollModeOnLoad', value);
-      }),
-      preferences.get('spreadModeOnLoad').then(function resolved(value) {
-        AppOptions.set('spreadModeOnLoad', value);
-      }),
-    ]).catch(function(reason) { });
+        AppOptions.set(name, prefs[name]);
+      }
+    }, function(reason) { });
   },
 
   /**
    * @private
    */
   _parseHashParameters() {
-    let { appConfig, } = this;
-    let waitOn = [];
+    const waitOn = [];
 
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ||
         AppOptions.get('pdfBugEnabled')) {
@@ -307,7 +247,7 @@ let PDFViewerApplication = {
           case 'visible':
           case 'shadow':
           case 'hover':
-            let viewer = appConfig.viewerContainer;
+            let viewer = this.appConfig.viewerContainer;
             viewer.classList.add('textLayer-' + hashParams['textlayer']);
             break;
         }
