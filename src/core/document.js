@@ -424,16 +424,14 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
 
     get linearization() {
-      var linearization = null;
-      if (this.stream.length) {
-        try {
-          linearization = Linearization.create(this.stream);
-        } catch (err) {
-          if (err instanceof MissingDataException) {
-            throw err;
-          }
-          info(err);
+      let linearization = null;
+      try {
+        linearization = Linearization.create(this.stream);
+      } catch (err) {
+        if (err instanceof MissingDataException) {
+          throw err;
         }
+        info(err);
       }
       // shadow the prototype getter with a data property
       return shadow(this, 'linearization', linearization);
