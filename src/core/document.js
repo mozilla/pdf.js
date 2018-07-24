@@ -535,12 +535,13 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'numPages', num);
     },
     get documentInfo() {
-      var docInfo = {
+      const docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
+        IsLinearized: !!this.linearization,
         IsAcroFormPresent: !!this.acroForm,
         IsXFAPresent: !!this.xfa,
       };
-      var infoDict;
+      let infoDict;
       try {
         infoDict = this.xref.trailer.get('Info');
       } catch (err) {
