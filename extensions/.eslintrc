@@ -4,7 +4,6 @@
   ],
 
   "rules": {
-    // ECMAScript 6
-    "no-var": "error",
+    "no-restricted-globals": "off",
   },
 }
