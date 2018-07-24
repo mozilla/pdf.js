@@ -377,22 +377,16 @@ var PDFDocument = (function PDFDocumentClosure() {
     return true; /* found */
   }
 
-  var DocumentInfoValidators = {
-    get entries() {
-      // Lazily build this since all the validation functions below are not
-      // defined until after this file loads.
-      return shadow(this, 'entries', {
-        Title: isString,
-        Author: isString,
-        Subject: isString,
-        Keywords: isString,
-        Creator: isString,
-        Producer: isString,
-        CreationDate: isString,
-        ModDate: isString,
-        Trapped: isName,
-      });
-    },
+  const DocumentInfoValidators = {
+    Title: isString,
+    Author: isString,
+    Subject: isString,
+    Keywords: isString,
+    Creator: isString,
+    Producer: isString,
+    CreationDate: isString,
+    ModDate: isString,
+    Trapped: isName,
   };
 
   PDFDocument.prototype = {
@@ -555,14 +549,13 @@ var PDFDocument = (function PDFDocumentClosure() {
         }
         info('The document information dictionary is invalid.');
       }
-      if (infoDict) {
-        var validEntries = DocumentInfoValidators.entries;
+      if (isDict(infoDict)) {
         // Only fill the document info with valid entries from the spec.
-        for (var key in validEntries) {
+        for (let key in DocumentInfoValidators) {
           if (infoDict.has(key)) {
-            var value = infoDict.get(key);
+            const value = infoDict.get(key);
             // Make sure the value conforms to the spec.
-            if (validEntries[key](value)) {
+            if (DocumentInfoValidators[key](value)) {
               docInfo[key] = (typeof value !== 'string' ?
                               value : stringToPDFString(value));
             } else {
