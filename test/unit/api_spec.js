@@ -28,6 +28,7 @@ import {
 } from '../../src/display/api';
 import { GlobalWorkerOptions } from '../../src/display/worker_options';
 import isNodeJS from '../../src/shared/is_node';
+import { Metadata } from '../../src/display/metadata';
 
 describe('api', function() {
   let basicApiFileName = 'basicapi.pdf';
@@ -802,11 +803,18 @@ describe('api', function() {
     });
     it('gets metadata', function(done) {
       var promise = doc.getMetadata();
-      promise.then(function(metadata) {
-        expect(metadata.info['Title']).toEqual('Basic API Test');
-        expect(metadata.info['PDFFormatVersion']).toEqual('1.7');
-        expect(metadata.metadata.get('dc:title')).toEqual('Basic API Test');
-        expect(metadata.contentDispositionFilename).toEqual(null);
+      promise.then(function({ info, metadata, contentDispositionFilename, }) {
+        expect(info['Title']).toEqual('Basic API Test');
+        // The following are PDF.js specific, non-standard, properties.
+        expect(info['PDFFormatVersion']).toEqual('1.7');
+        expect(info['IsLinearized']).toEqual(false);
+        expect(info['IsAcroFormPresent']).toEqual(false);
+        expect(info['IsXFAPresent']).toEqual(false);
+
+        expect(metadata instanceof Metadata).toEqual(true);
+        expect(metadata.get('dc:title')).toEqual('Basic API Test');
+
+        expect(contentDispositionFilename).toEqual(null);
         done();
       }).catch(function (reason) {
         done.fail(reason);
