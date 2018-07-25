@@ -38,7 +38,7 @@ var Catalog = (function CatalogClosure() {
     }
 
     this.fontCache = new RefSetCache();
-    this.builtInCMapCache = Object.create(null);
+    this.builtInCMapCache = new Map();
     this.pageKidsCountCache = new RefSetCache();
     // TODO refactor to move getPage() to the PDFDocument.
     this.pageFactory = pageFactory;
@@ -449,7 +449,7 @@ var Catalog = (function CatalogClosure() {
           delete font.translated;
         }
         this.fontCache.clear();
-        this.builtInCMapCache = Object.create(null);
+        this.builtInCMapCache.clear();
       });
     },
 
