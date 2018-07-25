@@ -355,6 +355,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       xref: this.xref,
       isEvalSupported: evaluatorOptions.isEvalSupported,
     });
+    this._pagePromises = [];
   }
 
   function find(stream, needle, limit, backwards) {
@@ -520,21 +521,7 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
     setup: function PDFDocument_setup(recoveryMode) {
       this.xref.parse(recoveryMode);
-      var pageFactory = {
-        createPage: (pageIndex, dict, ref, fontCache, builtInCMapCache) => {
-          return new Page({
-            pdfManager: this.pdfManager,
-            xref: this.xref,
-            pageIndex,
-            pageDict: dict,
-            ref,
-            fontCache,
-            builtInCMapCache,
-            pdfFunctionFactory: this.pdfFunctionFactory,
-          });
-        },
-      };
-      this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
+      this.catalog = new Catalog(this.pdfManager, this.xref);
     },
     get numPages() {
       var linearization = this.linearization;
@@ -599,8 +586,25 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'fingerprint', fileID);
     },
 
-    getPage: function PDFDocument_getPage(pageIndex) {
-      return this.catalog.getPage(pageIndex);
+    getPage(pageIndex) {
+      if (this._pagePromises[pageIndex] !== undefined) {
+        return this._pagePromises[pageIndex];
+      }
+      const catalog = this.catalog;
+
+      return this._pagePromises[pageIndex] =
+        catalog.getPageDict(pageIndex).then(([pageDict, ref]) => {
+          return new Page({
+            pdfManager: this.pdfManager,
+            xref: this.xref,
+            pageIndex,
+            pageDict,
+            ref,
+            fontCache: catalog.fontCache,
+            builtInCMapCache: catalog.builtInCMapCache,
+            pdfFunctionFactory: this.pdfFunctionFactory,
+          });
+        });
     },
 
     cleanup: function PDFDocument_cleanup() {
