@@ -126,6 +126,8 @@ var DecodeStream = (function DecodeStreamClosure() {
   var emptyBuffer = new Uint8Array(0);
 
   function DecodeStream(maybeMinBufferLength) {
+    this._rawMinBufferLength = maybeMinBufferLength || 0;
+
     this.pos = 0;
     this.bufferLength = 0;
     this.eof = false;
@@ -251,7 +253,17 @@ var DecodeStream = (function DecodeStreamClosure() {
 var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
   function StreamsSequenceStream(streams) {
     this.streams = streams;
-    DecodeStream.call(this, /* maybeLength = */ null);
+
+    let maybeLength = 0;
+    for (let i = 0, ii = streams.length; i < ii; i++) {
+      const stream = streams[i];
+      if (stream instanceof DecodeStream) {
+        maybeLength += stream._rawMinBufferLength;
+      } else {
+        maybeLength += stream.length;
+      }
+    }
+    DecodeStream.call(this, maybeLength);
   }
 
   StreamsSequenceStream.prototype = Object.create(DecodeStream.prototype);
