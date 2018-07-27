@@ -35,6 +35,7 @@ import {
   getUnicodeForGlyph, getUnicodeRangeFor, mapSpecialUnicodeValues
 } from './unicode';
 import { FontRendererFactory } from './font_renderer';
+import { IdentityCMap } from './cmap';
 import { Stream } from './stream';
 import { Type1Parser } from './type1_parser';
 
@@ -2308,9 +2309,11 @@ var Font = (function FontClosure() {
 
       var isTrueType = !tables['CFF '];
       if (!isTrueType) {
-        // OpenType font (skip composite fonts with non-default CID to GID map).
-        if ((header.version === 'OTTO' &&
-             !(properties.composite && properties.cidToGidMap)) ||
+        const isComposite = properties.composite &&
+                            ((properties.cidToGidMap || []).length > 0 ||
+                             !(properties.cMap instanceof IdentityCMap));
+        // OpenType font (skip composite fonts with non-default glyph mapping).
+        if ((header.version === 'OTTO' && !isComposite) ||
             !tables['head'] || !tables['hhea'] || !tables['maxp'] ||
             !tables['post']) {
           // No major tables: throwing everything at `CFFFont`.
