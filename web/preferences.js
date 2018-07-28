@@ -100,21 +100,6 @@ class BasePreferences {
   }
 
   /**
-   * Replace the current preference values with the ones from storage.
-   * @return {Promise} A promise that is resolved when the preference values
-   *                   have been updated.
-   */
-  reload() {
-    return this._initializedPromise.then(() => {
-      return this._readFromStorage(this.defaults);
-    }).then((prefObj) => {
-      if (prefObj) {
-        this.prefs = prefObj;
-      }
-    });
-  }
-
-  /**
    * Set the value of a preference.
    * @param {string} name The name of the preference that should be changed.
    * @param {boolean|number|string} value The new value of the preference.
