@@ -60,9 +60,19 @@ class BasePreferences {
 
       this.prefs = Object.assign(Object.create(null), defaults);
       return this._readFromStorage(defaults);
-    }).then((prefObj) => {
-      if (prefObj) {
-        this.prefs = prefObj;
+    }).then((prefs) => {
+      if (!prefs) {
+        return;
+      }
+      for (let name in prefs) {
+        const defaultValue = this.defaults[name], prefValue = prefs[name];
+        // Ignore preferences not present in, or whose types don't match,
+        // the default values.
+        if (defaultValue === undefined ||
+            typeof prefValue !== typeof defaultValue) {
+          continue;
+        }
+        this.prefs[name] = prefValue;
       }
     });
   }
