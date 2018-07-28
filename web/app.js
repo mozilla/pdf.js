@@ -635,8 +635,6 @@ let PDFViewerApplication = {
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
       return this.close().then(() => {
-        // Reload the preferences if a document was previously opened.
-        this.preferences.reload();
         // ... and repeat the open() call.
         return this.open(file, args);
       });
