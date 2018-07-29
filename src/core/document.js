@@ -379,22 +379,16 @@ var PDFDocument = (function PDFDocumentClosure() {
     return true; /* found */
   }
 
-  var DocumentInfoValidators = {
-    get entries() {
-      // Lazily build this since all the validation functions below are not
-      // defined until after this file loads.
-      return shadow(this, 'entries', {
-        Title: isString,
-        Author: isString,
-        Subject: isString,
-        Keywords: isString,
-        Creator: isString,
-        Producer: isString,
-        CreationDate: isString,
-        ModDate: isString,
-        Trapped: isName,
-      });
-    },
+  const DocumentInfoValidators = {
+    Title: isString,
+    Author: isString,
+    Subject: isString,
+    Keywords: isString,
+    Creator: isString,
+    Producer: isString,
+    CreationDate: isString,
+    ModDate: isString,
+    Trapped: isName,
   };
 
   PDFDocument.prototype = {
@@ -426,16 +420,14 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
 
     get linearization() {
-      var linearization = null;
-      if (this.stream.length) {
-        try {
-          linearization = Linearization.create(this.stream);
-        } catch (err) {
-          if (err instanceof MissingDataException) {
-            throw err;
-          }
-          info(err);
+      let linearization = null;
+      try {
+        linearization = Linearization.create(this.stream);
+      } catch (err) {
+        if (err instanceof MissingDataException) {
+          throw err;
         }
+        info(err);
       }
       // shadow the prototype getter with a data property
       return shadow(this, 'linearization', linearization);
@@ -531,12 +523,13 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'numPages', num);
     },
     get documentInfo() {
-      var docInfo = {
+      const docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
+        IsLinearized: !!this.linearization,
         IsAcroFormPresent: !!this.acroForm,
         IsXFAPresent: !!this.xfa,
       };
-      var infoDict;
+      let infoDict;
       try {
         infoDict = this.xref.trailer.get('Info');
       } catch (err) {
@@ -545,14 +538,13 @@ var PDFDocument = (function PDFDocumentClosure() {
         }
         info('The document information dictionary is invalid.');
       }
-      if (infoDict) {
-        var validEntries = DocumentInfoValidators.entries;
+      if (isDict(infoDict)) {
         // Only fill the document info with valid entries from the spec.
-        for (var key in validEntries) {
+        for (let key in DocumentInfoValidators) {
           if (infoDict.has(key)) {
-            var value = infoDict.get(key);
+            const value = infoDict.get(key);
             // Make sure the value conforms to the spec.
-            if (validEntries[key](value)) {
+            if (DocumentInfoValidators[key](value)) {
               docInfo[key] = (typeof value !== 'string' ?
                               value : stringToPDFString(value));
             } else {
