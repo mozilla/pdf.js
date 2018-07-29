@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 
-import { Catalog, ObjectLoader, XRef } from './obj';
-import { Dict, isDict, isName, isStream } from './primitives';
 import {
-  getInheritableProperty, info, isArrayBuffer, isNum, isSpace, isString,
-  MissingDataException, OPS, shadow, stringToBytes, stringToPDFString, Util
+  assert, FormatError, getInheritableProperty, info, isArrayBuffer, isNum,
+  isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
+  stringToPDFString, Util
 } from '../shared/util';
+import { Catalog, ObjectLoader, XRef } from './obj';
+import { Dict, isDict, isName, isStream, Ref } from './primitives';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
 import { AnnotationFactory } from './annotation';
 import { calculateMD5 } from './crypto';
@@ -355,6 +356,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       xref: this.xref,
       isEvalSupported: evaluatorOptions.isEvalSupported,
     });
+    this._pagePromises = [];
   }
 
   function find(stream, needle, limit, backwards) {
@@ -520,21 +522,7 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
     setup: function PDFDocument_setup(recoveryMode) {
       this.xref.parse(recoveryMode);
-      var pageFactory = {
-        createPage: (pageIndex, dict, ref, fontCache, builtInCMapCache) => {
-          return new Page({
-            pdfManager: this.pdfManager,
-            xref: this.xref,
-            pageIndex,
-            pageDict: dict,
-            ref,
-            fontCache,
-            builtInCMapCache,
-            pdfFunctionFactory: this.pdfFunctionFactory,
-          });
-        },
-      };
-      this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
+      this.catalog = new Catalog(this.pdfManager, this.xref);
     },
     get numPages() {
       var linearization = this.linearization;
@@ -599,8 +587,49 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'fingerprint', fileID);
     },
 
-    getPage: function PDFDocument_getPage(pageIndex) {
-      return this.catalog.getPage(pageIndex);
+    _getLinearizationPage(pageIndex) {
+      const { catalog, linearization, } = this;
+      assert(linearization && linearization.pageFirst === pageIndex);
+
+      const ref = new Ref(linearization.objectNumberFirst, 0);
+      return this.xref.fetchAsync(ref).then((obj) => {
+        // Ensure that the object that was found is actually a Page dictionary.
+        if (isDict(obj, 'Page') ||
+            (isDict(obj) && !obj.has('Type') && obj.has('Contents'))) {
+          if (ref && !catalog.pageKidsCountCache.has(ref)) {
+            catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
+          }
+          return [obj, ref];
+        }
+        throw new FormatError('The Linearization dictionary doesn\'t point ' +
+                              'to a valid Page dictionary.');
+      }).catch((reason) => {
+        info(reason);
+        return catalog.getPageDict(pageIndex);
+      });
+    },
+
+    getPage(pageIndex) {
+      if (this._pagePromises[pageIndex] !== undefined) {
+        return this._pagePromises[pageIndex];
+      }
+      const { catalog, linearization, } = this;
+
+      const promise = (linearization && linearization.pageFirst === pageIndex) ?
+        this._getLinearizationPage(pageIndex) : catalog.getPageDict(pageIndex);
+
+      return this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
+        return new Page({
+          pdfManager: this.pdfManager,
+          xref: this.xref,
+          pageIndex,
+          pageDict,
+          ref,
+          fontCache: catalog.fontCache,
+          builtInCMapCache: catalog.builtInCMapCache,
+          pdfFunctionFactory: this.pdfFunctionFactory,
+        });
+      });
     },
 
     cleanup: function PDFDocument_cleanup() {
