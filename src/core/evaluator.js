@@ -132,16 +132,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.pdfFunctionFactory = pdfFunctionFactory;
 
     this.fetchBuiltInCMap = (name) => {
-      var cachedCMap = this.builtInCMapCache[name];
-      if (cachedCMap) {
-        return Promise.resolve(cachedCMap);
+      if (this.builtInCMapCache.has(name)) {
+        return Promise.resolve(this.builtInCMapCache.get(name));
       }
       return this.handler.sendWithPromise('FetchBuiltInCMap', {
         name,
       }).then((data) => {
         if (data.compressionType !== CMapCompressionType.NONE) {
           // Given the size of uncompressed CMaps, only cache compressed ones.
-          this.builtInCMapCache[name] = data;
+          this.builtInCMapCache.set(name, data);
         }
         return data;
       });
