@@ -29,7 +29,7 @@ import { CipherTransformFactory } from './crypto';
 import { ColorSpace } from './colorspace';
 
 var Catalog = (function CatalogClosure() {
-  function Catalog(pdfManager, xref, pageFactory) {
+  function Catalog(pdfManager, xref) {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.catDict = xref.getCatalogObj();
@@ -40,9 +40,6 @@ var Catalog = (function CatalogClosure() {
     this.fontCache = new RefSetCache();
     this.builtInCMapCache = new Map();
     this.pageKidsCountCache = new RefSetCache();
-    // TODO refactor to move getPage() to the PDFDocument.
-    this.pageFactory = pageFactory;
-    this.pagePromises = [];
   }
 
   Catalog.prototype = {
@@ -451,18 +448,6 @@ var Catalog = (function CatalogClosure() {
         this.fontCache.clear();
         this.builtInCMapCache.clear();
       });
-    },
-
-    getPage: function Catalog_getPage(pageIndex) {
-      if (!(pageIndex in this.pagePromises)) {
-        this.pagePromises[pageIndex] = this.getPageDict(pageIndex).then(
-            ([dict, ref]) => {
-          return this.pageFactory.createPage(pageIndex, dict, ref,
-                                             this.fontCache,
-                                             this.builtInCMapCache);
-        });
-      }
-      return this.pagePromises[pageIndex];
     },
 
     getPageDict: function Catalog_getPageDict(pageIndex) {
