@@ -177,7 +177,14 @@ function createWebpackConfig(defines, output) {
           exclude: /src[\\\/]core[\\\/](glyphlist|unicode)/,
           options: {
             presets: skipBabel ? undefined : ['env'],
-            plugins: ['transform-es2015-modules-commonjs'],
+            plugins: [
+              'transform-es2015-modules-commonjs',
+              ['transform-runtime', {
+                'helpers': false,
+                'polyfill': false,
+                'regenerator': true,
+              }],
+            ],
           },
         },
         {
@@ -808,7 +815,7 @@ gulp.task('mozcentral', ['mozcentral-pre']);
 gulp.task('chromium-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building Chromium extension');
-  var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: true, });
+  var defines = builder.merge(DEFINES, { CHROME: true, });
 
   var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
@@ -897,6 +904,11 @@ gulp.task('lib', ['buildnumber'], function () {
       presets: noPreset ? undefined : ['env'],
       plugins: [
         'transform-es2015-modules-commonjs',
+        ['transform-runtime', {
+          'helpers': false,
+          'polyfill': false,
+          'regenerator': true,
+        }],
         babelPluginReplaceNonWebPackRequire,
       ],
     }).code;

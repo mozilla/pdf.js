@@ -2050,13 +2050,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
         });
       }, this);
 
-      messageHandler.on('FetchBuiltInCMap', function (data) {
+      messageHandler.on('FetchBuiltInCMap', function(data) {
         if (this.destroyed) {
           return Promise.reject(new Error('Worker was destroyed'));
         }
-        return this.CMapReaderFactory.fetch({
-          name: data.name,
-        });
+        return this.CMapReaderFactory.fetch(data);
       }, this);
     },
 
