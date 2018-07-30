@@ -145,21 +145,20 @@ class MozL10n {
     this.mozL10n = mozL10n;
   }
 
-  getLanguage() {
-    return Promise.resolve(this.mozL10n.getLanguage());
+  async getLanguage() {
+    return this.mozL10n.getLanguage();
   }
 
-  getDirection() {
-    return Promise.resolve(this.mozL10n.getDirection());
+  async getDirection() {
+    return this.mozL10n.getDirection();
   }
 
-  get(property, args, fallback) {
-    return Promise.resolve(this.mozL10n.get(property, args, fallback));
+  async get(property, args, fallback) {
+    return this.mozL10n.get(property, args, fallback);
   }
 
-  translate(element) {
+  async translate(element) {
     this.mozL10n.translate(element);
-    return Promise.resolve();
   }
 }
 
