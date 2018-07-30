@@ -300,7 +300,7 @@ function setReferer(url, callback) {
 let storageArea = chrome.storage.sync || chrome.storage.local;
 
 class ChromePreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
+  async _writeToStorage(prefObj) {
     return new Promise((resolve) => {
       if (prefObj === this.defaults) {
         let keysToRemove = Object.keys(this.defaults);
@@ -317,7 +317,7 @@ class ChromePreferences extends BasePreferences {
     });
   }
 
-  _readFromStorage(prefObj) {
+  async _readFromStorage(prefObj) {
     return new Promise((resolve) => {
       let getPreferences = (defaultPrefs) => {
         if (chrome.runtime.lastError) {

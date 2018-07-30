@@ -124,13 +124,13 @@ class DownloadManager {
 }
 
 class FirefoxPreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
+  async _writeToStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('setPreferences', prefObj, resolve);
     });
   }
 
-  _readFromStorage(prefObj) {
+  async _readFromStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('getPreferences', prefObj, function(prefStr) {
         let readPrefs = JSON.parse(prefStr);
