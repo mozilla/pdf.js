@@ -1497,29 +1497,23 @@ var XRef = (function XRefClosure() {
       return xrefEntry;
     },
 
-    fetchIfRefAsync: function XRef_fetchIfRefAsync(obj, suppressEncryption) {
+    async fetchIfRefAsync(obj, suppressEncryption) {
       if (!isRef(obj)) {
-        return Promise.resolve(obj);
+        return obj;
       }
       return this.fetchAsync(obj, suppressEncryption);
     },
 
-    fetchAsync: function XRef_fetchAsync(ref, suppressEncryption) {
-      var streamManager = this.stream.manager;
-      var xref = this;
-      return new Promise(function tryFetch(resolve, reject) {
-        try {
-          resolve(xref.fetch(ref, suppressEncryption));
-        } catch (e) {
-          if (e instanceof MissingDataException) {
-            streamManager.requestRange(e.begin, e.end).then(function () {
-              tryFetch(resolve, reject);
-            }, reject);
-            return;
-          }
-          reject(e);
+    async fetchAsync(ref, suppressEncryption) {
+      try {
+        return this.fetch(ref, suppressEncryption);
+      } catch (ex) {
+        if (!(ex instanceof MissingDataException)) {
+          throw ex;
         }
-      });
+        await this.pdfManager.requestRange(ex.begin, ex.end);
+        return this.fetchAsync(ref, suppressEncryption);
+      }
     },
 
     getCatalogObj: function XRef_getCatalogObj() {
