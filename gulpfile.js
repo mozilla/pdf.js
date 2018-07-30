@@ -1220,6 +1220,7 @@ gulp.task('dist-pre',
       'http': false,
       'https': false,
       'node-ensure': false,
+      'zlib': false,
     },
     format: 'amd', // to not allow system.js to choose 'cjs'
     repository: {

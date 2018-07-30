@@ -43,7 +43,7 @@ directory `build/chromium`.
 
 To get a local copy of the current code, clone it using git:
 
-    $ git clone git://github.com/mozilla/pdf.js.git
+    $ git clone https://github.com/mozilla/pdf.js.git
     $ cd pdf.js
 
 Next, install Node.js via the [official package](http://nodejs.org) or via
@@ -102,11 +102,7 @@ You can play with the PDF.js API directly from your browser using the live demos
 
 + [Interactive examples](http://mozilla.github.io/pdf.js/examples/index.html#interactive-examples)
 
-The repository contains a hello world example that you can run locally:
-
-+ [examples/helloworld/](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/)
-
-More examples can be found in the examples folder. Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
+More examples can be found in the [examples folder](https://github.com/mozilla/pdf.js/tree/master/examples/). Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
 
 For an introduction to the PDF.js code, check out the presentation by our
 contributor Julian Viereck:

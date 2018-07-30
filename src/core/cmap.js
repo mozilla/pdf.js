@@ -14,8 +14,8 @@
  */
 
 import {
-  CMapCompressionType, FormatError, isString, MissingDataException,
-  unreachable, Util, warn
+  CMapCompressionType, FormatError, isString, MissingDataException, unreachable,
+  warn
 } from '../shared/util';
 import { isCmd, isEOF, isName, isStream } from './primitives';
 import { Lexer } from './parser';
@@ -194,8 +194,8 @@ var BUILT_IN_CMAPS = [
 'WP-Symbol'];
 
 // CMap, not to be confused with TrueType's cmap.
-var CMap = (function CMapClosure() {
-  function CMap(builtInCMap) {
+class CMap {
+  constructor(builtInCMap = false) {
     // Codespace ranges are stored as follows:
     // [[1BytePairs], [2BytePairs], [3BytePairs], [4BytePairs]]
     // where nBytePairs are ranges e.g. [low1, high1, low2, high2, ...]
@@ -211,204 +211,193 @@ var CMap = (function CMapClosure() {
     this.useCMap = null;
     this.builtInCMap = builtInCMap;
   }
-  CMap.prototype = {
-    addCodespaceRange(n, low, high) {
-      this.codespaceRanges[n - 1].push(low, high);
-      this.numCodespaceRanges++;
-    },
 
-    mapCidRange(low, high, dstLow) {
-      while (low <= high) {
-        this._map[low++] = dstLow++;
-      }
-    },
+  addCodespaceRange(n, low, high) {
+    this.codespaceRanges[n - 1].push(low, high);
+    this.numCodespaceRanges++;
+  }
 
-    mapBfRange(low, high, dstLow) {
-      var lastByte = dstLow.length - 1;
-      while (low <= high) {
-        this._map[low++] = dstLow;
-        // Only the last byte has to be incremented.
-        dstLow = dstLow.substr(0, lastByte) +
-                 String.fromCharCode(dstLow.charCodeAt(lastByte) + 1);
-      }
-    },
+  mapCidRange(low, high, dstLow) {
+    while (low <= high) {
+      this._map[low++] = dstLow++;
+    }
+  }
 
-    mapBfRangeToArray(low, high, array) {
-      var i = 0, ii = array.length;
-      while (low <= high && i < ii) {
-        this._map[low] = array[i++];
-        ++low;
-      }
-    },
+  mapBfRange(low, high, dstLow) {
+    var lastByte = dstLow.length - 1;
+    while (low <= high) {
+      this._map[low++] = dstLow;
+      // Only the last byte has to be incremented.
+      dstLow = dstLow.substr(0, lastByte) +
+               String.fromCharCode(dstLow.charCodeAt(lastByte) + 1);
+    }
+  }
 
-    // This is used for both bf and cid chars.
-    mapOne(src, dst) {
-      this._map[src] = dst;
-    },
+  mapBfRangeToArray(low, high, array) {
+    let i = 0, ii = array.length;
+    while (low <= high && i < ii) {
+      this._map[low] = array[i++];
+      ++low;
+    }
+  }
 
-    lookup(code) {
-      return this._map[code];
-    },
+  // This is used for both bf and cid chars.
+  mapOne(src, dst) {
+    this._map[src] = dst;
+  }
 
-    contains(code) {
-      return this._map[code] !== undefined;
-    },
+  lookup(code) {
+    return this._map[code];
+  }
 
-    forEach(callback) {
-      // Most maps have fewer than 65536 entries, and for those we use normal
-      // array iteration. But really sparse tables are possible -- e.g. with
-      // indices in the *billions*. For such tables we use for..in, which isn't
-      // ideal because it stringifies the indices for all present elements, but
-      // it does avoid iterating over every undefined entry.
-      let map = this._map;
-      let length = map.length;
-      if (length <= 0x10000) {
-        for (let i = 0; i < length; i++) {
-          if (map[i] !== undefined) {
-            callback(i, map[i]);
-          }
-        }
-      } else {
-        for (let i in map) {
+  contains(code) {
+    return this._map[code] !== undefined;
+  }
+
+  forEach(callback) {
+    // Most maps have fewer than 65536 entries, and for those we use normal
+    // array iteration. But really sparse tables are possible -- e.g. with
+    // indices in the *billions*. For such tables we use for..in, which isn't
+    // ideal because it stringifies the indices for all present elements, but
+    // it does avoid iterating over every undefined entry.
+    let map = this._map;
+    let length = map.length;
+    if (length <= 0x10000) {
+      for (let i = 0; i < length; i++) {
+        if (map[i] !== undefined) {
           callback(i, map[i]);
         }
       }
-    },
-
-    charCodeOf(value) {
-      // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
-      // are both very sparse and very large (see issue8372.pdf).
-      let map = this._map;
-      if (map.length <= 0x10000) {
-        return map.indexOf(value);
+    } else {
+      for (let i in map) {
+        callback(i, map[i]);
       }
-      for (let charCode in map) {
-        if (map[charCode] === value) {
-          return (charCode | 0);
+    }
+  }
+
+  charCodeOf(value) {
+    // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
+    // are both very sparse and very large (see issue8372.pdf).
+    const map = this._map;
+    if (map.length <= 0x10000) {
+      return map.indexOf(value);
+    }
+    for (let charCode in map) {
+      if (map[charCode] === value) {
+        return (charCode | 0);
+      }
+    }
+    return -1;
+  }
+
+  getMap() {
+    return this._map;
+  }
+
+  readCharCode(str, offset, out) {
+    let c = 0;
+    const codespaceRanges = this.codespaceRanges;
+    // 9.7.6.2 CMap Mapping
+    // The code length is at most 4.
+    for (let n = 0, nn = codespaceRanges.length; n < nn; n++) {
+      c = ((c << 8) | str.charCodeAt(offset + n)) >>> 0;
+      // Check each codespace range to see if it falls within.
+      const codespaceRange = codespaceRanges[n];
+      for (let k = 0, kk = codespaceRange.length; k < kk;) {
+        const low = codespaceRange[k++];
+        const high = codespaceRange[k++];
+        if (c >= low && c <= high) {
+          out.charcode = c;
+          out.length = n + 1;
+          return;
         }
       }
-      return -1;
-    },
+    }
+    out.charcode = 0;
+    out.length = 1;
+  }
 
-    getMap() {
-      return this._map;
-    },
+  get length() {
+    return this._map.length;
+  }
 
-    readCharCode(str, offset, out) {
-      var c = 0;
-      var codespaceRanges = this.codespaceRanges;
-      var codespaceRangesLen = this.codespaceRanges.length;
-      // 9.7.6.2 CMap Mapping
-      // The code length is at most 4.
-      for (var n = 0; n < codespaceRangesLen; n++) {
-        c = ((c << 8) | str.charCodeAt(offset + n)) >>> 0;
-        // Check each codespace range to see if it falls within.
-        var codespaceRange = codespaceRanges[n];
-        for (var k = 0, kk = codespaceRange.length; k < kk;) {
-          var low = codespaceRange[k++];
-          var high = codespaceRange[k++];
-          if (c >= low && c <= high) {
-            out.charcode = c;
-            out.length = n + 1;
-            return;
-          }
-        }
-      }
-      out.charcode = 0;
-      out.length = 1;
-    },
-
-    get length() {
-      return this._map.length;
-    },
-
-    get isIdentityCMap() {
-      if (!(this.name === 'Identity-H' || this.name === 'Identity-V')) {
+  get isIdentityCMap() {
+    if (!(this.name === 'Identity-H' || this.name === 'Identity-V')) {
+      return false;
+    }
+    if (this._map.length !== 0x10000) {
+      return false;
+    }
+    for (let i = 0; i < 0x10000; i++) {
+      if (this._map[i] !== i) {
         return false;
       }
-      if (this._map.length !== 0x10000) {
-        return false;
-      }
-      for (var i = 0; i < 0x10000; i++) {
-        if (this._map[i] !== i) {
-          return false;
-        }
-      }
-      return true;
-    },
-  };
-  return CMap;
-})();
+    }
+    return true;
+  }
+}
 
 // A special case of CMap, where the _map array implicitly has a length of
 // 65536 and each element is equal to its index.
-var IdentityCMap = (function IdentityCMapClosure() {
-  function IdentityCMap(vertical, n) {
-    CMap.call(this);
+class IdentityCMap extends CMap {
+  constructor(vertical, n) {
+    super();
+
     this.vertical = vertical;
     this.addCodespaceRange(n, 0, 0xffff);
   }
-  Util.inherit(IdentityCMap, CMap, {});
 
-  IdentityCMap.prototype = {
-    addCodespaceRange: CMap.prototype.addCodespaceRange,
+  mapCidRange(low, high, dstLow) {
+    unreachable('should not call mapCidRange');
+  }
 
-    mapCidRange(low, high, dstLow) {
-      unreachable('should not call mapCidRange');
-    },
+  mapBfRange(low, high, dstLow) {
+    unreachable('should not call mapBfRange');
+  }
 
-    mapBfRange(low, high, dstLow) {
-      unreachable('should not call mapBfRange');
-    },
+  mapBfRangeToArray(low, high, array) {
+    unreachable('should not call mapBfRangeToArray');
+  }
 
-    mapBfRangeToArray(low, high, array) {
-      unreachable('should not call mapBfRangeToArray');
-    },
+  mapOne(src, dst) {
+    unreachable('should not call mapCidOne');
+  }
 
-    mapOne(src, dst) {
-      unreachable('should not call mapCidOne');
-    },
+  lookup(code) {
+    return (Number.isInteger(code) && code <= 0xffff) ? code : undefined;
+  }
 
-    lookup(code) {
-      return (Number.isInteger(code) && code <= 0xffff) ? code : undefined;
-    },
+  contains(code) {
+    return Number.isInteger(code) && code <= 0xffff;
+  }
 
-    contains(code) {
-      return Number.isInteger(code) && code <= 0xffff;
-    },
+  forEach(callback) {
+    for (let i = 0; i <= 0xffff; i++) {
+      callback(i, i);
+    }
+  }
 
-    forEach(callback) {
-      for (var i = 0; i <= 0xffff; i++) {
-        callback(i, i);
-      }
-    },
+  charCodeOf(value) {
+    return (Number.isInteger(value) && value <= 0xffff) ? value : -1;
+  }
 
-    charCodeOf(value) {
-      return (Number.isInteger(value) && value <= 0xffff) ? value : -1;
-    },
+  getMap() {
+    // Sometimes identity maps must be instantiated, but it's rare.
+    const map = new Array(0x10000);
+    for (let i = 0; i <= 0xffff; i++) {
+      map[i] = i;
+    }
+    return map;
+  }
 
-    getMap() {
-      // Sometimes identity maps must be instantiated, but it's rare.
-      var map = new Array(0x10000);
-      for (var i = 0; i <= 0xffff; i++) {
-        map[i] = i;
-      }
-      return map;
-    },
+  get length() {
+    return 0x10000;
+  }
 
-    readCharCode: CMap.prototype.readCharCode,
-
-    get length() {
-      return 0x10000;
-    },
-
-    get isIdentityCMap() {
-      unreachable('should not access .isIdentityCMap');
-    },
-  };
-
-  return IdentityCMap;
-})();
+  get isIdentityCMap() {
+    unreachable('should not access .isIdentityCMap');
+  }
+}
 
 var BinaryCMapReader = (function BinaryCMapReaderClosure() {
   function hexToInt(a, size) {
