@@ -133,44 +133,42 @@ let PDFViewerApplication = {
   contentDispositionFilename: null,
 
   // Called once when the document is loaded.
-  initialize(appConfig) {
+  async initialize(appConfig) {
     this.preferences = this.externalServices.createPreferences();
     this.appConfig = appConfig;
 
-    return this._readPreferences().then(() => {
-      return this._parseHashParameters();
-    }).then(() => {
-      return this._initializeL10n();
-    }).then(() => {
-      if (this.isViewerEmbedded &&
-          AppOptions.get('externalLinkTarget') === LinkTarget.NONE) {
-        // Prevent external links from "replacing" the viewer,
-        // when it's embedded in e.g. an <iframe> or an <object>.
-        AppOptions.set('externalLinkTarget', LinkTarget.TOP);
-      }
-      return this._initializeViewerComponents();
-    }).then(() => {
-      // Bind the various event handlers *after* the viewer has been
-      // initialized, to prevent errors if an event arrives too soon.
-      this.bindEvents();
-      this.bindWindowEvents();
+    await this._readPreferences();
+    await this._parseHashParameters();
+    await this._initializeL10n();
 
-      // We can start UI localization now.
-      let appContainer = appConfig.appContainer || document.documentElement;
-      this.l10n.translate(appContainer).then(() => {
-        // Dispatch the 'localized' event on the `eventBus` once the viewer
-        // has been fully initialized and translated.
-        this.eventBus.dispatch('localized', { source: this, });
-      });
+    if (this.isViewerEmbedded &&
+        AppOptions.get('externalLinkTarget') === LinkTarget.NONE) {
+      // Prevent external links from "replacing" the viewer,
+      // when it's embedded in e.g. an <iframe> or an <object>.
+      AppOptions.set('externalLinkTarget', LinkTarget.TOP);
+    }
+    await this._initializeViewerComponents();
 
-      this.initialized = true;
+    // Bind the various event handlers *after* the viewer has been
+    // initialized, to prevent errors if an event arrives too soon.
+    this.bindEvents();
+    this.bindWindowEvents();
+
+    // We can start UI localization now.
+    let appContainer = appConfig.appContainer || document.documentElement;
+    this.l10n.translate(appContainer).then(() => {
+      // Dispatch the 'localized' event on the `eventBus` once the viewer
+      // has been fully initialized and translated.
+      this.eventBus.dispatch('localized', { source: this, });
     });
+
+    this.initialized = true;
   },
 
   /**
    * @private
    */
-  _readPreferences() {
+  async _readPreferences() {
     // A subset of the Preferences that `AppOptions`, for compatibility reasons,
     // is allowed to override if the `AppOptions` values matches the ones below.
     const OVERRIDES = {
@@ -180,88 +178,88 @@ let PDFViewerApplication = {
       textLayerMode: TextLayerMode.DISABLE,
     };
 
-    return this.preferences.getAll().then(function(prefs) {
+    try {
+      const prefs = await this.preferences.getAll();
       for (let name in prefs) {
         if ((name in OVERRIDES) && AppOptions.get(name) === OVERRIDES[name]) {
           continue;
         }
         AppOptions.set(name, prefs[name]);
       }
-    }, function(reason) { });
+    } catch (reason) { }
   },
 
   /**
    * @private
    */
-  _parseHashParameters() {
+  async _parseHashParameters() {
+    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION') &&
+        !AppOptions.get('pdfBugEnabled')) {
+      return;
+    }
     const waitOn = [];
 
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION') ||
-        AppOptions.get('pdfBugEnabled')) {
-      // Special debugging flags in the hash section of the URL.
-      let hash = document.location.hash.substring(1);
-      let hashParams = parseQueryString(hash);
+    // Special debugging flags in the hash section of the URL.
+    let hash = document.location.hash.substring(1);
+    let hashParams = parseQueryString(hash);
 
-      if ('disableworker' in hashParams &&
-          hashParams['disableworker'] === 'true') {
-        waitOn.push(loadFakeWorker());
+    if ('disableworker' in hashParams &&
+        hashParams['disableworker'] === 'true') {
+      waitOn.push(loadFakeWorker());
+    }
+    if ('disablerange' in hashParams) {
+      AppOptions.set('disableRange', hashParams['disablerange'] === 'true');
+    }
+    if ('disablestream' in hashParams) {
+      AppOptions.set('disableStream', hashParams['disablestream'] === 'true');
+    }
+    if ('disableautofetch' in hashParams) {
+      AppOptions.set('disableAutoFetch',
+                     hashParams['disableautofetch'] === 'true');
+    }
+    if ('disablefontface' in hashParams) {
+      AppOptions.set('disableFontFace',
+                     hashParams['disablefontface'] === 'true');
+    }
+    if ('disablehistory' in hashParams) {
+      AppOptions.set('disableHistory', hashParams['disablehistory'] === 'true');
+    }
+    if ('webgl' in hashParams) {
+      AppOptions.set('enableWebGL', hashParams['webgl'] === 'true');
+    }
+    if ('useonlycsszoom' in hashParams) {
+      AppOptions.set('useOnlyCssZoom', hashParams['useonlycsszoom'] === 'true');
+    }
+    if ('verbosity' in hashParams) {
+      AppOptions.set('verbosity', hashParams['verbosity'] | 0);
+    }
+    if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
+        hashParams['disablebcmaps'] === 'true') {
+      AppOptions.set('cMapUrl', '../external/cmaps/');
+      AppOptions.set('cMapPacked', false);
+    }
+    if ('textlayer' in hashParams) {
+      switch (hashParams['textlayer']) {
+        case 'off':
+          AppOptions.set('textLayerMode', TextLayerMode.DISABLE);
+          break;
+        case 'visible':
+        case 'shadow':
+        case 'hover':
+          let viewer = this.appConfig.viewerContainer;
+          viewer.classList.add('textLayer-' + hashParams['textlayer']);
+          break;
       }
-      if ('disablerange' in hashParams) {
-        AppOptions.set('disableRange', hashParams['disablerange'] === 'true');
-      }
-      if ('disablestream' in hashParams) {
-        AppOptions.set('disableStream', hashParams['disablestream'] === 'true');
-      }
-      if ('disableautofetch' in hashParams) {
-        AppOptions.set('disableAutoFetch',
-                       hashParams['disableautofetch'] === 'true');
-      }
-      if ('disablefontface' in hashParams) {
-        AppOptions.set('disableFontFace',
-                       hashParams['disablefontface'] === 'true');
-      }
-      if ('disablehistory' in hashParams) {
-        AppOptions.set('disableHistory',
-                       hashParams['disablehistory'] === 'true');
-      }
-      if ('webgl' in hashParams) {
-        AppOptions.set('enableWebGL', hashParams['webgl'] === 'true');
-      }
-      if ('useonlycsszoom' in hashParams) {
-        AppOptions.set('useOnlyCssZoom',
-                       hashParams['useonlycsszoom'] === 'true');
-      }
-      if ('verbosity' in hashParams) {
-        AppOptions.set('verbosity', hashParams['verbosity'] | 0);
-      }
-      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
-          hashParams['disablebcmaps'] === 'true') {
-        AppOptions.set('cMapUrl', '../external/cmaps/');
-        AppOptions.set('cMapPacked', false);
-      }
-      if ('textlayer' in hashParams) {
-        switch (hashParams['textlayer']) {
-          case 'off':
-            AppOptions.set('textLayerMode', TextLayerMode.DISABLE);
-            break;
-          case 'visible':
-          case 'shadow':
-          case 'hover':
-            let viewer = this.appConfig.viewerContainer;
-            viewer.classList.add('textLayer-' + hashParams['textlayer']);
-            break;
-        }
-      }
-      if ('pdfbug' in hashParams) {
-        AppOptions.set('pdfBug', true);
-        let enabled = hashParams['pdfbug'].split(',');
-        waitOn.push(loadAndEnablePDFBug(enabled));
-      }
-      // It is not possible to change locale for the (various) extension builds.
-      if ((typeof PDFJSDev === 'undefined' ||
-           PDFJSDev.test('!PRODUCTION || GENERIC')) && 'locale' in hashParams) {
-        AppOptions.set('locale', hashParams['locale']);
-      }
+    }
+    if ('pdfbug' in hashParams) {
+      AppOptions.set('pdfBug', true);
+      let enabled = hashParams['pdfbug'].split(',');
+      waitOn.push(loadAndEnablePDFBug(enabled));
+    }
+    // It is not possible to change locale for the (various) extension builds.
+    if ((typeof PDFJSDev === 'undefined' ||
+         PDFJSDev.test('!PRODUCTION || GENERIC')) && 'locale' in hashParams) {
+      AppOptions.set('locale', hashParams['locale']);
     }
 
     return Promise.all(waitOn);
@@ -270,164 +268,160 @@ let PDFViewerApplication = {
   /**
    * @private
    */
-  _initializeL10n() {
+  async _initializeL10n() {
     this.l10n = this.externalServices.createL10n({
       locale: AppOptions.get('locale'),
     });
-    return this.l10n.getDirection().then((dir) => {
-      document.getElementsByTagName('html')[0].dir = dir;
-    });
+    const dir = await this.l10n.getDirection();
+    document.getElementsByTagName('html')[0].dir = dir;
   },
 
   /**
    * @private
    */
-  _initializeViewerComponents() {
-    let { appConfig, } = this;
+  async _initializeViewerComponents() {
+    const appConfig = this.appConfig;
 
-    return new Promise((resolve, reject) => {
-      this.overlayManager = new OverlayManager();
+    this.overlayManager = new OverlayManager();
 
-      const dispatchToDOM = AppOptions.get('eventBusDispatchToDOM');
-      let eventBus = appConfig.eventBus || getGlobalEventBus(dispatchToDOM);
-      this.eventBus = eventBus;
+    const dispatchToDOM = AppOptions.get('eventBusDispatchToDOM');
+    let eventBus = appConfig.eventBus || getGlobalEventBus(dispatchToDOM);
+    this.eventBus = eventBus;
 
-      let pdfRenderingQueue = new PDFRenderingQueue();
-      pdfRenderingQueue.onIdle = this.cleanup.bind(this);
-      this.pdfRenderingQueue = pdfRenderingQueue;
+    let pdfRenderingQueue = new PDFRenderingQueue();
+    pdfRenderingQueue.onIdle = this.cleanup.bind(this);
+    this.pdfRenderingQueue = pdfRenderingQueue;
 
-      let pdfLinkService = new PDFLinkService({
-        eventBus,
-        externalLinkTarget: AppOptions.get('externalLinkTarget'),
-        externalLinkRel: AppOptions.get('externalLinkRel'),
-      });
-      this.pdfLinkService = pdfLinkService;
+    let pdfLinkService = new PDFLinkService({
+      eventBus,
+      externalLinkTarget: AppOptions.get('externalLinkTarget'),
+      externalLinkRel: AppOptions.get('externalLinkRel'),
+    });
+    this.pdfLinkService = pdfLinkService;
 
-      let downloadManager = this.externalServices.createDownloadManager({
-        disableCreateObjectURL: AppOptions.get('disableCreateObjectURL'),
-      });
-      this.downloadManager = downloadManager;
+    let downloadManager = this.externalServices.createDownloadManager({
+      disableCreateObjectURL: AppOptions.get('disableCreateObjectURL'),
+    });
+    this.downloadManager = downloadManager;
 
-      let container = appConfig.mainContainer;
-      let viewer = appConfig.viewerContainer;
-      this.pdfViewer = new PDFViewer({
+    let container = appConfig.mainContainer;
+    let viewer = appConfig.viewerContainer;
+    this.pdfViewer = new PDFViewer({
+      container,
+      viewer,
+      eventBus,
+      renderingQueue: pdfRenderingQueue,
+      linkService: pdfLinkService,
+      downloadManager,
+      renderer: AppOptions.get('renderer'),
+      enableWebGL: AppOptions.get('enableWebGL'),
+      l10n: this.l10n,
+      textLayerMode: AppOptions.get('textLayerMode'),
+      imageResourcesPath: AppOptions.get('imageResourcesPath'),
+      renderInteractiveForms: AppOptions.get('renderInteractiveForms'),
+      enablePrintAutoRotate: AppOptions.get('enablePrintAutoRotate'),
+      useOnlyCssZoom: AppOptions.get('useOnlyCssZoom'),
+      maxCanvasPixels: AppOptions.get('maxCanvasPixels'),
+    });
+    pdfRenderingQueue.setViewer(this.pdfViewer);
+    pdfLinkService.setViewer(this.pdfViewer);
+
+    let thumbnailContainer = appConfig.sidebar.thumbnailView;
+    this.pdfThumbnailViewer = new PDFThumbnailViewer({
+      container: thumbnailContainer,
+      renderingQueue: pdfRenderingQueue,
+      linkService: pdfLinkService,
+      l10n: this.l10n,
+    });
+    pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
+
+    this.pdfHistory = new PDFHistory({
+      linkService: pdfLinkService,
+      eventBus,
+    });
+    pdfLinkService.setHistory(this.pdfHistory);
+
+    this.findController = new PDFFindController({
+      pdfViewer: this.pdfViewer,
+      eventBus,
+    });
+    this.findController.onUpdateResultsCount = (matchCount) => {
+      if (this.supportsIntegratedFind) {
+        return;
+      }
+      this.findBar.updateResultsCount(matchCount);
+    };
+    this.findController.onUpdateState = (state, previous, matchCount) => {
+      if (this.supportsIntegratedFind) {
+        this.externalServices.updateFindControlState({
+          result: state,
+          findPrevious: previous,
+        });
+      } else {
+        this.findBar.updateUIState(state, previous, matchCount);
+      }
+    };
+
+    this.pdfViewer.setFindController(this.findController);
+
+    // TODO: improve `PDFFindBar` constructor parameter passing
+    let findBarConfig = Object.create(appConfig.findBar);
+    findBarConfig.findController = this.findController;
+    findBarConfig.eventBus = eventBus;
+    this.findBar = new PDFFindBar(findBarConfig, this.l10n);
+
+    this.pdfDocumentProperties =
+      new PDFDocumentProperties(appConfig.documentProperties,
+                                this.overlayManager, eventBus, this.l10n);
+
+    this.pdfCursorTools = new PDFCursorTools({
+      container,
+      eventBus,
+      cursorToolOnLoad: AppOptions.get('cursorToolOnLoad'),
+    });
+
+    this.toolbar = new Toolbar(appConfig.toolbar, container, eventBus,
+                               this.l10n);
+
+    this.secondaryToolbar =
+      new SecondaryToolbar(appConfig.secondaryToolbar, container, eventBus);
+
+    if (this.supportsFullscreen) {
+      this.pdfPresentationMode = new PDFPresentationMode({
         container,
         viewer,
-        eventBus,
-        renderingQueue: pdfRenderingQueue,
-        linkService: pdfLinkService,
-        downloadManager,
-        renderer: AppOptions.get('renderer'),
-        enableWebGL: AppOptions.get('enableWebGL'),
-        l10n: this.l10n,
-        textLayerMode: AppOptions.get('textLayerMode'),
-        imageResourcesPath: AppOptions.get('imageResourcesPath'),
-        renderInteractiveForms: AppOptions.get('renderInteractiveForms'),
-        enablePrintAutoRotate: AppOptions.get('enablePrintAutoRotate'),
-        useOnlyCssZoom: AppOptions.get('useOnlyCssZoom'),
-        maxCanvasPixels: AppOptions.get('maxCanvasPixels'),
-      });
-      pdfRenderingQueue.setViewer(this.pdfViewer);
-      pdfLinkService.setViewer(this.pdfViewer);
-
-      let thumbnailContainer = appConfig.sidebar.thumbnailView;
-      this.pdfThumbnailViewer = new PDFThumbnailViewer({
-        container: thumbnailContainer,
-        renderingQueue: pdfRenderingQueue,
-        linkService: pdfLinkService,
-        l10n: this.l10n,
-      });
-      pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
-
-      this.pdfHistory = new PDFHistory({
-        linkService: pdfLinkService,
-        eventBus,
-      });
-      pdfLinkService.setHistory(this.pdfHistory);
-
-      this.findController = new PDFFindController({
         pdfViewer: this.pdfViewer,
         eventBus,
+        contextMenuItems: appConfig.fullscreen,
       });
-      this.findController.onUpdateResultsCount = (matchCount) => {
-        if (this.supportsIntegratedFind) {
-          return;
-        }
-        this.findBar.updateResultsCount(matchCount);
-      };
-      this.findController.onUpdateState = (state, previous, matchCount) => {
-        if (this.supportsIntegratedFind) {
-          this.externalServices.updateFindControlState({
-            result: state,
-            findPrevious: previous,
-          });
-        } else {
-          this.findBar.updateUIState(state, previous, matchCount);
-        }
-      };
+    }
 
-      this.pdfViewer.setFindController(this.findController);
+    this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay,
+                                             this.overlayManager, this.l10n);
 
-      // TODO: improve `PDFFindBar` constructor parameter passing
-      let findBarConfig = Object.create(appConfig.findBar);
-      findBarConfig.findController = this.findController;
-      findBarConfig.eventBus = eventBus;
-      this.findBar = new PDFFindBar(findBarConfig, this.l10n);
-
-      this.pdfDocumentProperties =
-        new PDFDocumentProperties(appConfig.documentProperties,
-                                  this.overlayManager, eventBus, this.l10n);
-
-      this.pdfCursorTools = new PDFCursorTools({
-        container,
-        eventBus,
-        cursorToolOnLoad: AppOptions.get('cursorToolOnLoad'),
-      });
-
-      this.toolbar = new Toolbar(appConfig.toolbar, container, eventBus,
-                                 this.l10n);
-
-      this.secondaryToolbar =
-        new SecondaryToolbar(appConfig.secondaryToolbar, container, eventBus);
-
-      if (this.supportsFullscreen) {
-        this.pdfPresentationMode = new PDFPresentationMode({
-          container,
-          viewer,
-          pdfViewer: this.pdfViewer,
-          eventBus,
-          contextMenuItems: appConfig.fullscreen,
-        });
-      }
-
-      this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay,
-                                               this.overlayManager, this.l10n);
-
-      this.pdfOutlineViewer = new PDFOutlineViewer({
-        container: appConfig.sidebar.outlineView,
-        eventBus,
-        linkService: pdfLinkService,
-      });
-
-      this.pdfAttachmentViewer = new PDFAttachmentViewer({
-        container: appConfig.sidebar.attachmentsView,
-        eventBus,
-        downloadManager,
-      });
-
-      // TODO: improve `PDFSidebar` constructor parameter passing
-      let sidebarConfig = Object.create(appConfig.sidebar);
-      sidebarConfig.pdfViewer = this.pdfViewer;
-      sidebarConfig.pdfThumbnailViewer = this.pdfThumbnailViewer;
-      sidebarConfig.pdfOutlineViewer = this.pdfOutlineViewer;
-      sidebarConfig.eventBus = eventBus;
-      this.pdfSidebar = new PDFSidebar(sidebarConfig, this.l10n);
-      this.pdfSidebar.onToggled = this.forceRendering.bind(this);
-
-      this.pdfSidebarResizer = new PDFSidebarResizer(appConfig.sidebarResizer,
-                                                     eventBus, this.l10n);
-      resolve(undefined);
+    this.pdfOutlineViewer = new PDFOutlineViewer({
+      container: appConfig.sidebar.outlineView,
+      eventBus,
+      linkService: pdfLinkService,
     });
+
+    this.pdfAttachmentViewer = new PDFAttachmentViewer({
+      container: appConfig.sidebar.attachmentsView,
+      eventBus,
+      downloadManager,
+    });
+
+    // TODO: improve `PDFSidebar` constructor parameter passing
+    let sidebarConfig = Object.create(appConfig.sidebar);
+    sidebarConfig.pdfViewer = this.pdfViewer;
+    sidebarConfig.pdfThumbnailViewer = this.pdfThumbnailViewer;
+    sidebarConfig.pdfOutlineViewer = this.pdfOutlineViewer;
+    sidebarConfig.eventBus = eventBus;
+    this.pdfSidebar = new PDFSidebar(sidebarConfig, this.l10n);
+    this.pdfSidebar.onToggled = this.forceRendering.bind(this);
+
+    this.pdfSidebarResizer = new PDFSidebarResizer(appConfig.sidebarResizer,
+                                                   eventBus, this.l10n);
   },
 
   run(config) {
@@ -582,12 +576,12 @@ let PDFViewerApplication = {
    * @returns {Promise} - Returns the promise, which is resolved when all
    *                      destruction is completed.
    */
-  close() {
+  async close() {
     let errorWrapper = this.appConfig.errorWrapper.container;
     errorWrapper.setAttribute('hidden', 'true');
 
     if (!this.pdfLoadingTask) {
-      return Promise.resolve();
+      return;
     }
 
     let promise = this.pdfLoadingTask.destroy();
@@ -632,13 +626,10 @@ let PDFViewerApplication = {
    * @returns {Promise} - Returns the promise, which is resolved when document
    *                      is opened.
    */
-  open(file, args) {
+  async open(file, args) {
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
-      return this.close().then(() => {
-        // ... and repeat the open() call.
-        return this.open(file, args);
-      });
+      await this.close();
     }
     // Set the necessary global worker parameters, using the available options.
     const workerParameters = AppOptions.getAll('worker');
@@ -1629,14 +1620,14 @@ function webViewerInitialized() {
     PDFViewerApplication.pdfSidebar.toggle();
   });
 
-  Promise.resolve().then(function() {
+  try {
     webViewerOpenFileViaURL(file);
-  }).catch(function(reason) {
+  } catch (reason) {
     PDFViewerApplication.l10n.get('loading_error', null,
         'An error occurred while loading the PDF.').then((msg) => {
       PDFViewerApplication.error(msg, reason);
     });
-  });
+  }
 }
 
 let webViewerOpenFileViaURL;
