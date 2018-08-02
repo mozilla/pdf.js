@@ -3978,5 +3978,12 @@
        "md5": "ce718efe601cd7491dd00651b4790329",
        "rounds": 1,
        "type": "eq"
+    },
+    { "id": "issue9940",
+      "file": "pdfs/issue9940.pdf",
+      "md5": "6ffef210c4b6cfe423e20430d8af168a",
+      "rounds": 1,
+      "link": false,
+      "type": "eq"
     }
 ]
