@@ -16,7 +16,7 @@
 import {
   bytesToString, getInheritableProperty, isArrayBuffer, isBool, isEmptyObj,
   isNum, isSpace, isString, log2, ReadableStream, removeNullCharacters,
-  stringToBytes, stringToPDFString
+  stringToBytes, stringToPDFString, URL
 } from '../../src/shared/util';
 import { Dict, Ref } from '../../src/core/primitives';
 import { XRefMock } from './test_utils';
@@ -309,6 +309,18 @@ describe('util', function() {
     it('should have property getReader', function () {
       let readable = new ReadableStream();
       expect(typeof readable.getReader).toEqual('function');
+    });
+  });
+
+  describe('URL', function() {
+    it('should return an Object', function() {
+      const url = new URL('https://example.com');
+      expect(typeof url).toEqual('object');
+    });
+
+    it('should have property `href`', function() {
+      const url = new URL('https://example.com');
+      expect(typeof url.href).toEqual('string');
     });
   });
 });
