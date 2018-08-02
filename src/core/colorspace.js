@@ -960,18 +960,6 @@ var CalRGBCS = (function CalRGBCSClosure() {
            '] for ' + this.name + ', falling back to default');
       this.GR = this.GG = this.GB = 1;
     }
-
-    if (this.MXA < 0 || this.MYA < 0 || this.MZA < 0 ||
-        this.MXB < 0 || this.MYB < 0 || this.MZB < 0 ||
-        this.MXC < 0 || this.MYC < 0 || this.MZC < 0) {
-      info('Invalid Matrix for ' + this.name + ' [' +
-           this.MXA + ', ' + this.MYA + ', ' + this.MZA +
-           this.MXB + ', ' + this.MYB + ', ' + this.MZB +
-           this.MXC + ', ' + this.MYC + ', ' + this.MZC +
-           '], falling back to default');
-      this.MXA = this.MYB = this.MZC = 1;
-      this.MXB = this.MYA = this.MZA = this.MXC = this.MYC = this.MZB = 0;
-    }
   }
 
   function matrixProduct(a, b, result) {
