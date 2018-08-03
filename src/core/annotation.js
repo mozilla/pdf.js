@@ -742,7 +742,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     this.data.pushButton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
 
     if (this.data.checkBox) {
-      this._processCheckBox();
+      this._processCheckBox(params);
     } else if (this.data.radioButton) {
       this._processRadioButton(params);
     } else if (this.data.pushButton) {
@@ -752,11 +752,29 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
   }
 
-  _processCheckBox() {
-    if (!isName(this.data.fieldValue)) {
+  _processCheckBox(params) {
+    if (isName(this.data.fieldValue)) {
+      this.data.fieldValue = this.data.fieldValue.name;
+    }
+
+    const customAppearance = params.dict.get('AP');
+    if (!isDict(customAppearance)) {
       return;
     }
-    this.data.fieldValue = this.data.fieldValue.name;
+
+    const exportValueOptionsDict = customAppearance.get('D');
+    if (!isDict(exportValueOptionsDict)) {
+      return;
+    }
+
+    const exportValues = exportValueOptionsDict.getKeys();
+    const hasCorrectOptionCount = exportValues.length === 2;
+    if (!hasCorrectOptionCount) {
+      return;
+    }
+
+    this.data.exportValue = exportValues[0] === 'Off' ?
+      exportValues[1] : exportValues[0];
   }
 
   _processRadioButton(params) {
