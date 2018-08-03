@@ -83,27 +83,24 @@ var PDFImage = (function PDFImageClosure() {
                       mask = null, isMask = false, pdfFunctionFactory, }) {
     this.image = image;
     var dict = image.dict;
-    if (dict.has('Filter')) {
-      const filter = dict.get('Filter');
-      if (isName(filter)) {
-        switch (filter.name) {
-          case 'JPXDecode':
-            var jpxImage = new JpxImage();
-            jpxImage.parseImageProperties(image.stream);
-            image.stream.reset();
 
-            image.width = jpxImage.width;
-            image.height = jpxImage.height;
-            image.bitsPerComponent = jpxImage.bitsPerComponent;
-            image.numComps = jpxImage.componentsCount;
-            break;
-          case 'JBIG2Decode':
-            image.bitsPerComponent = 1;
-            image.numComps = 1;
-            break;
-        }
-      } else {
-        warn(`PDFImage - invalid /Filter entry in dictionary: "${filter}".`);
+    const filter = dict.get('Filter');
+    if (isName(filter)) {
+      switch (filter.name) {
+        case 'JPXDecode':
+          var jpxImage = new JpxImage();
+          jpxImage.parseImageProperties(image.stream);
+          image.stream.reset();
+
+          image.width = jpxImage.width;
+          image.height = jpxImage.height;
+          image.bitsPerComponent = jpxImage.bitsPerComponent;
+          image.numComps = jpxImage.componentsCount;
+          break;
+        case 'JBIG2Decode':
+          image.bitsPerComponent = 1;
+          image.numComps = 1;
+          break;
       }
     }
     // TODO cache rendered images?
