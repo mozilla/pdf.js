@@ -80,7 +80,7 @@ describe('api', function() {
         loadingTask.promise
       ];
       Promise.all(promises).then(function (data) {
-        expect((data[0].loaded / data[0].total) > 0).toEqual(true);
+        expect((data[0].loaded / data[0].total) >= 0).toEqual(true);
         expect(data[1] instanceof PDFDocumentProxy).toEqual(true);
         expect(loadingTask).toEqual(data[1].loadingTask);
         loadingTask.destroy().then(done);
