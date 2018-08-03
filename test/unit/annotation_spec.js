@@ -979,7 +979,34 @@ describe('annotation', function() {
       buttonWidgetDict = null;
     });
 
-    it('should handle checkboxes', function() {
+    it('should handle checkboxes with export value', function() {
+      buttonWidgetDict.set('V', Name.get('1'));
+
+      var appearanceStatesDict = new Dict();
+      var exportValueOptionsDict = new Dict();
+
+      exportValueOptionsDict.set('Off', 0);
+      exportValueOptionsDict.set('Checked', 1);
+      appearanceStatesDict.set('D', exportValueOptionsDict);
+      buttonWidgetDict.set('AP', appearanceStatesDict);
+
+      var buttonWidgetRef = new Ref(124, 0);
+      var xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict, }
+      ]);
+
+      var annotation = AnnotationFactory.create(xref, buttonWidgetRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+
+      expect(data.checkBox).toEqual(true);
+      expect(data.fieldValue).toEqual('1');
+      expect(data.radioButton).toEqual(false);
+      expect(data.exportValue).toEqual('Checked');
+    });
+
+    it('should handle checkboxes without export value', function() {
       buttonWidgetDict.set('V', Name.get('1'));
 
       var buttonWidgetRef = new Ref(124, 0);
