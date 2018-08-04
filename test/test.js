@@ -36,7 +36,7 @@ function parseOptions() {
   var yargs = require('yargs')
     .usage('Usage: $0')
     .boolean(['help', 'masterMode', 'reftest', 'unitTest', 'fontTest',
-              'noPrompts', 'noDownload', 'downloadOnly'])
+              'noPrompts', 'noDownload', 'downloadOnly', 'strictVerify'])
     .string(['manifestFile', 'browser', 'browserManifestFile',
              'port', 'statsFile', 'statsDelay', 'testfilter'])
     .alias('browser', 'b').alias('help', 'h').alias('masterMode', 'm')
@@ -63,6 +63,7 @@ function parseOptions() {
     .describe('fontTest', 'Run the font tests.')
     .describe('noDownload', 'Skips test PDFs downloading.')
     .describe('downloadOnly', 'Download test PDFs without running the tests.')
+    .describe('strictVerify', 'Error if verifying the manifest files fails.')
     .describe('statsFile', 'The file where to store stats.')
     .describe('statsDelay', 'The amount of time in milliseconds the browser ' +
       'should wait before starting stats.')
@@ -716,6 +717,9 @@ function ensurePDFsDownloaded(callback) {
                     'used for testing.');
         console.log('Please re-download the files, or adjust the MD5 ' +
                     'checksum in the manifest for the files listed above.\n');
+        if (options.strictVerify) {
+          process.exit(1);
+        }
       }
       callback();
     });
