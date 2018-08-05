@@ -708,6 +708,22 @@ var Font = (function FontClosure() {
     return false;
   }
 
+  /**
+   * Compared to other font formats, the header in CFF files is not constant
+   * but contains version numbers. To reduce the possibility of misclassifying
+   * font files as CFF, it's recommended to check for other font formats first.
+   */
+  function isCFFFile(file) {
+    const header = file.peekBytes(4);
+    if (/* major version, [1, 255] */ header[0] >= 1 &&
+        /* minor version, [0, 255]; header[1] */
+        /* header size, [0, 255]; header[2] */
+        /* offset(0) size, [1, 4] */ (header[3] >= 1 && header[3] <= 4)) {
+      return true;
+    }
+    return false;
+  }
+
   function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
     var toFontChar = [], unicode;
     for (var i = 0, ii = encoding.length; i < ii; i++) {
