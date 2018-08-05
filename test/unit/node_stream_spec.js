@@ -30,7 +30,7 @@ describe('node_stream', function() {
   let server = null;
   let port = null;
   let pdf = url.parse(encodeURI('file://' + path.join(process.cwd(),
-                      './test/pdfs/tracemonkey.pdf'))).href;
+                      './test/pdfs/tracemonkeyWRONG_PATH.pdf'))).href;
   let pdfLength = 1016315;
 
   beforeAll((done) => {
