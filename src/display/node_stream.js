@@ -20,7 +20,7 @@ let https = __non_webpack_require__('https');
 let url = __non_webpack_require__('url');
 
 import {
-  AbortException, assert, createPromiseCapability
+  AbortException, assert, createPromiseCapability, MissingPDFException
 } from '../shared/util';
 import {
   extractFilenameFromHeader, validateRangeRequestCapabilities
@@ -300,6 +300,10 @@ class PDFNodeStreamFullReader extends BaseFullReader {
     super(stream);
 
     let handleResponse = (response) => {
+      let status = response.status;
+      if (status === 404 || status === 0 && /^file:/.test(url)) {
+        throw new MissingPDFException('Missing PDF "' + url + '".');
+      }
       this._headersCapability.resolve();
       this._setReadableStream(response);
 
