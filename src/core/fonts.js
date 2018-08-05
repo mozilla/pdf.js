@@ -550,36 +550,14 @@ var Font = (function FontClosure() {
       return;
     }
 
-    // Some fonts might use wrong font types for Type1C or CIDFontType0C
-    if (subtype === 'Type1C') {
-      if (type !== 'Type1' && type !== 'MMType1') {
-        // Some TrueType fonts by mistake claim Type1C
-        if (isTrueTypeFile(file)) {
-          subtype = 'TrueType';
-        } else {
-          type = 'Type1';
-        }
-      } else if (isOpenTypeFile(file)) {
-        // Sometimes the type/subtype can be a complete lie (see issue7598.pdf).
-        subtype = 'OpenType';
-      }
-    }
-    if (subtype === 'CIDFontType0C' && type !== 'CIDFontType0') {
-      type = 'CIDFontType0';
-    }
-    // Some CIDFontType0C fonts by mistake claim CIDFontType0.
-    if (type === 'CIDFontType0') {
-      if (isType1File(file)) {
-        subtype = 'CIDFontType0';
-      } else if (isOpenTypeFile(file)) {
-        // Sometimes the type/subtype can be a complete lie (see issue6782.pdf).
-        subtype = 'OpenType';
-      } else {
-        subtype = 'CIDFontType0C';
-      }
-    }
-    if (subtype === 'OpenType' && type !== 'OpenType') {
-      type = 'OpenType';
+    // Parse the font file to determine the correct type/subtype, rather than
+    // relying on the (often incorrect) data in the font dictionary; (see e.g.
+    //  issue6782.pdf, issue7598.pdf, and issue9949.pdf).
+    [type, subtype] = getFontFileType(file, properties);
+
+    if (type !== this.type || subtype !== this.subtype) {
+      info('Inconsistent font file Type/SubType, expected: ' +
+           `${this.type}/${this.subtype} but found: ${type}/${subtype}.`);
     }
 
     try {
@@ -680,7 +658,8 @@ var Font = (function FontClosure() {
 
   function isTrueTypeFile(file) {
     var header = file.peekBytes(4);
-    return readUint32(header, 0) === 0x00010000;
+    return (readUint32(header, 0) === 0x00010000 ||
+            bytesToString(header) === 'true');
   }
 
   function isTrueTypeCollectionFile(file) {
@@ -705,6 +684,62 @@ var Font = (function FontClosure() {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Compared to other font formats, the header in CFF files is not constant
+   * but contains version numbers. To reduce the possibility of misclassifying
+   * font files as CFF, it's recommended to check for other font formats first.
+   */
+  function isCFFFile(file) {
+    const header = file.peekBytes(4);
+    if (/* major version, [1, 255] */ header[0] >= 1 &&
+        /* minor version, [0, 255]; header[1] */
+        /* header size, [0, 255]; header[2] */
+        /* offset(0) size, [1, 4] */ (header[3] >= 1 && header[3] <= 4)) {
+      return true;
+    }
+    return false;
+  }
+
+  function getFontFileType(file, { type, subtype, composite, }) {
+    let fileType, fileSubtype;
+
+    if (isTrueTypeFile(file) || isTrueTypeCollectionFile(file)) {
+      if (composite) {
+        fileType = 'CIDFontType2';
+      } else {
+        fileType = 'TrueType';
+      }
+    } else if (isOpenTypeFile(file)) {
+      if (composite) {
+        fileType = 'CIDFontType2';
+      } else {
+        fileType = 'OpenType';
+      }
+    } else if (isType1File(file)) {
+      if (composite) {
+        fileType = 'CIDFontType0';
+      } else if (type === 'MMType1') {
+        fileType = 'MMType1';
+      } else {
+        fileType = 'Type1';
+      }
+    } else if (isCFFFile(file)) {
+      if (composite) {
+        fileType = 'CIDFontType0';
+        fileSubtype = 'CIDFontType0C';
+      } else {
+        fileType = 'Type1';
+        fileSubtype = 'Type1C';
+      }
+    } else {
+      warn('getFontFileType: Unable to detect correct font file Type/Subtype.');
+      fileType = type;
+      fileSubtype = subtype;
+    }
+
+    return [fileType, fileSubtype];
   }
 
   function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
