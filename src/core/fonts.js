@@ -599,9 +599,6 @@ var Font = (function FontClosure() {
           throw new FormatError(`Font ${type} is not supported`);
       }
     } catch (e) {
-      if (!(e instanceof FormatError)) {
-        throw e;
-      }
       warn(e);
       this.fallbackToSystemFont();
       return;
