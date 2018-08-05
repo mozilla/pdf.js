@@ -578,6 +578,12 @@
        "annotations": true,
        "about": "PDF with annotations, some of which have the Hidden flag set."
     },
+    {  "id": "issue9949",
+       "file": "pdfs/issue9949.pdf",
+       "md5": "55d24d7fc71b849818ea91d3b9eaf302",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue4665-text",
        "file": "pdfs/issue4665.pdf",
        "md5": "0de1308432819c101881df7ca4424575",
