@@ -20,7 +20,7 @@ let https = __non_webpack_require__('https');
 let url = __non_webpack_require__('url');
 
 import {
-  AbortException, assert, createPromiseCapability
+  AbortException, assert, createPromiseCapability, MissingPDFException
 } from '../shared/util';
 import {
   extractFilenameFromHeader, validateRangeRequestCapabilities
@@ -300,6 +300,12 @@ class PDFNodeStreamFullReader extends BaseFullReader {
     super(stream);
 
     let handleResponse = (response) => {
+      if (response.statusCode === 404) {
+        const error = new MissingPDFException(`Missing PDF "${this._url}".`);
+        this._storedError = error;
+        this._headersCapability.reject(error);
+        return;
+      }
       this._headersCapability.resolve();
       this._setReadableStream(response);
 
@@ -359,17 +365,24 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
     }
     this._httpHeaders['Range'] = `bytes=${start}-${end - 1}`;
 
+    let handleResponse = (response) => {
+      if (response.statusCode === 404) {
+        const error = new MissingPDFException(`Missing PDF "${this._url}".`);
+        this._storedError = error;
+        return;
+      }
+      this._setReadableStream(response);
+    };
+
     this._request = null;
     if (this._url.protocol === 'http:') {
-      this._request = http.request(createRequestOptions(
-        this._url, this._httpHeaders), (response) => {
-          this._setReadableStream(response);
-        });
+      this._request = http.request(
+        createRequestOptions(this._url, this._httpHeaders),
+        handleResponse);
     } else {
-      this._request = https.request(createRequestOptions(
-        this._url, this._httpHeaders), (response) => {
-          this._setReadableStream(response);
-        });
+      this._request = https.request(
+        createRequestOptions(this._url, this._httpHeaders),
+        handleResponse);
     }
 
     this._request.on('error', (reason) => {
@@ -392,6 +405,9 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
 
     fs.lstat(path, (error, stat) => {
       if (error) {
+        if (error.code === 'ENOENT') {
+          error = new MissingPDFException(`Missing PDF "${path}".`);
+        }
         this._storedError = error;
         this._headersCapability.reject(error);
         return;
