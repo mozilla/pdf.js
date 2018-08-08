@@ -3125,6 +3125,12 @@
        "forms": true,
        "about": "Text widget annotation without appearance streams."
     },
+    {  "id": "issue9664_reduced",
+       "file": "pdfs/issue9664_reduced.pdf",
+       "md5": "e58041ef52926ff2b7a2ba2fa631a409",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "annotation-tx2-annotations",
        "file": "pdfs/annotation-tx2.pdf",
        "md5": "b7a32a751895d394fc07bb6ddb40c420",
