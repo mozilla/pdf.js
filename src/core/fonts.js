@@ -717,17 +717,15 @@ var Font = (function FontClosure() {
     } else if (isType1File(file)) {
       if (composite) {
         fileType = 'CIDFontType0';
-      } else if (type === 'MMType1') {
-        fileType = 'MMType1';
       } else {
-        fileType = 'Type1';
+        fileType = (type === 'MMType1' ? 'MMType1' : 'Type1');
       }
     } else if (isCFFFile(file)) {
       if (composite) {
         fileType = 'CIDFontType0';
         fileSubtype = 'CIDFontType0C';
       } else {
-        fileType = 'Type1';
+        fileType = (type === 'MMType1' ? 'MMType1' : 'Type1');
         fileSubtype = 'Type1C';
       }
     } else {
