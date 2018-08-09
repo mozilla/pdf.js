@@ -942,10 +942,6 @@ let PDFViewerApplication = {
         }
       }
 
-      let initialParams = {
-        bookmark: null,
-        hash: null,
-      };
       let storePromise = store.getMultiple({
         page: null,
         zoom: DEFAULT_SCALE_VALUE,
@@ -957,8 +953,10 @@ let PDFViewerApplication = {
         spreadMode: null,
       }).catch(() => { /* Unable to read from storage; ignoring errors. */ });
 
-      Promise.all([storePromise, pageModePromise]).then(
-          ([values = {}, pageMode]) => {
+      Promise.all([
+        storePromise, pageModePromise,
+      ]).then(async ([values = {}, pageMode]) => {
+        const initialBookmark = this.initialBookmark;
         // Initialize the default values, from user preferences.
         const zoom = AppOptions.get('defaultZoomValue');
         let hash = zoom ? `zoom=${zoom}` : null;
@@ -981,52 +979,40 @@ let PDFViewerApplication = {
           // Always let the user preference/history take precedence.
           sidebarView = sidebarView || apiPageModeToSidebarView(pageMode);
         }
-        return {
-          hash,
-          rotation,
-          sidebarView,
-          scrollMode,
-          spreadMode,
-        };
-      }).then(({ hash, rotation, sidebarView, scrollMode, spreadMode, }) => {
-        initialParams.bookmark = this.initialBookmark;
-        initialParams.hash = hash;
 
         this.setInitialView(hash, {
           rotation, sidebarView, scrollMode, spreadMode,
         });
         this.eventBus.dispatch('documentinit', { source: this, });
-
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
         if (!this.isViewerEmbedded) {
           pdfViewer.focus();
         }
 
-        return Promise.race([
+        // For documents with different page sizes, once all pages are resolved,
+        // ensure that the correct location becomes visible on load.
+        // (To reduce the risk, in very large and/or slow loading documents,
+        //  that the location changes *after* the user has started interacting
+        //  with the viewer, wait for either `pagesPromise` or a timeout.)
+        await Promise.race([
           pagesPromise,
           new Promise((resolve) => {
             setTimeout(resolve, FORCE_PAGES_LOADED_TIMEOUT);
           }),
         ]);
-      }).then(() => {
-        // For documents with different page sizes, once all pages are resolved,
-        // ensure that the correct location becomes visible on load.
-        // To reduce the risk, in very large and/or slow loading documents,
-        // that the location changes *after* the user has started interacting
-        // with the viewer, wait for either `pagesPromise` or a timeout above.
-
-        if (!initialParams.bookmark && !initialParams.hash) {
+        if (!initialBookmark && !hash) {
           return;
         }
         if (pdfViewer.hasEqualPageSizes) {
           return;
         }
-        this.initialBookmark = initialParams.bookmark;
+        this.initialBookmark = initialBookmark;
 
         // eslint-disable-next-line no-self-assign
         pdfViewer.currentScaleValue = pdfViewer.currentScaleValue;
-        this.setInitialView(initialParams.hash);
+        // Re-apply the initial document location.
+        this.setInitialView(hash);
       }).then(function() {
         // At this point, rendering of the initial page(s) should always have
         // started (and may even have completed).
