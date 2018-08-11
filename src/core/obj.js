@@ -28,6 +28,10 @@ import { ChunkedStream } from './chunked_stream';
 import { CipherTransformFactory } from './crypto';
 import { ColorSpace } from './colorspace';
 
+function fetchDestination(dest) {
+  return isDict(dest) ? dest.get('D') : dest;
+}
+
 var Catalog = (function CatalogClosure() {
   function Catalog(pdfManager, xref) {
     this.pdfManager = pdfManager;
@@ -173,64 +177,37 @@ var Catalog = (function CatalogClosure() {
       // shadow the prototype getter
       return shadow(this, 'numPages', obj);
     },
+
     get destinations() {
-      function fetchDestination(dest) {
-        return isDict(dest) ? dest.get('D') : dest;
-      }
-
-      var xref = this.xref;
-      var dests = {}, nameTreeRef, nameDictionaryRef;
-      var obj = this.catDict.get('Names');
-      if (obj && obj.has('Dests')) {
-        nameTreeRef = obj.getRaw('Dests');
-      } else if (this.catDict.has('Dests')) {
-        nameDictionaryRef = this.catDict.get('Dests');
-      }
-
-      if (nameDictionaryRef) {
-        // reading simple destination dictionary
-        obj = nameDictionaryRef;
-        obj.forEach(function catalogForEach(key, value) {
-          if (!value) {
-            return;
-          }
-          dests[key] = fetchDestination(value);
-        });
-      }
-      if (nameTreeRef) {
-        var nameTree = new NameTree(nameTreeRef, xref);
-        var names = nameTree.getAll();
-        for (var name in names) {
+      const obj = this._readDests(), dests = Object.create(null);
+      if (obj instanceof NameTree) {
+        const names = obj.getAll();
+        for (let name in names) {
           dests[name] = fetchDestination(names[name]);
         }
+      } else if (obj instanceof Dict) {
+        obj.forEach(function(key, value) {
+          if (value) {
+            dests[key] = fetchDestination(value);
+          }
+        });
       }
       return shadow(this, 'destinations', dests);
     },
-    getDestination: function Catalog_getDestination(destinationId) {
-      function fetchDestination(dest) {
-        return isDict(dest) ? dest.get('D') : dest;
+    getDestination(destinationId) {
+      const obj = this._readDests();
+      if (obj instanceof NameTree || obj instanceof Dict) {
+        return fetchDestination(obj.get(destinationId) || null);
       }
-
-      var xref = this.xref;
-      var dest = null, nameTreeRef, nameDictionaryRef;
-      var obj = this.catDict.get('Names');
+      return null;
+    },
+    _readDests() {
+      const obj = this.catDict.get('Names');
       if (obj && obj.has('Dests')) {
-        nameTreeRef = obj.getRaw('Dests');
-      } else if (this.catDict.has('Dests')) {
-        nameDictionaryRef = this.catDict.get('Dests');
+        return new NameTree(obj.getRaw('Dests'), this.xref);
+      } else if (this.catDict.has('Dests')) { // Simple destination dictionary.
+        return this.catDict.get('Dests');
       }
-
-      if (nameDictionaryRef) { // Simple destination dictionary.
-        var value = nameDictionaryRef.get(destinationId);
-        if (value) {
-          dest = fetchDestination(value);
-        }
-      }
-      if (nameTreeRef) {
-        var nameTree = new NameTree(nameTreeRef, xref);
-        dest = fetchDestination(nameTree.get(destinationId));
-      }
-      return dest;
     },
 
     get pageLabels() {
