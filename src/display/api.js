@@ -627,7 +627,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getDestinations();
     },
     /**
-     * @param {string} id The named destination to get.
+     * @param {string} id - The named destination to get.
      * @return {Promise} A promise that is resolved with all information
      * of the given named destination.
      */
@@ -2119,6 +2119,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getDestination: function WorkerTransport_getDestination(id) {
+      if (typeof id !== 'string') {
+        return Promise.reject(new Error('Invalid destination request.'));
+      }
       return this.messageHandler.sendWithPromise('GetDestination', {
         id,
       });
