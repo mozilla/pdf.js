@@ -27,13 +27,27 @@ import { Stream } from './stream';
 
 class AnnotationFactory {
   /**
+   * Create an `Annotation` object of the correct type for the given reference
+   * to an annotation dictionary. This yields a promise that is resolved when
+   * the `Annotation` object is constructed.
+   *
    * @param {XRef} xref
    * @param {Object} ref
    * @param {PDFManager} pdfManager
    * @param {Object} idFactory
-   * @returns {Annotation}
+   * @param {PartialEvaluator} evaluator
+   * @param {WorkerTask} task
+   * @return {Promise} A promise that is resolved with an {Annotation} instance.
    */
   static create(xref, ref, pdfManager, idFactory, evaluator, task) {
+    return pdfManager.ensure(this, '_create',
+                          [xref, ref, pdfManager, idFactory, evaluator, task]);
+  }
+
+  /**
+   * @private
+   */
+  static _create(xref, ref, pdfManager, idFactory, evaluator, task) {
     let dict = xref.fetchIfRef(ref);
 
     if (!isDict(dict)) {
@@ -889,6 +903,25 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     this._processButtonValue(params);
+
+    const customAppearance = params.dict.get('AP');
+    if (!isDict(customAppearance)) {
+      return;
+    }
+
+    const exportValueOptionsDict = customAppearance.get('D');
+    if (!isDict(exportValueOptionsDict)) {
+      return;
+    }
+
+    const exportValues = exportValueOptionsDict.getKeys();
+    const hasCorrectOptionCount = exportValues.length === 2;
+    if (!hasCorrectOptionCount) {
+      return;
+    }
+
+    this.data.exportValue = exportValues[0] === 'Off' ?
+      exportValues[1] : exportValues[0];
   }
 
   _processRadioButton(params) {

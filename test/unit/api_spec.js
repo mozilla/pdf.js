@@ -80,7 +80,7 @@ describe('api', function() {
         loadingTask.promise
       ];
       Promise.all(promises).then(function (data) {
-        expect((data[0].loaded / data[0].total) > 0).toEqual(true);
+        expect((data[0].loaded / data[0].total) >= 0).toEqual(true);
         expect(data[1] instanceof PDFDocumentProxy).toEqual(true);
         expect(loadingTask).toEqual(data[1].loadingTask);
         loadingTask.destroy().then(done);
@@ -164,11 +164,6 @@ describe('api', function() {
       });
     });
     it('creates pdf doc from non-existent URL', function(done) {
-      if (isNodeJS()) {
-        pending('Fix `src/display/node_stream.js` to actually throw ' +
-                'a `MissingPDFException` in all cases where a PDF file ' +
-                'cannot be found, such that this test-case can be enabled.');
-      }
       var loadingTask = getDocument(
         buildGetDocumentParams('non-existent.pdf'));
       loadingTask.promise.then(function(error) {

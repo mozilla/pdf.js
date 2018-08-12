@@ -16,7 +16,7 @@
 import {
   assert, FormatError, getInheritableProperty, info, isArrayBuffer, isNum,
   isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
-  stringToPDFString, Util
+  stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream, Ref } from './primitives';
@@ -27,6 +27,7 @@ import { Linearization } from './parser';
 import { OperatorList } from './operator_list';
 import { PartialEvaluator } from './evaluator';
 import { PDFFunctionFactory } from './function';
+import { WorkerTask } from './worker';
 
 var Page = (function PageClosure() {
 
@@ -232,9 +233,7 @@ var Page = (function PageClosure() {
 
       // Fetch the page's annotations and add their operator lists to the
       // page's operator list to render them.
-      var annotationsPromise = this.annotations ?
-        this.annotations : this.getAnnotations(annotationTask);
-      return Promise.all([pageListPromise, annotationsPromise]).then(
+      return Promise.all([pageListPromise, this._parsedAnnotations]).then(
           function ([pageOpList, annotations]) {
         if (annotations.length === 0) {
           pageOpList.flush(true);
@@ -299,10 +298,10 @@ var Page = (function PageClosure() {
       });
     },
 
-    getAnnotationsData: function Page_getAnnotationsData(intent, task) {
-      return this.getAnnotations(task).then(function (annotations) {
-        var annotationsData = [];
-        for (var i = 0, n = annotations.length; i < n; ++i) {
+    getAnnotationsData(intent) {
+      return this._parsedAnnotations.then(function(annotations) {
+        let annotationsData = [];
+        for (let i = 0, ii = annotations.length; i < ii; i++) {
           if (!intent || isAnnotationRenderable(annotations[i], intent)) {
             annotationsData.push(annotations[i].data);
           }
@@ -311,59 +310,57 @@ var Page = (function PageClosure() {
       });
     },
 
-    getAnnotations: function Page_getAnnotations(task) {
-      if (this._annotations) {
-        return this._annotations;
-      }
+    get annotations() {
+      return shadow(this, 'annotations',
+                    this._getInheritableProperty('Annots') || []);
+    },
 
-      var handler = {};
+    get _parsedAnnotations() {
+      let pdfManager = this.pdfManager;
 
-      var self = this;
+      const parsedAnnotations =
+        this.pdfManager.ensure(this, 'annotations').then(() => {
+          const annotationRefs = this.annotations;
+          const annotationPromises = [];
+          for (let i = 0, ii = annotationRefs.length; i < ii; i++) {
+            annotationPromises.push(AnnotationFactory.create(
+              this.xref,
+              annotationRefs[i],
+              this.pdfManager,
+              this.idFactory,
+              new PartialEvaluator({
+                pdfManager: this.pdfManager,
+                xref: this.xref,
+                handler: {
+                  send: (actionname, data) => {
+                    if (pdfManager &&
+                        pdfManager.pdfDocument &&
+                        pdfManager.pdfDocument.acroForm) {
+                      pdfManager.pdfDocument.acroForm
+                          .annotationFonts.push(data);
+                    }
+                  },
+                },
+                pageIndex: this.pageIndex,
+                idFactory: this.idFactory,
+                fontCache: this.fontCache,
+                builtInCMapCache: this.builtInCMapCache,
+                options: this.evaluatorOptions,
+              }),
+              new WorkerTask('GetAnnotationAppearances')));
+          }
 
-      handler.send = function (actionname, data) {
-        if (self.pdfManager && self.pdfManager.pdfDocument &&
-            self.pdfManager.pdfDocument.acroForm) {
-          self.pdfManager.pdfDocument.acroForm.annotationFonts.push(data);
-        }
-      };
-
-      var partialEvaluator = new PartialEvaluator({
-        pdfManager: this.pdfManager,
-        xref: this.xref,
-        handler,
-        pageIndex: this.pageIndex,
-        idFactory: this.idFactory,
-        fontCache: this.fontCache,
-        builtInCMapCache: this.builtInCMapCache,
-        options: this.evaluatorOptions,
-      });
-
-      var annotationRefs = this._getInheritableProperty('Annots') || [];
-      var annotationPromises = [];
-      for (var i = 0, n = annotationRefs.length; i < n; ++i) {
-        var annotationRef = annotationRefs[i];
-        var annotationPromise = AnnotationFactory.create(
-          this.xref,
-          annotationRef,
-          this.pdfManager,
-          this.idFactory,
-          partialEvaluator,
-          task
-        );
-
-        if (annotationPromise) {
-          annotationPromises.push(annotationPromise);
-        }
-      }
-
-      this._annotations =
-        Promise.all(annotationPromises).then(function (annotations) {
-          return annotations;
-        }, function (reason) {
-          return [];
+          return Promise.all(annotationPromises).then(function(annotations) {
+            return annotations.filter(function isDefined(annotation) {
+              return !!annotation;
+            });
+          }, function(reason) {
+            warn(`_parsedAnnotations: "${reason}".`);
+            return [];
+          });
         });
 
-      return this._annotations;
+      return shadow(this, '_parsedAnnotations', parsedAnnotations);
     },
   };
 

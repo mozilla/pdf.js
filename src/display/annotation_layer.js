@@ -979,7 +979,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         optionElement.value = option.exportValue;
         optionElement.setAttribute('name', itemName);
 
-        if (this.data.fieldValue.includes(option.exportValue) >= 0) {
+        if (this.data.fieldValue.includes(option.exportValue)) {
           optionElement.setAttribute('selected', true);
         }
 
@@ -1143,6 +1143,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
       for (i = 0, ii = this.data.options.length; i < ii; i++) {
         let optionItem = this.data.options[i];
+        if (this.data.fieldValue.includes(optionItem.exportValue)) {
+          comboElement.value = optionItem.displayValue;
+        }
 
         let aElement = document.createElement('a');
         aElement.setAttribute('value', optionItem.exportValue);
@@ -1153,10 +1156,6 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           aElement.style.fontSize = '9px';
         } else {
           aElement.style.fontSize = style.fontSize;
-        }
-
-        if (this.data.fieldValue.includes(optionItem.exportValue) >= 0) {
-          comboElement.value = optionItem.displayValue;
         }
 
         let aElementWidth = self._measureText(aElement.text,

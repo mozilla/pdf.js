@@ -163,7 +163,6 @@
   width: 115%;
 }
 
-<<<<<<< HEAD
 .annotationLayer .choiceWidgetAnnotation input + span::before {
   content: '▼';
   right: 0;

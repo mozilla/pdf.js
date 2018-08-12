@@ -578,6 +578,12 @@
        "annotations": true,
        "about": "PDF with annotations, some of which have the Hidden flag set."
     },
+    {  "id": "issue9949",
+       "file": "pdfs/issue9949.pdf",
+       "md5": "55d24d7fc71b849818ea91d3b9eaf302",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue4665-text",
        "file": "pdfs/issue4665.pdf",
        "md5": "0de1308432819c101881df7ca4424575",
@@ -1335,6 +1341,13 @@
     {  "id": "issue8480",
        "file": "pdfs/issue8480.pdf",
        "md5": "769bc07bf8041d95667f2d32aaf75665",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue9915",
+       "file": "pdfs/issue9915_reduced.pdf",
+       "md5": "c56dabe5066a6c821901920e09dffe00",
        "rounds": 1,
        "link": false,
        "type": "eq"
@@ -3259,6 +3272,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue9650",
+       "file": "pdfs/issue9650.pdf",
+       "md5": "20d50bda6b1080b6d9088811299c791e",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue9679",
        "file": "pdfs/issue9679.pdf",
        "md5": "3077d06add3875705aa1021c7b116023",
@@ -3963,5 +3984,12 @@
        "md5": "ce718efe601cd7491dd00651b4790329",
        "rounds": 1,
        "type": "eq"
+    },
+    { "id": "issue9940",
+      "file": "pdfs/issue9940.pdf",
+      "md5": "6ffef210c4b6cfe423e20430d8af168a",
+      "rounds": 1,
+      "link": false,
+      "type": "eq"
     }
 ]

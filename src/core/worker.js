@@ -723,16 +723,9 @@ var WorkerMessageHandler = {
       }
     );
 
-    handler.on('GetAnnotations', function wphSetupGetAnnotations(data) {
-      return pdfManager.getPage(data.pageIndex).then(function(page) {
-        var task = new WorkerTask(
-          'GetAnnotationAppereances: page ' + data.pageIndex);
-        startWorkerTask(task);
-        var annotationsDataPromise = page.getAnnotationsData(data.intent, task);
-        return annotationsDataPromise.then(function (annotationsData) {
-          finishWorkerTask(task);
-          return annotationsData;
-        });
+    handler.on('GetAnnotations', function({ pageIndex, intent, }) {
+      return pdfManager.getPage(pageIndex).then(function(page) {
+        return page.getAnnotationsData(intent);
       });
     });
 
