@@ -583,6 +583,32 @@ describe('api', function() {
       });
     });
 
+    it('gets non-string destination', function(done) {
+      let numberPromise = doc.getDestination(4.3);
+      let booleanPromise = doc.getDestination(true);
+      let arrayPromise = doc.getDestination([
+        { num: 17, gen: 0, }, { name: 'XYZ', }, 0, 841.89, null]);
+
+      numberPromise = numberPromise.then(function() {
+        throw new Error('shall fail for non-string destination.');
+      }, function(reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+      booleanPromise = booleanPromise.then(function() {
+        throw new Error('shall fail for non-string destination.');
+      }, function(reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+      arrayPromise = arrayPromise.then(function() {
+        throw new Error('shall fail for non-string destination.');
+      }, function(reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+
+      Promise.all([numberPromise, booleanPromise, arrayPromise]).then(
+        done, done.fail);
+    });
+
     it('gets non-existent page labels', function (done) {
       var promise = doc.getPageLabels();
       promise.then(function (data) {
