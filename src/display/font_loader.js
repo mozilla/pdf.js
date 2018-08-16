@@ -120,7 +120,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
 
       // Add the font to the DOM only once or skip if the font
       // is already loaded.
-      if (font.attached || font.loading === false) {
+      if (font.attached || font.missingFile) {
         continue;
       }
       font.attached = true;
