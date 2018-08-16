@@ -156,11 +156,11 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
   FontLoader.prototype.queueLoadingCallback =
       function FontLoader_queueLoadingCallback(callback) {
     function LoadLoader_completeRequest() {
-      assert(!request.end, 'completeRequest() cannot be called twice');
-      request.end = Date.now();
+      assert(!request.done, 'completeRequest() cannot be called twice.');
+      request.done = true;
 
-      // sending all completed requests in order how they were queued
-      while (context.requests.length > 0 && context.requests[0].end) {
+      // Sending all completed requests in order of how they were queued.
+      while (context.requests.length > 0 && context.requests[0].done) {
         var otherRequest = context.requests.shift();
         setTimeout(otherRequest.callback, 0);
       }
@@ -170,9 +170,9 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
     var requestId = 'pdfjs-font-loading-' + (context.nextRequestId++);
     var request = {
       id: requestId,
+      done: false,
       complete: LoadLoader_completeRequest,
       callback,
-      started: Date.now(),
     };
     context.requests.push(request);
     return request;
