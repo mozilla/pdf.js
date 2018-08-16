@@ -75,10 +75,7 @@ class BaseFontLoader {
         warn(`Failed to load font "${nativeFontFace.family}": ${reason}`);
       });
     };
-    // Firefox Font Loading API does not work with mozPrintCallback --
-    // disabling it in this case.
-    const isFontLoadingAPISupported = this.isFontLoadingAPISupported &&
-                                      !this.isSyncFontLoadingSupported;
+
     for (const font of fonts) {
       // Add the font to the DOM only once; skip if the font is already loaded.
       if (font.attached || font.missingFile) {
@@ -86,7 +83,7 @@ class BaseFontLoader {
       }
       font.attached = true;
 
-      if (isFontLoadingAPISupported) {
+      if (this.isFontLoadingAPISupported) {
         const nativeFontFace = font.createNativeFontFace();
         if (nativeFontFace) {
           this.addNativeFontFace(nativeFontFace);
@@ -103,7 +100,7 @@ class BaseFontLoader {
     }
 
     const request = this._queueLoadingCallback(callback);
-    if (isFontLoadingAPISupported) {
+    if (this.isFontLoadingAPISupported) {
       Promise.all(fontLoadPromises).then(request.complete);
     } else if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
       this._prepareFontLoadEvent(rules, fontsToLoad, request);
@@ -176,6 +173,16 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
 
   get isFontLoadingAPISupported() {
     let supported = (typeof document !== 'undefined' && !!document.fonts);
+
+    if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) &&
+        (supported && typeof navigator !== 'undefined')) {
+      // The Firefox Font Loading API does not work with `mozPrintCallback`
+      // prior to version 63; see https://bugzilla.mozilla.org/show_bug.cgi?id=1473742
+      const m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(navigator.userAgent);
+      if (m && m[1] < 63) {
+        supported = false;
+      }
+    }
     return shadow(this, 'isFontLoadingAPISupported', supported);
   }
 
