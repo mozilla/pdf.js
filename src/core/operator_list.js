@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { ImageKind, OPS } from '../shared/util';
+import { assert, ImageKind, OPS } from '../shared/util';
 
 var QueueOptimizer = (function QueueOptimizerClosure() {
   function addState(parentState, pattern, checkFn, iterateFn, processFn) {
@@ -116,7 +116,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       }
       var imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
       var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
-      var imgData = new Uint8Array(imgWidth * imgHeight * 4);
+      var imgData = new Uint8ClampedArray(imgWidth * imgHeight * 4);
       var imgRowSize = imgWidth << 2;
       for (q = 0; q < count; q++) {
         var data = argsArray[iFirstPIIXO + (q << 2)][0].data;
@@ -543,6 +543,12 @@ var OperatorList = (function OperatorListClosure() {
         case OPS.paintInlineImageXObjectGroup:
         case OPS.paintImageMaskXObject:
           var arg = argsArray[i][0]; // first param in imgData
+
+          if (typeof PDFJSDev === 'undefined' ||
+              PDFJSDev.test('!PRODUCTION || TESTING')) {
+            assert(arg.data instanceof Uint8ClampedArray,
+                   'OperatorList - getTransfers: Unsupported "arg.data" type.');
+          }
           if (!arg.cached) {
             transfers.push(arg.data.buffer);
           }
