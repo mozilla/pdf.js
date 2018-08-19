@@ -969,13 +969,6 @@ function createPromiseCapability() {
   return capability;
 }
 
-var createBlob = function createBlob(data, contentType) {
-  if (typeof Blob !== 'undefined') {
-    return new Blob([data], { type: contentType, });
-  }
-  throw new Error('The "Blob" constructor is not supported.');
-};
-
 var createObjectURL = (function createObjectURLClosure() {
   // Blob/createObjectURL is not available, falling back to data schema.
   var digits =
@@ -983,7 +976,7 @@ var createObjectURL = (function createObjectURLClosure() {
 
   return function createObjectURL(data, contentType, forceDataSchema = false) {
     if (!forceDataSchema && URL.createObjectURL) {
-      var blob = createBlob(data, contentType);
+      const blob = new Blob([data], { type: contentType, });
       return URL.createObjectURL(blob);
     }
 
@@ -1033,7 +1026,6 @@ export {
   arraysToBytes,
   assert,
   bytesToString,
-  createBlob,
   createPromiseCapability,
   createObjectURL,
   deprecated,
