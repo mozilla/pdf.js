@@ -21,10 +21,10 @@ import {
   TextLayerMode
 } from './ui_utils';
 import {
-  build, createBlob, createObjectURL, getDocument, getFilenameFromUrl,
-  GlobalWorkerOptions, InvalidPDFException, LinkTarget, loadScript,
-  MissingPDFException, OPS, PDFWorker, shadow, UnexpectedResponseException,
-  UNSUPPORTED_FEATURES, URL, version
+  build, createObjectURL, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
+  InvalidPDFException, LinkTarget, loadScript, MissingPDFException, OPS,
+  PDFWorker, shadow, UnexpectedResponseException, UNSUPPORTED_FEATURES, URL,
+  version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -748,7 +748,7 @@ let PDFViewerApplication = {
     }
 
     this.pdfDocument.getData().then(function(data) {
-      let blob = createBlob(data, 'application/pdf');
+      const blob = new Blob([data], { type: 'application/pdf', });
       downloadManager.download(blob, url, filename);
     }).catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
