@@ -487,15 +487,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       // shadow the prototype getter with a data property
       return shadow(this, 'startXRef', startXRef);
     },
-    get mainXRefEntriesOffset() {
-      var mainXRefEntriesOffset = 0;
-      var linearization = this.linearization;
-      if (linearization) {
-        mainXRefEntriesOffset = linearization.mainXRefEntriesOffset;
-      }
-      // shadow the prototype getter with a data property
-      return shadow(this, 'mainXRefEntriesOffset', mainXRefEntriesOffset);
-    },
+
     // Find the header, remove leading garbage and setup the stream
     // starting from the header.
     checkHeader: function PDFDocument_checkHeader() {
