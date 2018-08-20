@@ -594,9 +594,7 @@ class BaseViewer {
       let vPadding = noPadding ? 0 : VERTICAL_PADDING;
 
       if (!noPadding && this._isScrollModeHorizontal) {
-        const temp = hPadding;
-        hPadding = vPadding;
-        vPadding = temp;
+        [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
       }
       let pageWidthScale = (this.container.clientWidth - hPadding) /
                            currentPage.width * currentPage.scale;
