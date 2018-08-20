@@ -171,19 +171,6 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add('removePageBorders');
     }
-
-    if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
-        ('scrollMode' in options || 'spreadMode' in options)) {
-      console.error(`The ${this._name} constructor options ` +
-        '`scrollMode`/`spreadMode` are deprecated, use the setters instead.');
-      if (options.scrollMode !== undefined) {
-        this.scrollMode = options.scrollMode;
-      }
-      if (options.spreadMode !== undefined) {
-        this.spreadMode = options.spreadMode;
-      }
-    }
-
     // Defer the dispatching of this event, to give other viewer components
     // time to initialize *and* register 'baseviewerinit' event listeners.
     Promise.resolve().then(() => {
@@ -1080,14 +1067,6 @@ class BaseViewer {
     this.update();
   }
 
-  setScrollMode(mode) {
-    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-      console.error(`${this._name}.setScrollMode() is deprecated, ` +
-                    `use the ${this._name}.scrollMode setter instead.`);
-      this.scrollMode = mode;
-    }
-  }
-
   /**
    * @return {number} One of the values in {SpreadMode}.
    */
@@ -1146,14 +1125,6 @@ class BaseViewer {
     }
     this.scrollPageIntoView({ pageNumber, });
     this.update();
-  }
-
-  setSpreadMode(mode) {
-    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-      console.error(`${this._name}.setSpreadMode() is deprecated, ` +
-                    `use the ${this._name}.spreadMode setter instead.`);
-      this.spreadMode = mode;
-    }
   }
 }
 
