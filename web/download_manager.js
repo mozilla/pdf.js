@@ -112,13 +112,14 @@ class DownloadManager {
    *   which dialog to show. "save" triggers "save as" and "download" triggers
    *   the "open with" dialog.
    */
-  download(blob, url, filename, sourceEventType = "download") {
+  download(blob, url, filename, sourceEventType = "download", shouldPrint) {
     if (viewerCompatibilityParams.disableCreateObjectURL) {
       // URL.createObjectURL is not supported
       this.downloadUrl(url, filename);
       return;
     }
     const blobUrl = URL.createObjectURL(blob);
+    if(shouldPrint) blobUrl += '#shield-pdfjs-download-print'
     download(blobUrl, filename);
   }
 }

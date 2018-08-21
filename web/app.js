@@ -968,7 +968,7 @@ const PDFViewerApplication = {
     throw new Error("PDF document not downloaded.");
   },
 
-  async download({ sourceEventType = "download" } = {}) {
+  async download({ sourceEventType = "download", shouldPrint } = {}) {
     const url = this.baseUrl,
       filename = this._docFilename;
     try {
@@ -977,11 +977,11 @@ const PDFViewerApplication = {
       const data = await this.pdfDocument.getData();
       const blob = new Blob([data], { type: "application/pdf" });
 
-      await this.downloadManager.download(blob, url, filename, sourceEventType);
+      await this.downloadManager.download(blob, url, filename, sourceEventType, shouldPrint);
     } catch (reason) {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply download using the URL.
-      await this.downloadManager.downloadUrl(url, filename);
+      await this.downloadManager.downloadUrl(url, filename, shouldPrint);
     }
   },
 
@@ -1897,7 +1897,7 @@ const PDFViewerApplication = {
     eventBus._on("namedaction", webViewerNamedAction);
     eventBus._on("presentationmodechanged", webViewerPresentationModeChanged);
     eventBus._on("presentationmode", webViewerPresentationMode);
-    eventBus._on("print", webViewerPrint);
+    eventBus._on("print", webViewerDownload.bind(null, true)); // shield modification
     eventBus._on("download", webViewerDownload);
     eventBus._on("save", webViewerSave);
     eventBus._on("firstpage", webViewerFirstPage);
@@ -2101,8 +2101,7 @@ let validateFileURL;
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const HOSTED_VIEWER_ORIGINS = [
     "null",
-    "http://mozilla.github.io",
-    "https://mozilla.github.io",
+    "pdfjs://dist",
   ];
   validateFileURL = function (file) {
     if (file === undefined) {
@@ -2524,8 +2523,8 @@ function webViewerPresentationMode() {
 function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();
 }
-function webViewerDownload() {
-  PDFViewerApplication.downloadOrSave({ sourceEventType: "download" });
+function webViewerDownload(shouldPrint) {
+  PDFViewerApplication.downloadOrSave({ sourceEventType: "download", shouldPrint });
 }
 function webViewerSave() {
   PDFViewerApplication.downloadOrSave({ sourceEventType: "save" });
