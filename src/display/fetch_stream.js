@@ -152,23 +152,21 @@ class PDFFetchStreamReader {
     return this._isStreamingSupported;
   }
 
-  read() {
-    return this._headersCapability.promise.then(() => {
-      return this._reader.read().then(({ value, done, }) => {
-        if (done) {
-          return Promise.resolve({ value, done, });
-        }
-        this._loaded += value.byteLength;
-        if (this.onProgress) {
-          this.onProgress({
-            loaded: this._loaded,
-            total: this._contentLength,
-          });
-        }
-        let buffer = new Uint8Array(value).buffer;
-        return Promise.resolve({ value: buffer, done: false, });
+  async read() {
+    await this._headersCapability.promise;
+    const { value, done, } = await this._reader.read();
+    if (done) {
+      return { value, done, };
+    }
+    this._loaded += value.byteLength;
+    if (this.onProgress) {
+      this.onProgress({
+        loaded: this._loaded,
+        total: this._contentLength,
       });
-    });
+    }
+    let buffer = new Uint8Array(value).buffer;
+    return { value: buffer, done: false, };
   }
 
   cancel(reason) {
@@ -223,20 +221,18 @@ class PDFFetchStreamRangeReader {
     return this._isStreamingSupported;
   }
 
-  read() {
-    return this._readCapability.promise.then(() => {
-      return this._reader.read().then(({ value, done, }) => {
-        if (done) {
-          return Promise.resolve({ value, done, });
-        }
-        this._loaded += value.byteLength;
-        if (this.onProgress) {
-          this.onProgress({ loaded: this._loaded, });
-        }
-        let buffer = new Uint8Array(value).buffer;
-        return Promise.resolve({ value: buffer, done: false, });
-      });
-    });
+  async read() {
+    await this._readCapability.promise;
+    const { value, done, } = await this._reader.read();
+    if (done) {
+      return { value, done, };
+    }
+    this._loaded += value.byteLength;
+    if (this.onProgress) {
+      this.onProgress({ loaded: this._loaded, });
+    }
+    let buffer = new Uint8Array(value).buffer;
+    return { value: buffer, done: false, };
   }
 
   cancel(reason) {
