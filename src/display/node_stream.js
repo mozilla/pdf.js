@@ -131,31 +131,30 @@ class BaseFullReader {
     return this._isStreamingSupported;
   }
 
-  read() {
-    return this._readCapability.promise.then(() => {
-      if (this._done) {
-        return Promise.resolve({ value: undefined, done: true, });
-      }
-      if (this._storedError) {
-        return Promise.reject(this._storedError);
-      }
+  async read() {
+    await this._readCapability.promise;
+    if (this._done) {
+      return { value: undefined, done: true, };
+    }
+    if (this._storedError) {
+      throw this._storedError;
+    }
 
-      let chunk = this._readableStream.read();
-      if (chunk === null) {
-        this._readCapability = createPromiseCapability();
-        return this.read();
-      }
-      this._loaded += chunk.length;
-      if (this.onProgress) {
-        this.onProgress({
-          loaded: this._loaded,
-          total: this._contentLength,
-        });
-      }
-      // Ensure that `read()` method returns ArrayBuffer.
-      let buffer = new Uint8Array(chunk).buffer;
-      return Promise.resolve({ value: buffer, done: false, });
-    });
+    let chunk = this._readableStream.read();
+    if (chunk === null) {
+      this._readCapability = createPromiseCapability();
+      return this.read();
+    }
+    this._loaded += chunk.length;
+    if (this.onProgress) {
+      this.onProgress({
+        loaded: this._loaded,
+        total: this._contentLength,
+      });
+    }
+    // Ensure that `read()` method returns ArrayBuffer.
+    let buffer = new Uint8Array(chunk).buffer;
+    return { value: buffer, done: false, };
   }
 
   cancel(reason) {
@@ -220,28 +219,27 @@ class BaseRangeReader {
     return this._isStreamingSupported;
   }
 
-  read() {
-    return this._readCapability.promise.then(() => {
-      if (this._done) {
-        return Promise.resolve({ value: undefined, done: true, });
-      }
-      if (this._storedError) {
-        return Promise.reject(this._storedError);
-      }
+  async read() {
+    await this._readCapability.promise;
+    if (this._done) {
+      return { value: undefined, done: true, };
+    }
+    if (this._storedError) {
+      throw this._storedError;
+    }
 
-      let chunk = this._readableStream.read();
-      if (chunk === null) {
-        this._readCapability = createPromiseCapability();
-        return this.read();
-      }
-      this._loaded += chunk.length;
-      if (this.onProgress) {
-        this.onProgress({ loaded: this._loaded, });
-      }
-      // Ensure that `read()` method returns ArrayBuffer.
-      let buffer = new Uint8Array(chunk).buffer;
-      return Promise.resolve({ value: buffer, done: false, });
-    });
+    let chunk = this._readableStream.read();
+    if (chunk === null) {
+      this._readCapability = createPromiseCapability();
+      return this.read();
+    }
+    this._loaded += chunk.length;
+    if (this.onProgress) {
+      this.onProgress({ loaded: this._loaded, });
+    }
+    // Ensure that `read()` method returns ArrayBuffer.
+    let buffer = new Uint8Array(chunk).buffer;
+    return { value: buffer, done: false, };
   }
 
   cancel(reason) {
