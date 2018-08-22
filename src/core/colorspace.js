@@ -53,7 +53,7 @@ var ColorSpace = (function ColorSpaceClosure() {
     }
   }
 
-  // Constructor should define this.numComps, this.defaultColor, this.name
+  // Constructor should define this.numComps, this.name
   function ColorSpace() {
     unreachable('should not call ColorSpace constructor');
   }
@@ -421,15 +421,13 @@ var ColorSpace = (function ColorSpaceClosure() {
  * Separation color space is actually just a DeviceN with one color component.
  * Both color spaces use a tinting function to convert colors to a base color
  * space.
+ *
+ * The default color is `new Float32Array(new Array(numComps).fill(1))`.
  */
 var AlternateCS = (function AlternateCSClosure() {
   function AlternateCS(numComps, base, tintFn) {
     this.name = 'Alternate';
     this.numComps = numComps;
-    this.defaultColor = new Float32Array(numComps);
-    for (var i = 0; i < numComps; ++i) {
-      this.defaultColor[i] = 1;
-    }
     this.base = base;
     this.tintFn = tintFn;
     this.tmpBuf = new Float32Array(base.numComps);
@@ -514,11 +512,13 @@ var PatternCS = (function PatternCSClosure() {
   return PatternCS;
 })();
 
+/**
+ * The default color is `new Uint8Array([0])`.
+ */
 var IndexedCS = (function IndexedCSClosure() {
   function IndexedCS(base, highVal, lookup) {
     this.name = 'Indexed';
     this.numComps = 1;
-    this.defaultColor = new Uint8Array(this.numComps);
     this.base = base;
     this.highVal = highVal;
 
@@ -585,11 +585,13 @@ var IndexedCS = (function IndexedCSClosure() {
   return IndexedCS;
 })();
 
+/**
+ * The default color is `new Float32Array([0])`.
+ */
 var DeviceGrayCS = (function DeviceGrayCSClosure() {
   function DeviceGrayCS() {
     this.name = 'DeviceGray';
     this.numComps = 1;
-    this.defaultColor = new Float32Array(this.numComps);
   }
 
   DeviceGrayCS.prototype = {
@@ -632,11 +634,13 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
   return DeviceGrayCS;
 })();
 
+/**
+ * The default color is `new Float32Array([0, 0, 0])`.
+ */
 var DeviceRgbCS = (function DeviceRgbCSClosure() {
   function DeviceRgbCS() {
     this.name = 'DeviceRGB';
     this.numComps = 3;
-    this.defaultColor = new Float32Array(this.numComps);
   }
   DeviceRgbCS.prototype = {
     getRgb: ColorSpace.prototype.getRgb,
@@ -684,6 +688,9 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
   return DeviceRgbCS;
 })();
 
+/**
+ * The default color is `new Float32Array([0, 0, 0, 1])`.
+ */
 var DeviceCmykCS = (function DeviceCmykCSClosure() {
   // The coefficients below was found using numerical analysis: the method of
   // steepest descent for the sum((f_i - color_value_i)^2) for r/g/b colors,
@@ -730,9 +737,6 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
   function DeviceCmykCS() {
     this.name = 'DeviceCMYK';
     this.numComps = 4;
-    this.defaultColor = new Float32Array(this.numComps);
-    // Set the fourth component to the maximum value for a black color.
-    this.defaultColor[3] = 1;
   }
   DeviceCmykCS.prototype = {
     getRgb: ColorSpace.prototype.getRgb,
@@ -771,14 +775,15 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
   return DeviceCmykCS;
 })();
 
-//
-// CalGrayCS: Based on "PDF Reference, Sixth Ed", p.245
-//
+/**
+ * CalGrayCS: Based on "PDF Reference, Sixth Ed", p.245
+ *
+ * The default color is `new Float32Array([0])`.
+ */
 var CalGrayCS = (function CalGrayCSClosure() {
   function CalGrayCS(whitePoint, blackPoint, gamma) {
     this.name = 'CalGray';
     this.numComps = 1;
-    this.defaultColor = new Float32Array(this.numComps);
 
     if (!whitePoint) {
       throw new FormatError(
@@ -875,9 +880,11 @@ var CalGrayCS = (function CalGrayCSClosure() {
   return CalGrayCS;
 })();
 
-//
-// CalRGBCS: Based on "PDF Reference, Sixth Ed", p.247
-//
+/**
+ * CalRGBCS: Based on "PDF Reference, Sixth Ed", p.247
+ *
+ * The default color is `new Float32Array([0, 0, 0])`.
+ */
 var CalRGBCS = (function CalRGBCSClosure() {
   // See http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html for these
   // matrices.
@@ -908,7 +915,6 @@ var CalRGBCS = (function CalRGBCSClosure() {
   function CalRGBCS(whitePoint, blackPoint, gamma, matrix) {
     this.name = 'CalRGB';
     this.numComps = 3;
-    this.defaultColor = new Float32Array(this.numComps);
 
     if (!whitePoint) {
       throw new FormatError(
@@ -1162,14 +1168,15 @@ var CalRGBCS = (function CalRGBCSClosure() {
   return CalRGBCS;
 })();
 
-//
-// LabCS: Based on "PDF Reference, Sixth Ed", p.250
-//
+/**
+ * LabCS: Based on "PDF Reference, Sixth Ed", p.250
+ *
+ * The default color is `new Float32Array([0, 0, 0])`.
+ */
 var LabCS = (function LabCSClosure() {
   function LabCS(whitePoint, blackPoint, range) {
     this.name = 'Lab';
     this.numComps = 3;
-    this.defaultColor = new Float32Array(this.numComps);
 
     if (!whitePoint) {
       throw new FormatError(
