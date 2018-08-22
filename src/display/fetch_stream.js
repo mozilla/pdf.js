@@ -128,7 +128,7 @@ class PDFFetchStreamReader {
       url,
       createFetchOptions(
         this._headers,
-        this._withCredentials,
+        true,
         this._abortController
       )
     )
@@ -239,7 +239,7 @@ class PDFFetchStreamRangeReader {
       url,
       createFetchOptions(
         this._headers,
-        this._withCredentials,
+        true,
         this._abortController
       )
     )
