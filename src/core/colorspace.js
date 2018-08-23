@@ -29,13 +29,13 @@ import { isDict, isName, isStream } from './primitives';
  * @param {Number} alpha01 - Size reserved for the alpha channel.
  */
 function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
-  var COMPONENTS = 3;
+  const COMPONENTS = 3;
   alpha01 = alpha01 !== 1 ? 0 : alpha01;
-  var xRatio = w1 / w2;
-  var yRatio = h1 / h2;
-  var newIndex = 0, oldIndex;
-  var xScaled = new Uint16Array(w2);
-  var w1Scanline = w1 * COMPONENTS;
+  let xRatio = w1 / w2;
+  let yRatio = h1 / h2;
+  let newIndex = 0, oldIndex;
+  let xScaled = new Uint16Array(w2);
+  let w1Scanline = w1 * COMPONENTS;
 
   for (let i = 0; i < w2; i++) {
     xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
@@ -121,10 +121,10 @@ class ColorSpace {
       assert(dest instanceof Uint8ClampedArray,
              'ColorSpace.fillRgb: Unsupported "dest" type.');
     }
-    var count = originalWidth * originalHeight;
-    var rgbBuf = null;
-    var numComponentColors = 1 << bpc;
-    var needsResizing = originalHeight !== height || originalWidth !== width;
+    let count = originalWidth * originalHeight;
+    let rgbBuf = null;
+    let numComponentColors = 1 << bpc;
+    let needsResizing = originalHeight !== height || originalWidth !== width;
 
     if (this.isPassthrough(bpc)) {
       rgbBuf = comps;
@@ -139,12 +139,12 @@ class ColorSpace {
       // TODO it may be worth while to cache the color map. While running
       // testing I never hit a cache so I will leave that out for now (perhaps
       // we are reparsing colorspaces too much?).
-      var allColors = bpc <= 8 ? new Uint8Array(numComponentColors) :
+      let allColors = bpc <= 8 ? new Uint8Array(numComponentColors) :
                                  new Uint16Array(numComponentColors);
       for (let i = 0; i < numComponentColors; i++) {
         allColors[i] = i;
       }
-      var colorMap = new Uint8ClampedArray(numComponentColors * 3);
+      let colorMap = new Uint8ClampedArray(numComponentColors * 3);
       this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bpc,
                         /* alpha01 = */ 0);
 
@@ -210,8 +210,8 @@ class ColorSpace {
   }
 
   static fromIR(IR) {
-    var name = Array.isArray(IR) ? IR[0] : IR;
-    var whitePoint, blackPoint, gamma;
+    let name = Array.isArray(IR) ? IR[0] : IR;
+    let whitePoint, blackPoint, gamma;
 
     switch (name) {
       case 'DeviceGrayCS':
@@ -229,28 +229,28 @@ class ColorSpace {
         whitePoint = IR[1];
         blackPoint = IR[2];
         gamma = IR[3];
-        var matrix = IR[4];
+        let matrix = IR[4];
         return new CalRGBCS(whitePoint, blackPoint, gamma, matrix);
       case 'PatternCS':
-        var basePatternCS = IR[1];
+        let basePatternCS = IR[1];
         if (basePatternCS) {
           basePatternCS = this.fromIR(basePatternCS);
         }
         return new PatternCS(basePatternCS);
       case 'IndexedCS':
-        var baseIndexedCS = IR[1];
-        var hiVal = IR[2];
-        var lookup = IR[3];
+        let baseIndexedCS = IR[1];
+        let hiVal = IR[2];
+        let lookup = IR[3];
         return new IndexedCS(this.fromIR(baseIndexedCS), hiVal, lookup);
       case 'AlternateCS':
-        var numComps = IR[1];
-        var alt = IR[2];
-        var tintFn = IR[3];
+        let numComps = IR[1];
+        let alt = IR[2];
+        let tintFn = IR[3];
         return new AlternateCS(numComps, this.fromIR(alt), tintFn);
       case 'LabCS':
         whitePoint = IR[1];
         blackPoint = IR[2];
-        var range = IR[3];
+        let range = IR[3];
         return new LabCS(whitePoint, blackPoint, range);
       default:
         throw new FormatError(`Unknown colorspace name: ${name}`);
@@ -290,8 +290,8 @@ class ColorSpace {
       }
     }
     if (Array.isArray(cs)) {
-      var mode = xref.fetchIfRef(cs[0]).name;
-      var numComps, params, alt, whitePoint, blackPoint, gamma;
+      let mode = xref.fetchIfRef(cs[0]).name;
+      let numComps, params, alt, whitePoint, blackPoint, gamma;
 
       switch (mode) {
         case 'DeviceGray':
@@ -314,18 +314,18 @@ class ColorSpace {
           whitePoint = params.getArray('WhitePoint');
           blackPoint = params.getArray('BlackPoint');
           gamma = params.getArray('Gamma');
-          var matrix = params.getArray('Matrix');
+          let matrix = params.getArray('Matrix');
           return ['CalRGBCS', whitePoint, blackPoint, gamma, matrix];
         case 'ICCBased':
-          var stream = xref.fetchIfRef(cs[1]);
-          var dict = stream.dict;
+          let stream = xref.fetchIfRef(cs[1]);
+          let dict = stream.dict;
           numComps = dict.get('N');
           alt = dict.get('Alternate');
           if (alt) {
-            var altIR = this.parseToIR(alt, xref, res, pdfFunctionFactory);
+            let altIR = this.parseToIR(alt, xref, res, pdfFunctionFactory);
             // Parse the /Alternate CS to ensure that the number of components
             // are correct, and also (indirectly) that it is not a PatternCS.
-            var altCS = this.fromIR(altIR, pdfFunctionFactory);
+            let altCS = this.fromIR(altIR, pdfFunctionFactory);
             if (altCS.numComps === numComps) {
               return altIR;
             }
@@ -340,7 +340,7 @@ class ColorSpace {
           }
           break;
         case 'Pattern':
-          var basePatternCS = cs[1] || null;
+          let basePatternCS = cs[1] || null;
           if (basePatternCS) {
             basePatternCS = this.parseToIR(basePatternCS, xref, res,
                                            pdfFunctionFactory);
@@ -348,17 +348,17 @@ class ColorSpace {
           return ['PatternCS', basePatternCS];
         case 'Indexed':
         case 'I':
-          var baseIndexedCS = this.parseToIR(cs[1], xref, res,
+          let baseIndexedCS = this.parseToIR(cs[1], xref, res,
                                              pdfFunctionFactory);
-          var hiVal = xref.fetchIfRef(cs[2]) + 1;
-          var lookup = xref.fetchIfRef(cs[3]);
+          let hiVal = xref.fetchIfRef(cs[2]) + 1;
+          let lookup = xref.fetchIfRef(cs[3]);
           if (isStream(lookup)) {
             lookup = lookup.getBytes();
           }
           return ['IndexedCS', baseIndexedCS, hiVal, lookup];
         case 'Separation':
         case 'DeviceN':
-          var name = xref.fetchIfRef(cs[1]);
+          let name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
           alt = this.parseToIR(cs[2], xref, res, pdfFunctionFactory);
           let tintFn = pdfFunctionFactory.create(xref.fetchIfRef(cs[3]));
@@ -367,7 +367,7 @@ class ColorSpace {
           params = xref.fetchIfRef(cs[1]);
           whitePoint = params.getArray('WhitePoint');
           blackPoint = params.getArray('BlackPoint');
-          var range = params.getArray('Range');
+          let range = params.getArray('Range');
           return ['LabCS', whitePoint, blackPoint, range];
         default:
           throw new FormatError(`unimplemented color space object "${mode}"`);
@@ -394,7 +394,7 @@ class ColorSpace {
       warn('The decode map is not the correct length');
       return true;
     }
-    for (var i = 0, ii = decode.length; i < ii; i += 2) {
+    for (let i = 0, ii = decode.length; i < ii; i += 2) {
       if (decode[i] !== 0 || decode[i + 1] !== 1) {
         return false;
       }
@@ -439,7 +439,7 @@ class AlternateCS extends ColorSpace {
       assert(dest instanceof Uint8ClampedArray,
              'AlternateCS.getRgbItem: Unsupported "dest" type.');
     }
-    var tmpBuf = this.tmpBuf;
+    let tmpBuf = this.tmpBuf;
     this.tintFn(src, srcOffset, tmpBuf, 0);
     this.base.getRgbItem(tmpBuf, 0, dest, destOffset);
   }
@@ -450,21 +450,21 @@ class AlternateCS extends ColorSpace {
       assert(dest instanceof Uint8ClampedArray,
              'AlternateCS.getRgbBuffer: Unsupported "dest" type.');
     }
-    var tintFn = this.tintFn;
-    var base = this.base;
-    var scale = 1 / ((1 << bits) - 1);
-    var baseNumComps = base.numComps;
-    var usesZeroToOneRange = base.usesZeroToOneRange;
-    var isPassthrough = (base.isPassthrough(8) || !usesZeroToOneRange) &&
+    let tintFn = this.tintFn;
+    let base = this.base;
+    let scale = 1 / ((1 << bits) - 1);
+    let baseNumComps = base.numComps;
+    let usesZeroToOneRange = base.usesZeroToOneRange;
+    let isPassthrough = (base.isPassthrough(8) || !usesZeroToOneRange) &&
                         alpha01 === 0;
-    var pos = isPassthrough ? destOffset : 0;
+    let pos = isPassthrough ? destOffset : 0;
     let baseBuf = isPassthrough ?
                   dest : new Uint8ClampedArray(baseNumComps * count);
-    var numComps = this.numComps;
+    let numComps = this.numComps;
 
-    var scaled = new Float32Array(numComps);
-    var tinted = new Float32Array(baseNumComps);
-    var i, j;
+    let scaled = new Float32Array(numComps);
+    let tinted = new Float32Array(baseNumComps);
+    let i, j;
 
     for (i = 0; i < count; i++) {
       for (j = 0; j < numComps; j++) {
@@ -513,16 +513,16 @@ class IndexedCS extends ColorSpace {
     this.base = base;
     this.highVal = highVal;
 
-    var baseNumComps = base.numComps;
-    var length = baseNumComps * highVal;
+    let baseNumComps = base.numComps;
+    let length = baseNumComps * highVal;
 
     if (isStream(lookup)) {
       this.lookup = new Uint8Array(length);
-      var bytes = lookup.getBytes(length);
+      let bytes = lookup.getBytes(length);
       this.lookup.set(bytes);
     } else if (isString(lookup)) {
       this.lookup = new Uint8Array(length);
-      for (var i = 0; i < length; ++i) {
+      for (let i = 0; i < length; ++i) {
         this.lookup[i] = lookup.charCodeAt(i);
       }
     } else if (lookup instanceof Uint8Array) {
@@ -538,8 +538,8 @@ class IndexedCS extends ColorSpace {
       assert(dest instanceof Uint8ClampedArray,
              'IndexedCS.getRgbItem: Unsupported "dest" type.');
     }
-    var numComps = this.base.numComps;
-    var start = src[srcOffset] * numComps;
+    let numComps = this.base.numComps;
+    let start = src[srcOffset] * numComps;
     this.base.getRgbBuffer(this.lookup, start, 1, dest, destOffset, 8, 0);
   }
 
@@ -549,13 +549,13 @@ class IndexedCS extends ColorSpace {
       assert(dest instanceof Uint8ClampedArray,
              'IndexedCS.getRgbBuffer: Unsupported "dest" type.');
     }
-    var base = this.base;
-    var numComps = base.numComps;
-    var outputDelta = base.getOutputLength(numComps, alpha01);
-    var lookup = this.lookup;
+    let base = this.base;
+    let numComps = base.numComps;
+    let outputDelta = base.getOutputLength(numComps, alpha01);
+    let lookup = this.lookup;
 
-    for (var i = 0; i < count; ++i) {
-      var lookupPos = src[srcOffset++] * numComps;
+    for (let i = 0; i < count; ++i) {
+      let lookupPos = src[srcOffset++] * numComps;
       base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8, alpha01);
       destOffset += outputDelta;
     }
@@ -594,9 +594,9 @@ class DeviceGrayCS extends ColorSpace {
       assert(dest instanceof Uint8ClampedArray,
              'DeviceGrayCS.getRgbBuffer: Unsupported "dest" type.');
     }
-    var scale = 255 / ((1 << bits) - 1);
-    var j = srcOffset, q = destOffset;
-    for (var i = 0; i < count; ++i) {
+    let scale = 255 / ((1 << bits) - 1);
+    let j = srcOffset, q = destOffset;
+    for (let i = 0; i < count; ++i) {
       let c = scale * src[j++];
       dest[q++] = c;
       dest[q++] = c;
@@ -643,9 +643,9 @@ class DeviceRgbCS extends ColorSpace {
       dest.set(src.subarray(srcOffset, srcOffset + count * 3), destOffset);
       return;
     }
-    var scale = 255 / ((1 << bits) - 1);
-    var j = srcOffset, q = destOffset;
-    for (var i = 0; i < count; ++i) {
+    let scale = 255 / ((1 << bits) - 1);
+    let j = srcOffset, q = destOffset;
+    for (let i = 0; i < count; ++i) {
       dest[q++] = scale * src[j++];
       dest[q++] = scale * src[j++];
       dest[q++] = scale * src[j++];
@@ -677,10 +677,10 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
   // CMYK color conversion using the estimation below:
   //   f(A, B,.. N) = Acc+Bcm+Ccy+Dck+c+Fmm+Gmy+Hmk+Im+Jyy+Kyk+Ly+Mkk+Nk+255
   function convertToRgb(src, srcOffset, srcScale, dest, destOffset) {
-    var c = src[srcOffset] * srcScale;
-    var m = src[srcOffset + 1] * srcScale;
-    var y = src[srcOffset + 2] * srcScale;
-    var k = src[srcOffset + 3] * srcScale;
+    let c = src[srcOffset] * srcScale;
+    let m = src[srcOffset + 1] * srcScale;
+    let y = src[srcOffset + 2] * srcScale;
+    let k = src[srcOffset + 3] * srcScale;
 
     dest[destOffset] = 255 +
       c * (-4.387332384609988 * c + 54.48615194189176 * m +
@@ -732,8 +732,8 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
         assert(dest instanceof Uint8ClampedArray,
                'DeviceCmykCS.getRgbBuffer: Unsupported "dest" type.');
       }
-      var scale = 1 / ((1 << bits) - 1);
-      for (var i = 0; i < count; i++) {
+      let scale = 1 / ((1 << bits) - 1);
+      for (let i = 0; i < count; i++) {
         convertToRgb(src, srcOffset, scale, dest, destOffset);
         srcOffset += 4;
         destOffset += 3 + alpha01;
@@ -760,12 +760,12 @@ const CalGrayCS = (function CalGrayCSClosure() {
   function convertToRgb(cs, src, srcOffset, dest, destOffset, scale) {
     // A represents a gray component of a calibrated gray space.
     // A <---> AG in the spec
-    var A = src[srcOffset] * scale;
-    var AG = Math.pow(A, cs.G);
+    let A = src[srcOffset] * scale;
+    let AG = Math.pow(A, cs.G);
 
     // Computes L as per spec. ( = cs.YW * AG )
     // Except if other than default BlackPoint values are used.
-    var L = cs.YW * AG;
+    let L = cs.YW * AG;
     // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html, Ch 4.
     // Convert values to rgb range [0, 255].
     let val = Math.max(295.8 * Math.pow(L, 0.333333333333333333) - 40.8, 0);
@@ -834,9 +834,9 @@ const CalGrayCS = (function CalGrayCSClosure() {
         assert(dest instanceof Uint8ClampedArray,
                'CalGrayCS.getRgbBuffer: Unsupported "dest" type.');
       }
-      var scale = 1 / ((1 << bits) - 1);
+      let scale = 1 / ((1 << bits) - 1);
 
-      for (var i = 0; i < count; ++i) {
+      for (let i = 0; i < count; ++i) {
         convertToRgb(this, src, srcOffset, dest, destOffset, scale);
         srcOffset += 1;
         destOffset += 3 + alpha01;
@@ -862,29 +862,29 @@ const CalGrayCS = (function CalGrayCSClosure() {
 const CalRGBCS = (function CalRGBCSClosure() {
   // See http://www.brucelindbloom.com/index.html?Eqn_ChromAdapt.html for these
   // matrices.
-  var BRADFORD_SCALE_MATRIX = new Float32Array([
+  const BRADFORD_SCALE_MATRIX = new Float32Array([
     0.8951, 0.2664, -0.1614,
     -0.7502, 1.7135, 0.0367,
     0.0389, -0.0685, 1.0296]);
 
-  var BRADFORD_SCALE_INVERSE_MATRIX = new Float32Array([
+  const BRADFORD_SCALE_INVERSE_MATRIX = new Float32Array([
     0.9869929, -0.1470543, 0.1599627,
     0.4323053, 0.5183603, 0.0492912,
     -0.0085287, 0.0400428, 0.9684867]);
 
   // See http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html.
-  var SRGB_D65_XYZ_TO_RGB_MATRIX = new Float32Array([
+  const SRGB_D65_XYZ_TO_RGB_MATRIX = new Float32Array([
     3.2404542, -1.5371385, -0.4985314,
     -0.9692660, 1.8760108, 0.0415560,
     0.0556434, -0.2040259, 1.0572252]);
 
-  var FLAT_WHITEPOINT_MATRIX = new Float32Array([1, 1, 1]);
+  const FLAT_WHITEPOINT_MATRIX = new Float32Array([1, 1, 1]);
 
-  var tempNormalizeMatrix = new Float32Array(3);
-  var tempConvertMatrix1 = new Float32Array(3);
-  var tempConvertMatrix2 = new Float32Array(3);
+  let tempNormalizeMatrix = new Float32Array(3);
+  let tempConvertMatrix1 = new Float32Array(3);
+  let tempConvertMatrix2 = new Float32Array(3);
 
-  var DECODE_L_CONSTANT = Math.pow(((8 + 16) / 116), 3) / 8.0;
+  const DECODE_L_CONSTANT = Math.pow(((8 + 16) / 116), 3) / 8.0;
 
   function matrixProduct(a, b, result) {
     result[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -899,9 +899,9 @@ const CalRGBCS = (function CalRGBCSClosure() {
   }
 
   function convertToD65(sourceWhitePoint, LMS, result) {
-    var D65X = 0.95047;
-    var D65Y = 1;
-    var D65Z = 1.08883;
+    const D65X = 0.95047;
+    const D65Y = 1;
+    const D65Z = 1.08883;
 
     result[0] = LMS[0] * D65X / sourceWhitePoint[0];
     result[1] = LMS[1] * D65Y / sourceWhitePoint[1];
@@ -945,25 +945,25 @@ const CalRGBCS = (function CalRGBCSClosure() {
     // http://www.adobe.com/content/dam/Adobe/en/devnet/photoshop/sdk/
     // AdobeBPC.pdf.
     // The destination blackPoint is the default blackPoint [0, 0, 0].
-    var zeroDecodeL = decodeL(0);
+    let zeroDecodeL = decodeL(0);
 
-    var X_DST = zeroDecodeL;
-    var X_SRC = decodeL(sourceBlackPoint[0]);
+    let X_DST = zeroDecodeL;
+    let X_SRC = decodeL(sourceBlackPoint[0]);
 
-    var Y_DST = zeroDecodeL;
-    var Y_SRC = decodeL(sourceBlackPoint[1]);
+    let Y_DST = zeroDecodeL;
+    let Y_SRC = decodeL(sourceBlackPoint[1]);
 
-    var Z_DST = zeroDecodeL;
-    var Z_SRC = decodeL(sourceBlackPoint[2]);
+    let Z_DST = zeroDecodeL;
+    let Z_SRC = decodeL(sourceBlackPoint[2]);
 
-    var X_Scale = (1 - X_DST) / (1 - X_SRC);
-    var X_Offset = 1 - X_Scale;
+    let X_Scale = (1 - X_DST) / (1 - X_SRC);
+    let X_Offset = 1 - X_Scale;
 
-    var Y_Scale = (1 - Y_DST) / (1 - Y_SRC);
-    var Y_Offset = 1 - Y_Scale;
+    let Y_Scale = (1 - Y_DST) / (1 - Y_SRC);
+    let Y_Offset = 1 - Y_Scale;
 
-    var Z_Scale = (1 - Z_DST) / (1 - Z_SRC);
-    var Z_Offset = 1 - Z_Scale;
+    let Z_Scale = (1 - Z_DST) / (1 - Z_SRC);
+    let Z_Offset = 1 - Z_Scale;
 
     result[0] = XYZ_Flat[0] * X_Scale + X_Offset;
     result[1] = XYZ_Flat[1] * Y_Scale + Y_Offset;
@@ -980,20 +980,20 @@ const CalRGBCS = (function CalRGBCSClosure() {
       return;
     }
 
-    var LMS = result;
+    let LMS = result;
     matrixProduct(BRADFORD_SCALE_MATRIX, XYZ_In, LMS);
 
-    var LMS_Flat = tempNormalizeMatrix;
+    let LMS_Flat = tempNormalizeMatrix;
     convertToFlat(sourceWhitePoint, LMS, LMS_Flat);
 
     matrixProduct(BRADFORD_SCALE_INVERSE_MATRIX, LMS_Flat, result);
   }
 
   function normalizeWhitePointToD65(sourceWhitePoint, XYZ_In, result) {
-    var LMS = result;
+    let LMS = result;
     matrixProduct(BRADFORD_SCALE_MATRIX, XYZ_In, LMS);
 
-    var LMS_D65 = tempNormalizeMatrix;
+    let LMS_D65 = tempNormalizeMatrix;
     convertToD65(sourceWhitePoint, LMS, LMS_D65);
 
     matrixProduct(BRADFORD_SCALE_INVERSE_MATRIX, LMS_D65, result);
@@ -1002,41 +1002,41 @@ const CalRGBCS = (function CalRGBCSClosure() {
   function convertToRgb(cs, src, srcOffset, dest, destOffset, scale) {
     // A, B and C represent a red, green and blue components of a calibrated
     // rgb space.
-    var A = adjustToRange(0, 1, src[srcOffset] * scale);
-    var B = adjustToRange(0, 1, src[srcOffset + 1] * scale);
-    var C = adjustToRange(0, 1, src[srcOffset + 2] * scale);
+    let A = adjustToRange(0, 1, src[srcOffset] * scale);
+    let B = adjustToRange(0, 1, src[srcOffset + 1] * scale);
+    let C = adjustToRange(0, 1, src[srcOffset + 2] * scale);
 
     // A <---> AGR in the spec
     // B <---> BGG in the spec
     // C <---> CGB in the spec
-    var AGR = Math.pow(A, cs.GR);
-    var BGG = Math.pow(B, cs.GG);
-    var CGB = Math.pow(C, cs.GB);
+    let AGR = Math.pow(A, cs.GR);
+    let BGG = Math.pow(B, cs.GG);
+    let CGB = Math.pow(C, cs.GB);
 
     // Computes intermediate variables L, M, N as per spec.
     // To decode X, Y, Z values map L, M, N directly to them.
-    var X = cs.MXA * AGR + cs.MXB * BGG + cs.MXC * CGB;
-    var Y = cs.MYA * AGR + cs.MYB * BGG + cs.MYC * CGB;
-    var Z = cs.MZA * AGR + cs.MZB * BGG + cs.MZC * CGB;
+    let X = cs.MXA * AGR + cs.MXB * BGG + cs.MXC * CGB;
+    let Y = cs.MYA * AGR + cs.MYB * BGG + cs.MYC * CGB;
+    let Z = cs.MZA * AGR + cs.MZB * BGG + cs.MZC * CGB;
 
     // The following calculations are based on this document:
     // http://www.adobe.com/content/dam/Adobe/en/devnet/photoshop/sdk/
     // AdobeBPC.pdf.
-    var XYZ = tempConvertMatrix1;
+    let XYZ = tempConvertMatrix1;
     XYZ[0] = X;
     XYZ[1] = Y;
     XYZ[2] = Z;
-    var XYZ_Flat = tempConvertMatrix2;
+    let XYZ_Flat = tempConvertMatrix2;
 
     normalizeWhitePointToFlat(cs.whitePoint, XYZ, XYZ_Flat);
 
-    var XYZ_Black = tempConvertMatrix1;
+    let XYZ_Black = tempConvertMatrix1;
     compensateBlackPoint(cs.blackPoint, XYZ_Flat, XYZ_Black);
 
-    var XYZ_D65 = tempConvertMatrix2;
+    let XYZ_D65 = tempConvertMatrix2;
     normalizeWhitePointToD65(FLAT_WHITEPOINT_MATRIX, XYZ_Black, XYZ_D65);
 
-    var SRGB = tempConvertMatrix1;
+    let SRGB = tempConvertMatrix1;
     matrixProduct(SRGB_D65_XYZ_TO_RGB_MATRIX, XYZ_D65, SRGB);
 
     // Convert the values to rgb range [0, 255].
@@ -1058,14 +1058,14 @@ const CalRGBCS = (function CalRGBCSClosure() {
       matrix = matrix || new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
       // Translate arguments to spec variables.
-      var XW = whitePoint[0];
-      var YW = whitePoint[1];
-      var ZW = whitePoint[2];
+      let XW = whitePoint[0];
+      let YW = whitePoint[1];
+      let ZW = whitePoint[2];
       this.whitePoint = whitePoint;
 
-      var XB = blackPoint[0];
-      var YB = blackPoint[1];
-      var ZB = blackPoint[2];
+      let XB = blackPoint[0];
+      let YB = blackPoint[1];
+      let ZB = blackPoint[2];
       this.blackPoint = blackPoint;
 
       this.GR = gamma[0];
@@ -1116,9 +1116,9 @@ const CalRGBCS = (function CalRGBCSClosure() {
         assert(dest instanceof Uint8ClampedArray,
               'CalRGBCS.getRgbBuffer: Unsupported "dest" type.');
       }
-      var scale = 1 / ((1 << bits) - 1);
+      let scale = 1 / ((1 << bits) - 1);
 
-      for (var i = 0; i < count; ++i) {
+      for (let i = 0; i < count; ++i) {
         convertToRgb(this, src, srcOffset, dest, destOffset, scale);
         srcOffset += 3;
         destOffset += 3 + alpha01;
@@ -1144,7 +1144,7 @@ const CalRGBCS = (function CalRGBCSClosure() {
 const LabCS = (function LabCSClosure() {
   // Function g(x) from spec
   function fn_g(x) {
-    var result;
+    let result;
     if (x >= 6 / 29) {
       result = x * x * x;
     } else {
@@ -1165,9 +1165,9 @@ const LabCS = (function LabCSClosure() {
     // converting an image we have to map the values to the correct range given
     // above.
     // Ls,as,bs <---> L*,a*,b* in the spec
-    var Ls = src[srcOffset];
-    var as = src[srcOffset + 1];
-    var bs = src[srcOffset + 2];
+    let Ls = src[srcOffset];
+    let as = src[srcOffset + 1];
+    let bs = src[srcOffset + 2];
     if (maxVal !== false) {
       Ls = decode(Ls, maxVal, 0, 100);
       as = decode(as, maxVal, cs.amin, cs.amax);
@@ -1179,15 +1179,15 @@ const LabCS = (function LabCSClosure() {
     bs = bs > cs.bmax ? cs.bmax : bs < cs.bmin ? cs.bmin : bs;
 
     // Computes intermediate variables X,Y,Z as per spec
-    var M = (Ls + 16) / 116;
-    var L = M + (as / 500);
-    var N = M - (bs / 200);
+    let M = (Ls + 16) / 116;
+    let L = M + (as / 500);
+    let N = M - (bs / 200);
 
-    var X = cs.XW * fn_g(L);
-    var Y = cs.YW * fn_g(M);
-    var Z = cs.ZW * fn_g(N);
+    let X = cs.XW * fn_g(L);
+    let Y = cs.YW * fn_g(M);
+    let Z = cs.ZW * fn_g(N);
 
-    var r, g, b;
+    let r, g, b;
     // Using different conversions for D50 and D65 white points,
     // per http://www.color.org/srgb.pdf
     if (cs.ZW < 1) {
@@ -1268,8 +1268,8 @@ const LabCS = (function LabCSClosure() {
         assert(dest instanceof Uint8ClampedArray,
                'LabCS.getRgbBuffer: Unsupported "dest" type.');
       }
-      var maxVal = (1 << bits) - 1;
-      for (var i = 0; i < count; i++) {
+      let maxVal = (1 << bits) - 1;
+      for (let i = 0; i < count; i++) {
         convertToRgb(this, src, srcOffset, maxVal, dest, destOffset);
         srcOffset += 3;
         destOffset += 3 + alpha01;
