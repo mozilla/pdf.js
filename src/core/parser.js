@@ -471,13 +471,45 @@ var Parser = (function ParserClosure() {
 
       return imageStream;
     },
+
+    _findStreamLength(startPos, signature) {
+      const { stream, } = this.lexer;
+      stream.pos = startPos;
+
+      const SCAN_BLOCK_LENGTH = 2048;
+      const signatureLength = signature.length;
+
+      while (stream.pos < stream.end) {
+        const scanBytes = stream.peekBytes(SCAN_BLOCK_LENGTH);
+        const scanLength = scanBytes.length - signatureLength;
+
+        if (scanLength <= 0) {
+          break;
+        }
+        let pos = 0;
+        while (pos < scanLength) {
+          let j = 0;
+          while (j < signatureLength && scanBytes[pos + j] === signature[j]) {
+            j++;
+          }
+          if (j >= signatureLength) { // `signature` found.
+            stream.pos += pos;
+            return (stream.pos - startPos);
+          }
+          pos++;
+        }
+        stream.pos += scanLength;
+      }
+      return -1;
+    },
+
     makeStream: function Parser_makeStream(dict, cipherTransform) {
       var lexer = this.lexer;
       var stream = lexer.stream;
 
       // get stream start position
       lexer.skipToNextLine();
-      var pos = stream.pos - 1;
+      const startPos = stream.pos - 1;
 
       // get length
       var length = dict.get('Length');
@@ -487,52 +519,22 @@ var Parser = (function ParserClosure() {
       }
 
       // skip over the stream data
-      stream.pos = pos + length;
+      stream.pos = startPos + length;
       lexer.nextChar();
 
       // Shift '>>' and check whether the new object marks the end of the stream
       if (this.tryShift() && isCmd(this.buf2, 'endstream')) {
         this.shift(); // 'stream'
       } else {
-        // bad stream length, scanning for endstream
-        stream.pos = pos;
-        var SCAN_BLOCK_SIZE = 2048;
-        var ENDSTREAM_SIGNATURE_LENGTH = 9;
-        var ENDSTREAM_SIGNATURE = [0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65,
-                                   0x61, 0x6D];
-        var skipped = 0, found = false, i, j;
-        while (stream.pos < stream.end) {
-          var scanBytes = stream.peekBytes(SCAN_BLOCK_SIZE);
-          var scanLength = scanBytes.length - ENDSTREAM_SIGNATURE_LENGTH;
-          if (scanLength <= 0) {
-            break;
-          }
-          found = false;
-          i = 0;
-          while (i < scanLength) {
-            j = 0;
-            while (j < ENDSTREAM_SIGNATURE_LENGTH &&
-                   scanBytes[i + j] === ENDSTREAM_SIGNATURE[j]) {
-              j++;
-            }
-            if (j >= ENDSTREAM_SIGNATURE_LENGTH) {
-              found = true;
-              break;
-            }
-            i++;
-          }
-          if (found) {
-            skipped += i;
-            stream.pos += i;
-            break;
-          }
-          skipped += scanLength;
-          stream.pos += scanLength;
+        // Bad stream length, scanning for endstream command.
+        const ENDSTREAM_SIGNATURE = new Uint8Array([
+          0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6D]);
+        let actualLength = this._findStreamLength(startPos,
+                                                  ENDSTREAM_SIGNATURE);
+        if (actualLength < 0) {
+          throw new FormatError('Missing endstream command.');
         }
-        if (!found) {
-          throw new FormatError('Missing endstream');
-        }
-        length = skipped;
+        length = actualLength;
 
         lexer.nextChar();
         this.shift();
@@ -540,7 +542,7 @@ var Parser = (function ParserClosure() {
       }
       this.shift(); // 'endstream'
 
-      stream = stream.makeSubStream(pos, length, dict);
+      stream = stream.makeSubStream(startPos, length, dict);
       if (cipherTransform) {
         stream = cipherTransform.createStream(stream, length);
       }
