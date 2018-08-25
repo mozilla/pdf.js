@@ -18,8 +18,8 @@ import {
   PredictorStream, RunLengthStream
 } from './stream';
 import {
-  assert, FormatError, info, isNum, isSpace, isString, MissingDataException,
-  StreamType, warn
+  assert, bytesToString, FormatError, info, isNum, isSpace, isString,
+  MissingDataException, StreamType, warn
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
@@ -532,7 +532,34 @@ var Parser = (function ParserClosure() {
         let actualLength = this._findStreamLength(startPos,
                                                   ENDSTREAM_SIGNATURE);
         if (actualLength < 0) {
-          throw new FormatError('Missing endstream command.');
+          // Only allow limited truncation of the endstream signature,
+          // to prevent false positives.
+          const MAX_TRUNCATION = 1;
+          // Check if the PDF generator included truncated endstream commands,
+          // such as e.g. "endstrea" (fixes issue10004.pdf).
+          for (let i = 1; i <= MAX_TRUNCATION; i++) {
+            const end = ENDSTREAM_SIGNATURE.length - i;
+            const TRUNCATED_SIGNATURE = ENDSTREAM_SIGNATURE.slice(0, end);
+
+            let maybeLength = this._findStreamLength(startPos,
+                                                     TRUNCATED_SIGNATURE);
+            if (maybeLength >= 0) {
+              // Ensure that the byte immediately following the truncated
+              // endstream command is a space, to prevent false positives.
+              const lastByte = stream.peekBytes(end + 1)[end];
+              if (!isSpace(lastByte)) {
+                break;
+              }
+              info(`Found "${bytesToString(TRUNCATED_SIGNATURE)}" when ` +
+                   'searching for endstream command.');
+              actualLength = maybeLength;
+              break;
+            }
+          }
+
+          if (actualLength < 0) {
+            throw new FormatError('Missing endstream command.');
+          }
         }
         length = actualLength;
 
