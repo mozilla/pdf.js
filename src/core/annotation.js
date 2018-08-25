@@ -603,6 +603,17 @@ class WidgetAnnotation extends Annotation {
     this.fieldResources = getInheritableProperty({ dict, key: 'DR', }) ||
                           Dict.empty;
 
+    const additional = dict.get('AA')
+    const calculate = additional ? additional.get('C') : Dict.empty
+    const JS = calculate ? calculate.get('JS') : null
+
+    data.additional = {
+      calculate: {
+        JS
+      }
+    }
+
+
     data.fieldFlags = getInheritableProperty({ dict, key: 'Ff', });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
       data.fieldFlags = 0;
