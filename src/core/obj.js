@@ -53,9 +53,9 @@ class Catalog {
       return shadow(this, 'metadata', null);
     }
 
-    const encryptMetadata = (!this.xref.encrypt ? false :
-                             this.xref.encrypt.encryptMetadata);
-    const stream = this.xref.fetch(streamRef, !encryptMetadata);
+    const suppressEncryption = !(this.xref.encrypt &&
+                                 this.xref.encrypt.encryptMetadata);
+    const stream = this.xref.fetch(streamRef, suppressEncryption);
     let metadata;
 
     if (stream && isDict(stream.dict)) {
@@ -351,14 +351,11 @@ class Catalog {
   }
 
   get attachments() {
-    let attachments = null, nameTreeRef;
     const obj = this.catDict.get('Names');
-    if (obj) {
-      nameTreeRef = obj.getRaw('EmbeddedFiles');
-    }
+    let attachments = null;
 
-    if (nameTreeRef) {
-      const nameTree = new NameTree(nameTreeRef, this.xref);
+    if (obj && obj.has('EmbeddedFiles')) {
+      const nameTree = new NameTree(obj.getRaw('EmbeddedFiles'), this.xref);
       const names = nameTree.getAll();
       for (const name in names) {
         const fs = new FileSpec(names[name], this.xref);
