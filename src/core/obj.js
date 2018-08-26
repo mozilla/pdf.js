@@ -15,9 +15,9 @@
 
 import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
-  info, InvalidPDFException, isBool, isString, MissingDataException, shadow,
-  stringToPDFString, stringToUTF8String, toRomanNumerals, unreachable, warn,
-  XRefParseException
+  info, InvalidPDFException, isBool, isNum, isString, MissingDataException,
+  PermissionFlag, shadow, stringToPDFString, stringToUTF8String,
+  toRomanNumerals, unreachable, warn, XRefParseException
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -175,6 +175,48 @@ class Catalog {
       }
     }
     return (root.items.length > 0 ? root.items : null);
+  }
+
+  get permissions() {
+    let permissions = null;
+    try {
+      permissions = this._readPermissions();
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      warn('Unable to read permissions.');
+    }
+    return shadow(this, 'permissions', permissions);
+  }
+
+  /**
+   * @private
+   */
+  _readPermissions() {
+    const encrypt = this.xref.trailer.get('Encrypt');
+    if (!isDict(encrypt)) {
+      return null;
+    }
+
+    let flags = encrypt.get('P');
+    if (!isNum(flags)) {
+      return null;
+    }
+
+    // PDF integer objects are represented internally in signed 2's complement
+    // form. Therefore, convert the signed decimal integer to a signed 2's
+    // complement binary integer so we can use regular bitwise operations on it.
+    flags += 2 ** 32;
+
+    const permissions = [];
+    for (const key in PermissionFlag) {
+      const value = PermissionFlag[key];
+      if (flags & value) {
+        permissions.push(value);
+      }
+    }
+    return permissions;
   }
 
   get numPages() {
