@@ -18,7 +18,8 @@ import {
 } from './test_utils';
 import {
   createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
-  OPS, PasswordException, PasswordResponses, StreamType, stringToBytes
+  OPS, PasswordException, PasswordResponses, PermissionFlag, StreamType,
+  stringToBytes
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException, StatTimer
@@ -822,6 +823,63 @@ describe('api', function() {
         done.fail(reason);
       });
     });
+
+    it('gets non-existent permissions', function(done) {
+      doc.getPermissions().then(function(permissions) {
+        expect(permissions).toEqual(null);
+
+        done();
+      }).catch(function(reason) {
+        done.fail(reason);
+      });
+    });
+
+    it('gets permissions', function (done) {
+      // Editing not allowed.
+      const loadingTask0 =
+        getDocument(buildGetDocumentParams('issue9972-1.pdf'));
+      const promise0 = loadingTask0.promise.then(function(pdfDocument) {
+        return pdfDocument.getPermissions();
+      });
+
+      // Printing not allowed.
+      const loadingTask1 =
+        getDocument(buildGetDocumentParams('issue9972-2.pdf'));
+      const promise1 = loadingTask1.promise.then(function(pdfDocument) {
+        return pdfDocument.getPermissions();
+      });
+
+      // Copying not allowed.
+      const loadingTask2 =
+        getDocument(buildGetDocumentParams('issue9972-3.pdf'));
+      const promise2 = loadingTask2.promise.then(function(pdfDocument) {
+        return pdfDocument.getPermissions();
+      });
+
+      const totalPermissionCount = Object.keys(PermissionFlag).length;
+      Promise.all([promise0, promise1, promise2]).then(function(permissions) {
+        expect(permissions[0].length).toEqual(totalPermissionCount - 1);
+        expect(permissions[0].includes(PermissionFlag.MODIFY_CONTENTS))
+          .toBeFalsy();
+
+        expect(permissions[1].length).toEqual(totalPermissionCount - 2);
+        expect(permissions[1].includes(PermissionFlag.PRINT)).toBeFalsy();
+        expect(permissions[1].includes(PermissionFlag.PRINT_HIGH_QUALITY))
+          .toBeFalsy();
+
+        expect(permissions[2].length).toEqual(totalPermissionCount - 1);
+        expect(permissions[2].includes(PermissionFlag.COPY)).toBeFalsy();
+
+        Promise.all([
+          loadingTask0.destroy(),
+          loadingTask1.destroy(),
+          loadingTask2.destroy(),
+        ]).then(done);
+      }).catch(function(reason) {
+        done.fail(reason);
+      });
+    });
+
     it('gets metadata', function(done) {
       var promise = doc.getMetadata();
       promise.then(function({ info, metadata, contentDispositionFilename, }) {

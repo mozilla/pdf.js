@@ -692,6 +692,15 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @return {Promise} A promise that is resolved with an {Array} that contains
+   *   the permission flags for the PDF document, or `null` when
+   *   no permissions are present in the PDF file.
+   */
+  getPermissions() {
+    return this._transport.getPermissions();
+  }
+
+  /**
    * @return {Promise} A promise that is resolved with an {Object} that has
    *   `info` and `metadata` properties. `info` is an {Object} filled with
    *   anything available in the information dictionary and similarly
@@ -2139,6 +2148,10 @@ class WorkerTransport {
 
   getOutline() {
     return this.messageHandler.sendWithPromise('GetOutline', null);
+  }
+
+  getPermissions() {
+    return this.messageHandler.sendWithPromise('GetPermissions', null);
   }
 
   getMetadata() {
