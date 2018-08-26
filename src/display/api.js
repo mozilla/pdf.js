@@ -577,166 +577,179 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
 /**
  * Proxy to a PDFDocument in the worker thread. Also, contains commonly used
  * properties that can be read synchronously.
- * @class
- * @alias PDFDocumentProxy
  */
-var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
-  function PDFDocumentProxy(pdfInfo, transport, loadingTask) {
-    this._pdfInfo = pdfInfo;
-    this.transport = transport;
+class PDFDocumentProxy {
+  constructor(pdfInfo, transport, loadingTask) {
     this.loadingTask = loadingTask;
-  }
-  PDFDocumentProxy.prototype = /** @lends PDFDocumentProxy.prototype */ {
-    /**
-     * @return {number} Total number of pages the PDF contains.
-     */
-    get numPages() {
-      return this._pdfInfo.numPages;
-    },
-    /**
-     * @return {string} A unique ID to identify a PDF. Not guaranteed to be
-     * unique.
-     */
-    get fingerprint() {
-      return this._pdfInfo.fingerprint;
-    },
-    /**
-     * @param {number} pageNumber The page number to get. The first page is 1.
-     * @return {Promise} A promise that is resolved with a {@link PDFPageProxy}
-     * object.
-     */
-    getPage(pageNumber) {
-      return this.transport.getPage(pageNumber);
-    },
-    /**
-     * @param {{num: number, gen: number}} ref The page reference. Must have
-     *   the 'num' and 'gen' properties.
-     * @return {Promise} A promise that is resolved with the page index that is
-     * associated with the reference.
-     */
-    getPageIndex: function PDFDocumentProxy_getPageIndex(ref) {
-      return this.transport.getPageIndex(ref);
-    },
-    /**
-     * @return {Promise} A promise that is resolved with a lookup table for
-     * mapping named destinations to reference numbers.
-     *
-     * This can be slow for large documents: use getDestination instead
-     */
-    getDestinations: function PDFDocumentProxy_getDestinations() {
-      return this.transport.getDestinations();
-    },
-    /**
-     * @param {string} id - The named destination to get.
-     * @return {Promise} A promise that is resolved with all information
-     * of the given named destination.
-     */
-    getDestination: function PDFDocumentProxy_getDestination(id) {
-      return this.transport.getDestination(id);
-    },
-    /**
-     * @return {Promise} A promise that is resolved with:
-     *   an Array containing the pageLabels that correspond to the pageIndexes,
-     *   or `null` when no pageLabels are present in the PDF file.
-     */
-    getPageLabels: function PDFDocumentProxy_getPageLabels() {
-      return this.transport.getPageLabels();
-    },
-    /**
-     * @return {Promise} A promise that is resolved with a {string} containing
-     *   the PageMode name.
-     */
-    getPageMode() {
-      return this.transport.getPageMode();
-    },
-    /**
-     * @return {Promise} A promise that is resolved with a lookup table for
-     * mapping named attachments to their content.
-     */
-    getAttachments: function PDFDocumentProxy_getAttachments() {
-      return this.transport.getAttachments();
-    },
-    /**
-     * @return {Promise} A promise that is resolved with an {Array} of all the
-     * JavaScript strings in the name tree, or `null` if no JavaScript exists.
-     */
-    getJavaScript() {
-      return this.transport.getJavaScript();
-    },
-    /**
-     * @return {Promise} A promise that is resolved with an {Array} that is a
-     * tree outline (if it has one) of the PDF. The tree is in the format of:
-     * [
-     *  {
-     *   title: string,
-     *   bold: boolean,
-     *   italic: boolean,
-     *   color: rgb Uint8ClampedArray,
-     *   dest: dest obj,
-     *   url: string,
-     *   items: array of more items like this
-     *  },
-     *  ...
-     * ].
-     */
-    getOutline: function PDFDocumentProxy_getOutline() {
-      return this.transport.getOutline();
-    },
-    /**
-     * @return {Promise} A promise that is resolved with an {Object} that has
-     * info and metadata properties.  Info is an {Object} filled with anything
-     * available in the information dictionary and similarly metadata is a
-     * {Metadata} object with information from the metadata section of the PDF.
-     */
-    getMetadata: function PDFDocumentProxy_getMetadata() {
-      return this.transport.getMetadata();
-    },
-    /**
-     * @return {Promise} A promise that is resolved with a TypedArray that has
-     * the raw data from the PDF.
-     */
-    getData: function PDFDocumentProxy_getData() {
-      return this.transport.getData();
-    },
-    /**
-     * @return {Promise} A promise that is resolved when the document's data
-     * is loaded. It is resolved with an {Object} that contains the length
-     * property that indicates size of the PDF data in bytes.
-     */
-    getDownloadInfo: function PDFDocumentProxy_getDownloadInfo() {
-      return this.transport.downloadInfoCapability.promise;
-    },
-    /**
-     * @return {Promise} A promise this is resolved with current stats about
-     * document structures (see {@link PDFDocumentStats}).
-     */
-    getStats: function PDFDocumentProxy_getStats() {
-      return this.transport.getStats();
-    },
-    /**
-     * Cleans up resources allocated by the document, e.g. created @font-face.
-     */
-    cleanup: function PDFDocumentProxy_cleanup() {
-      this.transport.startCleanup();
-    },
-    /**
-     * Destroys current document instance and terminates worker.
-     */
-    destroy: function PDFDocumentProxy_destroy() {
-      return this.loadingTask.destroy();
-    },
 
-    /**
-     * @return {Object} A subset of the current {DocumentInitParameters},
-     *   which are either needed in the viewer and/or whose default values
-     *   may be affected by the `apiCompatibilityParams`.
-     */
-    get loadingParams() {
-      return this.transport.loadingParams;
-    },
-  };
-  return PDFDocumentProxy;
-})();
+    this._pdfInfo = pdfInfo;
+    this._transport = transport;
+  }
+
+  /**
+   * @return {number} Total number of pages the PDF contains.
+   */
+  get numPages() {
+    return this._pdfInfo.numPages;
+  }
+
+  /**
+   * @return {string} A (not guaranteed to be) unique ID to identify a PDF.
+   */
+  get fingerprint() {
+    return this._pdfInfo.fingerprint;
+  }
+
+  /**
+   * @param {number} pageNumber - The page number to get. The first page is 1.
+   * @return {Promise} A promise that is resolved with a {@link PDFPageProxy}
+   *   object.
+   */
+  getPage(pageNumber) {
+    return this._transport.getPage(pageNumber);
+  }
+
+  /**
+   * @param {{num: number, gen: number}} ref - The page reference. Must have
+   *   the `num` and `gen` properties.
+   * @return {Promise} A promise that is resolved with the page index that is
+   *   associated with the reference.
+   */
+  getPageIndex(ref) {
+    return this._transport.getPageIndex(ref);
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved with a lookup table for
+   *   mapping named destinations to reference numbers.
+   *
+   * This can be slow for large documents. Use `getDestination` instead.
+   */
+  getDestinations() {
+    return this._transport.getDestinations();
+  }
+
+  /**
+   * @param {string} id - The named destination to get.
+   * @return {Promise} A promise that is resolved with all information
+   *   of the given named destination.
+   */
+  getDestination(id) {
+    return this._transport.getDestination(id);
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved with an {Array} containing
+   *   the page labels that correspond to the page indexes, or `null` when
+   *   no page labels are present in the PDF file.
+   */
+  getPageLabels() {
+    return this._transport.getPageLabels();
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved with a {string} containing
+   *   the page mode name.
+   */
+  getPageMode() {
+    return this._transport.getPageMode();
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved with a lookup table for
+   *   mapping named attachments to their content.
+   */
+  getAttachments() {
+    return this._transport.getAttachments();
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved with an {Array} of all the
+   *   JavaScript strings in the name tree, or `null` if no JavaScript exists.
+   */
+  getJavaScript() {
+    return this._transport.getJavaScript();
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved with an {Array} that is a
+   * tree outline (if it has one) of the PDF. The tree is in the format of:
+   * [
+   *   {
+   *     title: string,
+   *     bold: boolean,
+   *     italic: boolean,
+   *     color: rgb Uint8ClampedArray,
+   *     dest: dest obj,
+   *     url: string,
+   *     items: array of more items like this
+   *   },
+   *   ...
+   * ]
+   */
+  getOutline() {
+    return this._transport.getOutline();
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved with an {Object} that has
+   *   `info` and `metadata` properties. `info` is an {Object} filled with
+   *   anything available in the information dictionary and similarly
+   *   `metadata` is a {Metadata} object with information from the metadata
+   *   section of the PDF.
+   */
+  getMetadata() {
+    return this._transport.getMetadata();
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved with a {TypedArray} that has
+   * the raw data from the PDF.
+   */
+  getData() {
+    return this._transport.getData();
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved when the document's data
+   *   is loaded. It is resolved with an {Object} that contains the `length`
+   *   property that indicates size of the PDF data in bytes.
+   */
+  getDownloadInfo() {
+    return this._transport.downloadInfoCapability.promise;
+  }
+
+  /**
+   * @return {Promise} A promise this is resolved with current statistics about
+   *   document structures (see {@link PDFDocumentStats}).
+   */
+  getStats() {
+    return this._transport.getStats();
+  }
+
+  /**
+   * Cleans up resources allocated by the document, e.g. created `@font-face`.
+   */
+  cleanup() {
+    this._transport.startCleanup();
+  }
+
+  /**
+   * Destroys the current document instance and terminates the worker.
+   */
+  destroy() {
+    return this.loadingTask.destroy();
+  }
+
+  /**
+   * @return {Object} A subset of the current {DocumentInitParameters},
+   *   which are either needed in the viewer and/or whose default values
+   *   may be affected by the `apiCompatibilityParams`.
+   */
+  get loadingParams() {
+    return this._transport.loadingParams;
+  }
+}
 
 /**
  * Page getTextContent parameters.
