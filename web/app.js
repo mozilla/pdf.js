@@ -288,7 +288,8 @@ let PDFViewerApplication = {
     return new Promise((resolve, reject) => {
       this.overlayManager = new OverlayManager();
 
-      let eventBus = appConfig.eventBus || getGlobalEventBus();
+      const dispatchToDOM = AppOptions.get('eventBusDispatchToDOM');
+      let eventBus = appConfig.eventBus || getGlobalEventBus(dispatchToDOM);
       this.eventBus = eventBus;
 
       let pdfRenderingQueue = new PDFRenderingQueue();
