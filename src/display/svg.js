@@ -16,7 +16,7 @@
 
 import {
   createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNum, OPS,
-  Util, warn
+  TextRenderingMode, Util, warn
 } from '../shared/util';
 import { DOMSVGFactory } from './dom_utils';
 import isNodeJS from '../shared/is_node';
@@ -281,6 +281,7 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.textMatrix = IDENTITY_MATRIX;
     this.fontMatrix = FONT_IDENTITY_MATRIX;
     this.leading = 0;
+    this.textRenderingMode = TextRenderingMode.FILL;
 
     // Current point (in user coordinates)
     this.x = 0;
@@ -570,6 +571,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.setTextRise:
             this.setTextRise(args[0]);
             break;
+          case OPS.setTextRenderingMode:
+            this.setTextRenderingMode(args[0]);
+            break;
           case OPS.setLineWidth:
             this.setLineWidth(args[0]);
             break;
@@ -789,8 +793,29 @@ SVGGraphics = (function SVGGraphicsClosure() {
       if (current.fontWeight !== SVG_DEFAULTS.fontWeight) {
         current.tspan.setAttributeNS(null, 'font-weight', current.fontWeight);
       }
-      if (current.fillColor !== SVG_DEFAULTS.fillColor) {
-        current.tspan.setAttributeNS(null, 'fill', current.fillColor);
+
+      const fillStrokeMode = current.textRenderingMode &
+        TextRenderingMode.FILL_STROKE_MASK;
+
+      if (fillStrokeMode === TextRenderingMode.FILL ||
+          fillStrokeMode === TextRenderingMode.FILL_STROKE) {
+        if (current.fillColor !== SVG_DEFAULTS.fillColor) {
+          current.tspan.setAttributeNS(null, 'fill', current.fillColor);
+        }
+        if (current.fillAlpha < 1) {
+          current.tspan.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
+        }
+      } else if (current.textRenderingMode === TextRenderingMode.ADD_TO_PATH) {
+        // Workaround for Firefox: We must set fill="transparent" because
+        // fill="none" would generate an empty clipping path.
+        current.tspan.setAttributeNS(null, 'fill', 'transparent');
+      } else {
+        current.tspan.setAttributeNS(null, 'fill', 'none');
+      }
+
+      if (fillStrokeMode === TextRenderingMode.STROKE ||
+          fillStrokeMode === TextRenderingMode.FILL_STROKE) {
+        this._setStrokeAttributes(current.tspan);
       }
 
       // Include the text rise in the text matrix since the `pm` function
@@ -865,7 +890,16 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.xcoords = [];
     },
 
-    endText: function SVGGraphics_endText() {},
+    endText() {
+      const current = this.current;
+      if ((current.textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG) &&
+          current.txtElement && current.txtElement.hasChildNodes()) {
+        // If no glyphs are shown (i.e. no child nodes), no clipping occurs.
+        current.element = current.txtElement;
+        this.clip('nonzero');
+        this.endPath();
+      }
+    },
 
     // Path properties
     setLineWidth: function SVGGraphics_setLineWidth(width) {
@@ -978,7 +1012,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
       var clipPath = this.svgFactory.createElement('svg:clipPath');
       clipPath.setAttributeNS(null, 'id', clipId);
       clipPath.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      var clipElement = current.element.cloneNode();
+      // A deep clone is needed when text is used as a clipping path.
+      const clipElement = current.element.cloneNode(true);
       if (this.pendingClip === 'evenodd') {
         clipElement.setAttributeNS(null, 'clip-rule', 'evenodd');
       } else {
@@ -1022,6 +1057,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     setTextRise: function SVGGraphics_setTextRise(textRise) {
       this.current.textRise = textRise;
+    },
+
+    setTextRenderingMode(textRenderingMode) {
+      this.current.textRenderingMode = textRenderingMode;
     },
 
     setHScale: function SVGGraphics_setHScale(scale) {
@@ -1079,25 +1118,31 @@ SVGGraphics = (function SVGGraphicsClosure() {
       var current = this.current;
 
       if (current.element) {
-        current.element.setAttributeNS(null, 'stroke', current.strokeColor);
-        current.element.setAttributeNS(null, 'stroke-opacity',
-                                       current.strokeAlpha);
-        current.element.setAttributeNS(null, 'stroke-miterlimit',
-                                       pf(current.miterLimit));
-        current.element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
-        current.element.setAttributeNS(null, 'stroke-linejoin',
-                                       current.lineJoin);
-        current.element.setAttributeNS(null, 'stroke-width',
-                                       pf(current.lineWidth) + 'px');
-        current.element.setAttributeNS(null, 'stroke-dasharray',
-                                       current.dashArray.map(pf).join(' '));
-        current.element.setAttributeNS(null, 'stroke-dashoffset',
-                                       pf(current.dashPhase) + 'px');
+        this._setStrokeAttributes(current.element);
 
         current.element.setAttributeNS(null, 'fill', 'none');
 
         this.endPath();
       }
+    },
+
+    /**
+     * @private
+     */
+    _setStrokeAttributes(element) {
+      const current = this.current;
+      element.setAttributeNS(null, 'stroke', current.strokeColor);
+      element.setAttributeNS(null, 'stroke-opacity', current.strokeAlpha);
+      element.setAttributeNS(null, 'stroke-miterlimit',
+                             pf(current.miterLimit));
+      element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
+      element.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
+      element.setAttributeNS(null, 'stroke-width',
+                             pf(current.lineWidth) + 'px');
+      element.setAttributeNS(null, 'stroke-dasharray',
+                             current.dashArray.map(pf).join(' '));
+      element.setAttributeNS(null, 'stroke-dashoffset',
+                             pf(current.dashPhase) + 'px');
     },
 
     eoFill: function SVGGraphics_eoFill() {
