@@ -897,6 +897,9 @@ let PDFViewerApplication = {
       this.loadingBar.hide();
 
       firstPagePromise.then(() => {
+        this.eventBus.dispatch('documentloaded', { source: this, });
+        // TODO: Remove the following event, i.e. 'documentload',
+        //       once the mozilla-central tests have been updated.
         this.eventBus.dispatch('documentload', { source: this, });
       });
     });
@@ -1000,6 +1003,7 @@ let PDFViewerApplication = {
         this.setInitialView(hash, {
           rotation, sidebarView, scrollMode, spreadMode,
         });
+        this.eventBus.dispatch('documentinit', { source: this, });
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
