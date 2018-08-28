@@ -160,7 +160,7 @@ let PDFViewerApplication = {
       this.l10n.translate(appContainer).then(() => {
         // Dispatch the 'localized' event on the `eventBus` once the viewer
         // has been fully initialized and translated.
-        this.eventBus.dispatch('localized');
+        this.eventBus.dispatch('localized', { source: this, });
       });
 
       this.initialized = true;
@@ -1371,14 +1371,15 @@ let PDFViewerApplication = {
     };
     _boundEvents.windowHashChange = () => {
       eventBus.dispatch('hashchange', {
+        source: window,
         hash: document.location.hash.substring(1),
       });
     };
     _boundEvents.windowBeforePrint = () => {
-      eventBus.dispatch('beforeprint');
+      eventBus.dispatch('beforeprint', { source: window, });
     };
     _boundEvents.windowAfterPrint = () => {
-      eventBus.dispatch('afterprint');
+      eventBus.dispatch('afterprint', { source: window, });
     };
 
     window.addEventListener('wheel', webViewerWheel);
@@ -1560,6 +1561,7 @@ function webViewerInitialized() {
         return;
       }
       PDFViewerApplication.eventBus.dispatch('fileinputchange', {
+        source: this,
         fileInput: evt.target,
       });
     });
@@ -1578,6 +1580,7 @@ function webViewerInitialized() {
         return;
       }
       PDFViewerApplication.eventBus.dispatch('fileinputchange', {
+        source: this,
         fileInput: evt.dataTransfer,
       });
     });
