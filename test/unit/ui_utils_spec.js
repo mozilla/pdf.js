@@ -262,6 +262,45 @@ describe('ui_utils', function() {
       eventBus.dispatch('test');
       expect(count).toEqual(2);
     });
+
+    it('should not, by default, re-dispatch to DOM', function(done) {
+      if (isNodeJS()) {
+        pending('Document in not supported in Node.js.');
+      }
+      const eventBus = new EventBus();
+      let count = 0;
+      eventBus.on('test', function() {
+        count++;
+      });
+      document.addEventListener('test', function() {
+        count++;
+      });
+      eventBus.dispatch('test');
+
+      Promise.resolve().then(() => {
+        expect(count).toEqual(1);
+        done();
+      });
+    });
+    it('should re-dispatch to DOM', function(done) {
+      if (isNodeJS()) {
+        pending('Document in not supported in Node.js.');
+      }
+      const eventBus = new EventBus({ dispatchToDOM: true, });
+      let count = 0;
+      eventBus.on('test', function() {
+        count++;
+      });
+      document.addEventListener('test', function() {
+        count++;
+      });
+      eventBus.dispatch('test');
+
+      Promise.resolve().then(() => {
+        expect(count).toEqual(2);
+        done();
+      });
+    });
   });
 
   describe('isValidRotation', function() {
