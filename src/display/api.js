@@ -75,7 +75,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
         worker = __non_webpack_require__('./pdf.worker.js');
       }
       callback(worker.WorkerMessageHandler);
-    });
+    }, null, 'pdfjsWorker');
   }) : dynamicLoaderSupported ? (function (callback) {
     requirejs(['pdfjs-dist/build/pdf.worker'], function (worker) {
       callback(worker.WorkerMessageHandler);
