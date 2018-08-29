@@ -1082,21 +1082,34 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
       var current = this.current;
       var x = current.x, y = current.y;
+      let xw, yh, origX, origY, pixelSize = this.getSinglePixelWidth();
       for (var i = 0, j = 0, ii = ops.length; i < ii; i++) {
         switch (ops[i] | 0) {
           case OPS.rectangle:
-            x = args[j++];
-            y = args[j++];
+            origX = args[j++];
+            origY = args[j++];
+            if (pixelSize) {
+              x = Math.floor(origX / pixelSize) * pixelSize;
+              y = Math.ceil(origY / pixelSize) * pixelSize;
+            } else {
+              x = origX;
+              y = origY;
+            }
             var width = args[j++];
             var height = args[j++];
             if (width === 0) {
-              width = this.getSinglePixelWidth();
+              width = pixelSize;
             }
             if (height === 0) {
-              height = this.getSinglePixelWidth();
+              height = pixelSize;
             }
-            var xw = x + width;
-            var yh = y + height;
+            if (pixelSize) {
+              xw = Math.ceil((origX + width) / pixelSize) * pixelSize;
+              yh = Math.ceil((origY + height) / pixelSize) * pixelSize;
+            } else {
+              xw = x + width;
+              yh = y + height;
+            }
             this.ctx.moveTo(x, y);
             this.ctx.lineTo(xw, y);
             this.ctx.lineTo(xw, yh);
@@ -1941,7 +1954,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
-
+      const pixelSize = this.getSinglePixelWidth();
+      h = Math.ceil(h / pixelSize) * pixelSize;
+      w = Math.ceil(w / pixelSize) * pixelSize;
       ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                     0, -h, w, h);
       if (this.imageLayer) {
@@ -2144,6 +2159,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                                   newWidth, newHeight);
         tmpCtx = tmpCanvas.context;
         tmpCtx.clearRect(0, 0, newWidth, newHeight);
+        const pixelSize = this.getSinglePixelWidth();
+        newHeight = Math.ceil(newHeight / pixelSize) * pixelSize;
+        newWidth = Math.ceil(newWidth / pixelSize) * pixelSize;
         tmpCtx.drawImage(imgToPaint, 0, 0, paintWidth, paintHeight,
                                      0, 0, newWidth, newHeight);
         imgToPaint = tmpCanvas.canvas;
