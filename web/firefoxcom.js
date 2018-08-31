@@ -167,7 +167,8 @@ class MozL10n {
     'find',
     'findagain',
     'findhighlightallchange',
-    'findcasesensitivitychange'
+    'findcasesensitivitychange',
+    'findentirewordchange',
   ];
   let handleEvent = function(evt) {
     if (!PDFViewerApplication.initialized) {
@@ -179,13 +180,14 @@ class MozL10n {
       query: evt.detail.query,
       phraseSearch: true,
       caseSensitive: !!evt.detail.caseSensitive,
+      entireWord: !!evt.detail.entireWord,
       highlightAll: !!evt.detail.highlightAll,
       findPrevious: !!evt.detail.findPrevious,
     });
   };
 
-  for (let i = 0, len = events.length; i < len; i++) {
-    window.addEventListener(events[i], handleEvent);
+  for (let event of events) {
+    window.addEventListener(event, handleEvent);
   }
 })();
 
