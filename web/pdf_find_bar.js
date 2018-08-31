@@ -33,6 +33,7 @@ class PDFFindBar {
     this.findField = options.findField || null;
     this.highlightAll = options.highlightAllCheckbox || null;
     this.caseSensitive = options.caseSensitiveCheckbox || null;
+    this.entireWord = options.entireWordCheckbox || null;
     this.findMsg = options.findMsg || null;
     this.findResultsCount = options.findResultsCount || null;
     this.findStatusIcon = options.findStatusIcon || null;
@@ -85,6 +86,10 @@ class PDFFindBar {
       this.dispatchEvent('casesensitivitychange');
     });
 
+    this.entireWord.addEventListener('click', () => {
+      this.dispatchEvent('entirewordchange');
+    });
+
     this.eventBus.on('resize', this._adjustWidth.bind(this));
   }
 
@@ -97,8 +102,9 @@ class PDFFindBar {
       source: this,
       type,
       query: this.findField.value,
-      caseSensitive: this.caseSensitive.checked,
       phraseSearch: true,
+      caseSensitive: this.caseSensitive.checked,
+      entireWord: this.entireWord.checked,
       highlightAll: this.highlightAll.checked,
       findPrevious: findPrev,
     });
