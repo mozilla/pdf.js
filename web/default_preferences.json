@@ -4,6 +4,7 @@
   "sidebarViewOnLoad": 0,
   "cursorToolOnLoad": 0,
   "enableWebGL": false,
+  "eventBusDispatchToDOM": false,
   "pdfBugEnabled": false,
   "disableRange": false,
   "disableStream": false,

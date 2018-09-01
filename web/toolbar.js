@@ -100,19 +100,19 @@ class Toolbar {
     let self = this;
 
     items.previous.addEventListener('click', function() {
-      eventBus.dispatch('previouspage');
+      eventBus.dispatch('previouspage', { source: self, });
     });
 
     items.next.addEventListener('click', function() {
-      eventBus.dispatch('nextpage');
+      eventBus.dispatch('nextpage', { source: self, });
     });
 
     items.zoomIn.addEventListener('click', function() {
-      eventBus.dispatch('zoomin');
+      eventBus.dispatch('zoomin', { source: self, });
     });
 
     items.zoomOut.addEventListener('click', function() {
-      eventBus.dispatch('zoomout');
+      eventBus.dispatch('zoomout', { source: self, });
     });
 
     items.pageNumber.addEventListener('click', function() {
@@ -137,19 +137,19 @@ class Toolbar {
     });
 
     items.presentationModeButton.addEventListener('click', function() {
-      eventBus.dispatch('presentationmode');
+      eventBus.dispatch('presentationmode', { source: self, });
     });
 
     items.openFile.addEventListener('click', function() {
-      eventBus.dispatch('openfile');
+      eventBus.dispatch('openfile', { source: self, });
     });
 
     items.print.addEventListener('click', function() {
-      eventBus.dispatch('print');
+      eventBus.dispatch('print', { source: self, });
     });
 
     items.download.addEventListener('click', function() {
-      eventBus.dispatch('download');
+      eventBus.dispatch('download', { source: self, });
     });
 
     // Suppress context menus for some controls.

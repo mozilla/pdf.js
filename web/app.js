@@ -160,7 +160,7 @@ let PDFViewerApplication = {
       this.l10n.translate(appContainer).then(() => {
         // Dispatch the 'localized' event on the `eventBus` once the viewer
         // has been fully initialized and translated.
-        this.eventBus.dispatch('localized');
+        this.eventBus.dispatch('localized', { source: this, });
       });
 
       this.initialized = true;
@@ -288,7 +288,8 @@ let PDFViewerApplication = {
     return new Promise((resolve, reject) => {
       this.overlayManager = new OverlayManager();
 
-      let eventBus = appConfig.eventBus || getGlobalEventBus();
+      const dispatchToDOM = AppOptions.get('eventBusDispatchToDOM');
+      let eventBus = appConfig.eventBus || getGlobalEventBus(dispatchToDOM);
       this.eventBus = eventBus;
 
       let pdfRenderingQueue = new PDFRenderingQueue();
@@ -897,6 +898,9 @@ let PDFViewerApplication = {
       this.loadingBar.hide();
 
       firstPagePromise.then(() => {
+        this.eventBus.dispatch('documentloaded', { source: this, });
+        // TODO: Remove the following event, i.e. 'documentload',
+        //       once the mozilla-central tests have been updated.
         this.eventBus.dispatch('documentload', { source: this, });
       });
     });
@@ -1000,6 +1004,7 @@ let PDFViewerApplication = {
         this.setInitialView(hash, {
           rotation, sidebarView, scrollMode, spreadMode,
         });
+        this.eventBus.dispatch('documentinit', { source: this, });
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
@@ -1371,14 +1376,15 @@ let PDFViewerApplication = {
     };
     _boundEvents.windowHashChange = () => {
       eventBus.dispatch('hashchange', {
+        source: window,
         hash: document.location.hash.substring(1),
       });
     };
     _boundEvents.windowBeforePrint = () => {
-      eventBus.dispatch('beforeprint');
+      eventBus.dispatch('beforeprint', { source: window, });
     };
     _boundEvents.windowAfterPrint = () => {
-      eventBus.dispatch('afterprint');
+      eventBus.dispatch('afterprint', { source: window, });
     };
 
     window.addEventListener('wheel', webViewerWheel);
@@ -1560,6 +1566,7 @@ function webViewerInitialized() {
         return;
       }
       PDFViewerApplication.eventBus.dispatch('fileinputchange', {
+        source: this,
         fileInput: evt.target,
       });
     });
@@ -1578,6 +1585,7 @@ function webViewerInitialized() {
         return;
       }
       PDFViewerApplication.eventBus.dispatch('fileinputchange', {
+        source: this,
         fileInput: evt.dataTransfer,
       });
     });
