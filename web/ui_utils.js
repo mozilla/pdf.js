@@ -683,8 +683,9 @@ let animationStarted = new Promise(function (resolve) {
  * used.
  */
 class EventBus {
-  constructor() {
+  constructor({ dispatchToDOM = false, } = {}) {
     this._listeners = Object.create(null);
+    this._dispatchToDOM = dispatchToDOM === true;
   }
 
   on(eventName, listener) {
@@ -708,6 +709,9 @@ class EventBus {
   dispatch(eventName) {
     let eventListeners = this._listeners[eventName];
     if (!eventListeners || eventListeners.length === 0) {
+      if (this._dispatchToDOM) {
+        this._dispatchDOMEvent(eventName);
+      }
       return;
     }
     // Passing all arguments after the eventName to the listeners.
@@ -717,6 +721,35 @@ class EventBus {
     eventListeners.slice(0).forEach(function (listener) {
       listener.apply(null, args);
     });
+    if (this._dispatchToDOM) {
+      this._dispatchDOMEvent(eventName, args);
+    }
+  }
+
+  /**
+   * @private
+   */
+  _dispatchDOMEvent(eventName, args = null) {
+    if (!this._dispatchToDOM) {
+      return;
+    }
+    const details = Object.create(null);
+    if (args && args.length > 0) {
+      const obj = args[0];
+      for (let key in obj) {
+        const value = obj[key];
+        if (key === 'source') {
+          if (value === window || value === document) {
+            return; // No need to re-dispatch (already) global events.
+          }
+          continue; // Ignore the `source` property.
+        }
+        details[key] = value;
+      }
+    }
+    const event = document.createEvent('CustomEvent');
+    event.initCustomEvent(eventName, true, true, details);
+    document.dispatchEvent(event);
   }
 }
 

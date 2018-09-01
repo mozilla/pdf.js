@@ -60,19 +60,19 @@ class PDFPresentationMode {
     if (contextMenuItems) {
       contextMenuItems.contextFirstPage.addEventListener('click', () => {
         this.contextMenuOpen = false;
-        this.eventBus.dispatch('firstpage');
+        this.eventBus.dispatch('firstpage', { source: this, });
       });
       contextMenuItems.contextLastPage.addEventListener('click', () => {
         this.contextMenuOpen = false;
-        this.eventBus.dispatch('lastpage');
+        this.eventBus.dispatch('lastpage', { source: this, });
       });
       contextMenuItems.contextPageRotateCw.addEventListener('click', () => {
         this.contextMenuOpen = false;
-        this.eventBus.dispatch('rotatecw');
+        this.eventBus.dispatch('rotatecw', { source: this, });
       });
       contextMenuItems.contextPageRotateCcw.addEventListener('click', () => {
         this.contextMenuOpen = false;
-        this.eventBus.dispatch('rotateccw');
+        this.eventBus.dispatch('rotateccw', { source: this, });
       });
     }
   }
