@@ -1065,10 +1065,10 @@ var JpegImage = (function JpegImageClosure() {
       var Y, Cb, Cr, k;
       var offset = 0;
       for (var i = 0, length = data.length; i < length; i += 4) {
-        Y = data[i];
-        Cb = data[i + 1];
-        Cr = data[i + 2];
-        k = data[i + 3];
+        Y  = 255-data[i];
+        Cb = 255-data[i + 1];
+        Cr = 255-data[i + 2];
+        k  = 255-data[i + 3];
 
         data[offset++] = -122.67195406894 +
           Cb * (-6.60635669420364e-5 * Cb + 0.000437130475926232 * Cr -
@@ -1123,10 +1123,10 @@ var JpegImage = (function JpegImageClosure() {
       var offset = 0;
       var scale = 1 / 255;
       for (var i = 0, length = data.length; i < length; i += 4) {
-        c = data[i] * scale;
-        m = data[i + 1] * scale;
-        y = data[i + 2] * scale;
-        k = data[i + 3] * scale;
+        c = (255-data[i]) * scale;
+        m = (255-data[i + 1]) * scale;
+        y = (255-data[i + 2]) * scale;
+        k = (255-data[i + 3]) * scale;
 
         data[offset++] = 255 +
           c * (-4.387332384609988 * c + 54.48615194189176 * m +
