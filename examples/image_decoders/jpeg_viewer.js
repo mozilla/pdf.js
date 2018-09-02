@@ -58,7 +58,11 @@ var jpegImage = new pdfjsImageDecoders.JpegImage();
 jpegImage.parse(typedArrayImage);
 
 var width = jpegImage.width, height = jpegImage.height;
-var jpegData = jpegImage.getData(width, height, /* forceRGB = */ true);
+var jpegData = jpegImage.getData({
+  width,
+  height,
+  forceRGB: true,
+});
 
 // Render the JPEG image on a <canvas>.
 //
