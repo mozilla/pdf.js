@@ -18,7 +18,8 @@ import {
 } from './test_utils';
 import {
   createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
-  OPS, PasswordException, PasswordResponses, StreamType, stringToBytes
+  OPS, PasswordException, PasswordResponses, PermissionFlag, StreamType,
+  stringToBytes
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException, StatTimer
@@ -84,9 +85,7 @@ describe('api', function() {
         expect(data[1] instanceof PDFDocumentProxy).toEqual(true);
         expect(loadingTask).toEqual(data[1].loadingTask);
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('creates pdf doc from URL and aborts before worker initialized',
         function(done) {
@@ -111,9 +110,7 @@ describe('api', function() {
       destroyed.then(function (data) {
         expect(true).toEqual(true);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('creates pdf doc from typed array', function(done) {
       var typedArrayPdf;
@@ -149,9 +146,7 @@ describe('api', function() {
       loadingTask.promise.then(function(data) {
         expect(data instanceof PDFDocumentProxy).toEqual(true);
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('creates pdf doc from invalid PDF file', function(done) {
       // A severely corrupt PDF file (even Adobe Reader fails to open it).
@@ -213,9 +208,7 @@ describe('api', function() {
       Promise.all(promises).then(function (data) {
         expect(data[2] instanceof PDFDocumentProxy).toEqual(true);
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('creates pdf doc from PDF file protected with only a user password',
         function (done) {
@@ -257,9 +250,7 @@ describe('api', function() {
       });
       Promise.all([result1, result2, result3]).then(function () {
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('creates pdf doc from password protected PDF file and aborts/throws ' +
@@ -309,9 +300,7 @@ describe('api', function() {
 
       Promise.all([result1, result2]).then(function () {
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
   });
 
@@ -333,9 +322,7 @@ describe('api', function() {
         expect(!!worker.port).toEqual(false);
         expect(worker.destroyed).toEqual(true);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('worker created or destroyed by getDocument', function (done) {
       if (isNodeJS()) {
@@ -357,9 +344,7 @@ describe('api', function() {
         expect(!!destroyedWorker).toEqual(false);
         expect(worker.destroyed).toEqual(true);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('worker created and can be used in getDocument', function (done) {
       if (isNodeJS()) {
@@ -386,9 +371,7 @@ describe('api', function() {
         expect(worker.destroyed).toEqual(false);
         worker.destroy();
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('creates more than one worker', function (done) {
       if (isNodeJS()) {
@@ -408,9 +391,7 @@ describe('api', function() {
         worker2.destroy();
         worker3.destroy();
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets current workerSrc', function() {
       if (isNodeJS()) {
@@ -452,9 +433,7 @@ describe('api', function() {
         expect(data instanceof PDFPageProxy).toEqual(true);
         expect(data.pageIndex).toEqual(0);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets non-existent page', function(done) {
       var outOfRangePromise = doc.getPage(100);
@@ -480,9 +459,7 @@ describe('api', function() {
       Promise.all([outOfRangePromise, nonIntegerPromise, nonNumberPromise]).
         then(function () {
           done();
-        }).catch(function (reason) {
-          done.fail(reason);
-        });
+        }).catch(done.fail);
     });
     it('gets page index', function(done) {
       // reference to second page
@@ -491,9 +468,7 @@ describe('api', function() {
       promise.then(function(pageIndex) {
         expect(pageIndex).toEqual(1);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets invalid page index', function (done) {
       var ref = { num: 3, gen: 0, }; // Reference to a font dictionary.
@@ -513,9 +488,7 @@ describe('api', function() {
           chapter1: [{ gen: 0, num: 17, }, { name: 'XYZ', }, 0, 841.89, null],
         });
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets a destination, from /Dests dictionary', function(done) {
       var promise = doc.getDestination('chapter1');
@@ -523,9 +496,7 @@ describe('api', function() {
         expect(data).toEqual([{ gen: 0, num: 17, }, { name: 'XYZ', },
                               0, 841.89, null]);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets a non-existent destination, from /Dests dictionary',
         function(done) {
@@ -533,9 +504,7 @@ describe('api', function() {
       promise.then(function(data) {
         expect(data).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets destinations, from /Names (NameTree) dictionary', function(done) {
@@ -550,9 +519,7 @@ describe('api', function() {
         });
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets a destination, from /Names (NameTree) dictionary', function(done) {
       var loadingTask = getDocument(buildGetDocumentParams('issue6204.pdf'));
@@ -564,9 +531,7 @@ describe('api', function() {
                                      0, 375, null]);
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets a non-existent destination, from /Names (NameTree) dictionary',
         function(done) {
@@ -578,9 +543,7 @@ describe('api', function() {
         expect(destination).toEqual(null);
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets non-string destination', function(done) {
@@ -614,9 +577,7 @@ describe('api', function() {
       promise.then(function (data) {
         expect(data).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets page labels', function (done) {
       // PageLabels with Roman/Arabic numerals.
@@ -657,9 +618,7 @@ describe('api', function() {
           loadingTask2.destroy(),
           loadingTask3.destroy()
         ]).then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets default page mode', function(done) {
@@ -671,17 +630,13 @@ describe('api', function() {
         expect(mode).toEqual('UseNone');
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets non-default page mode', function(done) {
       doc.getPageMode().then(function(mode) {
         expect(mode).toEqual('UseOutlines');
         done();
-      }).catch(function(reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets non-existent attachments', function(done) {
@@ -689,9 +644,7 @@ describe('api', function() {
       promise.then(function (data) {
         expect(data).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets attachments', function(done) {
       if (isNodeJS()) { // The PDF file used is a linked test-case.
@@ -708,9 +661,7 @@ describe('api', function() {
         expect(attachment.content.length).toEqual(30098);
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets javascript', function(done) {
@@ -718,9 +669,7 @@ describe('api', function() {
       promise.then(function (data) {
         expect(data).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     // Keep this in sync with the pattern in viewer.js. The pattern is used to
     // detect whether or not to automatically start printing.
@@ -736,9 +685,7 @@ describe('api', function() {
         expect(data).toEqual(['print({});']);
         expect(data[0]).toMatch(viewerPrintRegExp);
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets javascript with printing instructions (JS action)',
         function(done) {
@@ -752,9 +699,7 @@ describe('api', function() {
           ['this.print({bUI:true,bSilent:false,bShrinkToFit:true});']);
         expect(data[0]).toMatch(viewerPrintRegExp);
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets non-existent outline', function(done) {
       var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
@@ -766,9 +711,7 @@ describe('api', function() {
         expect(outline).toEqual(null);
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets outline', function(done) {
       var promise = doc.getOutline();
@@ -791,9 +734,7 @@ describe('api', function() {
         expect(outlineItem.items.length).toEqual(1);
         expect(outlineItem.items[0].title).toEqual('Paragraph 1.1');
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets outline containing a url', function(done) {
       var loadingTask = getDocument(buildGetDocumentParams('issue3214.pdf'));
@@ -818,10 +759,61 @@ describe('api', function() {
 
           loadingTask.destroy().then(done);
         });
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
+
+    it('gets non-existent permissions', function(done) {
+      doc.getPermissions().then(function(permissions) {
+        expect(permissions).toEqual(null);
+
+        done();
+      }).catch(done.fail);
+    });
+
+    it('gets permissions', function (done) {
+      // Editing not allowed.
+      const loadingTask0 =
+        getDocument(buildGetDocumentParams('issue9972-1.pdf'));
+      const promise0 = loadingTask0.promise.then(function(pdfDocument) {
+        return pdfDocument.getPermissions();
+      });
+
+      // Printing not allowed.
+      const loadingTask1 =
+        getDocument(buildGetDocumentParams('issue9972-2.pdf'));
+      const promise1 = loadingTask1.promise.then(function(pdfDocument) {
+        return pdfDocument.getPermissions();
+      });
+
+      // Copying not allowed.
+      const loadingTask2 =
+        getDocument(buildGetDocumentParams('issue9972-3.pdf'));
+      const promise2 = loadingTask2.promise.then(function(pdfDocument) {
+        return pdfDocument.getPermissions();
+      });
+
+      const totalPermissionCount = Object.keys(PermissionFlag).length;
+      Promise.all([promise0, promise1, promise2]).then(function(permissions) {
+        expect(permissions[0].length).toEqual(totalPermissionCount - 1);
+        expect(permissions[0].includes(PermissionFlag.MODIFY_CONTENTS))
+          .toBeFalsy();
+
+        expect(permissions[1].length).toEqual(totalPermissionCount - 2);
+        expect(permissions[1].includes(PermissionFlag.PRINT)).toBeFalsy();
+        expect(permissions[1].includes(PermissionFlag.PRINT_HIGH_QUALITY))
+          .toBeFalsy();
+
+        expect(permissions[2].length).toEqual(totalPermissionCount - 1);
+        expect(permissions[2].includes(PermissionFlag.COPY)).toBeFalsy();
+
+        Promise.all([
+          loadingTask0.destroy(),
+          loadingTask1.destroy(),
+          loadingTask2.destroy(),
+        ]).then(done);
+      }).catch(done.fail);
+    });
+
     it('gets metadata', function(done) {
       var promise = doc.getMetadata();
       promise.then(function({ info, metadata, contentDispositionFilename, }) {
@@ -837,9 +829,7 @@ describe('api', function() {
 
         expect(contentDispositionFilename).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets data', function(done) {
       var promise = doc.getData();
@@ -847,27 +837,21 @@ describe('api', function() {
         expect(data instanceof Uint8Array).toEqual(true);
         expect(data.length).toEqual(basicApiFileLength);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets download info', function(done) {
       var promise = doc.getDownloadInfo();
       promise.then(function (data) {
         expect(data).toEqual({ length: basicApiFileLength, });
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets document stats', function(done) {
       var promise = doc.getStats();
       promise.then(function (stats) {
         expect(stats).toEqual({ streamTypes: [], fontTypes: [], });
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('checks that fingerprints are unique', function(done) {
@@ -892,9 +876,7 @@ describe('api', function() {
           loadingTask1.destroy(),
           loadingTask2.destroy()
         ]).then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     describe('Cross-origin', function() {
@@ -988,9 +970,7 @@ describe('api', function() {
           page = data;
           done();
         });
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     afterAll(function(done) {
@@ -1050,9 +1030,7 @@ describe('api', function() {
       Promise.all([defaultPromise, displayPromise, printPromise]).then(
           function () {
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets annotations containing relative URLs (bug 766086)',
@@ -1112,9 +1090,7 @@ describe('api', function() {
           docBaseUrlLoadingTask.destroy(),
           invalidDocBaseUrlLoadingTask.destroy()
         ]).then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets text content', function (done) {
@@ -1136,9 +1112,7 @@ describe('api', function() {
         // A simple check that ensures the two `textContent` object match.
         expect(JSON.stringify(data[0])).toEqual(JSON.stringify(data[1]));
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets operator list', function(done) {
       var promise = page.getOperatorList();
@@ -1147,9 +1121,7 @@ describe('api', function() {
         expect(!!oplist.argsArray).toEqual(true);
         expect(oplist.lastChunk).toEqual(true);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets operatorList with JPEG image (issue 4888)', function(done) {
       let loadingTask = getDocument(buildGetDocumentParams('cmykjpeg.pdf'));
@@ -1166,9 +1138,7 @@ describe('api', function() {
             done();
           });
         });
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets document stats after parsing page', function(done) {
       var promise = page.getOperatorList().then(function () {
@@ -1184,9 +1154,7 @@ describe('api', function() {
         expect(stats).toEqual({ streamTypes: expectedStreamTypes,
                                 fontTypes: expectedFontTypes, });
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets page stats after parsing page, without `pdfBug` set',
@@ -1420,9 +1388,7 @@ describe('api', function() {
       });
       promiseDone.then(function() {
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
   });
   describe('PDFDataRangeTransport', function () {
@@ -1479,9 +1445,7 @@ describe('api', function() {
         expect(page.rotate).toEqual(0);
         expect(fetches).toBeGreaterThan(2);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('should fetch document info and page using range and streaming',
         function (done) {
@@ -1520,9 +1484,7 @@ describe('api', function() {
         expect(page.rotate).toEqual(0);
         expect(fetches).toEqual(1);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
   });
 });
