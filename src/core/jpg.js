@@ -1024,7 +1024,7 @@ var JpegImage = (function JpegImageClosure() {
       return data;
     },
 
-    _isColorConversionNeeded() {
+    get _isColorConversionNeeded() {
       if (this.adobe) {
         // The adobe transform marker overrides any previous setting.
         return !!this.adobe.transformCode;
@@ -1180,10 +1180,10 @@ var JpegImage = (function JpegImageClosure() {
           rgbData[offset++] = grayColor;
         }
         return rgbData;
-      } else if (this.numComponents === 3 && this._isColorConversionNeeded()) {
+      } else if (this.numComponents === 3 && this._isColorConversionNeeded) {
         return this._convertYccToRgb(data);
       } else if (this.numComponents === 4) {
-        if (this._isColorConversionNeeded()) {
+        if (this._isColorConversionNeeded) {
           if (forceRGBoutput) {
             return this._convertYcckToRgb(data);
           }
