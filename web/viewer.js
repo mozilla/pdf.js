@@ -137,7 +137,6 @@ function getViewerConfiguration() {
       entireWordCheckbox: document.getElementById('findEntireWord'),
       findMsg: document.getElementById('findMsg'),
       findResultsCount: document.getElementById('findResultsCount'),
-      findStatusIcon: document.getElementById('findStatusIcon'),
       findPreviousButton: document.getElementById('findPrevious'),
       findNextButton: document.getElementById('findNext'),
     },

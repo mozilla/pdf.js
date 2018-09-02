@@ -36,7 +36,6 @@ class PDFFindBar {
     this.entireWord = options.entireWordCheckbox || null;
     this.findMsg = options.findMsg || null;
     this.findResultsCount = options.findResultsCount || null;
-    this.findStatusIcon = options.findStatusIcon || null;
     this.findPreviousButton = options.findPreviousButton || null;
     this.findNextButton = options.findNextButton || null;
     this.findController = options.findController || null;
