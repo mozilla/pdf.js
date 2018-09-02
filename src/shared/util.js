@@ -25,6 +25,18 @@ const NativeImageDecoding = {
   DISPLAY: 'display',
 };
 
+// Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
+const PermissionFlag = {
+  PRINT: 0x04,
+  MODIFY_CONTENTS: 0x08,
+  COPY: 0x10,
+  MODIFY_ANNOTATIONS: 0x20,
+  FILL_INTERACTIVE_FORMS: 0x100,
+  COPY_FOR_ACCESSIBILITY: 0x200,
+  ASSEMBLE: 0x400,
+  PRINT_HIGH_QUALITY: 0x800,
+};
+
 var TextRenderingMode = {
   FILL: 0,
   STROKE: 1,
@@ -1014,6 +1026,7 @@ export {
   NativeImageDecoding,
   PasswordException,
   PasswordResponses,
+  PermissionFlag,
   StreamType,
   TextRenderingMode,
   UnexpectedResponseException,
