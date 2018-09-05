@@ -1510,17 +1510,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         textContentItem.str.length = 0;
       }
 
-      function isIdenticalSetFont(name, size) {
-        return (textState.font &&
-                name === textState.fontName && size === textState.fontSize);
-      }
-
-      function handleBeginText() {
-        flushTextContentItem();
-        textState.textMatrix = IDENTITY_MATRIX.slice();
-        textState.textLineMatrix = IDENTITY_MATRIX.slice();
-      }
-
       function enqueueChunk() {
         let length = textContent.items.length;
         if (length > 0) {
@@ -1546,7 +1535,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         task.ensureNotTerminated();
         timeSlotManager.reset();
         var stop, operation = {}, args = [];
-        let pendingBeginText = false;
         while (!(stop = timeSlotManager.check())) {
           // The arguments parsed by read() are not used beyond this loop, so
           // we can reuse the same array on every iteration, thus avoiding
@@ -1557,30 +1545,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             break;
           }
           textState = stateManager.state;
-          var fn = operation.fn | 0;
+          var fn = operation.fn;
           args = operation.args;
           var advance, diff;
 
-          if (pendingBeginText) {
-            if (fn === OPS.setFont) {
-              const fontNameArg = args[0].name, fontSizeArg = args[1];
-              // For multiple identical Tf (setFont) commands, first check if
-              // the following command is Tm (setTextMatrix) before continuing.
-              if (isIdenticalSetFont(fontNameArg, fontSizeArg)) {
-                continue;
-              }
-            }
-            if (fn !== OPS.setTextMatrix) {
-              handleBeginText();
-            }
-            pendingBeginText = false;
-          }
-
-          switch (fn) {
+          switch (fn | 0) {
             case OPS.setFont:
               // Optimization to ignore multiple identical Tf commands.
               var fontNameArg = args[0].name, fontSizeArg = args[1];
-              if (isIdenticalSetFont(fontNameArg, fontSizeArg)) {
+              if (textState.font && fontNameArg === textState.fontName &&
+                  fontSizeArg === textState.fontSize) {
                 break;
               }
 
@@ -1668,15 +1642,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               textState.wordSpacing = args[0];
               break;
             case OPS.beginText:
-              // Optimization to attempt to combine separate BT/ET sequences,
-              // by checking the next operator(s) before flushing text content
-              // and resetting the text/textLine matrices (see above).
-              if (combineTextItems) {
-                pendingBeginText = true;
-                break;
-              }
-
-              handleBeginText();
+              flushTextContentItem();
+              textState.textMatrix = IDENTITY_MATRIX.slice();
+              textState.textLineMatrix = IDENTITY_MATRIX.slice();
               break;
             case OPS.showSpacedText:
               var items = args[0];
