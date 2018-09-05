@@ -15,6 +15,7 @@
 
 import { getGlobalEventBus } from './dom_events';
 import { parseQueryString } from './ui_utils';
+import { SpreadMode } from './base_viewer';
 
 /**
  * @typedef {Object} PDFLinkServiceOptions
@@ -217,6 +218,16 @@ class PDFLinkService {
       }
       if ('page' in params) {
         pageNumber = (params.page | 0) || 1;
+      }
+      if ('spread' in params) {
+        const spreadArg = params.spread;
+        if (spreadArg === 'none') {
+          this.pdfViewer.spreadMode = SpreadMode.NONE;
+        } else if (spreadArg === 'odd') {
+          this.pdfViewer.spreadMode = SpreadMode.ODD;
+        } else if (spreadArg === 'even') {
+          this.pdfViewer.spreadMode = SpreadMode.EVEN;
+        }
       }
       if ('zoom' in params) {
         // Build the destination array.
