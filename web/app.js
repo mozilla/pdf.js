@@ -54,6 +54,7 @@ const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 
 const DefaultExternalServices = {
   updateFindControlState(data) {},
+  updateFindMatchesCount(data) {},
   initPassiveLoading(callbacks) {},
   fallback(data, callback) {},
   reportTelemetry(data) {},
@@ -345,20 +346,22 @@ let PDFViewerApplication = {
       pdfViewer: this.pdfViewer,
       eventBus,
     });
-    this.findController.onUpdateResultsCount = (matchCount) => {
+    this.findController.onUpdateResultsCount = (matchesCount) => {
       if (this.supportsIntegratedFind) {
-        return;
+        this.externalServices.updateFindMatchesCount(matchesCount);
+      } else {
+        this.findBar.updateResultsCount(matchesCount);
       }
-      this.findBar.updateResultsCount(matchCount);
     };
-    this.findController.onUpdateState = (state, previous, matchCount) => {
+    this.findController.onUpdateState = (state, previous, matchesCount) => {
       if (this.supportsIntegratedFind) {
         this.externalServices.updateFindControlState({
           result: state,
           findPrevious: previous,
+          matchesCount,
         });
       } else {
-        this.findBar.updateUIState(state, previous, matchCount);
+        this.findBar.updateUIState(state, previous, matchesCount);
       }
     };
 

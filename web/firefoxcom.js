@@ -209,6 +209,10 @@ PDFViewerApplication.externalServices = {
     FirefoxCom.request('updateFindControlState', data);
   },
 
+  updateFindMatchesCount(data) {
+    // FirefoxCom.request('updateFindMatchesCount', data);
+  },
+
   initPassiveLoading(callbacks) {
     let pdfDataRangeTransport;
 
