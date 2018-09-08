@@ -56,21 +56,19 @@ function formatL10nValue(text, args) {
  * @implements {IL10n}
  */
 let NullL10n = {
-  getLanguage() {
-    return Promise.resolve('en-us');
+  async getLanguage() {
+    return 'en-us';
   },
 
-  getDirection() {
-    return Promise.resolve('ltr');
+  async getDirection() {
+    return 'ltr';
   },
 
-  get(property, args, fallback) {
-    return Promise.resolve(formatL10nValue(fallback, args));
+  async get(property, args, fallback) {
+    return formatL10nValue(fallback, args);
   },
 
-  translate(element) {
-    return Promise.resolve();
-  },
+  async translate(element) { },
 };
 
 /**
