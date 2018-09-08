@@ -122,7 +122,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   }
 
   function lookupCmap(ranges, unicode) {
-    var code = unicode.charCodeAt(0), gid = 0;
+    var code = unicode.codePointAt(0), gid = 0;
     var l = 0, r = ranges.length - 1;
     while (l < r) {
       var c = (l + r + 1) >> 1;
