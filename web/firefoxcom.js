@@ -124,13 +124,13 @@ class DownloadManager {
 }
 
 class FirefoxPreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
+  async _writeToStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('setPreferences', prefObj, resolve);
     });
   }
 
-  _readFromStorage(prefObj) {
+  async _readFromStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('getPreferences', prefObj, function(prefStr) {
         let readPrefs = JSON.parse(prefStr);
@@ -145,21 +145,20 @@ class MozL10n {
     this.mozL10n = mozL10n;
   }
 
-  getLanguage() {
-    return Promise.resolve(this.mozL10n.getLanguage());
+  async getLanguage() {
+    return this.mozL10n.getLanguage();
   }
 
-  getDirection() {
-    return Promise.resolve(this.mozL10n.getDirection());
+  async getDirection() {
+    return this.mozL10n.getDirection();
   }
 
-  get(property, args, fallback) {
-    return Promise.resolve(this.mozL10n.get(property, args, fallback));
+  async get(property, args, fallback) {
+    return this.mozL10n.get(property, args, fallback);
   }
 
-  translate(element) {
+  async translate(element) {
     this.mozL10n.translate(element);
-    return Promise.resolve();
   }
 }
 

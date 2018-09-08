@@ -27,28 +27,24 @@ class GenericL10n {
     });
   }
 
-  getLanguage() {
-    return this._ready.then((l10n) => {
-      return l10n.getLanguage();
-    });
+  async getLanguage() {
+    const l10n = await this._ready;
+    return l10n.getLanguage();
   }
 
-  getDirection() {
-    return this._ready.then((l10n) => {
-      return l10n.getDirection();
-    });
+  async getDirection() {
+    const l10n = await this._ready;
+    return l10n.getDirection();
   }
 
-  get(property, args, fallback) {
-    return this._ready.then((l10n) => {
-      return l10n.get(property, args, fallback);
-    });
+  async get(property, args, fallback) {
+    const l10n = await this._ready;
+    return l10n.get(property, args, fallback);
   }
 
-  translate(element) {
-    return this._ready.then((l10n) => {
-      return l10n.translate(element);
-    });
+  async translate(element) {
+    const l10n = await this._ready;
+    return l10n.translate(element);
   }
 }
 
