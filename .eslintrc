@@ -167,10 +167,6 @@
     "space-infix-ops": ["error", { "int32Hint": false }],
     "space-unary-ops": ["error", { "words": true, "nonwords": false, }],
     "spaced-comment": ["error", "always", {
-      "line": {
-        "exceptions": ["//", "#else", "#endif"],
-        "markers": ["#if", "#elif", "#include", "#expand", "#error"],
-      },
       "block": {
         "balanced": true,
       }
