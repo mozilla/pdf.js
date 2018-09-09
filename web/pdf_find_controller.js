@@ -68,7 +68,7 @@ class PDFFindController {
     this.pageContents = []; // Stores the text for each page.
     this.pageMatches = [];
     this.pageMatchesLength = null;
-    this.matchCount = 0;
+    this.matchesCountTotal = 0;
     this.selected = { // Currently selected match.
       pageIdx: -1,
       matchIdx: -1,
@@ -269,8 +269,9 @@ class PDFFindController {
     }
 
     // Update the match count.
-    if (this.pageMatches[pageIndex].length > 0) {
-      this.matchCount += this.pageMatches[pageIndex].length;
+    const pageMatchesCount = this.pageMatches[pageIndex].length;
+    if (pageMatchesCount > 0) {
+      this.matchesCountTotal += pageMatchesCount;
       this._updateUIResultsCount();
     }
   }
@@ -338,7 +339,7 @@ class PDFFindController {
       this.hadMatch = false;
       this.resumePageIdx = null;
       this.pageMatches = [];
-      this.matchCount = 0;
+      this.matchesCountTotal = 0;
       this.pageMatchesLength = null;
 
       for (let i = 0; i < numPages; i++) {
@@ -475,16 +476,32 @@ class PDFFindController {
     }
   }
 
-  _updateUIResultsCount() {
-    if (this.onUpdateResultsCount) {
-      this.onUpdateResultsCount(this.matchCount);
+  _requestMatchesCount() {
+    const { pageIdx, matchIdx, } = this.selected;
+    let current = 0;
+    if (matchIdx !== -1) {
+      for (let i = 0; i < pageIdx; i++) {
+        current += (this.pageMatches[i] && this.pageMatches[i].length) || 0;
+      }
+      current += matchIdx + 1;
     }
+    return { current, total: this.matchesCountTotal, };
+  }
+
+  _updateUIResultsCount() {
+    if (!this.onUpdateResultsCount) {
+      return;
+    }
+    const matchesCount = this._requestMatchesCount();
+    this.onUpdateResultsCount(matchesCount);
   }
 
   _updateUIState(state, previous) {
-    if (this.onUpdateState) {
-      this.onUpdateState(state, previous, this.matchCount);
+    if (!this.onUpdateState) {
+      return;
     }
+    const matchesCount = this._requestMatchesCount();
+    this.onUpdateState(state, previous, matchesCount);
   }
 }
 
