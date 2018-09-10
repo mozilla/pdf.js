@@ -25,6 +25,7 @@
     "network_utils_spec.js",
     "node_stream_spec.js",
     "parser_spec.js",
+    "pdf_find_utils.js",
     "pdf_history.js",
     "primitives_spec.js",
     "stream_spec.js",
