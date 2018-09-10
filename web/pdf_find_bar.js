@@ -153,7 +153,7 @@ class PDFFindBar {
     this.updateResultsCount(matchesCount);
   }
 
-  updateResultsCount({ current, total, }) {
+  updateResultsCount({ current = 0, total = 0, } = {}) {
     if (!this.findResultsCount) {
       return; // No UI control is provided.
     }
