@@ -14,6 +14,7 @@
  */
 
 import { createPromiseCapability } from 'pdfjs-lib';
+import { getCharacterType } from './pdf_find_utils';
 import { getGlobalEventBus } from './dom_events';
 import { scrollIntoView } from './ui_utils';
 
@@ -190,7 +191,30 @@ class PDFFindController {
     }
   }
 
-  _calculatePhraseMatch(query, pageIndex, pageContent) {
+  /**
+   * Determine if the search query constitutes a "whole word", by comparing the
+   * first/last character type with the preceding/following character type.
+   */
+  _isEntireWord(content, startIdx, length) {
+    if (startIdx > 0) {
+      const first = content.charCodeAt(startIdx);
+      const limit = content.charCodeAt(startIdx - 1);
+      if (getCharacterType(first) === getCharacterType(limit)) {
+        return false;
+      }
+    }
+    const endIdx = (startIdx + length - 1);
+    if (endIdx < (content.length - 1)) {
+      const last = content.charCodeAt(endIdx);
+      const limit = content.charCodeAt(endIdx + 1);
+      if (getCharacterType(last) === getCharacterType(limit)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  _calculatePhraseMatch(query, pageIndex, pageContent, entireWord) {
     let matches = [];
     let queryLen = query.length;
     let matchIdx = -queryLen;
@@ -199,12 +223,15 @@ class PDFFindController {
       if (matchIdx === -1) {
         break;
       }
+      if (entireWord && !this._isEntireWord(pageContent, matchIdx, queryLen)) {
+        continue;
+      }
       matches.push(matchIdx);
     }
     this.pageMatches[pageIndex] = matches;
   }
 
-  _calculateWordMatch(query, pageIndex, pageContent) {
+  _calculateWordMatch(query, pageIndex, pageContent, entireWord) {
     let matchesWithLength = [];
     // Divide the query into pieces and search for text in each piece.
     let queryArray = query.match(/\S+/g);
@@ -216,6 +243,10 @@ class PDFFindController {
         matchIdx = pageContent.indexOf(subquery, matchIdx + subqueryLen);
         if (matchIdx === -1) {
           break;
+        }
+        if (entireWord &&
+            !this._isEntireWord(pageContent, matchIdx, subqueryLen)) {
+          continue;
         }
         // Other searches do not, so we store the length.
         matchesWithLength.push({
@@ -244,6 +275,7 @@ class PDFFindController {
     let query = this._normalize(this.state.query);
     let caseSensitive = this.state.caseSensitive;
     let phraseSearch = this.state.phraseSearch;
+    const entireWord = this.state.entireWord;
     let queryLen = query.length;
 
     if (queryLen === 0) {
@@ -257,9 +289,9 @@ class PDFFindController {
     }
 
     if (phraseSearch) {
-      this._calculatePhraseMatch(query, pageIndex, pageContent);
+      this._calculatePhraseMatch(query, pageIndex, pageContent, entireWord);
     } else {
-      this._calculateWordMatch(query, pageIndex, pageContent);
+      this._calculateWordMatch(query, pageIndex, pageContent, entireWord);
     }
 
     this._updatePage(pageIndex);
