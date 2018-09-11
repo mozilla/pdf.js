@@ -510,14 +510,20 @@ class PDFFindController {
 
   _requestMatchesCount() {
     const { pageIdx, matchIdx, } = this.selected;
-    let current = 0;
+    let current = 0, total = this.matchesCountTotal;
     if (matchIdx !== -1) {
       for (let i = 0; i < pageIdx; i++) {
         current += (this.pageMatches[i] && this.pageMatches[i].length) || 0;
       }
       current += matchIdx + 1;
     }
-    return { current, total: this.matchesCountTotal, };
+    // When searching starts, this method may be called before the `pageMatches`
+    // have been counted (in `_calculateMatch`). Ensure that the UI won't show
+    // temporarily broken state when the active find result doesn't make sense.
+    if (current > total) {
+      current = total = 0;
+    }
+    return { current, total, };
   }
 
   _updateUIResultsCount() {
