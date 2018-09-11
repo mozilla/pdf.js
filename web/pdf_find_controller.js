@@ -368,7 +368,6 @@ class PDFFindController {
       this.selected.pageIdx = this.selected.matchIdx = -1;
       this.offset.pageIdx = currentPageIndex;
       this.offset.matchIdx = null;
-      this.hadMatch = false;
       this.resumePageIdx = null;
       this.pageMatches = [];
       this.matchesCountTotal = 0;
@@ -411,7 +410,6 @@ class PDFFindController {
           (previous && offset.matchIdx > 0)) {
         // The simple case; we just have advance the matchIdx to select
         // the next match on the page.
-        this.hadMatch = true;
         offset.matchIdx = (previous ? offset.matchIdx - 1 :
                                       offset.matchIdx + 1);
         this._updateMatch(/* found = */ true);
@@ -432,7 +430,6 @@ class PDFFindController {
 
     if (numMatches) {
       // There were matches for the page, so initialize `matchIdx`.
-      this.hadMatch = true;
       offset.matchIdx = (previous ? numMatches - 1 : 0);
       this._updateMatch(/* found = */ true);
       return true;
