@@ -62,7 +62,6 @@ class PDFFindController {
   }
 
   reset() {
-    this.startedTextExtraction = false;
     this.extractTextPromises = [];
     this.pendingFindMatches = Object.create(null);
     this.active = false; // If active, find results will be highlighted.
@@ -309,11 +308,10 @@ class PDFFindController {
   }
 
   _extractText() {
-    if (this.startedTextExtraction) {
+    // Perform text extraction once if this method is called multiple times.
+    if (this.extractTextPromises.length > 0) {
       return;
     }
-    this.startedTextExtraction = true;
-    this.pageContents.length = 0;
 
     let promise = Promise.resolve();
     for (let i = 0, ii = this.pdfViewer.pagesCount; i < ii; i++) {
