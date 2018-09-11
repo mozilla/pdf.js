@@ -332,7 +332,7 @@ function isSameOrigin(baseUrl, otherUrl) {
 }
 
 // Checks if URLs use one of the whitelisted protocols, e.g. to avoid XSS.
-function isValidProtocol(url) {
+function _isValidProtocol(url) {
   if (!url) {
     return false;
   }
@@ -349,7 +349,8 @@ function isValidProtocol(url) {
 }
 
 /**
- * Attempts to create a valid absolute URL (utilizing `isValidProtocol`).
+ * Attempts to create a valid absolute URL.
+ *
  * @param {URL|string} url - An absolute, or relative, URL.
  * @param {URL|string} baseUrl - An absolute URL.
  * @returns Either a valid {URL}, or `null` otherwise.
@@ -360,7 +361,7 @@ function createValidAbsoluteUrl(url, baseUrl) {
   }
   try {
     var absoluteUrl = baseUrl ? new URL(url, baseUrl) : new URL(url);
-    if (isValidProtocol(absoluteUrl)) {
+    if (_isValidProtocol(absoluteUrl)) {
       return absoluteUrl;
     }
   } catch (ex) { /* `new URL()` will throw on incorrect data. */ }
