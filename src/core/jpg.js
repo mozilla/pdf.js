@@ -14,7 +14,7 @@
  */
 /* eslint-disable no-multi-spaces */
 
-import { warn } from '../shared/util';
+import { assert, warn } from '../shared/util';
 
 let JpegError = (function JpegErrorClosure() {
   function JpegError(msg) {
@@ -1026,7 +1026,7 @@ var JpegImage = (function JpegImageClosure() {
       // out-of-box behaviour when `JpegImage` is used standalone, default to
       // inverting JPEG (CMYK) images if and only if the image data does *not*
       // come from a PDF file and no `decodeTransform` was passed by the user.
-      if (!transform && numComponents === 4 && !isSourcePDF) {
+      if (!isSourcePDF && numComponents === 4 && !transform) {
         transform = new Int32Array([
           -256, 255, -256, 255, -256, 255, -256, 255]);
       }
@@ -1180,6 +1180,10 @@ var JpegImage = (function JpegImageClosure() {
     },
 
     getData({ width, height, forceRGB = false, isSourcePDF = false, }) {
+      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING && !LIB')) {
+        assert(isSourcePDF === true,
+          'JpegImage.getData: Unexpected "isSourcePDF" value for PDF files.');
+      }
       if (this.numComponents > 4) {
         throw new JpegError('Unsupported color mode');
       }
