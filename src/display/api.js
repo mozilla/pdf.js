@@ -888,7 +888,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var internalRenderTask = new InternalRenderTask(complete, params,
                                                       this.objs,
                                                       this.commonObjs,
-                                                      intentState.operatorList,
+                                                      params.operatorList || intentState.operatorList,
                                                       this.pageNumber,
                                                       canvasFactory,
                                                       webGLContext);
