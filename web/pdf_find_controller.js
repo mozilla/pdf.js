@@ -16,7 +16,6 @@
 import { createPromiseCapability } from 'pdfjs-lib';
 import { getCharacterType } from './pdf_find_utils';
 import { getGlobalEventBus } from './dom_events';
-import { scrollIntoView } from './ui_utils';
 
 const FindState = {
   FOUND: 0,
@@ -25,8 +24,6 @@ const FindState = {
   PENDING: 3,
 };
 
-const FIND_SCROLL_OFFSET_TOP = -50;
-const FIND_SCROLL_OFFSET_LEFT = -400;
 const FIND_TIMEOUT = 250; // ms
 
 const CHARACTERS_TO_NORMALIZE = {
@@ -128,26 +125,6 @@ class PDFFindController {
         this._nextMatch();
       }
     });
-  }
-
-  /**
-   * Called from the text layer when match presentation is updated.
-   *
-   * @param {number} pageIndex - The index of the page.
-   * @param {number} matchIndex - The index of the match.
-   * @param {Array} elements - Text layer `div` elements.
-   * @param {number} beginIdx - Start index of the `div` array for the match.
-   */
-  updateMatchPosition(pageIndex, matchIndex, elements, beginIdx) {
-    if (this.selected.matchIdx === matchIndex &&
-        this.selected.pageIdx === pageIndex) {
-      const spot = {
-        top: FIND_SCROLL_OFFSET_TOP,
-        left: FIND_SCROLL_OFFSET_LEFT,
-      };
-      scrollIntoView(elements[beginIdx], spot,
-                     /* skipOverflowHiddenElements = */ true);
-    }
   }
 
   _normalize(text) {
