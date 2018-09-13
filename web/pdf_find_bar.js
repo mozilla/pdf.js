@@ -157,18 +157,20 @@ class PDFFindBar {
     if (!this.findResultsCount) {
       return; // No UI control is provided.
     }
-    let matchesCountMsg = '';
+    let matchesCountMsg = '', limit = MATCHES_COUNT_LIMIT;
 
     if (total) {
-      if (total > MATCHES_COUNT_LIMIT) {
+      if (total > limit) {
         matchesCountMsg = this.l10n.get('find_matches_count_limit', {
-          limit: MATCHES_COUNT_LIMIT.toLocaleString(),
-        }, 'More than {{limit}} matches');
+          n: limit,
+          limit: limit.toLocaleString(),
+        }, 'More than {{limit}} match' + (limit !== 1 ? 'es' : ''));
       } else {
         matchesCountMsg = this.l10n.get('find_matches_count', {
+          n: total,
           current: current.toLocaleString(),
           total: total.toLocaleString(),
-        }, '{{current}} of {{total}} matches');
+        }, '{{current}} of {{total}} match' + (total !== 1 ? 'es' : ''));
       }
     }
     Promise.resolve(matchesCountMsg).then((msg) => {
