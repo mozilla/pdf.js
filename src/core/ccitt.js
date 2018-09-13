@@ -14,7 +14,7 @@
  */
 /* Copyright 1996-2003 Glyph & Cog, LLC
  *
- * The CCIT stream implementation contained in this file is a JavaScript port
+ * The CCITT stream implementation contained in this file is a JavaScript port
  * of XPDF's implementation, made available under the Apache 2.0 open source
  * license.
  */
