@@ -510,7 +510,7 @@ class PDFFindController {
     // When searching starts, this method may be called before the `pageMatches`
     // have been counted (in `_calculateMatch`). Ensure that the UI won't show
     // temporarily broken state when the active find result doesn't make sense.
-    if (current > total) {
+    if (current < 1 || current > total) {
       current = total = 0;
     }
     return { current, total, };
