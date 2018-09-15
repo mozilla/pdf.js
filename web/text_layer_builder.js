@@ -15,8 +15,11 @@
 
 import { getGlobalEventBus } from './dom_events';
 import { renderTextLayer } from 'pdfjs-lib';
+import { scrollIntoView } from './ui_utils';
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
+const MATCH_SCROLL_OFFSET_TOP = -50;
+const MATCH_SCROLL_OFFSET_LEFT = -400;
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -243,9 +246,17 @@ class TextLayerBuilder {
       let isSelected = (isSelectedPage && i === selectedMatchIdx);
       let highlightSuffix = (isSelected ? ' selected' : '');
 
+      // Scroll the selected match into view.
       if (this.findController) {
-        this.findController.updateMatchPosition(pageIdx, i, textDivs,
-                                                begin.divIdx);
+        if (this.findController.selected.matchIdx === i &&
+            this.findController.selected.pageIdx === pageIdx) {
+          const spot = {
+            top: MATCH_SCROLL_OFFSET_TOP,
+            left: MATCH_SCROLL_OFFSET_LEFT,
+          };
+          scrollIntoView(textDivs[begin.divIdx], spot,
+                         /* skipOverflowHiddenElements = */ true);
+        }
       }
 
       // Match inside new div.
