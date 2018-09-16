@@ -212,7 +212,7 @@ PDFViewerApplication.externalServices = {
   },
 
   updateFindMatchesCount(data) {
-    // FirefoxCom.request('updateFindMatchesCount', data);
+    FirefoxCom.request('updateFindMatchesCount', data);
   },
 
   initPassiveLoading(callbacks) {

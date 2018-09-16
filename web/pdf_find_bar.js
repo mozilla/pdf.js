@@ -161,16 +161,33 @@ class PDFFindBar {
 
     if (total) {
       if (total > limit) {
-        matchesCountMsg = this.l10n.get('find_matches_count_limit', {
-          n: limit,
-          limit: limit.toLocaleString(),
-        }, 'More than {{limit}} match' + (limit !== 1 ? 'es' : ''));
+        if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
+          // TODO: Remove this hard-coded `[other]` form once plural support has
+          // been implemented in the mozilla-central specific `l10n.js` file.
+          matchesCountMsg = this.l10n.get('find_matches_count_limit[other]', {
+            limit: limit.toLocaleString(),
+          }, 'More than {{limit}} matches');
+        } else {
+          matchesCountMsg = this.l10n.get('find_matches_count_limit', {
+            n: limit,
+            limit: limit.toLocaleString(),
+          }, 'More than {{limit}} match' + (limit !== 1 ? 'es' : ''));
+        }
       } else {
-        matchesCountMsg = this.l10n.get('find_matches_count', {
-          n: total,
-          current: current.toLocaleString(),
-          total: total.toLocaleString(),
-        }, '{{current}} of {{total}} match' + (total !== 1 ? 'es' : ''));
+        if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
+          // TODO: Remove this hard-coded `[other]` form once plural support has
+          // been implemented in the mozilla-central specific `l10n.js` file.
+          matchesCountMsg = this.l10n.get('find_matches_count[other]', {
+            current: current.toLocaleString(),
+            total: total.toLocaleString(),
+          }, '{{current}} of {{total}} matches');
+        } else {
+          matchesCountMsg = this.l10n.get('find_matches_count', {
+            n: total,
+            current: current.toLocaleString(),
+            total: total.toLocaleString(),
+          }, '{{current}} of {{total}} match' + (total !== 1 ? 'es' : ''));
+        }
       }
     }
     Promise.resolve(matchesCountMsg).then((msg) => {
