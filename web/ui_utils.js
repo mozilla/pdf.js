@@ -56,21 +56,19 @@ function formatL10nValue(text, args) {
  * @implements {IL10n}
  */
 let NullL10n = {
-  getLanguage() {
-    return Promise.resolve('en-us');
+  async getLanguage() {
+    return 'en-us';
   },
 
-  getDirection() {
-    return Promise.resolve('ltr');
+  async getDirection() {
+    return 'ltr';
   },
 
-  get(property, args, fallback) {
-    return Promise.resolve(formatL10nValue(fallback, args));
+  async get(property, args, fallback) {
+    return formatL10nValue(fallback, args);
   },
 
-  translate(element) {
-    return Promise.resolve();
-  },
+  async translate(element) { },
 };
 
 /**
@@ -683,8 +681,9 @@ let animationStarted = new Promise(function (resolve) {
  * used.
  */
 class EventBus {
-  constructor() {
+  constructor({ dispatchToDOM = false, } = {}) {
     this._listeners = Object.create(null);
+    this._dispatchToDOM = dispatchToDOM === true;
   }
 
   on(eventName, listener) {
@@ -708,6 +707,9 @@ class EventBus {
   dispatch(eventName) {
     let eventListeners = this._listeners[eventName];
     if (!eventListeners || eventListeners.length === 0) {
+      if (this._dispatchToDOM) {
+        this._dispatchDOMEvent(eventName);
+      }
       return;
     }
     // Passing all arguments after the eventName to the listeners.
@@ -717,6 +719,35 @@ class EventBus {
     eventListeners.slice(0).forEach(function (listener) {
       listener.apply(null, args);
     });
+    if (this._dispatchToDOM) {
+      this._dispatchDOMEvent(eventName, args);
+    }
+  }
+
+  /**
+   * @private
+   */
+  _dispatchDOMEvent(eventName, args = null) {
+    if (!this._dispatchToDOM) {
+      return;
+    }
+    const details = Object.create(null);
+    if (args && args.length > 0) {
+      const obj = args[0];
+      for (let key in obj) {
+        const value = obj[key];
+        if (key === 'source') {
+          if (value === window || value === document) {
+            return; // No need to re-dispatch (already) global events.
+          }
+          continue; // Ignore the `source` property.
+        }
+        details[key] = value;
+      }
+    }
+    const event = document.createEvent('CustomEvent');
+    event.initCustomEvent(eventName, true, true, details);
+    document.dispatchEvent(event);
   }
 }
 

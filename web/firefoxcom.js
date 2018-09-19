@@ -124,13 +124,13 @@ class DownloadManager {
 }
 
 class FirefoxPreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
+  async _writeToStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('setPreferences', prefObj, resolve);
     });
   }
 
-  _readFromStorage(prefObj) {
+  async _readFromStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('getPreferences', prefObj, function(prefStr) {
         let readPrefs = JSON.parse(prefStr);
@@ -145,21 +145,20 @@ class MozL10n {
     this.mozL10n = mozL10n;
   }
 
-  getLanguage() {
-    return Promise.resolve(this.mozL10n.getLanguage());
+  async getLanguage() {
+    return this.mozL10n.getLanguage();
   }
 
-  getDirection() {
-    return Promise.resolve(this.mozL10n.getDirection());
+  async getDirection() {
+    return this.mozL10n.getDirection();
   }
 
-  get(property, args, fallback) {
-    return Promise.resolve(this.mozL10n.get(property, args, fallback));
+  async get(property, args, fallback) {
+    return this.mozL10n.get(property, args, fallback);
   }
 
-  translate(element) {
+  async translate(element) {
     this.mozL10n.translate(element);
-    return Promise.resolve();
   }
 }
 
@@ -168,7 +167,8 @@ class MozL10n {
     'find',
     'findagain',
     'findhighlightallchange',
-    'findcasesensitivitychange'
+    'findcasesensitivitychange',
+    'findentirewordchange',
   ];
   let handleEvent = function(evt) {
     if (!PDFViewerApplication.initialized) {
@@ -180,13 +180,14 @@ class MozL10n {
       query: evt.detail.query,
       phraseSearch: true,
       caseSensitive: !!evt.detail.caseSensitive,
+      entireWord: !!evt.detail.entireWord,
       highlightAll: !!evt.detail.highlightAll,
       findPrevious: !!evt.detail.findPrevious,
     });
   };
 
-  for (let i = 0, len = events.length; i < len; i++) {
-    window.addEventListener(events[i], handleEvent);
+  for (let event of events) {
+    window.addEventListener(event, handleEvent);
   }
 })();
 
@@ -208,6 +209,10 @@ FirefoxComDataRangeTransport.prototype.abort =
 PDFViewerApplication.externalServices = {
   updateFindControlState(data) {
     FirefoxCom.request('updateFindControlState', data);
+  },
+
+  updateFindMatchesCount(data) {
+    FirefoxCom.request('updateFindMatchesCount', data);
   },
 
   initPassiveLoading(callbacks) {

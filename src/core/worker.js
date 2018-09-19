@@ -703,6 +703,10 @@ var WorkerMessageHandler = {
       }
     );
 
+    handler.on('GetPermissions', function(data) {
+      return pdfManager.ensureCatalog('permissions');
+    });
+
     handler.on('GetMetadata',
       function wphSetupGetMetadata(data) {
         return Promise.all([pdfManager.ensureDoc('documentInfo'),

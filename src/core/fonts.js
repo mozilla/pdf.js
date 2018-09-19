@@ -39,18 +39,24 @@ import { IdentityCMap } from './cmap';
 import { Stream } from './stream';
 import { Type1Parser } from './type1_parser';
 
-// Unicode Private Use Area
-var PRIVATE_USE_OFFSET_START = 0xE000;
-var PRIVATE_USE_OFFSET_END = 0xF8FF;
-var SKIP_PRIVATE_USE_RANGE_F000_TO_F01F = false;
+ // Unicode Private Use Areas:
+const PRIVATE_USE_AREAS = [
+  [0xE000, 0xF8FF],     // BMP (0)
+  [0x100000, 0x10FFFD], // PUP (16)
+];
 
 // PDF Glyph Space Units are one Thousandth of a TextSpace Unit
 // except for Type 3 fonts
 var PDF_GLYPH_SPACE_UNITS = 1000;
 
-// Accented characters are not displayed properly on Windows, using this flag
-// to control analysis of seac charstrings.
-var SEAC_ANALYSIS_ENABLED = false;
+// Accented characters have issues on Windows and Linux. When this flag is
+// enabled glyphs that use seac and seac style endchar operators are truncated
+// and we instead just store the glyph id's of the base glyph and its accent to
+// be drawn individually.
+// Linux (freetype) requires that when a seac style endchar is used
+// that the charset must be a predefined one, however we build a
+// custom one. Windows just refuses to draw glyphs with seac operators.
+var SEAC_ANALYSIS_ENABLED = true;
 
 var FontFlags = {
   FixedPitch: 1,
@@ -444,37 +450,6 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
   return OpenTypeFileBuilder;
 })();
 
-// Problematic Unicode characters in the fonts that needs to be moved to avoid
-// issues when they are painted on the canvas, e.g. complex-script shaping or
-// control/whitespace characters. The ranges are listed in pairs: the first item
-// is a code of the first problematic code, the second one is the next
-// non-problematic code. The ranges must be in sorted order.
-var ProblematicCharRanges = new Int32Array([
-  // Control characters.
-  0x0000, 0x0020,
-  0x007F, 0x00A1,
-  0x00AD, 0x00AE,
-  // Chars that is used in complex-script shaping.
-  0x0600, 0x0780,
-  0x08A0, 0x10A0,
-  0x1780, 0x1800,
-  0x1C00, 0x1C50,
-  // General punctuation chars.
-  0x2000, 0x2010,
-  0x2011, 0x2012,
-  0x2028, 0x2030,
-  0x205F, 0x2070,
-  0x25CC, 0x25CD,
-  0x3000, 0x3001,
-  0x3164, 0x3165,
-  // Chars that is used in complex-script shaping.
-  0xAA60, 0xAA80,
-  // Unicode high surrogates.
-  0xD800, 0xE000,
-  // Specials Unicode block.
-  0xFFF0, 0x10000
-]);
-
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -755,91 +730,46 @@ var Font = (function FontClosure() {
   }
 
   /**
-   * Helper function for `adjustMapping`.
-   * @return {boolean}
-   */
-  function isProblematicUnicodeLocation(code) {
-    // Using binary search to find a range start.
-    var i = 0, j = ProblematicCharRanges.length - 1;
-    while (i < j) {
-      var c = (i + j + 1) >> 1;
-      if (code < ProblematicCharRanges[c]) {
-        j = c - 1;
-      } else {
-        i = c;
-      }
-    }
-    // Even index means code in problematic range.
-    return !(i & 1);
-  }
-
-  /**
-   * Rebuilds the char code to glyph ID map by trying to replace the char codes
-   * with their unicode value. It also moves char codes that are in known
-   * problematic locations.
+   * Rebuilds the char code to glyph ID map by moving all char codes to the
+   * private use area. This is done to avoid issues with various problematic
+   * unicode areas where either a glyph won't be drawn or is deformed by a
+   * shaper.
    * @return {Object} Two properties:
    * 'toFontChar' - maps original char codes(the value that will be read
    * from commands such as show text) to the char codes that will be used in the
    * font that we build
    * 'charCodeToGlyphId' - maps the new font char codes to glyph ids
    */
-  function adjustMapping(charCodeToGlyphId, properties, missingGlyphs) {
-    var toUnicode = properties.toUnicode;
-    var isSymbolic = !!(properties.flags & FontFlags.Symbolic);
-    var isIdentityUnicode =
-      properties.toUnicode instanceof IdentityToUnicodeMap;
+  function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId) {
     var newMap = Object.create(null);
     var toFontChar = [];
-    var usedFontCharCodes = [];
-    var nextAvailableFontCharCode = PRIVATE_USE_OFFSET_START;
+    var privateUseAreaIndex = 0;
+    var nextAvailableFontCharCode = PRIVATE_USE_AREAS[privateUseAreaIndex][0];
+    var privateUseOffetEnd = PRIVATE_USE_AREAS[privateUseAreaIndex][1];
     for (var originalCharCode in charCodeToGlyphId) {
       originalCharCode |= 0;
       var glyphId = charCodeToGlyphId[originalCharCode];
       // For missing glyphs don't create the mappings so the glyph isn't
       // drawn.
-      if (missingGlyphs[glyphId]) {
+      if (!hasGlyph(glyphId)) {
         continue;
       }
-      var fontCharCode = originalCharCode;
-      // First try to map the value to a unicode position if a non identity map
-      // was created.
-      var hasUnicodeValue = false;
-      if (!isIdentityUnicode && toUnicode.has(originalCharCode)) {
-        hasUnicodeValue = true;
-        var unicode = toUnicode.get(fontCharCode);
-        // TODO: Try to map ligatures to the correct spot.
-        if (unicode.length === 1) {
-          fontCharCode = unicode.charCodeAt(0);
+      if (nextAvailableFontCharCode > privateUseOffetEnd) {
+        privateUseAreaIndex++;
+        if (privateUseAreaIndex >= PRIVATE_USE_AREAS.length) {
+          warn('Ran out of space in font private use area.');
+          break;
         }
+        nextAvailableFontCharCode = PRIVATE_USE_AREAS[privateUseAreaIndex][0];
+        privateUseOffetEnd = PRIVATE_USE_AREAS[privateUseAreaIndex][1];
       }
-      // Try to move control characters, special characters and already mapped
-      // characters to the private use area since they will not be drawn by
-      // canvas if left in their current position. Also, move characters if the
-      // font was symbolic and there is only an identity unicode map since the
-      // characters probably aren't in the correct position (fixes an issue
-      // with firefox and thuluthfont).
-      if ((usedFontCharCodes[fontCharCode] !== undefined ||
-           isProblematicUnicodeLocation(fontCharCode) ||
-           (isSymbolic && !hasUnicodeValue))) {
-        // Loop to try and find a free spot in the private use area.
-        do {
-          if (nextAvailableFontCharCode > PRIVATE_USE_OFFSET_END) {
-            warn('Ran out of space in font private use area.');
-            break;
-          }
-          fontCharCode = nextAvailableFontCharCode++;
-
-          if (SKIP_PRIVATE_USE_RANGE_F000_TO_F01F && fontCharCode === 0xF000) {
-            fontCharCode = 0xF020;
-            nextAvailableFontCharCode = fontCharCode + 1;
-          }
-
-        } while (usedFontCharCodes[fontCharCode] !== undefined);
+      var fontCharCode = nextAvailableFontCharCode++;
+      if (glyphId === 0) {
+        glyphId = newGlyphZeroId;
       }
 
       newMap[fontCharCode] = glyphId;
       toFontChar[originalCharCode] = fontCharCode;
-      usedFontCharCodes[fontCharCode] = true;
     }
     return {
       toFontChar,
@@ -1075,6 +1005,11 @@ var Font = (function FontClosure() {
           throw new FormatError(
             'Unicode ranges Bits > 123 are reserved for internal usage');
         }
+      }
+      if (lastCharIndex > 0xFFFF) {
+        // OS2 only supports a 16 bit int. The spec says if supplementary
+        // characters are used the field should just be set to 0xFFFF.
+        lastCharIndex = 0xFFFF;
       }
     } else {
       // TODO
@@ -1863,14 +1798,14 @@ var Font = (function FontClosure() {
             data[offset + 1] = (value >> 1) & 0xFF;
           };
         }
+        // The first glyph is duplicated.
+        var numGlyphsOut = dupFirstEntry ? numGlyphs + 1 : numGlyphs;
         var locaData = loca.data;
-        var locaDataSize = itemSize * (1 + numGlyphs);
-        // is loca.data too short or long?
-        if (locaData.length !== locaDataSize) {
-          locaData = new Uint8Array(locaDataSize);
-          locaData.set(loca.data.subarray(0, locaDataSize));
-          loca.data = locaData;
-        }
+        var locaDataSize = itemSize * (1 + numGlyphsOut);
+        // Resize loca table to account for duplicated glyph.
+        locaData = new Uint8Array(locaDataSize);
+        locaData.set(loca.data.subarray(0, locaDataSize));
+        loca.data = locaData;
         // removing the invalid glyphs
         var oldGlyfData = glyf.data;
         var oldGlyfDataLength = oldGlyfData.length;
@@ -1880,10 +1815,7 @@ var Font = (function FontClosure() {
         var missingGlyphs = Object.create(null);
         itemEncode(locaData, 0, writeOffset);
         var i, j;
-        // When called with dupFirstEntry the number of glyphs has already been
-        // increased but there isn't data yet for the duplicated glyph.
-        var locaCount = dupFirstEntry ? numGlyphs - 1 : numGlyphs;
-        for (i = 0, j = itemSize; i < locaCount; i++, j += itemSize) {
+        for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
           var endOffset = itemDecode(locaData, j);
           // The spec says the offsets should be in ascending order, however
           // some fonts use the offset of 0 to mark a glyph as missing.
@@ -1921,11 +1853,14 @@ var Font = (function FontClosure() {
           // to have single glyph with one point
           var simpleGlyph = new Uint8Array(
             [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0]);
-          for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
+          for (i = 0, j = itemSize; i < numGlyphsOut; i++, j += itemSize) {
             itemEncode(locaData, j, simpleGlyph.length);
           }
           glyf.data = simpleGlyph;
         } else if (dupFirstEntry) {
+          // Browsers will not display a glyph at position 0. Typically glyph 0
+          // is notdef, but a number of fonts put a valid glyph there so it must
+          // be duplicated and appended.
           var firstEntryLength = itemDecode(locaData, itemSize);
           if (newGlyfData.length > firstEntryLength + writeOffset) {
             glyf.data = newGlyfData.subarray(0, firstEntryLength + writeOffset);
@@ -2382,7 +2317,15 @@ var Font = (function FontClosure() {
 
       font.pos = (font.start || 0) + tables['maxp'].offset;
       var version = font.getInt32();
-      var numGlyphs = font.getUint16();
+      const numGlyphs = font.getUint16();
+      // Glyph 0 is duplicated and appended.
+      let numGlyphsOut = numGlyphs + 1;
+      let dupFirstEntry = true;
+      if (numGlyphsOut > 0xFFFF) {
+        dupFirstEntry = false;
+        numGlyphsOut = numGlyphs;
+        warn('Not enough space in glyfs to duplicate first glyph.');
+      }
       var maxFunctionDefs = 0;
       var maxSizeOfInstructions = 0;
       if (version >= 0x00010000 && tables['maxp'].length >= 22) {
@@ -2399,15 +2342,8 @@ var Font = (function FontClosure() {
         maxSizeOfInstructions = font.getUint16();
       }
 
-      var dupFirstEntry = false;
-      if (properties.type === 'CIDFontType2' && properties.toUnicode &&
-          properties.toUnicode.get(0) > '\u0000') {
-        // oracle's defect (see 3427), duplicating first entry
-        dupFirstEntry = true;
-        numGlyphs++;
-        tables['maxp'].data[4] = numGlyphs >> 8;
-        tables['maxp'].data[5] = numGlyphs & 255;
-      }
+      tables['maxp'].data[4] = numGlyphsOut >> 8;
+      tables['maxp'].data[5] = numGlyphsOut & 255;
 
       var hintsValid = sanitizeTTPrograms(tables['fpgm'], tables['prep'],
                                           tables['cvt '], maxFunctionDefs);
@@ -2419,7 +2355,7 @@ var Font = (function FontClosure() {
 
       // Ensure the hmtx table contains the advance width and
       // sidebearings information for numGlyphs in the maxp table
-      sanitizeMetrics(font, tables['hhea'], tables['hmtx'], numGlyphs);
+      sanitizeMetrics(font, tables['hhea'], tables['hmtx'], numGlyphsOut);
 
       if (!tables['head']) {
         throw new FormatError('Required "head" table is not found');
@@ -2472,11 +2408,14 @@ var Font = (function FontClosure() {
 
       // The 'post' table has glyphs names.
       if (tables['post']) {
-        var valid = readPostScriptTable(tables['post'], properties, numGlyphs);
-        if (!valid) {
-          tables['post'] = null;
-        }
+        readPostScriptTable(tables['post'], properties, numGlyphs);
       }
+
+      // The original 'post' table is not needed, replace it.
+      tables['post'] = {
+        tag: 'post',
+        data: createPostTable(properties),
+      };
 
       var charCodeToGlyphId = [], charCode;
 
@@ -2504,12 +2443,6 @@ var Font = (function FontClosure() {
             charCodeToGlyphId[charCode] = glyphId;
           }
         });
-        if (dupFirstEntry && (isCidToGidMapEmpty || !charCodeToGlyphId[0])) {
-          // We don't duplicate the first entry in the `charCodeToGlyphId` map
-          // if the font has a `CIDToGIDMap` which has already mapped the first
-          // entry to a non-zero `glyphId` (fixes issue7544.pdf).
-          charCodeToGlyphId[0] = numGlyphs - 1;
-        }
       } else {
         // Most of the following logic in this code branch is based on the
         // 9.6.6.4 of the PDF spec.
@@ -2620,13 +2553,21 @@ var Font = (function FontClosure() {
         charCodeToGlyphId[0] = 0;
       }
 
+      // Typically glyph 0 is duplicated and the mapping must be updated, but if
+      // there isn't enough room to duplicate, the glyph id is left the same. In
+      // this case, glyph 0 may not work correctly, but that is better than
+      // having the whole font fail.
+      let glyphZeroId = numGlyphsOut - 1;
+      if (!dupFirstEntry) {
+        glyphZeroId = 0;
+      }
+
       // Converting glyphs and ids into font's cmap table
-      var newMapping = adjustMapping(charCodeToGlyphId, properties,
-                                     missingGlyphs);
+      var newMapping = adjustMapping(charCodeToGlyphId, hasGlyph, glyphZeroId);
       this.toFontChar = newMapping.toFontChar;
       tables['cmap'] = {
         tag: 'cmap',
-        data: createCmapTable(newMapping.charCodeToGlyphId, numGlyphs),
+        data: createCmapTable(newMapping.charCodeToGlyphId, numGlyphsOut),
       };
 
       if (!tables['OS/2'] || !validateOS2Table(tables['OS/2'])) {
@@ -2637,14 +2578,6 @@ var Font = (function FontClosure() {
         };
       }
 
-      // Rewrite the 'post' table if needed
-      if (!tables['post']) {
-        tables['post'] = {
-          tag: 'post',
-          data: createPostTable(properties),
-        };
-      }
-
       if (!isTrueType) {
         try {
           // Trying to repair CFF file
@@ -2652,6 +2585,7 @@ var Font = (function FontClosure() {
           var parser = new CFFParser(cffFile, properties,
                                      SEAC_ANALYSIS_ENABLED);
           cff = parser.parse();
+          cff.duplicateFirstGlyph();
           var compiler = new CFFCompiler(cff);
           tables['CFF '].data = compiler.compile();
         } catch (e) {
@@ -2688,8 +2622,16 @@ var Font = (function FontClosure() {
         adjustToUnicode(properties, properties.builtInEncoding);
       }
 
+      // Type 1 fonts have a notdef inserted at the beginning, so glyph 0
+      // becomes glyph 1. In a CFF font glyph 0 is appended to the end of the
+      // char strings.
+      let glyphZeroId = 1;
+      if (font instanceof CFFFont) {
+        glyphZeroId = font.numGlyphs - 1;
+      }
       var mapping = font.getGlyphMapping(properties);
-      var newMapping = adjustMapping(mapping, properties, Object.create(null));
+      var newMapping = adjustMapping(mapping, font.hasGlyphId.bind(font),
+                                     glyphZeroId);
       this.toFontChar = newMapping.toFontChar;
       var numGlyphs = font.numGlyphs;
 
@@ -2927,12 +2869,14 @@ var Font = (function FontClosure() {
         var seac = this.seacMap[charcode];
         fontCharCode = seac.baseFontCharCode;
         accent = {
-          fontChar: String.fromCharCode(seac.accentFontCharCode),
+          fontChar: String.fromCodePoint(seac.accentFontCharCode),
           offset: seac.accentOffset,
         };
       }
 
-      var fontChar = String.fromCharCode(fontCharCode);
+      var fontChar = typeof fontCharCode === 'number' ?
+                      String.fromCodePoint(fontCharCode) :
+                      '';
 
       var glyph = this.glyphCache[charcode];
       if (!glyph ||
@@ -3283,6 +3227,18 @@ var Type1Font = (function Type1FontClosure() {
       return type1FontGlyphMapping(properties, builtInEncoding, glyphNames);
     },
 
+    hasGlyphId: function Type1Font_hasGlyphID(id) {
+      if (id < 0 || id >= this.numGlyphs) {
+        return false;
+      }
+      if (id === 0) {
+        // notdef is always defined.
+        return true;
+      }
+      var glyph = this.charstrings[id - 1];
+      return glyph.charstring.length > 0;
+    },
+
     getSeacs: function Type1Font_getSeacs(charstrings) {
       var i, ii;
       var seacMap = [];
@@ -3382,14 +3338,7 @@ var Type1Font = (function Type1FontClosure() {
       var charStringsIndex = new CFFIndex();
       charStringsIndex.add([0x8B, 0x0E]); // .notdef
       for (i = 0; i < count; i++) {
-        var glyph = glyphs[i];
-        // If the CharString outline is empty, replace it with .notdef to
-        // prevent OTS from rejecting the font (fixes bug1252420.pdf).
-        if (glyph.length === 0) {
-          charStringsIndex.add([0x8B, 0x0E]); // .notdef
-          continue;
-        }
-        charStringsIndex.add(glyph);
+        charStringsIndex.add(glyphs[i]);
       }
       cff.charStrings = charStringsIndex;
 
@@ -3448,6 +3397,7 @@ var CFFFont = (function CFFFontClosure() {
 
     var parser = new CFFParser(file, properties, SEAC_ANALYSIS_ENABLED);
     this.cff = parser.parse();
+    this.cff.duplicateFirstGlyph();
     var compiler = new CFFCompiler(this.cff);
     this.seacs = this.cff.seacs;
     try {
@@ -3498,37 +3448,20 @@ var CFFFont = (function CFFFontClosure() {
       charCodeToGlyphId = type1FontGlyphMapping(properties, encoding, charsets);
       return charCodeToGlyphId;
     },
+    hasGlyphId: function CFFFont_hasGlyphID(id) {
+      return this.cff.hasGlyphId(id);
+    },
   };
 
   return CFFFont;
 })();
 
-// Workaround for seac on Windows.
-(function checkSeacSupport() {
-  if (typeof navigator !== 'undefined' && /Windows/.test(navigator.userAgent)) {
-    SEAC_ANALYSIS_ENABLED = true;
-  }
-})();
-
-// Workaround for Private Use Area characters in Chrome on Windows
-// http://code.google.com/p/chromium/issues/detail?id=122465
-// https://github.com/mozilla/pdf.js/issues/1689
-(function checkChromeWindows() {
-  if (typeof navigator !== 'undefined' &&
-      /Windows.*Chrome/.test(navigator.userAgent)) {
-    SKIP_PRIVATE_USE_RANGE_F000_TO_F01F = true;
-  }
-})();
-
 export {
   SEAC_ANALYSIS_ENABLED,
-  PRIVATE_USE_OFFSET_START,
-  PRIVATE_USE_OFFSET_END,
   ErrorFont,
   Font,
   FontFlags,
   ToUnicodeMap,
   IdentityToUnicodeMap,
-  ProblematicCharRanges,
   getFontType,
 };

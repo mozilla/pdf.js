@@ -14,7 +14,7 @@
  */
 /* eslint-disable no-multi-spaces */
 
-import { warn } from '../shared/util';
+import { assert, warn } from '../shared/util';
 
 let JpegError = (function JpegErrorClosure() {
   function JpegError(msg) {
@@ -975,7 +975,7 @@ var JpegImage = (function JpegImageClosure() {
       this.numComponents = this.components.length;
     },
 
-    _getLinearizedBlockData: function getLinearizedBlockData(width, height) {
+    _getLinearizedBlockData(width, height, isSourcePDF = false) {
       var scaleX = this.width / width, scaleY = this.height / height;
 
       var component, componentScaleX, componentScaleY, blocksPerScanline;
@@ -1013,7 +1013,24 @@ var JpegImage = (function JpegImageClosure() {
       }
 
       // decodeTransform contains pairs of multiplier (-256..256) and additive
-      const transform = this._decodeTransform;
+      let transform = this._decodeTransform;
+
+      // In PDF files, JPEG images with CMYK colour spaces are usually inverted
+      // (this can be observed by extracting the raw image data).
+      // Since the conversion algorithms (see below) were written primarily for
+      // the PDF use-cases, attempting to use `JpegImage` to parse standalone
+      // JPEG (CMYK) images may thus result in inverted images (see issue 9513).
+      //
+      // Unfortunately it's not (always) possible to tell, from the image data
+      // alone, if it needs to be inverted. Thus in an attempt to provide better
+      // out-of-box behaviour when `JpegImage` is used standalone, default to
+      // inverting JPEG (CMYK) images if and only if the image data does *not*
+      // come from a PDF file and no `decodeTransform` was passed by the user.
+      if (!isSourcePDF && numComponents === 4 && !transform) {
+        transform = new Int32Array([
+          -256, 255, -256, 255, -256, 255, -256, 255]);
+      }
+
       if (transform) {
         for (i = 0; i < dataLength;) {
           for (j = 0, k = 0; j < numComponents; j++, i++, k += 2) {
@@ -1024,7 +1041,7 @@ var JpegImage = (function JpegImageClosure() {
       return data;
     },
 
-    _isColorConversionNeeded() {
+    get _isColorConversionNeeded() {
       if (this.adobe) {
         // The adobe transform marker overrides any previous setting.
         return !!this.adobe.transformCode;
@@ -1162,14 +1179,18 @@ var JpegImage = (function JpegImageClosure() {
       return data.subarray(0, offset);
     },
 
-    getData: function getData(width, height, forceRGBoutput) {
+    getData({ width, height, forceRGB = false, isSourcePDF = false, }) {
+      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING && !LIB')) {
+        assert(isSourcePDF === true,
+          'JpegImage.getData: Unexpected "isSourcePDF" value for PDF files.');
+      }
       if (this.numComponents > 4) {
         throw new JpegError('Unsupported color mode');
       }
-      // type of data: Uint8Array(width * height * numComponents)
-      var data = this._getLinearizedBlockData(width, height);
+      // Type of data: Uint8ClampedArray(width * height * numComponents)
+      var data = this._getLinearizedBlockData(width, height, isSourcePDF);
 
-      if (this.numComponents === 1 && forceRGBoutput) {
+      if (this.numComponents === 1 && forceRGB) {
         var dataLength = data.length;
         var rgbData = new Uint8ClampedArray(dataLength * 3);
         var offset = 0;
@@ -1180,15 +1201,15 @@ var JpegImage = (function JpegImageClosure() {
           rgbData[offset++] = grayColor;
         }
         return rgbData;
-      } else if (this.numComponents === 3 && this._isColorConversionNeeded()) {
+      } else if (this.numComponents === 3 && this._isColorConversionNeeded) {
         return this._convertYccToRgb(data);
       } else if (this.numComponents === 4) {
-        if (this._isColorConversionNeeded()) {
-          if (forceRGBoutput) {
+        if (this._isColorConversionNeeded) {
+          if (forceRGB) {
             return this._convertYcckToRgb(data);
           }
           return this._convertYcckToCmyk(data);
-        } else if (forceRGBoutput) {
+        } else if (forceRGB) {
           return this._convertCmykToRgb(data);
         }
       }

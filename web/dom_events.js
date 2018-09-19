@@ -129,12 +129,13 @@ function attachDOMEventsToEventBus(eventBus) {
 }
 
 let globalEventBus = null;
-function getGlobalEventBus() {
-  if (globalEventBus) {
-    return globalEventBus;
+function getGlobalEventBus(dispatchToDOM = false) {
+  if (!globalEventBus) {
+    globalEventBus = new EventBus({ dispatchToDOM, });
+    if (!dispatchToDOM) {
+      attachDOMEventsToEventBus(globalEventBus);
+    }
   }
-  globalEventBus = new EventBus();
-  attachDOMEventsToEventBus(globalEventBus);
   return globalEventBus;
 }
 

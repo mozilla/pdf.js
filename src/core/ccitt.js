@@ -12,6 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* Copyright 1996-2003 Glyph & Cog, LLC
+ *
+ * The CCITT stream implementation contained in this file is a JavaScript port
+ * of XPDF's implementation, made available under the Apache 2.0 open source
+ * license.
+ */
 
 /**
  * @typedef {Object} CCITTFaxDecoderSource
