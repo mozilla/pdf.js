@@ -746,6 +746,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
       var vertical = font.vertical;
       var widthAdvanceScale = fontSize * current.fontMatrix[0];
 
+      var prevCharacter = '';
+
       var x = 0, i;
       for (i = 0; i < glyphsLength; ++i) {
         var glyph = glyphs[i];
@@ -771,9 +773,12 @@ SVGGraphics = (function SVGGraphicsClosure() {
           // might actually map to a different glyph.
           continue;
         }
-        current.xcoords.push(current.x + x * textHScale);
-        current.tspan.textContent += character;
+        if (!(prevCharacter.trim() === '' && character.trim() === '')) {
+          current.xcoords.push(current.x + x * textHScale);
+          current.tspan.textContent += character;
+        }
         x += charWidth;
+        prevCharacter = character;
       }
       if (vertical) {
         current.y -= x * textHScale;
