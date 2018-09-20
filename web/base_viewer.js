@@ -538,20 +538,16 @@ class BaseViewer {
     throw new Error('Not implemented: _scrollIntoView');
   }
 
-  _setScaleDispatchEvent(newScale, newValue, preset = false) {
-    this.eventBus.dispatch('scalechanging', {
-      source: this,
-      scale: newScale,
-      presetValue: preset ? newValue : undefined,
-    });
-  }
-
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {
     this._currentScaleValue = newValue.toString();
 
     if (isSameScale(this._currentScale, newScale)) {
       if (preset) {
-        this._setScaleDispatchEvent(newScale, newValue, true);
+        this.eventBus.dispatch('scalechanging', {
+          source: this,
+          scale: newScale,
+          presetValue: newValue,
+        });
       }
       return;
     }
@@ -576,7 +572,11 @@ class BaseViewer {
       });
     }
 
-    this._setScaleDispatchEvent(newScale, newValue, preset);
+    this.eventBus.dispatch('scalechanging', {
+      source: this,
+      scale: newScale,
+      presetValue: preset ? newValue : undefined,
+    });
 
     if (this.defaultRenderingQueue) {
       this.update();
