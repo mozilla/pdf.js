@@ -346,13 +346,13 @@ var PDFViewerApplication = {
       }
     });
 
-    container.addEventListener('pagesinit', function () {
+    document.addEventListener('pagesinit', function () {
       // We can use pdfViewer now, e.g. let's change default scale.
       pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
     });
 
-    container.addEventListener('pagechange', function (evt) {
-      var page = evt.pageNumber;
+    document.addEventListener('pagechanging', function (evt) {
+      var page = evt.detail.pageNumber;
       var numPages = PDFViewerApplication.pagesCount;
 
       document.getElementById('pageNumber').value = page;

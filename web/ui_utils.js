@@ -732,9 +732,6 @@ class EventBus {
    * @private
    */
   _dispatchDOMEvent(eventName, args = null) {
-    if (!this._dispatchToDOM) {
-      return;
-    }
     const details = Object.create(null);
     if (args && args.length > 0) {
       const obj = args[0];
@@ -753,6 +750,14 @@ class EventBus {
     event.initCustomEvent(eventName, true, true, details);
     document.dispatchEvent(event);
   }
+}
+
+let globalEventBus = null;
+function getGlobalEventBus(dispatchToDOM = false) {
+  if (!globalEventBus) {
+    globalEventBus = new EventBus({ dispatchToDOM, });
+  }
+  return globalEventBus;
 }
 
 function clamp(v, min, max) {
@@ -868,6 +873,7 @@ export {
   TextLayerMode,
   NullL10n,
   EventBus,
+  getGlobalEventBus,
   ProgressBar,
   getPDFFileNameFromURL,
   noContextMenuHandler,

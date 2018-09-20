@@ -14,15 +14,14 @@
  */
 
 import {
-  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, isPortraitOrientation,
-  isValidRotation, MAX_AUTO_SCALE, moveToEndOfArray, NullL10n,
-  PresentationModeState, RendererType, SCROLLBAR_PADDING, TextLayerMode,
-  UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
+  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getGlobalEventBus,
+  isPortraitOrientation, isValidRotation, MAX_AUTO_SCALE, moveToEndOfArray,
+  NullL10n, PresentationModeState, RendererType, SCROLLBAR_PADDING,
+  TextLayerMode, UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
 import { createPromiseCapability } from 'pdfjs-lib';
-import { getGlobalEventBus } from './dom_events';
 import { PDFPageView } from './pdf_page_view';
 import { SimpleLinkService } from './pdf_link_service';
 import { TextLayerBuilder } from './text_layer_builder';
@@ -232,15 +231,13 @@ class BaseViewer {
         `${this._name}._setCurrentPageNumber: "${val}" is out of bounds.`);
       return;
     }
+    this._currentPageNumber = val;
 
-    let arg = {
+    this.eventBus.dispatch('pagechanging', {
       source: this,
       pageNumber: val,
       pageLabel: this._pageLabels && this._pageLabels[val - 1],
-    };
-    this._currentPageNumber = val;
-    this.eventBus.dispatch('pagechanging', arg);
-    this.eventBus.dispatch('pagechange', arg);
+    });
 
     if (resetCurrentPageView) {
       this._resetCurrentPageView();
@@ -542,13 +539,11 @@ class BaseViewer {
   }
 
   _setScaleDispatchEvent(newScale, newValue, preset = false) {
-    let arg = {
+    this.eventBus.dispatch('scalechanging', {
       source: this,
       scale: newScale,
       presetValue: preset ? newValue : undefined,
-    };
-    this.eventBus.dispatch('scalechanging', arg);
-    this.eventBus.dispatch('scalechange', arg);
+    });
   }
 
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {

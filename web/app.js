@@ -15,10 +15,10 @@
 /* globals PDFBug, Stats */
 
 import {
-  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isValidRotation,
-  MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
-  parseQueryString, PresentationModeState, ProgressBar, RendererType,
-  TextLayerMode
+  animationStarted, DEFAULT_SCALE_VALUE, getGlobalEventBus,
+  getPDFFileNameFromURL, isValidRotation, MAX_SCALE, MIN_SCALE,
+  noContextMenuHandler, normalizeWheelEventDelta, parseQueryString,
+  PresentationModeState, ProgressBar, RendererType, TextLayerMode
 } from './ui_utils';
 import {
   build, createObjectURL, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
@@ -30,7 +30,6 @@ import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { PDFSidebar, SidebarView } from './pdf_sidebar';
 import { AppOptions } from './app_options';
-import { getGlobalEventBus } from './dom_events';
 import { OverlayManager } from './overlay_manager';
 import { PasswordPrompt } from './password_prompt';
 import { PDFAttachmentViewer } from './pdf_attachment_viewer';
@@ -869,9 +868,6 @@ let PDFViewerApplication = {
 
       firstPagePromise.then(() => {
         this.eventBus.dispatch('documentloaded', { source: this, });
-        // TODO: Remove the following event, i.e. 'documentload',
-        //       once the mozilla-central tests have been updated.
-        this.eventBus.dispatch('documentload', { source: this, });
       });
     });
 
