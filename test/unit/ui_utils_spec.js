@@ -272,13 +272,17 @@ describe('ui_utils', function() {
       eventBus.on('test', function() {
         count++;
       });
-      document.addEventListener('test', function() {
-        count++;
-      });
+      function domEventListener() {
+        done.fail('shall not dispatch DOM event.');
+      }
+      document.addEventListener('test', domEventListener);
+
       eventBus.dispatch('test');
 
       Promise.resolve().then(() => {
         expect(count).toEqual(1);
+
+        document.removeEventListener('test', domEventListener);
         done();
       });
     });
@@ -291,13 +295,17 @@ describe('ui_utils', function() {
       eventBus.on('test', function() {
         count++;
       });
-      document.addEventListener('test', function() {
+      function domEventListener() {
         count++;
-      });
+      }
+      document.addEventListener('test', domEventListener);
+
       eventBus.dispatch('test');
 
       Promise.resolve().then(() => {
         expect(count).toEqual(2);
+
+        document.removeEventListener('test', domEventListener);
         done();
       });
     });
