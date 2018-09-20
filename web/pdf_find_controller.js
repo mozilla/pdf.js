@@ -15,7 +15,7 @@
 
 import { createPromiseCapability } from 'pdfjs-lib';
 import { getCharacterType } from './pdf_find_utils';
-import { getGlobalEventBus } from './dom_events';
+import { getGlobalEventBus } from './ui_utils';
 
 const FindState = {
   FOUND: 0,
