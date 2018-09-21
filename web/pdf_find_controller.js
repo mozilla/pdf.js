@@ -51,7 +51,7 @@ class PDFFindController {
     this.onUpdateResultsCount = null;
     this.onUpdateState = null;
 
-    this.reset();
+    this._reset();
 
     eventBus.on('findbarclose', () => {
       this._highlightMatches = false;
@@ -87,8 +87,51 @@ class PDFFindController {
     return this._state;
   }
 
-  reset() {
+  /**
+   * Set a reference to the PDF document in order to search it.
+   * Note that searching is not possible if this method is not called.
+   *
+   * @param {PDFDocumentProxy} pdfDocument - The PDF document to search.
+   */
+  setDocument(pdfDocument) {
+    if (this._pdfDocument) {
+      this._reset();
+    }
+    if (!pdfDocument) {
+      return;
+    }
+    this._pdfDocument = pdfDocument;
+  }
+
+  executeCommand(cmd, state) {
+    if (!this._pdfDocument) {
+      return;
+    }
+
+    if (this._state === null || cmd !== 'findagain') {
+      this._dirtyMatch = true;
+    }
+    this._state = state;
+    this._updateUIState(FindState.PENDING);
+
+    this._firstPagePromise.then(() => {
+      this._extractText();
+
+      clearTimeout(this._findTimeout);
+      if (cmd === 'find') {
+        // Trigger the find action with a small delay to avoid starting the
+        // search when the user is still typing (saving resources).
+        this._findTimeout =
+          setTimeout(this._nextMatch.bind(this), FIND_TIMEOUT);
+      } else {
+        this._nextMatch();
+      }
+    });
+  }
+
+  _reset() {
     this._highlightMatches = false;
+    this._pdfDocument = null;
     this._pageMatches = [];
     this._pageMatchesLength = null;
     this._state = null;
@@ -115,28 +158,6 @@ class PDFFindController {
         eventBus.off('pagesinit', onPagesInit);
         resolve();
       });
-    });
-  }
-
-  executeCommand(cmd, state) {
-    if (this._state === null || cmd !== 'findagain') {
-      this._dirtyMatch = true;
-    }
-    this._state = state;
-    this._updateUIState(FindState.PENDING);
-
-    this._firstPagePromise.then(() => {
-      this._extractText();
-
-      clearTimeout(this._findTimeout);
-      if (cmd === 'find') {
-        // Trigger the find action with a small delay to avoid starting the
-        // search when the user is still typing (saving resources).
-        this._findTimeout =
-          setTimeout(this._nextMatch.bind(this), FIND_TIMEOUT);
-      } else {
-        this._nextMatch();
-      }
     });
   }
 
@@ -326,7 +347,11 @@ class PDFFindController {
       this._extractTextPromises[i] = extractTextCapability.promise;
 
       promise = promise.then(() => {
-        return this._pdfViewer.getPageTextContent(i).then((textContent) => {
+        return this._pdfDocument.getPage(i + 1).then((pdfPage) => {
+          return pdfPage.getTextContent({
+            normalizeWhitespace: true,
+          });
+        }).then((textContent) => {
           const textItems = textContent.items;
           const strBuf = [];
 

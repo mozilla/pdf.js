@@ -55,7 +55,7 @@ container.addEventListener('pagesinit', function () {
   pdfSinglePageViewer.currentScaleValue = 'page-width';
 
   if (SEARCH_FOR) { // We can try search for things
-    pdfFindController.executeCommand('find', {query: SEARCH_FOR});
+    pdfFindController.executeCommand('find', { query: SEARCH_FOR, });
   }
 });
 
@@ -70,4 +70,5 @@ pdfjsLib.getDocument({
   pdfSinglePageViewer.setDocument(pdfDocument);
 
   pdfLinkService.setDocument(pdfDocument, null);
+  pdfFindController.setDocument(pdfDocument);
 });
