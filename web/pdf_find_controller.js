@@ -355,10 +355,10 @@ class PDFFindController {
       this._pdfViewer.currentPageNumber = index + 1;
     }
 
-    const page = this._pdfViewer.getPageView(index);
-    if (page.textLayer) {
-      page.textLayer.updateMatches();
-    }
+    this._eventBus.dispatch('updatetextlayermatches', {
+      source: this,
+      pageIndex: index,
+    });
   }
 
   _nextMatch() {
