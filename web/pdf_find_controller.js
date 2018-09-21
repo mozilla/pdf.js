@@ -41,11 +41,20 @@ const CHARACTERS_TO_NORMALIZE = {
 };
 
 /**
+ * @typedef {Object} PDFFindControllerOptions
+ * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {EventBus} eventBus - The application event bus.
+ */
+
+/**
  * Provides search functionality to find a given string in a PDF document.
  */
 class PDFFindController {
-  constructor({ pdfViewer, eventBus = getGlobalEventBus(), }) {
-    this._pdfViewer = pdfViewer;
+  /**
+   * @param {PDFFindControllerOptions} options
+   */
+  constructor({ linkService, eventBus = getGlobalEventBus(), }) {
+    this._linkService = linkService;
     this._eventBus = eventBus;
 
     this.onUpdateResultsCount = null;
@@ -342,7 +351,7 @@ class PDFFindController {
     }
 
     let promise = Promise.resolve();
-    for (let i = 0, ii = this._pdfViewer.pagesCount; i < ii; i++) {
+    for (let i = 0, ii = this._linkService.pagesCount; i < ii; i++) {
       const extractTextCapability = createPromiseCapability();
       this._extractTextPromises[i] = extractTextCapability.promise;
 
@@ -375,9 +384,9 @@ class PDFFindController {
   _updatePage(index) {
     if (this._selected.pageIdx === index) {
       // If the page is selected, scroll the page into view, which triggers
-      // rendering the page, which adds the textLayer. Once the textLayer is
-      // build, it will scroll onto the selected match.
-      this._pdfViewer.currentPageNumber = index + 1;
+      // rendering the page, which adds the text layer. Once the text layer
+      // is built, it will scroll to the selected match.
+      this._linkService.page = index + 1;
     }
 
     this._eventBus.dispatch('updatetextlayermatches', {
@@ -388,8 +397,8 @@ class PDFFindController {
 
   _nextMatch() {
     const previous = this._state.findPrevious;
-    const currentPageIndex = this._pdfViewer.currentPageNumber - 1;
-    const numPages = this._pdfViewer.pagesCount;
+    const currentPageIndex = this._linkService.page - 1;
+    const numPages = this._linkService.pagesCount;
 
     this._highlightMatches = true;
 
@@ -501,7 +510,7 @@ class PDFFindController {
 
   _advanceOffsetPage(previous) {
     const offset = this._offset;
-    const numPages = this._extractTextPromises.length;
+    const numPages = this._linkService.pagesCount;
     offset.pageIdx = (previous ? offset.pageIdx - 1 : offset.pageIdx + 1);
     offset.matchIdx = null;
 

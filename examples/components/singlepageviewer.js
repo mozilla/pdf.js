@@ -46,7 +46,7 @@ pdfLinkService.setViewer(pdfSinglePageViewer);
 
 // (Optionally) enable find controller.
 var pdfFindController = new pdfjsViewer.PDFFindController({
-  pdfViewer: pdfSinglePageViewer,
+  linkService: pdfLinkService,
 });
 pdfSinglePageViewer.setFindController(pdfFindController);
 
