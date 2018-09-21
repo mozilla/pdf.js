@@ -346,25 +346,6 @@ let PDFViewerApplication = {
       linkService: pdfLinkService,
       eventBus,
     });
-    this.findController.onUpdateResultsCount = (matchesCount) => {
-      if (this.supportsIntegratedFind) {
-        this.externalServices.updateFindMatchesCount(matchesCount);
-      } else {
-        this.findBar.updateResultsCount(matchesCount);
-      }
-    };
-    this.findController.onUpdateState = (state, previous, matchesCount) => {
-      if (this.supportsIntegratedFind) {
-        this.externalServices.updateFindControlState({
-          result: state,
-          findPrevious: previous,
-          matchesCount,
-        });
-      } else {
-        this.findBar.updateUIState(state, previous, matchesCount);
-      }
-    };
-
     this.pdfViewer.setFindController(this.findController);
 
     // TODO: improve `PDFFindBar` constructor parameter passing
@@ -1343,6 +1324,8 @@ let PDFViewerApplication = {
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
     eventBus.on('findfromurlhash', webViewerFindFromUrlHash);
+    eventBus.on('updatefindmatchescount', webViewerUpdateFindMatchesCount);
+    eventBus.on('updatefindcontrolstate', webViewerUpdateFindControlState);
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       eventBus.on('fileinputchange', webViewerFileInputChange);
     }
@@ -1414,6 +1397,8 @@ let PDFViewerApplication = {
     eventBus.off('documentproperties', webViewerDocumentProperties);
     eventBus.off('find', webViewerFind);
     eventBus.off('findfromurlhash', webViewerFindFromUrlHash);
+    eventBus.off('updatefindmatchescount', webViewerUpdateFindMatchesCount);
+    eventBus.off('updatefindcontrolstate', webViewerUpdateFindControlState);
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       eventBus.off('fileinputchange', webViewerFileInputChange);
     }
@@ -1974,6 +1959,26 @@ function webViewerFindFromUrlHash(evt) {
     highlightAll: true,
     findPrevious: false,
   });
+}
+
+function webViewerUpdateFindMatchesCount({ matchesCount, }) {
+  if (PDFViewerApplication.supportsIntegratedFind) {
+    PDFViewerApplication.externalServices.updateFindMatchesCount(matchesCount);
+  } else {
+    PDFViewerApplication.findBar.updateResultsCount(matchesCount);
+  }
+}
+
+function webViewerUpdateFindControlState({ state, previous, matchesCount, }) {
+  if (PDFViewerApplication.supportsIntegratedFind) {
+    PDFViewerApplication.externalServices.updateFindControlState({
+      result: state,
+      findPrevious: previous,
+      matchesCount,
+    });
+  } else {
+    PDFViewerApplication.findBar.updateUIState(state, previous, matchesCount);
+  }
 }
 
 function webViewerScaleChanging(evt) {

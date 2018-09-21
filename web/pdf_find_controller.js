@@ -57,9 +57,6 @@ class PDFFindController {
     this._linkService = linkService;
     this._eventBus = eventBus;
 
-    this.onUpdateResultsCount = null;
-    this.onUpdateState = null;
-
     this._reset();
 
     eventBus.on('findbarclose', () => {
@@ -564,19 +561,19 @@ class PDFFindController {
   }
 
   _updateUIResultsCount() {
-    if (!this.onUpdateResultsCount) {
-      return;
-    }
-    const matchesCount = this._requestMatchesCount();
-    this.onUpdateResultsCount(matchesCount);
+    this._eventBus.dispatch('updatefindmatchescount', {
+      source: this,
+      matchesCount: this._requestMatchesCount(),
+    });
   }
 
   _updateUIState(state, previous) {
-    if (!this.onUpdateState) {
-      return;
-    }
-    const matchesCount = this._requestMatchesCount();
-    this.onUpdateState(state, previous, matchesCount);
+    this._eventBus.dispatch('updatefindcontrolstate', {
+      source: this,
+      state,
+      previous,
+      matchesCount: this._requestMatchesCount(),
+    });
   }
 }
 
