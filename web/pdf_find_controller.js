@@ -526,8 +526,8 @@ class PDFFindController {
 
     if (found) {
       const previousPage = this._selected.pageIdx;
-      this.selected.pageIdx = this._offset.pageIdx;
-      this.selected.matchIdx = this._offset.matchIdx;
+      this._selected.pageIdx = this._offset.pageIdx;
+      this._selected.matchIdx = this._offset.matchIdx;
       state = (wrapped ? FindState.WRAPPED : FindState.FOUND);
 
       // Update the currently selected page to wipe out any selected matches.
