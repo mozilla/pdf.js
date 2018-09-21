@@ -708,12 +708,13 @@ class EventBus {
     let eventListeners = this._listeners[eventName];
     if (!eventListeners || eventListeners.length === 0) {
       if (this._dispatchToDOM) {
-        this._dispatchDOMEvent(eventName);
+        const args = Array.prototype.slice.call(arguments, 1);
+        this._dispatchDOMEvent(eventName, args);
       }
       return;
     }
     // Passing all arguments after the eventName to the listeners.
-    let args = Array.prototype.slice.call(arguments, 1);
+    const args = Array.prototype.slice.call(arguments, 1);
     // Making copy of the listeners array in case if it will be modified
     // during dispatch.
     eventListeners.slice(0).forEach(function (listener) {
