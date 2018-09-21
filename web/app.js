@@ -343,7 +343,7 @@ let PDFViewerApplication = {
     pdfLinkService.setHistory(this.pdfHistory);
 
     this.findController = new PDFFindController({
-      pdfViewer: this.pdfViewer,
+      linkService: pdfLinkService,
       eventBus,
     });
     this.findController.onUpdateResultsCount = (matchesCount) => {
