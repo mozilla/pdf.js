@@ -38,14 +38,8 @@ class PDFFindBar {
     this.findResultsCount = options.findResultsCount || null;
     this.findPreviousButton = options.findPreviousButton || null;
     this.findNextButton = options.findNextButton || null;
-    this.findController = options.findController || null;
     this.eventBus = options.eventBus;
     this.l10n = l10n;
-
-    if (this.findController === null) {
-      throw new Error('PDFFindBar cannot be used without a ' +
-                      'PDFFindController instance.');
-    }
 
     // Add event listeners to the DOM elements.
     this.toggleButton.addEventListener('click', () => {
