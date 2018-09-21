@@ -182,10 +182,23 @@ describe('ui_utils', function() {
     it('dispatch event', function () {
       var eventBus = new EventBus();
       var count = 0;
-      eventBus.on('test', function () {
+      eventBus.on('test', function(evt) {
+        expect(evt).toEqual(undefined);
         count++;
       });
       eventBus.dispatch('test');
+      expect(count).toEqual(1);
+    });
+    it('dispatch event with arguments', function() {
+      const eventBus = new EventBus();
+      let count = 0;
+      eventBus.on('test', function(evt) {
+        expect(evt).toEqual({ abc: 123, });
+        count++;
+      });
+      eventBus.dispatch('test', {
+        abc: 123,
+      });
       expect(count).toEqual(1);
     });
     it('dispatch different event', function () {
@@ -269,16 +282,21 @@ describe('ui_utils', function() {
       }
       const eventBus = new EventBus();
       let count = 0;
-      eventBus.on('test', function() {
+      eventBus.on('test', function(evt) {
+        expect(evt).toEqual(undefined);
         count++;
       });
-      document.addEventListener('test', function() {
-        count++;
-      });
+      function domEventListener() {
+        done.fail('shall not dispatch DOM event.');
+      }
+      document.addEventListener('test', domEventListener);
+
       eventBus.dispatch('test');
 
       Promise.resolve().then(() => {
         expect(count).toEqual(1);
+
+        document.removeEventListener('test', domEventListener);
         done();
       });
     });
@@ -288,16 +306,46 @@ describe('ui_utils', function() {
       }
       const eventBus = new EventBus({ dispatchToDOM: true, });
       let count = 0;
-      eventBus.on('test', function() {
+      eventBus.on('test', function(evt) {
+        expect(evt).toEqual(undefined);
         count++;
       });
-      document.addEventListener('test', function() {
+      function domEventListener(evt) {
+        expect(evt.detail).toEqual({});
         count++;
-      });
+      }
+      document.addEventListener('test', domEventListener);
+
       eventBus.dispatch('test');
 
       Promise.resolve().then(() => {
         expect(count).toEqual(2);
+
+        document.removeEventListener('test', domEventListener);
+        done();
+      });
+    });
+    it('should re-dispatch to DOM, with arguments (without internal listeners)',
+        function(done) {
+      if (isNodeJS()) {
+        pending('Document in not supported in Node.js.');
+      }
+      const eventBus = new EventBus({ dispatchToDOM: true, });
+      let count = 0;
+      function domEventListener(evt) {
+        expect(evt.detail).toEqual({ abc: 123, });
+        count++;
+      }
+      document.addEventListener('test', domEventListener);
+
+      eventBus.dispatch('test', {
+        abc: 123,
+      });
+
+      Promise.resolve().then(() => {
+        expect(count).toEqual(1);
+
+        document.removeEventListener('test', domEventListener);
         done();
       });
     });
