@@ -369,7 +369,6 @@ let PDFViewerApplication = {
 
     // TODO: improve `PDFFindBar` constructor parameter passing
     let findBarConfig = Object.create(appConfig.findBar);
-    findBarConfig.findController = this.findController;
     findBarConfig.eventBus = eventBus;
     this.findBar = new PDFFindBar(findBarConfig, this.l10n);
 
