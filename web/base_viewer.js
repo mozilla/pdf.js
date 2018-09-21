@@ -913,14 +913,6 @@ class BaseViewer {
     return false;
   }
 
-  getPageTextContent(pageIndex) {
-    return this.pdfDocument.getPage(pageIndex + 1).then(function(page) {
-      return page.getTextContent({
-        normalizeWhitespace: true,
-      });
-    });
-  }
-
   /**
    * @param {HTMLDivElement} textLayerDiv
    * @param {number} pageIndex
