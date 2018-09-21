@@ -358,7 +358,7 @@ class TextLayerBuilder {
       }
     };
     _boundEvents.updateTextLayerMatches = (evt) => {
-      if (evt.pageIndex !== -1) {
+      if (evt.pageIndex !== this.pageIdx && evt.pageIndex !== -1) {
         return;
       }
       this.updateMatches();
