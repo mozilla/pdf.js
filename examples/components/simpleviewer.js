@@ -38,17 +38,17 @@ var container = document.getElementById('viewerContainer');
 // (Optionally) enable hyperlinks within PDF files.
 var pdfLinkService = new pdfjsViewer.PDFLinkService();
 
-var pdfViewer = new pdfjsViewer.PDFViewer({
-  container: container,
-  linkService: pdfLinkService,
-});
-pdfLinkService.setViewer(pdfViewer);
-
 // (Optionally) enable find controller.
 var pdfFindController = new pdfjsViewer.PDFFindController({
   linkService: pdfLinkService,
 });
-pdfViewer.setFindController(pdfFindController);
+
+var pdfViewer = new pdfjsViewer.PDFViewer({
+  container: container,
+  linkService: pdfLinkService,
+  findController: pdfFindController,
+});
+pdfLinkService.setViewer(pdfViewer);
 
 container.addEventListener('pagesinit', function () {
   // We can use pdfViewer now, e.g. let's change default scale.
