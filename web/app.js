@@ -305,6 +305,12 @@ let PDFViewerApplication = {
     });
     this.downloadManager = downloadManager;
 
+    const findController = new PDFFindController({
+      linkService: pdfLinkService,
+      eventBus,
+    });
+    this.findController = findController;
+
     let container = appConfig.mainContainer;
     let viewer = appConfig.viewerContainer;
     this.pdfViewer = new PDFViewer({
@@ -314,6 +320,7 @@ let PDFViewerApplication = {
       renderingQueue: pdfRenderingQueue,
       linkService: pdfLinkService,
       downloadManager,
+      findController,
       renderer: AppOptions.get('renderer'),
       enableWebGL: AppOptions.get('enableWebGL'),
       l10n: this.l10n,
@@ -341,12 +348,6 @@ let PDFViewerApplication = {
       eventBus,
     });
     pdfLinkService.setHistory(this.pdfHistory);
-
-    this.findController = new PDFFindController({
-      linkService: pdfLinkService,
-      eventBus,
-    });
-    this.pdfViewer.setFindController(this.findController);
 
     // TODO: improve `PDFFindBar` constructor parameter passing
     let findBarConfig = Object.create(appConfig.findBar);
