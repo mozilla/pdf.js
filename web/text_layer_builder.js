@@ -317,7 +317,7 @@ class TextLayerBuilder {
       clearedUntilDivIdx = match.end.divIdx + 1;
     }
 
-    if (this.findController === null || !this.findController.active) {
+    if (!this.findController || !this.findController.highlightMatches) {
       return;
     }
 
@@ -357,8 +357,15 @@ class TextLayerBuilder {
         delete _boundEvents[name];
       }
     };
+    _boundEvents.updateTextLayerMatches = (evt) => {
+      if (evt.pageIndex !== -1) {
+        return;
+      }
+      this.updateMatches();
+    };
 
     eventBus.on('pagecancelled', _boundEvents.pageCancelled);
+    eventBus.on('updatetextlayermatches', _boundEvents.updateTextLayerMatches);
   }
 
   /**
