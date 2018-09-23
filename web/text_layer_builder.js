@@ -56,6 +56,9 @@ class TextLayerBuilder {
     this.textLayerRenderTask = null;
     this.enhanceTextSelection = enhanceTextSelection;
 
+    this._boundEvents = Object.create(null);
+    this._bindEvents();
+
     this._bindMouse();
   }
 
@@ -329,6 +332,33 @@ class TextLayerBuilder {
 
     this.matches = this.convertMatches(pageMatches, pageMatchesLength);
     this.renderMatches(this.matches);
+  }
+
+  /**
+   * @private
+   */
+  _bindEvents() {
+    const { eventBus, _boundEvents, } = this;
+
+    _boundEvents.pageCancelled = (evt) => {
+      if (evt.pageNumber !== this.pageNumber) {
+        return;
+      }
+      if (this.textLayerRenderTask) {
+        console.error('TextLayerBuilder._bindEvents: `this.cancel()` should ' +
+          'have been called when the page was reset, or rendering cancelled.');
+        return;
+      }
+      // Ensure that all event listeners are cleaned up when the page is reset,
+      // since re-rendering will create new `TextLayerBuilder` instances and the
+      // number of (stale) event listeners would otherwise grow without bound.
+      for (const name in _boundEvents) {
+        eventBus.off(name.toLowerCase(), _boundEvents[name]);
+        delete _boundEvents[name];
+      }
+    };
+
+    eventBus.on('pagecancelled', _boundEvents.pageCancelled);
   }
 
   /**
