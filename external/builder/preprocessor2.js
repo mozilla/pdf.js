@@ -288,6 +288,7 @@ function preprocessPDFJSCode(ctx, code) {
     },
   };
   var parseOptions = {
+    ecmaVersion: 8,
     locations: true,
     sourceFile: ctx.sourceFile,
     sourceType: 'module',

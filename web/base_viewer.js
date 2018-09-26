@@ -15,9 +15,9 @@
 
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, isPortraitOrientation,
-  isValidRotation, MAX_AUTO_SCALE, NullL10n, PresentationModeState,
-  RendererType, SCROLLBAR_PADDING, TextLayerMode, UNKNOWN_SCALE,
-  VERTICAL_PADDING, watchScroll
+  isValidRotation, MAX_AUTO_SCALE, moveToEndOfArray, NullL10n,
+  PresentationModeState, RendererType, SCROLLBAR_PADDING, TextLayerMode,
+  UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
@@ -28,6 +28,18 @@ import { SimpleLinkService } from './pdf_link_service';
 import { TextLayerBuilder } from './text_layer_builder';
 
 const DEFAULT_CACHE_SIZE = 10;
+
+const ScrollMode = {
+  VERTICAL: 0, // The default value.
+  HORIZONTAL: 1,
+  WRAPPED: 2,
+};
+
+const SpreadMode = {
+  NONE: 0, // The default value.
+  ODD: 1,
+  EVEN: 2,
+};
 
 /**
  * @typedef {Object} PDFViewerOptions
@@ -75,8 +87,24 @@ function PDFPageViewBuffer(size) {
       data.shift().destroy();
     }
   };
-  this.resize = function(newSize) {
+  /**
+   * After calling resize, the size of the buffer will be newSize. The optional
+   * parameter pagesToKeep is, if present, an array of pages to push to the back
+   * of the buffer, delaying their destruction. The size of pagesToKeep has no
+   * impact on the final size of the buffer; if pagesToKeep has length larger
+   * than newSize, some of those pages will be destroyed anyway.
+   */
+  this.resize = function(newSize, pagesToKeep) {
     size = newSize;
+    if (pagesToKeep) {
+      const pageIdsToKeep = new Set();
+      for (let i = 0, iMax = pagesToKeep.length; i < iMax; ++i) {
+        pageIdsToKeep.add(pagesToKeep[i].id);
+      }
+      moveToEndOfArray(data, function(page) {
+        return pageIdsToKeep.has(page.id);
+      });
+    }
     while (data.length > size) {
       data.shift().destroy();
     }
@@ -117,7 +145,6 @@ class BaseViewer {
     this.removePageBorders = options.removePageBorders || false;
     this.textLayerMode = Number.isInteger(options.textLayerMode) ?
       options.textLayerMode : TextLayerMode.ENABLE;
-    this.enhanceTextSelection = options.enhanceTextSelection || false;
     this.imageResourcesPath = options.imageResourcesPath || '';
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
@@ -143,6 +170,11 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add('removePageBorders');
     }
+    // Defer the dispatching of this event, to give other viewer components
+    // time to initialize *and* register 'baseviewerinit' event listeners.
+    Promise.resolve().then(() => {
+      this.eventBus.dispatch('baseviewerinit', { source: this, });
+    });
   }
 
   get pagesCount() {
@@ -400,6 +432,9 @@ class BaseViewer {
         bindOnAfterAndBeforeDraw(pageView);
         this._pages.push(pageView);
       }
+      if (this._spreadMode !== SpreadMode.NONE) {
+        this._updateSpreadMode();
+      }
 
       // Fetch all the pages since the viewport is needed before printing
       // starts to create the correct size canvas. Wait until one page is
@@ -436,10 +471,6 @@ class BaseViewer {
       if (this.defaultRenderingQueue) {
         this.update();
       }
-
-      if (this.findController) {
-        this.findController.resolveFirstPage();
-      }
     }).catch((reason) => {
       console.error('Unable to initialize viewer', reason);
     });
@@ -454,7 +485,7 @@ class BaseViewer {
     }
     if (!labels) {
       this._pageLabels = null;
-    } else if (!(labels instanceof Array &&
+    } else if (!(Array.isArray(labels) &&
                  this.pdfDocument.numPages === labels.length)) {
       this._pageLabels = null;
       console.error(`${this._name}.setPageLabels: Invalid page labels.`);
@@ -480,9 +511,13 @@ class BaseViewer {
     this._pagesRotation = 0;
     this._pagesRequests = [];
     this._pageViewsReady = false;
+    this._scrollMode = ScrollMode.VERTICAL;
+    this._spreadMode = SpreadMode.NONE;
 
-    // Remove the pages from the DOM.
+    // Remove the pages from the DOM...
     this.viewer.textContent = '';
+    // ... and reset the Scroll mode CSS class(es) afterwards.
+    this._updateScrollMode();
   }
 
   _scrollUpdate() {
@@ -553,10 +588,13 @@ class BaseViewer {
       if (!currentPage) {
         return;
       }
-      let hPadding = (this.isInPresentationMode || this.removePageBorders) ?
-        0 : SCROLLBAR_PADDING;
-      let vPadding = (this.isInPresentationMode || this.removePageBorders) ?
-        0 : VERTICAL_PADDING;
+      const noPadding = (this.isInPresentationMode || this.removePageBorders);
+      let hPadding = noPadding ? 0 : SCROLLBAR_PADDING;
+      let vPadding = noPadding ? 0 : VERTICAL_PADDING;
+
+      if (!noPadding && this._isScrollModeHorizontal) {
+        [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
+      }
       let pageWidthScale = (this.container.clientWidth - hPadding) /
                            currentPage.width * currentPage.scale;
       let pageHeightScale = (this.container.clientHeight - vPadding) /
@@ -733,10 +771,15 @@ class BaseViewer {
     });
   }
 
-  _resizeBuffer(numVisiblePages) {
+  /**
+   * visiblePages is optional; if present, it should be an array of pages and in
+   * practice its length is going to be numVisiblePages, but this is not
+   * required. The new size of the buffer depends only on numVisiblePages.
+   */
+  _resizeBuffer(numVisiblePages, visiblePages) {
     let suggestedCacheSize = Math.max(DEFAULT_CACHE_SIZE,
                                       2 * numVisiblePages + 1);
-    this._buffer.resize(suggestedCacheSize);
+    this._buffer.resize(suggestedCacheSize, visiblePages);
   }
 
   _updateLocation(firstPage) {
@@ -780,6 +823,10 @@ class BaseViewer {
     this.container.focus();
   }
 
+  get _isScrollModeHorizontal() {
+    throw new Error('Not implemented: _isScrollModeHorizontal');
+  }
+
   get isInPresentationMode() {
     return this.presentationModeState === PresentationModeState.FULLSCREEN;
   }
@@ -791,6 +838,11 @@ class BaseViewer {
   get isHorizontalScrollbarEnabled() {
     return (this.isInPresentationMode ?
       false : (this.container.scrollWidth > this.container.clientWidth));
+  }
+
+  get isVerticalScrollbarEnabled() {
+    return (this.isInPresentationMode ?
+      false : (this.container.scrollHeight > this.container.clientHeight));
   }
 
   _getVisiblePages() {
@@ -847,9 +899,11 @@ class BaseViewer {
 
   forceRendering(currentlyVisiblePages) {
     let visiblePages = currentlyVisiblePages || this._getVisiblePages();
+    let scrollAhead = (this._isScrollModeHorizontal ?
+                       this.scroll.right : this.scroll.down);
     let pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                           this._pages,
-                                                          this.scroll.down);
+                                                          scrollAhead);
     if (pageView) {
       this._ensurePdfPageLoaded(pageView).then(() => {
         this.renderingQueue.renderView(pageView);
@@ -957,8 +1011,122 @@ class BaseViewer {
       };
     });
   }
+
+  /**
+   * @return {number} One of the values in {ScrollMode}.
+   */
+  get scrollMode() {
+    return this._scrollMode;
+  }
+
+  /**
+   * @param {number} mode - The direction in which the document pages should be
+   *   laid out within the scrolling container.
+   *   The constants from {ScrollMode} should be used.
+   */
+  set scrollMode(mode) {
+    if (this._scrollMode === mode) {
+      return; // The Scroll mode didn't change.
+    }
+    if (!Number.isInteger(mode) || !Object.values(ScrollMode).includes(mode)) {
+      throw new Error(`Invalid scroll mode: ${mode}`);
+    }
+    this._scrollMode = mode;
+    this.eventBus.dispatch('scrollmodechanged', { source: this, mode, });
+
+    this._updateScrollMode(/* pageNumber = */ this._currentPageNumber);
+  }
+
+  _updateScrollMode(pageNumber = null) {
+    const scrollMode = this._scrollMode, viewer = this.viewer;
+
+    if (scrollMode === ScrollMode.HORIZONTAL) {
+      viewer.classList.add('scrollHorizontal');
+    } else {
+      viewer.classList.remove('scrollHorizontal');
+    }
+    if (scrollMode === ScrollMode.WRAPPED) {
+      viewer.classList.add('scrollWrapped');
+    } else {
+      viewer.classList.remove('scrollWrapped');
+    }
+
+    if (!this.pdfDocument || !pageNumber) {
+      return;
+    }
+    // Non-numeric scale values can be sensitive to the scroll orientation.
+    // Call this before re-scrolling to the current page, to ensure that any
+    // changes in scale don't move the current page.
+    if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
+      this._setScale(this._currentScaleValue, true);
+    }
+    this.scrollPageIntoView({ pageNumber, });
+    this.update();
+  }
+
+  /**
+   * @return {number} One of the values in {SpreadMode}.
+   */
+  get spreadMode() {
+    return this._spreadMode;
+  }
+
+  /**
+   * @param {number} mode - Group the pages in spreads, starting with odd- or
+   *   even-number pages (unless `SpreadMode.NONE` is used).
+   *   The constants from {SpreadMode} should be used.
+   */
+  set spreadMode(mode) {
+    if (this._spreadMode === mode) {
+      return; // The Spread mode didn't change.
+    }
+    if (!Number.isInteger(mode) || !Object.values(SpreadMode).includes(mode)) {
+      throw new Error(`Invalid spread mode: ${mode}`);
+    }
+    this._spreadMode = mode;
+    this.eventBus.dispatch('spreadmodechanged', { source: this, mode, });
+
+    this._updateSpreadMode(/* pageNumber = */ this._currentPageNumber);
+  }
+
+  _updateSpreadMode(pageNumber = null) {
+    if (!this.pdfDocument) {
+      return;
+    }
+    const viewer = this.viewer, pages = this._pages;
+    // Temporarily remove all the pages from the DOM.
+    viewer.textContent = '';
+
+    if (this._spreadMode === SpreadMode.NONE) {
+      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
+        viewer.appendChild(pages[i].div);
+      }
+    } else {
+      const parity = this._spreadMode - 1;
+      let spread = null;
+      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
+        if (spread === null) {
+          spread = document.createElement('div');
+          spread.className = 'spread';
+          viewer.appendChild(spread);
+        } else if (i % 2 === parity) {
+          spread = spread.cloneNode(false);
+          viewer.appendChild(spread);
+        }
+        spread.appendChild(pages[i].div);
+      }
+    }
+
+    if (!pageNumber) {
+      return;
+    }
+    this.scrollPageIntoView({ pageNumber, });
+    this.update();
+  }
 }
 
 export {
   BaseViewer,
+  ScrollMode,
+  SpreadMode,
 };

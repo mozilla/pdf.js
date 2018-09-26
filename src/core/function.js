@@ -46,22 +46,24 @@ class PDFFunctionFactory {
       fnObj,
     });
   }
+}
 
-  createFromIR(IR) {
-    return PDFFunction.fromIR({
-      xref: this.xref,
-      isEvalSupported: this.isEvalSupported,
-      IR,
-    });
+function toNumberArray(arr) {
+  if (!Array.isArray(arr)) {
+    return null;
   }
-
-  createIR(fn) {
-    return PDFFunction.getIR({
-      xref: this.xref,
-      isEvalSupported: this.isEvalSupported,
-      fn,
-    });
+  const length = arr.length;
+  for (let i = 0; i < length; i++) {
+    if (typeof arr[i] !== 'number') {
+      // Non-number is found -- convert all items to numbers.
+      const result = new Array(length);
+      for (let i = 0; i < length; i++) {
+        result[i] = +arr[i];
+      }
+      return result;
+    }
   }
+  return arr;
 }
 
 var PDFFunction = (function PDFFunctionClosure() {
@@ -171,8 +173,8 @@ var PDFFunction = (function PDFFunctionClosure() {
         }
         return out;
       }
-      var domain = dict.getArray('Domain');
-      var range = dict.getArray('Range');
+      var domain = toNumberArray(dict.getArray('Domain'));
+      var range = toNumberArray(dict.getArray('Range'));
 
       if (!domain || !range) {
         throw new FormatError('No domain or range');
@@ -184,7 +186,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       domain = toMultiArray(domain);
       range = toMultiArray(range);
 
-      var size = dict.get('Size');
+      var size = toNumberArray(dict.getArray('Size'));
       var bps = dict.get('BitsPerSample');
       var order = dict.get('Order') || 1;
       if (order !== 1) {
@@ -193,17 +195,17 @@ var PDFFunction = (function PDFFunctionClosure() {
         info('No support for cubic spline interpolation: ' + order);
       }
 
-      var encode = dict.getArray('Encode');
+      var encode = toNumberArray(dict.getArray('Encode'));
       if (!encode) {
         encode = [];
         for (var i = 0; i < inputSize; ++i) {
-          encode.push(0);
-          encode.push(size[i] - 1);
+          encode.push([0, size[i] - 1]);
         }
+      } else {
+        encode = toMultiArray(encode);
       }
-      encode = toMultiArray(encode);
 
-      var decode = dict.getArray('Decode');
+      var decode = toNumberArray(dict.getArray('Decode'));
       if (!decode) {
         decode = range;
       } else {
@@ -304,14 +306,9 @@ var PDFFunction = (function PDFFunctionClosure() {
     },
 
     constructInterpolated({ xref, isEvalSupported, fn, dict, }) {
-      var c0 = dict.getArray('C0') || [0];
-      var c1 = dict.getArray('C1') || [1];
+      var c0 = toNumberArray(dict.getArray('C0')) || [0];
+      var c1 = toNumberArray(dict.getArray('C1')) || [1];
       var n = dict.get('N');
-
-      if (!Array.isArray(c0) || !Array.isArray(c1)) {
-        throw new FormatError(
-          'Illegal dictionary for interpolated function');
-      }
 
       var length = c0.length;
       var diff = [];
@@ -340,7 +337,7 @@ var PDFFunction = (function PDFFunctionClosure() {
     },
 
     constructStiched({ xref, isEvalSupported, fn, dict, }) {
-      var domain = dict.getArray('Domain');
+      var domain = toNumberArray(dict.getArray('Domain'));
 
       if (!domain) {
         throw new FormatError('No domain');
@@ -354,12 +351,12 @@ var PDFFunction = (function PDFFunctionClosure() {
       var fnRefs = dict.get('Functions');
       var fns = [];
       for (var i = 0, ii = fnRefs.length; i < ii; ++i) {
-        fns.push(this.getIR({ xref, isEvalSupported,
+        fns.push(this.parse({ xref, isEvalSupported,
                               fn: xref.fetchIfRef(fnRefs[i]), }));
       }
 
-      var bounds = dict.getArray('Bounds');
-      var encode = dict.getArray('Encode');
+      var bounds = toNumberArray(dict.getArray('Bounds'));
+      var encode = toNumberArray(dict.getArray('Encode'));
 
       return [CONSTRUCT_STICHED, domain, bounds, encode, fns];
     },
@@ -368,13 +365,8 @@ var PDFFunction = (function PDFFunctionClosure() {
       var domain = IR[1];
       var bounds = IR[2];
       var encode = IR[3];
-      var fnsIR = IR[4];
-      var fns = [];
+      var fns = IR[4];
       var tmpBuf = new Float32Array(1);
-
-      for (var i = 0, ii = fnsIR.length; i < ii; i++) {
-        fns.push(this.fromIR({ xref, isEvalSupported, IR: fnsIR[i], }));
-      }
 
       return function constructStichedFromIRResult(src, srcOffset,
                                                    dest, destOffset) {
@@ -420,8 +412,8 @@ var PDFFunction = (function PDFFunctionClosure() {
     },
 
     constructPostScript({ xref, isEvalSupported, fn, dict, }) {
-      var domain = dict.getArray('Domain');
-      var range = dict.getArray('Range');
+      var domain = toNumberArray(dict.getArray('Domain'));
+      var range = toNumberArray(dict.getArray('Range'));
 
       if (!domain) {
         throw new FormatError('No domain.');

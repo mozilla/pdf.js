@@ -15,7 +15,7 @@
 
 import {
   assert, CMapCompressionType, removeNullCharacters, stringToBytes,
-  unreachable, warn
+  unreachable, Util, warn
 } from '../shared/util';
 
 const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
@@ -132,6 +132,158 @@ class DOMSVGFactory {
     assert(typeof type === 'string', 'Invalid SVG element type');
 
     return document.createElementNS(SVG_NS, type);
+  }
+}
+
+/**
+ * @typedef {Object} PageViewportParameters
+ * @property {Array} viewBox - The xMin, yMin, xMax and yMax coordinates.
+ * @property {number} scale - The scale of the viewport.
+ * @property {number} rotation - The rotation, in degrees, of the viewport.
+ * @property {number} offsetX - (optional) The vertical, i.e. x-axis, offset.
+ *   The default value is `0`.
+ * @property {number} offsetY - (optional) The horizontal, i.e. y-axis, offset.
+ *   The default value is `0`.
+ * @property {boolean} dontFlip - (optional) If true, the x-axis will not be
+ *   flipped. The default value is `false`.
+ */
+
+/**
+ * @typedef {Object} PageViewportCloneParameters
+ * @property {number} scale - (optional) The scale, overriding the one in the
+ *   cloned viewport. The default value is `this.scale`.
+ * @property {number} rotation - (optional) The rotation, in degrees, overriding
+ *   the one in the cloned viewport. The default value is `this.rotation`.
+ * @property {boolean} dontFlip - (optional) If true, the x-axis will not be
+ *   flipped. The default value is `false`.
+ */
+
+/**
+ * PDF page viewport created based on scale, rotation and offset.
+ */
+class PageViewport {
+  /**
+   * @param {PageViewportParameters}
+   */
+  constructor({ viewBox, scale, rotation, offsetX = 0, offsetY = 0,
+                dontFlip = false, }) {
+    this.viewBox = viewBox;
+    this.scale = scale;
+    this.rotation = rotation;
+    this.offsetX = offsetX;
+    this.offsetY = offsetY;
+
+    // creating transform to convert pdf coordinate system to the normal
+    // canvas like coordinates taking in account scale and rotation
+    let centerX = (viewBox[2] + viewBox[0]) / 2;
+    let centerY = (viewBox[3] + viewBox[1]) / 2;
+    let rotateA, rotateB, rotateC, rotateD;
+    rotation = rotation % 360;
+    rotation = rotation < 0 ? rotation + 360 : rotation;
+    switch (rotation) {
+      case 180:
+        rotateA = -1; rotateB = 0; rotateC = 0; rotateD = 1;
+        break;
+      case 90:
+        rotateA = 0; rotateB = 1; rotateC = 1; rotateD = 0;
+        break;
+      case 270:
+        rotateA = 0; rotateB = -1; rotateC = -1; rotateD = 0;
+        break;
+      // case 0:
+      default:
+        rotateA = 1; rotateB = 0; rotateC = 0; rotateD = -1;
+        break;
+    }
+
+    if (dontFlip) {
+      rotateC = -rotateC; rotateD = -rotateD;
+    }
+
+    let offsetCanvasX, offsetCanvasY;
+    let width, height;
+    if (rotateA === 0) {
+      offsetCanvasX = Math.abs(centerY - viewBox[1]) * scale + offsetX;
+      offsetCanvasY = Math.abs(centerX - viewBox[0]) * scale + offsetY;
+      width = Math.abs(viewBox[3] - viewBox[1]) * scale;
+      height = Math.abs(viewBox[2] - viewBox[0]) * scale;
+    } else {
+      offsetCanvasX = Math.abs(centerX - viewBox[0]) * scale + offsetX;
+      offsetCanvasY = Math.abs(centerY - viewBox[1]) * scale + offsetY;
+      width = Math.abs(viewBox[2] - viewBox[0]) * scale;
+      height = Math.abs(viewBox[3] - viewBox[1]) * scale;
+    }
+    // creating transform for the following operations:
+    // translate(-centerX, -centerY), rotate and flip vertically,
+    // scale, and translate(offsetCanvasX, offsetCanvasY)
+    this.transform = [
+      rotateA * scale,
+      rotateB * scale,
+      rotateC * scale,
+      rotateD * scale,
+      offsetCanvasX - rotateA * scale * centerX - rotateC * scale * centerY,
+      offsetCanvasY - rotateB * scale * centerX - rotateD * scale * centerY
+    ];
+
+    this.width = width;
+    this.height = height;
+  }
+
+  /**
+   * Clones viewport, with optional additional properties.
+   * @param {PageViewportCloneParameters} - (optional)
+   * @return {PageViewport} Cloned viewport.
+   */
+  clone({ scale = this.scale, rotation = this.rotation,
+          dontFlip = false, } = {}) {
+    return new PageViewport({
+      viewBox: this.viewBox.slice(),
+      scale,
+      rotation,
+      offsetX: this.offsetX,
+      offsetY: this.offsetY,
+      dontFlip,
+    });
+  }
+
+  /**
+   * Converts PDF point to the viewport coordinates. For examples, useful for
+   * converting PDF location into canvas pixel coordinates.
+   * @param {number} x - The x-coordinate.
+   * @param {number} y - The y-coordinate.
+   * @return {Object} Object containing `x` and `y` properties of the
+   *   point in the viewport coordinate space.
+   * @see {@link convertToPdfPoint}
+   * @see {@link convertToViewportRectangle}
+   */
+  convertToViewportPoint(x, y) {
+    return Util.applyTransform([x, y], this.transform);
+  }
+
+  /**
+   * Converts PDF rectangle to the viewport coordinates.
+   * @param {Array} rect - The xMin, yMin, xMax and yMax coordinates.
+   * @return {Array} Array containing corresponding coordinates of the rectangle
+   *   in the viewport coordinate space.
+   * @see {@link convertToViewportPoint}
+   */
+  convertToViewportRectangle(rect) {
+    let tl = Util.applyTransform([rect[0], rect[1]], this.transform);
+    let br = Util.applyTransform([rect[2], rect[3]], this.transform);
+    return [tl[0], tl[1], br[0], br[1]];
+  }
+
+  /**
+   * Converts viewport coordinates to the PDF location. For examples, useful
+   * for converting canvas pixel location into PDF one.
+   * @param {number} x - The x-coordinate.
+   * @param {number} y - The y-coordinate.
+   * @return {Object} Object containing `x` and `y` properties of the
+   *   point in the PDF coordinate space.
+   * @see {@link convertToViewportPoint}
+   */
+  convertToPdfPoint(x, y) {
+    return Util.applyInverseTransform([x, y], this.transform);
   }
 }
 
@@ -276,7 +428,21 @@ class DummyStatTimer {
   }
 }
 
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    let script = document.createElement('script');
+    script.src = src;
+
+    script.onload = resolve;
+    script.onerror = function() {
+      reject(new Error(`Cannot load script at: ${script.src}`));
+    };
+    (document.head || document.documentElement).appendChild(script);
+  });
+}
+
 export {
+  PageViewport,
   RenderingCancelledException,
   addLinkAttributes,
   getFilenameFromUrl,
@@ -287,4 +453,5 @@ export {
   DOMSVGFactory,
   StatTimer,
   DummyStatTimer,
+  loadScript,
 };

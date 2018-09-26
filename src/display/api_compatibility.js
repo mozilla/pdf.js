@@ -15,13 +15,12 @@
 
 let compatibilityParams = Object.create(null);
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+  const isNodeJS = require('../shared/is_node');
+
   const userAgent =
     (typeof navigator !== 'undefined' && navigator.userAgent) || '';
   const isIE = /Trident/.test(userAgent);
-  const isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
   const isIOSChrome = /CriOS/.test(userAgent);
-  const isSafari = /Safari\//.test(userAgent) &&
-                   !/(Chrome\/|Android\s)/.test(userAgent);
 
   // Checks if possible to use URL.createObjectURL()
   // Support: IE, Chrome on iOS
@@ -33,18 +32,14 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     }
   })();
 
-  // Support: Safari 6.0+, iOS
-  (function checkRangeRequests() {
-    // Safari has issues with cached range requests, see issue #3260.
-    // Last tested with version 6.0.4.
-    if (isSafari || isIOS) {
-      compatibilityParams.disableRange = true;
-      compatibilityParams.disableStream = true;
+  // Support: Node.js
+  (function checkFontFaceAndImage() {
+    // Node.js is missing native support for `@font-face` and `Image`.
+    if (isNodeJS()) {
+      compatibilityParams.disableFontFace = true;
+      compatibilityParams.nativeImageDecoderSupport = 'none';
     }
   })();
 }
-const apiCompatibilityParams = Object.freeze(compatibilityParams);
 
-export {
-  apiCompatibilityParams,
-};
+exports.apiCompatibilityParams = Object.freeze(compatibilityParams);

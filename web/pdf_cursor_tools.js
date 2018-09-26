@@ -47,6 +47,8 @@ class PDFCursorTools {
 
     this._addEventListeners();
 
+    // Defer the initial `switchTool` call, to give other viewer components
+    // time to initialize *and* register 'cursortoolchanged' event listeners.
     Promise.resolve().then(() => {
       this.switchTool(cursorToolOnLoad);
     });

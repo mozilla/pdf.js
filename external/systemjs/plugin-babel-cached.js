@@ -33,6 +33,7 @@ function getDb() {
         resolve(db);
       };
       request.onerror = function () {
+        console.warn('getDb: ' + request.error);
         reject(request.error);
       };
     });
@@ -95,7 +96,7 @@ function sha256(str) {
 }
 
 exports.translate = function (load, opt) {
-  var savedHashCode;
+  var savedHashCode, babelTranslateError;
   return sha256(load.source).then(function (hashCode) {
     savedHashCode = hashCode;
     return loadCache(load.address, hashCode);
@@ -109,6 +110,13 @@ exports.translate = function (load, opt) {
                         translated, load.metadata.format).then(function () {
         return translated;
       });
+    }, function(reason) {
+      throw (babelTranslateError = reason);
     });
+  }.bind(this)).catch(function(reason) {
+    if (babelTranslateError) {
+      throw babelTranslateError;
+    }
+    return babel.translate.call(this, load, opt);
   }.bind(this));
 };

@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 
-import { Catalog, ObjectLoader, XRef } from './obj';
-import { Dict, isDict, isName, isStream } from './primitives';
 import {
-  getInheritableProperty, info, isArrayBuffer, isNum, isSpace, isString,
-  MissingDataException, OPS, shadow, stringToBytes, stringToPDFString, Util
+  assert, FormatError, getInheritableProperty, info, isArrayBuffer, isNum,
+  isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
+  stringToPDFString, Util, warn
 } from '../shared/util';
+import { Catalog, ObjectLoader, XRef } from './obj';
+import { Dict, isDict, isName, isStream, Ref } from './primitives';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
 import { AnnotationFactory } from './annotation';
 import { calculateMD5 } from './crypto';
@@ -225,8 +226,7 @@ var Page = (function PageClosure() {
 
       // Fetch the page's annotations and add their operator lists to the
       // page's operator list to render them.
-      var annotationsPromise = this.pdfManager.ensure(this, 'annotations');
-      return Promise.all([pageListPromise, annotationsPromise]).then(
+      return Promise.all([pageListPromise, this._parsedAnnotations]).then(
           function ([pageOpList, annotations]) {
         if (annotations.length === 0) {
           pageOpList.flush(true);
@@ -291,30 +291,44 @@ var Page = (function PageClosure() {
       });
     },
 
-    getAnnotationsData: function Page_getAnnotationsData(intent) {
-      var annotations = this.annotations;
-      var annotationsData = [];
-      for (var i = 0, n = annotations.length; i < n; ++i) {
-        if (!intent || isAnnotationRenderable(annotations[i], intent)) {
-          annotationsData.push(annotations[i].data);
+    getAnnotationsData(intent) {
+      return this._parsedAnnotations.then(function(annotations) {
+        let annotationsData = [];
+        for (let i = 0, ii = annotations.length; i < ii; i++) {
+          if (!intent || isAnnotationRenderable(annotations[i], intent)) {
+            annotationsData.push(annotations[i].data);
+          }
         }
-      }
-      return annotationsData;
+        return annotationsData;
+      });
     },
 
     get annotations() {
-      var annotations = [];
-      var annotationRefs = this._getInheritableProperty('Annots') || [];
-      for (var i = 0, n = annotationRefs.length; i < n; ++i) {
-        var annotationRef = annotationRefs[i];
-        var annotation = AnnotationFactory.create(this.xref, annotationRef,
-                                                  this.pdfManager,
-                                                  this.idFactory);
-        if (annotation) {
-          annotations.push(annotation);
-        }
-      }
-      return shadow(this, 'annotations', annotations);
+      return shadow(this, 'annotations',
+                    this._getInheritableProperty('Annots') || []);
+    },
+
+    get _parsedAnnotations() {
+      const parsedAnnotations =
+        this.pdfManager.ensure(this, 'annotations').then(() => {
+          const annotationRefs = this.annotations;
+          const annotationPromises = [];
+          for (let i = 0, ii = annotationRefs.length; i < ii; i++) {
+            annotationPromises.push(AnnotationFactory.create(
+              this.xref, annotationRefs[i], this.pdfManager, this.idFactory));
+          }
+
+          return Promise.all(annotationPromises).then(function(annotations) {
+            return annotations.filter(function isDefined(annotation) {
+              return !!annotation;
+            });
+          }, function(reason) {
+            warn(`_parsedAnnotations: "${reason}".`);
+            return [];
+          });
+        });
+
+      return shadow(this, '_parsedAnnotations', parsedAnnotations);
     },
   };
 
@@ -355,6 +369,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       xref: this.xref,
       isEvalSupported: evaluatorOptions.isEvalSupported,
     });
+    this._pagePromises = [];
   }
 
   function find(stream, needle, limit, backwards) {
@@ -377,22 +392,16 @@ var PDFDocument = (function PDFDocumentClosure() {
     return true; /* found */
   }
 
-  var DocumentInfoValidators = {
-    get entries() {
-      // Lazily build this since all the validation functions below are not
-      // defined until after this file loads.
-      return shadow(this, 'entries', {
-        Title: isString,
-        Author: isString,
-        Subject: isString,
-        Keywords: isString,
-        Creator: isString,
-        Producer: isString,
-        CreationDate: isString,
-        ModDate: isString,
-        Trapped: isName,
-      });
-    },
+  const DocumentInfoValidators = {
+    Title: isString,
+    Author: isString,
+    Subject: isString,
+    Keywords: isString,
+    Creator: isString,
+    Producer: isString,
+    CreationDate: isString,
+    ModDate: isString,
+    Trapped: isName,
   };
 
   PDFDocument.prototype = {
@@ -424,16 +433,14 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
 
     get linearization() {
-      var linearization = null;
-      if (this.stream.length) {
-        try {
-          linearization = Linearization.create(this.stream);
-        } catch (err) {
-          if (err instanceof MissingDataException) {
-            throw err;
-          }
-          info(err);
+      let linearization = null;
+      try {
+        linearization = Linearization.create(this.stream);
+      } catch (err) {
+        if (err instanceof MissingDataException) {
+          throw err;
         }
+        info(err);
       }
       // shadow the prototype getter with a data property
       return shadow(this, 'linearization', linearization);
@@ -480,15 +487,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       // shadow the prototype getter with a data property
       return shadow(this, 'startXRef', startXRef);
     },
-    get mainXRefEntriesOffset() {
-      var mainXRefEntriesOffset = 0;
-      var linearization = this.linearization;
-      if (linearization) {
-        mainXRefEntriesOffset = linearization.mainXRefEntriesOffset;
-      }
-      // shadow the prototype getter with a data property
-      return shadow(this, 'mainXRefEntriesOffset', mainXRefEntriesOffset);
-    },
+
     // Find the header, remove leading garbage and setup the stream
     // starting from the header.
     checkHeader: function PDFDocument_checkHeader() {
@@ -520,21 +519,7 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
     setup: function PDFDocument_setup(recoveryMode) {
       this.xref.parse(recoveryMode);
-      var pageFactory = {
-        createPage: (pageIndex, dict, ref, fontCache, builtInCMapCache) => {
-          return new Page({
-            pdfManager: this.pdfManager,
-            xref: this.xref,
-            pageIndex,
-            pageDict: dict,
-            ref,
-            fontCache,
-            builtInCMapCache,
-            pdfFunctionFactory: this.pdfFunctionFactory,
-          });
-        },
-      };
-      this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
+      this.catalog = new Catalog(this.pdfManager, this.xref);
     },
     get numPages() {
       var linearization = this.linearization;
@@ -543,12 +528,13 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'numPages', num);
     },
     get documentInfo() {
-      var docInfo = {
+      const docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
+        IsLinearized: !!this.linearization,
         IsAcroFormPresent: !!this.acroForm,
         IsXFAPresent: !!this.xfa,
       };
-      var infoDict;
+      let infoDict;
       try {
         infoDict = this.xref.trailer.get('Info');
       } catch (err) {
@@ -557,14 +543,13 @@ var PDFDocument = (function PDFDocumentClosure() {
         }
         info('The document information dictionary is invalid.');
       }
-      if (infoDict) {
-        var validEntries = DocumentInfoValidators.entries;
+      if (isDict(infoDict)) {
         // Only fill the document info with valid entries from the spec.
-        for (var key in validEntries) {
+        for (let key in DocumentInfoValidators) {
           if (infoDict.has(key)) {
-            var value = infoDict.get(key);
+            const value = infoDict.get(key);
             // Make sure the value conforms to the spec.
-            if (validEntries[key](value)) {
+            if (DocumentInfoValidators[key](value)) {
               docInfo[key] = (typeof value !== 'string' ?
                               value : stringToPDFString(value));
             } else {
@@ -599,8 +584,49 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'fingerprint', fileID);
     },
 
-    getPage: function PDFDocument_getPage(pageIndex) {
-      return this.catalog.getPage(pageIndex);
+    _getLinearizationPage(pageIndex) {
+      const { catalog, linearization, } = this;
+      assert(linearization && linearization.pageFirst === pageIndex);
+
+      const ref = new Ref(linearization.objectNumberFirst, 0);
+      return this.xref.fetchAsync(ref).then((obj) => {
+        // Ensure that the object that was found is actually a Page dictionary.
+        if (isDict(obj, 'Page') ||
+            (isDict(obj) && !obj.has('Type') && obj.has('Contents'))) {
+          if (ref && !catalog.pageKidsCountCache.has(ref)) {
+            catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
+          }
+          return [obj, ref];
+        }
+        throw new FormatError('The Linearization dictionary doesn\'t point ' +
+                              'to a valid Page dictionary.');
+      }).catch((reason) => {
+        info(reason);
+        return catalog.getPageDict(pageIndex);
+      });
+    },
+
+    getPage(pageIndex) {
+      if (this._pagePromises[pageIndex] !== undefined) {
+        return this._pagePromises[pageIndex];
+      }
+      const { catalog, linearization, } = this;
+
+      const promise = (linearization && linearization.pageFirst === pageIndex) ?
+        this._getLinearizationPage(pageIndex) : catalog.getPageDict(pageIndex);
+
+      return this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
+        return new Page({
+          pdfManager: this.pdfManager,
+          xref: this.xref,
+          pageIndex,
+          pageDict,
+          ref,
+          fontCache: catalog.fontCache,
+          builtInCMapCache: catalog.builtInCMapCache,
+          pdfFunctionFactory: this.pdfFunctionFactory,
+        });
+      });
     },
 
     cleanup: function PDFDocument_cleanup() {

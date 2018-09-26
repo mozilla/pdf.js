@@ -36,7 +36,7 @@ function parseOptions() {
   var yargs = require('yargs')
     .usage('Usage: $0')
     .boolean(['help', 'masterMode', 'reftest', 'unitTest', 'fontTest',
-              'noPrompts', 'noDownload', 'downloadOnly'])
+              'noPrompts', 'noDownload', 'downloadOnly', 'strictVerify'])
     .string(['manifestFile', 'browser', 'browserManifestFile',
              'port', 'statsFile', 'statsDelay', 'testfilter'])
     .alias('browser', 'b').alias('help', 'h').alias('masterMode', 'm')
@@ -63,6 +63,7 @@ function parseOptions() {
     .describe('fontTest', 'Run the font tests.')
     .describe('noDownload', 'Skips test PDFs downloading.')
     .describe('downloadOnly', 'Download test PDFs without running the tests.')
+    .describe('strictVerify', 'Error if verifying the manifest files fails.')
     .describe('statsFile', 'The file where to store stats.')
     .describe('statsDelay', 'The amount of time in milliseconds the browser ' +
       'should wait before starting stats.')
@@ -140,7 +141,9 @@ function examineRefImages() {
   startServer();
   var startUrl = 'http://' + server.host + ':' + server.port +
                  '/test/resources/reftest-analyzer.html#web=/test/eq.log';
-  var browser = WebBrowser.create(sessions[0].config);
+  var config = Object.assign({}, sessions[0].config);
+  config['headless'] = false;
+  var browser = WebBrowser.create(config);
   browser.start(startUrl);
 }
 
@@ -207,7 +210,7 @@ function startRefTest(masterMode, showRefImages) {
     }
 
     if (fs.existsSync(eqLog)) {
-      fs.unlink(eqLog);
+      fs.unlinkSync(eqLog);
     }
     if (fs.existsSync(testResultDir)) {
       testUtils.removeDirSync(testResultDir);
@@ -318,7 +321,7 @@ function checkEq(task, results, browser, masterMode) {
     }
     var testSnapshot = pageResults[page].snapshot;
     if (testSnapshot && testSnapshot.indexOf('data:image/png;base64,') === 0) {
-      testSnapshot = new Buffer(testSnapshot.substring(22), 'base64');
+      testSnapshot = Buffer.from(testSnapshot.substring(22), 'base64');
     } else {
       console.error('Valid snapshot was not found.');
     }
@@ -714,6 +717,9 @@ function ensurePDFsDownloaded(callback) {
                     'used for testing.');
         console.log('Please re-download the files, or adjust the MD5 ' +
                     'checksum in the manifest for the files listed above.\n');
+        if (options.strictVerify) {
+          process.exit(1);
+        }
       }
       callback();
     });

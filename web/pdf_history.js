@@ -14,7 +14,7 @@
  */
 
 import {
-  cloneObj, isValidRotation, parseQueryString, waitOnEventOrTimeout
+  isValidRotation, parseQueryString, waitOnEventOrTimeout
 } from './ui_utils';
 import { getGlobalEventBus } from './dom_events';
 
@@ -164,7 +164,7 @@ class PDFHistory {
       return;
     }
     if ((namedDest && typeof namedDest !== 'string') ||
-        !(explicitDest instanceof Array) ||
+        !Array.isArray(explicitDest) ||
         !(Number.isInteger(pageNumber) &&
           pageNumber > 0 && pageNumber <= this.linkService.pagesCount)) {
       console.error('PDFHistory.push: Invalid parameters.');
@@ -303,7 +303,7 @@ class PDFHistory {
     }
     let position = this._position;
     if (temporary) {
-      position = cloneObj(this._position);
+      position = Object.assign(Object.create(null), this._position);
       position.temporary = true;
     }
 
@@ -567,7 +567,7 @@ function isDestArraysEqual(firstDest, secondDest) {
     if (typeof first !== typeof second) {
       return false;
     }
-    if (first instanceof Array || second instanceof Array) {
+    if (Array.isArray(first) || Array.isArray(second)) {
       return false;
     }
     if (first !== null && typeof first === 'object' && second !== null) {
@@ -584,7 +584,7 @@ function isDestArraysEqual(firstDest, secondDest) {
     return first === second || (Number.isNaN(first) && Number.isNaN(second));
   }
 
-  if (!(firstDest instanceof Array && secondDest instanceof Array)) {
+  if (!(Array.isArray(firstDest) && Array.isArray(secondDest))) {
     return false;
   }
   if (firstDest.length !== secondDest.length) {

@@ -65,9 +65,13 @@
 !issue8823.pdf
 !issue9084.pdf
 !issue9105_reduced.pdf
+!issue9252.pdf
 !issue9262_reduced.pdf
 !issue9291.pdf
+!issue9418.pdf
 !issue9458.pdf
+!issue9915_reduced.pdf
+!issue9940.pdf
 !bad-PageLabels.pdf
 !decodeACSuccessive.pdf
 !filled-background.pdf
@@ -84,6 +88,7 @@
 !bug1068432.pdf
 !bug1146106.pdf
 !bug1252420.pdf
+!issue9949.pdf
 !bug1308536.pdf
 !bug1337429.pdf
 !issue5564_reduced.pdf
@@ -109,6 +114,7 @@
 !issue5686.pdf
 !issue3928.pdf
 !clippath.pdf
+!issue8795_reduced.pdf
 !close-path-bug.pdf
 !issue6019.pdf
 !issue6621.pdf
@@ -149,6 +155,7 @@
 !bug1108301.pdf
 !bug1157493.pdf
 !bug1250079.pdf
+!bug1473809.pdf
 !pdfjsbad1586.pdf
 !freeculture.pdf
 !issue6006.pdf
@@ -262,6 +269,7 @@
 !issue4573.pdf
 !issue4722.pdf
 !issue4800.pdf
+!text_clip_cff_cid.pdf
 !issue4801.pdf
 !issue5334.pdf
 !bug1186827.pdf
@@ -274,6 +282,7 @@
 !issue5475.pdf
 !annotation-border-styles.pdf
 !IdentityToUnicodeMap_charCodeOf.pdf
+!PDFJS-9279-reduced.pdf
 !issue5481.pdf
 !issue5567.pdf
 !issue5701.pdf
@@ -296,6 +305,7 @@
 !issue7014.pdf
 !issue8187.pdf
 !annotation-link-text-popup.pdf
+!issue9278.pdf
 !annotation-text-without-popup.pdf
 !annotation-underline.pdf
 !annotation-strikeout.pdf
@@ -317,3 +327,6 @@
 !transparent.pdf
 !xobject-image.pdf
 !ccitt_EndOfBlock_false.pdf
+!issue9972-1.pdf
+!issue9972-2.pdf
+!issue9972-3.pdf

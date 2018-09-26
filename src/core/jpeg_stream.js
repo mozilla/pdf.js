@@ -63,7 +63,10 @@ let JpegStream = (function JpegStreamClosure() {
     if (this.eof) {
       return;
     }
-    let jpegImage = new JpegImage();
+    let jpegOptions = {
+      decodeTransform: undefined,
+      colorTransform: undefined,
+    };
 
     // Checking if values need to be transformed before conversion.
     let decodeArr = this.dict.getArray('Decode', 'D');
@@ -81,20 +84,25 @@ let JpegStream = (function JpegStreamClosure() {
         }
       }
       if (transformNeeded) {
-        jpegImage.decodeTransform = transform;
+        jpegOptions.decodeTransform = transform;
       }
     }
     // Fetching the 'ColorTransform' entry, if it exists.
     if (isDict(this.params)) {
       let colorTransform = this.params.get('ColorTransform');
       if (Number.isInteger(colorTransform)) {
-        jpegImage.colorTransform = colorTransform;
+        jpegOptions.colorTransform = colorTransform;
       }
     }
+    const jpegImage = new JpegImage(jpegOptions);
 
     jpegImage.parse(this.bytes);
-    let data = jpegImage.getData(this.drawWidth, this.drawHeight,
-                                 this.forceRGB);
+    let data = jpegImage.getData({
+      width: this.drawWidth,
+      height: this.drawHeight,
+      forceRGB: this.forceRGB,
+      isSourcePDF: true,
+    });
     this.buffer = data;
     this.bufferLength = data.length;
     this.eof = true;

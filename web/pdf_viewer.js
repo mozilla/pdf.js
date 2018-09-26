@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { BaseViewer, ScrollMode } from './base_viewer';
 import { getVisibleElements, scrollIntoView } from './ui_utils';
-import { BaseViewer } from './base_viewer';
 import { shadow } from 'pdfjs-lib';
 
 class PDFViewer extends BaseViewer {
@@ -23,12 +23,22 @@ class PDFViewer extends BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, }) {
+    if (!pageSpot && !this.isInPresentationMode) {
+      const left = pageDiv.offsetLeft + pageDiv.clientLeft;
+      const right = left + pageDiv.clientWidth;
+      const { scrollLeft, clientWidth, } = this.container;
+      if (this._scrollMode === ScrollMode.HORIZONTAL ||
+          left < scrollLeft || right > scrollLeft + clientWidth) {
+        pageSpot = { left: 0, top: 0, };
+      }
+    }
     scrollIntoView(pageDiv, pageSpot);
   }
 
   _getVisiblePages() {
     if (!this.isInPresentationMode) {
-      return getVisibleElements(this.container, this._pages, true);
+      return getVisibleElements(this.container, this._pages, true,
+                                this._scrollMode === ScrollMode.HORIZONTAL);
     }
     // The algorithm in getVisibleElements doesn't work in all browsers and
     // configurations when presentation mode is active.
@@ -44,7 +54,7 @@ class PDFViewer extends BaseViewer {
     if (numVisiblePages === 0) {
       return;
     }
-    this._resizeBuffer(numVisiblePages);
+    this._resizeBuffer(numVisiblePages, visiblePages);
 
     this.renderingQueue.renderHighestPriority(visible);
 
@@ -75,6 +85,13 @@ class PDFViewer extends BaseViewer {
       source: this,
       location: this._location,
     });
+  }
+
+  get _isScrollModeHorizontal() {
+    // Used to ensure that pre-rendering of the next/previous page works
+    // correctly, since Scroll/Spread modes are ignored in Presentation Mode.
+    return (this.isInPresentationMode ?
+            false : this._scrollMode === ScrollMode.HORIZONTAL);
   }
 }
 

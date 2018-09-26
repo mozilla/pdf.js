@@ -16,8 +16,8 @@
 import {
   AbortException, assert, CMapCompressionType, createPromiseCapability,
   FONT_IDENTITY_MATRIX, FormatError, getLookupTableFactory, IDENTITY_MATRIX,
-  info, isNum, isString, NativeImageDecoding, OPS, TextRenderingMode,
-  UNSUPPORTED_FEATURES, Util, warn
+  info, isNum, isString, NativeImageDecoding, OPS, stringToPDFString,
+  TextRenderingMode, UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
 import { DecodeStream, Stream } from './stream';
@@ -131,20 +131,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.options = options || DefaultPartialEvaluatorOptions;
     this.pdfFunctionFactory = pdfFunctionFactory;
 
-    this.fetchBuiltInCMap = (name) => {
-      var cachedCMap = this.builtInCMapCache[name];
-      if (cachedCMap) {
-        return Promise.resolve(cachedCMap);
+    this.fetchBuiltInCMap = async (name) => {
+      if (this.builtInCMapCache.has(name)) {
+        return this.builtInCMapCache.get(name);
       }
-      return this.handler.sendWithPromise('FetchBuiltInCMap', {
-        name,
-      }).then((data) => {
-        if (data.compressionType !== CMapCompressionType.NONE) {
-          // Given the size of uncompressed CMaps, only cache compressed ones.
-          this.builtInCMapCache[name] = data;
-        }
-        return data;
-      });
+      const data = await this.handler.sendWithPromise('FetchBuiltInCMap',
+                                                      { name, });
+      if (data.compressionType !== CMapCompressionType.NONE) {
+        // Given the size of uncompressed CMaps, only cache compressed ones.
+        this.builtInCMapCache.set(name, data);
+      }
+      return data;
     };
   }
 
@@ -377,7 +374,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var width = dict.get('Width', 'W');
         var height = dict.get('Height', 'H');
         var bitStrideLength = (width + 7) >> 3;
-        var imgArray = image.getBytes(bitStrideLength * height);
+        var imgArray = image.getBytes(bitStrideLength * height,
+                                      /* forceClamped = */ true);
         var decode = dict.getArray('Decode', 'D');
 
         imgData = PDFImage.createMask({
@@ -1260,7 +1258,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // notification and allow rendering to continue.
           this.handler.send('UnsupportedFeature',
                             { featureId: UNSUPPORTED_FEATURES.unknown, });
-          warn('getOperatorList - ignoring errors during task: ' + task.name);
+          warn(`getOperatorList - ignoring errors during "${task.name}" ` +
+               `task: "${reason}".`);
 
           closePendingRestoreOPS();
           return;
@@ -1845,7 +1844,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         if (this.options.ignoreErrors) {
           // Error(s) in the TextContent -- allow text-extraction to continue.
-          warn('getTextContent - ignoring errors during task: ' + task.name);
+          warn(`getTextContent - ignoring errors during "${task.name}" ` +
+               `task: "${reason}".`);
 
           flushTextContentItem();
           enqueueChunk();
@@ -1869,8 +1869,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var cidSystemInfo = dict.get('CIDSystemInfo');
         if (isDict(cidSystemInfo)) {
           properties.cidSystemInfo = {
-            registry: cidSystemInfo.get('Registry'),
-            ordering: cidSystemInfo.get('Ordering'),
+            registry: stringToPDFString(cidSystemInfo.get('Registry')),
+            ordering: stringToPDFString(cidSystemInfo.get('Ordering')),
             supplement: cidSystemInfo.get('Supplement'),
           };
         }
@@ -2929,6 +2929,8 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
     t['null'] = null;
   });
 
+  const MAX_INVALID_PATH_OPS = 20;
+
   function EvaluatorPreprocessor(stream, xref, stateManager) {
     this.opMap = getOPMap();
     // TODO(mduan): pass array of knownCommands rather than this.opMap
@@ -2936,6 +2938,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
     this.parser = new Parser(new Lexer(stream, this.opMap), false, xref);
     this.stateManager = stateManager;
     this.nonProcessedArgs = [];
+    this._numInvalidPathOPS = 0;
   }
 
   EvaluatorPreprocessor.prototype = {
@@ -2973,7 +2976,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
           // Check that the command is valid
           var opSpec = this.opMap[cmd];
           if (!opSpec) {
-            warn('Unknown command "' + cmd + '"');
+            warn(`Unknown command "${cmd}".`);
             continue;
           }
 
@@ -2999,18 +3002,28 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
             }
 
             if (argsLength < numArgs) {
+              const partialMsg = `command ${cmd}: expected ${numArgs} args, ` +
+                                 `but received ${argsLength} args.`;
+
+              // Incomplete path operators, in particular, can result in fairly
+              // chaotic rendering artifacts. Hence the following heuristics is
+              // used to error, rather than just warn, once a number of invalid
+              // path operators have been encountered (fixes bug1443140.pdf).
+              if ((fn >= OPS.moveTo && fn <= OPS.endPath) && // Path operator
+                  ++this._numInvalidPathOPS > MAX_INVALID_PATH_OPS) {
+                throw new FormatError(`Invalid ${partialMsg}`);
+              }
               // If we receive too few arguments, it's not possible to execute
               // the command, hence we skip the command.
-              warn('Skipping command ' + fn + ': expected ' + numArgs +
-                   ' args, but received ' + argsLength + ' args.');
+              warn(`Skipping ${partialMsg}`);
               if (args !== null) {
                 args.length = 0;
               }
               continue;
             }
           } else if (argsLength > numArgs) {
-            info('Command ' + fn + ': expected [0,' + numArgs +
-                 '] args, but received ' + argsLength + ' args.');
+            info(`Command ${cmd}: expected [0, ${numArgs}] args, ` +
+                 `but received ${argsLength} args.`);
           }
 
           // TODO figure out how to type-check vararg functions

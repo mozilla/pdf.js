@@ -14,7 +14,7 @@
  */
 /* eslint-disable no-multi-spaces */
 
-import { warn } from '../shared/util';
+import { assert, warn } from '../shared/util';
 
 let JpegError = (function JpegErrorClosure() {
   function JpegError(msg) {
@@ -39,6 +39,18 @@ let DNLMarkerError = (function DNLMarkerErrorClosure() {
   DNLMarkerError.constructor = DNLMarkerError;
 
   return DNLMarkerError;
+})();
+
+let EOIMarkerError = (function EOIMarkerErrorClosure() {
+  function EOIMarkerError(message) {
+    this.message = message;
+  }
+
+  EOIMarkerError.prototype = new Error();
+  EOIMarkerError.prototype.name = 'EOIMarkerError';
+  EOIMarkerError.constructor = EOIMarkerError;
+
+  return EOIMarkerError;
 })();
 
 /**
@@ -82,9 +94,9 @@ var JpegImage = (function JpegImageClosure() {
   var dctSqrt2 =  5793;   // sqrt(2)
   var dctSqrt1d2 = 2896;  // sqrt(2) / 2
 
-  function JpegImage() {
-    this.decodeTransform = null;
-    this.colorTransform = -1;
+  function JpegImage({ decodeTransform = null, colorTransform = -1, } = {}) {
+    this._decodeTransform = decodeTransform;
+    this._colorTransform = colorTransform;
   }
 
   function buildHuffmanTable(codeLengths, values) {
@@ -148,6 +160,9 @@ var JpegImage = (function JpegImageClosure() {
               throw new DNLMarkerError(
                 'Found DNL marker (0xFFDC) while parsing scan data', scanLines);
             }
+          } else if (nextByte === 0xD9) { // EOI == 0xFFD9
+            throw new EOIMarkerError(
+              'Found EOI marker (0xFFD9) while parsing scan data');
           }
           throw new JpegError(
             `unexpected marker ${((bitsData << 8) | nextByte).toString(16)}`);
@@ -716,7 +731,7 @@ var JpegImage = (function JpegImageClosure() {
       }
 
       fileMarker = readUint16();
-      while (fileMarker !== 0xFFD9) { // EOI (End of image)
+      markerLoop: while (fileMarker !== 0xFFD9) { // EOI (End of image)
         var i, j, l;
         switch (fileMarker) {
           case 0xFFE0: // APP0 (Application Specific)
@@ -892,9 +907,11 @@ var JpegImage = (function JpegImageClosure() {
               offset += processed;
             } catch (ex) {
               if (ex instanceof DNLMarkerError) {
-                warn('Attempting to re-parse JPEG image using "scanLines" ' +
-                     'parameter found in DNL marker (0xFFDC) segment.');
+                warn(`${ex.message} -- attempting to re-parse the JPEG image.`);
                 return this.parse(data, { dnlScanLines: ex.scanLines, });
+              } else if (ex instanceof EOIMarkerError) {
+                warn(`${ex.message} -- ignoring the rest of the image data.`);
+                break markerLoop;
               }
               throw ex;
             }
@@ -958,7 +975,7 @@ var JpegImage = (function JpegImageClosure() {
       this.numComponents = this.components.length;
     },
 
-    _getLinearizedBlockData: function getLinearizedBlockData(width, height) {
+    _getLinearizedBlockData(width, height, isSourcePDF = false) {
       var scaleX = this.width / width, scaleY = this.height / height;
 
       var component, componentScaleX, componentScaleY, blocksPerScanline;
@@ -996,7 +1013,24 @@ var JpegImage = (function JpegImageClosure() {
       }
 
       // decodeTransform contains pairs of multiplier (-256..256) and additive
-      var transform = this.decodeTransform;
+      let transform = this._decodeTransform;
+
+      // In PDF files, JPEG images with CMYK colour spaces are usually inverted
+      // (this can be observed by extracting the raw image data).
+      // Since the conversion algorithms (see below) were written primarily for
+      // the PDF use-cases, attempting to use `JpegImage` to parse standalone
+      // JPEG (CMYK) images may thus result in inverted images (see issue 9513).
+      //
+      // Unfortunately it's not (always) possible to tell, from the image data
+      // alone, if it needs to be inverted. Thus in an attempt to provide better
+      // out-of-box behaviour when `JpegImage` is used standalone, default to
+      // inverting JPEG (CMYK) images if and only if the image data does *not*
+      // come from a PDF file and no `decodeTransform` was passed by the user.
+      if (!isSourcePDF && numComponents === 4 && !transform) {
+        transform = new Int32Array([
+          -256, 255, -256, 255, -256, 255, -256, 255]);
+      }
+
       if (transform) {
         for (i = 0; i < dataLength;) {
           for (j = 0, k = 0; j < numComponents; j++, i++, k += 2) {
@@ -1007,13 +1041,13 @@ var JpegImage = (function JpegImageClosure() {
       return data;
     },
 
-    _isColorConversionNeeded() {
+    get _isColorConversionNeeded() {
       if (this.adobe) {
         // The adobe transform marker overrides any previous setting.
         return !!this.adobe.transformCode;
       }
       if (this.numComponents === 3) {
-        if (this.colorTransform === 0) {
+        if (this._colorTransform === 0) {
           // If the Adobe transform marker is not present and the image
           // dictionary has a 'ColorTransform' entry, explicitly set to `0`,
           // then the colours should *not* be transformed.
@@ -1022,7 +1056,7 @@ var JpegImage = (function JpegImageClosure() {
         return true;
       }
       // `this.numComponents !== 3`
-      if (this.colorTransform === 1) {
+      if (this._colorTransform === 1) {
         // If the Adobe transform marker is not present and the image
         // dictionary has a 'ColorTransform' entry, explicitly set to `1`,
         // then the colours should be transformed.
@@ -1145,14 +1179,18 @@ var JpegImage = (function JpegImageClosure() {
       return data.subarray(0, offset);
     },
 
-    getData: function getData(width, height, forceRGBoutput) {
+    getData({ width, height, forceRGB = false, isSourcePDF = false, }) {
+      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING && !LIB')) {
+        assert(isSourcePDF === true,
+          'JpegImage.getData: Unexpected "isSourcePDF" value for PDF files.');
+      }
       if (this.numComponents > 4) {
         throw new JpegError('Unsupported color mode');
       }
-      // type of data: Uint8Array(width * height * numComponents)
-      var data = this._getLinearizedBlockData(width, height);
+      // Type of data: Uint8ClampedArray(width * height * numComponents)
+      var data = this._getLinearizedBlockData(width, height, isSourcePDF);
 
-      if (this.numComponents === 1 && forceRGBoutput) {
+      if (this.numComponents === 1 && forceRGB) {
         var dataLength = data.length;
         var rgbData = new Uint8ClampedArray(dataLength * 3);
         var offset = 0;
@@ -1163,15 +1201,15 @@ var JpegImage = (function JpegImageClosure() {
           rgbData[offset++] = grayColor;
         }
         return rgbData;
-      } else if (this.numComponents === 3 && this._isColorConversionNeeded()) {
+      } else if (this.numComponents === 3 && this._isColorConversionNeeded) {
         return this._convertYccToRgb(data);
       } else if (this.numComponents === 4) {
-        if (this._isColorConversionNeeded()) {
-          if (forceRGBoutput) {
+        if (this._isColorConversionNeeded) {
+          if (forceRGB) {
             return this._convertYcckToRgb(data);
           }
           return this._convertYcckToCmyk(data);
-        } else if (forceRGBoutput) {
+        } else if (forceRGB) {
           return this._convertCmykToRgb(data);
         }
       }

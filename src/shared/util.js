@@ -15,8 +15,10 @@
 
 import './compatibility';
 import { ReadableStream } from './streams_polyfill';
+import { URL } from './url_polyfill';
 
-var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
+const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
+const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
 const NativeImageDecoding = {
   NONE: 'none',
@@ -24,7 +26,19 @@ const NativeImageDecoding = {
   DISPLAY: 'display',
 };
 
-var TextRenderingMode = {
+// Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
+const PermissionFlag = {
+  PRINT: 0x04,
+  MODIFY_CONTENTS: 0x08,
+  COPY: 0x10,
+  MODIFY_ANNOTATIONS: 0x20,
+  FILL_INTERACTIVE_FORMS: 0x100,
+  COPY_FOR_ACCESSIBILITY: 0x200,
+  ASSEMBLE: 0x400,
+  PRINT_HIGH_QUALITY: 0x800,
+};
+
+const TextRenderingMode = {
   FILL: 0,
   STROKE: 1,
   FILL_STROKE: 2,
@@ -37,13 +51,13 @@ var TextRenderingMode = {
   ADD_TO_PATH_FLAG: 4,
 };
 
-var ImageKind = {
+const ImageKind = {
   GRAYSCALE_1BPP: 1,
   RGB_24BPP: 2,
   RGBA_32BPP: 3,
 };
 
-var AnnotationType = {
+const AnnotationType = {
   TEXT: 1,
   LINK: 2,
   FREETEXT: 3,
@@ -72,7 +86,7 @@ var AnnotationType = {
   REDACT: 26,
 };
 
-var AnnotationFlag = {
+const AnnotationFlag = {
   INVISIBLE: 0x01,
   HIDDEN: 0x02,
   PRINT: 0x04,
@@ -85,7 +99,7 @@ var AnnotationFlag = {
   LOCKEDCONTENTS: 0x200,
 };
 
-var AnnotationFieldFlag = {
+const AnnotationFieldFlag = {
   READONLY: 0x0000001,
   REQUIRED: 0x0000002,
   NOEXPORT: 0x0000004,
@@ -107,7 +121,7 @@ var AnnotationFieldFlag = {
   COMMITONSELCHANGE: 0x4000000,
 };
 
-var AnnotationBorderStyleType = {
+const AnnotationBorderStyleType = {
   SOLID: 1,
   DASHED: 2,
   BEVELED: 3,
@@ -115,7 +129,7 @@ var AnnotationBorderStyleType = {
   UNDERLINE: 5,
 };
 
-var StreamType = {
+const StreamType = {
   UNKNOWN: 0,
   FLATE: 1,
   LZW: 2,
@@ -128,7 +142,7 @@ var StreamType = {
   RL: 9,
 };
 
-var FontType = {
+const FontType = {
   UNKNOWN: 0,
   TYPE1: 1,
   TYPE1C: 2,
@@ -148,14 +162,14 @@ const VerbosityLevel = {
   INFOS: 5,
 };
 
-var CMapCompressionType = {
+const CMapCompressionType = {
   NONE: 0,
   BINARY: 1,
   STREAM: 2,
 };
 
 // All the possible operations for an operator list.
-var OPS = {
+const OPS = {
   // Intentionally start from 1 so it is easy to spot bad operators that will be
   // 0's.
   dependency: 1,
@@ -251,6 +265,20 @@ var OPS = {
   constructPath: 91,
 };
 
+const UNSUPPORTED_FEATURES = {
+  unknown: 'unknown',
+  forms: 'forms',
+  javaScript: 'javaScript',
+  smask: 'smask',
+  shadingPattern: 'shadingPattern',
+  font: 'font',
+};
+
+const PasswordResponses = {
+  NEED_PASSWORD: 1,
+  INCORRECT_PASSWORD: 2,
+};
+
 let verbosity = VerbosityLevel.WARNINGS;
 
 function setVerbosityLevel(level) {
@@ -294,15 +322,6 @@ function assert(cond, msg) {
   }
 }
 
-var UNSUPPORTED_FEATURES = {
-  unknown: 'unknown',
-  forms: 'forms',
-  javaScript: 'javaScript',
-  smask: 'smask',
-  shadingPattern: 'shadingPattern',
-  font: 'font',
-};
-
 // Checks if URLs have the same origin. For non-HTTP based URLs, returns false.
 function isSameOrigin(baseUrl, otherUrl) {
   try {
@@ -319,7 +338,7 @@ function isSameOrigin(baseUrl, otherUrl) {
 }
 
 // Checks if URLs use one of the whitelisted protocols, e.g. to avoid XSS.
-function isValidProtocol(url) {
+function _isValidProtocol(url) {
   if (!url) {
     return false;
   }
@@ -336,7 +355,8 @@ function isValidProtocol(url) {
 }
 
 /**
- * Attempts to create a valid absolute URL (utilizing `isValidProtocol`).
+ * Attempts to create a valid absolute URL.
+ *
  * @param {URL|string} url - An absolute, or relative, URL.
  * @param {URL|string} baseUrl - An absolute URL.
  * @returns Either a valid {URL}, or `null` otherwise.
@@ -347,7 +367,7 @@ function createValidAbsoluteUrl(url, baseUrl) {
   }
   try {
     var absoluteUrl = baseUrl ? new URL(url, baseUrl) : new URL(url);
-    if (isValidProtocol(absoluteUrl)) {
+    if (_isValidProtocol(absoluteUrl)) {
       return absoluteUrl;
     }
   } catch (ex) { /* `new URL()` will throw on incorrect data. */ }
@@ -373,11 +393,6 @@ function getLookupTableFactory(initializer) {
     return lookup;
   };
 }
-
-var PasswordResponses = {
-  NEED_PASSWORD: 1,
-  INCORRECT_PASSWORD: 2,
-};
 
 var PasswordException = (function PasswordExceptionClosure() {
   function PasswordException(msg, code) {
@@ -441,18 +456,6 @@ var UnexpectedResponseException =
   UnexpectedResponseException.constructor = UnexpectedResponseException;
 
   return UnexpectedResponseException;
-})();
-
-var NotImplementedException = (function NotImplementedExceptionClosure() {
-  function NotImplementedException(msg) {
-    this.message = msg;
-  }
-
-  NotImplementedException.prototype = new Error();
-  NotImplementedException.prototype.name = 'NotImplementedException';
-  NotImplementedException.constructor = NotImplementedException;
-
-  return NotImplementedException;
 })();
 
 var MissingDataException = (function MissingDataExceptionClosure() {
@@ -691,8 +694,6 @@ function getInheritableProperty({ dict, key, getArray = false,
   return values;
 }
 
-var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
-
 var Util = (function UtilClosure() {
   function Util() {}
 
@@ -850,219 +851,47 @@ var Util = (function UtilClosure() {
     return result;
   };
 
-  var ROMAN_NUMBER_MAP = [
-    '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
-    '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
-    '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'
-  ];
-  /**
-   * Converts positive integers to (upper case) Roman numerals.
-   * @param {integer} number - The number that should be converted.
-   * @param {boolean} lowerCase - Indicates if the result should be converted
-   *   to lower case letters. The default is false.
-   * @return {string} The resulting Roman number.
-   */
-  Util.toRoman = function Util_toRoman(number, lowerCase) {
-    assert(Number.isInteger(number) && number > 0,
-           'The number should be a positive integer.');
-    var pos, romanBuf = [];
-    // Thousands
-    while (number >= 1000) {
-      number -= 1000;
-      romanBuf.push('M');
-    }
-    // Hundreds
-    pos = (number / 100) | 0;
-    number %= 100;
-    romanBuf.push(ROMAN_NUMBER_MAP[pos]);
-    // Tens
-    pos = (number / 10) | 0;
-    number %= 10;
-    romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
-    // Ones
-    romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
-
-    var romanStr = romanBuf.join('');
-    return (lowerCase ? romanStr.toLowerCase() : romanStr);
-  };
-
-  Util.appendToArray = function Util_appendToArray(arr1, arr2) {
-    Array.prototype.push.apply(arr1, arr2);
-  };
-
-  Util.prependToArray = function Util_prependToArray(arr1, arr2) {
-    Array.prototype.unshift.apply(arr1, arr2);
-  };
-
-  Util.extendObj = function extendObj(obj1, obj2) {
-    for (var key in obj2) {
-      obj1[key] = obj2[key];
-    }
-  };
-
-  Util.inherit = function Util_inherit(sub, base, prototype) {
-    sub.prototype = Object.create(base.prototype);
-    sub.prototype.constructor = sub;
-    for (var prop in prototype) {
-      sub.prototype[prop] = prototype[prop];
-    }
-  };
-
-  Util.loadScript = function Util_loadScript(src, callback) {
-    var script = document.createElement('script');
-    var loaded = false;
-    script.setAttribute('src', src);
-    if (callback) {
-      script.onload = function() {
-        if (!loaded) {
-          callback();
-        }
-        loaded = true;
-      };
-    }
-    document.getElementsByTagName('head')[0].appendChild(script);
-  };
-
   return Util;
 })();
 
+const ROMAN_NUMBER_MAP = [
+  '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
+  '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
+  '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'
+];
+
 /**
- * PDF page viewport created based on scale, rotation and offset.
- * @class
- * @alias PageViewport
+ * Converts positive integers to (upper case) Roman numerals.
+ * @param {integer} number - The number that should be converted.
+ * @param {boolean} lowerCase - Indicates if the result should be converted
+ *   to lower case letters. The default value is `false`.
+ * @return {string} The resulting Roman number.
  */
-var PageViewport = (function PageViewportClosure() {
-  /**
-   * @constructor
-   * @private
-   * @param viewBox {Array} xMin, yMin, xMax and yMax coordinates.
-   * @param scale {number} scale of the viewport.
-   * @param rotation {number} rotations of the viewport in degrees.
-   * @param offsetX {number} offset X
-   * @param offsetY {number} offset Y
-   * @param dontFlip {boolean} if true, axis Y will not be flipped.
-   */
-  function PageViewport(viewBox, scale, rotation, offsetX, offsetY, dontFlip) {
-    this.viewBox = viewBox;
-    this.scale = scale;
-    this.rotation = rotation;
-    this.offsetX = offsetX;
-    this.offsetY = offsetY;
-
-    // creating transform to convert pdf coordinate system to the normal
-    // canvas like coordinates taking in account scale and rotation
-    var centerX = (viewBox[2] + viewBox[0]) / 2;
-    var centerY = (viewBox[3] + viewBox[1]) / 2;
-    var rotateA, rotateB, rotateC, rotateD;
-    rotation = rotation % 360;
-    rotation = rotation < 0 ? rotation + 360 : rotation;
-    switch (rotation) {
-      case 180:
-        rotateA = -1; rotateB = 0; rotateC = 0; rotateD = 1;
-        break;
-      case 90:
-        rotateA = 0; rotateB = 1; rotateC = 1; rotateD = 0;
-        break;
-      case 270:
-        rotateA = 0; rotateB = -1; rotateC = -1; rotateD = 0;
-        break;
-      // case 0:
-      default:
-        rotateA = 1; rotateB = 0; rotateC = 0; rotateD = -1;
-        break;
-    }
-
-    if (dontFlip) {
-      rotateC = -rotateC; rotateD = -rotateD;
-    }
-
-    var offsetCanvasX, offsetCanvasY;
-    var width, height;
-    if (rotateA === 0) {
-      offsetCanvasX = Math.abs(centerY - viewBox[1]) * scale + offsetX;
-      offsetCanvasY = Math.abs(centerX - viewBox[0]) * scale + offsetY;
-      width = Math.abs(viewBox[3] - viewBox[1]) * scale;
-      height = Math.abs(viewBox[2] - viewBox[0]) * scale;
-    } else {
-      offsetCanvasX = Math.abs(centerX - viewBox[0]) * scale + offsetX;
-      offsetCanvasY = Math.abs(centerY - viewBox[1]) * scale + offsetY;
-      width = Math.abs(viewBox[2] - viewBox[0]) * scale;
-      height = Math.abs(viewBox[3] - viewBox[1]) * scale;
-    }
-    // creating transform for the following operations:
-    // translate(-centerX, -centerY), rotate and flip vertically,
-    // scale, and translate(offsetCanvasX, offsetCanvasY)
-    this.transform = [
-      rotateA * scale,
-      rotateB * scale,
-      rotateC * scale,
-      rotateD * scale,
-      offsetCanvasX - rotateA * scale * centerX - rotateC * scale * centerY,
-      offsetCanvasY - rotateB * scale * centerX - rotateD * scale * centerY
-    ];
-
-    this.width = width;
-    this.height = height;
-    this.fontScale = scale;
+function toRomanNumerals(number, lowerCase = false) {
+  assert(Number.isInteger(number) && number > 0,
+         'The number should be a positive integer.');
+  let pos, romanBuf = [];
+  // Thousands
+  while (number >= 1000) {
+    number -= 1000;
+    romanBuf.push('M');
   }
-  PageViewport.prototype = /** @lends PageViewport.prototype */ {
-    /**
-     * Clones viewport with additional properties.
-     * @param args {Object} (optional) If specified, may contain the 'scale' or
-     * 'rotation' properties to override the corresponding properties in
-     * the cloned viewport.
-     * @returns {PageViewport} Cloned viewport.
-     */
-    clone: function PageViewPort_clone(args) {
-      args = args || {};
-      var scale = 'scale' in args ? args.scale : this.scale;
-      var rotation = 'rotation' in args ? args.rotation : this.rotation;
-      return new PageViewport(this.viewBox.slice(), scale, rotation,
-                              this.offsetX, this.offsetY, args.dontFlip);
-    },
-    /**
-     * Converts PDF point to the viewport coordinates. For examples, useful for
-     * converting PDF location into canvas pixel coordinates.
-     * @param x {number} X coordinate.
-     * @param y {number} Y coordinate.
-     * @returns {Object} Object that contains 'x' and 'y' properties of the
-     * point in the viewport coordinate space.
-     * @see {@link convertToPdfPoint}
-     * @see {@link convertToViewportRectangle}
-     */
-    convertToViewportPoint: function PageViewport_convertToViewportPoint(x, y) {
-      return Util.applyTransform([x, y], this.transform);
-    },
-    /**
-     * Converts PDF rectangle to the viewport coordinates.
-     * @param rect {Array} xMin, yMin, xMax and yMax coordinates.
-     * @returns {Array} Contains corresponding coordinates of the rectangle
-     * in the viewport coordinate space.
-     * @see {@link convertToViewportPoint}
-     */
-    convertToViewportRectangle:
-      function PageViewport_convertToViewportRectangle(rect) {
-      var tl = Util.applyTransform([rect[0], rect[1]], this.transform);
-      var br = Util.applyTransform([rect[2], rect[3]], this.transform);
-      return [tl[0], tl[1], br[0], br[1]];
-    },
-    /**
-     * Converts viewport coordinates to the PDF location. For examples, useful
-     * for converting canvas pixel location into PDF one.
-     * @param x {number} X coordinate.
-     * @param y {number} Y coordinate.
-     * @returns {Object} Object that contains 'x' and 'y' properties of the
-     * point in the PDF coordinate space.
-     * @see {@link convertToViewportPoint}
-     */
-    convertToPdfPoint: function PageViewport_convertToPdfPoint(x, y) {
-      return Util.applyInverseTransform([x, y], this.transform);
-    },
-  };
-  return PageViewport;
-})();
+  // Hundreds
+  pos = (number / 100) | 0;
+  number %= 100;
+  romanBuf.push(ROMAN_NUMBER_MAP[pos]);
+  // Tens
+  pos = (number / 10) | 0;
+  number %= 10;
+  romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
+  // Ones
+  romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
 
-var PDFStringTranslateTable = [
+  const romanStr = romanBuf.join('');
+  return (lowerCase ? romanStr.toLowerCase() : romanStr);
+}
+
+const PDFStringTranslateTable = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0x2D8, 0x2C7, 0x2C6, 0x2D9, 0x2DD, 0x2DB, 0x2DA, 0x2DC, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1152,13 +981,6 @@ function createPromiseCapability() {
   return capability;
 }
 
-var createBlob = function createBlob(data, contentType) {
-  if (typeof Blob !== 'undefined') {
-    return new Blob([data], { type: contentType, });
-  }
-  throw new Error('The "Blob" constructor is not supported.');
-};
-
 var createObjectURL = (function createObjectURLClosure() {
   // Blob/createObjectURL is not available, falling back to data schema.
   var digits =
@@ -1166,7 +988,7 @@ var createObjectURL = (function createObjectURLClosure() {
 
   return function createObjectURL(data, contentType, forceDataSchema = false) {
     if (!forceDataSchema && URL.createObjectURL) {
-      var blob = createBlob(data, contentType);
+      const blob = new Blob([data], { type: contentType, });
       return URL.createObjectURL(blob);
     }
 
@@ -1184,429 +1006,6 @@ var createObjectURL = (function createObjectURLClosure() {
   };
 })();
 
-function resolveCall(fn, args, thisArg = null) {
-  if (!fn) {
-    return Promise.resolve(undefined);
-  }
-  return new Promise((resolve, reject) => {
-    resolve(fn.apply(thisArg, args));
-  });
-}
-
-function wrapReason(reason) {
-  if (typeof reason !== 'object') {
-    return reason;
-  }
-  switch (reason.name) {
-    case 'AbortException':
-      return new AbortException(reason.message);
-    case 'MissingPDFException':
-      return new MissingPDFException(reason.message);
-    case 'UnexpectedResponseException':
-      return new UnexpectedResponseException(reason.message, reason.status);
-    default:
-      return new UnknownErrorException(reason.message, reason.details);
-  }
-}
-
-function makeReasonSerializable(reason) {
-  if (!(reason instanceof Error) ||
-      reason instanceof AbortException ||
-      reason instanceof MissingPDFException ||
-      reason instanceof UnexpectedResponseException ||
-      reason instanceof UnknownErrorException) {
-    return reason;
-  }
-  return new UnknownErrorException(reason.message, reason.toString());
-}
-
-function resolveOrReject(capability, success, reason) {
-  if (success) {
-    capability.resolve();
-  } else {
-    capability.reject(reason);
-  }
-}
-
-function finalize(promise) {
-  return Promise.resolve(promise).catch(() => {});
-}
-
-function MessageHandler(sourceName, targetName, comObj) {
-  this.sourceName = sourceName;
-  this.targetName = targetName;
-  this.comObj = comObj;
-  this.callbackId = 1;
-  this.streamId = 1;
-  this.postMessageTransfers = true;
-  this.streamSinks = Object.create(null);
-  this.streamControllers = Object.create(null);
-  let callbacksCapabilities = this.callbacksCapabilities = Object.create(null);
-  let ah = this.actionHandler = Object.create(null);
-
-  this._onComObjOnMessage = (event) => {
-    let data = event.data;
-    if (data.targetName !== this.sourceName) {
-      return;
-    }
-    if (data.stream) {
-      this._processStreamMessage(data);
-    } else if (data.isReply) {
-      let callbackId = data.callbackId;
-      if (data.callbackId in callbacksCapabilities) {
-        let callback = callbacksCapabilities[callbackId];
-        delete callbacksCapabilities[callbackId];
-        if ('error' in data) {
-          callback.reject(wrapReason(data.error));
-        } else {
-          callback.resolve(data.data);
-        }
-      } else {
-        throw new Error(`Cannot resolve callback ${callbackId}`);
-      }
-    } else if (data.action in ah) {
-      let action = ah[data.action];
-      if (data.callbackId) {
-        let sourceName = this.sourceName;
-        let targetName = data.sourceName;
-        Promise.resolve().then(function () {
-          return action[0].call(action[1], data.data);
-        }).then((result) => {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            isReply: true,
-            callbackId: data.callbackId,
-            data: result,
-          });
-        }, (reason) => {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            isReply: true,
-            callbackId: data.callbackId,
-            error: makeReasonSerializable(reason),
-          });
-        });
-      } else if (data.streamId) {
-        this._createStreamSink(data);
-      } else {
-        action[0].call(action[1], data.data);
-      }
-    } else {
-      throw new Error(`Unknown action from worker: ${data.action}`);
-    }
-  };
-  comObj.addEventListener('message', this._onComObjOnMessage);
-}
-
-MessageHandler.prototype = {
-  on(actionName, handler, scope) {
-    var ah = this.actionHandler;
-    if (ah[actionName]) {
-      throw new Error(`There is already an actionName called "${actionName}"`);
-    }
-    ah[actionName] = [handler, scope];
-  },
-  /**
-   * Sends a message to the comObj to invoke the action with the supplied data.
-   * @param {String} actionName - Action to call.
-   * @param {JSON} data - JSON data to send.
-   * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers
-   */
-  send(actionName, data, transfers) {
-    var message = {
-      sourceName: this.sourceName,
-      targetName: this.targetName,
-      action: actionName,
-      data,
-    };
-    this.postMessage(message, transfers);
-  },
-  /**
-   * Sends a message to the comObj to invoke the action with the supplied data.
-   * Expects that the other side will callback with the response.
-   * @param {String} actionName - Action to call.
-   * @param {JSON} data - JSON data to send.
-   * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers.
-   * @returns {Promise} Promise to be resolved with response data.
-   */
-  sendWithPromise(actionName, data, transfers) {
-    var callbackId = this.callbackId++;
-    var message = {
-      sourceName: this.sourceName,
-      targetName: this.targetName,
-      action: actionName,
-      data,
-      callbackId,
-    };
-    var capability = createPromiseCapability();
-    this.callbacksCapabilities[callbackId] = capability;
-    try {
-      this.postMessage(message, transfers);
-    } catch (e) {
-      capability.reject(e);
-    }
-    return capability.promise;
-  },
-  /**
-   * Sends a message to the comObj to invoke the action with the supplied data.
-   * Expect that the other side will callback to signal 'start_complete'.
-   * @param {String} actionName - Action to call.
-   * @param {JSON} data - JSON data to send.
-   * @param {Object} queueingStrategy - strategy to signal backpressure based on
-   *                 internal queue.
-   * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers.
-   * @return {ReadableStream} ReadableStream to read data in chunks.
-   */
-  sendWithStream(actionName, data, queueingStrategy, transfers) {
-    let streamId = this.streamId++;
-    let sourceName = this.sourceName;
-    let targetName = this.targetName;
-
-    return new ReadableStream({
-      start: (controller) => {
-        let startCapability = createPromiseCapability();
-        this.streamControllers[streamId] = {
-          controller,
-          startCall: startCapability,
-          isClosed: false,
-        };
-        this.postMessage({
-          sourceName,
-          targetName,
-          action: actionName,
-          streamId,
-          data,
-          desiredSize: controller.desiredSize,
-        });
-        // Return Promise for Async process, to signal success/failure.
-        return startCapability.promise;
-      },
-
-      pull: (controller) => {
-        let pullCapability = createPromiseCapability();
-        this.streamControllers[streamId].pullCall = pullCapability;
-        this.postMessage({
-          sourceName,
-          targetName,
-          stream: 'pull',
-          streamId,
-          desiredSize: controller.desiredSize,
-        });
-        // Returning Promise will not call "pull"
-        // again until current pull is resolved.
-        return pullCapability.promise;
-      },
-
-      cancel: (reason) => {
-        let cancelCapability = createPromiseCapability();
-        this.streamControllers[streamId].cancelCall = cancelCapability;
-        this.streamControllers[streamId].isClosed = true;
-        this.postMessage({
-          sourceName,
-          targetName,
-          stream: 'cancel',
-          reason,
-          streamId,
-        });
-        // Return Promise to signal success or failure.
-        return cancelCapability.promise;
-      },
-    }, queueingStrategy);
-  },
-
-  _createStreamSink(data) {
-    let self = this;
-    let action = this.actionHandler[data.action];
-    let streamId = data.streamId;
-    let desiredSize = data.desiredSize;
-    let sourceName = this.sourceName;
-    let targetName = data.sourceName;
-    let capability = createPromiseCapability();
-
-    let sendStreamRequest = ({ stream, chunk, transfers,
-                               success, reason, }) => {
-      this.postMessage({ sourceName, targetName, stream, streamId,
-                         chunk, success, reason, }, transfers);
-    };
-
-    let streamSink = {
-      enqueue(chunk, size = 1, transfers) {
-        if (this.isCancelled) {
-          return;
-        }
-        let lastDesiredSize = this.desiredSize;
-        this.desiredSize -= size;
-        // Enqueue decreases the desiredSize property of sink,
-        // so when it changes from positive to negative,
-        // set ready as unresolved promise.
-        if (lastDesiredSize > 0 && this.desiredSize <= 0) {
-          this.sinkCapability = createPromiseCapability();
-          this.ready = this.sinkCapability.promise;
-        }
-        sendStreamRequest({ stream: 'enqueue', chunk, transfers, });
-      },
-
-      close() {
-        if (this.isCancelled) {
-          return;
-        }
-        this.isCancelled = true;
-        sendStreamRequest({ stream: 'close', });
-        delete self.streamSinks[streamId];
-      },
-
-      error(reason) {
-        if (this.isCancelled) {
-          return;
-        }
-        this.isCancelled = true;
-        sendStreamRequest({ stream: 'error', reason, });
-      },
-
-      sinkCapability: capability,
-      onPull: null,
-      onCancel: null,
-      isCancelled: false,
-      desiredSize,
-      ready: null,
-    };
-
-    streamSink.sinkCapability.resolve();
-    streamSink.ready = streamSink.sinkCapability.promise;
-    this.streamSinks[streamId] = streamSink;
-    resolveCall(action[0], [data.data, streamSink], action[1]).then(() => {
-      sendStreamRequest({ stream: 'start_complete', success: true, });
-    }, (reason) => {
-      sendStreamRequest({ stream: 'start_complete', success: false, reason, });
-    });
-  },
-
-  _processStreamMessage(data) {
-    let sourceName = this.sourceName;
-    let targetName = data.sourceName;
-    let streamId = data.streamId;
-
-    let sendStreamResponse = ({ stream, success, reason, }) => {
-      this.comObj.postMessage({ sourceName, targetName, stream,
-                                success, streamId, reason, });
-    };
-
-    let deleteStreamController = () => {
-      // Delete streamController only when start, pull and
-      // cancel callbacks are resolved, to avoid "TypeError".
-      Promise.all([
-        this.streamControllers[data.streamId].startCall,
-        this.streamControllers[data.streamId].pullCall,
-        this.streamControllers[data.streamId].cancelCall
-      ].map(function(capability) {
-        return capability && finalize(capability.promise);
-      })).then(() => {
-        delete this.streamControllers[data.streamId];
-      });
-    };
-
-    switch (data.stream) {
-      case 'start_complete':
-        resolveOrReject(this.streamControllers[data.streamId].startCall,
-                        data.success, wrapReason(data.reason));
-        break;
-      case 'pull_complete':
-        resolveOrReject(this.streamControllers[data.streamId].pullCall,
-                        data.success, wrapReason(data.reason));
-        break;
-      case 'pull':
-        // Ignore any pull after close is called.
-        if (!this.streamSinks[data.streamId]) {
-          sendStreamResponse({ stream: 'pull_complete', success: true, });
-          break;
-        }
-        // Pull increases the desiredSize property of sink,
-        // so when it changes from negative to positive,
-        // set ready property as resolved promise.
-        if (this.streamSinks[data.streamId].desiredSize <= 0 &&
-            data.desiredSize > 0) {
-          this.streamSinks[data.streamId].sinkCapability.resolve();
-        }
-        // Reset desiredSize property of sink on every pull.
-        this.streamSinks[data.streamId].desiredSize = data.desiredSize;
-        resolveCall(this.streamSinks[data.streamId].onPull).then(() => {
-          sendStreamResponse({ stream: 'pull_complete', success: true, });
-        }, (reason) => {
-          sendStreamResponse({ stream: 'pull_complete',
-                               success: false, reason, });
-        });
-        break;
-      case 'enqueue':
-        assert(this.streamControllers[data.streamId],
-               'enqueue should have stream controller');
-        if (!this.streamControllers[data.streamId].isClosed) {
-          this.streamControllers[data.streamId].controller.enqueue(data.chunk);
-        }
-        break;
-      case 'close':
-        assert(this.streamControllers[data.streamId],
-               'close should have stream controller');
-        if (this.streamControllers[data.streamId].isClosed) {
-          break;
-        }
-        this.streamControllers[data.streamId].isClosed = true;
-        this.streamControllers[data.streamId].controller.close();
-        deleteStreamController();
-        break;
-      case 'error':
-        assert(this.streamControllers[data.streamId],
-               'error should have stream controller');
-        this.streamControllers[data.streamId].controller.
-          error(wrapReason(data.reason));
-        deleteStreamController();
-        break;
-      case 'cancel_complete':
-        resolveOrReject(this.streamControllers[data.streamId].cancelCall,
-                        data.success, wrapReason(data.reason));
-        deleteStreamController();
-        break;
-      case 'cancel':
-        if (!this.streamSinks[data.streamId]) {
-          break;
-        }
-        resolveCall(this.streamSinks[data.streamId].onCancel,
-                    [wrapReason(data.reason)]).then(() => {
-          sendStreamResponse({ stream: 'cancel_complete', success: true, });
-        }, (reason) => {
-          sendStreamResponse({ stream: 'cancel_complete',
-                               success: false, reason, });
-        });
-        this.streamSinks[data.streamId].sinkCapability.
-          reject(wrapReason(data.reason));
-        this.streamSinks[data.streamId].isCancelled = true;
-        delete this.streamSinks[data.streamId];
-        break;
-      default:
-        throw new Error('Unexpected stream case');
-    }
-  },
-
-  /**
-   * Sends raw message to the comObj.
-   * @private
-   * @param {Object} message - Raw message.
-   * @param transfers List of transfers/ArrayBuffers, or undefined.
-   */
-  postMessage(message, transfers) {
-    if (transfers && this.postMessageTransfers) {
-      this.comObj.postMessage(message, transfers);
-    } else {
-      this.comObj.postMessage(message);
-    }
-  },
-
-  destroy() {
-    this.comObj.removeEventListener('message', this._onComObjOnMessage);
-  },
-};
-
 export {
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
@@ -1622,26 +1021,24 @@ export {
   CMapCompressionType,
   AbortException,
   InvalidPDFException,
-  MessageHandler,
   MissingDataException,
   MissingPDFException,
   NativeImageDecoding,
-  NotImplementedException,
-  PageViewport,
   PasswordException,
   PasswordResponses,
+  PermissionFlag,
   StreamType,
   TextRenderingMode,
   UnexpectedResponseException,
   UnknownErrorException,
   Util,
+  toRomanNumerals,
   XRefParseException,
   FormatError,
   arrayByteLength,
   arraysToBytes,
   assert,
   bytesToString,
-  createBlob,
   createPromiseCapability,
   createObjectURL,
   deprecated,
@@ -1665,6 +1062,7 @@ export {
   readUint32,
   removeNullCharacters,
   ReadableStream,
+  URL,
   setVerbosityLevel,
   shadow,
   string32,

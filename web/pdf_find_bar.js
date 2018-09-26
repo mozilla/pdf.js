@@ -16,6 +16,8 @@
 import { FindState } from './pdf_find_controller';
 import { NullL10n } from './ui_utils';
 
+const MATCHES_COUNT_LIMIT = 1000;
+
 /**
  * Creates a "search bar" given a set of DOM elements that act as controls
  * for searching or for setting search preferences in the UI. This object
@@ -31,9 +33,9 @@ class PDFFindBar {
     this.findField = options.findField || null;
     this.highlightAll = options.highlightAllCheckbox || null;
     this.caseSensitive = options.caseSensitiveCheckbox || null;
+    this.entireWord = options.entireWordCheckbox || null;
     this.findMsg = options.findMsg || null;
     this.findResultsCount = options.findResultsCount || null;
-    this.findStatusIcon = options.findStatusIcon || null;
     this.findPreviousButton = options.findPreviousButton || null;
     this.findNextButton = options.findNextButton || null;
     this.findController = options.findController || null;
@@ -83,6 +85,10 @@ class PDFFindBar {
       this.dispatchEvent('casesensitivitychange');
     });
 
+    this.entireWord.addEventListener('click', () => {
+      this.dispatchEvent('entirewordchange');
+    });
+
     this.eventBus.on('resize', this._adjustWidth.bind(this));
   }
 
@@ -95,14 +101,15 @@ class PDFFindBar {
       source: this,
       type,
       query: this.findField.value,
-      caseSensitive: this.caseSensitive.checked,
       phraseSearch: true,
+      caseSensitive: this.caseSensitive.checked,
+      entireWord: this.entireWord.checked,
       highlightAll: this.highlightAll.checked,
       findPrevious: findPrev,
     });
   }
 
-  updateUIState(state, previous, matchCount) {
+  updateUIState(state, previous, matchesCount) {
     let notFound = false;
     let findMsg = '';
     let status = '';
@@ -143,26 +150,51 @@ class PDFFindBar {
       this._adjustWidth();
     });
 
-    this.updateResultsCount(matchCount);
+    this.updateResultsCount(matchesCount);
   }
 
-  updateResultsCount(matchCount) {
+  updateResultsCount({ current = 0, total = 0, } = {}) {
     if (!this.findResultsCount) {
       return; // No UI control is provided.
     }
+    let matchesCountMsg = '', limit = MATCHES_COUNT_LIMIT;
 
-    if (!matchCount) {
-      // If there are no matches, hide and reset the counter.
-      this.findResultsCount.classList.add('hidden');
-      this.findResultsCount.textContent = '';
-    } else {
-      // Update and show the match counter.
-      this.findResultsCount.textContent = matchCount.toLocaleString();
-      this.findResultsCount.classList.remove('hidden');
+    if (total > 0) {
+      if (total > limit) {
+        if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
+          // TODO: Remove this hard-coded `[other]` form once plural support has
+          // been implemented in the mozilla-central specific `l10n.js` file.
+          matchesCountMsg = this.l10n.get('find_match_count_limit[other]', {
+            limit,
+          }, 'More than {{limit}} matches');
+        } else {
+          matchesCountMsg = this.l10n.get('find_match_count_limit', {
+            limit,
+          }, 'More than {{limit}} match' + (limit !== 1 ? 'es' : ''));
+        }
+      } else {
+        if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
+          // TODO: Remove this hard-coded `[other]` form once plural support has
+          // been implemented in the mozilla-central specific `l10n.js` file.
+          matchesCountMsg = this.l10n.get('find_match_count[other]', {
+            current,
+            total,
+          }, '{{current}} of {{total}} matches');
+        } else {
+          matchesCountMsg = this.l10n.get('find_match_count', {
+            current,
+            total,
+          }, '{{current}} of {{total}} match' + (total !== 1 ? 'es' : ''));
+        }
+      }
     }
-    // Since `updateResultsCount` may be called from `PDFFindController`,
-    // ensure that the width of the findbar is always updated correctly.
-    this._adjustWidth();
+    Promise.resolve(matchesCountMsg).then((msg) => {
+      this.findResultsCount.textContent = msg;
+      this.findResultsCount.classList[!total ? 'add' : 'remove']('hidden');
+      // Since `updateResultsCount` may be called from `PDFFindController`,
+      // ensure that the width of the findbar is always updated correctly.
+      this._adjustWidth();
+    });
   }
 
   open() {

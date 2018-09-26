@@ -53,36 +53,9 @@ select {
   display: none !important;
 }
 
-#viewerContainer.pdfPresentationMode:-webkit-full-screen {
-  top: 0px;
-  border-top: 2px solid transparent;
-  background-color: #000;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: none;
-  -webkit-user-select: none;
-}
-
-#viewerContainer.pdfPresentationMode:-moz-full-screen {
-  top: 0px;
-  border-top: 2px solid transparent;
-  background-color: #000;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: none;
-  -moz-user-select: none;
-}
-
 #viewerContainer.pdfPresentationMode:-ms-fullscreen {
   top: 0px !important;
-  border-top: 2px solid transparent;
-  width: 100%;
-  height: 100%;
   overflow: hidden !important;
-  cursor: none;
-  -ms-user-select: none;
 }
 
 #viewerContainer.pdfPresentationMode:-ms-fullscreen::-ms-backdrop {
@@ -97,37 +70,11 @@ select {
   height: 100%;
   overflow: hidden;
   cursor: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-.pdfPresentationMode:-webkit-full-screen a:not(.internalLink) {
-  display: none;
-}
-
-.pdfPresentationMode:-moz-full-screen a:not(.internalLink) {
-  display: none;
-}
-
-.pdfPresentationMode:-ms-fullscreen a:not(.internalLink) {
-  display: none !important;
+  user-select: none;
 }
 
 .pdfPresentationMode:fullscreen a:not(.internalLink) {
   display: none;
-}
-
-.pdfPresentationMode:-webkit-full-screen .textLayer > div {
-  cursor: none;
-}
-
-.pdfPresentationMode:-moz-full-screen .textLayer > div {
-  cursor: none;
-}
-
-.pdfPresentationMode:-ms-fullscreen .textLayer > div {
-  cursor: none;
 }
 
 .pdfPresentationMode:fullscreen .textLayer > div {
@@ -156,19 +103,15 @@ select {
   z-index: 100;
   border-top: 1px solid #333;
 
-  -webkit-transition-duration: 200ms;
-  -webkit-transition-timing-function: ease;
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
 html[dir='ltr'] #sidebarContainer {
-  -webkit-transition-property: left;
   transition-property: left;
   left: -200px;
   left: calc(-1 * var(--sidebar-width));
 }
 html[dir='rtl'] #sidebarContainer {
-  -webkit-transition-property: right;
   transition-property: right;
   right: -200px;
   right: calc(-1 * var(--sidebar-width));
@@ -180,11 +123,9 @@ html[dir='rtl'] #sidebarContainer {
 
 #outerContainer.sidebarResizing #sidebarContainer {
   /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  -webkit-transition-duration: 0s;
   transition-duration: 0s;
   /* Prevent e.g. the thumbnails being selected when the sidebar is resized. */
-  -webkit-user-select: none;
-  -moz-user-select: none;
+  user-select: none;
 }
 
 #outerContainer.sidebarMoving #sidebarContainer,
@@ -234,9 +175,8 @@ html[dir='rtl'] #sidebarContent {
   bottom: 0;
   left: 0;
   outline: none;
-
-  -webkit-transition-duration: 200ms;
-  -webkit-transition-timing-function: ease;
+}
+#viewerContainer:not(.pdfPresentationMode) {
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
@@ -249,18 +189,15 @@ html[dir='rtl'] #viewerContainer {
 
 #outerContainer.sidebarResizing #viewerContainer {
   /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  -webkit-transition-duration: 0s;
   transition-duration: 0s;
 }
 
-html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer {
-  -webkit-transition-property: left;
+html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
   transition-property: left;
   left: 200px;
   left: var(--sidebar-width);
 }
-html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer {
-  -webkit-transition-property: right;
+html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
   transition-property: right;
   right: 200px;
   right: var(--sidebar-width);
@@ -353,13 +290,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   height: 100%;
   background-color: #ddd;
   overflow: hidden;
-  -webkit-transition: width 200ms;
   transition: width 200ms;
-}
-
-@-webkit-keyframes progressIndeterminate {
-  0% { left: -142px; }
-  100% { left: 0; }
 }
 
 @keyframes progressIndeterminate {
@@ -369,7 +300,6 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 
 #loadingBar .progress.indeterminate {
   background-color: #999;
-  -webkit-transition: none;
   transition: none;
 }
 
@@ -385,7 +315,6 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
                                         #999 45px, #ddd 55px,
                                         #ddd 95px, #bbb 100px);
 
-  -webkit-animation: progressIndeterminate 950ms linear infinite;
   animation: progressIndeterminate 950ms linear infinite;
 }
 
@@ -424,22 +353,14 @@ html[dir='rtl'] .findbar {
 }
 
 .findbar label {
-  -webkit-user-select: none;
-  -moz-user-select: none;
+  user-select: none;
 }
 
 #findInput {
   width: 200px;
 }
 #findInput::-webkit-input-placeholder {
-  font-style: italic;
   color: hsl(0, 0%, 75%);
-}
-#findInput::-moz-placeholder {
-  font-style: italic;
-}
-#findInput:-ms-input-placeholder {
-  font-style: italic;
 }
 #findInput::placeholder {
   font-style: italic;
@@ -471,6 +392,11 @@ html[dir='rtl'] .secondaryToolbar {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   margin-bottom: -4px;
+}
+
+#secondaryToolbarButtonContainer.hiddenScrollModeButtons > .scrollModeButtons,
+#secondaryToolbarButtonContainer.hiddenSpreadModeButtons > .spreadModeButtons {
+  display: none !important;
 }
 
 .doorHanger,
@@ -627,9 +553,6 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
               0 0 1px hsla(0,0%,100%,.15) inset,
               0 1px 0 hsla(0,0%,100%,.05);
-  -webkit-transition-property: background-color, border-color, box-shadow;
-  -webkit-transition-duration: 150ms;
-  -webkit-transition-timing-function: ease;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: ease;
@@ -689,9 +612,6 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   padding: 12px 0;
   margin: 1px 0;
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
-  -webkit-transition-property: padding;
-  -webkit-transition-duration: 10ms;
-  -webkit-transition-timing-function: ease;
   transition-property: padding;
   transition-duration: 10ms;
   transition-timing-function: ease;
@@ -708,14 +628,9 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   color: hsla(0,0%,100%,.8);
   font-size: 12px;
   line-height: 14px;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+  user-select: none;
   /* Opera does not support user-select, use <... unselectable="on"> instead */
   cursor: default;
-  -webkit-transition-property: background-color, border-color, box-shadow;
-  -webkit-transition-duration: 150ms;
-  -webkit-transition-timing-function: ease;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: ease;
@@ -758,9 +673,6 @@ html[dir='rtl'] .dropdownToolbarButton {
   box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
               0 0 1px hsla(0,0%,0%,.2) inset,
               0 1px 0 hsla(0,0%,100%,.05);
-  -webkit-transition-property: background-color, border-color, box-shadow;
-  -webkit-transition-duration: 10ms;
-  -webkit-transition-timing-function: linear;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
@@ -775,9 +687,6 @@ html[dir='rtl'] .dropdownToolbarButton {
   box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
               0 0 1px hsla(0,0%,0%,.2) inset,
               0 1px 0 hsla(0,0%,100%,.05);
-  -webkit-transition-property: background-color, border-color, box-shadow;
-  -webkit-transition-duration: 10ms;
-  -webkit-transition-timing-function: linear;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
@@ -951,8 +860,6 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 
 .toolbarButton.bookmark,
 .secondaryToolbarButton.bookmark {
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
   box-sizing: border-box;
   outline: none;
   padding-top: 4px;
@@ -1065,6 +972,30 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: url(images/secondaryToolbarButton-handTool.png);
 }
 
+.secondaryToolbarButton.scrollVertical::before {
+  content: url(images/secondaryToolbarButton-scrollVertical.png);
+}
+
+.secondaryToolbarButton.scrollHorizontal::before {
+  content: url(images/secondaryToolbarButton-scrollHorizontal.png);
+}
+
+.secondaryToolbarButton.scrollWrapped::before {
+  content: url(images/secondaryToolbarButton-scrollWrapped.png);
+}
+
+.secondaryToolbarButton.spreadNone::before {
+  content: url(images/secondaryToolbarButton-spreadNone.png);
+}
+
+.secondaryToolbarButton.spreadOdd::before {
+  content: url(images/secondaryToolbarButton-spreadOdd.png);
+}
+
+.secondaryToolbarButton.spreadEven::before {
+  content: url(images/secondaryToolbarButton-spreadEven.png);
+}
+
 .secondaryToolbarButton.documentProperties::before {
   content: url(images/secondaryToolbarButton-documentProperties.png);
 }
@@ -1158,8 +1089,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
   font-size: 12px;
   line-height: 14px;
   text-align: left;
-  -webkit-user-select: none;
-  -moz-user-select: none;
+  user-select: none;
   cursor: default;
 }
 
@@ -1249,8 +1179,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   bottom: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  -webkit-user-select: none;
-  -moz-user-select: none;
+  user-select: none;
 }
 
 #outlineView {
@@ -1283,7 +1212,7 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   color: hsla(0,0%,100%,.8);
   font-size: 13px;
   line-height: 15px;
-  -moz-user-select: none;
+  user-select: none;
   white-space: normal;
 }
 
@@ -1379,7 +1308,6 @@ html[dir='rtl'] .outlineItemToggler::before {
    so we can override the opaque grey background when the window is inactive;
    see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
 ::selection { background: rgba(0,0,255,0.3); }
-::-moz-selection { background: rgba(0,0,255,0.3); }
 
 #errorWrapper {
   background: none repeat scroll 0 0 #FF5555;
@@ -1594,8 +1522,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   background-color: rgba(255, 255, 0, 0.1);
   color: black;
   border: solid 1px rgba(255, 0, 0, 0.5);
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 
@@ -1611,8 +1537,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
 .grab-to-pan-grab {
   cursor: url("images/grab.cur"), move !important;
-  cursor: -webkit-grab !important;
-  cursor: -moz-grab !important;
   cursor: grab !important;
 }
 .grab-to-pan-grab *:not(input):not(textarea):not(button):not(select):not(:link) {
@@ -1621,8 +1545,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 .grab-to-pan-grab:active,
 .grab-to-pan-grabbing {
   cursor: url("images/grabbing.cur"), move !important;
-  cursor: -webkit-grabbing !important;
-  cursor: -moz-grabbing !important;
   cursor: grabbing !important;
 
   position: fixed;
@@ -1647,13 +1569,11 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 @media screen and (min-resolution: 2dppx) {
   /* Rules for Retina screens */
   .toolbarButton::before {
-    -webkit-transform: scale(0.5);
     transform: scale(0.5);
     top: -5px;
   }
 
   .secondaryToolbarButton::before {
-    -webkit-transform: scale(0.5);
     transform: scale(0.5);
     top: -4px;
   }
@@ -1799,12 +1719,35 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     content: url(images/secondaryToolbarButton-handTool@2x.png);
   }
 
+  .secondaryToolbarButton.scrollVertical::before {
+    content: url(images/secondaryToolbarButton-scrollVertical@2x.png);
+  }
+
+  .secondaryToolbarButton.scrollHorizontal::before {
+    content: url(images/secondaryToolbarButton-scrollHorizontal@2x.png);
+  }
+
+  .secondaryToolbarButton.scrollWrapped::before {
+    content: url(images/secondaryToolbarButton-scrollWrapped@2x.png);
+  }
+
+  .secondaryToolbarButton.spreadNone::before {
+    content: url(images/secondaryToolbarButton-spreadNone@2x.png);
+  }
+
+  .secondaryToolbarButton.spreadOdd::before {
+    content: url(images/secondaryToolbarButton-spreadOdd@2x.png);
+  }
+
+  .secondaryToolbarButton.spreadEven::before {
+    content: url(images/secondaryToolbarButton-spreadEven@2x.png);
+  }
+
   .secondaryToolbarButton.documentProperties::before {
     content: url(images/secondaryToolbarButton-documentProperties@2x.png);
   }
 
   .outlineItemToggler::before {
-    -webkit-transform: scale(0.5);
     transform: scale(0.5);
     top: -1px;
     content: url(images/treeitem-expanded@2x.png);
@@ -1909,10 +1852,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 
   html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer {
-    left: 0px;
+    left: 0px !important;
   }
   html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer {
-    right: 0px;
+    right: 0px !important;
   }
 
   #outerContainer .hiddenLargeView,

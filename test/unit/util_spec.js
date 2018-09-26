@@ -14,9 +14,9 @@
  */
 
 import {
-  bytesToString, getInheritableProperty, isArrayBuffer, isBool, isEmptyObj,
-  isNum, isSpace, isString, log2, ReadableStream, removeNullCharacters,
-  stringToBytes, stringToPDFString
+  bytesToString, createValidAbsoluteUrl, getInheritableProperty, isArrayBuffer,
+  isBool, isEmptyObj, isNum, isSameOrigin, isSpace, isString, log2,
+  ReadableStream, removeNullCharacters, stringToBytes, stringToPDFString, URL
 } from '../../src/shared/util';
 import { Dict, Ref } from '../../src/core/primitives';
 import { XRefMock } from './test_utils';
@@ -309,6 +309,79 @@ describe('util', function() {
     it('should have property getReader', function () {
       let readable = new ReadableStream();
       expect(typeof readable.getReader).toEqual('function');
+    });
+  });
+
+  describe('URL', function() {
+    it('should return an Object', function() {
+      const url = new URL('https://example.com');
+      expect(typeof url).toEqual('object');
+    });
+
+    it('should have property `href`', function() {
+      const url = new URL('https://example.com');
+      expect(typeof url.href).toEqual('string');
+    });
+  });
+
+  describe('isSameOrigin', function() {
+    it('handles invalid base URLs', function() {
+      // The base URL is not valid.
+      expect(isSameOrigin('/foo', '/bar')).toEqual(false);
+
+      // The base URL has no origin.
+      expect(isSameOrigin('blob:foo', '/bar')).toEqual(false);
+    });
+
+    it('correctly checks if the origin of both URLs matches', function() {
+      expect(isSameOrigin('https://www.mozilla.org/foo',
+                          'https://www.mozilla.org/bar')).toEqual(true);
+      expect(isSameOrigin('https://www.mozilla.org/foo',
+                          'https://www.example.com/bar')).toEqual(false);
+    });
+  });
+
+  describe('createValidAbsoluteUrl', function() {
+    it('handles invalid URLs', function() {
+      expect(createValidAbsoluteUrl(undefined, undefined)).toEqual(null);
+      expect(createValidAbsoluteUrl(null, null)).toEqual(null);
+      expect(createValidAbsoluteUrl('/foo', '/bar')).toEqual(null);
+    });
+
+    it('handles URLs that do not use a whitelisted protocol', function() {
+      expect(createValidAbsoluteUrl('magnet:?foo', null)).toEqual(null);
+    });
+
+    it('correctly creates a valid URL for whitelisted protocols', function() {
+      // `http` protocol
+      expect(createValidAbsoluteUrl('http://www.mozilla.org/foo', null))
+        .toEqual(new URL('http://www.mozilla.org/foo'));
+      expect(createValidAbsoluteUrl('/foo', 'http://www.mozilla.org'))
+        .toEqual(new URL('http://www.mozilla.org/foo'));
+
+      // `https` protocol
+      expect(createValidAbsoluteUrl('https://www.mozilla.org/foo', null))
+        .toEqual(new URL('https://www.mozilla.org/foo'));
+      expect(createValidAbsoluteUrl('/foo', 'https://www.mozilla.org'))
+        .toEqual(new URL('https://www.mozilla.org/foo'));
+
+      // `ftp` protocol
+      expect(createValidAbsoluteUrl('ftp://www.mozilla.org/foo', null))
+        .toEqual(new URL('ftp://www.mozilla.org/foo'));
+      expect(createValidAbsoluteUrl('/foo', 'ftp://www.mozilla.org'))
+        .toEqual(new URL('ftp://www.mozilla.org/foo'));
+
+      // `mailto` protocol (base URLs have no meaning and should yield `null`)
+      expect(createValidAbsoluteUrl('mailto:foo@bar.baz', null))
+        .toEqual(new URL('mailto:foo@bar.baz'));
+      expect(createValidAbsoluteUrl('/foo', 'mailto:foo@bar.baz'))
+        .toEqual(null);
+
+      // `tel` protocol (base URLs have no meaning and should yield `null`)
+      expect(createValidAbsoluteUrl('tel:+0123456789', null))
+        .toEqual(new URL('tel:+0123456789'));
+      expect(createValidAbsoluteUrl('/foo', 'tel:0123456789'))
+        .toEqual(null);
     });
   });
 });
