@@ -373,7 +373,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
     do {
       i--;
     } while (s[i] === '0');
-    return s.substr(0, s[i] === '.' ? i : i + 1);
+    return s.substring(0, s[i] === '.' ? i : i + 1);
   }
 
   /**
