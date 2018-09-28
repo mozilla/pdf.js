@@ -155,7 +155,7 @@ function parseCMap(binaryData) {
     },
     readHex: function (size) {
       var lengthInChars = (size + 1) << 1;
-      var s = this.buffer.substr(this.pos, lengthInChars);
+      var s = this.buffer.substring(this.pos, this.pos + lengthInChars);
       this.pos += lengthInChars;
       return s;
     },
@@ -343,7 +343,7 @@ function writeNumber(n) {
       s = writeByte((buffer & 0x7f) | (s.length > 0 ? 0x80 : 0)) + s;
     }
     while (s.indexOf('80') === 0) {
-      s = s.substr(2);
+      s = s.substring(2);
     }
     return s;
   } else {

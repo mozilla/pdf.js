@@ -195,8 +195,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
       }
 
       function spliceString(s, offset, remove, insert) {
-        var chunk1 = s.substr(0, offset);
-        var chunk2 = s.substr(offset + remove);
+        var chunk1 = s.substring(0, offset);
+        var chunk2 = s.substring(offset + remove);
         return chunk1 + insert + chunk2;
       }
 
