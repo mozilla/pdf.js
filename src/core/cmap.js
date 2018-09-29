@@ -228,7 +228,7 @@ class CMap {
     while (low <= high) {
       this._map[low++] = dstLow;
       // Only the last byte has to be incremented.
-      dstLow = dstLow.substr(0, lastByte) +
+      dstLow = dstLow.substring(0, lastByte) +
                String.fromCharCode(dstLow.charCodeAt(lastByte) + 1);
     }
   }
