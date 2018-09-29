@@ -240,7 +240,7 @@ function preprocessCSS(mode, source, destination) {
                  !/\}\s*$/.test(lines[i]) &&
                  lines[i].indexOf(':') < 0);
         if (i < lines.length && /\S\s*}\s*$/.test(lines[i])) {
-          lines[i] = lines[i].substr(lines[i].indexOf('}'));
+          lines[i] = lines[i].substring(lines[i].indexOf('}'));
         }
       }
       // collapse whitespaces

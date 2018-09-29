@@ -52,7 +52,7 @@ window.onload = function() {
 
   function hashParameters() {
     var result = { };
-    var params = window.location.hash.substr(1).split(/[&;]/);
+    var params = window.location.hash.substring(1).split(/[&;]/);
     for (var i = 0; i < params.length; i++) {
       var parts = params[i].split("=");
       result[parts[0]] = unescape(unescape(parts[1]));

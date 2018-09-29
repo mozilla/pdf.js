@@ -262,7 +262,7 @@ var Stepper = (function StepperClosure() {
     if (typeof args === 'string') {
       var MAX_STRING_LENGTH = 75;
       return args.length <= MAX_STRING_LENGTH ? args :
-        args.substr(0, MAX_STRING_LENGTH) + '...';
+        args.substring(0, MAX_STRING_LENGTH) + '...';
     }
     if (typeof args !== 'object' || args === null) {
       return args;

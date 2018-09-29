@@ -1366,7 +1366,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       nibbles += (nibbles.length & 1) ? 'f' : 'ff';
       var out = [30];
       for (i = 0, ii = nibbles.length; i < ii; i += 2) {
-        out.push(parseInt(nibbles.substr(i, 2), 16));
+        out.push(parseInt(nibbles.substring(i, i + 2), 16));
       }
       return out;
     },
