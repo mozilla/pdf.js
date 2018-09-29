@@ -2002,18 +2002,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           switch (glyphName[0]) {
             case 'G': // Gxx glyph
               if (glyphName.length === 3) {
-                code = parseInt(glyphName.substr(1), 16);
+                code = parseInt(glyphName.substring(1), 16);
               }
               break;
             case 'g': // g00xx glyph
               if (glyphName.length === 5) {
-                code = parseInt(glyphName.substr(1), 16);
+                code = parseInt(glyphName.substring(1), 16);
               }
               break;
             case 'C': // Cddd glyph
             case 'c': // cddd glyph
               if (glyphName.length >= 3) {
-                code = +glyphName.substr(1);
+                code = +glyphName.substring(1);
               }
               break;
             default:

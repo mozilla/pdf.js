@@ -52,7 +52,7 @@ describe('CFFParser', function() {
                       'f78e14';
     var fontArr = [];
     for (var i = 0, ii = exampleFont.length; i < ii; i += 2) {
-      var hex = exampleFont.substr(i, 2);
+      var hex = exampleFont.substring(i, i + 2);
       fontArr.push(parseInt(hex, 16));
     }
     fontData = new Stream(fontArr);
