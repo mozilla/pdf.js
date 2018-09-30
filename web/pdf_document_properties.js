@@ -184,7 +184,7 @@ class PDFDocumentProperties {
    * Note that the overlay will contain no information if this method
    * is not called.
    *
-   * @param {Object} pdfDocument - A reference to the PDF document.
+   * @param {PDFDocumentProxy} pdfDocument - A reference to the PDF document.
    * @param {string} url - The URL of the document.
    */
   setDocument(pdfDocument, url = null) {

@@ -41,17 +41,23 @@ const CHARACTERS_TO_NORMALIZE = {
 };
 
 /**
+ * @typedef {Object} PDFFindControllerOptions
+ * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {EventBus} eventBus - The application event bus.
+ */
+
+/**
  * Provides search functionality to find a given string in a PDF document.
  */
 class PDFFindController {
-  constructor({ pdfViewer, eventBus = getGlobalEventBus(), }) {
-    this._pdfViewer = pdfViewer;
+  /**
+   * @param {PDFFindControllerOptions} options
+   */
+  constructor({ linkService, eventBus = getGlobalEventBus(), }) {
+    this._linkService = linkService;
     this._eventBus = eventBus;
 
-    this.onUpdateResultsCount = null;
-    this.onUpdateState = null;
-
-    this.reset();
+    this._reset();
 
     eventBus.on('findbarclose', () => {
       this._highlightMatches = false;
@@ -87,8 +93,51 @@ class PDFFindController {
     return this._state;
   }
 
-  reset() {
+  /**
+   * Set a reference to the PDF document in order to search it.
+   * Note that searching is not possible if this method is not called.
+   *
+   * @param {PDFDocumentProxy} pdfDocument - The PDF document to search.
+   */
+  setDocument(pdfDocument) {
+    if (this._pdfDocument) {
+      this._reset();
+    }
+    if (!pdfDocument) {
+      return;
+    }
+    this._pdfDocument = pdfDocument;
+  }
+
+  executeCommand(cmd, state) {
+    if (!this._pdfDocument) {
+      return;
+    }
+
+    if (this._state === null || cmd !== 'findagain') {
+      this._dirtyMatch = true;
+    }
+    this._state = state;
+    this._updateUIState(FindState.PENDING);
+
+    this._firstPagePromise.then(() => {
+      this._extractText();
+
+      clearTimeout(this._findTimeout);
+      if (cmd === 'find') {
+        // Trigger the find action with a small delay to avoid starting the
+        // search when the user is still typing (saving resources).
+        this._findTimeout =
+          setTimeout(this._nextMatch.bind(this), FIND_TIMEOUT);
+      } else {
+        this._nextMatch();
+      }
+    });
+  }
+
+  _reset() {
     this._highlightMatches = false;
+    this._pdfDocument = null;
     this._pageMatches = [];
     this._pageMatchesLength = null;
     this._state = null;
@@ -115,28 +164,6 @@ class PDFFindController {
         eventBus.off('pagesinit', onPagesInit);
         resolve();
       });
-    });
-  }
-
-  executeCommand(cmd, state) {
-    if (this._state === null || cmd !== 'findagain') {
-      this._dirtyMatch = true;
-    }
-    this._state = state;
-    this._updateUIState(FindState.PENDING);
-
-    this._firstPagePromise.then(() => {
-      this._extractText();
-
-      clearTimeout(this._findTimeout);
-      if (cmd === 'find') {
-        // Trigger the find action with a small delay to avoid starting the
-        // search when the user is still typing (saving resources).
-        this._findTimeout =
-          setTimeout(this._nextMatch.bind(this), FIND_TIMEOUT);
-      } else {
-        this._nextMatch();
-      }
     });
   }
 
@@ -321,12 +348,16 @@ class PDFFindController {
     }
 
     let promise = Promise.resolve();
-    for (let i = 0, ii = this._pdfViewer.pagesCount; i < ii; i++) {
+    for (let i = 0, ii = this._linkService.pagesCount; i < ii; i++) {
       const extractTextCapability = createPromiseCapability();
       this._extractTextPromises[i] = extractTextCapability.promise;
 
       promise = promise.then(() => {
-        return this._pdfViewer.getPageTextContent(i).then((textContent) => {
+        return this._pdfDocument.getPage(i + 1).then((pdfPage) => {
+          return pdfPage.getTextContent({
+            normalizeWhitespace: true,
+          });
+        }).then((textContent) => {
           const textItems = textContent.items;
           const strBuf = [];
 
@@ -350,21 +381,21 @@ class PDFFindController {
   _updatePage(index) {
     if (this._selected.pageIdx === index) {
       // If the page is selected, scroll the page into view, which triggers
-      // rendering the page, which adds the textLayer. Once the textLayer is
-      // build, it will scroll onto the selected match.
-      this._pdfViewer.currentPageNumber = index + 1;
+      // rendering the page, which adds the text layer. Once the text layer
+      // is built, it will scroll to the selected match.
+      this._linkService.page = index + 1;
     }
 
-    const page = this._pdfViewer.getPageView(index);
-    if (page.textLayer) {
-      page.textLayer.updateMatches();
-    }
+    this._eventBus.dispatch('updatetextlayermatches', {
+      source: this,
+      pageIndex: index,
+    });
   }
 
   _nextMatch() {
     const previous = this._state.findPrevious;
-    const currentPageIndex = this._pdfViewer.currentPageNumber - 1;
-    const numPages = this._pdfViewer.pagesCount;
+    const currentPageIndex = this._linkService.page - 1;
+    const numPages = this._linkService.pagesCount;
 
     this._highlightMatches = true;
 
@@ -476,7 +507,7 @@ class PDFFindController {
 
   _advanceOffsetPage(previous) {
     const offset = this._offset;
-    const numPages = this._extractTextPromises.length;
+    const numPages = this._linkService.pagesCount;
     offset.pageIdx = (previous ? offset.pageIdx - 1 : offset.pageIdx + 1);
     offset.matchIdx = null;
 
@@ -495,8 +526,8 @@ class PDFFindController {
 
     if (found) {
       const previousPage = this._selected.pageIdx;
-      this.selected.pageIdx = this._offset.pageIdx;
-      this.selected.matchIdx = this._offset.matchIdx;
+      this._selected.pageIdx = this._offset.pageIdx;
+      this._selected.matchIdx = this._offset.matchIdx;
       state = (wrapped ? FindState.WRAPPED : FindState.FOUND);
 
       // Update the currently selected page to wipe out any selected matches.
@@ -530,19 +561,19 @@ class PDFFindController {
   }
 
   _updateUIResultsCount() {
-    if (!this.onUpdateResultsCount) {
-      return;
-    }
-    const matchesCount = this._requestMatchesCount();
-    this.onUpdateResultsCount(matchesCount);
+    this._eventBus.dispatch('updatefindmatchescount', {
+      source: this,
+      matchesCount: this._requestMatchesCount(),
+    });
   }
 
   _updateUIState(state, previous) {
-    if (!this.onUpdateState) {
-      return;
-    }
-    const matchesCount = this._requestMatchesCount();
-    this.onUpdateState(state, previous, matchesCount);
+    this._eventBus.dispatch('updatefindcontrolstate', {
+      source: this,
+      state,
+      previous,
+      matchesCount: this._requestMatchesCount(),
+    });
   }
 }
 
