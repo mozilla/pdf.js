@@ -14,6 +14,7 @@
  */
 
 import './compatibility';
+import { ColorSpace } from '../core/colorspace';
 import { ReadableStream } from './streams_polyfill';
 import { URL } from './url_polyfill';
 
@@ -698,6 +699,34 @@ var Util = (function UtilClosure() {
   function Util() {}
 
   var rgbBuf = ['rgb(', 0, ',', 0, ',', 0, ')'];
+
+  // Convert a PDF array color to a RGB array color
+  Util.createRgbColor = function Util_createRgbColor(color) {
+    let rgbColor = new Uint8ClampedArray(3);
+    if (!Array.isArray(color)) {
+      return rgbColor;
+    }
+
+    switch (color.length) {
+      case 0: // Transparent, which we indicate with a null value
+        rgbColor = null;
+        break;
+
+      case 1: // Convert grayscale to RGB
+        ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
+        break;
+
+      case 3: // Convert RGB percentages to RGB
+        ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
+        break;
+
+      case 4: // Convert CMYK to RGB
+        ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
+        break;
+    }
+
+    return rgbColor;
+  };
 
   // makeCssRgb() can be called thousands of times. Using |rgbBuf| avoids
   // creating many intermediate strings.

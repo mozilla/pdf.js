@@ -20,7 +20,6 @@ import {
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
-import { ColorSpace } from './colorspace';
 import { OperatorList } from './operator_list';
 import { Stream } from './stream';
 
@@ -71,6 +70,9 @@ class AnnotationFactory {
 
       case 'Text':
         return new TextAnnotation(parameters);
+
+      case 'FreeText':
+        return new FreeTextAnnotation(parameters);
 
       case 'Widget':
         let fieldType = getInheritableProperty({ dict, key: 'FT', });
@@ -285,36 +287,7 @@ class Annotation {
    *                        4 (CMYK) elements
    */
   setColor(color) {
-    let rgbColor = new Uint8ClampedArray(3);
-    if (!Array.isArray(color)) {
-      this.color = rgbColor;
-      return;
-    }
-
-    switch (color.length) {
-      case 0: // Transparent, which we indicate with a null value
-        this.color = null;
-        break;
-
-      case 1: // Convert grayscale to RGB
-        ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
-        this.color = rgbColor;
-        break;
-
-      case 3: // Convert RGB percentages to RGB
-        ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
-        this.color = rgbColor;
-        break;
-
-      case 4: // Convert CMYK to RGB
-        ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
-        this.color = rgbColor;
-        break;
-
-      default:
-        this.color = rgbColor;
-        break;
-    }
+    this.color = Util.createRgbColor(color);
   }
 
   /**
@@ -897,6 +870,24 @@ class TextAnnotation extends Annotation {
                        parameters.dict.get('Name').name : 'Note';
     }
     this._preparePopup(parameters.dict);
+  }
+}
+
+class FreeTextAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.FREETEXT;
+
+    let dict = parameters.dict;
+
+    this.data.textColor = Util.createRgbColor(dict.getArray('TextColor'));
+    this.data.textStyle = dict.get('DS');
+    this.data.fontSize = dict.get('FontSize');
+    this.data.opacity = dict.get('CA') || 1;
+    this.data.richText = dict.get('RC');
+
+    this._preparePopup(dict);
   }
 }
 
