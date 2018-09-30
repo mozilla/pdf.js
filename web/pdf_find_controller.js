@@ -53,9 +53,22 @@ class PDFFindController {
 
     this.reset();
 
+    eventBus.on('findbarclose', () => {
+      this._highlightMatches = false;
+
+      eventBus.dispatch('updatetextlayermatches', {
+        source: this,
+        pageIndex: -1,
+      });
+    });
+
     // Compile the regular expression for text normalization once.
     const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join('');
     this._normalizationRegex = new RegExp(`[${replace}]`, 'g');
+  }
+
+  get highlightMatches() {
+    return this._highlightMatches;
   }
 
   get pageMatches() {
@@ -75,7 +88,7 @@ class PDFFindController {
   }
 
   reset() {
-    this.active = false; // If active, find results will be highlighted.
+    this._highlightMatches = false;
     this._pageMatches = [];
     this._pageMatchesLength = null;
     this._state = null;
@@ -353,7 +366,7 @@ class PDFFindController {
     const currentPageIndex = this._pdfViewer.currentPageNumber - 1;
     const numPages = this._pdfViewer.pagesCount;
 
-    this.active = true;
+    this._highlightMatches = true;
 
     if (this._dirtyMatch) {
       // Need to recalculate the matches, reset everything.

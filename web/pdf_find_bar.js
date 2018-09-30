@@ -216,7 +216,8 @@ class PDFFindBar {
     this.opened = false;
     this.toggleButton.classList.remove('toggled');
     this.bar.classList.add('hidden');
-    this.findController.active = false;
+
+    this.eventBus.dispatch('findbarclose', { source: this, });
   }
 
   toggle() {

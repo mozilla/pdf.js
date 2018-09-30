@@ -169,20 +169,27 @@ class MozL10n {
     'findhighlightallchange',
     'findcasesensitivitychange',
     'findentirewordchange',
+    'findbarclose',
   ];
-  let handleEvent = function(evt) {
+  let handleEvent = function({ type, detail, }) {
     if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    if (type === 'findbarclose') {
+      PDFViewerApplication.eventBus.dispatch('findbarclose', {
+        source: window,
+      });
       return;
     }
     PDFViewerApplication.eventBus.dispatch('find', {
       source: window,
-      type: evt.type.substring('find'.length),
-      query: evt.detail.query,
+      type: type.substring('find'.length),
+      query: detail.query,
       phraseSearch: true,
-      caseSensitive: !!evt.detail.caseSensitive,
-      entireWord: !!evt.detail.entireWord,
-      highlightAll: !!evt.detail.highlightAll,
-      findPrevious: !!evt.detail.findPrevious,
+      caseSensitive: !!detail.caseSensitive,
+      entireWord: !!detail.entireWord,
+      highlightAll: !!detail.highlightAll,
+      findPrevious: !!detail.findPrevious,
     });
   };
 
