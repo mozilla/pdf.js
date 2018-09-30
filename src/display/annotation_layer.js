@@ -59,6 +59,9 @@ class AnnotationElementFactory {
       case AnnotationType.TEXT:
         return new TextAnnotationElement(parameters);
 
+      case AnnotationType.FREETEXT:
+        return new FreeTextAnnotationElement(parameters);
+
       case AnnotationType.WIDGET:
         const fieldType = parameters.data.fieldType;
 
@@ -403,6 +406,125 @@ class TextAnnotationElement extends AnnotationElement {
     }
 
     this.container.appendChild(image);
+    return this.container;
+  }
+}
+
+class FreeTextAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    let isRenderable = !!(parameters.data.hasPopup ||
+                          parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable);
+
+    this.containerClassName = 'freeTextAnnotation';
+  }
+
+  /**
+   * Render the freetext annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof FreeTextAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = this.containerClassName;
+
+    let data = this.data;
+
+    let div = document.createElement('div');
+    let divWidth = data.rect[2] - data.rect[0];
+    let divHeight = data.rect[3] - data.rect[1];
+    let style = 'width: ' + divWidth + 'px;';
+    style += 'height: ' + divHeight + 'px;';
+
+    if (data.hasAppearance) {
+      // The annotation is already rendering by stream appareance,
+      // we should only create popup if necessary
+      div.setAttribute('style', style);
+      this.container.append(div);
+
+      if (!this.data.hasPopup) {
+        this._createPopup(this.container, div, data);
+      }
+
+      return this.container;
+    }
+
+    if (data.richText) {
+      // The content is a rich text, we should only add this content and
+      // create popup if necessary.
+      // RichText is defined by 12.7.3.4 paragraph of the specification,
+      // it's a XML document with body as root element, we convert it in div
+      let parser = new DOMParser();
+      let doc = parser.parseFromString(data.richText, 'text/xml');
+      let body = doc.firstChild.cloneNode(true);
+      let divContent = document.createElement('div');
+      while (body.firstChild) {
+        divContent.appendChild(body.firstChild);
+      }
+      divContent.style.cssText = body.style.cssText;
+
+      div.setAttribute('style', style);
+      div.appendChild(divContent);
+      this.container.append(div);
+
+      if (!this.data.hasPopup) {
+        this._createPopup(this.container, div, data);
+      }
+
+      return this.container;
+    }
+
+    // Color define the background color of the annotation
+    if (data.color) {
+      let backgroundColor = Util.makeCssRgb(data.color[0] | 0,
+                                            data.color[1] | 0,
+                                            data.color[2] | 0);
+      style += 'background-color: ' + backgroundColor + ';';
+    }
+
+    if (data.opacity) {
+      style += 'opacity: ' + data.opacity + ';';
+    }
+
+    // Text style
+    if (data.textColor) {
+      let textColor = Util.makeCssRgb(data.textColor[0] | 0,
+                                      data.textColor[1] | 0,
+                                      data.textColor[2] | 0);
+      style += 'color: ' + textColor + ';';
+    }
+
+    if (data.fontSize) {
+      style += 'font-size: ' + data.fontSize + 'pt;';
+    }
+
+    if (data.textStyle) {
+      let matchFont = data.textStyle.match(/(.*;?)font:\s*([^;]+);?\s*(.*)/);
+      console.log(data.textStyle, matchFont);
+      if (matchFont !== null && matchFont.length === 4) {
+        data.textStyle = matchFont[1] + matchFont[3];
+        let font = matchFont[2];
+        let matchFontSize = font.match(/(\D*)([0-9\.]+(pt|px|em|rem|cm))(.*)/);
+        if (matchFontSize !== null && matchFontSize.length === 5) {
+          console.log(matchFontSize);
+          style += 'font-size: ' + matchFontSize[2] + ';';
+          font = matchFontSize[1] + matchFontSize[4];
+        }
+        style += 'font-family: ' + font + ';';
+      }
+
+      style += data.textStyle + ';';
+    }
+
+    div.setAttribute('style', style);
+
+    div.innerText = data.contents;
+
+    this.container.append(div);
+
+    this._createPopup(this.container, div, data);
+
     return this.container;
   }
 }
