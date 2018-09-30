@@ -1435,4 +1435,59 @@ describe('annotation', function() {
       }, done.fail);
     });
   });
+
+  describe('InkAnnotation', function() {
+    it('should handle a single ink list', function(done) {
+      const inkDict = new Dict();
+      inkDict.set('Type', Name.get('Annot'));
+      inkDict.set('Subtype', Name.get('Ink'));
+      inkDict.set('InkList', [[1, 1, 1, 2, 2, 2, 3, 3]]);
+
+      const inkRef = new Ref(142, 0);
+      const xref = new XRefMock([
+        { ref: inkRef, data: inkDict, }
+      ]);
+
+      AnnotationFactory.create(xref, inkRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.INK);
+        expect(data.inkLists.length).toEqual(1);
+        expect(data.inkLists[0]).toEqual([
+          { x: 1, y: 1, },
+          { x: 1, y: 2, },
+          { x: 2, y: 2, },
+          { x: 3, y: 3, },
+        ]);
+        done();
+      }, done.fail);
+    });
+
+    it('should handle multiple ink lists', function(done) {
+      const inkDict = new Dict();
+      inkDict.set('Type', Name.get('Annot'));
+      inkDict.set('Subtype', Name.get('Ink'));
+      inkDict.set('InkList', [
+        [1, 1, 1, 2],
+        [3, 3, 4, 5],
+      ]);
+
+      const inkRef = new Ref(143, 0);
+      const xref = new XRefMock([
+        { ref: inkRef, data: inkDict, }
+      ]);
+
+      AnnotationFactory.create(xref, inkRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.INK);
+        expect(data.inkLists.length).toEqual(2);
+        expect(data.inkLists[0]).toEqual([
+          { x: 1, y: 1, }, { x: 1, y: 2, }
+        ]);
+        expect(data.inkLists[1]).toEqual([
+          { x: 3, y: 3, }, { x: 4, y: 5, }
+        ]);
+        done();
+      }, done.fail);
+    });
+  });
 });
