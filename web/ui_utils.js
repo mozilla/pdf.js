@@ -548,6 +548,9 @@ function isDataSchema(url) {
  * @returns {string} Guessed PDF filename.
  */
 function getPDFFileNameFromURL(url, defaultFilename = 'document.pdf') {
+  if (typeof url !== 'string') {
+    return defaultFilename;
+  }
   if (isDataSchema(url)) {
     console.warn('getPDFFileNameFromURL: ' +
                  'ignoring "data:" URL for performance reasons.');
