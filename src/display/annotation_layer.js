@@ -1130,15 +1130,18 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     super(parameters, /* isRenderable = */ true);
 
-    let file = this.data.file;
-    this.filename = getFilenameFromUrl(file.filename);
-    this.content = file.content;
+    const { filename, content, } = this.data.file;
+    this.filename = getFilenameFromUrl(filename);
+    this.content = content;
 
-    this.linkService.onFileAttachmentAnnotation({
-      id: stringToPDFString(file.filename),
-      filename: file.filename,
-      content: file.content,
-    });
+    if (this.linkService.eventBus) {
+      this.linkService.eventBus.dispatch('fileattachmentannotation', {
+        source: this,
+        id: stringToPDFString(filename),
+        filename,
+        content,
+      });
+    }
   }
 
   /**
