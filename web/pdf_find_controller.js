@@ -110,9 +110,7 @@ class PDFFindController {
   }
 
   executeCommand(cmd, state) {
-    if (!this._pdfDocument) {
-      return;
-    }
+    const pdfDocument = this._pdfDocument;
 
     if (this._state === null || cmd !== 'findagain') {
       this._dirtyMatch = true;
@@ -121,14 +119,25 @@ class PDFFindController {
     this._updateUIState(FindState.PENDING);
 
     this._firstPagePromise.then(() => {
+      if (!this._pdfDocument ||
+          (pdfDocument && this._pdfDocument !== pdfDocument)) {
+        // If the document was closed before searching began, or if the search
+        // operation was relevant for a previously opened document, do nothing.
+        return;
+      }
       this._extractText();
 
-      clearTimeout(this._findTimeout);
+      if (this._findTimeout) {
+        clearTimeout(this._findTimeout);
+        this._findTimeout = null;
+      }
       if (cmd === 'find') {
         // Trigger the find action with a small delay to avoid starting the
         // search when the user is still typing (saving resources).
-        this._findTimeout =
-          setTimeout(this._nextMatch.bind(this), FIND_TIMEOUT);
+        this._findTimeout = setTimeout(() => {
+          this._nextMatch();
+          this._findTimeout = null;
+        }, FIND_TIMEOUT);
       } else {
         this._nextMatch();
       }
@@ -156,14 +165,19 @@ class PDFFindController {
     this._pendingFindMatches = Object.create(null);
     this._resumePageIdx = null;
     this._dirtyMatch = false;
+    clearTimeout(this._findTimeout);
     this._findTimeout = null;
 
     this._firstPagePromise = new Promise((resolve) => {
-      const eventBus = this._eventBus;
-      eventBus.on('pagesinit', function onPagesInit() {
-        eventBus.off('pagesinit', onPagesInit);
+      const onPagesInit = () => {
+        if (!this._pdfDocument) {
+          throw new Error(
+            'PDFFindController: `setDocument()` should have been called.');
+        }
+        this._eventBus.off('pagesinit', onPagesInit);
         resolve();
-      });
+      };
+      this._eventBus.on('pagesinit', onPagesInit);
     });
   }
 
