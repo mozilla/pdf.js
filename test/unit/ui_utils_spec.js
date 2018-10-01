@@ -80,6 +80,12 @@ describe('ui_utils', function() {
       expect(getPDFFileNameFromURL('/pdfs/file3.txt', '')).toEqual('');
     });
 
+    it('gets fallback filename when url is not a string', function() {
+      expect(getPDFFileNameFromURL(null)).toEqual('document.pdf');
+
+      expect(getPDFFileNameFromURL(null, 'file.pdf')).toEqual('file.pdf');
+    });
+
     it('gets PDF filename from URL containing leading/trailing whitespace',
         function() {
       // Relative URL

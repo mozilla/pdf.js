@@ -49,7 +49,7 @@ class PDFLinkService {
     this._pagesRefCache = null;
   }
 
-  setDocument(pdfDocument, baseUrl) {
+  setDocument(pdfDocument, baseUrl = null) {
     this.baseUrl = baseUrl;
     this.pdfDocument = pdfDocument;
     this._pagesRefCache = Object.create(null);
