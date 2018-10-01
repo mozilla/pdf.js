@@ -464,6 +464,34 @@ class FreeTextAnnotationElement extends AnnotationElement {
       }
       divContent.style.cssText = body.style.cssText;
 
+      // For security, allow only div, p, span, b, i and style attribute
+      // this elements is defined in 12.7.3.4 paragraph of the specification
+      let securityNodeNames = ['DIV', 'P', 'SPAN', 'B', 'I', '#text'];
+      let cleanDom = function (node) {
+        if (securityNodeNames.includes(node.nodeName) === false) {
+          // Bad node type : remove it
+          node.remove();
+          return;
+        }
+
+        if (node.nodeName !== '#text') {
+          let attributes = node.getAttributeNames();
+          for (let i = 0, ii = attributes.length; i < ii; ++i) {
+            if (attributes[i].toLowerCase() !== 'style') {
+              // Bad attribute type : remove it
+              node.removeAttribute(attributes[i]);
+            }
+          }
+        }
+
+        node = node.firstChild;
+        while (node) {
+          cleanDom(node);
+          node = node.nextSibling;
+        }
+      };
+      cleanDom(divContent);
+
       div.setAttribute('style', style);
       div.appendChild(divContent);
       this.container.append(div);
