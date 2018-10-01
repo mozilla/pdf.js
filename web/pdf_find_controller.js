@@ -58,15 +58,7 @@ class PDFFindController {
     this._eventBus = eventBus;
 
     this._reset();
-
-    eventBus.on('findbarclose', () => {
-      this._highlightMatches = false;
-
-      eventBus.dispatch('updatetextlayermatches', {
-        source: this,
-        pageIndex: -1,
-      });
-    });
+    eventBus.on('findbarclose', this._onFindBarClose.bind(this));
 
     // Compile the regular expression for text normalization once.
     const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join('');
@@ -554,6 +546,32 @@ class PDFFindController {
     if (this._selected.pageIdx !== -1) {
       this._updatePage(this._selected.pageIdx);
     }
+  }
+
+  _onFindBarClose(evt) {
+    const pdfDocument = this._pdfDocument;
+    // Since searching is asynchronous, ensure that the removal of highlighted
+    // matches (from the UI) is async too such that the 'updatetextlayermatches'
+    // events will always be dispatched in the expected order.
+    this._firstPagePromise.then(() => {
+      if (!this._pdfDocument ||
+          (pdfDocument && this._pdfDocument !== pdfDocument)) {
+        // Only update the UI if the document is open, and is the current one.
+        return;
+      }
+      if (this._findTimeout) {
+        clearTimeout(this._findTimeout);
+        this._findTimeout = null;
+        // Avoid the UI being in a pending state if the findbar is re-opened.
+        this._updateUIState(FindState.FOUND);
+      }
+      this._highlightMatches = false;
+
+      this._eventBus.dispatch('updatetextlayermatches', {
+        source: this,
+        pageIndex: -1,
+      });
+    });
   }
 
   _requestMatchesCount() {
