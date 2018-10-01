@@ -589,8 +589,6 @@ var Font = (function FontClosure() {
     this.toUnicode = properties.toUnicode;
     this.encoding = properties.baseEncoding;
     this.seacMap = properties.seacMap;
-
-    this.loading = true;
   }
 
   Font.getFontID = (function () {
@@ -1261,7 +1259,6 @@ var Font = (function FontClosure() {
         });
       }
       this.loadedName = fontName.split('-')[0];
-      this.loading = false;
       this.fontType = getFontType(type, subtype);
     },
 
@@ -2944,7 +2941,7 @@ var ErrorFont = (function ErrorFontClosure() {
   function ErrorFont(error) {
     this.error = error;
     this.loadedName = 'g_font_error';
-    this.loading = false;
+    this.missingFile = true;
   }
 
   ErrorFont.prototype = {
