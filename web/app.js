@@ -286,7 +286,7 @@ let PDFViewerApplication = {
     this.overlayManager = new OverlayManager();
 
     const dispatchToDOM = AppOptions.get('eventBusDispatchToDOM');
-    let eventBus = appConfig.eventBus || getGlobalEventBus(dispatchToDOM);
+    const eventBus = appConfig.eventBus || getGlobalEventBus(dispatchToDOM);
     this.eventBus = eventBus;
 
     let pdfRenderingQueue = new PDFRenderingQueue();
@@ -349,10 +349,7 @@ let PDFViewerApplication = {
     });
     pdfLinkService.setHistory(this.pdfHistory);
 
-    // TODO: improve `PDFFindBar` constructor parameter passing
-    let findBarConfig = Object.create(appConfig.findBar);
-    findBarConfig.eventBus = eventBus;
-    this.findBar = new PDFFindBar(findBarConfig, this.l10n);
+    this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
 
     this.pdfDocumentProperties =
       new PDFDocumentProperties(appConfig.documentProperties,
