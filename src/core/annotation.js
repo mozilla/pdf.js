@@ -1089,14 +1089,35 @@ class FreeTextAnnotation extends Annotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.FREETEXT;
-
     let dict = parameters.dict;
 
     this.data.textColor = Util.createRgbColor(dict.getArray('TextColor'));
     this.data.textStyle = dict.get('DS');
     this.data.fontSize = dict.get('FontSize');
-    this.data.opacity = dict.get('CA') || 1;
+    this.data.opacity = dict.get('CA');
     this.data.richText = dict.get('RC');
+    this.data.defaultAppearance = dict.get('DA');
+
+    if (this.data.defaultAppearance) {
+      let colorRegexString = '(';
+      colorRegexString += '([0-9\.]+) g|';
+      colorRegexString += '([0-9\.]+) ([0-9\.]+) ([0-9\.]+) rg|';
+      colorRegexString += '([0-9\.]+) ([0-9\.]+) ([0-9\.]+) ([0-9\.]+) k)';
+      let colorRegex = RegExp(colorRegexString);
+
+      let colorFound = this.data.defaultAppearance.match(colorRegex);
+      if (colorFound) {
+        let color = colorFound[1].split(' ');
+        color.pop();
+        this.data.textColor = Util.createRgbColor(color);
+      }
+
+      let fontFound;
+      fontFound = this.data.defaultAppearance.match(/([^\s]+) ([0-9]+) Tf/);
+      if (fontFound) {
+        this.data.fontSize = fontFound[2];
+      }
+    }
 
     this._preparePopup(dict);
   }

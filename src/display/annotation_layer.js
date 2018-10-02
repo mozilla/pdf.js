@@ -524,7 +524,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     }
 
     if (data.fontSize) {
-      style += 'font-size: ' + data.fontSize + 'pt;';
+      style += 'font-size: ' + data.fontSize + 'px;';
     }
 
     if (data.textStyle) {

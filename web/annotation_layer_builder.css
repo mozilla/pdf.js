@@ -200,6 +200,7 @@
 .annotationLayer .caretAnnotation,
 .annotationLayer .inkAnnotation svg polyline,
 .annotationLayer .stampAnnotation,
+.annotationLayer .freeTextAnnotation,
 .annotationLayer .fileAttachmentAnnotation {
   cursor: pointer;
 }
