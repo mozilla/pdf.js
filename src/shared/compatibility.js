@@ -183,6 +183,14 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   String.fromCodePoint = require('core-js/fn/string/from-code-point');
 })();
 
+// Support: IE
+(function checkSymbol() {
+  if (globalScope.Symbol) {
+    return;
+  }
+  require('core-js/es6/symbol');
+})();
+
 } // End of !PDFJSDev.test('CHROME')
 
 // Provides support for Object.values in legacy browsers.
