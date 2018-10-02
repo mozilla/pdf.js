@@ -465,7 +465,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
       divContent.style.cssText = body.style.cssText;
 
       // For security, allow only div, p, span, b, i and style attribute
-      // this elements is defined in 12.7.3.4 paragraph of the specification
+      // this elements are defined in 12.7.3.4 paragraph of the specification
       let securityNodeNames = ['DIV', 'P', 'SPAN', 'B', 'I', '#text'];
       let cleanDom = function (node) {
         if (securityNodeNames.includes(node.nodeName) === false) {
@@ -529,13 +529,11 @@ class FreeTextAnnotationElement extends AnnotationElement {
 
     if (data.textStyle) {
       let matchFont = data.textStyle.match(/(.*;?)font:\s*([^;]+);?\s*(.*)/);
-      console.log(data.textStyle, matchFont);
       if (matchFont !== null && matchFont.length === 4) {
         data.textStyle = matchFont[1] + matchFont[3];
         let font = matchFont[2];
         let matchFontSize = font.match(/(\D*)([0-9\.]+(pt|px|em|rem|cm))(.*)/);
         if (matchFontSize !== null && matchFontSize.length === 5) {
-          console.log(matchFontSize);
           style += 'font-size: ' + matchFontSize[2] + ';';
           font = matchFontSize[1] + matchFontSize[4];
         }
