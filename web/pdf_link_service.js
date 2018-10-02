@@ -338,18 +338,6 @@ class PDFLinkService {
   }
 
   /**
-   * @param {Object} params
-   */
-  onFileAttachmentAnnotation({ id, filename, content, }) {
-    this.eventBus.dispatch('fileattachmentannotation', {
-      source: this,
-      id,
-      filename,
-      content,
-    });
-  }
-
-  /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
@@ -480,11 +468,6 @@ class SimpleLinkService {
    * @param {string} action
    */
   executeNamedAction(action) {}
-
-  /**
-   * @param {Object} params
-   */
-  onFileAttachmentAnnotation({ id, filename, content, }) {}
 
   /**
    * @param {number} pageNum - page number.
