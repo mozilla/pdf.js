@@ -29,12 +29,10 @@ const SidebarView = {
  * @typedef {Object} PDFSidebarOptions
  * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {PDFThumbnailViewer} pdfThumbnailViewer - The thumbnail viewer.
- * @property {PDFOutlineViewer} pdfOutlineViewer - The outline viewer.
  * @property {HTMLDivElement} outerContainer - The outer container
  *   (encasing both the viewer and sidebar elements).
  * @property {HTMLDivElement} viewerContainer - The viewer container
  *   (in which the viewer element is placed).
- * @property {EventBus} eventBus - The application event bus.
  * @property {HTMLButtonElement} toggleButton - The button used for
  *   opening/closing the sidebar.
  * @property {HTMLButtonElement} thumbnailButton - The button used to show
@@ -56,9 +54,10 @@ const SidebarView = {
 class PDFSidebar {
   /**
    * @param {PDFSidebarOptions} options
+   * @param {EventBus} eventBus - The application event bus.
    * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, l10n = NullL10n) {
+  constructor(options, eventBus, l10n = NullL10n) {
     this.isOpen = false;
     this.active = SidebarView.THUMBS;
     this.isInitialViewSet = false;
@@ -71,11 +70,9 @@ class PDFSidebar {
 
     this.pdfViewer = options.pdfViewer;
     this.pdfThumbnailViewer = options.pdfThumbnailViewer;
-    this.pdfOutlineViewer = options.pdfOutlineViewer;
 
     this.outerContainer = options.outerContainer;
     this.viewerContainer = options.viewerContainer;
-    this.eventBus = options.eventBus;
     this.toggleButton = options.toggleButton;
 
     this.thumbnailButton = options.thumbnailButton;
@@ -88,6 +85,7 @@ class PDFSidebar {
 
     this.disableNotification = options.disableNotification || false;
 
+    this.eventBus = eventBus;
     this.l10n = l10n;
 
     this._addEventListeners();
@@ -397,7 +395,7 @@ class PDFSidebar {
       this.switchView(SidebarView.OUTLINE);
     });
     this.outlineButton.addEventListener('dblclick', () => {
-      this.pdfOutlineViewer.toggleOutlineTree();
+      this.eventBus.dispatch('toggleoutlinetree', { source: this, });
     });
 
     this.attachmentsButton.addEventListener('click', () => {
