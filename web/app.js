@@ -396,9 +396,7 @@ let PDFViewerApplication = {
     let sidebarConfig = Object.create(appConfig.sidebar);
     sidebarConfig.pdfViewer = this.pdfViewer;
     sidebarConfig.pdfThumbnailViewer = this.pdfThumbnailViewer;
-    sidebarConfig.pdfOutlineViewer = this.pdfOutlineViewer;
-    sidebarConfig.eventBus = eventBus;
-    this.pdfSidebar = new PDFSidebar(sidebarConfig, this.l10n);
+    this.pdfSidebar = new PDFSidebar(sidebarConfig, eventBus, this.l10n);
     this.pdfSidebar.onToggled = this.forceRendering.bind(this);
 
     this.pdfSidebarResizer = new PDFSidebarResizer(appConfig.sidebarResizer,
