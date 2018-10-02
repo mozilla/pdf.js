@@ -190,6 +190,7 @@
 .annotationLayer .polygonAnnotation svg polygon,
 .annotationLayer .inkAnnotation svg polyline,
 .annotationLayer .stampAnnotation,
+.annotationLayer .freeTextAnnotation,
 .annotationLayer .fileAttachmentAnnotation {
   cursor: pointer;
 }
