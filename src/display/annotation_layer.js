@@ -450,59 +450,6 @@ class FreeTextAnnotationElement extends AnnotationElement {
       return this.container;
     }
 
-    if (data.richText) {
-      // The content is a rich text, we should only add this content and
-      // create popup if necessary.
-      // RichText is defined by 12.7.3.4 paragraph of the specification,
-      // it's a XML document with body as root element, we convert it in div
-      let parser = new DOMParser();
-      let doc = parser.parseFromString(data.richText, 'text/xml');
-      let body = doc.firstChild.cloneNode(true);
-      let divContent = document.createElement('div');
-      while (body.firstChild) {
-        divContent.appendChild(body.firstChild);
-      }
-      divContent.style.cssText = body.style.cssText;
-
-      // For security, allow only div, p, span, b, i and style attribute
-      // this elements are defined in 12.7.3.4 paragraph of the specification
-      let securityNodeNames = ['DIV', 'P', 'SPAN', 'B', 'I', '#text'];
-      let cleanDom = function (node) {
-        if (securityNodeNames.includes(node.nodeName) === false) {
-          // Bad node type : remove it
-          node.remove();
-          return;
-        }
-
-        if (node.nodeName !== '#text') {
-          let attributes = node.getAttributeNames();
-          for (let i = 0, ii = attributes.length; i < ii; ++i) {
-            if (attributes[i].toLowerCase() !== 'style') {
-              // Bad attribute type : remove it
-              node.removeAttribute(attributes[i]);
-            }
-          }
-        }
-
-        node = node.firstChild;
-        while (node) {
-          cleanDom(node);
-          node = node.nextSibling;
-        }
-      };
-      cleanDom(divContent);
-
-      div.setAttribute('style', style);
-      div.appendChild(divContent);
-      this.container.append(div);
-
-      if (!this.data.hasPopup) {
-        this._createPopup(this.container, div, data);
-      }
-
-      return this.container;
-    }
-
     // Color define the background color of the annotation
     if (data.color) {
       let backgroundColor = Util.makeCssRgb(data.color[0] | 0,

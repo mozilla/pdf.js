@@ -228,6 +228,34 @@ function getTransformMatrix(rect, bbox, matrix) {
   ];
 }
 
+// Convert a PDF array color to a RGB array color
+function createRgbColor(color) {
+  let rgbColor = new Uint8ClampedArray(3);
+  if (!Array.isArray(color)) {
+    return rgbColor;
+  }
+
+  switch (color.length) {
+    case 0: // Transparent, which we indicate with a null value
+      rgbColor = null;
+      break;
+
+    case 1: // Convert grayscale to RGB
+      ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
+      break;
+
+    case 3: // Convert RGB percentages to RGB
+      ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
+      break;
+
+    case 4: // Convert CMYK to RGB
+      ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
+      break;
+  }
+
+  return rgbColor;
+}
+
 class Annotation {
   constructor(params) {
     const dict = params.dict;
@@ -383,7 +411,7 @@ class Annotation {
    *                        4 (CMYK) elements
    */
   setColor(color) {
-    this.color = Util.createRgbColor(color);
+    this.color = createRgbColor(color);
   }
 
   /**
@@ -1091,11 +1119,10 @@ class FreeTextAnnotation extends Annotation {
     this.data.annotationType = AnnotationType.FREETEXT;
     let dict = parameters.dict;
 
-    this.data.textColor = Util.createRgbColor(dict.getArray('TextColor'));
+    this.data.textColor = createRgbColor(dict.getArray('TextColor'));
     this.data.textStyle = dict.get('DS');
     this.data.fontSize = dict.get('FontSize');
     this.data.opacity = dict.get('CA');
-    this.data.richText = dict.get('RC');
     this.data.defaultAppearance = dict.get('DA');
 
     if (this.data.defaultAppearance) {
@@ -1109,7 +1136,7 @@ class FreeTextAnnotation extends Annotation {
       if (colorFound) {
         let color = colorFound[1].split(' ');
         color.pop();
-        this.data.textColor = Util.createRgbColor(color);
+        this.data.textColor = createRgbColor(color);
       }
 
       let fontFound;
