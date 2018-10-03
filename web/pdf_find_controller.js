@@ -99,6 +99,7 @@ class PDFFindController {
       return;
     }
     this._pdfDocument = pdfDocument;
+    this._firstPageCapability.resolve();
   }
 
   executeCommand(cmd, state) {
@@ -110,7 +111,7 @@ class PDFFindController {
     this._state = state;
     this._updateUIState(FindState.PENDING);
 
-    this._firstPagePromise.then(() => {
+    this._firstPageCapability.promise.then(() => {
       if (!this._pdfDocument ||
           (pdfDocument && this._pdfDocument !== pdfDocument)) {
         // If the document was closed before searching began, or if the search
@@ -160,17 +161,7 @@ class PDFFindController {
     clearTimeout(this._findTimeout);
     this._findTimeout = null;
 
-    this._firstPagePromise = new Promise((resolve) => {
-      const onPagesInit = () => {
-        if (!this._pdfDocument) {
-          throw new Error(
-            'PDFFindController: `setDocument()` should have been called.');
-        }
-        this._eventBus.off('pagesinit', onPagesInit);
-        resolve();
-      };
-      this._eventBus.on('pagesinit', onPagesInit);
-    });
+    this._firstPageCapability = createPromiseCapability();
   }
 
   _normalize(text) {
@@ -553,7 +544,7 @@ class PDFFindController {
     // Since searching is asynchronous, ensure that the removal of highlighted
     // matches (from the UI) is async too such that the 'updatetextlayermatches'
     // events will always be dispatched in the expected order.
-    this._firstPagePromise.then(() => {
+    this._firstPageCapability.promise.then(() => {
       if (!this._pdfDocument ||
           (pdfDocument && this._pdfDocument !== pdfDocument)) {
         // Only update the UI if the document is open, and is the current one.
