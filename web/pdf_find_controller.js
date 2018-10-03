@@ -58,15 +58,7 @@ class PDFFindController {
     this._eventBus = eventBus;
 
     this._reset();
-
-    eventBus.on('findbarclose', () => {
-      this._highlightMatches = false;
-
-      eventBus.dispatch('updatetextlayermatches', {
-        source: this,
-        pageIndex: -1,
-      });
-    });
+    eventBus.on('findbarclose', this._onFindBarClose.bind(this));
 
     // Compile the regular expression for text normalization once.
     const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join('');
@@ -110,9 +102,7 @@ class PDFFindController {
   }
 
   executeCommand(cmd, state) {
-    if (!this._pdfDocument) {
-      return;
-    }
+    const pdfDocument = this._pdfDocument;
 
     if (this._state === null || cmd !== 'findagain') {
       this._dirtyMatch = true;
@@ -121,14 +111,25 @@ class PDFFindController {
     this._updateUIState(FindState.PENDING);
 
     this._firstPagePromise.then(() => {
+      if (!this._pdfDocument ||
+          (pdfDocument && this._pdfDocument !== pdfDocument)) {
+        // If the document was closed before searching began, or if the search
+        // operation was relevant for a previously opened document, do nothing.
+        return;
+      }
       this._extractText();
 
-      clearTimeout(this._findTimeout);
+      if (this._findTimeout) {
+        clearTimeout(this._findTimeout);
+        this._findTimeout = null;
+      }
       if (cmd === 'find') {
         // Trigger the find action with a small delay to avoid starting the
         // search when the user is still typing (saving resources).
-        this._findTimeout =
-          setTimeout(this._nextMatch.bind(this), FIND_TIMEOUT);
+        this._findTimeout = setTimeout(() => {
+          this._nextMatch();
+          this._findTimeout = null;
+        }, FIND_TIMEOUT);
       } else {
         this._nextMatch();
       }
@@ -156,14 +157,19 @@ class PDFFindController {
     this._pendingFindMatches = Object.create(null);
     this._resumePageIdx = null;
     this._dirtyMatch = false;
+    clearTimeout(this._findTimeout);
     this._findTimeout = null;
 
     this._firstPagePromise = new Promise((resolve) => {
-      const eventBus = this._eventBus;
-      eventBus.on('pagesinit', function onPagesInit() {
-        eventBus.off('pagesinit', onPagesInit);
+      const onPagesInit = () => {
+        if (!this._pdfDocument) {
+          throw new Error(
+            'PDFFindController: `setDocument()` should have been called.');
+        }
+        this._eventBus.off('pagesinit', onPagesInit);
         resolve();
-      });
+      };
+      this._eventBus.on('pagesinit', onPagesInit);
     });
   }
 
@@ -540,6 +546,32 @@ class PDFFindController {
     if (this._selected.pageIdx !== -1) {
       this._updatePage(this._selected.pageIdx);
     }
+  }
+
+  _onFindBarClose(evt) {
+    const pdfDocument = this._pdfDocument;
+    // Since searching is asynchronous, ensure that the removal of highlighted
+    // matches (from the UI) is async too such that the 'updatetextlayermatches'
+    // events will always be dispatched in the expected order.
+    this._firstPagePromise.then(() => {
+      if (!this._pdfDocument ||
+          (pdfDocument && this._pdfDocument !== pdfDocument)) {
+        // Only update the UI if the document is open, and is the current one.
+        return;
+      }
+      if (this._findTimeout) {
+        clearTimeout(this._findTimeout);
+        this._findTimeout = null;
+        // Avoid the UI being in a pending state if the findbar is re-opened.
+        this._updateUIState(FindState.FOUND);
+      }
+      this._highlightMatches = false;
+
+      this._eventBus.dispatch('updatetextlayermatches', {
+        source: this,
+        pageIndex: -1,
+      });
+    });
   }
 
   _requestMatchesCount() {
