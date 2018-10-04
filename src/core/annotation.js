@@ -932,7 +932,7 @@ class FreeTextAnnotation extends Annotation {
 
     return evaluator.getOperatorList({
       stream: appearanceStream,
-      task: task,
+      task,
       resources: resourcesFonts,
       operatorList: opList,
     }).then(() => {
@@ -953,7 +953,7 @@ class FreeTextAnnotation extends Annotation {
       }
 
       return opList;
-    })
+    });
   }
 }
 
