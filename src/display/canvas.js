@@ -1079,68 +1079,120 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     // Path
     constructPath: function CanvasGraphics_constructPath(ops, args) {
-      var ctx = this.ctx;
-      var current = this.current;
-      var x = current.x, y = current.y;
-      for (var i = 0, j = 0, ii = ops.length; i < ii; i++) {
+      for (let i = 0, j = 0, ii = ops.length; i < ii; ++i) {
         switch (ops[i] | 0) {
           case OPS.rectangle:
-            x = args[j++];
-            y = args[j++];
-            var width = args[j++];
-            var height = args[j++];
-            if (width === 0) {
-              width = this.getSinglePixelWidth();
-            }
-            if (height === 0) {
-              height = this.getSinglePixelWidth();
-            }
-            var xw = x + width;
-            var yh = y + height;
-            this.ctx.moveTo(x, y);
-            this.ctx.lineTo(xw, y);
-            this.ctx.lineTo(xw, yh);
-            this.ctx.lineTo(x, yh);
-            this.ctx.lineTo(x, y);
-            this.ctx.closePath();
+            this.rectangle(
+              args[j++], // x
+              args[j++], // y
+              args[j++], // width
+              args[j++]  // height
+            );
             break;
+
           case OPS.moveTo:
-            x = args[j++];
-            y = args[j++];
-            ctx.moveTo(x, y);
+            this.moveTo(
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
+
           case OPS.lineTo:
-            x = args[j++];
-            y = args[j++];
-            ctx.lineTo(x, y);
+            this.lineTo(
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
+
           case OPS.curveTo:
-            x = args[j + 4];
-            y = args[j + 5];
-            ctx.bezierCurveTo(args[j], args[j + 1], args[j + 2], args[j + 3],
-                              x, y);
-            j += 6;
+            this.curveTo(
+              args[j++], // cp1x
+              args[j++], // cp1y
+              args[j++], // cp2x
+              args[j++], // cp2y
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
+
           case OPS.curveTo2:
-            ctx.bezierCurveTo(x, y, args[j], args[j + 1],
-                              args[j + 2], args[j + 3]);
-            x = args[j + 2];
-            y = args[j + 3];
-            j += 4;
+            this.curveTo2(
+              args[j++], // cp2x
+              args[j++], // cp2y
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
+
           case OPS.curveTo3:
-            x = args[j + 2];
-            y = args[j + 3];
-            ctx.bezierCurveTo(args[j], args[j + 1], x, y, x, y);
-            j += 4;
+            this.curveTo3(
+              args[j++], // cp1x
+              args[j++], // cp1y
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
+
           case OPS.closePath:
-            ctx.closePath();
+            this.closePath();
             break;
         }
       }
-      current.setCurrentPoint(x, y);
     },
+
+    rectangle: function CanvasGraphics_rectangle(x, y, width, height) {
+      // ensure width is not null
+      if (width === 0) {
+        width = this.getSinglePixelWidth();
+      }
+
+      // ensure height is not null
+      if (height === 0) {
+        height = this.getSinglePixelWidth();
+      }
+
+      const xw = x + width;
+      const yh = y + height;
+
+      // draw rectangle
+      this.ctx.moveTo(x, y);
+      this.ctx.lineTo(xw, y);
+      this.ctx.lineTo(xw, yh);
+      this.ctx.lineTo(x, yh);
+      this.ctx.lineTo(x, y);
+      this.ctx.closePath();
+
+      // set pointer to the starting point of
+      // the rectangle
+      this.current.setCurrentPoint(x, y);
+    },
+
+    moveTo: function CanvasGraphics_moveTo(x, y) {
+      this.ctx.moveTo(x, y);
+      this.current.setCurrentPoint(x, y);
+    },
+
+    lineTo: function CanvasGraphics_lineTo(x, y) {
+      this.ctx.lineTo(x, y);
+      this.current.setCurrentPoint(x, y);
+    },
+
+    curveTo: function CanvasGraphics_curveTo(cp1x, cp1y, cp2x, cp2y, x, y) {
+      this.ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+      this.current.setCurrentPoint(x, y);
+    },
+
+    curveTo2: function CanvasGraphics_curveTo2(cp2x, cp2y, x, y) {
+      const { 'x': prevX, 'y': prevY, } = this.current;
+      this.ctx.bezierCurveTo(prevX, prevY, cp2x, cp2y, x, y);
+      this.current.setCurrentPoint(x, y);
+    },
+
+    curveTo3: function CanvasGraphics_curveTo3(cp1x, cp1y, x, y) {
+      this.ctx.bezierCurveTo(cp1x, cp1y, x, y, x, y);
+      this.current.setCurrentPoint(x, y);
+    },
+
     closePath: function CanvasGraphics_closePath() {
       this.ctx.closePath();
     },

@@ -939,58 +939,62 @@ SVGGraphics = (function SVGGraphicsClosure() {
       var current = this.current;
       var x = current.x, y = current.y;
       current.path = this.svgFactory.createElement('svg:path');
-      var d = [];
       var opLength = ops.length;
 
       for (var i = 0, j = 0; i < opLength; i++) {
         switch (ops[i] | 0) {
           case OPS.rectangle:
-            x = args[j++];
-            y = args[j++];
-            var width = args[j++];
-            var height = args[j++];
-            var xw = x + width;
-            var yh = y + height;
-            d.push('M', pf(x), pf(y), 'L', pf(xw), pf(y), 'L', pf(xw), pf(yh),
-                   'L', pf(x), pf(yh), 'Z');
+            this.rectangle(
+              args[j++], // x
+              args[j++], // y
+              args[j++], // width
+              args[j++]  // height
+            );
             break;
           case OPS.moveTo:
-            x = args[j++];
-            y = args[j++];
-            d.push('M', pf(x), pf(y));
+            this.moveTo(
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
           case OPS.lineTo:
-            x = args[j++];
-            y = args[j++];
-            d.push('L', pf(x), pf(y));
+            this.lineTo(
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
           case OPS.curveTo:
-            x = args[j + 4];
-            y = args[j + 5];
-            d.push('C', pf(args[j]), pf(args[j + 1]), pf(args[j + 2]),
-                   pf(args[j + 3]), pf(x), pf(y));
-            j += 6;
+            this.curveTo(
+              args[j++], // cp1x
+              args[j++], // cp1y
+              args[j++], // cp2x
+              args[j++], // cp2y
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
           case OPS.curveTo2:
-            x = args[j + 2];
-            y = args[j + 3];
-            d.push('C', pf(x), pf(y), pf(args[j]), pf(args[j + 1]),
-                   pf(args[j + 2]), pf(args[j + 3]));
-            j += 4;
+            this.curveTo2(
+              args[j++], // cp2x
+              args[j++], // cp2y
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
           case OPS.curveTo3:
-            x = args[j + 2];
-            y = args[j + 3];
-            d.push('C', pf(args[j]), pf(args[j + 1]), pf(x), pf(y),
-                   pf(x), pf(y));
-            j += 4;
+            this.curveTo3(
+              args[j++], // cp1x
+              args[j++], // cp2x
+              args[j++], // x
+              args[j++]  // y
+            );
             break;
           case OPS.closePath:
-            d.push('Z');
+            this.closePath();
             break;
         }
       }
-      current.path.setAttributeNS(null, 'd', d.join(' '));
+
       current.path.setAttributeNS(null, 'fill', 'none');
 
       this._ensureTransformGroup().appendChild(current.path);
@@ -999,6 +1003,90 @@ SVGGraphics = (function SVGGraphicsClosure() {
       // in 'fill' and 'stroke'
       current.element = current.path;
       current.setCurrentPoint(x, y);
+    },
+
+    rectangle: function SVGGraphics_rectangle(x, y, width, height) {
+      var current = this.current;
+
+      if (current.path) {
+        var xw = x + width;
+        var yh = y + height;
+
+        var d = current.path.getAttributeNS(null, 'd');
+        d += ' ' + [
+          'M', pf(x), pf(y),
+          'L', pf(xw), pf(y),
+          'L', pf(xw), pf(yh),
+          'L', pf(x), pf(yh),
+          'Z'
+        ].join(' ');
+        current.path.setAttributeNS(null, 'd', d);
+      }
+    },
+
+    moveTo: function SVGGraphics_moveTo(x, y) {
+      var current = this.current;
+
+      if (current.path) {
+        var d = current.path.getAttributeNS(null, 'd');
+        d += ' ' + ['M', pf(x), pf(y)].join(' ');
+        current.path.setAttributeNS(null, 'd', d);
+      }
+    },
+
+    lineTo: function SVGGraphics_lineTo(x, y) {
+      var current = this.current;
+
+      if (current.path) {
+        var d = current.path.getAttributeNS(null, 'd');
+        d += ' ' + ['L', pf(x), pf(y)].join(' ');
+        current.path.setAttributeNS(null, 'd', d);
+      }
+    },
+
+    curveTo: function SVGGraphics_curveTo(cp1x, cp1y, cp2x, cp2y, x, y) {
+      var current = this.current;
+
+      if (current.path) {
+        var d = current.path.getAttributeNS(null, 'd');
+        d += ' ' + [
+          'C',
+          pf(cp1x), pf(cp1y),
+          pf(cp2x), pf(cp2y),
+          pf(x), pf(y)
+        ].join(' ');
+        current.path.setAttributeNS(null, 'd', d);
+      }
+    },
+
+    curveTo2: function SVGGraphics_curveTo2(cp2x, cp2y, x, y) {
+      var current = this.current;
+
+      if (current.path) {
+        var d = current.path.getAttributeNS(null, 'd');
+        d += ' ' + [
+          'C',
+          pf(x), pf(y),
+          pf(cp2x), pf(cp2y),
+          pf(x), pf(y)
+        ].join(' ');
+        current.path.setAttributeNS(null, 'd', d);
+      }
+    },
+
+    curveTo3: function SVGGraphics_curveTo3(cp1x, cp1y, x, y) {
+      var current = this.current;
+
+      if (current.path) {
+        var d = current.path.getAttributeNS(null, 'd');
+        d += ' ' + [
+          'C',
+          pf(cp1x), pf(cp1y),
+          pf(x), pf(y),
+          pf(x), pf(y)
+        ].join(' ');
+        current.path.setAttributeNS(null, 'd', d);
+      }
     },
 
     endPath: function SVGGraphics_endPath() {
