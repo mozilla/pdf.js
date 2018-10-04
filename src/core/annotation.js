@@ -1118,6 +1118,7 @@ class FreeTextAnnotation extends Annotation {
 
     this.data.annotationType = AnnotationType.FREETEXT;
     let dict = parameters.dict;
+    this.pdfManager = parameters.pdfManager;
 
     this.data.textColor = createRgbColor(dict.getArray('TextColor'));
     this.data.textStyle = dict.get('DS');
@@ -1125,28 +1126,44 @@ class FreeTextAnnotation extends Annotation {
     this.data.opacity = dict.get('CA');
     this.data.defaultAppearance = dict.get('DA');
 
-    if (this.data.defaultAppearance) {
-      let colorRegexString = '(';
-      colorRegexString += '([0-9\.]+) g|';
-      colorRegexString += '([0-9\.]+) ([0-9\.]+) ([0-9\.]+) rg|';
-      colorRegexString += '([0-9\.]+) ([0-9\.]+) ([0-9\.]+) ([0-9\.]+) k)';
-      let colorRegex = RegExp(colorRegexString);
+    this._preparePopup(dict);
+  }
 
-      let colorFound = this.data.defaultAppearance.match(colorRegex);
-      if (colorFound) {
-        let color = colorFound[1].split(' ');
-        color.pop();
-        this.data.textColor = createRgbColor(color);
-      }
-
-      let fontFound;
-      fontFound = this.data.defaultAppearance.match(/([^\s]+) ([0-9]+) Tf/);
-      if (fontFound) {
-        this.data.fontSize = fontFound[2];
-      }
+  getOperatorList(evaluator, task, renderForms) {
+    if (renderForms || this.appearance) {
+      return super.getOperatorList(evaluator, task, renderForms);
     }
 
-    this._preparePopup(dict);
+    let data = this.data;
+
+    let opList = new OperatorList();
+    let appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
+    let resourcesFonts = this.pdfManager.pdfDocument.catalog.fontCache;
+
+    return evaluator.getOperatorList({
+      stream: appearanceStream,
+      task: task,
+      resources: resourcesFonts,
+      operatorList: opList,
+    }).then(() => {
+      let a = opList.argsArray;
+      let i;
+      for (i = 0; i < opList.fnArray.length; i++) {
+        let fn = opList.fnArray[i];
+        switch (fn | 0) {
+          case OPS.setFont:
+            data.fontRefName = a[i][0];
+            data.fontSize = a[i][1];
+            break;
+          case OPS.setGrayFill:
+          case OPS.setFillRGBColor:
+            data.textColor = a[i];
+            break;
+        }
+      }
+
+      return opList;
+    })
   }
 }
 

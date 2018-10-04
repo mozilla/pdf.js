@@ -471,23 +471,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     }
 
     if (data.fontSize) {
-      style += 'font-size: ' + data.fontSize + 'px;';
-    }
-
-    if (data.textStyle) {
-      let matchFont = data.textStyle.match(/(.*;?)font:\s*([^;]+);?\s*(.*)/);
-      if (matchFont !== null && matchFont.length === 4) {
-        data.textStyle = matchFont[1] + matchFont[3];
-        let font = matchFont[2];
-        let matchFontSize = font.match(/(\D*)([0-9\.]+(pt|px|em|rem|cm))(.*)/);
-        if (matchFontSize !== null && matchFontSize.length === 5) {
-          style += 'font-size: ' + matchFontSize[2] + ';';
-          font = matchFontSize[1] + matchFontSize[4];
-        }
-        style += 'font-family: ' + font + ';';
-      }
-
-      style += data.textStyle + ';';
+      style += 'font-size: ' + data.fontSize + 'pt;';
     }
 
     div.setAttribute('style', style);
