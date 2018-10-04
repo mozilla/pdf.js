@@ -106,6 +106,9 @@ class AnnotationFactory {
       case 'Polygon':
         return new PolygonAnnotation(parameters);
 
+      case 'Ink':
+        return new InkAnnotation(parameters);
+
       case 'Highlight':
         return new HighlightAnnotation(parameters);
 
@@ -1010,6 +1013,34 @@ class PolygonAnnotation extends PolylineAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.POLYGON;
+  }
+}
+
+class InkAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.INK;
+
+    let dict = parameters.dict;
+    const xref = parameters.xref;
+
+    let originalInkLists = dict.getArray('InkList');
+    this.data.inkLists = [];
+    for (let i = 0, ii = originalInkLists.length; i < ii; ++i) {
+      // The raw ink lists array contains arrays of numbers representing
+      // the alternating horizontal and vertical coordinates, respectively,
+      // of each vertex. Convert this to an array of objects with x and y
+      // coordinates.
+      this.data.inkLists.push([]);
+      for (let j = 0, jj = originalInkLists[i].length; j < jj; j += 2) {
+        this.data.inkLists[i].push({
+          x: xref.fetchIfRef(originalInkLists[i][j]),
+          y: xref.fetchIfRef(originalInkLists[i][j + 1]),
+        });
+      }
+    }
+    this._preparePopup(dict);
   }
 }
 
