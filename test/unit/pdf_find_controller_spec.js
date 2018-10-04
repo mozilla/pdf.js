@@ -51,18 +51,17 @@ describe('pdf_find_controller', function() {
   beforeEach(function(done) {
     const loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
     loadingTask.promise.then(function(pdfDocument) {
+      eventBus = new EventBus();
+
       const linkService = new MockLinkService();
       linkService.setDocument(pdfDocument);
-
-      eventBus = new EventBus();
 
       pdfFindController = new PDFFindController({
         linkService,
         eventBus,
       });
-      pdfFindController.setDocument(pdfDocument);
+      pdfFindController.setDocument(pdfDocument); // Enable searching.
 
-      eventBus.dispatch('pagesinit');
       done();
     });
   });
