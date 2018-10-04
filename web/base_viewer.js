@@ -363,6 +363,10 @@ class BaseViewer {
     if (this.pdfDocument) {
       this._cancelRendering();
       this._resetView();
+
+      if (this.findController) {
+        this.findController.setDocument(null);
+      }
     }
 
     this.pdfDocument = pdfDocument;
@@ -471,6 +475,9 @@ class BaseViewer {
 
       this.eventBus.dispatch('pagesinit', { source: this, });
 
+      if (this.findController) {
+        this.findController.setDocument(pdfDocument); // Enable searching.
+      }
       if (this.defaultRenderingQueue) {
         this.update();
       }

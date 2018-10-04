@@ -70,5 +70,4 @@ pdfjsLib.getDocument({
   pdfViewer.setDocument(pdfDocument);
 
   pdfLinkService.setDocument(pdfDocument, null);
-  pdfFindController.setDocument(pdfDocument);
 });

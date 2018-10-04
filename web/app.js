@@ -569,7 +569,6 @@ let PDFViewerApplication = {
     if (this.pdfDocument) {
       this.pdfDocument = null;
 
-      this.findController.setDocument(null);
       this.pdfThumbnailViewer.setDocument(null);
       this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null);
@@ -893,7 +892,6 @@ let PDFViewerApplication = {
     } else if (PDFJSDev.test('CHROME')) {
       baseDocumentUrl = location.href.split('#')[0];
     }
-    this.findController.setDocument(pdfDocument);
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
     this.pdfDocumentProperties.setDocument(pdfDocument, this.url);
 
