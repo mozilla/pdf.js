@@ -49,13 +49,11 @@ const SCALE_SELECT_PADDING = 22;
 class Toolbar {
   /**
    * @param {ToolbarOptions} options
-   * @param {HTMLDivElement} mainContainer
    * @param {EventBus} eventBus
    * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, mainContainer, eventBus, l10n = NullL10n) {
+  constructor(options, eventBus, l10n = NullL10n) {
     this.toolbar = options.container;
-    this.mainContainer = mainContainer;
     this.eventBus = eventBus;
     this.l10n = l10n;
     this.items = options;
