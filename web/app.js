@@ -263,7 +263,9 @@ let PDFViewerApplication = {
       AppOptions.set('locale', hashParams['locale']);
     }
 
-    return Promise.all(waitOn);
+    return Promise.all(waitOn).catch((reason) => {
+      console.error(`_parseHashParameters: "${reason.message}".`);
+    });
   },
 
   /**
@@ -1464,10 +1466,14 @@ function loadFakeWorker() {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
           window.pdfjsWorker = worker;
           resolve();
-        });
+        }).catch(reject);
       } else if (typeof require === 'function') {
-        window.pdfjsWorker = require('../src/core/worker.js');
-        resolve();
+        try {
+          window.pdfjsWorker = require('../src/core/worker.js');
+          resolve();
+        } catch (ex) {
+          reject(ex);
+        }
       } else {
         reject(new Error(
           'SystemJS or CommonJS must be used to load fake worker.'));
