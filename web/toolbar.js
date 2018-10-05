@@ -78,7 +78,7 @@ class Toolbar {
   }
 
   setPageScale(pageScaleValue, pageScale) {
-    this.pageScaleValue = pageScaleValue;
+    this.pageScaleValue = (pageScaleValue || pageScale).toString();
     this.pageScale = pageScale;
     this._updateUIState(false);
   }
@@ -169,9 +169,7 @@ class Toolbar {
       // Don't update the UI state until we localize the toolbar.
       return;
     }
-    let { pageNumber, pagesCount, items, } = this;
-    let scaleValue = (this.pageScaleValue || this.pageScale).toString();
-    let scale = this.pageScale;
+    const { pageNumber, pagesCount, pageScaleValue, pageScale, items, } = this;
 
     if (resetNumPages) {
       if (this.hasPageLabels) {
@@ -199,17 +197,17 @@ class Toolbar {
     items.previous.disabled = (pageNumber <= 1);
     items.next.disabled = (pageNumber >= pagesCount);
 
-    items.zoomOut.disabled = (scale <= MIN_SCALE);
-    items.zoomIn.disabled = (scale >= MAX_SCALE);
+    items.zoomOut.disabled = (pageScale <= MIN_SCALE);
+    items.zoomIn.disabled = (pageScale >= MAX_SCALE);
 
-    let customScale = Math.round(scale * 10000) / 100;
+    let customScale = Math.round(pageScale * 10000) / 100;
     this.l10n.get('page_scale_percent', { scale: customScale, },
                   '{{scale}}%').then((msg) => {
       let options = items.scaleSelect.options;
       let predefinedValueFound = false;
       for (let i = 0, ii = options.length; i < ii; i++) {
         let option = options[i];
-        if (option.value !== scaleValue) {
+        if (option.value !== pageScaleValue) {
           option.selected = false;
           continue;
         }
