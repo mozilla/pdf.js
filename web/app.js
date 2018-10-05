@@ -311,8 +311,8 @@ let PDFViewerApplication = {
     });
     this.findController = findController;
 
-    let container = appConfig.mainContainer;
-    let viewer = appConfig.viewerContainer;
+    const container = appConfig.mainContainer;
+    const viewer = appConfig.viewerContainer;
     this.pdfViewer = new PDFViewer({
       container,
       viewer,
@@ -361,8 +361,7 @@ let PDFViewerApplication = {
       cursorToolOnLoad: AppOptions.get('cursorToolOnLoad'),
     });
 
-    this.toolbar = new Toolbar(appConfig.toolbar, container, eventBus,
-                               this.l10n);
+    this.toolbar = new Toolbar(appConfig.toolbar, eventBus, this.l10n);
 
     this.secondaryToolbar =
       new SecondaryToolbar(appConfig.secondaryToolbar, container, eventBus);
