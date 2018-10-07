@@ -45,9 +45,9 @@ const pdfjsFilePath =
   typeof document !== 'undefined' && document.currentScript ?
     document.currentScript.src : null;
 
-var fakeWorkerFilesLoader = null;
-var useRequireEnsure = false;
+let fakeWorkerFilesLoader = null;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
+  let useRequireEnsure = false;
   // For GENERIC build we need to add support for different fake file loaders
   // for different frameworks.
   if (typeof window === 'undefined') {
@@ -64,21 +64,33 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
   if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
     workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
   }
-  var dynamicLoaderSupported =
+  const dynamicLoaderSupported =
     typeof requirejs !== 'undefined' && requirejs.load;
-  fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
-    __non_webpack_require__.ensure([], function () {
-      var worker;
-      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
-        worker = __non_webpack_require__('../pdf.worker.js');
-      } else {
-        worker = __non_webpack_require__('./pdf.worker.js');
-      }
-      callback(worker.WorkerMessageHandler);
-    }, null, 'pdfjsWorker');
-  }) : dynamicLoaderSupported ? (function (callback) {
-    requirejs(['pdfjs-dist/build/pdf.worker'], function (worker) {
-      callback(worker.WorkerMessageHandler);
+  fakeWorkerFilesLoader = useRequireEnsure ? (function() {
+    return new Promise(function(resolve, reject) {
+      __non_webpack_require__.ensure([], function() {
+        try {
+          let worker;
+          if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
+            worker = __non_webpack_require__('../pdf.worker.js');
+          } else {
+            worker = __non_webpack_require__('./pdf.worker.js');
+          }
+          resolve(worker.WorkerMessageHandler);
+        } catch (ex) {
+          reject(ex);
+        }
+      }, reject, 'pdfjsWorker');
+    });
+  }) : dynamicLoaderSupported ? (function() {
+    return new Promise(function(resolve, reject) {
+      requirejs(['pdfjs-dist/build/pdf.worker'], function(worker) {
+        try {
+          resolve(worker.WorkerMessageHandler);
+        } catch (ex) {
+          reject(ex);
+        }
+      }, reject);
     });
   }) : null;
 }
@@ -1374,21 +1386,26 @@ var PDFWorker = (function PDFWorkerClosure() {
       if (typeof SystemJS === 'object') {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
           fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
-        });
+        }).catch(fakeWorkerFilesLoadedCapability.reject);
       } else if (typeof require === 'function') {
-        let worker = require('../core/worker.js');
-        fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
+        try {
+          let worker = require('../core/worker.js');
+          fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
+        } catch (ex) {
+          fakeWorkerFilesLoadedCapability.reject(ex);
+        }
       } else {
-        throw new Error(
-          'SystemJS or CommonJS must be used to load fake worker.');
+        fakeWorkerFilesLoadedCapability.reject(new Error(
+          'SystemJS or CommonJS must be used to load fake worker.'));
       }
     } else {
-      let loader = fakeWorkerFilesLoader || function(callback) {
-        loadScript(getWorkerSrc()).then(function() {
-          callback(window.pdfjsWorker.WorkerMessageHandler);
+      const loader = fakeWorkerFilesLoader || function() {
+        return loadScript(getWorkerSrc()).then(function() {
+          return window.pdfjsWorker.WorkerMessageHandler;
         });
       };
-      loader(fakeWorkerFilesLoadedCapability.resolve);
+      loader().then(fakeWorkerFilesLoadedCapability.resolve,
+                    fakeWorkerFilesLoadedCapability.reject);
     }
     return fakeWorkerFilesLoadedCapability.promise;
   }
@@ -1592,6 +1609,9 @@ var PDFWorker = (function PDFWorkerClosure() {
         var messageHandler = new MessageHandler(id, id + '_worker', port);
         this._messageHandler = messageHandler;
         this._readyCapability.resolve();
+      }).catch((reason) => {
+        this._readyCapability.reject(
+          new Error(`Setting up fake worker failed: "${reason.message}".`));
       });
     },
 
