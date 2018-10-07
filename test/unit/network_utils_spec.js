@@ -23,11 +23,6 @@ import {
 
 describe('network_utils', function() {
   describe('validateRangeRequestCapabilities', function() {
-    const defaultValues = {
-      allowRangeRequests: false,
-      suggestedLength: undefined,
-    };
-
     it('rejects range chunk sizes that are not larger than zero', function() {
       expect(function() {
         validateRangeRequestCapabilities({ rangeChunkSize: 0, });
@@ -38,14 +33,30 @@ describe('network_utils', function() {
       expect(validateRangeRequestCapabilities({
         disableRange: true,
         isHttp: true,
+        getResponseHeader: (headerName) => {
+          if (headerName === 'Content-Length') {
+            return 8;
+          }
+        },
         rangeChunkSize: 64,
-      })).toEqual(defaultValues);
+      })).toEqual({
+        allowRangeRequests: false,
+        suggestedLength: 8,
+      });
 
       expect(validateRangeRequestCapabilities({
         disableRange: false,
         isHttp: false,
+        getResponseHeader: (headerName) => {
+          if (headerName === 'Content-Length') {
+            return 8;
+          }
+        },
         rangeChunkSize: 64,
-      })).toEqual(defaultValues);
+      })).toEqual({
+        allowRangeRequests: false,
+        suggestedLength: 8,
+      });
     });
 
     it('rejects invalid Accept-Ranges header values', function() {
@@ -55,10 +66,15 @@ describe('network_utils', function() {
         getResponseHeader: (headerName) => {
           if (headerName === 'Accept-Ranges') {
             return 'none';
+          } else if (headerName === 'Content-Length') {
+            return 8;
           }
         },
         rangeChunkSize: 64,
-      })).toEqual(defaultValues);
+      })).toEqual({
+        allowRangeRequests: false,
+        suggestedLength: 8,
+      });
     });
 
     it('rejects invalid Content-Encoding header values', function() {
@@ -70,10 +86,15 @@ describe('network_utils', function() {
             return 'bytes';
           } else if (headerName === 'Content-Encoding') {
             return 'gzip';
+          } else if (headerName === 'Content-Length') {
+            return 8;
           }
         },
         rangeChunkSize: 64,
-      })).toEqual(defaultValues);
+      })).toEqual({
+        allowRangeRequests: false,
+        suggestedLength: 8,
+      });
     });
 
     it('rejects invalid Content-Length header values', function() {
@@ -90,7 +111,10 @@ describe('network_utils', function() {
           }
         },
         rangeChunkSize: 64,
-      })).toEqual(defaultValues);
+      })).toEqual({
+        allowRangeRequests: false,
+        suggestedLength: undefined,
+      });
     });
 
     it('rejects file sizes that are too small for range requests', function() {
