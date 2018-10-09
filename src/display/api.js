@@ -34,16 +34,10 @@ import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 import { WebGLContext } from './webgl';
 
-var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
+const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
 let isWorkerDisabled = false;
-let workerSrc;
-
-const pdfjsFilePath =
-  typeof PDFJSDev !== 'undefined' &&
-  PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
-  typeof document !== 'undefined' && document.currentScript ?
-    document.currentScript.src : null;
+let fallbackWorkerSrc;
 
 let fakeWorkerFilesLoader = null;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
@@ -62,7 +56,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
     useRequireEnsure = true;
   }
   if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
-    workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
+    fallbackWorkerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
   }
   const dynamicLoaderSupported =
     typeof requirejs !== 'undefined' && requirejs.load;
@@ -93,6 +87,14 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
       }, reject);
     });
   }) : null;
+
+  if (!fallbackWorkerSrc && typeof document !== 'undefined') {
+    const pdfjsFilePath = document.currentScript && document.currentScript.src;
+    if (pdfjsFilePath) {
+      fallbackWorkerSrc =
+        pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
+    }
+  }
 }
 
 /**
@@ -1346,13 +1348,8 @@ var PDFWorker = (function PDFWorkerClosure() {
     if (GlobalWorkerOptions.workerSrc) {
       return GlobalWorkerOptions.workerSrc;
     }
-    if (typeof workerSrc !== 'undefined') {
-      return workerSrc;
-    }
-    if (typeof PDFJSDev !== 'undefined' &&
-        PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
-        pdfjsFilePath) {
-      return pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
+    if (typeof fallbackWorkerSrc !== 'undefined') {
+      return fallbackWorkerSrc;
     }
     throw new Error('No "GlobalWorkerOptions.workerSrc" specified.');
   }
@@ -1480,7 +1477,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
       if (typeof Worker !== 'undefined' && !isWorkerDisabled &&
           !getMainThreadWorkerMessageHandler()) {
-        var workerSrc = getWorkerSrc();
+        let workerSrc = getWorkerSrc();
 
         try {
           // Wraps workerSrc path into blob URL, if the former does not belong
