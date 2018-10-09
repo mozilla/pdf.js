@@ -827,6 +827,12 @@ class LineAnnotationElement extends AnnotationElement {
     let width = data.rect[2] - data.rect[0];
     let height = data.rect[3] - data.rect[1];
     let svg = this.svgFactory.create(width, height);
+    let strokeColor = 'transparent';
+    if (!data.hasAppearance) {
+      strokeColor = Util.makeCssRgb(data.color[0] | 0,
+                                    data.color[1] | 0,
+                                    data.color[2] | 0);
+    }
 
     // PDF coordinates are calculated from a bottom left origin, so transform
     // the line coordinates to a top left origin for the SVG element.
@@ -836,9 +842,10 @@ class LineAnnotationElement extends AnnotationElement {
     line.setAttribute('x2', data.rect[2] - data.lineCoordinates[2]);
     line.setAttribute('y2', data.rect[3] - data.lineCoordinates[3]);
     line.setAttribute('stroke-width', data.borderStyle.width);
-    line.setAttribute('stroke', 'transparent');
+    line.setAttribute('stroke', strokeColor);
 
     svg.appendChild(line);
+
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the line instead
@@ -873,6 +880,18 @@ class SquareAnnotationElement extends AnnotationElement {
     let width = data.rect[2] - data.rect[0];
     let height = data.rect[3] - data.rect[1];
     let svg = this.svgFactory.create(width, height);
+    let strokeColor = 'transparent';
+    let fillColor = 'none';
+    if (!data.hasAppearance) {
+      strokeColor = Util.makeCssRgb(data.color[0] | 0,
+                                    data.color[1] | 0,
+                                    data.color[2] | 0);
+      if (data.interiorColor) {
+        fillColor = Util.makeCssRgb(data.interiorColor[0] | 0,
+                                    data.interiorColor[1] | 0,
+                                    data.interiorColor[2] | 0);
+      }
+    }
 
     // The browser draws half of the borders inside the square and half of
     // the borders outside the square by default. This behavior cannot be
@@ -884,8 +903,8 @@ class SquareAnnotationElement extends AnnotationElement {
     square.setAttribute('width', width - borderWidth);
     square.setAttribute('height', height - borderWidth);
     square.setAttribute('stroke-width', borderWidth);
-    square.setAttribute('stroke', 'transparent');
-    square.setAttribute('fill', 'none');
+    square.setAttribute('stroke', strokeColor);
+    square.setAttribute('fill', fillColor);
 
     svg.appendChild(square);
     this.container.append(svg);
@@ -922,6 +941,18 @@ class CircleAnnotationElement extends AnnotationElement {
     let width = data.rect[2] - data.rect[0];
     let height = data.rect[3] - data.rect[1];
     let svg = this.svgFactory.create(width, height);
+    let strokeColor = 'transparent';
+    let fillColor = 'none';
+    if (!data.hasAppearance) {
+      strokeColor = Util.makeCssRgb(data.color[0] | 0,
+                                    data.color[1] | 0,
+                                    data.color[2] | 0);
+      if (data.interiorColor) {
+        fillColor = Util.makeCssRgb(data.interiorColor[0] | 0,
+                                    data.interiorColor[1] | 0,
+                                    data.interiorColor[2] | 0);
+      }
+    }
 
     // The browser draws half of the borders inside the circle and half of
     // the borders outside the circle by default. This behavior cannot be
@@ -933,8 +964,8 @@ class CircleAnnotationElement extends AnnotationElement {
     circle.setAttribute('rx', (width / 2) - (borderWidth / 2));
     circle.setAttribute('ry', (height / 2) - (borderWidth / 2));
     circle.setAttribute('stroke-width', borderWidth);
-    circle.setAttribute('stroke', 'transparent');
-    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', strokeColor);
+    circle.setAttribute('fill', fillColor);
 
     svg.appendChild(circle);
     this.container.append(svg);
@@ -974,6 +1005,18 @@ class PolylineAnnotationElement extends AnnotationElement {
     let width = data.rect[2] - data.rect[0];
     let height = data.rect[3] - data.rect[1];
     let svg = this.svgFactory.create(width, height);
+    let strokeColor = 'transparent';
+    let fillColor = 'none';
+    if (!data.hasAppearance) {
+      strokeColor = Util.makeCssRgb(data.color[0] | 0,
+                                    data.color[1] | 0,
+                                    data.color[2] | 0);
+      if (data.interiorColor) {
+        fillColor = Util.makeCssRgb(data.interiorColor[0] | 0,
+                                    data.interiorColor[1] | 0,
+                                    data.interiorColor[2] | 0);
+      }
+    }
 
     // Convert the vertices array to a single points string that the SVG
     // polyline element expects ("x1,y1 x2,y2 ..."). PDF coordinates are
@@ -992,8 +1035,8 @@ class PolylineAnnotationElement extends AnnotationElement {
     let polyline = this.svgFactory.createElement(this.svgElementName);
     polyline.setAttribute('points', points);
     polyline.setAttribute('stroke-width', borderWidth);
-    polyline.setAttribute('stroke', 'transparent');
-    polyline.setAttribute('fill', 'none');
+    polyline.setAttribute('stroke', strokeColor);
+    polyline.setAttribute('fill', fillColor);
 
     svg.appendChild(polyline);
     this.container.append(svg);
@@ -1045,6 +1088,12 @@ class InkAnnotationElement extends AnnotationElement {
     let width = data.rect[2] - data.rect[0];
     let height = data.rect[3] - data.rect[1];
     let svg = this.svgFactory.create(width, height);
+    let strokeColor = 'transparent';
+    if (!data.hasAppearance) {
+      strokeColor = Util.makeCssRgb(data.color[0] | 0,
+                                    data.color[1] | 0,
+                                    data.color[2] | 0);
+    }
 
     let inkLists = data.inkLists;
     for (let i = 0, ii = inkLists.length; i < ii; i++) {
@@ -1067,7 +1116,7 @@ class InkAnnotationElement extends AnnotationElement {
       let polyline = this.svgFactory.createElement(this.svgElementName);
       polyline.setAttribute('points', points);
       polyline.setAttribute('stroke-width', borderWidth);
-      polyline.setAttribute('stroke', 'transparent');
+      polyline.setAttribute('stroke', strokeColor);
       polyline.setAttribute('fill', 'none');
 
       // Create the popup ourselves so that we can bind it to the polyline
@@ -1103,11 +1152,22 @@ class HighlightAnnotationElement extends AnnotationElement {
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
     }
+
+    if (!this.data.hasAppearance && this.data.color) {
+      this.container.style.backgroundColor = Util.makeCssRgb(
+        this.data.color[0] | 0,
+        this.data.color[1] | 0,
+        this.data.color[2] | 0
+      );
+      // To see the text, we must add an opacity
+      this.container.style.opacity = 0.4;
+    }
+
     return this.container;
   }
 }
 
-class UnderlineAnnotationElement extends AnnotationElement {
+class TextDecorationAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     let isRenderable = !!(parameters.data.hasPopup ||
                           parameters.data.title || parameters.data.contents);
@@ -1115,67 +1175,66 @@ class UnderlineAnnotationElement extends AnnotationElement {
   }
 
   /**
-   * Render the underline annotation's HTML element in the empty container.
+   * Render the text-decoration annotation's HTML element in the empty
+   * container.
    *
    * @public
-   * @memberof UnderlineAnnotationElement
+   * @memberof TextDecorationAnnotationElement
    * @returns {HTMLSectionElement}
    */
   render() {
+    if (!this.data.hasPopup) {
+      this._createPopup(this.container, null, this.data);
+    }
+
+    if (!this.data.hasAppearance && this.data.color) {
+      let div = document.createElement('div');
+      div.innerHTML = this.data.contents || this.data.title;
+      div.style.color = 'transparent';
+      div.style.textDecoration = this.data.textDecoration + ' ' +
+                                 Util.makeCssRgb(
+                                  this.data.color[0] | 0,
+                                  this.data.color[1] | 0,
+                                  this.data.color[2] | 0);
+      div.style.overflow = 'hidden';
+      div.style.position = 'absolute';
+      div.style.left = 0;
+      div.style.right = 0;
+      div.style.letterSpacing = this.container.style.width;
+      div.style.lineHeight = this.container.style.height;
+      div.style.zIndex = -1;
+
+      this.container.insertBefore(div, this.container.firstChild);
+    }
+
+    return this.container;
+  }
+}
+
+class UnderlineAnnotationElement extends TextDecorationAnnotationElement {
+  constructor(parameters) {
+    super(parameters);
+
     this.container.className = 'underlineAnnotation';
-
-    if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
-    }
-    return this.container;
+    this.data.textDecoration = 'underline solid';
   }
 }
 
-class SquigglyAnnotationElement extends AnnotationElement {
+class SquigglyAnnotationElement extends TextDecorationAnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
-  }
+    super(parameters);
 
-  /**
-   * Render the squiggly annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof SquigglyAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
-  render() {
     this.container.className = 'squigglyAnnotation';
-
-    if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
-    }
-    return this.container;
+    this.data.textDecoration = 'underline wavy';
   }
 }
 
-class StrikeOutAnnotationElement extends AnnotationElement {
+class StrikeOutAnnotationElement extends TextDecorationAnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
-  }
+    super(parameters);
 
-  /**
-   * Render the strikeout annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof StrikeOutAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
-  render() {
     this.container.className = 'strikeoutAnnotation';
-
-    if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
-    }
-    return this.container;
+    this.data.textDecoration = 'line-through solid';
   }
 }
 

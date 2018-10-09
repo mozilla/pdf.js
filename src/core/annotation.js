@@ -165,6 +165,41 @@ function getTransformMatrix(rect, bbox, matrix) {
   ];
 }
 
+/**
+ * Convert a PDF array color to a RGB array color.
+ * The default value is black, in RGB color space.
+ *
+ * @param {Array} color - The color array containing either 0
+ *                        (transparent), 1 (grayscale), 3 (RGB) or
+ *                        4 (CMYK) elements
+ */
+function createRgbColor(color) {
+  let rgbColor = new Uint8ClampedArray(3);
+  if (!Array.isArray(color)) {
+    return rgbColor;
+  }
+
+  switch (color.length) {
+    case 0: // Transparent, which we indicate with a null value
+      rgbColor = null;
+      break;
+
+    case 1: // Convert grayscale to RGB
+      ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
+      break;
+
+    case 3: // Convert RGB percentages to RGB
+      ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
+      break;
+
+    case 4: // Convert CMYK to RGB
+      ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
+      break;
+  }
+
+  return rgbColor;
+}
+
 class Annotation {
   constructor(params) {
     let dict = params.dict;
@@ -285,36 +320,7 @@ class Annotation {
    *                        4 (CMYK) elements
    */
   setColor(color) {
-    let rgbColor = new Uint8ClampedArray(3);
-    if (!Array.isArray(color)) {
-      this.color = rgbColor;
-      return;
-    }
-
-    switch (color.length) {
-      case 0: // Transparent, which we indicate with a null value
-        this.color = null;
-        break;
-
-      case 1: // Convert grayscale to RGB
-        ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
-        this.color = rgbColor;
-        break;
-
-      case 3: // Convert RGB percentages to RGB
-        ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
-        this.color = rgbColor;
-        break;
-
-      case 4: // Convert CMYK to RGB
-        ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
-        this.color = rgbColor;
-        break;
-
-      default:
-        this.color = rgbColor;
-        break;
-    }
+    this.color = createRgbColor(color);
   }
 
   /**
@@ -961,6 +967,7 @@ class LineAnnotation extends Annotation {
 
     let dict = parameters.dict;
     this.data.lineCoordinates = Util.normalizeRect(dict.getArray('L'));
+
     this._preparePopup(dict);
   }
 }
@@ -970,6 +977,14 @@ class SquareAnnotation extends Annotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.SQUARE;
+
+    let dict = parameters.dict;
+    this.data.interiorColor = null; // Default transparent
+    if (dict.has('IC')) {
+      let interiorColor = dict.getArray('IC');
+      this.data.interiorColor = createRgbColor(interiorColor);
+    }
+
     this._preparePopup(parameters.dict);
   }
 }
@@ -979,6 +994,14 @@ class CircleAnnotation extends Annotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.CIRCLE;
+
+    let dict = parameters.dict;
+    this.data.interiorColor = null; // Default transparent
+    if (dict.has('IC')) {
+      let interiorColor = dict.getArray('IC');
+      this.data.interiorColor = createRgbColor(interiorColor);
+    }
+
     this._preparePopup(parameters.dict);
   }
 }
@@ -1001,6 +1024,12 @@ class PolylineAnnotation extends Annotation {
         x: rawVertices[i],
         y: rawVertices[i + 1],
       });
+    }
+
+    this.data.interiorColor = null; // Default transparent
+    if (dict.has('IC')) {
+      let interiorColor = dict.getArray('IC');
+      this.data.interiorColor = createRgbColor(interiorColor);
     }
 
     this._preparePopup(dict);
