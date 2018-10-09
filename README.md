@@ -6,6 +6,13 @@ PDF.js is community-driven and supported by Mozilla Labs. Our goal is to
 create a general-purpose, web standards-based platform for parsing and
 rendering PDFs.
 
+## Difference with mozilla repo
+
+This fork improves SVG rendering of PDF docs, and more specifically:
++ adds masks support
++ adds radial/axial gradients (shadingFill) support
++ manages groups hierarchy
+
 ## Contributing
 
 PDF.js is an open source project and always looking for more contributors. To
