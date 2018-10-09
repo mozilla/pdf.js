@@ -1358,10 +1358,12 @@ var PDFWorker = (function PDFWorkerClosure() {
   }
 
   function getMainThreadWorkerMessageHandler() {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-    return (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler);
+    try {
+      if (typeof window !== 'undefined') {
+        return (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler);
+      }
+    } catch (ex) { }
+    return null;
   }
 
   let fakeWorkerFilesLoadedCapability;
