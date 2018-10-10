@@ -1109,6 +1109,34 @@ gulp.task('server', function (done) {
   server.port = 8888;
   server.start();
 });
+var connect = require('gulp-connect');
+var proxy = require('http-proxy-middleware');
+gulp.task('cor', function () {
+  connect.server({
+      root: '',
+      livereload: true,
+      port: 9000,
+      middleware: function (connect, opt) {
+          return [
+              proxy(['/db'], {
+                  target: 'http://127.0.0.1:3456', // input url of your db
+                  changeOrigin: true,
+                  pathRewrite: {
+                      '^/db': '',
+                  },
+              }),
+              proxy(['/pdf'], {
+                target: 'http://127.0.0.1:8888',
+                changeOrigin: true,
+                pathRewrite: {
+                    '^/pdf': '/',
+                },
+            })
+          ];
+      },
+  });
+});
+gulp.task('app', ['server', 'cor']);
 
 gulp.task('clean', function(callback) {
   console.log();

@@ -64,7 +64,10 @@ class ViewHistory {
       return;
     }
     // console.log(databaseStr);
-    let db = new PouchDB('http://127.0.0.1:1111/db/shit');
+    let url = new URL(window.location.href);
+    let origin = url.origin;
+    console.log(origin)
+    let db = new PouchDB(origin + '/db/pdf_js');
     try {
       let doc = await db.get('pdf_history');
       try {
@@ -98,7 +101,9 @@ class ViewHistory {
       return sessionStorage.getItem('pdfjs.history');
     }
     // console.log(databaseStr);
-    let db = new PouchDB('http://127.0.0.1:1111/db/shit');
+    let url = new URL(window.location.href);
+    let origin = url.origin;
+    let db = new PouchDB(origin + '/db/pdf_js');
     try {
       let doc = await db.get('pdf_history');
       console.log(doc);

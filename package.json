@@ -42,16 +42,22 @@
     "wintersmith": "^2.4.1",
     "yargs": "^11.1.0"
   },
-  "scripts": {
-    "test": "gulp lint unittestcli externaltest"
-  },
   "repository": {
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
   "license": "Apache-2.0",
+  "scripts": {
+    "start": "gulp app",
+    "server": "gulp server",
+    "build": "gulp generic",
+    "test": "gulp lint unittestcli externaltest"
+  },
   "dependencies": {
     "@types/pouchdb": "^6.3.2",
+    "gulp-cli": "^2.0.1",
+    "gulp-connect": "^5.6.1",
+    "http-proxy-middleware": "^0.19.0",
     "pouchdb": "^7.0.0"
   }
 }
