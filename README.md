@@ -56,14 +56,22 @@ If everything worked out, install all dependencies for PDF.js:
 
     $ npm install
 
+If you want to SYNC your reading process,  install all dependencies for pouchDB server:
+
+    $ npm install pouchdb-server -g
+
+Then run pouchdb-server on port 3456
+
+    $ pouchdb-server -p 3456
+
 Finally, you need to start a local web server as some browsers do not allow opening
 PDF files using a `file://` URL. Run:
 
-    $ gulp server
+    $ npm start
 
 and then you can open:
 
-+ http://localhost:8888/web/viewer.html
++ http://localhost:9000/pdf/web/viewer.html
 
 Please keep in mind that this requires an ES6 compatible browser; refer to [Building PDF.js](https://github.com/mozilla/pdf.js/blob/master/README.md#building-pdfjs) for usage with older browsers.
 

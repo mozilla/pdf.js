@@ -14,6 +14,8 @@
  */
 
 const DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
+import PouchDB from './../node_modules/pouchdb/dist/pouchdb.js';
+// import PouchDB from 'pouchdb';
 
 /**
  * View History - This is a utility for saving various view parameters for
@@ -28,7 +30,6 @@ class ViewHistory {
   constructor(fingerprint, cacheSize = DEFAULT_VIEW_HISTORY_CACHE_SIZE) {
     this.fingerprint = fingerprint;
     this.cacheSize = cacheSize;
-
     this._initializedPromise = this._readFromStorage().then((databaseStr) => {
       let database = JSON.parse(databaseStr || '{}');
       if (!('files' in database)) {
@@ -62,6 +63,35 @@ class ViewHistory {
       sessionStorage.setItem('pdfjs.history', databaseStr);
       return;
     }
+    // console.log(databaseStr);
+    let url = new URL(window.location.href);
+    let origin = url.origin;
+    console.log(origin)
+    let db = new PouchDB(origin + '/db/pdf_js');
+    try {
+      let doc = await db.get('pdf_history');
+      try {
+        let res = await db.put({
+          _id: 'pdf_history',
+          databaseStr,
+          _rev: doc._rev,
+        });
+        console.log(res);
+      } catch (err) {
+        console.log(err);
+      }
+    } catch (err) {
+      console.log(err);
+      try {
+        let res = await db.put({
+          _id: 'pdf_history',
+          databaseStr,
+        });
+        console.log(res);
+      } catch (err) {
+        console.log(err);
+      }
+    }
     localStorage.setItem('pdfjs.history', databaseStr);
   }
 
@@ -70,6 +100,19 @@ class ViewHistory {
         PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
       return sessionStorage.getItem('pdfjs.history');
     }
+    // console.log(databaseStr);
+    let url = new URL(window.location.href);
+    let origin = url.origin;
+    let db = new PouchDB(origin + '/db/pdf_js');
+    try {
+      let doc = await db.get('pdf_history');
+      console.log(doc);
+      return doc['databaseStr'];
+    } catch (err) {
+      console.log(err);
+    }
+    //
+
     return localStorage.getItem('pdfjs.history');
   }
 
