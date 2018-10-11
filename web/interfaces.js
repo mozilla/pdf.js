@@ -23,6 +23,11 @@ class IPDFLinkService {
   /**
    * @returns {number}
    */
+  get pagesCount() {}
+
+  /**
+   * @returns {number}
+   */
   get page() {}
 
   /**
