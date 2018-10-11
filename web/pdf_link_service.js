@@ -408,10 +408,20 @@ function isValidExplicitDestination(dest) {
   return true;
 }
 
+/**
+ * @implements {IPDFLinkService}
+ */
 class SimpleLinkService {
   constructor() {
     this.externalLinkTarget = null;
     this.externalLinkRel = null;
+  }
+
+  /**
+   * @returns {number}
+   */
+  get pagesCount() {
+    return 0;
   }
 
   /**
