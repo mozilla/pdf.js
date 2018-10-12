@@ -224,11 +224,7 @@ class Toolbar {
   updateLoadingIndicatorState(loading = false) {
     let pageNumberInput = this.items.pageNumber;
 
-    if (loading) {
-      pageNumberInput.classList.add(PAGE_NUMBER_LOADING_INDICATOR);
-    } else {
-      pageNumberInput.classList.remove(PAGE_NUMBER_LOADING_INDICATOR);
-    }
+    pageNumberInput.classList.toggle(PAGE_NUMBER_LOADING_INDICATOR, loading);
   }
 
   _adjustScaleWidth() {

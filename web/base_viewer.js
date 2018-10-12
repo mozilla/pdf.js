@@ -1038,16 +1038,10 @@ class BaseViewer {
   _updateScrollMode(pageNumber = null) {
     const scrollMode = this._scrollMode, viewer = this.viewer;
 
-    if (scrollMode === ScrollMode.HORIZONTAL) {
-      viewer.classList.add('scrollHorizontal');
-    } else {
-      viewer.classList.remove('scrollHorizontal');
-    }
-    if (scrollMode === ScrollMode.WRAPPED) {
-      viewer.classList.add('scrollWrapped');
-    } else {
-      viewer.classList.remove('scrollWrapped');
-    }
+    viewer.classList.toggle('scrollHorizontal',
+                            scrollMode === ScrollMode.HORIZONTAL);
+    viewer.classList.toggle('scrollWrapped',
+                            scrollMode === ScrollMode.WRAPPED);
 
     if (!this.pdfDocument || !pageNumber) {
       return;
