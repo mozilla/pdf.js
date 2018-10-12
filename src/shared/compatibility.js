@@ -90,6 +90,28 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   };
 })();
 
+// Provides support for DOMTokenList.prototype.toggle, with the optional
+// "force" parameter, in legacy browsers.
+// Support: IE
+(function checkDOMTokenListToggle() {
+  if (!hasDOM || isNodeJS()) {
+    return;
+  }
+  const div = document.createElement('div');
+  if (div.classList.toggle('test', 0) === false) {
+    return;
+  }
+  const originalDOMTokenListToggle = DOMTokenList.prototype.toggle;
+
+  DOMTokenList.prototype.toggle = function(token) {
+    if (arguments.length > 1) {
+      const force = !!arguments[1];
+      return (this[force ? 'add' : 'remove'](token), force);
+    }
+    return originalDOMTokenListToggle(token);
+  };
+})();
+
 // Provides support for String.prototype.includes in legacy browsers.
 // Support: IE, Chrome<41
 (function checkStringIncludes() {
