@@ -1,4 +1,4 @@
-/* Copyright 2012 Mozilla Foundation
+/* Copyright 2018 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,17 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-restricted-globals, no-unused-vars */
 
-'use strict';
-
-if (PDFJSDev.test('MOZCENTRAL') && typeof ReadableStream === 'undefined') {
-  importScripts('./streams_polyfill.js');
+if (typeof ReadableStream === "undefined") {
+  require("../../../src/shared/global_scope").ReadableStream =
+    require("../../../external/streams/streams-lib").ReadableStream;
 }
-
-const pdfjsVersion = PDFJSDev.eval('BUNDLE_VERSION');
-const pdfjsBuild = PDFJSDev.eval('BUNDLE_BUILD');
-
-const pdfjsCoreWorker = require('./core/worker.js');
-
-exports.WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
