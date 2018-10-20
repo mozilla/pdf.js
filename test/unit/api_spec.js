@@ -142,9 +142,20 @@ describe('api', function() {
       // Sanity check to make sure that we fetched the entire PDF file.
       expect(typedArrayPdf.length).toEqual(basicApiFileLength);
 
-      var loadingTask = getDocument(typedArrayPdf);
-      loadingTask.promise.then(function(data) {
-        expect(data instanceof PDFDocumentProxy).toEqual(true);
+      const loadingTask = getDocument(typedArrayPdf);
+
+      const progressReportedCapability = createPromiseCapability();
+      loadingTask.onProgress = function(data) {
+        progressReportedCapability.resolve(data);
+      };
+
+      Promise.all([
+        loadingTask.promise,
+        progressReportedCapability.promise,
+      ]).then(function(data) {
+        expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
+        expect(data[1].loaded / data[1].total).toEqual(1);
+
         loadingTask.destroy().then(done);
       }).catch(done.fail);
     });
