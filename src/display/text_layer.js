@@ -55,7 +55,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
   function appendText(task, geom, styles) {
     // Initialize all used properties to keep the caches monomorphic.
-    var textDiv = document.createElement('div');
+    var textDiv = document.createElement('span');
     var textDivProperties = {
       style: null,
       angle: 0,
@@ -99,14 +99,90 @@ var renderTextLayer = (function renderTextLayerClosure() {
       left = tx[4] + (fontAscent * Math.sin(angle));
       top = tx[5] - (fontAscent * Math.cos(angle));
     }
+
+    /* determine where to insert line breaks in order to make copying text work
+     as expected */
+
+    var topAdjustment = 0;
+    var hasPrecedingLineBreak = false;
+
+    // line adjustments aren't supported for angled text
+    if (angle === 0) {
+      /*
+      if this item:
+      * has approximately the same y-position as the last item
+      * is adjacent to the last item
+      it is likely on the same line of text, so it shouldn't be modified
+        */
+      if (
+        task._lastLineStart &&
+        Math.abs(task._lastLineBottom - (top + fontHeight)) <
+          (fontHeight * 0.4) &&
+        Math.abs(left - task._lastLineEnd) < 15
+        ) {
+
+        /* If the item:
+           * has approximately the same x-position as the start of the previous
+             line
+           * is immediately below the previous line
+           * is approximately the same font size
+          It is likely part of the same text block, which is being wrapped onto
+             a new line.
+          In this case, the new line should still be treated as an inline
+            element, but it might be necessary to insert a space between the
+            last word of the last line and the first word of this line.
+             */
+      } else if (
+        task._lastLineStart &&
+         Math.abs(task._lastLineBottom - top) < (fontHeight * 0.55) &&
+          /* outdent on 2nd line is OK (because the first line of a paragraph
+            is often indented), but indent is not (because it is almost always
+              an intentional line break)
+          */
+         ((task._lastLineStart - left) < (fontHeight * 2) &&
+          (task._lastLineStart - left) > (fontHeight * -0.5)) &&
+        (fontHeight / task._lastFontSize > 0.9 &&
+          fontHeight / task._lastFontSize < 1.1)
+      ) {
+        if (!isAllWhitespace(task._lastText[task._lastText.length - 1]) &&
+            !isAllWhitespace(geom.str[0])) {
+          geom.str = ' ' + geom.str;
+          geom.width += fontHeight * 0.2;
+          // shift the text left to account for the added space
+          left -= fontHeight * 0.2;
+        }
+      } else {
+        /*
+        the text is likely the start of a new text block. In this case, a <br>
+        will be inserted between the last block and this one.
+        */
+        topAdjustment += fontHeight;
+        hasPrecedingLineBreak = true;
+      }
+
+      if (Math.abs((top + fontHeight) - task._lastLineBottom) > 5) {
+        // new line started
+        task._lastLineStart = left;
+      }
+    }
+
+    task._lastText = geom.str;
+    task._lastLineEnd = left + (geom.width * task._viewport.scale);
+    task._lastLineBottom = top + fontHeight;
+    task._lastFontSize = fontHeight;
+
     styleBuf[1] = left;
-    styleBuf[3] = top;
+    styleBuf[3] = top - topAdjustment;
     styleBuf[5] = fontHeight;
     styleBuf[7] = style.fontFamily;
     textDivProperties.style = styleBuf.join('');
     textDiv.setAttribute('style', textDivProperties.style);
 
     textDiv.textContent = geom.str;
+    if (hasPrecedingLineBreak) {
+      textDiv.insertBefore(document.createElement('br'), textDiv.childNodes[0]);
+    }
+
     // `fontName` is only used by the FontInspector, and we only use `dataset`
     // here to make the font name available in the debugger.
     if (task._fontInspectorEnabled) {
@@ -481,6 +557,11 @@ var renderTextLayer = (function renderTextLayerClosure() {
                                     globalScope.FontInspector.enabled);
 
     this._reader = null;
+    this._lastText = null;
+    this._lastLineStart = null;
+    this._lastLineEnd = null;
+    this._lastLineBottom = null;
+    this._lastFontSize = null;
     this._layoutTextLastFontSize = null;
     this._layoutTextLastFontFamily = null;
     this._layoutTextCtx = null;
