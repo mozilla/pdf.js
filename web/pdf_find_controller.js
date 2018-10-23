@@ -389,6 +389,13 @@ class PDFFindController {
     });
   }
 
+  _updateAllPages() {
+    this._eventBus.dispatch('updatetextlayermatches', {
+      source: this,
+      pageIndex: -1,
+    });
+  }
+
   _nextMatch() {
     const previous = this._state.findPrevious;
     const currentPageIndex = this._linkService.page - 1;
@@ -407,18 +414,18 @@ class PDFFindController {
       this._pageMatchesLength = null;
       this._matchesCountTotal = 0;
 
-      for (let i = 0; i < numPages; i++) {
-        // Wipe out any previously highlighted matches.
-        this._updatePage(i);
+      this._updateAllPages(); // Wipe out any previously highlighted matches.
 
+      for (let i = 0; i < numPages; i++) {
         // Start finding the matches as soon as the text is extracted.
-        if (!(i in this._pendingFindMatches)) {
-          this._pendingFindMatches[i] = true;
-          this._extractTextPromises[i].then((pageIdx) => {
-            delete this._pendingFindMatches[pageIdx];
-            this._calculateMatch(pageIdx);
-          });
+        if (this._pendingFindMatches[i] === true) {
+          continue;
         }
+        this._pendingFindMatches[i] = true;
+        this._extractTextPromises[i].then((pageIdx) => {
+          delete this._pendingFindMatches[pageIdx];
+          this._calculateMatch(pageIdx);
+        });
       }
     }
 
@@ -557,11 +564,7 @@ class PDFFindController {
         this._updateUIState(FindState.FOUND);
       }
       this._highlightMatches = false;
-
-      this._eventBus.dispatch('updatetextlayermatches', {
-        source: this,
-        pageIndex: -1,
-      });
+      this._updateAllPages(); // Wipe out any previously highlighted matches.
     });
   }
 
