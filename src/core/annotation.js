@@ -1155,7 +1155,7 @@ class FreeTextAnnotation extends Annotation {
             data.fontRefName = a[i][0];
             data.fontSize = a[i][1];
             break;
-          case OPS.setGrayFill:
+          case OPS.setFillGray:
           case OPS.setFillRGBColor:
             data.textColor = a[i];
             break;

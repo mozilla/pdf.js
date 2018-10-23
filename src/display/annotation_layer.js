@@ -475,9 +475,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     }
 
     div.setAttribute('style', style);
-
     div.innerText = data.contents;
-
     this.container.append(div);
 
     this._createPopup(this.container, div, data);
