@@ -975,7 +975,7 @@ describe('annotation', function() {
 
             // Remove the last invalid flag for the next iteration.
             if (!valid) {
-              flags -= invalidFieldFlags.splice(-1, 1);
+              flags -= invalidFieldFlags.pop();
             }
           });
         });
