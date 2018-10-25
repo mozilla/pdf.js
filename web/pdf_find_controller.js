@@ -141,7 +141,7 @@ class PDFFindController {
     this._highlightMatches = false;
     this._pdfDocument = null;
     this._pageMatches = [];
-    this._pageMatchesLength = null;
+    this._pageMatchesLength = [];
     this._state = null;
     this._selected = { // Currently selected match.
       pageIdx: -1,
@@ -291,9 +291,6 @@ class PDFFindController {
     }
 
     // Prepare arrays for storing the matches.
-    if (!this._pageMatchesLength) {
-      this._pageMatchesLength = [];
-    }
     this._pageMatchesLength[pageIndex] = [];
     this._pageMatches[pageIndex] = [];
 
@@ -404,7 +401,7 @@ class PDFFindController {
       this._offset.matchIdx = null;
       this._resumePageIdx = null;
       this._pageMatches.length = 0;
-      this._pageMatchesLength = null;
+      this._pageMatchesLength.length = 0;
       this._matchesCountTotal = 0;
 
       for (let i = 0; i < numPages; i++) {
