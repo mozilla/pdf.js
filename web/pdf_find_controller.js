@@ -173,6 +173,17 @@ class PDFFindController {
   }
 
   /**
+   * @return {string} The (current) normalized search query.
+   */
+  get _query() {
+    if (this._state.query !== this._rawQuery) {
+      this._rawQuery = this._state.query;
+      this._normalizedQuery = normalize(this._state.query);
+    }
+    return this._normalizedQuery;
+  }
+
+  /**
    * Helper for multi-term search that fills the `matchesWithLength` array
    * and handles cases where one search term includes another search term (for
    * example, "tamed tame" or "this is"). It looks for intersecting terms in
@@ -307,7 +318,7 @@ class PDFFindController {
 
   _calculateMatch(pageIndex) {
     let pageContent = this._pageContents[pageIndex];
-    let query = normalize(this._state.query);
+    let query = this._query;
     const { caseSensitive, entireWord, phraseSearch, } = this._state;
 
     if (query.length === 0) {
@@ -425,7 +436,7 @@ class PDFFindController {
     }
 
     // If there's no query there's no point in searching.
-    if (this._state.query === '') {
+    if (this._query === '') {
       this._updateUIState(FindState.FOUND);
       return;
     }
