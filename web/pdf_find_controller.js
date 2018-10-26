@@ -40,6 +40,18 @@ const CHARACTERS_TO_NORMALIZE = {
   '\u00BE': '3/4', // Vulgar fraction three quarters
 };
 
+let normalizationRegex = null;
+function normalize(text) {
+  if (!normalizationRegex) {
+    // Compile the regular expression for text normalization once.
+    const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join('');
+    normalizationRegex = new RegExp(`[${replace}]`, 'g');
+  }
+  return text.replace(normalizationRegex, function(ch) {
+    return CHARACTERS_TO_NORMALIZE[ch];
+  });
+}
+
 /**
  * @typedef {Object} PDFFindControllerOptions
  * @property {IPDFLinkService} linkService - The navigation/linking service.
@@ -59,10 +71,6 @@ class PDFFindController {
 
     this._reset();
     eventBus.on('findbarclose', this._onFindBarClose.bind(this));
-
-    // Compile the regular expression for text normalization once.
-    const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join('');
-    this._normalizationRegex = new RegExp(`[${replace}]`, 'g');
   }
 
   get highlightMatches() {
@@ -162,12 +170,6 @@ class PDFFindController {
     this._findTimeout = null;
 
     this._firstPageCapability = createPromiseCapability();
-  }
-
-  _normalize(text) {
-    return text.replace(this._normalizationRegex, function(ch) {
-      return CHARACTERS_TO_NORMALIZE[ch];
-    });
   }
 
   /**
@@ -304,8 +306,8 @@ class PDFFindController {
   }
 
   _calculateMatch(pageIndex) {
-    let pageContent = this._normalize(this._pageContents[pageIndex]);
-    let query = this._normalize(this._state.query);
+    let pageContent = normalize(this._pageContents[pageIndex]);
+    let query = normalize(this._state.query);
     const { caseSensitive, entireWord, phraseSearch, } = this._state;
 
     if (query.length === 0) {
