@@ -160,7 +160,7 @@ class PDFFindController {
       matchIdx: null,
     };
     this._extractTextPromises = [];
-    this._pageContents = []; // Stores the text for each page.
+    this._pageContents = []; // Stores the normalized text for each page.
     this._matchesCountTotal = 0;
     this._pagesToSearch = null;
     this._pendingFindMatches = Object.create(null);
@@ -306,7 +306,7 @@ class PDFFindController {
   }
 
   _calculateMatch(pageIndex) {
-    let pageContent = normalize(this._pageContents[pageIndex]);
+    let pageContent = this._pageContents[pageIndex];
     let query = normalize(this._state.query);
     const { caseSensitive, entireWord, phraseSearch, } = this._state;
 
@@ -364,8 +364,8 @@ class PDFFindController {
             strBuf.push(textItems[j].str);
           }
 
-          // Store the page content (text items) as one string.
-          this._pageContents[i] = strBuf.join('');
+          // Store the normalized page content (text items) as one string.
+          this._pageContents[i] = normalize(strBuf.join(''));
           extractTextCapability.resolve(i);
         }, (reason) => {
           console.error(`Unable to get text content for page ${i + 1}`, reason);
