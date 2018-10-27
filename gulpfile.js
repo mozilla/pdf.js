@@ -1169,6 +1169,15 @@ gulp.task('wintersmith', ['gh-pages-prepare'], function (done) {
                   /STABLE_VERSION/g, config.stableVersion);
     replaceInFile(GH_PAGES_DIR + '/getting_started/index.html',
                   /BETA_VERSION/g, config.betaVersion);
+
+    // Hide the beta version button if there is only a stable version.
+    const groupClass = config.betaVersion ? 'btn-group-vertical centered' : '';
+    const hiddenClass = config.betaVersion ? '' : 'hidden';
+    replaceInFile(GH_PAGES_DIR + '/getting_started/index.html',
+                  /GROUP_CLASS/g, groupClass);
+    replaceInFile(GH_PAGES_DIR + '/getting_started/index.html',
+                  /HIDDEN_CLASS/g, hiddenClass);
+
     console.log('Done building with wintersmith.');
     done();
   });
