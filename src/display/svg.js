@@ -1278,7 +1278,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
                        matrix[3], matrix[4], matrix[5]);
       }
 
-      if (Array.isArray(bbox) && bbox.length === 4) {
+      if (bbox) {
         var width = bbox[2] - bbox[0];
         var height = bbox[3] - bbox[1];
 
