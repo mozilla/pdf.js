@@ -335,7 +335,12 @@ class PDFFindController {
       this._calculateWordMatch(query, pageIndex, pageContent, entireWord);
     }
 
-    this._updatePage(pageIndex);
+    // In the event that the page *and* its textLayer have both finished
+    // rendering before the pageMatches were calculated, ensure that the
+    // matches will be highlighted and scrolled into view as necessary.
+    if (pageIndex === this._selected.pageIdx || this._state.highlightAll) {
+      this._updatePage(pageIndex);
+    }
     if (this._resumePageIdx === pageIndex) {
       this._resumePageIdx = null;
       this._nextPageMatch();
