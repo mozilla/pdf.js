@@ -40,6 +40,18 @@ const CHARACTERS_TO_NORMALIZE = {
   '\u00BE': '3/4', // Vulgar fraction three quarters
 };
 
+let normalizationRegex = null;
+function normalize(text) {
+  if (!normalizationRegex) {
+    // Compile the regular expression for text normalization once.
+    const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join('');
+    normalizationRegex = new RegExp(`[${replace}]`, 'g');
+  }
+  return text.replace(normalizationRegex, function(ch) {
+    return CHARACTERS_TO_NORMALIZE[ch];
+  });
+}
+
 /**
  * @typedef {Object} PDFFindControllerOptions
  * @property {IPDFLinkService} linkService - The navigation/linking service.
@@ -59,10 +71,6 @@ class PDFFindController {
 
     this._reset();
     eventBus.on('findbarclose', this._onFindBarClose.bind(this));
-
-    // Compile the regular expression for text normalization once.
-    const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join('');
-    this._normalizationRegex = new RegExp(`[${replace}]`, 'g');
   }
 
   get highlightMatches() {
@@ -152,7 +160,7 @@ class PDFFindController {
       matchIdx: null,
     };
     this._extractTextPromises = [];
-    this._pageContents = []; // Stores the text for each page.
+    this._pageContents = []; // Stores the normalized text for each page.
     this._matchesCountTotal = 0;
     this._pagesToSearch = null;
     this._pendingFindMatches = Object.create(null);
@@ -164,10 +172,15 @@ class PDFFindController {
     this._firstPageCapability = createPromiseCapability();
   }
 
-  _normalize(text) {
-    return text.replace(this._normalizationRegex, function(ch) {
-      return CHARACTERS_TO_NORMALIZE[ch];
-    });
+  /**
+   * @return {string} The (current) normalized search query.
+   */
+  get _query() {
+    if (this._state.query !== this._rawQuery) {
+      this._rawQuery = this._state.query;
+      this._normalizedQuery = normalize(this._state.query);
+    }
+    return this._normalizedQuery;
   }
 
   /**
@@ -304,8 +317,8 @@ class PDFFindController {
   }
 
   _calculateMatch(pageIndex) {
-    let pageContent = this._normalize(this._pageContents[pageIndex]);
-    let query = this._normalize(this._state.query);
+    let pageContent = this._pageContents[pageIndex];
+    let query = this._query;
     const { caseSensitive, entireWord, phraseSearch, } = this._state;
 
     if (query.length === 0) {
@@ -362,8 +375,8 @@ class PDFFindController {
             strBuf.push(textItems[j].str);
           }
 
-          // Store the page content (text items) as one string.
-          this._pageContents[i] = strBuf.join('');
+          // Store the normalized page content (text items) as one string.
+          this._pageContents[i] = normalize(strBuf.join(''));
           extractTextCapability.resolve(i);
         }, (reason) => {
           console.error(`Unable to get text content for page ${i + 1}`, reason);
@@ -423,7 +436,7 @@ class PDFFindController {
     }
 
     // If there's no query there's no point in searching.
-    if (this._state.query === '') {
+    if (this._query === '') {
       this._updateUIState(FindState.FOUND);
       return;
     }
