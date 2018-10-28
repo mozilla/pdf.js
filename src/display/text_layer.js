@@ -100,11 +100,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
       top = tx[5] - (fontAscent * Math.cos(angle));
     }
 
-    /* determine where to insert line breaks in order to make copying text work
+    /* determine where to insert spaces in order to make copying text work
      as expected */
-
-    var topAdjustment = 0;
-    var hasPrecedingLineBreak = false;
 
     // line adjustments aren't supported for angled text
     if (angle === 0) {
@@ -151,13 +148,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
           // shift the text left to account for the added space
           left -= fontHeight * 0.2;
         }
-      } else {
-        /*
-        the text is likely the start of a new text block. In this case, a <br>
-        will be inserted between the last block and this one.
-        */
-        topAdjustment += fontHeight;
-        hasPrecedingLineBreak = true;
       }
 
       if (Math.abs((top + fontHeight) - task._lastLineBottom) > 5) {
@@ -172,16 +162,13 @@ var renderTextLayer = (function renderTextLayerClosure() {
     task._lastFontSize = fontHeight;
 
     styleBuf[1] = left;
-    styleBuf[3] = top - topAdjustment;
+    styleBuf[3] = top;
     styleBuf[5] = fontHeight;
     styleBuf[7] = style.fontFamily;
     textDivProperties.style = styleBuf.join('');
     textDiv.setAttribute('style', textDivProperties.style);
 
     textDiv.textContent = geom.str;
-    if (hasPrecedingLineBreak) {
-      textDiv.insertBefore(document.createElement('br'), textDiv.childNodes[0]);
-    }
 
     // `fontName` is only used by the FontInspector, and we only use `dataset`
     // here to make the font name available in the debugger.
