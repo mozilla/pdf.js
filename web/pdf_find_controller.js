@@ -120,10 +120,10 @@ class PDFFindController {
     this._updateUIState(FindState.PENDING);
 
     this._firstPageCapability.promise.then(() => {
+      // If the document was closed before searching began, or if the search
+      // operation was relevant for a previously opened document, do nothing.
       if (!this._pdfDocument ||
           (pdfDocument && this._pdfDocument !== pdfDocument)) {
-        // If the document was closed before searching began, or if the search
-        // operation was relevant for a previously opened document, do nothing.
         return;
       }
       this._extractText();
@@ -158,6 +158,7 @@ class PDFFindController {
     this._offset = { // Where the find algorithm currently is in the document.
       pageIdx: null,
       matchIdx: null,
+      wrapped: false,
     };
     this._extractTextPromises = [];
     this._pageContents = []; // Stores the normalized text for each page.
@@ -399,6 +400,13 @@ class PDFFindController {
     });
   }
 
+  _updateAllPages() {
+    this._eventBus.dispatch('updatetextlayermatches', {
+      source: this,
+      pageIndex: -1,
+    });
+  }
+
   _nextMatch() {
     const previous = this._state.findPrevious;
     const currentPageIndex = this._linkService.page - 1;
@@ -412,23 +420,24 @@ class PDFFindController {
       this._selected.pageIdx = this._selected.matchIdx = -1;
       this._offset.pageIdx = currentPageIndex;
       this._offset.matchIdx = null;
+      this._offset.wrapped = false;
       this._resumePageIdx = null;
       this._pageMatches.length = 0;
       this._pageMatchesLength.length = 0;
       this._matchesCountTotal = 0;
 
-      for (let i = 0; i < numPages; i++) {
-        // Wipe out any previously highlighted matches.
-        this._updatePage(i);
+      this._updateAllPages(); // Wipe out any previously highlighted matches.
 
+      for (let i = 0; i < numPages; i++) {
         // Start finding the matches as soon as the text is extracted.
-        if (!(i in this._pendingFindMatches)) {
-          this._pendingFindMatches[i] = true;
-          this._extractTextPromises[i].then((pageIdx) => {
-            delete this._pendingFindMatches[pageIdx];
-            this._calculateMatch(pageIdx);
-          });
+        if (this._pendingFindMatches[i] === true) {
+          continue;
         }
+        this._pendingFindMatches[i] = true;
+        this._extractTextPromises[i].then((pageIdx) => {
+          delete this._pendingFindMatches[pageIdx];
+          this._calculateMatch(pageIdx);
+        });
       }
     }
 
@@ -555,23 +564,29 @@ class PDFFindController {
     // matches (from the UI) is async too such that the 'updatetextlayermatches'
     // events will always be dispatched in the expected order.
     this._firstPageCapability.promise.then(() => {
+      // Only update the UI if the document is open, and is the current one.
       if (!this._pdfDocument ||
           (pdfDocument && this._pdfDocument !== pdfDocument)) {
-        // Only update the UI if the document is open, and is the current one.
         return;
       }
+      // Ensure that a pending, not yet started, search operation is aborted.
       if (this._findTimeout) {
         clearTimeout(this._findTimeout);
         this._findTimeout = null;
-        // Avoid the UI being in a pending state if the findbar is re-opened.
-        this._updateUIState(FindState.FOUND);
       }
-      this._highlightMatches = false;
+      // Abort any long running searches, to avoid a match being scrolled into
+      // view *after* the findbar has been closed. In this case `this._offset`
+      // will most likely differ from `this._selected`, hence we also ensure
+      // that any new search operation will always start with a clean slate.
+      if (this._resumePageIdx) {
+        this._resumePageIdx = null;
+        this._dirtyMatch = true;
+      }
+      // Avoid the UI being in a pending state when the findbar is re-opened.
+      this._updateUIState(FindState.FOUND);
 
-      this._eventBus.dispatch('updatetextlayermatches', {
-        source: this,
-        pageIndex: -1,
-      });
+      this._highlightMatches = false;
+      this._updateAllPages(); // Wipe out any previously highlighted matches.
     });
   }
 
