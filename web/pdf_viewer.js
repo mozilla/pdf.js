@@ -40,11 +40,9 @@ class PDFViewer extends BaseViewer {
       return getVisibleElements(this.container, this._pages, true,
                                 this._scrollMode === ScrollMode.HORIZONTAL);
     }
-    // The algorithm in getVisibleElements doesn't work in all browsers and
+    // The algorithm in `getVisibleElements` doesn't work in all browsers and
     // configurations when presentation mode is active.
-    let currentPage = this._pages[this._currentPageNumber - 1];
-    let visible = [{ id: currentPage.id, view: currentPage, }];
-    return { first: currentPage, last: currentPage, views: visible, };
+    return this._getCurrentVisiblePage();
   }
 
   update() {

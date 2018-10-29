@@ -855,6 +855,30 @@ class BaseViewer {
       false : (this.container.scrollHeight > this.container.clientHeight));
   }
 
+  /**
+   * Helper method for `this._getVisiblePages`. Should only ever be used when
+   * the viewer can only display a single page at a time, for example in:
+   *  - `PDFSinglePageViewer`.
+   *  - `PDFViewer` with Presentation Mode active.
+   */
+  _getCurrentVisiblePage() {
+    if (!this.pagesCount) {
+      return { views: [], };
+    }
+    const pageView = this._pages[this._currentPageNumber - 1];
+    // NOTE: Compute the `x` and `y` properties of the current view,
+    // since `this._updateLocation` depends of them being available.
+    const element = pageView.div;
+
+    const view = {
+      id: pageView.id,
+      x: element.offsetLeft + element.clientLeft,
+      y: element.offsetTop + element.clientTop,
+      view: pageView,
+    };
+    return { first: view, last: view, views: [view], };
+  }
+
   _getVisiblePages() {
     throw new Error('Not implemented: _getVisiblePages');
   }
