@@ -108,21 +108,7 @@ class PDFSinglePageViewer extends BaseViewer {
   }
 
   _getVisiblePages() {
-    if (!this.pagesCount) {
-      return { views: [], };
-    }
-    let pageView = this._pages[this._currentPageNumber - 1];
-    // NOTE: Compute the `x` and `y` properties of the current view,
-    // since `this._updateLocation` depends of them being available.
-    let element = pageView.div;
-
-    let view = {
-      id: pageView.id,
-      x: element.offsetLeft + element.clientLeft,
-      y: element.offsetTop + element.clientTop,
-      view: pageView,
-    };
-    return { first: view, last: view, views: [view], };
+    return this._getCurrentVisiblePage();
   }
 
   update() {
