@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { getGlobalEventBus, NullL10n } from './ui_utils';
 import { FindState } from './pdf_find_controller';
-import { NullL10n } from './ui_utils';
 
 const MATCHES_COUNT_LIMIT = 1000;
 
@@ -25,7 +25,7 @@ const MATCHES_COUNT_LIMIT = 1000;
  * is done by PDFFindController.
  */
 class PDFFindBar {
-  constructor(options, l10n = NullL10n) {
+  constructor(options, eventBus = getGlobalEventBus(), l10n = NullL10n) {
     this.opened = false;
 
     this.bar = options.bar || null;
@@ -38,14 +38,8 @@ class PDFFindBar {
     this.findResultsCount = options.findResultsCount || null;
     this.findPreviousButton = options.findPreviousButton || null;
     this.findNextButton = options.findNextButton || null;
-    this.findController = options.findController || null;
-    this.eventBus = options.eventBus;
+    this.eventBus = eventBus;
     this.l10n = l10n;
-
-    if (this.findController === null) {
-      throw new Error('PDFFindBar cannot be used without a ' +
-                      'PDFFindController instance.');
-    }
 
     // Add event listeners to the DOM elements.
     this.toggleButton.addEventListener('click', () => {
@@ -138,13 +132,9 @@ class PDFFindBar {
         break;
     }
 
-    if (notFound) {
-      this.findField.classList.add('notFound');
-    } else {
-      this.findField.classList.remove('notFound');
-    }
-
+    this.findField.classList.toggle('notFound', notFound);
     this.findField.setAttribute('data-status', status);
+
     Promise.resolve(findMsg).then((msg) => {
       this.findMsg.textContent = msg;
       this._adjustWidth();
@@ -216,7 +206,8 @@ class PDFFindBar {
     this.opened = false;
     this.toggleButton.classList.remove('toggled');
     this.bar.classList.add('hidden');
-    this.findController.active = false;
+
+    this.eventBus.dispatch('findbarclose', { source: this, });
   }
 
   toggle() {

@@ -1776,6 +1776,13 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "annotation-caret-ink",
+       "file": "pdfs/annotation-caret-ink.pdf",
+       "md5": "6218ca235580d1975474c979e0128c2d",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "bug1130815-eq",
        "file": "pdfs/bug1130815.pdf",
        "md5": "3ff3b550c3af766991b2a1b11d00de85",

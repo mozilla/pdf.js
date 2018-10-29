@@ -34,20 +34,14 @@ import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 import { WebGLContext } from './webgl';
 
-var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
+const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
 let isWorkerDisabled = false;
-let workerSrc;
+let fallbackWorkerSrc;
 
-const pdfjsFilePath =
-  typeof PDFJSDev !== 'undefined' &&
-  PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
-  typeof document !== 'undefined' && document.currentScript ?
-    document.currentScript.src : null;
-
-var fakeWorkerFilesLoader = null;
-var useRequireEnsure = false;
+let fakeWorkerFilesLoader = null;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
+  let useRequireEnsure = false;
   // For GENERIC build we need to add support for different fake file loaders
   // for different frameworks.
   if (typeof window === 'undefined') {
@@ -62,25 +56,45 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
     useRequireEnsure = true;
   }
   if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
-    workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
+    fallbackWorkerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
   }
-  var dynamicLoaderSupported =
+  const dynamicLoaderSupported =
     typeof requirejs !== 'undefined' && requirejs.load;
-  fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
-    __non_webpack_require__.ensure([], function () {
-      var worker;
-      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
-        worker = __non_webpack_require__('../pdf.worker.js');
-      } else {
-        worker = __non_webpack_require__('./pdf.worker.js');
-      }
-      callback(worker.WorkerMessageHandler);
-    }, null, 'pdfjsWorker');
-  }) : dynamicLoaderSupported ? (function (callback) {
-    requirejs(['pdfjs-dist/build/pdf.worker'], function (worker) {
-      callback(worker.WorkerMessageHandler);
+  fakeWorkerFilesLoader = useRequireEnsure ? (function() {
+    return new Promise(function(resolve, reject) {
+      __non_webpack_require__.ensure([], function() {
+        try {
+          let worker;
+          if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
+            worker = __non_webpack_require__('../pdf.worker.js');
+          } else {
+            worker = __non_webpack_require__('./pdf.worker.js');
+          }
+          resolve(worker.WorkerMessageHandler);
+        } catch (ex) {
+          reject(ex);
+        }
+      }, reject, 'pdfjsWorker');
+    });
+  }) : dynamicLoaderSupported ? (function() {
+    return new Promise(function(resolve, reject) {
+      requirejs(['pdfjs-dist/build/pdf.worker'], function(worker) {
+        try {
+          resolve(worker.WorkerMessageHandler);
+        } catch (ex) {
+          reject(ex);
+        }
+      }, reject);
     });
   }) : null;
+
+  if (!fallbackWorkerSrc && typeof document !== 'undefined') {
+    const pdfjsFilePath = document.currentScript && document.currentScript.src;
+    if (pdfjsFilePath) {
+      fallbackWorkerSrc =
+        pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
+    }
+  }
 }
 
 /**
@@ -501,13 +515,11 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
 
 /**
  * Abstract class to support range requests file loading.
- * @class
- * @alias PDFDataRangeTransport
  * @param {number} length
  * @param {Uint8Array} initialData
  */
-var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
-  function PDFDataRangeTransport(length, initialData) {
+class PDFDataRangeTransport {
+  constructor(length, initialData) {
     this.length = length;
     this.initialData = initialData;
 
@@ -516,63 +528,51 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
     this._progressiveReadListeners = [];
     this._readyCapability = createPromiseCapability();
   }
-  PDFDataRangeTransport.prototype =
-      /** @lends PDFDataRangeTransport.prototype */ {
-    addRangeListener:
-        function PDFDataRangeTransport_addRangeListener(listener) {
-      this._rangeListeners.push(listener);
-    },
 
-    addProgressListener:
-        function PDFDataRangeTransport_addProgressListener(listener) {
-      this._progressListeners.push(listener);
-    },
+  addRangeListener(listener) {
+    this._rangeListeners.push(listener);
+  }
 
-    addProgressiveReadListener:
-        function PDFDataRangeTransport_addProgressiveReadListener(listener) {
-      this._progressiveReadListeners.push(listener);
-    },
+  addProgressListener(listener) {
+    this._progressListeners.push(listener);
+  }
 
-    onDataRange: function PDFDataRangeTransport_onDataRange(begin, chunk) {
-      var listeners = this._rangeListeners;
-      for (var i = 0, n = listeners.length; i < n; ++i) {
-        listeners[i](begin, chunk);
+  addProgressiveReadListener(listener) {
+    this._progressiveReadListeners.push(listener);
+  }
+
+  onDataRange(begin, chunk) {
+    for (const listener of this._rangeListeners) {
+      listener(begin, chunk);
+    }
+  }
+
+  onDataProgress(loaded) {
+    this._readyCapability.promise.then(() => {
+      for (const listener of this._progressListeners) {
+        listener(loaded);
       }
-    },
+    });
+  }
 
-    onDataProgress: function PDFDataRangeTransport_onDataProgress(loaded) {
-      this._readyCapability.promise.then(() => {
-        var listeners = this._progressListeners;
-        for (var i = 0, n = listeners.length; i < n; ++i) {
-          listeners[i](loaded);
-        }
-      });
-    },
+  onDataProgressiveRead(chunk) {
+    this._readyCapability.promise.then(() => {
+      for (const listener of this._progressiveReadListeners) {
+        listener(chunk);
+      }
+    });
+  }
 
-    onDataProgressiveRead:
-        function PDFDataRangeTransport_onDataProgress(chunk) {
-      this._readyCapability.promise.then(() => {
-        var listeners = this._progressiveReadListeners;
-        for (var i = 0, n = listeners.length; i < n; ++i) {
-          listeners[i](chunk);
-        }
-      });
-    },
+  transportReady() {
+    this._readyCapability.resolve();
+  }
 
-    transportReady: function PDFDataRangeTransport_transportReady() {
-      this._readyCapability.resolve();
-    },
+  requestDataRange(begin, end) {
+    unreachable('Abstract method PDFDataRangeTransport.requestDataRange');
+  }
 
-    requestDataRange:
-        function PDFDataRangeTransport_requestDataRange(begin, end) {
-      unreachable('Abstract method PDFDataRangeTransport.requestDataRange');
-    },
-
-    abort: function PDFDataRangeTransport_abort() {
-    },
-  };
-  return PDFDataRangeTransport;
-})();
+  abort() {}
+}
 
 /**
  * Proxy to a PDFDocument in the worker thread. Also, contains commonly used
@@ -1334,22 +1334,19 @@ var PDFWorker = (function PDFWorkerClosure() {
     if (GlobalWorkerOptions.workerSrc) {
       return GlobalWorkerOptions.workerSrc;
     }
-    if (typeof workerSrc !== 'undefined') {
-      return workerSrc;
-    }
-    if (typeof PDFJSDev !== 'undefined' &&
-        PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
-        pdfjsFilePath) {
-      return pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
+    if (typeof fallbackWorkerSrc !== 'undefined') {
+      return fallbackWorkerSrc;
     }
     throw new Error('No "GlobalWorkerOptions.workerSrc" specified.');
   }
 
   function getMainThreadWorkerMessageHandler() {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-    return (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler);
+    try {
+      if (typeof window !== 'undefined') {
+        return (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler);
+      }
+    } catch (ex) { }
+    return null;
   }
 
   let fakeWorkerFilesLoadedCapability;
@@ -1374,21 +1371,26 @@ var PDFWorker = (function PDFWorkerClosure() {
       if (typeof SystemJS === 'object') {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
           fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
-        });
+        }).catch(fakeWorkerFilesLoadedCapability.reject);
       } else if (typeof require === 'function') {
-        let worker = require('../core/worker.js');
-        fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
+        try {
+          let worker = require('../core/worker.js');
+          fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
+        } catch (ex) {
+          fakeWorkerFilesLoadedCapability.reject(ex);
+        }
       } else {
-        throw new Error(
-          'SystemJS or CommonJS must be used to load fake worker.');
+        fakeWorkerFilesLoadedCapability.reject(new Error(
+          'SystemJS or CommonJS must be used to load fake worker.'));
       }
     } else {
-      let loader = fakeWorkerFilesLoader || function(callback) {
-        loadScript(getWorkerSrc()).then(function() {
-          callback(window.pdfjsWorker.WorkerMessageHandler);
+      const loader = fakeWorkerFilesLoader || function() {
+        return loadScript(getWorkerSrc()).then(function() {
+          return window.pdfjsWorker.WorkerMessageHandler;
         });
       };
-      loader(fakeWorkerFilesLoadedCapability.resolve);
+      loader().then(fakeWorkerFilesLoadedCapability.resolve,
+                    fakeWorkerFilesLoadedCapability.reject);
     }
     return fakeWorkerFilesLoadedCapability.promise;
   }
@@ -1463,7 +1465,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
       if (typeof Worker !== 'undefined' && !isWorkerDisabled &&
           !getMainThreadWorkerMessageHandler()) {
-        var workerSrc = getWorkerSrc();
+        let workerSrc = getWorkerSrc();
 
         try {
           // Wraps workerSrc path into blob URL, if the former does not belong
@@ -1592,6 +1594,9 @@ var PDFWorker = (function PDFWorkerClosure() {
         var messageHandler = new MessageHandler(id, id + '_worker', port);
         this._messageHandler = messageHandler;
         this._readyCapability.resolve();
+      }).catch((reason) => {
+        this._readyCapability.reject(
+          new Error(`Setting up fake worker failed: "${reason.message}".`));
       });
     },
 
@@ -1744,12 +1749,9 @@ class WorkerTransport {
       fullReader.headersReady.then(() => {
         // If stream or range are disabled, it's our only way to report
         // loading progress.
-        if (!fullReader.isStreamingSupported ||
-            !fullReader.isRangeSupported) {
-          if (this._lastProgress) {
-            if (loadingTask.onProgress) {
-              loadingTask.onProgress(this._lastProgress);
-            }
+        if (!fullReader.isStreamingSupported || !fullReader.isRangeSupported) {
+          if (this._lastProgress && loadingTask.onProgress) {
+            loadingTask.onProgress(this._lastProgress);
           }
           fullReader.onProgress = (evt) => {
             if (loadingTask.onProgress) {
@@ -1847,6 +1849,14 @@ class WorkerTransport {
     }, this);
 
     messageHandler.on('DataLoaded', function(data) {
+      // For consistency: Ensure that progress is always reported when the
+      // entire PDF file has been loaded, regardless of how it was fetched.
+      if (loadingTask.onProgress) {
+        loadingTask.onProgress({
+          loaded: data.length,
+          total: data.length,
+        });
+      }
       this.downloadInfoCapability.resolve(data);
     }, this);
 

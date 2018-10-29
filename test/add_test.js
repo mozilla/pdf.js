@@ -46,14 +46,15 @@ calculateMD5(file, (err, md5) => {
   }
   let contents = fs.readFileSync(gitIgnore, 'utf8').split('\n');
   let randomLine = getRandomArbitrary(10, contents.length - 2);
-  contents.splice(randomLine, 0, '!' + file.substr(file.lastIndexOf('/') + 1));
+  contents.splice(randomLine, 0,
+                  '!' + file.substring(file.lastIndexOf('/') + 1));
   fs.writeFileSync('test/pdfs/.gitignore', contents.join('\n'));
 
   contents = fs.readFileSync(testManifest, 'utf8');
   let pdf = file.substring(file.lastIndexOf('/') + 1, file.length - 4);
   let randomPoint = getRandomArbitrary(100, contents.length - 20);
   let bracket = contents.indexOf('},\n', randomPoint);
-  let out = contents.substr(0, bracket) +
+  let out = contents.substring(0, bracket) +
     '},\n' +
     `    {  "id": "${pdf}",\n` +
     `       "file": "pdfs/${pdf}.pdf",\n` +
@@ -61,7 +62,7 @@ calculateMD5(file, (err, md5) => {
     '       "rounds": 1,\n' +
     '       "type": "eq"\n' +
     '    ' +
-    contents.substr(bracket);
+    contents.substring(bracket);
   fs.writeFileSync('test/test_manifest.json', out);
   execSync(`git add ${testManifest} ${gitIgnore}`);
   execSync(`git add ${file}`);

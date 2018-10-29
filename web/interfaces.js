@@ -23,6 +23,11 @@ class IPDFLinkService {
   /**
    * @returns {number}
    */
+  get pagesCount() {}
+
+  /**
+   * @returns {number}
+   */
   get page() {}
 
   /**
@@ -66,11 +71,6 @@ class IPDFLinkService {
    * @param {string} action
    */
   executeNamedAction(action) {}
-
-  /**
-   * @param {Object} params
-   */
-  onFileAttachmentAnnotation({ id, filename, content, }) {}
 
   /**
    * @param {number} pageNum - page number.
