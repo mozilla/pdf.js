@@ -139,6 +139,16 @@ class PDFFindController {
           this._nextMatch();
           this._findTimeout = null;
         }, FIND_TIMEOUT);
+      } else if (cmd === 'findagain' && !this._dirtyMatch) {
+        const updateHighlightAll = (!this._highlightMatches &&
+                                    this._state.highlightAll);
+        this._nextMatch();
+
+        // When the findbar was previously closed, and `highlightAll` is set,
+        // ensure that the matches on all active pages are highlighted again.
+        if (updateHighlightAll) {
+          this._updateAllPages();
+        }
       } else {
         this._nextMatch();
       }
