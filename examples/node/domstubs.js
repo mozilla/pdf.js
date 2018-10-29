@@ -46,6 +46,7 @@ function DOMElement(name) {
   this.childNodes = [];
   this.attributes = {};
   this.textContent = '';
+  this.parentNode = undefined;
 
   if (name === 'style') {
     this.sheet = {
@@ -98,6 +99,7 @@ DOMElement.prototype = {
     var childNodes = this.childNodes;
     if (childNodes.indexOf(element) === -1) {
       childNodes.push(element);
+      element.parentNode = this;
     }
   },
 
@@ -106,6 +108,7 @@ DOMElement.prototype = {
     newNode.childNodes = this.childNodes;
     newNode.attributes = this.attributes;
     newNode.textContent = this.textContent;
+    newNode.parentNode = undefined;
     return newNode;
   },
 
@@ -124,6 +127,15 @@ DOMElement.prototype = {
 
   getSerializer: function DOMElement_getSerializer() {
     return new DOMElementSerializer(this);
+  },
+
+  remove: function DOMElement_remove() {
+    if (this.parentNode) {
+      this.parentNode.childNodes = this.parentNode.childNodes.filter(
+        node => node != this
+      );
+      this.parentNode = undefined;
+    }
   }
 }
 
@@ -243,6 +255,9 @@ Image.prototype = {
 
 exports.document = document;
 exports.Image = Image;
+
+function Blob(blobParts, options) {}
+exports.Blob = Blob;
 
 var exported_symbols = Object.keys(exports);
 

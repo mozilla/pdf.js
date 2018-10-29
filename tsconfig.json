@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es6",
+        "lib": [
+            "es6"
+        ],
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noImplicitAny": true,
+        "suppressImplicitAnyIndexErrors": true,
+        // "noUnusedLocals": true,
+        "strict": true
+    },
+    "include": [
+        "external/types"
+    ],
+    "exclude": [
+        "node_modules",
+        "build"
+    ]
+}
