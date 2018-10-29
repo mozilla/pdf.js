@@ -205,6 +205,10 @@ declare namespace _pdfjs {
     annotationType: AnnotationType.POLYGON;
     vertices: Vertex[];
   }
+  interface InkAnnotation extends Annotation {
+    annotationType: AnnotationType.INK;
+    inkLists: Vertex[][];
+  }
   interface HighlightAnnotation extends Annotation {
     annotationType: AnnotationType.HIGHLIGHT;
   }

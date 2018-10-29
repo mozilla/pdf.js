@@ -229,7 +229,7 @@ declare namespace _pdfjs {
     title: string;
     bold: boolean;
     italic: boolean;
-    color: Uint8Array /* rgb */;
+    color: Color /* rgb */;
     dest: Array<Name | string | any[]> | null;
     unsafeUrl?: string;
     url: string | null;
@@ -475,7 +475,7 @@ declare namespace _pdfjs {
    *                        (transparent), 1 (grayscale), 3 (RGB) or
    *                        4 (CMYK) elements
    */
-  type Color = Uint8Array;
+  type Color = Uint8ClampedArray;
 
   /**
    * Page render parameters.
