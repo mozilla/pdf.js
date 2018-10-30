@@ -105,41 +105,18 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
     // line adjustments aren't supported for angled text
     if (angle === 0) {
-      /*
-      if this item:
-      * has approximately the same y-position as the last item
-      * is adjacent to the last item
-      it is likely on the same line of text, so it shouldn't be modified
-        */
       if (
         task._lastLineStart &&
-        Math.abs(task._lastLineBottom - (top + fontHeight)) <
-          (fontHeight * 0.4) &&
-        Math.abs(left - task._lastLineEnd) < 15
-        ) {
-
-        /* If the item:
-           * has approximately the same x-position as the start of the previous
-             line
-           * is immediately below the previous line
-           * is approximately the same font size
-          It is likely part of the same text block, which is being wrapped onto
-             a new line.
-          In this case, the new line should still be treated as an inline
-            element, but it might be necessary to insert a space between the
-            last word of the last line and the first word of this line.
-             */
-      } else if (
-        task._lastLineStart &&
-         Math.abs(task._lastLineBottom - top) < (fontHeight * 0.55) &&
-          /* outdent on 2nd line is OK (because the first line of a paragraph
-            is often indented), but indent is not (because it is almost always
-              an intentional line break)
-          */
-         ((task._lastLineStart - left) < (fontHeight * 2) &&
-          (task._lastLineStart - left) > (fontHeight * -0.5)) &&
+        top > task._lastLineBottom &&
+        Math.abs(task._lastLineBottom - top) < (fontHeight * 0.55) &&
+        /* outdent on 2nd line is OK (because the first line of a paragraph
+           is often indented), but indent is not (because it is almost always
+           an intentional line break)
+        */
+        ((task._lastLineStart - left) < (fontHeight * 2) &&
+        (task._lastLineStart - left) > (fontHeight * -0.5)) &&
         (fontHeight / task._lastFontSize > 0.9 &&
-          fontHeight / task._lastFontSize < 1.1)
+        fontHeight / task._lastFontSize < 1.1)
       ) {
         if (!isAllWhitespace(task._lastText[task._lastText.length - 1]) &&
             !isAllWhitespace(geom.str[0])) {
