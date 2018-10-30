@@ -201,6 +201,21 @@ class PDFFindController {
   _shouldDirtyMatch(cmd) {
     switch (cmd) {
       case 'findagain':
+        const pageNumber = this._selected.pageIdx + 1;
+        const linkService = this._linkService;
+        // Only treat a 'findagain' event as a new search operation when it's
+        // *absolutely* certain that the currently selected match is no longer
+        // visible, e.g. as a result of the user scrolling in the document.
+        //
+        // NOTE: If only a simple `this._linkService.page` check was used here,
+        // there's a risk that consecutive 'findagain' operations could "skip"
+        // over matches at the top/bottom of pages thus making them completely
+        // inaccessible when there's multiple pages visible in the viewer.
+        if (pageNumber >= 1 && pageNumber <= linkService.pagesCount &&
+            linkService.page !== pageNumber && linkService.isPageVisible &&
+            !linkService.isPageVisible(pageNumber)) {
+          break;
+        }
         return false;
     }
     return true;
