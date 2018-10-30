@@ -128,6 +128,8 @@ class PDFFindController {
       }
       this._extractText();
 
+      const findbarClosed = !this._highlightMatches;
+
       if (this._findTimeout) {
         clearTimeout(this._findTimeout);
         this._findTimeout = null;
@@ -139,14 +141,16 @@ class PDFFindController {
           this._nextMatch();
           this._findTimeout = null;
         }, FIND_TIMEOUT);
-      } else if (cmd === 'findagain' && !this._dirtyMatch) {
-        const updateHighlightAll = (!this._highlightMatches &&
-                                    this._state.highlightAll);
+      } else if (this._dirtyMatch) {
+        // Immediately trigger searching for non-'find' operations, when the
+        // current state needs to be reset and matches re-calculated.
+        this._nextMatch();
+      } else if (cmd === 'findagain') {
         this._nextMatch();
 
         // When the findbar was previously closed, and `highlightAll` is set,
         // ensure that the matches on all active pages are highlighted again.
-        if (updateHighlightAll) {
+        if (findbarClosed && this._state.highlightAll) {
           this._updateAllPages();
         }
       } else {
