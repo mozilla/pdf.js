@@ -104,7 +104,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
      as expected */
 
     // line adjustments aren't supported for angled text
-    if (angle === 0) {
+    if (angle === 0 && geom.dir === 'ltr') {
       if (
         task._lastLineStart &&
         top > task._lastLineBottom &&
