@@ -2365,7 +2365,7 @@ var RenderTask = (function RenderTaskClosure() {
  * @ignore
  */
 var InternalRenderTask = (function InternalRenderTaskClosure() {
-  let canvasInRendering = new WeakMap();
+  let canvasInRendering = new WeakSet();
 
   function InternalRenderTask(callback, params, objs, commonObjs, operatorList,
                               pageNumber, canvasFactory, webGLContext,
@@ -2408,7 +2408,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
             'Use different canvas or ensure previous operations were ' +
             'cancelled or completed.');
         }
-        canvasInRendering.set(this._canvas, this);
+        canvasInRendering.add(this._canvas);
       }
 
       if (this._pdfBug && globalScope.StepperManager &&

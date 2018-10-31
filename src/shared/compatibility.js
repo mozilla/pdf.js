@@ -187,6 +187,14 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   globalScope.WeakMap = require('core-js/fn/weak-map');
 })();
 
+// Support: IE11
+(function checkWeakSet() {
+  if (globalScope.WeakSet) {
+    return;
+  }
+  globalScope.WeakSet = require('core-js/fn/weak-set');
+})();
+
 // Provides support for String.codePointAt in legacy browsers.
 // Support: IE11.
 (function checkStringCodePointAt() {
