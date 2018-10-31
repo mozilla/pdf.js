@@ -2439,6 +2439,9 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     cancel: function InternalRenderTask_cancel() {
       this.running = false;
       this.cancelled = true;
+      if (this.gfx) {
+        this.gfx.endDrawing();
+      }
       if (this._canvas) {
         canvasInRendering.delete(this._canvas);
       }
