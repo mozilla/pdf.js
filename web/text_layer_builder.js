@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus } from './dom_events';
+import { getGlobalEventBus, scrollIntoView } from './ui_utils';
 import { renderTextLayer } from 'pdfjs-lib';
-import { scrollIntoView } from './ui_utils';
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
 const MATCH_SCROLL_OFFSET_TOP = -50;

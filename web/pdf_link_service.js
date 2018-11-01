@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus } from './dom_events';
-import { parseQueryString } from './ui_utils';
+import { getGlobalEventBus, parseQueryString } from './ui_utils';
 
 /**
  * @typedef {Object} PDFLinkServiceOptions
