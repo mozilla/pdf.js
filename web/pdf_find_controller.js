@@ -113,7 +113,7 @@ class PDFFindController {
   executeCommand(cmd, state) {
     const pdfDocument = this._pdfDocument;
 
-    if (this._state === null || cmd !== 'findagain') {
+    if (this._state === null || this._shouldDirtyMatch(cmd)) {
       this._dirtyMatch = true;
     }
     this._state = state;
@@ -128,6 +128,8 @@ class PDFFindController {
       }
       this._extractText();
 
+      const findbarClosed = !this._highlightMatches;
+
       if (this._findTimeout) {
         clearTimeout(this._findTimeout);
         this._findTimeout = null;
@@ -139,14 +141,16 @@ class PDFFindController {
           this._nextMatch();
           this._findTimeout = null;
         }, FIND_TIMEOUT);
-      } else if (cmd === 'findagain' && !this._dirtyMatch) {
-        const updateHighlightAll = (!this._highlightMatches &&
-                                    this._state.highlightAll);
+      } else if (this._dirtyMatch) {
+        // Immediately trigger searching for non-'find' operations, when the
+        // current state needs to be reset and matches re-calculated.
+        this._nextMatch();
+      } else if (cmd === 'findagain') {
         this._nextMatch();
 
         // When the findbar was previously closed, and `highlightAll` is set,
         // ensure that the matches on all active pages are highlighted again.
-        if (updateHighlightAll) {
+        if (findbarClosed && this._state.highlightAll) {
           this._updateAllPages();
         }
       } else {
@@ -192,6 +196,29 @@ class PDFFindController {
       this._normalizedQuery = normalize(this._state.query);
     }
     return this._normalizedQuery;
+  }
+
+  _shouldDirtyMatch(cmd) {
+    switch (cmd) {
+      case 'findagain':
+        const pageNumber = this._selected.pageIdx + 1;
+        const linkService = this._linkService;
+        // Only treat a 'findagain' event as a new search operation when it's
+        // *absolutely* certain that the currently selected match is no longer
+        // visible, e.g. as a result of the user scrolling in the document.
+        //
+        // NOTE: If only a simple `this._linkService.page` check was used here,
+        // there's a risk that consecutive 'findagain' operations could "skip"
+        // over matches at the top/bottom of pages thus making them completely
+        // inaccessible when there's multiple pages visible in the viewer.
+        if (pageNumber >= 1 && pageNumber <= linkService.pagesCount &&
+            linkService.page !== pageNumber && linkService.isPageVisible &&
+            !linkService.isPageVisible(pageNumber)) {
+          break;
+        }
+        return false;
+    }
+    return true;
   }
 
   /**

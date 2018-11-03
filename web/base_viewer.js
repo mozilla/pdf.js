@@ -878,6 +878,23 @@ class BaseViewer {
     throw new Error('Not implemented: _getVisiblePages');
   }
 
+  /**
+   * @param {number} pageNumber
+   */
+  isPageVisible(pageNumber) {
+    if (!this.pdfDocument) {
+      return false;
+    }
+    if (this.pageNumber < 1 || pageNumber > this.pagesCount) {
+      console.error(
+        `${this._name}.isPageVisible: "${pageNumber}" is out of bounds.`);
+      return false;
+    }
+    return this._getVisiblePages().views.some(function(view) {
+      return (view.id === pageNumber);
+    });
+  }
+
   cleanup() {
     for (let i = 0, ii = this._pages.length; i < ii; i++) {
       if (this._pages[i] &&

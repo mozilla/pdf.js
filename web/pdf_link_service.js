@@ -352,6 +352,13 @@ class PDFLinkService {
     let refStr = pageRef.num + ' ' + pageRef.gen + ' R';
     return (this._pagesRefCache && this._pagesRefCache[refStr]) || null;
   }
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageVisible(pageNumber) {
+    return this.pdfViewer.isPageVisible(pageNumber);
+  }
 }
 
 function isValidExplicitDestination(dest) {
@@ -483,6 +490,13 @@ class SimpleLinkService {
    * @param {Object} pageRef - reference to the page.
    */
   cachePageRef(pageNum, pageRef) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageVisible(pageNumber) {
+    return true;
+  }
 }
 
 export {
