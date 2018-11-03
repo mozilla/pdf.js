@@ -113,7 +113,7 @@ class PDFFindController {
   executeCommand(cmd, state) {
     const pdfDocument = this._pdfDocument;
 
-    if (this._state === null || cmd !== 'findagain') {
+    if (this._state === null || this._shouldDirtyMatch(cmd)) {
       this._dirtyMatch = true;
     }
     this._state = state;
@@ -196,6 +196,14 @@ class PDFFindController {
       this._normalizedQuery = normalize(this._state.query);
     }
     return this._normalizedQuery;
+  }
+
+  _shouldDirtyMatch(cmd) {
+    switch (cmd) {
+      case 'findagain':
+        return false;
+    }
+    return true;
   }
 
   /**
