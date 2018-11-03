@@ -1,3 +1,5 @@
+import { PDFPageView } from "./pdf_page_view";
+
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -73,10 +75,12 @@ class ViewHistory {
     return localStorage.getItem('pdfjs.history');
   }
 
+  //Change set here
   async set(name, val) {
     await this._initializedPromise;
     this.file[name] = val;
     return this._writeToStorage();
+    PDFPageView = history.state.PDFPageView; //i beleive this should retain the scroll height
   }
 
   async setMultiple(properties) {
