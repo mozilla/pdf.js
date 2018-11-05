@@ -111,6 +111,9 @@ class PDFFindController {
   }
 
   executeCommand(cmd, state) {
+    if (!state) {
+      return;
+    }
     const pdfDocument = this._pdfDocument;
 
     if (this._state === null || this._shouldDirtyMatch(cmd, state)) {
