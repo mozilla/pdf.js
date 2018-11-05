@@ -113,7 +113,7 @@ class PDFFindController {
   executeCommand(cmd, state) {
     const pdfDocument = this._pdfDocument;
 
-    if (this._state === null || this._shouldDirtyMatch(cmd)) {
+    if (this._state === null || this._shouldDirtyMatch(cmd, state)) {
       this._dirtyMatch = true;
     }
     this._state = state;
@@ -198,7 +198,12 @@ class PDFFindController {
     return this._normalizedQuery;
   }
 
-  _shouldDirtyMatch(cmd) {
+  _shouldDirtyMatch(cmd, state) {
+    // When the search query changes, regardless of the actual search command
+    // used, always re-calculate matches to avoid errors (fixes bug 1030622).
+    if (state.query !== this._state.query) {
+      return true;
+    }
     switch (cmd) {
       case 'findagain':
         const pageNumber = this._selected.pageIdx + 1;
