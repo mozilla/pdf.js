@@ -15,10 +15,10 @@
 /* globals PDFBug, Stats */
 
 import {
-  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isValidRotation,
-  MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
-  parseQueryString, PresentationModeState, ProgressBar, RendererType,
-  TextLayerMode
+  animationStarted, DEFAULT_SCALE_VALUE, getGlobalEventBus,
+  getPDFFileNameFromURL, isValidRotation, MAX_SCALE, MIN_SCALE,
+  noContextMenuHandler, normalizeWheelEventDelta, parseQueryString,
+  PresentationModeState, ProgressBar, RendererType, TextLayerMode
 } from './ui_utils';
 import {
   build, createObjectURL, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
@@ -30,7 +30,6 @@ import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { PDFSidebar, SidebarView } from './pdf_sidebar';
 import { AppOptions } from './app_options';
-import { getGlobalEventBus } from './dom_events';
 import { OverlayManager } from './overlay_manager';
 import { PasswordPrompt } from './password_prompt';
 import { PDFAttachmentViewer } from './pdf_attachment_viewer';
@@ -263,7 +262,9 @@ let PDFViewerApplication = {
       AppOptions.set('locale', hashParams['locale']);
     }
 
-    return Promise.all(waitOn);
+    return Promise.all(waitOn).catch((reason) => {
+      console.error(`_parseHashParameters: "${reason.message}".`);
+    });
   },
 
   /**
@@ -286,7 +287,7 @@ let PDFViewerApplication = {
     this.overlayManager = new OverlayManager();
 
     const dispatchToDOM = AppOptions.get('eventBusDispatchToDOM');
-    let eventBus = appConfig.eventBus || getGlobalEventBus(dispatchToDOM);
+    const eventBus = appConfig.eventBus || getGlobalEventBus(dispatchToDOM);
     this.eventBus = eventBus;
 
     let pdfRenderingQueue = new PDFRenderingQueue();
@@ -311,8 +312,8 @@ let PDFViewerApplication = {
     });
     this.findController = findController;
 
-    let container = appConfig.mainContainer;
-    let viewer = appConfig.viewerContainer;
+    const container = appConfig.mainContainer;
+    const viewer = appConfig.viewerContainer;
     this.pdfViewer = new PDFViewer({
       container,
       viewer,
@@ -349,10 +350,7 @@ let PDFViewerApplication = {
     });
     pdfLinkService.setHistory(this.pdfHistory);
 
-    // TODO: improve `PDFFindBar` constructor parameter passing
-    let findBarConfig = Object.create(appConfig.findBar);
-    findBarConfig.eventBus = eventBus;
-    this.findBar = new PDFFindBar(findBarConfig, this.l10n);
+    this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
 
     this.pdfDocumentProperties =
       new PDFDocumentProperties(appConfig.documentProperties,
@@ -364,8 +362,7 @@ let PDFViewerApplication = {
       cursorToolOnLoad: AppOptions.get('cursorToolOnLoad'),
     });
 
-    this.toolbar = new Toolbar(appConfig.toolbar, container, eventBus,
-                               this.l10n);
+    this.toolbar = new Toolbar(appConfig.toolbar, eventBus, this.l10n);
 
     this.secondaryToolbar =
       new SecondaryToolbar(appConfig.secondaryToolbar, container, eventBus);
@@ -399,9 +396,7 @@ let PDFViewerApplication = {
     let sidebarConfig = Object.create(appConfig.sidebar);
     sidebarConfig.pdfViewer = this.pdfViewer;
     sidebarConfig.pdfThumbnailViewer = this.pdfThumbnailViewer;
-    sidebarConfig.pdfOutlineViewer = this.pdfOutlineViewer;
-    sidebarConfig.eventBus = eventBus;
-    this.pdfSidebar = new PDFSidebar(sidebarConfig, this.l10n);
+    this.pdfSidebar = new PDFSidebar(sidebarConfig, eventBus, this.l10n);
     this.pdfSidebar.onToggled = this.forceRendering.bind(this);
 
     this.pdfSidebarResizer = new PDFSidebarResizer(appConfig.sidebarResizer,
@@ -574,7 +569,6 @@ let PDFViewerApplication = {
     if (this.pdfDocument) {
       this.pdfDocument = null;
 
-      this.findController.setDocument(null);
       this.pdfThumbnailViewer.setDocument(null);
       this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null);
@@ -874,9 +868,6 @@ let PDFViewerApplication = {
 
       firstPagePromise.then(() => {
         this.eventBus.dispatch('documentloaded', { source: this, });
-        // TODO: Remove the following event, i.e. 'documentload',
-        //       once the mozilla-central tests have been updated.
-        this.eventBus.dispatch('documentload', { source: this, });
       });
     });
 
@@ -898,7 +889,6 @@ let PDFViewerApplication = {
     } else if (PDFJSDev.test('CHROME')) {
       baseDocumentUrl = location.href.split('#')[0];
     }
-    this.findController.setDocument(pdfDocument);
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
     this.pdfDocumentProperties.setDocument(pdfDocument, this.url);
 
@@ -1472,10 +1462,14 @@ function loadFakeWorker() {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
           window.pdfjsWorker = worker;
           resolve();
-        });
+        }).catch(reject);
       } else if (typeof require === 'function') {
-        window.pdfjsWorker = require('../src/core/worker.js');
-        resolve();
+        try {
+          window.pdfjsWorker = require('../src/core/worker.js');
+          resolve();
+        } catch (ex) {
+          reject(ex);
+        }
       } else {
         reject(new Error(
           'SystemJS or CommonJS must be used to load fake worker.'));

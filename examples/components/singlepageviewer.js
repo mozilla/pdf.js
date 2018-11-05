@@ -50,7 +50,7 @@ var pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
 });
 pdfLinkService.setViewer(pdfSinglePageViewer);
 
-container.addEventListener('pagesinit', function () {
+document.addEventListener('pagesinit', function () {
   // We can use pdfSinglePageViewer now, e.g. let's change default scale.
   pdfSinglePageViewer.currentScaleValue = 'page-width';
 
@@ -70,5 +70,4 @@ pdfjsLib.getDocument({
   pdfSinglePageViewer.setDocument(pdfDocument);
 
   pdfLinkService.setDocument(pdfDocument, null);
-  pdfFindController.setDocument(pdfDocument);
 });

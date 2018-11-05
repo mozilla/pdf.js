@@ -14,9 +14,8 @@
  */
 
 import {
-  isValidRotation, parseQueryString, waitOnEventOrTimeout
+  getGlobalEventBus, isValidRotation, parseQueryString, waitOnEventOrTimeout
 } from './ui_utils';
-import { getGlobalEventBus } from './dom_events';
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
 const HASH_CHANGE_TIMEOUT = 1000; // milliseconds

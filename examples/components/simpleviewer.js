@@ -50,7 +50,7 @@ var pdfViewer = new pdfjsViewer.PDFViewer({
 });
 pdfLinkService.setViewer(pdfViewer);
 
-container.addEventListener('pagesinit', function () {
+document.addEventListener('pagesinit', function () {
   // We can use pdfViewer now, e.g. let's change default scale.
   pdfViewer.currentScaleValue = 'page-width';
 
@@ -70,5 +70,4 @@ pdfjsLib.getDocument({
   pdfViewer.setDocument(pdfDocument);
 
   pdfLinkService.setDocument(pdfDocument, null);
-  pdfFindController.setDocument(pdfDocument);
 });
