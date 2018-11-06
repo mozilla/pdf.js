@@ -483,7 +483,7 @@
   }
 
   JURL.prototype = {
-    toString() {
+    toString: function() {
       return this.href;
     },
     get href() {
