@@ -1493,6 +1493,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       // groups and applies the viewport transform.
       let rootGroup = this.svgFactory.createElement('g');
       rootGroup.setAttributeNS(null, 'transform', pm(viewport.transform));
+      rootGroup.style.isolation = 'isolate';
       svg.appendChild(rootGroup);
 
       // For the construction of the SVG image we are only interested in the
