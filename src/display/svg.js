@@ -752,6 +752,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.tspan.setAttributeNS(null, 'y', pf(-current.y));
 
       current.txtElement = this.svgFactory.createElement('text');
+      current.txtElement.style.whiteSpace = 'pre';
       current.txtElement.appendChild(current.tspan);
     },
 
@@ -762,6 +763,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.current.lineMatrix = IDENTITY_MATRIX;
       this.current.tspan = this.svgFactory.createElement('tspan');
       this.current.txtElement = this.svgFactory.createElement('text');
+      this.current.txtElement.style.whiteSpace = 'pre';
       this.current.txtgrp = this.svgFactory.createElement('g');
       this.current.element = this.current.txtgrp;
       this.current.xcoords = [];
