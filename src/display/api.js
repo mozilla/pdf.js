@@ -1885,7 +1885,7 @@ class WorkerTransport {
       }
 
       const [id, type, exportedData] = data;
-      if (this.commonObjs.hasData(id)) {
+      if (this.commonObjs.has(id)) {
         return;
       }
 
@@ -1937,7 +1937,7 @@ class WorkerTransport {
 
       const [id, pageIndex, type, imageData] = data;
       const pageProxy = this.pageCache[pageIndex];
-      if (pageProxy.objs.hasData(id)) {
+      if (pageProxy.objs.has(id)) {
         return;
       }
 
@@ -2256,6 +2256,11 @@ class PDFObjects {
     return obj.data;
   }
 
+  has(objId) {
+    const obj = this._objs[objId];
+    return (obj ? obj.resolved : false);
+  }
+
   /**
    * Resolves the object `objId` with optional `data`.
    */
@@ -2265,26 +2270,6 @@ class PDFObjects {
     obj.resolved = true;
     obj.data = data;
     obj.capability.resolve(data);
-  }
-
-  isResolved(objId) {
-    const obj = this._objs[objId];
-    return (obj ? obj.resolved : false);
-  }
-
-  hasData(objId) {
-    return this.isResolved(objId);
-  }
-
-  /**
-   * Returns the data of `objId` if the object exists, null otherwise.
-   */
-  getData(objId) {
-    const obj = this._objs[objId];
-    if (!obj || !obj.resolved) {
-      return null;
-    }
-    return obj.data;
   }
 
   clear() {
