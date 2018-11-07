@@ -432,7 +432,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
     this.forceDataSchema = !!forceDataSchema;
   }
 
-  var XML_NS = 'http://www.w3.org/XML/1998/namespace';
   var XLINK_NS = 'http://www.w3.org/1999/xlink';
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
@@ -883,7 +882,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
       current.txtElement.setAttributeNS(null, 'transform',
                                         pm(textMatrix) + ' scale(1, -1)');
-      current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       current.txtElement.appendChild(current.tspan);
       current.txtgrp.appendChild(current.txtElement);
       this._clipnAppend(current.txtgrp);
@@ -1494,6 +1492,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       let rootGroup = this.svgFactory.createElement('g');
       rootGroup.setAttributeNS(null, 'transform', pm(viewport.transform));
       rootGroup.style.isolation = 'isolate';
+      rootGroup.style.whiteSpace = 'pre';
       svg.appendChild(rootGroup);
 
       // For the construction of the SVG image we are only interested in the
