@@ -9,8 +9,7 @@ rendering PDFs.
 ## Difference with mozilla repo
 
 This fork improves SVG rendering of PDF docs, and more specifically:
-+ adds masks support
-+ adds radial/axial gradients (shadingFill) support
++ adds masks, pattern, blend mode, gradients (shading fill) support
 + manages groups hierarchy
 
 ## Contributing
