@@ -432,6 +432,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
     this.forceDataSchema = !!forceDataSchema;
   }
 
+  var XML_NS = 'http://www.w3.org/XML/1998/namespace';
   var XLINK_NS = 'http://www.w3.org/1999/xlink';
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
@@ -752,7 +753,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.tspan.setAttributeNS(null, 'y', pf(-current.y));
 
       current.txtElement = this.svgFactory.createElement('text');
-      current.txtElement.style.whiteSpace = 'pre';
+      current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       current.txtElement.appendChild(current.tspan);
     },
 
@@ -763,7 +764,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.current.lineMatrix = IDENTITY_MATRIX;
       this.current.tspan = this.svgFactory.createElement('tspan');
       this.current.txtElement = this.svgFactory.createElement('text');
-      this.current.txtElement.style.whiteSpace = 'pre';
+      this.current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       this.current.txtgrp = this.svgFactory.createElement('g');
       this.current.element = this.current.txtgrp;
       this.current.xcoords = [];
