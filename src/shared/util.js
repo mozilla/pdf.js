@@ -296,20 +296,20 @@ function getVerbosityLevel() {
 // end users.
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
-    console.log('Info: ' + msg);
+    console.warn('Info: ' + msg);
   }
 }
 
 // Non-fatal warnings.
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
-    console.log('Warning: ' + msg);
+    console.warn('Warning: ' + msg);
   }
 }
 
 // Deprecated API function -- display regardless of the `verbosity` setting.
 function deprecated(details) {
-  console.log('Deprecated API usage: ' + details);
+  console.warn('Deprecated API usage: ' + details);
 }
 
 function unreachable(msg) {
