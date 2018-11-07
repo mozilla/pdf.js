@@ -447,8 +447,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.style.display = 'table-cell';
 
       let font = null;
-      if (this.data.fontRefName) {
-        font = this.page.commonObjs.getData(this.data.fontRefName);
+      if (this.data.fontRefName &&
+          this.page.commonObjs.has(this.data.fontRefName)) {
+        font = this.page.commonObjs.get(this.data.fontRefName);
       }
       this._setTextStyle(element, font);
     }
