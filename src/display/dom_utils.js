@@ -118,12 +118,14 @@ class DOMSVGFactory {
   create(width, height) {
     assert(width > 0 && height > 0, 'Invalid SVG dimensions');
 
-    let svg = document.createElementNS(SVG_NS, 'svg:svg');
+    let svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('version', '1.1');
     svg.setAttribute('width', width + 'px');
     svg.setAttribute('height', height + 'px');
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    svg.setAttribute('xmlns', 'http://www.w3.org/XML/1998/namespace');
 
     return svg;
   }
