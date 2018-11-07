@@ -312,20 +312,20 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.dashPhase = 0;
 
     this.dependencies = [];
-
     // Clipping
     this.activeClipUrl = null;
-    this.clipGroup = null;
-
+    // Masking
     this.maskId = '';
-
+    // Blending Mode
+    this.blendMode = 'source-over';
     // Shading fill
     this.activeGradientUrl = null;
     this.gradientId = '';
-
+    // patterns
+    this.pattern = '';
     //hierarchy
     this.group = null;
-    this.svg = null;
+    this.parentGroup = null;
     this.maskedGroup = null;
 
   }
@@ -419,7 +419,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     this.current = new SVGExtraState();
     this.transformMatrix = IDENTITY_MATRIX; // Graphics state matrix
-    this.transformStack = [];
     this.extraStack = [];
     this.commonObjs = commonObjs;
     this.objs = objs;
@@ -440,13 +439,12 @@ SVGGraphics = (function SVGGraphicsClosure() {
   var clipCount = 0;
   var maskCount = 0;
   var gradientCount = 0;
-  var pathMatrix = IDENTITY_MATRIX;
+  var patternCount = 0;
 
   SVGGraphics.prototype = {
     save: function SVGGraphics_save() {
-      this.transformStack.push(this.transformMatrix);
       var old = this.current;
-      old.svg = this.svg;
+      old.parentGroup = this.parentGroup;
       old.group = this.group;
       this.extraStack.push(old);
       this.current = old.clone();
@@ -455,35 +453,37 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
 
     restore: function SVGGraphics_restore() {
-      this.transformMatrix = this.transformStack.pop();
-      pathMatrix = this.transformMatrix;
       this.current = this.extraStack.pop();
 
       this.pendingClip = null;
-      this.svg = this.current.svg;
+      this.parentGroup = this.current.parentGroup;
       this.group = this.current.group;
     },
 
     createGroup: function SVGGraphics_group(items) {
+      var clip = this.group.tagName.toLowerCase()=='pattern' ? '' : this.current.activeClipUrl;
       this.save();
-      this.svg = this.group;
+      this.parentGroup = this.group;
       this.group = this.svgFactory.createElement('g');
+      if (clip)
+        this.group.setAttributeNS(null, 'clip-path', clip);
+      this.parentGroup.appendChild(this.group);
       this.executeOpTree(items);
-      if (this.current.activeClipUrl) {
-        var grp = this.svgFactory.createElement('g');
-        grp.setAttributeNS(null, 'clip-path', this.current.activeClipUrl);
-        grp.appendChild(this.group);
-        this.group = grp;
-      }
-      if (this.current.activeGradientUrl) {
-        var url = this.current.activeGradientUrl;
+      var url = this.current.activeGradientUrl;
+      if (url) {
+        var blendMode = this.current.blendMode;
+        this.parentGroup.removeChild(this.group);
         this.restore();
-        this.current.path.setAttributeNS(null, 'fill', url);
-        this.group.appendChild(this.current.path);
-        this.group.setAttributeNS(null, 'transform', pm(this.transformMatrix));
+        var path = this.current.path.cloneNode();
+        path.setAttributeNS(null, 'fill', url);
+        if (blendMode != 'source-over')
+          path.setAttributeNS(null, 'style', 'mix-blend-mode: ' + blendMode);
+        this.group.appendChild(path);
       }
       else {
-        this.svg.appendChild(this.group);
+        if (!this.group.children.length) {
+          this.parentGroup.removeChild(this.group);
+        }
         this.restore();
       }
     },
@@ -517,10 +517,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
 
     transform: function SVGGraphics_transform(a, b, c, d, e, f) {
-      var transformMatrix = [a, b, c, d, e, f];
-      this.transformMatrix = Util.transform(this.transformMatrix,
-                                            transformMatrix);
-      pathMatrix = this.transformMatrix;
+      this.transformMatrix = [a, b, c, d, e, f];
+      this.parentGroup = this.group;
+      this.group = this.svgFactory.createElement('g');
+      this.group.setAttributeNS(null, 'transform', pm(this.transformMatrix));
+      this.parentGroup.appendChild(this.group);
     },
 
     getSVG: function SVGGraphics_getSVG(operatorList, viewport) {
@@ -635,6 +636,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.shadingFill:
             this.shadingFill(args[0]);
             break;
+            case OPS.setFillColorN:
+              this.setFillColorN(args);
+              break;
           case OPS.setGState:
             this.setGState(args[0]);
             break;
@@ -750,7 +754,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
       current.txtElement = this.svgFactory.createElement('text');
       current.txtElement.appendChild(current.tspan);
-      current.txtgrp.setAttributeNS(null, 'transform', pm(this.transformMatrix));
     },
 
     beginText: function SVGGraphics_beginText() {
@@ -761,6 +764,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.current.tspan = this.svgFactory.createElement('tspan');
       this.current.txtElement = this.svgFactory.createElement('text');
       this.current.txtgrp = this.svgFactory.createElement('g');
+      this.current.element = this.current.txtgrp;
       this.current.xcoords = [];
     },
 
@@ -882,8 +886,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       current.txtElement.appendChild(current.tspan);
       current.txtgrp.appendChild(current.txtElement);
-
-      this.group.appendChild(current.txtgrp);
+      this._clipnAppend(current.txtgrp);
     },
 
     setLeadingMoveText: function SVGGraphics_setLeadingMoveText(x, y) {
@@ -1051,7 +1054,43 @@ SVGGraphics = (function SVGGraphicsClosure() {
           throw new Error(`Unknown IR type: ${args[0]}`);
       }
     },
-
+    setFillColorN: function SVGGraphics_setFillColorN(IR) {
+      var current = this.current;
+      if (IR[0] == 'TilingPattern') {
+        var color = IR[1];
+        var operatorList = IR[2];
+        var opTree = this.convertOpList(operatorList);
+        var matrix = IR[3] || [1, 0, 0, 1, 0, 0];
+        var bbox = IR[4];
+        var xstep = IR[5];
+        var ystep = IR[6];
+        var paintType = IR[7];
+        var tilingType = IR[8];
+        var group = this.group;
+        this.group = this.svgFactory.createElement('pattern');
+        this.group.id = "pattern" + (patternCount++);
+        current.pattern = this.group.id;
+        var defs = this.defs;
+        this.defs = this.svgFactory.createElement('defs');
+        var matrix_text = pm(matrix);
+        if (matrix_text)
+          this.group.setAttributeNS(null, 'patternTransform', matrix_text);
+        this.group.setAttributeNS(null, 'patternUnits', 'userSpaceOnUse');
+        this.group.setAttributeNS(null, 'viewBox', bbox.join(','));
+        this.group.setAttributeNS(null, 'width', (bbox[2] - bbox[0]));
+        this.group.setAttributeNS(null, 'height', (bbox[3] - bbox[1]));
+        if (paintType == 2 && Array.isArray(color) && color.length == 3)
+          current.fillColor = Util.makeCssRgb(color[0], color[1], color[2]);
+        this.executeOpTree(opTree);
+        if (this.defs.childelementCount)
+          this.group.appendChild(this.defs);
+        this.defs = defs;
+        this.defs.appendChild(this.group);
+        this.group = group;
+      }
+      else {
+      }
+    },
     constructPath: function SVGGraphics_constructPath(ops, args) {
       var current = this.current;
       var x = current.x, y = current.y;
@@ -1110,7 +1149,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.path.setAttributeNS(null, 'd', d.join(' '));
       current.path.setAttributeNS(null, 'fill', 'none');
 
-      this.group.appendChild(current.path);
+      this._clipnAppend(this.current.path);
 
       // Saving a reference in current.element so that it can be addressed
       // in 'fill' and 'stroke'
@@ -1124,30 +1163,17 @@ SVGGraphics = (function SVGGraphicsClosure() {
       }
       var current = this.current;
       // Add current path to clipping path
-      var clipId = 'clip' + clipCount;
-      clipCount++;
+      var clipId = 'clip' + (clipCount++);
       var clipPath = this.svgFactory.createElement('clipPath');
       clipPath.setAttributeNS(null, 'id', clipId);
-      clipPath.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      // A deep clone is needed when text is used as a clipping path.
-      const clipElement = current.element.cloneNode(true);
+      this.defs.appendChild(clipPath);
       if (this.pendingClip === 'evenodd') {
-        clipElement.setAttributeNS(null, 'clip-rule', 'evenodd');
+        current.element.setAttributeNS(null, 'clip-rule', 'evenodd');
       } else {
-        clipElement.setAttributeNS(null, 'clip-rule', 'nonzero');
+        current.element.setAttributeNS(null, 'clip-rule', 'nonzero');
       }
       this.pendingClip = null;
-      clipPath.appendChild(clipElement);
-      this.defs.appendChild(clipPath);
-
-      if (current.activeClipUrl) {
-        // The previous clipping group content can go out of order -- resetting
-        // cached clipGroups.
-        current.clipGroup = null;
-        this.extraStack.forEach(function (prev) {
-          prev.clipGroup = null;
-        });
-      }
+      clipPath.appendChild(current.element);
       current.activeClipUrl = 'url(#' + clipId + ')';
     },
 
@@ -1211,6 +1237,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case 'ca':
             this.setFillAlpha(value);
             break;
+          case 'BM':
+            this.current.blendMode = value;
+            if (value != 'source-over')
+              this.group.setAttributeNS(null, 'style', 'mix-blend-mode: ' + value);
+            break;
           default:
             warn('Unimplemented graphic state ' + key);
             break;
@@ -1220,14 +1251,13 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     fill: function SVGGraphics_fill() {
       var current = this.current;
-      if (current.element) {
-        if (['path', 'rect'].includes(current.element.tagName))
-          current.element.setAttributeNS(null, 'transform', pm(pathMatrix));
+      if (current.pattern)
+        current.element.setAttributeNS(null, 'fill', 'url(#' + current.pattern + ')');
+      else
         current.element.setAttributeNS(null, 'fill', current.fillColor);
-        current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
-        this.endPath();
-        this.group.appendChild(current.element);
-      }
+      current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
+      this.endPath();
+      this._clipnAppend(current.element);
     },
 
     stroke: function SVGGraphics_stroke() {
@@ -1239,7 +1269,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
         current.element.setAttributeNS(null, 'fill', 'none');
 
         this.endPath();
-        this.group.appendChild(current.element);
+        this._clipnAppend(current.element);
       }
     },
 
@@ -1248,8 +1278,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
      */
     _setStrokeAttributes(element) {
       const current = this.current;
-      if (['path', 'rect'].includes(element.tagName))
-        element.setAttributeNS(null, 'transform', pm(pathMatrix));
       element.setAttributeNS(null, 'stroke', current.strokeColor);
       element.setAttributeNS(null, 'stroke-opacity', current.strokeAlpha);
       element.setAttributeNS(null, 'stroke-miterlimit',
@@ -1302,8 +1330,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     paintSolidColorImageMask:
         function SVGGraphics_paintSolidColorImageMask() {
-      this.group.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      pathMatrix = IDENTITY_MATRIX;
       var current = this.current;
       var rect = this.svgFactory.createElement('rect');
       rect.setAttributeNS(null, 'x', '0');
@@ -1312,12 +1338,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
       rect.setAttributeNS(null, 'height', '1px');
       rect.setAttributeNS(null, 'fill', current.fillColor);
 
-      this.group.appendChild(rect);
+      this._clipnAppend(rect);
     },
 
     paintJpegXObject: function SVGGraphics_paintJpegXObject(objId, w, h) {
-      this.group.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      pathMatrix = IDENTITY_MATRIX;
       var imgObj = this.objs.get(objId);
       var imgEl = this.svgFactory.createElement('image');
       imgEl.setAttributeNS(XLINK_NS, 'xlink:href', imgObj.src);
@@ -1328,12 +1352,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
       imgEl.setAttributeNS(null, 'transform',
                            'scale(' + pf(1 / w) + ' ' + pf(-1 / h) + ')');
 
-      this.group.appendChild(imgEl);
+      this._clipnAppend(imgEl);
     },
 
     paintImageXObject: function SVGGraphics_paintImageXObject(objId) {
-      this.group.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      pathMatrix = IDENTITY_MATRIX;
       var imgData = this.objs.get(objId);
       if (!imgData) {
         warn('Dependent image isn\'t ready yet');
@@ -1344,8 +1366,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     paintInlineImageXObject:
         function SVGGraphics_paintInlineImageXObject(imgData, mask) {
-      this.group.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      pathMatrix = IDENTITY_MATRIX;
       var width = imgData.width;
       var height = imgData.height;
 
@@ -1369,22 +1389,18 @@ SVGGraphics = (function SVGGraphicsClosure() {
       if (mask) {
         mask.appendChild(imgEl);
       } else {
-        this.group.appendChild(imgEl);
+        this._clipnAppend(imgEl);
       }
     },
 
     paintImageMaskXObject:
         function SVGGraphics_paintImageMaskXObject(imgData) {
-      this.group.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      pathMatrix = IDENTITY_MATRIX;
       var current = this.current;
       var width = imgData.width;
       var height = imgData.height;
       var fillColor = current.fillColor;
-
-      current.maskId = 'mask' + maskCount++;
       var mask = this.svgFactory.createElement('mask');
-      mask.setAttributeNS(null, 'id', current.maskId);
+      mask.id = 'mask' + (maskCount++);
 
       var rect = this.svgFactory.createElement('rect');
       rect.setAttributeNS(null, 'x', '0');
@@ -1392,18 +1408,15 @@ SVGGraphics = (function SVGGraphicsClosure() {
       rect.setAttributeNS(null, 'width', pf(width));
       rect.setAttributeNS(null, 'height', pf(height));
       rect.setAttributeNS(null, 'fill', fillColor);
-      rect.setAttributeNS(null, 'mask', 'url(#' + current.maskId + ')');
+      rect.setAttributeNS(null, 'mask', 'url(#' + mask.id + ')');
       this.defs.appendChild(mask);
 
-      this.group.appendChild(rect);
-
+      this._clipnAppend(rect);
       this.paintInlineImageXObject(imgData, mask);
     },
 
     paintFormXObjectBegin:
         function SVGGraphics_paintFormXObjectBegin(matrix, bbox) {
-      this.group.setAttributeNS(null, 'transform', pm(matrix));
-      pathMatrix = IDENTITY_MATRIX;
 
       if (Array.isArray(bbox) && bbox.length === 4) {
         var width = bbox[2] - bbox[0];
@@ -1428,10 +1441,12 @@ SVGGraphics = (function SVGGraphicsClosure() {
         var matrix = args.matrix;
         var isolated = args.isolated;
         var mask = this.svgFactory.createElement('mask');
-        this.current.maskId = mask.id = 'mask' + maskCount++;
-        mask.setAttributeNS(null, 'id', this.current.maskId);
-        if (Array.isArray(args.matrix) && matrix.length === 6)
-          mask.setAttributeNS(null, 'transform', pm(args.matrix));
+        mask.id = 'mask' + (maskCount++);
+        if (Array.isArray(args.matrix) && matrix.length === 6) {
+          var matrix_text = pm(args.matrix);
+          if (matrix_text)
+            mask.setAttributeNS(null, 'transform', matrix_text);
+        }
         mask.setAttributeNS(null, 'x', '0');
         mask.setAttributeNS(null, 'y', '0');
         mask.setAttributeNS(null, 'width', '100%');
@@ -1487,7 +1502,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
       return svg;
     },
-
+    _clipnAppend: function SVGGraphics_clipnAppend(element) {
+      if (this.current.activeClipUrl)
+        element.setAttributeNS(null, 'clip-path', this.current.activeClipUrl);
+      this.group.appendChild(element);
+    },
   };
   return SVGGraphics;
 })();
