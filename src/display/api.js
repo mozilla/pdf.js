@@ -1885,7 +1885,7 @@ class WorkerTransport {
       }
 
       const [id, type, exportedData] = data;
-      if (this.commonObjs.hasData(id)) {
+      if (this.commonObjs.has(id)) {
         return;
       }
 
@@ -1937,7 +1937,7 @@ class WorkerTransport {
 
       const [id, pageIndex, type, imageData] = data;
       const pageProxy = this.pageCache[pageIndex];
-      if (pageProxy.objs.hasData(id)) {
+      if (pageProxy.objs.has(id)) {
         return;
       }
 
@@ -2205,108 +2205,77 @@ class WorkerTransport {
 }
 
 /**
- * A PDF document and page is built of many objects. E.g. there are objects
- * for fonts, images, rendering code and such. These objects might get processed
- * inside of a worker. The `PDFObjects` implements some basic functions to
- * manage these objects.
+ * A PDF document and page is built of many objects. E.g. there are objects for
+ * fonts, images, rendering code, etc. These objects may get processed inside of
+ * a worker. This class implements some basic methods to manage these objects.
  * @ignore
  */
-var PDFObjects = (function PDFObjectsClosure() {
-  function PDFObjects() {
-    this.objs = Object.create(null);
+class PDFObjects {
+  constructor() {
+    this._objs = Object.create(null);
   }
 
-  PDFObjects.prototype = {
-    /**
-     * Internal function.
-     * Ensures there is an object defined for `objId`.
-     */
-    ensureObj: function PDFObjects_ensureObj(objId) {
-      if (this.objs[objId]) {
-        return this.objs[objId];
-      }
+  /**
+   * Ensures there is an object defined for `objId`.
+   * @private
+   */
+  _ensureObj(objId) {
+    if (this._objs[objId]) {
+      return this._objs[objId];
+    }
+    return this._objs[objId] = {
+      capability: createPromiseCapability(),
+      data: null,
+      resolved: false,
+    };
+  }
 
-      var obj = {
-        capability: createPromiseCapability(),
-        data: null,
-        resolved: false,
-      };
-      this.objs[objId] = obj;
+  /**
+   * If called *without* callback, this returns the data of `objId` but the
+   * object needs to be resolved. If it isn't, this method throws.
+   *
+   * If called *with* a callback, the callback is called with the data of the
+   * object once the object is resolved. That means, if you call this method
+   * and the object is already resolved, the callback gets called right away.
+   */
+  get(objId, callback = null) {
+    // If there is a callback, then the get can be async and the object is
+    // not required to be resolved right now.
+    if (callback) {
+      this._ensureObj(objId).capability.promise.then(callback);
+      return null;
+    }
+    // If there isn't a callback, the user expects to get the resolved data
+    // directly.
+    const obj = this._objs[objId];
+    // If there isn't an object yet or the object isn't resolved, then the
+    // data isn't ready yet!
+    if (!obj || !obj.resolved) {
+      throw new Error(`Requesting object that isn't resolved yet ${objId}.`);
+    }
+    return obj.data;
+  }
 
-      return obj;
-    },
+  has(objId) {
+    const obj = this._objs[objId];
+    return (obj ? obj.resolved : false);
+  }
 
-    /**
-     * If called *without* callback, this returns the data of `objId` but the
-     * object needs to be resolved. If it isn't, this function throws.
-     *
-     * If called *with* a callback, the callback is called with the data of the
-     * object once the object is resolved. That means, if you call this
-     * function and the object is already resolved, the callback gets called
-     * right away.
-     */
-    get: function PDFObjects_get(objId, callback) {
-      // If there is a callback, then the get can be async and the object is
-      // not required to be resolved right now
-      if (callback) {
-        this.ensureObj(objId).capability.promise.then(callback);
-        return null;
-      }
+  /**
+   * Resolves the object `objId` with optional `data`.
+   */
+  resolve(objId, data) {
+    const obj = this._ensureObj(objId);
 
-      // If there isn't a callback, the user expects to get the resolved data
-      // directly.
-      var obj = this.objs[objId];
+    obj.resolved = true;
+    obj.data = data;
+    obj.capability.resolve(data);
+  }
 
-      // If there isn't an object yet or the object isn't resolved, then the
-      // data isn't ready yet!
-      if (!obj || !obj.resolved) {
-        throw new Error(`Requesting object that isn't resolved yet ${objId}`);
-      }
-
-      return obj.data;
-    },
-
-    /**
-     * Resolves the object `objId` with optional `data`.
-     */
-    resolve: function PDFObjects_resolve(objId, data) {
-      var obj = this.ensureObj(objId);
-
-      obj.resolved = true;
-      obj.data = data;
-      obj.capability.resolve(data);
-    },
-
-    isResolved: function PDFObjects_isResolved(objId) {
-      var objs = this.objs;
-
-      if (!objs[objId]) {
-        return false;
-      }
-      return objs[objId].resolved;
-    },
-
-    hasData: function PDFObjects_hasData(objId) {
-      return this.isResolved(objId);
-    },
-
-    /**
-     * Returns the data of `objId` if object exists, null otherwise.
-     */
-    getData: function PDFObjects_getData(objId) {
-      var objs = this.objs;
-      if (!objs[objId] || !objs[objId].resolved) {
-        return null;
-      }
-      return objs[objId].data;
-    },
-
-    clear: function PDFObjects_clear() {
-      this.objs = Object.create(null);
-    },
-  };
-  return PDFObjects;
-})();
+  clear() {
+    this._objs = Object.create(null);
+  }
+}
 
 /**
  * Allows controlling of the rendering tasks.
