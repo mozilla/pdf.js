@@ -321,16 +321,12 @@ function getDocument(src) {
     const workerParams = {
       postMessageTransfers: params.postMessageTransfers,
       verbosity: params.verbosity,
+      port: GlobalWorkerOptions.workerPort,
     };
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global worker options, using it.
-    let workerPort = GlobalWorkerOptions.workerPort;
-    if (workerPort) {
-      workerParams.port = workerPort;
-      worker = PDFWorker.fromPort(workerParams);
-    } else {
-      worker = new PDFWorker(workerParams);
-    }
+    worker = workerParams.port ? PDFWorker.fromPort(workerParams) :
+                                 new PDFWorker(workerParams);
     task._worker = worker;
   }
   var docId = task.docId;
@@ -1342,8 +1338,10 @@ class LoopbackPort {
  * a "fake" worker will be used instead.
  * @class
  */
-var PDFWorker = (function PDFWorkerClosure() {
+const PDFWorker = (function PDFWorkerClosure() {
+  const pdfWorkerPorts = new WeakMap();
   let nextFakeWorkerId = 0;
+  let fakeWorkerFilesLoadedCapability;
 
   function getWorkerSrc() {
     if (GlobalWorkerOptions.workerSrc) {
@@ -1364,8 +1362,6 @@ var PDFWorker = (function PDFWorkerClosure() {
     return null;
   }
 
-  let fakeWorkerFilesLoadedCapability;
-
   // Loads worker code into main thread.
   function setupFakeWorkerGlobal() {
     if (fakeWorkerFilesLoadedCapability) {
@@ -1373,7 +1369,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     }
     fakeWorkerFilesLoadedCapability = createPromiseCapability();
 
-    let mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
+    const mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
     if (mainWorkerMessageHandler) {
       // The worker was already loaded using a `<script>` tag.
       fakeWorkerFilesLoadedCapability.resolve(mainWorkerMessageHandler);
@@ -1389,7 +1385,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         }).catch(fakeWorkerFilesLoadedCapability.reject);
       } else if (typeof require === 'function') {
         try {
-          let worker = require('../core/worker.js');
+          const worker = require('../core/worker.js');
           fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
         } catch (ex) {
           fakeWorkerFilesLoadedCapability.reject(ex);
@@ -1414,65 +1410,61 @@ var PDFWorker = (function PDFWorkerClosure() {
     // We will rely on blob URL's property to specify origin.
     // We want this function to fail in case if createObjectURL or Blob do not
     // exist or fail for some reason -- our Worker creation will fail anyway.
-    var wrapper = 'importScripts(\'' + url + '\');';
+    const wrapper = 'importScripts(\'' + url + '\');';
     return URL.createObjectURL(new Blob([wrapper]));
   }
-
-  let pdfWorkerPorts = new WeakMap();
 
   /**
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
-  function PDFWorker({ name = null, port = null,
-                       postMessageTransfers = true,
-                       verbosity = getVerbosityLevel(), } = {}) {
-    if (port && pdfWorkerPorts.has(port)) {
-      throw new Error('Cannot use more than one PDFWorker per port');
+  class PDFWorker {
+    constructor({ name = null, port = null, postMessageTransfers = true,
+                  verbosity = getVerbosityLevel(), } = {}) {
+      if (port && pdfWorkerPorts.has(port)) {
+        throw new Error('Cannot use more than one PDFWorker per port');
+      }
+
+      this.name = name;
+      this.destroyed = false;
+      this.postMessageTransfers = postMessageTransfers !== false;
+      this.verbosity = verbosity;
+
+      this._readyCapability = createPromiseCapability();
+      this._port = null;
+      this._webWorker = null;
+      this._messageHandler = null;
+
+      if (port) {
+        pdfWorkerPorts.set(port, this);
+        this._initializeFromPort(port);
+        return;
+      }
+      this._initialize();
     }
 
-    this.name = name;
-    this.destroyed = false;
-    this.postMessageTransfers = postMessageTransfers !== false;
-    this.verbosity = verbosity;
-
-    this._readyCapability = createPromiseCapability();
-    this._port = null;
-    this._webWorker = null;
-    this._messageHandler = null;
-
-    if (port) {
-      pdfWorkerPorts.set(port, this);
-      this._initializeFromPort(port);
-      return;
-    }
-
-    this._initialize();
-  }
-
-  PDFWorker.prototype = /** @lends PDFWorker.prototype */ {
     get promise() {
       return this._readyCapability.promise;
-    },
+    }
 
     get port() {
       return this._port;
-    },
+    }
 
     get messageHandler() {
       return this._messageHandler;
-    },
+    }
 
-    _initializeFromPort: function PDFWorker_initializeFromPort(port) {
+    _initializeFromPort(port) {
       this._port = port;
       this._messageHandler = new MessageHandler('main', 'worker', port);
-      this._messageHandler.on('ready', function () {
+      this._messageHandler.on('ready', function() {
         // Ignoring 'ready' event -- MessageHandler shall be already initialized
         // and ready to accept the messages.
       });
       this._readyCapability.resolve();
-    },
+    }
 
-    _initialize: function PDFWorker_initialize() {
+    _initialize() {
       // If worker support isn't disabled explicit and the browser has worker
       // support, create a new web worker and test if it/the browser fulfills
       // all requirements to run parts of pdf.js in a web worker.
@@ -1493,9 +1485,9 @@ var PDFWorker = (function PDFWorkerClosure() {
 
           // Some versions of FF can't create a worker on localhost, see:
           // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-          var worker = new Worker(workerSrc);
-          var messageHandler = new MessageHandler('main', 'worker', worker);
-          var terminateEarly = () => {
+          const worker = new Worker(workerSrc);
+          const messageHandler = new MessageHandler('main', 'worker', worker);
+          const terminateEarly = () => {
             worker.removeEventListener('error', onWorkerError);
             messageHandler.destroy();
             worker.terminate();
@@ -1508,7 +1500,7 @@ var PDFWorker = (function PDFWorkerClosure() {
             }
           };
 
-          var onWorkerError = () => {
+          const onWorkerError = () => {
             if (!this._webWorker) {
               // Worker failed to initialize due to an error. Clean up and fall
               // back to the fake worker.
@@ -1582,9 +1574,9 @@ var PDFWorker = (function PDFWorkerClosure() {
       // Either workers are disabled, not supported or have thrown an exception.
       // Thus, we fallback to a faked worker.
       this._setupFakeWorker();
-    },
+    }
 
-    _setupFakeWorker: function PDFWorker_setupFakeWorker() {
+    _setupFakeWorker() {
       if (!isWorkerDisabled) {
         warn('Setting up fake worker.');
         isWorkerDisabled = true;
@@ -1595,30 +1587,30 @@ var PDFWorker = (function PDFWorkerClosure() {
           this._readyCapability.reject(new Error('Worker was destroyed'));
           return;
         }
-        let port = new LoopbackPort();
+        const port = new LoopbackPort();
         this._port = port;
 
         // All fake workers use the same port, making id unique.
-        var id = 'fake' + (nextFakeWorkerId++);
+        const id = 'fake' + (nextFakeWorkerId++);
 
         // If the main thread is our worker, setup the handling for the
         // messages -- the main thread sends to it self.
-        var workerHandler = new MessageHandler(id + '_worker', id, port);
+        const workerHandler = new MessageHandler(id + '_worker', id, port);
         WorkerMessageHandler.setup(workerHandler, port);
 
-        var messageHandler = new MessageHandler(id, id + '_worker', port);
+        const messageHandler = new MessageHandler(id, id + '_worker', port);
         this._messageHandler = messageHandler;
         this._readyCapability.resolve();
       }).catch((reason) => {
         this._readyCapability.reject(
           new Error(`Setting up fake worker failed: "${reason.message}".`));
       });
-    },
+    }
 
     /**
      * Destroys the worker instance.
      */
-    destroy: function PDFWorker_destroy() {
+    destroy() {
       this.destroyed = true;
       if (this._webWorker) {
         // We need to terminate only web worker created resource.
@@ -1631,26 +1623,26 @@ var PDFWorker = (function PDFWorkerClosure() {
         this._messageHandler.destroy();
         this._messageHandler = null;
       }
-    },
-  };
-
-  /**
-   * @param {PDFWorkerParameters} params - The worker initialization parameters.
-   */
-  PDFWorker.fromPort = function(params) {
-    if (!params || !params.port) {
-      throw new Error('PDFWorker.fromPort - invalid method signature.');
     }
-    if (pdfWorkerPorts.has(params.port)) {
-      return pdfWorkerPorts.get(params.port);
+
+    /**
+     * @param {PDFWorkerParameters} params - The worker initialization
+     *                                       parameters.
+     */
+    static fromPort(params) {
+      if (!params || !params.port) {
+        throw new Error('PDFWorker.fromPort - invalid method signature.');
+      }
+      if (pdfWorkerPorts.has(params.port)) {
+        return pdfWorkerPorts.get(params.port);
+      }
+      return new PDFWorker(params);
     }
-    return new PDFWorker(params);
-  };
 
-  PDFWorker.getWorkerSrc = function() {
-    return getWorkerSrc();
-  };
-
+    static getWorkerSrc() {
+      return getWorkerSrc();
+    }
+  }
   return PDFWorker;
 })();
 
