@@ -1,4 +1,4 @@
-/* Copyright 2014 Mozilla Foundation
+/* Copyright 2018 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-unused-vars */
-
-'use strict';
 
 /**
  * @interface
@@ -193,3 +190,12 @@ class IL10n {
    */
   async translate(element) { }
 }
+
+export {
+  IPDFLinkService,
+  IPDFHistory,
+  IRenderableView,
+  IPDFTextLayerFactory,
+  IPDFAnnotationLayerFactory,
+  IL10n,
+};
