@@ -1332,26 +1332,23 @@ describe('api', function() {
 
     // Render the first page of the given PDF file.
     // Fulfills the promise with the base64-encoded version of the PDF.
-    function renderPDF(filename) {
-      var loadingTask = getDocument(filename);
+    async function renderPDF(filename) {
+      const loadingTask = getDocument(filename);
       loadingTasks.push(loadingTask);
-      return loadingTask.promise
-        .then(function(pdf) {
-          pdfDocuments.push(pdf);
-          return pdf.getPage(1);
-        }).then(function(page) {
-          var viewport = page.getViewport(1.2);
-          var canvasAndCtx = CanvasFactory.create(viewport.width,
-                                                  viewport.height);
-          return page.render({
-            canvasContext: canvasAndCtx.context,
-            viewport,
-          }).then(function() {
-            var data = canvasAndCtx.canvas.toDataURL();
-            CanvasFactory.destroy(canvasAndCtx);
-            return data;
-          });
-        });
+      const pdf = await loadingTask.promise;
+      pdfDocuments.push(pdf);
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport(1.2);
+      const canvasAndCtx = CanvasFactory.create(viewport.width,
+                                                viewport.height);
+      const renderTask = page.render({
+        canvasContext: canvasAndCtx.context,
+        viewport,
+      });
+      await renderTask.promise;
+      const data = canvasAndCtx.canvas.toDataURL();
+      CanvasFactory.destroy(canvasAndCtx);
+      return data;
     }
 
     afterEach(function(done) {

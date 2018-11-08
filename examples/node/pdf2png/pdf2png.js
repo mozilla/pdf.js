@@ -73,7 +73,8 @@ loadingTask.promise.then(function(pdfDocument) {
       canvasFactory: canvasFactory
     };
 
-    page.render(renderContext).then(function () {
+    var renderTask = page.render(renderContext);
+    renderTask.promise.then(function() {
       // Convert the canvas to an image buffer.
       var image = canvasAndContext.canvas.toBuffer();
       fs.writeFile('output.png', image, function (error) {
