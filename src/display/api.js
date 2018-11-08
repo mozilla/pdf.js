@@ -2280,11 +2280,10 @@ class PDFObjects {
 
 /**
  * Allows controlling of the rendering tasks.
- * @class
  * @alias RenderTask
  */
-var RenderTask = (function RenderTaskClosure() {
-  function RenderTask(internalRenderTask) {
+class RenderTask {
+  constructor(internalRenderTask) {
     this._internalRenderTask = internalRenderTask;
 
     /**
@@ -2296,39 +2295,36 @@ var RenderTask = (function RenderTaskClosure() {
     this.onContinue = null;
   }
 
-  RenderTask.prototype = /** @lends RenderTask.prototype */ {
-    /**
-     * Promise for rendering task completion.
-     * @return {Promise}
-     */
-    get promise() {
-      return this._internalRenderTask.capability.promise;
-    },
+  /**
+   * Promise for rendering task completion.
+   * @return {Promise}
+   */
+  get promise() {
+    return this._internalRenderTask.capability.promise;
+  }
 
-    /**
-     * Cancels the rendering task. If the task is currently rendering it will
-     * not be cancelled until graphics pauses with a timeout. The promise that
-     * this object extends will be rejected when cancelled.
-     */
-    cancel: function RenderTask_cancel() {
-      this._internalRenderTask.cancel();
-    },
+  /**
+   * Cancels the rendering task. If the task is currently rendering it will
+   * not be cancelled until graphics pauses with a timeout. The promise that
+   * this object extends will be rejected when cancelled.
+   */
+  cancel() {
+    this._internalRenderTask.cancel();
+  }
 
-    /**
-     * Registers callbacks to indicate the rendering task completion.
-     *
-     * @param {function} onFulfilled The callback for the rendering completion.
-     * @param {function} onRejected The callback for the rendering failure.
-     * @return {Promise} A promise that is resolved after the onFulfilled or
-     *                   onRejected callback.
-     */
-    then: function RenderTask_then(onFulfilled, onRejected) {
-      return this.promise.then.apply(this.promise, arguments);
-    },
-  };
-
-  return RenderTask;
-})();
+  /**
+   * Registers callbacks to indicate the rendering task completion.
+   *
+   * @param {function} onFulfilled The callback for the rendering completion.
+   * @param {function} onRejected The callback for the rendering failure.
+   * @return {Promise} A promise that is resolved after the onFulfilled or
+   *                   onRejected callback.
+   */
+  then(onFulfilled, onRejected) {
+    deprecated('RenderTask.then method, use the `promise` getter instead.');
+    return this.promise.then.apply(this.promise, arguments);
+  }
+}
 
 /**
  * For internal use only.
