@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 /* globals requirejs, __non_webpack_require__ */
+/* eslint no-var: error */
 
 import {
   assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
@@ -106,7 +107,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
  */
 
 /** @type IPDFStreamFactory */
-var createPDFNetworkStream;
+let createPDFNetworkStream;
 
 /**
  * Sets the function that instantiates a IPDFStream as an alternative PDF data
@@ -221,9 +222,9 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @return {PDFDocumentLoadingTask}
  */
 function getDocument(src) {
-  var task = new PDFDocumentLoadingTask();
+  const task = new PDFDocumentLoadingTask();
 
-  var source;
+  let source;
   if (typeof src === 'string') {
     source = { url: src, };
   } else if (isArrayBuffer(src)) {
@@ -239,15 +240,12 @@ function getDocument(src) {
       throw new Error(
         'Invalid parameter object: need either .data, .range or .url');
     }
-
     source = src;
   }
+  const params = Object.create(null);
+  let rangeTransport = null, worker = null;
 
-  let params = Object.create(null);
-  var rangeTransport = null;
-  let worker = null;
-
-  for (var key in source) {
+  for (const key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
       // The full path is required in the 'url' field.
       params[key] = new URL(source[key], window.location).href;
@@ -260,7 +258,7 @@ function getDocument(src) {
       continue;
     } else if (key === 'data' && !(source[key] instanceof Uint8Array)) {
       // Converting string or array-like data to Uint8Array.
-      var pdfBytes = source[key];
+      const pdfBytes = source[key];
       if (typeof pdfBytes === 'string') {
         params[key] = stringToBytes(pdfBytes);
       } else if (typeof pdfBytes === 'object' && pdfBytes !== null &&
@@ -329,13 +327,13 @@ function getDocument(src) {
                                  new PDFWorker(workerParams);
     task._worker = worker;
   }
-  var docId = task.docId;
-  worker.promise.then(function () {
+  const docId = task.docId;
+  worker.promise.then(function() {
     if (task.destroyed) {
       throw new Error('Loading aborted');
     }
     return _fetchDocument(worker, params, rangeTransport, docId).then(
-        function (workerId) {
+        function(workerId) {
       if (task.destroyed) {
         throw new Error('Loading aborted');
       }
@@ -360,10 +358,10 @@ function getDocument(src) {
         });
       }
 
-      var messageHandler = new MessageHandler(docId, workerId, worker.port);
+      const messageHandler = new MessageHandler(docId, workerId, worker.port);
       messageHandler.postMessageTransfers = worker.postMessageTransfers;
-      var transport = new WorkerTransport(messageHandler, task, networkStream,
-                                          params);
+      const transport = new WorkerTransport(messageHandler, task, networkStream,
+                                            params);
       task._transport = transport;
       messageHandler.send('Ready', null);
     });
@@ -411,7 +409,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     nativeImageDecoderSupport: source.nativeImageDecoderSupport,
     ignoreErrors: source.ignoreErrors,
     isEvalSupported: source.isEvalSupported,
-  }).then(function (workerId) {
+  }).then(function(workerId) {
     if (worker.destroyed) {
       throw new Error('Worker was destroyed');
     }
@@ -1257,11 +1255,10 @@ class LoopbackPort {
       if (cloned.has(value)) { // already cloned the object
         return cloned.get(value);
       }
-      var result;
-      var buffer;
+      let buffer, result;
       if ((buffer = value.buffer) && isArrayBuffer(buffer)) {
         // We found object with ArrayBuffer (typed array).
-        var transferable = transfers && transfers.includes(buffer);
+        const transferable = transfers && transfers.includes(buffer);
         if (value === buffer) {
           // Special case when we are faking typed arrays in compatibility.js.
           result = value;
@@ -1278,8 +1275,8 @@ class LoopbackPort {
       cloned.set(value, result); // adding to cache now for cyclic references
       // Cloning all value and object properties, however ignoring properties
       // defined via getter.
-      for (var i in value) {
-        var desc, p = value;
+      for (const i in value) {
+        let desc, p = value;
         while (!(desc = Object.getOwnPropertyDescriptor(p, i))) {
           p = Object.getPrototypeOf(p);
         }
@@ -1293,16 +1290,16 @@ class LoopbackPort {
     }
 
     if (!this._defer) {
-      this._listeners.forEach(function (listener) {
+      this._listeners.forEach(function(listener) {
         listener.call(this, { data: obj, });
       }, this);
       return;
     }
 
-    var cloned = new WeakMap();
-    var e = { data: cloneValue(obj), };
+    const cloned = new WeakMap();
+    const e = { data: cloneValue(obj), };
     this._deferred.then(() => {
-      this._listeners.forEach(function (listener) {
+      this._listeners.forEach(function(listener) {
         listener.call(this, e);
       }, this);
     });
@@ -1313,7 +1310,7 @@ class LoopbackPort {
   }
 
   removeEventListener(name, listener) {
-    var i = this._listeners.indexOf(listener);
+    const i = this._listeners.indexOf(listener);
     this._listeners.splice(i, 1);
   }
 
@@ -2036,9 +2033,9 @@ class WorkerTransport {
           new Error('Only 3 components or 1 component can be returned'));
       }
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function(resolve, reject) {
         const img = new Image();
-        img.onload = function () {
+        img.onload = function() {
           const width = img.width;
           const height = img.height;
           const size = width * height;
@@ -2064,7 +2061,7 @@ class WorkerTransport {
           }
           resolve({ data: buf, width, height, });
         };
-        img.onerror = function () {
+        img.onerror = function() {
           reject(new Error('JpegDecode failed to load image'));
         };
         img.src = imageUrl;
@@ -2485,11 +2482,10 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
   return InternalRenderTask;
 })();
 
-var version, build;
-if (typeof PDFJSDev !== 'undefined') {
-  version = PDFJSDev.eval('BUNDLE_VERSION');
-  build = PDFJSDev.eval('BUNDLE_BUILD');
-}
+const version = (typeof PDFJSDev !== 'undefined' ?
+                 PDFJSDev.eval('BUNDLE_VERSION') : null);
+const build = (typeof PDFJSDev !== 'undefined' ?
+               PDFJSDev.eval('BUNDLE_BUILD') : null);
 
 export {
   getDocument,
