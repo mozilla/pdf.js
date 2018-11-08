@@ -810,7 +810,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
             // If the promise isn't resolved yet, add the continueCallback
             // to the promise and bail out.
-            if (!objsPool.isResolved(depObjId)) {
+            if (!objsPool.has(depObjId)) {
               objsPool.get(depObjId, continueCallback);
               return i;
             }
