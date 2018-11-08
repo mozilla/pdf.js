@@ -753,7 +753,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.tspan.setAttributeNS(null, 'y', pf(-current.y));
 
       current.txtElement = this.svgFactory.createElement('text');
-      current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       current.txtElement.appendChild(current.tspan);
     },
 
@@ -764,7 +763,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.current.lineMatrix = IDENTITY_MATRIX;
       this.current.tspan = this.svgFactory.createElement('tspan');
       this.current.txtElement = this.svgFactory.createElement('text');
-      this.current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       this.current.txtgrp = this.svgFactory.createElement('g');
       this.current.element = this.current.txtgrp;
       this.current.xcoords = [];
@@ -1489,6 +1487,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
       let definitions = this.svgFactory.createElement('defs');
       svg.appendChild(definitions);
       this.defs = definitions;
+
+      // Create a style to preserve multiple white-space
+      var style = this.svgFactory.createElement('style');
+      style.textContent = "tspan, text {white-space:pre;}";
+      this.defs.appendChild(style);
 
       // Create the root group element, which acts a container for all other
       // groups and applies the viewport transform.
