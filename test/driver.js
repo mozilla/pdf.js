@@ -358,7 +358,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
         let absoluteUrl = new URL(task.file, window.location).href;
         try {
-          pdfjsLib.getDocument({
+          const loadingTask = pdfjsLib.getDocument({
             url: absoluteUrl,
             password: task.password,
             nativeImageDecoderSupport: task.nativeImageDecoderSupport,
@@ -367,7 +367,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
             disableRange: task.disableRange,
             disableAutoFetch: !task.enableAutoFetch,
             pdfBug: true,
-          }).then((doc) => {
+          });
+          loadingTask.promise.then((doc) => {
             task.pdfDoc = doc;
             this._nextPage(task, failure);
           }, (err) => {

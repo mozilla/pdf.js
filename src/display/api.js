@@ -15,10 +15,11 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isSameOrigin, MissingPDFException, NativeImageDecoding,
-  PasswordException, setVerbosityLevel, shadow, stringToBytes,
-  UnexpectedResponseException, UnknownErrorException, unreachable, URL, warn
+  assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
+  InvalidPDFException, isArrayBuffer, isSameOrigin, MissingPDFException,
+  NativeImageDecoding, PasswordException, setVerbosityLevel, shadow,
+  stringToBytes, UnexpectedResponseException, UnknownErrorException,
+  unreachable, URL, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
@@ -427,56 +428,55 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
  * @class
  * @alias PDFDocumentLoadingTask
  */
-var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
-  var nextDocumentId = 0;
+const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
+  let nextDocumentId = 0;
 
   /** @constructs PDFDocumentLoadingTask */
-  function PDFDocumentLoadingTask() {
-    this._capability = createPromiseCapability();
-    this._transport = null;
-    this._worker = null;
+  class PDFDocumentLoadingTask {
+    constructor() {
+      this._capability = createPromiseCapability();
+      this._transport = null;
+      this._worker = null;
 
-    /**
-     * Unique document loading task id -- used in MessageHandlers.
-     * @type {string}
-     */
-    this.docId = 'd' + (nextDocumentId++);
+      /**
+       * Unique document loading task id -- used in MessageHandlers.
+       * @type {string}
+       */
+      this.docId = 'd' + (nextDocumentId++);
 
-    /**
-     * Shows if loading task is destroyed.
-     * @type {boolean}
-     */
-    this.destroyed = false;
+      /**
+       * Shows if loading task is destroyed.
+       * @type {boolean}
+       */
+      this.destroyed = false;
 
-    /**
-     * Callback to request a password if wrong or no password was provided.
-     * The callback receives two parameters: function that needs to be called
-     * with new password and reason (see {PasswordResponses}).
-     */
-    this.onPassword = null;
+      /**
+       * Callback to request a password if wrong or no password was provided.
+       * The callback receives two parameters: function that needs to be called
+       * with new password and reason (see {PasswordResponses}).
+       */
+      this.onPassword = null;
 
-    /**
-     * Callback to be able to monitor the loading progress of the PDF file
-     * (necessary to implement e.g. a loading bar). The callback receives
-     * an {Object} with the properties: {number} loaded and {number} total.
-     */
-    this.onProgress = null;
+      /**
+       * Callback to be able to monitor the loading progress of the PDF file
+       * (necessary to implement e.g. a loading bar). The callback receives
+       * an {Object} with the properties: {number} loaded and {number} total.
+       */
+      this.onProgress = null;
 
-    /**
-     * Callback to when unsupported feature is used. The callback receives
-     * an {UNSUPPORTED_FEATURES} argument.
-     */
-    this.onUnsupportedFeature = null;
-  }
+      /**
+       * Callback to when unsupported feature is used. The callback receives
+       * an {UNSUPPORTED_FEATURES} argument.
+       */
+      this.onUnsupportedFeature = null;
+    }
 
-  PDFDocumentLoadingTask.prototype =
-      /** @lends PDFDocumentLoadingTask.prototype */ {
     /**
      * @return {Promise}
      */
     get promise() {
       return this._capability.promise;
-    },
+    }
 
     /**
      * Aborts all network requests and destroys worker.
@@ -486,7 +486,7 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
     destroy() {
       this.destroyed = true;
 
-      var transportDestroyed = !this._transport ? Promise.resolve() :
+      const transportDestroyed = !this._transport ? Promise.resolve() :
         this._transport.destroy();
       return transportDestroyed.then(() => {
         this._transport = null;
@@ -495,7 +495,7 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
           this._worker = null;
         }
       });
-    },
+    }
 
     /**
      * Registers callbacks to indicate the document loading completion.
@@ -505,11 +505,12 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
      * @return {Promise} A promise that is resolved after the onFulfilled or
      *                   onRejected callback.
      */
-    then: function PDFDocumentLoadingTask_then(onFulfilled, onRejected) {
+    then(onFulfilled, onRejected) {
+      deprecated('PDFDocumentLoadingTask.then method, ' +
+                 'use the `promise` getter instead.');
       return this.promise.then.apply(this.promise, arguments);
-    },
-  };
-
+    }
+  }
   return PDFDocumentLoadingTask;
 })();
 

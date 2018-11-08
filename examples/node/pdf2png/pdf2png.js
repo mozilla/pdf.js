@@ -57,7 +57,8 @@ var pdfURL = '../../../web/compressed.tracemonkey-pldi-09.pdf';
 var rawData = new Uint8Array(fs.readFileSync(pdfURL));
 
 // Load the PDF file.
-pdfjsLib.getDocument(rawData).then(function (pdfDocument) {
+var loadingTask = pdfjsLib.getDocument(rawData);
+loadingTask.promise.then(function(pdfDocument) {
   console.log('# PDF document loaded.');
 
   // Get the first page.
