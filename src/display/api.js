@@ -1002,21 +1002,25 @@ class PDFPageProxy {
       stats.timeEnd('Overall');
     };
 
-    const internalRenderTask = new InternalRenderTask(complete, {
-                                                        canvasContext,
-                                                        viewport,
-                                                        transform,
-                                                        imageLayer,
-                                                        background,
-                                                      },
-                                                      this.objs,
-                                                      this.commonObjs,
-                                                      intentState.operatorList,
-                                                      this.pageNumber,
-                                                      canvasFactoryInstance,
-                                                      webGLContext,
-                                                      this._pdfBug);
-    internalRenderTask.useRequestAnimationFrame = renderingIntent !== 'print';
+    const internalRenderTask = new InternalRenderTask({
+      callback: complete,
+      params: { // Include the required properties, and *not* the entire object.
+        canvasContext,
+        viewport,
+        transform,
+        imageLayer,
+        background,
+      },
+      objs: this.objs,
+      commonObjs: this.commonObjs,
+      operatorList: intentState.operatorList,
+      pageNumber: this.pageNumber,
+      canvasFactory: canvasFactoryInstance,
+      webGLContext,
+      useRequestAnimationFrame: renderingIntent !== 'print',
+      pdfBug: this._pdfBug,
+    });
+
     if (!intentState.renderTasks) {
       intentState.renderTasks = [];
     }
@@ -2340,40 +2344,40 @@ class RenderTask {
  * For internal use only.
  * @ignore
  */
-var InternalRenderTask = (function InternalRenderTaskClosure() {
-  let canvasInRendering = new WeakSet();
+const InternalRenderTask = (function InternalRenderTaskClosure() {
+  const canvasInRendering = new WeakSet();
 
-  function InternalRenderTask(callback, params, objs, commonObjs, operatorList,
-                              pageNumber, canvasFactory, webGLContext,
-                              pdfBug = false) {
-    this.callback = callback;
-    this.params = params;
-    this.objs = objs;
-    this.commonObjs = commonObjs;
-    this.operatorListIdx = null;
-    this.operatorList = operatorList;
-    this.pageNumber = pageNumber;
-    this.canvasFactory = canvasFactory;
-    this.webGLContext = webGLContext;
-    this._pdfBug = pdfBug;
+  class InternalRenderTask {
+    constructor({ callback, params, objs, commonObjs, operatorList, pageNumber,
+                  canvasFactory, webGLContext, useRequestAnimationFrame = false,
+                  pdfBug = false, }) {
+      this.callback = callback;
+      this.params = params;
+      this.objs = objs;
+      this.commonObjs = commonObjs;
+      this.operatorListIdx = null;
+      this.operatorList = operatorList;
+      this.pageNumber = pageNumber;
+      this.canvasFactory = canvasFactory;
+      this.webGLContext = webGLContext;
+      this._pdfBug = pdfBug;
 
-    this.running = false;
-    this.graphicsReadyCallback = null;
-    this.graphicsReady = false;
-    this.useRequestAnimationFrame = false;
-    this.cancelled = false;
-    this.capability = createPromiseCapability();
-    this.task = new RenderTask(this);
-    // caching this-bound methods
-    this._continueBound = this._continue.bind(this);
-    this._scheduleNextBound = this._scheduleNext.bind(this);
-    this._nextBound = this._next.bind(this);
-    this._canvas = params.canvasContext.canvas;
-  }
+      this.running = false;
+      this.graphicsReadyCallback = null;
+      this.graphicsReady = false;
+      this._useRequestAnimationFrame = (useRequestAnimationFrame === true &&
+                                        typeof window !== 'undefined');
+      this.cancelled = false;
+      this.capability = createPromiseCapability();
+      this.task = new RenderTask(this);
+      // caching this-bound methods
+      this._continueBound = this._continue.bind(this);
+      this._scheduleNextBound = this._scheduleNext.bind(this);
+      this._nextBound = this._next.bind(this);
+      this._canvas = params.canvasContext.canvas;
+    }
 
-  InternalRenderTask.prototype = {
-
-    initializeGraphics(transparency) {
+    initializeGraphics(transparency = false) {
       if (this.cancelled) {
         return;
       }
@@ -2393,26 +2397,27 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
         this.stepper.init(this.operatorList);
         this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
       }
+      const {
+        canvasContext, viewport, transform, imageLayer, background,
+      } = this.params;
 
-      var params = this.params;
-      this.gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
-                                    this.objs, this.canvasFactory,
-                                    this.webGLContext, params.imageLayer);
-
+      this.gfx = new CanvasGraphics(canvasContext, this.commonObjs, this.objs,
+                                    this.canvasFactory, this.webGLContext,
+                                    imageLayer);
       this.gfx.beginDrawing({
-        transform: params.transform,
-        viewport: params.viewport,
+        transform,
+        viewport,
         transparency,
-        background: params.background,
+        background,
       });
       this.operatorListIdx = 0;
       this.graphicsReady = true;
       if (this.graphicsReadyCallback) {
         this.graphicsReadyCallback();
       }
-    },
+    }
 
-    cancel: function InternalRenderTask_cancel() {
+    cancel() {
       this.running = false;
       this.cancelled = true;
       if (this.gfx) {
@@ -2423,9 +2428,9 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       }
       this.callback(new RenderingCancelledException(
         'Rendering cancelled, page ' + this.pageNumber, 'canvas'));
-    },
+    }
 
-    operatorListChanged: function InternalRenderTask_operatorListChanged() {
+    operatorListChanged() {
       if (!this.graphicsReady) {
         if (!this.graphicsReadyCallback) {
           this.graphicsReadyCallback = this._continueBound;
@@ -2441,9 +2446,9 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
         return;
       }
       this._continue();
-    },
+    }
 
-    _continue: function InternalRenderTask__continue() {
+    _continue() {
       this.running = true;
       if (this.cancelled) {
         return;
@@ -2453,42 +2458,38 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       } else {
         this._scheduleNext();
       }
-    },
+    }
 
-    _scheduleNext: function InternalRenderTask__scheduleNext() {
-      if (this.useRequestAnimationFrame && typeof window !== 'undefined') {
+    _scheduleNext() {
+      if (this._useRequestAnimationFrame) {
         window.requestAnimationFrame(() => {
           this._nextBound().catch(this.callback);
         });
       } else {
         Promise.resolve().then(this._nextBound).catch(this.callback);
       }
-    },
+    }
 
-    _next: function InternalRenderTask__next() {
-      return new Promise(() => {
-        if (this.cancelled) {
-          return;
-        }
-        this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
-                                          this.operatorListIdx,
-                                          this._continueBound,
-                                          this.stepper);
-        if (this.operatorListIdx === this.operatorList.argsArray.length) {
-          this.running = false;
-          if (this.operatorList.lastChunk) {
-            this.gfx.endDrawing();
-            if (this._canvas) {
-              canvasInRendering.delete(this._canvas);
-            }
-            this.callback();
+    async _next() {
+      if (this.cancelled) {
+        return;
+      }
+      this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
+                                                          this.operatorListIdx,
+                                                          this._continueBound,
+                                                          this.stepper);
+      if (this.operatorListIdx === this.operatorList.argsArray.length) {
+        this.running = false;
+        if (this.operatorList.lastChunk) {
+          this.gfx.endDrawing();
+          if (this._canvas) {
+            canvasInRendering.delete(this._canvas);
           }
+          this.callback();
         }
-      });
-    },
-
-  };
-
+      }
+    }
+  }
   return InternalRenderTask;
 })();
 
