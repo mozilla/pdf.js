@@ -117,7 +117,8 @@
   /**
    * Asynchronously downloads PDF.
    */
-  pdfjsLib.getDocument(url).then(function (pdfDoc_) {
+  var loadingTask = pdfjsLib.getDocument(url);
+  loadingTask.promise.then(function(pdfDoc_) {
     pdfDoc = pdfDoc_;
     document.getElementById('page_count').textContent = pdfDoc.numPages;
 
