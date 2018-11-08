@@ -850,385 +850,395 @@ class PDFDocumentProxy {
 
 /**
  * Proxy to a PDFPage in the worker thread.
- * @class
  * @alias PDFPageProxy
  */
-var PDFPageProxy = (function PDFPageProxyClosure() {
-  function PDFPageProxy(pageIndex, pageInfo, transport, pdfBug = false) {
+class PDFPageProxy {
+  constructor(pageIndex, pageInfo, transport, pdfBug = false) {
     this.pageIndex = pageIndex;
     this._pageInfo = pageInfo;
-    this.transport = transport;
+    this._transport = transport;
     this._stats = (pdfBug ? new StatTimer() : DummyStatTimer);
     this._pdfBug = pdfBug;
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
+
     this.cleanupAfterRender = false;
     this.pendingCleanup = false;
     this.intentStates = Object.create(null);
     this.destroyed = false;
   }
-  PDFPageProxy.prototype = /** @lends PDFPageProxy.prototype */ {
-    /**
-     * @return {number} Page number of the page. First page is 1.
-     */
-    get pageNumber() {
-      return this.pageIndex + 1;
-    },
-    /**
-     * @return {number} The number of degrees the page is rotated clockwise.
-     */
-    get rotate() {
-      return this._pageInfo.rotate;
-    },
-    /**
-     * @return {Object} The reference that points to this page. It has 'num' and
-     * 'gen' properties.
-     */
-    get ref() {
-      return this._pageInfo.ref;
-    },
-    /**
-     * @return {number} The default size of units in 1/72nds of an inch.
-     */
-    get userUnit() {
-      return this._pageInfo.userUnit;
-    },
-    /**
-     * @return {Array} An array of the visible portion of the PDF page in the
-     * user space units - [x1, y1, x2, y2].
-     */
-    get view() {
-      return this._pageInfo.view;
-    },
 
-    /**
-     * @param {number} scale The desired scale of the viewport.
-     * @param {number} rotate Degrees to rotate the viewport. If omitted this
-     * defaults to the page rotation.
-     * @param {boolean} dontFlip (optional) If true, axis Y will not be flipped.
-     * @return {PageViewport} Contains 'width' and 'height' properties
-     * along with transforms required for rendering.
-     */
-    getViewport(scale, rotate = this.rotate, dontFlip = false) {
-      return new PageViewport({
-        viewBox: this.view,
-        scale,
-        rotation: rotate,
-        dontFlip,
-      });
-    },
-    /**
-     * @param {GetAnnotationsParameters} params - Annotation parameters.
-     * @return {Promise} A promise that is resolved with an {Array} of the
-     * annotation objects.
-     */
-    getAnnotations: function PDFPageProxy_getAnnotations(params) {
-      var intent = (params && params.intent) || null;
+  /**
+   * @return {number} Page number of the page. First page is 1.
+   */
+  get pageNumber() {
+    return this.pageIndex + 1;
+  }
 
-      if (!this.annotationsPromise || this.annotationsIntent !== intent) {
-        this.annotationsPromise = this.transport.getAnnotations(this.pageIndex,
-                                                                intent);
-        this.annotationsIntent = intent;
-      }
-      return this.annotationsPromise;
-    },
-    /**
-     * Begins the process of rendering a page to the desired context.
-     * @param {RenderParameters} params Page render parameters.
-     * @return {RenderTask} An object that contains the promise, which
-     *                      is resolved when the page finishes rendering.
-     */
-    render: function PDFPageProxy_render(params) {
-      let stats = this._stats;
-      stats.time('Overall');
+  /**
+   * @return {number} The number of degrees the page is rotated clockwise.
+   */
+  get rotate() {
+    return this._pageInfo.rotate;
+  }
 
-      // If there was a pending destroy cancel it so no cleanup happens during
-      // this call to render.
-      this.pendingCleanup = false;
+  /**
+   * @return {Object} The reference that points to this page. It has 'num' and
+   * 'gen' properties.
+   */
+  get ref() {
+    return this._pageInfo.ref;
+  }
 
-      var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
-      var canvasFactory = params.canvasFactory || new DOMCanvasFactory();
-      let webGLContext = new WebGLContext({
-        enable: params.enableWebGL,
-      });
+  /**
+   * @return {number} The default size of units in 1/72nds of an inch.
+   */
+  get userUnit() {
+    return this._pageInfo.userUnit;
+  }
 
-      if (!this.intentStates[renderingIntent]) {
-        this.intentStates[renderingIntent] = Object.create(null);
-      }
-      var intentState = this.intentStates[renderingIntent];
+  /**
+   * @return {Array} An array of the visible portion of the PDF page in the
+   * user space units - [x1, y1, x2, y2].
+   */
+  get view() {
+    return this._pageInfo.view;
+  }
 
-      // If there's no displayReadyCapability yet, then the operatorList
-      // was never requested before. Make the request and create the promise.
-      if (!intentState.displayReadyCapability) {
-        intentState.receivingOperatorList = true;
-        intentState.displayReadyCapability = createPromiseCapability();
-        intentState.operatorList = {
-          fnArray: [],
-          argsArray: [],
-          lastChunk: false,
-        };
+  /**
+   * @param {number} scale The desired scale of the viewport.
+   * @param {number} rotate Degrees to rotate the viewport. If omitted this
+   * defaults to the page rotation.
+   * @param {boolean} dontFlip (optional) If true, axis Y will not be flipped.
+   * @return {PageViewport} Contains 'width' and 'height' properties
+   * along with transforms required for rendering.
+   */
+  getViewport(scale, rotate = this.rotate, dontFlip = false) {
+    return new PageViewport({
+      viewBox: this.view,
+      scale,
+      rotation: rotate,
+      dontFlip,
+    });
+  }
 
-        stats.time('Page Request');
-        this.transport.messageHandler.send('RenderPageRequest', {
-          pageIndex: this.pageNumber - 1,
-          intent: renderingIntent,
-          renderInteractiveForms: (params.renderInteractiveForms === true),
-        });
-      }
+  /**
+   * @param {GetAnnotationsParameters} params - Annotation parameters.
+   * @return {Promise} A promise that is resolved with an {Array} of the
+   * annotation objects.
+   */
+  getAnnotations({ intent = null, } = {}) {
+    if (!this.annotationsPromise || this.annotationsIntent !== intent) {
+      this.annotationsPromise = this._transport.getAnnotations(this.pageIndex,
+                                                               intent);
+      this.annotationsIntent = intent;
+    }
+    return this.annotationsPromise;
+  }
 
-      var complete = (error) => {
-        var i = intentState.renderTasks.indexOf(internalRenderTask);
-        if (i >= 0) {
-          intentState.renderTasks.splice(i, 1);
-        }
+  /**
+   * Begins the process of rendering a page to the desired context.
+   * @param {RenderParameters} params Page render parameters.
+   * @return {RenderTask} An object that contains the promise, which
+   *                      is resolved when the page finishes rendering.
+   */
+  render({ canvasContext, viewport, intent = 'display', enableWebGL = false,
+           renderInteractiveForms = false, transform = null, imageLayer = null,
+           canvasFactory = null, background = null, }) {
+    const stats = this._stats;
+    stats.time('Overall');
 
-        if (this.cleanupAfterRender) {
-          this.pendingCleanup = true;
-        }
-        this._tryCleanup();
+    // If there was a pending destroy cancel it so no cleanup happens during
+    // this call to render.
+    this.pendingCleanup = false;
 
-        if (error) {
-          internalRenderTask.capability.reject(error);
-        } else {
-          internalRenderTask.capability.resolve();
-        }
-        stats.timeEnd('Rendering');
-        stats.timeEnd('Overall');
+    const renderingIntent = (intent === 'print' ? 'print' : 'display');
+    const canvasFactoryInstance = canvasFactory || new DOMCanvasFactory();
+    const webGLContext = new WebGLContext({
+      enable: enableWebGL,
+    });
+
+    if (!this.intentStates[renderingIntent]) {
+      this.intentStates[renderingIntent] = Object.create(null);
+    }
+    const intentState = this.intentStates[renderingIntent];
+
+    // If there's no displayReadyCapability yet, then the operatorList
+    // was never requested before. Make the request and create the promise.
+    if (!intentState.displayReadyCapability) {
+      intentState.receivingOperatorList = true;
+      intentState.displayReadyCapability = createPromiseCapability();
+      intentState.operatorList = {
+        fnArray: [],
+        argsArray: [],
+        lastChunk: false,
       };
 
-      var internalRenderTask = new InternalRenderTask(complete, params,
+      stats.time('Page Request');
+      this._transport.messageHandler.send('RenderPageRequest', {
+        pageIndex: this.pageNumber - 1,
+        intent: renderingIntent,
+        renderInteractiveForms: renderInteractiveForms === true,
+      });
+    }
+
+    const complete = (error) => {
+      const i = intentState.renderTasks.indexOf(internalRenderTask);
+      if (i >= 0) {
+        intentState.renderTasks.splice(i, 1);
+      }
+
+      if (this.cleanupAfterRender) {
+        this.pendingCleanup = true;
+      }
+      this._tryCleanup();
+
+      if (error) {
+        internalRenderTask.capability.reject(error);
+      } else {
+        internalRenderTask.capability.resolve();
+      }
+      stats.timeEnd('Rendering');
+      stats.timeEnd('Overall');
+    };
+
+    const internalRenderTask = new InternalRenderTask(complete, {
+                                                        canvasContext,
+                                                        viewport,
+                                                        transform,
+                                                        imageLayer,
+                                                        background,
+                                                      },
                                                       this.objs,
                                                       this.commonObjs,
                                                       intentState.operatorList,
                                                       this.pageNumber,
-                                                      canvasFactory,
+                                                      canvasFactoryInstance,
                                                       webGLContext,
                                                       this._pdfBug);
-      internalRenderTask.useRequestAnimationFrame = renderingIntent !== 'print';
-      if (!intentState.renderTasks) {
-        intentState.renderTasks = [];
-      }
-      intentState.renderTasks.push(internalRenderTask);
-      var renderTask = internalRenderTask.task;
+    internalRenderTask.useRequestAnimationFrame = renderingIntent !== 'print';
+    if (!intentState.renderTasks) {
+      intentState.renderTasks = [];
+    }
+    intentState.renderTasks.push(internalRenderTask);
+    const renderTask = internalRenderTask.task;
 
-      intentState.displayReadyCapability.promise.then((transparency) => {
-        if (this.pendingCleanup) {
-          complete();
-          return;
-        }
-        stats.time('Rendering');
-        internalRenderTask.initializeGraphics(transparency);
-        internalRenderTask.operatorListChanged();
-      }).catch(complete);
-
-      return renderTask;
-    },
-
-    /**
-     * @return {Promise} A promise resolved with an {@link PDFOperatorList}
-     *   object that represents page's operator list.
-     */
-    getOperatorList: function PDFPageProxy_getOperatorList() {
-      function operatorListChanged() {
-        if (intentState.operatorList.lastChunk) {
-          intentState.opListReadCapability.resolve(intentState.operatorList);
-
-          var i = intentState.renderTasks.indexOf(opListTask);
-          if (i >= 0) {
-            intentState.renderTasks.splice(i, 1);
-          }
-        }
-      }
-
-      var renderingIntent = 'oplist';
-      if (!this.intentStates[renderingIntent]) {
-        this.intentStates[renderingIntent] = Object.create(null);
-      }
-      var intentState = this.intentStates[renderingIntent];
-      var opListTask;
-
-      if (!intentState.opListReadCapability) {
-        opListTask = {};
-        opListTask.operatorListChanged = operatorListChanged;
-        intentState.receivingOperatorList = true;
-        intentState.opListReadCapability = createPromiseCapability();
-        intentState.renderTasks = [];
-        intentState.renderTasks.push(opListTask);
-        intentState.operatorList = {
-          fnArray: [],
-          argsArray: [],
-          lastChunk: false,
-        };
-
-        this._stats.time('Page Request');
-        this.transport.messageHandler.send('RenderPageRequest', {
-          pageIndex: this.pageIndex,
-          intent: renderingIntent,
-        });
-      }
-      return intentState.opListReadCapability.promise;
-    },
-
-    /**
-     * @param {getTextContentParameters} params - getTextContent parameters.
-     * @return {ReadableStream} ReadableStream to read textContent chunks.
-     */
-    streamTextContent(params = {}) {
-      const TEXT_CONTENT_CHUNK_SIZE = 100;
-      return this.transport.messageHandler.sendWithStream('GetTextContent', {
-        pageIndex: this.pageNumber - 1,
-        normalizeWhitespace: (params.normalizeWhitespace === true),
-        combineTextItems: (params.disableCombineTextItems !== true),
-      }, {
-        highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
-        size(textContent) {
-          return textContent.items.length;
-        },
-      });
-    },
-
-    /**
-     * @param {getTextContentParameters} params - getTextContent parameters.
-     * @return {Promise} That is resolved a {@link TextContent}
-     * object that represent the page text content.
-     */
-    getTextContent: function PDFPageProxy_getTextContent(params) {
-      params = params || {};
-      let readableStream = this.streamTextContent(params);
-
-      return new Promise(function(resolve, reject) {
-        function pump() {
-          reader.read().then(function({ value, done, }) {
-            if (done) {
-              resolve(textContent);
-              return;
-            }
-            Object.assign(textContent.styles, value.styles);
-            textContent.items.push(...value.items);
-            pump();
-          }, reject);
-        }
-
-        let reader = readableStream.getReader();
-        let textContent = {
-          items: [],
-          styles: Object.create(null),
-        };
-
-        pump();
-      });
-    },
-
-    /**
-     * Destroys page object.
-     */
-    _destroy: function PDFPageProxy_destroy() {
-      this.destroyed = true;
-      this.transport.pageCache[this.pageIndex] = null;
-
-      var waitOn = [];
-      Object.keys(this.intentStates).forEach(function(intent) {
-        if (intent === 'oplist') {
-          // Avoid errors below, since the renderTasks are just stubs.
-          return;
-        }
-        var intentState = this.intentStates[intent];
-        intentState.renderTasks.forEach(function(renderTask) {
-          var renderCompleted = renderTask.capability.promise.
-            catch(function () {}); // ignoring failures
-          waitOn.push(renderCompleted);
-          renderTask.cancel();
-        });
-      }, this);
-      this.objs.clear();
-      this.annotationsPromise = null;
-      this.pendingCleanup = false;
-      return Promise.all(waitOn);
-    },
-
-    /**
-     * Cleans up resources allocated by the page.
-     * @param {boolean} resetStats - (optional) Reset page stats, if enabled.
-     *   The default value is `false`.
-     */
-    cleanup(resetStats = false) {
-      this.pendingCleanup = true;
-      this._tryCleanup(resetStats);
-    },
-    /**
-     * For internal use only. Attempts to clean up if rendering is in a state
-     * where that's possible.
-     * @ignore
-     */
-    _tryCleanup(resetStats = false) {
-      if (!this.pendingCleanup ||
-          Object.keys(this.intentStates).some(function(intent) {
-            var intentState = this.intentStates[intent];
-            return (intentState.renderTasks.length !== 0 ||
-                    intentState.receivingOperatorList);
-          }, this)) {
+    intentState.displayReadyCapability.promise.then((transparency) => {
+      if (this.pendingCleanup) {
+        complete();
         return;
       }
+      stats.time('Rendering');
+      internalRenderTask.initializeGraphics(transparency);
+      internalRenderTask.operatorListChanged();
+    }).catch(complete);
 
-      Object.keys(this.intentStates).forEach(function(intent) {
-        delete this.intentStates[intent];
-      }, this);
-      this.objs.clear();
-      this.annotationsPromise = null;
-      if (resetStats && this._stats instanceof StatTimer) {
-        this._stats = new StatTimer();
-      }
-      this.pendingCleanup = false;
-    },
-    /**
-     * For internal use only.
-     * @ignore
-     */
-    _startRenderPage: function PDFPageProxy_startRenderPage(transparency,
-                                                            intent) {
-      var intentState = this.intentStates[intent];
-      // TODO Refactor RenderPageRequest to separate rendering
-      // and operator list logic
-      if (intentState.displayReadyCapability) {
-        intentState.displayReadyCapability.resolve(transparency);
-      }
-    },
-    /**
-     * For internal use only.
-     * @ignore
-     */
-    _renderPageChunk: function PDFPageProxy_renderPageChunk(operatorListChunk,
-                                                            intent) {
-      var intentState = this.intentStates[intent];
-      var i, ii;
-      // Add the new chunk to the current operator list.
-      for (i = 0, ii = operatorListChunk.length; i < ii; i++) {
-        intentState.operatorList.fnArray.push(operatorListChunk.fnArray[i]);
-        intentState.operatorList.argsArray.push(
-          operatorListChunk.argsArray[i]);
-      }
-      intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
+    return renderTask;
+  }
 
-      // Notify all the rendering tasks there are more operators to be consumed.
-      for (i = 0; i < intentState.renderTasks.length; i++) {
-        intentState.renderTasks[i].operatorListChanged();
+  /**
+   * @return {Promise} A promise resolved with an {@link PDFOperatorList}
+   *   object that represents page's operator list.
+   */
+  getOperatorList() {
+    function operatorListChanged() {
+      if (intentState.operatorList.lastChunk) {
+        intentState.opListReadCapability.resolve(intentState.operatorList);
+
+        const i = intentState.renderTasks.indexOf(opListTask);
+        if (i >= 0) {
+          intentState.renderTasks.splice(i, 1);
+        }
+      }
+    }
+
+    const renderingIntent = 'oplist';
+    if (!this.intentStates[renderingIntent]) {
+      this.intentStates[renderingIntent] = Object.create(null);
+    }
+    const intentState = this.intentStates[renderingIntent];
+    let opListTask;
+
+    if (!intentState.opListReadCapability) {
+      opListTask = {};
+      opListTask.operatorListChanged = operatorListChanged;
+      intentState.receivingOperatorList = true;
+      intentState.opListReadCapability = createPromiseCapability();
+      intentState.renderTasks = [];
+      intentState.renderTasks.push(opListTask);
+      intentState.operatorList = {
+        fnArray: [],
+        argsArray: [],
+        lastChunk: false,
+      };
+
+      this._stats.time('Page Request');
+      this._transport.messageHandler.send('RenderPageRequest', {
+        pageIndex: this.pageIndex,
+        intent: renderingIntent,
+      });
+    }
+    return intentState.opListReadCapability.promise;
+  }
+
+  /**
+   * @param {getTextContentParameters} params - getTextContent parameters.
+   * @return {ReadableStream} ReadableStream to read textContent chunks.
+   */
+  streamTextContent({ normalizeWhitespace = false,
+                      disableCombineTextItems = false, } = {}) {
+    const TEXT_CONTENT_CHUNK_SIZE = 100;
+
+    return this._transport.messageHandler.sendWithStream('GetTextContent', {
+      pageIndex: this.pageNumber - 1,
+      normalizeWhitespace: normalizeWhitespace === true,
+      combineTextItems: disableCombineTextItems !== true,
+    }, {
+      highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
+      size(textContent) {
+        return textContent.items.length;
+      },
+    });
+  }
+
+  /**
+   * @param {getTextContentParameters} params - getTextContent parameters.
+   * @return {Promise} That is resolved a {@link TextContent}
+   * object that represent the page text content.
+   */
+  getTextContent(params = {}) {
+    const readableStream = this.streamTextContent(params);
+
+    return new Promise(function(resolve, reject) {
+      function pump() {
+        reader.read().then(function({ value, done, }) {
+          if (done) {
+            resolve(textContent);
+            return;
+          }
+          Object.assign(textContent.styles, value.styles);
+          textContent.items.push(...value.items);
+          pump();
+        }, reject);
       }
 
-      if (operatorListChunk.lastChunk) {
-        intentState.receivingOperatorList = false;
-        this._tryCleanup();
-      }
-    },
+      const reader = readableStream.getReader();
+      const textContent = {
+        items: [],
+        styles: Object.create(null),
+      };
+      pump();
+    });
+  }
 
-    /**
-     * @return {Object} Returns page stats, if enabled.
-     */
-    get stats() {
-      return (this._stats instanceof StatTimer ? this._stats : null);
-    },
-  };
-  return PDFPageProxy;
-})();
+  /**
+   * Destroys page object.
+   */
+  _destroy() {
+    this.destroyed = true;
+    this._transport.pageCache[this.pageIndex] = null;
+
+    const waitOn = [];
+    Object.keys(this.intentStates).forEach(function(intent) {
+      if (intent === 'oplist') {
+        // Avoid errors below, since the renderTasks are just stubs.
+        return;
+      }
+      const intentState = this.intentStates[intent];
+      intentState.renderTasks.forEach(function(renderTask) {
+        const renderCompleted = renderTask.capability.promise.
+          catch(function() {}); // ignoring failures
+        waitOn.push(renderCompleted);
+        renderTask.cancel();
+      });
+    }, this);
+    this.objs.clear();
+    this.annotationsPromise = null;
+    this.pendingCleanup = false;
+    return Promise.all(waitOn);
+  }
+
+  /**
+   * Cleans up resources allocated by the page.
+   * @param {boolean} resetStats - (optional) Reset page stats, if enabled.
+   *   The default value is `false`.
+   */
+  cleanup(resetStats = false) {
+    this.pendingCleanup = true;
+    this._tryCleanup(resetStats);
+  }
+
+  /**
+   * For internal use only. Attempts to clean up if rendering is in a state
+   * where that's possible.
+   * @ignore
+   */
+  _tryCleanup(resetStats = false) {
+    if (!this.pendingCleanup ||
+        Object.keys(this.intentStates).some(function(intent) {
+          const intentState = this.intentStates[intent];
+          return (intentState.renderTasks.length !== 0 ||
+                  intentState.receivingOperatorList);
+        }, this)) {
+      return;
+    }
+
+    Object.keys(this.intentStates).forEach(function(intent) {
+      delete this.intentStates[intent];
+    }, this);
+    this.objs.clear();
+    this.annotationsPromise = null;
+    if (resetStats && this._stats instanceof StatTimer) {
+      this._stats = new StatTimer();
+    }
+    this.pendingCleanup = false;
+  }
+
+  /**
+   * For internal use only.
+   * @ignore
+   */
+  _startRenderPage(transparency, intent) {
+    const intentState = this.intentStates[intent];
+    // TODO Refactor RenderPageRequest to separate rendering
+    // and operator list logic
+    if (intentState.displayReadyCapability) {
+      intentState.displayReadyCapability.resolve(transparency);
+    }
+  }
+
+  /**
+   * For internal use only.
+   * @ignore
+   */
+  _renderPageChunk(operatorListChunk, intent) {
+    const intentState = this.intentStates[intent];
+    // Add the new chunk to the current operator list.
+    for (let i = 0, ii = operatorListChunk.length; i < ii; i++) {
+      intentState.operatorList.fnArray.push(operatorListChunk.fnArray[i]);
+      intentState.operatorList.argsArray.push(
+        operatorListChunk.argsArray[i]);
+    }
+    intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
+
+    // Notify all the rendering tasks there are more operators to be consumed.
+    for (let i = 0; i < intentState.renderTasks.length; i++) {
+      intentState.renderTasks[i].operatorListChanged();
+    }
+
+    if (operatorListChunk.lastChunk) {
+      intentState.receivingOperatorList = false;
+      this._tryCleanup();
+    }
+  }
+
+  /**
+   * @return {Object} Returns page stats, if enabled.
+   */
+  get stats() {
+    return (this._stats instanceof StatTimer ? this._stats : null);
+  }
+}
 
 class LoopbackPort {
   constructor(defer = true) {
