@@ -660,23 +660,21 @@ class BaseViewer {
    * Scrolls page into view.
    * @param {ScrollPageIntoViewParameters} params
    */
-  scrollPageIntoView(params) {
+  scrollPageIntoView({ pageNumber, destArray = null,
+                       allowNegativeOffset = false, }) {
     if (!this.pdfDocument) {
       return;
     }
-    let pageNumber = params.pageNumber || 0;
-    let dest = params.destArray || null;
-    let allowNegativeOffset = params.allowNegativeOffset || false;
-
-    if (this.isInPresentationMode || !dest) {
-      this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
-      return;
-    }
-
-    let pageView = this._pages[pageNumber - 1];
+    const pageView = (Number.isInteger(pageNumber) &&
+                      this._pages[pageNumber - 1]);
     if (!pageView) {
       console.error(
         `${this._name}.scrollPageIntoView: Invalid "pageNumber" parameter.`);
+      return;
+    }
+
+    if (this.isInPresentationMode || !destArray) {
+      this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
       return;
     }
     let x = 0, y = 0;
@@ -687,11 +685,11 @@ class BaseViewer {
     let pageHeight = (changeOrientation ? pageView.width : pageView.height) /
       pageView.scale / CSS_UNITS;
     let scale = 0;
-    switch (dest[1].name) {
+    switch (destArray[1].name) {
       case 'XYZ':
-        x = dest[2];
-        y = dest[3];
-        scale = dest[4];
+        x = destArray[2];
+        y = destArray[3];
+        scale = destArray[4];
         // If x and/or y coordinates are not supplied, default to
         // _top_ left of the page (not the obvious bottom left,
         // since aligning the bottom of the intended page with the
@@ -705,7 +703,7 @@ class BaseViewer {
         break;
       case 'FitH':
       case 'FitBH':
-        y = dest[2];
+        y = destArray[2];
         scale = 'page-width';
         // According to the PDF spec, section 12.3.2.2, a `null` value in the
         // parameter should maintain the position relative to the new page.
@@ -716,16 +714,16 @@ class BaseViewer {
         break;
       case 'FitV':
       case 'FitBV':
-        x = dest[2];
+        x = destArray[2];
         width = pageWidth;
         height = pageHeight;
         scale = 'page-height';
         break;
       case 'FitR':
-        x = dest[2];
-        y = dest[3];
-        width = dest[4] - x;
-        height = dest[5] - y;
+        x = destArray[2];
+        y = destArray[3];
+        width = destArray[4] - x;
+        height = destArray[5] - y;
         let hPadding = this.removePageBorders ? 0 : SCROLLBAR_PADDING;
         let vPadding = this.removePageBorders ? 0 : VERTICAL_PADDING;
 
@@ -736,8 +734,8 @@ class BaseViewer {
         scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
         break;
       default:
-        console.error(`${this._name}.scrollPageIntoView: "${dest[1].name}" ` +
-                      'is not a valid destination type.');
+        console.error(`${this._name}.scrollPageIntoView: ` +
+          `"${destArray[1].name}" is not a valid destination type.`);
         return;
     }
 
@@ -747,7 +745,7 @@ class BaseViewer {
       this.currentScaleValue = DEFAULT_SCALE_VALUE;
     }
 
-    if (scale === 'page-fit' && !dest[4]) {
+    if (scale === 'page-fit' && !destArray[4]) {
       this._scrollIntoView({
         pageDiv: pageView.div,
         pageNumber,
