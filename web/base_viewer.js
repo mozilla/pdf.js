@@ -1086,7 +1086,7 @@ class BaseViewer {
     if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
       this._setScale(this._currentScaleValue, true);
     }
-    this.scrollPageIntoView({ pageNumber, });
+    this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
   }
 
@@ -1146,7 +1146,7 @@ class BaseViewer {
     if (!pageNumber) {
       return;
     }
-    this.scrollPageIntoView({ pageNumber, });
+    this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
   }
 }
