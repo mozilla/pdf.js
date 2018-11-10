@@ -122,7 +122,9 @@ class PDFFindController {
       this._dirtyMatch = true;
     }
     this._state = state;
-    this._updateUIState(FindState.PENDING);
+    if (cmd !== 'findhighlightallchange') {
+      this._updateUIState(FindState.PENDING);
+    }
 
     this._firstPageCapability.promise.then(() => {
       // If the document was closed before searching began, or if the search
@@ -134,6 +136,7 @@ class PDFFindController {
       this._extractText();
 
       const findbarClosed = !this._highlightMatches;
+      const pendingTimeout = !!this._findTimeout;
 
       if (this._findTimeout) {
         clearTimeout(this._findTimeout);
@@ -158,6 +161,15 @@ class PDFFindController {
         if (findbarClosed && this._state.highlightAll) {
           this._updateAllPages();
         }
+      } else if (cmd === 'findhighlightallchange') {
+        // If there was a pending search operation, synchronously trigger a new
+        // search *first* to ensure that the correct matches are highlighted.
+        if (pendingTimeout) {
+          this._nextMatch();
+        } else {
+          this._highlightMatches = true;
+        }
+        this._updateAllPages(); // Update the highlighting on all active pages.
       } else {
         this._nextMatch();
       }
@@ -244,6 +256,8 @@ class PDFFindController {
             !linkService.isPageVisible(pageNumber)) {
           break;
         }
+        return false;
+      case 'findhighlightallchange':
         return false;
     }
     return true;
