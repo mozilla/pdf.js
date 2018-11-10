@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { getGlobalEventBus, scrollIntoView } from './ui_utils';
 import { createPromiseCapability } from 'pdfjs-lib';
 import { getCharacterType } from './pdf_find_utils';
-import { getGlobalEventBus } from './ui_utils';
 
 const FindState = {
   FOUND: 0,
@@ -25,6 +25,8 @@ const FindState = {
 };
 
 const FIND_TIMEOUT = 250; // ms
+const MATCH_SCROLL_OFFSET_TOP = -50; // px
+const MATCH_SCROLL_OFFSET_LEFT = -400; // px
 
 const CHARACTERS_TO_NORMALIZE = {
   '\u2018': '\'', // Left single quotation mark
@@ -162,8 +164,26 @@ class PDFFindController {
     });
   }
 
+  scrollMatchIntoView({ element = null, pageIndex = -1, matchIndex = -1, }) {
+    if (!this._scrollMatches || !element) {
+      return;
+    } else if (matchIndex === -1 || matchIndex !== this._selected.matchIdx) {
+      return;
+    } else if (pageIndex === -1 || pageIndex !== this._selected.pageIdx) {
+      return;
+    }
+    this._scrollMatches = false; // Ensure that scrolling only happens once.
+
+    const spot = {
+      top: MATCH_SCROLL_OFFSET_TOP,
+      left: MATCH_SCROLL_OFFSET_LEFT,
+    };
+    scrollIntoView(element, spot, /* skipOverflowHiddenElements = */ true);
+  }
+
   _reset() {
     this._highlightMatches = false;
+    this._scrollMatches = false;
     this._pdfDocument = null;
     this._pageMatches = [];
     this._pageMatchesLength = [];
@@ -436,10 +456,10 @@ class PDFFindController {
   }
 
   _updatePage(index) {
-    if (this._selected.pageIdx === index) {
+    if (this._scrollMatches && this._selected.pageIdx === index) {
       // If the page is selected, scroll the page into view, which triggers
       // rendering the page, which adds the text layer. Once the text layer
-      // is built, it will scroll to the selected match.
+      // is built, it will attempt to scroll the selected match into view.
       this._linkService.page = index + 1;
     }
 
@@ -495,7 +515,6 @@ class PDFFindController {
       this._updateUIState(FindState.FOUND);
       return;
     }
-
     // If we're waiting on a page, we return since we can't do anything else.
     if (this._resumePageIdx) {
       return;
@@ -603,6 +622,9 @@ class PDFFindController {
 
     this._updateUIState(state, this._state.findPrevious);
     if (this._selected.pageIdx !== -1) {
+      // Ensure that the match will be scrolled into view.
+      this._scrollMatches = true;
+
       this._updatePage(this._selected.pageIdx);
     }
   }
