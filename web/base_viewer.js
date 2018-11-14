@@ -212,10 +212,14 @@ class BaseViewer {
       return;
     }
     // The intent can be to just reset a scroll position and/or scale.
-    this._setCurrentPageNumber(val, /* resetCurrentPageView = */ true);
+    if (!this._setCurrentPageNumber(val, /* resetCurrentPageView = */ true)) {
+      console.error(
+        `${this._name}.currentPageNumber: "${val}" is not a valid page.`);
+    }
   }
 
   /**
+   * @return {boolean} Whether the pageNumber is valid (within bounds).
    * @private
    */
   _setCurrentPageNumber(val, resetCurrentPageView = false) {
@@ -223,13 +227,11 @@ class BaseViewer {
       if (resetCurrentPageView) {
         this._resetCurrentPageView();
       }
-      return;
+      return true;
     }
 
     if (!(0 < val && val <= this.pagesCount)) {
-      console.error(
-        `${this._name}._setCurrentPageNumber: "${val}" is out of bounds.`);
-      return;
+      return false;
     }
     this._currentPageNumber = val;
 
@@ -242,6 +244,7 @@ class BaseViewer {
     if (resetCurrentPageView) {
       this._resetCurrentPageView();
     }
+    return true;
   }
 
   /**
@@ -256,14 +259,21 @@ class BaseViewer {
    * @param {string} val - The page label.
    */
   set currentPageLabel(val) {
-    let pageNumber = val | 0; // Fallback page number.
+    if (!this.pdfDocument) {
+      return;
+    }
+    let page = val | 0; // Fallback page number.
     if (this._pageLabels) {
       let i = this._pageLabels.indexOf(val);
       if (i >= 0) {
-        pageNumber = i + 1;
+        page = i + 1;
       }
     }
-    this.currentPageNumber = pageNumber;
+    // The intent can be to just reset a scroll position and/or scale.
+    if (!this._setCurrentPageNumber(page, /* resetCurrentPageView = */ true)) {
+      console.error(
+        `${this._name}.currentPageLabel: "${val}" is not a valid page.`);
+    }
   }
 
   /**
@@ -279,7 +289,7 @@ class BaseViewer {
    */
   set currentScale(val) {
     if (isNaN(val)) {
-      throw new Error('Invalid numeric scale');
+      throw new Error('Invalid numeric scale.');
     }
     if (!this.pdfDocument) {
       return;
@@ -668,8 +678,8 @@ class BaseViewer {
     const pageView = (Number.isInteger(pageNumber) &&
                       this._pages[pageNumber - 1]);
     if (!pageView) {
-      console.error(
-        `${this._name}.scrollPageIntoView: Invalid "pageNumber" parameter.`);
+      console.error(`${this._name}.scrollPageIntoView: ` +
+        `"${pageNumber}" is not a valid pageNumber parameter.`);
       return;
     }
 
