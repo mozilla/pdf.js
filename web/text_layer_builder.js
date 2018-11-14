@@ -238,15 +238,16 @@ class TextLayerBuilder {
       let match = matches[i];
       let begin = match.begin;
       let end = match.end;
-      let isSelected = (isSelectedPage && i === selectedMatchIdx);
-      let highlightSuffix = (isSelected ? ' selected' : '');
+      const isSelected = (isSelectedPage && i === selectedMatchIdx);
+      const highlightSuffix = (isSelected ? ' selected' : '');
 
-      // Attempt to scroll the selected match into view.
-      findController.scrollMatchIntoView({
-        element: textDivs[begin.divIdx],
-        pageIndex: pageIdx,
-        matchIndex: i,
-      });
+      if (isSelected) { // Attempt to scroll the selected match into view.
+        findController.scrollMatchIntoView({
+          element: textDivs[begin.divIdx],
+          pageIndex: pageIdx,
+          matchIndex: selectedMatchIdx,
+        });
+      }
 
       // Match inside new div.
       if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
