@@ -22,7 +22,7 @@
   right: 0;
   bottom: 0;
 }
-.textLayer > div {
+.textLayer > span {
   position: absolute;
   white-space: pre;
   -webkit-transform-origin: 0% 0%;
