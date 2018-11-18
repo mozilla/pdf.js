@@ -726,7 +726,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
   CanvasGraphics.prototype = {
 
-    beginDrawing({ transform, viewport, transparency,
+    beginDrawing({ transform, viewport, transparency = false,
                    background = null, }) {
       // For pdfs that use blend modes we have to clear the canvas else certain
       // blend modes can look wrong since we'd be blending with a white

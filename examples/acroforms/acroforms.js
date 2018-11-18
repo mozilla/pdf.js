@@ -24,7 +24,8 @@ var DEFAULT_SCALE = 1.0;
 var container = document.getElementById('pageContainer');
 
 // Fetch the PDF document from the URL using promises.
-pdfjsLib.getDocument(DEFAULT_URL).then(function (doc) {
+var loadingTask = pdfjsLib.getDocument(DEFAULT_URL);
+loadingTask.promise.then(function(doc) {
   // Use a promise to fetch and render the next page.
   var promise = Promise.resolve();
 

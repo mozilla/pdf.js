@@ -49,7 +49,8 @@ function buildSVG(viewport, textContent) {
 
 function pageLoaded() {
   // Loading document and page text content
-  pdfjsLib.getDocument({url: PDF_PATH}).then(function (pdfDocument) {
+  var loadingTask = pdfjsLib.getDocument({url: PDF_PATH});
+  loadingTask.promise.then(function(pdfDocument) {
     pdfDocument.getPage(PAGE_NUMBER).then(function (page) {
       var viewport = page.getViewport(PAGE_SCALE);
       page.getTextContent().then(function (textContent) {
