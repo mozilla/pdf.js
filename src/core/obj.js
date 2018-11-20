@@ -1686,7 +1686,7 @@ class NameOrNumberTree {
       while (l <= r) {
         // Check only even indices (0, 2, 4, ...) because the
         // odd indices contain the actual data.
-        const m = (l + r) & ~1;
+        const tmp = (l + r) >> 1, m = tmp + (tmp & 1);
         const currentKey = xref.fetchIfRef(entries[m]);
         if (key < currentKey) {
           r = m - 2;
