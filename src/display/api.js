@@ -221,7 +221,7 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *
  * @return {PDFDocumentLoadingTask}
  */
-function getDocument(src) {
+function getDocument(src, params) {
   const task = new PDFDocumentLoadingTask();
 
   let source;
@@ -242,7 +242,7 @@ function getDocument(src) {
     }
     source = src;
   }
-  const params = Object.create(null);
+  const params = Object.create(params || null);
   let rangeTransport = null, worker = null;
 
   for (const key in source) {
