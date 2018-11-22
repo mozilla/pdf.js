@@ -242,7 +242,7 @@ function getDocument(src, params) {
     }
     source = src;
   }
-  const params = Object.create(params || null);
+  params = Object.create(params || null);
   let rangeTransport = null, worker = null;
 
   for (const key in source) {
