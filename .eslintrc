@@ -5,6 +5,7 @@
   },
 
   "plugins": [
+    "import",
     "mozilla",
     "unicorn",
   ],
@@ -24,6 +25,7 @@
 
   "rules": {
     // Plugins
+    "import/no-unresolved": "error",
     "mozilla/avoid-removeChild": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",
     "unicorn/no-array-instanceof": "error",
