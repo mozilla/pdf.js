@@ -12,6 +12,7 @@
     "core-js": "^2.5.7",
     "escodegen": "^1.11.0",
     "eslint": "^5.9.0",
+    "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-mozilla": "^0.14.0",
     "eslint-plugin-no-unsanitized": "^3.0.2",
     "eslint-plugin-unicorn": "^4.0.3",
