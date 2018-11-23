@@ -717,18 +717,18 @@ gulp.task('minified-post', ['minified-pre'], function () {
   console.log();
   console.log('### Minifying js files');
 
-  var UglifyES = require('uglify-es');
+  var Terser = require('terser');
   // V8 chokes on very long sequences. Works around that.
   var optsForHugeFile = { compress: { sequences: false, }, };
 
   fs.writeFileSync(MINIFIED_DIR + '/web/pdf.viewer.js',
-                   UglifyES.minify(viewerFiles).code);
+                   Terser.minify(viewerFiles).code);
   fs.writeFileSync(MINIFIED_DIR + '/build/pdf.min.js',
-                   UglifyES.minify(pdfFile).code);
+                   Terser.minify(pdfFile).code);
   fs.writeFileSync(MINIFIED_DIR + '/build/pdf.worker.min.js',
-                   UglifyES.minify(pdfWorkerFile, optsForHugeFile).code);
+                   Terser.minify(pdfWorkerFile, optsForHugeFile).code);
   fs.writeFileSync(MINIFIED_DIR + 'image_decoders/pdf.image_decoders.min.js',
-                   UglifyES.minify(pdfImageDecodersFile).code);
+                   Terser.minify(pdfImageDecodersFile).code);
 
   console.log();
   console.log('### Cleaning js files');
