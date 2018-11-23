@@ -176,12 +176,11 @@ function createWebpackConfig(defines, output) {
           // babel is too slow
           exclude: /src[\\\/]core[\\\/](glyphlist|unicode)/,
           options: {
-            presets: skipBabel ? undefined : ['env'],
+            presets: skipBabel ? undefined : ['@babel/preset-env'],
             plugins: [
-              'transform-es2015-modules-commonjs',
-              ['transform-runtime', {
+              '@babel/plugin-transform-modules-commonjs',
+              ['@babel/plugin-transform-runtime', {
                 'helpers': false,
-                'polyfill': false,
                 'regenerator': true,
               }],
             ],
@@ -903,25 +902,24 @@ gulp.task('lib', ['buildnumber'], function () {
     content = preprocessor2.preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: 'module',
-      presets: noPreset ? undefined : ['env'],
+      presets: noPreset ? undefined : ['@babel/preset-env'],
       plugins: [
-        'transform-es2015-modules-commonjs',
-        ['transform-runtime', {
+        '@babel/plugin-transform-modules-commonjs',
+        ['@babel/plugin-transform-runtime', {
           'helpers': false,
-          'polyfill': false,
           'regenerator': true,
         }],
         babelPluginReplaceNonWebPackRequire,
       ],
     }).code;
-    var removeCjsSrc =
-      /^(var\s+\w+\s*=\s*require\('.*?)(?:\/src)(\/[^']*'\);)$/gm;
-    content = content.replace(removeCjsSrc, function (all, prefix, suffix) {
+    // eslint-disable-next-line max-len
+    var removeCjsSrc = /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
+    content = content.replace(removeCjsSrc, (all, prefix, interop, suffix) => {
       return prefix + suffix;
     });
     return licenseHeaderLibre + content;
   }
-  var babel = require('babel-core');
+  var babel = require('@babel/core');
   var versionInfo = getVersionJSON();
   var ctx = {
     rootPath: __dirname,
