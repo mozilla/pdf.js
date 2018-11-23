@@ -16,7 +16,7 @@
     "amd": true,
   },
 
-  globals: {
+  "globals": {
     "PDFJSDev": false,
     "exports": false,
     "SystemJS": false,
