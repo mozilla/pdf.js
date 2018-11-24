@@ -28,6 +28,7 @@
     "jasmine": "^3.3.0",
     "jasmine-core": "^3.3.0",
     "jsdoc": "^3.5.5",
+    "jstransformer-markdown-it": "^2.1.0",
     "merge-stream": "^1.0.1",
     "mkdirp": "^0.5.1",
     "node-ensure": "^0.0.0",
