@@ -42,7 +42,7 @@
     "vinyl-fs": "^3.0.3",
     "webpack": "4.21.0",
     "webpack-stream": "^4.0.3",
-    "wintersmith": "^2.4.1",
+    "wintersmith": "^2.5.0",
     "yargs": "^11.1.0"
   },
   "scripts": {
