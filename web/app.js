@@ -169,21 +169,14 @@ let PDFViewerApplication = {
    * @private
    */
   async _readPreferences() {
-    // A subset of the Preferences that `AppOptions`, for compatibility reasons,
-    // is allowed to override if the `AppOptions` values matches the ones below.
-    const OVERRIDES = {
-      disableFontFace: true,
-      disableRange: true,
-      disableStream: true,
-      textLayerMode: TextLayerMode.DISABLE,
-    };
-
+    if (AppOptions.get('disablePreferences') === true) {
+      // Give custom implementations of the default viewer a simpler way to
+      // opt-out of having the `Preferences` override existing `AppOptions`.
+      return;
+    }
     try {
       const prefs = await this.preferences.getAll();
-      for (let name in prefs) {
-        if ((name in OVERRIDES) && AppOptions.get(name) === OVERRIDES[name]) {
-          continue;
-        }
+      for (const name in prefs) {
         AppOptions.set(name, prefs[name]);
       }
     } catch (reason) { }
