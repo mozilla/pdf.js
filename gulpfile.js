@@ -898,11 +898,12 @@ gulp.task('lib', ['buildnumber'], function () {
     };
   }
   function preprocess(content) {
-    var noPreset = /\/\*\s*no-babel-preset\s*\*\//.test(content);
+    var skipBabel = process.env['SKIP_BABEL'] === 'true' ||
+                    /\/\*\s*no-babel-preset\s*\*\//.test(content);
     content = preprocessor2.preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: 'module',
-      presets: noPreset ? undefined : ['@babel/preset-env'],
+      presets: skipBabel ? undefined : ['@babel/preset-env'],
       plugins: [
         '@babel/plugin-transform-modules-commonjs',
         ['@babel/plugin-transform-runtime', {
@@ -1057,10 +1058,10 @@ gulp.task('baseline', function (done) {
 });
 
 gulp.task('unittestcli', ['testing-pre', 'lib'], function(done) {
-  var args = ['JASMINE_CONFIG_PATH=test/unit/clitests.json'];
-  var testProcess = spawn('node_modules/.bin/jasmine', args,
-                          { stdio: 'inherit', });
-  testProcess.on('close', function (code) {
+  var options = ['node_modules/jasmine/bin/jasmine',
+                 'JASMINE_CONFIG_PATH=test/unit/clitests.json'];
+  var jasmineProcess = spawn('node', options, { stdio: 'inherit', });
+  jasmineProcess.on('close', function(code) {
     if (code !== 0) {
       done(new Error('Unit tests failed.'));
       return;
