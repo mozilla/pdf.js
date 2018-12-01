@@ -7,8 +7,6 @@
 // `gulp singlefile` before running the example.
 //
 
-var fs = require('fs');
-
 // Run `gulp dist-install` to generate 'pdfjs-dist' npm package files.
 var pdfjsLib = require('pdfjs-dist');
 
