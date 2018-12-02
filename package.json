@@ -47,7 +47,7 @@
     "yargs": "^11.1.0"
   },
   "scripts": {
-    "test": "gulp lint unittestcli externaltest"
+    "test": "env SKIP_BABEL=true gulp lint unittestcli externaltest"
   },
   "repository": {
     "type": "git",
