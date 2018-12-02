@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-import {
-  getGlobalEventBus, isValidRotation, parseQueryString, waitOnEventOrTimeout
-} from './ui_utils';
+import getGlobalEventBus from './ui_utils/getGlobalEventBus';
+import isValidRotation from './ui_utils/isValidRotation';
+import parseQueryString from './ui_utils/parseQueryString';
+import waitOnEventOrTimeout from './ui_utils/waitOnEventOrTimeout';
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
 const HASH_CHANGE_TIMEOUT = 1000; // milliseconds
