@@ -13,6 +13,15 @@
  * limitations under the License.
  */
 
+export { default as clamp, } from './clamp';
+export { default as EventBus, } from './EventBus';
+export { default as getGlobalEventBus, } from './getGlobalEventBus';
+export { default as isValidRotation, } from './isValidRotation';
+export { default as parseQueryString, } from './parseQueryString';
+export { default as ProgressBar, } from './ProgressBar';
+export { default as waitOnEventOrTimeout, } from './waitOnEventOrTimeout';
+export { default as WaitOnType, } from './WaitOnType';
+
 const CSS_UNITS = 96.0 / 72.0;
 const DEFAULT_SCALE_VALUE = 'auto';
 const DEFAULT_SCALE = 1.0;
@@ -178,21 +187,6 @@ function watchScroll(viewAreaElement, callback) {
   let rAF = null;
   viewAreaElement.addEventListener('scroll', debounceScroll, true);
   return state;
-}
-
-/**
- * Helper function to parse query string (e.g. ?param1=value&parm2=...).
- */
-function parseQueryString(query) {
-  let parts = query.split('&');
-  let params = Object.create(null);
-  for (let i = 0, ii = parts.length; i < ii; ++i) {
-    let param = parts[i].split('=');
-    let key = param[0].toLowerCase();
-    let value = param.length > 1 ? param[1] : null;
-    params[decodeURIComponent(key)] = decodeURIComponent(value);
-  }
-  return params;
 }
 
 /**
@@ -602,66 +596,8 @@ function normalizeWheelEventDelta(evt) {
   return delta;
 }
 
-function isValidRotation(angle) {
-  return Number.isInteger(angle) && angle % 90 === 0;
-}
-
 function isPortraitOrientation(size) {
   return size.width <= size.height;
-}
-
-const WaitOnType = {
-  EVENT: 'event',
-  TIMEOUT: 'timeout',
-};
-
-/**
- * @typedef {Object} WaitOnEventOrTimeoutParameters
- * @property {Object} target - The event target, can for example be:
- *   `window`, `document`, a DOM element, or an {EventBus} instance.
- * @property {string} name - The name of the event.
- * @property {number} delay - The delay, in milliseconds, after which the
- *   timeout occurs (if the event wasn't already dispatched).
- */
-
-/**
- * Allows waiting for an event or a timeout, whichever occurs first.
- * Can be used to ensure that an action always occurs, even when an event
- * arrives late or not at all.
- *
- * @param {WaitOnEventOrTimeoutParameters}
- * @returns {Promise} A promise that is resolved with a {WaitOnType} value.
- */
-function waitOnEventOrTimeout({ target, name, delay = 0, }) {
-  return new Promise(function(resolve, reject) {
-    if (typeof target !== 'object' || !(name && typeof name === 'string') ||
-        !(Number.isInteger(delay) && delay >= 0)) {
-      throw new Error('waitOnEventOrTimeout - invalid parameters.');
-    }
-
-    function handler(type) {
-      if (target instanceof EventBus) {
-        target.off(name, eventHandler);
-      } else {
-        target.removeEventListener(name, eventHandler);
-      }
-
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      resolve(type);
-    }
-
-    const eventHandler = handler.bind(null, WaitOnType.EVENT);
-    if (target instanceof EventBus) {
-      target.on(name, eventHandler);
-    } else {
-      target.addEventListener(name, eventHandler);
-    }
-
-    const timeoutHandler = handler.bind(null, WaitOnType.TIMEOUT);
-    let timeout = setTimeout(timeoutHandler, delay);
-  });
 }
 
 /**
@@ -677,164 +613,6 @@ let animationStarted = new Promise(function (resolve) {
   }
   window.requestAnimationFrame(resolve);
 });
-
-/**
- * Simple event bus for an application. Listeners are attached using the
- * `on` and `off` methods. To raise an event, the `dispatch` method shall be
- * used.
- */
-class EventBus {
-  constructor({ dispatchToDOM = false, } = {}) {
-    this._listeners = Object.create(null);
-    this._dispatchToDOM = dispatchToDOM === true;
-  }
-
-  on(eventName, listener) {
-    let eventListeners = this._listeners[eventName];
-    if (!eventListeners) {
-      eventListeners = [];
-      this._listeners[eventName] = eventListeners;
-    }
-    eventListeners.push(listener);
-  }
-
-  off(eventName, listener) {
-    let eventListeners = this._listeners[eventName];
-    let i;
-    if (!eventListeners || ((i = eventListeners.indexOf(listener)) < 0)) {
-      return;
-    }
-    eventListeners.splice(i, 1);
-  }
-
-  dispatch(eventName) {
-    let eventListeners = this._listeners[eventName];
-    if (!eventListeners || eventListeners.length === 0) {
-      if (this._dispatchToDOM) {
-        const args = Array.prototype.slice.call(arguments, 1);
-        this._dispatchDOMEvent(eventName, args);
-      }
-      return;
-    }
-    // Passing all arguments after the eventName to the listeners.
-    const args = Array.prototype.slice.call(arguments, 1);
-    // Making copy of the listeners array in case if it will be modified
-    // during dispatch.
-    eventListeners.slice(0).forEach(function (listener) {
-      listener.apply(null, args);
-    });
-    if (this._dispatchToDOM) {
-      this._dispatchDOMEvent(eventName, args);
-    }
-  }
-
-  /**
-   * @private
-   */
-  _dispatchDOMEvent(eventName, args = null) {
-    const details = Object.create(null);
-    if (args && args.length > 0) {
-      const obj = args[0];
-      for (let key in obj) {
-        const value = obj[key];
-        if (key === 'source') {
-          if (value === window || value === document) {
-            return; // No need to re-dispatch (already) global events.
-          }
-          continue; // Ignore the `source` property.
-        }
-        details[key] = value;
-      }
-    }
-    const event = document.createEvent('CustomEvent');
-    event.initCustomEvent(eventName, true, true, details);
-    document.dispatchEvent(event);
-  }
-}
-
-let globalEventBus = null;
-function getGlobalEventBus(dispatchToDOM = false) {
-  if (!globalEventBus) {
-    globalEventBus = new EventBus({ dispatchToDOM, });
-  }
-  return globalEventBus;
-}
-
-function clamp(v, min, max) {
-  return Math.min(Math.max(v, min), max);
-}
-
-class ProgressBar {
-  constructor(id, { height, width, units, } = {}) {
-    this.visible = true;
-
-    // Fetch the sub-elements for later.
-    this.div = document.querySelector(id + ' .progress');
-    // Get the loading bar element, so it can be resized to fit the viewer.
-    this.bar = this.div.parentNode;
-
-    // Get options, with sensible defaults.
-    this.height = height || 100;
-    this.width = width || 100;
-    this.units = units || '%';
-
-    // Initialize heights.
-    this.div.style.height = this.height + this.units;
-    this.percent = 0;
-  }
-
-  _updateBar() {
-    if (this._indeterminate) {
-      this.div.classList.add('indeterminate');
-      this.div.style.width = this.width + this.units;
-      return;
-    }
-
-    this.div.classList.remove('indeterminate');
-    let progressSize = this.width * this._percent / 100;
-    this.div.style.width = progressSize + this.units;
-  }
-
-  get percent() {
-    return this._percent;
-  }
-
-  set percent(val) {
-    this._indeterminate = isNaN(val);
-    this._percent = clamp(val, 0, 100);
-    this._updateBar();
-  }
-
-  setWidth(viewer) {
-    if (!viewer) {
-      return;
-    }
-    let container = viewer.parentNode;
-    let scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
-    if (scrollbarWidth > 0) {
-      this.bar.setAttribute('style', 'width: calc(100% - ' +
-                                     scrollbarWidth + 'px);');
-    }
-  }
-
-  hide() {
-    if (!this.visible) {
-      return;
-    }
-    this.visible = false;
-    this.bar.classList.add('hidden');
-    document.body.classList.remove('loadingInProgress');
-  }
-
-  show() {
-    if (this.visible) {
-      return;
-    }
-    this.visible = true;
-    document.body.classList.add('loadingInProgress');
-    this.bar.classList.remove('hidden');
-  }
-}
 
 /**
  * Moves all elements of an array that satisfy condition to the end of the
@@ -866,18 +644,13 @@ export {
   MAX_AUTO_SCALE,
   SCROLLBAR_PADDING,
   VERTICAL_PADDING,
-  isValidRotation,
   isPortraitOrientation,
   PresentationModeState,
   RendererType,
   TextLayerMode,
   NullL10n,
-  EventBus,
-  getGlobalEventBus,
-  ProgressBar,
   getPDFFileNameFromURL,
   noContextMenuHandler,
-  parseQueryString,
   backtrackBeforeAllVisibleElements, // only exported for testing
   getVisibleElements,
   roundToDivide,
@@ -889,7 +662,5 @@ export {
   binarySearchFirstItem,
   normalizeWheelEventDelta,
   animationStarted,
-  WaitOnType,
-  waitOnEventOrTimeout,
   moveToEndOfArray,
 };
