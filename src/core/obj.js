@@ -17,7 +17,7 @@ import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
   info, InvalidPDFException, isBool, isNum, isString, MissingDataException,
   PermissionFlag, shadow, stringToPDFString, stringToUTF8String,
-  toRomanNumerals, unreachable, warn, XRefParseException
+  toRomanNumerals, unreachable, warn, XRefEntryException, XRefParseException
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -1473,7 +1473,7 @@ var XRef = (function XRefClosure() {
       if (xrefEntry.uncompressed) {
         xrefEntry = this.fetchUncompressed(ref, xrefEntry, suppressEncryption);
       } else {
-        xrefEntry = this.fetchCompressed(xrefEntry, suppressEncryption);
+        xrefEntry = this.fetchCompressed(ref, xrefEntry, suppressEncryption);
       }
       if (isDict(xrefEntry)) {
         xrefEntry.objId = ref.toString();
@@ -1483,12 +1483,11 @@ var XRef = (function XRefClosure() {
       return xrefEntry;
     },
 
-    fetchUncompressed: function XRef_fetchUncompressed(ref, xrefEntry,
-                                                       suppressEncryption) {
+    fetchUncompressed(ref, xrefEntry, suppressEncryption = false) {
       var gen = ref.gen;
       var num = ref.num;
       if (xrefEntry.gen !== gen) {
-        throw new FormatError('inconsistent generation in XRef');
+        throw new XRefEntryException(`Inconsistent generation in XRef: ${ref}`);
       }
       var stream = this.stream.makeSubStream(xrefEntry.offset +
                                              this.stream.start);
@@ -1504,7 +1503,7 @@ var XRef = (function XRefClosure() {
         obj2 = parseInt(obj2, 10);
       }
       if (obj1 !== num || obj2 !== gen || !isCmd(obj3)) {
-        throw new FormatError('bad XRef entry');
+        throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
       }
       if (obj3.cmd !== 'obj') {
         // some bad PDFs use "obj1234" and really mean 1234
@@ -1514,7 +1513,7 @@ var XRef = (function XRefClosure() {
             return num;
           }
         }
-        throw new FormatError('bad XRef entry');
+        throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
       }
       if (this.encrypt && !suppressEncryption) {
         xrefEntry = parser.getObj(this.encrypt.createCipherTransform(num, gen));
@@ -1527,8 +1526,7 @@ var XRef = (function XRefClosure() {
       return xrefEntry;
     },
 
-    fetchCompressed: function XRef_fetchCompressed(xrefEntry,
-                                                   suppressEncryption) {
+    fetchCompressed(ref, xrefEntry, suppressEncryption = false) {
       var tableOffset = xrefEntry.offset;
       var stream = this.fetch(new Ref(tableOffset, 0));
       if (!isStream(stream)) {
@@ -1573,7 +1571,7 @@ var XRef = (function XRefClosure() {
       }
       xrefEntry = entries[xrefEntry.gen];
       if (xrefEntry === undefined) {
-        throw new FormatError('bad XRef entry for compressed object');
+        throw new XRefEntryException(`Bad (compressed) XRef entry: ${ref}`);
       }
       return xrefEntry;
     },

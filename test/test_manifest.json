@@ -1275,6 +1275,22 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue7496",
+       "file": "pdfs/issue7496.pdf",
+       "md5": "b422981ae781166e75c0fb4c3634ed96",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "load"
+    },
+    {  "id": "issue10326",
+       "file": "pdfs/issue10326.pdf",
+       "md5": "015c13b09ef735ea1204f38992c60487",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "load"
+    },
     {  "id": "issue7544",
        "file": "pdfs/issue7544.pdf",
        "md5": "87e3a9fc7d6a6c1bd5b53af6926ce48e",
