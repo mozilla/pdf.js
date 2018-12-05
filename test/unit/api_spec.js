@@ -650,6 +650,24 @@ describe('api', function() {
       }).catch(done.fail);
     });
 
+    it('gets default open action destination', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getOpenActionDestination();
+      }).then(function(dest) {
+        expect(dest).toEqual(null);
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
+    it('gets non-default open action destination', function(done) {
+      doc.getOpenActionDestination().then(function(dest) {
+        expect(dest).toEqual([{ num: 15, gen: 0, }, { name: 'FitH', }, null]);
+        done();
+      }).catch(done.fail);
+    });
+
     it('gets non-existent attachments', function(done) {
       var promise = doc.getAttachments();
       promise.then(function (data) {
