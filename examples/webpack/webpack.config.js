@@ -1,4 +1,4 @@
-var webpack = require('webpack');
+var webpack = require('webpack'); // eslint-disable-line no-unused-vars
 var path = require('path');
 
 module.exports = {

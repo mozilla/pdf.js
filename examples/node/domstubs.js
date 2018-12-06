@@ -96,7 +96,7 @@ DOMElement.prototype = {
 
   appendChild: function DOMElement_appendChild(element) {
     var childNodes = this.childNodes;
-    if (childNodes.indexOf(element) === -1) {
+    if (!childNodes.includes(element)) {
       childNodes.push(element);
     }
   },
@@ -152,10 +152,12 @@ DOMElementSerializer.prototype = {
           return ' xmlns:xlink="http://www.w3.org/1999/xlink"' +
                  ' xmlns:svg="http://www.w3.org/2000/svg"';
         }
+        /* falls through */
       case 2:  // Initialize variables for looping over attributes.
         ++this._state;
         this._loopIndex = 0;
         this._attributeKeys = Object.keys(node.attributes);
+        /* falls through */
       case 3:  // Serialize any attributes and end opening tag.
         if (this._loopIndex < this._attributeKeys.length) {
           var name = this._attributeKeys[this._loopIndex++];
@@ -170,6 +172,7 @@ DOMElementSerializer.prototype = {
         }
         ++this._state;
         this._loopIndex = 0;
+        /* falls through */
       case 5:  // Serialize child nodes (only for non-tspan/style elements).
         var value;
         while (true) {
@@ -186,6 +189,7 @@ DOMElementSerializer.prototype = {
             break;
           }
         }
+        /* falls through */
       case 6:  // Ending tag.
         ++this._state;
         return '</' + node.nodeName + '>';

@@ -339,8 +339,9 @@ var PDFViewerApplication = {
         function() {
       PDFViewerApplication.page = (this.value | 0);
 
-      // Ensure that the page number input displays the correct value, even if the
-      // value entered by the user was invalid (e.g. a floating point number).
+      // Ensure that the page number input displays the correct value,
+      // even if the value entered by the user was invalid
+      // (e.g. a floating point number).
       if (this.value !== PDFViewerApplication.page.toString()) {
         this.value = PDFViewerApplication.page;
       }
