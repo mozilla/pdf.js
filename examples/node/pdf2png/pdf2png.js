@@ -70,7 +70,7 @@ loadingTask.promise.then(function(pdfDocument) {
     var renderContext = {
       canvasContext: canvasAndContext.context,
       viewport: viewport,
-      canvasFactory: canvasFactory
+      canvasFactory: canvasFactory,
     };
 
     var renderTask = page.render(renderContext);

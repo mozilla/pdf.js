@@ -59,8 +59,8 @@ jpegImage.parse(typedArrayImage);
 
 var width = jpegImage.width, height = jpegImage.height;
 var jpegData = jpegImage.getData({
-  width,
-  height,
+  width: width,
+  height: height,
   forceRGB: true,
 });
 
@@ -76,4 +76,3 @@ for (var i = 0, j = 0, ii = width * height * 4; i < ii;) {
 }
 jpegCanvas.width = width, jpegCanvas.height = height;
 jpegCtx.putImageData(imageData, 0, 0);
-
