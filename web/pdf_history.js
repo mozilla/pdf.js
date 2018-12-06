@@ -158,16 +158,27 @@ class PDFHistory {
    * Push an internal destination to the browser history.
    * @param {PushParameters}
    */
-  push({ namedDest, explicitDest, pageNumber, }) {
+  push({ namedDest = null, explicitDest, pageNumber, }) {
     if (!this.initialized) {
       return;
     }
-    if ((namedDest && typeof namedDest !== 'string') ||
-        !Array.isArray(explicitDest) ||
-        !(Number.isInteger(pageNumber) &&
-          pageNumber > 0 && pageNumber <= this.linkService.pagesCount)) {
-      console.error('PDFHistory.push: Invalid parameters.');
+    if (namedDest && typeof namedDest !== 'string') {
+      console.error('PDFHistory.push: ' +
+                    `"${namedDest}" is not a valid namedDest parameter.`);
       return;
+    } else if (!Array.isArray(explicitDest)) {
+      console.error('PDFHistory.push: ' +
+                    `"${explicitDest}" is not a valid explicitDest parameter.`);
+      return;
+    } else if (!(Number.isInteger(pageNumber) &&
+                 pageNumber > 0 && pageNumber <= this.linkService.pagesCount)) {
+      // Allow an unset `pageNumber` if and only if the history is still empty;
+      // please refer to the `this._destination.page = null;` comment above.
+      if (pageNumber !== null || this._destination) {
+        console.error('PDFHistory.push: ' +
+                      `"${pageNumber}" is not a valid pageNumber parameter.`);
+        return;
+      }
     }
 
     let hash = namedDest || JSON.stringify(explicitDest);
