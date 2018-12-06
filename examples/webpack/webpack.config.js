@@ -5,12 +5,12 @@ module.exports = {
   context: __dirname,
   entry: {
     'main': './main.js',
-    'pdf.worker': 'pdfjs-dist/build/pdf.worker.entry'
+    'pdf.worker': 'pdfjs-dist/build/pdf.worker.entry',
   },
   mode: 'none',
   output: {
     path: path.join(__dirname, '../../build/webpack'),
     publicPath: '../../build/webpack/',
-    filename: '[name].bundle.js'
-  }
+    filename: '[name].bundle.js',
+  },
 };
