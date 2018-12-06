@@ -24,9 +24,11 @@ gulp.task('build-worker', function() {
   return browserify(workerSrc, { output: TMP_FILE_PREFIX + 'worker.tmp', })
     .bundle()
     .pipe(source(TMP_FILE_PREFIX + 'worker.tmp'))
-    .pipe(streamify(uglify({ compress: {
-      sequences: false, // Chrome has issue with the generated code if true
-    }, })))
+    .pipe(streamify(uglify({
+      compress: {
+        sequences: false, // Chrome has issue with the generated code if true
+      },
+    })))
     .pipe(rename('pdf.worker.bundle.js'))
     .pipe(gulp.dest(OUTPUT_PATH));
 });

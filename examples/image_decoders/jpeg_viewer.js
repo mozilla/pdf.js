@@ -68,11 +68,12 @@ var jpegData = jpegImage.getData({
 //
 var imageData = jpegCtx.createImageData(width, height);
 var imageBytes = imageData.data;
-for (var i = 0, j = 0, ii = width * height * 4; i < ii;) {
-  imageBytes[i++] = jpegData[j++];
-  imageBytes[i++] = jpegData[j++];
-  imageBytes[i++] = jpegData[j++];
-  imageBytes[i++] = 255;
+for (var j = 0, k = 0, jj = width * height * 4; j < jj;) {
+  imageBytes[j++] = jpegData[k++];
+  imageBytes[j++] = jpegData[k++];
+  imageBytes[j++] = jpegData[k++];
+  imageBytes[j++] = 255;
 }
-jpegCanvas.width = width, jpegCanvas.height = height;
+jpegCanvas.width = width;
+jpegCanvas.height = height;
 jpegCtx.putImageData(imageData, 0, 0);

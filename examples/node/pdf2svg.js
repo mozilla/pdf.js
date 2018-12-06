@@ -108,11 +108,12 @@ loadingTask.promise.then(function(doc) {
         var svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
         svgGfx.embedFonts = true;
         return svgGfx.getSVG(opList, viewport).then(function (svg) {
-          return writeSvgToFile(svg, getFilePathForPage(pageNum)).then(function () {
-            console.log('Page: ' + pageNum);
-          }, function(err) {
-            console.log('Error: ' + err);
-          });
+          return writeSvgToFile(svg, getFilePathForPage(pageNum))
+            .then(function () {
+              console.log('Page: ' + pageNum);
+            }, function(err) {
+              console.log('Error: ' + err);
+            });
         });
       });
     });
