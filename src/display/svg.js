@@ -903,7 +903,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     // Path properties
     setLineWidth: function SVGGraphics_setLineWidth(width) {
-      this.current.lineWidth = width;
+      if (width > 0) {
+        this.current.lineWidth = width;
+      }
     },
     setLineCap: function SVGGraphics_setLineCap(style) {
       this.current.lineCap = LINE_CAP_STYLES[style];
