@@ -548,7 +548,8 @@ var PDFDocument = (function PDFDocumentClosure() {
         for (let key of infoDict.getKeys()) {
           const value = infoDict.get(key);
           // Make sure the value conforms to the spec.
-          if (DocumentInfoValidators[key] && !DocumentInfoValidators[key](value)) {
+          if (DocumentInfoValidators[key] &&
+              !DocumentInfoValidators[key](value)) {
             info('Bad value in document info for "' + key + '"');
           } else {
             docInfo[key] = (typeof value !== 'string' ?
