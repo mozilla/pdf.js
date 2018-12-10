@@ -80,7 +80,11 @@ WebServer.prototype = {
   _handler: function (req, res) {
     var url = req.url.replace(/\/\//g, '/');
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
-    var pathPart = decodeURI(urlParts[1]), queryPart = urlParts[3];
+    // guard against directory traversal attacks,
+    // e.g. /../../../../../../../etc/passwd
+    // which let you make GET requests for files outside of this.root
+    var pathPart = path.normalize(decodeURI(urlParts[1]));
+    var queryPart = urlParts[3];
     var verbose = this.verbose;
 
     var methodHooks = this.hooks[req.method];
