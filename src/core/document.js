@@ -545,16 +545,14 @@ var PDFDocument = (function PDFDocumentClosure() {
       }
       if (isDict(infoDict)) {
         // Only fill the document info with valid entries from the spec.
-        for (let key in DocumentInfoValidators) {
-          if (infoDict.has(key)) {
-            const value = infoDict.get(key);
-            // Make sure the value conforms to the spec.
-            if (DocumentInfoValidators[key](value)) {
-              docInfo[key] = (typeof value !== 'string' ?
-                              value : stringToPDFString(value));
-            } else {
-              info('Bad value in document info for "' + key + '"');
-            }
+        for (let key of infoDict.getKeys()) {
+          const value = infoDict.get(key);
+          // Make sure the value conforms to the spec.
+          if (DocumentInfoValidators[key] && !DocumentInfoValidators[key](value)) {
+            info('Bad value in document info for "' + key + '"');
+          } else {
+            docInfo[key] = (typeof value !== 'string' ?
+                            value : stringToPDFString(value));
           }
         }
       }
