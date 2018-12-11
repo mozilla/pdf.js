@@ -66,11 +66,12 @@ loadingTask.promise.then(function(pdfDocument) {
     // Render the page on a Node canvas with 100% scale.
     var viewport = page.getViewport(1.0);
     var canvasFactory = new NodeCanvasFactory();
-    var canvasAndContext = canvasFactory.create(viewport.width, viewport.height);
+    var canvasAndContext =
+      canvasFactory.create(viewport.width, viewport.height);
     var renderContext = {
       canvasContext: canvasAndContext.context,
       viewport: viewport,
-      canvasFactory: canvasFactory
+      canvasFactory: canvasFactory,
     };
 
     var renderTask = page.render(renderContext);
@@ -81,7 +82,8 @@ loadingTask.promise.then(function(pdfDocument) {
         if (error) {
           console.error('Error: ' + error);
         } else {
-          console.log('Finished converting first page of PDF file to a PNG image.');
+          console.log(
+            'Finished converting first page of PDF file to a PNG image.');
         }
       });
     });
