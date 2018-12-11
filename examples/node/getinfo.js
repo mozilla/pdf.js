@@ -52,7 +52,7 @@ loadingTask.promise.then(function(doc) {
       }).then(function () {
         console.log();
       });
-    })
+    });
   };
   // Loading of the first page will wait on metadata and subsequent loadings
   // will wait on the previous pages.
