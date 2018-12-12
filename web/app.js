@@ -50,6 +50,7 @@ import { ViewHistory } from './view_history';
 const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
+const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
 
 const DefaultExternalServices = {
   updateFindControlState(data) {},
@@ -1334,6 +1335,7 @@ let PDFViewerApplication = {
       eventBus.dispatch('afterprint', { source: window, });
     };
 
+    window.addEventListener('visibilitychange', webViewerVisibilityChange);
     window.addEventListener('wheel', webViewerWheel);
     window.addEventListener('click', webViewerClick);
     window.addEventListener('keydown', webViewerKeyDown);
@@ -1394,6 +1396,7 @@ let PDFViewerApplication = {
   unbindWindowEvents() {
     let { _boundEvents, } = this;
 
+    window.removeEventListener('visibilitychange', webViewerVisibilityChange);
     window.removeEventListener('wheel', webViewerWheel);
     window.removeEventListener('click', webViewerClick);
     window.removeEventListener('keydown', webViewerKeyDown);
@@ -2006,7 +2009,23 @@ function webViewerPageChanging(evt) {
   }
 }
 
-let zoomDisabled = false, zoomDisabledTimeout;
+function webViewerVisibilityChange(evt) {
+  if (document.visibilityState === 'visible') {
+    // Ignore mouse wheel zooming during tab switches (bug 1503412).
+    setZoomDisabledTimeout();
+  }
+}
+
+let zoomDisabledTimeout = null;
+function setZoomDisabledTimeout() {
+  if (zoomDisabledTimeout) {
+    clearTimeout(zoomDisabledTimeout);
+  }
+  zoomDisabledTimeout = setTimeout(function() {
+    zoomDisabledTimeout = null;
+  }, WHEEL_ZOOM_DISABLED_TIMEOUT);
+}
+
 function webViewerWheel(evt) {
   let pdfViewer = PDFViewerApplication.pdfViewer;
   if (pdfViewer.isInPresentationMode) {
@@ -2022,7 +2041,7 @@ function webViewerWheel(evt) {
     // Only zoom the pages, not the entire viewer.
     evt.preventDefault();
     // NOTE: this check must be placed *after* preventDefault.
-    if (zoomDisabled) {
+    if (zoomDisabledTimeout || document.visibilityState === 'hidden') {
       return;
     }
 
@@ -2051,11 +2070,7 @@ function webViewerWheel(evt) {
       pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
     }
   } else {
-    zoomDisabled = true;
-    clearTimeout(zoomDisabledTimeout);
-    zoomDisabledTimeout = setTimeout(function () {
-      zoomDisabled = false;
-    }, 1000);
+    setZoomDisabledTimeout();
   }
 }
 
