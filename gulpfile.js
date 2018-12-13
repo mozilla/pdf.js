@@ -145,7 +145,7 @@ function createWebpackConfig(defines, output) {
   var licenseHeaderLibre =
     fs.readFileSync('./src/license_header_libre.js').toString();
   var enableSourceMaps = !bundleDefines.FIREFOX && !bundleDefines.MOZCENTRAL &&
-                         !bundleDefines.CHROME;
+                         !bundleDefines.CHROME && !bundleDefines.TESTING;
   var skipBabel = bundleDefines.SKIP_BABEL ||
                   process.env['SKIP_BABEL'] === 'true';
 
