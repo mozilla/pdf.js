@@ -19,7 +19,7 @@
     "eslint-plugin-unicorn": "^4.0.3",
     "fancy-log": "^1.3.2",
     "globals": "^9.18.0",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.0",
     "gulp-postcss": "^7.0.1",
     "gulp-rename": "^1.4.0",
     "gulp-replace": "^1.0.0",
