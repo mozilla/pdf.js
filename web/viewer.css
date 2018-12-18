@@ -1103,6 +1103,11 @@ html[dir='rtl'] .verticalToolbarSeparator {
   -webkit-overflow-scrolling: touch;
 }
 
+#thumbnailView > a:active,
+#thumbnailView > a:focus {
+  outline: 0;
+}
+
 .thumbnail {
   margin: 0 10px 5px 10px;
 }
