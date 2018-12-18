@@ -14,8 +14,8 @@
  */
 
 import {
-  assert, FormatError, getInheritableProperty, info, isArrayBuffer, isNum,
-  isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
+  assert, FormatError, getInheritableProperty, info, isArrayBuffer, isBool,
+  isNum, isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
   stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
@@ -544,17 +544,37 @@ var PDFDocument = (function PDFDocumentClosure() {
         info('The document information dictionary is invalid.');
       }
       if (isDict(infoDict)) {
-        // Only fill the document info with valid entries from the spec.
-        for (let key in DocumentInfoValidators) {
-          if (infoDict.has(key)) {
-            const value = infoDict.get(key);
-            // Make sure the value conforms to the spec.
+        // Fill the document info with valid entries from the specification,
+        // as well as any existing well-formed custom entries.
+        for (let key of infoDict.getKeys()) {
+          const value = infoDict.get(key);
+
+          if (DocumentInfoValidators[key]) {
+            // Make sure the (standard) value conforms to the specification.
             if (DocumentInfoValidators[key](value)) {
               docInfo[key] = (typeof value !== 'string' ?
                               value : stringToPDFString(value));
             } else {
-              info('Bad value in document info for "' + key + '"');
+              info(`Bad value in document info for "${key}".`);
             }
+          } else if (typeof key === 'string') {
+            // For custom values, only accept white-listed types to prevent
+            // errors that would occur when trying to send non-serializable
+            // objects to the main-thread (for example `Dict` or `Stream`).
+            let customValue;
+            if (isString(value)) {
+              customValue = stringToPDFString(value);
+            } else if (isName(value) || isNum(value) || isBool(value)) {
+              customValue = value;
+            } else {
+              info(`Unsupported value in document info for (custom) "${key}".`);
+              continue;
+            }
+
+            if (!docInfo['Custom']) {
+              docInfo['Custom'] = Object.create(null);
+            }
+            docInfo['Custom'][key] = customValue;
           }
         }
       }
