@@ -904,15 +904,19 @@ class PDFPageProxy {
    * @param {number} rotate Degrees to rotate the viewport. If omitted this
    * defaults to the page rotation.
    * @param {boolean} dontFlip (optional) If true, axis Y will not be flipped.
+   * @param {number} offsetX (optional) The vertical, i.e. x-axis, offset.
+   * @param {number} offsetY (optional) The horizontal, i.e. y-axis, offset.
    * @return {PageViewport} Contains 'width' and 'height' properties
    * along with transforms required for rendering.
    */
-  getViewport(scale, rotate = this.rotate, dontFlip = false) {
+  getViewport(scale, rotate = this.rotate, dontFlip = false, offsetX, offsetY) {
     return new PageViewport({
       viewBox: this.view,
       scale,
       rotation: rotate,
       dontFlip,
+      offsetX,
+      offsetY,
     });
   }
 
