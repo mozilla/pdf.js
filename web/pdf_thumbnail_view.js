@@ -146,7 +146,7 @@ class PDFThumbnailView {
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
     let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = pdfPage.getViewport(1, totalRotation);
+    this.viewport = pdfPage.getViewport({ scale: 1, rotation: totalRotation, });
     this.reset();
   }
 

@@ -64,7 +64,7 @@ loadingTask.promise.then(function(pdfDocument) {
   // Get the first page.
   pdfDocument.getPage(1).then(function (page) {
     // Render the page on a Node canvas with 100% scale.
-    var viewport = page.getViewport(1.0);
+    var viewport = page.getViewport({ scale: 1.0, });
     var canvasFactory = new NodeCanvasFactory();
     var canvasAndContext =
       canvasFactory.create(viewport.width, viewport.height);

@@ -50,7 +50,7 @@ loadingTask.promise.then(function(pdfDocument) {
       container: container,
       id: PAGE_TO_VIEW,
       scale: SCALE,
-      defaultViewport: pdfPage.getViewport(SCALE),
+      defaultViewport: pdfPage.getViewport({ scale: SCALE, }),
       // We can enable text/annotations layers, if needed
       textLayerFactory: new pdfjsViewer.DefaultTextLayerFactory(),
       annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),

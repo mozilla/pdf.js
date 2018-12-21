@@ -419,7 +419,7 @@ class BaseViewer {
     // viewport for all pages
     firstPagePromise.then((pdfPage) => {
       let scale = this.currentScale;
-      let viewport = pdfPage.getViewport(scale * CSS_UNITS);
+      let viewport = pdfPage.getViewport({ scale: scale * CSS_UNITS, });
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let textLayerFactory = null;
         if (this.textLayerMode !== TextLayerMode.DISABLE) {
@@ -1031,7 +1031,7 @@ class BaseViewer {
    */
   getPagesOverview() {
     let pagesOverview = this._pages.map(function(pageView) {
-      let viewport = pageView.pdfPage.getViewport(1);
+      let viewport = pageView.pdfPage.getViewport({ scale: 1, });
       return {
         width: viewport.width,
         height: viewport.height,

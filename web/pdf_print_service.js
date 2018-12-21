@@ -45,7 +45,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
     let renderContext = {
       canvasContext: ctx,
       transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
-      viewport: pdfPage.getViewport(1, size.rotation),
+      viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation, }),
       intent: 'print',
     };
     return pdfPage.render(renderContext).promise;
