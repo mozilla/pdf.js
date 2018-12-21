@@ -911,7 +911,7 @@ class PDFPageProxy {
    * @return {PageViewport} Contains 'width' and 'height' properties
    * along with transforms required for rendering.
    */
-  getViewport(scale, rotate = this.rotate, dontFlip = false, 
+  getViewport(scale, rotate = this.rotate, dontFlip = false,
               offsetX = 0, offsetY = 0) {
     return new PageViewport({
       viewBox: this.view,
