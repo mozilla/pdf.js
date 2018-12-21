@@ -61,7 +61,7 @@ describe('custom canvas rendering', function() {
     if (isNodeJS()) {
       pending('TODO: Support Canvas testing in Node.js.');
     }
-    var viewport = page.getViewport(1);
+    var viewport = page.getViewport({ scale: 1, });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
@@ -80,7 +80,7 @@ describe('custom canvas rendering', function() {
     if (isNodeJS()) {
       pending('TODO: Support Canvas testing in Node.js.');
     }
-    var viewport = page.getViewport(1);
+    var viewport = page.getViewport({ scale: 1, });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({

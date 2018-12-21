@@ -52,7 +52,7 @@ function pageLoaded() {
   var loadingTask = pdfjsLib.getDocument({ url: PDF_PATH, });
   loadingTask.promise.then(function(pdfDocument) {
     pdfDocument.getPage(PAGE_NUMBER).then(function (page) {
-      var viewport = page.getViewport(PAGE_SCALE);
+      var viewport = page.getViewport({ scale: PAGE_SCALE, });
       page.getTextContent().then(function (textContent) {
         // building SVG and adding that to the DOM
         var svg = buildSVG(viewport, textContent);
