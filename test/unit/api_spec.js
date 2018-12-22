@@ -1034,7 +1034,7 @@ describe('api', function() {
       expect(page.view).toEqual([0, 0, 595.28, 841.89]);
     });
     it('gets viewport', function () {
-      var viewport = page.getViewport(1.5, 90);
+      var viewport = page.getViewport({ scale: 1.5, rotation: 90, });
       expect(viewport.viewBox).toEqual(page.view);
       expect(viewport.scale).toEqual(1.5);
       expect(viewport.rotation).toEqual(90);
@@ -1045,8 +1045,9 @@ describe('api', function() {
     it('gets viewport respecting "dontFlip" argument', function () {
       const scale = 1;
       const rotation = 135;
-      let viewport = page.getViewport(scale, rotation);
-      let dontFlipViewport = page.getViewport(scale, rotation, true);
+      let viewport = page.getViewport({ scale, rotation, });
+      let dontFlipViewport = page.getViewport({ scale, rotation,
+                                                dontFlip: true, });
 
       expect(dontFlipViewport).not.toEqual(viewport);
       expect(dontFlipViewport).toEqual(viewport.clone({ dontFlip: true, }));
@@ -1239,7 +1240,7 @@ describe('api', function() {
 
       loadingTask.promise.then((pdfDoc) => {
         return pdfDoc.getPage(1).then((pdfPage) => {
-          let viewport = pdfPage.getViewport(1);
+          let viewport = pdfPage.getViewport({ scale: 1, });
           canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
           let renderTask = pdfPage.render({
@@ -1273,7 +1274,7 @@ describe('api', function() {
       if (isNodeJS()) {
         pending('TODO: Support Canvas testing in Node.js.');
       }
-      var viewport = page.getViewport(1);
+      var viewport = page.getViewport({ scale: 1, });
       var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       var renderTask = page.render({
@@ -1297,7 +1298,7 @@ describe('api', function() {
       if (isNodeJS()) {
         pending('TODO: Support Canvas testing in Node.js.');
       }
-      let viewport = page.getViewport(1);
+      let viewport = page.getViewport({ scale: 1, });
       let canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       let renderTask = page.render({
@@ -1326,7 +1327,7 @@ describe('api', function() {
       if (isNodeJS()) {
         pending('TODO: Support Canvas testing in Node.js.');
       }
-      var viewport = page.getViewport(1);
+      var viewport = page.getViewport({ scale: 1, });
       var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       var renderTask1 = page.render({
@@ -1368,7 +1369,7 @@ describe('api', function() {
       const pdf = await loadingTask.promise;
       pdfDocuments.push(pdf);
       const page = await pdf.getPage(1);
-      const viewport = page.getViewport(1.2);
+      const viewport = page.getViewport({ scale: 1.2, });
       const canvasAndCtx = CanvasFactory.create(viewport.width,
                                                 viewport.height);
       const renderTask = page.render({
