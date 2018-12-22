@@ -38,7 +38,7 @@ loadingTask.promise.then(function(doc) {
   var loadPage = function (pageNum) {
     return doc.getPage(pageNum).then(function (page) {
       console.log('# Page ' + pageNum);
-      var viewport = page.getViewport(1.0 /* scale */);
+      var viewport = page.getViewport({ scale: 1.0, });
       console.log('Size: ' + viewport.width + 'x' + viewport.height);
       console.log();
       return page.getTextContent().then(function (content) {

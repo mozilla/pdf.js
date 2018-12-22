@@ -756,6 +756,17 @@ class PDFDocumentProxy {
 }
 
 /**
+ * Page getViewport parameters.
+ *
+ * @typedef {Object} GetViewportParameters
+ * @property {number} scale - The desired scale of the viewport.
+ * @property {number} rotation - (optional) The desired rotation, in degrees, of
+ *   the viewport. If omitted it defaults to the page rotation.
+ * @property {boolean} dontFlip - (optional) If true, the y-axis will not be
+ *   flipped. The default value is `false`.
+ */
+
+/**
  * Page getTextContent parameters.
  *
  * @typedef {Object} getTextContentParameters
@@ -811,7 +822,7 @@ class PDFDocumentProxy {
  * @typedef {Object} RenderParameters
  * @property {Object} canvasContext - A 2D context of a DOM Canvas object.
  * @property {PageViewport} viewport - Rendering viewport obtained by
- *                                calling of PDFPage.getViewport method.
+ *                          calling the `PDFPageProxy.getViewport` method.
  * @property {string} intent - Rendering intent, can be 'display' or 'print'
  *                    (default value is 'display').
  * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
@@ -900,18 +911,22 @@ class PDFPageProxy {
   }
 
   /**
-   * @param {number} scale The desired scale of the viewport.
-   * @param {number} rotate Degrees to rotate the viewport. If omitted this
-   * defaults to the page rotation.
-   * @param {boolean} dontFlip (optional) If true, axis Y will not be flipped.
+   * @param {GetViewportParameters} params - Viewport parameters.
    * @return {PageViewport} Contains 'width' and 'height' properties
-   * along with transforms required for rendering.
+   *   along with transforms required for rendering.
    */
-  getViewport(scale, rotate = this.rotate, dontFlip = false) {
+  getViewport({ scale, rotation = this.rotate, dontFlip = false, } = {}) {
+    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) &&
+        (arguments.length > 1 || typeof arguments[0] === 'number')) {
+      deprecated('getViewport is called with obsolete arguments.');
+      scale = arguments[0];
+      rotation = typeof arguments[1] === 'number' ? arguments[1] : this.rotate;
+      dontFlip = typeof arguments[2] === 'boolean' ? arguments[2] : false;
+    }
     return new PageViewport({
       viewBox: this.view,
       scale,
-      rotation: rotate,
+      rotation,
       dontFlip,
     });
   }

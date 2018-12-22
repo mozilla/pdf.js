@@ -37,7 +37,7 @@ loadingTask.promise.then(function(doc) {
           container: container,
           id: pageNum,
           scale: DEFAULT_SCALE,
-          defaultViewport: pdfPage.getViewport(DEFAULT_SCALE),
+          defaultViewport: pdfPage.getViewport({ scale: DEFAULT_SCALE, }),
           annotationLayerFactory:
             new pdfjsViewer.DefaultAnnotationLayerFactory(),
           renderInteractiveForms: true,

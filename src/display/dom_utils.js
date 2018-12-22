@@ -140,11 +140,11 @@ class DOMSVGFactory {
  * @property {Array} viewBox - The xMin, yMin, xMax and yMax coordinates.
  * @property {number} scale - The scale of the viewport.
  * @property {number} rotation - The rotation, in degrees, of the viewport.
- * @property {number} offsetX - (optional) The vertical, i.e. x-axis, offset.
+ * @property {number} offsetX - (optional) The horizontal, i.e. x-axis, offset.
  *   The default value is `0`.
- * @property {number} offsetY - (optional) The horizontal, i.e. y-axis, offset.
+ * @property {number} offsetY - (optional) The vertical, i.e. y-axis, offset.
  *   The default value is `0`.
- * @property {boolean} dontFlip - (optional) If true, the x-axis will not be
+ * @property {boolean} dontFlip - (optional) If true, the y-axis will not be
  *   flipped. The default value is `false`.
  */
 

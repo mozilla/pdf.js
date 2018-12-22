@@ -118,8 +118,8 @@ class PDFPageView {
     this.pdfPageRotate = pdfPage.rotate;
 
     let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = pdfPage.getViewport(this.scale * CSS_UNITS,
-                                        totalRotation);
+    this.viewport = pdfPage.getViewport({ scale: this.scale * CSS_UNITS,
+                                          rotation: totalRotation, });
     this.stats = pdfPage.stats;
     this.reset();
   }

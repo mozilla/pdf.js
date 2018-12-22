@@ -471,7 +471,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
           this.canvas.mozOpaque = true;
           ctx = this.canvas.getContext('2d', { alpha: false, });
           task.pdfDoc.getPage(task.pageNum).then(function(page) {
-            var viewport = page.getViewport(PDF_TO_CSS_UNITS);
+            var viewport = page.getViewport({ scale: PDF_TO_CSS_UNITS, });
             self.canvas.width = viewport.width;
             self.canvas.height = viewport.height;
             self._clearCanvas();
