@@ -651,6 +651,14 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @return {Promise} A promise that is resolved with an {Array} containing the
+   *   destination, or `null` when no open action is present in the PDF file.
+   */
+  getOpenActionDestination() {
+    return this._transport.getOpenActionDestination();
+  }
+
+  /**
    * @return {Promise} A promise that is resolved with a lookup table for
    *   mapping named attachments to their content.
    */
@@ -2165,6 +2173,11 @@ class WorkerTransport {
 
   getPageMode() {
     return this.messageHandler.sendWithPromise('GetPageMode', null);
+  }
+
+  getOpenActionDestination() {
+    return this.messageHandler.sendWithPromise('getOpenActionDestination',
+                                               null);
   }
 
   getAttachments() {

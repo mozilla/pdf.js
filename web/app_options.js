@@ -48,6 +48,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER,
   },
+  disableOpenActionDestination: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.VIEWER,
+  },
   disablePageLabels: {
     /** @type {boolean} */
     value: false,

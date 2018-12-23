@@ -117,6 +117,10 @@
       ],
       "default": 0
     },
+    "disableOpenActionDestination": {
+      "type": "boolean",
+      "default": true
+    },
     "disablePageLabels": {
       "type": "boolean",
       "default": false
