@@ -264,7 +264,6 @@ class ChunkedStreamManager {
     this.chunkSize = args.rangeChunkSize;
     this.stream = new ChunkedStream(this.length, this.chunkSize, this);
     this.pdfNetworkStream = pdfNetworkStream;
-    this.url = args.url;
     this.disableAutoFetch = args.disableAutoFetch;
     this.msgHandler = args.msgHandler;
 

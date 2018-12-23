@@ -322,7 +322,6 @@ var WorkerMessageHandler = {
                                fullRequest.isStreamingSupported;
         pdfManager = new NetworkPdfManager(docId, pdfStream, {
           msgHandler: handler,
-          url: source.url,
           password: source.password,
           length: fullRequest.contentLength,
           disableAutoFetch,
