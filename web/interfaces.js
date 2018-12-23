@@ -94,7 +94,7 @@ class IPDFHistory {
   /**
    * @param {Object} params
    */
-  push({ namedDest, explicitDest, pageNumber, }) {}
+  push({ namedDest = null, explicitDest, pageNumber, }) {}
 
   pushCurrentPosition() {}
 

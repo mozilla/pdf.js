@@ -531,6 +531,10 @@ var WorkerMessageHandler = {
       return pdfManager.ensureCatalog('pageMode');
     });
 
+    handler.on('getOpenActionDestination', function(data) {
+      return pdfManager.ensureCatalog('openActionDestination');
+    });
+
     handler.on('GetAttachments',
       function wphSetupGetAttachments(data) {
         return pdfManager.ensureCatalog('attachments');

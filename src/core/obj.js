@@ -392,6 +392,28 @@ class Catalog {
     return shadow(this, 'pageMode', pageMode);
   }
 
+  get openActionDestination() {
+    const obj = this.catDict.get('OpenAction');
+    let openActionDest = null;
+
+    if (isDict(obj)) {
+      // Convert the OpenAction dictionary into a format that works with
+      // `parseDestDictionary`, to avoid having to re-implement those checks.
+      const destDict = new Dict(this.xref);
+      destDict.set('A', obj);
+
+      const resultObj = { url: null, dest: null, };
+      Catalog.parseDestDictionary({ destDict, resultObj, });
+
+      if (Array.isArray(resultObj.dest)) {
+        openActionDest = resultObj.dest;
+      }
+    } else if (Array.isArray(obj)) {
+      openActionDest = obj;
+    }
+    return shadow(this, 'openActionDestination', openActionDest);
+  }
+
   get attachments() {
     const obj = this.catDict.get('Names');
     let attachments = null;
