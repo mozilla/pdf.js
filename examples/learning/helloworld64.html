@@ -39,12 +39,12 @@
 
   // Opening PDF by passing its binary data as a string. It is still preferable
   // to use Uint8Array, but string or array-like structure will work too.
-  var loadingTask = pdfjsLib.getDocument({data: pdfData});
+  var loadingTask = pdfjsLib.getDocument({ data: pdfData, });
   loadingTask.promise.then(function(pdf) {
     // Fetch the first page.
     pdf.getPage(1).then(function(page) {
       var scale = 1.5;
-      var viewport = page.getViewport(scale);
+      var viewport = page.getViewport({ scale: scale, });
 
       // Prepare canvas using PDF page dimensions.
       var canvas = document.getElementById('the-canvas');
@@ -55,7 +55,7 @@
       // Render PDF page into canvas context.
       var renderContext = {
         canvasContext: context,
-        viewport: viewport
+        viewport: viewport,
       };
       page.render(renderContext);
     });
