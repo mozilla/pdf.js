@@ -51,6 +51,7 @@ const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
+const HASH_UPDATE_DELAY = 1000; // ms
 
 const DefaultExternalServices = {
   updateFindControlState(data) {},
@@ -164,6 +165,9 @@ let PDFViewerApplication = {
     });
 
     this.initialized = true;
+
+    // update url on scroll
+    setupHashUpdating();
   },
 
   /**
@@ -1767,6 +1771,27 @@ function webViewerSidebarViewChanged(evt) {
     // Only update the storage when the document has been loaded *and* rendered.
     store.set('sidebarView', evt.view).catch(function() { });
   }
+}
+
+function setupHashUpdating() {
+  let tid = false;
+
+  // set up the update function
+  let updatePos = () => {
+    return PDFViewerApplication.pdfHistory.pushCurrentPosition();
+  };
+
+  // schedule the update call for some time in the future.
+  let test = (evt) => {
+    if (tid) {
+      clearTimeout(tid);
+    }
+    tid = setTimeout(updatePos, HASH_UPDATE_DELAY);
+  };
+
+  // make sure to tell the browser that we need passive handling.
+  // See https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md
+  window.addEventListener('scroll', test, { passive: true, });
 }
 
 function webViewerUpdateViewarea(evt) {
