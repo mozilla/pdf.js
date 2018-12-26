@@ -1074,7 +1074,7 @@ let PDFViewerApplication = {
         ({ info, metadata, contentDispositionFilename, }) => {
       this.documentInfo = info;
       this.metadata = metadata;
-      if(contentDispositionFilename.includes('%')){
+      if(contentDispositionFilename && contentDispositionFilename.includes('%')){
           contentDispositionFilename = decodeURIComponent(contentDispositionFilename);
       }
       this.contentDispositionFilename = contentDispositionFilename;
