@@ -1,3 +1,5 @@
+/* eslint-disable mozilla/use-includes-instead-of-indexOf */
+
 'use strict';
 
 var fs = require('fs');
@@ -60,7 +62,7 @@ function flatten(stats) {
         pdf: stat['pdf'],
         round: stat['round'],
         stat: s['name'],
-        time: s['end'] - s['start']
+        time: s['end'] - s['start'],
       });
     });
   });

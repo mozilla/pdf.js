@@ -41,30 +41,71 @@
 'use strict';
 
 function initializePDFJS(callback) {
-    Promise.all([
-      'pdfjs/display/global', 'pdfjs-test/unit/annotation_spec',
-      'pdfjs-test/unit/api_spec', 'pdfjs-test/unit/bidi_spec',
-      'pdfjs-test/unit/cff_parser_spec', 'pdfjs-test/unit/cmap_spec',
-      'pdfjs-test/unit/crypto_spec', 'pdfjs-test/unit/document_spec',
-      'pdfjs-test/unit/dom_utils_spec', 'pdfjs-test/unit/evaluator_spec',
-      'pdfjs-test/unit/fonts_spec', 'pdfjs-test/unit/function_spec',
-      'pdfjs-test/unit/metadata_spec', 'pdfjs-test/unit/murmurhash3_spec',
-      'pdfjs-test/unit/network_spec', 'pdfjs-test/unit/parser_spec',
-      'pdfjs-test/unit/primitives_spec', 'pdfjs-test/unit/stream_spec',
-      'pdfjs-test/unit/type1_parser_spec', 'pdfjs-test/unit/ui_utils_spec',
-      'pdfjs-test/unit/unicode_spec', 'pdfjs-test/unit/util_spec'
-    ].map(function (moduleName) {
-      return SystemJS.import(moduleName);
-    })).then(function (modules) {
-      var displayGlobal = modules[0];
+  Promise.all([
+    'pdfjs/display/api',
+    'pdfjs/display/worker_options',
+    'pdfjs/display/network',
+    'pdfjs/display/fetch_stream',
+    'pdfjs/shared/is_node',
+    'pdfjs-test/unit/annotation_spec',
+    'pdfjs-test/unit/api_spec',
+    'pdfjs-test/unit/bidi_spec',
+    'pdfjs-test/unit/cff_parser_spec',
+    'pdfjs-test/unit/cmap_spec',
+    'pdfjs-test/unit/colorspace_spec',
+    'pdfjs-test/unit/crypto_spec',
+    'pdfjs-test/unit/custom_spec',
+    'pdfjs-test/unit/display_svg_spec',
+    'pdfjs-test/unit/document_spec',
+    'pdfjs-test/unit/dom_utils_spec',
+    'pdfjs-test/unit/encodings_spec',
+    'pdfjs-test/unit/evaluator_spec',
+    'pdfjs-test/unit/function_spec',
+    'pdfjs-test/unit/message_handler_spec',
+    'pdfjs-test/unit/metadata_spec',
+    'pdfjs-test/unit/murmurhash3_spec',
+    'pdfjs-test/unit/network_spec',
+    'pdfjs-test/unit/network_utils_spec',
+    'pdfjs-test/unit/parser_spec',
+    'pdfjs-test/unit/pdf_find_controller_spec',
+    'pdfjs-test/unit/pdf_find_utils_spec',
+    'pdfjs-test/unit/pdf_history_spec',
+    'pdfjs-test/unit/primitives_spec',
+    'pdfjs-test/unit/stream_spec',
+    'pdfjs-test/unit/type1_parser_spec',
+    'pdfjs-test/unit/ui_utils_spec',
+    'pdfjs-test/unit/unicode_spec',
+    'pdfjs-test/unit/util_spec',
+  ].map(function (moduleName) {
+    return SystemJS.import(moduleName);
+  })).then(function(modules) {
+    var displayApi = modules[0];
+    const GlobalWorkerOptions = modules[1].GlobalWorkerOptions;
+    var PDFNetworkStream = modules[2].PDFNetworkStream;
+    var PDFFetchStream = modules[3].PDFFetchStream;
+    const isNodeJS = modules[4];
 
-      // Configure the worker.
-      displayGlobal.PDFJS.workerSrc = '../../src/worker_loader.js';
-      // Opt-in to using the latest API.
-      displayGlobal.PDFJS.pdfjsNext = true;
+    if (isNodeJS()) {
+      throw new Error('The `gulp unittest` command cannot be used in ' +
+                      'Node.js environments.');
+    }
+    // Set the network stream factory for unit-tests.
+    if (typeof Response !== 'undefined' && 'body' in Response.prototype &&
+        typeof ReadableStream !== 'undefined') {
+      displayApi.setPDFNetworkStreamFactory(function(params) {
+        return new PDFFetchStream(params);
+      });
+    } else {
+      displayApi.setPDFNetworkStreamFactory(function(params) {
+        return new PDFNetworkStream(params);
+      });
+    }
 
-      callback();
-    });
+    // Configure the worker.
+    GlobalWorkerOptions.workerSrc = '../../build/generic/build/pdf.worker.js';
+
+    callback();
+  });
 }
 
 (function() {
@@ -79,52 +120,46 @@ function initializePDFJS(callback) {
 
   // Runner Parameters
   var queryString = new jasmine.QueryString({
-    getWindowLocation: function() {
+    getWindowLocation() {
       return window.location;
-    }
+    },
   });
 
-  var catchingExceptions = queryString.getParam('catch');
-  env.catchExceptions(typeof catchingExceptions === 'undefined' ?
-                      true : catchingExceptions);
-
-  var throwingExpectationFailures = queryString.getParam('throwFailures');
-  env.throwOnExpectationFailure(throwingExpectationFailures);
+  var config = {
+    failFast: queryString.getParam('failFast'),
+    oneFailurePerSpec: queryString.getParam('oneFailurePerSpec'),
+    hideDisabled: queryString.getParam('hideDisabled'),
+  };
 
   var random = queryString.getParam('random');
-  env.randomizeTests(random);
+  if (random !== undefined && random !== '') {
+    config.random = random;
+  }
 
   var seed = queryString.getParam('seed');
   if (seed) {
-    env.seed(seed);
+    config.seed = seed;
   }
 
   // Reporters
   var htmlReporter = new jasmine.HtmlReporter({
-    env: env,
-    onRaiseExceptionsClick: function() {
-      queryString.navigateWithNewParam('catch', !env.catchingExceptions());
+    env,
+    navigateWithNewParam(key, value) {
+      return queryString.navigateWithNewParam(key, value);
     },
-    onThrowExpectationsClick: function() {
-      queryString.navigateWithNewParam('throwFailures',
-                                       !env.throwingExpectationFailures());
-    },
-    onRandomClick: function() {
-      queryString.navigateWithNewParam('random', !env.randomTests());
-    },
-    addToExistingQueryString: function(key, value) {
+    addToExistingQueryString(key, value) {
       return queryString.fullStringWithNewParam(key, value);
     },
-    getContainer: function() {
+    getContainer() {
       return document.body;
     },
-    createElement: function() {
+    createElement() {
       return document.createElement.apply(document, arguments);
     },
-    createTextNode: function() {
+    createTextNode() {
       return document.createTextNode.apply(document, arguments);
     },
-    timer: new jasmine.Timer()
+    timer: new jasmine.Timer(),
   });
 
   env.addReporter(htmlReporter);
@@ -138,14 +173,16 @@ function initializePDFJS(callback) {
   // Filter which specs will be run by matching the start of the full name
   // against the `spec` query param.
   var specFilter = new jasmine.HtmlSpecFilter({
-    filterString: function() {
+    filterString() {
       return queryString.getParam('spec');
-    }
+    },
   });
 
-  env.specFilter = function(spec) {
+  config.specFilter = function(spec) {
     return specFilter.matches(spec.getFullName());
   };
+
+  env.configure(config);
 
   // Sets longer timeout.
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;

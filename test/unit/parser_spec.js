@@ -12,26 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/parser_spec', ['exports', 'pdfjs/core/parser',
-           'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/parser.js'),
-            require('../../src/core/primitives.js'),
-            require('../../src/core/stream.js'));
-  } else {
-    factory((root.pdfjsTestUnitParserSpec = {}), root.pdfjsCoreParser,
-             root.pdfjsCorePrimitives, root.pdfjsCoreStream);
-  }
-}(this, function (exports, coreParser, corePrimitives, coreStream) {
-
-var Lexer = coreParser.Lexer;
-var Linearization = coreParser.Linearization;
-var Name = corePrimitives.Name;
-var StringStream = coreStream.StringStream;
+import { Lexer, Linearization } from '../../src/core/parser';
+import { FormatError } from '../../src/shared/util';
+import { Name } from '../../src/core/primitives';
+import { StringStream } from '../../src/core/stream';
 
 describe('parser', function() {
   describe('Lexer', function() {
@@ -62,6 +47,44 @@ describe('parser', function() {
       var result = lexer.getNumber();
 
       expect(result).toEqual(-205.88);
+    });
+
+    it('should ignore minus signs in the middle of number', function() {
+      var input = new StringStream('205--.88');
+      var lexer = new Lexer(input);
+      var result = lexer.getNumber();
+
+      expect(result).toEqual(205.88);
+    });
+
+    it('should ignore line-breaks between operator and digit in number',
+        function() {
+      let minusInput = new StringStream('-\r\n205.88');
+      let minusLexer = new Lexer(minusInput);
+
+      expect(minusLexer.getNumber()).toEqual(-205.88);
+
+      let plusInput = new StringStream('+\r\n205.88');
+      let plusLexer = new Lexer(plusInput);
+
+      expect(plusLexer.getNumber()).toEqual(205.88);
+    });
+
+    it('should treat a single decimal point as zero', function() {
+      let input = new StringStream('.');
+      let lexer = new Lexer(input);
+
+      expect(lexer.getNumber()).toEqual(0);
+
+      let numbers = ['..', '-.', '+.', '-\r\n.', '+\r\n.'];
+      for (let number of numbers) {
+        let input = new StringStream(number);
+        let lexer = new Lexer(input);
+
+        expect(function() {
+          return lexer.getNumber();
+        }).toThrowError(FormatError, /^Invalid number:\s/);
+      }
     });
 
     it('should handle glued numbers and operators', function() {
@@ -294,4 +317,3 @@ describe('parser', function() {
     });
   });
 });
-}));

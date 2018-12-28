@@ -13,8 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals chrome, getHeaderFromHeaders */
-/* exported saveReferer */
+/* import-globals-from pdfHandler.js */
 
 'use strict';
 /**
@@ -45,7 +44,7 @@ var g_referrers = {};
 (function() {
   var requestFilter = {
     urls: ['*://*/*'],
-    types: ['main_frame', 'sub_frame']
+    types: ['main_frame', 'sub_frame'],
   };
   chrome.webRequest.onSendHeaders.addListener(function(details) {
     g_requestHeaders[details.requestId] = details.requestHeaders;
@@ -105,7 +104,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
       chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, {
         urls: [data.requestUrl],
         types: ['xmlhttprequest'],
-        tabId: tabId
+        tabId: tabId,
       }, ['blocking', 'requestHeaders']);
     }
     // Acknowledge the message, and include the latest referer for this frame.
@@ -118,7 +117,16 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
       delete g_referrers[tabId][frameId];
     }
     chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders);
+    chrome.webRequest.onHeadersReceived.removeListener(exposeOnHeadersReceived);
   });
+
+  // Expose some response headers for fetch API calls from PDF.js;
+  // This is a work-around for https://crbug.com/784528
+  chrome.webRequest.onHeadersReceived.addListener(exposeOnHeadersReceived, {
+    urls: ['https://*/*'],
+    types: ['xmlhttprequest'],
+    tabId: tabId,
+  }, ['blocking', 'responseHeaders']);
 
   function onBeforeSendHeaders(details) {
     if (details.frameId !== frameId) {
@@ -127,7 +135,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
     var headers = details.requestHeaders;
     var refererHeader = getHeaderFromHeaders(headers, 'referer');
     if (!refererHeader) {
-      refererHeader = {name: 'Referer'};
+      refererHeader = { name: 'Referer', };
       headers.push(refererHeader);
     } else if (refererHeader.value &&
         refererHeader.value.lastIndexOf('chrome-extension:', 0) !== 0) {
@@ -136,6 +144,24 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
       return;
     }
     refererHeader.value = referer;
-    return {requestHeaders: headers};
+    return { requestHeaders: headers, };
+  }
+
+  function exposeOnHeadersReceived(details) {
+    if (details.frameId !== frameId) {
+      return;
+    }
+    var headers = details.responseHeaders;
+    var aceh = getHeaderFromHeaders(headers, 'access-control-expose-headers');
+    // List of headers that PDF.js uses in src/display/network_utils.js
+    var acehValue =
+      'accept-ranges,content-encoding,content-length,content-disposition';
+    if (aceh) {
+      aceh.value += ',' + acehValue;
+    } else {
+      aceh = { name: 'Access-Control-Expose-Headers', value: acehValue, };
+      headers.push(aceh);
+    }
+    return { responseHeaders: headers, };
   }
 });

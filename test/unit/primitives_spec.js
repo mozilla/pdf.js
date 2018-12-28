@@ -12,57 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/primitives_spec', ['exports',
-           'pdfjs/core/primitives'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/primitives.js'));
-  } else {
-    factory((root.pdfjsTestUnitPrimitivesSpec = {}), root.pdfjsCorePrimitives);
-  }
-}(this, function (exports, corePrimitives) {
-
-var Name = corePrimitives.Name;
-var Dict = corePrimitives.Dict;
-var Ref = corePrimitives.Ref;
-var RefSet = corePrimitives.RefSet;
-var Cmd = corePrimitives.Cmd;
-var isName = corePrimitives.isName;
-var isCmd = corePrimitives.isCmd;
-var isDict = corePrimitives.isDict;
-var isRef = corePrimitives.isRef;
-var isRefsEqual = corePrimitives.isRefsEqual;
+import {
+  Cmd, Dict, isCmd, isDict, isName, isRef, isRefsEqual, Name, Ref, RefSet
+} from '../../src/core/primitives';
+import { XRefMock } from './test_utils';
 
 describe('primitives', function() {
-  function XRefMock(array) {
-    this.map = Object.create(null);
-    for (var elem in array) {
-      var obj = array[elem];
-      var ref = obj.ref, data = obj.data;
-      this.map[ref.toString()] = data;
-    }
-  }
-  XRefMock.prototype = {
-    fetch: function (ref) {
-      return this.map[ref.toString()];
-    },
-    fetchIfRef: function (obj) {
-      if (!isRef(obj)) {
-        return obj;
-      }
-      return this.fetch(obj);
-    },
-    fetchAsync: function (ref) {
-      return Promise.resolve(this.fetch(ref));
-    },
-    fetchIfRefAsync: function (obj) {
-      return Promise.resolve(this.fetchIfRef(obj));
-    },
-  };
-
   describe('Name', function() {
     it('should retain the given name', function() {
       var givenName = 'Font';
@@ -404,4 +360,3 @@ describe('primitives', function() {
     });
   });
 });
-}));

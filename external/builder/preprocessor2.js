@@ -22,7 +22,7 @@ function evalWithDefines(code, defines, loc) {
   if (!code || !code.trim()) {
     throw new Error('No JavaScript expression given');
   }
-  return vm.runInNewContext(code, defines, {displayErrors: false});
+  return vm.runInNewContext(code, defines, { displayErrors: false, });
 }
 
 function handlePreprocessorAction(ctx, actionName, args, loc) {
@@ -36,7 +36,7 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
           throw new Error('No code for testing is given');
         }
         var isTrue = !!evalWithDefines(arg.value, ctx.defines);
-        return {type: 'Literal', value: isTrue, loc: loc};
+        return { type: 'Literal', value: isTrue, loc: loc, };
       case 'eval':
         arg = args[0];
         if (!arg || arg.type !== 'Literal' ||
@@ -46,7 +46,7 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
         var result = evalWithDefines(arg.value, ctx.defines);
         if (typeof result === 'boolean' || typeof result === 'string' ||
             typeof result === 'number') {
-          return {type: 'Literal', value: result, loc: loc};
+          return { type: 'Literal', value: result, loc: loc, };
         }
         if (typeof result === 'object') {
           var parsedObj = acorn.parse('(' + JSON.stringify(result) + ')');
@@ -80,13 +80,21 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
 
 function postprocessNode(ctx, node) {
   switch (node.type) {
+    case 'ExportNamedDeclaration':
+    case 'ImportDeclaration':
+      if (node.source && node.source.type === 'Literal' &&
+          ctx.map && ctx.map[node.source.value]) {
+        var newValue = ctx.map[node.source.value];
+        node.source.value = node.source.raw = newValue;
+      }
+      break;
     case 'IfStatement':
       if (isLiteral(node.test, true)) {
         // if (true) stmt1; => stmt1
         return node.consequent;
       } else if (isLiteral(node.test, false)) {
         // if (false) stmt1; else stmt2; => stmt2
-        return node.alternate || {type: 'EmptyStatement', loc: node.loc};
+        return node.alternate || { type: 'EmptyStatement', loc: node.loc, };
       }
       break;
     case 'ConditionalExpression':
@@ -102,13 +110,13 @@ function postprocessNode(ctx, node) {
       if (node.operator === 'typeof' &&
           isPDFJSPreprocessor(node.argument)) {
         // typeof PDFJSDev => 'object'
-        return {type: 'Literal', value: 'object', loc: node.loc};
+        return { type: 'Literal', value: 'object', loc: node.loc, };
       }
       if (node.operator === '!' &&
           node.argument.type === 'Literal' &&
           typeof node.argument.value === 'boolean') {
         // !true => false,  !false => true
-        return {type: 'Literal', value: !node.argument.value, loc: node.loc};
+        return { type: 'Literal', value: !node.argument.value, loc: node.loc, };
       }
       break;
     case 'LogicalExpression':
@@ -149,7 +157,7 @@ function postprocessNode(ctx, node) {
                  return {
                    type: 'Literal',
                    value: (node.operator[0] === '=') === equal,
-                   loc: node.loc
+                   loc: node.loc,
                  };
              }
           }
@@ -160,10 +168,17 @@ function postprocessNode(ctx, node) {
       if (node.callee.type === 'MemberExpression' &&
           isPDFJSPreprocessor(node.callee.object) &&
           node.callee.property.type === 'Identifier') {
-        // PDFJSDev.xxxx(arg1, arg2, ...) => tranform
+        // PDFJSDev.xxxx(arg1, arg2, ...) => transform
         var action = node.callee.property.name;
         return handlePreprocessorAction(ctx, action,
                                         node.arguments, node.loc);
+      }
+      // require('string')
+      if (node.callee.type === 'Identifier' && node.callee.name === 'require' &&
+          node.arguments.length === 1 && node.arguments[0].type === 'Literal' &&
+          ctx.map && ctx.map[node.arguments[0].value]) {
+        var requireName = node.arguments[0];
+        requireName.value = requireName.raw = ctx.map[requireName.value];
       }
       break;
     case 'BlockStatement':
@@ -200,86 +215,6 @@ function postprocessNode(ctx, node) {
         // Function body ends with return without arg -- removing it.
         block.body.pop();
       }
-      break;
-    case 'Program':
-      // Checking for a function closure that looks like UMD header.
-      node.body.some(function (item, index) {
-        // Is it `(function (root, factory) { ? }(this, function (?) {?}));` ?
-        if (item.type !== 'ExpressionStatement' ||
-            item.expression.type !== 'CallExpression' ||
-            item.expression.callee.type !== 'FunctionExpression' ||
-            item.expression.callee.params.length !== 2 ||
-            item.expression.arguments.length !== 2 ||
-            item.expression.arguments[0].type !== 'ThisExpression' ||
-            item.expression.arguments[1].type !== 'FunctionExpression') {
-          return false;
-        }
-        var init = item.expression.callee;
-        // Is init body looks like
-        // `if (?) { ? } else if (typeof exports !== 'undefined') { ? } ...`?
-        if (init.body.type !== 'BlockStatement' ||
-            init.body.body.length !== 1 ||
-            init.body.body[0].type !== 'IfStatement') {
-          return false;
-        }
-        var initIf = init.body.body[0];
-        if (initIf.alternate.type !== 'IfStatement' ||
-            initIf.alternate.test.type !== 'BinaryExpression' ||
-            initIf.alternate.test.operator !== '!==' ||
-            initIf.alternate.test.left.type !== 'UnaryExpression' ||
-            initIf.alternate.test.left.operator !== 'typeof' ||
-            initIf.alternate.test.left.argument.type !== 'Identifier' ||
-            initIf.alternate.test.left.argument.name !== 'exports' ||
-            initIf.alternate.test.right.type !== 'Literal' ||
-            initIf.alternate.test.right.value !== 'undefined' ||
-            initIf.alternate.consequent.type !== 'BlockStatement') {
-          return false;
-        }
-        var commonJsInit = initIf.alternate.consequent;
-        // Is commonJsInit `factory(exports, ...)` ?
-        if (commonJsInit.body.length !== 1 ||
-            commonJsInit.body[0].type !== 'ExpressionStatement' ||
-            commonJsInit.body[0].expression.type !== 'CallExpression' ||
-            commonJsInit.body[0].expression.callee.type !== 'Identifier') {
-          return false;
-        }
-        var commonJsInitArgs = commonJsInit.body[0].expression.arguments;
-        if (commonJsInitArgs.length === 0 ||
-            commonJsInitArgs[0].type !== 'Identifier' ||
-            commonJsInitArgs[0].name !== 'exports') {
-          return false;
-        }
-        var factory = item.expression.arguments[1];
-        // Is factory `function (exports, ....) { ? }` ?
-        if (factory.params.length === 0 ||
-            factory.params[0].type !== 'Identifier' ||
-            factory.params[0].name !== 'exports' ||
-            factory.body.type !== 'BlockStatement') {
-          return true;
-        }
-        var factoryParams = factory.params;
-        var factoryBody = factory.body;
-
-        // Remove closure and function and replacing parameters with vars.
-        node.body.splice(index, 1);
-        for (var i = 1, ii = factoryParams.length; i < ii; i++) {
-          var varNode = {
-            type: 'VariableDeclaration',
-            'declarations': [{
-                type: 'VariableDeclarator',
-                id: factoryParams[i],
-                init: commonJsInitArgs[i] || null,
-                loc: factoryParams[i].loc
-            }],
-            kind: 'var'
-          };
-          node.body.splice(index++, 0, varNode);
-        }
-        factoryBody.body.forEach(function (item) {
-          node.body.splice(index++, 0, item);
-        });
-        return true;
-      });
       break;
   }
   return node;
@@ -347,28 +282,24 @@ function traverseTree(ctx, node) {
 }
 
 function preprocessPDFJSCode(ctx, code) {
-  var saveComments = !!ctx.saveComments;
   var format = ctx.format || {
     indent: {
       style: ' ',
-      adjustMultilineComment: saveComments,
-    }
+    },
   };
-  var comments;
-  var parseComment = {
+  var parseOptions = {
+    ecmaVersion: 8,
     locations: true,
-    onComments: saveComments || (comments = []),
+    sourceFile: ctx.sourceFile,
     sourceType: 'module',
   };
   var codegenOptions = {
     format: format,
-    comment: saveComments,
     parse: acorn.parse,
+    sourceMap: ctx.sourceMap,
+    sourceMapWithCode: ctx.sourceMap,
   };
-  var syntax = acorn.parse(code, parseComment);
-  if (saveComments) {
-    escodegen.attachComments(syntax, comments);
-  }
+  var syntax = acorn.parse(code, parseOptions);
   traverseTree(ctx, syntax);
   return escodegen.generate(syntax, codegenOptions);
 }

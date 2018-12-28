@@ -29,57 +29,61 @@ NodeCanvasFactory.prototype = {
     };
   },
 
-  reset: function NodeCanvasFactory_reset(canvasAndContextPair, width, height) {
-    assert(canvasAndContextPair.canvas, 'Canvas is not specified');
+  reset: function NodeCanvasFactory_reset(canvasAndContext, width, height) {
+    assert(canvasAndContext.canvas, 'Canvas is not specified');
     assert(width > 0 && height > 0, 'Invalid canvas size');
-    canvasAndContextPair.canvas.width = width;
-    canvasAndContextPair.canvas.height = height;
+    canvasAndContext.canvas.width = width;
+    canvasAndContext.canvas.height = height;
   },
 
-  destroy: function NodeCanvasFactory_destroy(canvasAndContextPair) {
-    assert(canvasAndContextPair.canvas, 'Canvas is not specified');
+  destroy: function NodeCanvasFactory_destroy(canvasAndContext) {
+    assert(canvasAndContext.canvas, 'Canvas is not specified');
 
     // Zeroing the width and height cause Firefox to release graphics
     // resources immediately, which can greatly reduce memory consumption.
-    canvasAndContextPair.canvas.width = 0;
-    canvasAndContextPair.canvas.height = 0;
-    canvasAndContextPair.canvas = null;
-    canvasAndContextPair.context = null;
+    canvasAndContext.canvas.width = 0;
+    canvasAndContext.canvas.height = 0;
+    canvasAndContext.canvas = null;
+    canvasAndContext.context = null;
   },
 };
 
-var pdfjsLib = require('../../../build/dist');
+var pdfjsLib = require('pdfjs-dist');
 
 // Relative path of the PDF file.
-var pdfURL = '../../helloworld/helloworld.pdf';
+var pdfURL = '../../../web/compressed.tracemonkey-pldi-09.pdf';
 
 // Read the PDF file into a typed array so PDF.js can load it.
 var rawData = new Uint8Array(fs.readFileSync(pdfURL));
 
 // Load the PDF file.
-pdfjsLib.getDocument(rawData).then(function (pdfDocument) {
+var loadingTask = pdfjsLib.getDocument(rawData);
+loadingTask.promise.then(function(pdfDocument) {
   console.log('# PDF document loaded.');
 
   // Get the first page.
   pdfDocument.getPage(1).then(function (page) {
     // Render the page on a Node canvas with 100% scale.
-    var viewport = page.getViewport(1.0);
+    var viewport = page.getViewport({ scale: 1.0, });
     var canvasFactory = new NodeCanvasFactory();
-    var canvasAndContextPair = canvasFactory.create(viewport.width, viewport.height);
+    var canvasAndContext =
+      canvasFactory.create(viewport.width, viewport.height);
     var renderContext = {
-      canvasContext: canvasAndContextPair.context,
+      canvasContext: canvasAndContext.context,
       viewport: viewport,
-      canvasFactory: canvasFactory
+      canvasFactory: canvasFactory,
     };
 
-    page.render(renderContext).then(function () {
+    var renderTask = page.render(renderContext);
+    renderTask.promise.then(function() {
       // Convert the canvas to an image buffer.
-      image = canvasAndContextPair.canvas.toBuffer();
+      var image = canvasAndContext.canvas.toBuffer();
       fs.writeFile('output.png', image, function (error) {
         if (error) {
           console.error('Error: ' + error);
         } else {
-          console.log('Finished converting first page of PDF file to a PNG image.');
+          console.log(
+            'Finished converting first page of PDF file to a PNG image.');
         }
       });
     });

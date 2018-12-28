@@ -12,20 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/network_spec', ['exports', 'pdfjs/core/network'],
-           factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/network.js'));
-  } else {
-    factory((root.pdfjsTestUnitNetworkSpec = {}), root.pdfjsCoreNetwork);
-  }
-}(this, function (exports, coreNetwork) {
-
-var PDFNetworkStream = coreNetwork.PDFNetworkStream;
+import { PDFNetworkStream } from '../../src/display/network';
 
 describe('network', function() {
   var pdf1 = new URL('../pdfs/tracemonkey.pdf', window.location).href;
@@ -35,12 +23,10 @@ describe('network', function() {
 
   it('read without stream and range', function(done) {
     var stream = new PDFNetworkStream({
-      source: {
-        url: pdf1,
-        rangeChunkSize: 65536,
-        disableStream: true,
-      },
-      disableRange: true
+      url: pdf1,
+      rangeChunkSize: 65536,
+      disableStream: true,
+      disableRange: true,
     });
 
     var fullReader = stream.getFullReader();
@@ -89,12 +75,10 @@ describe('network', function() {
     }
 
     var stream = new PDFNetworkStream({
-      source: {
-        url: pdf2,
-        rangeChunkSize: 65536,
-        disableStream: false,
-      },
-      disableRange: false
+      url: pdf2,
+      rangeChunkSize: 65536,
+      disableStream: false,
+      disableRange: false,
     });
 
     var fullReader = stream.getFullReader();
@@ -135,13 +119,11 @@ describe('network', function() {
     // requiring this test to pass.
     var rangeSize = 32768;
     var stream = new PDFNetworkStream({
-      source: {
-        url: pdf1,
-        length: pdf1Length,
-        rangeChunkSize: rangeSize,
-        disableStream: true,
-      },
-      disableRange: false
+      url: pdf1,
+      length: pdf1Length,
+      rangeChunkSize: rangeSize,
+      disableStream: true,
+      disableRange: false,
     });
 
     var fullReader = stream.getFullReader();
@@ -162,7 +144,7 @@ describe('network', function() {
                                              pdf1Length - tailSize);
     var range2Reader = stream.getRangeReader(pdf1Length - tailSize, pdf1Length);
 
-    var result1 = {value: 0}, result2 = {value: 0};
+    var result1 = { value: 0, }, result2 = { value: 0, };
     var read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
@@ -189,4 +171,3 @@ describe('network', function() {
     });
   });
 });
-}));

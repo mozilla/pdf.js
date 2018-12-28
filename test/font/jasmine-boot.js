@@ -71,52 +71,46 @@ function initializePDFJS(callback) {
 
   // Runner Parameters
   var queryString = new jasmine.QueryString({
-    getWindowLocation: function() {
+    getWindowLocation() {
       return window.location;
-    }
+    },
   });
 
-  var catchingExceptions = queryString.getParam('catch');
-  env.catchExceptions(typeof catchingExceptions === 'undefined' ?
-                      true : catchingExceptions);
-
-  var throwingExpectationFailures = queryString.getParam('throwFailures');
-  env.throwOnExpectationFailure(throwingExpectationFailures);
+  var config = {
+    failFast: queryString.getParam('failFast'),
+    oneFailurePerSpec: queryString.getParam('oneFailurePerSpec'),
+    hideDisabled: queryString.getParam('hideDisabled'),
+  };
 
   var random = queryString.getParam('random');
-  env.randomizeTests(random);
+  if (random !== undefined && random !== '') {
+    config.random = random;
+  }
 
   var seed = queryString.getParam('seed');
   if (seed) {
-    env.seed(seed);
+    config.seed = seed;
   }
 
   // Reporters
   var htmlReporter = new jasmine.HtmlReporter({
-    env: env,
-    onRaiseExceptionsClick: function() {
-      queryString.navigateWithNewParam('catch', !env.catchingExceptions());
+    env,
+    navigateWithNewParam(key, value) {
+      return queryString.navigateWithNewParam(key, value);
     },
-    onThrowExpectationsClick: function() {
-      queryString.navigateWithNewParam('throwFailures',
-                                       !env.throwingExpectationFailures());
-    },
-    onRandomClick: function() {
-      queryString.navigateWithNewParam('random', !env.randomTests());
-    },
-    addToExistingQueryString: function(key, value) {
+    addToExistingQueryString(key, value) {
       return queryString.fullStringWithNewParam(key, value);
     },
-    getContainer: function() {
+    getContainer() {
       return document.body;
     },
-    createElement: function() {
+    createElement() {
       return document.createElement.apply(document, arguments);
     },
-    createTextNode: function() {
+    createTextNode() {
       return document.createTextNode.apply(document, arguments);
     },
-    timer: new jasmine.Timer()
+    timer: new jasmine.Timer(),
   });
 
   env.addReporter(htmlReporter);
@@ -130,14 +124,16 @@ function initializePDFJS(callback) {
   // Filter which specs will be run by matching the start of the full name
   // against the `spec` query param.
   var specFilter = new jasmine.HtmlSpecFilter({
-    filterString: function() {
+    filterString() {
       return queryString.getParam('spec');
-    }
+    },
   });
 
-  env.specFilter = function(spec) {
+  config.specFilter = function(spec) {
     return specFilter.matches(spec.getFullName());
   };
+
+  env.configure(config);
 
   // Sets longer timeout.
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;

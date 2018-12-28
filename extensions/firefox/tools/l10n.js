@@ -1,6 +1,6 @@
 "use strict";
 
-// Small subset of the webL10n API by Fabien Cazenave for pdf.js extension.
+// Small subset of the webL10n API by Fabien Cazenave for PDF.js extension.
 (function(window) {
   var gLanguage = "";
   var gExternalLocalizerServices = null;
@@ -76,7 +76,6 @@
     }
   }
 
-
   // translate an HTML subtree
   function translateFragment(element) {
     element = element || document.querySelector("html");
@@ -93,27 +92,6 @@
       translateElement(element);
     }
   }
-
-  function translateDocument() {
-    gLanguage = gExternalLocalizerServices.getLocale();
-
-    translateFragment();
-
-    gReadyState = "complete";
-
-    // fire a 'localized' DOM event
-    var evtObject = document.createEvent("Event");
-    evtObject.initEvent("localized", false, false);
-    evtObject.language = gLanguage;
-    window.dispatchEvent(evtObject);
-  }
-
-  window.addEventListener("DOMContentLoaded", function() {
-    if (gExternalLocalizerServices) {
-      translateDocument();
-    }
-    // ... else see setExternalLocalizerServices below
-  });
 
   // Public API
   document.mozL10n = {
@@ -134,7 +112,7 @@
       // use the short language code for "full" codes like 'ar-sa' (issue 5440)
       var shortCode = gLanguage.split("-")[0];
 
-      return (rtlList.indexOf(shortCode) >= 0) ? "rtl" : "ltr";
+      return (rtlList.includes(shortCode) ? "rtl" : "ltr");
     },
 
     getReadyState() {
@@ -143,15 +121,11 @@
 
     setExternalLocalizerServices(externalLocalizerServices) {
       gExternalLocalizerServices = externalLocalizerServices;
-
-      // ... in case if we missed DOMContentLoaded above.
-      if (window.document.readyState === "interactive" ||
-          window.document.readyState === "complete") {
-        translateDocument();
-      }
+      gLanguage = gExternalLocalizerServices.getLocale();
+      gReadyState = "complete";
     },
 
     // translate an element or document fragment
-    translate: translateFragment
+    translate: translateFragment,
   };
 })(this);

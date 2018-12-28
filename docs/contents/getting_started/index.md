@@ -43,9 +43,9 @@ Before downloading PDF.js please take a moment to understand the different layer
     <p>
       Includes the generic build of PDF.js and the viewer.
     </p>
-    <span class="btn-group-vertical centered">
+    <span class="GROUP_CLASS">
       <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-dist.zip">Stable (vSTABLE_VERSION)</a>
-      <a type="button" class="btn btn-warning" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-dist.zip">Beta (vBETA_VERSION)</a>
+      <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-dist.zip">Beta (vBETA_VERSION)</a>
     </span>
   </div>
   <div class="col-md-6">
@@ -56,6 +56,13 @@ $ cd pdf.js
 </code></pre>
   </div>
 </div>
+
+## Including via a CDN
+
+PDF.js is hosted on several free CDNs:
+ - https://www.jsdelivr.com/package/npm/pdfjs-dist
+ - https://cdnjs.com/libraries/pdf.js
+ - https://unpkg.com/pdfjs-dist/
 
 ## File Layout Overview
 
@@ -68,7 +75,6 @@ $ cd pdf.js
 │   └── pdf.worker.js                      - core layer
 └── web/
     ├── cmaps/                             - character maps(required by core)
-    ├── compatibility.js                   - polyfills for missing features
     ├── compressed.tracemonkey-pldi-09.pdf - test pdf
     ├── debugger.js                        - helpful pdf debugging features
     ├── images/                            - images for the viewer and annotation icons
@@ -92,7 +98,7 @@ $ cd pdf.js
 ├── extensions/                            - various browser extensions
 ├── external/                              - third party code
 ├── l10n/                                  - translation files
-├── make.js                                - build script
+├── gulpfile.js                            - build script
 ├── package.json
 ├── src/
 │   ├── core/                              - core layer
@@ -107,8 +113,8 @@ $ cd pdf.js
 
 ## Trying the Viewer
 
-With the prebuilt or source version open `web/viewer.html` in a browser and the test pdf should load. Note: the worker is not enabled for file:// urls, so use a server. If you're using the source build and have node, you can run `gulp server`.
+With the prebuilt or source version, open `web/viewer.html` in a browser and the test pdf should load. Note: the worker is not enabled for file:// urls, so use a server. If you're using the source build and have node, you can run `gulp server`.
 
 ## More Information
 
-For a further walkthrough of a minimal viewer see the hello world example. More documentation can be found in our [wiki](https://github.com/mozilla/pdf.js/wiki) too.
+For a further walkthrough of a minimal viewer, see the hello world example. More documentation can be found in our [wiki](https://github.com/mozilla/pdf.js/wiki) too.

@@ -15,15 +15,15 @@
 
 import { CSS_UNITS } from './ui_utils';
 import { PDFPrintServiceFactory } from './app';
-import { shadow } from './pdfjs';
+import { shadow } from 'pdfjs-lib';
 
 // Creates a placeholder with div and canvas with right size for the page.
 function composePage(pdfDocument, pageNumber, size, printContainer) {
-  var canvas = document.createElement('canvas');
+  let canvas = document.createElement('canvas');
 
   // The size of the canvas in pixels for printing.
-  var PRINT_RESOLUTION = 150;
-  var PRINT_UNITS = PRINT_RESOLUTION / 72.0;
+  const PRINT_RESOLUTION = 150;
+  const PRINT_UNITS = PRINT_RESOLUTION / 72.0;
   canvas.width = Math.floor(size.width * PRINT_UNITS);
   canvas.height = Math.floor(size.height * PRINT_UNITS);
 
@@ -31,25 +31,25 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
   canvas.style.width = Math.floor(size.width * CSS_UNITS) + 'px';
   canvas.style.height = Math.floor(size.height * CSS_UNITS) + 'px';
 
-  var canvasWrapper = document.createElement('div');
+  let canvasWrapper = document.createElement('div');
   canvasWrapper.appendChild(canvas);
   printContainer.appendChild(canvasWrapper);
 
   canvas.mozPrintCallback = function(obj) {
     // Printing/rendering the page.
-    var ctx = obj.context;
+    let ctx = obj.context;
 
     ctx.save();
     ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    pdfDocument.getPage(pageNumber).then(function (pdfPage) {
-      var renderContext = {
+    pdfDocument.getPage(pageNumber).then(function(pdfPage) {
+      let renderContext = {
         canvasContext: ctx,
         transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
-        viewport: pdfPage.getViewport(1, size.rotation),
-        intent: 'print'
+        viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation, }),
+        intent: 'print',
       };
       return pdfPage.render(renderContext).promise;
     }).then(function() {
@@ -75,34 +75,33 @@ function FirefoxPrintService(pdfDocument, pagesOverview, printContainer) {
 }
 
 FirefoxPrintService.prototype = {
-  layout: function () {
-    var pdfDocument = this.pdfDocument;
-    var printContainer = this.printContainer;
-    var body = document.querySelector('body');
+  layout() {
+    let pdfDocument = this.pdfDocument;
+    let printContainer = this.printContainer;
+    let body = document.querySelector('body');
     body.setAttribute('data-pdfjsprinting', true);
 
-    for (var i = 0, ii = this.pagesOverview.length; i < ii; ++i) {
+    for (let i = 0, ii = this.pagesOverview.length; i < ii; ++i) {
       composePage(pdfDocument, i + 1, this.pagesOverview[i], printContainer);
     }
   },
 
-  destroy: function () {
+  destroy() {
     this.printContainer.textContent = '';
-  }
+  },
 };
 
 PDFPrintServiceFactory.instance = {
   get supportsPrinting() {
-    var canvas = document.createElement('canvas');
-    var value = 'mozPrintCallback' in canvas;
+    let canvas = document.createElement('canvas');
+    let value = 'mozPrintCallback' in canvas;
 
     return shadow(this, 'supportsPrinting', value);
   },
 
-  createPrintService: function (pdfDocument, pagesOverview, printContainer) {
-    return new FirefoxPrintService(pdfDocument, pagesOverview,
-                                   printContainer);
-  }
+  createPrintService(pdfDocument, pagesOverview, printContainer) {
+    return new FirefoxPrintService(pdfDocument, pagesOverview, printContainer);
+  },
 };
 
 export {

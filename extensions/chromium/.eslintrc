@@ -3,7 +3,20 @@
     ../../.eslintrc
   ],
 
+  "env": {
+    "webextensions": true
+  },
+
+  "plugins": [
+    "mozilla"
+  ],
+
   "parserOptions": {
     "sourceType": "script"
+  },
+
+  "rules": {
+    "mozilla/import-globals": "error",
+    "object-shorthand": "off",
   },
 }

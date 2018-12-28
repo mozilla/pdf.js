@@ -1,17 +1,20 @@
 'use strict';
 
-require('shelljs/make');
-
 var builder = require('./builder');
 var fs = require('fs');
+var path = require('path');
 
 var errors = 0;
 
-cd(__dirname);
-cd('fixtures');
-ls('*-expected.*').forEach(function(expectationFilename) {
+var baseDir = path.join(__dirname, 'fixtures');
+var files = fs.readdirSync(baseDir).filter(function (name) {
+  return /-expected\./.test(name);
+}).map(function (name) {
+  return path.join(baseDir, name);
+});
+files.forEach(function(expectationFilename) {
   var inFilename = expectationFilename.replace('-expected', '');
-  var expectation = cat(expectationFilename).trim()
+  var expectation = fs.readFileSync(expectationFilename).toString().trim()
     .replace(/__filename/g, fs.realpathSync(inFilename));
   var outLines = [];
 
@@ -32,20 +35,22 @@ ls('*-expected.*').forEach(function(expectationFilename) {
   if (out !== expectation) {
     errors++;
 
-    echo('Assertion failed for ' + inFilename);
-    echo('--------------------------------------------------');
-    echo('EXPECTED:');
-    echo(expectation);
-    echo('--------------------------------------------------');
-    echo('ACTUAL');
-    echo(out);
-    echo('--------------------------------------------------');
-    echo();
+    console.log('Assertion failed for ' + inFilename);
+    console.log('--------------------------------------------------');
+    console.log('EXPECTED:');
+    console.log(expectation);
+    console.log('--------------------------------------------------');
+    console.log('ACTUAL');
+    console.log(out);
+    console.log('--------------------------------------------------');
+    console.log();
   }
 });
 
 if (errors) {
-  echo('Found ' + errors + ' expectation failures.');
+  console.error('Found ' + errors + ' expectation failures.');
+  process.exit(1);
 } else {
-  echo('All tests completed without errors.');
+  console.log('All tests completed without errors.');
+  process.exit(0);
 }

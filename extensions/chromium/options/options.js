@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals chrome */
 
 'use strict';
 var storageAreaName = chrome.storage.sync ? 'sync' : 'local';
@@ -76,12 +75,15 @@ Promise.all([
       renderPreference = renderBooleanPref(prefSchema.title,
                                            prefSchema.description,
                                            prefName);
+    } else if (prefSchema.type === 'integer' && prefSchema.enum) {
+      // Most other prefs are integer-valued enumerations, render them in a
+      // generic way too.
+      // Unlike the renderBooleanPref branch, each preference handled by this
+      // branch still needs its own template in options.html with
+      // id="$prefName-template".
+      renderPreference = renderEnumPref(prefSchema.title, prefName);
     } else if (prefName === 'defaultZoomValue') {
       renderPreference = renderDefaultZoomValue(prefSchema.title);
-    } else if (prefName === 'sidebarViewOnLoad') {
-      renderPreference = renderSidebarViewOnLoad(prefSchema.title);
-    } else if (prefName === 'externalLinkTarget') {
-      renderPreference = renderExternalLinkTarget(prefSchema.title);
     } else {
       // Should NEVER be reached. Only happens if a new type of preference is
       // added to the storage manifest.
@@ -153,12 +155,29 @@ function renderBooleanPref(shortDescription, description, prefName) {
   return renderPreference;
 }
 
+function renderEnumPref(shortDescription, prefName) {
+  var wrapper = importTemplate(prefName + '-template');
+  var select = wrapper.querySelector('select');
+  select.onchange = function() {
+    var pref = {};
+    pref[prefName] = parseInt(this.value);
+    storageArea.set(pref);
+  };
+  wrapper.querySelector('span').textContent = shortDescription;
+  document.getElementById('settings-boxes').appendChild(wrapper);
+
+  function renderPreference(value) {
+    select.value = value;
+  }
+  return renderPreference;
+}
+
 function renderDefaultZoomValue(shortDescription) {
   var wrapper = importTemplate('defaultZoomValue-template');
   var select = wrapper.querySelector('select');
   select.onchange = function() {
     storageArea.set({
-      defaultZoomValue: this.value
+      defaultZoomValue: this.value,
     });
   };
   wrapper.querySelector('span').textContent = shortDescription;
@@ -178,40 +197,6 @@ function renderDefaultZoomValue(shortDescription) {
     } else {
       customOption.hidden = true;
     }
-  }
-  return renderPreference;
-}
-
-function renderSidebarViewOnLoad(shortDescription) {
-  var wrapper = importTemplate('sidebarViewOnLoad-template');
-  var select = wrapper.querySelector('select');
-  select.onchange = function() {
-    storageArea.set({
-      sidebarViewOnLoad: parseInt(this.value)
-    });
-  };
-  wrapper.querySelector('span').textContent = shortDescription;
-  document.getElementById('settings-boxes').appendChild(wrapper);
-
-  function renderPreference(value) {
-    select.value = value;
-  }
-  return renderPreference;
-}
-
-function renderExternalLinkTarget(shortDescription) {
-  var wrapper = importTemplate('externalLinkTarget-template');
-  var select = wrapper.querySelector('select');
-  select.onchange = function() {
-    storageArea.set({
-      externalLinkTarget: parseInt(this.value)
-    });
-  };
-  wrapper.querySelector('span').textContent = shortDescription;
-  document.getElementById('settings-boxes').appendChild(wrapper);
-
-  function renderPreference(value) {
-    select.value = value;
   }
   return renderPreference;
 }

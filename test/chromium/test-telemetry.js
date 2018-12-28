@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable object-shorthand */
 
 'use strict';
 
@@ -45,7 +46,7 @@ function createExtensionGlobal() {
   window.chrome.runtime = {};
   window.chrome.runtime.id = 'oemmndcbldboiebfnladdacbdfmadadm';
   window.chrome.runtime.getManifest = function() {
-    return {version: '1.0.0'};
+    return { version: '1.0.0', };
   };
 
   function createStorageAPI() {
@@ -323,7 +324,7 @@ var tests = [
     var window = createExtensionGlobal();
     telemetryScript.runInNewContext(window);
     window.chrome.runtime.getManifest = function() {
-     return {version: '1.0.1'};
+      return { version: '1.0.1', };
     };
     window.Date.test_now_value += 12 * 36E5;
     telemetryScript.runInNewContext(window);

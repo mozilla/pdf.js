@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
-import { mozL10n, SCROLLBAR_PADDING } from './ui_utils';
+import { ScrollMode, SpreadMode } from './base_viewer';
+import { CursorTool } from './pdf_cursor_tools';
+import { PDFSinglePageViewer } from './pdf_single_page_viewer';
+import { SCROLLBAR_PADDING } from './ui_utils';
 
 /**
  * @typedef {Object} SecondaryToolbarOptions
@@ -39,23 +42,21 @@ import { mozL10n, SCROLLBAR_PADDING } from './ui_utils';
  *   clockwise.
  * @property {HTMLButtonElement} pageRotateCcwButton - Button to rotate the
  *   pages counterclockwise.
- * @property {HTMLButtonElement} toggleHandToolButton - Button to toggle the
+ * @property {HTMLButtonElement} cursorSelectToolButton - Button to enable the
+ *   select tool.
+ * @property {HTMLButtonElement} cursorHandToolButton - Button to enable the
  *   hand tool.
  * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
  *   the document properties dialog.
  */
 
-/**
- * @class
- */
-var SecondaryToolbar = (function SecondaryToolbarClosure() {
+class SecondaryToolbar {
   /**
-   * @constructs SecondaryToolbar
    * @param {SecondaryToolbarOptions} options
    * @param {HTMLDivElement} mainContainer
    * @param {EventBus} eventBus
    */
-  function SecondaryToolbar(options, mainContainer, eventBus) {
+  constructor(options, mainContainer, eventBus) {
     this.toolbar = options.toolbar;
     this.toggleButton = options.toggleButton;
     this.toolbarButtonContainer = options.toolbarButtonContainer;
@@ -74,8 +75,35 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
         close: false },*/
       { element: options.toggleHandToolButton, eventName: 'togglehandtool',
         close: true },
+      { element: options.openFileButton, eventName: 'openfile', close: true, },
+      { element: options.printButton, eventName: 'print', close: true, },
+      { element: options.downloadButton, eventName: 'download', close: true, },
+      { element: options.viewBookmarkButton, eventName: null, close: true, },
+      { element: options.firstPageButton, eventName: 'firstpage',
+        close: true, },
+      { element: options.lastPageButton, eventName: 'lastpage', close: true, },
+      { element: options.pageRotateCwButton, eventName: 'rotatecw',
+        close: false, },
+      { element: options.pageRotateCcwButton, eventName: 'rotateccw',
+        close: false, },
+      { element: options.cursorSelectToolButton, eventName: 'switchcursortool',
+        eventDetails: { tool: CursorTool.SELECT, }, close: true, },
+      { element: options.cursorHandToolButton, eventName: 'switchcursortool',
+        eventDetails: { tool: CursorTool.HAND, }, close: true, },
+      { element: options.scrollVerticalButton, eventName: 'switchscrollmode',
+        eventDetails: { mode: ScrollMode.VERTICAL, }, close: true, },
+      { element: options.scrollHorizontalButton, eventName: 'switchscrollmode',
+        eventDetails: { mode: ScrollMode.HORIZONTAL, }, close: true, },
+      { element: options.scrollWrappedButton, eventName: 'switchscrollmode',
+        eventDetails: { mode: ScrollMode.WRAPPED, }, close: true, },
+      { element: options.spreadNoneButton, eventName: 'switchspreadmode',
+        eventDetails: { mode: SpreadMode.NONE, }, close: true, },
+      { element: options.spreadOddButton, eventName: 'switchspreadmode',
+        eventDetails: { mode: SpreadMode.ODD, }, close: true, },
+      { element: options.spreadEvenButton, eventName: 'switchspreadmode',
+        eventDetails: { mode: SpreadMode.EVEN, }, close: true, },
       { element: options.documentPropertiesButton,
-        eventName: 'documentproperties', close: true }
+        eventName: 'documentproperties', close: true, },
     ];
     this.items = {
       firstPage: options.firstPageButton,
@@ -93,14 +121,30 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
 
     this.reset();
 
-    // Bind the event listeners for click and hand tool actions.
+    // Bind the event listeners for click, cursor tool, and scroll/spread mode
+    // actions.
     this._bindClickListeners();
-    this._bindHandToolListener(options.toggleHandToolButton);
+    this._bindCursorToolsListener(options);
+    this._bindScrollModeListener(options);
+    this._bindSpreadModeListener(options);
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
     this.eventBus.on('resize', this._setMaxHeight.bind(this));
+
+    // Hide the Scroll/Spread mode buttons, when they're not applicable to the
+    // current `BaseViewer` instance (in particular `PDFSinglePageViewer`).
+    this.eventBus.on('baseviewerinit', (evt) => {
+      if (evt.source instanceof PDFSinglePageViewer) {
+        this.toolbarButtonContainer.classList.add('hiddenScrollModeButtons',
+                                                  'hiddenSpreadModeButtons');
+      } else {
+        this.toolbarButtonContainer.classList.remove('hiddenScrollModeButtons',
+                                                     'hiddenSpreadModeButtons');
+      }
+    });
   }
 
+<<<<<<< HEAD
   SecondaryToolbar.prototype = {
     /**
      * @return {boolean}
@@ -150,82 +194,187 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
           }
           if (close) {
             this.close();
-          }
-        }.bind(this, eventName, close));
-      }
-    },
+=======
+  /**
+   * @return {boolean}
+   */
+  get isOpen() {
+    return this.opened;
+  }
 
-    _bindHandToolListener:
-        function SecondaryToolbar_bindHandToolListener(toggleHandToolButton) {
-      var isHandToolActive = false;
-      this.eventBus.on('handtoolchanged', function (e) {
-        if (isHandToolActive === e.isActive) {
-          return;
+  setPageNumber(pageNumber) {
+    this.pageNumber = pageNumber;
+    this._updateUIState();
+  }
+
+  setPagesCount(pagesCount) {
+    this.pagesCount = pagesCount;
+    this._updateUIState();
+  }
+
+  reset() {
+    this.pageNumber = 0;
+    this.pagesCount = 0;
+    this._updateUIState();
+
+    // Reset the Scroll/Spread buttons too, since they're document specific.
+    this.eventBus.dispatch('secondarytoolbarreset', { source: this, });
+  }
+
+  _updateUIState() {
+    this.items.firstPage.disabled = (this.pageNumber <= 1);
+    this.items.lastPage.disabled = (this.pageNumber >= this.pagesCount);
+    this.items.pageRotateCw.disabled = this.pagesCount === 0;
+    this.items.pageRotateCcw.disabled = this.pagesCount === 0;
+  }
+
+  _bindClickListeners() {
+    // Button to toggle the visibility of the secondary toolbar.
+    this.toggleButton.addEventListener('click', this.toggle.bind(this));
+
+    // All items within the secondary toolbar.
+    for (let button in this.buttons) {
+      let { element, eventName, close, eventDetails, } = this.buttons[button];
+
+      element.addEventListener('click', (evt) => {
+        if (eventName !== null) {
+          let details = { source: this, };
+          for (let property in eventDetails) {
+            details[property] = eventDetails[property];
+>>>>>>> upstream/master
+          }
+          this.eventBus.dispatch(eventName, details);
         }
-        isHandToolActive = e.isActive;
-        if (isHandToolActive) {
-          toggleHandToolButton.title =
-            mozL10n.get('hand_tool_disable.title', null, 'Disable hand tool');
-          toggleHandToolButton.firstElementChild.textContent =
-            mozL10n.get('hand_tool_disable_label', null, 'Disable hand tool');
-        } else {
-          toggleHandToolButton.title =
-            mozL10n.get('hand_tool_enable.title', null, 'Enable hand tool');
-          toggleHandToolButton.firstElementChild.textContent =
-            mozL10n.get('hand_tool_enable_label', null, 'Enable hand tool');
+        if (close) {
+          this.close();
         }
       });
-    },
-
-    open: function SecondaryToolbar_open() {
-      if (this.opened) {
-        return;
-      }
-      this.opened = true;
-      this._setMaxHeight();
-
-      this.toggleButton.classList.add('toggled');
-      this.toolbar.classList.remove('hidden');
-    },
-
-    close: function SecondaryToolbar_close() {
-      if (!this.opened) {
-        return;
-      }
-      this.opened = false;
-      this.toolbar.classList.add('hidden');
-      this.toggleButton.classList.remove('toggled');
-    },
-
-    toggle: function SecondaryToolbar_toggle() {
-      if (this.opened) {
-        this.close();
-      } else {
-        this.open();
-      }
-    },
-
-    /**
-     * @private
-     */
-    _setMaxHeight: function SecondaryToolbar_setMaxHeight() {
-      if (!this.opened) {
-        return; // Only adjust the 'max-height' if the toolbar is visible.
-      }
-      this.containerHeight = this.mainContainer.clientHeight;
-
-      if (this.containerHeight === this.previousContainerHeight) {
-        return;
-      }
-      this.toolbarButtonContainer.setAttribute('style',
-        'max-height: ' + (this.containerHeight - SCROLLBAR_PADDING) + 'px;');
-
-      this.previousContainerHeight = this.containerHeight;
     }
-  };
+  }
 
-  return SecondaryToolbar;
-})();
+  _bindCursorToolsListener(buttons) {
+    this.eventBus.on('cursortoolchanged', function(evt) {
+      buttons.cursorSelectToolButton.classList.remove('toggled');
+      buttons.cursorHandToolButton.classList.remove('toggled');
+
+      switch (evt.tool) {
+        case CursorTool.SELECT:
+          buttons.cursorSelectToolButton.classList.add('toggled');
+          break;
+        case CursorTool.HAND:
+          buttons.cursorHandToolButton.classList.add('toggled');
+          break;
+      }
+    });
+  }
+
+  _bindScrollModeListener(buttons) {
+    function scrollModeChanged(evt) {
+      buttons.scrollVerticalButton.classList.remove('toggled');
+      buttons.scrollHorizontalButton.classList.remove('toggled');
+      buttons.scrollWrappedButton.classList.remove('toggled');
+
+      switch (evt.mode) {
+        case ScrollMode.VERTICAL:
+          buttons.scrollVerticalButton.classList.add('toggled');
+          break;
+        case ScrollMode.HORIZONTAL:
+          buttons.scrollHorizontalButton.classList.add('toggled');
+          break;
+        case ScrollMode.WRAPPED:
+          buttons.scrollWrappedButton.classList.add('toggled');
+          break;
+      }
+
+      // Temporarily *disable* the Spread buttons when horizontal scrolling is
+      // enabled, since the non-default Spread modes doesn't affect the layout.
+      const isScrollModeHorizontal = (evt.mode === ScrollMode.HORIZONTAL);
+      buttons.spreadNoneButton.disabled = isScrollModeHorizontal;
+      buttons.spreadOddButton.disabled = isScrollModeHorizontal;
+      buttons.spreadEvenButton.disabled = isScrollModeHorizontal;
+    }
+    this.eventBus.on('scrollmodechanged', scrollModeChanged);
+
+    this.eventBus.on('secondarytoolbarreset', (evt) => {
+      if (evt.source === this) {
+        scrollModeChanged({ mode: ScrollMode.VERTICAL, });
+      }
+    });
+  }
+
+  _bindSpreadModeListener(buttons) {
+    function spreadModeChanged(evt) {
+      buttons.spreadNoneButton.classList.remove('toggled');
+      buttons.spreadOddButton.classList.remove('toggled');
+      buttons.spreadEvenButton.classList.remove('toggled');
+
+      switch (evt.mode) {
+        case SpreadMode.NONE:
+          buttons.spreadNoneButton.classList.add('toggled');
+          break;
+        case SpreadMode.ODD:
+          buttons.spreadOddButton.classList.add('toggled');
+          break;
+        case SpreadMode.EVEN:
+          buttons.spreadEvenButton.classList.add('toggled');
+          break;
+      }
+    }
+    this.eventBus.on('spreadmodechanged', spreadModeChanged);
+
+    this.eventBus.on('secondarytoolbarreset', (evt) => {
+      if (evt.source === this) {
+        spreadModeChanged({ mode: SpreadMode.NONE, });
+      }
+    });
+  }
+
+  open() {
+    if (this.opened) {
+      return;
+    }
+    this.opened = true;
+    this._setMaxHeight();
+
+    this.toggleButton.classList.add('toggled');
+    this.toolbar.classList.remove('hidden');
+  }
+
+  close() {
+    if (!this.opened) {
+      return;
+    }
+    this.opened = false;
+    this.toolbar.classList.add('hidden');
+    this.toggleButton.classList.remove('toggled');
+  }
+
+  toggle() {
+    if (this.opened) {
+      this.close();
+    } else {
+      this.open();
+    }
+  }
+
+  /**
+   * @private
+   */
+  _setMaxHeight() {
+    if (!this.opened) {
+      return; // Only adjust the 'max-height' if the toolbar is visible.
+    }
+    this.containerHeight = this.mainContainer.clientHeight;
+
+    if (this.containerHeight === this.previousContainerHeight) {
+      return;
+    }
+    this.toolbarButtonContainer.setAttribute('style',
+      'max-height: ' + (this.containerHeight - SCROLLBAR_PADDING) + 'px;');
+
+    this.previousContainerHeight = this.containerHeight;
+  }
+}
 
 export {
   SecondaryToolbar,

@@ -12,31 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/stream_spec', ['exports',
-           'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/primitives.js'),
-            require('../../src/core/stream.js'));
-  } else {
-    factory((root.pdfjsTestUnitStreamSpec = {}), root.pdfjsCorePrimitives,
-             root.pdfjsCoreStream);
-  }
-}(this, function (exports, corePrimitives, coreStream) {
-
-var Dict = corePrimitives.Dict;
-var Stream = coreStream.Stream;
-var PredictorStream = coreStream.PredictorStream;
+import { PredictorStream, Stream } from '../../src/core/stream';
+import { Dict } from '../../src/core/primitives';
 
 describe('stream', function() {
   beforeEach(function() {
     jasmine.addMatchers({
-      toMatchTypedArray: function(util, customEqualityTesters) {
+      toMatchTypedArray(util, customEqualityTesters) {
         return {
-          compare: function (actual, expected) {
+          compare(actual, expected) {
             var result = {};
             if (actual.length !== expected.length) {
               result.pass = false;
@@ -53,9 +38,9 @@ describe('stream', function() {
               }
             }
             return result;
-          }
+          },
         };
-      }
+      },
     });
   });
   describe('PredictorStream', function() {
@@ -74,7 +59,11 @@ describe('stream', function() {
       expect(result).toMatchTypedArray(
         new Uint8Array([100, 3, 101, 2, 102, 1])
       );
+
+      predictor.reset();
+      let clampedResult = predictor.getBytes(6, /* forceClamped = */ true);
+      expect(clampedResult).toEqual(
+        new Uint8ClampedArray([100, 3, 101, 2, 102, 1]));
     });
   });
 });
-}));

@@ -12,36 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/cmap_spec', ['exports', 'pdfjs/core/cmap',
-      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/display/dom_utils',
-      'pdfjs/shared/util', 'pdfjs-test/unit/test_utils'], factory);
-  } else if (typeof exports !== 'undefined') {
-      factory(exports, require('../../src/core/cmap.js'),
-        require('../../src/core/primitives.js'),
-        require('../../src/core/stream.js'),
-        require('../../src/display/dom_utils.js'),
-        require('../../src/shared/util.js'), require('./test_utils.js'));
-  } else {
-    factory((root.pdfjsTestUnitCMapSpec = {}), root.pdfjsCoreCMap,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream,
-      root.pdfjsDisplayDOMUtils, root.pdfjsSharedUtil,
-      root.pdfjsTestUnitTestUtils);
-  }
-}(this, function (exports, coreCMap, corePrimitives, coreStream,
-                  displayDOMUtils, sharedUtil, testUnitTestUtils) {
-
-var CMapFactory = coreCMap.CMapFactory;
-var CMap = coreCMap.CMap;
-var IdentityCMap = coreCMap.IdentityCMap;
-var Name = corePrimitives.Name;
-var StringStream = coreStream.StringStream;
-var DOMCMapReaderFactory = displayDOMUtils.DOMCMapReaderFactory;
-var isNodeJS = sharedUtil.isNodeJS;
-var NodeCMapReaderFactory = testUnitTestUtils.NodeCMapReaderFactory;
+import { CMap, CMapFactory, IdentityCMap } from '../../src/core/cmap';
+import { DOMCMapReaderFactory } from '../../src/display/dom_utils';
+import isNodeJS from '../../src/shared/is_node';
+import { Name } from '../../src/core/primitives';
+import { NodeCMapReaderFactory } from './test_utils';
+import { StringStream } from '../../src/core/stream';
 
 var cMapUrl = {
   dom: '../../external/bcmaps/',
@@ -69,7 +46,7 @@ describe('cmap', function() {
 
     fetchBuiltInCMap = function (name) {
       return CMapReaderFactory.fetch({
-        name: name,
+        name,
       });
     };
     done();
@@ -198,7 +175,7 @@ describe('cmap', function() {
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({
       encoding: stream,
-      fetchBuiltInCMap: fetchBuiltInCMap,
+      fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise.then(function (cmap) {
@@ -237,7 +214,7 @@ describe('cmap', function() {
   it('loads built in cmap', function(done) {
     var cmapPromise = CMapFactory.create({
       encoding: Name.get('Adobe-Japan1-1'),
-      fetchBuiltInCMap: fetchBuiltInCMap,
+      fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise.then(function (cmap) {
@@ -254,7 +231,7 @@ describe('cmap', function() {
   it('loads built in identity cmap', function(done) {
     var cmapPromise = CMapFactory.create({
       encoding: Name.get('Identity-H'),
-      fetchBuiltInCMap: fetchBuiltInCMap,
+      fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise.then(function (cmap) {
@@ -273,7 +250,7 @@ describe('cmap', function() {
   it('attempts to load a non-existent built-in CMap', function(done) {
     var cmapPromise = CMapFactory.create({
       encoding: Name.get('null'),
-      fetchBuiltInCMap: fetchBuiltInCMap,
+      fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise.then(function () {
@@ -291,7 +268,7 @@ describe('cmap', function() {
       var CMapReaderFactory = isNodeJS() ?
         new NodeCMapReaderFactory({ }) : new DOMCMapReaderFactory({ });
       return CMapReaderFactory.fetch({
-        name: name,
+        name,
       });
     }
 
@@ -305,9 +282,45 @@ describe('cmap', function() {
     }, function (reason) {
       expect(reason instanceof Error).toEqual(true);
       expect(reason.message).toEqual(
-        'Unable to load CMap at: nullAdobe-Japan1-1');
+        'The CMap "baseUrl" parameter must be specified, ensure that ' +
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.');
+      done();
+    });
+  });
+
+  it('attempts to load a built-in CMap with inconsistent API parameters',
+      function(done) {
+    function tmpFetchBuiltInCMap(name) {
+      let CMapReaderFactory;
+      if (isNodeJS()) {
+        CMapReaderFactory = new NodeCMapReaderFactory({
+          baseUrl: cMapUrl.node,
+          isCompressed: false,
+        });
+      } else {
+        CMapReaderFactory = new DOMCMapReaderFactory({
+          baseUrl: cMapUrl.dom,
+          isCompressed: false,
+        });
+      }
+      return CMapReaderFactory.fetch({
+        name,
+      });
+    }
+
+    let cmapPromise = CMapFactory.create({
+      encoding: Name.get('Adobe-Japan1-1'),
+      fetchBuiltInCMap: tmpFetchBuiltInCMap,
+      useCMap: null,
+    });
+    cmapPromise.then(function () {
+      done.fail('No CMap should be loaded');
+    }, function (reason) {
+      expect(reason instanceof Error).toEqual(true);
+      let message = reason.message;
+      expect(message.startsWith('Unable to load CMap at: ')).toEqual(true);
+      expect(message.endsWith('/external/bcmaps/Adobe-Japan1-1')).toEqual(true);
       done();
     });
   });
 });
-}));

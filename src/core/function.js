@@ -13,39 +13,67 @@
  * limitations under the License.
  */
 
-'use strict';
+import {
+  FormatError, info, isBool, isEvalSupported, shadow, unreachable
+} from '../shared/util';
+import { isDict, isStream } from './primitives';
+import { PostScriptLexer, PostScriptParser } from './ps_parser';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/function', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/ps_parser'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./ps_parser.js'));
-  } else {
-    factory((root.pdfjsCoreFunction = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCorePsParser);
+let IsEvalSupportedCached = {
+  get value() {
+    return shadow(this, 'value', isEvalSupported());
+  },
+};
+
+class PDFFunctionFactory {
+  constructor({ xref, isEvalSupported = true, }) {
+    this.xref = xref;
+    this.isEvalSupported = isEvalSupported !== false;
   }
-}(this, function (exports, sharedUtil, corePrimitives, corePsParser) {
 
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var isArray = sharedUtil.isArray;
-var isBool = sharedUtil.isBool;
-var isDict = corePrimitives.isDict;
-var isStream = corePrimitives.isStream;
-var PostScriptLexer = corePsParser.PostScriptLexer;
-var PostScriptParser = corePsParser.PostScriptParser;
+  create(fn) {
+    return PDFFunction.parse({
+      xref: this.xref,
+      isEvalSupported: this.isEvalSupported,
+      fn,
+    });
+  }
+
+  createFromArray(fnObj) {
+    return PDFFunction.parseArray({
+      xref: this.xref,
+      isEvalSupported: this.isEvalSupported,
+      fnObj,
+    });
+  }
+}
+
+function toNumberArray(arr) {
+  if (!Array.isArray(arr)) {
+    return null;
+  }
+  const length = arr.length;
+  for (let i = 0; i < length; i++) {
+    if (typeof arr[i] !== 'number') {
+      // Non-number is found -- convert all items to numbers.
+      const result = new Array(length);
+      for (let i = 0; i < length; i++) {
+        result[i] = +arr[i];
+      }
+      return result;
+    }
+  }
+  return arr;
+}
 
 var PDFFunction = (function PDFFunctionClosure() {
-  var CONSTRUCT_SAMPLED = 0;
-  var CONSTRUCT_INTERPOLATED = 2;
-  var CONSTRUCT_STICHED = 3;
-  var CONSTRUCT_POSTSCRIPT = 4;
+  const CONSTRUCT_SAMPLED = 0;
+  const CONSTRUCT_INTERPOLATED = 2;
+  const CONSTRUCT_STICHED = 3;
+  const CONSTRUCT_POSTSCRIPT = 4;
 
   return {
-    getSampleArray: function PDFFunction_getSampleArray(size, outputSize, bps,
-                                                       str) {
+    getSampleArray(size, outputSize, bps, stream) {
       var i, ii;
       var length = 1;
       for (i = 0, ii = size.length; i < ii; i++) {
@@ -59,7 +87,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       // 32 is a valid bps so shifting won't work
       var sampleMul = 1.0 / (Math.pow(2.0, bps) - 1);
 
-      var strBytes = str.getBytes((length * bps + 7) / 8);
+      var strBytes = stream.getBytes((length * bps + 7) / 8);
       var strIdx = 0;
       for (i = 0; i < length; i++) {
         while (codeSize < bps) {
@@ -74,7 +102,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       return array;
     },
 
-    getIR: function PDFFunction_getIR(xref, fn) {
+    getIR({ xref, isEvalSupported, fn, }) {
       var dict = fn.dict;
       if (!dict) {
         dict = fn;
@@ -89,51 +117,52 @@ var PDFFunction = (function PDFFunctionClosure() {
       var typeNum = dict.get('FunctionType');
       var typeFn = types[typeNum];
       if (!typeFn) {
-        error('Unknown type of function');
+        throw new FormatError('Unknown type of function');
       }
 
-      return typeFn.call(this, fn, dict, xref);
+      return typeFn.call(this, { xref, isEvalSupported, fn, dict, });
     },
 
-    fromIR: function PDFFunction_fromIR(IR) {
+    fromIR({ xref, isEvalSupported, IR, }) {
       var type = IR[0];
       switch (type) {
         case CONSTRUCT_SAMPLED:
-          return this.constructSampledFromIR(IR);
+          return this.constructSampledFromIR({ xref, isEvalSupported, IR, });
         case CONSTRUCT_INTERPOLATED:
-          return this.constructInterpolatedFromIR(IR);
+          return this.constructInterpolatedFromIR({ xref, isEvalSupported,
+                                                    IR, });
         case CONSTRUCT_STICHED:
-          return this.constructStichedFromIR(IR);
+          return this.constructStichedFromIR({ xref, isEvalSupported, IR, });
         // case CONSTRUCT_POSTSCRIPT:
         default:
-          return this.constructPostScriptFromIR(IR);
+          return this.constructPostScriptFromIR({ xref, isEvalSupported, IR, });
       }
     },
 
-    parse: function PDFFunction_parse(xref, fn) {
-      var IR = this.getIR(xref, fn);
-      return this.fromIR(IR);
+    parse({ xref, isEvalSupported, fn, }) {
+      let IR = this.getIR({ xref, isEvalSupported, fn, });
+      return this.fromIR({ xref, isEvalSupported, IR, });
     },
 
-    parseArray: function PDFFunction_parseArray(xref, fnObj) {
-      if (!isArray(fnObj)) {
+    parseArray({ xref, isEvalSupported, fnObj, }) {
+      if (!Array.isArray(fnObj)) {
         // not an array -- parsing as regular function
-        return this.parse(xref, fnObj);
+        return this.parse({ xref, isEvalSupported, fn: fnObj, });
       }
 
       var fnArray = [];
       for (var j = 0, jj = fnObj.length; j < jj; j++) {
-        var obj = xref.fetchIfRef(fnObj[j]);
-        fnArray.push(PDFFunction.parse(xref, obj));
+        fnArray.push(this.parse({ xref, isEvalSupported,
+                                  fn: xref.fetchIfRef(fnObj[j]), }));
       }
-      return function (src, srcOffset, dest, destOffset) {
+      return function(src, srcOffset, dest, destOffset) {
         for (var i = 0, ii = fnArray.length; i < ii; i++) {
           fnArray[i](src, srcOffset, dest, destOffset + i);
         }
       };
     },
 
-    constructSampled: function PDFFunction_constructSampled(str, dict) {
+    constructSampled({ xref, isEvalSupported, fn, dict, }) {
       function toMultiArray(arr) {
         var inputLength = arr.length;
         var out = [];
@@ -144,11 +173,11 @@ var PDFFunction = (function PDFFunctionClosure() {
         }
         return out;
       }
-      var domain = dict.getArray('Domain');
-      var range = dict.getArray('Range');
+      var domain = toNumberArray(dict.getArray('Domain'));
+      var range = toNumberArray(dict.getArray('Range'));
 
       if (!domain || !range) {
-        error('No domain or range');
+        throw new FormatError('No domain or range');
       }
 
       var inputSize = domain.length / 2;
@@ -157,7 +186,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       domain = toMultiArray(domain);
       range = toMultiArray(range);
 
-      var size = dict.get('Size');
+      var size = toNumberArray(dict.getArray('Size'));
       var bps = dict.get('BitsPerSample');
       var order = dict.get('Order') || 1;
       if (order !== 1) {
@@ -166,24 +195,24 @@ var PDFFunction = (function PDFFunctionClosure() {
         info('No support for cubic spline interpolation: ' + order);
       }
 
-      var encode = dict.getArray('Encode');
+      var encode = toNumberArray(dict.getArray('Encode'));
       if (!encode) {
         encode = [];
         for (var i = 0; i < inputSize; ++i) {
-          encode.push(0);
-          encode.push(size[i] - 1);
+          encode.push([0, size[i] - 1]);
         }
+      } else {
+        encode = toMultiArray(encode);
       }
-      encode = toMultiArray(encode);
 
-      var decode = dict.getArray('Decode');
+      var decode = toNumberArray(dict.getArray('Decode'));
       if (!decode) {
         decode = range;
       } else {
         decode = toMultiArray(decode);
       }
 
-      var samples = this.getSampleArray(size, outputSize, bps, str);
+      var samples = this.getSampleArray(size, outputSize, bps, fn);
 
       return [
         CONSTRUCT_SAMPLED, inputSize, domain, encode, decode, samples, size,
@@ -191,7 +220,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       ];
     },
 
-    constructSampledFromIR: function PDFFunction_constructSampledFromIR(IR) {
+    constructSampledFromIR({ xref, isEvalSupported, IR, }) {
       // See chapter 3, page 109 of the PDF reference
       function interpolate(x, xmin, xmax, ymin, ymax) {
         return ymin + ((x - xmin) * ((ymax - ymin) / (xmax - xmin)));
@@ -276,15 +305,10 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructInterpolated: function PDFFunction_constructInterpolated(str,
-                                                                      dict) {
-      var c0 = dict.getArray('C0') || [0];
-      var c1 = dict.getArray('C1') || [1];
+    constructInterpolated({ xref, isEvalSupported, fn, dict, }) {
+      var c0 = toNumberArray(dict.getArray('C0')) || [0];
+      var c1 = toNumberArray(dict.getArray('C1')) || [1];
       var n = dict.get('N');
-
-      if (!isArray(c0) || !isArray(c1)) {
-        error('Illegal dictionary for interpolated function');
-      }
 
       var length = c0.length;
       var diff = [];
@@ -295,8 +319,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       return [CONSTRUCT_INTERPOLATED, c0, diff, n];
     },
 
-    constructInterpolatedFromIR:
-      function PDFFunction_constructInterpolatedFromIR(IR) {
+    constructInterpolatedFromIR({ xref, isEvalSupported, IR, }) {
       var c0 = IR[1];
       var diff = IR[2];
       var n = IR[3];
@@ -313,41 +336,37 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructStiched: function PDFFunction_constructStiched(fn, dict, xref) {
-      var domain = dict.getArray('Domain');
+    constructStiched({ xref, isEvalSupported, fn, dict, }) {
+      var domain = toNumberArray(dict.getArray('Domain'));
 
       if (!domain) {
-        error('No domain');
+        throw new FormatError('No domain');
       }
 
       var inputSize = domain.length / 2;
       if (inputSize !== 1) {
-        error('Bad domain for stiched function');
+        throw new FormatError('Bad domain for stiched function');
       }
 
       var fnRefs = dict.get('Functions');
       var fns = [];
       for (var i = 0, ii = fnRefs.length; i < ii; ++i) {
-        fns.push(PDFFunction.getIR(xref, xref.fetchIfRef(fnRefs[i])));
+        fns.push(this.parse({ xref, isEvalSupported,
+                              fn: xref.fetchIfRef(fnRefs[i]), }));
       }
 
-      var bounds = dict.getArray('Bounds');
-      var encode = dict.getArray('Encode');
+      var bounds = toNumberArray(dict.getArray('Bounds'));
+      var encode = toNumberArray(dict.getArray('Encode'));
 
       return [CONSTRUCT_STICHED, domain, bounds, encode, fns];
     },
 
-    constructStichedFromIR: function PDFFunction_constructStichedFromIR(IR) {
+    constructStichedFromIR({ xref, isEvalSupported, IR, }) {
       var domain = IR[1];
       var bounds = IR[2];
       var encode = IR[3];
-      var fnsIR = IR[4];
-      var fns = [];
+      var fns = IR[4];
       var tmpBuf = new Float32Array(1);
-
-      for (var i = 0, ii = fnsIR.length; i < ii; i++) {
-        fns.push(PDFFunction.fromIR(fnsIR[i]));
-      }
 
       return function constructStichedFromIRResult(src, srcOffset,
                                                    dest, destOffset) {
@@ -392,17 +411,16 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructPostScript: function PDFFunction_constructPostScript(fn, dict,
-                                                                  xref) {
-      var domain = dict.getArray('Domain');
-      var range = dict.getArray('Range');
+    constructPostScript({ xref, isEvalSupported, fn, dict, }) {
+      var domain = toNumberArray(dict.getArray('Domain'));
+      var range = toNumberArray(dict.getArray('Range'));
 
       if (!domain) {
-        error('No domain.');
+        throw new FormatError('No domain.');
       }
 
       if (!range) {
-        error('No range.');
+        throw new FormatError('No range.');
       }
 
       var lexer = new PostScriptLexer(fn);
@@ -412,21 +430,22 @@ var PDFFunction = (function PDFFunctionClosure() {
       return [CONSTRUCT_POSTSCRIPT, domain, range, code];
     },
 
-    constructPostScriptFromIR: function PDFFunction_constructPostScriptFromIR(
-                                          IR) {
+    constructPostScriptFromIR({ xref, isEvalSupported, IR, }) {
       var domain = IR[1];
       var range = IR[2];
       var code = IR[3];
 
-      var compiled = (new PostScriptCompiler()).compile(code, domain, range);
-      if (compiled) {
-        // Compiled function consists of simple expressions such as addition,
-        // subtraction, Math.max, and also contains 'var' and 'return'
-        // statements. See the generation in the PostScriptCompiler below.
-        // eslint-disable-next-line no-new-func
-        return new Function('src', 'srcOffset', 'dest', 'destOffset', compiled);
+      if (isEvalSupported && IsEvalSupportedCached.value) {
+        let compiled = (new PostScriptCompiler()).compile(code, domain, range);
+        if (compiled) {
+          // Compiled function consists of simple expressions such as addition,
+          // subtraction, Math.max, and also contains 'var' and 'return'
+          // statements. See the generation in the PostScriptCompiler below.
+          // eslint-disable-next-line no-new-func
+          return new Function('src', 'srcOffset', 'dest', 'destOffset',
+                              compiled);
+        }
       }
-
       info('Unable to compile PS function');
 
       var numOutputs = range.length >> 1;
@@ -480,7 +499,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         }
         dest.set(output, destOffset);
       };
-    }
+    },
   };
 })();
 
@@ -508,19 +527,19 @@ var PostScriptStack = (function PostScriptStackClosure() {
   PostScriptStack.prototype = {
     push: function PostScriptStack_push(value) {
       if (this.stack.length >= MAX_STACK_SIZE) {
-        error('PostScript function stack overflow.');
+        throw new Error('PostScript function stack overflow.');
       }
       this.stack.push(value);
     },
     pop: function PostScriptStack_pop() {
       if (this.stack.length <= 0) {
-        error('PostScript function stack underflow.');
+        throw new Error('PostScript function stack underflow.');
       }
       return this.stack.pop();
     },
     copy: function PostScriptStack_copy(n) {
       if (this.stack.length + n >= MAX_STACK_SIZE) {
-        error('PostScript function stack overflow.');
+        throw new Error('PostScript function stack overflow.');
       }
       var stack = this.stack;
       for (var i = stack.length - n, j = n - 1; j >= 0; j--, i++) {
@@ -544,7 +563,7 @@ var PostScriptStack = (function PostScriptStackClosure() {
       for (i = c, j = r; i < j; i++, j--) {
         t = stack[i]; stack[i] = stack[j]; stack[j] = t;
       }
-    }
+    },
   };
   return PostScriptStack;
 })();
@@ -775,12 +794,11 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
             }
             break;
           default:
-            error('Unknown operator ' + operator);
-            break;
+            throw new FormatError(`Unknown operator ${operator}`);
         }
       }
       return stack.stack;
-    }
+    },
   };
   return PostScriptEvaluator;
 })();
@@ -796,7 +814,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.type = type;
   }
   AstNode.prototype.visit = function (visitor) {
-    throw new Error('abstract method');
+    unreachable('abstract method');
   };
 
   function AstArgument(index, min, max) {
@@ -870,38 +888,38 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.parts = [];
   }
   ExpressionBuilderVisitor.prototype = {
-    visitArgument: function (arg) {
+    visitArgument(arg) {
       this.parts.push('Math.max(', arg.min, ', Math.min(',
                       arg.max, ', src[srcOffset + ', arg.index, ']))');
     },
-    visitVariable: function (variable) {
+    visitVariable(variable) {
       this.parts.push('v', variable.index);
     },
-    visitLiteral: function (literal) {
+    visitLiteral(literal) {
       this.parts.push(literal.number);
     },
-    visitBinaryOperation: function (operation) {
+    visitBinaryOperation(operation) {
       this.parts.push('(');
       operation.arg1.visit(this);
       this.parts.push(' ', operation.op, ' ');
       operation.arg2.visit(this);
       this.parts.push(')');
     },
-    visitVariableDefinition: function (definition) {
+    visitVariableDefinition(definition) {
       this.parts.push('var ');
       definition.variable.visit(this);
       this.parts.push(' = ');
       definition.arg.visit(this);
       this.parts.push(';');
     },
-    visitMin: function (max) {
+    visitMin(max) {
       this.parts.push('Math.min(');
       max.arg.visit(this);
       this.parts.push(', ', max.max, ')');
     },
-    toString: function () {
+    toString() {
       return this.parts.join('');
-    }
+    },
   };
 
   function buildAddOperation(num1, num2) {
@@ -1052,7 +1070,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
               return null;
             }
             n = num1.number;
-            if (n < 0 || (n | 0) !== n || stack.length < n) {
+            if (n < 0 || !Number.isInteger(n) || stack.length < n) {
               return null;
             }
             ast1 = stack[stack.length - n - 1];
@@ -1102,7 +1120,8 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
             }
             j = num2.number;
             n = num1.number;
-            if (n <= 0 || (n | 0) !== n || (j | 0) !== j || stack.length < n) {
+            if (n <= 0 || !Number.isInteger(n) || !Number.isInteger(j) ||
+                stack.length < n) {
               // ... and integers
               return null;
             }
@@ -1146,14 +1165,15 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
         result.push(out.join(''));
       });
       return result.join('\n');
-    }
+    },
   };
 
   return PostScriptCompiler;
 })();
 
-exports.isPDFFunction = isPDFFunction;
-exports.PDFFunction = PDFFunction;
-exports.PostScriptEvaluator = PostScriptEvaluator;
-exports.PostScriptCompiler = PostScriptCompiler;
-}));
+export {
+  isPDFFunction,
+  PDFFunctionFactory,
+  PostScriptEvaluator,
+  PostScriptCompiler,
+};

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable object-shorthand */
 
 'use strict';
 
@@ -33,7 +34,7 @@ var mimeTypes = {
   '.png': 'image/png',
   '.log': 'text/plain',
   '.bcmap': 'application/octet-stream',
-  '.properties': 'text/plain'
+  '.properties': 'text/plain',
 };
 
 var defaultMimeType = 'application/octet-stream';
@@ -47,8 +48,8 @@ function WebServer() {
   this.cacheExpirationTime = 0;
   this.disableRangeRequests = false;
   this.hooks = {
-    'GET': [],
-    'POST': []
+    'GET': [crossOriginHandler],
+    'POST': [],
   };
 }
 WebServer.prototype = {
@@ -79,7 +80,11 @@ WebServer.prototype = {
   _handler: function (req, res) {
     var url = req.url.replace(/\/\//g, '/');
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
-    var pathPart = decodeURI(urlParts[1]), queryPart = urlParts[3];
+    // guard against directory traversal attacks,
+    // e.g. /../../../../../../../etc/passwd
+    // which let you make GET requests for files outside of this.root
+    var pathPart = path.normalize(decodeURI(urlParts[1]));
+    var queryPart = urlParts[3];
     var verbose = this.verbose;
 
     var methodHooks = this.hooks[req.method];
@@ -244,7 +249,7 @@ WebServer.prototype = {
     }
 
     function serveRequestedFile(filePath) {
-      var stream = fs.createReadStream(filePath, {flags: 'rs'});
+      var stream = fs.createReadStream(filePath, { flags: 'rs', });
 
       stream.on('error', function (error) {
         res.writeHead(500);
@@ -271,7 +276,7 @@ WebServer.prototype = {
 
     function serveRequestedFileRange(filePath, start, end) {
       var stream = fs.createReadStream(filePath, {
-        flags: 'rs', start: start, end: end - 1});
+        flags: 'rs', start: start, end: end - 1, });
 
       stream.on('error', function (error) {
         res.writeHead(500);
@@ -291,7 +296,21 @@ WebServer.prototype = {
       stream.pipe(res);
     }
 
-  }
+  },
 };
+
+// This supports the "Cross-origin" test in test/unit/api_spec.js
+// It is here instead of test.js so that when the test will still complete as
+// expected if the user does "gulp server" and then visits
+// http://localhost:8888/test/unit/unit_test.html?spec=Cross-origin
+function crossOriginHandler(req, res) {
+  if (req.url === '/test/pdfs/basicapi.pdf?cors=withCredentials') {
+    res.setHeader('Access-Control-Allow-Origin', req.headers['origin']);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  if (req.url === '/test/pdfs/basicapi.pdf?cors=withoutCredentials') {
+    res.setHeader('Access-Control-Allow-Origin', req.headers['origin']);
+  }
+}
 
 exports.WebServer = WebServer;

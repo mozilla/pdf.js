@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 
 /**
  * Construct a GrabToPan instance for a given HTML element.
@@ -175,7 +176,7 @@ GrabToPan.prototype = {
     this.document.removeEventListener('mouseup', this._endPan, true);
     // Note: ChildNode.remove doesn't throw if the parentNode is undefined.
     this.overlay.remove();
-  }
+  },
 };
 
 // Get the correct (vendor-prefixed) name of the matches method.

@@ -12,56 +12,107 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/test_utils', ['exports', 'pdfjs/shared/util'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/shared/util.js'));
+import { CMapCompressionType } from '../../src/shared/util';
+import isNodeJS from '../../src/shared/is_node';
+import { isRef } from '../../src/core/primitives';
+
+class NodeFileReaderFactory {
+  static fetch(params) {
+    var fs = require('fs');
+    var file = fs.readFileSync(params.path);
+    return new Uint8Array(file);
+  }
+}
+
+const TEST_PDFS_PATH = {
+  dom: '../pdfs/',
+  node: './test/pdfs/',
+};
+
+function buildGetDocumentParams(filename, options) {
+  let params = Object.create(null);
+  if (isNodeJS()) {
+    params.url = TEST_PDFS_PATH.node + filename;
   } else {
-    factory((root.pdfjsTestUnitTestUtils = {}), root.pdfjsSharedUtil);
+    params.url = new URL(TEST_PDFS_PATH.dom + filename, window.location).href;
   }
-}(this, function (exports, sharedUtil) {
+  for (let option in options) {
+    params[option] = options[option];
+  }
+  return params;
+}
 
-var CMapCompressionType = sharedUtil.CMapCompressionType;
-
-var NodeCMapReaderFactory = (function NodeCMapReaderFactoryClosure() {
-  function NodeCMapReaderFactory(params) {
-    this.baseUrl = params.baseUrl || null;
-    this.isCompressed = params.isCompressed || false;
+class NodeCMapReaderFactory {
+  constructor({ baseUrl = null, isCompressed = false, }) {
+    this.baseUrl = baseUrl;
+    this.isCompressed = isCompressed;
   }
 
-  NodeCMapReaderFactory.prototype = {
-    fetch: function(params) {
-      var name = params.name;
-      if (!name) {
-        return Promise.reject(new Error('CMap name must be specified.'));
-      }
-      return new Promise(function (resolve, reject) {
-        var url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+  fetch({ name, }) {
+    if (!this.baseUrl) {
+      return Promise.reject(new Error(
+        'The CMap "baseUrl" parameter must be specified, ensure that ' +
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.'));
+    }
+    if (!name) {
+      return Promise.reject(new Error('CMap name must be specified.'));
+    }
+    return new Promise((resolve, reject) => {
+      let url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
 
-        var fs = require('fs');
-        fs.readFile(url, function (error, data) {
-          if (error || !data) {
-            reject(new Error('Unable to load ' +
-                             (this.isCompressed ? 'binary ' : '') +
-                             'CMap at: ' + url));
-            return;
-          }
-          resolve({
-            cMapData: new Uint8Array(data),
-            compressionType: this.isCompressed ?
-              CMapCompressionType.BINARY : CMapCompressionType.NONE,
-          });
-        }.bind(this));
-      }.bind(this));
-    },
-  };
+      let fs = require('fs');
+      fs.readFile(url, (error, data) => {
+        if (error || !data) {
+          reject(new Error('Unable to load ' +
+                           (this.isCompressed ? 'binary ' : '') +
+                           'CMap at: ' + url));
+          return;
+        }
+        resolve({
+          cMapData: new Uint8Array(data),
+          compressionType: this.isCompressed ?
+            CMapCompressionType.BINARY : CMapCompressionType.NONE,
+        });
+      });
+    });
+  }
+}
 
-  return NodeCMapReaderFactory;
-})();
+class XRefMock {
+  constructor(array) {
+    this._map = Object.create(null);
 
-exports.NodeCMapReaderFactory = NodeCMapReaderFactory;
-}));
+    for (let key in array) {
+      let obj = array[key];
+      this._map[obj.ref.toString()] = obj.data;
+    }
+  }
+
+  fetch(ref) {
+    return this._map[ref.toString()];
+  }
+
+  fetchAsync(ref) {
+    return Promise.resolve(this.fetch(ref));
+  }
+
+  fetchIfRef(obj) {
+    if (!isRef(obj)) {
+      return obj;
+    }
+    return this.fetch(obj);
+  }
+
+  fetchIfRefAsync(obj) {
+    return Promise.resolve(this.fetchIfRef(obj));
+  }
+}
+
+export {
+  NodeFileReaderFactory,
+  NodeCMapReaderFactory,
+  XRefMock,
+  buildGetDocumentParams,
+  TEST_PDFS_PATH,
+};

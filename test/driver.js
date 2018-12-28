@@ -12,47 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, pdfjsSharedUtil */
+/* globals pdfjsLib, pdfjsViewer */
 
 'use strict';
 
-var WAITING_TIME = 100; // ms
-var PDF_TO_CSS_UNITS = 96.0 / 72.0;
-
-/**
- * @class
- */
-var LinkServiceMock = (function LinkServiceMockClosure() {
-  function LinkServiceMock() {}
-
-  LinkServiceMock.prototype = {
-    get page() {
-      return 0;
-    },
-
-    set page(value) {},
-
-    navigateTo: function (dest) {},
-
-    getDestinationHash: function (dest) {
-      return '#';
-    },
-
-    getAnchorUrl: function (hash) {
-      return '#';
-    },
-
-    setHash: function (hash) {},
-
-    executeNamedAction: function (action) {},
-
-    onFileAttachmentAnnotation: function (params) {},
-
-    cachePageRef: function (pageNum, pageRef) {},
-  };
-
-  return LinkServiceMock;
-})();
+const WAITING_TIME = 100; // ms
+const PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const CMAP_URL = '../external/bcmaps/';
+const CMAP_PACKED = true;
+const IMAGE_RESOURCES_PATH = '/web/images/';
+const WORKER_SRC = '../build/generic/build/pdf.worker.js';
 
 /**
  * @class
@@ -78,7 +47,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
 
   function rasterizeTextLayer(ctx, viewport, textContent,
                               enhanceTextSelection) {
-    return new Promise(function (resolve) {
+    return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, 'svg:svg');
       svg.setAttribute('width', viewport.width + 'px');
@@ -100,11 +69,11 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       foreignObject.appendChild(div);
 
       // Rendering text layer as HTML.
-      var task = PDFJS.renderTextLayer({
-        textContent: textContent,
+      var task = pdfjsLib.renderTextLayer({
+        textContent,
         container: div,
-        viewport: viewport,
-        enhanceTextSelection: enhanceTextSelection,
+        viewport,
+        enhanceTextSelection,
       });
       Promise.all([stylePromise, task.promise]).then(function (results) {
         task.expandTextDivs(true);
@@ -120,6 +89,9 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
           ctx.drawImage(img, 0, 0);
           resolve();
         };
+        img.onerror = function(e) {
+          reject(new Error('Error rasterizing text layer ' + e));
+        };
       });
     });
   }
@@ -131,28 +103,56 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
  * @class
  */
 var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
-  var SVG_NS = 'http://www.w3.org/2000/svg';
+  const SVG_NS = 'http://www.w3.org/2000/svg';
 
-  var annotationLayerStylePromise = null;
+  /**
+   * For the reference tests, the entire annotation layer must be visible. To
+   * achieve this, we load the common styles as used by the viewer and extend
+   * them with a set of overrides to make all elements visible.
+   *
+   * Note that we cannot simply use `@import` to import the common styles in
+   * the overrides file because the browser does not resolve that when the
+   * styles are inserted via XHR. Therefore, we load and combine them here.
+   */
+  let styles = {
+    common: {
+      file: '../web/annotation_layer_builder.css',
+      promise: null,
+    },
+    overrides: {
+      file: './annotation_layer_builder_overrides.css',
+      promise: null,
+    },
+  };
+
   function getAnnotationLayerStyle() {
-    if (annotationLayerStylePromise) {
-      return annotationLayerStylePromise;
+    // Use the cached promises if they are available.
+    if (styles.common.promise && styles.overrides.promise) {
+      return Promise.all([styles.common.promise, styles.overrides.promise]);
     }
-    annotationLayerStylePromise = new Promise(function (resolve) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', './annotation_layer_test.css');
-      xhr.onload = function () {
-        resolve(xhr.responseText);
-      };
-      xhr.send(null);
-    });
-    return annotationLayerStylePromise;
+
+    // Load the style files and cache the results.
+    for (let key in styles) {
+      styles[key].promise = new Promise(function(resolve, reject) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', styles[key].file);
+        xhr.onload = function() {
+          resolve(xhr.responseText);
+        };
+        xhr.onerror = function(e) {
+          reject(new Error('Error fetching annotation style ' + e));
+        };
+        xhr.send(null);
+      });
+    }
+
+    return Promise.all([styles.common.promise, styles.overrides.promise]);
   }
 
   function inlineAnnotationImages(images) {
     var imagePromises = [];
     for (var i = 0, ii = images.length; i < ii; i++) {
-      var imagePromise = new Promise(function(resolve) {
+      var imagePromise = new Promise(function(resolve, reject) {
         var xhr = new XMLHttpRequest();
         xhr.responseType = 'blob';
         xhr.onload = function() {
@@ -162,8 +162,8 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           };
           reader.readAsDataURL(xhr.response);
         };
-        xhr.onerror = function() {
-          resolve('');
+        xhr.onerror = function(e) {
+          reject(new Error('Error fetching inline annotation image ' + e));
         };
         xhr.open('GET', images[i].src);
         xhr.send();
@@ -174,8 +174,9 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   }
 
   function rasterizeAnnotationLayer(ctx, viewport, annotations, page,
+                                    imageResourcesPath,
                                     renderInteractiveForms) {
-    return new Promise(function (resolve) {
+    return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, 'svg:svg');
       svg.setAttribute('width', viewport.width + 'px');
@@ -194,27 +195,36 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
       div.className = 'annotationLayer';
 
       // Rendering annotation layer as HTML.
-      stylePromise.then(function (styles) {
-        style.textContent = styles;
+      stylePromise.then(function (common, overrides) {
+        style.textContent = common + overrides;
 
-        var annotation_viewport = viewport.clone({ dontFlip: true });
+        var annotation_viewport = viewport.clone({ dontFlip: true, });
         var parameters = {
           viewport: annotation_viewport,
-          div: div,
-          annotations: annotations,
-          page: page,
-          linkService: new LinkServiceMock(),
-          renderInteractiveForms: renderInteractiveForms,
+          div,
+          annotations,
+          page,
+          linkService: new pdfjsViewer.SimpleLinkService(),
+          imageResourcesPath,
+          renderInteractiveForms,
         };
-        PDFJS.AnnotationLayer.render(parameters);
+        pdfjsLib.AnnotationLayer.render(parameters);
 
         // Inline SVG images from text annotations.
         var images = div.getElementsByTagName('img');
         var imagePromises = inlineAnnotationImages(images);
         var converted = Promise.all(imagePromises).then(function(data) {
+          var loadedPromises = [];
           for (var i = 0, ii = data.length; i < ii; i++) {
             images[i].src = data[i];
+            loadedPromises.push(new Promise(function (resolve, reject) {
+              images[i].onload = resolve;
+              images[i].onerror = function(e) {
+                reject(new Error('Error loading image ' + e));
+              };
+            }));
           }
+          return loadedPromises;
         });
 
         foreignObject.appendChild(div);
@@ -229,6 +239,9 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           img.onload = function () {
             ctx.drawImage(img, 0, 0);
             resolve();
+          };
+          img.onerror = function(e) {
+            reject(new Error('Error rasterizing annotation layer ' + e));
           };
         });
       });
@@ -257,14 +270,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
    * @param {DriverOptions} options
    */
   function Driver(options) {
-    // Configure the global PDFJS object
-    PDFJS.workerSrc = '../src/worker_loader.js';
-    PDFJS.cMapPacked = true;
-    PDFJS.cMapUrl = '../external/bcmaps/';
-    PDFJS.enableStats = true;
-    PDFJS.imageResourcesPath = '/web/images/';
-    // Opt-in to using the latest API.
-    PDFJS.pdfjsNext = true;
+    // Configure the global worker options.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -317,7 +324,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
           self.manifest = JSON.parse(r.responseText);
           if (self.testFilter && self.testFilter.length) {
             self.manifest = self.manifest.filter(function(item) {
-              return self.testFilter.indexOf(item.id) !== -1;
+              return self.testFilter.includes(item.id);
             });
           }
           self.currentTask = 0;
@@ -334,66 +341,71 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       }, this.delay);
     },
 
-    _nextTask: function Driver_nextTask() {
-      var self = this;
-      var failure = '';
+    _nextTask() {
+      let failure = '';
 
-      this._cleanup();
+      this._cleanup().then(() => {
+        if (this.currentTask === this.manifest.length) {
+          this._done();
+          return;
+        }
+        let task = this.manifest[this.currentTask];
+        task.round = 0;
+        task.pageNum = task.firstPage || 1;
+        task.stats = { times: [], };
 
-      if (this.currentTask === this.manifest.length) {
-        this._done();
-        return;
-      }
-      var task = this.manifest[this.currentTask];
-      task.round = 0;
-      task.pageNum = task.firstPage || 1;
-      task.stats = { times: [] };
+        this._log('Loading file "' + task.file + '"\n');
 
-      this._log('Loading file "' + task.file + '"\n');
-
-      var absoluteUrl = new URL(task.file, window.location).href;
-      PDFJS.disableRange = task.disableRange;
-      PDFJS.disableAutoFetch = !task.enableAutoFetch;
-      try {
-        PDFJS.getDocument({
-          url: absoluteUrl,
-          password: task.password
-        }).then(function(doc) {
-          task.pdfDoc = doc;
-          self._nextPage(task, failure);
-        }, function(e) {
-          failure = 'Loading PDF document: ' + e;
-          self._nextPage(task, failure);
-        });
-        return;
-      } catch (e) {
-        failure = 'Loading PDF document: ' + this._exceptionToString(e);
-      }
-      this._nextPage(task, failure);
+        let absoluteUrl = new URL(task.file, window.location).href;
+        try {
+          const loadingTask = pdfjsLib.getDocument({
+            url: absoluteUrl,
+            password: task.password,
+            nativeImageDecoderSupport: task.nativeImageDecoderSupport,
+            cMapUrl: CMAP_URL,
+            cMapPacked: CMAP_PACKED,
+            disableRange: task.disableRange,
+            disableAutoFetch: !task.enableAutoFetch,
+            pdfBug: true,
+          });
+          loadingTask.promise.then((doc) => {
+            task.pdfDoc = doc;
+            this._nextPage(task, failure);
+          }, (err) => {
+            failure = 'Loading PDF document: ' + err;
+            this._nextPage(task, failure);
+          });
+          return;
+        } catch (e) {
+          failure = 'Loading PDF document: ' + this._exceptionToString(e);
+        }
+        this._nextPage(task, failure);
+      });
     },
 
-    _cleanup: function Driver_cleanup() {
+    _cleanup() {
       // Clear out all the stylesheets since a new one is created for each font.
       while (document.styleSheets.length > 0) {
-        var styleSheet = document.styleSheets[0];
+        let styleSheet = document.styleSheets[0];
         while (styleSheet.cssRules.length > 0) {
           styleSheet.deleteRule(0);
         }
-        var ownerNode = styleSheet.ownerNode;
-        ownerNode.parentNode.removeChild(ownerNode);
+        styleSheet.ownerNode.remove();
       }
-      var body = document.body;
+      let body = document.body;
       while (body.lastChild !== this.end) {
         body.removeChild(body.lastChild);
       }
 
+      let destroyedPromises = [];
       // Wipe out the link to the pdfdoc so it can be GC'ed.
-      for (var i = 0; i < this.manifest.length; i++) {
+      for (let i = 0; i < this.manifest.length; i++) {
         if (this.manifest[i].pdfDoc) {
-          this.manifest[i].pdfDoc.destroy();
+          destroyedPromises.push(this.manifest[i].pdfDoc.destroy());
           delete this.manifest[i].pdfDoc;
         }
       }
+      return Promise.all(destroyedPromises);
     },
 
     _exceptionToString: function Driver_exceptionToString(e) {
@@ -444,7 +456,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         }
       }
 
-      if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
+      if (task.skipPages && task.skipPages.includes(task.pageNum)) {
         this._log(' Skipping page ' + task.pageNum + '/' +
                   task.pdfDoc.numPages + '...\n');
         task.pageNum++;
@@ -457,9 +469,9 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
           this._log(' Loading page ' + task.pageNum + '/' +
             task.pdfDoc.numPages + '... ');
           this.canvas.mozOpaque = true;
-          ctx = this.canvas.getContext('2d', {alpha: false});
+          ctx = this.canvas.getContext('2d', { alpha: false, });
           task.pdfDoc.getPage(task.pageNum).then(function(page) {
-            var viewport = page.getViewport(PDF_TO_CSS_UNITS);
+            var viewport = page.getViewport({ scale: PDF_TO_CSS_UNITS, });
             self.canvas.width = viewport.width;
             self.canvas.height = viewport.height;
             self._clearCanvas();
@@ -513,11 +525,13 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
                 // The annotation builder will draw its content on the canvas.
                 initPromise =
-                  page.getAnnotations({ intent: 'display' }).then(
+                  page.getAnnotations({ intent: 'display', }).then(
                     function(annotations) {
                       return rasterizeAnnotationLayer(annotationLayerContext,
                                                       viewport, annotations,
-                                                      page, renderForms);
+                                                      page,
+                                                      IMAGE_RESOURCES_PATH,
+                                                      renderForms);
                   });
               } else {
                 annotationLayerCanvas = null;
@@ -527,7 +541,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
             var renderContext = {
               canvasContext: ctx,
-              viewport: viewport,
+              viewport,
               renderInteractiveForms: renderForms,
             };
             var completeRender = (function(error) {
@@ -544,18 +558,18 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
               if (annotationLayerCanvas) {
                 ctx.drawImage(annotationLayerCanvas, 0, 0);
               }
-              page.cleanup();
-              task.stats = page.stats;
-              page.stats = new pdfjsSharedUtil.StatTimer();
+              if (page.stats) { // Get the page stats *before* running cleanup.
+                task.stats = page.stats;
+              }
+              page.cleanup(/* resetStats = */ true);
               self._snapshot(task, error);
             });
             initPromise.then(function () {
-              page.render(renderContext).promise.then(function() {
+              return page.render(renderContext).promise.then(function() {
                 completeRender(false);
-              },
-              function(error) {
-                completeRender('render : ' + error);
               });
+            }).catch(function (error) {
+              completeRender('render : ' + error);
             });
           },
           function(error) {
@@ -569,7 +583,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     },
 
     _clearCanvas: function Driver_clearCanvas() {
-      var ctx = this.canvas.getContext('2d', {alpha: false});
+      var ctx = this.canvas.getContext('2d', { alpha: false, });
       ctx.beginPath();
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     },
@@ -605,7 +619,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     _info: function Driver_info(message) {
       this._send('/info', JSON.stringify({
         browser: this.browser,
-        message: message
+        message,
       }));
     },
 
@@ -641,12 +655,12 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         numPages: task.pdfDoc ?
                   (task.lastPage || task.pdfDoc.numPages) : 0,
         lastPageNum: this._getLastPageNumber(task),
-        failure: failure,
+        failure,
         file: task.file,
         round: task.round,
         page: task.pageNum,
-        snapshot: snapshot,
-        stats: task.stats.times
+        snapshot,
+        stats: task.stats.times,
       });
       this._send('/submit_task_results', result, callback);
     },
@@ -673,7 +687,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       };
       this.inflight.textContent = this.inFlightRequests++;
       r.send(message);
-    }
+    },
   };
 
   return Driver;

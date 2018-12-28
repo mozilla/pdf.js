@@ -24,15 +24,11 @@
   line-height: 1.0;
 }
 
-.textLayer > div {
+.textLayer > span {
   color: transparent;
   position: absolute;
   white-space: pre;
   cursor: text;
-  -webkit-transform-origin: 0% 0%;
-  -moz-transform-origin: 0% 0%;
-  -o-transform-origin: 0% 0%;
-  -ms-transform-origin: 0% 0%;
   transform-origin: 0% 0%;
 }
 
@@ -61,7 +57,6 @@
 }
 
 .textLayer ::selection { background: rgb(0,0,255); }
-.textLayer ::-moz-selection { background: rgb(0,0,255); }
 
 .textLayer .endOfContent {
   display: block;
@@ -72,9 +67,7 @@
   bottom: 0px;
   z-index: -1;
   cursor: default;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  -moz-user-select: none;
+  user-select: none;
 }
 
 .textLayer .endOfContent.active {

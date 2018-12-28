@@ -1,11 +1,14 @@
 {
   "extends": [
-    ../.eslintrc
+    "../.eslintrc"
   ],
 
   "env": {
     "node": true,
-    "shelljs": true,
     "jasmine": true,
+  },
+
+  "rules": {
+    "no-restricted-globals": "off",
   },
 }

@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /* eslint strict: ["error", "function"] */
-/* globals chrome */
 
 (function() {
   'use strict';
@@ -30,6 +29,8 @@ limitations under the License.
     storageLocal.get(storageKeys, function(values) {
       if (!values || !Object.keys(values).length) {
         // No local storage - nothing to migrate.
+        // ... except possibly for a renamed preference name.
+        migrateRenamedStorage();
         return;
       }
       migrateToSyncStorage(values);
@@ -64,7 +65,54 @@ limitations under the License.
         // the migration successful.
         console.log(
             'Successfully migrated preferences from local to sync storage.');
+        migrateRenamedStorage();
       });
+    });
+  }
+
+  // TODO: Remove this migration code somewhere in the future, when most users
+  // have had their chance of migrating to the new preference format.
+  // Note: We cannot modify managed preferences, so the migration logic is
+  // duplicated in web/chromecom.js too.
+  function migrateRenamedStorage() {
+    storageSync.get([
+      'enableHandToolOnLoad',
+      'cursorToolOnLoad',
+      'disableTextLayer',
+      'enhanceTextSelection',
+      'textLayerMode',
+    ], function(items) {
+      // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
+      if (typeof items.enableHandToolOnLoad === 'boolean') {
+        if (items.enableHandToolOnLoad) {
+          storageSync.set({
+            cursorToolOnLoad: 1,
+          }, function() {
+            if (!chrome.runtime.lastError) {
+              storageSync.remove('enableHandToolOnLoad');
+            }
+          });
+        } else {
+          storageSync.remove('enableHandToolOnLoad');
+        }
+      }
+      // Migration code for https://github.com/mozilla/pdf.js/pull/9479.
+      if (typeof items.disableTextLayer === 'boolean') {
+        var textLayerMode = items.disableTextLayer ? 0 :
+          items.enhanceTextSelection ? 2 : 1;
+        if (textLayerMode !== 1) {
+          // Overwrite if computed textLayerMode is not the default value (1).
+          storageSync.set({
+            textLayerMode: textLayerMode,
+          }, function() {
+            if (!chrome.runtime.lastError) {
+              storageSync.remove(['disableTextLayer', 'enhanceTextSelection']);
+            }
+          });
+        } else {
+          storageSync.remove(['disableTextLayer', 'enhanceTextSelection']);
+        }
+      }
     });
   }
 })();

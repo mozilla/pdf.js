@@ -24,11 +24,9 @@ self.importScripts = (function (importScripts) {
   };
 })(importScripts);
 
-importScripts('./shared/compatibility.js');
 importScripts('../node_modules/systemjs/dist/system.js');
 importScripts('../systemjs.config.js');
 
-Promise.all([SystemJS.import('pdfjs/core/network'),
-             SystemJS.import('pdfjs/core/worker')]).then(function () {
+SystemJS.import('pdfjs/core/worker').then(function () {
   // Worker is loaded at this point.
 });

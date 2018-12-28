@@ -24,13 +24,13 @@ var TestReporter = function(browser, appPath) {
   }
 
   function sendInfo(message) {
-    send('/info', {message: message});
+    send('/info', { message, });
   }
 
   function sendResult(status, description, error) {
     var message = {
-      status: status,
-      description: description
+      status,
+      description,
     };
     if (typeof error !== 'undefined') {
       message['error'] = error;
@@ -48,7 +48,7 @@ var TestReporter = function(browser, appPath) {
 
   this.jasmineStarted = function(suiteInfo) {
     this.runnerStartTime = this.now();
-    sendInfo('Started unit tests for ' + browser + '.');
+    sendInfo('Started tests for ' + browser + '.');
   };
 
   this.suiteStarted = function(result) { };

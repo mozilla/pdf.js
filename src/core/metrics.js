@@ -13,18 +13,7 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/metrics', ['exports', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
-  } else {
-    factory((root.pdfjsCoreMetrics = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
-var getLookupTableFactory = sharedUtil.getLookupTableFactory;
+import { getLookupTableFactory } from '../shared/util';
 
 // The Metrics object contains glyph widths (in glyph space units).
 // As per PDF spec, for most fonts (Type 3 being an exception) a glyph
@@ -2968,5 +2957,6 @@ var getMetrics = getLookupTableFactory(function (t) {
   });
 });
 
-exports.getMetrics = getMetrics;
-}));
+export {
+  getMetrics,
+};

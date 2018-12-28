@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable object-shorthand, mozilla/use-includes-instead-of-indexOf */
 
 'use strict';
 
@@ -21,14 +22,14 @@ var fs = require('fs');
 var path = require('path');
 var spawn = require('child_process').spawn;
 var testUtils = require('./testutils.js');
-var shelljs = require('shelljs');
 var crypto = require('crypto');
 
 var tempDirPrefix = 'pdfjs_';
 
-function WebBrowser(name, path) {
+function WebBrowser(name, path, headless) {
   this.name = name;
   this.path = path;
+  this.headless = headless;
   this.tmpDir = null;
   this.profileDir = null;
   this.process = null;
@@ -69,7 +70,11 @@ WebBrowser.prototype = {
 
     var args = this.buildArguments(url);
     args = args.concat('--' + this.uniqStringId);
-    this.process = spawn(this.path, args);
+
+    this.process = spawn(this.path, args, { stdio: [process.stdin,
+                                                    process.stdout,
+                                                    process.stderr], });
+
     this.process.on('exit', function (code, signal) {
       this.process = null;
       var exitInfo = code !== null ? ' with status ' + code :
@@ -140,28 +145,41 @@ WebBrowser.prototype = {
     var cmdKillAll, cmdCheckAllKilled, isAllKilled;
 
     if (process.platform === 'win32') {
-      var wmicPrefix = 'wmic process where "not Name = \'cmd.exe\' ' +
+      var wmicPrefix = ['process', 'where', '"not Name = \'cmd.exe\' ' +
         'and not Name like \'%wmic%\' ' +
-        'and CommandLine like \'%' + this.uniqStringId + '%\'" ';
-      cmdKillAll = wmicPrefix + 'call terminate';
-      cmdCheckAllKilled = wmicPrefix + 'get CommandLine';
+        'and CommandLine like \'%' + this.uniqStringId + '%\'"'];
+      cmdKillAll = {
+        file: 'wmic',
+        args: wmicPrefix.concat(['call', 'terminate']),
+      };
+      cmdCheckAllKilled = {
+        file: 'wmic',
+        args: wmicPrefix.concat(['get', 'CommandLine']),
+      };
       isAllKilled = function(exitCode, stdout) {
         return stdout.indexOf(this.uniqStringId) === -1;
       }.bind(this);
     } else {
-      cmdKillAll = 'pkill -f ' + this.uniqStringId;
-      cmdCheckAllKilled = 'pgrep -f ' + this.uniqStringId;
+      cmdKillAll = { file: 'pkill', args: ['-f', this.uniqStringId], };
+      cmdCheckAllKilled = { file: 'pgrep', args: ['-f', this.uniqStringId], };
       isAllKilled = function(pgrepStatus) {
         return pgrepStatus === 1; // "No process matched.", per man pgrep.
       };
     }
     function execAsyncNoStdin(cmd, onExit) {
-      var proc = shelljs.exec(cmd, {
-        async: true,
-        silent: true,
-      }, onExit);
+      var proc = spawn(cmd.file, cmd.args, {
+        shell: true,
+        stdio: 'pipe',
+      });
       // Close stdin, otherwise wmic won't run.
       proc.stdin.end();
+      var stdout = '';
+      proc.stdout.on('data', (data) => {
+        stdout += data;
+      });
+      proc.on('close', (code) => {
+        onExit(code, stdout);
+      });
     }
     var killDateStart = Date.now();
     // Note: First process' output it shown, the later outputs are suppressed.
@@ -191,14 +209,14 @@ WebBrowser.prototype = {
 
 var firefoxResourceDir = path.join(__dirname, 'resources', 'firefox');
 
-function FirefoxBrowser(name, path) {
+function FirefoxBrowser(name, path, headless) {
   if (os.platform() === 'darwin') {
     var m = /([^.\/]+)\.app(\/?)$/.exec(path);
     if (m) {
       path += (m[2] ? '' : '/') + 'Contents/MacOS/firefox';
     }
   }
-  WebBrowser.call(this, name, path);
+  WebBrowser.call(this, name, path, headless);
 }
 FirefoxBrowser.prototype = Object.create(WebBrowser.prototype);
 FirefoxBrowser.prototype.buildArguments = function (url) {
@@ -207,6 +225,9 @@ FirefoxBrowser.prototype.buildArguments = function (url) {
   if (os.platform() === 'darwin') {
     args.push('-foreground');
   }
+  if (this.headless) {
+    args.push('--headless');
+  }
   args.push('-no-remote', '-profile', profileDir, url);
   return args;
 };
@@ -214,7 +235,7 @@ FirefoxBrowser.prototype.setupProfileDir = function (dir) {
   testUtils.copySubtreeSync(firefoxResourceDir, dir);
 };
 
-function ChromiumBrowser(name, path) {
+function ChromiumBrowser(name, path, headless) {
   if (os.platform() === 'darwin') {
     var m = /([^.\/]+)\.app(\/?)$/.exec(path);
     if (m) {
@@ -222,30 +243,44 @@ function ChromiumBrowser(name, path) {
       console.log(path);
     }
   }
-  WebBrowser.call(this, name, path);
+  WebBrowser.call(this, name, path, headless);
 }
 ChromiumBrowser.prototype = Object.create(WebBrowser.prototype);
 ChromiumBrowser.prototype.buildArguments = function (url) {
   var profileDir = this.getProfileDir();
-  return ['--user-data-dir=' + profileDir,
-    '--no-first-run', '--disable-sync', url];
+  var crashDumpsDir = path.join(this.tmpDir, 'crash_dumps');
+  var args = ['--user-data-dir=' + profileDir,
+              '--no-first-run',
+              '--disable-sync',
+              '--no-default-browser-check',
+              '--disable-device-discovery-notifications',
+              '--disable-translate',
+              '--disable-background-timer-throttling',
+              '--disable-renderer-backgrounding'];
+  if (this.headless) {
+    args.push('--headless',
+              '--crash-dumps-dir=' + crashDumpsDir,
+              '--disable-gpu',
+              '--remote-debugging-port=9222');
+  }
+  args.push(url);
+  return args;
 };
 
 WebBrowser.create = function (desc) {
   var name = desc.name;
-  var path = shelljs.which(desc.path);
+  var path = fs.realpathSync(desc.path);
   if (!path) {
     throw new Error('Browser executable not found: ' + desc.path);
   }
 
   if (/firefox/i.test(name)) {
-    return new FirefoxBrowser(name, path);
+    return new FirefoxBrowser(name, path, desc.headless);
   }
   if (/(chrome|chromium|opera)/i.test(name)) {
-    return new ChromiumBrowser(name, path);
+    return new ChromiumBrowser(name, path, desc.headless);
   }
-  return new WebBrowser(name, path);
+  return new WebBrowser(name, path, desc.headless);
 };
-
 
 exports.WebBrowser = WebBrowser;

@@ -1,8 +1,14 @@
 {
   "parserOptions": {
-    "ecmaVersion": 6,
+    "ecmaVersion": 8,
     "sourceType": "module",
   },
+
+  "plugins": [
+    "import",
+    "mozilla",
+    "unicorn",
+  ],
 
   "env": {
     "browser": true,
@@ -11,14 +17,21 @@
     "amd": true,
   },
 
-  globals: {
+  "globals": {
     "PDFJSDev": false,
     "exports": false,
     "SystemJS": false,
   },
 
   "rules": {
+    // Plugins
+    "import/no-unresolved": "error",
+    "mozilla/avoid-removeChild": "error",
+    "mozilla/use-includes-instead-of-indexOf": "error",
+    "unicorn/no-array-instanceof": "error",
+
     // Possible errors
+    "for-direction": "error",
     "no-cond-assign": ["error", "except-parens"],
     "no-constant-condition": ["error", { "checkLoops": false, }],
     "no-dupe-args": "error",
@@ -59,7 +72,9 @@
     "no-implied-eval": "error",
     "no-iterator": "error",
     "no-lone-blocks": "error",
-    "no-multi-spaces": "error",
+    "no-multi-spaces": ["error", {
+      "ignoreEOLComments": true,
+    }],
     "no-multi-str": "error",
     "no-new-func": "error",
     "no-new-wrappers": "error",
@@ -87,6 +102,20 @@
     "no-catch-shadow": "error",
     "no-delete-var": "error",
     "no-label-var": "error",
+    "no-restricted-globals": ["error",
+      {
+        "name": "ReadableStream",
+        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
+      },
+      {
+        "name": "URL",
+        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
+      },
+      {
+        "name": "WritableStream",
+        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
+      },
+    ],
     "no-shadow-restricted-names": "error",
     "no-shadow": "off",
     "no-undef-init": "error",
@@ -102,6 +131,13 @@
     "brace-style": ["error", "1tbs", {
       "allowSingleLine": false,
     }],
+    "comma-dangle": ["error", {
+      "arrays": "ignore",
+      "objects": "always",
+      "imports": "never",
+      "exports": "always",
+      "functions": "never",
+    }],
     "comma-spacing": ["error", { "before": false, "after": true, }],
     "comma-style": ["error", "last"],
     "eol-last": "error",
@@ -109,15 +145,20 @@
     "key-spacing": ["error", { "beforeColon": false, "afterColon": true, "mode": "strict", }],
     "keyword-spacing": ["error", { "before": true, "after": true, }],
     "linebreak-style": ["error", "unix"],
-    "max-len": ["error", 80],
+    "lines-between-class-members": ["error", "always"],
+    "max-len": ["error", {
+      "code": 80,
+      "ignoreUrls": true
+    }],
     "new-cap": ["error", { "newIsCap": true, "capIsNew": false, }],
     "new-parens": "error",
     "no-array-constructor": "error",
-    "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 0, "maxBOF": 1, }],
+    "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0, "maxBOF": 1, }],
     "no-new-object": "error",
     "no-tabs": "error",
     "no-trailing-spaces": ["error", { "skipBlankLines": false, }],
     "no-whitespace-before-property": "error",
+    "object-curly-spacing": ["error", "always"],
     "operator-linebreak": ["error", "after", { "overrides": { ":": "ignore", } }],
     "quotes": ["error", "single"],
     "semi-spacing": ["error", { "before": false, "after": true, }],
@@ -128,10 +169,6 @@
     "space-infix-ops": ["error", { "int32Hint": false }],
     "space-unary-ops": ["error", { "words": true, "nonwords": false, }],
     "spaced-comment": ["error", "always", {
-      "line": {
-        "exceptions": ["//", "#else", "#endif"],
-        "markers": ["#if", "#elif", "#include", "#expand", "#error"],
-      },
       "block": {
         "balanced": true,
       }
@@ -154,7 +191,8 @@
     "no-useless-computed-key": "error",
     "no-useless-constructor": "error",
     "no-useless-rename": "error",
-    "object-shorthand": ["off", "always", {
+    "no-var": "off",
+    "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],
     "rest-spread-spacing": ["error", "never"],

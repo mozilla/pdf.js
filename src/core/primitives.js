@@ -14,20 +14,6 @@
  */
 /* uses XRef */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/primitives', ['exports', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
-  } else {
-    factory((root.pdfjsCorePrimitives = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
-
-var isArray = sharedUtil.isArray;
-
 var EOF = {};
 
 var Name = (function NameClosure() {
@@ -72,7 +58,7 @@ var Dict = (function DictClosure() {
   // xref is optional
   function Dict(xref) {
     // Map should only be used internally, use functions below to access.
-    this.map = Object.create(null);
+    this._map = Object.create(null);
     this.xref = xref;
     this.objId = null;
     this.suppressEncryption = false;
@@ -88,15 +74,15 @@ var Dict = (function DictClosure() {
     get: function Dict_get(key1, key2, key3) {
       var value;
       var xref = this.xref, suppressEncryption = this.suppressEncryption;
-      if (typeof (value = this.map[key1]) !== 'undefined' || key1 in this.map ||
-          typeof key2 === 'undefined') {
+      if (typeof (value = this._map[key1]) !== 'undefined' ||
+          key1 in this._map || typeof key2 === 'undefined') {
         return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
       }
-      if (typeof (value = this.map[key2]) !== 'undefined' || key2 in this.map ||
-          typeof key3 === 'undefined') {
+      if (typeof (value = this._map[key2]) !== 'undefined' ||
+          key2 in this._map || typeof key3 === 'undefined') {
         return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
       }
-      value = this.map[key3] || null;
+      value = this._map[key3] || null;
       return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
     },
 
@@ -104,21 +90,21 @@ var Dict = (function DictClosure() {
     getAsync: function Dict_getAsync(key1, key2, key3) {
       var value;
       var xref = this.xref, suppressEncryption = this.suppressEncryption;
-      if (typeof (value = this.map[key1]) !== 'undefined' || key1 in this.map ||
-          typeof key2 === 'undefined') {
+      if (typeof (value = this._map[key1]) !== 'undefined' ||
+          key1 in this._map || typeof key2 === 'undefined') {
         if (xref) {
           return xref.fetchIfRefAsync(value, suppressEncryption);
         }
         return Promise.resolve(value);
       }
-      if (typeof (value = this.map[key2]) !== 'undefined' || key2 in this.map ||
-          typeof key3 === 'undefined') {
+      if (typeof (value = this._map[key2]) !== 'undefined' ||
+          key2 in this._map || typeof key3 === 'undefined') {
         if (xref) {
           return xref.fetchIfRefAsync(value, suppressEncryption);
         }
         return Promise.resolve(value);
       }
-      value = this.map[key3] || null;
+      value = this._map[key3] || null;
       if (xref) {
         return xref.fetchIfRefAsync(value, suppressEncryption);
       }
@@ -129,7 +115,7 @@ var Dict = (function DictClosure() {
     getArray: function Dict_getArray(key1, key2, key3) {
       var value = this.get(key1, key2, key3);
       var xref = this.xref, suppressEncryption = this.suppressEncryption;
-      if (!isArray(value) || !xref) {
+      if (!Array.isArray(value) || !xref) {
         return value;
       }
       value = value.slice(); // Ensure that we don't modify the Dict data.
@@ -144,43 +130,43 @@ var Dict = (function DictClosure() {
 
     // no dereferencing
     getRaw: function Dict_getRaw(key) {
-      return this.map[key];
+      return this._map[key];
     },
 
     getKeys: function Dict_getKeys() {
-      return Object.keys(this.map);
+      return Object.keys(this._map);
     },
 
     set: function Dict_set(key, value) {
-      this.map[key] = value;
+      this._map[key] = value;
     },
 
     has: function Dict_has(key) {
-      return key in this.map;
+      return key in this._map;
     },
 
     forEach: function Dict_forEach(callback) {
-      for (var key in this.map) {
+      for (var key in this._map) {
         callback(key, this.get(key));
       }
-    }
+    },
   };
 
   Dict.empty = new Dict(null);
 
-  Dict.merge = function Dict_merge(xref, dictArray) {
-    var mergedDict = new Dict(xref);
+  Dict.merge = function(xref, dictArray) {
+    let mergedDict = new Dict(xref);
 
-    for (var i = 0, ii = dictArray.length; i < ii; i++) {
-      var dict = dictArray[i];
+    for (let i = 0, ii = dictArray.length; i < ii; i++) {
+      let dict = dictArray[i];
       if (!isDict(dict)) {
         continue;
       }
-      for (var keyName in dict.map) {
-        if (mergedDict.map[keyName]) {
+      for (let keyName in dict._map) {
+        if (mergedDict._map[keyName] !== undefined) {
           continue;
         }
-        mergedDict.map[keyName] = dict.map[keyName];
+        mergedDict._map[keyName] = dict._map[keyName];
       }
     }
     return mergedDict;
@@ -204,7 +190,7 @@ var Ref = (function RefClosure() {
         str += this.gen;
       }
       return str;
-    }
+    },
   };
 
   return Ref;
@@ -228,7 +214,7 @@ var RefSet = (function RefSetClosure() {
 
     remove: function RefSet_remove(ref) {
       delete this.dict[ref.toString()];
-    }
+    },
   };
 
   return RefSet;
@@ -264,7 +250,7 @@ var RefSetCache = (function RefSetCacheClosure() {
 
     clear: function RefSetCache_clear() {
       this.dict = Object.create(null);
-    }
+    },
   };
 
   return RefSetCache;
@@ -299,18 +285,19 @@ function isStream(v) {
   return typeof v === 'object' && v !== null && v.getBytes !== undefined;
 }
 
-exports.EOF = EOF;
-exports.Cmd = Cmd;
-exports.Dict = Dict;
-exports.Name = Name;
-exports.Ref = Ref;
-exports.RefSet = RefSet;
-exports.RefSetCache = RefSetCache;
-exports.isEOF = isEOF;
-exports.isCmd = isCmd;
-exports.isDict = isDict;
-exports.isName = isName;
-exports.isRef = isRef;
-exports.isRefsEqual = isRefsEqual;
-exports.isStream = isStream;
-}));
+export {
+  EOF,
+  Cmd,
+  Dict,
+  Name,
+  Ref,
+  RefSet,
+  RefSetCache,
+  isEOF,
+  isCmd,
+  isDict,
+  isName,
+  isRef,
+  isRefsEqual,
+  isStream,
+};

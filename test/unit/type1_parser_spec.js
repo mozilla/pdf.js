@@ -12,26 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/type1_parser_spec', ['exports',
-           'pdfjs/core/fonts', 'pdfjs/core/stream', 'pdfjs/core/type1_parser'],
-           factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/fonts.js'),
-            require('../../src/core/stream.js'),
-            require('../../src/core/type1_parser.js'));
-  } else {
-    factory((root.pdfjsTestUnitType1ParserSpec = {}), root.pdfjsCoreFonts,
-             root.pdfjsCoreStream, root.pdfjsCoreType1Parser);
-  }
-}(this, function (exports, coreFonts, coreStream, coreType1Parser) {
-
-var SEAC_ANALYSIS_ENABLED = coreFonts.SEAC_ANALYSIS_ENABLED;
-var StringStream = coreStream.StringStream;
-var Type1Parser = coreType1Parser.Type1Parser;
+import { SEAC_ANALYSIS_ENABLED } from '../../src/core/fonts';
+import { StringStream } from '../../src/core/stream';
+import { Type1Parser } from '../../src/core/type1_parser';
 
 describe('Type1Parser', function() {
   it('splits tokens', function() {
@@ -127,9 +111,8 @@ describe('Type1Parser', function() {
       'dup 33 /arrowright put\n' +
       'readonly def\n');
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
-    var props = { overridableEncoding: true };
+    var props = { overridableEncoding: true, };
     parser.extractFontHeader(props);
     expect(props.builtInEncoding[33]).toEqual('arrowright');
   });
 });
-}));
