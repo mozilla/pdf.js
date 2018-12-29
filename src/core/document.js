@@ -16,7 +16,7 @@
 import {
   assert, FormatError, getInheritableProperty, info, isArrayBuffer, isBool,
   isNum, isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
-  stringToPDFString, Util, warn
+  stringToPDFString, Util, warn, XRefEntryException, XRefParseException
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream, Ref } from './primitives';
@@ -646,6 +646,20 @@ var PDFDocument = (function PDFDocumentClosure() {
           builtInCMapCache: catalog.builtInCMapCache,
           pdfFunctionFactory: this.pdfFunctionFactory,
         });
+      });
+    },
+
+    checkFirstPage() {
+      return this.getPage(0).catch((reason) => {
+        if (reason instanceof XRefEntryException) {
+          // Clear out the various caches to ensure that we haven't stored any
+          // inconsistent and/or incorrect state, since that could easily break
+          // subsequent `this.getPage` calls.
+          this._pagePromises.length = 0;
+          this.cleanup();
+
+          throw new XRefParseException();
+        }
       });
     },
 

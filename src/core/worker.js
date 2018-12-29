@@ -258,33 +258,22 @@ var WorkerMessageHandler = {
       WorkerTasks.splice(i, 1);
     }
 
-    function loadDocument(recoveryMode) {
-      var loadDocumentCapability = createPromiseCapability();
+    async function loadDocument(recoveryMode) {
+      await pdfManager.ensureDoc('checkHeader');
+      await pdfManager.ensureDoc('parseStartXRef');
+      await pdfManager.ensureDoc('parse', [recoveryMode]);
 
-      var parseSuccess = function parseSuccess() {
-        Promise.all([
-          pdfManager.ensureDoc('numPages'),
-          pdfManager.ensureDoc('fingerprint'),
-        ]).then(function([numPages, fingerprint]) {
-          loadDocumentCapability.resolve({
-            numPages,
-            fingerprint,
-          });
-        }, parseFailure);
-      };
+      if (!recoveryMode) {
+        // Check that at least the first page can be successfully loaded,
+        // since otherwise the XRef table is definitely not valid.
+        await pdfManager.ensureDoc('checkFirstPage');
+      }
 
-      var parseFailure = function parseFailure(e) {
-        loadDocumentCapability.reject(e);
-      };
-
-      pdfManager.ensureDoc('checkHeader', []).then(function() {
-        pdfManager.ensureDoc('parseStartXRef', []).then(function() {
-          pdfManager.ensureDoc('parse', [recoveryMode]).then(
-            parseSuccess, parseFailure);
-        }, parseFailure);
-      }, parseFailure);
-
-      return loadDocumentCapability.promise;
+      const [numPages, fingerprint] = await Promise.all([
+        pdfManager.ensureDoc('numPages'),
+        pdfManager.ensureDoc('fingerprint'),
+      ]);
+      return { numPages, fingerprint, };
     }
 
     function getPdfManager(data, evaluatorOptions) {
