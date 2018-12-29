@@ -185,11 +185,10 @@ var Ref = (function RefClosure() {
     toString: function Ref_toString() {
       // This function is hot, so we make the string as compact as possible.
       // |this.gen| is almost always zero, so we treat that case specially.
-      var str = this.num + 'R';
       if (this.gen !== 0) {
-        str += this.gen;
+        return `${this.num}R${this.gen}`;
       }
-      return str;
+      return `${this.num}R`;
     },
   };
 
