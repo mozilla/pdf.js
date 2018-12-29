@@ -28,18 +28,17 @@ import { OperatorList } from './operator_list';
 import { PartialEvaluator } from './evaluator';
 import { PDFFunctionFactory } from './function';
 
-var Page = (function PageClosure() {
+const DEFAULT_USER_UNIT = 1.0;
+const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
-  var DEFAULT_USER_UNIT = 1.0;
-  var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
+function isAnnotationRenderable(annotation, intent) {
+  return (intent === 'display' && annotation.viewable) ||
+         (intent === 'print' && annotation.printable);
+}
 
-  function isAnnotationRenderable(annotation, intent) {
-    return (intent === 'display' && annotation.viewable) ||
-           (intent === 'print' && annotation.printable);
-  }
-
-  function Page({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
-                  builtInCMapCache, pdfFunctionFactory, }) {
+class Page {
+  constructor({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
+                builtInCMapCache, pdfFunctionFactory, }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
@@ -51,8 +50,8 @@ var Page = (function PageClosure() {
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
-    var uniquePrefix = 'p' + this.pageIndex + '_';
-    var idCounters = {
+    const uniquePrefix = `p${this.pageIndex}_`;
+    const idCounters = {
       obj: 0,
     };
     this.idFactory = {
@@ -62,138 +61,211 @@ var Page = (function PageClosure() {
     };
   }
 
-  Page.prototype = {
-    /**
-     * @private
-     */
-    _getInheritableProperty(key, getArray = false) {
-      let value = getInheritableProperty({ dict: this.pageDict, key, getArray,
+  /**
+   * @private
+   */
+  _getInheritableProperty(key, getArray = false) {
+    const value = getInheritableProperty({ dict: this.pageDict, key, getArray,
                                            stopWhenFound: false, });
-      if (!Array.isArray(value)) {
-        return value;
-      }
-      if (value.length === 1 || !isDict(value[0])) {
-        return value[0];
-      }
-      return Dict.merge(this.xref, value);
-    },
+    if (!Array.isArray(value)) {
+      return value;
+    }
+    if (value.length === 1 || !isDict(value[0])) {
+      return value[0];
+    }
+    return Dict.merge(this.xref, value);
+  }
 
-    get content() {
-      return this.pageDict.get('Contents');
-    },
+  get content() {
+    return this.pageDict.get('Contents');
+  }
 
-    get resources() {
-      // For robustness: The spec states that a \Resources entry has to be
-      // present, but can be empty. Some document omit it still, in this case
-      // we return an empty dictionary.
-      return shadow(this, 'resources',
-                    this._getInheritableProperty('Resources') || Dict.empty);
-    },
+  get resources() {
+    // For robustness: The spec states that a \Resources entry has to be
+    // present, but can be empty. Some documents still omit it; in this case
+    // we return an empty dictionary.
+    return shadow(this, 'resources',
+                  this._getInheritableProperty('Resources') || Dict.empty);
+  }
 
-    get mediaBox() {
-      var mediaBox = this._getInheritableProperty('MediaBox',
+  get mediaBox() {
+    const mediaBox = this._getInheritableProperty('MediaBox',
                                                   /* getArray = */ true);
-      // Reset invalid media box to letter size.
-      if (!Array.isArray(mediaBox) || mediaBox.length !== 4) {
-        return shadow(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
-      }
-      return shadow(this, 'mediaBox', mediaBox);
-    },
+    // Reset invalid media box to letter size.
+    if (!Array.isArray(mediaBox) || mediaBox.length !== 4) {
+      return shadow(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
+    }
+    return shadow(this, 'mediaBox', mediaBox);
+  }
 
-    get cropBox() {
-      var cropBox = this._getInheritableProperty('CropBox',
+  get cropBox() {
+    const cropBox = this._getInheritableProperty('CropBox',
                                                  /* getArray = */ true);
-      // Reset invalid crop box to media box.
-      if (!Array.isArray(cropBox) || cropBox.length !== 4) {
-        return shadow(this, 'cropBox', this.mediaBox);
+    // Reset invalid crop box to media box.
+    if (!Array.isArray(cropBox) || cropBox.length !== 4) {
+      return shadow(this, 'cropBox', this.mediaBox);
+    }
+    return shadow(this, 'cropBox', cropBox);
+  }
+
+  get userUnit() {
+    let obj = this.pageDict.get('UserUnit');
+    if (!isNum(obj) || obj <= 0) {
+      obj = DEFAULT_USER_UNIT;
+    }
+    return shadow(this, 'userUnit', obj);
+  }
+
+  get view() {
+    // From the spec, 6th ed., p.963:
+    // "The crop, bleed, trim, and art boxes should not ordinarily
+    // extend beyond the boundaries of the media box. If they do, they are
+    // effectively reduced to their intersection with the media box."
+    const mediaBox = this.mediaBox, cropBox = this.cropBox;
+    if (mediaBox === cropBox) {
+      return shadow(this, 'view', mediaBox);
+    }
+
+    const intersection = Util.intersect(cropBox, mediaBox);
+    return shadow(this, 'view', intersection || mediaBox);
+  }
+
+  get rotate() {
+    let rotate = this._getInheritableProperty('Rotate') || 0;
+
+    // Normalize rotation so it's a multiple of 90 and between 0 and 270.
+    if (rotate % 90 !== 0) {
+      rotate = 0;
+    } else if (rotate >= 360) {
+      rotate = rotate % 360;
+    } else if (rotate < 0) {
+      // The spec doesn't cover negatives. Assume it's counterclockwise
+      // rotation. The following is the other implementation of modulo.
+      rotate = ((rotate % 360) + 360) % 360;
+    }
+    return shadow(this, 'rotate', rotate);
+  }
+
+  getContentStream() {
+    const content = this.content;
+    let stream;
+
+    if (Array.isArray(content)) {
+      // Fetching the individual streams from the array.
+      const xref = this.xref;
+      const streams = [];
+      for (const stream of content) {
+        streams.push(xref.fetchIfRef(stream));
       }
-      return shadow(this, 'cropBox', cropBox);
-    },
+      stream = new StreamsSequenceStream(streams);
+    } else if (isStream(content)) {
+      stream = content;
+    } else {
+      // Replace non-existent page content with empty content.
+      stream = new NullStream();
+    }
+    return stream;
+  }
 
-    get userUnit() {
-      var obj = this.pageDict.get('UserUnit');
-      if (!isNum(obj) || obj <= 0) {
-        obj = DEFAULT_USER_UNIT;
-      }
-      return shadow(this, 'userUnit', obj);
-    },
+  loadResources(keys) {
+    if (!this.resourcesPromise) {
+      // TODO: add async `_getInheritableProperty` and remove this.
+      this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
+    }
+    return this.resourcesPromise.then(() => {
+      const objectLoader = new ObjectLoader(this.resources, keys, this.xref);
+      return objectLoader.load();
+    });
+  }
 
-    get view() {
-      // From the spec, 6th ed., p.963:
-      // "The crop, bleed, trim, and art boxes should not ordinarily
-      // extend beyond the boundaries of the media box. If they do, they are
-      // effectively reduced to their intersection with the media box."
-      var mediaBox = this.mediaBox, cropBox = this.cropBox;
-      if (mediaBox === cropBox) {
-        return shadow(this, 'view', mediaBox);
-      }
-      var intersection = Util.intersect(cropBox, mediaBox);
-      return shadow(this, 'view', intersection || mediaBox);
-    },
-
-    get rotate() {
-      var rotate = this._getInheritableProperty('Rotate') || 0;
-      // Normalize rotation so it's a multiple of 90 and between 0 and 270
-      if (rotate % 90 !== 0) {
-        rotate = 0;
-      } else if (rotate >= 360) {
-        rotate = rotate % 360;
-      } else if (rotate < 0) {
-        // The spec doesn't cover negatives, assume its counterclockwise
-        // rotation. The following is the other implementation of modulo.
-        rotate = ((rotate % 360) + 360) % 360;
-      }
-      return shadow(this, 'rotate', rotate);
-    },
-
-    getContentStream: function Page_getContentStream() {
-      var content = this.content;
-      var stream;
-      if (Array.isArray(content)) {
-        // fetching items
-        var xref = this.xref;
-        var i, n = content.length;
-        var streams = [];
-        for (i = 0; i < n; ++i) {
-          streams.push(xref.fetchIfRef(content[i]));
-        }
-        stream = new StreamsSequenceStream(streams);
-      } else if (isStream(content)) {
-        stream = content;
-      } else {
-        // replacing non-existent page content with empty one
-        stream = new NullStream();
-      }
-      return stream;
-    },
-
-    loadResources: function Page_loadResources(keys) {
-      if (!this.resourcesPromise) {
-        // TODO: add async `_getInheritableProperty` and remove this.
-        this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
-      }
-      return this.resourcesPromise.then(() => {
-        let objectLoader = new ObjectLoader(this.resources, keys, this.xref);
-
-        return objectLoader.load();
-      });
-    },
-
-    getOperatorList({ handler, task, intent, renderInteractiveForms, }) {
-      var contentStreamPromise = this.pdfManager.ensure(this,
+  getOperatorList({ handler, task, intent, renderInteractiveForms, }) {
+    const contentStreamPromise = this.pdfManager.ensure(this,
                                                         'getContentStream');
-      var resourcesPromise = this.loadResources([
-        'ExtGState',
-        'ColorSpace',
-        'Pattern',
-        'Shading',
-        'XObject',
-        'Font'
-        // ProcSet
-        // Properties
-      ]);
+    const resourcesPromise = this.loadResources([
+      'ExtGState',
+      'ColorSpace',
+      'Pattern',
+      'Shading',
+      'XObject',
+      'Font',
+    ]);
 
-      var partialEvaluator = new PartialEvaluator({
+    const partialEvaluator = new PartialEvaluator({
+      pdfManager: this.pdfManager,
+      xref: this.xref,
+      handler,
+      pageIndex: this.pageIndex,
+      idFactory: this.idFactory,
+      fontCache: this.fontCache,
+      builtInCMapCache: this.builtInCMapCache,
+      options: this.evaluatorOptions,
+      pdfFunctionFactory: this.pdfFunctionFactory,
+    });
+
+    const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+    const pageListPromise = dataPromises.then(([contentStream]) => {
+      const opList = new OperatorList(intent, handler, this.pageIndex);
+
+      handler.send('StartRenderPage', {
+        transparency: partialEvaluator.hasBlendModes(this.resources),
+        pageIndex: this.pageIndex,
+        intent,
+      });
+
+      return partialEvaluator.getOperatorList({
+        stream: contentStream,
+        task,
+        resources: this.resources,
+        operatorList: opList,
+      }).then(function() {
+        return opList;
+      });
+    });
+
+    // Fetch the page's annotations and add their operator lists to the
+    // page's operator list to render them.
+    return Promise.all([pageListPromise, this._parsedAnnotations]).then(
+        function([pageOpList, annotations]) {
+      if (annotations.length === 0) {
+        pageOpList.flush(true);
+        return pageOpList;
+      }
+
+      // Collect the operator list promises for the annotations. Each promise
+      // is resolved with the complete operator list for a single annotation.
+      const opListPromises = [];
+      for (const annotation of annotations) {
+        if (isAnnotationRenderable(annotation, intent)) {
+          opListPromises.push(annotation.getOperatorList(
+            partialEvaluator, task, renderInteractiveForms));
+        }
+      }
+
+      return Promise.all(opListPromises).then(function(opLists) {
+        pageOpList.addOp(OPS.beginAnnotations, []);
+        for (const opList of opLists) {
+          pageOpList.addOpList(opList);
+        }
+        pageOpList.addOp(OPS.endAnnotations, []);
+        pageOpList.flush(true);
+        return pageOpList;
+      });
+    });
+  }
+
+  extractTextContent({ handler, task, normalizeWhitespace, sink,
+                       combineTextItems, }) {
+    const contentStreamPromise = this.pdfManager.ensure(this,
+                                                        'getContentStream');
+    const resourcesPromise = this.loadResources([
+      'ExtGState',
+      'XObject',
+      'Font',
+    ]);
+
+    const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+    return dataPromises.then(([contentStream]) => {
+      const partialEvaluator = new PartialEvaluator({
         pdfManager: this.pdfManager,
         xref: this.xref,
         handler,
@@ -205,135 +277,57 @@ var Page = (function PageClosure() {
         pdfFunctionFactory: this.pdfFunctionFactory,
       });
 
-      var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
-      var pageListPromise = dataPromises.then(([contentStream]) => {
-        var opList = new OperatorList(intent, handler, this.pageIndex);
-
-        handler.send('StartRenderPage', {
-          transparency: partialEvaluator.hasBlendModes(this.resources),
-          pageIndex: this.pageIndex,
-          intent,
-        });
-        return partialEvaluator.getOperatorList({
-          stream: contentStream,
-          task,
-          resources: this.resources,
-          operatorList: opList,
-        }).then(function () {
-          return opList;
-        });
+      return partialEvaluator.getTextContent({
+        stream: contentStream,
+        task,
+        resources: this.resources,
+        normalizeWhitespace,
+        combineTextItems,
+        sink,
       });
+    });
+  }
 
-      // Fetch the page's annotations and add their operator lists to the
-      // page's operator list to render them.
-      return Promise.all([pageListPromise, this._parsedAnnotations]).then(
-          function ([pageOpList, annotations]) {
-        if (annotations.length === 0) {
-          pageOpList.flush(true);
-          return pageOpList;
+  getAnnotationsData(intent) {
+    return this._parsedAnnotations.then(function(annotations) {
+      const annotationsData = [];
+      for (let i = 0, ii = annotations.length; i < ii; i++) {
+        if (!intent || isAnnotationRenderable(annotations[i], intent)) {
+          annotationsData.push(annotations[i].data);
+        }
+      }
+      return annotationsData;
+    });
+  }
+
+  get annotations() {
+    return shadow(this, 'annotations',
+                  this._getInheritableProperty('Annots') || []);
+  }
+
+  get _parsedAnnotations() {
+    const parsedAnnotations =
+      this.pdfManager.ensure(this, 'annotations').then(() => {
+        const annotationRefs = this.annotations;
+        const annotationPromises = [];
+        for (let i = 0, ii = annotationRefs.length; i < ii; i++) {
+          annotationPromises.push(AnnotationFactory.create(
+            this.xref, annotationRefs[i], this.pdfManager, this.idFactory));
         }
 
-        // Collect the operator list promises for the annotations. Each promise
-        // is resolved with the complete operator list for a single annotation.
-        var i, ii, opListPromises = [];
-        for (i = 0, ii = annotations.length; i < ii; i++) {
-          if (isAnnotationRenderable(annotations[i], intent)) {
-            opListPromises.push(annotations[i].getOperatorList(
-              partialEvaluator, task, renderInteractiveForms));
-          }
-        }
-
-        return Promise.all(opListPromises).then(function(opLists) {
-          pageOpList.addOp(OPS.beginAnnotations, []);
-          for (i = 0, ii = opLists.length; i < ii; i++) {
-            pageOpList.addOpList(opLists[i]);
-          }
-          pageOpList.addOp(OPS.endAnnotations, []);
-
-          pageOpList.flush(true);
-          return pageOpList;
-        });
-      });
-    },
-
-    extractTextContent({ handler, task, normalizeWhitespace,
-                         sink, combineTextItems, }) {
-      var contentStreamPromise = this.pdfManager.ensure(this,
-                                                        'getContentStream');
-      var resourcesPromise = this.loadResources([
-        'ExtGState',
-        'XObject',
-        'Font'
-      ]);
-
-      var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
-      return dataPromises.then(([contentStream]) => {
-        var partialEvaluator = new PartialEvaluator({
-          pdfManager: this.pdfManager,
-          xref: this.xref,
-          handler,
-          pageIndex: this.pageIndex,
-          idFactory: this.idFactory,
-          fontCache: this.fontCache,
-          builtInCMapCache: this.builtInCMapCache,
-          options: this.evaluatorOptions,
-          pdfFunctionFactory: this.pdfFunctionFactory,
-        });
-
-        return partialEvaluator.getTextContent({
-          stream: contentStream,
-          task,
-          resources: this.resources,
-          normalizeWhitespace,
-          combineTextItems,
-          sink,
-        });
-      });
-    },
-
-    getAnnotationsData(intent) {
-      return this._parsedAnnotations.then(function(annotations) {
-        let annotationsData = [];
-        for (let i = 0, ii = annotations.length; i < ii; i++) {
-          if (!intent || isAnnotationRenderable(annotations[i], intent)) {
-            annotationsData.push(annotations[i].data);
-          }
-        }
-        return annotationsData;
-      });
-    },
-
-    get annotations() {
-      return shadow(this, 'annotations',
-                    this._getInheritableProperty('Annots') || []);
-    },
-
-    get _parsedAnnotations() {
-      const parsedAnnotations =
-        this.pdfManager.ensure(this, 'annotations').then(() => {
-          const annotationRefs = this.annotations;
-          const annotationPromises = [];
-          for (let i = 0, ii = annotationRefs.length; i < ii; i++) {
-            annotationPromises.push(AnnotationFactory.create(
-              this.xref, annotationRefs[i], this.pdfManager, this.idFactory));
-          }
-
-          return Promise.all(annotationPromises).then(function(annotations) {
-            return annotations.filter(function isDefined(annotation) {
-              return !!annotation;
-            });
-          }, function(reason) {
-            warn(`_parsedAnnotations: "${reason}".`);
-            return [];
+        return Promise.all(annotationPromises).then(function(annotations) {
+          return annotations.filter(function isDefined(annotation) {
+            return !!annotation;
           });
+        }, function(reason) {
+          warn(`_parsedAnnotations: "${reason}".`);
+          return [];
         });
+      });
 
-      return shadow(this, '_parsedAnnotations', parsedAnnotations);
-    },
-  };
-
-  return Page;
-})();
+    return shadow(this, '_parsedAnnotations', parsedAnnotations);
+  }
+}
 
 /**
  * The `PDFDocument` holds all the data of the PDF file. Compared to the
