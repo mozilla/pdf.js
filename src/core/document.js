@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 import {
   assert, FormatError, getInheritableProperty, info, isArrayBuffer, isBool,
@@ -329,20 +330,41 @@ class Page {
   }
 }
 
-/**
- * The `PDFDocument` holds all the data of the PDF file. Compared to the
- * `PDFDoc`, this one doesn't have any job management code.
- * Right now there exists one PDFDocument on the main thread + one object
- * for each worker. If there is no worker support enabled, there are two
- * `PDFDocument` objects on the main thread created.
- */
-var PDFDocument = (function PDFDocumentClosure() {
-  var FINGERPRINT_FIRST_BYTES = 1024;
-  var EMPTY_FINGERPRINT = '\x00\x00\x00\x00\x00\x00\x00' +
-    '\x00\x00\x00\x00\x00\x00\x00\x00\x00';
+const FINGERPRINT_FIRST_BYTES = 1024;
+const EMPTY_FINGERPRINT = '\x00\x00\x00\x00\x00\x00\x00' +
+                          '\x00\x00\x00\x00\x00\x00\x00\x00\x00';
 
-  function PDFDocument(pdfManager, arg) {
-    var stream;
+function find(stream, needle, limit, backwards) {
+  const pos = stream.pos;
+  const end = stream.end;
+  if (pos + limit > end) {
+    limit = end - pos;
+  }
+
+  const strBuf = [];
+  for (let i = 0; i < limit; ++i) {
+    strBuf.push(String.fromCharCode(stream.getByte()));
+  }
+  const str = strBuf.join('');
+
+  stream.pos = pos;
+  const index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
+  if (index === -1) {
+    return false;
+  }
+  stream.pos += index;
+  return true;
+}
+
+/**
+ * The `PDFDocument` class holds all the data of the PDF file. There exists
+ * one `PDFDocument` object on the main thread and one object for each worker.
+ * If no worker support is enabled, two `PDFDocument` objects are created on
+ * the main thread.
+ */
+class PDFDocument {
+  constructor(pdfManager, arg) {
+    let stream;
     if (isStream(arg)) {
       stream = arg;
     } else if (isArrayBuffer(arg)) {
@@ -351,319 +373,303 @@ var PDFDocument = (function PDFDocumentClosure() {
       throw new Error('PDFDocument: Unknown argument type');
     }
     if (stream.length <= 0) {
-      throw new Error('PDFDocument: stream must have data');
+      throw new Error('PDFDocument: Stream must have data');
     }
 
     this.pdfManager = pdfManager;
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
 
-    let evaluatorOptions = pdfManager.evaluatorOptions;
     this.pdfFunctionFactory = new PDFFunctionFactory({
       xref: this.xref,
-      isEvalSupported: evaluatorOptions.isEvalSupported,
+      isEvalSupported: pdfManager.evaluatorOptions.isEvalSupported,
     });
     this._pagePromises = [];
   }
 
-  function find(stream, needle, limit, backwards) {
-    var pos = stream.pos;
-    var end = stream.end;
-    var strBuf = [];
-    if (pos + limit > end) {
-      limit = end - pos;
+  parse(recoveryMode) {
+    this.setup(recoveryMode);
+
+    const version = this.catalog.catDict.get('Version');
+    if (isName(version)) {
+      this.pdfFormatVersion = version.name;
     }
-    for (var n = 0; n < limit; ++n) {
-      strBuf.push(String.fromCharCode(stream.getByte()));
+
+    // Check if AcroForms are present in the document.
+    try {
+      this.acroForm = this.catalog.catDict.get('AcroForm');
+      if (this.acroForm) {
+        this.xfa = this.acroForm.get('XFA');
+        const fields = this.acroForm.get('Fields');
+        if ((!fields || !Array.isArray(fields) || fields.length === 0) &&
+            !this.xfa) {
+          this.acroForm = null; // No fields and no XFA, so it's not a form.
+        }
+      }
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      info('Cannot fetch AcroForm entry; assuming no AcroForms are present');
+      this.acroForm = null;
     }
-    var str = strBuf.join('');
-    stream.pos = pos;
-    var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
-    if (index === -1) {
-      return false; /* not found */
-    }
-    stream.pos += index;
-    return true; /* found */
   }
 
-  const DocumentInfoValidators = {
-    Title: isString,
-    Author: isString,
-    Subject: isString,
-    Keywords: isString,
-    Creator: isString,
-    Producer: isString,
-    CreationDate: isString,
-    ModDate: isString,
-    Trapped: isName,
-  };
+  get linearization() {
+    let linearization = null;
+    try {
+      linearization = Linearization.create(this.stream);
+    } catch (err) {
+      if (err instanceof MissingDataException) {
+        throw err;
+      }
+      info(err);
+    }
+    return shadow(this, 'linearization', linearization);
+  }
 
-  PDFDocument.prototype = {
-    parse: function PDFDocument_parse(recoveryMode) {
-      this.setup(recoveryMode);
-      var version = this.catalog.catDict.get('Version');
-      if (isName(version)) {
-        this.pdfFormatVersion = version.name;
-      }
-      try {
-        // checking if AcroForm is present
-        this.acroForm = this.catalog.catDict.get('AcroForm');
-        if (this.acroForm) {
-          this.xfa = this.acroForm.get('XFA');
-          var fields = this.acroForm.get('Fields');
-          if ((!fields || !Array.isArray(fields) || fields.length === 0) &&
-              !this.xfa) {
-            // no fields and no XFA -- not a form (?)
-            this.acroForm = null;
-          }
-        }
-      } catch (ex) {
-        if (ex instanceof MissingDataException) {
-          throw ex;
-        }
-        info('Something wrong with AcroForm entry');
-        this.acroForm = null;
-      }
-    },
+  get startXRef() {
+    const stream = this.stream;
+    let startXRef = 0;
 
-    get linearization() {
-      let linearization = null;
-      try {
-        linearization = Linearization.create(this.stream);
-      } catch (err) {
-        if (err instanceof MissingDataException) {
-          throw err;
-        }
-        info(err);
-      }
-      // shadow the prototype getter with a data property
-      return shadow(this, 'linearization', linearization);
-    },
-    get startXRef() {
-      var stream = this.stream;
-      var startXRef = 0;
-      var linearization = this.linearization;
-      if (linearization) {
-        // Find end of first obj.
-        stream.reset();
-        if (find(stream, 'endobj', 1024)) {
-          startXRef = stream.pos + 6;
-        }
-      } else {
-        // Find startxref by jumping backward from the end of the file.
-        var step = 1024;
-        var found = false, pos = stream.end;
-        while (!found && pos > 0) {
-          pos -= step - 'startxref'.length;
-          if (pos < 0) {
-            pos = 0;
-          }
-          stream.pos = pos;
-          found = find(stream, 'startxref', step, true);
-        }
-        if (found) {
-          stream.skip(9);
-          var ch;
-          do {
-            ch = stream.getByte();
-          } while (isSpace(ch));
-          var str = '';
-          while (ch >= 0x20 && ch <= 0x39) { // < '9'
-            str += String.fromCharCode(ch);
-            ch = stream.getByte();
-          }
-          startXRef = parseInt(str, 10);
-          if (isNaN(startXRef)) {
-            startXRef = 0;
-          }
-        }
-      }
-      // shadow the prototype getter with a data property
-      return shadow(this, 'startXRef', startXRef);
-    },
-
-    // Find the header, remove leading garbage and setup the stream
-    // starting from the header.
-    checkHeader: function PDFDocument_checkHeader() {
-      var stream = this.stream;
+    if (this.linearization) {
+      // Find the end of the first object.
       stream.reset();
-      if (find(stream, '%PDF-', 1024)) {
-        // Found the header, trim off any garbage before it.
-        stream.moveStart();
-        // Reading file format version
-        var MAX_VERSION_LENGTH = 12;
-        var version = '', ch;
-        while ((ch = stream.getByte()) > 0x20) { // SPACE
-          if (version.length >= MAX_VERSION_LENGTH) {
-            break;
+      if (find(stream, 'endobj', 1024)) {
+        startXRef = stream.pos + 6;
+      }
+    } else {
+      // Find `startxref` by checking backwards from the end of the file.
+      const step = 1024;
+      const startXRefLength = 'startxref'.length;
+      let found = false, pos = stream.end;
+
+      while (!found && pos > 0) {
+        pos -= step - startXRefLength;
+        if (pos < 0) {
+          pos = 0;
+        }
+        stream.pos = pos;
+        found = find(stream, 'startxref', step, true);
+      }
+
+      if (found) {
+        stream.skip(9);
+        let ch;
+        do {
+          ch = stream.getByte();
+        } while (isSpace(ch));
+        let str = '';
+        while (ch >= 0x20 && ch <= 0x39) { // < '9'
+          str += String.fromCharCode(ch);
+          ch = stream.getByte();
+        }
+        startXRef = parseInt(str, 10);
+        if (isNaN(startXRef)) {
+          startXRef = 0;
+        }
+      }
+    }
+    return shadow(this, 'startXRef', startXRef);
+  }
+
+  // Find the header, get the PDF format version and setup the
+  // stream to start from the header.
+  checkHeader() {
+    const stream = this.stream;
+    stream.reset();
+
+    if (!find(stream, '%PDF-', 1024)) {
+      // May not be a PDF file, but don't throw an error and let
+      // parsing continue.
+      return;
+    }
+    stream.moveStart();
+
+    // Read the PDF format version.
+    const MAX_PDF_VERSION_LENGTH = 12;
+    let version = '', ch;
+    while ((ch = stream.getByte()) > 0x20) { // Space
+      if (version.length >= MAX_PDF_VERSION_LENGTH) {
+        break;
+      }
+      version += String.fromCharCode(ch);
+    }
+    if (!this.pdfFormatVersion) {
+      // Remove the "%PDF-" prefix.
+      this.pdfFormatVersion = version.substring(5);
+    }
+  }
+
+  parseStartXRef() {
+    this.xref.setStartXRef(this.startXRef);
+  }
+
+  setup(recoveryMode) {
+    this.xref.parse(recoveryMode);
+    this.catalog = new Catalog(this.pdfManager, this.xref);
+  }
+
+  get numPages() {
+    const linearization = this.linearization;
+    const num = linearization ? linearization.numPages : this.catalog.numPages;
+    return shadow(this, 'numPages', num);
+  }
+
+  get documentInfo() {
+    const DocumentInfoValidators = {
+      Title: isString,
+      Author: isString,
+      Subject: isString,
+      Keywords: isString,
+      Creator: isString,
+      Producer: isString,
+      CreationDate: isString,
+      ModDate: isString,
+      Trapped: isName,
+    };
+
+    const docInfo = {
+      PDFFormatVersion: this.pdfFormatVersion,
+      IsLinearized: !!this.linearization,
+      IsAcroFormPresent: !!this.acroForm,
+      IsXFAPresent: !!this.xfa,
+    };
+
+    let infoDict;
+    try {
+      infoDict = this.xref.trailer.get('Info');
+    } catch (err) {
+      if (err instanceof MissingDataException) {
+        throw err;
+      }
+      info('The document information dictionary is invalid.');
+    }
+
+    if (isDict(infoDict)) {
+      // Fill the document info with valid entries from the specification,
+      // as well as any existing well-formed custom entries.
+      for (const key of infoDict.getKeys()) {
+        const value = infoDict.get(key);
+
+        if (DocumentInfoValidators[key]) {
+          // Make sure the (standard) value conforms to the specification.
+          if (DocumentInfoValidators[key](value)) {
+            docInfo[key] = (typeof value !== 'string' ?
+                            value : stringToPDFString(value));
+          } else {
+            info(`Bad value in document info for "${key}".`);
           }
-          version += String.fromCharCode(ch);
-        }
-        if (!this.pdfFormatVersion) {
-          // removing "%PDF-"-prefix
-          this.pdfFormatVersion = version.substring(5);
-        }
-        return;
-      }
-      // May not be a PDF file, continue anyway.
-    },
-    parseStartXRef: function PDFDocument_parseStartXRef() {
-      var startXRef = this.startXRef;
-      this.xref.setStartXRef(startXRef);
-    },
-    setup: function PDFDocument_setup(recoveryMode) {
-      this.xref.parse(recoveryMode);
-      this.catalog = new Catalog(this.pdfManager, this.xref);
-    },
-    get numPages() {
-      var linearization = this.linearization;
-      var num = linearization ? linearization.numPages : this.catalog.numPages;
-      // shadow the prototype getter
-      return shadow(this, 'numPages', num);
-    },
-    get documentInfo() {
-      const docInfo = {
-        PDFFormatVersion: this.pdfFormatVersion,
-        IsLinearized: !!this.linearization,
-        IsAcroFormPresent: !!this.acroForm,
-        IsXFAPresent: !!this.xfa,
-      };
-      let infoDict;
-      try {
-        infoDict = this.xref.trailer.get('Info');
-      } catch (err) {
-        if (err instanceof MissingDataException) {
-          throw err;
-        }
-        info('The document information dictionary is invalid.');
-      }
-      if (isDict(infoDict)) {
-        // Fill the document info with valid entries from the specification,
-        // as well as any existing well-formed custom entries.
-        for (let key of infoDict.getKeys()) {
-          const value = infoDict.get(key);
-
-          if (DocumentInfoValidators[key]) {
-            // Make sure the (standard) value conforms to the specification.
-            if (DocumentInfoValidators[key](value)) {
-              docInfo[key] = (typeof value !== 'string' ?
-                              value : stringToPDFString(value));
-            } else {
-              info(`Bad value in document info for "${key}".`);
-            }
-          } else if (typeof key === 'string') {
-            // For custom values, only accept white-listed types to prevent
-            // errors that would occur when trying to send non-serializable
-            // objects to the main-thread (for example `Dict` or `Stream`).
-            let customValue;
-            if (isString(value)) {
-              customValue = stringToPDFString(value);
-            } else if (isName(value) || isNum(value) || isBool(value)) {
-              customValue = value;
-            } else {
-              info(`Unsupported value in document info for (custom) "${key}".`);
-              continue;
-            }
-
-            if (!docInfo['Custom']) {
-              docInfo['Custom'] = Object.create(null);
-            }
-            docInfo['Custom'][key] = customValue;
+        } else if (typeof key === 'string') {
+          // For custom values, only accept white-listed types to prevent
+          // errors that would occur when trying to send non-serializable
+          // objects to the main-thread (for example `Dict` or `Stream`).
+          let customValue;
+          if (isString(value)) {
+            customValue = stringToPDFString(value);
+          } else if (isName(value) || isNum(value) || isBool(value)) {
+            customValue = value;
+          } else {
+            info(`Unsupported value in document info for (custom) "${key}".`);
+            continue;
           }
-        }
-      }
-      return shadow(this, 'documentInfo', docInfo);
-    },
-    get fingerprint() {
-      var xref = this.xref, hash, fileID = '';
-      var idArray = xref.trailer.get('ID');
 
-      if (Array.isArray(idArray) && idArray[0] && isString(idArray[0]) &&
-          idArray[0] !== EMPTY_FINGERPRINT) {
-        hash = stringToBytes(idArray[0]);
-      } else {
-        if (this.stream.ensureRange) {
-          this.stream.ensureRange(0,
-            Math.min(FINGERPRINT_FIRST_BYTES, this.stream.end));
-        }
-        hash = calculateMD5(this.stream.bytes.subarray(0,
-          FINGERPRINT_FIRST_BYTES), 0, FINGERPRINT_FIRST_BYTES);
-      }
-
-      for (var i = 0, n = hash.length; i < n; i++) {
-        var hex = hash[i].toString(16);
-        fileID += hex.length === 1 ? '0' + hex : hex;
-      }
-
-      return shadow(this, 'fingerprint', fileID);
-    },
-
-    _getLinearizationPage(pageIndex) {
-      const { catalog, linearization, } = this;
-      assert(linearization && linearization.pageFirst === pageIndex);
-
-      const ref = new Ref(linearization.objectNumberFirst, 0);
-      return this.xref.fetchAsync(ref).then((obj) => {
-        // Ensure that the object that was found is actually a Page dictionary.
-        if (isDict(obj, 'Page') ||
-            (isDict(obj) && !obj.has('Type') && obj.has('Contents'))) {
-          if (ref && !catalog.pageKidsCountCache.has(ref)) {
-            catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
+          if (!docInfo['Custom']) {
+            docInfo['Custom'] = Object.create(null);
           }
-          return [obj, ref];
+          docInfo['Custom'][key] = customValue;
         }
-        throw new FormatError('The Linearization dictionary doesn\'t point ' +
-                              'to a valid Page dictionary.');
-      }).catch((reason) => {
-        info(reason);
-        return catalog.getPageDict(pageIndex);
-      });
-    },
-
-    getPage(pageIndex) {
-      if (this._pagePromises[pageIndex] !== undefined) {
-        return this._pagePromises[pageIndex];
       }
-      const { catalog, linearization, } = this;
+    }
+    return shadow(this, 'documentInfo', docInfo);
+  }
 
-      const promise = (linearization && linearization.pageFirst === pageIndex) ?
-        this._getLinearizationPage(pageIndex) : catalog.getPageDict(pageIndex);
+  get fingerprint() {
+    let hash;
+    const idArray = this.xref.trailer.get('ID');
+    if (Array.isArray(idArray) && idArray[0] && isString(idArray[0]) &&
+        idArray[0] !== EMPTY_FINGERPRINT) {
+      hash = stringToBytes(idArray[0]);
+    } else {
+      if (this.stream.ensureRange) {
+        this.stream.ensureRange(0,
+          Math.min(FINGERPRINT_FIRST_BYTES, this.stream.end));
+      }
+      hash = calculateMD5(this.stream.bytes.subarray(0,
+        FINGERPRINT_FIRST_BYTES), 0, FINGERPRINT_FIRST_BYTES);
+    }
 
-      return this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
-        return new Page({
-          pdfManager: this.pdfManager,
-          xref: this.xref,
-          pageIndex,
-          pageDict,
-          ref,
-          fontCache: catalog.fontCache,
-          builtInCMapCache: catalog.builtInCMapCache,
-          pdfFunctionFactory: this.pdfFunctionFactory,
-        });
-      });
-    },
+    let fingerprint = '';
+    for (const hashPart of hash) {
+      const hex = hashPart.toString(16);
+      fingerprint += (hex.length === 1 ? '0' + hex : hex);
+    }
+    return shadow(this, 'fingerprint', fingerprint);
+  }
 
-    checkFirstPage() {
-      return this.getPage(0).catch((reason) => {
-        if (reason instanceof XRefEntryException) {
-          // Clear out the various caches to ensure that we haven't stored any
-          // inconsistent and/or incorrect state, since that could easily break
-          // subsequent `this.getPage` calls.
-          this._pagePromises.length = 0;
-          this.cleanup();
+  _getLinearizationPage(pageIndex) {
+    const { catalog, linearization, } = this;
+    assert(linearization && linearization.pageFirst === pageIndex);
 
-          throw new XRefParseException();
+    const ref = new Ref(linearization.objectNumberFirst, 0);
+    return this.xref.fetchAsync(ref).then((obj) => {
+      // Ensure that the object that was found is actually a Page dictionary.
+      if (isDict(obj, 'Page') ||
+          (isDict(obj) && !obj.has('Type') && obj.has('Contents'))) {
+        if (ref && !catalog.pageKidsCountCache.has(ref)) {
+          catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
         }
+        return [obj, ref];
+      }
+      throw new FormatError('The Linearization dictionary doesn\'t point ' +
+                            'to a valid Page dictionary.');
+    }).catch((reason) => {
+      info(reason);
+      return catalog.getPageDict(pageIndex);
+    });
+  }
+
+  getPage(pageIndex) {
+    if (this._pagePromises[pageIndex] !== undefined) {
+      return this._pagePromises[pageIndex];
+    }
+    const { catalog, linearization, } = this;
+
+    const promise = (linearization && linearization.pageFirst === pageIndex) ?
+      this._getLinearizationPage(pageIndex) : catalog.getPageDict(pageIndex);
+
+    return this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
+      return new Page({
+        pdfManager: this.pdfManager,
+        xref: this.xref,
+        pageIndex,
+        pageDict,
+        ref,
+        fontCache: catalog.fontCache,
+        builtInCMapCache: catalog.builtInCMapCache,
+        pdfFunctionFactory: this.pdfFunctionFactory,
       });
-    },
+    });
+  }
 
-    cleanup: function PDFDocument_cleanup() {
-      return this.catalog.cleanup();
-    },
-  };
+  checkFirstPage() {
+    return this.getPage(0).catch((reason) => {
+      if (reason instanceof XRefEntryException) {
+        // Clear out the various caches to ensure that we haven't stored any
+        // inconsistent and/or incorrect state, since that could easily break
+        // subsequent `this.getPage` calls.
+        this._pagePromises.length = 0;
+        this.cleanup();
 
-  return PDFDocument;
-})();
+        throw new XRefParseException();
+      }
+    });
+  }
+
+  cleanup() {
+    return this.catalog.cleanup();
+  }
+}
 
 export {
   Page,
