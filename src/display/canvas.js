@@ -1317,7 +1317,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var name = fontObj.loadedName || 'sans-serif';
       var bold = fontObj.black ? '900' : (fontObj.bold ? 'bold' : 'normal');
       var italic = fontObj.italic ? 'italic' : 'normal';
-      var typeface = '"' + name + '", ' + fontObj.fallbackName;
+      var typeface = `"${name}", ${fontObj.fallbackName}`;
 
       // Some font backends cannot handle fonts below certain size.
       // Keeping the font at minimal size and using the fontSizeScale to change
@@ -1327,8 +1327,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                             size > MAX_FONT_SIZE ? MAX_FONT_SIZE : size;
       this.current.fontSizeScale = size / browserFontSize;
 
-      var rule = italic + ' ' + bold + ' ' + browserFontSize + 'px ' + typeface;
-      this.ctx.font = rule;
+      this.ctx.font = `${italic} ${bold} ${browserFontSize}px ${typeface}`;
     },
     setTextRenderingMode: function CanvasGraphics_setTextRenderingMode(mode) {
       this.current.textRenderingMode = mode;
