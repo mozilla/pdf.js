@@ -482,6 +482,11 @@ class AnnotationBorderStyle {
    * @param {integer} width - The width
    */
   setWidth(width) {
+    // Some corrupt PDF generators may provide the width as a `Name`,
+    // rather than as a number (fixes issue 10385).
+    if (isName(width)) {
+      width = parseFloat(width.name);
+    }
     if (Number.isInteger(width)) {
       this.width = width;
     }
