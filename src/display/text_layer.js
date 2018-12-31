@@ -540,12 +540,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       let transform = '';
       if (textDivProperties.canvasWidth !== 0 && width > 0) {
         textDivProperties.scale = textDivProperties.canvasWidth / width;
-        transform = 'scaleX(' + textDivProperties.scale + ')';
+        transform = `scaleX(${textDivProperties.scale})`;
       }
       if (textDivProperties.angle !== 0) {
-        transform = 'rotate(' + textDivProperties.angle + 'deg) ' + transform;
+        transform = `rotate(${textDivProperties.angle}deg) ${transform}`;
       }
-      if (transform !== '') {
+      if (transform.length > 0) {
         textDivProperties.originalTransform = transform;
         textDiv.style.transform = transform;
       }
