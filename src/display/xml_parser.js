@@ -278,12 +278,16 @@ class SimpleDOMNode {
   }
 
   get firstChild() {
-    return this.childNodes[0];
+    return this.childNodes && this.childNodes[0];
   }
 
   get nextSibling() {
-    let index = this.parentNode.childNodes.indexOf(this);
-    return this.parentNode.childNodes[index + 1];
+    const childNodes = this.parentNode.childNodes;
+    if (!childNodes) {
+      return undefined;
+    }
+    const index = childNodes.indexOf(this);
+    return childNodes[index + 1];
   }
 
   get textContent() {
