@@ -903,8 +903,11 @@ let PDFViewerApplication = {
       if (!AppOptions.get('disableHistory') && !this.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
-        let resetHistory = !AppOptions.get('showPreviousViewOnLoad');
-        this.pdfHistory.initialize(pdfDocument.fingerprint, resetHistory);
+        this.pdfHistory.initialize({
+          fingerprint: pdfDocument.fingerprint,
+          resetHistory: !AppOptions.get('showPreviousViewOnLoad'),
+          updateUrl: AppOptions.get('historyUpdateUrl'),
+        });
 
         if (this.pdfHistory.initialBookmark) {
           this.initialBookmark = this.pdfHistory.initialBookmark;
