@@ -600,8 +600,8 @@ class PDFDocument {
     }
 
     let fingerprint = '';
-    for (const hashPart of hash) {
-      const hex = hashPart.toString(16);
+    for (let i = 0, ii = hash.length; i < ii; i++) {
+      const hex = hash[i].toString(16);
       fingerprint += (hex.length === 1 ? '0' + hex : hex);
     }
     return shadow(this, 'fingerprint', fingerprint);
