@@ -31,6 +31,14 @@ const UPDATE_VIEWAREA_TIMEOUT = 1000; // milliseconds
  */
 
 /**
+ * @typedef {Object} InitializeParameters
+ * @property {string} fingerprint - The PDF document's unique fingerprint.
+ * @property {boolean} resetHistory - (optional) Reset the browsing history.
+ * @property {boolean} updateUrl - (optional) Attempt to update the document
+ *   URL, with the current hash, when pushing/replacing browser history entries.
+ */
+
+/**
  * @typedef {Object} PushParameters
  * @property {string} namedDest - (optional) The named destination. If absent,
  *   a stringified version of `explicitDest` is used.
@@ -82,10 +90,9 @@ class PDFHistory {
   /**
    * Initialize the history for the PDF document, using either the current
    * browser history entry or the document hash, whichever is present.
-   * @param {string} fingerprint - The PDF document's unique fingerprint.
-   * @param {boolean} resetHistory - (optional) Reset the browsing history.
+   * @param {InitializeParameters} params
    */
-  initialize(fingerprint, resetHistory = false) {
+  initialize({ fingerprint, resetHistory = false, updateUrl = false, }) {
     if (!fingerprint || typeof fingerprint !== 'string') {
       console.error(
         'PDFHistory.initialize: The "fingerprint" must be a non-empty string.');
@@ -93,6 +100,7 @@ class PDFHistory {
     }
     let reInitialized = this.initialized && this.fingerprint !== fingerprint;
     this.fingerprint = fingerprint;
+    this._updateUrl = (updateUrl === true);
 
     if (!this.initialized) {
       this._bindEvents();
@@ -290,11 +298,18 @@ class PDFHistory {
     }
     this._updateInternalState(destination, newState.uid);
 
+    let newUrl;
+    if (this._updateUrl && destination && destination.hash) {
+      const baseUrl = document.location.href.split('#')[0];
+      if (!baseUrl.startsWith('file://')) { // Prevent errors in Firefox.
+        newUrl = `${baseUrl}#${destination.hash}`;
+      }
+    }
     if (shouldReplace) {
-      window.history.replaceState(newState, '');
+      window.history.replaceState(newState, '', newUrl);
     } else {
       this._maxUid = this._uid;
-      window.history.pushState(newState, '');
+      window.history.pushState(newState, '', newUrl);
     }
 
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&

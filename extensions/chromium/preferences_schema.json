@@ -147,6 +147,10 @@
       "type": "boolean",
       "default": false
     },
+    "historyUpdateUrl": {
+      "type": "boolean",
+      "default": false
+    },
     "enablePrintAutoRotate": {
       "title": "Automatically rotate printed pages",
       "description": "When enabled, pages whose orientation differ from the first page are rotated when printed.",
