@@ -236,12 +236,15 @@ describe('annotation', function() {
       expect(borderStyle.width).toEqual(1);
     });
 
-    it('should set/get a valid width, when the input is a `Name` (issue 10385)',
+    it('should set the width to zero, when the input is a `Name` (issue 10385)',
         function() {
-      const borderStyle = new AnnotationBorderStyle();
-      borderStyle.setWidth(Name.get('0'));
+      const borderStyleZero = new AnnotationBorderStyle();
+      borderStyleZero.setWidth(Name.get('0'));
+      const borderStyleFive = new AnnotationBorderStyle();
+      borderStyleFive.setWidth(Name.get('5'));
 
-      expect(borderStyle.width).toEqual(0);
+      expect(borderStyleZero.width).toEqual(0);
+      expect(borderStyleFive.width).toEqual(0);
     });
 
     it('should set and get a valid style', function() {
