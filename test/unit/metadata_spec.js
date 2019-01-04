@@ -127,4 +127,23 @@ describe('metadata', function() {
 
     expect(isEmptyObj(metadata.getAll())).toEqual(true);
   });
+
+  it('should correctly handle metadata containing "&apos" (issue 10407)',
+      function() {
+    const data = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
+      '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\'>' +
+      '<rdf:Description xmlns:dc=\'http://purl.org/dc/elements/1.1/\'>' +
+      '<dc:title><rdf:Alt>' +
+      '<rdf:li xml:lang="x-default">&apos;Foo bar baz&apos;</rdf:li>' +
+      '</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>';
+    const metadata = new Metadata(data);
+
+    expect(metadata.has('dc:title')).toBeTruthy();
+    expect(metadata.has('dc:qux')).toBeFalsy();
+
+    expect(metadata.get('dc:title')).toEqual('\'Foo bar baz\'');
+    expect(metadata.get('dc:qux')).toEqual(null);
+
+    expect(metadata.getAll()).toEqual({ 'dc:title': '\'Foo bar baz\'', });
+  });
 });
