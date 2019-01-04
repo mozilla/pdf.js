@@ -485,7 +485,8 @@ class AnnotationBorderStyle {
     // Some corrupt PDF generators may provide the width as a `Name`,
     // rather than as a number (fixes issue 10385).
     if (isName(width)) {
-      width = parseFloat(width.name);
+      this.width = 0; // This is consistent with the behaviour in Adobe Reader.
+      return;
     }
     if (Number.isInteger(width)) {
       this.width = width;
