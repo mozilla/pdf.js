@@ -80,11 +80,11 @@ Note that we only mention the most relevant files and folders.
 │   ├── cmaps/                             - character maps (required by core)
 │   ├── compressed.tracemonkey-pldi-09.pdf - PDF file for testing purposes
 │   ├── debugger.js                        - helpful debugging features
-│   └── images/                            - images for the viewer and annotation icons
+│   ├── images/                            - images for the viewer and annotation icons
 │   ├── locale/                            - translation files
 │   ├── viewer.css                         - viewer style sheet
 │   ├── viewer.html                        - viewer layout
-│   └── viewer.js                          - viewer layer
+│   ├── viewer.js                          - viewer layer
 │   └── viewer.js.map                      - viewer layer's source map
 └── LICENSE
 ```
