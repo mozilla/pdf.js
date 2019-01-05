@@ -3429,6 +3429,12 @@
       "type": "eq",
       "about": "True type font with encoding dict with no base encoding but with differences."
     },
+    {  "id": "issue10402",
+       "file": "pdfs/issue10402.pdf",
+       "md5": "7936bd34d7c0aebd0a864b5aa98aa1b4",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3064-text",
        "file": "pdfs/issue3064.pdf",
        "md5": "0307415b7d69b13acaf8bd4285d9544b",
