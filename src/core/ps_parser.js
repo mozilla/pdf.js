@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 import { FormatError, isSpace, shadow } from '../shared/util';
 import { EOF } from './primitives';
