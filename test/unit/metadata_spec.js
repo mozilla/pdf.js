@@ -146,4 +146,26 @@ describe('metadata', function() {
 
     expect(metadata.getAll()).toEqual({ 'dc:title': '\'Foo bar baz\'', });
   });
+
+  it('should gracefully handle unbalanced end tags (issue 10410)', function() {
+    const data = '<?xpacket begin="Ã¯Â»Â¿" id="W5M0MpCehiHzreSzNTczkc9d"?>' +
+      '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
+      '<rdf:Description rdf:about="" ' +
+      'xmlns:pdf="http://ns.adobe.com/pdf/1.3/">' +
+      '<pdf:Producer>Soda PDF 5</pdf:Producer></rdf:Description>' +
+      '<rdf:Description rdf:about="" ' +
+      'xmlns:xap="http://ns.adobe.com/xap/1.0/">' +
+      '<xap:CreateDate>2018-10-02T08:14:49-05:00</xap:CreateDate>' +
+      '<xap:CreatorTool>Soda PDF 5</xap:CreatorTool>' +
+      '<xap:MetadataDate>2018-10-02T08:14:49-05:00</xap:MetadataDate> ' +
+      '<xap:ModifyDate>2018-10-02T08:14:49-05:00</xap:ModifyDate>' +
+      '</rdf:Description><rdf:Description rdf:about="" ' +
+      'xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/">' +
+      '<xmpMM:DocumentID>uuid:00000000-1c84-3cf9-89ba-bef0e729c831' +
+      '</xmpMM:DocumentID></rdf:Description>' +
+      '</rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
+    const metadata = new Metadata(data);
+
+    expect(isEmptyObj(metadata.getAll())).toEqual(true);
+  });
 });
