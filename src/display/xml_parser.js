@@ -287,6 +287,9 @@ class SimpleDOMNode {
       return undefined;
     }
     const index = childNodes.indexOf(this);
+    if (index === -1) {
+      return undefined;
+    }
     return childNodes[index + 1];
   }
 
@@ -364,8 +367,11 @@ class SimpleXMLParser extends XMLParserBase {
   }
 
   onEndElement(name) {
-    this._currentFragment = this._stack.pop();
+    this._currentFragment = this._stack.pop() || [];
     const lastElement = this._currentFragment[this._currentFragment.length - 1];
+    if (!lastElement) {
+      return;
+    }
     for (let i = 0, ii = lastElement.childNodes.length; i < ii; i++) {
       lastElement.childNodes[i].parentNode = lastElement;
     }
