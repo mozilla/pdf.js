@@ -112,7 +112,7 @@ class PDFHistory {
     this._destination = null;
     this._position = null;
 
-    if (!this._isValidState(state) || resetHistory) {
+    if (!this._isValidState(state, /* checkReload = */ true) || resetHistory) {
       let { hash, page, rotation, } = parseCurrentHash(this.linkService);
 
       if (!hash || reInitialized || resetHistory) {
@@ -359,14 +359,27 @@ class PDFHistory {
   /**
    * @private
    */
-  _isValidState(state) {
+  _isValidState(state, checkReload = false) {
     if (!state) {
       return false;
     }
     if (state.fingerprint !== this.fingerprint) {
-      // This should only occur in viewers with support for opening more than
-      // one PDF document, e.g. the GENERIC viewer.
-      return false;
+      if (checkReload) {
+        // Potentially accept the history entry, even if the fingerprints don't
+        // match, when the viewer was reloaded (see issue 6847).
+        if (typeof state.fingerprint !== 'string' ||
+            state.fingerprint.length !== this.fingerprint.length) {
+          return false;
+        }
+        const [perfEntry] = performance.getEntriesByType('navigation');
+        if (!perfEntry || perfEntry.type !== 'reload') {
+          return false;
+        }
+      } else {
+        // This should only occur in viewers with support for opening more than
+        // one PDF document, e.g. the GENERIC viewer.
+        return false;
+      }
     }
     if (!Number.isInteger(state.uid) || state.uid < 0) {
       return false;
