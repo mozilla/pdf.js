@@ -91,6 +91,11 @@ const defaultOptions = {
     value: 0,
     kind: OptionKind.VIEWER,
   },
+  historyUpdateUrl: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER,
+  },
   imageResourcesPath: {
     /** @type {string} */
     value: './images/',

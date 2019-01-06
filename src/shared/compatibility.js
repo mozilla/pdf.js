@@ -112,6 +112,24 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   };
 })();
 
+// Provides support for String.prototype.startsWith in legacy browsers.
+// Support: IE, Chrome<41
+(function checkStringStartsWith() {
+  if (String.prototype.startsWith) {
+    return;
+  }
+  require('core-js/fn/string/starts-with');
+})();
+
+// Provides support for String.prototype.endsWith in legacy browsers.
+// Support: IE, Chrome<41
+(function checkStringEndsWith() {
+  if (String.prototype.endsWith) {
+    return;
+  }
+  require('core-js/fn/string/ends-with');
+})();
+
 // Provides support for String.prototype.includes in legacy browsers.
 // Support: IE, Chrome<41
 (function checkStringIncludes() {
@@ -222,6 +240,24 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
 })();
 
 } // End of !PDFJSDev.test('CHROME')
+
+// Provides support for String.prototype.padStart in legacy browsers.
+// Support: IE, Chrome<57
+(function checkStringPadStart() {
+  if (String.prototype.padStart) {
+    return;
+  }
+  require('core-js/fn/string/pad-start');
+})();
+
+// Provides support for String.prototype.padEnd in legacy browsers.
+// Support: IE, Chrome<57
+(function checkStringPadEnd() {
+  if (String.prototype.padEnd) {
+    return;
+  }
+  require('core-js/fn/string/pad-end');
+})();
 
 // Provides support for Object.values in legacy browsers.
 // Support: IE, Chrome<54
