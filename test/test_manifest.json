@@ -739,6 +739,13 @@
        "link": true,
        "type": "load"
     },
+    {  "id": "issue10388",
+       "file": "pdfs/issue10388_reduced.pdf",
+       "md5": "62a6b2adbea1535432bd94a3516e2d4c",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue7507",
        "file": "pdfs/issue7507.pdf",
        "md5": "f7aeaafe0c89b94436e94eaa63307303",
