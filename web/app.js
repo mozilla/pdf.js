@@ -996,6 +996,10 @@ let PDFViewerApplication = {
         pdfViewer.currentScaleValue = pdfViewer.currentScaleValue;
         // Re-apply the initial document location.
         this.setInitialView(hash);
+      }).catch(() => {
+        // Ensure that the document is always completely initialized,
+        // even if there are any errors thrown above.
+        this.setInitialView();
       }).then(function() {
         // At this point, rendering of the initial page(s) should always have
         // started (and may even have completed).
