@@ -413,8 +413,8 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  */
 function getVisibleElements(scrollEl, views, sortByVisibility = false,
                             horizontal = false) {
-  let top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
-  let left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
+  const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
+  const left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
 
   // Throughout this "generic" function, comments will assume we're working with
   // PDF document pages, which is the most important and complex case. In this
@@ -427,27 +427,24 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   // the border). Adding clientWidth/Height gets us the bottom-right corner of
   // the padding edge.
   function isElementBottomAfterViewTop(view) {
-    let element = view.div;
-    let elementBottom =
+    const element = view.div;
+    const elementBottom =
       element.offsetTop + element.clientTop + element.clientHeight;
     return elementBottom > top;
   }
   function isElementRightAfterViewLeft(view) {
-    let element = view.div;
-    let elementRight =
+    const element = view.div;
+    const elementRight =
       element.offsetLeft + element.clientLeft + element.clientWidth;
     return elementRight > left;
   }
 
-  let visible = [], view, element;
-  let currentHeight, viewHeight, viewBottom, hiddenHeight;
-  let currentWidth, viewWidth, viewRight, hiddenWidth;
-  let percentVisible;
-  let firstVisibleElementInd = views.length === 0 ? 0 :
+  const visible = [], numViews = views.length;
+  let firstVisibleElementInd = numViews === 0 ? 0 :
     binarySearchFirstItem(views, horizontal ? isElementRightAfterViewLeft :
                                               isElementBottomAfterViewTop);
 
-  if (views.length > 0 && !horizontal) {
+  if (numViews > 0 && !horizontal) {
     // In wrapped scrolling (or vertical scrolling with spreads), with some page
     // sizes, isElementBottomAfterViewTop doesn't satisfy the binary search
     // condition: there can be pages with bottoms above the view top between
@@ -467,15 +464,13 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   // we pass `right`, without needing the code below that handles the -1 case.
   let lastEdge = horizontal ? right : -1;
 
-  for (let i = firstVisibleElementInd, ii = views.length; i < ii; i++) {
-    view = views[i];
-    element = view.div;
-    currentWidth = element.offsetLeft + element.clientLeft;
-    currentHeight = element.offsetTop + element.clientTop;
-    viewWidth = element.clientWidth;
-    viewHeight = element.clientHeight;
-    viewRight = currentWidth + viewWidth;
-    viewBottom = currentHeight + viewHeight;
+  for (let i = firstVisibleElementInd; i < numViews; i++) {
+    const view = views[i], element = view.div;
+    const currentWidth = element.offsetLeft + element.clientLeft;
+    const currentHeight = element.offsetTop + element.clientTop;
+    const viewWidth = element.clientWidth, viewHeight = element.clientHeight;
+    const viewRight = currentWidth + viewWidth;
+    const viewBottom = currentHeight + viewHeight;
 
     if (lastEdge === -1) {
       // As commented above, this is only needed in non-horizontal cases.
@@ -494,24 +489,22 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
       continue;
     }
 
-    hiddenHeight = Math.max(0, top - currentHeight) +
-      Math.max(0, viewBottom - bottom);
-    hiddenWidth = Math.max(0, left - currentWidth) +
-      Math.max(0, viewRight - right);
-    percentVisible = ((viewHeight - hiddenHeight) * (viewWidth - hiddenWidth) *
-      100 / viewHeight / viewWidth) | 0;
-
+    const hiddenHeight = Math.max(0, top - currentHeight) +
+                         Math.max(0, viewBottom - bottom);
+    const hiddenWidth = Math.max(0, left - currentWidth) +
+                        Math.max(0, viewRight - right);
+    const percent = ((viewHeight - hiddenHeight) * (viewWidth - hiddenWidth) *
+                     100 / viewHeight / viewWidth) | 0;
     visible.push({
       id: view.id,
       x: currentWidth,
       y: currentHeight,
       view,
-      percent: percentVisible,
+      percent,
     });
   }
 
-  let first = visible[0];
-  let last = visible[visible.length - 1];
+  const first = visible[0], last = visible[visible.length - 1];
 
   if (sortByVisibility) {
     visible.sort(function(a, b) {
