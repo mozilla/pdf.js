@@ -444,7 +444,9 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
     binarySearchFirstItem(views, horizontal ? isElementRightAfterViewLeft :
                                               isElementBottomAfterViewTop);
 
-  if (numViews > 0 && !horizontal) {
+  // Please note the return value of the `binarySearchFirstItem` function when
+  // no valid element is found (hence the `firstVisibleElementInd` check below).
+  if (numViews > 0 && firstVisibleElementInd < numViews && !horizontal) {
     // In wrapped scrolling (or vertical scrolling with spreads), with some page
     // sizes, isElementBottomAfterViewTop doesn't satisfy the binary search
     // condition: there can be pages with bottoms above the view top between
