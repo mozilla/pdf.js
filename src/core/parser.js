@@ -222,7 +222,18 @@ var Parser = (function ParserClosure() {
           stream.skip(-(stream.pos - maybeEIPos)); // Reset the stream position.
         }
       }
-      return ((stream.pos - 4) - startPos);
+
+      let endOffset = 4;
+      stream.skip(-endOffset); // Set the stream position to just before "EI".
+      ch = stream.peekByte();
+      stream.skip(endOffset); // ... and remember to reset the stream position.
+
+      // Ensure that we don't accidentally truncate the inline image, when the
+      // data is immediately followed by the "EI" marker (fixes issue10388.pdf).
+      if (!isSpace(ch)) {
+        endOffset--;
+      }
+      return ((stream.pos - endOffset) - startPos);
     },
     /**
      * Find the EOI (end-of-image) marker 0xFFD9 of the stream.
