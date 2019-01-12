@@ -104,7 +104,6 @@ describe('pdf_find_controller', function() {
           return;
         }
         eventBus.off('updatefindmatchescount', onUpdateFindMatchesCount);
-        console.log(pdfFindController.pageMatches);
 
         expect(evt.matchesCount.total).toBe(totalMatches);
         for (let i = 0; i < totalPages; i++) {
