@@ -1199,7 +1199,7 @@ var XRef = (function XRefClosure() {
       }
       var objRegExp = /^(\d+)\s+(\d+)\s+obj\b/;
       const endobjRegExp = /\bendobj[\b\s]$/;
-      const nestedObjRegExp = /\s+(\d+\s+\d+\s+obj[\b\s])$/;
+      const nestedObjRegExp = /\s+(\d+\s+\d+\s+obj[\b\s<])$/;
       const CHECK_CONTENT_LENGTH = 25;
 
       var trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
