@@ -128,6 +128,56 @@ describe('metadata', function() {
     expect(isEmptyObj(metadata.getAll())).toEqual(true);
   });
 
+  it('should gracefully handle "junk" before the actual metadata (issue 10395)',
+      function() {
+    const data = 'ï»¿<?xpacket begin="ï»¿" id="W5M0MpCehiHzreSzNTczkc9d"?>' +
+      '<x:xmpmeta x:xmptk="TallComponents PDFObjects 1.0" ' +
+      'xmlns:x="adobe:ns:meta/">' +
+      '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
+      '<rdf:Description rdf:about="" ' +
+      'xmlns:pdf="http://ns.adobe.com/pdf/1.3/">' +
+      '<pdf:Producer>PDFKit.NET 4.0.102.0</pdf:Producer>' +
+      '<pdf:Keywords></pdf:Keywords>' +
+      '<pdf:PDFVersion>1.7</pdf:PDFVersion></rdf:Description>' +
+      '<rdf:Description rdf:about="" ' +
+      'xmlns:xap="http://ns.adobe.com/xap/1.0/">' +
+      '<xap:CreateDate>2018-12-27T13:50:36-08:00</xap:CreateDate>' +
+      '<xap:ModifyDate>2018-12-27T13:50:38-08:00</xap:ModifyDate>' +
+      '<xap:CreatorTool></xap:CreatorTool>' +
+      '<xap:MetadataDate>2018-12-27T13:50:38-08:00</xap:MetadataDate>' +
+      '</rdf:Description><rdf:Description rdf:about="" ' +
+      'xmlns:dc="http://purl.org/dc/elements/1.1/">' +
+      '<dc:creator><rdf:Seq><rdf:li></rdf:li></rdf:Seq></dc:creator>' +
+      '<dc:subject><rdf:Bag /></dc:subject>' +
+      '<dc:description><rdf:Alt><rdf:li xml:lang="x-default">' +
+      '</rdf:li></rdf:Alt></dc:description>' +
+      '<dc:title><rdf:Alt><rdf:li xml:lang="x-default"></rdf:li>' +
+      '</rdf:Alt></dc:title><dc:format>application/pdf</dc:format>' +
+      '</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
+    const metadata = new Metadata(data);
+
+    expect(metadata.has('dc:title')).toBeTruthy();
+    expect(metadata.has('dc:qux')).toBeFalsy();
+
+    expect(metadata.get('dc:title')).toEqual('');
+    expect(metadata.get('dc:qux')).toEqual(null);
+
+    expect(metadata.getAll()).toEqual({
+      'dc:creator': '',
+      'dc:description': '',
+      'dc:format': 'application/pdf',
+      'dc:subject': '',
+      'dc:title': '',
+      'pdf:keywords': '',
+      'pdf:pdfversion': '1.7',
+      'pdf:producer': 'PDFKit.NET 4.0.102.0',
+      'xap:createdate': '2018-12-27T13:50:36-08:00',
+      'xap:creatortool': '',
+      'xap:metadatadate': '2018-12-27T13:50:38-08:00',
+      'xap:modifydate': '2018-12-27T13:50:38-08:00',
+    });
+  });
+
   it('should correctly handle metadata containing "&apos" (issue 10407)',
       function() {
     const data = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
