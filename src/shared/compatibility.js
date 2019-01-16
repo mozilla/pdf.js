@@ -101,14 +101,17 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   if (div.classList.toggle('test', 0) === false) {
     return;
   }
-  const originalDOMTokenListToggle = DOMTokenList.prototype.toggle;
 
   DOMTokenList.prototype.toggle = function(token) {
     if (arguments.length > 1) {
       const force = !!arguments[1];
       return (this[force ? 'add' : 'remove'](token), force);
     }
-    return originalDOMTokenListToggle(token);
+
+    if (this.contains(token)) {
+      return (this.remove(token), false);
+    }
+    return (this.add(token), true);
   };
 })();
 
