@@ -180,7 +180,7 @@ class PDFFindBar {
     }
     Promise.resolve(matchesCountMsg).then((msg) => {
       this.findResultsCount.textContent = msg;
-      this.findResultsCount.classList[!total ? 'add' : 'remove']('hidden');
+      this.findResultsCount.classList.toggle('hidden', !total);
       // Since `updateResultsCount` may be called from `PDFFindController`,
       // ensure that the width of the findbar is always updated correctly.
       this._adjustWidth();
