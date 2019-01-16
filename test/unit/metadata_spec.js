@@ -156,7 +156,26 @@ describe('metadata', function() {
       '</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
     const metadata = new Metadata(data);
 
-    expect(isEmptyObj(metadata.getAll())).toEqual(true);
+    expect(metadata.has('dc:title')).toBeTruthy();
+    expect(metadata.has('dc:qux')).toBeFalsy();
+
+    expect(metadata.get('dc:title')).toEqual('');
+    expect(metadata.get('dc:qux')).toEqual(null);
+
+    expect(metadata.getAll()).toEqual({
+      'dc:creator': '',
+      'dc:description': '',
+      'dc:format': 'application/pdf',
+      'dc:subject': '',
+      'dc:title': '',
+      'pdf:keywords': '',
+      'pdf:pdfversion': '1.7',
+      'pdf:producer': 'PDFKit.NET 4.0.102.0',
+      'xap:createdate': '2018-12-27T13:50:36-08:00',
+      'xap:creatortool': '',
+      'xap:metadatadate': '2018-12-27T13:50:38-08:00',
+      'xap:modifydate': '2018-12-27T13:50:38-08:00',
+    });
   });
 
   it('should correctly handle metadata containing "&apos" (issue 10407)',
