@@ -1084,10 +1084,12 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
     setFillColorN: function SVGGraphics_setFillColorN(args) {
       var current = this.current;
+      var color = args[1];
+      var paintType = args[7];
       if (args[0] == 'TilingPattern') {
         if (paintType == 2 && Array.isArray(color) && color.length == 3)
           current.fillColor = Util.makeCssRgb(color[0], color[1], color[2]);
-        current.fillPatternId = this.group.id;
+        current.fillPatternId = this.buildPattern(args);
       }
       else if (args[0] == 'RadialAxial')
         current.fillColor = 'url(#' + this.buildGradient(args, pm(Util.inverseTransform(this.transformMatrix))) + ')';
@@ -1097,6 +1099,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
     setStrokeColorN: function SVGGraphics_setStrokeColorN(args) {
       var current = this.current;
+      var color = args[1];
+      var paintType = args[7];
       if (args[0] == 'TilingPattern') {
         if (paintType == 2 && Array.isArray(color) && color.length == 3)
           current.strokeColor = Util.makeCssRgb(color[0], color[1], color[2]);
