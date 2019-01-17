@@ -322,7 +322,8 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.activeGradientUrl = null;
     this.gradientId = '';
     // patterns
-    this.pattern = '';
+    this.fillPatternId = '';
+    this.strokePatternId = '';
     //hierarchy
     this.group = null;
     this.parentGroup = null;
@@ -558,6 +559,82 @@ SVGGraphics = (function SVGGraphicsClosure() {
       return opListToTree(opList);
     },
 
+    buildGradient: function SVGGraphics_buildGradient(args, matrix) { 
+      var id = 'gradient' + (gradientCount++);
+      var gradient = this.svgFactory.createElement(args[1] == 'axial' ? 'linearGradient' : 'radialGradient');
+      gradient.setAttributeNS(null, 'id', id);
+      if (matrix)
+        gradient.setAttributeNS(null, 'gradientTransform', matrix);
+      gradient.setAttributeNS(null, 'gradientUnits', "userSpaceOnUse");
+      if (args[1] == 'axial') {
+        if (args[3][0] != undefined)
+          gradient.setAttributeNS(null, 'x1', args[3][0]);
+        if (args[3][1] != undefined)
+          gradient.setAttributeNS(null, 'y1', args[3][1]);
+        if (args[4][0] != undefined)
+          gradient.setAttributeNS(null, 'x2', args[4][0]);
+        if (args[4][1] != undefined)
+          gradient.setAttributeNS(null, 'y2', args[4][1]);
+      }
+      else if (args[1] == 'radial') {
+        if (args[3][0] != undefined)
+          gradient.setAttributeNS(null, 'fx', args[3][0]);
+        if (args[3][1] != undefined)
+          gradient.setAttributeNS(null, 'fy', args[3][1]);
+        if (args[5] != undefined)
+          gradient.setAttributeNS(null, 'fr', args[5]);
+        if (args[3][0] != undefined)
+          gradient.setAttributeNS(null, 'cx', args[4][0]);
+        if (args[4][1] != undefined)
+          gradient.setAttributeNS(null, 'cy', args[4][1]);
+        if (args[6] != undefined)
+          gradient.setAttributeNS(null, 'r', args[6]);
+      }
+      else
+        return;
+      this.defs.appendChild(gradient);
+      for (var s of args[2]) {
+        var stop = this.svgFactory.createElement('stop');
+        if (s[0] != undefined)
+          stop.setAttributeNS(null, 'offset', s[0]);
+        if (s[1] != undefined)
+          stop.setAttributeNS(null, 'stop-color', s[1]);
+        gradient.append(stop);
+      }
+      return id;
+    },
+
+    buildPattern: function SVGGraphics_buildPattern(args) {
+      var group = this.group;
+      var defs = this.defs;
+      var color = args[1];
+      var operatorList = args[2];
+      var opTree = this.convertOpList(operatorList);
+      var matrix = args[3] || [1, 0, 0, 1, 0, 0];
+      var bbox = args[4];
+      var xstep = args[5];
+      var ystep = args[6];
+      var paintType = args[7];
+      var tilingType = args[8];
+      this.group = this.svgFactory.createElement('pattern');
+      var id = this.group.id = "pattern" + (patternCount++);
+      this.defs = this.svgFactory.createElement('defs');
+      var matrix_text = pm(matrix);
+      if (matrix_text)
+        this.group.setAttributeNS(null, 'patternTransform', matrix_text);
+      this.group.setAttributeNS(null, 'patternUnits', 'userSpaceOnUse');
+      this.group.setAttributeNS(null, 'viewBox', bbox.join(','));
+      this.group.setAttributeNS(null, 'width', (bbox[2] - bbox[0]));
+      this.group.setAttributeNS(null, 'height', (bbox[3] - bbox[1]));
+      this.executeOpTree(opTree);
+      if (this.defs.childelementCount)
+        this.group.appendChild(this.defs);
+      this.defs = defs;
+      this.defs.appendChild(this.group);
+      this.group = group;
+      return id;
+    },
+
     executeOpTree: function SVGGraphics_executeOpTree(opTree) {
       var opTreeLen = opTree.length;
       for (var x = 0; x < opTreeLen; x++) {
@@ -636,9 +713,12 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.shadingFill:
             this.shadingFill(args[0]);
             break;
-            case OPS.setFillColorN:
-              this.setFillColorN(args);
-              break;
+          case OPS.setFillColorN:
+            this.setFillColorN(args);
+            break;
+          case OPS.setStrokeColorN:
+            this.setStrokeColorN(args);
+            break;
           case OPS.setGState:
             this.setGState(args[0]);
             break;
@@ -974,7 +1054,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.current.strokeColor = color;
     },
     setFillAlpha: function SVGGraphics_setFillAlpha(fillAlpha) {
-      this.current.fillAlpha = fillAlpha;
+      this.current.fillAlpha = this.current.fillAlpha * fillAlpha;
     },
     setFillRGBColor: function SVGGraphics_setFillRGBColor(r, g, b) {
       var color = Util.makeCssRgb(r, g, b);
@@ -990,60 +1070,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
     shadingFill: function SVGGraphics_shadingFill(args) {
       switch(args[0]){
         case 'RadialAxial':
-          if (args[1] == 'axial') {
-            this.current.gradientId = 'gradient' + (gradientCount++);
-            var gradient = this.svgFactory.createElement('linearGradient');
-            gradient.setAttributeNS(null, 'id', this.current.gradientId);
-            gradient.setAttributeNS(null, 'gradientTransform', pm(this.transformMatrix));
-            gradient.setAttributeNS(null, 'gradientUnits', "userSpaceOnUse");
-            if (args[3][0] != undefined)
-              gradient.setAttributeNS(null, 'x1', args[3][0]);
-            if (args[3][1] != undefined)
-              gradient.setAttributeNS(null, 'y1', args[3][1]);
-            if (args[4][0] != undefined)
-              gradient.setAttributeNS(null, 'x2', args[4][0]);
-            if (args[4][1] != undefined)
-              gradient.setAttributeNS(null, 'y2', args[4][1]);
-            this.defs.appendChild(gradient);
-            for (var s of args[2]) {
-              var stop = this.svgFactory.createElement('stop');
-              if (s[0] != undefined)
-                stop.setAttributeNS(null, 'offset', s[0]);
-              if (s[1] != undefined)
-                stop.setAttributeNS(null, 'stop-color', s[1]);
-              gradient.append(stop);
-            }
-            this.current.activeGradientUrl = 'url(#' + this.current.gradientId + ')';
-          }
-          else if (args[1] == 'radial') {
-            this.current.gradientId = 'gradient' + (gradientCount++);
-            var gradient = this.svgFactory.createElement('radialGradient');
-            gradient.setAttributeNS(null, 'id', this.current.gradientId);
-            gradient.setAttributeNS(null, 'gradientTransform', pm(this.transformMatrix));
-            gradient.setAttributeNS(null, 'gradientUnits', "userSpaceOnUse");
-           if (args[3][0] != undefined)
-              gradient.setAttributeNS(null, 'fx', args[3][0]);
-           if (args[3][1] != undefined)
-            gradient.setAttributeNS(null, 'fy', args[3][1]);
-           if (args[5] != undefined)
-            gradient.setAttributeNS(null, 'fr', args[5]);
-           if (args[3][0] != undefined)
-            gradient.setAttributeNS(null, 'cx', args[4][0]);
-           if (args[4][1] != undefined)
-            gradient.setAttributeNS(null, 'cy', args[4][1]);
-           if (args[6] != undefined)
-            gradient.setAttributeNS(null, 'r', args[6]);
-            this.defs.appendChild(gradient);
-            for (var s of args[2]) {
-              var stop = this.svgFactory.createElement('stop');
-              if (s[0] != undefined)
-                stop.setAttributeNS(null, 'offset', s[0]);
-              if (s[1] != undefined)
-                stop.setAttributeNS(null, 'stop-color', s[1]);
-              gradient.append(stop);
-            }
-            this.current.activeGradientUrl = 'url(#' + this.current.gradientId + ')';
-          }
+          var id = this.buildGradient(args, pm(this.transformMatrix));
+          if (id)
+            this.current.activeGradientUrl = 'url(#' + id + ')';
           break;
         case 'Mesh':
           break;
@@ -1053,41 +1082,30 @@ SVGGraphics = (function SVGGraphicsClosure() {
           throw new Error(`Unknown IR type: ${args[0]}`);
       }
     },
-    setFillColorN: function SVGGraphics_setFillColorN(IR) {
+    setFillColorN: function SVGGraphics_setFillColorN(args) {
       var current = this.current;
-      if (IR[0] == 'TilingPattern') {
-        var color = IR[1];
-        var operatorList = IR[2];
-        var opTree = this.convertOpList(operatorList);
-        var matrix = IR[3] || [1, 0, 0, 1, 0, 0];
-        var bbox = IR[4];
-        var xstep = IR[5];
-        var ystep = IR[6];
-        var paintType = IR[7];
-        var tilingType = IR[8];
-        var group = this.group;
-        this.group = this.svgFactory.createElement('pattern');
-        this.group.id = "pattern" + (patternCount++);
-        current.pattern = this.group.id;
-        var defs = this.defs;
-        this.defs = this.svgFactory.createElement('defs');
-        var matrix_text = pm(matrix);
-        if (matrix_text)
-          this.group.setAttributeNS(null, 'patternTransform', matrix_text);
-        this.group.setAttributeNS(null, 'patternUnits', 'userSpaceOnUse');
-        this.group.setAttributeNS(null, 'viewBox', bbox.join(','));
-        this.group.setAttributeNS(null, 'width', (bbox[2] - bbox[0]));
-        this.group.setAttributeNS(null, 'height', (bbox[3] - bbox[1]));
+      if (args[0] == 'TilingPattern') {
         if (paintType == 2 && Array.isArray(color) && color.length == 3)
           current.fillColor = Util.makeCssRgb(color[0], color[1], color[2]);
-        this.executeOpTree(opTree);
-        if (this.defs.childelementCount)
-          this.group.appendChild(this.defs);
-        this.defs = defs;
-        this.defs.appendChild(this.group);
-        this.group = group;
+        current.fillPatternId = this.group.id;
       }
+      else if (args[0] == 'RadialAxial')
+        current.fillColor = 'url(#' + this.buildGradient(args, pm(Util.inverseTransform(this.transformMatrix))) + ')';
       else {
+        warn('Unimplemented filling type ' + args[0]);
+      }
+    },
+    setStrokeColorN: function SVGGraphics_setStrokeColorN(args) {
+      var current = this.current;
+      if (args[0] == 'TilingPattern') {
+        if (paintType == 2 && Array.isArray(color) && color.length == 3)
+          current.strokeColor = Util.makeCssRgb(color[0], color[1], color[2]);
+        current.strokePatternId = this.buildPattern(args);
+      }
+      else if (args[0] == 'RadialAxial')
+        current.strokeColor = 'url(#' + this.buildGradient(args, pm(Util.inverseTransform(this.transformMatrix))) + ')';
+      else {
+        warn('Unimplemented Stroking type ' + args[0]);
       }
     },
     constructPath: function SVGGraphics_constructPath(ops, args) {
@@ -1250,8 +1268,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     fill: function SVGGraphics_fill() {
       var current = this.current;
-      if (current.pattern)
-        current.element.setAttributeNS(null, 'fill', 'url(#' + current.pattern + ')');
+      if (current.fillPatternId)
+        current.element.setAttributeNS(null, 'fill', 'url(#' + (current.fillPatternId) + ')');
       else
         current.element.setAttributeNS(null, 'fill', current.fillColor);
       current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
@@ -1277,7 +1295,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
      */
     _setStrokeAttributes(element) {
       const current = this.current;
-      element.setAttributeNS(null, 'stroke', current.strokeColor);
+      if (current.strokePatternId)
+        current.element.setAttributeNS(null, 'stroke', 'url(#' + current.strokePatternId + ')');
+      else
+        element.setAttributeNS(null, 'stroke', current.strokeColor);
       element.setAttributeNS(null, 'stroke-opacity', current.strokeAlpha);
       element.setAttributeNS(null, 'stroke-miterlimit',
                              pf(current.miterLimit));
@@ -1436,7 +1457,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
         function SVGGraphics_paintFormXObjectEnd() {},
 
     beginGroup: function SVGGraphics_beginGroup(args){
-      if (args.smask && args.smask.subtype == 'Luminosity') {
+      if (args.smask && ['Alpha', 'Luminosity'].includes(args.smask.subtype)) {
         var matrix = args.matrix;
         var isolated = args.isolated;
         var mask = this.svgFactory.createElement('mask');
@@ -1446,10 +1467,21 @@ SVGGraphics = (function SVGGraphicsClosure() {
           if (matrix_text)
             mask.setAttributeNS(null, 'transform', matrix_text);
         }
-        mask.setAttributeNS(null, 'x', '0');
-        mask.setAttributeNS(null, 'y', '0');
-        mask.setAttributeNS(null, 'width', '100%');
-        mask.setAttributeNS(null, 'height', '100%');
+        var bbox = args.bbox;
+        if (bbox && Array.isArray(bbox) && bbox.length == 4) {
+        var width = bbox[2] - bbox[0];
+        var height = bbox[1] > bbox[3] ? bbox[1] - bbox[3] : bbox[3] - bbox[1];
+          mask.setAttributeNS(null, 'x', args.bbox[0]);
+          mask.setAttributeNS(null, 'y', bbox[1] > bbox[3] ? bbox[3] : bbox[1]);
+          mask.setAttributeNS(null, 'width', width);
+          mask.setAttributeNS(null, 'height', height);
+        }
+        else {
+          mask.setAttributeNS(null, 'x', '0');
+          mask.setAttributeNS(null, 'y', '0');
+          mask.setAttributeNS(null, 'width', '100%');
+          mask.setAttributeNS(null, 'height', '100%');
+        }
         mask.setAttributeNS(null, 'maskUnits', 'userSpaceOnUse');
         this.defs.appendChild(mask);
         this.current.maskedGroup = this.group;
@@ -1469,9 +1501,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
             this.group.setAttributeNS(null, 'fill-opacity', this.current.fillAlpha);
         }
       }
-      if (args.smask && args.smask.subtype == 'Luminosity') {
+      if (args.smask && ['Alpha', 'Luminosity'].includes(args.smask.subtype)) {
         if (this.current.maskedGroup) {
           this.group = this.current.maskedGroup;
+          if (args.smask.subtype == 'Alpha')
+            this.group.style.maskMode = 'alpha';
           this.current.maskedGroup = null;
         }
       }
