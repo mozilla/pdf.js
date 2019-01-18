@@ -45,23 +45,14 @@ class PDFViewer extends BaseViewer {
     return this._getCurrentVisiblePage();
   }
 
-  update() {
-    let visible = this._getVisiblePages();
-    let visiblePages = visible.views, numVisiblePages = visiblePages.length;
-
-    if (numVisiblePages === 0) {
+  _updateHelper(visiblePages) {
+    if (this.isInPresentationMode) {
       return;
     }
-    this._resizeBuffer(numVisiblePages, visiblePages);
-
-    this.renderingQueue.renderHighestPriority(visible);
-
     let currentId = this._currentPageNumber;
     let stillFullyVisible = false;
 
-    for (let i = 0; i < numVisiblePages; ++i) {
-      let page = visiblePages[i];
-
+    for (const page of visiblePages) {
       if (page.percent < 100) {
         break;
       }
@@ -70,19 +61,10 @@ class PDFViewer extends BaseViewer {
         break;
       }
     }
-
     if (!stillFullyVisible) {
       currentId = visiblePages[0].id;
     }
-    if (!this.isInPresentationMode) {
-      this._setCurrentPageNumber(currentId);
-    }
-
-    this._updateLocation(visible.first);
-    this.eventBus.dispatch('updateviewarea', {
-      source: this,
-      location: this._location,
-    });
+    this._setCurrentPageNumber(currentId);
   }
 
   get _isScrollModeHorizontal() {
