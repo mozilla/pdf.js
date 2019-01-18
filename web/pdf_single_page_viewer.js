@@ -111,23 +111,7 @@ class PDFSinglePageViewer extends BaseViewer {
     return this._getCurrentVisiblePage();
   }
 
-  update() {
-    let visible = this._getVisiblePages();
-    let visiblePages = visible.views, numVisiblePages = visiblePages.length;
-
-    if (numVisiblePages === 0) {
-      return;
-    }
-    this._resizeBuffer(numVisiblePages);
-
-    this.renderingQueue.renderHighestPriority(visible);
-
-    this._updateLocation(visible.first);
-    this.eventBus.dispatch('updateviewarea', {
-      source: this,
-      location: this._location,
-    });
-  }
+  _updateHelper(visiblePages) { }
 
   get _isScrollModeHorizontal() {
     // The Scroll/Spread modes are never used in `PDFSinglePageViewer`.
