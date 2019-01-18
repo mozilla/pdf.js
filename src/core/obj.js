@@ -701,10 +701,7 @@ class Catalog {
   static parseDestDictionary(params) {
     // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
     function addDefaultProtocolToUrl(url) {
-      if (url.indexOf('www.') === 0) {
-        return `http://${url}`;
-      }
-      return url;
+      return (url.startsWith('www.') ? `http://${url}` : url);
     }
 
     // According to ISO 32000-1:2008, section 12.6.4.7, URIs should be encoded
@@ -1234,7 +1231,7 @@ var XRef = (function XRefClosure() {
         }
         var token = readToken(buffer, position);
         var m;
-        if (token.indexOf('xref') === 0 &&
+        if (token.startsWith('xref') &&
             (token.length === 4 || /\s/.test(token[4]))) {
           position += skipUntil(buffer, position, trailerBytes);
           trailers.push(position);
@@ -1288,7 +1285,7 @@ var XRef = (function XRefClosure() {
           }
 
           position += contentLength;
-        } else if (token.indexOf('trailer') === 0 &&
+        } else if (token.startsWith('trailer') &&
                    (token.length === 7 || /\s/.test(token[7]))) {
           trailers.push(position);
           position += skipUntil(buffer, position, startxrefBytes);
@@ -1507,7 +1504,7 @@ var XRef = (function XRefClosure() {
       }
       if (obj3.cmd !== 'obj') {
         // some bad PDFs use "obj1234" and really mean 1234
-        if (obj3.cmd.indexOf('obj') === 0) {
+        if (obj3.cmd.startsWith('obj')) {
           num = parseInt(obj3.cmd.substring(3), 10);
           if (!Number.isNaN(num)) {
             return num;

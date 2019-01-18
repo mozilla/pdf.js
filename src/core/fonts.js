@@ -1200,7 +1200,7 @@ var Font = (function FontClosure() {
       // if at least one width is present, remeasure all chars when exists
       this.remeasure = Object.keys(this.widths).length > 0;
       if (isStandardFont && type === 'CIDFontType2' &&
-          this.cidEncoding.indexOf('Identity-') === 0) {
+          this.cidEncoding.startsWith('Identity-')) {
         var GlyphMapForStandardFonts = getGlyphMapForStandardFonts();
         // Standard fonts might be embedded as CID font without glyph mapping.
         // Building one based on GlyphMapForStandardFonts.
