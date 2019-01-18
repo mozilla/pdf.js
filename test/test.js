@@ -320,7 +320,7 @@ function checkEq(task, results, browser, masterMode) {
       continue;
     }
     var testSnapshot = pageResults[page].snapshot;
-    if (testSnapshot && testSnapshot.indexOf('data:image/png;base64,') === 0) {
+    if (testSnapshot && testSnapshot.startsWith('data:image/png;base64,')) {
       testSnapshot = Buffer.from(testSnapshot.substring(22), 'base64');
     } else {
       console.error('Valid snapshot was not found.');

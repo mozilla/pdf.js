@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand, mozilla/use-includes-instead-of-indexOf */
+/* eslint-disable object-shorthand */
 
 'use strict';
 
@@ -157,7 +157,7 @@ WebBrowser.prototype = {
         args: wmicPrefix.concat(['get', 'CommandLine']),
       };
       isAllKilled = function(exitCode, stdout) {
-        return stdout.indexOf(this.uniqStringId) === -1;
+        return !stdout.includes(this.uniqStringId);
       }.bind(this);
     } else {
       cmdKillAll = { file: 'pkill', args: ['-f', this.uniqStringId], };
