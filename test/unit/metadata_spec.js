@@ -18,12 +18,12 @@ import { Metadata } from '../../src/display/metadata';
 
 describe('metadata', function() {
   it('should handle valid metadata', function() {
-    var validData = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
+    const data = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
       '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\'>' +
       '<rdf:Description xmlns:dc=\'http://purl.org/dc/elements/1.1/\'>' +
       '<dc:title><rdf:Alt><rdf:li xml:lang="x-default">Foo bar baz</rdf:li>' +
       '</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>';
-    var metadata = new Metadata(validData);
+    const metadata = new Metadata(data);
 
     expect(metadata.has('dc:title')).toBeTruthy();
     expect(metadata.has('dc:qux')).toBeFalsy();
@@ -35,12 +35,12 @@ describe('metadata', function() {
   });
 
   it('should repair and handle invalid metadata', function() {
-    var invalidData = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
+    const data = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
       '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\'>' +
       '<rdf:Description xmlns:dc=\'http://purl.org/dc/elements/1.1/\'>' +
       '<dc:title>\\376\\377\\000P\\000D\\000F\\000&</dc:title>' +
       '</rdf:Description></rdf:RDF></x:xmpmeta>';
-    var metadata = new Metadata(invalidData);
+    const metadata = new Metadata(data);
 
     expect(metadata.has('dc:title')).toBeTruthy();
     expect(metadata.has('dc:qux')).toBeFalsy();
@@ -52,7 +52,7 @@ describe('metadata', function() {
   });
 
   it('should repair and handle invalid metadata (bug 1424938)', function() {
-    let invalidData = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\' ' +
+    const data = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\' ' +
       'x:xmptk=\'XMP toolkit 2.9.1-13, framework 1.6\'>' +
       '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\' ' +
       'xmlns:iX=\'http://ns.adobe.com/iX/1.0/\'>' +
@@ -82,7 +82,7 @@ describe('metadata', function() {
       '<dc:creator><rdf:Seq><rdf:li>\\376\\377\\000O\\000D\\000I\\000S' +
       '</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF>' +
       '</x:xmpmeta>';
-    let metadata = new Metadata(invalidData);
+    const metadata = new Metadata(data);
 
     expect(metadata.has('dc:title')).toBeTruthy();
     expect(metadata.has('dc:qux')).toBeFalsy();
@@ -99,7 +99,7 @@ describe('metadata', function() {
   });
 
   it('should gracefully handle incomplete tags (issue 8884)', function() {
-    let data = '<?xpacket begin="Ã¯Â»Â¿" id="W5M0MpCehiHzreSzNTczkc9d' +
+    const data = '<?xpacket begin="Ã¯Â»Â¿" id="W5M0MpCehiHzreSzNTczkc9d' +
       '<x:xmpmeta xmlns:x="adobe:ns:meta/">' +
       '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
       '<rdf:Description rdf:about=""' +
@@ -123,7 +123,7 @@ describe('metadata', function() {
       '</rdf:RDF>' +
       '</x:xmpmeta>' +
       '<?xpacket end="w"?>';
-    let metadata = new Metadata(data);
+    const metadata = new Metadata(data);
 
     expect(isEmptyObj(metadata.getAll())).toEqual(true);
   });
@@ -217,5 +217,39 @@ describe('metadata', function() {
     const metadata = new Metadata(data);
 
     expect(isEmptyObj(metadata.getAll())).toEqual(true);
+  });
+
+  it('should not be vulnerable to the billion laughs attack', function() {
+    const data = '<?xml version="1.0"?>' +
+      '<!DOCTYPE lolz [' +
+      '  <!ENTITY lol "lol">' +
+      '  <!ENTITY lol1 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">' +
+      '  <!ENTITY lol2 "&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;">' +
+      '  <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">' +
+      '  <!ENTITY lol4 "&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;">' +
+      '  <!ENTITY lol5 "&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;">' +
+      '  <!ENTITY lol6 "&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;">' +
+      '  <!ENTITY lol7 "&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;">' +
+      '  <!ENTITY lol8 "&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;">' +
+      '  <!ENTITY lol9 "&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;">' +
+      ']>' +
+      '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
+      '  <rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/">' +
+      '    <dc:title>' +
+      '      <rdf:Alt>' +
+      '        <rdf:li xml:lang="x-default">a&lol9;b</rdf:li>' +
+      '      </rdf:Alt>' +
+      '    </dc:title>' +
+      '  </rdf:Description>' +
+      '</rdf:RDF>';
+    const metadata = new Metadata(data);
+
+    expect(metadata.has('dc:title')).toBeTruthy();
+    expect(metadata.has('dc:qux')).toBeFalsy();
+
+    expect(metadata.get('dc:title')).toEqual('a&lol9;b');
+    expect(metadata.get('dc:qux')).toEqual(null);
+
+    expect(metadata.getAll()).toEqual({ 'dc:title': 'a&lol9;b', });
   });
 });
