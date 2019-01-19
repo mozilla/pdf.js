@@ -766,6 +766,16 @@ function preprocessDefaultPreferences(content) {
           content + '\n');
 }
 
+function createMozcentralStreamsPolyfillBundle(defines) {
+  var streamsPolyfillOutputName = 'streams_polyfill.js';
+
+  var streamsPolyfillFileConfig = createWebpackConfig(defines, {
+    filename: streamsPolyfillOutputName,
+  });
+  return gulp.src('./extensions/firefox/content/streams_polyfill.js')
+             .pipe(webpack2Stream(streamsPolyfillFileConfig));
+}
+
 gulp.task('mozcentral-pre', gulp.series('buildnumber', 'locale', function () {
   console.log();
   console.log('### Building mozilla-central extension');
@@ -787,6 +797,8 @@ gulp.task('mozcentral-pre', gulp.series('buildnumber', 'locale', function () {
   return merge([
     createBundle(defines).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'build')),
     createWebBundle(defines).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
+    createMozcentralStreamsPolyfillBundle(defines)
+        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'build')),
     gulp.src(COMMON_WEB_FILES, { base: 'web/', })
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
     gulp.src(['external/bcmaps/*.bcmap', 'external/bcmaps/LICENSE'],
