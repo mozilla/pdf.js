@@ -165,8 +165,8 @@ function preprocess(inFilename, outFilename, defines) {
       if (state === STATE_NONE) {
         writeLine(line);
       } else if ((state === STATE_IF_TRUE || state === STATE_ELSE_TRUE) &&
-          stack.indexOf(STATE_IF_FALSE) === -1 &&
-          stack.indexOf(STATE_ELSE_FALSE) === -1) {
+                 !stack.includes(STATE_IF_FALSE) &&
+                 !stack.includes(STATE_ELSE_FALSE)) {
         writeLine(line.replace(/^\/\/|^<!--|-->$/g, '  '));
       }
     }
@@ -223,7 +223,7 @@ function preprocessCSS(mode, source, destination) {
           if (checkBracket) {
             if (checkBracket[1] === '{') {
               bracketLevel++;
-            } else if (lines[j].indexOf('{') < 0) {
+            } else if (!lines[j].includes('{')) {
               bracketLevel--;
             }
           }
@@ -238,7 +238,7 @@ function preprocessCSS(mode, source, destination) {
           lines.splice(i, 1);
         } while (i < lines.length &&
                  !/\}\s*$/.test(lines[i]) &&
-                 lines[i].indexOf(':') < 0);
+                 !lines[i].includes(':'));
         if (i < lines.length && /\S\s*}\s*$/.test(lines[i])) {
           lines[i] = lines[i].substring(lines[i].indexOf('}'));
         }

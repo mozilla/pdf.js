@@ -1,5 +1,3 @@
-/* eslint-disable mozilla/use-includes-instead-of-indexOf */
-
 'use strict';
 
 var fs = require('fs');
@@ -67,7 +65,7 @@ function flatten(stats) {
     });
   });
   // Use only overall results if not grouped by 'stat'
-  if (options.groupBy.indexOf('stat') < 0) {
+  if (!options.groupBy.includes('stat')) {
     rows = rows.filter(function(s) {
       return s.stat === 'Overall';
     });
