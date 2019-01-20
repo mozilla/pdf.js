@@ -151,6 +151,15 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   require('core-js/fn/array/includes');
 })();
 
+// Provides support for Array.from in legacy browsers.
+// Support: IE
+(function checkArrayFrom() {
+  if (Array.from) {
+    return;
+  }
+  require('core-js/fn/array/from');
+})();
+
 // Provides support for Object.assign in legacy browsers.
 // Support: IE
 (function checkObjectAssign() {
