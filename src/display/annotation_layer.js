@@ -830,7 +830,7 @@ class LineAnnotationElement extends AnnotationElement {
 
     // PDF coordinates are calculated from a bottom left origin, so transform
     // the line coordinates to a top left origin for the SVG element.
-    let line = this.svgFactory.createElement('svg:line');
+    let line = this.svgFactory.createElement('line');
     line.setAttribute('x1', data.rect[2] - data.lineCoordinates[0]);
     line.setAttribute('y1', data.rect[3] - data.lineCoordinates[1]);
     line.setAttribute('x2', data.rect[2] - data.lineCoordinates[2]);
@@ -878,7 +878,7 @@ class SquareAnnotationElement extends AnnotationElement {
     // the borders outside the square by default. This behavior cannot be
     // changed programmatically, so correct for that here.
     let borderWidth = data.borderStyle.width;
-    let square = this.svgFactory.createElement('svg:rect');
+    let square = this.svgFactory.createElement('rect');
     square.setAttribute('x', borderWidth / 2);
     square.setAttribute('y', borderWidth / 2);
     square.setAttribute('width', width - borderWidth);
@@ -927,7 +927,7 @@ class CircleAnnotationElement extends AnnotationElement {
     // the borders outside the circle by default. This behavior cannot be
     // changed programmatically, so correct for that here.
     let borderWidth = data.borderStyle.width;
-    let circle = this.svgFactory.createElement('svg:ellipse');
+    let circle = this.svgFactory.createElement('ellipse');
     circle.setAttribute('cx', width / 2);
     circle.setAttribute('cy', height / 2);
     circle.setAttribute('rx', (width / 2) - (borderWidth / 2));
@@ -954,7 +954,7 @@ class PolylineAnnotationElement extends AnnotationElement {
     super(parameters, isRenderable, /* ignoreBorder = */ true);
 
     this.containerClassName = 'polylineAnnotation';
-    this.svgElementName = 'svg:polyline';
+    this.svgElementName = 'polyline';
   }
 
   /**
@@ -1012,7 +1012,7 @@ class PolygonAnnotationElement extends PolylineAnnotationElement {
     super(parameters);
 
     this.containerClassName = 'polygonAnnotation';
-    this.svgElementName = 'svg:polygon';
+    this.svgElementName = 'polygon';
   }
 }
 
