@@ -496,7 +496,7 @@ describe('colorspace', function () {
       expect(colorSpace.getRgb([2], 0)).toEqual(
         new Uint8ClampedArray([255, 109, 70]));
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
-      expect(colorSpace.isDefaultDecode([0, 1])).toBeTruthy();
+      expect(colorSpace.isDefaultDecode([0, 1], 1)).toBeTruthy();
       expect(testDest).toEqual(expectedDest);
     });
   });
