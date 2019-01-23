@@ -78,7 +78,7 @@ var PDFViewerApplication = {
       self.pdfDocument = pdfDocument;
       self.pdfViewer.setDocument(pdfDocument);
       self.pdfLinkService.setDocument(pdfDocument);
-      self.pdfHistory.initialize(pdfDocument.fingerprint);
+      self.pdfHistory.initialize({ fingerprint: pdfDocument.fingerprint, });
 
       self.loadingBar.hide();
       self.setTitleUsingMetadata(pdfDocument);
