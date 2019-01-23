@@ -14,7 +14,6 @@
  */
 
 import { BaseViewer } from './base_viewer';
-import { scrollIntoView } from './ui_utils';
 import { shadow } from 'pdfjs-lib';
 
 class PDFSinglePageViewer extends BaseViewer {
@@ -87,7 +86,7 @@ class PDFSinglePageViewer extends BaseViewer {
     let previousLocation = this._location;
     this._ensurePageViewVisible();
 
-    scrollIntoView(pageDiv, pageSpot);
+    super._scrollIntoView({ pageDiv, pageSpot, pageNumber, });
 
     // Since scrolling is tracked using `requestAnimationFrame`, update the
     // scroll direction during the next `this._scrollUpdate` invocation.
