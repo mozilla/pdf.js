@@ -39,6 +39,7 @@ class PDFSinglePageViewer extends BaseViewer {
     super._resetView();
     this._previousPageNumber = 1;
     this._shadowViewer = document.createDocumentFragment();
+    this._updateScrollDown = null;
   }
 
   _ensurePageViewVisible() {
@@ -82,9 +83,12 @@ class PDFSinglePageViewer extends BaseViewer {
     if (pageNumber) { // Ensure that `this._currentPageNumber` is correct.
       this._setCurrentPageNumber(pageNumber);
     }
-    let scrolledDown = this._currentPageNumber >= this._previousPageNumber;
-    let previousLocation = this._location;
+    const scrolledDown = this._currentPageNumber >= this._previousPageNumber;
+
     this._ensurePageViewVisible();
+    // Ensure that rendering always occurs, to avoid showing a blank page,
+    // even if the current position doesn't change when the page is scrolled.
+    this.update();
 
     super._scrollIntoView({ pageDiv, pageSpot, pageNumber, });
 
@@ -92,18 +96,8 @@ class PDFSinglePageViewer extends BaseViewer {
     // scroll direction during the next `this._scrollUpdate` invocation.
     this._updateScrollDown = () => {
       this.scroll.down = scrolledDown;
-      delete this._updateScrollDown;
+      this._updateScrollDown = null;
     };
-    // If the scroll position doesn't change as a result of the `scrollIntoView`
-    // call, ensure that rendering always occurs to avoid showing a blank page.
-    setTimeout(() => {
-      if (this._location === previousLocation) {
-        if (this._updateScrollDown) {
-          this._updateScrollDown();
-        }
-        this.update();
-      }
-    }, 0);
   }
 
   _getVisiblePages() {
