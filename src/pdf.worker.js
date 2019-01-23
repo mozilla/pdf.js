@@ -12,13 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-restricted-globals, no-unused-vars */
+/* eslint-disable no-unused-vars */
 
 'use strict';
-
-if (PDFJSDev.test('MOZCENTRAL') && typeof ReadableStream === 'undefined') {
-  importScripts('./streams_polyfill.js');
-}
 
 const pdfjsVersion = PDFJSDev.eval('BUNDLE_VERSION');
 const pdfjsBuild = PDFJSDev.eval('BUNDLE_BUILD');

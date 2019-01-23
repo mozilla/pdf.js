@@ -15,10 +15,10 @@
 /* eslint-disable no-restricted-globals */
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
-  // On the main-thread the `streams_polyfill.js` file is loaded using a
-  // <script> tag; see `web/viewer-snippet-firefox-extension.html`.
-  // On the worker-thread the `streams_polyfill.js` file is (conditionally)
-  // loaded using `importScripts`; see `src/pdf.worker.js`.
+  if (typeof ReadableStream === 'undefined') {
+    throw new Error('Please enable ReadableStream support by resetting the ' +
+      '"javascript.options.streams" preference to "true" in about:config.');
+  }
   exports.ReadableStream = ReadableStream;
 } else {
   let isReadableStreamSupported = false;
