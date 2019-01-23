@@ -14,11 +14,12 @@
  */
 
 import {
-  Annotation, AnnotationBorderStyle, AnnotationFactory
+  Annotation, AnnotationBorderStyle, AnnotationFactory, pdfDateStringToISOString
 } from '../../src/core/annotation';
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, stringToBytes, stringToUTF8String
+  AnnotationReviewState, AnnotationStateModelType, AnnotationType,
+  stringToBytes, stringToUTF8String
 } from '../../src/shared/util';
 import { Dict, Name, Ref } from '../../src/core/primitives';
 import { Lexer, Parser } from '../../src/core/parser';
@@ -69,6 +70,48 @@ describe('annotation', function() {
   afterAll(function() {
     pdfManagerMock = null;
     idFactoryMock = null;
+  });
+
+  describe('pdfDateStringToJsDateString', function () {
+    it('handles non-date-strings arguments', function () {
+      expect(function () {
+        pdfDateStringToISOString(null);
+      }).toThrow(new Error('Invalid argument for pdfDateStringToJsDateString'));
+    });
+
+    it('handles broken-date-strings', function () {
+      expect(pdfDateStringToISOString('D:1998-11-05')).toBeUndefined();
+      expect(pdfDateStringToISOString('1998-11-05')).toBeUndefined();
+
+    });
+
+    it('handles pdf date string input', function () {
+      expect(pdfDateStringToISOString('D:1998')).toEqual('1998');
+
+      expect(pdfDateStringToISOString('D:199811')).toEqual('1998-11');
+
+      expect(pdfDateStringToISOString('D:19981105')).toEqual('1998-11-05');
+      expect(pdfDateStringToISOString('D:1998110518'))
+        .toEqual('1998-11-05T18:00');
+      expect(pdfDateStringToISOString('D:199811051823'))
+        .toEqual('1998-11-05T18:23');
+      expect(pdfDateStringToISOString('D:19981105182355'))
+        .toEqual('1998-11-05T18:23:55');
+      expect(pdfDateStringToISOString('D:19981105182355Z'))
+        .toEqual('1998-11-05T18:23:55Z');
+      expect(pdfDateStringToISOString('D:19981105182355+08'))
+        .toEqual('1998-11-05T18:23:55+08:00');
+      expect(pdfDateStringToISOString('D:19981105182355-08'))
+        .toEqual('1998-11-05T18:23:55-08:00');
+      expect(pdfDateStringToISOString('D:19981105182355+08\'05'))
+        .toEqual('1998-11-05T18:23:55+08:05');
+
+      // It appears to be normal, to have ' as last character,
+      // but spec doesn't mention it ... anyway ...
+      expect(pdfDateStringToISOString('D:19981105182355+08\'05\''))
+        .toEqual('1998-11-05T18:23:55+08:05');
+
+    });
   });
 
   describe('AnnotationFactory', function() {
@@ -218,6 +261,161 @@ describe('annotation', function() {
       annotation.setColor([0.4, 0.6]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
+    });
+
+    it('should set and get a modified date', function () {
+      const annotation = new Annotation({ dict, ref, });
+      annotation.setModifiedDate('D:20180102030405Z');
+
+      expect(annotation.modifiedDate).toEqual(new Date('2018-01-02T03:04:05Z'));
+    });
+
+    it('should parse Contents', function () {
+      const annotDict = new Dict();
+      annotDict.set('Contents', 'Content');
+
+      const annotation = new Annotation({ dict: annotDict, ref, });
+
+      expect(annotation.data.contents).toEqual('Content');
+    });
+  });
+
+  describe('MarkupAnnotation', function () {
+    it('should correctly parse a Popup, T and IT',
+      function (done) {
+
+        const annotationRef = new Ref(820, 0);
+        const popupRef = new Ref(821, 0);
+
+        const popupDict = new Dict();
+        popupDict.set('Type', Name.get('Annot'));
+        popupDict.set('Subtype', Name.get('Popup'));
+        popupDict.set('Parent', annotationRef);
+
+        const annotationDict = new Dict();
+        annotationDict.set('Type', Name.get('Annot'));
+        annotationDict.set('Subtype', Name.get('Text'));
+        annotationDict.set('Popup', popupRef);
+        annotationDict.set('T', 'Author Name');
+        annotationDict.set('IT', Name.get('Text'));
+
+        const xref = new XRefMock([
+          { ref: annotationRef, data: annotationDict, }
+        ]);
+
+        AnnotationFactory.create(xref, annotationRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+            expect(data.title).toEqual('Author Name');
+            expect(data.intent).toEqual('Text');
+
+            expect(data.inReplyTo).toBeUndefined();
+            expect(data.replyType).toBeUndefined();
+            done();
+          }, done.fail);
+      });
+
+    it('should correctly parse a CreationDate, Subject, RichText(as text) ' +
+      'and not parse IRT and RT if not defined',
+      function (done) {
+        const subjText = 'This is subject of this annotation';
+        const richText = '"<?xml version="1.0"?><body xmlns="http://www.w3.org/1999/xhtml"' +
+          'xmlns: xfa = "http://www.xfa.org/schema/xfa-data/1.0/" xfa: APIVersion = ' +
+          '"Acrobat:19.10.0" xfa: spec = "2.0.2" > <p dir="ltr">' +
+          '<span dir="ltr" style="font-size:10.5pt;text-align:left;' +
+          'color:#000000; font-weight: normal; font-style:normal">' +
+          'test1&#13;</span></p></body>"';
+        const annotationDict = new Dict();
+        annotationDict.set('Type', Name.get('Annot'));
+        annotationDict.set('Subtype', Name.get('Text'));
+        annotationDict.set('CreationDate', 'D:20181213150601+01\'00');
+        annotationDict.set('Subj', subjText);
+        annotationDict.set('RC', richText);
+
+        const annotationRef = new Ref(820, 0);
+        const xref = new XRefMock([
+          { ref: annotationRef, data: annotationDict, }
+        ]);
+
+        AnnotationFactory.create(xref, annotationRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+            expect(data.creationDate).toEqual(
+              new Date('2018-12-13T15:06:01+01:00'));
+
+            expect(data.subject).toEqual(subjText);
+            expect(data.richText).toEqual(richText);
+
+            expect(data.inReplyTo).toBeUndefined();
+            expect(data.replyType).toBeUndefined();
+            done();
+          }, done.fail);
+      });
+
+  it('should correctly parse a IRT and set default RT.',
+    function (done) {
+
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      const replyRef = new Ref(819, 0);
+
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('IRT', replyRef);
+
+      const annotationRef = new Ref(820, 0);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+
+      AnnotationFactory.create(xref, annotationRef, pdfManagerMock,
+        idFactoryMock).then(({ data, }) => {
+          expect(data.creationDate).toBeUndefined();
+          expect(data.subject).toEqual('');
+
+          expect(data.inReplyTo).toEqual(replyRef.toString());
+          expect(data.replyType).toEqual('R');
+          done();
+         }, done.fail);
+    });
+
+  it('should correctly parse IRT, RT and as Group take Contents from Master',
+    function (done) {
+
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('Contents', 'TestText');
+      const replyRef = new Ref(819, 0);
+      // const richTextStream = new StringStream(
+      //  ''
+      // );
+
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('IRT', replyDict);
+      annotationDict.set('RT', Name.get('Group'));
+    // annotationDict.set('RC', richTextStream);
+      const annotationRef = new Ref(820, 0);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+
+      AnnotationFactory.create(xref, annotationRef, pdfManagerMock,
+        idFactoryMock).then(({ data, }) => {
+          expect(data.creationDate).toBeUndefined();
+          expect(data.inReplyTo).toBeDefined();
+          expect(data.replyType).toEqual('Group');
+          expect(data.contents).toEqual('TestText');
+
+          // expect(data.richText).toEqual();
+          done();
+        }, done.fail);
     });
   });
 
@@ -1361,6 +1559,29 @@ describe('annotation', function() {
     });
   });
 
+  describe('TextAnnotation', function () {
+    it('should parse State and StateModel', function (done) {
+      const textDict = new Dict();
+      textDict.set('Type', Name.get('Annot'));
+      textDict.set('Subtype', Name.get('Text'));
+      textDict.set('State', 'Rejected');
+      textDict.set('StateModel', 'Review');
+
+      const lineRef = new Ref(122, 0);
+      const xref = new XRefMock([
+        { ref: lineRef, data: textDict, }
+      ]);
+
+      AnnotationFactory.create(xref, lineRef, pdfManagerMock,
+        idFactoryMock).then(({ data, }) => {
+          expect(data.annotationType).toEqual(AnnotationType.TEXT);
+          expect(data.stateModel).toEqual(AnnotationStateModelType.REVIEW);
+          expect(data.state).toEqual(AnnotationReviewState.REJECTED);
+          done();
+        }, done.fail);
+    });
+  });
+
   describe('FileAttachmentAnnotation', function() {
     it('should correctly parse a file attachment', function(done) {
       const fileStream = new StringStream(
@@ -1415,7 +1636,31 @@ describe('annotation', function() {
     });
   });
 
-  describe('PopupAnnotation', function() {
+  describe('PopupAnnotation', function () {
+
+    it('should parse Open', function (done) {
+      var parentDict = new Dict();
+      parentDict.set('Type', Name.get('Annot'));
+      parentDict.set('Subtype', Name.get('Text'));
+
+      const popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('Parent', parentDict);
+      popupDict.set('Open', true);
+
+      const popupRef = new Ref(13, 0);
+      const xref = new XRefMock([
+        { ref: popupRef, data: popupDict, }
+      ]);
+
+      AnnotationFactory.create(xref, popupRef, pdfManagerMock,
+        idFactoryMock).then(({ data, }) => {
+          expect(data.open).toEqual(true);
+          done();
+        }, done.fail);
+    });
+
     it('should inherit the parent flags when the Popup is not viewable, ' +
        'but the parent is (PR 7352)', function(done) {
       const parentDict = new Dict();
