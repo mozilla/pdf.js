@@ -15,9 +15,10 @@
 
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getGlobalEventBus,
-  isPortraitOrientation, isValidRotation, MAX_AUTO_SCALE, moveToEndOfArray,
-  NullL10n, PresentationModeState, RendererType, SCROLLBAR_PADDING,
-  TextLayerMode, UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
+  getVisibleElements, isPortraitOrientation, isValidRotation, MAX_AUTO_SCALE,
+  moveToEndOfArray, NullL10n, PresentationModeState, RendererType,
+  SCROLLBAR_PADDING, scrollIntoView, TextLayerMode, UNKNOWN_SCALE,
+  VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
@@ -360,6 +361,7 @@ class BaseViewer {
   }
 
   get _setDocumentViewerElement() {
+    // In most viewers, e.g. `PDFViewer`, this should return `this.viewer`.
     throw new Error('Not implemented: _setDocumentViewerElement');
   }
 
@@ -545,7 +547,7 @@ class BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
-    throw new Error('Not implemented: _scrollIntoView');
+    scrollIntoView(pageDiv, pageSpot);
   }
 
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {
@@ -784,17 +786,6 @@ class BaseViewer {
     });
   }
 
-  /**
-   * visiblePages is optional; if present, it should be an array of pages and in
-   * practice its length is going to be numVisiblePages, but this is not
-   * required. The new size of the buffer depends only on numVisiblePages.
-   */
-  _resizeBuffer(numVisiblePages, visiblePages) {
-    let suggestedCacheSize = Math.max(DEFAULT_CACHE_SIZE,
-                                      2 * numVisiblePages + 1);
-    this._buffer.resize(suggestedCacheSize, visiblePages);
-  }
-
   _updateLocation(firstPage) {
     let currentScale = this._currentScale;
     let currentScaleValue = this._currentScaleValue;
@@ -835,7 +826,8 @@ class BaseViewer {
     if (numVisiblePages === 0) {
       return;
     }
-    this._resizeBuffer(numVisiblePages, visiblePages);
+    const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
+    this._buffer.resize(newCacheSize, visiblePages);
 
     this.renderingQueue.renderHighestPriority(visible);
 
@@ -857,7 +849,10 @@ class BaseViewer {
   }
 
   get _isScrollModeHorizontal() {
-    throw new Error('Not implemented: _isScrollModeHorizontal');
+    // Used to ensure that pre-rendering of the next/previous page works
+    // correctly, since Scroll/Spread modes are ignored in Presentation Mode.
+    return (this.isInPresentationMode ?
+            false : this._scrollMode === ScrollMode.HORIZONTAL);
   }
 
   get isInPresentationMode() {
@@ -903,7 +898,8 @@ class BaseViewer {
   }
 
   _getVisiblePages() {
-    throw new Error('Not implemented: _getVisiblePages');
+    return getVisibleElements(this.container, this._pages, true,
+                              this._isScrollModeHorizontal);
   }
 
   /**
