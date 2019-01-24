@@ -492,7 +492,7 @@ class AlternateCS extends ColorSpace {
                                      alpha01);
   }
 
-  isDefaultDecode(decodeMap) {
+  isDefaultDecode(decodeMap, bpc) {
     return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
   }
 }
@@ -565,8 +565,19 @@ class IndexedCS extends ColorSpace {
     return this.base.getOutputLength(inputLength * this.base.numComps, alpha01);
   }
 
-  isDefaultDecode(decodeMap) {
-    return true; // Indexed color maps shouldn't be changed.
+  isDefaultDecode(decodeMap, bpc) {
+    if (!Array.isArray(decodeMap)) {
+      return true;
+    }
+    if (decodeMap.length !== 2) {
+      warn('Decode map length is not correct');
+      return true;
+    }
+    if (!Number.isInteger(bpc) || bpc < 1) {
+      warn('Bits per component is not correct');
+      return true;
+    }
+    return decodeMap[0] === 0 && decodeMap[1] === (1 << bpc) - 1;
   }
 }
 
@@ -609,7 +620,7 @@ class DeviceGrayCS extends ColorSpace {
     return inputLength * (3 + alpha01);
   }
 
-  isDefaultDecode(decodeMap) {
+  isDefaultDecode(decodeMap, bpc) {
     return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
   }
 }
@@ -661,7 +672,7 @@ class DeviceRgbCS extends ColorSpace {
     return bits === 8;
   }
 
-  isDefaultDecode(decodeMap) {
+  isDefaultDecode(decodeMap, bpc) {
     return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
   }
 }
@@ -744,7 +755,7 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
       return (inputLength / 4 * (3 + alpha01)) | 0;
     }
 
-    isDefaultDecode(decodeMap) {
+    isDefaultDecode(decodeMap, bpc) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   }
@@ -847,7 +858,7 @@ const CalGrayCS = (function CalGrayCSClosure() {
       return inputLength * (3 + alpha01);
     }
 
-    isDefaultDecode(decodeMap) {
+    isDefaultDecode(decodeMap, bpc) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   }
@@ -1129,7 +1140,7 @@ const CalRGBCS = (function CalRGBCSClosure() {
       return (inputLength * (3 + alpha01) / 3) | 0;
     }
 
-    isDefaultDecode(decodeMap) {
+    isDefaultDecode(decodeMap, bpc) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   }
@@ -1280,7 +1291,7 @@ const LabCS = (function LabCSClosure() {
       return (inputLength * (3 + alpha01) / 3) | 0;
     }
 
-    isDefaultDecode(decodeMap) {
+    isDefaultDecode(decodeMap, bpc) {
       // XXX: Decoding is handled with the lab conversion because of the strange
       // ranges that are used.
       return true;
