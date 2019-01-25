@@ -171,7 +171,8 @@ var PDFImage = (function PDFImageClosure() {
     if (this.decode &&
         ((this.colorSpace &&
           !this.colorSpace.isDefaultDecode(this.decode, bitsPerComponent)) ||
-         (isMask && !ColorSpace.isDefaultDecode(this.decode, 1)))) {
+         (isMask &&
+          !ColorSpace.isDefaultDecode(this.decode, /* numComps = */ 1)))) {
       this.needsDecode = true;
       // Do some preprocessing to avoid more math.
       var max = (1 << bitsPerComponent) - 1;
