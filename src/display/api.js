@@ -2434,7 +2434,7 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       }
     }
 
-    cancel() {
+    cancel(error = null) {
       this.running = false;
       this.cancelled = true;
       if (this.gfx) {
@@ -2443,8 +2443,8 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       if (this._canvas) {
         canvasInRendering.delete(this._canvas);
       }
-      this.callback(new RenderingCancelledException(
-        'Rendering cancelled, page ' + this.pageNumber, 'canvas'));
+      this.callback(error || new RenderingCancelledException(
+        `Rendering cancelled, page ${this.pageNumber}`, 'canvas'));
     }
 
     operatorListChanged() {
@@ -2480,10 +2480,10 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
     _scheduleNext() {
       if (this._useRequestAnimationFrame) {
         window.requestAnimationFrame(() => {
-          this._nextBound().catch(this.callback);
+          this._nextBound().catch(this.cancel.bind(this));
         });
       } else {
-        Promise.resolve().then(this._nextBound).catch(this.callback);
+        Promise.resolve().then(this._nextBound).catch(this.cancel.bind(this));
       }
     }
 

@@ -432,7 +432,7 @@ class PDFPageView {
       };
     }
 
-    let finishPaintTask = (error) => {
+    const finishPaintTask = async (error) => {
       // The paintTask may have been replaced by a new one, so only remove
       // the reference to the paintTask if it matches the one that is
       // triggering this callback.
@@ -442,7 +442,7 @@ class PDFPageView {
 
       if (error instanceof RenderingCancelledException) {
         this.error = null;
-        return Promise.resolve(undefined);
+        return;
       }
 
       this.renderingState = RenderingStates.FINISHED;
@@ -465,9 +465,8 @@ class PDFPageView {
       });
 
       if (error) {
-        return Promise.reject(error);
+        throw error;
       }
-      return Promise.resolve(undefined);
     };
 
     let paintTask = this.renderer === RendererType.SVG ?
