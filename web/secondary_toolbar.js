@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-import { ScrollMode, SpreadMode } from './base_viewer';
+import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from './ui_utils';
 import { CursorTool } from './pdf_cursor_tools';
 import { PDFSinglePageViewer } from './pdf_single_page_viewer';
-import { SCROLLBAR_PADDING } from './ui_utils';
 
 /**
  * @typedef {Object} SecondaryToolbarOptions

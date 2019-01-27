@@ -19,10 +19,12 @@ import { RenderingStates } from './pdf_rendering_queue';
 const UI_NOTIFICATION_CLASS = 'pdfSidebarNotification';
 
 const SidebarView = {
+  UNKNOWN: -1,
   NONE: 0,
-  THUMBS: 1,
+  THUMBS: 1, // Default value.
   OUTLINE: 2,
   ATTACHMENTS: 3,
+  LAYERS: 4,
 };
 
 /**
@@ -131,8 +133,8 @@ class PDFSidebar {
     this.isInitialViewSet = true;
 
     // If the user has already manually opened the sidebar, immediately closing
-    // it would be bad UX.
-    if (view === SidebarView.NONE) {
+    // it would be bad UX; also ignore the "unknown" sidebar view value.
+    if (view === SidebarView.NONE || view === SidebarView.UNKNOWN) {
       this._dispatchEvent();
       return;
     }
