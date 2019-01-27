@@ -15,10 +15,11 @@
 
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getGlobalEventBus,
-  getVisibleElements, isPortraitOrientation, isValidRotation, MAX_AUTO_SCALE,
-  moveToEndOfArray, NullL10n, PresentationModeState, RendererType,
-  SCROLLBAR_PADDING, scrollIntoView, TextLayerMode, UNKNOWN_SCALE,
-  VERTICAL_PADDING, watchScroll
+  getVisibleElements, isPortraitOrientation, isValidRotation, isValidScrollMode,
+  isValidSpreadMode, MAX_AUTO_SCALE, moveToEndOfArray, NullL10n,
+  PresentationModeState, RendererType, SCROLLBAR_PADDING, scrollIntoView,
+  ScrollMode, SpreadMode, TextLayerMode, UNKNOWN_SCALE, VERTICAL_PADDING,
+  watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
@@ -28,18 +29,6 @@ import { SimpleLinkService } from './pdf_link_service';
 import { TextLayerBuilder } from './text_layer_builder';
 
 const DEFAULT_CACHE_SIZE = 10;
-
-const ScrollMode = {
-  VERTICAL: 0, // The default value.
-  HORIZONTAL: 1,
-  WRAPPED: 2,
-};
-
-const SpreadMode = {
-  NONE: 0, // The default value.
-  ODD: 1,
-  EVEN: 2,
-};
 
 /**
  * @typedef {Object} PDFViewerOptions
@@ -1086,7 +1075,7 @@ class BaseViewer {
     if (this._scrollMode === mode) {
       return; // The Scroll mode didn't change.
     }
-    if (!Number.isInteger(mode) || !Object.values(ScrollMode).includes(mode)) {
+    if (!isValidScrollMode(mode)) {
       throw new Error(`Invalid scroll mode: ${mode}`);
     }
     this._scrollMode = mode;
@@ -1132,7 +1121,7 @@ class BaseViewer {
     if (this._spreadMode === mode) {
       return; // The Spread mode didn't change.
     }
-    if (!Number.isInteger(mode) || !Object.values(SpreadMode).includes(mode)) {
+    if (!isValidSpreadMode(mode)) {
       throw new Error(`Invalid spread mode: ${mode}`);
     }
     this._spreadMode = mode;
@@ -1179,6 +1168,4 @@ class BaseViewer {
 
 export {
   BaseViewer,
-  ScrollMode,
-  SpreadMode,
 };

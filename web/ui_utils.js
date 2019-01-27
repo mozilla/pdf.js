@@ -41,6 +41,20 @@ const TextLayerMode = {
   ENABLE_ENHANCE: 2,
 };
 
+const ScrollMode = {
+  UNKNOWN: -1,
+  VERTICAL: 0, // Default value.
+  HORIZONTAL: 1,
+  WRAPPED: 2,
+};
+
+const SpreadMode = {
+  UNKNOWN: -1,
+  NONE: 0, // Default value.
+  ODD: 1,
+  EVEN: 2,
+};
+
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
@@ -602,6 +616,16 @@ function isValidRotation(angle) {
   return Number.isInteger(angle) && angle % 90 === 0;
 }
 
+function isValidScrollMode(mode) {
+  return (Number.isInteger(mode) && Object.values(ScrollMode).includes(mode) &&
+          mode !== ScrollMode.UNKNOWN);
+}
+
+function isValidSpreadMode(mode) {
+  return (Number.isInteger(mode) && Object.values(SpreadMode).includes(mode) &&
+          mode !== SpreadMode.UNKNOWN);
+}
+
 function isPortraitOrientation(size) {
   return size.width <= size.height;
 }
@@ -863,10 +887,14 @@ export {
   SCROLLBAR_PADDING,
   VERTICAL_PADDING,
   isValidRotation,
+  isValidScrollMode,
+  isValidSpreadMode,
   isPortraitOrientation,
   PresentationModeState,
   RendererType,
   TextLayerMode,
+  ScrollMode,
+  SpreadMode,
   NullL10n,
   EventBus,
   getGlobalEventBus,

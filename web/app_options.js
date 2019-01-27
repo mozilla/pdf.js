@@ -48,17 +48,7 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER,
   },
-  disableOpenActionDestination: {
-    /** @type {boolean} */
-    value: true,
-    kind: OptionKind.VIEWER,
-  },
   disablePageLabels: {
-    /** @type {boolean} */
-    value: false,
-    kind: OptionKind.VIEWER,
-  },
-  disablePageMode: {
     /** @type {boolean} */
     value: false,
     kind: OptionKind.VIEWER,
@@ -124,24 +114,19 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER,
   },
-  showPreviousViewOnLoad: {
-    /** @type {boolean} */
-    value: true,
-    kind: OptionKind.VIEWER,
-  },
   sidebarViewOnLoad: {
     /** @type {number} */
-    value: 0,
+    value: -1,
     kind: OptionKind.VIEWER,
   },
   scrollModeOnLoad: {
     /** @type {number} */
-    value: 0,
+    value: -1,
     kind: OptionKind.VIEWER,
   },
   spreadModeOnLoad: {
     /** @type {number} */
-    value: 0,
+    value: -1,
     kind: OptionKind.VIEWER,
   },
   textLayerMode: {
@@ -152,6 +137,11 @@ const defaultOptions = {
   useOnlyCssZoom: {
     /** @type {boolean} */
     value: false,
+    kind: OptionKind.VIEWER,
+  },
+  viewOnLoad: {
+    /** @type {boolean} */
+    value: 0,
     kind: OptionKind.VIEWER,
   },
 
