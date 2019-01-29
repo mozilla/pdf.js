@@ -1180,10 +1180,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
             j += 4;
             break;
           case OPS.curveTo3:
-            d.push('C', pf(args[j]), pf(args[j + 1]), pf(x), pf(y),
-                   pf(x), pf(y));
             x = args[j + 2];
             y = args[j + 3];
+            d.push('C', pf(args[j]), pf(args[j + 1]), pf(x), pf(y),
+                   pf(x), pf(y));
             j += 4;
             break;
           case OPS.closePath:
