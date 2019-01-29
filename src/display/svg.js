@@ -486,7 +486,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
           this.parentGroup.removeChild(this.group);
         }
         this.restore();
-      }
+      }
     },
 
     loadDependencies: function SVGGraphics_loadDependencies(operatorList) {
@@ -567,7 +567,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       if (matrix) {
         gradient.setAttributeNS(null, 'gradientTransform', matrix);
       }
-      gradient.setAttributeNS(null, 'gradientUnits', "userSpaceOnUse");
+      gradient.setAttributeNS(null, 'gradientUnits', 'userSpaceOnUse');
       if (args[1] === 'axial') {
         if (args[3][0] !== undefined) {
           gradient.setAttributeNS(null, 'x1', args[3][0]);
@@ -581,7 +581,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
         if (args[4][1] !== undefined) {
           gradient.setAttributeNS(null, 'y2', args[4][1]);
         }
-      } else if (args[1] === 'radial') {
+      } else if (args[1] === 'radial') {
         if (args[3][0] !== undefined) {
           gradient.setAttributeNS(null, 'fx', args[3][0]);
         }
@@ -1076,7 +1076,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
 
     shadingFill: function SVGGraphics_shadingFill(args) {
-      switch(args[0]) {
+      switch (args[0]) {
         case 'RadialAxial':
           var id = this._buildGradient(args, pm(this.transformMatrix));
           if (id) {
@@ -1485,8 +1485,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
         mask.id = 'mask' + (maskCount++);
         if (Array.isArray(args.matrix) && matrix.length === 6) {
           var matrix_text = pm(args.matrix);
-          if (matrix_text)
+          if (matrix_text) {
             mask.setAttributeNS(null, 'transform', matrix_text);
+          }
         }
         var bbox = args.bbox;
         if (bbox && Array.isArray(bbox) && bbox.length === 4) {
