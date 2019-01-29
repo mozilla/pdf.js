@@ -400,6 +400,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
    * @returns {string}
    */
   function pm(m) {
+    if (!m) {
+      return;
+    }
     if (m[4] === 0 && m[5] === 0) {
       if (m[1] === 0 && m[2] === 0) {
         if (m[0] === 1 && m[3] === 1) {
