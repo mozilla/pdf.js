@@ -438,7 +438,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
     this.forceDataSchema = !!forceDataSchema;
   }
 
-  var XML_NS = 'http://www.w3.org/XML/1998/namespace';
   var XLINK_NS = 'http://www.w3.org/1999/xlink';
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
@@ -484,8 +483,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
         this.restore();
         var path = this.current.path.cloneNode();
         path.setAttributeNS(null, 'fill', url);
-        if (blendMode != 'source-over')
+        if (blendMode !== 'source-over') {
           path.setAttributeNS(null, 'style', 'mix-blend-mode: ' + blendMode);
+        }
         this.group.appendChild(path);
       } else {
         if (!this.group.children.length) {
@@ -1287,7 +1287,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case 'BM':
             this.current.blendMode = value;
             if (value !== 'source-over') {
-              this.group.setAttributeNS(null, 'style', 
+              this.group.setAttributeNS(null, 'style',
                                         'mix-blend-mode: ' + value);
             }
             break;
@@ -1570,7 +1570,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
       // Create a style to preserve multiple white-space
       var style = this.svgFactory.createElement('svg:style');
-      style.textContent = "tspan, text {white-space:pre;}";
+      style.textContent = 'tspan, text {white-space:pre;}';
       this.defs.appendChild(style);
 
       // Create the root group element, which acts a container for all other
