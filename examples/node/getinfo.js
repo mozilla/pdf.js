@@ -7,8 +7,6 @@
 // `gulp singlefile` before running the example.
 //
 
-var fs = require('fs');
-
 // Run `gulp dist-install` to generate 'pdfjs-dist' npm package files.
 var pdfjsLib = require('pdfjs-dist');
 
@@ -17,7 +15,8 @@ var pdfPath = process.argv[2] || '../../web/compressed.tracemonkey-pldi-09.pdf';
 
 // Will be using promises to load document, pages and misc data instead of
 // callback.
-pdfjsLib.getDocument(pdfPath).then(function (doc) {
+var loadingTask = pdfjsLib.getDocument(pdfPath);
+loadingTask.promise.then(function(doc) {
   var numPages = doc.numPages;
   console.log('# Document Loaded');
   console.log('Number of Pages: ' + numPages);
@@ -39,7 +38,7 @@ pdfjsLib.getDocument(pdfPath).then(function (doc) {
   var loadPage = function (pageNum) {
     return doc.getPage(pageNum).then(function (page) {
       console.log('# Page ' + pageNum);
-      var viewport = page.getViewport(1.0 /* scale */);
+      var viewport = page.getViewport({ scale: 1.0, });
       console.log('Size: ' + viewport.width + 'x' + viewport.height);
       console.log();
       return page.getTextContent().then(function (content) {
@@ -53,7 +52,7 @@ pdfjsLib.getDocument(pdfPath).then(function (doc) {
       }).then(function () {
         console.log();
       });
-    })
+    });
   };
   // Loading of the first page will wait on metadata and subsequent loadings
   // will wait on the previous pages.

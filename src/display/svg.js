@@ -1054,7 +1054,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     // Path properties
     setLineWidth: function SVGGraphics_setLineWidth(width) {
-      this.current.lineWidth = width;
+      if (width > 0) {
+        this.current.lineWidth = width;
+      }
     },
     setLineCap: function SVGGraphics_setLineCap(style) {
       this.current.lineCap = LINE_CAP_STYLES[style];
@@ -1473,8 +1475,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
     paintFormXObjectBegin:
         function SVGGraphics_paintFormXObjectBegin(matrix, bbox) {
       var matrix_text = pm(matrix);
-      if (matrix_text)
+      if (matrix_text) {
         this.group.setAttributeNS(null, 'transform', matrix_text);
+      }
       if (Array.isArray(bbox) && bbox.length === 4) {
         var width = bbox[2] - bbox[0];
         var height = bbox[1] > bbox[3] ? bbox[1] - bbox[3] : bbox[3] - bbox[1];

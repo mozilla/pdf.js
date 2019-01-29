@@ -14,25 +14,32 @@
  */
 /* eslint-disable no-restricted-globals */
 
-let isReadableStreamSupported = false;
-if (typeof ReadableStream !== 'undefined') {
-  // MS Edge may say it has ReadableStream but they are not up to spec yet.
-  try {
-    // eslint-disable-next-line no-new
-    new ReadableStream({
-      start(controller) {
-        controller.close();
-      },
-    });
-    isReadableStreamSupported = true;
-  } catch (e) {
-    // The ReadableStream constructor cannot be used.
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
+  if (typeof ReadableStream === 'undefined') {
+    throw new Error('Please enable ReadableStream support by resetting the ' +
+      '"javascript.options.streams" preference to "true" in about:config.');
   }
-}
-if (isReadableStreamSupported) {
   exports.ReadableStream = ReadableStream;
 } else {
-  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('IMAGE_DECODERS')) {
+  let isReadableStreamSupported = false;
+  if (typeof ReadableStream !== 'undefined') {
+    // MS Edge may say it has ReadableStream but they are not up to spec yet.
+    try {
+      // eslint-disable-next-line no-new
+      new ReadableStream({
+        start(controller) {
+          controller.close();
+        },
+      });
+      isReadableStreamSupported = true;
+    } catch (e) {
+      // The ReadableStream constructor cannot be used.
+    }
+  }
+  if (isReadableStreamSupported) {
+    exports.ReadableStream = ReadableStream;
+  } else if (typeof PDFJSDev !== 'undefined' &&
+             PDFJSDev.test('IMAGE_DECODERS')) {
     class DummyReadableStream {
       constructor() {
         throw new Error('The current image decoders are synchronous, ' +

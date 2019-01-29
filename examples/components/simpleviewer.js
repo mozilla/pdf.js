@@ -15,7 +15,7 @@
 
 'use strict';
 
-if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer)  {
+if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
   alert('Please build the pdfjs-dist library using\n' +
         '  `gulp dist-install`');
 }
@@ -50,7 +50,7 @@ var pdfViewer = new pdfjsViewer.PDFViewer({
 });
 pdfLinkService.setViewer(pdfViewer);
 
-container.addEventListener('pagesinit', function () {
+document.addEventListener('pagesinit', function () {
   // We can use pdfViewer now, e.g. let's change default scale.
   pdfViewer.currentScaleValue = 'page-width';
 
@@ -60,11 +60,12 @@ container.addEventListener('pagesinit', function () {
 });
 
 // Loading document.
-pdfjsLib.getDocument({
+var loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
-}).then(function(pdfDocument) {
+});
+loadingTask.promise.then(function(pdfDocument) {
   // Document loaded, specifying document for the viewer and
   // the (optional) linkService.
   pdfViewer.setDocument(pdfDocument);

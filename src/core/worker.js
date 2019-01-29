@@ -54,160 +54,6 @@ var WorkerTask = (function WorkerTaskClosure() {
   return WorkerTask;
 })();
 
-if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-/**
- * Interface that represents PDF data transport. If possible, it allows
- * progressively load entire or fragment of the PDF binary data.
- *
- * @interface
- */
-function IPDFStream() {} // eslint-disable-line no-inner-declarations
-IPDFStream.prototype = {
-  /**
-   * Gets a reader for the entire PDF data.
-   * @returns {IPDFStreamReader}
-   */
-  getFullReader() {
-    return null;
-  },
-
-  /**
-   * Gets a reader for the range of the PDF data.
-   * @param {number} begin - the start offset of the data.
-   * @param {number} end - the end offset of the data.
-   * @returns {IPDFStreamRangeReader}
-   */
-  getRangeReader(begin, end) {
-    return null;
-  },
-
-  /**
-   * Cancels all opened reader and closes all their opened requests.
-   * @param {Object} reason - the reason for cancelling
-   */
-  cancelAllRequests(reason) {},
-};
-
-/**
- * Interface for a PDF binary data reader.
- *
- * @interface
- */
-function IPDFStreamReader() {} // eslint-disable-line no-inner-declarations
-IPDFStreamReader.prototype = {
-  /**
-   * Gets a promise that is resolved when the headers and other metadata of
-   * the PDF data stream are available.
-   * @returns {Promise}
-   */
-  get headersReady() {
-    return null;
-  },
-
-  /**
-   * Gets the Content-Disposition filename. It is defined after the headersReady
-   * promise is resolved.
-   * @returns {string|null} The filename, or `null` if the Content-Disposition
-   *                        header is missing/invalid.
-   */
-  get filename() {
-    return null;
-  },
-
-  /**
-   * Gets PDF binary data length. It is defined after the headersReady promise
-   * is resolved.
-   * @returns {number} The data length (or 0 if unknown).
-   */
-  get contentLength() {
-    return 0;
-  },
-
-  /**
-   * Gets ability of the stream to handle range requests. It is defined after
-   * the headersReady promise is resolved. Rejected when the reader is cancelled
-   * or an error occurs.
-   * @returns {boolean}
-   */
-  get isRangeSupported() {
-    return false;
-  },
-
-  /**
-   * Gets ability of the stream to progressively load binary data. It is defined
-   * after the headersReady promise is resolved.
-   * @returns {boolean}
-   */
-  get isStreamingSupported() {
-    return false;
-  },
-
-  /**
-   * Requests a chunk of the binary data. The method returns the promise, which
-   * is resolved into object with properties "value" and "done". If the done
-   * is set to true, then the stream has reached its end, otherwise the value
-   * contains binary data. Cancelled requests will be resolved with the done is
-   * set to true.
-   * @returns {Promise}
-   */
-  read() {},
-
-  /**
-   * Cancels all pending read requests and closes the stream.
-   * @param {Object} reason
-   */
-  cancel(reason) {},
-
-  /**
-   * Sets or gets the progress callback. The callback can be useful when the
-   * isStreamingSupported property of the object is defined as false.
-   * The callback is called with one parameter: an object with the loaded and
-   * total properties.
-   */
-  onProgress: null,
-};
-
-/**
- * Interface for a PDF binary data fragment reader.
- *
- * @interface
- */
-function IPDFStreamRangeReader() {} // eslint-disable-line no-inner-declarations
-IPDFStreamRangeReader.prototype = {
-  /**
-   * Gets ability of the stream to progressively load binary data.
-   * @returns {boolean}
-   */
-  get isStreamingSupported() {
-    return false;
-  },
-
-  /**
-   * Requests a chunk of the binary data. The method returns the promise, which
-   * is resolved into object with properties "value" and "done". If the done
-   * is set to true, then the stream has reached its end, otherwise the value
-   * contains binary data. Cancelled requests will be resolved with the done is
-   * set to true.
-   * @returns {Promise}
-   */
-  read() {},
-
-  /**
-   * Cancels all pending read requests and closes the stream.
-   * @param {Object} reason
-   */
-  cancel(reason) {},
-
-  /**
-   * Sets or gets the progress callback. The callback can be useful when the
-   * isStreamingSupported property of the object is defined as false.
-   * The callback is called with one parameter: an object with the loaded
-   * property.
-   */
-  onProgress: null,
-};
-}
-
 /** @implements {IPDFStream} */
 var PDFWorkerStream = (function PDFWorkerStreamClosure() {
   function PDFWorkerStream(msgHandler) {
@@ -412,33 +258,22 @@ var WorkerMessageHandler = {
       WorkerTasks.splice(i, 1);
     }
 
-    function loadDocument(recoveryMode) {
-      var loadDocumentCapability = createPromiseCapability();
+    async function loadDocument(recoveryMode) {
+      await pdfManager.ensureDoc('checkHeader');
+      await pdfManager.ensureDoc('parseStartXRef');
+      await pdfManager.ensureDoc('parse', [recoveryMode]);
 
-      var parseSuccess = function parseSuccess() {
-        Promise.all([
-          pdfManager.ensureDoc('numPages'),
-          pdfManager.ensureDoc('fingerprint'),
-        ]).then(function([numPages, fingerprint]) {
-          loadDocumentCapability.resolve({
-            numPages,
-            fingerprint,
-          });
-        }, parseFailure);
-      };
+      if (!recoveryMode) {
+        // Check that at least the first page can be successfully loaded,
+        // since otherwise the XRef table is definitely not valid.
+        await pdfManager.ensureDoc('checkFirstPage');
+      }
 
-      var parseFailure = function parseFailure(e) {
-        loadDocumentCapability.reject(e);
-      };
-
-      pdfManager.ensureDoc('checkHeader', []).then(function() {
-        pdfManager.ensureDoc('parseStartXRef', []).then(function() {
-          pdfManager.ensureDoc('parse', [recoveryMode]).then(
-            parseSuccess, parseFailure);
-        }, parseFailure);
-      }, parseFailure);
-
-      return loadDocumentCapability.promise;
+      const [numPages, fingerprint] = await Promise.all([
+        pdfManager.ensureDoc('numPages'),
+        pdfManager.ensureDoc('fingerprint'),
+      ]);
+      return { numPages, fingerprint, };
     }
 
     function getPdfManager(data, evaluatorOptions) {
@@ -476,7 +311,6 @@ var WorkerMessageHandler = {
                                fullRequest.isStreamingSupported;
         pdfManager = new NetworkPdfManager(docId, pdfStream, {
           msgHandler: handler,
-          url: source.url,
           password: source.password,
           length: fullRequest.contentLength,
           disableAutoFetch,
@@ -683,6 +517,10 @@ var WorkerMessageHandler = {
 
     handler.on('GetPageMode', function wphSetupGetPageMode(data) {
       return pdfManager.ensureCatalog('pageMode');
+    });
+
+    handler.on('getOpenActionDestination', function(data) {
+      return pdfManager.ensureCatalog('openActionDestination');
     });
 
     handler.on('GetAttachments',

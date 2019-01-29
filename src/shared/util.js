@@ -473,6 +473,18 @@ var MissingDataException = (function MissingDataExceptionClosure() {
   return MissingDataException;
 })();
 
+const XRefEntryException = (function XRefEntryExceptionClosure() {
+  function XRefEntryException(msg) {
+    this.message = msg;
+  }
+
+  XRefEntryException.prototype = new Error();
+  XRefEntryException.prototype.name = 'XRefEntryException';
+  XRefEntryException.constructor = XRefEntryException;
+
+  return XRefEntryException;
+})();
+
 var XRefParseException = (function XRefParseExceptionClosure() {
   function XRefParseException(msg) {
     this.message = msg;
@@ -1034,6 +1046,7 @@ export {
   UnknownErrorException,
   Util,
   toRomanNumerals,
+  XRefEntryException,
   XRefParseException,
   FormatError,
   arrayByteLength,

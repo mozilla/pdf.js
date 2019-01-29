@@ -5,6 +5,7 @@
   },
 
   "plugins": [
+    "import",
     "mozilla",
     "unicorn",
   ],
@@ -16,7 +17,7 @@
     "amd": true,
   },
 
-  globals: {
+  "globals": {
     "PDFJSDev": false,
     "exports": false,
     "SystemJS": false,
@@ -24,6 +25,7 @@
 
   "rules": {
     // Plugins
+    "import/no-unresolved": "error",
     "mozilla/avoid-removeChild": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",
     "unicorn/no-array-instanceof": "error",
@@ -86,6 +88,7 @@
     "no-unused-expressions": "error",
     "no-unused-labels": "error",
     "no-useless-call": "error",
+    "no-useless-catch": "error",
     "no-useless-concat": "error",
     "prefer-promise-reject-errors": "error",
     "wrap-iife": ["error", "any"],

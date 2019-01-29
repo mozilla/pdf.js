@@ -144,7 +144,6 @@ class NetworkPdfManager extends BasePdfManager {
 
     this.streamManager = new ChunkedStreamManager(pdfNetworkStream, {
       msgHandler: args.msgHandler,
-      url: args.url,
       length: args.length,
       disableAutoFetch: args.disableAutoFetch,
       rangeChunkSize: args.rangeChunkSize,

@@ -17,7 +17,7 @@ import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
   info, InvalidPDFException, isBool, isNum, isString, MissingDataException,
   PermissionFlag, shadow, stringToPDFString, stringToUTF8String,
-  toRomanNumerals, unreachable, warn, XRefParseException
+  toRomanNumerals, unreachable, warn, XRefEntryException, XRefParseException
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -392,6 +392,28 @@ class Catalog {
     return shadow(this, 'pageMode', pageMode);
   }
 
+  get openActionDestination() {
+    const obj = this.catDict.get('OpenAction');
+    let openActionDest = null;
+
+    if (isDict(obj)) {
+      // Convert the OpenAction dictionary into a format that works with
+      // `parseDestDictionary`, to avoid having to re-implement those checks.
+      const destDict = new Dict(this.xref);
+      destDict.set('A', obj);
+
+      const resultObj = { url: null, dest: null, };
+      Catalog.parseDestDictionary({ destDict, resultObj, });
+
+      if (Array.isArray(resultObj.dest)) {
+        openActionDest = resultObj.dest;
+      }
+    } else if (Array.isArray(obj)) {
+      openActionDest = obj;
+    }
+    return shadow(this, 'openActionDestination', openActionDest);
+  }
+
   get attachments() {
     const obj = this.catDict.get('Names');
     let attachments = null;
@@ -679,10 +701,7 @@ class Catalog {
   static parseDestDictionary(params) {
     // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
     function addDefaultProtocolToUrl(url) {
-      if (url.indexOf('www.') === 0) {
-        return `http://${url}`;
-      }
-      return url;
+      return (url.startsWith('www.') ? `http://${url}` : url);
     }
 
     // According to ISO 32000-1:2008, section 12.6.4.7, URIs should be encoded
@@ -1177,7 +1196,7 @@ var XRef = (function XRefClosure() {
       }
       var objRegExp = /^(\d+)\s+(\d+)\s+obj\b/;
       const endobjRegExp = /\bendobj[\b\s]$/;
-      const nestedObjRegExp = /\s+(\d+\s+\d+\s+obj[\b\s])$/;
+      const nestedObjRegExp = /\s+(\d+\s+\d+\s+obj[\b\s<])$/;
       const CHECK_CONTENT_LENGTH = 25;
 
       var trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
@@ -1212,16 +1231,17 @@ var XRef = (function XRefClosure() {
         }
         var token = readToken(buffer, position);
         var m;
-        if (token.indexOf('xref') === 0 &&
+        if (token.startsWith('xref') &&
             (token.length === 4 || /\s/.test(token[4]))) {
           position += skipUntil(buffer, position, trailerBytes);
           trailers.push(position);
           position += skipUntil(buffer, position, startxrefBytes);
         } else if ((m = objRegExp.exec(token))) {
-          if (typeof this.entries[m[1]] === 'undefined') {
-            this.entries[m[1]] = {
+          const num = m[1] | 0, gen = m[2] | 0;
+          if (typeof this.entries[num] === 'undefined') {
+            this.entries[num] = {
               offset: position - stream.start,
-              gen: m[2] | 0,
+              gen,
               uncompressed: true,
             };
           }
@@ -1266,7 +1286,7 @@ var XRef = (function XRefClosure() {
           }
 
           position += contentLength;
-        } else if (token.indexOf('trailer') === 0 &&
+        } else if (token.startsWith('trailer') &&
                    (token.length === 7 || /\s/.test(token[7]))) {
           trailers.push(position);
           position += skipUntil(buffer, position, startxrefBytes);
@@ -1451,7 +1471,7 @@ var XRef = (function XRefClosure() {
       if (xrefEntry.uncompressed) {
         xrefEntry = this.fetchUncompressed(ref, xrefEntry, suppressEncryption);
       } else {
-        xrefEntry = this.fetchCompressed(xrefEntry, suppressEncryption);
+        xrefEntry = this.fetchCompressed(ref, xrefEntry, suppressEncryption);
       }
       if (isDict(xrefEntry)) {
         xrefEntry.objId = ref.toString();
@@ -1461,12 +1481,11 @@ var XRef = (function XRefClosure() {
       return xrefEntry;
     },
 
-    fetchUncompressed: function XRef_fetchUncompressed(ref, xrefEntry,
-                                                       suppressEncryption) {
+    fetchUncompressed(ref, xrefEntry, suppressEncryption = false) {
       var gen = ref.gen;
       var num = ref.num;
       if (xrefEntry.gen !== gen) {
-        throw new FormatError('inconsistent generation in XRef');
+        throw new XRefEntryException(`Inconsistent generation in XRef: ${ref}`);
       }
       var stream = this.stream.makeSubStream(xrefEntry.offset +
                                              this.stream.start);
@@ -1482,17 +1501,17 @@ var XRef = (function XRefClosure() {
         obj2 = parseInt(obj2, 10);
       }
       if (obj1 !== num || obj2 !== gen || !isCmd(obj3)) {
-        throw new FormatError('bad XRef entry');
+        throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
       }
       if (obj3.cmd !== 'obj') {
         // some bad PDFs use "obj1234" and really mean 1234
-        if (obj3.cmd.indexOf('obj') === 0) {
+        if (obj3.cmd.startsWith('obj')) {
           num = parseInt(obj3.cmd.substring(3), 10);
           if (!Number.isNaN(num)) {
             return num;
           }
         }
-        throw new FormatError('bad XRef entry');
+        throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
       }
       if (this.encrypt && !suppressEncryption) {
         xrefEntry = parser.getObj(this.encrypt.createCipherTransform(num, gen));
@@ -1505,8 +1524,7 @@ var XRef = (function XRefClosure() {
       return xrefEntry;
     },
 
-    fetchCompressed: function XRef_fetchCompressed(xrefEntry,
-                                                   suppressEncryption) {
+    fetchCompressed(ref, xrefEntry, suppressEncryption = false) {
       var tableOffset = xrefEntry.offset;
       var stream = this.fetch(new Ref(tableOffset, 0));
       if (!isStream(stream)) {
@@ -1551,7 +1569,7 @@ var XRef = (function XRefClosure() {
       }
       xrefEntry = entries[xrefEntry.gen];
       if (xrefEntry === undefined) {
-        throw new FormatError('bad XRef entry for compressed object');
+        throw new XRefEntryException(`Bad (compressed) XRef entry: ${ref}`);
       }
       return xrefEntry;
     },
@@ -1648,7 +1666,7 @@ class NameOrNumberTree {
     // contains the key we are looking for.
     while (kidsOrEntries.has('Kids')) {
       if (++loopCount > MAX_LEVELS) {
-        warn('Search depth limit reached for "' + this._type + '" tree.');
+        warn(`Search depth limit reached for "${this._type}" tree.`);
         return null;
       }
 
@@ -1686,13 +1704,26 @@ class NameOrNumberTree {
       while (l <= r) {
         // Check only even indices (0, 2, 4, ...) because the
         // odd indices contain the actual data.
-        const m = (l + r) & ~1;
+        const tmp = (l + r) >> 1, m = tmp + (tmp & 1);
         const currentKey = xref.fetchIfRef(entries[m]);
         if (key < currentKey) {
           r = m - 2;
         } else if (key > currentKey) {
           l = m + 2;
         } else {
+          return xref.fetchIfRef(entries[m + 1]);
+        }
+      }
+
+      // Fallback to an exhaustive search, in an attempt to handle corrupt
+      // PDF files where keys are not correctly ordered (fixes issue 10272).
+      info(`Falling back to an exhaustive search, for key "${key}", ` +
+           `in "${this._type}" tree.`);
+      for (let m = 0, mm = entries.length; m < mm; m += 2) {
+        const currentKey = xref.fetchIfRef(entries[m]);
+        if (currentKey === key) {
+          warn(`The "${key}" key was found at an incorrect, ` +
+               `i.e. out-of-order, position in "${this._type}" tree.`);
           return xref.fetchIfRef(entries[m + 1]);
         }
       }

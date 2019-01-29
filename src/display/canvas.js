@@ -726,7 +726,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
   CanvasGraphics.prototype = {
 
-    beginDrawing({ transform, viewport, transparency,
+    beginDrawing({ transform, viewport, transparency = false,
                    background = null, }) {
       // For pdfs that use blend modes we have to clear the canvas else certain
       // blend modes can look wrong since we'd be blending with a white
@@ -810,7 +810,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
             // If the promise isn't resolved yet, add the continueCallback
             // to the promise and bail out.
-            if (!objsPool.isResolved(depObjId)) {
+            if (!objsPool.has(depObjId)) {
               objsPool.get(depObjId, continueCallback);
               return i;
             }
@@ -1317,7 +1317,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var name = fontObj.loadedName || 'sans-serif';
       var bold = fontObj.black ? '900' : (fontObj.bold ? 'bold' : 'normal');
       var italic = fontObj.italic ? 'italic' : 'normal';
-      var typeface = '"' + name + '", ' + fontObj.fallbackName;
+      var typeface = `"${name}", ${fontObj.fallbackName}`;
 
       // Some font backends cannot handle fonts below certain size.
       // Keeping the font at minimal size and using the fontSizeScale to change
@@ -1327,8 +1327,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                             size > MAX_FONT_SIZE ? MAX_FONT_SIZE : size;
       this.current.fontSizeScale = size / browserFontSize;
 
-      var rule = italic + ' ' + bold + ' ' + browserFontSize + 'px ' + typeface;
-      this.ctx.font = rule;
+      this.ctx.font = `${italic} ${bold} ${browserFontSize}px ${typeface}`;
     },
     setTextRenderingMode: function CanvasGraphics_setTextRenderingMode(mode) {
       this.current.textRenderingMode = mode;
@@ -1750,7 +1749,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       this.baseTransform = this.ctx.mozCurrentTransform;
 
-      if (Array.isArray(bbox) && bbox.length === 4) {
+      if (bbox) {
         var width = bbox[2] - bbox[0];
         var height = bbox[3] - bbox[1];
         this.ctx.rect(bbox[0], bbox[1], width, height);

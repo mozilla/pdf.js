@@ -1200,7 +1200,7 @@ var Font = (function FontClosure() {
       // if at least one width is present, remeasure all chars when exists
       this.remeasure = Object.keys(this.widths).length > 0;
       if (isStandardFont && type === 'CIDFontType2' &&
-          this.cidEncoding.indexOf('Identity-') === 0) {
+          this.cidEncoding.startsWith('Identity-')) {
         var GlyphMapForStandardFonts = getGlyphMapForStandardFonts();
         // Standard fonts might be embedded as CID font without glyph mapping.
         // Building one based on GlyphMapForStandardFonts.
@@ -1613,7 +1613,19 @@ var Font = (function FontClosure() {
         }
 
         font.pos = (font.start ? font.start : 0) + header.offset;
-        font.pos += header.length - 2;
+        font.pos += 4; // version
+        font.pos += 2; // ascent
+        font.pos += 2; // descent
+        font.pos += 2; // linegap
+        font.pos += 2; // adv_width_max
+        font.pos += 2; // min_sb1
+        font.pos += 2; // min_sb2
+        font.pos += 2; // max_extent
+        font.pos += 2; // caret_slope_rise
+        font.pos += 2; // caret_slope_run
+        font.pos += 2; // caret_offset
+        font.pos += 8; // reserved
+        font.pos += 2; // format
         var numOfMetrics = font.getUint16();
 
         if (numOfMetrics > numGlyphs) {

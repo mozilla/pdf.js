@@ -123,11 +123,11 @@ class SecondaryToolbar {
     // current `BaseViewer` instance (in particular `PDFSinglePageViewer`).
     this.eventBus.on('baseviewerinit', (evt) => {
       if (evt.source instanceof PDFSinglePageViewer) {
-        this.toolbarButtonContainer.classList.add('hiddenScrollModeButtons');
-        this.toolbarButtonContainer.classList.add('hiddenSpreadModeButtons');
+        this.toolbarButtonContainer.classList.add('hiddenScrollModeButtons',
+                                                  'hiddenSpreadModeButtons');
       } else {
-        this.toolbarButtonContainer.classList.remove('hiddenScrollModeButtons');
-        this.toolbarButtonContainer.classList.remove('hiddenSpreadModeButtons');
+        this.toolbarButtonContainer.classList.remove('hiddenScrollModeButtons',
+                                                     'hiddenSpreadModeButtons');
       }
     });
   }

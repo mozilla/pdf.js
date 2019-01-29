@@ -739,6 +739,13 @@
        "link": true,
        "type": "load"
     },
+    {  "id": "issue10388",
+       "file": "pdfs/issue10388_reduced.pdf",
+       "md5": "62a6b2adbea1535432bd94a3516e2d4c",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue7507",
        "file": "pdfs/issue7507.pdf",
        "md5": "f7aeaafe0c89b94436e94eaa63307303",
@@ -824,6 +831,21 @@
        "md5": "f3889f7c7b60e1ab998aac430cc7e08e",
        "rounds": 1,
        "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue10438",
+       "file": "pdfs/issue10438_reduced.pdf",
+       "md5": "bb26f68493e33af17b256a6ffe777a24",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue10491",
+       "file": "pdfs/issue10491.pdf",
+       "md5": "0759ec46739b13bb0b66170a18d33d4f",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 2,
        "type": "eq"
     },
     {  "id": "issue6289",
@@ -1274,6 +1296,22 @@
        "link": false,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "issue7496",
+       "file": "pdfs/issue7496.pdf",
+       "md5": "b422981ae781166e75c0fb4c3634ed96",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "load"
+    },
+    {  "id": "issue10326",
+       "file": "pdfs/issue10326.pdf",
+       "md5": "015c13b09ef735ea1204f38992c60487",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "load"
     },
     {  "id": "issue7544",
        "file": "pdfs/issue7544.pdf",
@@ -2613,6 +2651,12 @@
       "link": false,
       "type": "eq"
     },
+    {  "id": "issue10339",
+       "file": "pdfs/issue10339_reduced.pdf",
+       "md5": "e34ef74f188080f8194c7d8e8b68c562",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue1721",
       "file": "pdfs/issue1721.pdf",
       "md5": "b47177f9e5197a76ec498733ecab60e6",
@@ -2749,6 +2793,12 @@
        "rounds": 1,
        "type": "text",
        "about": "Note that the text layer seems to be off to the right."
+    },
+    {  "id": "issue10084",
+       "file": "pdfs/issue10084_reduced.pdf",
+       "md5": "ae37cf36f2e319688c608e4086836824",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue4890",
        "file": "pdfs/issue4890.pdf",
@@ -3406,6 +3456,12 @@
       "link": true,
       "type": "eq",
       "about": "True type font with encoding dict with no base encoding but with differences."
+    },
+    {  "id": "issue10402",
+       "file": "pdfs/issue10402.pdf",
+       "md5": "7936bd34d7c0aebd0a864b5aa98aa1b4",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue3064-text",
        "file": "pdfs/issue3064.pdf",

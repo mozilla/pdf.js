@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
@@ -482,6 +483,12 @@ class AnnotationBorderStyle {
    * @param {integer} width - The width
    */
   setWidth(width) {
+    // Some corrupt PDF generators may provide the width as a `Name`,
+    // rather than as a number (fixes issue 10385).
+    if (isName(width)) {
+      this.width = 0; // This is consistent with the behaviour in Adobe Reader.
+      return;
+    }
     if (Number.isInteger(width)) {
       this.width = width;
     }
@@ -492,11 +499,11 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {Object} style - The style object
+   * @param {Name} style - The annotation style.
    * @see {@link shared/util.js}
    */
   setStyle(style) {
-    if (!style) {
+    if (!isName(style)) {
       return;
     }
     switch (style.name) {
@@ -613,8 +620,11 @@ class WidgetAnnotation extends Annotation {
 
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
 
-    // Hide signatures because we cannot validate them.
+    // Hide signatures because we cannot validate them, and unset the fieldValue
+    // since it's (most likely) a `Dict` which is non-serializable and will thus
+    // cause errors when sending annotations to the main-thread (issue 10347).
     if (data.fieldType === 'Sig') {
+      data.fieldValue = null;
       this.setFlags(AnnotationFlag.HIDDEN);
     }
   }

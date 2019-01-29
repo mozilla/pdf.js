@@ -198,20 +198,16 @@ class MozL10n {
   }
 })();
 
-function FirefoxComDataRangeTransport(length, initialData) {
-  PDFDataRangeTransport.call(this, length, initialData);
+class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
+  requestDataRange(begin, end) {
+    FirefoxCom.request('requestDataRange', { begin, end, });
+  }
+
+  abort() {
+    // Sync call to ensure abort is really started.
+    FirefoxCom.requestSync('abortLoading', null);
+  }
 }
-FirefoxComDataRangeTransport.prototype =
-  Object.create(PDFDataRangeTransport.prototype);
-FirefoxComDataRangeTransport.prototype.requestDataRange =
-    function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
-  FirefoxCom.request('requestDataRange', { begin, end, });
-};
-FirefoxComDataRangeTransport.prototype.abort =
-    function FirefoxComDataRangeTransport_abort() {
-  // Sync call to ensure abort is really started.
-  FirefoxCom.requestSync('abortLoading', null);
-};
 
 PDFViewerApplication.externalServices = {
   updateFindControlState(data) {

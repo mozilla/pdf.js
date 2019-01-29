@@ -100,6 +100,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     }
     var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
                               pdfFunctionFactory);
+    // isDefaultDecode() of DeviceGray and DeviceRGB needs no `bpc` argument.
     return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
@@ -114,8 +115,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     }
     var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
                               pdfFunctionFactory);
+    const bpc = dict.get('BitsPerComponent', 'BPC') || 1;
     return (cs.numComps === 1 || cs.numComps === 3) &&
-           cs.isDefaultDecode(dict.getArray('Decode', 'D'));
+           cs.isDefaultDecode(dict.getArray('Decode', 'D'), bpc);
   };
 
   function PartialEvaluator({ pdfManager, xref, handler, pageIndex, idFactory,
@@ -299,6 +301,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var dict = xobj.dict;
       var matrix = dict.getArray('Matrix');
       var bbox = dict.getArray('BBox');
+      if (Array.isArray(bbox) && bbox.length === 4) {
+        bbox = Util.normalizeRect(bbox);
+      } else {
+        bbox = null;
+      }
       var group = dict.get('Group');
       if (group) {
         var groupOptions = {
@@ -2528,13 +2535,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var fontNameStr = fontName && fontName.name;
         var baseFontStr = baseFont && baseFont.name;
         if (fontNameStr !== baseFontStr) {
-          info('The FontDescriptor\'s FontName is "' + fontNameStr +
-               '" but should be the same as the Font\'s BaseFont "' +
-               baseFontStr + '"');
+          info(`The FontDescriptor\'s FontName is "${fontNameStr}" but ` +
+               `should be the same as the Font\'s BaseFont "${baseFontStr}".`);
           // Workaround for cases where e.g. fontNameStr = 'Arial' and
           // baseFontStr = 'Arial,Bold' (needed when no font file is embedded).
           if (fontNameStr && baseFontStr &&
-              baseFontStr.indexOf(fontNameStr) === 0) {
+              baseFontStr.startsWith(fontNameStr)) {
             fontName = baseFont;
           }
         }

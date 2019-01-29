@@ -142,9 +142,20 @@ describe('api', function() {
       // Sanity check to make sure that we fetched the entire PDF file.
       expect(typedArrayPdf.length).toEqual(basicApiFileLength);
 
-      var loadingTask = getDocument(typedArrayPdf);
-      loadingTask.promise.then(function(data) {
-        expect(data instanceof PDFDocumentProxy).toEqual(true);
+      const loadingTask = getDocument(typedArrayPdf);
+
+      const progressReportedCapability = createPromiseCapability();
+      loadingTask.onProgress = function(data) {
+        progressReportedCapability.resolve(data);
+      };
+
+      Promise.all([
+        loadingTask.promise,
+        progressReportedCapability.promise,
+      ]).then(function(data) {
+        expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
+        expect(data[1].loaded / data[1].total).toEqual(1);
+
         loadingTask.destroy().then(done);
       }).catch(done.fail);
     });
@@ -639,6 +650,24 @@ describe('api', function() {
       }).catch(done.fail);
     });
 
+    it('gets default open action destination', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getOpenActionDestination();
+      }).then(function(dest) {
+        expect(dest).toEqual(null);
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
+    it('gets non-default open action destination', function(done) {
+      doc.getOpenActionDestination().then(function(dest) {
+        expect(dest).toEqual([{ num: 15, gen: 0, }, { name: 'FitH', }, null]);
+        done();
+      }).catch(done.fail);
+    });
+
     it('gets non-existent attachments', function(done) {
       var promise = doc.getAttachments();
       promise.then(function (data) {
@@ -818,6 +847,8 @@ describe('api', function() {
       var promise = doc.getMetadata();
       promise.then(function({ info, metadata, contentDispositionFilename, }) {
         expect(info['Title']).toEqual('Basic API Test');
+        // Custom, non-standard, information dictionary entries.
+        expect(info['Custom']).toEqual(undefined);
         // The following are PDF.js specific, non-standard, properties.
         expect(info['PDFFormatVersion']).toEqual('1.7');
         expect(info['IsLinearized']).toEqual(false);
@@ -831,6 +862,34 @@ describe('api', function() {
         done();
       }).catch(done.fail);
     });
+    it('gets metadata, with custom info dict entries', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getMetadata();
+      }).then(function({ info, metadata, contentDispositionFilename, }) {
+        expect(info['Creator']).toEqual('TeX');
+        expect(info['Producer']).toEqual('pdfeTeX-1.21a');
+        expect(info['CreationDate']).toEqual('D:20090401163925-07\'00\'');
+        // Custom, non-standard, information dictionary entries.
+        const custom = info['Custom'];
+        expect(typeof custom === 'object' && custom !== null).toEqual(true);
+
+        expect(custom['PTEX.Fullbanner']).toEqual('This is pdfeTeX, ' +
+          'Version 3.141592-1.21a-2.2 (Web2C 7.5.4) kpathsea version 3.5.6');
+        // The following are PDF.js specific, non-standard, properties.
+        expect(info['PDFFormatVersion']).toEqual('1.4');
+        expect(info['IsLinearized']).toEqual(false);
+        expect(info['IsAcroFormPresent']).toEqual(false);
+        expect(info['IsXFAPresent']).toEqual(false);
+
+        expect(metadata).toEqual(null);
+        expect(contentDispositionFilename).toEqual(null);
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
+
     it('gets data', function(done) {
       var promise = doc.getData();
       promise.then(function (data) {
@@ -993,7 +1052,7 @@ describe('api', function() {
       expect(page.view).toEqual([0, 0, 595.28, 841.89]);
     });
     it('gets viewport', function () {
-      var viewport = page.getViewport(1.5, 90);
+      var viewport = page.getViewport({ scale: 1.5, rotation: 90, });
       expect(viewport.viewBox).toEqual(page.view);
       expect(viewport.scale).toEqual(1.5);
       expect(viewport.rotation).toEqual(90);
@@ -1004,8 +1063,9 @@ describe('api', function() {
     it('gets viewport respecting "dontFlip" argument', function () {
       const scale = 1;
       const rotation = 135;
-      let viewport = page.getViewport(scale, rotation);
-      let dontFlipViewport = page.getViewport(scale, rotation, true);
+      let viewport = page.getViewport({ scale, rotation, });
+      let dontFlipViewport = page.getViewport({ scale, rotation,
+                                                dontFlip: true, });
 
       expect(dontFlipViewport).not.toEqual(viewport);
       expect(dontFlipViewport).toEqual(viewport.clone({ dontFlip: true, }));
@@ -1198,7 +1258,7 @@ describe('api', function() {
 
       loadingTask.promise.then((pdfDoc) => {
         return pdfDoc.getPage(1).then((pdfPage) => {
-          let viewport = pdfPage.getViewport(1);
+          let viewport = pdfPage.getViewport({ scale: 1, });
           canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
           let renderTask = pdfPage.render({
@@ -1232,7 +1292,7 @@ describe('api', function() {
       if (isNodeJS()) {
         pending('TODO: Support Canvas testing in Node.js.');
       }
-      var viewport = page.getViewport(1);
+      var viewport = page.getViewport({ scale: 1, });
       var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       var renderTask = page.render({
@@ -1256,7 +1316,7 @@ describe('api', function() {
       if (isNodeJS()) {
         pending('TODO: Support Canvas testing in Node.js.');
       }
-      let viewport = page.getViewport(1);
+      let viewport = page.getViewport({ scale: 1, });
       let canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       let renderTask = page.render({
@@ -1285,7 +1345,7 @@ describe('api', function() {
       if (isNodeJS()) {
         pending('TODO: Support Canvas testing in Node.js.');
       }
-      var viewport = page.getViewport(1);
+      var viewport = page.getViewport({ scale: 1, });
       var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       var renderTask1 = page.render({
@@ -1321,26 +1381,23 @@ describe('api', function() {
 
     // Render the first page of the given PDF file.
     // Fulfills the promise with the base64-encoded version of the PDF.
-    function renderPDF(filename) {
-      var loadingTask = getDocument(filename);
+    async function renderPDF(filename) {
+      const loadingTask = getDocument(filename);
       loadingTasks.push(loadingTask);
-      return loadingTask.promise
-        .then(function(pdf) {
-          pdfDocuments.push(pdf);
-          return pdf.getPage(1);
-        }).then(function(page) {
-          var viewport = page.getViewport(1.2);
-          var canvasAndCtx = CanvasFactory.create(viewport.width,
-                                                  viewport.height);
-          return page.render({
-            canvasContext: canvasAndCtx.context,
-            viewport,
-          }).then(function() {
-            var data = canvasAndCtx.canvas.toDataURL();
-            CanvasFactory.destroy(canvasAndCtx);
-            return data;
-          });
-        });
+      const pdf = await loadingTask.promise;
+      pdfDocuments.push(pdf);
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 1.2, });
+      const canvasAndCtx = CanvasFactory.create(viewport.width,
+                                                viewport.height);
+      const renderTask = page.render({
+        canvasContext: canvasAndCtx.context,
+        viewport,
+      });
+      await renderTask.promise;
+      const data = canvasAndCtx.canvas.toDataURL();
+      CanvasFactory.destroy(canvasAndCtx);
+      return data;
     }
 
     afterEach(function(done) {

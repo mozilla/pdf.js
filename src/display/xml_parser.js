@@ -46,7 +46,7 @@ function isWhitespaceString(s) {
 
 class XMLParserBase {
   _resolveEntities(s) {
-    return s.replace(/&([^;]+);/g, function (all, entity) {
+    return s.replace(/&([^;]+);/g, (all, entity) => {
       if (entity.substring(0, 2) === '#x') {
         return String.fromCharCode(parseInt(entity.substring(2), 16));
       } else if (entity.substring(0, 1) === '#') {
@@ -278,12 +278,19 @@ class SimpleDOMNode {
   }
 
   get firstChild() {
-    return this.childNodes[0];
+    return this.childNodes && this.childNodes[0];
   }
 
   get nextSibling() {
-    let index = this.parentNode.childNodes.indexOf(this);
-    return this.parentNode.childNodes[index + 1];
+    const childNodes = this.parentNode.childNodes;
+    if (!childNodes) {
+      return undefined;
+    }
+    const index = childNodes.indexOf(this);
+    if (index === -1) {
+      return undefined;
+    }
+    return childNodes[index + 1];
   }
 
   get textContent() {
@@ -360,8 +367,11 @@ class SimpleXMLParser extends XMLParserBase {
   }
 
   onEndElement(name) {
-    this._currentFragment = this._stack.pop();
+    this._currentFragment = this._stack.pop() || [];
     const lastElement = this._currentFragment[this._currentFragment.length - 1];
+    if (!lastElement) {
+      return;
+    }
     for (let i = 0, ii = lastElement.childNodes.length; i < ii; i++) {
       lastElement.childNodes[i].parentNode = lastElement;
     }

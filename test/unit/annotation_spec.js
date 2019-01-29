@@ -236,6 +236,17 @@ describe('annotation', function() {
       expect(borderStyle.width).toEqual(1);
     });
 
+    it('should set the width to zero, when the input is a `Name` (issue 10385)',
+        function() {
+      const borderStyleZero = new AnnotationBorderStyle();
+      borderStyleZero.setWidth(Name.get('0'));
+      const borderStyleFive = new AnnotationBorderStyle();
+      borderStyleFive.setWidth(Name.get('5'));
+
+      expect(borderStyleZero.width).toEqual(0);
+      expect(borderStyleFive.width).toEqual(0);
+    });
+
     it('should set and get a valid style', function() {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setStyle(Name.get('D'));
@@ -975,7 +986,7 @@ describe('annotation', function() {
 
             // Remove the last invalid flag for the next iteration.
             if (!valid) {
-              flags -= invalidFieldFlags.splice(-1, 1);
+              flags -= invalidFieldFlags.pop();
             }
           });
         });

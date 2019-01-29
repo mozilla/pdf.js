@@ -72,6 +72,8 @@
 !issue9458.pdf
 !issue9915_reduced.pdf
 !issue9940.pdf
+!issue10388_reduced.pdf
+!issue10438_reduced.pdf
 !bad-PageLabels.pdf
 !decodeACSuccessive.pdf
 !filled-background.pdf
@@ -125,6 +127,7 @@
 !issue6541.pdf
 !issue2948.pdf
 !issue6231_1.pdf
+!issue10402.pdf
 !issue7074_reduced.pdf
 !issue6413.pdf
 !issue4630.pdf
@@ -248,6 +251,7 @@
 !bug878026.pdf
 !issue1045.pdf
 !issue5010.pdf
+!issue10339_reduced.pdf
 !issue4934.pdf
 !issue4650.pdf
 !issue6721_reduced.pdf
@@ -264,6 +268,7 @@
 !annotation-tx3.pdf
 !coons-allflags-withfunction.pdf
 !tensor-allflags-withfunction.pdf
+!issue10084_reduced.pdf
 !issue4246.pdf
 !issue4461.pdf
 !issue4573.pdf

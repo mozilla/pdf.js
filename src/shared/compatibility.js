@@ -90,6 +90,49 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   };
 })();
 
+// Provides support for DOMTokenList.prototype.toggle, with the optional
+// "force" parameter, in legacy browsers.
+// Support: IE
+(function checkDOMTokenListToggle() {
+  if (!hasDOM || isNodeJS()) {
+    return;
+  }
+  const div = document.createElement('div');
+  if (div.classList.toggle('test', 0) === false) {
+    return;
+  }
+
+  DOMTokenList.prototype.toggle = function(token) {
+    if (arguments.length > 1) {
+      const force = !!arguments[1];
+      return (this[force ? 'add' : 'remove'](token), force);
+    }
+
+    if (this.contains(token)) {
+      return (this.remove(token), false);
+    }
+    return (this.add(token), true);
+  };
+})();
+
+// Provides support for String.prototype.startsWith in legacy browsers.
+// Support: IE, Chrome<41
+(function checkStringStartsWith() {
+  if (String.prototype.startsWith) {
+    return;
+  }
+  require('core-js/fn/string/starts-with');
+})();
+
+// Provides support for String.prototype.endsWith in legacy browsers.
+// Support: IE, Chrome<41
+(function checkStringEndsWith() {
+  if (String.prototype.endsWith) {
+    return;
+  }
+  require('core-js/fn/string/ends-with');
+})();
+
 // Provides support for String.prototype.includes in legacy browsers.
 // Support: IE, Chrome<41
 (function checkStringIncludes() {
@@ -106,6 +149,15 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
     return;
   }
   require('core-js/fn/array/includes');
+})();
+
+// Provides support for Array.from in legacy browsers.
+// Support: IE
+(function checkArrayFrom() {
+  if (Array.from) {
+    return;
+  }
+  require('core-js/fn/array/from');
 })();
 
 // Provides support for Object.assign in legacy browsers.
@@ -165,6 +217,14 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   globalScope.WeakMap = require('core-js/fn/weak-map');
 })();
 
+// Support: IE11
+(function checkWeakSet() {
+  if (globalScope.WeakSet) {
+    return;
+  }
+  globalScope.WeakSet = require('core-js/fn/weak-set');
+})();
+
 // Provides support for String.codePointAt in legacy browsers.
 // Support: IE11.
 (function checkStringCodePointAt() {
@@ -192,6 +252,24 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
 })();
 
 } // End of !PDFJSDev.test('CHROME')
+
+// Provides support for String.prototype.padStart in legacy browsers.
+// Support: IE, Chrome<57
+(function checkStringPadStart() {
+  if (String.prototype.padStart) {
+    return;
+  }
+  require('core-js/fn/string/pad-start');
+})();
+
+// Provides support for String.prototype.padEnd in legacy browsers.
+// Support: IE, Chrome<57
+(function checkStringPadEnd() {
+  if (String.prototype.padEnd) {
+    return;
+  }
+  require('core-js/fn/string/pad-end');
+})();
 
 // Provides support for Object.values in legacy browsers.
 // Support: IE, Chrome<54

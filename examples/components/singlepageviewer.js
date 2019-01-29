@@ -50,7 +50,7 @@ var pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
 });
 pdfLinkService.setViewer(pdfSinglePageViewer);
 
-container.addEventListener('pagesinit', function () {
+document.addEventListener('pagesinit', function () {
   // We can use pdfSinglePageViewer now, e.g. let's change default scale.
   pdfSinglePageViewer.currentScaleValue = 'page-width';
 
@@ -60,11 +60,12 @@ container.addEventListener('pagesinit', function () {
 });
 
 // Loading document.
-pdfjsLib.getDocument({
+var loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
-}).then(function(pdfDocument) {
+});
+loadingTask.promise.then(function(pdfDocument) {
   // Document loaded, specifying document for the viewer and
   // the (optional) linkService.
   pdfSinglePageViewer.setDocument(pdfDocument);

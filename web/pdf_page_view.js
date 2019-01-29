@@ -14,13 +14,12 @@
  */
 
 import {
-  approximateFraction, CSS_UNITS, DEFAULT_SCALE, getOutputScale, NullL10n,
-  RendererType, roundToDivide, TextLayerMode
+  approximateFraction, CSS_UNITS, DEFAULT_SCALE, getGlobalEventBus,
+  getOutputScale, NullL10n, RendererType, roundToDivide, TextLayerMode
 } from './ui_utils';
 import {
   createPromiseCapability, RenderingCancelledException, SVGGraphics
 } from 'pdfjs-lib';
-import { getGlobalEventBus } from './dom_events';
 import { RenderingStates } from './pdf_rendering_queue';
 import { viewerCompatibilityParams } from './viewer_compatibility';
 
@@ -119,8 +118,8 @@ class PDFPageView {
     this.pdfPageRotate = pdfPage.rotate;
 
     let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = pdfPage.getViewport(this.scale * CSS_UNITS,
-                                        totalRotation);
+    this.viewport = pdfPage.getViewport({ scale: this.scale * CSS_UNITS,
+                                          rotation: totalRotation, });
     this.stats = pdfPage.stats;
     this.reset();
   }
@@ -433,7 +432,7 @@ class PDFPageView {
       };
     }
 
-    let finishPaintTask = (error) => {
+    const finishPaintTask = async (error) => {
       // The paintTask may have been replaced by a new one, so only remove
       // the reference to the paintTask if it matches the one that is
       // triggering this callback.
@@ -443,7 +442,7 @@ class PDFPageView {
 
       if (error instanceof RenderingCancelledException) {
         this.error = null;
-        return Promise.resolve(undefined);
+        return;
       }
 
       this.renderingState = RenderingStates.FINISHED;
@@ -466,9 +465,8 @@ class PDFPageView {
       });
 
       if (error) {
-        return Promise.reject(error);
+        throw error;
       }
-      return Promise.resolve(undefined);
     };
 
     let paintTask = this.renderer === RendererType.SVG ?
