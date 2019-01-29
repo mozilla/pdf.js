@@ -467,7 +467,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
 
     createGroup: function SVGGraphics_group(items) {
-      var clip = this.group.tagName.toLowerCase() === 'pattern' ?
+      var clip = this.group.tagName.toLowerCase() === 'svg:pattern' ?
                  '' : this.current.activeClipUrl;
       this.save();
       this.parentGroup = this.group;
