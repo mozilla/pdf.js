@@ -1174,6 +1174,39 @@ describe('api', function() {
         done();
       }).catch(done.fail);
     });
+
+    it('gets text content, with correct properties (issue 8276)',
+        function(done) {
+      const loadingTask = getDocument(
+        buildGetDocumentParams('issue8276_reduced.pdf'));
+
+      loadingTask.promise.then((pdfDoc) => {
+        pdfDoc.getPage(1).then((pdfPage) => {
+          pdfPage.getTextContent().then(({ items, styles, }) => {
+            expect(items.length).toEqual(1);
+            expect(Object.keys(styles)).toEqual(['Times']);
+
+            expect(items[0]).toEqual({
+              dir: 'ltr',
+              fontName: 'Times',
+              height: 18,
+              str: 'Issue 8276',
+              transform: [18, 0, 0, 18, 441.81, 708.4499999999999],
+              width: 77.49,
+            });
+            expect(styles.Times).toEqual({
+              fontFamily: 'serif',
+              ascent: NaN,
+              descent: NaN,
+              vertical: false,
+            });
+
+            loadingTask.destroy().then(done);
+          });
+        });
+      }).catch(done.fail);
+    });
+
     it('gets operator list', function(done) {
       var promise = page.getOperatorList();
       promise.then(function (oplist) {
