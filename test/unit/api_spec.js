@@ -1224,11 +1224,12 @@ describe('api', function() {
           pdfPage.getOperatorList().then((opList) => {
             let imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
             let imgArgs = opList.argsArray[imgIndex];
-            let { data: imgData, } = pdfPage.objs.get(imgArgs[0]);
+            let { data, } = pdfPage.objs.get(imgArgs[0]);
 
-            expect(imgData instanceof Uint8ClampedArray).toEqual(true);
-            expect(imgData.length).toEqual(90000);
-            done();
+            expect(data instanceof Uint8ClampedArray).toEqual(true);
+            expect(data.length).toEqual(90000);
+
+            loadingTask.destroy().then(done);
           });
         });
       }).catch(done.fail);
