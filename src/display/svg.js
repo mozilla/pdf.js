@@ -1472,6 +1472,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     paintFormXObjectBegin:
         function SVGGraphics_paintFormXObjectBegin(matrix, bbox) {
+      var matrix_text = pm(matrix);
+      if (matrix_text)
+        this.group.setAttributeNS(null, 'transform', matrix_text);
       if (Array.isArray(bbox) && bbox.length === 4) {
         var width = bbox[2] - bbox[0];
         var height = bbox[1] > bbox[3] ? bbox[1] - bbox[3] : bbox[3] - bbox[1];
