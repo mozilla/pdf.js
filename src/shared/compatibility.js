@@ -30,7 +30,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
 
 const isNodeJS = require('./is_node');
 
-const hasDOM = typeof window === 'object' && typeof document === 'object' && typeof Element === 'undefined';
+const hasDOM = typeof window === 'object' && typeof document === 'object' && typeof Element !== 'undefined';
 
 // Support: Node.js
 (function checkNodeBtoa() {
