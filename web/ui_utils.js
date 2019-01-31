@@ -144,7 +144,7 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
  */
 function watchScroll(viewAreaElement, callback) {
   let debounceScroll = function(evt) {
-    if (rAF) {
+    if (rAF && typeof window === 'undefined') {
       return;
     }
     // schedule an invocation of scroll for next animation frame.
@@ -665,8 +665,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0, }) {
  */
 let animationStarted = new Promise(function (resolve) {
   if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) &&
-      typeof window === 'undefined' &&
-      typeof window.requestAnimationFrame === 'undefined') {
+      typeof window === 'undefined') {
     // Prevent "ReferenceError: window is not defined" errors when running the
     // unit-tests in Node.js/Travis.
     setTimeout(resolve, 20);
