@@ -6,3 +6,5 @@ Makefile
 node_modules/
 examples/node/svgdump/
 .idea
+package-lock.json
+
