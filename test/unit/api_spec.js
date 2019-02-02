@@ -64,14 +64,11 @@ describe('api', function() {
     it('creates pdf doc from URL', function(done) {
       var loadingTask = getDocument(basicApiGetDocumentParams);
 
-      var isProgressReportedResolved = false;
       var progressReportedCapability = createPromiseCapability();
-
       // Attach the callback that is used to report loading progress;
       // similarly to how viewer.js works.
       loadingTask.onProgress = function (progressData) {
-        if (!isProgressReportedResolved) {
-          isProgressReportedResolved = true;
+        if (!progressReportedCapability.settled) {
           progressReportedCapability.resolve(progressData);
         }
       };
@@ -183,25 +180,20 @@ describe('api', function() {
         function (done) {
       var loadingTask = getDocument(buildGetDocumentParams('pr6531_1.pdf'));
 
-      var isPasswordNeededResolved = false;
       var passwordNeededCapability = createPromiseCapability();
-      var isPasswordIncorrectResolved = false;
       var passwordIncorrectCapability = createPromiseCapability();
-
       // Attach the callback that is used to request a password;
       // similarly to how viewer.js handles passwords.
       loadingTask.onPassword = function (updatePassword, reason) {
         if (reason === PasswordResponses.NEED_PASSWORD &&
-            !isPasswordNeededResolved) {
-          isPasswordNeededResolved = true;
+            !passwordNeededCapability.settled) {
           passwordNeededCapability.resolve();
 
           updatePassword('qwerty'); // Provide an incorrect password.
           return;
         }
         if (reason === PasswordResponses.INCORRECT_PASSWORD &&
-            !isPasswordIncorrectResolved) {
-          isPasswordIncorrectResolved = true;
+            !passwordIncorrectCapability.settled) {
           passwordIncorrectCapability.resolve();
 
           updatePassword('asdfasdf'); // Provide the correct password.
