@@ -907,22 +907,6 @@ let PDFViewerApplication = {
     firstPagePromise.then((pdfPage) => {
       this.loadingBar.setWidth(this.appConfig.viewerContainer);
 
-      if (!AppOptions.get('disableHistory') && !this.isViewerEmbedded) {
-        // The browsing history is only enabled when the viewer is standalone,
-        // i.e. not when it is embedded in a web page.
-        this.pdfHistory.initialize({
-          fingerprint: pdfDocument.fingerprint,
-          resetHistory: AppOptions.get('viewOnLoad') === ViewOnLoad.INITIAL,
-          updateUrl: AppOptions.get('historyUpdateUrl'),
-        });
-
-        if (this.pdfHistory.initialBookmark) {
-          this.initialBookmark = this.pdfHistory.initialBookmark;
-
-          this.initialRotation = this.pdfHistory.initialRotation;
-        }
-      }
-
       const storePromise = store.getMultiple({
         page: null,
         zoom: DEFAULT_SCALE_VALUE,
@@ -939,15 +923,11 @@ let PDFViewerApplication = {
       ]).then(async ([values = {}, pageMode, openActionDest]) => {
         const viewOnLoad = AppOptions.get('viewOnLoad');
 
-        // Always let the browser history/document hash take precedence.
-        if (openActionDest && !this.initialBookmark &&
-            viewOnLoad === ViewOnLoad.UNKNOWN) {
-          this.initialBookmark = JSON.stringify(openActionDest);
-          // TODO: Re-factor the `PDFHistory` initialization to remove this hack
-          // that's currently necessary to prevent weird initial history state.
-          this.pdfHistory.push({ explicitDest: openActionDest,
-                                 pageNumber: null, });
-        }
+        this._initializePdfHistory({
+          fingerprint: pdfDocument.fingerprint,
+          viewOnLoad,
+          initialDest: openActionDest,
+        });
         const initialBookmark = this.initialBookmark;
 
         // Initialize the default values, from user preferences.
@@ -1162,6 +1142,37 @@ let PDFViewerApplication = {
         });
       }
     });
+  },
+
+  /**
+   * @private
+   */
+  _initializePdfHistory({ fingerprint, viewOnLoad, initialDest = null, }) {
+    if (AppOptions.get('disableHistory') || this.isViewerEmbedded) {
+      // The browsing history is only enabled when the viewer is standalone,
+      // i.e. not when it is embedded in a web page.
+      return;
+    }
+    this.pdfHistory.initialize({
+      fingerprint,
+      resetHistory: viewOnLoad === ViewOnLoad.INITIAL,
+      updateUrl: AppOptions.get('historyUpdateUrl'),
+    });
+
+    if (this.pdfHistory.initialBookmark) {
+      this.initialBookmark = this.pdfHistory.initialBookmark;
+
+      this.initialRotation = this.pdfHistory.initialRotation;
+    }
+
+    // Always let the browser history/document hash take precedence.
+    if (initialDest && !this.initialBookmark &&
+        viewOnLoad === ViewOnLoad.UNKNOWN) {
+      this.initialBookmark = JSON.stringify(initialDest);
+      // TODO: Re-factor the `PDFHistory` initialization to remove this hack
+      // that's currently necessary to prevent weird initial history state.
+      this.pdfHistory.push({ explicitDest: initialDest, pageNumber: null, });
+    }
   },
 
   setInitialView(storedHash, { rotation, sidebarView,
