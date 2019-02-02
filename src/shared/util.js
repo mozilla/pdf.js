@@ -972,23 +972,36 @@ function isSpace(ch) {
  * Promise Capability object.
  *
  * @typedef {Object} PromiseCapability
- * @property {Promise} promise - A promise object.
- * @property {function} resolve - Fulfills the promise.
- * @property {function} reject - Rejects the promise.
+ * @property {Promise} promise - A Promise object.
+ * @property {boolean} settled - If the Promise has been fulfilled/rejected.
+ * @property {function} resolve - Fulfills the Promise.
+ * @property {function} reject - Rejects the Promise.
  */
 
 /**
  * Creates a promise capability object.
  * @alias createPromiseCapability
  *
- * @return {PromiseCapability} A capability object contains:
- * - a Promise, resolve and reject methods.
+ * @return {PromiseCapability}
  */
 function createPromiseCapability() {
-  var capability = {};
-  capability.promise = new Promise(function (resolve, reject) {
-    capability.resolve = resolve;
-    capability.reject = reject;
+  const capability = Object.create(null);
+  let isSettled = false;
+
+  Object.defineProperty(capability, 'settled', {
+    get() {
+      return isSettled;
+    },
+  });
+  capability.promise = new Promise(function(resolve, reject) {
+    capability.resolve = function(data) {
+      isSettled = true;
+      resolve(data);
+    };
+    capability.reject = function(reason) {
+      isSettled = true;
+      reject(reason);
+    };
   });
   return capability;
 }

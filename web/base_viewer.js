@@ -395,8 +395,7 @@ class BaseViewer {
       });
     });
 
-    let isOnePageRenderedResolved = false;
-    let onePageRenderedCapability = createPromiseCapability();
+    const onePageRenderedCapability = createPromiseCapability();
     this.onePageRendered = onePageRenderedCapability.promise;
 
     let bindOnAfterAndBeforeDraw = (pageView) => {
@@ -407,8 +406,7 @@ class BaseViewer {
         this._buffer.push(pageView);
       };
       pageView.onAfterDraw = () => {
-        if (!isOnePageRenderedResolved) {
-          isOnePageRenderedResolved = true;
+        if (!onePageRenderedCapability.settled) {
           onePageRenderedCapability.resolve();
         }
       };
