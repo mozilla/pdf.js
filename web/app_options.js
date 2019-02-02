@@ -96,7 +96,8 @@ const defaultOptions = {
    */
   maxCanvasPixels: {
     /** @type {number} */
-    value: viewerCompatibilityParams.maxCanvasPixels || 16777216,
+    value: 16777216,
+    compatibility: viewerCompatibilityParams.maxCanvasPixels,
     kind: OptionKind.VIEWER,
   },
   pdfBugEnabled: {
@@ -163,7 +164,8 @@ const defaultOptions = {
   },
   disableCreateObjectURL: {
     /** @type {boolean} */
-    value: apiCompatibilityParams.disableCreateObjectURL || false,
+    value: false,
+    compatibility: apiCompatibilityParams.disableCreateObjectURL,
     kind: OptionKind.API,
   },
   disableFontFace: {
@@ -241,22 +243,27 @@ class AppOptions {
   }
 
   static get(name) {
-    let defaultOption = defaultOptions[name], userOption = userOptions[name];
+    const userOption = userOptions[name];
     if (userOption !== undefined) {
       return userOption;
     }
-    return (defaultOption !== undefined ? defaultOption.value : undefined);
+    const defaultOption = defaultOptions[name];
+    if (defaultOption !== undefined) {
+      return (defaultOption.compatibility || defaultOption.value);
+    }
+    return undefined;
   }
 
   static getAll(kind = null) {
-    let options = Object.create(null);
-    for (let name in defaultOptions) {
-      let defaultOption = defaultOptions[name], userOption = userOptions[name];
-      if (kind && defaultOption.kind !== kind) {
+    const options = Object.create(null);
+    for (const name in defaultOptions) {
+      const defaultOption = defaultOptions[name];
+      if (kind && kind !== defaultOption.kind) {
         continue;
       }
-      options[name] = (userOption !== undefined ?
-                       userOption : defaultOption.value);
+      const userOption = userOptions[name];
+      options[name] = (userOption !== undefined ? userOption :
+                       (defaultOption.compatibility || defaultOption.value));
     }
     return options;
   }
