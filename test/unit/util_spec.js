@@ -14,9 +14,10 @@
  */
 
 import {
-  bytesToString, createValidAbsoluteUrl, getInheritableProperty, isArrayBuffer,
-  isBool, isEmptyObj, isNum, isSameOrigin, isSpace, isString, log2,
-  ReadableStream, removeNullCharacters, stringToBytes, stringToPDFString, URL
+  bytesToString, createPromiseCapability, createValidAbsoluteUrl,
+  getInheritableProperty, isArrayBuffer, isBool, isEmptyObj, isNum,
+  isSameOrigin, isSpace, isString, log2, ReadableStream, removeNullCharacters,
+  stringToBytes, stringToPDFString, URL
 } from '../../src/shared/util';
 import { Dict, Ref } from '../../src/core/primitives';
 import { XRefMock } from './test_utils';
@@ -382,6 +383,37 @@ describe('util', function() {
         .toEqual(new URL('tel:+0123456789'));
       expect(createValidAbsoluteUrl('/foo', 'tel:0123456789'))
         .toEqual(null);
+    });
+  });
+
+  describe('createPromiseCapability', function() {
+    it('should resolve with correct data', function(done) {
+      const promiseCapability = createPromiseCapability();
+      expect(promiseCapability.settled).toEqual(false);
+
+      promiseCapability.resolve({ test: 'abc', });
+
+      promiseCapability.promise.then(function(data) {
+        expect(promiseCapability.settled).toEqual(true);
+
+        expect(data).toEqual({ test: 'abc', });
+        done();
+      }, done.fail);
+    });
+
+    it('should reject with correct reason', function(done) {
+      const promiseCapability = createPromiseCapability();
+      expect(promiseCapability.settled).toEqual(false);
+
+      promiseCapability.reject(new Error('reason'));
+
+      promiseCapability.promise.then(done.fail, function(reason) {
+        expect(promiseCapability.settled).toEqual(true);
+
+        expect(reason instanceof Error).toEqual(true);
+        expect(reason.message).toEqual('reason');
+        done();
+      });
     });
   });
 });
