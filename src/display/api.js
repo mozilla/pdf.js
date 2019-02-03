@@ -90,7 +90,8 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
     });
   }) : null;
 
-  if (!fallbackWorkerSrc && typeof document !== 'undefined') {
+  if (!fallbackWorkerSrc && typeof document === 'object' &&
+      'currentScript' in document) {
     const pdfjsFilePath = document.currentScript && document.currentScript.src;
     if (pdfjsFilePath) {
       fallbackWorkerSrc =
