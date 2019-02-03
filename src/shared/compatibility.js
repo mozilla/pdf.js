@@ -54,25 +54,6 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   };
 })();
 
-// Provides document.currentScript support
-// Support: IE, Chrome<29.
-(function checkCurrentScript() {
-  if (!hasDOM) {
-    return;
-  }
-  if ('currentScript' in document) {
-    return;
-  }
-  Object.defineProperty(document, 'currentScript', {
-    get() {
-      var scripts = document.getElementsByTagName('script');
-      return scripts[scripts.length - 1];
-    },
-    enumerable: true,
-    configurable: true,
-  });
-})();
-
 // Provides support for ChildNode.remove in legacy browsers.
 // Support: IE.
 (function checkChildNodeRemove() {
