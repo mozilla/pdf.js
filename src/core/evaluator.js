@@ -579,9 +579,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    handleSetFont:
-        function PartialEvaluator_handleSetFont(resources, fontArgs, fontRef,
-                                                operatorList, task, state) {
+    handleSetFont(resources, fontArgs, fontRef, operatorList, task, state) {
       // TODO(mack): Not needed?
       var fontName;
       if (fontArgs) {
@@ -603,9 +601,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           return new TranslatedFont('g_font_error',
             new ErrorFont('Type3 font load error: ' + reason), translated.font);
         });
-      }).then((translated) => {
+      }).then(async (translated) => {
         state.font = translated.font;
-        translated.send(this.handler);
+        await translated.send(this.handler);
         return translated.loadedName;
       });
     },
@@ -615,7 +613,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var glyphs = font.charsToGlyphs(chars);
       var isAddToPathSet = !!(state.textRenderingMode &
                               TextRenderingMode.ADD_TO_PATH_FLAG);
-      if (font.data && (isAddToPathSet || this.options.disableFontFace ||
+      if (font.data && (isAddToPathSet || font.disableFontFace ||
+                        this.options.disableFontFace ||
                         state.fillColorSpace.name === 'Pattern')) {
         var buildPath = (fontChar) => {
           if (!font.renderer.hasBuiltPath(fontChar)) {
@@ -2635,17 +2634,23 @@ var TranslatedFont = (function TranslatedFontClosure() {
     this.sent = false;
   }
   TranslatedFont.prototype = {
-    send(handler) {
+    async send(handler) {
       if (this.sent) {
         return;
       }
-      var fontData = this.font.exportData();
-      handler.send('commonobj', [
+      this.sent = true;
+
+      return handler.sendWithPromise('commonobj', [
         this.loadedName,
         'Font',
-        fontData
-      ]);
-      this.sent = true;
+        this.font.exportData(),
+      ]).catch((reason) => {
+        handler.send('UnsupportedFeature',
+                     { featureId: UNSUPPORTED_FEATURES.font, });
+        warn('TranslatedFont.send - falling back to the built-in font ' +
+             `renderer: "${reason && reason.message}".`);
+        this.font.disableFontFace = true;
+      });
     },
     loadType3Data(evaluator, resources, parentOperatorList, task) {
       if (!this.font.isType3Font) {

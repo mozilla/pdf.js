@@ -64,17 +64,9 @@ class BaseFontLoader {
     }
   }
 
-  bind(fonts, callback) {
+  async bind(fonts) {
     const rules = [];
     const fontsToLoad = [];
-    const fontLoadPromises = [];
-    const getNativeFontPromise = function(nativeFontFace) {
-      // Return a promise that is always fulfilled, even when the font fails to
-      // load.
-      return nativeFontFace.loaded.catch(function(reason) {
-        warn(`Failed to load font "${nativeFontFace.family}": ${reason}`);
-      });
-    };
 
     for (const font of fonts) {
       // Add the font to the DOM only once; skip if the font is already loaded.
@@ -87,7 +79,14 @@ class BaseFontLoader {
         const nativeFontFace = font.createNativeFontFace();
         if (nativeFontFace) {
           this.addNativeFontFace(nativeFontFace);
-          fontLoadPromises.push(getNativeFontPromise(nativeFontFace));
+          try {
+            fontsToLoad.push(await nativeFontFace.loaded);
+          } catch (ex) {
+            // If font loading failed, fall back to the built-in font renderer.
+            font.disableFontFace = true;
+            throw new Error(
+              `Failed to load font '${nativeFontFace.family}': '${ex}'.`);
+          }
         }
       } else {
         const rule = font.createFontFaceRule();
@@ -99,14 +98,16 @@ class BaseFontLoader {
       }
     }
 
-    const request = this._queueLoadingCallback(callback);
-    if (this.isFontLoadingAPISupported) {
-      Promise.all(fontLoadPromises).then(request.complete);
-    } else if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
-      this._prepareFontLoadEvent(rules, fontsToLoad, request);
-    } else {
-      request.complete();
-    }
+    return new Promise((resolve) => {
+      const request = this._queueLoadingCallback(resolve);
+      if (this.isFontLoadingAPISupported) {
+        Promise.all(fontsToLoad).then(request.complete);
+      } else if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
+        this._prepareFontLoadEvent(rules, fontsToLoad, request);
+      } else {
+        request.complete();
+      }
+    });
   }
 
   _queueLoadingCallback(callback) {

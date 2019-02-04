@@ -1919,37 +1919,41 @@ class WorkerTransport {
 
       switch (type) {
         case 'Font':
-          const params = this._params;
+          return new Promise((resolve, reject) => {
+            const params = this._params;
 
-          if ('error' in exportedData) {
-            const exportedError = exportedData.error;
-            warn(`Error during font loading: ${exportedError}`);
-            this.commonObjs.resolve(id, exportedError);
-            break;
-          }
+            if ('error' in exportedData) {
+              warn(`Error during font loading: ${exportedData.error}`);
+              this.commonObjs.resolve(id, exportedData.error);
+              resolve();
+              return;
+            }
 
-          let fontRegistry = null;
-          if (params.pdfBug && globalScope.FontInspector &&
-              globalScope.FontInspector.enabled) {
-            fontRegistry = {
-              registerFont(font, url) {
-                globalScope['FontInspector'].fontAdded(font, url);
-              },
-            };
-          }
-          const font = new FontFaceObject(exportedData, {
-            isEvalSupported: params.isEvalSupported,
-            disableFontFace: params.disableFontFace,
-            ignoreErrors: params.ignoreErrors,
-            onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
-            fontRegistry,
+            let fontRegistry = null;
+            if (params.pdfBug && globalScope.FontInspector &&
+                globalScope.FontInspector.enabled) {
+              fontRegistry = {
+                registerFont(font, url) {
+                  globalScope['FontInspector'].fontAdded(font, url);
+                },
+              };
+            }
+            const font = new FontFaceObject(exportedData, {
+              isEvalSupported: params.isEvalSupported,
+              disableFontFace: params.disableFontFace,
+              ignoreErrors: params.ignoreErrors,
+              onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
+              fontRegistry,
+            });
+
+            this.fontLoader.bind([font]).then((fontObjs) => {
+              this.commonObjs.resolve(id, font);
+              resolve();
+            }, (reason) => {
+              this.commonObjs.resolve(id, font);
+              reject(reason);
+            });
           });
-          const fontReady = (fontObjs) => {
-            this.commonObjs.resolve(id, font);
-          };
-
-          this.fontLoader.bind([font], fontReady);
-          break;
         case 'FontPath':
           this.commonObjs.resolve(id, exportedData);
           break;

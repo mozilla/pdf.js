@@ -29,6 +29,10 @@ describe('evaluator', function() {
     send(name, data) {
       this.inputs.push({ name, data, });
     },
+
+    async sendWithPromise(name, data) {
+      this.inputs.push({ name, data, });
+    },
   };
   function ResourcesMock() { }
   ResourcesMock.prototype = {

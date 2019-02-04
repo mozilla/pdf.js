@@ -1159,6 +1159,8 @@ var Font = (function FontClosure() {
     font: null,
     mimetype: null,
     encoding: null,
+    disableFontFace: false,
+
     get renderer() {
       var renderer = FontRendererFactory.create(this, SEAC_ANALYSIS_ENABLED);
       return shadow(this, 'renderer', renderer);
