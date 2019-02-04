@@ -16,9 +16,10 @@
 
 import {
   animationStarted, DEFAULT_SCALE_VALUE, getGlobalEventBus,
-  getPDFFileNameFromURL, isValidRotation, MAX_SCALE, MIN_SCALE,
-  noContextMenuHandler, normalizeWheelEventDelta, parseQueryString,
-  PresentationModeState, ProgressBar, RendererType, TextLayerMode
+  getPDFFileNameFromURL, isValidRotation, isValidScrollMode, isValidSpreadMode,
+  MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
+  parseQueryString, PresentationModeState, ProgressBar, RendererType,
+  ScrollMode, SpreadMode, TextLayerMode
 } from './ui_utils';
 import {
   build, createObjectURL, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
@@ -51,6 +52,12 @@ const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
+
+const ViewOnLoad = {
+  UNKNOWN: -1,
+  PREVIOUS: 0, // Default value.
+  INITIAL: 1,
+};
 
 const DefaultExternalServices = {
   updateFindControlState(data) {},
@@ -900,46 +907,29 @@ let PDFViewerApplication = {
     firstPagePromise.then((pdfPage) => {
       this.loadingBar.setWidth(this.appConfig.viewerContainer);
 
-      if (!AppOptions.get('disableHistory') && !this.isViewerEmbedded) {
-        // The browsing history is only enabled when the viewer is standalone,
-        // i.e. not when it is embedded in a web page.
-        this.pdfHistory.initialize({
-          fingerprint: pdfDocument.fingerprint,
-          resetHistory: !AppOptions.get('showPreviousViewOnLoad'),
-          updateUrl: AppOptions.get('historyUpdateUrl'),
-        });
-
-        if (this.pdfHistory.initialBookmark) {
-          this.initialBookmark = this.pdfHistory.initialBookmark;
-
-          this.initialRotation = this.pdfHistory.initialRotation;
-        }
-      }
-
-      let storePromise = store.getMultiple({
+      const storePromise = store.getMultiple({
         page: null,
         zoom: DEFAULT_SCALE_VALUE,
         scrollLeft: '0',
         scrollTop: '0',
         rotation: null,
-        sidebarView: SidebarView.NONE,
-        scrollMode: null,
-        spreadMode: null,
+        sidebarView: SidebarView.UNKNOWN,
+        scrollMode: ScrollMode.UNKNOWN,
+        spreadMode: SpreadMode.UNKNOWN,
       }).catch(() => { /* Unable to read from storage; ignoring errors. */ });
 
       Promise.all([
         storePromise, pageModePromise, openActionDestPromise,
       ]).then(async ([values = {}, pageMode, openActionDest]) => {
-        if (openActionDest && !this.initialBookmark &&
-            !AppOptions.get('disableOpenActionDestination')) {
-          // Always let the browser history/document hash take precedence.
-          this.initialBookmark = JSON.stringify(openActionDest);
-          // TODO: Re-factor the `PDFHistory` initialization to remove this hack
-          // that's currently necessary to prevent weird initial history state.
-          this.pdfHistory.push({ explicitDest: openActionDest,
-                                 pageNumber: null, });
-        }
+        const viewOnLoad = AppOptions.get('viewOnLoad');
+
+        this._initializePdfHistory({
+          fingerprint: pdfDocument.fingerprint,
+          viewOnLoad,
+          initialDest: openActionDest,
+        });
         const initialBookmark = this.initialBookmark;
+
         // Initialize the default values, from user preferences.
         const zoom = AppOptions.get('defaultZoomValue');
         let hash = zoom ? `zoom=${zoom}` : null;
@@ -949,18 +939,25 @@ let PDFViewerApplication = {
         let scrollMode = AppOptions.get('scrollModeOnLoad');
         let spreadMode = AppOptions.get('spreadModeOnLoad');
 
-        if (values.page && AppOptions.get('showPreviousViewOnLoad')) {
-          hash = 'page=' + values.page + '&zoom=' + (zoom || values.zoom) +
-            ',' + values.scrollLeft + ',' + values.scrollTop;
+        if (values.page && viewOnLoad !== ViewOnLoad.INITIAL) {
+          hash = `page=${values.page}&zoom=${zoom || values.zoom},` +
+                 `${values.scrollLeft},${values.scrollTop}`;
 
           rotation = parseInt(values.rotation, 10);
-          sidebarView = sidebarView || (values.sidebarView | 0);
-          scrollMode = scrollMode || (values.scrollMode | 0);
-          spreadMode = spreadMode || (values.spreadMode | 0);
+          // Always let user preferences take precedence over the view history.
+          if (sidebarView === SidebarView.UNKNOWN) {
+            sidebarView = (values.sidebarView | 0);
+          }
+          if (scrollMode === ScrollMode.UNKNOWN) {
+            scrollMode = (values.scrollMode | 0);
+          }
+          if (spreadMode === SpreadMode.UNKNOWN) {
+            spreadMode = (values.spreadMode | 0);
+          }
         }
-        if (pageMode && !AppOptions.get('disablePageMode')) {
-          // Always let the user preference/history take precedence.
-          sidebarView = sidebarView || apiPageModeToSidebarView(pageMode);
+        // Always let the user preference/view history take precedence.
+        if (pageMode && sidebarView === SidebarView.UNKNOWN) {
+          sidebarView = apiPageModeToSidebarView(pageMode);
         }
 
         this.setInitialView(hash, {
@@ -1147,29 +1144,56 @@ let PDFViewerApplication = {
     });
   },
 
+  /**
+   * @private
+   */
+  _initializePdfHistory({ fingerprint, viewOnLoad, initialDest = null, }) {
+    if (AppOptions.get('disableHistory') || this.isViewerEmbedded) {
+      // The browsing history is only enabled when the viewer is standalone,
+      // i.e. not when it is embedded in a web page.
+      return;
+    }
+    this.pdfHistory.initialize({
+      fingerprint,
+      resetHistory: viewOnLoad === ViewOnLoad.INITIAL,
+      updateUrl: AppOptions.get('historyUpdateUrl'),
+    });
+
+    if (this.pdfHistory.initialBookmark) {
+      this.initialBookmark = this.pdfHistory.initialBookmark;
+
+      this.initialRotation = this.pdfHistory.initialRotation;
+    }
+
+    // Always let the browser history/document hash take precedence.
+    if (initialDest && !this.initialBookmark &&
+        viewOnLoad === ViewOnLoad.UNKNOWN) {
+      this.initialBookmark = JSON.stringify(initialDest);
+      // TODO: Re-factor the `PDFHistory` initialization to remove this hack
+      // that's currently necessary to prevent weird initial history state.
+      this.pdfHistory.push({ explicitDest: initialDest, pageNumber: null, });
+    }
+  },
+
   setInitialView(storedHash, { rotation, sidebarView,
                                scrollMode, spreadMode, } = {}) {
-    let setRotation = (angle) => {
+    const setRotation = (angle) => {
       if (isValidRotation(angle)) {
         this.pdfViewer.pagesRotation = angle;
       }
     };
-    let setViewerModes = (scroll, spread) => {
-      if (Number.isInteger(scroll)) {
+    const setViewerModes = (scroll, spread) => {
+      if (isValidScrollMode(scroll)) {
         this.pdfViewer.scrollMode = scroll;
       }
-      if (Number.isInteger(spread)) {
+      if (isValidSpreadMode(spread)) {
         this.pdfViewer.spreadMode = spread;
       }
     };
-
-    // Putting these before isInitialViewSet = true prevents these values from
-    // being stored in the document history (and overriding any future changes
-    // made to the corresponding global preferences), just this once.
-    setViewerModes(scrollMode, spreadMode);
-
     this.isInitialViewSet = true;
     this.pdfSidebar.setInitialView(sidebarView);
+
+    setViewerModes(scrollMode, spreadMode);
 
     if (this.initialBookmark) {
       setRotation(this.initialRotation);
