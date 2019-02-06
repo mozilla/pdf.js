@@ -171,16 +171,7 @@ class PDFSidebar {
         }
         return false;
       case SidebarView.THUMBS:
-        this.thumbnailButton.classList.add('toggled');
-        this.outlineButton.classList.remove('toggled');
-        this.attachmentsButton.classList.remove('toggled');
-
-        this.thumbnailView.classList.remove('hidden');
-        this.outlineView.classList.add('hidden');
-        this.attachmentsView.classList.add('hidden');
-
         if (this.isOpen && isViewChanged) {
-          this._updateThumbnailViewer();
           shouldForceRendering = true;
         }
         break;
@@ -188,25 +179,11 @@ class PDFSidebar {
         if (this.outlineButton.disabled) {
           return false;
         }
-        this.thumbnailButton.classList.remove('toggled');
-        this.outlineButton.classList.add('toggled');
-        this.attachmentsButton.classList.remove('toggled');
-
-        this.thumbnailView.classList.add('hidden');
-        this.outlineView.classList.remove('hidden');
-        this.attachmentsView.classList.add('hidden');
         break;
       case SidebarView.ATTACHMENTS:
         if (this.attachmentsButton.disabled) {
           return false;
         }
-        this.thumbnailButton.classList.remove('toggled');
-        this.outlineButton.classList.remove('toggled');
-        this.attachmentsButton.classList.add('toggled');
-
-        this.thumbnailView.classList.add('hidden');
-        this.outlineView.classList.add('hidden');
-        this.attachmentsView.classList.remove('hidden');
         break;
       default:
         console.error(`PDFSidebar._switchView: "${view}" is not a valid view.`);
@@ -214,13 +191,27 @@ class PDFSidebar {
     }
     // Update the active view *after* it has been validated above,
     // in order to prevent setting it to an invalid state.
-    this.active = view | 0;
+    this.active = view;
+
+    // Update the CSS classes, for all buttons...
+    this.thumbnailButton.classList.toggle('toggled',
+      view === SidebarView.THUMBS);
+    this.outlineButton.classList.toggle('toggled',
+      view === SidebarView.OUTLINE);
+    this.attachmentsButton.classList.toggle('toggled',
+      view === SidebarView.ATTACHMENTS);
+    // ... and for all views.
+    this.thumbnailView.classList.toggle('hidden', view !== SidebarView.THUMBS);
+    this.outlineView.classList.toggle('hidden', view !== SidebarView.OUTLINE);
+    this.attachmentsView.classList.toggle('hidden',
+      view !== SidebarView.ATTACHMENTS);
 
     if (forceOpen && !this.isOpen) {
       this.open();
       return true; // Opening will trigger rendering and dispatch the event.
     }
     if (shouldForceRendering) {
+      this._updateThumbnailViewer();
       this._forceRendering();
     }
     if (isViewChanged) {
@@ -237,8 +228,7 @@ class PDFSidebar {
     this.isOpen = true;
     this.toggleButton.classList.add('toggled');
 
-    this.outerContainer.classList.add('sidebarMoving');
-    this.outerContainer.classList.add('sidebarOpen');
+    this.outerContainer.classList.add('sidebarMoving', 'sidebarOpen');
 
     if (this.active === SidebarView.THUMBS) {
       this._updateThumbnailViewer();
