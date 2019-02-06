@@ -136,11 +136,10 @@ class PDFOutlineViewer {
    *
    * @private
    */
-  _toggleOutlineItem(root, show) {
+  _toggleOutlineItem(root, show = false) {
     this.lastToggleIsShow = show;
-    let togglers = root.querySelectorAll('.outlineItemToggler');
-    for (let i = 0, ii = togglers.length; i < ii; ++i) {
-      togglers[i].classList[show ? 'remove' : 'add']('outlineItemsHidden');
+    for (const toggler of root.querySelectorAll('.outlineItemToggler')) {
+      toggler.classList.toggle('outlineItemsHidden', !show);
     }
   }
 
