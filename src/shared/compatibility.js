@@ -71,6 +71,35 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   };
 })();
 
+// Provides support for DOMTokenList.prototype.{add, remove}, with more than
+// one parameter, in legacy browsers.
+// Support: IE
+(function checkDOMTokenListAddRemove() {
+  if (!hasDOM || isNodeJS()) {
+    return;
+  }
+  const div = document.createElement('div');
+  div.classList.add('testOne', 'testTwo');
+
+  if (div.classList.contains('testOne') === true &&
+      div.classList.contains('testTwo') === true) {
+    return;
+  }
+  const OriginalDOMTokenListAdd = DOMTokenList.prototype.add;
+  const OriginalDOMTokenListRemove = DOMTokenList.prototype.remove;
+
+  DOMTokenList.prototype.add = function(...tokens) {
+    for (let token of tokens) {
+      OriginalDOMTokenListAdd.call(this, token);
+    }
+  };
+  DOMTokenList.prototype.remove = function(...tokens) {
+    for (let token of tokens) {
+      OriginalDOMTokenListRemove.call(this, token);
+    }
+  };
+})();
+
 // Provides support for DOMTokenList.prototype.toggle, with the optional
 // "force" parameter, in legacy browsers.
 // Support: IE
@@ -84,15 +113,8 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   }
 
   DOMTokenList.prototype.toggle = function(token) {
-    if (arguments.length > 1) {
-      const force = !!arguments[1];
-      return (this[force ? 'add' : 'remove'](token), force);
-    }
-
-    if (this.contains(token)) {
-      return (this.remove(token), false);
-    }
-    return (this.add(token), true);
+    let force = (arguments.length > 1 ? !!arguments[1] : !this.contains(token));
+    return (this[force ? 'add' : 'remove'](token), force);
   };
 })();
 
