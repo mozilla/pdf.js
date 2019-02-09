@@ -2045,7 +2045,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 continue;
               }
             }
-            toUnicode[charcode] = String.fromCharCode(code);
+            toUnicode[charcode] = String.fromCodePoint(code);
           }
           continue;
         }
@@ -2179,7 +2179,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var w2 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
               str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
             }
-            map[charCode] = String.fromCharCode.apply(String, str);
+            map[charCode] = String.fromCodePoint.apply(String, str);
           });
           return new ToUnicodeMap(map);
         });
