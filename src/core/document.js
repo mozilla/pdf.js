@@ -666,6 +666,10 @@ class PDFDocument {
     });
   }
 
+  fontFallback(id, handler) {
+    return this.catalog.fontFallback(id, handler);
+  }
+
   cleanup() {
     return this.catalog.cleanup();
   }

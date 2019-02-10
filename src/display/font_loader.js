@@ -19,11 +19,12 @@ import {
 } from '../shared/util';
 
 class BaseFontLoader {
-  constructor(docId) {
+  constructor({ docId, onUnsupportedFeature, }) {
     if (this.constructor === BaseFontLoader) {
       unreachable('Cannot initialize BaseFontLoader.');
     }
     this.docId = docId;
+    this._onUnsupportedFeature = onUnsupportedFeature;
 
     this.nativeFontFaces = [];
     this.styleElement = null;
@@ -74,9 +75,12 @@ class BaseFontLoader {
         try {
           await nativeFontFace.loaded;
         } catch (ex) {
-          // Return a promise that is always fulfilled, even when the font
-          // failed to load.
+          this._onUnsupportedFeature({ featureId: UNSUPPORTED_FEATURES.font, });
           warn(`Failed to load font '${nativeFontFace.family}': '${ex}'.`);
+
+          // When font loading failed, fall back to the built-in font renderer.
+          font.disableFontFace = true;
+          throw ex;
         }
       }
       return; // The font was, asynchronously, loaded.
