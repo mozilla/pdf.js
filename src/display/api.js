@@ -1676,7 +1676,10 @@ class WorkerTransport {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
     this.commonObjs = new PDFObjects();
-    this.fontLoader = new FontLoader(loadingTask.docId);
+    this.fontLoader = new FontLoader({
+      docId: loadingTask.docId,
+      onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
+    });
     this._params = params;
     this.CMapReaderFactory = new params.CMapReaderFactory({
       baseUrl: params.cMapUrl,
@@ -1947,6 +1950,12 @@ class WorkerTransport {
 
           this.fontLoader.bind(font).then(() => {
             this.commonObjs.resolve(id, font);
+          }, (reason) => {
+            messageHandler.sendWithPromise('FontFallback', {
+              id,
+            }).finally(() => {
+              this.commonObjs.resolve(id, font);
+            });
           });
           break;
         case 'FontPath':
