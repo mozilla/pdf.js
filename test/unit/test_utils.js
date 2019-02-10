@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { CMapCompressionType } from '../../src/shared/util';
+import { assert, CMapCompressionType } from '../../src/shared/util';
 import isNodeJS from '../../src/shared/is_node';
 import { isRef } from '../../src/core/primitives';
 
@@ -41,6 +41,38 @@ function buildGetDocumentParams(filename, options) {
     params[option] = options[option];
   }
   return params;
+}
+
+class NodeCanvasFactory {
+  create(width, height) {
+    assert(width > 0 && height > 0, 'Invalid canvas size');
+
+    const Canvas = require('canvas');
+    const canvas = Canvas.createCanvas(width, height);
+    return {
+      canvas,
+      context: canvas.getContext('2d'),
+    };
+  }
+
+  reset(canvasAndContext, width, height) {
+    assert(canvasAndContext.canvas, 'Canvas is not specified');
+    assert(width > 0 && height > 0, 'Invalid canvas size');
+
+    canvasAndContext.canvas.width = width;
+    canvasAndContext.canvas.height = height;
+  }
+
+  destroy(canvasAndContext) {
+    assert(canvasAndContext.canvas, 'Canvas is not specified');
+
+    // Zeroing the width and height cause Firefox to release graphics
+    // resources immediately, which can greatly reduce memory consumption.
+    canvasAndContext.canvas.width = 0;
+    canvasAndContext.canvas.height = 0;
+    canvasAndContext.canvas = null;
+    canvasAndContext.context = null;
+  }
 }
 
 class NodeCMapReaderFactory {
@@ -111,6 +143,7 @@ class XRefMock {
 
 export {
   NodeFileReaderFactory,
+  NodeCanvasFactory,
   NodeCMapReaderFactory,
   XRefMock,
   buildGetDocumentParams,

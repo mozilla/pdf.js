@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { buildGetDocumentParams } from './test_utils';
+import { buildGetDocumentParams, NodeCanvasFactory } from './test_utils';
 import { DOMCanvasFactory } from '../../src/display/dom_utils';
 import { getDocument } from '../../src/display/api';
 import isNodeJS from '../../src/shared/is_node';
@@ -37,8 +37,7 @@ describe('custom canvas rendering', function() {
 
   beforeAll(function(done) {
     if (isNodeJS()) {
-      // NOTE: To support running the canvas-related tests in Node.js,
-      // a `NodeCanvasFactory` would need to be added (in test_utils.js).
+      CanvasFactory = new NodeCanvasFactory();
     } else {
       CanvasFactory = new DOMCanvasFactory();
     }
@@ -58,9 +57,6 @@ describe('custom canvas rendering', function() {
   });
 
   it('renders to canvas with a default white background', function(done) {
-    if (isNodeJS()) {
-      pending('TODO: Support Canvas testing in Node.js.');
-    }
     var viewport = page.getViewport({ scale: 1, });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
@@ -77,9 +73,6 @@ describe('custom canvas rendering', function() {
   });
 
   it('renders to canvas with a custom background', function(done) {
-    if (isNodeJS()) {
-      pending('TODO: Support Canvas testing in Node.js.');
-    }
     var viewport = page.getViewport({ scale: 1, });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
