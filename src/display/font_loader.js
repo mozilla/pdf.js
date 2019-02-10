@@ -60,50 +60,41 @@ class BaseFontLoader {
     }
   }
 
-  async bind(fonts) {
-    const rules = [];
-    const fontsToLoad = [];
-    const fontLoadPromises = [];
-    const getNativeFontPromise = function(nativeFontFace) {
-      // Return a promise that is always fulfilled, even when the font fails to
-      // load.
-      return nativeFontFace.loaded.catch(function(reason) {
-        warn(`Failed to load font "${nativeFontFace.family}": ${reason}`);
-      });
-    };
-
-    for (const font of fonts) {
-      // Add the font to the DOM only once; skip if the font is already loaded.
-      if (font.attached || font.missingFile) {
-        continue;
-      }
-      font.attached = true;
-
-      if (this.isFontLoadingAPISupported) {
-        const nativeFontFace = font.createNativeFontFace();
-        if (nativeFontFace) {
-          this.addNativeFontFace(nativeFontFace);
-          fontLoadPromises.push(getNativeFontPromise(nativeFontFace));
-        }
-      } else {
-        const rule = font.createFontFaceRule();
-        if (rule) {
-          this.insertRule(rule);
-          rules.push(rule);
-          fontsToLoad.push(font);
-        }
-      }
+  async bind(font) {
+    // Add the font to the DOM only once; skip if the font is already loaded.
+    if (font.attached || font.missingFile) {
+      return;
     }
+    font.attached = true;
 
     if (this.isFontLoadingAPISupported) {
-      return Promise.all(fontLoadPromises);
-    } else if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
+      const nativeFontFace = font.createNativeFontFace();
+      if (nativeFontFace) {
+        this.addNativeFontFace(nativeFontFace);
+        try {
+          await nativeFontFace.loaded;
+        } catch (ex) {
+          // Return a promise that is always fulfilled, even when the font
+          // failed to load.
+          warn(`Failed to load font '${nativeFontFace.family}': '${ex}'.`);
+        }
+      }
+      return; // The font was, asynchronously, loaded.
+    }
+
+    // !this.isFontLoadingAPISupported
+    const rule = font.createFontFaceRule();
+    if (rule) {
+      this.insertRule(rule);
+
+      if (this.isSyncFontLoadingSupported) {
+        return; // The font was, synchronously, loaded.
+      }
       return new Promise((resolve) => {
         const request = this._queueLoadingCallback(resolve);
-        this._prepareFontLoadEvent(rules, fontsToLoad, request);
+        this._prepareFontLoadEvent([rule], [font], request);
       });
     }
-    return; // Synchronous font loading supported.
   }
 
   _queueLoadingCallback(callback) {
