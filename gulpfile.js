@@ -1336,6 +1336,16 @@ gulp.task('dist-repo-git', gulp.series('dist-pre', function (done) {
   console.log('### Committing changes');
 
   var reason = process.env['PDFJS_UPDATE_REASON'];
+  // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
+  if (typeof reason === 'string') {
+    var reasonParts =
+      /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(reason);
+
+    if (reasonParts) {
+      reason = reasonParts[1] + 'https://github.com/' + reasonParts[2] +
+               '/releases/tag/' + reasonParts[3];
+    }
+  }
   var message = 'PDF.js version ' + VERSION + (reason ? ' - ' + reason : '');
   safeSpawnSync('git', ['add', '*'], { cwd: DIST_DIR, });
   safeSpawnSync('git', ['commit', '-am', message], { cwd: DIST_DIR, });
