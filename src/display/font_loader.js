@@ -27,10 +27,6 @@ class BaseFontLoader {
 
     this.nativeFontFaces = [];
     this.styleElement = null;
-    this.loadingContext = {
-      requests: [],
-      nextRequestId: 0,
-    };
   }
 
   addNativeFontFace(nativeFontFace) {
@@ -64,7 +60,7 @@ class BaseFontLoader {
     }
   }
 
-  bind(fonts, callback) {
+  async bind(fonts) {
     const rules = [];
     const fontsToLoad = [];
     const fontLoadPromises = [];
@@ -99,37 +95,19 @@ class BaseFontLoader {
       }
     }
 
-    const request = this._queueLoadingCallback(callback);
     if (this.isFontLoadingAPISupported) {
-      Promise.all(fontLoadPromises).then(request.complete);
+      return Promise.all(fontLoadPromises);
     } else if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
-      this._prepareFontLoadEvent(rules, fontsToLoad, request);
-    } else {
-      request.complete();
+      return new Promise((resolve) => {
+        const request = this._queueLoadingCallback(resolve);
+        this._prepareFontLoadEvent(rules, fontsToLoad, request);
+      });
     }
+    return; // Synchronous font loading supported.
   }
 
   _queueLoadingCallback(callback) {
-    function completeRequest() {
-      assert(!request.done, 'completeRequest() cannot be called twice.');
-      request.done = true;
-
-      // Sending all completed requests in order of how they were queued.
-      while (context.requests.length > 0 && context.requests[0].done) {
-        const otherRequest = context.requests.shift();
-        setTimeout(otherRequest.callback, 0);
-      }
-    }
-
-    const context = this.loadingContext;
-    const request = {
-      id: `pdfjs-font-loading-${context.nextRequestId++}`,
-      done: false,
-      complete: completeRequest,
-      callback,
-    };
-    context.requests.push(request);
-    return request;
+    unreachable('Abstract method `_queueLoadingCallback`.');
   }
 
   get isFontLoadingAPISupported() {
@@ -168,6 +146,10 @@ FontLoader = class MozcentralFontLoader extends BaseFontLoader {
 FontLoader = class GenericFontLoader extends BaseFontLoader {
   constructor(docId) {
     super(docId);
+    this.loadingContext = {
+      requests: [],
+      nextRequestId: 0,
+    };
     this.loadTestFontId = 0;
   }
 
@@ -203,6 +185,29 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
       }
     }
     return shadow(this, 'isSyncFontLoadingSupported', supported);
+  }
+
+  _queueLoadingCallback(callback) {
+    function completeRequest() {
+      assert(!request.done, 'completeRequest() cannot be called twice.');
+      request.done = true;
+
+      // Sending all completed requests in order of how they were queued.
+      while (context.requests.length > 0 && context.requests[0].done) {
+        const otherRequest = context.requests.shift();
+        setTimeout(otherRequest.callback, 0);
+      }
+    }
+
+    const context = this.loadingContext;
+    const request = {
+      id: `pdfjs-font-loading-${context.nextRequestId++}`,
+      done: false,
+      complete: completeRequest,
+      callback,
+    };
+    context.requests.push(request);
+    return request;
   }
 
   get _loadTestFont() {

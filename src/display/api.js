@@ -1944,11 +1944,10 @@ class WorkerTransport {
             onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
             fontRegistry,
           });
-          const fontReady = (fontObjs) => {
-            this.commonObjs.resolve(id, font);
-          };
 
-          this.fontLoader.bind([font], fontReady);
+          this.fontLoader.bind([font]).then(() => {
+            this.commonObjs.resolve(id, font);
+          });
           break;
         case 'FontPath':
           this.commonObjs.resolve(id, exportedData);
