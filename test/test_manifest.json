@@ -1451,6 +1451,13 @@
        "type": "eq",
        "nativeImageDecoderSupport": "none"
     },
+    {  "id": "issue10529",
+       "file": "pdfs/issue10529.pdf",
+       "md5": "1a4d404a137c610ff0c747cbea3b8666",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "issue6071",
        "file": "pdfs/issue6071.pdf",
        "md5": "2e08526d8e7c9ba4269fc12ef488d3eb",
