@@ -17,7 +17,7 @@ import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl,
   getInheritableProperty, isArrayBuffer, isBool, isEmptyObj, isNum,
   isSameOrigin, isSpace, isString, log2, ReadableStream, removeNullCharacters,
-  stringToBytes, stringToPDFString, URL
+  string32, stringToBytes, stringToPDFString, toRomanNumerals, URL
 } from '../../src/shared/util';
 import { Dict, Ref } from '../../src/core/primitives';
 import { XRefMock } from './test_utils';
@@ -254,6 +254,14 @@ describe('util', function() {
     });
   });
 
+  describe('string32', function() {
+    it('converts unsigned 32-bit integers to strings', function() {
+      expect(string32(0x74727565)).toEqual('true');
+      expect(string32(0x74797031)).toEqual('typ1');
+      expect(string32(0x4F54544F)).toEqual('OTTO');
+    });
+  });
+
   describe('stringToBytes', function() {
     it('handles non-string arguments', function() {
       expect(function() {
@@ -310,6 +318,42 @@ describe('util', function() {
     it('should have property getReader', function () {
       let readable = new ReadableStream();
       expect(typeof readable.getReader).toEqual('function');
+    });
+  });
+
+  describe('toRomanNumerals', function() {
+    it('handles invalid arguments', function() {
+      for (const input of ['foo', -1, 0]) {
+        expect(function() {
+          toRomanNumerals(input);
+        }).toThrow(new Error('The number should be a positive integer.'));
+      }
+    });
+
+    it('converts numbers to uppercase Roman numerals', function() {
+      expect(toRomanNumerals(1)).toEqual('I');
+      expect(toRomanNumerals(6)).toEqual('VI');
+      expect(toRomanNumerals(7)).toEqual('VII');
+      expect(toRomanNumerals(8)).toEqual('VIII');
+      expect(toRomanNumerals(10)).toEqual('X');
+      expect(toRomanNumerals(40)).toEqual('XL');
+      expect(toRomanNumerals(100)).toEqual('C');
+      expect(toRomanNumerals(500)).toEqual('D');
+      expect(toRomanNumerals(1000)).toEqual('M');
+      expect(toRomanNumerals(2019)).toEqual('MMXIX');
+    });
+
+    it('converts numbers to lowercase Roman numerals', function() {
+      expect(toRomanNumerals(1, /* lowercase = */ true)).toEqual('i');
+      expect(toRomanNumerals(6, /* lowercase = */ true)).toEqual('vi');
+      expect(toRomanNumerals(7, /* lowercase = */ true)).toEqual('vii');
+      expect(toRomanNumerals(8, /* lowercase = */ true)).toEqual('viii');
+      expect(toRomanNumerals(10, /* lowercase = */ true)).toEqual('x');
+      expect(toRomanNumerals(40, /* lowercase = */ true)).toEqual('xl');
+      expect(toRomanNumerals(100, /* lowercase = */ true)).toEqual('c');
+      expect(toRomanNumerals(500, /* lowercase = */ true)).toEqual('d');
+      expect(toRomanNumerals(1000, /* lowercase = */ true)).toEqual('m');
+      expect(toRomanNumerals(2019, /* lowercase = */ true)).toEqual('mmxix');
     });
   });
 
