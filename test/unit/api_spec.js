@@ -14,7 +14,8 @@
  */
 
 import {
-  buildGetDocumentParams, NodeFileReaderFactory, TEST_PDFS_PATH
+  buildGetDocumentParams, NodeCanvasFactory, NodeFileReaderFactory,
+  TEST_PDFS_PATH
 } from './test_utils';
 import {
   createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
@@ -40,8 +41,7 @@ describe('api', function() {
 
   beforeAll(function(done) {
     if (isNodeJS()) {
-      // NOTE: To support running the canvas-related tests in Node.js,
-      // a `NodeCanvasFactory` would need to be added (in test_utils.js).
+      CanvasFactory = new NodeCanvasFactory();
     } else {
       CanvasFactory = new DOMCanvasFactory();
     }
@@ -1275,9 +1275,6 @@ describe('api', function() {
     });
     it('gets page stats after rendering page, with `pdfBug` set',
         function(done) {
-      if (isNodeJS()) {
-        pending('TODO: Support Canvas testing in Node.js.');
-      }
       let loadingTask = getDocument(
         buildGetDocumentParams(basicApiFileName, { pdfBug: true, }));
       let canvasAndCtx;
@@ -1289,6 +1286,7 @@ describe('api', function() {
 
           let renderTask = pdfPage.render({
             canvasContext: canvasAndCtx.context,
+            canvasFactory: CanvasFactory,
             viewport,
           });
           return renderTask.promise.then(() => {
@@ -1315,14 +1313,12 @@ describe('api', function() {
     });
 
     it('cancels rendering of page', function(done) {
-      if (isNodeJS()) {
-        pending('TODO: Support Canvas testing in Node.js.');
-      }
       var viewport = page.getViewport({ scale: 1, });
       var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       var renderTask = page.render({
         canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
         viewport,
       });
       renderTask.cancel();
@@ -1339,14 +1335,12 @@ describe('api', function() {
 
     it('re-render page, using the same canvas, after cancelling rendering',
         function(done) {
-      if (isNodeJS()) {
-        pending('TODO: Support Canvas testing in Node.js.');
-      }
       let viewport = page.getViewport({ scale: 1, });
       let canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       let renderTask = page.render({
         canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
         viewport,
       });
       renderTask.cancel();
@@ -1358,6 +1352,7 @@ describe('api', function() {
       }).then(() => {
         let reRenderTask = page.render({
           canvasContext: canvasAndCtx.context,
+          canvasFactory: CanvasFactory,
           viewport,
         });
         return reRenderTask.promise;
@@ -1368,18 +1363,17 @@ describe('api', function() {
     });
 
     it('multiple render() on the same canvas', function(done) {
-      if (isNodeJS()) {
-        pending('TODO: Support Canvas testing in Node.js.');
-      }
       var viewport = page.getViewport({ scale: 1, });
       var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       var renderTask1 = page.render({
         canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
         viewport,
       });
       var renderTask2 = page.render({
         canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
         viewport,
       });
 
@@ -1418,6 +1412,7 @@ describe('api', function() {
                                                 viewport.height);
       const renderTask = page.render({
         canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
         viewport,
       });
       await renderTask.promise;
@@ -1445,10 +1440,6 @@ describe('api', function() {
     });
 
     it('should correctly render PDFs in parallel', function(done) {
-      if (isNodeJS()) {
-        pending('TODO: Support Canvas testing in Node.js.');
-      }
-
       var baseline1, baseline2, baseline3;
       var promiseDone = renderPDF(pdf1).then(function(data1) {
         baseline1 = data1;
