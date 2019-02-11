@@ -9,6 +9,7 @@
     "viewOnLoad": {
       "title": "View position on load",
       "description": "The position in the document upon load.\n -1 = Default (uses OpenAction if available, otherwise equal to `viewOnLoad = 0`).\n 0 = The last viewed page/position.\n 1 = The initial page/position.",
+      "type": "integer",
       "enum": [
         -1,
         0,
