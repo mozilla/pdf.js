@@ -1159,6 +1159,8 @@ var Font = (function FontClosure() {
     font: null,
     mimetype: null,
     encoding: null,
+    disableFontFace: false,
+
     get renderer() {
       var renderer = FontRendererFactory.create(this, SEAC_ANALYSIS_ENABLED);
       return shadow(this, 'renderer', renderer);
@@ -2943,6 +2945,10 @@ var Font = (function FontClosure() {
 
       // Enter the translated string into the cache
       return (charsCache[charsCacheKey] = glyphs);
+    },
+
+    get glyphCacheValues() {
+      return Object.values(this.glyphCache);
     },
   };
 

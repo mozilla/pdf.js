@@ -68,6 +68,10 @@ class BasePdfManager {
     return this.pdfDocument.getPage(pageIndex);
   }
 
+  fontFallback(id, handler) {
+    return this.pdfDocument.fontFallback(id, handler);
+  }
+
   cleanup() {
     return this.pdfDocument.cleanup();
   }

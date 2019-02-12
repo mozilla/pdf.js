@@ -667,6 +667,10 @@ var WorkerMessageHandler = {
       });
     });
 
+    handler.on('FontFallback', function(data) {
+      return pdfManager.fontFallback(data.id, handler);
+    });
+
     handler.on('Cleanup', function wphCleanup(data) {
       return pdfManager.cleanup();
     });

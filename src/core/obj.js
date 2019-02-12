@@ -490,6 +490,22 @@ class Catalog {
     return shadow(this, 'javaScript', javaScript);
   }
 
+  fontFallback(id, handler) {
+    const promises = [];
+    this.fontCache.forEach(function(promise) {
+      promises.push(promise);
+    });
+
+    return Promise.all(promises).then((translatedFonts) => {
+      for (const translatedFont of translatedFonts) {
+        if (translatedFont.loadedName === id) {
+          translatedFont.fallback(handler);
+          return;
+        }
+      }
+    });
+  }
+
   cleanup() {
     this.pageKidsCountCache.clear();
 
