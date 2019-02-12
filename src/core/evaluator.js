@@ -610,37 +610,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    handleText: function PartialEvaluator_handleText(chars, state) {
-      var font = state.font;
-      var glyphs = font.charsToGlyphs(chars);
-      var isAddToPathSet = !!(state.textRenderingMode &
-                              TextRenderingMode.ADD_TO_PATH_FLAG);
-      if (font.data && (isAddToPathSet || this.options.disableFontFace ||
-                        state.fillColorSpace.name === 'Pattern')) {
-        var buildPath = (fontChar) => {
-          if (!font.renderer.hasBuiltPath(fontChar)) {
-            var path = font.renderer.getPathJs(fontChar);
-            this.handler.send('commonobj', [
-              font.loadedName + '_path_' + fontChar,
-              'FontPath',
-              path
-            ]);
-          }
-        };
+    handleText(chars, state) {
+      const font = state.font;
+      const glyphs = font.charsToGlyphs(chars);
 
-        for (var i = 0, ii = glyphs.length; i < ii; i++) {
-          var glyph = glyphs[i];
-          buildPath(glyph.fontChar);
-
-          // If the glyph has an accent we need to build a path for its
-          // fontChar too, otherwise CanvasGraphics_paintChar will fail.
-          var accent = glyph.accent;
-          if (accent && accent.fontChar) {
-            buildPath(accent.fontChar);
-          }
+      if (font.data) {
+        const isAddToPathSet = !!(state.textRenderingMode &
+                                  TextRenderingMode.ADD_TO_PATH_FLAG);
+        if (isAddToPathSet || state.fillColorSpace.name === 'Pattern' ||
+            font.disableFontFace || this.options.disableFontFace) {
+          PartialEvaluator.buildFontPaths(font, glyphs, this.handler);
         }
       }
-
       return glyphs;
     },
 
@@ -2623,6 +2604,30 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
   };
 
+  PartialEvaluator.buildFontPaths = function(font, glyphs, handler) {
+    function buildPath(fontChar) {
+      if (font.renderer.hasBuiltPath(fontChar)) {
+        return;
+      }
+      handler.send('commonobj', [
+        `${font.loadedName}_path_${fontChar}`,
+        'FontPath',
+        font.renderer.getPathJs(fontChar),
+      ]);
+    }
+
+    for (const glyph of glyphs) {
+      buildPath(glyph.fontChar);
+
+      // If the glyph has an accent we need to build a path for its
+      // fontChar too, otherwise CanvasGraphics_paintChar will fail.
+      const accent = glyph.accent;
+      if (accent && accent.fontChar) {
+        buildPath(accent.fontChar);
+      }
+    }
+  };
+
   return PartialEvaluator;
 })();
 
@@ -2639,14 +2644,31 @@ var TranslatedFont = (function TranslatedFontClosure() {
       if (this.sent) {
         return;
       }
-      var fontData = this.font.exportData();
+      this.sent = true;
+
       handler.send('commonobj', [
         this.loadedName,
         'Font',
-        fontData
+        this.font.exportData(),
       ]);
-      this.sent = true;
     },
+
+    fallback(handler) {
+      if (!this.font.data) {
+        return;
+      }
+      // When font loading failed, fall back to the built-in font renderer.
+      this.font.disableFontFace = true;
+      // An arbitrary number of text rendering operators could have been
+      // encountered between the point in time when the 'Font' message was sent
+      // to the main-thread, and the point in time when the 'FontFallback'
+      // message was received on the worker-thread.
+      // To ensure that all 'FontPath's are available on the main-thread, when
+      // font loading failed, attempt to resend *all* previously parsed glyphs.
+      const glyphs = this.font.glyphCacheValues;
+      PartialEvaluator.buildFontPaths(this.font, glyphs, handler);
+    },
+
     loadType3Data(evaluator, resources, parentOperatorList, task) {
       if (!this.font.isType3Font) {
         throw new Error('Must be a Type3 font.');
