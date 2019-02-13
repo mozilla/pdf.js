@@ -21,6 +21,7 @@ import {
   parseQueryString, PresentationModeState, ProgressBar, RendererType,
   ScrollMode, SpreadMode, TextLayerMode
 } from './ui_utils';
+import { AppOptions, OptionKind } from './app_options';
 import {
   build, createObjectURL, getDocument, getFilenameFromUrl, GlobalWorkerOptions,
   InvalidPDFException, LinkTarget, loadScript, MissingPDFException, OPS,
@@ -30,7 +31,6 @@ import {
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { PDFSidebar, SidebarView } from './pdf_sidebar';
-import { AppOptions } from './app_options';
 import { OverlayManager } from './overlay_manager';
 import { PasswordPrompt } from './password_prompt';
 import { PDFAttachmentViewer } from './pdf_attachment_viewer';
@@ -611,7 +611,7 @@ let PDFViewerApplication = {
       await this.close();
     }
     // Set the necessary global worker parameters, using the available options.
-    const workerParameters = AppOptions.getAll('worker');
+    const workerParameters = AppOptions.getAll(OptionKind.WORKER);
     for (let key in workerParameters) {
       GlobalWorkerOptions[key] = workerParameters[key];
     }
@@ -633,7 +633,7 @@ let PDFViewerApplication = {
       parameters.docBaseUrl = this.baseUrl;
     }
     // Set the necessary API parameters, using the available options.
-    const apiParameters = AppOptions.getAll('api');
+    const apiParameters = AppOptions.getAll(OptionKind.API);
     for (let key in apiParameters) {
       parameters[key] = apiParameters[key];
     }
