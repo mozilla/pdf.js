@@ -259,8 +259,6 @@ class PDFPageView {
   }
 
   cancelRendering(keepAnnotations = false) {
-    const renderingState = this.renderingState;
-
     if (this.paintTask) {
       this.paintTask.cancel();
       this.paintTask = null;
@@ -275,14 +273,6 @@ class PDFPageView {
     if (!keepAnnotations && this.annotationLayer) {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
-    }
-
-    if (renderingState !== RenderingStates.INITIAL) {
-      this.eventBus.dispatch('pagecancelled', {
-        source: this,
-        pageNumber: this.id,
-        renderingState,
-      });
     }
   }
 
