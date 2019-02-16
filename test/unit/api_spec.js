@@ -846,6 +846,7 @@ describe('api', function() {
         expect(info['IsLinearized']).toEqual(false);
         expect(info['IsAcroFormPresent']).toEqual(false);
         expect(info['IsXFAPresent']).toEqual(false);
+        expect(info['IsCollectionPresent']).toEqual(false);
 
         expect(metadata instanceof Metadata).toEqual(true);
         expect(metadata.get('dc:title')).toEqual('Basic API Test');
@@ -874,6 +875,7 @@ describe('api', function() {
         expect(info['IsLinearized']).toEqual(false);
         expect(info['IsAcroFormPresent']).toEqual(false);
         expect(info['IsXFAPresent']).toEqual(false);
+        expect(info['IsCollectionPresent']).toEqual(false);
 
         expect(metadata).toEqual(null);
         expect(contentDispositionFilename).toEqual(null);
