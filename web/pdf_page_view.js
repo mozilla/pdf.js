@@ -154,6 +154,7 @@ class PDFPageView {
 
   reset(keepZoomLayer = false, keepAnnotations = false) {
     this.cancelRendering(keepAnnotations);
+    this.renderingState = RenderingStates.INITIAL;
 
     let div = this.div;
     div.style.width = Math.floor(this.viewport.width) + 'px';
@@ -258,14 +259,15 @@ class PDFPageView {
     this.reset(/* keepZoomLayer = */ true, /* keepAnnotations = */ true);
   }
 
+  /**
+   * PLEASE NOTE: Most likely you want to use the `this.reset()` method,
+   *              rather than calling this one directly.
+   */
   cancelRendering(keepAnnotations = false) {
-    const renderingState = this.renderingState;
-
     if (this.paintTask) {
       this.paintTask.cancel();
       this.paintTask = null;
     }
-    this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
 
     if (this.textLayer) {
@@ -275,14 +277,6 @@ class PDFPageView {
     if (!keepAnnotations && this.annotationLayer) {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
-    }
-
-    if (renderingState !== RenderingStates.INITIAL) {
-      this.eventBus.dispatch('pagecancelled', {
-        source: this,
-        pageNumber: this.id,
-        renderingState,
-      });
     }
   }
 
