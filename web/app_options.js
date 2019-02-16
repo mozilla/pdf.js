@@ -17,21 +17,21 @@ import { apiCompatibilityParams } from 'pdfjs-lib';
 import { viewerCompatibilityParams } from './viewer_compatibility';
 
 const OptionKind = {
-  VIEWER: 'viewer',
-  API: 'api',
-  WORKER: 'worker',
+  VIEWER: 0x02,
+  API: 0x04,
+  WORKER: 0x08,
+  PREFERENCE: 0x80,
 };
 
 /**
  * PLEASE NOTE: To avoid introducing unnecessary dependencies, we specify the
- *              values below *explicitly* rather than relying on imported types;
- *              compare with the format of `default_preferences.json`.
+ *              values below *explicitly* rather than relying on imported types.
  */
 const defaultOptions = {
   cursorToolOnLoad: {
     /** @type {number} */
     value: 0,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   defaultUrl: {
     /** @type {string} */
@@ -41,7 +41,7 @@ const defaultOptions = {
   defaultZoomValue: {
     /** @type {string} */
     value: '',
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   disableHistory: {
     /** @type {boolean} */
@@ -51,7 +51,7 @@ const defaultOptions = {
   disablePageLabels: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   /**
    * The `disablePreferences` is, conditionally, defined below.
@@ -59,17 +59,17 @@ const defaultOptions = {
   enablePrintAutoRotate: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableWebGL: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   eventBusDispatchToDOM: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   externalLinkRel: {
     /** @type {string} */
@@ -79,12 +79,12 @@ const defaultOptions = {
   externalLinkTarget: {
     /** @type {number} */
     value: 0,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   historyUpdateUrl: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   imageResourcesPath: {
     /** @type {string} */
@@ -103,47 +103,47 @@ const defaultOptions = {
   pdfBugEnabled: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   renderer: {
     /** @type {string} */
     value: 'canvas',
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   renderInteractiveForms: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   sidebarViewOnLoad: {
     /** @type {number} */
     value: -1,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   scrollModeOnLoad: {
     /** @type {number} */
     value: -1,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   spreadModeOnLoad: {
     /** @type {number} */
     value: -1,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   textLayerMode: {
     /** @type {number} */
     value: 1,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   useOnlyCssZoom: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   viewOnLoad: {
     /** @type {boolean} */
     value: 0,
-    kind: OptionKind.VIEWER,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
 
   cMapPacked: {
@@ -160,7 +160,7 @@ const defaultOptions = {
   disableAutoFetch: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.API,
+    kind: OptionKind.API + OptionKind.PREFERENCE,
   },
   disableCreateObjectURL: {
     /** @type {boolean} */
@@ -171,17 +171,17 @@ const defaultOptions = {
   disableFontFace: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.API,
+    kind: OptionKind.API + OptionKind.PREFERENCE,
   },
   disableRange: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.API,
+    kind: OptionKind.API + OptionKind.PREFERENCE,
   },
   disableStream: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.API,
+    kind: OptionKind.API + OptionKind.PREFERENCE,
   },
   isEvalSupported: {
     /** @type {boolean} */
@@ -258,8 +258,14 @@ class AppOptions {
     const options = Object.create(null);
     for (const name in defaultOptions) {
       const defaultOption = defaultOptions[name];
-      if (kind && kind !== defaultOption.kind) {
-        continue;
+      if (kind) {
+        if ((kind & defaultOption.kind) === 0) {
+          continue;
+        }
+        if ((kind & OptionKind.PREFERENCE) !== 0) {
+          options[name] = defaultOption.value;
+          continue;
+        }
       }
       const userOption = userOptions[name];
       options[name] = (userOption !== undefined ? userOption :
