@@ -14,13 +14,12 @@
  */
 
 import {
-  buildGetDocumentParams, NodeCanvasFactory, NodeFileReaderFactory,
-  TEST_PDFS_PATH
+  buildGetDocumentParams, DOMFileReaderFactory, NodeCanvasFactory,
+  NodeFileReaderFactory, TEST_PDFS_PATH
 } from './test_utils';
 import {
   createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
-  OPS, PasswordException, PasswordResponses, PermissionFlag, StreamType,
-  stringToBytes
+  OPS, PasswordException, PasswordResponses, PermissionFlag, StreamType
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException, StatTimer
@@ -110,50 +109,37 @@ describe('api', function() {
       }).catch(done.fail);
     });
     it('creates pdf doc from typed array', function(done) {
-      var typedArrayPdf;
+      let typedArrayPdfPromise;
       if (isNodeJS()) {
-        typedArrayPdf = NodeFileReaderFactory.fetch({
+        typedArrayPdfPromise = NodeFileReaderFactory.fetch({
           path: TEST_PDFS_PATH.node + basicApiFileName,
         });
       } else {
-        let nonBinaryRequest = false;
-        let request = new XMLHttpRequest();
-        request.open('GET', TEST_PDFS_PATH.dom + basicApiFileName, false);
-        try {
-          request.responseType = 'arraybuffer';
-          nonBinaryRequest = request.responseType !== 'arraybuffer';
-        } catch (e) {
-          nonBinaryRequest = true;
-        }
-        if (nonBinaryRequest && request.overrideMimeType) {
-          request.overrideMimeType('text/plain; charset=x-user-defined');
-        }
-        request.send(null);
-
-        if (nonBinaryRequest) {
-          typedArrayPdf = stringToBytes(request.responseText);
-        } else {
-          typedArrayPdf = new Uint8Array(request.response);
-        }
+        typedArrayPdfPromise = DOMFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH.dom + basicApiFileName,
+        });
       }
-      // Sanity check to make sure that we fetched the entire PDF file.
-      expect(typedArrayPdf.length).toEqual(basicApiFileLength);
 
-      const loadingTask = getDocument(typedArrayPdf);
+      typedArrayPdfPromise.then((typedArrayPdf) => {
+        // Sanity check to make sure that we fetched the entire PDF file.
+        expect(typedArrayPdf.length).toEqual(basicApiFileLength);
 
-      const progressReportedCapability = createPromiseCapability();
-      loadingTask.onProgress = function(data) {
-        progressReportedCapability.resolve(data);
-      };
+        const loadingTask = getDocument(typedArrayPdf);
 
-      Promise.all([
-        loadingTask.promise,
-        progressReportedCapability.promise,
-      ]).then(function(data) {
-        expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
-        expect(data[1].loaded / data[1].total).toEqual(1);
+        const progressReportedCapability = createPromiseCapability();
+        loadingTask.onProgress = function(data) {
+          progressReportedCapability.resolve(data);
+        };
 
-        loadingTask.destroy().then(done);
+        return Promise.all([
+          loadingTask.promise,
+          progressReportedCapability.promise,
+        ]).then(function(data) {
+          expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
+          expect(data[1].loaded / data[1].total).toEqual(1);
+
+          loadingTask.destroy().then(done);
+        });
       }).catch(done.fail);
     });
     it('creates pdf doc from invalid PDF file', function(done) {
