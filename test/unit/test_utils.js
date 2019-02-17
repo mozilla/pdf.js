@@ -17,11 +17,29 @@ import { assert, CMapCompressionType } from '../../src/shared/util';
 import isNodeJS from '../../src/shared/is_node';
 import { isRef } from '../../src/core/primitives';
 
+class DOMFileReaderFactory {
+  static async fetch(params) {
+    const response = await fetch(params.path);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    return new Uint8Array(await response.arrayBuffer());
+  }
+}
+
 class NodeFileReaderFactory {
-  static fetch(params) {
-    var fs = require('fs');
-    var file = fs.readFileSync(params.path);
-    return new Uint8Array(file);
+  static async fetch(params) {
+    const fs = require('fs');
+
+    return new Promise((resolve, reject) => {
+      fs.readFile(params.path, (error, data) => {
+        if (error || !data) {
+          reject(error || new Error(`Empty file for: ${params.path}`));
+          return;
+        }
+        resolve(new Uint8Array(data));
+      });
+    });
   }
 }
 
@@ -142,6 +160,7 @@ class XRefMock {
 }
 
 export {
+  DOMFileReaderFactory,
   NodeFileReaderFactory,
   NodeCanvasFactory,
   NodeCMapReaderFactory,
