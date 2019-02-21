@@ -325,7 +325,10 @@ function compileType3Glyph(imgData) {
 
       coords.push(p % width1);
       coords.push((p / width1) | 0);
-      --count;
+
+      if (!points[p]) {
+        --count;
+      }
     } while (p0 !== p);
     outlines.push(coords);
     --i;
