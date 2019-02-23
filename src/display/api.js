@@ -25,7 +25,7 @@ import {
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
   PageViewport, RenderingCancelledException, StatTimer
-} from './dom_utils';
+} from './display_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
 import { CanvasGraphics } from './canvas';
