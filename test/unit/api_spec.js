@@ -23,7 +23,7 @@ import {
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException, StatTimer
-} from '../../src/display/dom_utils';
+} from '../../src/display/display_utils';
 import {
   getDocument, PDFDataRangeTransport, PDFDocumentProxy, PDFPageProxy, PDFWorker
 } from '../../src/display/api';
