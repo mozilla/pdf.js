@@ -14,7 +14,7 @@
  */
 /* eslint no-var: error */
 
-import { getLookupTableFactory } from '../shared/util';
+import { getLookupTableFactory } from './core_utils';
 
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1

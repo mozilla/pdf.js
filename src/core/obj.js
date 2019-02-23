@@ -15,15 +15,17 @@
 
 import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
-  info, InvalidPDFException, isBool, isNum, isString, MissingDataException,
-  PermissionFlag, shadow, stringToPDFString, stringToUTF8String,
-  toRomanNumerals, unreachable, warn, XRefEntryException, XRefParseException
+  info, InvalidPDFException, isBool, isNum, isString, PermissionFlag, shadow,
+  stringToPDFString, stringToUTF8String, unreachable, warn
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
   RefSetCache
 } from './primitives';
 import { Lexer, Parser } from './parser';
+import {
+  MissingDataException, toRomanNumerals, XRefEntryException, XRefParseException
+} from './core_utils';
 import { ChunkedStream } from './chunked_stream';
 import { CipherTransformFactory } from './crypto';
 import { ColorSpace } from './colorspace';
