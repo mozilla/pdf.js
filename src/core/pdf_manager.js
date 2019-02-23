@@ -14,9 +14,10 @@
  */
 
 import {
-  createValidAbsoluteUrl, MissingDataException, shadow, unreachable, warn
+  createValidAbsoluteUrl, shadow, unreachable, warn
 } from '../shared/util';
 import { ChunkedStreamManager } from './chunked_stream';
+import { MissingDataException } from './core_utils';
 import { PDFDocument } from './document';
 import { Stream } from './stream';
 

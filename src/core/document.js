@@ -15,12 +15,15 @@
 /* eslint no-var: error */
 
 import {
-  assert, FormatError, getInheritableProperty, info, isArrayBuffer, isBool,
-  isNum, isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
-  stringToPDFString, Util, warn, XRefEntryException, XRefParseException
+  assert, FormatError, info, isArrayBuffer, isBool, isNum, isSpace, isString,
+  OPS, shadow, stringToBytes, stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream, Ref } from './primitives';
+import {
+  getInheritableProperty, MissingDataException, XRefEntryException,
+  XRefParseException
+} from './core_utils';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
 import { AnnotationFactory } from './annotation';
 import { calculateMD5 } from './crypto';

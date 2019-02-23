@@ -12,6 +12,7 @@
     "cff_parser_spec.js",
     "cmap_spec.js",
     "colorspace_spec.js",
+    "core_utils_spec.js",
     "crypto_spec.js",
     "display_svg_spec.js",
     "display_utils_spec.js",

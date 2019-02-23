@@ -14,7 +14,7 @@
  */
 /* no-babel-preset */
 
-var getLookupTableFactory = require('../shared/util').getLookupTableFactory;
+var getLookupTableFactory = require('./core_utils').getLookupTableFactory;
 
 // Some characters, e.g. copyrightserif, are mapped to the private use area
 // and might not be displayed using standard fonts. Mapping/hacking well-known

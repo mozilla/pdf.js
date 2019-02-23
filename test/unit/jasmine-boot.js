@@ -53,6 +53,7 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/cff_parser_spec',
     'pdfjs-test/unit/cmap_spec',
     'pdfjs-test/unit/colorspace_spec',
+    'pdfjs-test/unit/core_utils_spec',
     'pdfjs-test/unit/crypto_spec',
     'pdfjs-test/unit/custom_spec',
     'pdfjs-test/unit/display_svg_spec',

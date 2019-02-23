@@ -15,8 +15,7 @@
 
 import {
   assert, bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info,
-  isNum, isSpace, MissingDataException, readUint32, shadow, string32,
-  unreachable, warn
+  isNum, isSpace, readUint32, shadow, string32, unreachable, warn
 } from '../shared/util';
 import {
   CFF, CFFCharset, CFFCompiler, CFFHeader, CFFIndex, CFFParser, CFFPrivateDict,
@@ -36,6 +35,7 @@ import {
 } from './unicode';
 import { FontRendererFactory } from './font_renderer';
 import { IdentityCMap } from './cmap';
+import { MissingDataException } from './core_utils';
 import { Stream } from './stream';
 import { Type1Parser } from './type1_parser';
 

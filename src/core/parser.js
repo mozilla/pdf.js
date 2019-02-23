@@ -19,7 +19,7 @@ import {
 } from './stream';
 import {
   assert, bytesToString, FormatError, info, isNum, isSpace, isString,
-  MissingDataException, StreamType, warn
+  StreamType, warn
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
@@ -28,6 +28,7 @@ import { CCITTFaxStream } from './ccitt_stream';
 import { Jbig2Stream } from './jbig2_stream';
 import { JpegStream } from './jpeg_stream';
 import { JpxStream } from './jpx_stream';
+import { MissingDataException } from './core_utils';
 
 const MAX_LENGTH_TO_CACHE = 1000;
 const MAX_ADLER32_LENGTH = 5552;

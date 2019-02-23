@@ -15,11 +15,11 @@
 /* eslint-disable no-multi-spaces */
 
 import {
-  assert, FormatError, info, MissingDataException, unreachable,
-  UNSUPPORTED_FEATURES, Util, warn
+  assert, FormatError, info, unreachable, UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { ColorSpace } from './colorspace';
 import { isStream } from './primitives';
+import { MissingDataException } from './core_utils';
 
 var ShadingType = {
   FUNCTION_BASED: 1,
