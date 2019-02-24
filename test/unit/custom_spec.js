@@ -14,7 +14,7 @@
  */
 
 import { buildGetDocumentParams, NodeCanvasFactory } from './test_utils';
-import { DOMCanvasFactory } from '../../src/display/dom_utils';
+import { DOMCanvasFactory } from '../../src/display/display_utils';
 import { getDocument } from '../../src/display/api';
 import isNodeJS from '../../src/shared/is_node';
 

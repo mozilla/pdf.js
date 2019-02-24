@@ -15,9 +15,9 @@
 /* eslint no-var: error */
 
 import {
-  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj,
-  MissingDataException
+  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj
 } from '../shared/util';
+import { MissingDataException } from './core_utils';
 
 class ChunkedStream {
   constructor(length, chunkSize, manager) {

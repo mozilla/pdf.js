@@ -14,11 +14,11 @@
  */
 
 import {
-  CMapCompressionType, FormatError, isString, MissingDataException, unreachable,
-  warn
+  CMapCompressionType, FormatError, isString, unreachable, warn
 } from '../shared/util';
 import { isCmd, isEOF, isName, isStream } from './primitives';
 import { Lexer } from './parser';
+import { MissingDataException } from './core_utils';
 import { Stream } from './stream';
 
 var BUILT_IN_CMAPS = [
