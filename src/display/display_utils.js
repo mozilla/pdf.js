@@ -15,7 +15,7 @@
 
 import {
   assert, CMapCompressionType, removeNullCharacters, stringToBytes,
-  unreachable, Util, warn
+  unreachable, URL, Util, warn
 } from '../shared/util';
 
 const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
@@ -66,19 +66,41 @@ class DOMCMapReaderFactory {
     this.isCompressed = isCompressed;
   }
 
-  fetch({ name, }) {
+  async fetch({ name, }) {
     if (!this.baseUrl) {
-      return Promise.reject(new Error(
+      throw new Error(
         'The CMap "baseUrl" parameter must be specified, ensure that ' +
-        'the "cMapUrl" and "cMapPacked" API parameters are provided.'));
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.');
     }
     if (!name) {
-      return Promise.reject(new Error('CMap name must be specified.'));
+      throw new Error('CMap name must be specified.');
     }
-    return new Promise((resolve, reject) => {
-      let url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+    const url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+    const compressionType = (this.isCompressed ? CMapCompressionType.BINARY :
+                                                 CMapCompressionType.NONE);
 
-      let request = new XMLHttpRequest();
+    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) ||
+        (isFetchSupported() && isValidFetchUrl(url, document.baseURI))) {
+      return fetch(url).then(async (response) => {
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+        let cMapData;
+        if (this.isCompressed) {
+          cMapData = new Uint8Array(await response.arrayBuffer());
+        } else {
+          cMapData = stringToBytes(await response.text());
+        }
+        return { cMapData, compressionType, };
+      }).catch((reason) => {
+        throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` +
+                        `CMap at: ${url}`);
+      });
+    }
+
+    // The Fetch API is not supported.
+    return new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest();
       request.open('GET', url, true);
 
       if (this.isCompressed) {
@@ -89,27 +111,24 @@ class DOMCMapReaderFactory {
           return;
         }
         if (request.status === 200 || request.status === 0) {
-          let data;
+          let cMapData;
           if (this.isCompressed && request.response) {
-            data = new Uint8Array(request.response);
+            cMapData = new Uint8Array(request.response);
           } else if (!this.isCompressed && request.responseText) {
-            data = stringToBytes(request.responseText);
+            cMapData = stringToBytes(request.responseText);
           }
-          if (data) {
-            resolve({
-              cMapData: data,
-              compressionType: this.isCompressed ?
-                CMapCompressionType.BINARY : CMapCompressionType.NONE,
-            });
+          if (cMapData) {
+            resolve({ cMapData, compressionType, });
             return;
           }
         }
-        reject(new Error('Unable to load ' +
-                         (this.isCompressed ? 'binary ' : '') +
-                         'CMap at: ' + url));
+        reject(new Error(request.statusText));
       };
 
       request.send(null);
+    }).catch((reason) => {
+      throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` +
+                      `CMap at: ${url}`);
     });
   }
 }
@@ -428,6 +447,23 @@ class DummyStatTimer {
   }
 }
 
+function isFetchSupported() {
+  return (typeof fetch !== 'undefined' &&
+          typeof Response !== 'undefined' && 'body' in Response.prototype &&
+          // eslint-disable-next-line no-restricted-globals
+          typeof ReadableStream !== 'undefined');
+}
+
+function isValidFetchUrl(url, baseUrl) {
+  try {
+    const { protocol, } = baseUrl ? new URL(url, baseUrl) : new URL(url);
+    // The Fetch API only supports the http/https protocols, and not file/ftp.
+    return (protocol === 'http:' || protocol === 'https:');
+  } catch (ex) {
+    return false; // `new URL()` will throw on incorrect data.
+  }
+}
+
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     let script = document.createElement('script');
@@ -453,5 +489,6 @@ export {
   DOMSVGFactory,
   StatTimer,
   DummyStatTimer,
+  isFetchSupported,
   loadScript,
 };
