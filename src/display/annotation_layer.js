@@ -15,7 +15,7 @@
 
 import {
   addLinkAttributes, DOMSVGFactory, getFilenameFromUrl, LinkTarget
-} from './dom_utils';
+} from './display_utils';
 import {
   AnnotationBorderStyleType, AnnotationType, stringToPDFString, unreachable,
   Util, warn

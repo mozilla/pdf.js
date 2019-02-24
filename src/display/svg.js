@@ -18,7 +18,7 @@ import {
   createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNum, OPS,
   TextRenderingMode, Util, warn
 } from '../shared/util';
-import { DOMSVGFactory } from './dom_utils';
+import { DOMSVGFactory } from './display_utils';
 import isNodeJS from '../shared/is_node';
 
 var SVGGraphics = function() {

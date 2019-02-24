@@ -15,9 +15,9 @@
 
 import {
   AbortException, assert, CMapCompressionType, createPromiseCapability,
-  FONT_IDENTITY_MATRIX, FormatError, getLookupTableFactory, IDENTITY_MATRIX,
-  info, isNum, isString, NativeImageDecoding, OPS, stringToPDFString,
-  TextRenderingMode, UNSUPPORTED_FEATURES, Util, warn
+  FONT_IDENTITY_MATRIX, FormatError, IDENTITY_MATRIX, info, isNum, isString,
+  NativeImageDecoding, OPS, stringToPDFString, TextRenderingMode,
+  UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
 import { DecodeStream, Stream } from './stream';
@@ -42,6 +42,7 @@ import { Lexer, Parser } from './parser';
 import { bidi } from './bidi';
 import { ColorSpace } from './colorspace';
 import { getGlyphsUnicode } from './glyphlist';
+import { getLookupTableFactory } from './core_utils';
 import { getMetrics } from './metrics';
 import { isPDFFunction } from './function';
 import { JpegStream } from './jpeg_stream';

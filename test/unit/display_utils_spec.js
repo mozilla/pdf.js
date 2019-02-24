@@ -13,10 +13,12 @@
  * limitations under the License.
  */
 
-import { DOMSVGFactory, getFilenameFromUrl } from '../../src/display/dom_utils';
+import {
+  DOMSVGFactory, getFilenameFromUrl
+} from '../../src/display/display_utils';
 import isNodeJS from '../../src/shared/is_node';
 
-describe('dom_utils', function() {
+describe('display_utils', function() {
   describe('DOMSVGFactory', function() {
     let svgFactory;
 
