@@ -287,8 +287,8 @@ let PDFViewerApplication = {
 
     this.overlayManager = new OverlayManager();
 
-    const dispatchToDOM = AppOptions.get('eventBusDispatchToDOM');
-    const eventBus = appConfig.eventBus || getGlobalEventBus(dispatchToDOM);
+    const eventBus = appConfig.eventBus ||
+                     getGlobalEventBus(AppOptions.get('eventBusDispatchToDOM'));
     this.eventBus = eventBus;
 
     let pdfRenderingQueue = new PDFRenderingQueue();
@@ -336,9 +336,8 @@ let PDFViewerApplication = {
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
 
-    let thumbnailContainer = appConfig.sidebar.thumbnailView;
     this.pdfThumbnailViewer = new PDFThumbnailViewer({
-      container: thumbnailContainer,
+      container: appConfig.sidebar.thumbnailView,
       renderingQueue: pdfRenderingQueue,
       linkService: pdfLinkService,
       l10n: this.l10n,
@@ -393,11 +392,13 @@ let PDFViewerApplication = {
       downloadManager,
     });
 
-    // TODO: improve `PDFSidebar` constructor parameter passing
-    let sidebarConfig = Object.create(appConfig.sidebar);
-    sidebarConfig.pdfViewer = this.pdfViewer;
-    sidebarConfig.pdfThumbnailViewer = this.pdfThumbnailViewer;
-    this.pdfSidebar = new PDFSidebar(sidebarConfig, eventBus, this.l10n);
+    this.pdfSidebar = new PDFSidebar({
+      elements: appConfig.sidebar,
+      pdfViewer: this.pdfViewer,
+      pdfThumbnailViewer: this.pdfThumbnailViewer,
+      eventBus,
+      l10n: this.l10n,
+    });
     this.pdfSidebar.onToggled = this.forceRendering.bind(this);
 
     this.pdfSidebarResizer = new PDFSidebarResizer(appConfig.sidebarResizer,

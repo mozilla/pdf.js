@@ -29,8 +29,17 @@ const SidebarView = {
 
 /**
  * @typedef {Object} PDFSidebarOptions
+ * @property {PDFSidebarElements} elements - The DOM elements.
  * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {PDFThumbnailViewer} pdfThumbnailViewer - The thumbnail viewer.
+ * @property {EventBus} eventBus - The application event bus.
+ * @property {IL10n} l10n - The localization service.
+ * @property {boolean} disableNotification - (optional) Disable the notification
+ *   for documents containing outline/attachments. The default value is `false`.
+ */
+
+/**
+ * @typedef {Object} PDFSidebarElements
  * @property {HTMLDivElement} outerContainer - The outer container
  *   (encasing both the viewer and sidebar elements).
  * @property {HTMLDivElement} viewerContainer - The viewer container
@@ -49,17 +58,14 @@ const SidebarView = {
  *   the outline is placed.
  * @property {HTMLDivElement} attachmentsView - The container in which
  *   the attachments are placed.
- * @property {boolean} disableNotification - (optional) Disable the notification
- *   for documents containing outline/attachments. The default value is `false`.
  */
 
 class PDFSidebar {
   /**
    * @param {PDFSidebarOptions} options
-   * @param {EventBus} eventBus - The application event bus.
-   * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, eventBus, l10n = NullL10n) {
+  constructor({ elements, pdfViewer, pdfThumbnailViewer, eventBus,
+                l10n = NullL10n, disableNotification = false, }) {
     this.isOpen = false;
     this.active = SidebarView.THUMBS;
     this.isInitialViewSet = false;
@@ -70,25 +76,24 @@ class PDFSidebar {
      */
     this.onToggled = null;
 
-    this.pdfViewer = options.pdfViewer;
-    this.pdfThumbnailViewer = options.pdfThumbnailViewer;
+    this.pdfViewer = pdfViewer;
+    this.pdfThumbnailViewer = pdfThumbnailViewer;
 
-    this.outerContainer = options.outerContainer;
-    this.viewerContainer = options.viewerContainer;
-    this.toggleButton = options.toggleButton;
+    this.outerContainer = elements.outerContainer;
+    this.viewerContainer = elements.viewerContainer;
+    this.toggleButton = elements.toggleButton;
 
-    this.thumbnailButton = options.thumbnailButton;
-    this.outlineButton = options.outlineButton;
-    this.attachmentsButton = options.attachmentsButton;
+    this.thumbnailButton = elements.thumbnailButton;
+    this.outlineButton = elements.outlineButton;
+    this.attachmentsButton = elements.attachmentsButton;
 
-    this.thumbnailView = options.thumbnailView;
-    this.outlineView = options.outlineView;
-    this.attachmentsView = options.attachmentsView;
-
-    this.disableNotification = options.disableNotification || false;
+    this.thumbnailView = elements.thumbnailView;
+    this.outlineView = elements.outlineView;
+    this.attachmentsView = elements.attachmentsView;
 
     this.eventBus = eventBus;
     this.l10n = l10n;
+    this._disableNotification = disableNotification;
 
     this._addEventListeners();
   }
@@ -305,7 +310,7 @@ class PDFSidebar {
    * @private
    */
   _showUINotification(view) {
-    if (this.disableNotification) {
+    if (this._disableNotification) {
       return;
     }
 
@@ -339,7 +344,7 @@ class PDFSidebar {
    * @private
    */
   _hideUINotification(view) {
-    if (this.disableNotification) {
+    if (this._disableNotification) {
       return;
     }
 
