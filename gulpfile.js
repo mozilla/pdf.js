@@ -150,6 +150,21 @@ function createWebpackConfig(defines, output) {
   var skipBabel = bundleDefines.SKIP_BABEL ||
                   process.env['SKIP_BABEL'] === 'true';
 
+  // TODO: Remove this hack once the Webpack regression has been fixed; see
+  //       https://github.com/mozilla/pdf.js/issues/10177
+  function babelPluginReplaceNonWebPackRequire(babel) {
+    return {
+      visitor: {
+        Identifier(path, state) {
+          if (path.node.name === '__non_webpack_require__') {
+            path.replaceWith(
+              babel.types.identifier('TEMPORARY_NON_WEBPACK_REQUIRE_HACK'));
+          }
+        },
+      },
+    };
+  }
+
   // Required to expose e.g., the `window` object.
   output.globalObject = 'this';
 
@@ -184,6 +199,7 @@ function createWebpackConfig(defines, output) {
                 'helpers': false,
                 'regenerator': true,
               }],
+              babelPluginReplaceNonWebPackRequire, // Temporary hack.
             ],
           },
         },
@@ -248,6 +264,12 @@ function replaceWebpackRequire() {
   return replace('__webpack_require__', '__w_pdfjs_require__');
 }
 
+function replaceTemporaryNonWebpackRequireHack() {
+  // TODO: Remove this hack once the Webpack regression has been fixed; see
+  //       https://github.com/mozilla/pdf.js/issues/10177
+  return replace('TEMPORARY_NON_WEBPACK_REQUIRE_HACK', 'require');
+}
+
 function replaceJSRootName(amdName, jsName) {
   // Saving old-style JS module name.
   return replace('root["' + amdName + '"] = factory()',
@@ -270,6 +292,7 @@ function createBundle(defines) {
   var mainOutput = gulp.src('./src/pdf.js')
     .pipe(webpack2Stream(mainFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceTemporaryNonWebpackRequireHack()) // Temporary hack.
     .pipe(replaceJSRootName(mainAMDName, 'pdfjsLib'));
 
   var workerAMDName = 'pdfjs-dist/build/pdf.worker';
@@ -285,6 +308,7 @@ function createBundle(defines) {
   var workerOutput = gulp.src('./src/pdf.worker.js')
     .pipe(webpack2Stream(workerFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceTemporaryNonWebpackRequireHack()) // Temporary hack.
     .pipe(replaceJSRootName(workerAMDName, 'pdfjsWorker'));
   return merge([mainOutput, workerOutput]);
 }
@@ -296,7 +320,8 @@ function createWebBundle(defines) {
     filename: viewerOutputName,
   });
   return gulp.src('./web/viewer.js')
-             .pipe(webpack2Stream(viewerFileConfig));
+    .pipe(webpack2Stream(viewerFileConfig))
+    .pipe(replaceTemporaryNonWebpackRequireHack()); // Temporary hack.
 }
 
 function createComponentsBundle(defines) {
@@ -312,6 +337,7 @@ function createComponentsBundle(defines) {
   return gulp.src('./web/pdf_viewer.component.js')
     .pipe(webpack2Stream(componentsFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceTemporaryNonWebpackRequireHack()) // Temporary hack.
     .pipe(replaceJSRootName(componentsAMDName, 'pdfjsViewer'));
 }
 
@@ -328,6 +354,7 @@ function createImageDecodersBundle(defines) {
   return gulp.src('./src/pdf.image_decoders.js')
     .pipe(webpack2Stream(componentsFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceTemporaryNonWebpackRequireHack()) // Temporary hack.
     .pipe(replaceJSRootName(imageDecodersAMDName, 'pdfjsImageDecoders'));
 }
 
