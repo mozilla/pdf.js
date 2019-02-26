@@ -490,5 +490,6 @@ export {
   StatTimer,
   DummyStatTimer,
   isFetchSupported,
+  isValidFetchUrl,
   loadScript,
 };

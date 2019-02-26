@@ -37,14 +37,17 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
       return new PDFNodeStream(params);
     });
-  } else if (pdfjsDisplayDisplayUtils.isFetchSupported()) {
-    let PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
-    pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
-      return new PDFFetchStream(params);
-    });
   } else {
     let PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
+    let PDFFetchStream;
+    if (pdfjsDisplayDisplayUtils.isFetchSupported()) {
+      PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
+    }
     pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
+      if (PDFFetchStream &&
+          pdfjsDisplayDisplayUtils.isValidFetchUrl(params.url)) {
+        return new PDFFetchStream(params);
+      }
       return new PDFNetworkStream(params);
     });
   }
@@ -69,8 +72,8 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
   }
   pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
-    if (PDFFetchStream && /^https?:/i.test(params.url)) {
-      // "fetch" is only supported for http(s), not file/ftp.
+    if (PDFFetchStream &&
+        pdfjsDisplayDisplayUtils.isValidFetchUrl(params.url)) {
       return new PDFFetchStream(params);
     }
     return new PDFNetworkStream(params);

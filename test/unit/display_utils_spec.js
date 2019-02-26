@@ -14,7 +14,7 @@
  */
 
 import {
-  DOMSVGFactory, getFilenameFromUrl
+  DOMSVGFactory, getFilenameFromUrl, isValidFetchUrl
 } from '../../src/display/display_utils';
 import isNodeJS from '../../src/shared/is_node';
 
@@ -92,6 +92,30 @@ describe('display_utils', function() {
       var result = getFilenameFromUrl(url);
       var expected = 'filename.pdf';
       expect(result).toEqual(expected);
+    });
+  });
+
+  describe('isValidFetchUrl', function() {
+    it('handles invalid Fetch URLs', function() {
+      expect(isValidFetchUrl(null)).toEqual(false);
+      expect(isValidFetchUrl(100)).toEqual(false);
+      expect(isValidFetchUrl('foo')).toEqual(false);
+      expect(isValidFetchUrl('/foo', 100)).toEqual(false);
+    });
+
+    it('handles relative Fetch URLs', function() {
+      expect(isValidFetchUrl('/foo', 'file://www.example.com')).toEqual(false);
+      expect(isValidFetchUrl('/foo', 'http://www.example.com')).toEqual(true);
+    });
+
+    it('handles unsupported Fetch protocols', function() {
+      expect(isValidFetchUrl('file://www.example.com')).toEqual(false);
+      expect(isValidFetchUrl('ftp://www.example.com')).toEqual(false);
+    });
+
+    it('handles supported Fetch protocols', function() {
+      expect(isValidFetchUrl('http://www.example.com')).toEqual(true);
+      expect(isValidFetchUrl('https://www.example.com')).toEqual(true);
     });
   });
 });
