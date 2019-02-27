@@ -930,7 +930,6 @@ class PDFDocumentProxy {
 
 /**
  * Proxy to a PDFPage in the worker thread.
- * @class PDFPageProxy
  */
 class PDFPageProxy {
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
