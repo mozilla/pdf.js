@@ -15,7 +15,7 @@
 /* eslint no-var: error */
 
 /**
- * @module pdfjsLib
+ * @module pdfjs-dist
  */
 
 import {
