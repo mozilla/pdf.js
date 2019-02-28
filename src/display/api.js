@@ -2068,15 +2068,14 @@ class WorkerTransport {
       return new Promise(function(resolve, reject) {
         const img = new Image();
         img.onload = function() {
-          const width = img.width;
-          const height = img.height;
+          const { width, height, } = img;
           const size = width * height;
           const rgbaLength = size * 4;
           const buf = new Uint8ClampedArray(size * components);
-          const tmpCanvas = document.createElement('canvas');
+          let tmpCanvas = document.createElement('canvas');
           tmpCanvas.width = width;
           tmpCanvas.height = height;
-          const tmpCtx = tmpCanvas.getContext('2d');
+          let tmpCtx = tmpCanvas.getContext('2d');
           tmpCtx.drawImage(img, 0, 0);
           const data = tmpCtx.getImageData(0, 0, width, height).data;
 
@@ -2092,6 +2091,13 @@ class WorkerTransport {
             }
           }
           resolve({ data: buf, width, height, });
+
+          // Zeroing the width and height cause Firefox to release graphics
+          // resources immediately, which can greatly reduce memory consumption.
+          tmpCanvas.width = 0;
+          tmpCanvas.height = 0;
+          tmpCanvas = null;
+          tmpCtx = null;
         };
         img.onerror = function() {
           reject(new Error('JpegDecode failed to load image'));
