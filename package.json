@@ -42,7 +42,7 @@
     "typogr": "^0.6.8",
     "vinyl": "^2.2.0",
     "vinyl-fs": "^3.0.3",
-    "webpack": "^4.29.5",
+    "webpack": "^4.29.6",
     "webpack-stream": "^4.0.3",
     "wintersmith": "^2.5.0",
     "yargs": "^11.1.0"
