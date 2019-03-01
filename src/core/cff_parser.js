@@ -953,7 +953,7 @@ var CFFStrings = (function CFFStringsClosure() {
       return -1;
     },
     add: function CFFStrings_add(value) {
-      return this.strings.push(value) + NUM_STANDARD_CFF_STRINGS - 1;
+      this.strings.push(value);
     },
     get count() {
       return this.strings.length;
@@ -1616,6 +1616,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
         out[0] = 0; // format 0
         let charsetIndex = 0;
         let numCharsets = charset.charset.length;
+        let warned = false;
         for (let i = 1; i < out.length; i += 2) {
           let sid = 0;
           if (charsetIndex < numCharsets) {
@@ -1623,7 +1624,10 @@ var CFFCompiler = (function CFFCompilerClosure() {
             sid = strings.getSID(name);
             if (sid === -1) {
               sid = 0;
-              warn(`Couldn't find ${name} in CFF strings`);
+              if (!warned) {
+                warned = true;
+                warn(`Couldn't find ${name} in CFF strings`);
+              }
             }
           }
           out[i] = (sid >> 8) & 0xFF;
