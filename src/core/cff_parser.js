@@ -1623,7 +1623,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
             sid = strings.getSID(name);
             if (sid === -1) {
               sid = 0;
-              warn(`Couldn't find ${name} in CFF strings`);
+              info(`Couldn't find ${name} in CFF strings`);
             }
           }
           out[i] = (sid >> 8) & 0xFF;
