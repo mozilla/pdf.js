@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 import {
   assert, CMapCompressionType, removeNullCharacters, stringToBytes,
@@ -24,10 +25,10 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 class DOMCanvasFactory {
   create(width, height) {
     if (width <= 0 || height <= 0) {
-      throw new Error('invalid canvas size');
+      throw new Error('Invalid canvas size');
     }
-    let canvas = document.createElement('canvas');
-    let context = canvas.getContext('2d');
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
     canvas.width = width;
     canvas.height = height;
     return {
@@ -38,10 +39,10 @@ class DOMCanvasFactory {
 
   reset(canvasAndContext, width, height) {
     if (!canvasAndContext.canvas) {
-      throw new Error('canvas is not specified');
+      throw new Error('Canvas is not specified');
     }
     if (width <= 0 || height <= 0) {
-      throw new Error('invalid canvas size');
+      throw new Error('Invalid canvas size');
     }
     canvasAndContext.canvas.width = width;
     canvasAndContext.canvas.height = height;
@@ -49,7 +50,7 @@ class DOMCanvasFactory {
 
   destroy(canvasAndContext) {
     if (!canvasAndContext.canvas) {
-      throw new Error('canvas is not specified');
+      throw new Error('Canvas is not specified');
     }
     // Zeroing the width and height cause Firefox to release graphics
     // resources immediately, which can greatly reduce memory consumption.
@@ -137,7 +138,7 @@ class DOMSVGFactory {
   create(width, height) {
     assert(width > 0 && height > 0, 'Invalid SVG dimensions');
 
-    let svg = document.createElementNS(SVG_NS, 'svg:svg');
+    const svg = document.createElementNS(SVG_NS, 'svg:svg');
     svg.setAttribute('version', '1.1');
     svg.setAttribute('width', width + 'px');
     svg.setAttribute('height', height + 'px');
@@ -194,8 +195,8 @@ class PageViewport {
 
     // creating transform to convert pdf coordinate system to the normal
     // canvas like coordinates taking in account scale and rotation
-    let centerX = (viewBox[2] + viewBox[0]) / 2;
-    let centerY = (viewBox[3] + viewBox[1]) / 2;
+    const centerX = (viewBox[2] + viewBox[0]) / 2;
+    const centerY = (viewBox[3] + viewBox[1]) / 2;
     let rotateA, rotateB, rotateC, rotateD;
     rotation = rotation % 360;
     rotation = rotation < 0 ? rotation + 360 : rotation;
@@ -287,9 +288,9 @@ class PageViewport {
    * @see {@link convertToViewportPoint}
    */
   convertToViewportRectangle(rect) {
-    let tl = Util.applyTransform([rect[0], rect[1]], this.transform);
-    let br = Util.applyTransform([rect[2], rect[3]], this.transform);
-    return [tl[0], tl[1], br[0], br[1]];
+    const topLeft = Util.applyTransform([rect[0], rect[1]], this.transform);
+    const bottomRight = Util.applyTransform([rect[2], rect[3]], this.transform);
+    return [topLeft[0], topLeft[1], bottomRight[0], bottomRight[1]];
   }
 
   /**
@@ -306,7 +307,7 @@ class PageViewport {
   }
 }
 
-var RenderingCancelledException = (function RenderingCancelledException() {
+const RenderingCancelledException = (function RenderingCancelledException() {
   function RenderingCancelledException(msg, type) {
     this.message = msg;
     this.type = type;
@@ -332,7 +333,7 @@ const LinkTargetStringMap = [
   '_self',
   '_blank',
   '_parent',
-  '_top'
+  '_top',
 ];
 
 /**
@@ -355,7 +356,7 @@ function addLinkAttributes(link, { url, target, rel, } = {}) {
 
   if (url) {
     const LinkTargetValues = Object.values(LinkTarget);
-    let targetIndex =
+    const targetIndex =
       LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
     link.target = LinkTargetStringMap[targetIndex];
 
@@ -365,11 +366,10 @@ function addLinkAttributes(link, { url, target, rel, } = {}) {
 
 // Gets the file name from a given URL.
 function getFilenameFromUrl(url) {
-  var anchor = url.indexOf('#');
-  var query = url.indexOf('?');
-  var end = Math.min(
-    anchor > 0 ? anchor : url.length,
-    query > 0 ? query : url.length);
+  const anchor = url.indexOf('#');
+  const query = url.indexOf('?');
+  const end = Math.min(anchor > 0 ? anchor : url.length,
+                       query > 0 ? query : url.length);
   return url.substring(url.lastIndexOf('/', end) + 1, end);
 }
 
@@ -407,19 +407,17 @@ class StatTimer {
   }
 
   toString() {
-    let times = this.times;
     // Find the longest name for padding purposes.
     let out = '', longest = 0;
-    for (let i = 0, ii = times.length; i < ii; ++i) {
-      let name = times[i]['name'];
+    for (const time of this.times) {
+      const name = time.name;
       if (name.length > longest) {
         longest = name.length;
       }
     }
-    for (let i = 0, ii = times.length; i < ii; ++i) {
-      let span = times[i];
-      let duration = span.end - span.start;
-      out += `${span['name'].padEnd(longest)} ${duration}ms\n`;
+    for (const time of this.times) {
+      const duration = time.end - time.start;
+      out += `${time.name.padEnd(longest)} ${duration}ms\n`;
     }
     return out;
   }
@@ -466,7 +464,7 @@ function isValidFetchUrl(url, baseUrl) {
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    let script = document.createElement('script');
+    const script = document.createElement('script');
     script.src = src;
 
     script.onload = resolve;
