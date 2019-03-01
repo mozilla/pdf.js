@@ -3339,16 +3339,12 @@ var Type1Font = (function Type1FontClosure() {
       var i, ii;
       for (i = 0; i < count; i++) {
         var index = CFFStandardStrings.indexOf(charstrings[i].glyphName);
-        // TODO: Insert the string and correctly map it.  Previously it was
-        // thought mapping names that aren't in the standard strings to .notdef
-        // was fine, however in issue818 when mapping them all to .notdef the
-        // adieresis glyph no longer worked.
         if (index === -1) {
-          index = 0;
+          index = strings.add(charstrings[i].glyphName);
         }
-        charsetArray.push((index >> 8) & 0xff, index & 0xff);
+        charsetArray.push(index);
       }
-      cff.charset = new CFFCharset(false, 0, [], charsetArray);
+      cff.charset = new CFFCharset(false, 0, charsetArray);
 
       var charStringsIndex = new CFFIndex();
       charStringsIndex.add([0x8B, 0x0E]); // .notdef
