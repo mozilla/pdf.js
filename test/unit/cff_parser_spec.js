@@ -14,7 +14,7 @@
  */
 
 import {
-  CFFCompiler, CFFFDSelect, CFFParser, CFFStrings
+  CFFCharset, CFFCompiler, CFFFDSelect, CFFParser, CFFStrings
 } from '../../src/core/cff_parser';
 import { SEAC_ANALYSIS_ENABLED } from '../../src/core/fonts';
 import { Stream } from '../../src/core/stream';
@@ -443,6 +443,36 @@ describe('CFFCompiler', function() {
       0, // range struct 0 - fd
       0, // sentinel (high)
       2, // sentinel (low)
+    ]);
+  });
+
+  it('compiles charset of CID font', function() {
+    var charset = new CFFCharset();
+    var c = new CFFCompiler();
+    var numGlyphs = 7;
+    var out = c.compileCharset(charset, numGlyphs, new CFFStrings(), true);
+    // All CID charsets get turned into a simple format 2.
+    expect(out).toEqual([
+      2, // format
+      0, // cid (high)
+      0, // cid (low)
+      0, // nLeft (high)
+      numGlyphs - 1, // nLeft (low)
+    ]);
+  });
+
+  it('compiles charset of non CID font', function() {
+    var charset = new CFFCharset(false, 0, ['space', 'exclam']);
+    var c = new CFFCompiler();
+    var numGlyphs = 3;
+    var out = c.compileCharset(charset, numGlyphs, new CFFStrings(), false);
+    // All non-CID fonts use a format 0 charset.
+    expect(out).toEqual([
+      0, // format
+      0, // sid of 'space' (high)
+      1, // sid of 'space' (low)
+      0, // sid of 'exclam' (high)
+      2, // sid of 'exclam' (low)
     ]);
   });
 
