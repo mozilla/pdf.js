@@ -307,11 +307,6 @@ function warn(msg) {
   }
 }
 
-// Deprecated API function -- display regardless of the `verbosity` setting.
-function deprecated(details) {
-  console.log('Deprecated API usage: ' + details);
-}
-
 function unreachable(msg) {
   throw new Error(msg);
 }
@@ -929,7 +924,6 @@ export {
   bytesToString,
   createPromiseCapability,
   createObjectURL,
-  deprecated,
   getVerbosityLevel,
   info,
   isArrayBuffer,
