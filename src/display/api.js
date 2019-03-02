@@ -16,15 +16,14 @@
 /* eslint no-var: error */
 
 import {
-  assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
-  InvalidPDFException, isArrayBuffer, isSameOrigin, MissingPDFException,
-  NativeImageDecoding, PasswordException, setVerbosityLevel, shadow,
-  stringToBytes, UnexpectedResponseException, UnknownErrorException,
-  unreachable, URL, warn
+  assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
+  isArrayBuffer, isSameOrigin, MissingPDFException, NativeImageDecoding,
+  PasswordException, setVerbosityLevel, shadow, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, unreachable, URL, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
-  PageViewport, RenderingCancelledException, StatTimer
+  deprecated, DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
+  loadScript, PageViewport, RenderingCancelledException, StatTimer
 } from './display_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
