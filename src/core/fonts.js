@@ -3335,14 +3335,15 @@ var Type1Font = (function Type1FontClosure() {
       cff.globalSubrIndex = new CFFIndex();
 
       var count = glyphs.length;
-      var charsetArray = [0];
+      var charsetArray = ['.notdef'];
       var i, ii;
       for (i = 0; i < count; i++) {
-        var index = CFFStandardStrings.indexOf(charstrings[i].glyphName);
+        let glyphName = charstrings[i].glyphName;
+        let index = CFFStandardStrings.indexOf(glyphName);
         if (index === -1) {
-          index = strings.add(charstrings[i].glyphName);
+          strings.add(glyphName);
         }
-        charsetArray.push(index);
+        charsetArray.push(glyphName);
       }
       cff.charset = new CFFCharset(false, 0, charsetArray);
 
