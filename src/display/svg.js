@@ -940,7 +940,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
     constructPath: function SVGGraphics_constructPath(ops, args) {
       var current = this.current;
       var x = current.x, y = current.y;
-      current.path = this.svgFactory.createElement('svg:path');
       var d = [];
       var opLength = ops.length;
 
@@ -992,10 +991,22 @@ SVGGraphics = (function SVGGraphicsClosure() {
             break;
         }
       }
-      current.path.setAttributeNS(null, 'd', d.join(' '));
-      current.path.setAttributeNS(null, 'fill', 'none');
 
-      this._ensureTransformGroup().appendChild(current.path);
+      d = d.join(' ');
+
+      if (current.path && opLength > 0 && ops[0] !== OPS.rectangle &&
+          ops[0] !== OPS.moveTo) {
+        // If a path does not start with an OPS.rectangle or OPS.moveTo, it has
+        // probably been divided into two OPS.constructPath operators by
+        // OperatorList. Append the commands to the previous path element.
+        d = current.path.getAttributeNS(null, 'd') + d;
+      } else {
+        current.path = this.svgFactory.createElement('svg:path');
+        this._ensureTransformGroup().appendChild(current.path);
+      }
+
+      current.path.setAttributeNS(null, 'd', d);
+      current.path.setAttributeNS(null, 'fill', 'none');
 
       // Saving a reference in current.element so that it can be addressed
       // in 'fill' and 'stroke'
@@ -1004,6 +1015,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
 
     endPath: function SVGGraphics_endPath() {
+      // Painting operators end a path.
+      this.current.path = null;
+
       if (!this.pendingClip) {
         return;
       }
