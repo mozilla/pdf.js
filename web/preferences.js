@@ -35,8 +35,6 @@ function getDefaultPreferences() {
         }
       }).then(function({ AppOptions, OptionKind, }) {
         return AppOptions.getAll(OptionKind.PREFERENCE);
-      }, function(reason) {
-        console.error(reason);
       });
     }
   }

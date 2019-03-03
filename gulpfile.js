@@ -535,7 +535,7 @@ gulp.task('default_preferences-pre', function() {
     ], { base: 'src/', }),
     gulp.src([
       'web/*.js',
-      '!web/{pdfjs,preferences,viewer}.js',
+      '!web/{app,pdfjs,preferences,viewer}.js',
     ], { base: '.', }),
   ]).pipe(transform('utf8', preprocess))
     .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + 'lib/'));
