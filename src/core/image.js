@@ -305,7 +305,7 @@ var PDFImage = (function PDFImageClosure() {
       }
     }
 
-    return { data, width, height, };
+    return { data, width, height, downsized: false, };
   };
 
   PDFImage.prototype = {
@@ -535,6 +535,7 @@ var PDFImage = (function PDFImageClosure() {
         height: drawHeight,
         kind: 0,
         data: null,
+        downsized: false,
       };
 
       var numComps = this.numComps;

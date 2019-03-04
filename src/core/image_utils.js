@@ -14,6 +14,7 @@
  */
 /* eslint no-var: error */
 
+import { assert, OPS, warn } from '../shared/util';
 import { ColorSpace } from './colorspace';
 import { JpegStream } from './jpeg_stream';
 import { Stream } from './stream';
@@ -80,6 +81,106 @@ class NativeImageDecoder {
   }
 }
 
+const ImageCacheKind = {
+  NON_EXISTING: 0,
+  EXISTING: 1,
+  NEEDS_RESIZING: 2,
+};
+
+class ImageCache {
+  constructor({ handler, pageIndex, transform = null, }) {
+    this._handler = handler;
+    this._pageIndex = pageIndex;
+    this._transform = transform;
+    this._cache = Object.create(null);
+  }
+
+  get({ key, }) {
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(typeof key === 'string' && key.length > 0,
+             'ImageCache.get: Invalid `key` parameter.');
+    }
+    const cacheEntry = this._cache[key];
+
+    if (cacheEntry === undefined) {
+      return null;
+    }
+    return {
+      fn: cacheEntry.fn,
+      args: cacheEntry.args,
+    };
+  }
+
+  getKind({ key, ctm, }) {
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(typeof key === 'string' && key.length > 0,
+             'ImageCache.getKind: Invalid `key` parameter.');
+
+      assert(typeof ctm === 'object' && ctm.length === 6,
+             'ImageCache.getKind: Invalid `ctm` parameter.');
+    }
+    const cacheEntry = this._cache[key];
+
+    if (cacheEntry === undefined) {
+      return ImageCacheKind.NON_EXISTING;
+    }
+    return ImageCacheKind.EXISTING;
+  }
+
+  set({ key, fn, args, dimensions, }) {
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(typeof key === 'string' && key.length > 0,
+             'ImageCache.set: Invalid `key` parameter.');
+
+      assert(Object.values(OPS).includes(fn),
+             'ImageCache.set: Invalid `fn` parameter.');
+      assert(typeof args === 'object',
+             'ImageCache.set: Invalid `args` parameter.');
+
+      assert(typeof dimensions === 'object' && dimensions !== null,
+             'ImageCache.set: Invalid `dimensions` parameter.');
+      assert(Number.isInteger(dimensions.width) && dimensions.width > 0,
+             'ImageCache.set: Non-integer `dimensions.width` parameter.');
+      assert(Number.isInteger(dimensions.height) && dimensions.height > 0,
+             'ImageCache.set: Non-integer `dimensions.height` parameter.');
+      assert(typeof dimensions.downsized === 'boolean',
+            'ImageCache.set: Non-boolean `dimensions.downsized` parameter.');
+    }
+
+    if (this._cache[key] !== undefined) {
+      warn(`ImageCache.set: Overwriting existing entry for "${key}".`);
+    }
+
+    this._cache[key] = { fn, args, dimensions, };
+  }
+
+  remove({ key, }) {
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(typeof key === 'string' && key.length > 0,
+             'ImageCache.remove: Invalid `key` parameter.');
+    }
+
+    if (this._cache[key] === undefined) {
+      warn('ImageCache.remove: ' +
+           `Attempting to remove non-existent entry for "${key}".`);
+      return;
+    }
+
+    this._handler.send('obj', [key, this._pageIndex, 'ImageCacheRemove']);
+    delete this._cache[key];
+  }
+
+  clear() {
+    this._cache = Object.create(null);
+  }
+}
+
 export {
   NativeImageDecoder,
+  ImageCache,
+  ImageCacheKind,
 };

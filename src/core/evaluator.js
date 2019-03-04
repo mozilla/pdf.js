@@ -37,6 +37,7 @@ import {
   getSerifFonts, getStdFontMap, getSymbolsFonts
 } from './standard_fonts';
 import { getTilingPatternIR, Pattern } from './pattern';
+import { ImageCache, ImageCacheKind, NativeImageDecoder } from './image_utils';
 import { Lexer, Parser } from './parser';
 import { bidi } from './bidi';
 import { ColorSpace } from './colorspace';
@@ -47,7 +48,6 @@ import { getMetrics } from './metrics';
 import { isPDFFunction } from './function';
 import { JpegStream } from './jpeg_stream';
 import { MurmurHash3_64 } from './murmurhash3';
-import { NativeImageDecoder } from './image_utils';
 import { OperatorList } from './operator_list';
 import { PDFImage } from './image';
 
@@ -335,12 +335,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         });
         imgData.cached = true;
         args = [imgData];
+
         operatorList.addOp(OPS.paintImageMaskXObject, args);
         if (cacheKey) {
-          imageCache[cacheKey] = {
+          imageCache.set({
+            key: cacheKey,
             fn: OPS.paintImageMaskXObject,
             args,
-          };
+            dimensions: { width: imgData.width, height: imgData.height,
+                          downsized: imgData.downsized, },
+          });
         }
         return Promise.resolve();
       }
@@ -388,10 +392,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           operatorList.addOp(OPS.paintJpegXObject, args);
           if (cacheKey) {
-            imageCache[cacheKey] = {
+            imageCache.set({
+              key: cacheKey,
               fn: OPS.paintJpegXObject,
               args,
-            };
+              dimensions: { width: w, height: h, downsized: false, },
+            });
           }
         }, (reason) => {
           warn('Native JPEG decoding failed -- trying to recover: ' +
@@ -446,10 +452,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       operatorList.addOp(OPS.paintImageXObject, args);
       if (cacheKey) {
-        imageCache[cacheKey] = {
+        imageCache.set({
+          key: cacheKey,
           fn: OPS.paintImageXObject,
           args,
-        };
+          dimensions: { width: w, height: h, downsized: false, },
+        });
       }
       return Promise.resolve();
     },
@@ -859,7 +867,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var self = this;
       var xref = this.xref;
-      var imageCache = Object.create(null);
+      const imageCache = new ImageCache({
+        handler: this.handler,
+        pageIndex: this.pageIndex,
+      });
 
       var xobjs = (resources.get('XObject') || Dict.empty);
       var patterns = (resources.get('Pattern') || Dict.empty);
@@ -901,11 +912,25 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           switch (fn | 0) {
             case OPS.paintXObject:
               // eagerly compile XForm objects
-              var name = args[0].name;
-              if (name && imageCache[name] !== undefined) {
-                operatorList.addOp(imageCache[name].fn, imageCache[name].args);
-                args = null;
-                continue;
+              var name = isName(args[0]) ? args[0].name : null;
+              if (name) {
+                const cachedKind = imageCache.getKind({
+                  key: name,
+                  ctm: stateManager.state.ctm,
+                });
+
+                if (cachedKind === ImageCacheKind.EXISTING) {
+                  const cachedImage = imageCache.get({ key: name, });
+
+                  operatorList.addOp(cachedImage.fn, cachedImage.args);
+                  args = null;
+                  continue;
+                } else if (cachedKind === ImageCacheKind.NEEDS_RESIZING) {
+                  imageCache.remove(name);
+                } else {
+                  assert(cachedKind === ImageCacheKind.NON_EXISTING,
+                         'Unexpected `ImageCacheKind` value.');
+                }
               }
 
               next(new Promise(function(resolveXObject, rejectXObject) {
@@ -980,13 +1005,25 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.endInlineImage:
               var cacheKey = args[0].cacheKey;
               if (cacheKey) {
-                var cacheEntry = imageCache[cacheKey];
-                if (cacheEntry !== undefined) {
-                  operatorList.addOp(cacheEntry.fn, cacheEntry.args);
+                const cachedKind = imageCache.getKind({
+                  key: cacheKey,
+                  ctm: stateManager.state.ctm,
+                });
+
+                if (cachedKind === ImageCacheKind.EXISTING) {
+                  const cachedImage = imageCache.get({ key: cacheKey, });
+
+                  operatorList.addOp(cachedImage.fn, cachedImage.args);
                   args = null;
                   continue;
+                } else if (cachedKind === ImageCacheKind.NEEDS_RESIZING) {
+                  imageCache.remove(cacheKey);
+                } else {
+                  assert(cachedKind === ImageCacheKind.NON_EXISTING,
+                         'Unexpected `ImageCacheKind` value.');
                 }
               }
+
               next(self.buildPaintImageXObject({
                 resources,
                 image: args[0],

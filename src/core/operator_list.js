@@ -534,30 +534,6 @@ var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 1000;
   var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
-  function getTransfers(queue) {
-    var transfers = [];
-    var fnArray = queue.fnArray, argsArray = queue.argsArray;
-    for (var i = 0, ii = queue.length; i < ii; i++) {
-      switch (fnArray[i]) {
-        case OPS.paintInlineImageXObject:
-        case OPS.paintInlineImageXObjectGroup:
-        case OPS.paintImageMaskXObject:
-          var arg = argsArray[i][0]; // first param in imgData
-
-          if (typeof PDFJSDev === 'undefined' ||
-              PDFJSDev.test('!PRODUCTION || TESTING')) {
-            assert(arg.data instanceof Uint8ClampedArray,
-                   'OperatorList - getTransfers: Unsupported "arg.data" type.');
-          }
-          if (!arg.cached) {
-            transfers.push(arg.data.buffer);
-          }
-          break;
-      }
-    }
-    return transfers;
-  }
-
   function OperatorList(intent, messageHandler, pageIndex) {
     this.messageHandler = messageHandler;
     this.fnArray = [];
@@ -630,9 +606,44 @@ var OperatorList = (function OperatorListClosure() {
       };
     },
 
+    get _transfers() {
+      const transfers = [];
+      const { fnArray, argsArray, length, } = this;
+      for (let i = 0; i < length; i++) {
+        switch (fnArray[i]) {
+          case OPS.paintInlineImageXObject:
+          case OPS.paintInlineImageXObjectGroup:
+          case OPS.paintImageMaskXObject:
+            const arg = argsArray[i][0]; // First parameter in `imgData`.
+
+            if (typeof PDFJSDev === 'undefined' ||
+                PDFJSDev.test('!PRODUCTION || TESTING')) {
+              assert(arg.data instanceof Uint8ClampedArray,
+                     'OperatorList._transfers: Unsupported "arg.data" type.');
+            }
+            if (!arg.cached) {
+              transfers.push(arg.data.buffer);
+            }
+            if (arg.downsized) {
+              if (typeof PDFJSDev === 'undefined' ||
+                  PDFJSDev.test('!PRODUCTION || TESTING')) {
+                // OPS.paintInlineImageXObject, and its Group version, is
+                // currently only used for *small* images; see `evaluator.js`.
+                assert(fnArray[i] === OPS.paintImageMaskXObject,
+                       'OperatorList._transfers: Attempting to downsize ' +
+                       'small inline images does *not* make any sense.');
+              }
+              this.messageHandler.send('obj',
+                [null, this.pageIndex, 'InlineImageDownsized', null]);
+            }
+            break;
+        }
+      }
+      return transfers;
+    },
+
     flush(lastChunk) {
       this.optimizer.flush();
-      var transfers = getTransfers(this);
       var length = this.length;
       this._totalLength += length;
 
@@ -645,7 +656,7 @@ var OperatorList = (function OperatorListClosure() {
         },
         pageIndex: this.pageIndex,
         intent: this.intent,
-      }, transfers);
+      }, this._transfers);
       this.dependencies = Object.create(null);
       this.fnArray.length = 0;
       this.argsArray.length = 0;
