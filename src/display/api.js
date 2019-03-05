@@ -16,15 +16,14 @@
 /* eslint no-var: error */
 
 import {
-  assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
-  InvalidPDFException, isArrayBuffer, isSameOrigin, MissingPDFException,
-  NativeImageDecoding, PasswordException, setVerbosityLevel, shadow,
-  stringToBytes, UnexpectedResponseException, UnknownErrorException,
-  unreachable, URL, warn
+  assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
+  isArrayBuffer, isSameOrigin, MissingPDFException, NativeImageDecoding,
+  PasswordException, setVerbosityLevel, shadow, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, unreachable, URL, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
-  PageViewport, RenderingCancelledException, StatTimer
+  deprecated, DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
+  loadScript, PageViewport, RenderingCancelledException, StatTimer
 } from './display_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
@@ -2028,11 +2027,11 @@ class WorkerTransport {
         return; // Ignore any pending requests if the worker was terminated.
       }
 
-      const page = this.pageCache[data.pageNum - 1];
+      const page = this.pageCache[data.pageIndex];
       const intentState = page.intentStates[data.intent];
 
       if (intentState.displayReadyCapability) {
-        intentState.displayReadyCapability.reject(data.error);
+        intentState.displayReadyCapability.reject(new Error(data.error));
       } else {
         throw new Error(data.error);
       }
