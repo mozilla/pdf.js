@@ -477,6 +477,11 @@ function loadScript(src) {
   });
 }
 
+// Deprecated API function -- display regardless of the `verbosity` setting.
+function deprecated(details) {
+  console.log('Deprecated API usage: ' + details);
+}
+
 export {
   PageViewport,
   RenderingCancelledException,
@@ -492,4 +497,5 @@ export {
   isFetchSupported,
   isValidFetchUrl,
   loadScript,
+  deprecated,
 };
