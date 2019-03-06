@@ -222,7 +222,7 @@ const defaultOptions = {
   },
 };
 if (typeof PDFJSDev === 'undefined' ||
-    PDFJSDev.test('!PRODUCTION || GENERIC')) {
+    PDFJSDev.test('!PRODUCTION || (GENERIC && !LIB)')) {
   defaultOptions.disablePreferences = {
     /** @type {boolean} */
     value: false,
@@ -262,9 +262,15 @@ class AppOptions {
         if ((kind & defaultOption.kind) === 0) {
           continue;
         }
-        if ((kind & OptionKind.PREFERENCE) !== 0) {
-          options[name] = defaultOption.value;
-          continue;
+        if (kind === OptionKind.PREFERENCE) {
+          const value = defaultOption.value, valueType = typeof value;
+
+          if (valueType === 'boolean' || valueType === 'string' ||
+              (valueType === 'number' && Number.isInteger(value))) {
+            options[name] = value;
+            continue;
+          }
+          throw new Error(`Invalid type for preference: ${name}`);
         }
       }
       const userOption = userOptions[name];
