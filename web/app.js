@@ -187,7 +187,9 @@ let PDFViewerApplication = {
       for (const name in prefs) {
         AppOptions.set(name, prefs[name]);
       }
-    } catch (reason) { }
+    } catch (reason) {
+      console.error(`_readPreferences: "${reason.message}".`);
+    }
   },
 
   /**
