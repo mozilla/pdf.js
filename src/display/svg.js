@@ -282,6 +282,7 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.fontMatrix = FONT_IDENTITY_MATRIX;
     this.leading = 0;
     this.textRenderingMode = TextRenderingMode.FILL;
+    this.textMatrixScale = 1;
 
     // Current point (in user coordinates)
     this.x = 0;
@@ -690,6 +691,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
     setTextMatrix: function SVGGraphics_setTextMatrix(a, b, c, d, e, f) {
       var current = this.current;
       this.current.textMatrix = this.current.lineMatrix = [a, b, c, d, e, f];
+      current.textMatrixScale = Math.sqrt(a * a + b * b);
 
       this.current.x = this.current.lineX = 0;
       this.current.y = this.current.lineY = 0;
@@ -710,6 +712,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.current.y = this.current.lineY = 0;
       this.current.textMatrix = IDENTITY_MATRIX;
       this.current.lineMatrix = IDENTITY_MATRIX;
+      this.current.textMatrixScale = 1;
       this.current.tspan = this.svgFactory.createElement('svg:tspan');
       this.current.txtElement = this.svgFactory.createElement('svg:text');
       this.current.txtgrp = this.svgFactory.createElement('svg:g');
@@ -815,7 +818,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
       if (fillStrokeMode === TextRenderingMode.STROKE ||
           fillStrokeMode === TextRenderingMode.FILL_STROKE) {
-        this._setStrokeAttributes(current.tspan);
+        const lineWidthScale = 1 / (current.textMatrixScale || 1);
+        this._setStrokeAttributes(current.tspan, lineWidthScale);
       }
 
       // Include the text rise in the text matrix since the `pm` function
@@ -1145,8 +1149,14 @@ SVGGraphics = (function SVGGraphicsClosure() {
     /**
      * @private
      */
-    _setStrokeAttributes(element) {
+    _setStrokeAttributes(element, lineWidthScale = 1) {
       const current = this.current;
+      let dashArray = current.dashArray;
+      if (lineWidthScale !== 1 && dashArray.length > 0) {
+        dashArray = dashArray.map(function(value) {
+          return lineWidthScale * value;
+        });
+      }
       element.setAttributeNS(null, 'stroke', current.strokeColor);
       element.setAttributeNS(null, 'stroke-opacity', current.strokeAlpha);
       element.setAttributeNS(null, 'stroke-miterlimit',
@@ -1154,11 +1164,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
       element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
       element.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
       element.setAttributeNS(null, 'stroke-width',
-                             pf(current.lineWidth) + 'px');
+                             pf(lineWidthScale * current.lineWidth) + 'px');
       element.setAttributeNS(null, 'stroke-dasharray',
-                             current.dashArray.map(pf).join(' '));
+                             dashArray.map(pf).join(' '));
       element.setAttributeNS(null, 'stroke-dashoffset',
-                             pf(current.dashPhase) + 'px');
+                             pf(lineWidthScale * current.dashPhase) + 'px');
     },
 
     eoFill: function SVGGraphics_eoFill() {
