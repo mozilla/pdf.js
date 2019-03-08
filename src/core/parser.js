@@ -336,14 +336,22 @@ var Parser = (function ParserClosure() {
      * Find the EOD (end-of-data) marker '~>' (i.e. TILDE + GT) of the stream.
      * @returns {number} The inline stream length.
      */
-    findASCII85DecodeInlineStreamEnd:
-        function Parser_findASCII85DecodeInlineStreamEnd(stream) {
+    findASCII85DecodeInlineStreamEnd(stream) {
       var TILDE = 0x7E, GT = 0x3E;
       var startPos = stream.pos, ch, length;
       while ((ch = stream.getByte()) !== -1) {
-        if (ch === TILDE && stream.peekByte() === GT) {
-          stream.skip();
-          break;
+        if (ch === TILDE) {
+          ch = stream.peekByte();
+          // Handle corrupt PDF documents which contains whitespace "inside" of
+          // the EOD marker (fixes issue10614.pdf).
+          while (isSpace(ch)) {
+            stream.skip();
+            ch = stream.peekByte();
+          }
+          if (ch === GT) {
+            stream.skip();
+            break;
+          }
         }
       }
       length = stream.pos - startPos;
