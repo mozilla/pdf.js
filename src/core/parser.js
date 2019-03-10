@@ -714,8 +714,40 @@ class Parser {
   }
 }
 
-var Lexer = (function LexerClosure() {
-  function Lexer(stream, knownCommands) {
+// A '1' in this array means the character is white space. A '1' or
+// '2' means the character ends a name or command.
+const specialChars = [
+  1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, // 0x
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 1x
+  1, 0, 0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 2, // 2x
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, // 3x
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 4x
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, // 5x
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 6x
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, // 7x
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 8x
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 9x
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ax
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // bx
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // cx
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // dx
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ex
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // fx
+];
+
+function toHexDigit(ch) {
+  if (ch >= 0x30 && ch <= 0x39) { // '0'-'9'
+    return ch & 0x0F;
+  }
+  if ((ch >= 0x41 && ch <= 0x46) || (ch >= 0x61 && ch <= 0x66)) {
+    // 'A'-'F', 'a'-'f'
+    return (ch & 0x0F) + 9;
+  }
+  return -1;
+}
+
+class Lexer {
+  constructor(stream, knownCommands) {
     this.stream = stream;
     this.nextChar();
 
@@ -738,435 +770,407 @@ var Lexer = (function LexerClosure() {
     this.beginInlineImagePos = -1;
   }
 
-  // A '1' in this array means the character is white space. A '1' or
-  // '2' means the character ends a name or command.
-  var specialChars = [
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, // 0x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 1x
-    1, 0, 0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 2, // 2x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, // 3x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 4x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, // 5x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 6x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, // 7x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 8x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 9x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ax
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // bx
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // cx
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // dx
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ex
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // fx
-  ];
-
-  function toHexDigit(ch) {
-    if (ch >= 0x30 && ch <= 0x39) { // '0'-'9'
-      return ch & 0x0F;
-    }
-    if ((ch >= 0x41 && ch <= 0x46) || (ch >= 0x61 && ch <= 0x66)) {
-      // 'A'-'F', 'a'-'f'
-      return (ch & 0x0F) + 9;
-    }
-    return -1;
+  nextChar() {
+    return (this.currentChar = this.stream.getByte());
   }
 
-  Lexer.prototype = {
-    nextChar: function Lexer_nextChar() {
-      return (this.currentChar = this.stream.getByte());
-    },
-    peekChar: function Lexer_peekChar() {
-      return this.stream.peekByte();
-    },
-    getNumber: function Lexer_getNumber() {
-      var ch = this.currentChar;
-      var eNotation = false;
-      var divideBy = 0; // different from 0 if it's a floating point value
-      var sign = 0;
+  peekChar() {
+    return this.stream.peekByte();
+  }
+
+  getNumber() {
+    let ch = this.currentChar;
+    let eNotation = false;
+    let divideBy = 0; // Different from 0 if it's a floating point value.
+    let sign = 0;
+
+    if (ch === 0x2D) { // '-'
+      sign = -1;
+      ch = this.nextChar();
 
       if (ch === 0x2D) { // '-'
-        sign = -1;
-        ch = this.nextChar();
-
-        if (ch === 0x2D) { // '-'
-          // Ignore double negative (this is consistent with Adobe Reader).
-          ch = this.nextChar();
-        }
-      } else if (ch === 0x2B) { // '+'
-        sign = 1;
+        // Ignore double negative (this is consistent with Adobe Reader).
         ch = this.nextChar();
       }
-      if (ch === 0x0A || ch === 0x0D) { // LF, CR
-        // Ignore line-breaks (this is consistent with Adobe Reader).
-        do {
-          ch = this.nextChar();
-        } while (ch === 0x0A || ch === 0x0D);
-      }
-      if (ch === 0x2E) { // '.'
-        divideBy = 10;
+    } else if (ch === 0x2B) { // '+'
+      sign = 1;
+      ch = this.nextChar();
+    }
+    if (ch === 0x0A || ch === 0x0D) { // LF, CR
+      // Ignore line-breaks (this is consistent with Adobe Reader).
+      do {
         ch = this.nextChar();
+      } while (ch === 0x0A || ch === 0x0D);
+    }
+    if (ch === 0x2E) { // '.'
+      divideBy = 10;
+      ch = this.nextChar();
+    }
+    if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+      if (divideBy === 10 && sign === 0 &&
+          (isSpace(ch) || ch === /* EOF = */ -1)) {
+        // This is consistent with Adobe Reader (fixes issue9252.pdf).
+        warn('Lexer.getNumber - treating a single decimal point as zero.');
+        return 0;
       }
-      if (ch < 0x30 || ch > 0x39) { // '0' - '9'
-        if (divideBy === 10 && sign === 0 &&
-            (isSpace(ch) || ch === /* EOF = */ -1)) {
-          // This is consistent with Adobe Reader (fixes issue9252.pdf).
-          warn('Lexer.getNumber - treating a single decimal point as zero.');
-          return 0;
-        }
-        throw new FormatError(
-          `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`);
-      }
+      throw new FormatError(
+        `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`);
+    }
 
-      sign = sign || 1;
-      var baseValue = ch - 0x30; // '0'
-      var powerValue = 0;
-      var powerValueSign = 1;
+    sign = sign || 1;
+    let baseValue = ch - 0x30; // '0'
+    let powerValue = 0;
+    let powerValueSign = 1;
 
-      while ((ch = this.nextChar()) >= 0) {
-        if (0x30 <= ch && ch <= 0x39) { // '0' - '9'
-          var currentDigit = ch - 0x30; // '0'
-          if (eNotation) { // We are after an 'e' or 'E'
-            powerValue = powerValue * 10 + currentDigit;
-          } else {
-            if (divideBy !== 0) { // We are after a point
-              divideBy *= 10;
-            }
-            baseValue = baseValue * 10 + currentDigit;
-          }
-        } else if (ch === 0x2E) { // '.'
-          if (divideBy === 0) {
-            divideBy = 1;
-          } else {
-            // A number can have only one '.'
-            break;
-          }
-        } else if (ch === 0x2D) { // '-'
-          // ignore minus signs in the middle of numbers to match
-          // Adobe's behavior
-          warn('Badly formatted number');
-        } else if (ch === 0x45 || ch === 0x65) { // 'E', 'e'
-          // 'E' can be either a scientific notation or the beginning of a new
-          // operator
-          ch = this.peekChar();
-          if (ch === 0x2B || ch === 0x2D) { // '+', '-'
-            powerValueSign = (ch === 0x2D) ? -1 : 1;
-            this.nextChar(); // Consume the sign character
-          } else if (ch < 0x30 || ch > 0x39) { // '0' - '9'
-            // The 'E' must be the beginning of a new operator
-            break;
-          }
-          eNotation = true;
+    while ((ch = this.nextChar()) >= 0) {
+      if (0x30 <= ch && ch <= 0x39) { // '0' - '9'
+        const currentDigit = ch - 0x30; // '0'
+        if (eNotation) { // We are after an 'e' or 'E'.
+          powerValue = powerValue * 10 + currentDigit;
         } else {
-          // the last character doesn't belong to us
-          break;
-        }
-      }
-
-      if (divideBy !== 0) {
-        baseValue /= divideBy;
-      }
-      if (eNotation) {
-        baseValue *= Math.pow(10, powerValueSign * powerValue);
-      }
-      return sign * baseValue;
-    },
-    getString: function Lexer_getString() {
-      var numParen = 1;
-      var done = false;
-      var strBuf = this.strBuf;
-      strBuf.length = 0;
-
-      var ch = this.nextChar();
-      while (true) {
-        var charBuffered = false;
-        switch (ch | 0) {
-          case -1:
-            warn('Unterminated string');
-            done = true;
-            break;
-          case 0x28: // '('
-            ++numParen;
-            strBuf.push('(');
-            break;
-          case 0x29: // ')'
-            if (--numParen === 0) {
-              this.nextChar(); // consume strings ')'
-              done = true;
-            } else {
-              strBuf.push(')');
-            }
-            break;
-          case 0x5C: // '\\'
-            ch = this.nextChar();
-            switch (ch) {
-              case -1:
-                warn('Unterminated string');
-                done = true;
-                break;
-              case 0x6E: // 'n'
-                strBuf.push('\n');
-                break;
-              case 0x72: // 'r'
-                strBuf.push('\r');
-                break;
-              case 0x74: // 't'
-                strBuf.push('\t');
-                break;
-              case 0x62: // 'b'
-                strBuf.push('\b');
-                break;
-              case 0x66: // 'f'
-                strBuf.push('\f');
-                break;
-              case 0x5C: // '\'
-              case 0x28: // '('
-              case 0x29: // ')'
-                strBuf.push(String.fromCharCode(ch));
-                break;
-              case 0x30: case 0x31: case 0x32: case 0x33: // '0'-'3'
-              case 0x34: case 0x35: case 0x36: case 0x37: // '4'-'7'
-                var x = ch & 0x0F;
-                ch = this.nextChar();
-                charBuffered = true;
-                if (ch >= 0x30 && ch <= 0x37) { // '0'-'7'
-                  x = (x << 3) + (ch & 0x0F);
-                  ch = this.nextChar();
-                  if (ch >= 0x30 && ch <= 0x37) {  // '0'-'7'
-                    charBuffered = false;
-                    x = (x << 3) + (ch & 0x0F);
-                  }
-                }
-                strBuf.push(String.fromCharCode(x));
-                break;
-              case 0x0D: // CR
-                if (this.peekChar() === 0x0A) { // LF
-                  this.nextChar();
-                }
-                break;
-              case 0x0A: // LF
-                break;
-              default:
-                strBuf.push(String.fromCharCode(ch));
-                break;
-            }
-            break;
-          default:
-            strBuf.push(String.fromCharCode(ch));
-            break;
-        }
-        if (done) {
-          break;
-        }
-        if (!charBuffered) {
-          ch = this.nextChar();
-        }
-      }
-      return strBuf.join('');
-    },
-    getName: function Lexer_getName() {
-      var ch, previousCh;
-      var strBuf = this.strBuf;
-      strBuf.length = 0;
-      while ((ch = this.nextChar()) >= 0 && !specialChars[ch]) {
-        if (ch === 0x23) { // '#'
-          ch = this.nextChar();
-          if (specialChars[ch]) {
-            warn('Lexer_getName: ' +
-                 'NUMBER SIGN (#) should be followed by a hexadecimal number.');
-            strBuf.push('#');
-            break;
+          if (divideBy !== 0) { // We are after a point.
+            divideBy *= 10;
           }
-          var x = toHexDigit(ch);
-          if (x !== -1) {
-            previousCh = ch;
-            ch = this.nextChar();
-            var x2 = toHexDigit(ch);
-            if (x2 === -1) {
-              warn('Lexer_getName: Illegal digit (' +
-                   String.fromCharCode(ch) + ') in hexadecimal number.');
-              strBuf.push('#', String.fromCharCode(previousCh));
-              if (specialChars[ch]) {
-                break;
-              }
-              strBuf.push(String.fromCharCode(ch));
-              continue;
-            }
-            strBuf.push(String.fromCharCode((x << 4) | x2));
-          } else {
-            strBuf.push('#', String.fromCharCode(ch));
-          }
+          baseValue = baseValue * 10 + currentDigit;
+        }
+      } else if (ch === 0x2E) { // '.'
+        if (divideBy === 0) {
+          divideBy = 1;
         } else {
-          strBuf.push(String.fromCharCode(ch));
-        }
-      }
-      if (strBuf.length > 127) {
-        warn('name token is longer than allowed by the spec: ' + strBuf.length);
-      }
-      return Name.get(strBuf.join(''));
-    },
-    getHexString: function Lexer_getHexString() {
-      var strBuf = this.strBuf;
-      strBuf.length = 0;
-      var ch = this.currentChar;
-      var isFirstHex = true;
-      var firstDigit;
-      var secondDigit;
-      while (true) {
-        if (ch < 0) {
-          warn('Unterminated hex string');
-          break;
-        } else if (ch === 0x3E) { // '>'
-          this.nextChar();
-          break;
-        } else if (specialChars[ch] === 1) {
-          ch = this.nextChar();
-          continue;
-        } else {
-          if (isFirstHex) {
-            firstDigit = toHexDigit(ch);
-            if (firstDigit === -1) {
-              warn('Ignoring invalid character "' + ch + '" in hex string');
-              ch = this.nextChar();
-              continue;
-            }
-          } else {
-            secondDigit = toHexDigit(ch);
-            if (secondDigit === -1) {
-              warn('Ignoring invalid character "' + ch + '" in hex string');
-              ch = this.nextChar();
-              continue;
-            }
-            strBuf.push(String.fromCharCode((firstDigit << 4) | secondDigit));
-          }
-          isFirstHex = !isFirstHex;
-          ch = this.nextChar();
-        }
-      }
-      return strBuf.join('');
-    },
-    getObj: function Lexer_getObj() {
-      // skip whitespace and comments
-      var comment = false;
-      var ch = this.currentChar;
-      while (true) {
-        if (ch < 0) {
-          return EOF;
-        }
-        if (comment) {
-          if (ch === 0x0A || ch === 0x0D) { // LF, CR
-            comment = false;
-          }
-        } else if (ch === 0x25) { // '%'
-          comment = true;
-        } else if (specialChars[ch] !== 1) {
+          // A number can have only one dot.
           break;
         }
-        ch = this.nextChar();
+      } else if (ch === 0x2D) { // '-'
+        // Ignore minus signs in the middle of numbers to match
+        // Adobe's behavior.
+        warn('Badly formatted number: minus sign in the middle');
+      } else if (ch === 0x45 || ch === 0x65) { // 'E', 'e'
+        // 'E' can be either a scientific notation or the beginning of a new
+        // operator.
+        ch = this.peekChar();
+        if (ch === 0x2B || ch === 0x2D) { // '+', '-'
+          powerValueSign = (ch === 0x2D) ? -1 : 1;
+          this.nextChar(); // Consume the sign character.
+        } else if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+          // The 'E' must be the beginning of a new operator.
+          break;
+        }
+        eNotation = true;
+      } else {
+        // The last character doesn't belong to us.
+        break;
       }
+    }
 
-      // start reading token
+    if (divideBy !== 0) {
+      baseValue /= divideBy;
+    }
+    if (eNotation) {
+      baseValue *= Math.pow(10, powerValueSign * powerValue);
+    }
+    return sign * baseValue;
+  }
+
+  getString() {
+    let numParen = 1;
+    let done = false;
+    const strBuf = this.strBuf;
+    strBuf.length = 0;
+
+    let ch = this.nextChar();
+    while (true) {
+      let charBuffered = false;
       switch (ch | 0) {
-        case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: // '0'-'4'
-        case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: // '5'-'9'
-        case 0x2B: case 0x2D: case 0x2E: // '+', '-', '.'
-          return this.getNumber();
+        case -1:
+          warn('Unterminated string');
+          done = true;
+          break;
         case 0x28: // '('
-          return this.getString();
-        case 0x2F: // '/'
-          return this.getName();
-        // array punctuation
-        case 0x5B: // '['
-          this.nextChar();
-          return Cmd.get('[');
-        case 0x5D: // ']'
-          this.nextChar();
-          return Cmd.get(']');
-        // hex string or dict punctuation
-        case 0x3C: // '<'
-          ch = this.nextChar();
-          if (ch === 0x3C) {
-            // dict punctuation
-            this.nextChar();
-            return Cmd.get('<<');
-          }
-          return this.getHexString();
-        // dict punctuation
-        case 0x3E: // '>'
-          ch = this.nextChar();
-          if (ch === 0x3E) {
-            this.nextChar();
-            return Cmd.get('>>');
-          }
-          return Cmd.get('>');
-        case 0x7B: // '{'
-          this.nextChar();
-          return Cmd.get('{');
-        case 0x7D: // '}'
-          this.nextChar();
-          return Cmd.get('}');
+          ++numParen;
+          strBuf.push('(');
+          break;
         case 0x29: // ')'
-          // Consume the current character in order to avoid permanently hanging
-          // the worker thread if `Lexer.getObject` is called from within a loop
-          // containing try-catch statements, since we would otherwise attempt
-          // to parse the *same* character over and over (fixes issue8061.pdf).
-          this.nextChar();
-          throw new FormatError(`Illegal character: ${ch}`);
-      }
-
-      // command
-      var str = String.fromCharCode(ch);
-      var knownCommands = this.knownCommands;
-      var knownCommandFound = knownCommands && knownCommands[str] !== undefined;
-      while ((ch = this.nextChar()) >= 0 && !specialChars[ch]) {
-        // stop if known command is found and next character does not make
-        // the str a command
-        var possibleCommand = str + String.fromCharCode(ch);
-        if (knownCommandFound && knownCommands[possibleCommand] === undefined) {
-          break;
-        }
-        if (str.length === 128) {
-          throw new FormatError(`Command token too long: ${str.length}`);
-        }
-        str = possibleCommand;
-        knownCommandFound = knownCommands && knownCommands[str] !== undefined;
-      }
-      if (str === 'true') {
-        return true;
-      }
-      if (str === 'false') {
-        return false;
-      }
-      if (str === 'null') {
-        return null;
-      }
-
-      if (str === 'BI') {
-        // Keep track of the current stream position, since it's needed in order
-        // to correctly cache inline images; see `Parser.makeInlineImage`.
-        this.beginInlineImagePos = this.stream.pos;
-      }
-
-      return Cmd.get(str);
-    },
-    skipToNextLine: function Lexer_skipToNextLine() {
-      var ch = this.currentChar;
-      while (ch >= 0) {
-        if (ch === 0x0D) { // CR
-          ch = this.nextChar();
-          if (ch === 0x0A) { // LF
-            this.nextChar();
+          if (--numParen === 0) {
+            this.nextChar(); // consume strings ')'
+            done = true;
+          } else {
+            strBuf.push(')');
           }
           break;
-        } else if (ch === 0x0A) { // LF
-          this.nextChar();
+        case 0x5C: // '\\'
+          ch = this.nextChar();
+          switch (ch) {
+            case -1:
+              warn('Unterminated string');
+              done = true;
+              break;
+            case 0x6E: // 'n'
+              strBuf.push('\n');
+              break;
+            case 0x72: // 'r'
+              strBuf.push('\r');
+              break;
+            case 0x74: // 't'
+              strBuf.push('\t');
+              break;
+            case 0x62: // 'b'
+              strBuf.push('\b');
+              break;
+            case 0x66: // 'f'
+              strBuf.push('\f');
+              break;
+            case 0x5C: // '\'
+            case 0x28: // '('
+            case 0x29: // ')'
+              strBuf.push(String.fromCharCode(ch));
+              break;
+            case 0x30: case 0x31: case 0x32: case 0x33: // '0'-'3'
+            case 0x34: case 0x35: case 0x36: case 0x37: // '4'-'7'
+              let x = ch & 0x0F;
+              ch = this.nextChar();
+              charBuffered = true;
+              if (ch >= 0x30 && ch <= 0x37) { // '0'-'7'
+                x = (x << 3) + (ch & 0x0F);
+                ch = this.nextChar();
+                if (ch >= 0x30 && ch <= 0x37) {  // '0'-'7'
+                  charBuffered = false;
+                  x = (x << 3) + (ch & 0x0F);
+                }
+              }
+              strBuf.push(String.fromCharCode(x));
+              break;
+            case 0x0D: // CR
+              if (this.peekChar() === 0x0A) { // LF
+                this.nextChar();
+              }
+              break;
+            case 0x0A: // LF
+              break;
+            default:
+              strBuf.push(String.fromCharCode(ch));
+              break;
+          }
           break;
-        }
+        default:
+          strBuf.push(String.fromCharCode(ch));
+          break;
+      }
+      if (done) {
+        break;
+      }
+      if (!charBuffered) {
         ch = this.nextChar();
       }
-    },
-  };
+    }
+    return strBuf.join('');
+  }
 
-  return Lexer;
-})();
+  getName() {
+    let ch, previousCh;
+    const strBuf = this.strBuf;
+    strBuf.length = 0;
+
+    while ((ch = this.nextChar()) >= 0 && !specialChars[ch]) {
+      if (ch === 0x23) { // '#'
+        ch = this.nextChar();
+        if (specialChars[ch]) {
+          warn('Lexer_getName: ' +
+               'NUMBER SIGN (#) should be followed by a hexadecimal number.');
+          strBuf.push('#');
+          break;
+        }
+        const x = toHexDigit(ch);
+        if (x !== -1) {
+          previousCh = ch;
+          ch = this.nextChar();
+          const x2 = toHexDigit(ch);
+          if (x2 === -1) {
+            warn(`Lexer_getName: Illegal digit (${String.fromCharCode(ch)}) ` +
+                 'in hexadecimal number.');
+            strBuf.push('#', String.fromCharCode(previousCh));
+            if (specialChars[ch]) {
+              break;
+            }
+            strBuf.push(String.fromCharCode(ch));
+            continue;
+          }
+          strBuf.push(String.fromCharCode((x << 4) | x2));
+        } else {
+          strBuf.push('#', String.fromCharCode(ch));
+        }
+      } else {
+        strBuf.push(String.fromCharCode(ch));
+      }
+    }
+    if (strBuf.length > 127) {
+      warn(`Name token is longer than allowed by the spec: ${strBuf.length}`);
+    }
+    return Name.get(strBuf.join(''));
+  }
+
+  getHexString() {
+    const strBuf = this.strBuf;
+    strBuf.length = 0;
+    let ch = this.currentChar;
+    let isFirstHex = true;
+    let firstDigit, secondDigit;
+
+    while (true) {
+      if (ch < 0) {
+        warn('Unterminated hex string');
+        break;
+      } else if (ch === 0x3E) { // '>'
+        this.nextChar();
+        break;
+      } else if (specialChars[ch] === 1) {
+        ch = this.nextChar();
+        continue;
+      } else {
+        if (isFirstHex) {
+          firstDigit = toHexDigit(ch);
+          if (firstDigit === -1) {
+            warn(`Ignoring invalid character "${ch}" in hex string`);
+            ch = this.nextChar();
+            continue;
+          }
+        } else {
+          secondDigit = toHexDigit(ch);
+          if (secondDigit === -1) {
+            warn(`Ignoring invalid character "${ch}" in hex string`);
+            ch = this.nextChar();
+            continue;
+          }
+          strBuf.push(String.fromCharCode((firstDigit << 4) | secondDigit));
+        }
+        isFirstHex = !isFirstHex;
+        ch = this.nextChar();
+      }
+    }
+    return strBuf.join('');
+  }
+
+  getObj() {
+    // Skip whitespace and comments.
+    let comment = false;
+    let ch = this.currentChar;
+    while (true) {
+      if (ch < 0) {
+        return EOF;
+      }
+      if (comment) {
+        if (ch === 0x0A || ch === 0x0D) { // LF, CR
+          comment = false;
+        }
+      } else if (ch === 0x25) { // '%'
+        comment = true;
+      } else if (specialChars[ch] !== 1) {
+        break;
+      }
+      ch = this.nextChar();
+    }
+
+    // Start reading a token.
+    switch (ch | 0) {
+      case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: // '0'-'4'
+      case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: // '5'-'9'
+      case 0x2B: case 0x2D: case 0x2E: // '+', '-', '.'
+        return this.getNumber();
+      case 0x28: // '('
+        return this.getString();
+      case 0x2F: // '/'
+        return this.getName();
+      // array punctuation
+      case 0x5B: // '['
+        this.nextChar();
+        return Cmd.get('[');
+      case 0x5D: // ']'
+        this.nextChar();
+        return Cmd.get(']');
+      // hex string or dict punctuation
+      case 0x3C: // '<'
+        ch = this.nextChar();
+        if (ch === 0x3C) {
+          // dict punctuation
+          this.nextChar();
+          return Cmd.get('<<');
+        }
+        return this.getHexString();
+      // dict punctuation
+      case 0x3E: // '>'
+        ch = this.nextChar();
+        if (ch === 0x3E) {
+          this.nextChar();
+          return Cmd.get('>>');
+        }
+        return Cmd.get('>');
+      case 0x7B: // '{'
+        this.nextChar();
+        return Cmd.get('{');
+      case 0x7D: // '}'
+        this.nextChar();
+        return Cmd.get('}');
+      case 0x29: // ')'
+        // Consume the current character in order to avoid permanently hanging
+        // the worker thread if `Lexer.getObject` is called from within a loop
+        // containing try-catch statements, since we would otherwise attempt
+        // to parse the *same* character over and over (fixes issue8061.pdf).
+        this.nextChar();
+        throw new FormatError(`Illegal character: ${ch}`);
+    }
+
+    // Start reading a command.
+    let str = String.fromCharCode(ch);
+    const knownCommands = this.knownCommands;
+    let knownCommandFound = knownCommands && knownCommands[str] !== undefined;
+    while ((ch = this.nextChar()) >= 0 && !specialChars[ch]) {
+      // Stop if a known command is found and next character does not make
+      // the string a command.
+      const possibleCommand = str + String.fromCharCode(ch);
+      if (knownCommandFound && knownCommands[possibleCommand] === undefined) {
+        break;
+      }
+      if (str.length === 128) {
+        throw new FormatError(`Command token too long: ${str.length}`);
+      }
+      str = possibleCommand;
+      knownCommandFound = knownCommands && knownCommands[str] !== undefined;
+    }
+    if (str === 'true') {
+      return true;
+    }
+    if (str === 'false') {
+      return false;
+    }
+    if (str === 'null') {
+      return null;
+    }
+
+    if (str === 'BI') {
+      // Keep track of the current stream position, since it's needed in order
+      // to correctly cache inline images; see `Parser.makeInlineImage`.
+      this.beginInlineImagePos = this.stream.pos;
+    }
+
+    return Cmd.get(str);
+  }
+
+  skipToNextLine() {
+    let ch = this.currentChar;
+    while (ch >= 0) {
+      if (ch === 0x0D) { // CR
+        ch = this.nextChar();
+        if (ch === 0x0A) { // LF
+          this.nextChar();
+        }
+        break;
+      } else if (ch === 0x0A) { // LF
+        this.nextChar();
+        break;
+      }
+      ch = this.nextChar();
+    }
+  }
+}
 
 var Linearization = {
   create: function LinearizationCreate(stream) {
