@@ -14,110 +14,184 @@
  */
 /* eslint no-var: error */
 
-import { Lexer, Linearization } from '../../src/core/parser';
+import { Lexer, Linearization, Parser } from '../../src/core/parser';
 import { FormatError } from '../../src/shared/util';
 import { Name } from '../../src/core/primitives';
 import { StringStream } from '../../src/core/stream';
 
 describe('parser', function() {
+  describe('Parser', function() {
+    describe('inlineStreamSkipEI', function() {
+      it('should skip over the EI marker if it is found', function() {
+        const string = 'q 1 0 0 1 0 0 cm BI /W 10 /H 10 /BPC 1 ' +
+                       '/F /A85 ID abc123~> EI Q';
+        const input = new StringStream(string);
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer, /* allowStreams = */ true,
+                                  /* xref = */ null);
+        parser.inlineStreamSkipEI(input);
+        expect(input.pos).toEqual(string.indexOf('Q'));
+        expect(input.peekByte()).toEqual(0x51); // 'Q'
+      });
+
+      it('should skip to the end of stream if the EI marker is not found',
+          function() {
+        const string = 'q 1 0 0 1 0 0 cm BI /W 10 /H 10 /BPC 1 ' +
+                       '/F /A85 ID abc123~> Q';
+        const input = new StringStream(string);
+        const lexer = new Lexer(input);
+        const parser = new Parser(lexer, /* allowStreams = */ true,
+                                  /* xref = */ null);
+        parser.inlineStreamSkipEI(input);
+        expect(input.pos).toEqual(string.length);
+        expect(input.peekByte()).toEqual(-1);
+      });
+    });
+  });
+
   describe('Lexer', function() {
-    it('should stop parsing numbers at the end of stream', function() {
-      const input = new StringStream('11.234');
-      const lexer = new Lexer(input);
-      expect(lexer.getNumber()).toEqual(11.234);
-    });
-
-    it('should parse PostScript numbers', function() {
-      const numbers = ['-.002', '34.5', '-3.62', '123.6e10', '1E-5', '-1.',
-                       '0.0', '123', '-98', '43445', '0', '+17'];
-      for (const number of numbers) {
-        const input = new StringStream(number);
+    describe('nextChar', function() {
+      it('should return and set -1 when the end of the stream is reached',
+          function() {
+        const input = new StringStream('');
         const lexer = new Lexer(input);
-        expect(lexer.getNumber()).toEqual(parseFloat(number));
-      }
-    });
+        expect(lexer.nextChar()).toEqual(-1);
+        expect(lexer.currentChar).toEqual(-1);
+      });
 
-    it('should ignore double negative before number', function() {
-      const input = new StringStream('--205.88');
-      const lexer = new Lexer(input);
-      expect(lexer.getNumber()).toEqual(-205.88);
-    });
-
-    it('should ignore minus signs in the middle of number', function() {
-      const input = new StringStream('205--.88');
-      const lexer = new Lexer(input);
-      expect(lexer.getNumber()).toEqual(205.88);
-    });
-
-    it('should ignore line-breaks between operator and digit in number',
-        function() {
-      const minusInput = new StringStream('-\r\n205.88');
-      const minusLexer = new Lexer(minusInput);
-      expect(minusLexer.getNumber()).toEqual(-205.88);
-
-      const plusInput = new StringStream('+\r\n205.88');
-      const plusLexer = new Lexer(plusInput);
-      expect(plusLexer.getNumber()).toEqual(205.88);
-    });
-
-    it('should treat a single decimal point as zero', function() {
-      const input = new StringStream('.');
-      const lexer = new Lexer(input);
-      expect(lexer.getNumber()).toEqual(0);
-
-      const numbers = ['..', '-.', '+.', '-\r\n.', '+\r\n.'];
-      for (const number of numbers) {
-        const input = new StringStream(number);
+      it('should return and set the character after the current position',
+          function() {
+        const input = new StringStream('123');
         const lexer = new Lexer(input);
-
-        expect(function() {
-          return lexer.getNumber();
-        }).toThrowError(FormatError, /^Invalid number:\s/);
-      }
+        expect(lexer.nextChar()).toEqual(0x32); // '2'
+        expect(lexer.currentChar).toEqual(0x32); // '2'
+      });
     });
 
-    it('should handle glued numbers and operators', function() {
-      const input = new StringStream('123ET');
-      const lexer = new Lexer(input);
-      expect(lexer.getNumber()).toEqual(123);
-      // The lexer must not have consumed the 'E'
-      expect(lexer.currentChar).toEqual(0x45); // 'E'
-    });
-
-    it('should stop parsing strings at the end of stream', function() {
-      const input = new StringStream('(1$4)');
-      input.getByte = function(super_getByte) {
-        // Simulating end of file using null (see issue 2766).
-        const ch = super_getByte.call(input);
-        return (ch === 0x24 /* '$' */ ? -1 : ch);
-      }.bind(input, input.getByte);
-      const lexer = new Lexer(input);
-      expect(lexer.getString()).toEqual('1');
-    });
-
-    it('should not throw exception on bad input', function() {
-      // '7 0 2 15 5 2 2 2 4 3 2 4' should be parsed as '70 21 55 22 24 32'.
-      const input = new StringStream('<7 0 2 15 5 2 2 2 4 3 2 4>');
-      const lexer = new Lexer(input);
-      expect(lexer.getHexString()).toEqual('p!U"$2');
-    });
-
-    it('should ignore escaped CR and LF', function() {
-      // '(\101\<CR><LF>\102)' should be parsed as 'AB'.
-      const input = new StringStream('(\\101\\\r\n\\102\\\r\\103\\\n\\104)');
-      const lexer = new Lexer(input);
-      expect(lexer.getString()).toEqual('ABCD');
-    });
-
-    it('should handle Names with invalid usage of NUMBER SIGN (#)', function() {
-      const inputNames = ['/# 680 0 R', '/#AQwerty', '/#A<</B'];
-      const expectedNames = ['#', '#AQwerty', '#A'];
-
-      for (let i = 0, ii = inputNames.length; i < ii; i++) {
-        const input = new StringStream(inputNames[i]);
+    describe('peekChar', function() {
+      it('should only return -1 when the end of the stream is reached',
+          function() {
+        const input = new StringStream('');
         const lexer = new Lexer(input);
-        expect(lexer.getName()).toEqual(Name.get(expectedNames[i]));
-      }
+        expect(lexer.peekChar()).toEqual(-1);
+        expect(lexer.currentChar).toEqual(-1);
+      });
+
+      it('should only return the character after the current position',
+          function() {
+        const input = new StringStream('123');
+        const lexer = new Lexer(input);
+        expect(lexer.peekChar()).toEqual(0x32); // '2'
+        expect(lexer.currentChar).toEqual(0x31); // '1'
+      });
+    });
+
+    describe('getNumber', function() {
+      it('should stop parsing numbers at the end of stream', function() {
+        const input = new StringStream('11.234');
+        const lexer = new Lexer(input);
+        expect(lexer.getNumber()).toEqual(11.234);
+      });
+
+      it('should parse PostScript numbers', function() {
+        const numbers = ['-.002', '34.5', '-3.62', '123.6e10', '1E-5', '-1.',
+                         '0.0', '123', '-98', '43445', '0', '+17'];
+        for (const number of numbers) {
+          const input = new StringStream(number);
+          const lexer = new Lexer(input);
+          expect(lexer.getNumber()).toEqual(parseFloat(number));
+        }
+      });
+
+      it('should ignore double negative before number', function() {
+        const input = new StringStream('--205.88');
+        const lexer = new Lexer(input);
+        expect(lexer.getNumber()).toEqual(-205.88);
+      });
+
+      it('should ignore minus signs in the middle of number', function() {
+        const input = new StringStream('205--.88');
+        const lexer = new Lexer(input);
+        expect(lexer.getNumber()).toEqual(205.88);
+      });
+
+      it('should ignore line-breaks between operator and digit in number',
+          function() {
+        const minusInput = new StringStream('-\r\n205.88');
+        const minusLexer = new Lexer(minusInput);
+        expect(minusLexer.getNumber()).toEqual(-205.88);
+
+        const plusInput = new StringStream('+\r\n205.88');
+        const plusLexer = new Lexer(plusInput);
+        expect(plusLexer.getNumber()).toEqual(205.88);
+      });
+
+      it('should treat a single decimal point as zero', function() {
+        const input = new StringStream('.');
+        const lexer = new Lexer(input);
+        expect(lexer.getNumber()).toEqual(0);
+
+        const numbers = ['..', '-.', '+.', '-\r\n.', '+\r\n.'];
+        for (const number of numbers) {
+          const input = new StringStream(number);
+          const lexer = new Lexer(input);
+
+          expect(function() {
+            return lexer.getNumber();
+          }).toThrowError(FormatError, /^Invalid number:\s/);
+        }
+      });
+
+      it('should handle glued numbers and operators', function() {
+        const input = new StringStream('123ET');
+        const lexer = new Lexer(input);
+        expect(lexer.getNumber()).toEqual(123);
+        // The lexer must not have consumed the 'E'
+        expect(lexer.currentChar).toEqual(0x45); // 'E'
+      });
+    });
+
+    describe('getString', function() {
+      it('should stop parsing strings at the end of stream', function() {
+        const input = new StringStream('(1$4)');
+        input.getByte = function(super_getByte) {
+          // Simulating end of file using null (see issue 2766).
+          const ch = super_getByte.call(input);
+          return (ch === 0x24 /* '$' */ ? -1 : ch);
+        }.bind(input, input.getByte);
+        const lexer = new Lexer(input);
+        expect(lexer.getString()).toEqual('1');
+      });
+
+      it('should ignore escaped CR and LF', function() {
+        // '(\101\<CR><LF>\102)' should be parsed as 'AB'.
+        const input = new StringStream('(\\101\\\r\n\\102\\\r\\103\\\n\\104)');
+        const lexer = new Lexer(input);
+        expect(lexer.getString()).toEqual('ABCD');
+      });
+    });
+
+    describe('getHexString', function() {
+      it('should not throw exception on bad input', function() {
+        // '7 0 2 15 5 2 2 2 4 3 2 4' should be parsed as '70 21 55 22 24 32'.
+        const input = new StringStream('<7 0 2 15 5 2 2 2 4 3 2 4>');
+        const lexer = new Lexer(input);
+        expect(lexer.getHexString()).toEqual('p!U"$2');
+      });
+    });
+
+    describe('getName', function() {
+      it('should handle Names with invalid usage of NUMBER SIGN (#)',
+          function() {
+        const inputNames = ['/# 680 0 R', '/#AQwerty', '/#A<</B'];
+        const expectedNames = ['#', '#AQwerty', '#A'];
+
+        for (let i = 0, ii = inputNames.length; i < ii; i++) {
+          const input = new StringStream(inputNames[i]);
+          const lexer = new Lexer(input);
+          expect(lexer.getName()).toEqual(Name.get(expectedNames[i]));
+        }
+      });
     });
   });
 
