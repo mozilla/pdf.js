@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 import { Lexer, Linearization } from '../../src/core/parser';
 import { FormatError } from '../../src/shared/util';
@@ -21,65 +22,53 @@ import { StringStream } from '../../src/core/stream';
 describe('parser', function() {
   describe('Lexer', function() {
     it('should stop parsing numbers at the end of stream', function() {
-      var input = new StringStream('11.234');
-      var lexer = new Lexer(input);
-      var result = lexer.getNumber();
-
-      expect(result).toEqual(11.234);
+      const input = new StringStream('11.234');
+      const lexer = new Lexer(input);
+      expect(lexer.getNumber()).toEqual(11.234);
     });
 
     it('should parse PostScript numbers', function() {
-      var numbers = ['-.002', '34.5', '-3.62', '123.6e10', '1E-5', '-1.', '0.0',
-                    '123', '-98', '43445', '0', '+17'];
-      for (var i = 0, ii = numbers.length; i < ii; i++) {
-        var num = numbers[i];
-        var input = new StringStream(num);
-        var lexer = new Lexer(input);
-        var result = lexer.getNumber();
-
-        expect(result).toEqual(parseFloat(num));
+      const numbers = ['-.002', '34.5', '-3.62', '123.6e10', '1E-5', '-1.',
+                       '0.0', '123', '-98', '43445', '0', '+17'];
+      for (const number of numbers) {
+        const input = new StringStream(number);
+        const lexer = new Lexer(input);
+        expect(lexer.getNumber()).toEqual(parseFloat(number));
       }
     });
 
     it('should ignore double negative before number', function() {
-      var input = new StringStream('--205.88');
-      var lexer = new Lexer(input);
-      var result = lexer.getNumber();
-
-      expect(result).toEqual(-205.88);
+      const input = new StringStream('--205.88');
+      const lexer = new Lexer(input);
+      expect(lexer.getNumber()).toEqual(-205.88);
     });
 
     it('should ignore minus signs in the middle of number', function() {
-      var input = new StringStream('205--.88');
-      var lexer = new Lexer(input);
-      var result = lexer.getNumber();
-
-      expect(result).toEqual(205.88);
+      const input = new StringStream('205--.88');
+      const lexer = new Lexer(input);
+      expect(lexer.getNumber()).toEqual(205.88);
     });
 
     it('should ignore line-breaks between operator and digit in number',
         function() {
-      let minusInput = new StringStream('-\r\n205.88');
-      let minusLexer = new Lexer(minusInput);
-
+      const minusInput = new StringStream('-\r\n205.88');
+      const minusLexer = new Lexer(minusInput);
       expect(minusLexer.getNumber()).toEqual(-205.88);
 
-      let plusInput = new StringStream('+\r\n205.88');
-      let plusLexer = new Lexer(plusInput);
-
+      const plusInput = new StringStream('+\r\n205.88');
+      const plusLexer = new Lexer(plusInput);
       expect(plusLexer.getNumber()).toEqual(205.88);
     });
 
     it('should treat a single decimal point as zero', function() {
-      let input = new StringStream('.');
-      let lexer = new Lexer(input);
-
+      const input = new StringStream('.');
+      const lexer = new Lexer(input);
       expect(lexer.getNumber()).toEqual(0);
 
-      let numbers = ['..', '-.', '+.', '-\r\n.', '+\r\n.'];
-      for (let number of numbers) {
-        let input = new StringStream(number);
-        let lexer = new Lexer(input);
+      const numbers = ['..', '-.', '+.', '-\r\n.', '+\r\n.'];
+      for (const number of numbers) {
+        const input = new StringStream(number);
+        const lexer = new Lexer(input);
 
         expect(function() {
           return lexer.getNumber();
@@ -88,68 +77,54 @@ describe('parser', function() {
     });
 
     it('should handle glued numbers and operators', function() {
-      var input = new StringStream('123ET');
-      var lexer = new Lexer(input);
-      var value = lexer.getNumber();
-
-      expect(value).toEqual(123);
+      const input = new StringStream('123ET');
+      const lexer = new Lexer(input);
+      expect(lexer.getNumber()).toEqual(123);
       // The lexer must not have consumed the 'E'
       expect(lexer.currentChar).toEqual(0x45); // 'E'
     });
 
     it('should stop parsing strings at the end of stream', function() {
-      var input = new StringStream('(1$4)');
+      const input = new StringStream('(1$4)');
       input.getByte = function(super_getByte) {
-        // simulating end of file using null (see issue 2766)
-        var ch = super_getByte.call(input);
+        // Simulating end of file using null (see issue 2766).
+        const ch = super_getByte.call(input);
         return (ch === 0x24 /* '$' */ ? -1 : ch);
       }.bind(input, input.getByte);
-      var lexer = new Lexer(input);
-      var result = lexer.getString();
-
-      expect(result).toEqual('1');
+      const lexer = new Lexer(input);
+      expect(lexer.getString()).toEqual('1');
     });
 
     it('should not throw exception on bad input', function() {
-      // '8 0 2 15 5 2 2 2 4 3 2 4'
-      // should be parsed as
-      // '80 21 55 22 24 32'
-      var input = new StringStream('<7 0 2 15 5 2 2 2 4 3 2 4>');
-      var lexer = new Lexer(input);
-      var result = lexer.getHexString();
-
-      expect(result).toEqual('p!U"$2');
+      // '7 0 2 15 5 2 2 2 4 3 2 4' should be parsed as '70 21 55 22 24 32'.
+      const input = new StringStream('<7 0 2 15 5 2 2 2 4 3 2 4>');
+      const lexer = new Lexer(input);
+      expect(lexer.getHexString()).toEqual('p!U"$2');
     });
 
     it('should ignore escaped CR and LF', function() {
-      // '(\101\<CR><LF>\102)'
-      // should be parsed as
-      // "AB"
-      var input = new StringStream('(\\101\\\r\n\\102\\\r\\103\\\n\\104)');
-      var lexer = new Lexer(input);
-      var result = lexer.getString();
-
-      expect(result).toEqual('ABCD');
+      // '(\101\<CR><LF>\102)' should be parsed as 'AB'.
+      const input = new StringStream('(\\101\\\r\n\\102\\\r\\103\\\n\\104)');
+      const lexer = new Lexer(input);
+      expect(lexer.getString()).toEqual('ABCD');
     });
 
     it('should handle Names with invalid usage of NUMBER SIGN (#)', function() {
-      var inputNames = ['/# 680 0 R', '/#AQwerty', '/#A<</B'];
-      var expectedNames = ['#', '#AQwerty', '#A'];
+      const inputNames = ['/# 680 0 R', '/#AQwerty', '/#A<</B'];
+      const expectedNames = ['#', '#AQwerty', '#A'];
 
-      for (var i = 0, ii = inputNames.length; i < ii; i++) {
-        var input = new StringStream(inputNames[i]);
-        var lexer = new Lexer(input);
-        var result = lexer.getName();
-
-        expect(result).toEqual(Name.get(expectedNames[i]));
+      for (let i = 0, ii = inputNames.length; i < ii; i++) {
+        const input = new StringStream(inputNames[i]);
+        const lexer = new Lexer(input);
+        expect(lexer.getName()).toEqual(Name.get(expectedNames[i]));
       }
     });
   });
 
   describe('Linearization', function() {
-    it('should not find a linearization dictionary', function () {
+    it('should not find a linearization dictionary', function() {
       // Not an actual linearization dictionary.
-      var stream1 = new StringStream(
+      const stream1 = new StringStream(
         '3 0 obj\n' +
         '<<\n' +
         '/Length 4622\n' +
@@ -160,7 +135,7 @@ describe('parser', function() {
       expect(Linearization.create(stream1)).toEqual(null);
 
       // Linearization dictionary with invalid version number.
-      var stream2 = new StringStream(
+      const stream2 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
         '/Linearized 0\n' +
@@ -170,8 +145,8 @@ describe('parser', function() {
       expect(Linearization.create(stream2)).toEqual(null);
     });
 
-    it('should accept a valid linearization dictionary', function () {
-      var stream = new StringStream(
+    it('should accept a valid linearization dictionary', function() {
+      const stream = new StringStream(
         '131 0 obj\n' +
         '<<\n' +
         '/Linearized 1\n' +
@@ -184,7 +159,7 @@ describe('parser', function() {
         '>>\n' +
         'endobj'
       );
-      var expectedLinearizationDict = {
+      const expectedLinearizationDict = {
         length: 90,
         hints: [1388, 863],
         objectNumberFirst: 133,
@@ -197,9 +172,9 @@ describe('parser', function() {
     });
 
     it('should reject a linearization dictionary with invalid ' +
-       'integer parameters', function () {
+       'integer parameters', function() {
       // The /L parameter should be equal to the stream length.
-      var stream1 = new StringStream(
+      const stream1 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
         '/Linearized 1\n' +
@@ -212,13 +187,13 @@ describe('parser', function() {
         '>>\n' +
         'endobj'
       );
-      expect(function () {
+      expect(function() {
         return Linearization.create(stream1);
       }).toThrow(new Error('The "L" parameter in the linearization ' +
                            'dictionary does not equal the stream length.'));
 
       // The /E parameter should not be zero.
-      var stream2 = new StringStream(
+      const stream2 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
         '/Linearized 1\n' +
@@ -231,13 +206,13 @@ describe('parser', function() {
         '>>\n' +
         'endobj'
       );
-      expect(function () {
+      expect(function() {
         return Linearization.create(stream2);
       }).toThrow(new Error('The "E" parameter in the linearization ' +
                            'dictionary is invalid.'));
 
       // The /O parameter should be an integer.
-      var stream3 = new StringStream(
+      const stream3 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
         '/Linearized 1\n' +
@@ -250,16 +225,16 @@ describe('parser', function() {
         '>>\n' +
         'endobj'
       );
-      expect(function () {
+      expect(function() {
         return Linearization.create(stream3);
       }).toThrow(new Error('The "O" parameter in the linearization ' +
                            'dictionary is invalid.'));
     });
 
     it('should reject a linearization dictionary with invalid hint parameters',
-       function () {
+       function() {
       // The /H parameter should be an array.
-      var stream1 = new StringStream(
+      const stream1 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
         '/Linearized 1\n' +
@@ -272,13 +247,13 @@ describe('parser', function() {
         '>>\n' +
         'endobj'
       );
-      expect(function () {
+      expect(function() {
         return Linearization.create(stream1);
       }).toThrow(new Error('Hint array in the linearization dictionary ' +
                            'is invalid.'));
 
       // The hint array should contain two, or four, elements.
-      var stream2 = new StringStream(
+      const stream2 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
         '/Linearized 1\n' +
@@ -291,13 +266,13 @@ describe('parser', function() {
         '>>\n' +
         'endobj'
       );
-      expect(function () {
+      expect(function() {
         return Linearization.create(stream2);
       }).toThrow(new Error('Hint array in the linearization dictionary ' +
                            'is invalid.'));
 
       // The hint array should not contain zero.
-      var stream3 = new StringStream(
+      const stream3 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
         '/Linearized 1\n' +
@@ -310,7 +285,7 @@ describe('parser', function() {
         '>>\n' +
         'endobj'
       );
-      expect(function () {
+      expect(function() {
         return Linearization.create(stream3);
       }).toThrow(new Error('Hint (2) in the linearization dictionary ' +
                            'is invalid.'));
