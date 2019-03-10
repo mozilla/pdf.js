@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 import {
   Ascii85Stream, AsciiHexStream, FlateStream, LZWStream, NullStream,
@@ -1172,55 +1173,61 @@ class Lexer {
   }
 }
 
-var Linearization = {
-  create: function LinearizationCreate(stream) {
-    function getInt(name, allowZeroValue) {
-      var obj = linDict.get(name);
+class Linearization {
+  static create(stream) {
+    function getInt(linDict, name, allowZeroValue = false) {
+      const obj = linDict.get(name);
       if (Number.isInteger(obj) && (allowZeroValue ? obj >= 0 : obj > 0)) {
         return obj;
       }
-      throw new Error('The "' + name + '" parameter in the linearization ' +
+      throw new Error(`The "${name}" parameter in the linearization ` +
                       'dictionary is invalid.');
     }
-    function getHints() {
-      var hints = linDict.get('H'), hintsLength, item;
+
+    function getHints(linDict) {
+      const hints = linDict.get('H');
+      let hintsLength;
+
       if (Array.isArray(hints) &&
           ((hintsLength = hints.length) === 2 || hintsLength === 4)) {
-        for (var index = 0; index < hintsLength; index++) {
-          if (!(Number.isInteger(item = hints[index]) && item > 0)) {
-            throw new Error('Hint (' + index +
-                            ') in the linearization dictionary is invalid.');
+        for (let index = 0; index < hintsLength; index++) {
+          const hint = hints[index];
+          if (!(Number.isInteger(hint) && hint > 0)) {
+            throw new Error(`Hint (${index}) in the linearization dictionary ` +
+                            'is invalid.');
           }
         }
         return hints;
       }
       throw new Error('Hint array in the linearization dictionary is invalid.');
     }
-    var parser = new Parser(new Lexer(stream), false, null);
-    var obj1 = parser.getObj();
-    var obj2 = parser.getObj();
-    var obj3 = parser.getObj();
-    var linDict = parser.getObj();
-    var obj, length;
+
+    const parser = new Parser(new Lexer(stream), false, null);
+    const obj1 = parser.getObj();
+    const obj2 = parser.getObj();
+    const obj3 = parser.getObj();
+    const linDict = parser.getObj();
+    let obj, length;
     if (!(Number.isInteger(obj1) && Number.isInteger(obj2) &&
           isCmd(obj3, 'obj') && isDict(linDict) &&
           isNum(obj = linDict.get('Linearized')) && obj > 0)) {
       return null; // No valid linearization dictionary found.
-    } else if ((length = getInt('L')) !== stream.length) {
+    } else if ((length = getInt(linDict, 'L')) !== stream.length) {
       throw new Error('The "L" parameter in the linearization dictionary ' +
                       'does not equal the stream length.');
     }
     return {
       length,
-      hints: getHints(),
-      objectNumberFirst: getInt('O'),
-      endFirst: getInt('E'),
-      numPages: getInt('N'),
-      mainXRefEntriesOffset: getInt('T'),
-      pageFirst: (linDict.has('P') ? getInt('P', true) : 0),
+      hints: getHints(linDict),
+      objectNumberFirst: getInt(linDict, 'O'),
+      endFirst: getInt(linDict, 'E'),
+      numPages: getInt(linDict, 'N'),
+      mainXRefEntriesOffset: getInt(linDict, 'T'),
+      pageFirst: (linDict.has('P') ?
+                  getInt(linDict, 'P', /* allowZeroValue = */ true) : 0),
     };
-  },
-};
+  }
+}
 
 export {
   Lexer,
