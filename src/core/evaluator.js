@@ -15,8 +15,8 @@
 
 import {
   AbortException, assert, CMapCompressionType, createPromiseCapability,
-  FONT_IDENTITY_MATRIX, FormatError, IDENTITY_MATRIX, info, isNum, isString,
-  NativeImageDecoding, OPS, stringToPDFString, TextRenderingMode,
+  FONT_IDENTITY_MATRIX, FormatError, IDENTITY_MATRIX, info, isArrayEqual, isNum,
+  isString, NativeImageDecoding, OPS, stringToPDFString, TextRenderingMode,
   UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
@@ -1264,13 +1264,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                    0, textState.fontSize,
                    0, textState.textRise];
 
-        if (font.isType3Font &&
-            textState.fontMatrix !== FONT_IDENTITY_MATRIX &&
-            textState.fontSize === 1) {
-          var glyphHeight = font.bbox[3] - font.bbox[1];
+        if (font.isType3Font && textState.fontSize <= 1 &&
+            !isArrayEqual(textState.fontMatrix, FONT_IDENTITY_MATRIX)) {
+          const glyphHeight = font.bbox[3] - font.bbox[1];
           if (glyphHeight > 0) {
-            glyphHeight = glyphHeight * textState.fontMatrix[3];
-            tsm[3] *= glyphHeight;
+            tsm[3] *= (glyphHeight * textState.fontMatrix[3]);
           }
         }
 

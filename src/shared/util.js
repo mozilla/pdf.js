@@ -824,6 +824,15 @@ function isArrayBuffer(v) {
   return typeof v === 'object' && v !== null && v.byteLength !== undefined;
 }
 
+function isArrayEqual(arr1, arr2) {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+  return arr1.every(function(element, index) {
+    return element === arr2[index];
+  });
+}
+
 // Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
 function isSpace(ch) {
   return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
@@ -927,6 +936,7 @@ export {
   getVerbosityLevel,
   info,
   isArrayBuffer,
+  isArrayEqual,
   isBool,
   isEmptyObj,
   isNum,
