@@ -1016,6 +1016,20 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "bug1245391-text",
+       "file": "pdfs/bug1245391_reduced.pdf",
+       "md5": "6c946045ee0f2f663f269717c0f1614a",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
+    {  "id": "bug1513120-text",
+       "file": "pdfs/bug1513120_reduced.pdf",
+       "md5": "e88ad8b5bb385296f475ca51ce0d216d",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "bug1250079",
        "file": "pdfs/bug1250079.pdf",
        "md5": "a1dd21a70ae7097d96273e85a80b26ef",
