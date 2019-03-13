@@ -954,7 +954,7 @@ describe('api', function() {
         return _checkCanLoad(false, filename, options);
       }
       afterEach(function(done) {
-        if (loadingTask) {
+        if (loadingTask && !loadingTask.destroyed) {
           loadingTask.destroy().then(done);
         } else {
           done();
@@ -1385,7 +1385,6 @@ describe('api', function() {
     // A PDF using the Arial font.
     var pdf3 = buildGetDocumentParams('issue6068.pdf');
     var loadingTasks = [];
-    var pdfDocuments = [];
 
     // Render the first page of the given PDF file.
     // Fulfills the promise with the base64-encoded version of the PDF.
@@ -1393,7 +1392,6 @@ describe('api', function() {
       const loadingTask = getDocument(filename);
       loadingTasks.push(loadingTask);
       const pdf = await loadingTask.promise;
-      pdfDocuments.push(pdf);
       const page = await pdf.getPage(1);
       const viewport = page.getViewport({ scale: 1.2, });
       const canvasAndCtx = CanvasFactory.create(viewport.width,
@@ -1413,18 +1411,10 @@ describe('api', function() {
       // Issue 6205 reported an issue with font rendering, so clear the loaded
       // fonts so that we can see whether loading PDFs in parallel does not
       // cause any issues with the rendered fonts.
-      var destroyPromises = pdfDocuments.map(function(pdfDocument) {
-        return pdfDocument.destroy();
-      });
-
-      // Destroy the workers.
-      var destroyPromises2 = loadingTasks.map(function(loadingTask) {
+      const destroyPromises = loadingTasks.map(function(loadingTask) {
         return loadingTask.destroy();
       });
-
-      Promise.all(destroyPromises.concat(destroyPromises2)).then(function() {
-        done();
-      });
+      Promise.all(destroyPromises).then(done);
     });
 
     it('should correctly render PDFs in parallel', function(done) {
