@@ -574,9 +574,7 @@ class PDFDataRangeTransport {
  * properties that can be read synchronously.
  */
 class PDFDocumentProxy {
-  constructor(pdfInfo, transport, loadingTask) {
-    this.loadingTask = loadingTask;
-
+  constructor(pdfInfo, transport) {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
   }
@@ -760,6 +758,13 @@ class PDFDocumentProxy {
    */
   get loadingParams() {
     return this._transport.loadingParams;
+  }
+
+  /**
+   * @return {PDFDocumentLoadingTask} The loadingTask for the current document.
+   */
+  get loadingTask() {
+    return this._transport.loadingTask;
   }
 }
 
@@ -1827,9 +1832,8 @@ class WorkerTransport {
     }, this);
 
     messageHandler.on('GetDoc', function({ pdfInfo, }) {
-      this.numPages = pdfInfo.numPages;
-      this.pdfDocument = new PDFDocumentProxy(pdfInfo, this, loadingTask);
-      loadingTask._capability.resolve(this.pdfDocument);
+      this._numPages = pdfInfo.numPages;
+      loadingTask._capability.resolve(new PDFDocumentProxy(pdfInfo, this));
     }, this);
 
     messageHandler.on('PasswordRequest', function(exception) {
@@ -2130,7 +2134,7 @@ class WorkerTransport {
 
   getPage(pageNumber) {
     if (!Number.isInteger(pageNumber) ||
-        pageNumber <= 0 || pageNumber > this.numPages) {
+        pageNumber <= 0 || pageNumber > this._numPages) {
       return Promise.reject(new Error('Invalid page request'));
     }
 
