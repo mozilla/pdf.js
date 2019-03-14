@@ -392,7 +392,7 @@ ShadingIRs.Dummy = {
     return {
       type: "Pattern",
       getPattern: function Dummy_fromIR_getPattern() {
-        return "hotpink";
+        return "WhiteSmoke";
       },
     };
   },
@@ -401,7 +401,7 @@ ShadingIRs.Dummy = {
 function getShadingPatternFromIR(raw) {
   var shadingIR = ShadingIRs[raw[0]];
   if (!shadingIR) {
-    throw new Error(`Unknown IR type: ${raw[0]}`);
+    shadingIR = ShadingIRs.Dummy;
   }
   return shadingIR.fromIR(raw);
 }

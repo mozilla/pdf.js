@@ -1262,9 +1262,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               next(
                 new Promise(function (resolveXObject, rejectXObject) {
                   if (!name) {
-                    throw new FormatError(
-                      "XObject must be referred to by name."
-                    );
+                    // throw new FormatError(
+                    //   "XObject must be referred to by name."
+                    // );
                   }
 
                   let xobj = xobjs.getRaw(name);
