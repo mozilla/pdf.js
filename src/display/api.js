@@ -23,7 +23,8 @@ import {
 } from '../shared/util';
 import {
   deprecated, DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
-  loadScript, PageViewport, RenderingCancelledException, StatTimer
+  loadScript, PageViewport, releaseImageResources, RenderingCancelledException,
+  StatTimer
 } from './display_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
@@ -1988,11 +1989,14 @@ class WorkerTransport {
               resolve(img);
             };
             img.onerror = function() {
-              reject(new Error('Error during JPEG image loading'));
               // Note that when the browser image loading/decoding fails,
               // we'll fallback to the built-in PDF.js JPEG decoder; see
               // `PartialEvaluator.buildPaintImageXObject` in the
               // `src/core/evaluator.js` file.
+              reject(new Error('Error during JPEG image loading'));
+
+              // Always remember to release the image data if errors occurred.
+              releaseImageResources(img);
             };
             img.src = imageData;
           }).then((img) => {
@@ -2095,6 +2099,8 @@ class WorkerTransport {
           }
           resolve({ data: buf, width, height, });
 
+          // Immediately release the image data once decoding has finished.
+          releaseImageResources(img);
           // Zeroing the width and height cause Firefox to release graphics
           // resources immediately, which can greatly reduce memory consumption.
           tmpCanvas.width = 0;
@@ -2104,6 +2110,9 @@ class WorkerTransport {
         };
         img.onerror = function() {
           reject(new Error('JpegDecode failed to load image'));
+
+          // Always remember to release the image data if errors occurred.
+          releaseImageResources(img);
         };
         img.src = imageUrl;
       });
@@ -2323,6 +2332,14 @@ class PDFObjects {
   }
 
   clear() {
+    for (const objId in this._objs) {
+      const { data, } = this._objs[objId];
+
+      if (typeof Image !== 'undefined' && data instanceof Image) {
+        // Always release the image data when clearing out the cached objects.
+        releaseImageResources(data);
+      }
+    }
     this._objs = Object.create(null);
   }
 }
