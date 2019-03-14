@@ -3,30 +3,28 @@
 
 // Hello world example for browserify.
 
-require('pdfjs-dist');
+var pdfjsLib = require('pdfjs-dist');
 
 var pdfPath = '../helloworld/helloworld.pdf';
 
 // Setting worker path to worker bundle.
-PDFJS.workerSrc = '../../build/browserify/pdf.worker.bundle.js';
-
-// It is also possible to disable workers via `PDFJS.disableWorker = true`,
-// however that might degrade the UI performance in web browsers.
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  '../../build/browserify/pdf.worker.bundle.js';
 
 // Loading a document.
-var loadingTask = PDFJS.getDocument(pdfPath);
+var loadingTask = pdfjsLib.getDocument(pdfPath);
 loadingTask.promise.then(function (pdfDocument) {
   // Request a first page
   return pdfDocument.getPage(1).then(function (pdfPage) {
     // Display page on the existing canvas with 100% scale.
-    var viewport = pdfPage.getViewport(1.0);
+    var viewport = pdfPage.getViewport({ scale: 1.0, });
     var canvas = document.getElementById('theCanvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     var ctx = canvas.getContext('2d');
     var renderTask = pdfPage.render({
       canvasContext: ctx,
-      viewport: viewport
+      viewport: viewport,
     });
     return renderTask.promise;
   });

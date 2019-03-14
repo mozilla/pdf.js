@@ -22,18 +22,17 @@ var path = require('path');
 // Defines all languages that have a translation at mozilla-central.
 // This is used in gulpfile.js for the `importl10n` command.
 var langCodes = [
-  'ach', 'af', 'ak', 'an', 'ar', 'as', 'ast', 'az', 'be', 'bg',
-  'bn-BD', 'bn-IN', 'br', 'bs', 'ca', 'cs', 'csb', 'cy', 'da',
-  'de', 'el', 'en-GB', 'en-ZA', 'eo', 'es-AR', 'es-CL', 'es-ES',
-  'es-MX', 'et', 'eu', 'fa', 'ff', 'fi', 'fr', 'fy-NL', 'ga-IE',
-  'gd', 'gl', 'gu-IN', 'he', 'hi-IN', 'hr', 'hu', 'hy-AM', 'id',
-  'is', 'it', 'ja', 'ka', 'kk', 'km', 'kn', 'ko', 'ku', 'lg',
-  'lij', 'lt', 'lv', 'mai', 'mk', 'ml', 'mn', 'mr', 'ms', 'my',
-  'nb-NO', 'nl', 'nn-NO', 'nso', 'oc', 'or', 'pa-IN', 'pl',
-  'pt-BR', 'pt-PT', 'rm', 'ro', 'ru', 'rw', 'sah', 'si', 'sk',
-  'sl', 'son', 'sq', 'sr', 'sv-SE', 'sw', 'ta', 'ta-LK', 'te',
-  'th', 'tl', 'tn', 'tr', 'uk', 'ur', 'vi', 'wo', 'xh', 'zh-CN',
-  'zh-TW', 'zu'
+  'ach', 'af', 'ak', 'an', 'ar', 'as', 'ast', 'az', 'be', 'bg', 'bn-BD',
+  'bn-IN', 'br', 'brx', 'bs', 'ca', 'cak', 'crh', 'cs', 'csb', 'cy', 'da', 'de',
+  'el', 'en-CA', 'en-GB', 'en-ZA', 'eo', 'es-AR', 'es-CL', 'es-ES', 'es-MX',
+  'et', 'eu', 'fa', 'ff', 'fi', 'fr', 'fy-NL', 'ga-IE', 'gd', 'gl', 'gn',
+  'gu-IN', 'he', 'hi-IN', 'hr', 'hsb', 'hto', 'hu', 'hy-AM', 'ia', 'id', 'is',
+  'it', 'ja', 'ka', 'kab', 'kk', 'km', 'kn', 'ko', 'kok', 'ks', 'ku', 'lg',
+  'lij', 'lo', 'lt', 'ltg', 'lv', 'mai', 'meh', 'mk', 'ml', 'mn', 'mr', 'ms',
+  'my', 'nb-NO', 'ne-NP', 'nl', 'nn-NO', 'nso', 'oc', 'or', 'pa-IN', 'pl',
+  'pt-BR', 'pt-PT', 'rm', 'ro', 'ru', 'rw', 'sah', 'sat', 'si', 'sk', 'sl',
+  'son', 'sq', 'sr', 'sv-SE', 'sw', 'ta', 'ta-LK', 'te', 'th', 'tl', 'tn', 'tr',
+  'tsz', 'uk', 'ur', 'uz', 'vi', 'wo', 'xh', 'zam', 'zh-CN', 'zh-TW', 'zu'
 ];
 
 function normalizeText(s) {
@@ -46,7 +45,7 @@ function downloadLanguageFiles(root, langCode, callback) {
   // Constants for constructing the URLs. Translations are taken from the
   // Nightly channel as those are the most recent ones.
   var MOZ_CENTRAL_ROOT = 'https://hg.mozilla.org/l10n-central/';
-  var MOZ_CENTRAL_PDFJS_DIR = '/raw-file/tip/browser/pdfviewer/';
+  var MOZ_CENTRAL_PDFJS_DIR = '/raw-file/default/browser/pdfviewer/';
 
   // Defines which files to download for each language.
   var files = ['chrome.properties', 'viewer.properties'];
@@ -63,18 +62,27 @@ function downloadLanguageFiles(root, langCode, callback) {
     var url = MOZ_CENTRAL_ROOT + langCode + MOZ_CENTRAL_PDFJS_DIR + fileName;
 
     https.get(url, function(response) {
-      var content = '';
-      response.setEncoding('utf8');
-      response.on('data', function(chunk) {
-        content += chunk;
-      });
-      response.on('end', function() {
-        fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
+      // Not all files exist for each language. Files without translations have
+      // been removed (https://bugzilla.mozilla.org/show_bug.cgi?id=1443175).
+      if (response.statusCode === 200) {
+        var content = '';
+        response.setEncoding('utf8');
+        response.on('data', function(chunk) {
+          content += chunk;
+        });
+        response.on('end', function() {
+          fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
+          downloadsLeft--;
+          if (downloadsLeft === 0) {
+            callback();
+          }
+        });
+      } else {
         downloadsLeft--;
         if (downloadsLeft === 0) {
           callback();
         }
-      });
+      }
     });
   });
 }

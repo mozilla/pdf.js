@@ -14,7 +14,7 @@
  */
 
 import {
-  FormatError, info, isBool, isEvalSupported, shadow
+  FormatError, info, isBool, isEvalSupported, shadow, unreachable
 } from '../shared/util';
 import { isDict, isStream } from './primitives';
 import { PostScriptLexer, PostScriptParser } from './ps_parser';
@@ -186,7 +186,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       domain = toMultiArray(domain);
       range = toMultiArray(range);
 
-      var size = toNumberArray(dict.get('Size'));
+      var size = toNumberArray(dict.getArray('Size'));
       var bps = dict.get('BitsPerSample');
       var order = dict.get('Order') || 1;
       if (order !== 1) {
@@ -814,7 +814,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.type = type;
   }
   AstNode.prototype.visit = function (visitor) {
-    throw new Error('abstract method');
+    unreachable('abstract method');
   };
 
   function AstArgument(index, min, max) {

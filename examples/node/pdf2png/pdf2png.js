@@ -21,7 +21,7 @@ function NodeCanvasFactory() {}
 NodeCanvasFactory.prototype = {
   create: function NodeCanvasFactory_create(width, height) {
     assert(width > 0 && height > 0, 'Invalid canvas size');
-    var canvas = new Canvas(width, height);
+    var canvas = Canvas.createCanvas(width, height);
     var context = canvas.getContext('2d');
     return {
       canvas: canvas,
@@ -51,35 +51,39 @@ NodeCanvasFactory.prototype = {
 var pdfjsLib = require('pdfjs-dist');
 
 // Relative path of the PDF file.
-var pdfURL = '../../helloworld/helloworld.pdf';
+var pdfURL = '../../../web/compressed.tracemonkey-pldi-09.pdf';
 
 // Read the PDF file into a typed array so PDF.js can load it.
 var rawData = new Uint8Array(fs.readFileSync(pdfURL));
 
 // Load the PDF file.
-pdfjsLib.getDocument(rawData).then(function (pdfDocument) {
+var loadingTask = pdfjsLib.getDocument(rawData);
+loadingTask.promise.then(function(pdfDocument) {
   console.log('# PDF document loaded.');
 
   // Get the first page.
   pdfDocument.getPage(1).then(function (page) {
     // Render the page on a Node canvas with 100% scale.
-    var viewport = page.getViewport(1.0);
+    var viewport = page.getViewport({ scale: 1.0, });
     var canvasFactory = new NodeCanvasFactory();
-    var canvasAndContext = canvasFactory.create(viewport.width, viewport.height);
+    var canvasAndContext =
+      canvasFactory.create(viewport.width, viewport.height);
     var renderContext = {
       canvasContext: canvasAndContext.context,
       viewport: viewport,
-      canvasFactory: canvasFactory
+      canvasFactory: canvasFactory,
     };
 
-    page.render(renderContext).then(function () {
+    var renderTask = page.render(renderContext);
+    renderTask.promise.then(function() {
       // Convert the canvas to an image buffer.
       var image = canvasAndContext.canvas.toBuffer();
       fs.writeFile('output.png', image, function (error) {
         if (error) {
           console.error('Error: ' + error);
         } else {
-          console.log('Finished converting first page of PDF file to a PNG image.');
+          console.log(
+            'Finished converting first page of PDF file to a PNG image.');
         }
       });
     });

@@ -52,7 +52,7 @@ function downloadFile(file, url, callback, redirects) {
       downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
       return;
     }
-    if (response.statusCode === 404 && url.indexOf('web.archive.org') < 0) {
+    if (response.statusCode === 404 && !url.includes('web.archive.org')) {
       // trying waybackmachine
       redirectTo = 'http://web.archive.org/web/' + url;
       downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
@@ -75,7 +75,7 @@ function downloadFile(file, url, callback, redirects) {
     });
     response.pipe(stream);
     stream.on('finish', function() {
-      stream.close();
+      stream.end();
       if (!completed) {
         completed = true;
         callback();
@@ -84,7 +84,7 @@ function downloadFile(file, url, callback, redirects) {
   }).on('error', function (err) {
     if (!completed) {
       if (typeof err === 'object' && err.errno === 'ENOTFOUND' &&
-          url.indexOf('web.archive.org') < 0) {
+          !url.includes('web.archive.org')) {
         // trying waybackmachine
         var redirectTo = 'http://web.archive.org/web/' + url;
         downloadFile(file, redirectTo, callback, (redirects || 0) + 1);

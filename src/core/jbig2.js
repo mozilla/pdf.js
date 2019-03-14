@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-import {
-  log2, readInt8, readUint16, readUint32, shadow
-} from '../shared/util';
+import { log2, readInt8, readUint16, readUint32, shadow } from '../shared/util';
 import { ArithmeticDecoder } from './arithmetic_decoder';
+import { CCITTFaxDecoder } from './ccitt';
 
 let Jbig2Error = (function Jbig2ErrorClosure() {
   function Jbig2Error(msg) {
@@ -206,7 +205,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function decodeBitmap(mmr, width, height, templateIndex, prediction, skip, at,
                         decodingContext) {
     if (mmr) {
-      throw new Jbig2Error('MMR encoding is not supported');
+      let input = new Reader(decodingContext.data, decodingContext.start,
+        decodingContext.end);
+      return decodeMMRBitmap(input, width, height, false);
     }
 
     // Use optimized version for the most common case
@@ -413,9 +414,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                                   numberOfNewSymbols, numberOfExportedSymbols,
                                   huffmanTables, templateIndex, at,
                                   refinementTemplateIndex, refinementAt,
-                                  decodingContext) {
-    if (huffman) {
-      throw new Jbig2Error('huffman is not supported');
+                                  decodingContext, huffmanInput) {
+    if (huffman && refinement) {
+      throw new Jbig2Error('symbol refinement with Huffman is not supported');
     }
 
     var newSymbols = [];
@@ -424,17 +425,29 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     var decoder = decodingContext.decoder;
     var contextCache = decodingContext.contextCache;
+    let tableB1, symbolWidths;
+    if (huffman) {
+      tableB1 = getStandardTable(1); // standard table B.1
+      symbolWidths = [];
+      symbolCodeLength = Math.max(symbolCodeLength, 1); // 6.5.8.2.3
+    }
 
     while (newSymbols.length < numberOfNewSymbols) {
-      var deltaHeight = decodeInteger(contextCache, 'IADH', decoder); // 6.5.6
+      var deltaHeight = huffman ?
+        huffmanTables.tableDeltaHeight.decode(huffmanInput) :
+        decodeInteger(contextCache, 'IADH', decoder); // 6.5.6
       currentHeight += deltaHeight;
-      var currentWidth = 0;
+      let currentWidth = 0, totalWidth = 0;
+      let firstSymbol = huffman ? symbolWidths.length : 0;
       while (true) {
-        var deltaWidth = decodeInteger(contextCache, 'IADW', decoder); // 6.5.7
+        var deltaWidth = huffman ?
+          huffmanTables.tableDeltaWidth.decode(huffmanInput) :
+          decodeInteger(contextCache, 'IADW', decoder); // 6.5.7
         if (deltaWidth === null) {
           break; // OOB
         }
         currentWidth += deltaWidth;
+        totalWidth += currentWidth;
         var bitmap;
         if (refinement) {
           // 6.5.8.2 Refinement/aggregate-coded symbol bitmap
@@ -451,7 +464,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                                       0, // OR operator
                                       huffmanTables,
                                       refinementTemplateIndex, refinementAt,
-                                      decodingContext);
+                                      decodingContext, 0, huffmanInput);
           } else {
             var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
             var rdx = decodeInteger(contextCache, 'IARDX', decoder); // 6.4.11.3
@@ -462,20 +475,65 @@ var Jbig2Image = (function Jbig2ImageClosure() {
             refinementTemplateIndex, symbol, rdx, rdy, false, refinementAt,
             decodingContext);
           }
+          newSymbols.push(bitmap);
+        } else if (huffman) {
+          // Store only symbol width and decode a collective bitmap when the
+          // height class is done.
+          symbolWidths.push(currentWidth);
         } else {
           // 6.5.8.1 Direct-coded symbol bitmap
           bitmap = decodeBitmap(false, currentWidth, currentHeight,
             templateIndex, false, null, at, decodingContext);
+          newSymbols.push(bitmap);
         }
-        newSymbols.push(bitmap);
+      }
+      if (huffman && !refinement) {
+        // 6.5.9 Height class collective bitmap
+        let bitmapSize = huffmanTables.tableBitmapSize.decode(huffmanInput);
+        huffmanInput.byteAlign();
+        let collectiveBitmap;
+        if (bitmapSize === 0) {
+          // Uncompressed collective bitmap
+          collectiveBitmap = readUncompressedBitmap(huffmanInput, totalWidth,
+            currentHeight);
+        } else {
+          // MMR collective bitmap
+          let originalEnd = huffmanInput.end;
+          let bitmapEnd = huffmanInput.position + bitmapSize;
+          huffmanInput.end = bitmapEnd;
+          collectiveBitmap = decodeMMRBitmap(huffmanInput, totalWidth,
+            currentHeight, false);
+          huffmanInput.end = originalEnd;
+          huffmanInput.position = bitmapEnd;
+        }
+        let numberOfSymbolsDecoded = symbolWidths.length;
+        if (firstSymbol === numberOfSymbolsDecoded - 1) {
+          // collectiveBitmap is a single symbol.
+          newSymbols.push(collectiveBitmap);
+        } else {
+          // Divide collectiveBitmap into symbols.
+          let i, y, xMin = 0, xMax, bitmapWidth, symbolBitmap;
+          for (i = firstSymbol; i < numberOfSymbolsDecoded; i++) {
+            bitmapWidth = symbolWidths[i];
+            xMax = xMin + bitmapWidth;
+            symbolBitmap = [];
+            for (y = 0; y < currentHeight; y++) {
+              symbolBitmap.push(collectiveBitmap[y].subarray(xMin, xMax));
+            }
+            newSymbols.push(symbolBitmap);
+            xMin = xMax;
+          }
+        }
       }
     }
+
     // 6.5.10 Exported symbols
     var exportedSymbols = [];
     var flags = [], currentFlag = false;
     var totalSymbolsLength = symbols.length + numberOfNewSymbols;
     while (flags.length < totalSymbolsLength) {
-      var runLength = decodeInteger(contextCache, 'IAEX', decoder);
+      var runLength = huffman ? tableB1.decode(huffmanInput) :
+        decodeInteger(contextCache, 'IAEX', decoder);
       while (runLength--) {
         flags.push(currentFlag);
       }
@@ -500,9 +558,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                             transposed, dsOffset, referenceCorner,
                             combinationOperator, huffmanTables,
                             refinementTemplateIndex, refinementAt,
-                            decodingContext) {
-    if (huffman) {
-      throw new Jbig2Error('huffman is not supported');
+                            decodingContext, logStripSize, huffmanInput) {
+    if (huffman && refinement) {
+      throw new Jbig2Error('refinement with Huffman is not supported');
     }
 
     // Prepare bitmap
@@ -520,23 +578,33 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     var decoder = decodingContext.decoder;
     var contextCache = decodingContext.contextCache;
-    var stripT = -decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
+
+    var stripT = huffman ? -huffmanTables.tableDeltaT.decode(huffmanInput) :
+      -decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
     var firstS = 0;
     i = 0;
     while (i < numberOfSymbolInstances) {
-      var deltaT = decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
+      var deltaT = huffman ? huffmanTables.tableDeltaT.decode(huffmanInput) :
+        decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
       stripT += deltaT;
 
-      var deltaFirstS = decodeInteger(contextCache, 'IAFS', decoder); // 6.4.7
+      var deltaFirstS = huffman ?
+        huffmanTables.tableFirstS.decode(huffmanInput) :
+        decodeInteger(contextCache, 'IAFS', decoder); // 6.4.7
       firstS += deltaFirstS;
       var currentS = firstS;
       do {
-        var currentT = (stripSize === 1 ? 0 :
-                        decodeInteger(contextCache, 'IAIT', decoder)); // 6.4.9
+        let currentT = 0; // 6.4.9
+        if (stripSize > 1) {
+          currentT = huffman ? huffmanInput.readBits(logStripSize) :
+            decodeInteger(contextCache, 'IAIT', decoder);
+        }
         var t = stripSize * stripT + currentT;
-        var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
-        var applyRefinement = (refinement &&
-                               decodeInteger(contextCache, 'IARI', decoder));
+        var symbolId = huffman ?
+          huffmanTables.symbolIDTable.decode(huffmanInput) :
+          decodeIAID(contextCache, decoder, symbolCodeLength);
+        var applyRefinement = (refinement && (huffman ? huffmanInput.readBit() :
+          decodeInteger(contextCache, 'IARI', decoder)));
         var symbolBitmap = inputSymbols[symbolId];
         var symbolWidth = symbolBitmap[0].length;
         var symbolHeight = symbolBitmap.length;
@@ -610,7 +678,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           currentS += symbolWidth - 1;
         }
         i++;
-        var deltaS = decodeInteger(contextCache, 'IADS', decoder); // 6.4.8
+        var deltaS = huffman ? huffmanTables.tableDeltaS.decode(huffmanInput) :
+          decodeInteger(contextCache, 'IADS', decoder); // 6.4.8
         if (deltaS === null) {
           break; // OOB
         }
@@ -623,23 +692,25 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function decodePatternDictionary(mmr, patternWidth, patternHeight,
                                    maxPatternIndex, template, decodingContext) {
     let at = [];
-    at.push({
-      x: -patternWidth,
-      y: 0,
-    });
-    if (template === 0) {
+    if (!mmr) {
       at.push({
-        x: -3,
-        y: -1,
+        x: -patternWidth,
+        y: 0,
       });
-      at.push({
-        x: 2,
-        y: -2,
-      });
-      at.push({
-        x: -2,
-        y: -2,
-      });
+      if (template === 0) {
+        at.push({
+          x: -3,
+          y: -1,
+        });
+        at.push({
+          x: 2,
+          y: -2,
+        });
+        at.push({
+          x: -2,
+          y: -2,
+        });
+      }
     }
     let collectiveWidth = (maxPatternIndex + 1) * patternWidth;
     let collectiveBitmap = decodeBitmap(mmr, collectiveWidth, patternHeight,
@@ -692,30 +763,42 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     let patternWidth = pattern0[0].length, patternHeight = pattern0.length;
     let bitsPerValue = log2(numberOfPatterns);
     let at = [];
-    at.push({
-      x: (template <= 1) ? 3 : 2,
-      y: -1,
-    });
-    if (template === 0) {
+    if (!mmr) {
       at.push({
-        x: -3,
+        x: (template <= 1) ? 3 : 2,
         y: -1,
       });
-      at.push({
-        x: 2,
-        y: -2,
-      });
-      at.push({
-        x: -2,
-        y: -2,
-      });
+      if (template === 0) {
+        at.push({
+          x: -3,
+          y: -1,
+        });
+        at.push({
+          x: 2,
+          y: -2,
+        });
+        at.push({
+          x: -2,
+          y: -2,
+        });
+      }
     }
     // Annex C. Gray-scale Image Decoding Procedure.
-    let grayScaleBitPlanes = [];
+    let grayScaleBitPlanes = [], mmrInput, bitmap;
+    if (mmr) {
+      // MMR bit planes are in one continuous stream. Only EOFB codes indicate
+      // the end of each bitmap, so EOFBs must be decoded.
+      mmrInput = new Reader(decodingContext.data, decodingContext.start,
+        decodingContext.end);
+    }
     for (i = bitsPerValue - 1; i >= 0; i--) {
-      grayScaleBitPlanes[i] = decodeBitmap(mmr, gridWidth, gridHeight,
-                                           template, false, skip, at,
-                                           decodingContext);
+      if (mmr) {
+        bitmap = decodeMMRBitmap(mmrInput, gridWidth, gridHeight, true);
+      } else {
+        bitmap = decodeBitmap(false, gridWidth, gridHeight, template, false,
+          skip, at, decodingContext);
+      }
+      grayScaleBitPlanes[i] = bitmap;
     }
     // 6.6.5.2 Rendering the patterns.
     let mg, ng, bit, patternIndex, patternBitmap, x, y, patternRow, regionRow;
@@ -954,7 +1037,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         position += 2;
         textRegion.huffman = !!(textRegionSegmentFlags & 1);
         textRegion.refinement = !!(textRegionSegmentFlags & 2);
-        textRegion.stripSize = 1 << ((textRegionSegmentFlags >> 2) & 3);
+        textRegion.logStripSize = (textRegionSegmentFlags >> 2) & 3;
+        textRegion.stripSize = 1 << textRegion.logStripSize;
         textRegion.referenceCorner = (textRegionSegmentFlags >> 4) & 3;
         textRegion.transposed = !!(textRegionSegmentFlags & 64);
         textRegion.combinationOperator = (textRegionSegmentFlags >> 7) & 3;
@@ -972,7 +1056,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           textRegion.huffmanRefinementDX = (textRegionHuffmanFlags >> 10) & 3;
           textRegion.huffmanRefinementDY = (textRegionHuffmanFlags >> 12) & 3;
           textRegion.huffmanRefinementSizeSelector =
-            !!(textRegionHuffmanFlags & 14);
+            !!(textRegionHuffmanFlags & 0x4000);
         }
         if (textRegion.refinement && !textRegion.refinementTemplate) {
           at = [];
@@ -987,10 +1071,6 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         }
         textRegion.numberOfSymbolInstances = readUint32(data, position);
         position += 4;
-        // TODO 7.4.3.1.7 Symbol ID Huffman table decoding
-        if (textRegion.huffman) {
-          throw new Jbig2Error('huffman is not supported');
-        }
         args = [textRegion, header.referredTo, data, position, end];
         break;
       case 16: // PatternDictionary
@@ -1080,6 +1160,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         break;
       case 51: // EndOfFile
         break;
+      case 53: // Tables
+        args = [header.number, data, position, end];
+        break;
       case 62: // 7.4.15 defines 2 extension types which
                // are comments and can be ignored.
         break;
@@ -1099,27 +1182,6 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
   }
 
-  function parseJbig2(data, start, end) { // eslint-disable-line no-unused-vars
-    var position = start;
-    if (data[position] !== 0x97 || data[position + 1] !== 0x4A ||
-        data[position + 2] !== 0x42 || data[position + 3] !== 0x32 ||
-        data[position + 4] !== 0x0D || data[position + 5] !== 0x0A ||
-        data[position + 6] !== 0x1A || data[position + 7] !== 0x0A) {
-      throw new Jbig2Error('invalid header');
-    }
-    var header = {};
-    position += 8;
-    var flags = data[position++];
-    header.randomAccess = !(flags & 1);
-    if (!(flags & 2)) {
-      header.numberOfPages = readUint32(data, position);
-      position += 4;
-    }
-    readSegments(header, data, position, end); // segments
-    throw new Error('Not implemented');
-    // processSegments(segments, new SimpleSegmentVisitor());
-  }
-
   function parseJbig2Chunks(chunks) {
     var visitor = new SimpleSegmentVisitor();
     for (var i = 0, ii = chunks.length; i < ii; i++) {
@@ -1128,6 +1190,47 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       processSegments(segments, visitor);
     }
     return visitor.buffer;
+  }
+
+  function parseJbig2(data) {
+    let position = 0, end = data.length;
+
+    if (data[position] !== 0x97 || data[position + 1] !== 0x4A ||
+        data[position + 2] !== 0x42 || data[position + 3] !== 0x32 ||
+        data[position + 4] !== 0x0D || data[position + 5] !== 0x0A ||
+        data[position + 6] !== 0x1A || data[position + 7] !== 0x0A) {
+      throw new Jbig2Error('parseJbig2 - invalid header.');
+    }
+
+    let header = Object.create(null);
+    position += 8;
+    const flags = data[position++];
+    header.randomAccess = !(flags & 1);
+    if (!(flags & 2)) {
+      header.numberOfPages = readUint32(data, position);
+      position += 4;
+    }
+
+    let segments = readSegments(header, data, position, end);
+    let visitor = new SimpleSegmentVisitor();
+    processSegments(segments, visitor);
+
+    const { width, height, } = visitor.currentPageInfo;
+    const bitPacked = visitor.buffer;
+    let imgData = new Uint8ClampedArray(width * height);
+    let q = 0, k = 0;
+    for (let i = 0; i < height; i++) {
+      let mask = 0, buffer;
+      for (let j = 0; j < width; j++) {
+        if (!mask) {
+          mask = 128; buffer = bitPacked[k++];
+        }
+        imgData[q++] = (buffer & mask) ? 0 : 255;
+        mask >>= 1;
+      }
+    }
+
+    return { imgData, width, height, };
   }
 
   function SimpleSegmentVisitor() {}
@@ -1215,9 +1318,11 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                                                        currentSegment,
                                                        referredSegments,
                                                        data, start, end) {
-      var huffmanTables;
+      let huffmanTables, huffmanInput;
       if (dictionary.huffman) {
-        throw new Jbig2Error('huffman is not supported');
+        huffmanTables = getSymbolDictionaryHuffmanTables(dictionary,
+          referredSegments, this.customTables);
+        huffmanInput = new Reader(data, start, end);
       }
 
       // Combines exported symbols from all referred segments
@@ -1228,7 +1333,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
       var inputSymbols = [];
       for (var i = 0, ii = referredSegments.length; i < ii; i++) {
-        inputSymbols = inputSymbols.concat(symbols[referredSegments[i]]);
+        let referredSymbols = symbols[referredSegments[i]];
+        // referredSymbols is undefined when we have a reference to a Tables
+        // segment instead of a SymbolDictionary.
+        if (referredSymbols) {
+          inputSymbols = inputSymbols.concat(referredSymbols);
+        }
       }
 
       var decodingContext = new DecodingContext(data, start, end);
@@ -1237,22 +1347,32 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         dictionary.numberOfExportedSymbols, huffmanTables,
         dictionary.template, dictionary.at,
         dictionary.refinementTemplate, dictionary.refinementAt,
-        decodingContext);
+        decodingContext, huffmanInput);
     },
     onImmediateTextRegion:
       function SimpleSegmentVisitor_onImmediateTextRegion(region,
                                                           referredSegments,
                                                           data, start, end) {
       var regionInfo = region.info;
-      var huffmanTables;
+      let huffmanTables, huffmanInput;
 
       // Combines exported symbols from all referred segments
       var symbols = this.symbols;
       var inputSymbols = [];
       for (var i = 0, ii = referredSegments.length; i < ii; i++) {
-        inputSymbols = inputSymbols.concat(symbols[referredSegments[i]]);
+        let referredSymbols = symbols[referredSegments[i]];
+        // referredSymbols is undefined when we have a reference to a Tables
+        // segment instead of a SymbolDictionary.
+        if (referredSymbols) {
+          inputSymbols = inputSymbols.concat(referredSymbols);
+        }
       }
       var symbolCodeLength = log2(inputSymbols.length);
+      if (region.huffman) {
+        huffmanInput = new Reader(data, start, end);
+        huffmanTables = getTextRegionHuffmanTables(region, referredSegments,
+          this.customTables, inputSymbols.length, huffmanInput);
+      }
 
       var decodingContext = new DecodingContext(data, start, end);
       var bitmap = decodeTextRegion(region.huffman, region.refinement,
@@ -1260,7 +1380,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         region.numberOfSymbolInstances, region.stripSize, inputSymbols,
         symbolCodeLength, region.transposed, region.dsOffset,
         region.referenceCorner, region.combinationOperator, huffmanTables,
-        region.refinementTemplate, region.refinementAt, decodingContext);
+        region.refinementTemplate, region.refinementAt, decodingContext,
+        region.logStripSize, huffmanInput);
       this.drawBitmap(regionInfo, bitmap);
     },
     onImmediateLosslessTextRegion:
@@ -1293,13 +1414,737 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     onImmediateLosslessHalftoneRegion() {
       this.onImmediateHalftoneRegion.apply(this, arguments);
     },
+    onTables(currentSegment, data, start, end) {
+      let customTables = this.customTables;
+      if (!customTables) {
+        this.customTables = customTables = {};
+      }
+      customTables[currentSegment] = decodeTablesSegment(data, start, end);
+    },
   };
+
+  function HuffmanLine(lineData) {
+    if (lineData.length === 2) {
+      // OOB line.
+      this.isOOB = true;
+      this.rangeLow = 0;
+      this.prefixLength = lineData[0];
+      this.rangeLength = 0;
+      this.prefixCode = lineData[1];
+      this.isLowerRange = false;
+    } else {
+      // Normal, upper range or lower range line.
+      // Upper range lines are processed like normal lines.
+      this.isOOB = false;
+      this.rangeLow = lineData[0];
+      this.prefixLength = lineData[1];
+      this.rangeLength = lineData[2];
+      this.prefixCode = lineData[3];
+      this.isLowerRange = (lineData[4] === 'lower');
+    }
+  }
+
+  function HuffmanTreeNode(line) {
+    this.children = [];
+    if (line) {
+      // Leaf node
+      this.isLeaf = true;
+      this.rangeLength = line.rangeLength;
+      this.rangeLow = line.rangeLow;
+      this.isLowerRange = line.isLowerRange;
+      this.isOOB = line.isOOB;
+    } else {
+      // Intermediate or root node
+      this.isLeaf = false;
+    }
+  }
+
+  HuffmanTreeNode.prototype = {
+    buildTree(line, shift) {
+      let bit = (line.prefixCode >> shift) & 1;
+      if (shift <= 0) {
+        // Create a leaf node.
+        this.children[bit] = new HuffmanTreeNode(line);
+      } else {
+        // Create an intermediate node and continue recursively.
+        let node = this.children[bit];
+        if (!node) {
+          this.children[bit] = node = new HuffmanTreeNode(null);
+        }
+        node.buildTree(line, shift - 1);
+      }
+    },
+    decodeNode(reader) {
+      if (this.isLeaf) {
+        if (this.isOOB) {
+          return null;
+        }
+        let htOffset = reader.readBits(this.rangeLength);
+        return this.rangeLow + (this.isLowerRange ? -htOffset : htOffset);
+      }
+      let node = this.children[reader.readBit()];
+      if (!node) {
+        throw new Jbig2Error('invalid Huffman data');
+      }
+      return node.decodeNode(reader);
+    },
+  };
+
+  function HuffmanTable(lines, prefixCodesDone) {
+    if (!prefixCodesDone) {
+      this.assignPrefixCodes(lines);
+    }
+    // Create Huffman tree.
+    this.rootNode = new HuffmanTreeNode(null);
+    let i, ii = lines.length, line;
+    for (i = 0; i < ii; i++) {
+      line = lines[i];
+      if (line.prefixLength > 0) {
+        this.rootNode.buildTree(line, line.prefixLength - 1);
+      }
+    }
+  }
+
+  HuffmanTable.prototype = {
+    decode(reader) {
+      return this.rootNode.decodeNode(reader);
+    },
+    assignPrefixCodes(lines) {
+      // Annex B.3 Assigning the prefix codes.
+      let linesLength = lines.length, prefixLengthMax = 0, i;
+      for (i = 0; i < linesLength; i++) {
+        prefixLengthMax = Math.max(prefixLengthMax, lines[i].prefixLength);
+      }
+
+      let histogram = new Uint32Array(prefixLengthMax + 1);
+      for (i = 0; i < linesLength; i++) {
+        histogram[lines[i].prefixLength]++;
+      }
+      let currentLength = 1, firstCode = 0, currentCode, currentTemp, line;
+      histogram[0] = 0;
+
+      while (currentLength <= prefixLengthMax) {
+        firstCode = (firstCode + histogram[currentLength - 1]) << 1;
+        currentCode = firstCode;
+        currentTemp = 0;
+        while (currentTemp < linesLength) {
+          line = lines[currentTemp];
+          if (line.prefixLength === currentLength) {
+            line.prefixCode = currentCode;
+            currentCode++;
+          }
+          currentTemp++;
+        }
+        currentLength++;
+      }
+    },
+  };
+
+  function decodeTablesSegment(data, start, end) {
+    // Decodes a Tables segment, i.e., a custom Huffman table.
+    // Annex B.2 Code table structure.
+    let flags = data[start];
+    let lowestValue = readUint32(data, start + 1) & 0xFFFFFFFF;
+    let highestValue = readUint32(data, start + 5) & 0xFFFFFFFF;
+    let reader = new Reader(data, start + 9, end);
+
+    let prefixSizeBits = ((flags >> 1) & 7) + 1;
+    let rangeSizeBits = ((flags >> 4) & 7) + 1;
+    let lines = [];
+    let prefixLength, rangeLength, currentRangeLow = lowestValue;
+
+    // Normal table lines
+    do {
+      prefixLength = reader.readBits(prefixSizeBits);
+      rangeLength = reader.readBits(rangeSizeBits);
+      lines.push(new HuffmanLine(
+        [currentRangeLow, prefixLength, rangeLength, 0]));
+      currentRangeLow += 1 << rangeLength;
+    } while (currentRangeLow < highestValue);
+
+    // Lower range table line
+    prefixLength = reader.readBits(prefixSizeBits);
+    lines.push(
+      new HuffmanLine([lowestValue - 1, prefixLength, 32, 0, 'lower']));
+
+    // Upper range table line
+    prefixLength = reader.readBits(prefixSizeBits);
+    lines.push(new HuffmanLine([highestValue, prefixLength, 32, 0]));
+
+    if (flags & 1) {
+      // Out-of-band table line
+      prefixLength = reader.readBits(prefixSizeBits);
+      lines.push(new HuffmanLine([prefixLength, 0]));
+    }
+
+    return new HuffmanTable(lines, false);
+  }
+
+  let standardTablesCache = {};
+
+  function getStandardTable(number) {
+    // Annex B.5 Standard Huffman tables.
+    let table = standardTablesCache[number];
+    if (table) {
+      return table;
+    }
+    let lines;
+    switch (number) {
+      case 1:
+        lines = [
+          [0, 1, 4, 0x0],
+          [16, 2, 8, 0x2],
+          [272, 3, 16, 0x6],
+          [65808, 3, 32, 0x7] // upper
+        ];
+        break;
+      case 2:
+        lines = [
+          [0, 1, 0, 0x0],
+          [1, 2, 0, 0x2],
+          [2, 3, 0, 0x6],
+          [3, 4, 3, 0xE],
+          [11, 5, 6, 0x1E],
+          [75, 6, 32, 0x3E], // upper
+          [6, 0x3F] // OOB
+        ];
+        break;
+      case 3:
+        lines = [
+          [-256, 8, 8, 0xFE],
+          [0, 1, 0, 0x0],
+          [1, 2, 0, 0x2],
+          [2, 3, 0, 0x6],
+          [3, 4, 3, 0xE],
+          [11, 5, 6, 0x1E],
+          [-257, 8, 32, 0xFF, 'lower'],
+          [75, 7, 32, 0x7E], // upper
+          [6, 0x3E] // OOB
+        ];
+        break;
+      case 4:
+        lines = [
+          [1, 1, 0, 0x0],
+          [2, 2, 0, 0x2],
+          [3, 3, 0, 0x6],
+          [4, 4, 3, 0xE],
+          [12, 5, 6, 0x1E],
+          [76, 5, 32, 0x1F] // upper
+        ];
+        break;
+      case 5:
+        lines = [
+          [-255, 7, 8, 0x7E],
+          [1, 1, 0, 0x0],
+          [2, 2, 0, 0x2],
+          [3, 3, 0, 0x6],
+          [4, 4, 3, 0xE],
+          [12, 5, 6, 0x1E],
+          [-256, 7, 32, 0x7F, 'lower'],
+          [76, 6, 32, 0x3E] // upper
+        ];
+        break;
+      case 6:
+        lines = [
+          [-2048, 5, 10, 0x1C],
+          [-1024, 4, 9, 0x8],
+          [-512, 4, 8, 0x9],
+          [-256, 4, 7, 0xA],
+          [-128, 5, 6, 0x1D],
+          [-64, 5, 5, 0x1E],
+          [-32, 4, 5, 0xB],
+          [0, 2, 7, 0x0],
+          [128, 3, 7, 0x2],
+          [256, 3, 8, 0x3],
+          [512, 4, 9, 0xC],
+          [1024, 4, 10, 0xD],
+          [-2049, 6, 32, 0x3E, 'lower'],
+          [2048, 6, 32, 0x3F] // upper
+        ];
+        break;
+      case 7:
+        lines = [
+          [-1024, 4, 9, 0x8],
+          [-512, 3, 8, 0x0],
+          [-256, 4, 7, 0x9],
+          [-128, 5, 6, 0x1A],
+          [-64, 5, 5, 0x1B],
+          [-32, 4, 5, 0xA],
+          [0, 4, 5, 0xB],
+          [32, 5, 5, 0x1C],
+          [64, 5, 6, 0x1D],
+          [128, 4, 7, 0xC],
+          [256, 3, 8, 0x1],
+          [512, 3, 9, 0x2],
+          [1024, 3, 10, 0x3],
+          [-1025, 5, 32, 0x1E, 'lower'],
+          [2048, 5, 32, 0x1F] // upper
+        ];
+        break;
+      case 8:
+        lines = [
+          [-15, 8, 3, 0xFC],
+          [-7, 9, 1, 0x1FC],
+          [-5, 8, 1, 0xFD],
+          [-3, 9, 0, 0x1FD],
+          [-2, 7, 0, 0x7C],
+          [-1, 4, 0, 0xA],
+          [0, 2, 1, 0x0],
+          [2, 5, 0, 0x1A],
+          [3, 6, 0, 0x3A],
+          [4, 3, 4, 0x4],
+          [20, 6, 1, 0x3B],
+          [22, 4, 4, 0xB],
+          [38, 4, 5, 0xC],
+          [70, 5, 6, 0x1B],
+          [134, 5, 7, 0x1C],
+          [262, 6, 7, 0x3C],
+          [390, 7, 8, 0x7D],
+          [646, 6, 10, 0x3D],
+          [-16, 9, 32, 0x1FE, 'lower'],
+          [1670, 9, 32, 0x1FF], // upper
+          [2, 0x1] // OOB
+        ];
+        break;
+      case 9:
+        lines = [
+          [-31, 8, 4, 0xFC],
+          [-15, 9, 2, 0x1FC],
+          [-11, 8, 2, 0xFD],
+          [-7, 9, 1, 0x1FD],
+          [-5, 7, 1, 0x7C],
+          [-3, 4, 1, 0xA],
+          [-1, 3, 1, 0x2],
+          [1, 3, 1, 0x3],
+          [3, 5, 1, 0x1A],
+          [5, 6, 1, 0x3A],
+          [7, 3, 5, 0x4],
+          [39, 6, 2, 0x3B],
+          [43, 4, 5, 0xB],
+          [75, 4, 6, 0xC],
+          [139, 5, 7, 0x1B],
+          [267, 5, 8, 0x1C],
+          [523, 6, 8, 0x3C],
+          [779, 7, 9, 0x7D],
+          [1291, 6, 11, 0x3D],
+          [-32, 9, 32, 0x1FE, 'lower'],
+          [3339, 9, 32, 0x1FF], // upper
+          [2, 0x0] // OOB
+        ];
+        break;
+      case 10:
+        lines = [
+          [-21, 7, 4, 0x7A],
+          [-5, 8, 0, 0xFC],
+          [-4, 7, 0, 0x7B],
+          [-3, 5, 0, 0x18],
+          [-2, 2, 2, 0x0],
+          [2, 5, 0, 0x19],
+          [3, 6, 0, 0x36],
+          [4, 7, 0, 0x7C],
+          [5, 8, 0, 0xFD],
+          [6, 2, 6, 0x1],
+          [70, 5, 5, 0x1A],
+          [102, 6, 5, 0x37],
+          [134, 6, 6, 0x38],
+          [198, 6, 7, 0x39],
+          [326, 6, 8, 0x3A],
+          [582, 6, 9, 0x3B],
+          [1094, 6, 10, 0x3C],
+          [2118, 7, 11, 0x7D],
+          [-22, 8, 32, 0xFE, 'lower'],
+          [4166, 8, 32, 0xFF], // upper
+          [2, 0x2] // OOB
+        ];
+        break;
+      case 11:
+        lines = [
+          [1, 1, 0, 0x0],
+          [2, 2, 1, 0x2],
+          [4, 4, 0, 0xC],
+          [5, 4, 1, 0xD],
+          [7, 5, 1, 0x1C],
+          [9, 5, 2, 0x1D],
+          [13, 6, 2, 0x3C],
+          [17, 7, 2, 0x7A],
+          [21, 7, 3, 0x7B],
+          [29, 7, 4, 0x7C],
+          [45, 7, 5, 0x7D],
+          [77, 7, 6, 0x7E],
+          [141, 7, 32, 0x7F] // upper
+        ];
+        break;
+      case 12:
+        lines = [
+          [1, 1, 0, 0x0],
+          [2, 2, 0, 0x2],
+          [3, 3, 1, 0x6],
+          [5, 5, 0, 0x1C],
+          [6, 5, 1, 0x1D],
+          [8, 6, 1, 0x3C],
+          [10, 7, 0, 0x7A],
+          [11, 7, 1, 0x7B],
+          [13, 7, 2, 0x7C],
+          [17, 7, 3, 0x7D],
+          [25, 7, 4, 0x7E],
+          [41, 8, 5, 0xFE],
+          [73, 8, 32, 0xFF] // upper
+        ];
+        break;
+      case 13:
+        lines = [
+          [1, 1, 0, 0x0],
+          [2, 3, 0, 0x4],
+          [3, 4, 0, 0xC],
+          [4, 5, 0, 0x1C],
+          [5, 4, 1, 0xD],
+          [7, 3, 3, 0x5],
+          [15, 6, 1, 0x3A],
+          [17, 6, 2, 0x3B],
+          [21, 6, 3, 0x3C],
+          [29, 6, 4, 0x3D],
+          [45, 6, 5, 0x3E],
+          [77, 7, 6, 0x7E],
+          [141, 7, 32, 0x7F] // upper
+        ];
+        break;
+      case 14:
+        lines = [
+          [-2, 3, 0, 0x4],
+          [-1, 3, 0, 0x5],
+          [0, 1, 0, 0x0],
+          [1, 3, 0, 0x6],
+          [2, 3, 0, 0x7]
+        ];
+        break;
+      case 15:
+        lines = [
+          [-24, 7, 4, 0x7C],
+          [-8, 6, 2, 0x3C],
+          [-4, 5, 1, 0x1C],
+          [-2, 4, 0, 0xC],
+          [-1, 3, 0, 0x4],
+          [0, 1, 0, 0x0],
+          [1, 3, 0, 0x5],
+          [2, 4, 0, 0xD],
+          [3, 5, 1, 0x1D],
+          [5, 6, 2, 0x3D],
+          [9, 7, 4, 0x7D],
+          [-25, 7, 32, 0x7E, 'lower'],
+          [25, 7, 32, 0x7F] // upper
+        ];
+        break;
+      default:
+        throw new Jbig2Error(`standard table B.${number} does not exist`);
+    }
+
+    let length = lines.length, i;
+    for (i = 0; i < length; i++) {
+      lines[i] = new HuffmanLine(lines[i]);
+    }
+    table = new HuffmanTable(lines, true);
+    standardTablesCache[number] = table;
+    return table;
+  }
+
+  function Reader(data, start, end) {
+    this.data = data;
+    this.start = start;
+    this.end = end;
+    this.position = start;
+    this.shift = -1;
+    this.currentByte = 0;
+  }
+
+  Reader.prototype = {
+    readBit() {
+      if (this.shift < 0) {
+        if (this.position >= this.end) {
+          throw new Jbig2Error('end of data while reading bit');
+        }
+        this.currentByte = this.data[this.position++];
+        this.shift = 7;
+      }
+      let bit = (this.currentByte >> this.shift) & 1;
+      this.shift--;
+      return bit;
+    },
+
+    readBits(numBits) {
+      let result = 0, i;
+      for (i = numBits - 1; i >= 0; i--) {
+        result |= this.readBit() << i;
+      }
+      return result;
+    },
+
+    byteAlign() {
+      this.shift = -1;
+    },
+
+    next() {
+      if (this.position >= this.end) {
+        return -1;
+      }
+      return this.data[this.position++];
+    },
+  };
+
+  function getCustomHuffmanTable(index, referredTo, customTables) {
+    // Returns a Tables segment that has been earlier decoded.
+    // See 7.4.2.1.6 (symbol dictionary) or 7.4.3.1.6 (text region).
+    let currentIndex = 0, i, ii = referredTo.length, table;
+    for (i = 0; i < ii; i++) {
+      table = customTables[referredTo[i]];
+      if (table) {
+        if (index === currentIndex) {
+          return table;
+        }
+        currentIndex++;
+      }
+    }
+    throw new Jbig2Error('can\'t find custom Huffman table');
+  }
+
+  function getTextRegionHuffmanTables(textRegion, referredTo, customTables,
+                                      numberOfSymbols, reader) {
+    // 7.4.3.1.7 Symbol ID Huffman table decoding
+
+    // Read code lengths for RUNCODEs 0...34.
+    let codes = [], i, codeLength;
+    for (i = 0; i <= 34; i++) {
+      codeLength = reader.readBits(4);
+      codes.push(new HuffmanLine([i, codeLength, 0, 0]));
+    }
+    // Assign Huffman codes for RUNCODEs.
+    let runCodesTable = new HuffmanTable(codes, false);
+
+    // Read a Huffman code using the assignment above.
+    // Interpret the RUNCODE codes and the additional bits (if any).
+    codes.length = 0;
+    for (i = 0; i < numberOfSymbols;) {
+      codeLength = runCodesTable.decode(reader);
+      if (codeLength >= 32) {
+        let repeatedLength, numberOfRepeats, j;
+        switch (codeLength) {
+          case 32:
+            if (i === 0) {
+              throw new Jbig2Error('no previous value in symbol ID table');
+            }
+            numberOfRepeats = reader.readBits(2) + 3;
+            repeatedLength = codes[i - 1].prefixLength;
+            break;
+          case 33:
+            numberOfRepeats = reader.readBits(3) + 3;
+            repeatedLength = 0;
+            break;
+          case 34:
+            numberOfRepeats = reader.readBits(7) + 11;
+            repeatedLength = 0;
+            break;
+          default:
+            throw new Jbig2Error('invalid code length in symbol ID table');
+        }
+        for (j = 0; j < numberOfRepeats; j++) {
+          codes.push(new HuffmanLine([i, repeatedLength, 0, 0]));
+          i++;
+        }
+      } else {
+        codes.push(new HuffmanLine([i, codeLength, 0, 0]));
+        i++;
+      }
+    }
+    reader.byteAlign();
+    let symbolIDTable = new HuffmanTable(codes, false);
+
+    // 7.4.3.1.6 Text region segment Huffman table selection
+
+    let customIndex = 0, tableFirstS, tableDeltaS, tableDeltaT;
+
+    switch (textRegion.huffmanFS) {
+      case 0:
+      case 1:
+        tableFirstS = getStandardTable(textRegion.huffmanFS + 6);
+        break;
+      case 3:
+        tableFirstS = getCustomHuffmanTable(customIndex, referredTo,
+          customTables);
+        customIndex++;
+        break;
+      default:
+        throw new Jbig2Error('invalid Huffman FS selector');
+    }
+
+    switch (textRegion.huffmanDS) {
+      case 0:
+      case 1:
+      case 2:
+        tableDeltaS = getStandardTable(textRegion.huffmanDS + 8);
+        break;
+      case 3:
+        tableDeltaS = getCustomHuffmanTable(customIndex, referredTo,
+          customTables);
+        customIndex++;
+        break;
+      default:
+        throw new Jbig2Error('invalid Huffman DS selector');
+    }
+
+    switch (textRegion.huffmanDT) {
+      case 0:
+      case 1:
+      case 2:
+        tableDeltaT = getStandardTable(textRegion.huffmanDT + 11);
+        break;
+      case 3:
+        tableDeltaT = getCustomHuffmanTable(customIndex, referredTo,
+          customTables);
+        customIndex++;
+        break;
+      default:
+        throw new Jbig2Error('invalid Huffman DT selector');
+    }
+
+    if (textRegion.refinement) {
+      // Load tables RDW, RDH, RDX and RDY.
+      throw new Jbig2Error('refinement with Huffman is not supported');
+    }
+
+    return {
+      symbolIDTable,
+      tableFirstS,
+      tableDeltaS,
+      tableDeltaT,
+    };
+  }
+
+  function getSymbolDictionaryHuffmanTables(dictionary, referredTo,
+                                            customTables) {
+    // 7.4.2.1.6 Symbol dictionary segment Huffman table selection
+
+    let customIndex = 0, tableDeltaHeight, tableDeltaWidth;
+    switch (dictionary.huffmanDHSelector) {
+      case 0:
+      case 1:
+        tableDeltaHeight = getStandardTable(dictionary.huffmanDHSelector + 4);
+        break;
+      case 3:
+        tableDeltaHeight = getCustomHuffmanTable(customIndex, referredTo,
+          customTables);
+        customIndex++;
+        break;
+      default:
+        throw new Jbig2Error('invalid Huffman DH selector');
+    }
+
+    switch (dictionary.huffmanDWSelector) {
+      case 0:
+      case 1:
+        tableDeltaWidth = getStandardTable(dictionary.huffmanDWSelector + 2);
+        break;
+      case 3:
+        tableDeltaWidth = getCustomHuffmanTable(customIndex, referredTo,
+          customTables);
+        customIndex++;
+        break;
+      default:
+        throw new Jbig2Error('invalid Huffman DW selector');
+    }
+
+    let tableBitmapSize, tableAggregateInstances;
+    if (dictionary.bitmapSizeSelector) {
+      tableBitmapSize = getCustomHuffmanTable(customIndex, referredTo,
+        customTables);
+      customIndex++;
+    } else {
+      tableBitmapSize = getStandardTable(1);
+    }
+
+    if (dictionary.aggregationInstancesSelector) {
+      tableAggregateInstances = getCustomHuffmanTable(customIndex, referredTo,
+        customTables);
+    } else {
+      tableAggregateInstances = getStandardTable(1);
+    }
+
+    return {
+      tableDeltaHeight,
+      tableDeltaWidth,
+      tableBitmapSize,
+      tableAggregateInstances,
+    };
+  }
+
+  function readUncompressedBitmap(reader, width, height) {
+    let bitmap = [], x, y, row;
+    for (y = 0; y < height; y++) {
+      row = new Uint8Array(width);
+      bitmap.push(row);
+      for (x = 0; x < width; x++) {
+        row[x] = reader.readBit();
+      }
+      reader.byteAlign();
+    }
+    return bitmap;
+  }
+
+  function decodeMMRBitmap(input, width, height, endOfBlock) {
+    // MMR is the same compression algorithm as the PDF filter
+    // CCITTFaxDecode with /K -1.
+    let params = {
+      K: -1,
+      Columns: width,
+      Rows: height,
+      BlackIs1: true,
+      EndOfBlock: endOfBlock,
+    };
+    let decoder = new CCITTFaxDecoder(input, params);
+    let bitmap = [], x, y, row, currentByte, shift, eof = false;
+
+    for (y = 0; y < height; y++) {
+      row = new Uint8Array(width);
+      bitmap.push(row);
+      shift = -1;
+      for (x = 0; x < width; x++) {
+        if (shift < 0) {
+          currentByte = decoder.readNextChar();
+          if (currentByte === -1) {
+            // Set the rest of the bits to zero.
+            currentByte = 0;
+            eof = true;
+          }
+          shift = 7;
+        }
+        row[x] = (currentByte >> shift) & 1;
+        shift--;
+      }
+    }
+
+    if (endOfBlock && !eof) {
+      // Read until EOFB has been consumed.
+      const lookForEOFLimit = 5;
+      for (let i = 0; i < lookForEOFLimit; i++) {
+        if (decoder.readNextChar() === -1) {
+          break;
+        }
+      }
+    }
+
+    return bitmap;
+  }
 
   function Jbig2Image() {}
 
   Jbig2Image.prototype = {
-    parseChunks: function Jbig2Image_parseChunks(chunks) {
+    parseChunks(chunks) {
       return parseJbig2Chunks(chunks);
+    },
+
+    parse(data) {
+      const { imgData, width, height, } = parseJbig2(data);
+      this.width = width;
+      this.height = height;
+      return imgData;
     },
   };
 

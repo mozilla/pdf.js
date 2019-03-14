@@ -145,10 +145,10 @@ document.webL10n = (function(window, document, undefined) {
    *    locale (language) to parse. Must be a lowercase string.
    *
    * @param {Function} successCallback
-   *    triggered when the l10n resource has been successully parsed.
+   *    triggered when the l10n resource has been successfully parsed.
    *
    * @param {Function} failureCallback
-   *    triggered when the an error has occured.
+   *    triggered when the an error has occurred.
    *
    * @return {void}
    *    uses the following global variables: gL10nData, gTextData, gTextProp.
@@ -267,7 +267,7 @@ document.webL10n = (function(window, document, undefined) {
           var id, prop, index = key.lastIndexOf('.');
           if (index > 0) { // an attribute has been specified
             id = key.substring(0, index);
-            prop = key.substr(index + 1);
+            prop = key.substring(index + 1);
           } else { // no attribute: assuming text content by default
             id = key;
             prop = gTextProp;
@@ -974,7 +974,7 @@ document.webL10n = (function(window, document, undefined) {
       var index = key.lastIndexOf('.');
       var prop = gTextProp;
       if (index > 0) { // An attribute has been specified
-        prop = key.substr(index + 1);
+        prop = key.substring(index + 1);
         key = key.substring(0, index);
       }
       var fallback;

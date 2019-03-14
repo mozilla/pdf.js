@@ -15,113 +15,95 @@
 /* globals chrome */
 
 import { DefaultExternalServices, PDFViewerApplication } from './app';
+import { AppOptions } from './app_options';
 import { BasePreferences } from './preferences';
 import { DownloadManager } from './download_manager';
 import { GenericL10n } from './genericl10n';
-import { PDFJS } from 'pdfjs-lib';
+import { URL } from 'pdfjs-lib';
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
   throw new Error('Module "pdfjs-web/chromecom" shall not be used outside ' +
                   'CHROME build.');
 }
 
-var ChromeCom = {};
-/**
- * Creates an event that the extension is listening for and will
- * asynchronously respond by calling the callback.
- *
- * @param {String} action The action to trigger.
- * @param {String} data Optional data to send.
- * @param {Function} callback Optional response callback that will be called
- * with one data argument. When the request cannot be handled, the callback
- * is immediately invoked with no arguments.
- */
-ChromeCom.request = function ChromeCom_request(action, data, callback) {
-  var message = {
-    action,
-    data,
-  };
-  if (!chrome.runtime) {
-    console.error('chrome.runtime is undefined.');
-    if (callback) {
-      callback();
-    }
-  } else if (callback) {
-    chrome.runtime.sendMessage(message, callback);
-  } else {
-    chrome.runtime.sendMessage(message);
-  }
-};
-
-/**
- * Resolves a PDF file path and attempts to detects length.
- *
- * @param {String} file - Absolute URL of PDF file.
- * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
- * @param {Function} callback - A callback with resolved URL and file length.
- */
-ChromeCom.resolvePDFFile = function(file, overlayManager, callback) {
-  // Expand drive:-URLs to filesystem URLs (Chrome OS)
-  file = file.replace(/^drive:/i,
-      'filesystem:' + location.origin + '/external/');
-
-  if (/^filesystem:/.test(file) && !PDFJS.disableWorker) {
-    // The security origin of filesystem:-URLs are not preserved when the
-    // URL is passed to a Web worker, (http://crbug.com/362061), so we have
-    // to create an intermediate blob:-URL as a work-around.
-    var resolveLocalFileSystemURL = window.resolveLocalFileSystemURL ||
-                                    window.webkitResolveLocalFileSystemURL;
-    resolveLocalFileSystemURL(file, function onResolvedFSURL(fileEntry) {
-      fileEntry.file(function(fileObject) {
-        var blobUrl = URL.createObjectURL(fileObject);
-        callback(blobUrl, fileObject.size);
-      });
-    }, function onFileSystemError(error) {
-      // This should not happen. When it happens, just fall back to the
-      // usual way of getting the File's data (via the Web worker).
-      console.warn('Cannot resolve file ' + file + ', ' + error.name + ' ' +
-                   error.message);
-      callback(file);
-    });
-    return;
-  }
-  if (/^https?:/.test(file)) {
-    // Assumption: The file being opened is the file that was requested.
-    // There is no UI to input a different URL, so this assumption will hold
-    // for now.
-    setReferer(file, function() {
-      callback(file);
-    });
-    return;
-  }
-  if (/^file?:/.test(file)) {
-    getEmbedderOrigin(function(origin) {
-      // If the origin cannot be determined, let Chrome decide whether to
-      // allow embedding files. Otherwise, only allow local files to be
-      // embedded from local files or Chrome extensions.
-      // Even without this check, the file load in frames is still blocked,
-      // but this may change in the future (https://crbug.com/550151).
-      if (origin && !/^file:|^chrome-extension:/.test(origin)) {
-        PDFViewerApplication.error('Blocked ' + origin + ' from loading ' +
-            file + '. Refused to load a local file in a non-local page ' +
-            'for security reasons.');
-        return;
+let ChromeCom = {
+  /**
+   * Creates an event that the extension is listening for and will
+   * asynchronously respond by calling the callback.
+   *
+   * @param {String} action The action to trigger.
+   * @param {String} data Optional data to send.
+   * @param {Function} callback Optional response callback that will be called
+   * with one data argument. When the request cannot be handled, the callback
+   * is immediately invoked with no arguments.
+   */
+  request(action, data, callback) {
+    let message = {
+      action,
+      data,
+    };
+    if (!chrome.runtime) {
+      console.error('chrome.runtime is undefined.');
+      if (callback) {
+        callback();
       }
-      isAllowedFileSchemeAccess(function(isAllowedAccess) {
-        if (isAllowedAccess) {
-          callback(file);
-        } else {
-          requestAccessToLocalFile(file, overlayManager);
-        }
+    } else if (callback) {
+      chrome.runtime.sendMessage(message, callback);
+    } else {
+      chrome.runtime.sendMessage(message);
+    }
+  },
+
+  /**
+   * Resolves a PDF file path and attempts to detects length.
+   *
+   * @param {String} file - Absolute URL of PDF file.
+   * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
+   * @param {Function} callback - A callback with resolved URL and file length.
+   */
+  resolvePDFFile(file, overlayManager, callback) {
+    // Expand drive:-URLs to filesystem URLs (Chrome OS)
+    file = file.replace(/^drive:/i,
+        'filesystem:' + location.origin + '/external/');
+
+    if (/^https?:/.test(file)) {
+      // Assumption: The file being opened is the file that was requested.
+      // There is no UI to input a different URL, so this assumption will hold
+      // for now.
+      setReferer(file, function() {
+        callback(file);
       });
-    });
-    return;
-  }
-  callback(file);
+      return;
+    }
+    if (/^file?:/.test(file)) {
+      getEmbedderOrigin(function(origin) {
+        // If the origin cannot be determined, let Chrome decide whether to
+        // allow embedding files. Otherwise, only allow local files to be
+        // embedded from local files or Chrome extensions.
+        // Even without this check, the file load in frames is still blocked,
+        // but this may change in the future (https://crbug.com/550151).
+        if (origin && !/^file:|^chrome-extension:/.test(origin)) {
+          PDFViewerApplication.error('Blocked ' + origin + ' from loading ' +
+              file + '. Refused to load a local file in a non-local page ' +
+              'for security reasons.');
+          return;
+        }
+        isAllowedFileSchemeAccess(function(isAllowedAccess) {
+          if (isAllowedAccess) {
+            callback(file);
+          } else {
+            requestAccessToLocalFile(file, overlayManager, callback);
+          }
+        });
+      });
+      return;
+    }
+    callback(file);
+  },
 };
 
 function getEmbedderOrigin(callback) {
-  var origin = window === top ? location.origin : location.ancestorOrigins[0];
+  let origin = window === top ? location.origin : location.ancestorOrigins[0];
   if (origin === 'null') {
     // file:-URLs, data-URLs, sandboxed frames, etc.
     getParentOrigin(callback);
@@ -155,9 +137,9 @@ function reloadIfRuntimeIsUnavailable() {
   }
 }
 
-var chromeFileAccessOverlayPromise;
-function requestAccessToLocalFile(fileUrl, overlayManager) {
-  var onCloseOverlay = null;
+let chromeFileAccessOverlayPromise;
+function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
+  let onCloseOverlay = null;
   if (top !== window) {
     // When the extension reloads after receiving new permissions, the pages
     // have to be reloaded to restore the extension runtime. Auto-reload
@@ -180,7 +162,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager) {
       onCloseOverlay, true);
   }
   chromeFileAccessOverlayPromise.then(function() {
-    var iconPath = chrome.runtime.getManifest().icons[48];
+    let iconPath = chrome.runtime.getManifest().icons[48];
     document.getElementById('chrome-pdfjs-logo-bg').style.backgroundImage =
       'url(' + chrome.runtime.getURL(iconPath) + ')';
 
@@ -188,7 +170,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager) {
     // because the shown string should match the UI at chrome://extensions.
     // These strings are from chrome/app/resources/generated_resources_*.xtb.
     /* eslint-disable no-unexpected-multiline */
-    var i18nFileAccessLabel =
+    let i18nFileAccessLabel =
       PDFJSDev.json('$ROOT/web/chrome-i18n-allow-access-to-file-urls.json')
       [chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()];
     /* eslint-enable no-unexpected-multiline */
@@ -198,7 +180,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager) {
         i18nFileAccessLabel;
     }
 
-    var link = document.getElementById('chrome-link-to-extensions-page');
+    let link = document.getElementById('chrome-link-to-extensions-page');
     link.href = 'chrome://extensions/?id=' + chrome.runtime.id;
     link.onclick = function(e) {
       // Direct navigation to chrome:// URLs is blocked by Chrome, so we
@@ -215,6 +197,29 @@ function requestAccessToLocalFile(fileUrl, overlayManager) {
     // Show which file is being opened to help the user with understanding
     // why this permission request is shown.
     document.getElementById('chrome-url-of-local-file').textContent = fileUrl;
+
+    document.getElementById('chrome-file-fallback').onchange = function() {
+      let file = this.files[0];
+      if (file) {
+        let originalFilename = decodeURIComponent(fileUrl.split('/').pop());
+        let originalUrl = fileUrl;
+        if (originalFilename !== file.name) {
+          let msg = 'The selected file does not match the original file.' +
+            '\nOriginal: ' + originalFilename +
+            '\nSelected: ' + file.name +
+            '\nDo you want to open the selected file?';
+          if (!confirm(msg)) {
+            this.value = '';
+            return;
+          }
+          // There is no way to retrieve the original URL from the File object.
+          // So just generate a fake path.
+          originalUrl = 'file:///fakepath/to/' + encodeURIComponent(file.name);
+        }
+        callback(URL.createObjectURL(file), file.size, originalUrl);
+        overlayManager.close('chromeFileAccessOverlay');
+      }
+    };
 
     overlayManager.open('chromeFileAccessOverlay');
   });
@@ -243,7 +248,7 @@ if (window === top) {
 //    to the background page.
 // 3. When the background page knows the referrer of the page, the referrer is
 //    saved in history.state.chromecomState.
-var port;
+let port;
 // Set the referer for the given URL.
 // 0. Background: If loaded via a http(s) URL: Save referer.
 // 1. Page -> background: send URL and referer from history.state
@@ -271,7 +276,7 @@ function setReferer(url, callback) {
       // back and forward, the background page will not observe a HTTP request
       // with Referer. To make sure that the Referer is preserved, store it in
       // history.state, which is preserved across reloads/navigations.
-      var state = window.history.state || {};
+      let state = window.history.state || {};
       state.chromecomState = referer;
       window.history.replaceState(state, '');
     }
@@ -292,13 +297,13 @@ function setReferer(url, callback) {
 // chrome.storage.sync is not supported in every Chromium-derivate.
 // Note: The background page takes care of migrating values from
 // chrome.storage.local to chrome.storage.sync when needed.
-var storageArea = chrome.storage.sync || chrome.storage.local;
+let storageArea = chrome.storage.sync || chrome.storage.local;
 
 class ChromePreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
+  async _writeToStorage(prefObj) {
     return new Promise((resolve) => {
       if (prefObj === this.defaults) {
-        var keysToRemove = Object.keys(this.defaults);
+        let keysToRemove = Object.keys(this.defaults);
         // If the storage is reset, remove the keys so that the values from
         // managed storage are applied again.
         storageArea.remove(keysToRemove, function() {
@@ -312,9 +317,9 @@ class ChromePreferences extends BasePreferences {
     });
   }
 
-  _readFromStorage(prefObj) {
+  async _readFromStorage(prefObj) {
     return new Promise((resolve) => {
-      var getPreferences = (defaultPrefs) => {
+      let getPreferences = (defaultPrefs) => {
         if (chrome.runtime.lastError) {
           // Managed storage not supported, e.g. in Opera.
           defaultPrefs = this.defaults;
@@ -328,16 +333,52 @@ class ChromePreferences extends BasePreferences {
         // Get preferences as set by the system administrator.
         // See extensions/chromium/preferences_schema.json for more information.
         // These preferences can be overridden by the user.
-        chrome.storage.managed.get(this.defaults, function(items) {
-          // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
+
+        // Deprecated preferences are removed from web/default_preferences.json,
+        // but kept in extensions/chromium/preferences_schema.json for backwards
+        // compatibility with managed preferences.
+        let defaultManagedPrefs = Object.assign({
+          enableHandToolOnLoad: false,
+          disableTextLayer: false,
+          enhanceTextSelection: false,
+          showPreviousViewOnLoad: true,
+          disablePageMode: false,
+        }, this.defaults);
+
+        chrome.storage.managed.get(defaultManagedPrefs, function(items) {
+          items = items || defaultManagedPrefs;
+          // Migration logic for deprecated preferences: If the new preference
+          // is not defined by an administrator (i.e. the value is the same as
+          // the default value), and a deprecated preference is set with a
+          // non-default value, migrate the deprecated preference value to the
+          // new preference value.
           // Never remove this, because we have no means of modifying managed
           // preferences.
-          if (items && items.enableHandToolOnLoad && !items.cursorToolOnLoad) {
-            // if the old enableHandToolOnLoad has a non-default value,
-            // and cursorToolOnLoad has a default value, migrate.
-            items.enableHandToolOnLoad = false;
+
+          // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
+          if (items.enableHandToolOnLoad && !items.cursorToolOnLoad) {
             items.cursorToolOnLoad = 1;
           }
+          delete items.enableHandToolOnLoad;
+
+          // Migration code for https://github.com/mozilla/pdf.js/pull/9479.
+          if (items.textLayerMode !== 1) {
+            if (items.disableTextLayer) {
+              items.textLayerMode = 0;
+            } else if (items.enhanceTextSelection) {
+              items.textLayerMode = 2;
+            }
+          }
+          delete items.disableTextLayer;
+          delete items.enhanceTextSelection;
+
+          // Migration code for https://github.com/mozilla/pdf.js/pull/10502.
+          if (!items.showPreviousViewOnLoad && !items.viewOnLoad) {
+            items.viewOnLoad = 1;
+          }
+          delete items.showPreviousViewOnLoad;
+          delete items.disablePageMode;
+
           getPreferences(items);
         });
       } else {
@@ -348,21 +389,22 @@ class ChromePreferences extends BasePreferences {
   }
 }
 
-var ChromeExternalServices = Object.create(DefaultExternalServices);
-ChromeExternalServices.initPassiveLoading = function (callbacks) {
-  let { appConfig, overlayManager, } = PDFViewerApplication;
-  ChromeCom.resolvePDFFile(appConfig.defaultUrl, overlayManager,
-      function (url, length, originalURL) {
-    callbacks.onOpenWithURL(url, length, originalURL);
+let ChromeExternalServices = Object.create(DefaultExternalServices);
+ChromeExternalServices.initPassiveLoading = function(callbacks) {
+  let { overlayManager, } = PDFViewerApplication;
+  // defaultUrl is set in viewer.js
+  ChromeCom.resolvePDFFile(AppOptions.get('defaultUrl'), overlayManager,
+      function(url, length, originalUrl) {
+    callbacks.onOpenWithURL(url, length, originalUrl);
   });
 };
-ChromeExternalServices.createDownloadManager = function() {
-  return new DownloadManager();
+ChromeExternalServices.createDownloadManager = function(options) {
+  return new DownloadManager(options);
 };
 ChromeExternalServices.createPreferences = function() {
   return new ChromePreferences();
 };
-ChromeExternalServices.createL10n = function () {
+ChromeExternalServices.createL10n = function(options) {
   return new GenericL10n(navigator.language);
 };
 PDFViewerApplication.externalServices = ChromeExternalServices;

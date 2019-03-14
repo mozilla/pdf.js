@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  addLinkAttributes, PDFJS, removeNullCharacters
-} from 'pdfjs-lib';
+import { addLinkAttributes, LinkTarget, removeNullCharacters } from 'pdfjs-lib';
 
 const DEFAULT_TITLE = '\u2013';
 
@@ -41,6 +39,8 @@ class PDFOutlineViewer {
     this.eventBus = eventBus;
 
     this.reset();
+
+    eventBus.on('toggleoutlinetree', this.toggleOutlineTree.bind(this));
   }
 
   reset() {
@@ -68,20 +68,22 @@ class PDFOutlineViewer {
   /**
    * @private
    */
-  _bindLink(element, item) {
-    if (item.url) {
+  _bindLink(element, { url, newWindow, dest, }) {
+    let { linkService, } = this;
+
+    if (url) {
       addLinkAttributes(element, {
-        url: item.url,
-        target: (item.newWindow ? PDFJS.LinkTarget.BLANK : undefined),
+        url,
+        target: (newWindow ? LinkTarget.BLANK : linkService.externalLinkTarget),
+        rel: linkService.externalLinkRel,
       });
       return;
     }
-    let destination = item.dest;
 
-    element.href = this.linkService.getDestinationHash(destination);
+    element.href = linkService.getDestinationHash(dest);
     element.onclick = () => {
-      if (destination) {
-        this.linkService.navigateTo(destination);
+      if (dest) {
+        linkService.navigateTo(dest);
       }
       return false;
     };
@@ -90,12 +92,12 @@ class PDFOutlineViewer {
   /**
    * @private
    */
-  _setStyles(element, item) {
+  _setStyles(element, { bold, italic, }) {
     let styleStr = '';
-    if (item.bold) {
+    if (bold) {
       styleStr += 'font-weight: bold;';
     }
-    if (item.italic) {
+    if (italic) {
       styleStr += 'font-style: italic;';
     }
 
@@ -134,11 +136,10 @@ class PDFOutlineViewer {
    *
    * @private
    */
-  _toggleOutlineItem(root, show) {
+  _toggleOutlineItem(root, show = false) {
     this.lastToggleIsShow = show;
-    let togglers = root.querySelectorAll('.outlineItemToggler');
-    for (let i = 0, ii = togglers.length; i < ii; ++i) {
-      togglers[i].classList[show ? 'remove' : 'add']('outlineItemsHidden');
+    for (const toggler of root.querySelectorAll('.outlineItemToggler')) {
+      toggler.classList.toggle('outlineItemsHidden', !show);
     }
   }
 

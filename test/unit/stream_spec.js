@@ -59,6 +59,11 @@ describe('stream', function() {
       expect(result).toMatchTypedArray(
         new Uint8Array([100, 3, 101, 2, 102, 1])
       );
+
+      predictor.reset();
+      let clampedResult = predictor.getBytes(6, /* forceClamped = */ true);
+      expect(clampedResult).toEqual(
+        new Uint8ClampedArray([100, 3, 101, 2, 102, 1]));
     });
   });
 });

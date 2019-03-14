@@ -84,11 +84,13 @@ function writeSvgToFile(svgElement, filePath) {
 
 // Will be using promises to load document, pages and misc data instead of
 // callback.
-pdfjsLib.getDocument({
+var loadingTask = pdfjsLib.getDocument({
   data: data,
-  // Try to export JPEG images directly if they don't need any further processing.
-  nativeImageDecoderSupport: pdfjsLib.NativeImageDecoding.DISPLAY
-}).then(function (doc) {
+  // Try to export JPEG images directly if they don't need any further
+  // processing.
+  nativeImageDecoderSupport: pdfjsLib.NativeImageDecoding.DISPLAY,
+});
+loadingTask.promise.then(function(doc) {
   var numPages = doc.numPages;
   console.log('# Document Loaded');
   console.log('Number of Pages: ' + numPages);
@@ -98,7 +100,7 @@ pdfjsLib.getDocument({
   var loadPage = function (pageNum) {
     return doc.getPage(pageNum).then(function (page) {
       console.log('# Page ' + pageNum);
-      var viewport = page.getViewport(1.0 /* scale */);
+      var viewport = page.getViewport({ scale: 1.0, });
       console.log('Size: ' + viewport.width + 'x' + viewport.height);
       console.log();
 
@@ -106,11 +108,12 @@ pdfjsLib.getDocument({
         var svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
         svgGfx.embedFonts = true;
         return svgGfx.getSVG(opList, viewport).then(function (svg) {
-          return writeSvgToFile(svg, getFilePathForPage(pageNum)).then(function () {
-            console.log('Page: ' + pageNum);
-          }, function(err) {
-            console.log('Error: ' + err);
-          });
+          return writeSvgToFile(svg, getFilePathForPage(pageNum))
+            .then(function () {
+              console.log('Page: ' + pageNum);
+            }, function(err) {
+              console.log('Error: ' + err);
+            });
         });
       });
     });

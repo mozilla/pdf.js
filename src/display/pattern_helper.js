@@ -14,7 +14,6 @@
  */
 
 import { FormatError, info, Util } from '../shared/util';
-import { WebGLUtils } from './webgl';
 
 var ShadingIRs = {};
 
@@ -145,7 +144,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
   }
 
   function createMeshCanvas(bounds, combinesScale, coords, colors, figures,
-                            backgroundColor, cachedCanvases) {
+                            backgroundColor, cachedCanvases, webGLContext) {
     // we will increase scale on some weird factor to let antialiasing take
     // care of "rough" edges
     var EXPECTED_SCALE = 1.1;
@@ -180,10 +179,14 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
     var paddedHeight = height + BORDER_SIZE * 2;
 
     var canvas, tmpCanvas, i, ii;
-    if (WebGLUtils.isEnabled) {
-      canvas = WebGLUtils.drawFigures(width, height, backgroundColor,
-                                      figures, context);
-
+    if (webGLContext.isEnabled) {
+      canvas = webGLContext.drawFigures({
+        width,
+        height,
+        backgroundColor,
+        figures,
+        context,
+      });
       // https://bugzilla.mozilla.org/show_bug.cgi?id=972126
       tmpCanvas = cachedCanvases.getCanvas('mesh', paddedWidth, paddedHeight,
                                            false);
@@ -248,12 +251,11 @@ ShadingIRs.Mesh = {
           }
         }
 
-
         // Rasterizing on the main thread since sending/queue large canvases
         // might cause OOM.
         var temporaryPatternCanvas = createMeshCanvas(bounds, scale, coords,
           colors, figures, shadingFill ? null : background,
-          owner.cachedCanvases);
+          owner.cachedCanvases, owner.webGLContext);
 
         if (!shadingFill) {
           ctx.setTransform.apply(ctx, owner.baseTransform);

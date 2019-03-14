@@ -14,11 +14,11 @@
  */
 
 import {
-  addLinkAttributes, CustomStyle, DOMSVGFactory, getDefaultSetting,
-  getFilenameFromUrl, LinkTarget
+  addLinkAttributes, DOMSVGFactory, getFilenameFromUrl, LinkTarget
 } from './dom_utils';
 import {
-  AnnotationBorderStyleType, AnnotationType, stringToPDFString, Util, warn
+  AnnotationBorderStyleType, AnnotationType, stringToPDFString, unreachable,
+  Util, warn
 } from '../shared/util';
 
 /**
@@ -29,7 +29,8 @@ import {
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
- * @property {string} imageResourcesPath
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  * @property {Object} svgFactory
  */
@@ -61,8 +62,7 @@ class AnnotationElementFactory {
             } else if (parameters.data.checkBox) {
               return new CheckboxWidgetAnnotationElement(parameters);
             }
-            warn('Unimplemented button widget annotation: pushbutton');
-            break;
+            return new PushButtonWidgetAnnotationElement(parameters);
           case 'Ch':
             return new ChoiceWidgetAnnotationElement(parameters);
         }
@@ -82,6 +82,9 @@ class AnnotationElementFactory {
 
       case AnnotationType.POLYLINE:
         return new PolylineAnnotationElement(parameters);
+
+      case AnnotationType.INK:
+        return new InkAnnotationElement(parameters);
 
       case AnnotationType.POLYGON:
         return new PolygonAnnotationElement(parameters);
@@ -153,10 +156,8 @@ class AnnotationElement {
       page.view[3] - data.rect[3] + page.view[1]
     ]);
 
-    CustomStyle.setProp('transform', container,
-                        'matrix(' + viewport.transform.join(',') + ')');
-    CustomStyle.setProp('transformOrigin', container,
-                        -rect[0] + 'px ' + -rect[1] + 'px');
+    container.style.transform = 'matrix(' + viewport.transform.join(',') + ')';
+    container.style.transformOrigin = -rect[0] + 'px ' + -rect[1] + 'px';
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
       container.style.borderWidth = data.borderStyle.width + 'px';
@@ -172,7 +173,7 @@ class AnnotationElement {
       let verticalRadius = data.borderStyle.verticalCornerRadius;
       if (horizontalRadius > 0 || verticalRadius > 0) {
         let radius = horizontalRadius + 'px / ' + verticalRadius + 'px';
-        CustomStyle.setProp('borderRadius', container, radius);
+        container.style.borderRadius = radius;
       }
 
       switch (data.borderStyle.style) {
@@ -262,7 +263,7 @@ class AnnotationElement {
    * @memberof AnnotationElement
    */
   render() {
-    throw new Error('Abstract method `AnnotationElement.render` called');
+    unreachable('Abstract method `AnnotationElement.render` called');
   }
 }
 
@@ -283,17 +284,21 @@ class LinkAnnotationElement extends AnnotationElement {
   render() {
     this.container.className = 'linkAnnotation';
 
+    let { data, linkService, } = this;
     let link = document.createElement('a');
+
     addLinkAttributes(link, {
-      url: this.data.url,
-      target: (this.data.newWindow ? LinkTarget.BLANK : undefined),
+      url: data.url,
+      target: (data.newWindow ?
+               LinkTarget.BLANK : linkService.externalLinkTarget),
+      rel: linkService.externalLinkRel,
     });
 
-    if (!this.data.url) {
-      if (this.data.action) {
-        this._bindNamedAction(link, this.data.action);
+    if (!data.url) {
+      if (data.action) {
+        this._bindNamedAction(link, data.action);
       } else {
-        this._bindLink(link, this.data.dest);
+        this._bindLink(link, data.dest);
       }
     }
 
@@ -442,8 +447,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.style.display = 'table-cell';
 
       let font = null;
-      if (this.data.fontRefName) {
-        font = this.page.commonObjs.getData(this.data.fontRefName);
+      if (this.data.fontRefName &&
+          this.page.commonObjs.has(this.data.fontRefName)) {
+        font = this.page.commonObjs.get(this.data.fontRefName);
       }
       this._setTextStyle(element, font);
     }
@@ -543,6 +549,25 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
   }
 }
 
+class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
+  /**
+   * Render the push button widget annotation's HTML element
+   * in the empty container.
+   *
+   * @public
+   * @memberof PushButtonWidgetAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    // The rendering and functionality of a push button widget annotation is
+    // equal to that of a link annotation, but may have more functionality, such
+    // as performing actions on form fields (resetting, submitting, et cetera).
+    let container = super.render();
+    container.className = 'buttonWidgetAnnotation pushButton';
+    return container;
+  }
+}
+
 class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
     super(parameters, parameters.renderInteractiveForms);
@@ -579,7 +604,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
 
-      if (this.data.fieldValue.indexOf(option.displayValue) >= 0) {
+      if (this.data.fieldValue.includes(option.displayValue)) {
         optionElement.setAttribute('selected', true);
       }
 
@@ -607,11 +632,18 @@ class PopupAnnotationElement extends AnnotationElement {
   render() {
     // Do not render popup annotations for parent elements with these types as
     // they create the popups themselves (because of custom trigger divs).
-    const IGNORE_TYPES = ['Line', 'Square', 'Circle', 'PolyLine', 'Polygon'];
+    const IGNORE_TYPES = [
+      'Line',
+      'Square',
+      'Circle',
+      'PolyLine',
+      'Polygon',
+      'Ink',
+    ];
 
     this.container.className = 'popupAnnotation';
 
-    if (IGNORE_TYPES.indexOf(this.data.parentType) >= 0) {
+    if (IGNORE_TYPES.includes(this.data.parentType)) {
       return this.container;
     }
 
@@ -633,9 +665,8 @@ class PopupAnnotationElement extends AnnotationElement {
     // PDF viewers ignore a popup annotation's rectangle.
     let parentLeft = parseFloat(parentElement.style.left);
     let parentWidth = parseFloat(parentElement.style.width);
-    CustomStyle.setProp('transformOrigin', this.container,
-                        -(parentLeft + parentWidth) + 'px -' +
-                        parentElement.style.top);
+    this.container.style.transformOrigin =
+      -(parentLeft + parentWidth) + 'px -' + parentElement.style.top;
     this.container.style.left = (parentLeft + parentWidth) + 'px';
 
     this.container.appendChild(popup.render());
@@ -986,6 +1017,73 @@ class PolygonAnnotationElement extends PolylineAnnotationElement {
   }
 }
 
+class InkAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    let isRenderable = !!(parameters.data.hasPopup ||
+                          parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+
+    this.containerClassName = 'inkAnnotation';
+
+    // Use the polyline SVG element since it allows us to use coordinates
+    // directly and to draw both straight lines and curves.
+    this.svgElementName = 'svg:polyline';
+  }
+
+  /**
+   * Render the ink annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof InkAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = this.containerClassName;
+
+    // Create an invisible polyline with the same points that acts as the
+    // trigger for the popup.
+    let data = this.data;
+    let width = data.rect[2] - data.rect[0];
+    let height = data.rect[3] - data.rect[1];
+    let svg = this.svgFactory.create(width, height);
+
+    let inkLists = data.inkLists;
+    for (let i = 0, ii = inkLists.length; i < ii; i++) {
+      let inkList = inkLists[i];
+      let points = [];
+
+      // Convert the ink list to a single points string that the SVG
+      // polyline element expects ("x1,y1 x2,y2 ..."). PDF coordinates are
+      // calculated from a bottom left origin, so transform the polyline
+      // coordinates to a top left origin for the SVG element.
+      for (let j = 0, jj = inkList.length; j < jj; j++) {
+        let x = inkList[j].x - data.rect[0];
+        let y = data.rect[3] - inkList[j].y;
+        points.push(x + ',' + y);
+      }
+
+      points = points.join(' ');
+
+      let borderWidth = data.borderStyle.width;
+      let polyline = this.svgFactory.createElement(this.svgElementName);
+      polyline.setAttribute('points', points);
+      polyline.setAttribute('stroke-width', borderWidth);
+      polyline.setAttribute('stroke', 'transparent');
+      polyline.setAttribute('fill', 'none');
+
+      // Create the popup ourselves so that we can bind it to the polyline
+      // instead of to the entire container (which is the default).
+      this._createPopup(this.container, polyline, data);
+
+      svg.appendChild(polyline);
+    }
+
+    this.container.append(svg);
+
+    return this.container;
+  }
+}
+
 class HighlightAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     let isRenderable = !!(parameters.data.hasPopup ||
@@ -1110,15 +1208,18 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     super(parameters, /* isRenderable = */ true);
 
-    let file = this.data.file;
-    this.filename = getFilenameFromUrl(file.filename);
-    this.content = file.content;
+    const { filename, content, } = this.data.file;
+    this.filename = getFilenameFromUrl(filename);
+    this.content = content;
 
-    this.linkService.onFileAttachmentAnnotation({
-      id: stringToPDFString(file.filename),
-      filename: file.filename,
-      content: file.content,
-    });
+    if (this.linkService.eventBus) {
+      this.linkService.eventBus.dispatch('fileattachmentannotation', {
+        source: this,
+        id: stringToPDFString(filename),
+        filename,
+        content,
+      });
+    }
   }
 
   /**
@@ -1167,7 +1268,9 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {Array} annotations
  * @property {PDFPage} page
  * @property {IPDFLinkService} linkService
- * @property {string} imageResourcesPath
+ * @property {DownloadManager} downloadManager
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  */
 
@@ -1192,8 +1295,7 @@ class AnnotationLayer {
         viewport: parameters.viewport,
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
-        imageResourcesPath: parameters.imageResourcesPath ||
-                            getDefaultSetting('imageResourcesPath'),
+        imageResourcesPath: parameters.imageResourcesPath || '',
         renderInteractiveForms: parameters.renderInteractiveForms || false,
         svgFactory: new DOMSVGFactory(),
       });
@@ -1216,8 +1318,8 @@ class AnnotationLayer {
       let element = parameters.div.querySelector(
         '[data-annotation-id="' + data.id + '"]');
       if (element) {
-        CustomStyle.setProp('transform', element,
-          'matrix(' + parameters.viewport.transform.join(',') + ')');
+        element.style.transform =
+          'matrix(' + parameters.viewport.transform.join(',') + ')';
       }
     }
     parameters.div.removeAttribute('hidden');

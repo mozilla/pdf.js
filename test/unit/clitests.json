@@ -1,5 +1,10 @@
 {
   "spec_dir": "build/lib/test/unit",
+
+  "helpers": [
+    "clitests_helper.js"
+  ],
+
   "spec_files": [
     "annotation_spec.js",
     "api_spec.js",
@@ -11,20 +16,23 @@
     "display_svg_spec.js",
     "document_spec.js",
     "dom_utils_spec.js",
+    "encodings_spec.js",
     "evaluator_spec.js",
-    "fonts_spec.js",
     "function_spec.js",
+    "message_handler_spec.js",
     "metadata_spec.js",
     "murmurhash3_spec.js",
+    "network_utils_spec.js",
     "node_stream_spec.js",
     "parser_spec.js",
-    "pdf_history.js",
+    "pdf_find_controller_spec.js",
+    "pdf_find_utils_spec.js",
+    "pdf_history_spec.js",
     "primitives_spec.js",
     "stream_spec.js",
     "type1_parser_spec.js",
     "ui_utils_spec.js",
     "unicode_spec.js",
-    "util_spec.js",
-    "util_stream_spec.js"
+    "util_spec.js"
   ]
 }

@@ -14,7 +14,7 @@
  */
 
 import '../extensions/firefox/tools/l10n';
-import { createObjectURL, PDFDataRangeTransport, shadow } from 'pdfjs-lib';
+import { createObjectURL, PDFDataRangeTransport, shadow, URL } from 'pdfjs-lib';
 import { BasePreferences } from './preferences';
 import { PDFViewerApplication } from './app';
 
@@ -84,6 +84,10 @@ let FirefoxCom = (function FirefoxComClosure() {
 })();
 
 class DownloadManager {
+  constructor(options) {
+    this.disableCreateObjectURL = false;
+  }
+
   downloadUrl(url, filename) {
     FirefoxCom.request('download', {
       originalUrl: url,
@@ -92,7 +96,7 @@ class DownloadManager {
   }
 
   downloadData(data, filename, contentType) {
-    let blobUrl = createObjectURL(data, contentType, false);
+    let blobUrl = createObjectURL(data, contentType);
 
     FirefoxCom.request('download', {
       blobUrl,
@@ -120,13 +124,13 @@ class DownloadManager {
 }
 
 class FirefoxPreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
+  async _writeToStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('setPreferences', prefObj, resolve);
     });
   }
 
-  _readFromStorage(prefObj) {
+  async _readFromStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('getPreferences', prefObj, function(prefStr) {
         let readPrefs = JSON.parse(prefStr);
@@ -141,17 +145,20 @@ class MozL10n {
     this.mozL10n = mozL10n;
   }
 
-  getDirection() {
-    return Promise.resolve(this.mozL10n.getDirection());
+  async getLanguage() {
+    return this.mozL10n.getLanguage();
   }
 
-  get(property, args, fallback) {
-    return Promise.resolve(this.mozL10n.get(property, args, fallback));
+  async getDirection() {
+    return this.mozL10n.getDirection();
   }
 
-  translate(element) {
+  async get(property, args, fallback) {
+    return this.mozL10n.get(property, args, fallback);
+  }
+
+  async translate(element) {
     this.mozL10n.translate(element);
-    return Promise.resolve();
   }
 }
 
@@ -160,46 +167,55 @@ class MozL10n {
     'find',
     'findagain',
     'findhighlightallchange',
-    'findcasesensitivitychange'
+    'findcasesensitivitychange',
+    'findentirewordchange',
+    'findbarclose',
   ];
-  let handleEvent = function(evt) {
+  let handleEvent = function({ type, detail, }) {
     if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    if (type === 'findbarclose') {
+      PDFViewerApplication.eventBus.dispatch('findbarclose', {
+        source: window,
+      });
       return;
     }
     PDFViewerApplication.eventBus.dispatch('find', {
       source: window,
-      type: evt.type.substring('find'.length),
-      query: evt.detail.query,
+      type: type.substring('find'.length),
+      query: detail.query,
       phraseSearch: true,
-      caseSensitive: !!evt.detail.caseSensitive,
-      highlightAll: !!evt.detail.highlightAll,
-      findPrevious: !!evt.detail.findPrevious,
+      caseSensitive: !!detail.caseSensitive,
+      entireWord: !!detail.entireWord,
+      highlightAll: !!detail.highlightAll,
+      findPrevious: !!detail.findPrevious,
     });
   };
 
-  for (let i = 0, len = events.length; i < len; i++) {
-    window.addEventListener(events[i], handleEvent);
+  for (let event of events) {
+    window.addEventListener(event, handleEvent);
   }
 })();
 
-function FirefoxComDataRangeTransport(length, initialData) {
-  PDFDataRangeTransport.call(this, length, initialData);
+class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
+  requestDataRange(begin, end) {
+    FirefoxCom.request('requestDataRange', { begin, end, });
+  }
+
+  abort() {
+    // Sync call to ensure abort is really started.
+    FirefoxCom.requestSync('abortLoading', null);
+  }
 }
-FirefoxComDataRangeTransport.prototype =
-  Object.create(PDFDataRangeTransport.prototype);
-FirefoxComDataRangeTransport.prototype.requestDataRange =
-    function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
-  FirefoxCom.request('requestDataRange', { begin, end, });
-};
-FirefoxComDataRangeTransport.prototype.abort =
-    function FirefoxComDataRangeTransport_abort() {
-  // Sync call to ensure abort is really started.
-  FirefoxCom.requestSync('abortLoading', null);
-};
 
 PDFViewerApplication.externalServices = {
   updateFindControlState(data) {
     FirefoxCom.request('updateFindControlState', data);
+  },
+
+  updateFindMatchesCount(data) {
+    FirefoxCom.request('updateFindMatchesCount', data);
   },
 
   initPassiveLoading(callbacks) {
@@ -256,15 +272,15 @@ PDFViewerApplication.externalServices = {
     FirefoxCom.request('reportTelemetry', JSON.stringify(data));
   },
 
-  createDownloadManager() {
-    return new DownloadManager();
+  createDownloadManager(options) {
+    return new DownloadManager(options);
   },
 
   createPreferences() {
     return new FirefoxPreferences();
   },
 
-  createL10n() {
+  createL10n(options) {
     let mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
     return new MozL10n(mozL10n);

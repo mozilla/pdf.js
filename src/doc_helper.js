@@ -19,25 +19,6 @@
 */
 
 /**
- * PDFJS scope object that contains all functions, objects and variables related
- * to the PDF.js.
- * @constructor
- */
-function PDFJS() {
-  // Mock class constructor. See src/display/api.js.
-}
-
-/**
- * Controls the logging level.
- * The constants from PDFJS.VERBOSITY_LEVELS should be used:
- * - errors
- * - warnings [default]
- * - infos
- * @var {number}
- */
-PDFJS.verbosity = PDFJS.VERBOSITY_LEVELS.warnings;
-
-/**
  * Represents the eventual result of an asynchronous operation.
  * @external Promise
  * @see {@link http://promisesaplus.com/ Promise/A+}

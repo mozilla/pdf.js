@@ -35,7 +35,7 @@ const SWIPE_ANGLE_THRESHOLD = Math.PI / 6;
  * @property {HTMLDivElement} viewer - (optional) The viewer element.
  * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {EventBus} eventBus - The application event bus.
- * @property {Array} contextMenuItems - (optional) The menuitems that are added
+ * @property {Array} contextMenuItems - (optional) The menu items that are added
  *   to the context menu in Presentation Mode.
  */
 
@@ -60,19 +60,19 @@ class PDFPresentationMode {
     if (contextMenuItems) {
       contextMenuItems.contextFirstPage.addEventListener('click', () => {
         this.contextMenuOpen = false;
-        this.eventBus.dispatch('firstpage');
+        this.eventBus.dispatch('firstpage', { source: this, });
       });
       contextMenuItems.contextLastPage.addEventListener('click', () => {
         this.contextMenuOpen = false;
-        this.eventBus.dispatch('lastpage');
+        this.eventBus.dispatch('lastpage', { source: this, });
       });
       contextMenuItems.contextPageRotateCw.addEventListener('click', () => {
         this.contextMenuOpen = false;
-        this.eventBus.dispatch('rotatecw');
+        this.eventBus.dispatch('rotatecw', { source: this, });
       });
       contextMenuItems.contextPageRotateCcw.addEventListener('click', () => {
         this.contextMenuOpen = false;
-        this.eventBus.dispatch('rotateccw');
+        this.eventBus.dispatch('rotateccw', { source: this, });
       });
     }
   }

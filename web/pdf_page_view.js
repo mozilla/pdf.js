@@ -14,15 +14,14 @@
  */
 
 import {
-  approximateFraction, CSS_UNITS, DEFAULT_SCALE, getOutputScale, NullL10n,
-  RendererType, roundToDivide
+  approximateFraction, CSS_UNITS, DEFAULT_SCALE, getGlobalEventBus,
+  getOutputScale, NullL10n, RendererType, roundToDivide, TextLayerMode
 } from './ui_utils';
 import {
-  createPromiseCapability, CustomStyle, PDFJS, RenderingCancelledException,
-  SVGGraphics
+  createPromiseCapability, RenderingCancelledException, SVGGraphics
 } from 'pdfjs-lib';
-import { getGlobalEventBus } from './dom_events';
 import { RenderingStates } from './pdf_rendering_queue';
+import { viewerCompatibilityParams } from './viewer_compatibility';
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -33,14 +32,27 @@ import { RenderingStates } from './pdf_rendering_queue';
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IPDFTextLayerFactory} textLayerFactory
+ * @property {number} textLayerMode - (optional) Controls if the text layer used
+ *   for selection and searching is created, and if the improved text selection
+ *   behaviour is enabled. The constants from {TextLayerMode} should be used.
+ *   The default value is `TextLayerMode.ENABLE`.
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
- * @property {boolean} enhanceTextSelection - Turns on the text selection
- *   enhancement. The default is `false`.
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms - Turns on rendering of
  *   interactive form elements. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
+ *   rendering for some operations. The default value is `false`.
+ * @property {boolean} useOnlyCssZoom - (optional) Enables CSS only zooming.
+ *   The default value is `false`.
+ * @property {number} maxCanvasPixels - (optional) The maximum supported canvas
+ *   size in total pixels, i.e. width * height. Use -1 for no limit.
+ *   The default value is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
  */
+
+const MAX_CANVAS_PIXELS = viewerCompatibilityParams.maxCanvasPixels || 16777216;
 
 /**
  * @implements {IRenderableView}
@@ -63,14 +75,19 @@ class PDFPageView {
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
-    this.enhanceTextSelection = options.enhanceTextSelection || false;
+    this.textLayerMode = Number.isInteger(options.textLayerMode) ?
+      options.textLayerMode : TextLayerMode.ENABLE;
+    this.imageResourcesPath = options.imageResourcesPath || '';
     this.renderInteractiveForms = options.renderInteractiveForms || false;
+    this.useOnlyCssZoom = options.useOnlyCssZoom || false;
+    this.maxCanvasPixels = options.maxCanvasPixels || MAX_CANVAS_PIXELS;
 
     this.eventBus = options.eventBus || getGlobalEventBus();
     this.renderingQueue = options.renderingQueue;
     this.textLayerFactory = options.textLayerFactory;
     this.annotationLayerFactory = options.annotationLayerFactory;
     this.renderer = options.renderer || RendererType.CANVAS;
+    this.enableWebGL = options.enableWebGL || false;
     this.l10n = options.l10n || NullL10n;
 
     this.paintTask = null;
@@ -101,8 +118,8 @@ class PDFPageView {
     this.pdfPageRotate = pdfPage.rotate;
 
     let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = pdfPage.getViewport(this.scale * CSS_UNITS,
-                                        totalRotation);
+    this.viewport = pdfPage.getViewport({ scale: this.scale * CSS_UNITS,
+                                          rotation: totalRotation, });
     this.stats = pdfPage.stats;
     this.reset();
   }
@@ -209,17 +226,17 @@ class PDFPageView {
     }
 
     let isScalingRestricted = false;
-    if (this.canvas && PDFJS.maxCanvasPixels > 0) {
+    if (this.canvas && this.maxCanvasPixels > 0) {
       let outputScale = this.outputScale;
       if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
           ((Math.floor(this.viewport.height) * outputScale.sy) | 0) >
-          PDFJS.maxCanvasPixels) {
+          this.maxCanvasPixels) {
         isScalingRestricted = true;
       }
     }
 
     if (this.canvas) {
-      if (PDFJS.useOnlyCssZoom ||
+      if (this.useOnlyCssZoom ||
           (this.hasRestrictedScaling && isScalingRestricted)) {
         this.cssTransform(this.canvas, true);
 
@@ -242,6 +259,8 @@ class PDFPageView {
   }
 
   cancelRendering(keepAnnotations = false) {
+    const renderingState = this.renderingState;
+
     if (this.paintTask) {
       this.paintTask.cancel();
       this.paintTask = null;
@@ -256,6 +275,14 @@ class PDFPageView {
     if (!keepAnnotations && this.annotationLayer) {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
+    }
+
+    if (renderingState !== RenderingStates.INITIAL) {
+      this.eventBus.dispatch('pagecancelled', {
+        source: this,
+        pageNumber: this.id,
+        renderingState,
+      });
     }
   }
 
@@ -280,7 +307,7 @@ class PDFPageView {
     }
     let cssTransform = 'rotate(' + relativeRotation + 'deg) ' +
       'scale(' + scaleX + ',' + scaleY + ')';
-    CustomStyle.setProp('transform', target, cssTransform);
+    target.style.transform = cssTransform;
 
     if (this.textLayer) {
       // Rotating the text layer is more complicated since the divs inside the
@@ -317,11 +344,12 @@ class PDFPageView {
           console.error('Bad rotation value.');
           break;
       }
-      CustomStyle.setProp('transform', textLayerDiv,
-          'rotate(' + textAbsRotation + 'deg) ' +
-          'scale(' + scale + ', ' + scale + ') ' +
-          'translate(' + transX + ', ' + transY + ')');
-      CustomStyle.setProp('transformOrigin', textLayerDiv, '0% 0%');
+
+      textLayerDiv.style.transform =
+        'rotate(' + textAbsRotation + 'deg) ' +
+        'scale(' + scale + ', ' + scale + ') ' +
+        'translate(' + transX + ', ' + transY + ')';
+      textLayerDiv.style.transformOrigin = '0% 0%';
     }
 
     if (redrawAnnotations && this.annotationLayer) {
@@ -371,7 +399,7 @@ class PDFPageView {
     }
 
     let textLayer = null;
-    if (this.textLayerFactory) {
+    if (this.textLayerMode !== TextLayerMode.DISABLE && this.textLayerFactory) {
       let textLayerDiv = document.createElement('div');
       textLayerDiv.className = 'textLayer';
       textLayerDiv.style.width = canvasWrapper.style.width;
@@ -385,7 +413,7 @@ class PDFPageView {
 
       textLayer = this.textLayerFactory.
         createTextLayerBuilder(textLayerDiv, this.id - 1, this.viewport,
-                               this.enhanceTextSelection);
+            this.textLayerMode === TextLayerMode.ENABLE_ENHANCE);
     }
     this.textLayer = textLayer;
 
@@ -404,7 +432,7 @@ class PDFPageView {
       };
     }
 
-    let finishPaintTask = (error) => {
+    const finishPaintTask = async (error) => {
       // The paintTask may have been replaced by a new one, so only remove
       // the reference to the paintTask if it matches the one that is
       // triggering this callback.
@@ -412,11 +440,9 @@ class PDFPageView {
         this.paintTask = null;
       }
 
-      if (((typeof PDFJSDev === 'undefined' ||
-            !PDFJSDev.test('PDFJS_NEXT')) && error === 'cancelled') ||
-          error instanceof RenderingCancelledException) {
+      if (error instanceof RenderingCancelledException) {
         this.error = null;
-        return Promise.resolve(undefined);
+        return;
       }
 
       this.renderingState = RenderingStates.FINISHED;
@@ -439,9 +465,8 @@ class PDFPageView {
       });
 
       if (error) {
-        return Promise.reject(error);
+        throw error;
       }
-      return Promise.resolve(undefined);
     };
 
     let paintTask = this.renderer === RendererType.SVG ?
@@ -467,7 +492,7 @@ class PDFPageView {
     if (this.annotationLayerFactory) {
       if (!this.annotationLayer) {
         this.annotationLayer = this.annotationLayerFactory.
-          createAnnotationLayerBuilder(div, pdfPage,
+          createAnnotationLayerBuilder(div, pdfPage, this.imageResourcesPath,
                                        this.renderInteractiveForms, this.l10n);
       }
       this.annotationLayer.render(this.viewport, 'display');
@@ -519,7 +544,7 @@ class PDFPageView {
     let outputScale = getOutputScale(ctx);
     this.outputScale = outputScale;
 
-    if (PDFJS.useOnlyCssZoom) {
+    if (this.useOnlyCssZoom) {
       let actualSizeViewport = viewport.clone({ scale: CSS_UNITS, });
       // Use a scale that makes the canvas have the originally intended size
       // of the page.
@@ -528,9 +553,9 @@ class PDFPageView {
       outputScale.scaled = true;
     }
 
-    if (PDFJS.maxCanvasPixels > 0) {
+    if (this.maxCanvasPixels > 0) {
       let pixelsInViewport = viewport.width * viewport.height;
-      let maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
+      let maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
       if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
         outputScale.sx = maxScale;
         outputScale.sy = maxScale;
@@ -557,6 +582,7 @@ class PDFPageView {
       canvasContext: ctx,
       transform,
       viewport: this.viewport,
+      enableWebGL: this.enableWebGL,
       renderInteractiveForms: this.renderInteractiveForms,
     };
     let renderTask = this.pdfPage.render(renderContext);
@@ -594,13 +620,8 @@ class PDFPageView {
     let cancelled = false;
     let ensureNotCancelled = () => {
       if (cancelled) {
-        if ((typeof PDFJSDev !== 'undefined' &&
-             PDFJSDev.test('PDFJS_NEXT')) || PDFJS.pdfjsNext) {
-          throw new RenderingCancelledException(
-            'Rendering cancelled, page ' + this.id, 'svg');
-        } else {
-          throw 'cancelled'; // eslint-disable-line no-throw-literal
-        }
+        throw new RenderingCancelledException(
+          'Rendering cancelled, page ' + this.id, 'svg');
       }
     };
 

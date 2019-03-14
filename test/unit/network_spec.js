@@ -23,11 +23,9 @@ describe('network', function() {
 
   it('read without stream and range', function(done) {
     var stream = new PDFNetworkStream({
-      source: {
-        url: pdf1,
-        rangeChunkSize: 65536,
-        disableStream: true,
-      },
+      url: pdf1,
+      rangeChunkSize: 65536,
+      disableStream: true,
       disableRange: true,
     });
 
@@ -77,11 +75,9 @@ describe('network', function() {
     }
 
     var stream = new PDFNetworkStream({
-      source: {
-        url: pdf2,
-        rangeChunkSize: 65536,
-        disableStream: false,
-      },
+      url: pdf2,
+      rangeChunkSize: 65536,
+      disableStream: false,
       disableRange: false,
     });
 
@@ -123,12 +119,10 @@ describe('network', function() {
     // requiring this test to pass.
     var rangeSize = 32768;
     var stream = new PDFNetworkStream({
-      source: {
-        url: pdf1,
-        length: pdf1Length,
-        rangeChunkSize: rangeSize,
-        disableStream: true,
-      },
+      url: pdf1,
+      length: pdf1Length,
+      rangeChunkSize: rangeSize,
+      disableStream: true,
       disableRange: false,
     });
 

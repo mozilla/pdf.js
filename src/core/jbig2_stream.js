@@ -22,7 +22,7 @@ import { shadow } from '../shared/util';
  * For JBIG2's we use a library to decode these images and
  * the stream behaves like all the other DecodeStreams.
  */
-var Jbig2Stream = (function Jbig2StreamClosure() {
+let Jbig2Stream = (function Jbig2StreamClosure() {
   function Jbig2Stream(stream, maybeLength, dict, params) {
     this.stream = stream;
     this.maybeLength = maybeLength;
@@ -36,36 +36,39 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
 
   Object.defineProperty(Jbig2Stream.prototype, 'bytes', {
     get() {
-      // If this.maybeLength is null, we'll get the entire stream.
+      // If `this.maybeLength` is null, we'll get the entire stream.
       return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
     },
     configurable: true,
   });
 
-  Jbig2Stream.prototype.ensureBuffer = function(req) {
-    if (this.bufferLength) {
+  Jbig2Stream.prototype.ensureBuffer = function(requested) {
+    // No-op, since `this.readBlock` will always parse the entire image and
+    // directly insert all of its data into `this.buffer`.
+  };
+
+  Jbig2Stream.prototype.readBlock = function() {
+    if (this.eof) {
       return;
     }
+    let jbig2Image = new Jbig2Image();
 
-    var jbig2Image = new Jbig2Image();
-
-    var chunks = [];
+    let chunks = [];
     if (isDict(this.params)) {
-      var globalsStream = this.params.get('JBIG2Globals');
+      let globalsStream = this.params.get('JBIG2Globals');
       if (isStream(globalsStream)) {
-        var globals = globalsStream.getBytes();
+        let globals = globalsStream.getBytes();
         chunks.push({ data: globals, start: 0, end: globals.length, });
       }
     }
     chunks.push({ data: this.bytes, start: 0, end: this.bytes.length, });
-    var data = jbig2Image.parseChunks(chunks);
-    var dataLength = data.length;
+    let data = jbig2Image.parseChunks(chunks);
+    let dataLength = data.length;
 
     // JBIG2 had black as 1 and white as 0, inverting the colors
-    for (var i = 0; i < dataLength; i++) {
+    for (let i = 0; i < dataLength; i++) {
       data[i] ^= 0xFF;
     }
-
     this.buffer = data;
     this.bufferLength = dataLength;
     this.eof = true;

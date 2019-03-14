@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { getVisibleElements, scrollIntoView } from './ui_utils';
 import { BaseViewer } from './base_viewer';
 import { shadow } from 'pdfjs-lib';
 
@@ -22,38 +21,36 @@ class PDFViewer extends BaseViewer {
     return shadow(this, '_setDocumentViewerElement', this.viewer);
   }
 
-  _scrollIntoView({ pageDiv, pageSpot = null, }) {
-    scrollIntoView(pageDiv, pageSpot);
+  _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
+    if (!pageSpot && !this.isInPresentationMode) {
+      const left = pageDiv.offsetLeft + pageDiv.clientLeft;
+      const right = left + pageDiv.clientWidth;
+      const { scrollLeft, clientWidth, } = this.container;
+      if (this._isScrollModeHorizontal ||
+          left < scrollLeft || right > scrollLeft + clientWidth) {
+        pageSpot = { left: 0, top: 0, };
+      }
+    }
+    super._scrollIntoView({ pageDiv, pageSpot, pageNumber, });
   }
 
   _getVisiblePages() {
-    if (!this.isInPresentationMode) {
-      return getVisibleElements(this.container, this._pages, true);
+    if (this.isInPresentationMode) {
+      // The algorithm in `getVisibleElements` doesn't work in all browsers and
+      // configurations (e.g. Chrome) when Presentation Mode is active.
+      return this._getCurrentVisiblePage();
     }
-    // The algorithm in getVisibleElements doesn't work in all browsers and
-    // configurations when presentation mode is active.
-    let currentPage = this._pages[this._currentPageNumber - 1];
-    let visible = [{ id: currentPage.id, view: currentPage, }];
-    return { first: currentPage, last: currentPage, views: visible, };
+    return super._getVisiblePages();
   }
 
-  update() {
-    let visible = this._getVisiblePages();
-    let visiblePages = visible.views, numVisiblePages = visiblePages.length;
-
-    if (numVisiblePages === 0) {
+  _updateHelper(visiblePages) {
+    if (this.isInPresentationMode) {
       return;
     }
-    this._resizeBuffer(numVisiblePages);
-
-    this.renderingQueue.renderHighestPriority(visible);
-
     let currentId = this._currentPageNumber;
     let stillFullyVisible = false;
 
-    for (let i = 0; i < numVisiblePages; ++i) {
-      let page = visiblePages[i];
-
+    for (const page of visiblePages) {
       if (page.percent < 100) {
         break;
       }
@@ -62,19 +59,10 @@ class PDFViewer extends BaseViewer {
         break;
       }
     }
-
     if (!stillFullyVisible) {
       currentId = visiblePages[0].id;
     }
-    if (!this.isInPresentationMode) {
-      this._setCurrentPageNumber(currentId);
-    }
-
-    this._updateLocation(visible.first);
-    this.eventBus.dispatch('updateviewarea', {
-      source: this,
-      location: this._location,
-    });
+    this._setCurrentPageNumber(currentId);
   }
 }
 

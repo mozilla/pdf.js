@@ -15,17 +15,17 @@
 /* globals __non_webpack_require__ */
 
 import {
-  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNodeJS,
-  isNum, OPS, Util, warn
+  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNum, OPS,
+  TextRenderingMode, Util, warn
 } from '../shared/util';
 import { DOMSVGFactory } from './dom_utils';
+import isNodeJS from '../shared/is_node';
 
 var SVGGraphics = function() {
   throw new Error('Not implemented: SVGGraphics');
 };
 
-if (typeof PDFJSDev === 'undefined' ||
-    PDFJSDev.test('GENERIC || SINGLE_FILE')) {
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
@@ -182,7 +182,7 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
     return idat;
   }
 
-  function encode(imgData, kind, forceDataSchema) {
+  function encode(imgData, kind, forceDataSchema, isMask) {
     var width = imgData.width;
     var height = imgData.height;
     var bitDepth, colorType, lineSize;
@@ -220,8 +220,8 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
       offsetLiterals += lineSize;
     }
 
-    if (kind === ImageKind.GRAYSCALE_1BPP) {
-      // inverting for B/W
+    if (kind === ImageKind.GRAYSCALE_1BPP && isMask) {
+      // inverting for image masks
       offsetLiterals = 0;
       for (y = 0; y < height; y++) {
         offsetLiterals++; // skipping predictor
@@ -265,10 +265,10 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
     return createObjectURL(data, 'image/png', forceDataSchema);
   }
 
-  return function convertImgDataToPng(imgData, forceDataSchema) {
+  return function convertImgDataToPng(imgData, forceDataSchema, isMask) {
     var kind = (imgData.kind === undefined ?
                 ImageKind.GRAYSCALE_1BPP : imgData.kind);
-    return encode(imgData, kind, forceDataSchema);
+    return encode(imgData, kind, forceDataSchema, isMask);
   };
 })();
 
@@ -281,6 +281,7 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.textMatrix = IDENTITY_MATRIX;
     this.fontMatrix = FONT_IDENTITY_MATRIX;
     this.leading = 0;
+    this.textRenderingMode = TextRenderingMode.FILL;
 
     // Current point (in user coordinates)
     this.x = 0;
@@ -372,7 +373,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
     do {
       i--;
     } while (s[i] === '0');
-    return s.substr(0, s[i] === '.' ? i : i + 1);
+    return s.substring(0, s[i] === '.' ? i : i + 1);
   }
 
   /**
@@ -530,6 +531,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.beginText:
             this.beginText();
             break;
+          case OPS.dependency:
+            // Handled in loadDependencies, warning should not be thrown
+            break;
           case OPS.setLeading:
             this.setLeading(args);
             break;
@@ -566,6 +570,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
             break;
           case OPS.setTextRise:
             this.setTextRise(args[0]);
+            break;
+          case OPS.setTextRenderingMode:
+            this.setTextRenderingMode(args[0]);
             break;
           case OPS.setLineWidth:
             this.setLineWidth(args[0]);
@@ -641,6 +648,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
             break;
           case OPS.closeFillStroke:
             this.closeFillStroke();
+            break;
+          case OPS.closeEOFillStroke:
+            this.closeEOFillStroke();
             break;
           case OPS.nextLine:
             this.nextLine();
@@ -783,8 +793,29 @@ SVGGraphics = (function SVGGraphicsClosure() {
       if (current.fontWeight !== SVG_DEFAULTS.fontWeight) {
         current.tspan.setAttributeNS(null, 'font-weight', current.fontWeight);
       }
-      if (current.fillColor !== SVG_DEFAULTS.fillColor) {
-        current.tspan.setAttributeNS(null, 'fill', current.fillColor);
+
+      const fillStrokeMode = current.textRenderingMode &
+        TextRenderingMode.FILL_STROKE_MASK;
+
+      if (fillStrokeMode === TextRenderingMode.FILL ||
+          fillStrokeMode === TextRenderingMode.FILL_STROKE) {
+        if (current.fillColor !== SVG_DEFAULTS.fillColor) {
+          current.tspan.setAttributeNS(null, 'fill', current.fillColor);
+        }
+        if (current.fillAlpha < 1) {
+          current.tspan.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
+        }
+      } else if (current.textRenderingMode === TextRenderingMode.ADD_TO_PATH) {
+        // Workaround for Firefox: We must set fill="transparent" because
+        // fill="none" would generate an empty clipping path.
+        current.tspan.setAttributeNS(null, 'fill', 'transparent');
+      } else {
+        current.tspan.setAttributeNS(null, 'fill', 'none');
+      }
+
+      if (fillStrokeMode === TextRenderingMode.STROKE ||
+          fillStrokeMode === TextRenderingMode.FILL_STROKE) {
+        this._setStrokeAttributes(current.tspan);
       }
 
       // Include the text rise in the text matrix since the `pm` function
@@ -859,11 +890,22 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.xcoords = [];
     },
 
-    endText: function SVGGraphics_endText() {},
+    endText() {
+      const current = this.current;
+      if ((current.textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG) &&
+          current.txtElement && current.txtElement.hasChildNodes()) {
+        // If no glyphs are shown (i.e. no child nodes), no clipping occurs.
+        current.element = current.txtElement;
+        this.clip('nonzero');
+        this.endPath();
+      }
+    },
 
     // Path properties
     setLineWidth: function SVGGraphics_setLineWidth(width) {
-      this.current.lineWidth = width;
+      if (width > 0) {
+        this.current.lineWidth = width;
+      }
     },
     setLineCap: function SVGGraphics_setLineCap(style) {
       this.current.lineCap = LINE_CAP_STYLES[style];
@@ -972,7 +1014,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
       var clipPath = this.svgFactory.createElement('svg:clipPath');
       clipPath.setAttributeNS(null, 'id', clipId);
       clipPath.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      var clipElement = current.element.cloneNode();
+      // A deep clone is needed when text is used as a clipping path.
+      const clipElement = current.element.cloneNode(true);
       if (this.pendingClip === 'evenodd') {
         clipElement.setAttributeNS(null, 'clip-rule', 'evenodd');
       } else {
@@ -989,6 +1032,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
         this.extraStack.forEach(function (prev) {
           prev.clipGroup = null;
         });
+        // Intersect with the previous clipping path.
+        clipPath.setAttributeNS(null, 'clip-path', current.activeClipUrl);
       }
       current.activeClipUrl = 'url(#' + clipId + ')';
 
@@ -1001,9 +1046,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     closePath: function SVGGraphics_closePath() {
       var current = this.current;
-      var d = current.path.getAttributeNS(null, 'd');
-      d += 'Z';
-      current.path.setAttributeNS(null, 'd', d);
+      if (current.path) {
+        var d = current.path.getAttributeNS(null, 'd');
+        d += 'Z';
+        current.path.setAttributeNS(null, 'd', d);
+      }
     },
 
     setLeading: function SVGGraphics_setLeading(leading) {
@@ -1012,6 +1059,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     setTextRise: function SVGGraphics_setTextRise(textRise) {
       this.current.textRise = textRise;
+    },
+
+    setTextRenderingMode(textRenderingMode) {
+      this.current.textRenderingMode = textRenderingMode;
     },
 
     setHScale: function SVGGraphics_setHScale(scale) {
@@ -1058,32 +1109,48 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     fill: function SVGGraphics_fill() {
       var current = this.current;
-      current.element.setAttributeNS(null, 'fill', current.fillColor);
-      current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
+      if (current.element) {
+        current.element.setAttributeNS(null, 'fill', current.fillColor);
+        current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
+        this.endPath();
+      }
     },
 
     stroke: function SVGGraphics_stroke() {
       var current = this.current;
 
-      current.element.setAttributeNS(null, 'stroke', current.strokeColor);
-      current.element.setAttributeNS(null, 'stroke-opacity',
-                                     current.strokeAlpha);
-      current.element.setAttributeNS(null, 'stroke-miterlimit',
-                                     pf(current.miterLimit));
-      current.element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
-      current.element.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
-      current.element.setAttributeNS(null, 'stroke-width',
-                                     pf(current.lineWidth) + 'px');
-      current.element.setAttributeNS(null, 'stroke-dasharray',
-                                     current.dashArray.map(pf).join(' '));
-      current.element.setAttributeNS(null, 'stroke-dashoffset',
-                                     pf(current.dashPhase) + 'px');
+      if (current.element) {
+        this._setStrokeAttributes(current.element);
 
-      current.element.setAttributeNS(null, 'fill', 'none');
+        current.element.setAttributeNS(null, 'fill', 'none');
+
+        this.endPath();
+      }
+    },
+
+    /**
+     * @private
+     */
+    _setStrokeAttributes(element) {
+      const current = this.current;
+      element.setAttributeNS(null, 'stroke', current.strokeColor);
+      element.setAttributeNS(null, 'stroke-opacity', current.strokeAlpha);
+      element.setAttributeNS(null, 'stroke-miterlimit',
+                             pf(current.miterLimit));
+      element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
+      element.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
+      element.setAttributeNS(null, 'stroke-width',
+                             pf(current.lineWidth) + 'px');
+      element.setAttributeNS(null, 'stroke-dasharray',
+                             current.dashArray.map(pf).join(' '));
+      element.setAttributeNS(null, 'stroke-dashoffset',
+                             pf(current.dashPhase) + 'px');
     },
 
     eoFill: function SVGGraphics_eoFill() {
-      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      if (this.current.element) {
+        this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      }
       this.fill();
     },
 
@@ -1095,7 +1162,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
 
     eoFillStroke: function SVGGraphics_eoFillStroke() {
-      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      if (this.current.element) {
+        this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      }
       this.fillStroke();
     },
 
@@ -1107,6 +1176,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
     closeFillStroke: function SVGGraphics_closeFillStroke() {
       this.closePath();
       this.fillStroke();
+    },
+
+    closeEOFillStroke() {
+      this.closePath();
+      this.eoFillStroke();
     },
 
     paintSolidColorImageMask:
@@ -1150,7 +1224,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       var width = imgData.width;
       var height = imgData.height;
 
-      var imgSrc = convertImgDataToPng(imgData, this.forceDataSchema);
+      var imgSrc = convertImgDataToPng(imgData, this.forceDataSchema, !!mask);
       var cliprect = this.svgFactory.createElement('svg:rect');
       cliprect.setAttributeNS(null, 'x', '0');
       cliprect.setAttributeNS(null, 'y', '0');
@@ -1206,7 +1280,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
                        matrix[3], matrix[4], matrix[5]);
       }
 
-      if (Array.isArray(bbox) && bbox.length === 4) {
+      if (bbox) {
         var width = bbox[2] - bbox[0];
         var height = bbox[3] - bbox[1];
 

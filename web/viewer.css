@@ -15,6 +15,10 @@
 
 @import url(pdf_viewer.css);
 
+:root {
+  --sidebar-width: 200px;
+}
+
 * {
   padding: 0;
   margin: 0;
@@ -49,36 +53,9 @@ select {
   display: none !important;
 }
 
-#viewerContainer.pdfPresentationMode:-webkit-full-screen {
-  top: 0px;
-  border-top: 2px solid transparent;
-  background-color: #000;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: none;
-  -webkit-user-select: none;
-}
-
-#viewerContainer.pdfPresentationMode:-moz-full-screen {
-  top: 0px;
-  border-top: 2px solid transparent;
-  background-color: #000;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: none;
-  -moz-user-select: none;
-}
-
 #viewerContainer.pdfPresentationMode:-ms-fullscreen {
   top: 0px !important;
-  border-top: 2px solid transparent;
-  width: 100%;
-  height: 100%;
   overflow: hidden !important;
-  cursor: none;
-  -ms-user-select: none;
 }
 
 #viewerContainer.pdfPresentationMode:-ms-fullscreen::-ms-backdrop {
@@ -93,45 +70,19 @@ select {
   height: 100%;
   overflow: hidden;
   cursor: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-.pdfPresentationMode:-webkit-full-screen a:not(.internalLink) {
-  display: none;
-}
-
-.pdfPresentationMode:-moz-full-screen a:not(.internalLink) {
-  display: none;
-}
-
-.pdfPresentationMode:-ms-fullscreen a:not(.internalLink) {
-  display: none !important;
+  user-select: none;
 }
 
 .pdfPresentationMode:fullscreen a:not(.internalLink) {
   display: none;
 }
 
-.pdfPresentationMode:-webkit-full-screen .textLayer > div {
-  cursor: none;
-}
-
-.pdfPresentationMode:-moz-full-screen .textLayer > div {
-  cursor: none;
-}
-
-.pdfPresentationMode:-ms-fullscreen .textLayer > div {
-  cursor: none;
-}
-
-.pdfPresentationMode:fullscreen .textLayer > div {
+.pdfPresentationMode:fullscreen .textLayer > span {
   cursor: none;
 }
 
 .pdfPresentationMode.pdfPresentationModeControls > *,
-.pdfPresentationMode.pdfPresentationModeControls .textLayer > div {
+.pdfPresentationMode.pdfPresentationModeControls .textLayer > span {
   cursor: default;
 }
 
@@ -143,35 +94,48 @@ select {
 
 #sidebarContainer {
   position: absolute;
-  top: 0;
+  top: 32px;
   bottom: 0;
-  width: 200px;
+  width: 200px; /* Here, and elsewhere below, keep the constant value for compatibility
+                   with older browsers that lack support for CSS variables. */
+  width: var(--sidebar-width);
   visibility: hidden;
-  -webkit-transition-duration: 200ms;
-  -webkit-transition-timing-function: ease;
+  z-index: 100;
+  border-top: 1px solid #333;
+
   transition-duration: 200ms;
   transition-timing-function: ease;
-
 }
 html[dir='ltr'] #sidebarContainer {
-  -webkit-transition-property: left;
   transition-property: left;
   left: -200px;
+  left: calc(-1 * var(--sidebar-width));
 }
 html[dir='rtl'] #sidebarContainer {
-  -webkit-transition-property: right;
   transition-property: right;
   right: -200px;
+  right: calc(-1 * var(--sidebar-width));
 }
 
-#outerContainer.sidebarMoving > #sidebarContainer,
-#outerContainer.sidebarOpen > #sidebarContainer {
+.loadingInProgress #sidebarContainer {
+  top: 36px;
+}
+
+#outerContainer.sidebarResizing #sidebarContainer {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  transition-duration: 0s;
+  /* Prevent e.g. the thumbnails being selected when the sidebar is resized. */
+  user-select: none;
+}
+
+#outerContainer.sidebarMoving #sidebarContainer,
+#outerContainer.sidebarOpen #sidebarContainer {
   visibility: visible;
 }
-html[dir='ltr'] #outerContainer.sidebarOpen > #sidebarContainer {
+html[dir='ltr'] #outerContainer.sidebarOpen #sidebarContainer {
   left: 0px;
 }
-html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
+html[dir='rtl'] #outerContainer.sidebarOpen #sidebarContainer {
   right: 0px;
 }
 
@@ -182,20 +146,6 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   bottom: 0;
   left: 0;
   min-width: 320px;
-  -webkit-transition-duration: 200ms;
-  -webkit-transition-timing-function: ease;
-  transition-duration: 200ms;
-  transition-timing-function: ease;
-}
-html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
-  -webkit-transition-property: left;
-  transition-property: left;
-  left: 200px;
-}
-html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
-  -webkit-transition-property: right;
-  transition-property: right;
-  right: 200px;
 }
 
 #sidebarContent {
@@ -204,7 +154,7 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   position: absolute;
-  width: 200px;
+  width: 100%;
   background-color: hsla(0,0%,0%,.1);
 }
 html[dir='ltr'] #sidebarContent {
@@ -226,11 +176,31 @@ html[dir='rtl'] #sidebarContent {
   left: 0;
   outline: none;
 }
+#viewerContainer:not(.pdfPresentationMode) {
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
 html[dir='ltr'] #viewerContainer {
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.05);
 }
 html[dir='rtl'] #viewerContainer {
   box-shadow: inset -1px 0 0 hsla(0,0%,100%,.05);
+}
+
+#outerContainer.sidebarResizing #viewerContainer {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  transition-duration: 0s;
+}
+
+html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
+  transition-property: left;
+  left: 200px;
+  left: var(--sidebar-width);
+}
+html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
+  transition-property: right;
+  right: 200px;
+  right: var(--sidebar-width);
 }
 
 .toolbar {
@@ -246,7 +216,7 @@ html[dir='rtl'] #viewerContainer {
 }
 
 #toolbarSidebar {
-  width: 200px;
+  width: 100%;
   height: 32px;
   background-color: #424242; /* fallback */
   background-image: url(images/texture.png),
@@ -265,6 +235,21 @@ html[dir='rtl'] #toolbarSidebar {
               0 0 1px hsla(0,0%,0%,.1);
 }
 
+#sidebarResizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  z-index: 200;
+  cursor: ew-resize;
+}
+html[dir='ltr'] #sidebarResizer {
+  right: -6px;
+}
+html[dir='rtl'] #sidebarResizer {
+  left: -6px;
+}
+
 #toolbarContainer, .findbar, .secondaryToolbar {
   position: relative;
   height: 32px;
@@ -273,15 +258,13 @@ html[dir='rtl'] #toolbarSidebar {
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
 }
 html[dir='ltr'] #toolbarContainer, .findbar, .secondaryToolbar {
-  box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
-              inset 0 1px 1px hsla(0,0%,0%,.15),
+  box-shadow: inset 0 1px 1px hsla(0,0%,0%,.15),
               inset 0 -1px 0 hsla(0,0%,100%,.05),
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
 }
 html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
-  box-shadow: inset -1px 0 0 hsla(0,0%,100%,.08),
-              inset 0 1px 1px hsla(0,0%,0%,.15),
+  box-shadow: inset 0 1px 1px hsla(0,0%,0%,.15),
               inset 0 -1px 0 hsla(0,0%,100%,.05),
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
@@ -307,13 +290,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   height: 100%;
   background-color: #ddd;
   overflow: hidden;
-  -webkit-transition: width 200ms;
   transition: width 200ms;
-}
-
-@-webkit-keyframes progressIndeterminate {
-  0% { left: -142px; }
-  100% { left: 0; }
 }
 
 @keyframes progressIndeterminate {
@@ -323,7 +300,6 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 
 #loadingBar .progress.indeterminate {
   background-color: #999;
-  -webkit-transition: none;
   transition: none;
 }
 
@@ -339,7 +315,6 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
                                         #999 45px, #ddd 55px,
                                         #ddd 95px, #bbb 100px);
 
-  -webkit-animation: progressIndeterminate 950ms linear infinite;
   animation: progressIndeterminate 950ms linear infinite;
 }
 
@@ -378,21 +353,14 @@ html[dir='rtl'] .findbar {
 }
 
 .findbar label {
-  -webkit-user-select: none;
-  -moz-user-select: none;
+  user-select: none;
 }
 
 #findInput {
   width: 200px;
 }
 #findInput::-webkit-input-placeholder {
-  font-style: italic;
-}
-#findInput::-moz-placeholder {
-  font-style: italic;
-}
-#findInput:-ms-input-placeholder {
-  font-style: italic;
+  color: hsl(0, 0%, 75%);
 }
 #findInput::placeholder {
   font-style: italic;
@@ -424,6 +392,11 @@ html[dir='rtl'] .secondaryToolbar {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   margin-bottom: -4px;
+}
+
+#secondaryToolbarButtonContainer.hiddenScrollModeButtons > .scrollModeButtons,
+#secondaryToolbarButtonContainer.hiddenSpreadModeButtons > .spreadModeButtons {
+  display: none !important;
 }
 
 .doorHanger,
@@ -580,9 +553,6 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
               0 0 1px hsla(0,0%,100%,.15) inset,
               0 1px 0 hsla(0,0%,100%,.05);
-  -webkit-transition-property: background-color, border-color, box-shadow;
-  -webkit-transition-duration: 150ms;
-  -webkit-transition-timing-function: ease;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: ease;
@@ -642,9 +612,6 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   padding: 12px 0;
   margin: 1px 0;
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
-  -webkit-transition-property: padding;
-  -webkit-transition-duration: 10ms;
-  -webkit-transition-timing-function: ease;
   transition-property: padding;
   transition-duration: 10ms;
   transition-timing-function: ease;
@@ -661,14 +628,9 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   color: hsla(0,0%,100%,.8);
   font-size: 12px;
   line-height: 14px;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+  user-select: none;
   /* Opera does not support user-select, use <... unselectable="on"> instead */
   cursor: default;
-  -webkit-transition-property: background-color, border-color, box-shadow;
-  -webkit-transition-duration: 150ms;
-  -webkit-transition-timing-function: ease;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: ease;
@@ -711,9 +673,6 @@ html[dir='rtl'] .dropdownToolbarButton {
   box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
               0 0 1px hsla(0,0%,0%,.2) inset,
               0 1px 0 hsla(0,0%,100%,.05);
-  -webkit-transition-property: background-color, border-color, box-shadow;
-  -webkit-transition-duration: 10ms;
-  -webkit-transition-timing-function: linear;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
@@ -728,9 +687,6 @@ html[dir='rtl'] .dropdownToolbarButton {
   box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
               0 0 1px hsla(0,0%,0%,.2) inset,
               0 1px 0 hsla(0,0%,100%,.05);
-  -webkit-transition-property: background-color, border-color, box-shadow;
-  -webkit-transition-duration: 10ms;
-  -webkit-transition-timing-function: linear;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
@@ -904,8 +860,6 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 
 .toolbarButton.bookmark,
 .secondaryToolbarButton.bookmark {
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
   box-sizing: border-box;
   outline: none;
   padding-top: 4px;
@@ -1018,6 +972,30 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: url(images/secondaryToolbarButton-handTool.png);
 }
 
+.secondaryToolbarButton.scrollVertical::before {
+  content: url(images/secondaryToolbarButton-scrollVertical.png);
+}
+
+.secondaryToolbarButton.scrollHorizontal::before {
+  content: url(images/secondaryToolbarButton-scrollHorizontal.png);
+}
+
+.secondaryToolbarButton.scrollWrapped::before {
+  content: url(images/secondaryToolbarButton-scrollWrapped.png);
+}
+
+.secondaryToolbarButton.spreadNone::before {
+  content: url(images/secondaryToolbarButton-spreadNone.png);
+}
+
+.secondaryToolbarButton.spreadOdd::before {
+  content: url(images/secondaryToolbarButton-spreadOdd.png);
+}
+
+.secondaryToolbarButton.spreadEven::before {
+  content: url(images/secondaryToolbarButton-spreadEven.png);
+}
+
 .secondaryToolbarButton.documentProperties::before {
   content: url(images/secondaryToolbarButton-documentProperties.png);
 }
@@ -1111,24 +1089,33 @@ html[dir='rtl'] .verticalToolbarSeparator {
   font-size: 12px;
   line-height: 14px;
   text-align: left;
-  -webkit-user-select: none;
-  -moz-user-select: none;
+  user-select: none;
   cursor: default;
 }
 
 #thumbnailView {
   position: absolute;
-  width: 120px;
+  width: calc(100% - 60px);
   top: 0;
   bottom: 0;
-  padding: 10px 40px 0;
+  padding: 10px 30px 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
 
+#thumbnailView > a:active,
+#thumbnailView > a:focus {
+  outline: 0;
+}
+
 .thumbnail {
+  margin: 0 10px 5px 10px;
+}
+html[dir='ltr'] .thumbnail {
   float: left;
-  margin-bottom: 5px;
+}
+html[dir='rtl'] .thumbnail {
+  float: right;
 }
 
 #thumbnailView > a:last-of-type > .thumbnail {
@@ -1141,7 +1128,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
 
 .thumbnail:not([data-loaded]) {
   border: 1px dashed rgba(255, 255, 255, 0.5);
-  margin: -1px -1px 4px -1px;
+  margin: -1px 9px 4px 9px;
 }
 
 .thumbnailImage {
@@ -1192,13 +1179,12 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 #outlineView,
 #attachmentsView {
   position: absolute;
-  width: 192px;
+  width: calc(100% - 8px);
   top: 0;
   bottom: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  -webkit-user-select: none;
-  -moz-user-select: none;
+  user-select: none;
 }
 
 #outlineView {
@@ -1231,7 +1217,7 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   color: hsla(0,0%,100%,.8);
   font-size: 13px;
   line-height: 15px;
-  -moz-user-select: none;
+  user-select: none;
   white-space: normal;
 }
 
@@ -1327,7 +1313,6 @@ html[dir='rtl'] .outlineItemToggler::before {
    so we can override the opaque grey background when the window is inactive;
    see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
 ::selection { background: rgba(0,0,255,0.3); }
-::-moz-selection { background: rgba(0,0,255,0.3); }
 
 #errorWrapper {
   background: none repeat scroll 0 0 #FF5555;
@@ -1538,29 +1523,25 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   mix-blend-mode: screen;
 }
 
-#viewer.textLayer-visible .textLayer > div {
+#viewer.textLayer-visible .textLayer > span {
   background-color: rgba(255, 255, 0, 0.1);
   color: black;
   border: solid 1px rgba(255, 0, 0, 0.5);
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 
-#viewer.textLayer-hover .textLayer > div:hover {
+#viewer.textLayer-hover .textLayer > span:hover {
   background-color: white;
   color: black;
 }
 
-#viewer.textLayer-shadow .textLayer > div {
+#viewer.textLayer-shadow .textLayer > span {
   background-color: rgba(255,255,255, .6);
   color: black;
 }
 
 .grab-to-pan-grab {
   cursor: url("images/grab.cur"), move !important;
-  cursor: -webkit-grab !important;
-  cursor: -moz-grab !important;
   cursor: grab !important;
 }
 .grab-to-pan-grab *:not(input):not(textarea):not(button):not(select):not(:link) {
@@ -1569,8 +1550,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 .grab-to-pan-grab:active,
 .grab-to-pan-grabbing {
   cursor: url("images/grabbing.cur"), move !important;
-  cursor: -webkit-grabbing !important;
-  cursor: -moz-grabbing !important;
   cursor: grabbing !important;
 
   position: fixed;
@@ -1592,16 +1571,14 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   display: none;
 }
 
-@media screen and (min-resolution: 2dppx) {
+@media screen and (min-resolution: 1.1dppx) {
   /* Rules for Retina screens */
   .toolbarButton::before {
-    -webkit-transform: scale(0.5);
     transform: scale(0.5);
     top: -5px;
   }
 
   .secondaryToolbarButton::before {
-    -webkit-transform: scale(0.5);
     transform: scale(0.5);
     top: -4px;
   }
@@ -1747,12 +1724,35 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     content: url(images/secondaryToolbarButton-handTool@2x.png);
   }
 
+  .secondaryToolbarButton.scrollVertical::before {
+    content: url(images/secondaryToolbarButton-scrollVertical@2x.png);
+  }
+
+  .secondaryToolbarButton.scrollHorizontal::before {
+    content: url(images/secondaryToolbarButton-scrollHorizontal@2x.png);
+  }
+
+  .secondaryToolbarButton.scrollWrapped::before {
+    content: url(images/secondaryToolbarButton-scrollWrapped@2x.png);
+  }
+
+  .secondaryToolbarButton.spreadNone::before {
+    content: url(images/secondaryToolbarButton-spreadNone@2x.png);
+  }
+
+  .secondaryToolbarButton.spreadOdd::before {
+    content: url(images/secondaryToolbarButton-spreadOdd@2x.png);
+  }
+
+  .secondaryToolbarButton.spreadEven::before {
+    content: url(images/secondaryToolbarButton-spreadEven@2x.png);
+  }
+
   .secondaryToolbarButton.documentProperties::before {
     content: url(images/secondaryToolbarButton-documentProperties@2x.png);
   }
 
   .outlineItemToggler::before {
-    -webkit-transform: scale(0.5);
     transform: scale(0.5);
     top: -1px;
     content: url(images/treeitem-expanded@2x.png);
@@ -1841,28 +1841,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   display: none;
 }
 
-@media all and (max-width: 1040px) {
-  #outerContainer.sidebarMoving #toolbarViewerMiddle,
-  #outerContainer.sidebarOpen #toolbarViewerMiddle {
-    display: table;
-    margin: auto;
-    left: auto;
-    position: inherit;
-    transform: none;
-  }
-}
-
-@media all and (max-width: 980px) {
-  .sidebarMoving .hiddenLargeView,
-  .sidebarOpen .hiddenLargeView {
-    display: none;
-  }
-  .sidebarMoving .visibleLargeView,
-  .sidebarOpen .visibleLargeView {
-    display: inherit;
-  }
-}
-
 @media all and (max-width: 900px) {
   #toolbarViewerMiddle {
     display: table;
@@ -1871,34 +1849,18 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     position: inherit;
     transform: none;
   }
-  .sidebarMoving .hiddenMediumView,
-  .sidebarOpen .hiddenMediumView {
-    display: none;
-  }
-  .sidebarMoving .visibleMediumView,
-  .sidebarOpen .visibleMediumView {
-    display: inherit;
-  }
 }
 
 @media all and (max-width: 840px) {
-  #sidebarContainer {
-    top: 32px;
-    z-index: 100;
-  }
-  .loadingInProgress #sidebarContainer {
-    top: 37px;
-  }
   #sidebarContent {
-    top: 32px;
     background-color: hsla(0,0%,0%,.7);
   }
 
-  html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
-    left: 0px;
+  html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer {
+    left: 0px !important;
   }
-  html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
-    right: 0px;
+  html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer {
+    right: 0px !important;
   }
 
   #outerContainer .hiddenLargeView,

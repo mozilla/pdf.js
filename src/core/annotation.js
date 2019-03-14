@@ -12,26 +12,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, OPS, stringToBytes, stringToPDFString, Util, warn
+  AnnotationType, getInheritableProperty, OPS, stringToBytes, stringToPDFString,
+  Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
 import { ColorSpace } from './colorspace';
-import { OperatorList } from './evaluator';
+import { OperatorList } from './operator_list';
 import { Stream } from './stream';
 
 class AnnotationFactory {
   /**
+   * Create an `Annotation` object of the correct type for the given reference
+   * to an annotation dictionary. This yields a promise that is resolved when
+   * the `Annotation` object is constructed.
+   *
    * @param {XRef} xref
    * @param {Object} ref
    * @param {PDFManager} pdfManager
    * @param {Object} idFactory
-   * @returns {Annotation}
+   * @return {Promise} A promise that is resolved with an {Annotation} instance.
    */
   static create(xref, ref, pdfManager, idFactory) {
+    return pdfManager.ensure(this, '_create',
+                             [xref, ref, pdfManager, idFactory]);
+  }
+
+  /**
+   * @private
+   */
+  static _create(xref, ref, pdfManager, idFactory) {
     let dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
@@ -60,7 +74,7 @@ class AnnotationFactory {
         return new TextAnnotation(parameters);
 
       case 'Widget':
-        let fieldType = Util.getInheritableProperty(dict, 'FT');
+        let fieldType = getInheritableProperty({ dict, key: 'FT', });
         fieldType = isName(fieldType) ? fieldType.name : null;
 
         switch (fieldType) {
@@ -92,6 +106,9 @@ class AnnotationFactory {
 
       case 'Polygon':
         return new PolygonAnnotation(parameters);
+
+      case 'Ink':
+        return new InkAnnotation(parameters);
 
       case 'Highlight':
         return new HighlightAnnotation(parameters);
@@ -260,6 +277,7 @@ class Annotation {
 
   /**
    * Set the color and take care of color space conversion.
+   * The default value is black, in RGB color space.
    *
    * @public
    * @memberof Annotation
@@ -268,7 +286,7 @@ class Annotation {
    *                        4 (CMYK) elements
    */
   setColor(color) {
-    let rgbColor = new Uint8Array(3); // Black in RGB color space (default)
+    let rgbColor = new Uint8ClampedArray(3);
     if (!Array.isArray(color)) {
       this.color = rgbColor;
       return;
@@ -465,6 +483,12 @@ class AnnotationBorderStyle {
    * @param {integer} width - The width
    */
   setWidth(width) {
+    // Some corrupt PDF generators may provide the width as a `Name`,
+    // rather than as a number (fixes issue 10385).
+    if (isName(width)) {
+      this.width = 0; // This is consistent with the behaviour in Adobe Reader.
+      return;
+    }
     if (Number.isInteger(width)) {
       this.width = width;
     }
@@ -475,11 +499,11 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {Object} style - The style object
+   * @param {Name} style - The annotation style.
    * @see {@link shared/util.js}
    */
   setStyle(style) {
-    if (!style) {
+    if (!isName(style)) {
       return;
     }
     switch (style.name) {
@@ -580,23 +604,27 @@ class WidgetAnnotation extends Annotation {
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
-    data.fieldValue = Util.getInheritableProperty(dict, 'V',
-                                                  /* getArray = */ true);
+    data.fieldValue = getInheritableProperty({ dict, key: 'V',
+                                               getArray: true, });
     data.alternativeText = stringToPDFString(dict.get('TU') || '');
-    data.defaultAppearance = Util.getInheritableProperty(dict, 'DA') || '';
-    let fieldType = Util.getInheritableProperty(dict, 'FT');
+    data.defaultAppearance = getInheritableProperty({ dict, key: 'DA', }) || '';
+    let fieldType = getInheritableProperty({ dict, key: 'FT', });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
-    this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
+    this.fieldResources = getInheritableProperty({ dict, key: 'DR', }) ||
+                          Dict.empty;
 
-    data.fieldFlags = Util.getInheritableProperty(dict, 'Ff');
+    data.fieldFlags = getInheritableProperty({ dict, key: 'Ff', });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
       data.fieldFlags = 0;
     }
 
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
 
-    // Hide signatures because we cannot validate them.
+    // Hide signatures because we cannot validate them, and unset the fieldValue
+    // since it's (most likely) a `Dict` which is non-serializable and will thus
+    // cause errors when sending annotations to the main-thread (issue 10347).
     if (data.fieldType === 'Sig') {
+      data.fieldValue = null;
       this.setFlags(AnnotationFlag.HIDDEN);
     }
   }
@@ -675,18 +703,20 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
 
+    const dict = params.dict;
+
     // The field value is always a string.
     this.data.fieldValue = stringToPDFString(this.data.fieldValue || '');
 
     // Determine the alignment of text in the field.
-    let alignment = Util.getInheritableProperty(params.dict, 'Q');
+    let alignment = getInheritableProperty({ dict, key: 'Q', });
     if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
       alignment = null;
     }
     this.data.textAlignment = alignment;
 
     // Determine the maximum length of text in the field.
-    let maximumLength = Util.getInheritableProperty(params.dict, 'MaxLen');
+    let maximumLength = getInheritableProperty({ dict, key: 'MaxLen', });
     if (!Number.isInteger(maximumLength) || maximumLength < 0) {
       maximumLength = null;
     }
@@ -732,45 +762,88 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     this.data.checkBox = !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
                          !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
+                            !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    this.data.pushButton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+
     if (this.data.checkBox) {
-      if (!isName(this.data.fieldValue)) {
-        return;
-      }
+      this._processCheckBox(params);
+    } else if (this.data.radioButton) {
+      this._processRadioButton(params);
+    } else if (this.data.pushButton) {
+      this._processPushButton(params);
+    } else {
+      warn('Invalid field flags for button widget annotation');
+    }
+  }
+
+  _processCheckBox(params) {
+    if (isName(this.data.fieldValue)) {
       this.data.fieldValue = this.data.fieldValue.name;
     }
 
-    this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
-                            !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    if (this.data.radioButton) {
-      this.data.fieldValue = this.data.buttonValue = null;
+    const customAppearance = params.dict.get('AP');
+    if (!isDict(customAppearance)) {
+      return;
+    }
 
-      // The parent field's `V` entry holds a `Name` object with the appearance
-      // state of whichever child field is currently in the "on" state.
-      let fieldParent = params.dict.get('Parent');
-      if (isDict(fieldParent) && fieldParent.has('V')) {
-        let fieldParentValue = fieldParent.get('V');
-        if (isName(fieldParentValue)) {
-          this.data.fieldValue = fieldParentValue.name;
-        }
-      }
+    const exportValueOptionsDict = customAppearance.get('D');
+    if (!isDict(exportValueOptionsDict)) {
+      return;
+    }
 
-      // The button's value corresponds to its appearance state.
-      let appearanceStates = params.dict.get('AP');
-      if (!isDict(appearanceStates)) {
-        return;
-      }
-      let normalAppearanceState = appearanceStates.get('N');
-      if (!isDict(normalAppearanceState)) {
-        return;
-      }
-      let keys = normalAppearanceState.getKeys();
-      for (let i = 0, ii = keys.length; i < ii; i++) {
-        if (keys[i] !== 'Off') {
-          this.data.buttonValue = keys[i];
-          break;
-        }
+    const exportValues = exportValueOptionsDict.getKeys();
+    const hasCorrectOptionCount = exportValues.length === 2;
+    if (!hasCorrectOptionCount) {
+      return;
+    }
+
+    this.data.exportValue = exportValues[0] === 'Off' ?
+      exportValues[1] : exportValues[0];
+  }
+
+  _processRadioButton(params) {
+    this.data.fieldValue = this.data.buttonValue = null;
+
+    // The parent field's `V` entry holds a `Name` object with the appearance
+    // state of whichever child field is currently in the "on" state.
+    let fieldParent = params.dict.get('Parent');
+    if (isDict(fieldParent) && fieldParent.has('V')) {
+      let fieldParentValue = fieldParent.get('V');
+      if (isName(fieldParentValue)) {
+        this.data.fieldValue = fieldParentValue.name;
       }
     }
+
+    // The button's value corresponds to its appearance state.
+    let appearanceStates = params.dict.get('AP');
+    if (!isDict(appearanceStates)) {
+      return;
+    }
+    let normalAppearanceState = appearanceStates.get('N');
+    if (!isDict(normalAppearanceState)) {
+      return;
+    }
+    let keys = normalAppearanceState.getKeys();
+    for (let i = 0, ii = keys.length; i < ii; i++) {
+      if (keys[i] !== 'Off') {
+        this.data.buttonValue = keys[i];
+        break;
+      }
+    }
+  }
+
+  _processPushButton(params) {
+    if (!params.dict.has('A')) {
+      warn('Push buttons without action dictionaries are not supported');
+      return;
+    }
+
+    Catalog.parseDestDictionary({
+      destDict: params.dict,
+      resultObj: this.data,
+      docBaseUrl: params.pdfManager.docBaseUrl,
+    });
   }
 }
 
@@ -789,7 +862,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // inherit the options from a parent annotation (issue 8094).
     this.data.options = [];
 
-    let options = Util.getInheritableProperty(params.dict, 'Opt');
+    let options = getInheritableProperty({ dict: params.dict, key: 'Opt', });
     if (Array.isArray(options)) {
       let xref = params.xref;
       for (let i = 0, ii = options.length; i < ii; i++) {
@@ -798,7 +871,8 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
 
         this.data.options[i] = {
           exportValue: isOptionArray ? xref.fetchIfRef(option[0]) : option,
-          displayValue: isOptionArray ? xref.fetchIfRef(option[1]) : option,
+          displayValue: stringToPDFString(isOptionArray ?
+                                          xref.fetchIfRef(option[1]) : option),
         };
       }
     }
@@ -949,6 +1023,34 @@ class PolygonAnnotation extends PolylineAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.POLYGON;
+  }
+}
+
+class InkAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.INK;
+
+    let dict = parameters.dict;
+    const xref = parameters.xref;
+
+    let originalInkLists = dict.getArray('InkList');
+    this.data.inkLists = [];
+    for (let i = 0, ii = originalInkLists.length; i < ii; ++i) {
+      // The raw ink lists array contains arrays of numbers representing
+      // the alternating horizontal and vertical coordinates, respectively,
+      // of each vertex. Convert this to an array of objects with x and y
+      // coordinates.
+      this.data.inkLists.push([]);
+      for (let j = 0, jj = originalInkLists[i].length; j < jj; j += 2) {
+        this.data.inkLists[i].push({
+          x: xref.fetchIfRef(originalInkLists[i][j]),
+          y: xref.fetchIfRef(originalInkLists[i][j + 1]),
+        });
+      }
+    }
+    this._preparePopup(dict);
   }
 }
 

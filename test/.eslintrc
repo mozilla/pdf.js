@@ -1,10 +1,14 @@
 {
   "extends": [
-    ../.eslintrc
+    "../.eslintrc"
   ],
 
   "env": {
     "node": true,
     "jasmine": true,
+  },
+
+  "rules": {
+    "no-restricted-globals": "off",
   },
 }

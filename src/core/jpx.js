@@ -142,7 +142,7 @@ var JpxImage = (function JpxImageClosure() {
           this.width = Xsiz - XOsiz;
           this.height = Ysiz - YOsiz;
           this.componentsCount = Csiz;
-          // Results are always returned as Uint8Arrays
+          // Results are always returned as `Uint8ClampedArray`s.
           this.bitsPerComponent = 8;
           return;
         }
@@ -185,8 +185,9 @@ var JpxImage = (function JpxImageClosure() {
                   precision: (data[j] & 0x7F) + 1,
                   isSigned: !!(data[j] & 0x80),
                   XRsiz: data[j + 1],
-                  YRsiz: data[j + 1],
+                  YRsiz: data[j + 2],
                 };
+                j += 3;
                 calculateComponentDimensions(component, siz);
                 components.push(component);
               }
@@ -312,7 +313,7 @@ var JpxImage = (function JpxImageClosure() {
               cod.selectiveArithmeticCodingBypass = !!(blockStyle & 1);
               cod.resetContextProbabilities = !!(blockStyle & 2);
               cod.terminationOnEachCodingPass = !!(blockStyle & 4);
-              cod.verticalyStripe = !!(blockStyle & 8);
+              cod.verticallyStripe = !!(blockStyle & 8);
               cod.predictableTermination = !!(blockStyle & 16);
               cod.segmentationSymbolUsed = !!(blockStyle & 32);
               cod.reversibleTransformation = data[j++];
@@ -337,8 +338,8 @@ var JpxImage = (function JpxImageClosure() {
               if (cod.terminationOnEachCodingPass) {
                 unsupported.push('terminationOnEachCodingPass');
               }
-              if (cod.verticalyStripe) {
-                unsupported.push('verticalyStripe');
+              if (cod.verticallyStripe) {
+                unsupported.push('verticallyStripe');
               }
               if (cod.predictableTermination) {
                 unsupported.push('predictableTermination');
