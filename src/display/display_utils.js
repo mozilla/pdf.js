@@ -488,6 +488,7 @@ function releaseImageResources(img) {
       URL.revokeObjectURL) {
     URL.revokeObjectURL(url);
   }
+  img.removeAttribute('src');
 }
 
 export {
