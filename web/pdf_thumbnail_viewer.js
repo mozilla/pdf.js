@@ -19,6 +19,7 @@ import {
 import { PDFThumbnailView } from './pdf_thumbnail_view';
 
 const THUMBNAIL_SCROLL_MARGIN = -19;
+const THUMBNAIL_SELECTED_CLASS = 'selected';
 
 /**
  * @typedef {Object} PDFThumbnailViewerOptions
@@ -66,15 +67,23 @@ class PDFThumbnailViewer {
     return getVisibleElements(this.container, this._thumbnails);
   }
 
-  scrollThumbnailIntoView(page) {
-    let selected = document.querySelector('.thumbnail.selected');
-    if (selected) {
-      selected.classList.remove('selected');
+  scrollThumbnailIntoView(pageNumber) {
+    if (!this.pdfDocument) {
+      return;
     }
-    let thumbnail = document.querySelector(
-      'div.thumbnail[data-page-number="' + page + '"]');
-    if (thumbnail) {
-      thumbnail.classList.add('selected');
+    const thumbnailView = this._thumbnails[pageNumber - 1];
+
+    if (!thumbnailView) {
+      console.error('scrollThumbnailIntoView: Invalid "pageNumber" parameter.');
+      return;
+    }
+
+    if (pageNumber !== this._currentPageNumber) {
+      const prevThumbnailView = this._thumbnails[this._currentPageNumber - 1];
+      // Remove the highlight from the previous thumbnail...
+      prevThumbnailView.div.classList.remove(THUMBNAIL_SELECTED_CLASS);
+      // ... and add the highlight to the new thumbnail.
+      thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
     }
     let visibleThumbs = this._getVisibleThumbs();
     let numVisibleThumbs = visibleThumbs.views.length;
@@ -84,10 +93,25 @@ class PDFThumbnailViewer {
       let first = visibleThumbs.first.id;
       // Account for only one thumbnail being visible.
       let last = (numVisibleThumbs > 1 ? visibleThumbs.last.id : first);
-      if (page <= first || page >= last) {
-        scrollIntoView(thumbnail, { top: THUMBNAIL_SCROLL_MARGIN, });
+
+      let shouldScroll = false;
+      if (pageNumber <= first || pageNumber >= last) {
+        shouldScroll = true;
+      } else {
+        visibleThumbs.views.some(function(view) {
+          if (view.id !== pageNumber) {
+            return false;
+          }
+          shouldScroll = view.percent < 100;
+          return true;
+        });
+      }
+      if (shouldScroll) {
+        scrollIntoView(thumbnailView.div, { top: THUMBNAIL_SCROLL_MARGIN, });
       }
     }
+
+    this._currentPageNumber = pageNumber;
   }
 
   get pagesRotation() {
@@ -120,6 +144,7 @@ class PDFThumbnailViewer {
    */
   _resetView() {
     this._thumbnails = [];
+    this._currentPageNumber = 1;
     this._pageLabels = null;
     this._pagesRotation = 0;
     this._pagesRequests = [];
@@ -141,7 +166,7 @@ class PDFThumbnailViewer {
 
     pdfDocument.getPage(1).then((firstPage) => {
       let pagesCount = pdfDocument.numPages;
-      let viewport = firstPage.getViewport(1.0);
+      let viewport = firstPage.getViewport({ scale: 1, });
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let thumbnail = new PDFThumbnailView({
           container: this.container,
@@ -154,6 +179,10 @@ class PDFThumbnailViewer {
         });
         this._thumbnails.push(thumbnail);
       }
+
+      // Ensure that the current thumbnail is always highlighted on load.
+      const thumbnailView = this._thumbnails[this._currentPageNumber - 1];
+      thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
     }).catch((reason) => {
       console.error('Unable to initialize thumbnail viewer', reason);
     });
@@ -179,7 +208,7 @@ class PDFThumbnailViewer {
     }
     if (!labels) {
       this._pageLabels = null;
-    } else if (!(labels instanceof Array &&
+    } else if (!(Array.isArray(labels) &&
                  this.pdfDocument.numPages === labels.length)) {
       this._pageLabels = null;
       console.error('PDFThumbnailViewer_setPageLabels: Invalid page labels.');

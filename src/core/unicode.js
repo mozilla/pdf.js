@@ -70,9 +70,9 @@ function getUnicodeForGlyph(name, glyphsUnicodeMap) {
     var nameLen = name.length, hexStr;
 
     if (nameLen === 7 && name[1] === 'n' && name[2] === 'i') { // 'uniXXXX'
-      hexStr = name.substr(3);
+      hexStr = name.substring(3);
     } else if (nameLen >= 5 && nameLen <= 7) { // 'uXXXX{XX}'
-      hexStr = name.substr(1);
+      hexStr = name.substring(1);
     } else {
       return -1;
     }

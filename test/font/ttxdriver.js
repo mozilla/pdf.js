@@ -62,14 +62,14 @@ function runTtx(ttxResourcesHome, fontPath, registerOnCancel, callback) {
 
 exports.translateFont = function translateFont(content, registerOnCancel,
                                                callback) {
-  var buffer = new Buffer(content, 'base64');
+  var buffer = Buffer.from(content, 'base64');
   var taskId = (nextTTXTaskId++).toString();
   var fontPath = path.join(ttxResourcesHome, taskId + '.otf');
   var resultPath = path.join(ttxResourcesHome, taskId + '.ttx');
 
   fs.writeFileSync(fontPath, buffer);
   runTtx(ttxResourcesHome, fontPath, registerOnCancel, function (err) {
-    fs.unlink(fontPath);
+    fs.unlinkSync(fontPath);
     if (err) {
       console.error(err);
       callback(err);
@@ -77,7 +77,7 @@ exports.translateFont = function translateFont(content, registerOnCancel,
       callback('Output was not generated');
     } else {
       callback(null, fs.readFileSync(resultPath));
-      fs.unlink(resultPath);
+      fs.unlinkSync(resultPath);
     }
   });
 };

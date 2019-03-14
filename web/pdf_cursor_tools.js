@@ -25,15 +25,16 @@ const CursorTool = {
  * @typedef {Object} PDFCursorToolsOptions
  * @property {HTMLDivElement} container - The document container.
  * @property {EventBus} eventBus - The application event bus.
- * @property {BasePreferences} preferences - Object for reading/writing
- *                                           persistent settings.
+ * @property {number} cursorToolOnLoad - (optional) The cursor tool that will be
+ *   enabled on load; the constants from {CursorTool} should be used.
+ *   The default value is `CursorTool.SELECT`.
  */
 
 class PDFCursorTools {
   /**
    * @param {PDFCursorToolsOptions} options
    */
-  constructor({ container, eventBus, preferences, }) {
+  constructor({ container, eventBus, cursorToolOnLoad = CursorTool.SELECT, }) {
     this.container = container;
     this.eventBus = eventBus;
 
@@ -46,23 +47,11 @@ class PDFCursorTools {
 
     this._addEventListeners();
 
-    Promise.all([
-      preferences.get('cursorToolOnLoad'),
-      preferences.get('enableHandToolOnLoad')
-    ]).then(([cursorToolPref, handToolPref]) => {
-      // If the 'cursorToolOnLoad' preference has not been set to a non-default
-      // value, attempt to convert the old 'enableHandToolOnLoad' preference.
-      // TODO: Remove this conversion after a suitable number of releases.
-      if (handToolPref === true) {
-        preferences.set('enableHandToolOnLoad', false);
-
-        if (cursorToolPref === CursorTool.SELECT) {
-          cursorToolPref = CursorTool.HAND;
-          preferences.set('cursorToolOnLoad', cursorToolPref).catch(() => { });
-        }
-      }
-      this.switchTool(cursorToolPref);
-    }).catch(() => { });
+    // Defer the initial `switchTool` call, to give other viewer components
+    // time to initialize *and* register 'cursortoolchanged' event listeners.
+    Promise.resolve().then(() => {
+      this.switchTool(cursorToolOnLoad);
+    });
   }
 
   /**

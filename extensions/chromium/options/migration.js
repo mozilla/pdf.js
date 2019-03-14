@@ -78,6 +78,12 @@ limitations under the License.
     storageSync.get([
       'enableHandToolOnLoad',
       'cursorToolOnLoad',
+      'disableTextLayer',
+      'enhanceTextSelection',
+      'textLayerMode',
+      'showPreviousViewOnLoad',
+      'disablePageMode',
+      'viewOnLoad',
     ], function(items) {
       // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
       if (typeof items.enableHandToolOnLoad === 'boolean') {
@@ -91,6 +97,37 @@ limitations under the License.
           });
         } else {
           storageSync.remove('enableHandToolOnLoad');
+        }
+      }
+      // Migration code for https://github.com/mozilla/pdf.js/pull/9479.
+      if (typeof items.disableTextLayer === 'boolean') {
+        var textLayerMode = items.disableTextLayer ? 0 :
+          items.enhanceTextSelection ? 2 : 1;
+        if (textLayerMode !== 1) {
+          // Overwrite if computed textLayerMode is not the default value (1).
+          storageSync.set({
+            textLayerMode: textLayerMode,
+          }, function() {
+            if (!chrome.runtime.lastError) {
+              storageSync.remove(['disableTextLayer', 'enhanceTextSelection']);
+            }
+          });
+        } else {
+          storageSync.remove(['disableTextLayer', 'enhanceTextSelection']);
+        }
+      }
+      // Migration code for https://github.com/mozilla/pdf.js/pull/10502.
+      if (typeof items.showPreviousViewOnLoad === 'boolean') {
+        if (!items.showPreviousViewOnLoad) {
+          storageSync.set({
+            viewOnLoad: 1,
+          }, function() {
+            if (!chrome.runtime.lastError) {
+              storageSync.remove(['showPreviousViewOnLoad', 'disablePageMode']);
+            }
+          });
+        } else {
+          storageSync.remove(['showPreviousViewOnLoad', 'disablePageMode']);
         }
       }
     });

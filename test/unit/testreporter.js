@@ -48,7 +48,7 @@ var TestReporter = function(browser, appPath) {
 
   this.jasmineStarted = function(suiteInfo) {
     this.runnerStartTime = this.now();
-    sendInfo('Started unit tests for ' + browser + '.');
+    sendInfo('Started tests for ' + browser + '.');
   };
 
   this.suiteStarted = function(result) { };

@@ -3,5 +3,5 @@
 
 // Hello world example for browserify: worker bundle.
 
-(typeof window !== 'undefined' ? window : {}).pdfjsDistBuildPdfWorker =
+(typeof window !== 'undefined' ? window : {}).pdfjsWorker =
   require('pdfjs-dist/build/pdf.worker');

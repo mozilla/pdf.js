@@ -13,11 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  DOMSVGFactory, getFilenameFromUrl, isExternalLinkTargetSet, LinkTarget
-} from '../../src/display/dom_utils';
-import { isNodeJS } from '../../src/shared/util';
-import { PDFJS } from '../../src/display/global';
+import { DOMSVGFactory, getFilenameFromUrl } from '../../src/display/dom_utils';
+import isNodeJS from '../../src/shared/is_node';
 
 describe('dom_utils', function() {
   describe('DOMSVGFactory', function() {
@@ -93,39 +90,6 @@ describe('dom_utils', function() {
       var result = getFilenameFromUrl(url);
       var expected = 'filename.pdf';
       expect(result).toEqual(expected);
-    });
-  });
-
-  describe('isExternalLinkTargetSet', function() {
-    var savedExternalLinkTarget;
-
-    beforeAll(function (done) {
-      savedExternalLinkTarget = PDFJS.externalLinkTarget;
-      done();
-    });
-
-    afterAll(function () {
-      PDFJS.externalLinkTarget = savedExternalLinkTarget;
-    });
-
-    it('handles the predefined LinkTargets', function() {
-      for (var key in LinkTarget) {
-        var linkTarget = LinkTarget[key];
-        PDFJS.externalLinkTarget = linkTarget;
-
-        expect(isExternalLinkTargetSet()).toEqual(!!linkTarget);
-      }
-    });
-
-    it('handles incorrect LinkTargets', function() {
-      var targets = [true, '', false, -1, '_blank', null];
-
-      for (var i = 0, ii = targets.length; i < ii; i++) {
-        var linkTarget = targets[i];
-        PDFJS.externalLinkTarget = linkTarget;
-
-        expect(isExternalLinkTargetSet()).toEqual(false);
-      }
     });
   });
 });

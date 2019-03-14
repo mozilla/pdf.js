@@ -7,8 +7,3 @@ Makefile
 node_modules/
 examples/node/svgdump/
 examples/node/pdf2png/*.png
-node/
-.idea/
-pdf.js-deploy/
-pdf.js.iml
-package-lock.json

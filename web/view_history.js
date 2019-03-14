@@ -33,11 +33,12 @@ class ViewHistory {
       let database = JSON.parse(databaseStr || '{}');
       if (!('files' in database)) {
         database.files = [];
+      } else {
+        while (database.files.length >= this.cacheSize) {
+          database.files.shift();
+        }
       }
-      if (database.files.length >= this.cacheSize) {
-        database.files.shift();
-      }
-      let index;
+      let index = -1;
       for (let i = 0, length = database.files.length; i < length; i++) {
         let branch = database.files[i];
         if (branch.fingerprint === this.fingerprint) {
@@ -45,7 +46,7 @@ class ViewHistory {
           break;
         }
       }
-      if (typeof index !== 'number') {
+      if (index === -1) {
         index = database.files.push({ fingerprint: this.fingerprint, }) - 1;
       }
       this.file = database.files[index];
@@ -53,64 +54,54 @@ class ViewHistory {
     });
   }
 
-  _writeToStorage() {
-    return new Promise((resolve) => {
-      let databaseStr = JSON.stringify(this.database);
+  async _writeToStorage() {
+    let databaseStr = JSON.stringify(this.database);
 
-      if (typeof PDFJSDev !== 'undefined' &&
-          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        sessionStorage.setItem('pdfjs.history', databaseStr);
-      } else {
-        localStorage.setItem('pdfjs.history', databaseStr);
-      }
-      resolve();
-    });
+    if (typeof PDFJSDev !== 'undefined' &&
+        PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+      sessionStorage.setItem('pdfjs.history', databaseStr);
+      return;
+    }
+    localStorage.setItem('pdfjs.history', databaseStr);
   }
 
-  _readFromStorage() {
-    return new Promise(function(resolve) {
-      if (typeof PDFJSDev !== 'undefined' &&
-          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        resolve(sessionStorage.getItem('pdfjs.history'));
-      } else {
-        resolve(localStorage.getItem('pdfjs.history'));
-      }
-    });
+  async _readFromStorage() {
+    if (typeof PDFJSDev !== 'undefined' &&
+        PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+      return sessionStorage.getItem('pdfjs.history');
+    }
+    return localStorage.getItem('pdfjs.history');
   }
 
-  set(name, val) {
-    return this._initializedPromise.then(() => {
-      this.file[name] = val;
-      return this._writeToStorage();
-    });
+  async set(name, val) {
+    await this._initializedPromise;
+    this.file[name] = val;
+    return this._writeToStorage();
   }
 
-  setMultiple(properties) {
-    return this._initializedPromise.then(() => {
-      for (let name in properties) {
-        this.file[name] = properties[name];
-      }
-      return this._writeToStorage();
-    });
+  async setMultiple(properties) {
+    await this._initializedPromise;
+    for (let name in properties) {
+      this.file[name] = properties[name];
+    }
+    return this._writeToStorage();
   }
 
-  get(name, defaultValue) {
-    return this._initializedPromise.then(() => {
+  async get(name, defaultValue) {
+    await this._initializedPromise;
+    let val = this.file[name];
+    return val !== undefined ? val : defaultValue;
+  }
+
+  async getMultiple(properties) {
+    await this._initializedPromise;
+    let values = Object.create(null);
+
+    for (let name in properties) {
       let val = this.file[name];
-      return val !== undefined ? val : defaultValue;
-    });
-  }
-
-  getMultiple(properties) {
-    return this._initializedPromise.then(() => {
-      let values = Object.create(null);
-
-      for (let name in properties) {
-        let val = this.file[name];
-        values[name] = val !== undefined ? val : properties[name];
-      }
-      return values;
-    });
+      values[name] = val !== undefined ? val : properties[name];
+    }
+    return values;
   }
 }
 

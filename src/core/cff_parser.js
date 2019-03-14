@@ -96,7 +96,6 @@ var CFFStandardStrings = [
   'Black', 'Bold', 'Book', 'Light', 'Medium', 'Regular', 'Roman', 'Semibold'
 ];
 
-
 var CFFParser = (function CFFParserClosure() {
   var CharstringValidationData = [
     null,
@@ -540,6 +539,16 @@ var CFFParser = (function CFFParserClosure() {
         if (validationCommand) {
           if (validationCommand.stem) {
             state.hints += stackSize >> 1;
+            if (value === 3 || value === 23) {
+              // vstem or vstemhm.
+              state.hasVStems = true;
+            } else if (state.hasVStems && (value === 1 || value === 18)) {
+              // Some browsers don't draw glyphs that specify vstems before
+              // hstems. As a workaround, replace hstem (1) and hstemhm (18)
+              // with a pointless vstem (3) or vstemhm (23).
+              warn('CFF stem hints are in wrong order');
+              data[j - 1] = (value === 1) ? 3 : 23;
+            }
           }
           if ('min' in validationCommand) {
             if (!state.undefStack && stackSize < validationCommand.min) {
@@ -600,6 +609,7 @@ var CFFParser = (function CFFParserClosure() {
           firstStackClearing: true,
           seac: null,
           width: null,
+          hasVStems: false,
         };
         var valid = true;
         var localSubrToUse = null;
@@ -816,11 +826,10 @@ var CFFParser = (function CFFParserClosure() {
       return new CFFEncoding(predefined, format, encoding, raw);
     },
     parseFDSelect: function CFFParser_parseFDSelect(pos, length) {
-      var start = pos;
       var bytes = this.bytes;
       var format = bytes[pos++];
-      var fdSelect = [], rawBytes;
-      var i, invalidFirstGID = false;
+      var fdSelect = [];
+      var i;
 
       switch (format) {
         case 0:
@@ -828,7 +837,6 @@ var CFFParser = (function CFFParserClosure() {
             var id = bytes[pos++];
             fdSelect.push(id);
           }
-          rawBytes = bytes.subarray(start, pos);
           break;
         case 3:
           var rangesCount = (bytes[pos++] << 8) | bytes[pos++];
@@ -837,7 +845,6 @@ var CFFParser = (function CFFParserClosure() {
             if (i === 0 && first !== 0) {
               warn('parseFDSelect: The first range must have a first GID of 0' +
                    ' -- trying to recover.');
-              invalidFirstGID = true;
               first = 0;
             }
             var fdIndex = bytes[pos++];
@@ -848,11 +855,6 @@ var CFFParser = (function CFFParserClosure() {
           }
           // Advance past the sentinel(next).
           pos += 2;
-          rawBytes = bytes.subarray(start, pos);
-
-          if (invalidFirstGID) {
-            rawBytes[3] = rawBytes[4] = 0; // Adjust the first range, first GID.
-          }
           break;
         default:
           throw new FormatError(`parseFDSelect: Unknown format "${format}".`);
@@ -861,7 +863,7 @@ var CFFParser = (function CFFParserClosure() {
         throw new FormatError('parseFDSelect: Invalid font data.');
       }
 
-      return new CFFFDSelect(fdSelect, rawBytes);
+      return new CFFFDSelect(format, fdSelect);
     },
   };
   return CFFParser;
@@ -886,6 +888,30 @@ var CFF = (function CFFClosure() {
 
     this.isCIDFont = false;
   }
+  CFF.prototype = {
+    duplicateFirstGlyph: function CFF_duplicateFirstGlyph() {
+      // Browsers will not display a glyph at position 0. Typically glyph 0 is
+      // notdef, but a number of fonts put a valid glyph there so it must be
+      // duplicated and appended.
+      if (this.charStrings.count >= 65535) {
+        warn('Not enough space in charstrings to duplicate first glyph.');
+        return;
+      }
+      var glyphZero = this.charStrings.get(0);
+      this.charStrings.add(glyphZero);
+      if (this.isCIDFont) {
+        this.fdSelect.fdSelect.push(this.fdSelect.fdSelect[0]);
+      }
+    },
+    hasGlyphId: function CFF_hasGlyphID(id) {
+      if (id < 0 || id >= this.charStrings.count) {
+        return false;
+      }
+      var glyph = this.charStrings.get(id);
+      return glyph.length > 0;
+    },
+  };
+
   return CFF;
 })();
 
@@ -1143,9 +1169,9 @@ var CFFEncoding = (function CFFEncodingClosure() {
 })();
 
 var CFFFDSelect = (function CFFFDSelectClosure() {
-  function CFFFDSelect(fdSelect, raw) {
+  function CFFFDSelect(format, fdSelect) {
+    this.format = format;
     this.fdSelect = fdSelect;
-    this.raw = raw;
   }
   CFFFDSelect.prototype = {
     getFDIndex: function CFFFDSelect_get(glyphIndex) {
@@ -1262,6 +1288,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
         }
       }
 
+      cff.topDict.setByName('charset', 0);
       var compiled = this.compileTopDicts([cff.topDict],
                                           output.length,
                                           cff.isCIDFont);
@@ -1285,17 +1312,9 @@ var CFFCompiler = (function CFFCompilerClosure() {
           output.add(encoding);
         }
       }
-
-      if (cff.charset && cff.topDict.hasName('charset')) {
-        if (cff.charset.predefined) {
-          topDictTracker.setEntryLocation('charset', [cff.charset.format],
-                                          output);
-        } else {
-          var charset = this.compileCharset(cff.charset);
-          topDictTracker.setEntryLocation('charset', [output.length], output);
-          output.add(charset);
-        }
-      }
+      var charset = this.compileCharset(cff.charset);
+      topDictTracker.setEntryLocation('charset', [output.length], output);
+      output.add(charset);
 
       var charStrings = this.compileCharStrings(cff.charStrings);
       topDictTracker.setEntryLocation('CharStrings', [output.length], output);
@@ -1305,7 +1324,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
         // For some reason FDSelect must be in front of FDArray on windows. OSX
         // and linux don't seem to care.
         topDictTracker.setEntryLocation('FDSelect', [output.length], output);
-        var fdSelect = this.compileFDSelect(cff.fdSelect.raw);
+        var fdSelect = this.compileFDSelect(cff.fdSelect);
         output.add(fdSelect);
         // It is unclear if the sub font dictionary can have CID related
         // dictionary keys, but the sanitizer doesn't like them so remove them.
@@ -1358,7 +1377,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       nibbles += (nibbles.length & 1) ? 'f' : 'ff';
       var out = [30];
       for (i = 0, ii = nibbles.length; i < ii; i += 2) {
-        out.push(parseInt(nibbles.substr(i, 2), 16));
+        out.push(parseInt(nibbles.substring(i, i + 2), 16));
       }
       return out;
     },
@@ -1548,16 +1567,68 @@ var CFFCompiler = (function CFFCompilerClosure() {
       this.out.writeByteArray(this.compileIndex(globalSubrIndex));
     },
     compileCharStrings: function CFFCompiler_compileCharStrings(charStrings) {
-      return this.compileIndex(charStrings);
+      var charStringsIndex = new CFFIndex();
+      for (var i = 0; i < charStrings.count; i++) {
+        var glyph = charStrings.get(i);
+        // If the CharString outline is empty, replace it with .notdef to
+        // prevent OTS from rejecting the font (fixes bug1252420.pdf).
+        if (glyph.length === 0) {
+          charStringsIndex.add(new Uint8Array([0x8B, 0x0E]));
+          continue;
+        }
+        charStringsIndex.add(glyph);
+      }
+      return this.compileIndex(charStringsIndex);
     },
     compileCharset: function CFFCompiler_compileCharset(charset) {
-      return this.compileTypedArray(charset.raw);
+      let length = 1 + (this.cff.charStrings.count - 1) * 2;
+      // The contents of the charset doesn't matter, it's just there to make
+      // freetype happy.
+      let out = new Uint8Array(length);
+      return this.compileTypedArray(out);
     },
     compileEncoding: function CFFCompiler_compileEncoding(encoding) {
       return this.compileTypedArray(encoding.raw);
     },
     compileFDSelect: function CFFCompiler_compileFDSelect(fdSelect) {
-      return this.compileTypedArray(fdSelect);
+      let format = fdSelect.format;
+      let out, i;
+      switch (format) {
+        case 0:
+          out = new Uint8Array(1 + fdSelect.fdSelect.length);
+          out[0] = format;
+          for (i = 0; i < fdSelect.fdSelect.length; i++) {
+            out[i + 1] = fdSelect.fdSelect[i];
+          }
+          break;
+        case 3:
+          let start = 0;
+          let lastFD = fdSelect.fdSelect[0];
+          let ranges = [
+            format,
+            0, // nRanges place holder
+            0, // nRanges place holder
+            (start >> 8) & 0xFF,
+            start & 0xFF,
+            lastFD
+          ];
+          for (i = 1; i < fdSelect.fdSelect.length; i++) {
+            let currentFD = fdSelect.fdSelect[i];
+            if (currentFD !== lastFD) {
+              ranges.push((i >> 8) & 0xFF, i & 0xFF, currentFD);
+              lastFD = currentFD;
+            }
+          }
+          // 3 bytes are pushed for every range and there are 3 header bytes.
+          let numRanges = (ranges.length - 3) / 3;
+          ranges[1] = (numRanges >> 8) & 0xFF;
+          ranges[2] = numRanges & 0xFF;
+          // sentinel
+          ranges.push((i >> 8) & 0xFF, i & 0xFF);
+          out = new Uint8Array(ranges);
+          break;
+      }
+      return this.compileTypedArray(out);
     },
     compileTypedArray: function CFFCompiler_compileTypedArray(data) {
       var out = [];
@@ -1649,4 +1720,5 @@ export {
   CFFTopDict,
   CFFPrivateDict,
   CFFCompiler,
+  CFFFDSelect,
 };

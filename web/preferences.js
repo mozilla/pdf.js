@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-import { cloneObj } from './ui_utils';
-
 let defaultPreferences = null;
 function getDefaultPreferences() {
   if (!defaultPreferences) {
@@ -60,11 +58,21 @@ class BasePreferences {
         configurable: false,
       });
 
-      this.prefs = cloneObj(defaults);
+      this.prefs = Object.assign(Object.create(null), defaults);
       return this._readFromStorage(defaults);
-    }).then((prefObj) => {
-      if (prefObj) {
-        this.prefs = prefObj;
+    }).then((prefs) => {
+      if (!prefs) {
+        return;
+      }
+      for (let name in prefs) {
+        const defaultValue = this.defaults[name], prefValue = prefs[name];
+        // Ignore preferences not present in, or whose types don't match,
+        // the default values.
+        if (defaultValue === undefined ||
+            typeof prefValue !== typeof defaultValue) {
+          continue;
+        }
+        this.prefs[name] = prefValue;
       }
     });
   }
@@ -75,8 +83,8 @@ class BasePreferences {
    * @return {Promise} A promise that is resolved when the preference values
    *                   have been written.
    */
-  _writeToStorage(prefObj) {
-    return Promise.reject(new Error('Not implemented: _writeToStorage'));
+  async _writeToStorage(prefObj) {
+    throw new Error('Not implemented: _writeToStorage');
   }
 
   /**
@@ -85,8 +93,8 @@ class BasePreferences {
    * @return {Promise} A promise that is resolved with an {Object} containing
    *                   the preferences that have been read.
    */
-  _readFromStorage(prefObj) {
-    return Promise.reject(new Error('Not implemented: _readFromStorage'));
+  async _readFromStorage(prefObj) {
+    throw new Error('Not implemented: _readFromStorage');
   }
 
   /**
@@ -94,26 +102,10 @@ class BasePreferences {
    * @return {Promise} A promise that is resolved when the preference values
    *                   have been reset.
    */
-  reset() {
-    return this._initializedPromise.then(() => {
-      this.prefs = cloneObj(this.defaults);
-      return this._writeToStorage(this.defaults);
-    });
-  }
-
-  /**
-   * Replace the current preference values with the ones from storage.
-   * @return {Promise} A promise that is resolved when the preference values
-   *                   have been updated.
-   */
-  reload() {
-    return this._initializedPromise.then(() => {
-      return this._readFromStorage(this.defaults);
-    }).then((prefObj) => {
-      if (prefObj) {
-        this.prefs = prefObj;
-      }
-    });
+  async reset() {
+    await this._initializedPromise;
+    this.prefs = Object.assign(Object.create(null), this.defaults);
+    return this._writeToStorage(this.defaults);
   }
 
   /**
@@ -123,31 +115,32 @@ class BasePreferences {
    * @return {Promise} A promise that is resolved when the value has been set,
    *                   provided that the preference exists and the types match.
    */
-  set(name, value) {
-    return this._initializedPromise.then(() => {
-      if (this.defaults[name] === undefined) {
-        throw new Error(`Set preference: "${name}" is undefined.`);
-      } else if (value === undefined) {
-        throw new Error('Set preference: no value is specified.');
-      }
-      let valueType = typeof value;
-      let defaultType = typeof this.defaults[name];
+  async set(name, value) {
+    await this._initializedPromise;
+    let defaultValue = this.defaults[name];
 
-      if (valueType !== defaultType) {
-        if (valueType === 'number' && defaultType === 'string') {
-          value = value.toString();
-        } else {
-          throw new Error(`Set preference: "${value}" is a ${valueType}, ` +
-                          `expected a ${defaultType}.`);
-        }
+    if (defaultValue === undefined) {
+      throw new Error(`Set preference: "${name}" is undefined.`);
+    } else if (value === undefined) {
+      throw new Error('Set preference: no value is specified.');
+    }
+    let valueType = typeof value;
+    let defaultType = typeof defaultValue;
+
+    if (valueType !== defaultType) {
+      if (valueType === 'number' && defaultType === 'string') {
+        value = value.toString();
       } else {
-        if (valueType === 'number' && !Number.isInteger(value)) {
-          throw new Error(`Set preference: "${value}" must be an integer.`);
-        }
+        throw new Error(`Set preference: "${value}" is a ${valueType}, ` +
+                        `expected a ${defaultType}.`);
       }
-      this.prefs[name] = value;
-      return this._writeToStorage(this.prefs);
-    });
+    } else {
+      if (valueType === 'number' && !Number.isInteger(value)) {
+        throw new Error(`Set preference: "${value}" must be an integer.`);
+      }
+    }
+    this.prefs[name] = value;
+    return this._writeToStorage(this.prefs);
   }
 
   /**
@@ -156,21 +149,30 @@ class BasePreferences {
    * @return {Promise} A promise that is resolved with a {boolean|number|string}
    *                   containing the value of the preference.
    */
-  get(name) {
-    return this._initializedPromise.then(() => {
-      let defaultValue = this.defaults[name];
+  async get(name) {
+    await this._initializedPromise;
+    let defaultValue = this.defaults[name];
 
-      if (defaultValue === undefined) {
-        throw new Error(`Get preference: "${name}" is undefined.`);
-      } else {
-        let prefValue = this.prefs[name];
+    if (defaultValue === undefined) {
+      throw new Error(`Get preference: "${name}" is undefined.`);
+    } else {
+      let prefValue = this.prefs[name];
 
-        if (prefValue !== undefined) {
-          return prefValue;
-        }
+      if (prefValue !== undefined) {
+        return prefValue;
       }
-      return defaultValue;
-    });
+    }
+    return defaultValue;
+  }
+
+  /**
+   * Get the values of all preferences.
+   * @return {Promise} A promise that is resolved with an {Object} containing
+   *                   the values of all preferences.
+   */
+  async getAll() {
+    await this._initializedPromise;
+    return Object.assign(Object.create(null), this.defaults, this.prefs);
   }
 }
 

@@ -16,14 +16,31 @@
 import {
   assert, MissingPDFException, UnexpectedResponseException
 } from '../shared/util';
+import {
+  getFilenameFromContentDispositionHeader
+} from './content_disposition';
 
 function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
                                             rangeChunkSize, disableRange, }) {
-  assert(rangeChunkSize > 0);
+  assert(rangeChunkSize > 0, 'Range chunk size must be larger than zero');
   let returnValues = {
     allowRangeRequests: false,
     suggestedLength: undefined,
   };
+
+  let length = parseInt(getResponseHeader('Content-Length'), 10);
+  if (!Number.isInteger(length)) {
+    return returnValues;
+  }
+
+  returnValues.suggestedLength = length;
+
+  if (length <= 2 * rangeChunkSize) {
+    // The file size is smaller than the size of two chunks, so it does not
+    // make any sense to abort the request and retry with a range request.
+    return returnValues;
+  }
+
   if (disableRange || !isHttp) {
     return returnValues;
   }
@@ -36,20 +53,19 @@ function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
     return returnValues;
   }
 
-  let length = parseInt(getResponseHeader('Content-Length'), 10);
-  if (!Number.isInteger(length)) {
-    return returnValues;
-  }
-
-  returnValues.suggestedLength = length;
-  if (length <= 2 * rangeChunkSize) {
-    // The file size is smaller than the size of two chunks, so it does not
-    // make any sense to abort the request and retry with a range request.
-    return returnValues;
-  }
-
   returnValues.allowRangeRequests = true;
   return returnValues;
+}
+
+function extractFilenameFromHeader(getResponseHeader) {
+  const contentDisposition = getResponseHeader('Content-Disposition');
+  if (contentDisposition) {
+    let filename = getFilenameFromContentDispositionHeader(contentDisposition);
+    if (/\.pdf$/i.test(filename)) {
+      return filename;
+    }
+  }
+  return null;
 }
 
 function createResponseStatusError(status, url) {
@@ -67,6 +83,7 @@ function validateResponseStatus(status) {
 
 export {
   createResponseStatusError,
+  extractFilenameFromHeader,
   validateRangeRequestCapabilities,
   validateResponseStatus,
 };
