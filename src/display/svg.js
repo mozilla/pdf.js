@@ -429,6 +429,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
   var clipCount = 0;
   var maskCount = 0;
+  var shadingCount = 0;
 
   SVGGraphics.prototype = {
     save: function SVGGraphics_save() {
@@ -592,6 +593,15 @@ SVGGraphics = (function SVGGraphicsClosure() {
             break;
           case OPS.setStrokeRGBColor:
             this.setStrokeRGBColor(args[0], args[1], args[2]);
+            break;
+          case OPS.setStrokeColorN:
+            this.setStrokeColorN(args);
+            break;
+          case OPS.setFillColorN:
+            this.setFillColorN(args);
+            break;
+          case OPS.shadingFill:
+            this.shadingFill(args[0]);
             break;
           case OPS.setDash:
             this.setDash(args[0], args[1]);
@@ -935,6 +945,91 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.current.fillColor = color;
       this.current.tspan = this.svgFactory.createElement('svg:tspan');
       this.current.xcoords = [];
+    },
+    setStrokeColorN: function SVGGraphics_setStrokeColorN(args) {
+      this.endPathcurrent.strokeColor = this._makeColorN_Pattern(args);
+    },
+    setFillColorN: function SVGGraphics_setFillColorN(args) {
+      this.current.fillColor = this._makeColorN_Pattern(args);
+    },
+    shadingFill: function SVGGraphics_shadingFill(args) {
+      var viewport = this.viewport;
+      var width = viewport.width;
+      var height = viewport.height;
+      var inv = Util.inverseTransform(this.transformMatrix);
+      var bl = Util.applyTransform([0, 0], inv);
+      var br = Util.applyTransform([0, height], inv);
+      var ul = Util.applyTransform([width, 0], inv);
+      var ur = Util.applyTransform([width, height], inv);
+      var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
+      var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
+      var x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
+      var y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
+
+      var rect = this.svgFactory.createElement('svg:rect');
+      rect.setAttributeNS(null, 'x', x0);
+      rect.setAttributeNS(null, 'y', y0);
+      rect.setAttributeNS(null, 'width', x1 - x0);
+      rect.setAttributeNS(null, 'height', y1 - y0);
+      rect.setAttributeNS(null, 'fill', this._makeShadingPattern(args));
+      this._ensureTransformGroup().appendChild(rect);
+    },
+    _makeColorN_Pattern: function SVGGraphics_makeColorN_Pattern(args) {
+      if (args[0] === 'TilingPattern') {
+        warn('Unimplemented: TilingPattern');
+        return null;
+      }
+      return this._makeShadingPattern(args);
+    },
+    _makeShadingPattern: function SVGGraphics_makeShadingPattern(args) {
+      switch (args[0]) {
+        case 'RadialAxial':
+          var shadingId = 'shading' + shadingCount++;
+          var colorStops = args[2];
+          var gradient = this.svgFactory.createElement('svg:linearGradient');
+          gradient.setAttributeNS(null, 'id', shadingId);
+          gradient.setAttributeNS(null, 'gradientUnits', 'userSpaceOnUse');
+          switch (args[1]) {
+            case 'axial':
+              var point0 = args[3];
+              var point1 = args[4];
+              gradient.setAttributeNS(null, 'x1', point0[0]);
+              gradient.setAttributeNS(null, 'y1', point0[1]);
+              gradient.setAttributeNS(null, 'x2', point1[0]);
+              gradient.setAttributeNS(null, 'y2', point1[1]);
+              break;
+            case 'radial':
+              var focalPoint = args[3];
+              var circlePoint = args[4];
+              var focalRadius = args[5];
+              var circleRadius = args[6];
+              gradient.setAttributeNS(null, 'cx', circlePoint[0]);
+              gradient.setAttributeNS(null, 'cy', circlePoint[1]);
+              gradient.setAttributeNS(null, 'r', circleRadius);
+              gradient.setAttributeNS(null, 'fx', focalPoint[0]);
+              gradient.setAttributeNS(null, 'fy', focalPoint[1]);
+              gradient.setAttributeNS(null, 'fr', focalRadius);
+              break;
+            default:
+              throw new Error('Unknown RadialAxial type: ' + args[1]);
+          }
+          for (var i = 0, ilen = colorStops.length; i < ilen; ++i) {
+            var cs = colorStops[i];
+            var stop = this.svgFactory.createElement('svg:stop');
+            stop.setAttributeNS(null, 'offset', cs[0]);
+            stop.setAttributeNS(null, 'stop-color', cs[1]);
+            gradient.appendChild(stop);
+          }
+          this.defs.appendChild(gradient);
+          return 'url(#' + shadingId + ')';
+        case 'Mesh':
+          warn('Unimplemented: Mesh');
+          return null;
+        case 'Dummy':
+          return 'hotpink';
+        default:
+          throw new Error('Unknown IR type: ' + args[0]);
+      }
     },
     setDash: function SVGGraphics_setDash(dashArray, dashPhase) {
       this.current.dashArray = dashArray;
