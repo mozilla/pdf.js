@@ -947,7 +947,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.current.xcoords = [];
     },
     setStrokeColorN: function SVGGraphics_setStrokeColorN(args) {
-      this.endPathcurrent.strokeColor = this._makeColorN_Pattern(args);
+      this.current.strokeColor = this._makeColorN_Pattern(args);
     },
     setFillColorN: function SVGGraphics_setFillColorN(args) {
       this.current.fillColor = this._makeColorN_Pattern(args);
