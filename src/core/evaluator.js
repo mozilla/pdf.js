@@ -333,8 +333,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           imageIsFromDecodeStream: image instanceof DecodeStream,
           inverseDecode: (!!decode && decode[0] > 0),
         });
-        imgData.cached = true;
+        imgData.cached = !!cacheKey;
         args = [imgData];
+
         operatorList.addOp(OPS.paintImageMaskXObject, args);
         if (cacheKey) {
           imageCache[cacheKey] = {
