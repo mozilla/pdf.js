@@ -986,13 +986,14 @@ SVGGraphics = (function SVGGraphicsClosure() {
         case 'RadialAxial':
           var shadingId = 'shading' + shadingCount++;
           var colorStops = args[2];
-          var gradient = this.svgFactory.createElement('svg:linearGradient');
-          gradient.setAttributeNS(null, 'id', shadingId);
-          gradient.setAttributeNS(null, 'gradientUnits', 'userSpaceOnUse');
+          var gradient;
           switch (args[1]) {
             case 'axial':
               var point0 = args[3];
               var point1 = args[4];
+              gradient = this.svgFactory.createElement('svg:linearGradient');
+              gradient.setAttributeNS(null, 'id', shadingId);
+              gradient.setAttributeNS(null, 'gradientUnits', 'userSpaceOnUse');
               gradient.setAttributeNS(null, 'x1', point0[0]);
               gradient.setAttributeNS(null, 'y1', point0[1]);
               gradient.setAttributeNS(null, 'x2', point1[0]);
@@ -1003,6 +1004,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
               var circlePoint = args[4];
               var focalRadius = args[5];
               var circleRadius = args[6];
+              gradient = this.svgFactory.createElement('svg:radialGradient');
+              gradient.setAttributeNS(null, 'id', shadingId);
+              gradient.setAttributeNS(null, 'gradientUnits', 'userSpaceOnUse');
               gradient.setAttributeNS(null, 'cx', circlePoint[0]);
               gradient.setAttributeNS(null, 'cy', circlePoint[1]);
               gradient.setAttributeNS(null, 'r', circleRadius);
