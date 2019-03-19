@@ -142,7 +142,7 @@ class PDFFindController {
         clearTimeout(this._findTimeout);
         this._findTimeout = null;
       }
-      if (cmd === 'find') {
+      if (cmd === 'find' && cmd !== 'findwithindex') {
         // Trigger the find action with a small delay to avoid starting the
         // search when the user is still typing (saving resources).
         this._findTimeout = setTimeout(() => {
@@ -170,6 +170,25 @@ class PDFFindController {
           this._highlightMatches = true;
         }
         this._updateAllPages(); // Update the highlighting on all active pages.
+      } else if (cmd === 'findwithindex') {
+        this._nextMatch();
+        let promises = this._extractTextPromises;
+        Promise.all(promises).then((res) => {
+          // doc_index parameter
+          let index = parseInt(this.state.occurrence);
+          for (let i = 0; i < this.pageMatches.length; i++) {
+            if (this.pageMatches[i].length > 0) {
+              if (this.pageMatches[i].length > index) {
+                this._offset.pageIdx = i;
+                this._offset.matchIdx = index;
+                this._updateMatch(true);
+                break;
+              } else {
+                index = index - this.pageMatches[i].length;
+              }
+            }
+          }
+        });
       } else {
         this._nextMatch();
       }

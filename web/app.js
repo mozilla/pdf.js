@@ -1354,6 +1354,7 @@ let PDFViewerApplication = {
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
     eventBus.on('findfromurlhash', webViewerFindFromUrlHash);
+    eventBus.on('findsearchindexhash', webViewerFindSearchIndexHash);
     eventBus.on('updatefindmatchescount', webViewerUpdateFindMatchesCount);
     eventBus.on('updatefindcontrolstate', webViewerUpdateFindControlState);
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
@@ -1987,13 +1988,30 @@ function webViewerFind(evt) {
 }
 
 function webViewerFindFromUrlHash(evt) {
+  PDFViewerApplication.findBar.findField.value = evt.query;
+  PDFViewerApplication.findBar.open();
   PDFViewerApplication.findController.executeCommand('find', {
     query: evt.query,
     phraseSearch: evt.phraseSearch,
     caseSensitive: false,
     entireWord: false,
     highlightAll: true,
-    findPrevious: false,
+    findPrevious: true,
+  });
+}
+
+function webViewerFindSearchIndexHash(evt) {
+  PDFViewerApplication.findBar.findField.value = evt.query;
+  PDFViewerApplication.findBar.open();
+  PDFViewerApplication.findBar.entireWord.checked = true;
+  PDFViewerApplication.findController.executeCommand('findwithindex', {
+     query: evt.query,
+     phraseSearch: evt.phraseSearch,
+     caseSensitive: false,
+     highlightAll: true,
+     findPrevious: false,
+     entireWord: evt.entireWord,
+     occurrence: evt.occurrence,
   });
 }
 

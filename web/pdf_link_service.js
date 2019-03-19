@@ -202,11 +202,19 @@ class PDFLinkService {
     let pageNumber, dest;
     if (hash.includes('=')) {
       let params = parseQueryString(hash);
-      if ('search' in params) {
+      if ('search' in params && 'doc_index' in params) {
+        this.eventBus.dispatch('findsearchindexhash', {
+          source: this,
+          query: params['search'].replace(/"/g, ''),
+          phraseSearch: true,
+          entireWord: true,
+          occurrence: params['doc_index'],
+        });
+      } else if ('search' in params) {
         this.eventBus.dispatch('findfromurlhash', {
           source: this,
           query: params['search'].replace(/"/g, ''),
-          phraseSearch: (params['phrase'] === 'true'),
+          phraseSearch: true,
         });
       }
       // borrowing syntax from "Parameters for Opening PDF Files"
