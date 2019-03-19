@@ -171,7 +171,7 @@ class MozL10n {
     'findentirewordchange',
     'findbarclose',
   ];
-  let handleEvent = function({ type, detail, }) {
+  const handleEvent = function({ type, detail, }) {
     if (!PDFViewerApplication.initialized) {
       return;
     }
@@ -193,7 +193,28 @@ class MozL10n {
     });
   };
 
-  for (let event of events) {
+  for (const event of events) {
+    window.addEventListener(event, handleEvent);
+  }
+})();
+
+(function listenZoomEvents() {
+  const events = [
+    'zoomin',
+    'zoomout',
+    'zoomreset',
+  ];
+  const handleEvent = function({ type, detail, }) {
+    if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch(type, {
+      source: window,
+      ignoreDuplicate: (type === 'zoomreset' ? true : undefined),
+    });
+  };
+
+  for (const event of events) {
     window.addEventListener(event, handleEvent);
   }
 })();
