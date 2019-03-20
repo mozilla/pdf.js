@@ -257,7 +257,7 @@ describe('evaluator', function() {
         done();
       });
     });
-    it('should skip paintXObject if name is missing', function(done) {
+    it('should error on paintXObject if name is missing', function(done) {
       var stream = new StringStream('/ Do');
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function(result) {
