@@ -431,6 +431,18 @@ let PDFViewerApplication = {
     this.pdfViewer.currentScaleValue = newScale;
   },
 
+  zoomReset(ignoreDuplicate = false) {
+    if (this.pdfViewer.isInPresentationMode) {
+      return;
+    } else if (ignoreDuplicate &&
+               this.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE) {
+      // Avoid attempting to needlessly reset the zoom level *twice* in a row,
+      // when using the `Ctrl + 0` keyboard shortcut in `MOZCENTRAL` builds.
+      return;
+    }
+    this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
+  },
+
   get pagesCount() {
     return this.pdfDocument ? this.pdfDocument.numPages : 0;
   },
@@ -1343,6 +1355,7 @@ let PDFViewerApplication = {
     eventBus.on('previouspage', webViewerPreviousPage);
     eventBus.on('zoomin', webViewerZoomIn);
     eventBus.on('zoomout', webViewerZoomOut);
+    eventBus.on('zoomreset', webViewerZoomReset);
     eventBus.on('pagenumberchanged', webViewerPageNumberChanged);
     eventBus.on('scalechanged', webViewerScaleChanged);
     eventBus.on('rotatecw', webViewerRotateCw);
@@ -1417,6 +1430,7 @@ let PDFViewerApplication = {
     eventBus.off('previouspage', webViewerPreviousPage);
     eventBus.off('zoomin', webViewerZoomIn);
     eventBus.off('zoomout', webViewerZoomOut);
+    eventBus.off('zoomreset', webViewerZoomReset);
     eventBus.off('pagenumberchanged', webViewerPageNumberChanged);
     eventBus.off('scalechanged', webViewerScaleChanged);
     eventBus.off('rotatecw', webViewerRotateCw);
@@ -1940,6 +1954,9 @@ function webViewerZoomIn() {
 function webViewerZoomOut() {
   PDFViewerApplication.zoomOut();
 }
+function webViewerZoomReset(evt) {
+  PDFViewerApplication.zoomReset(evt && evt.ignoreDuplicate);
+}
 function webViewerPageNumberChanged(evt) {
   let pdfViewer = PDFViewerApplication.pdfViewer;
   // Note that for `<input type="number">` HTML elements, an empty string will
@@ -2189,9 +2206,9 @@ function webViewerKeyDown(evt) {
       case 96: // '0' on Numpad of Swedish keyboard
         if (!isViewerInPresentationMode) {
           // keeping it unhandled (to restore page zoom to 100%)
-          setTimeout(function () {
+          setTimeout(function() {
             // ... and resetting the scale after browser adjusts its scale
-            pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
+            PDFViewerApplication.zoomReset();
           });
           handled = false;
         }
