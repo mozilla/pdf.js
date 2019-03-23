@@ -20,7 +20,7 @@
   right: 0;
   bottom: 0;
   overflow: hidden;
-  opacity: 0.2;
+  opacity: 0.5;
   line-height: 1.0;
 }
 
@@ -36,7 +36,7 @@
   margin: -1px;
   padding: 1px;
 
-  background-color: rgb(180, 0, 170);
+  background-color: #ffd800;
   border-radius: 4px;
 }
 
@@ -53,10 +53,10 @@
 }
 
 .textLayer .highlight.selected {
-  background-color: rgb(0, 100, 0);
+  background-color: #e67c01;
 }
 
-.textLayer ::selection { background: rgb(0,0,255); }
+.textLayer ::selection { background: #4ba3fc; }
 
 .textLayer .endOfContent {
   display: block;
