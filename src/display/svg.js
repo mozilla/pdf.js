@@ -595,6 +595,12 @@ SVGGraphics = class SVGGraphics {
         case OPS.setDash:
           this.setDash(args[0], args[1]);
           break;
+        case OPS.setRenderingIntent:
+          this.setRenderingIntent(args[0]);
+          break;
+        case OPS.setFlatness:
+          this.setFlatness(args[0]);
+          break;
         case OPS.setGState:
           this.setGState(args[0]);
           break;
@@ -1188,6 +1194,14 @@ SVGGraphics = class SVGGraphics {
     this.current.textHScale = scale / 100;
   }
 
+  setRenderingIntent(intent) {
+    // This operation is ignored since we haven't found a use case for it yet.
+  }
+
+  setFlatness(flatness) {
+    // This operation is ignored since we haven't found a use case for it yet.
+  }
+
   setGState(states) {
     for (const [key, value] of states) {
       switch (key) {
@@ -1205,6 +1219,12 @@ SVGGraphics = class SVGGraphics {
           break;
         case 'D':
           this.setDash(value[0], value[1]);
+          break;
+        case 'RI':
+          this.setRenderingIntent(value);
+          break;
+        case 'FL':
+          this.setFlatness(value);
           break;
         case 'Font':
           this.setFont(value);
