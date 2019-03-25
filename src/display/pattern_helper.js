@@ -330,6 +330,26 @@ var TilingPattern = (function TilingPatternClosure() {
 
       info('TilingType: ' + tilingType);
 
+      // A tiling pattern as defined by PDF spec 8.7.2 is a cell whose size is
+      // described by bbox, and may repeat regularly by shifting the cell by
+      // xstep and ystep.
+      // Because the HTML5 canvas API does not support pattern repetition with
+      // gaps in between, we use the xstep/ystep instead of the bbox's size.
+      //
+      // This has the following consequences (similarly for ystep):
+      //
+      // - If xstep is the same as bbox, then there is no observable difference.
+      //
+      // - If xstep is larger than bbox, then the pattern canvas is partially
+      //   empty: the area bounded by bbox is painted, the outside area is void.
+      //
+      // - If xstep is smaller than bbox, then the pixels between xstep and the
+      //   bbox boundary will be missing. This is INCORRECT behavior.
+      //   "Figures on adjacent tiles should not overlap" (PDF spec 8.7.3.1),
+      //   but overlapping cells without common pixels are still valid.
+      //   TODO: Fix the implementation, to allow this scenario to be painted
+      //   correctly.
+
       var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
 
       // Obtain scale from matrix and current transformation matrix.
