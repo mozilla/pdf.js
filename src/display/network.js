@@ -18,7 +18,6 @@ import {
   createResponseStatusError, extractFilenameFromHeader,
   validateRangeRequestCapabilities
 } from './network_utils';
-import globalScope from '../shared/global_scope';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   throw new Error('Module "./network" shall not ' +
@@ -41,7 +40,6 @@ function NetworkManager(url, args) {
 
   this.currXhrId = 0;
   this.pendingRequests = Object.create(null);
-  this.loadedRequests = Object.create(null);
 }
 
 function getArrayBuffer(xhr) {
@@ -52,25 +50,6 @@ function getArrayBuffer(xhr) {
   let array = stringToBytes(data);
   return array.buffer;
 }
-
-var supportsMozChunked =
-  typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') ? false :
-    (function supportsMozChunkedClosure() {
-  try {
-    var x = new XMLHttpRequest();
-    // Firefox 37- required .open() to be called before setting responseType.
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=707484
-    // Even though the URL is not visited, .open() could fail if the URL is
-    // blocked, e.g. via the connect-src CSP directive or the NoScript addon.
-    // When this error occurs, this feature detection method will mistakenly
-    // report that moz-chunked-arraybuffer is not supported in Firefox 37-.
-    x.open('GET', globalScope.location.href);
-    x.responseType = 'moz-chunked-arraybuffer';
-    return x.responseType === 'moz-chunked-arraybuffer';
-  } catch (e) {
-    return false;
-  }
-})();
 
 NetworkManager.prototype = {
   requestRange: function NetworkManager_requestRange(begin, end, listeners) {
@@ -111,15 +90,7 @@ NetworkManager.prototype = {
     } else {
       pendingRequest.expectedStatus = 200;
     }
-
-    var useMozChunkedLoading = supportsMozChunked && !!args.onProgressiveData;
-    if (useMozChunkedLoading) {
-      xhr.responseType = 'moz-chunked-arraybuffer';
-      pendingRequest.onProgressiveData = args.onProgressiveData;
-      pendingRequest.mozChunked = true;
-    } else {
-      xhr.responseType = 'arraybuffer';
-    }
+    xhr.responseType = 'arraybuffer';
 
     if (args.onError) {
       xhr.onerror = function(evt) {
@@ -146,14 +117,8 @@ NetworkManager.prototype = {
       return;
     }
 
-    if (pendingRequest.mozChunked) {
-      var chunk = getArrayBuffer(pendingRequest.xhr);
-      pendingRequest.onProgressiveData(chunk);
-    }
-
-    var onProgress = pendingRequest.onProgress;
-    if (onProgress) {
-      onProgress(evt);
+    if (pendingRequest.onProgress) {
+      pendingRequest.onProgress(evt);
     }
   },
 
@@ -206,8 +171,6 @@ NetworkManager.prototype = {
       return;
     }
 
-    this.loadedRequests[xhrId] = true;
-
     var chunk = getArrayBuffer(xhr);
     if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
       var rangeHeader = xhr.getResponseHeader('Content-Range');
@@ -217,8 +180,6 @@ NetworkManager.prototype = {
         begin,
         chunk,
       });
-    } else if (pendingRequest.onProgressiveData) {
-      pendingRequest.onDone(null);
     } else if (chunk) {
       pendingRequest.onDone({
         begin: 0,
@@ -240,16 +201,8 @@ NetworkManager.prototype = {
     return this.pendingRequests[xhrId].xhr;
   },
 
-  isStreamingRequest: function NetworkManager_isStreamingRequest(xhrId) {
-    return !!(this.pendingRequests[xhrId].onProgressiveData);
-  },
-
   isPendingRequest: function NetworkManager_isPendingRequest(xhrId) {
     return xhrId in this.pendingRequests;
-  },
-
-  isLoadedRequest: function NetworkManager_isLoadedRequest(xhrId) {
-    return xhrId in this.loadedRequests;
   },
 
   abortAllRequests: function NetworkManager_abortAllRequests() {
@@ -318,8 +271,6 @@ function PDFNetworkStreamFullRequestReader(manager, source) {
 
   var args = {
     onHeadersReceived: this._onHeadersReceived.bind(this),
-    onProgressiveData: source.disableStream ? null :
-                       this._onProgressiveData.bind(this),
     onDone: this._onDone.bind(this),
     onError: this._onError.bind(this),
     onProgress: this._onProgress.bind(this),
@@ -371,36 +322,25 @@ PDFNetworkStreamFullRequestReader.prototype = {
 
     this._filename = extractFilenameFromHeader(getResponseHeader);
 
-    var networkManager = this._manager;
-    if (networkManager.isStreamingRequest(fullRequestXhrId)) {
-      // We can continue fetching when progressive loading is enabled,
-      // and we don't need the autoFetch feature.
-      this._isStreamingSupported = true;
-    } else if (this._isRangeSupported) {
+    if (this._isRangeSupported) {
       // NOTE: by cancelling the full request, and then issuing range
       // requests, there will be an issue for sites where you can only
       // request the pdf once. However, if this is the case, then the
-      // server should not be returning that it can support range
-      // requests.
-      networkManager.abortRequest(fullRequestXhrId);
+      // server should not be returning that it can support range requests.
+      this._manager.abortRequest(fullRequestXhrId);
     }
 
     this._headersReceivedCapability.resolve();
   },
 
-  _onProgressiveData:
-      function PDFNetworkStreamFullRequestReader_onProgressiveData(chunk) {
-    if (this._requests.length > 0) {
-      var requestCapability = this._requests.shift();
-      requestCapability.resolve({ value: chunk, done: false, });
-    } else {
-      this._cachedChunks.push(chunk);
-    }
-  },
-
   _onDone: function PDFNetworkStreamFullRequestReader_onDone(args) {
     if (args) {
-      this._onProgressiveData(args.chunk);
+      if (this._requests.length > 0) {
+        var requestCapability = this._requests.shift();
+        requestCapability.resolve({ value: args.chunk, done: false, });
+      } else {
+        this._cachedChunks.push(args.chunk);
+      }
     }
     this._done = true;
     if (this._cachedChunks.length > 0) {
