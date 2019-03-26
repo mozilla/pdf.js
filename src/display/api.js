@@ -344,6 +344,7 @@ function getDocument(src) {
         networkStream = new PDFDataTransportStream({
           length: params.length,
           initialData: params.initialData,
+          progressiveDone: params.progressiveDone,
           disableRange: params.disableRange,
           disableStream: params.disableStream,
         }, rangeTransport);
@@ -389,6 +390,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   if (pdfDataRangeTransport) {
     source.length = pdfDataRangeTransport.length;
     source.initialData = pdfDataRangeTransport.initialData;
+    source.progressiveDone = pdfDataRangeTransport.progressiveDone;
   }
   return worker.messageHandler.sendWithPromise('GetDocRequest', {
     docId,
@@ -515,13 +517,15 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
  * @param {Uint8Array} initialData
  */
 class PDFDataRangeTransport {
-  constructor(length, initialData) {
+  constructor(length, initialData, progressiveDone = false) {
     this.length = length;
     this.initialData = initialData;
+    this.progressiveDone = progressiveDone;
 
     this._rangeListeners = [];
     this._progressListeners = [];
     this._progressiveReadListeners = [];
+    this._progressiveDoneListeners = [];
     this._readyCapability = createPromiseCapability();
   }
 
@@ -535,6 +539,10 @@ class PDFDataRangeTransport {
 
   addProgressiveReadListener(listener) {
     this._progressiveReadListeners.push(listener);
+  }
+
+  addProgressiveDoneListener(listener) {
+    this._progressiveDoneListeners.push(listener);
   }
 
   onDataRange(begin, chunk) {
@@ -555,6 +563,14 @@ class PDFDataRangeTransport {
     this._readyCapability.promise.then(() => {
       for (const listener of this._progressiveReadListeners) {
         listener(chunk);
+      }
+    });
+  }
+
+  onDataProgressiveDone() {
+    this._readyCapability.promise.then(() => {
+      for (const listener of this._progressiveDoneListeners) {
+        listener();
       }
     });
   }
