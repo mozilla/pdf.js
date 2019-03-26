@@ -256,7 +256,7 @@ PDFViewerApplication.externalServices = {
       switch (args.pdfjsLoadAction) {
         case 'supportsRangedLoading':
           pdfDataRangeTransport =
-            new FirefoxComDataRangeTransport(args.length, args.data);
+            new FirefoxComDataRangeTransport(args.length, args.data, args.done);
 
           callbacks.onOpenWithTransport(args.pdfUrl, args.length,
                                         pdfDataRangeTransport);
@@ -269,6 +269,11 @@ PDFViewerApplication.externalServices = {
           break;
         case 'progressiveRead':
           pdfDataRangeTransport.onDataProgressiveRead(args.chunk);
+          break;
+        case 'progressiveDone':
+          if (pdfDataRangeTransport) {
+            pdfDataRangeTransport.onDataProgressiveDone();
+          }
           break;
         case 'progress':
           callbacks.onProgress(args.loaded, args.total);
