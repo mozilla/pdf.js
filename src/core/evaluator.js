@@ -2350,6 +2350,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
         }
 
+        const firstChar = (dict.get('FirstChar') || 0);
+        const lastChar = (dict.get('LastChar') || (composite ? 0xFFFF : 0xFF));
+        hash.update(`${firstChar}-${lastChar}`);
+
         var toUnicode = dict.get('ToUnicode') || baseDict.get('ToUnicode');
         if (isStream(toUnicode)) {
           var stream = toUnicode.str || toUnicode;
