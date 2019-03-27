@@ -2725,6 +2725,12 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue9534_reduced",
+       "file": "pdfs/issue9534_reduced.pdf",
+       "md5": "f9a47805555de5bc0f9f5f5188df6bad",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue1233",
       "file": "pdfs/issue1233.pdf",
       "md5": "2d3565b0a286e29955796c37c66326c1",
