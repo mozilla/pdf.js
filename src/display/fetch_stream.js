@@ -42,6 +42,10 @@ class PDFFetchStream {
     this._rangeRequestReaders = [];
   }
 
+  get _progressiveDataLength() {
+    return (this._fullRequestReader ? this._fullRequestReader._loaded : 0);
+  }
+
   getFullReader() {
     assert(!this._fullRequestReader);
     this._fullRequestReader = new PDFFetchStreamReader(this);
@@ -49,6 +53,9 @@ class PDFFetchStream {
   }
 
   getRangeReader(begin, end) {
+    if (end <= this._progressiveDataLength) {
+      return null;
+    }
     let reader = new PDFFetchStreamRangeReader(this, begin, end);
     this._rangeRequestReaders.push(reader);
     return reader;

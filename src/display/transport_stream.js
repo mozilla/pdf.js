@@ -70,6 +70,10 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
        }
     },
 
+    get _progressiveDataLength() {
+      return (this._fullRequestReader ? this._fullRequestReader._loaded : 0);
+    },
+
     _onProgress: function PDFDataTransportStream_onDataProgress(evt) {
        if (this._rangeReaders.length > 0) {
          // Reporting to first range reader.
@@ -96,6 +100,9 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
     },
 
     getRangeReader: function PDFDataTransportStream_getRangeReader(begin, end) {
+      if (end <= this._progressiveDataLength) {
+        return null;
+      }
       var reader = new PDFDataTransportStreamRangeReader(this, begin, end);
       this._pdfDataRangeTransport.requestDataRange(begin, end);
       this._rangeReaders.push(reader);
@@ -121,6 +128,10 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
     this._done = false;
     this._filename = null;
     this._queuedChunks = queuedChunks || [];
+    this._loaded = 0;
+    for (const chunk of this._queuedChunks) {
+      this._loaded += chunk.byteLength;
+    }
     this._requests = [];
     this._headersReady = Promise.resolve();
     stream._fullRequestReader = this;
@@ -135,9 +146,10 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
       if (this._requests.length > 0) {
         var requestCapability = this._requests.shift();
         requestCapability.resolve({ value: chunk, done: false, });
-        return;
+      } else {
+        this._queuedChunks.push(chunk);
       }
-      this._queuedChunks.push(chunk);
+      this._loaded += chunk.byteLength;
     },
 
     get headersReady() {
