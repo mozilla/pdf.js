@@ -3438,19 +3438,21 @@ var CFFFont = (function CFFFontClosure() {
 
       if (properties.composite) {
         charCodeToGlyphId = Object.create(null);
+        let charCode;
         if (cff.isCIDFont) {
           // If the font is actually a CID font then we should use the charset
           // to map CIDs to GIDs.
           for (glyphId = 0; glyphId < charsets.length; glyphId++) {
             var cid = charsets[glyphId];
-            var charCode = properties.cMap.charCodeOf(cid);
+            charCode = properties.cMap.charCodeOf(cid);
             charCodeToGlyphId[charCode] = glyphId;
           }
         } else {
           // If it is NOT actually a CID font then CIDs should be mapped
           // directly to GIDs.
           for (glyphId = 0; glyphId < cff.charStrings.count; glyphId++) {
-            charCodeToGlyphId[glyphId] = glyphId;
+            charCode = properties.cMap.charCodeOf(glyphId);
+            charCodeToGlyphId[charCode] = glyphId;
           }
         }
         return charCodeToGlyphId;
