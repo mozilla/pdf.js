@@ -695,20 +695,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var fontCapability = createPromiseCapability();
 
       var preEvaluatedFont = this.preEvaluateFont(font);
-      var descriptor = preEvaluatedFont.descriptor;
+      const { descriptor, hash, } = preEvaluatedFont;
 
       var fontRefIsRef = isRef(fontRef), fontID;
       if (fontRefIsRef) {
         fontID = fontRef.toString();
       }
 
-      if (isDict(descriptor)) {
+      if (hash && isDict(descriptor)) {
         if (!descriptor.fontAliases) {
           descriptor.fontAliases = Object.create(null);
         }
-
         var fontAliases = descriptor.fontAliases;
-        var hash = preEvaluatedFont.hash;
+
         if (fontAliases[hash]) {
           var aliasFontRef = fontAliases[hash].aliasRef;
           if (fontRefIsRef && aliasFontRef &&
@@ -785,7 +784,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         try {
           // error, but it's still nice to have font type reported
-          var descriptor = preEvaluatedFont.descriptor;
           var fontFile3 = descriptor && descriptor.get('FontFile3');
           var subtype = fontFile3 && fontFile3.get('Subtype');
           var fontType = getFontType(preEvaluatedFont.type,
@@ -2351,6 +2349,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
           }
         }
+
+        const firstChar = (dict.get('FirstChar') || 0);
+        const lastChar = (dict.get('LastChar') || (composite ? 0xFFFF : 0xFF));
+        hash.update(`${firstChar}-${lastChar}`);
 
         var toUnicode = dict.get('ToUnicode') || baseDict.get('ToUnicode');
         if (isStream(toUnicode)) {
