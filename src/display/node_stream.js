@@ -54,19 +54,26 @@ class PDFNodeStream {
     this.isFsUrl = this.url.protocol === 'file:';
     this.httpHeaders = (this.isHttp && source.httpHeaders) || {};
 
-    this._fullRequest = null;
+    this._fullRequestReader = null;
     this._rangeRequestReaders = [];
   }
 
+  get _progressiveDataLength() {
+    return (this._fullRequestReader ? this._fullRequestReader._loaded : 0);
+  }
+
   getFullReader() {
-    assert(!this._fullRequest);
-    this._fullRequest = this.isFsUrl ?
+    assert(!this._fullRequestReader);
+    this._fullRequestReader = this.isFsUrl ?
       new PDFNodeStreamFsFullReader(this) :
       new PDFNodeStreamFullReader(this);
-    return this._fullRequest;
+    return this._fullRequestReader;
   }
 
   getRangeReader(start, end) {
+    if (end <= this._progressiveDataLength) {
+      return null;
+    }
     let rangeReader = this.isFsUrl ?
       new PDFNodeStreamFsRangeReader(this, start, end) :
       new PDFNodeStreamRangeReader(this, start, end);
@@ -75,8 +82,8 @@ class PDFNodeStream {
   }
 
   cancelAllRequests(reason) {
-    if (this._fullRequest) {
-      this._fullRequest.cancel(reason);
+    if (this._fullRequestReader) {
+      this._fullRequestReader.cancel(reason);
     }
 
     let readers = this._rangeRequestReaders.slice(0);

@@ -1814,6 +1814,21 @@ class WorkerTransport {
       const rangeReader =
         this._networkStream.getRangeReader(data.begin, data.end);
 
+      // When streaming is enabled, it's possible that the data requested here
+      // has already been fetched via the `_fullRequestReader` implementation.
+      // However, given that the PDF data is loaded asynchronously on the
+      // main-thread and then sent via `postMessage` to the worker-thread,
+      // it may not have been available during parsing (hence the attempt to
+      // use range requests here).
+      //
+      // To avoid wasting time and resources here, we'll thus *not* dispatch
+      // range requests if the data was already loaded but has not been sent to
+      // the worker-thread yet (which will happen via the `_fullRequestReader`).
+      if (!rangeReader) {
+        sink.close();
+        return;
+      }
+
       sink.onPull = () => {
         rangeReader.read().then(function({ value, done, }) {
           if (done) {
