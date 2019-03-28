@@ -3009,6 +3009,22 @@
        "link": false,
        "type": "eq"
     },
+    {
+       "id": "tiling-pattern-box",
+       "file": "pdfs/tiling-pattern-box.pdf",
+       "md5": "09100872824fc14012bd8f9bf4dbc632",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {
+       "id": "tiling-pattern-large-steps",
+       "file": "pdfs/tiling-pattern-large-steps.pdf",
+       "md5": "569aac1303c97004aab6a720d9b259b4",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue6151",
        "file": "pdfs/issue6151.pdf",
        "md5": "926f8c6b25e6f0978759f7947d70e079",
