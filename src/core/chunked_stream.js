@@ -98,6 +98,10 @@ class ChunkedStream {
   }
 
   ensureByte(pos) {
+    if (pos < this.progressiveDataLength) {
+      return;
+    }
+
     const chunk = Math.floor(pos / this.chunkSize);
     if (chunk === this.lastSuccessfulEnsureByteChunk) {
       return;
