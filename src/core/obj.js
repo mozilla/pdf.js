@@ -376,6 +376,27 @@ class Catalog {
     return pageLabels;
   }
 
+  get pageLayout() {
+    const obj = this.catDict.get('PageLayout');
+    // Purposely use a non-standard default value, rather than 'SinglePage', to
+    // allow differentiating between `undefined` and /SinglePage since that does
+    // affect the Scroll mode (continuous/non-continuous) used in Adobe Reader.
+    let pageLayout = '';
+
+    if (isName(obj)) {
+      switch (obj.name) {
+        case 'SinglePage':
+        case 'OneColumn':
+        case 'TwoColumnLeft':
+        case 'TwoColumnRight':
+        case 'TwoPageLeft':
+        case 'TwoPageRight':
+          pageLayout = obj.name;
+      }
+    }
+    return shadow(this, 'pageLayout', pageLayout);
+  }
+
   get pageMode() {
     const obj = this.catDict.get('PageMode');
     let pageMode = 'UseNone'; // Default value.

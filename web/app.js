@@ -889,6 +889,8 @@ let PDFViewerApplication = {
 
     // Since the `setInitialView` call below depends on this being resolved,
     // fetch it early to avoid delaying initial rendering of the PDF document.
+    const pageLayoutPromise = pdfDocument.getPageLayout().catch(
+      function() { /* Avoid breaking initial rendering; ignoring errors. */ });
     const pageModePromise = pdfDocument.getPageMode().catch(
       function() { /* Avoid breaking initial rendering; ignoring errors. */ });
     const openActionDestPromise = pdfDocument.getOpenActionDestination().catch(
@@ -934,8 +936,8 @@ let PDFViewerApplication = {
       }).catch(() => { /* Unable to read from storage; ignoring errors. */ });
 
       Promise.all([
-        storePromise, pageModePromise, openActionDestPromise,
-      ]).then(async ([values = {}, pageMode, openActionDest]) => {
+        storePromise, pageLayoutPromise, pageModePromise, openActionDestPromise,
+      ]).then(async ([values = {}, pageLayout, pageMode, openActionDest]) => {
         const viewOnLoad = AppOptions.get('viewOnLoad');
 
         this._initializePdfHistory({
@@ -973,6 +975,9 @@ let PDFViewerApplication = {
         // Always let the user preference/view history take precedence.
         if (pageMode && sidebarView === SidebarView.UNKNOWN) {
           sidebarView = apiPageModeToSidebarView(pageMode);
+        }
+        if (pageLayout && spreadMode === SpreadMode.UNKNOWN) {
+          spreadMode = apiPageLayoutToSpreadMode(pageLayout);
         }
 
         this.setInitialView(hash, {
@@ -2432,6 +2437,29 @@ function webViewerKeyDown(evt) {
   if (handled) {
     evt.preventDefault();
   }
+}
+
+/**
+ * Converts API PageLayout values to the format used by `PDFViewer`.
+ * NOTE: This is supported to the extent that the viewer implements the
+ *       necessary Scroll/Spread modes (since SinglePage, TwoPageLeft,
+ *       and TwoPageRight all suggests using non-continuous scrolling).
+ * @param {string} mode - The API PageLayout value.
+ * @returns {number} A value from {SpreadMode}.
+ */
+function apiPageLayoutToSpreadMode(layout) {
+  switch (layout) {
+    case 'SinglePage':
+    case 'OneColumn':
+      return SpreadMode.NONE;
+    case 'TwoColumnLeft':
+    case 'TwoPageLeft':
+      return SpreadMode.ODD;
+    case 'TwoColumnRight':
+    case 'TwoPageRight':
+      return SpreadMode.EVEN;
+  }
+  return SpreadMode.NONE; // Default value.
 }
 
 /**
