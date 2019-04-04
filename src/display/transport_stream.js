@@ -21,7 +21,9 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
     assert(pdfDataRangeTransport);
 
     this._queuedChunks = [];
-    var initialData = params.initialData;
+    this._progressiveDone = params.progressiveDone || false;
+
+    const initialData = params.initialData;
     if (initialData && initialData.length > 0) {
       let buffer = new Uint8Array(initialData).buffer;
       this._queuedChunks.push(buffer);
@@ -45,6 +47,10 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
 
     this._pdfDataRangeTransport.addProgressiveReadListener((chunk) => {
       this._onReceiveData({ chunk, });
+    });
+
+    this._pdfDataRangeTransport.addProgressiveDoneListener(() => {
+      this._onProgressiveDone();
     });
 
     this._pdfDataRangeTransport.transportReady();
@@ -80,6 +86,13 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
        }
     },
 
+    _onProgressiveDone() {
+      if (this._fullRequestReader) {
+        this._fullRequestReader.progressiveDone();
+      }
+      this._progressiveDone = true;
+    },
+
     _removeRangeReader:
         function PDFDataTransportStream_removeRangeReader(reader) {
       var i = this._rangeReaders.indexOf(reader);
@@ -92,7 +105,8 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
       assert(!this._fullRequestReader);
       var queuedChunks = this._queuedChunks;
       this._queuedChunks = null;
-      return new PDFDataTransportStreamReader(this, queuedChunks);
+      return new PDFDataTransportStreamReader(this, queuedChunks,
+                                              this._progressiveDone);
     },
 
     getRangeReader: function PDFDataTransportStream_getRangeReader(begin, end) {
@@ -116,9 +130,10 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
   };
 
   /** @implements {IPDFStreamReader} */
-  function PDFDataTransportStreamReader(stream, queuedChunks) {
+  function PDFDataTransportStreamReader(stream, queuedChunks,
+                                        progressiveDone = false) {
     this._stream = stream;
-    this._done = false;
+    this._done = progressiveDone || false;
     this._filename = null;
     this._queuedChunks = queuedChunks || [];
     this._requests = [];
@@ -179,6 +194,13 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
         requestCapability.resolve({ value: undefined, done: true, });
       });
       this._requests = [];
+    },
+
+    progressiveDone() {
+      if (this._done) {
+        return;
+      }
+      this._done = true;
     },
   };
 

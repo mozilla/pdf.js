@@ -1526,5 +1526,30 @@ describe('api', function() {
         });
       }).catch(done.fail);
     });
+
+    it('should fetch document info and page, without range, ' +
+       'using complete initialData', function(done) {
+      let fetches = 0, loadingTask;
+
+      dataPromise.then(function(data) {
+        const transport =
+          new PDFDataRangeTransport(data.length, data,
+                                    /* progressiveDone = */ true);
+        transport.requestDataRange = function(begin, end) {
+          fetches++;
+        };
+        loadingTask = getDocument({ disableRange: true, range: transport, });
+        return loadingTask.promise;
+      }).then(function(pdfDocument) {
+        expect(pdfDocument.numPages).toEqual(14);
+
+        return pdfDocument.getPage(10);
+      }).then(function(pdfPage) {
+        expect(pdfPage.rotate).toEqual(0);
+        expect(fetches).toEqual(0);
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
   });
 });
