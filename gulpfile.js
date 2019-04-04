@@ -950,7 +950,6 @@ gulp.task('jsdoc', function (done) {
     'src/doc_helper.js',
     'src/display/api.js',
     'src/shared/util.js',
-    'src/core/annotation.js'
   ];
 
   rimraf(JSDOC_BUILD_DIR, function () {
