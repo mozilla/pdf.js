@@ -610,6 +610,24 @@ describe('api', function() {
       }).catch(done.fail);
     });
 
+    it('gets default page layout', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getPageLayout();
+      }).then(function(mode) {
+        expect(mode).toEqual('');
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
+    it('gets non-default page layout', function(done) {
+      doc.getPageLayout().then(function(mode) {
+        expect(mode).toEqual('SinglePage');
+        done();
+      }).catch(done.fail);
+    });
+
     it('gets default page mode', function(done) {
       var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
 

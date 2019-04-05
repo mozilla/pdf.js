@@ -659,6 +659,14 @@ class PDFDocumentProxy {
 
   /**
    * @return {Promise} A promise that is resolved with a {string} containing
+   *   the page layout name.
+   */
+  getPageLayout() {
+    return this._transport.getPageLayout();
+  }
+
+  /**
+   * @return {Promise} A promise that is resolved with a {string} containing
    *   the page mode name.
    */
   getPageMode() {
@@ -2212,6 +2220,10 @@ class WorkerTransport {
 
   getPageLabels() {
     return this.messageHandler.sendWithPromise('GetPageLabels', null);
+  }
+
+  getPageLayout() {
+    return this.messageHandler.sendWithPromise('GetPageLayout', null);
   }
 
   getPageMode() {
