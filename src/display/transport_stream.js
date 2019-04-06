@@ -41,8 +41,8 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
       this._onReceiveData({ begin, chunk, });
     });
 
-    this._pdfDataRangeTransport.addProgressListener((loaded) => {
-      this._onProgress({ loaded, });
+    this._pdfDataRangeTransport.addProgressListener((loaded, total) => {
+      this._onProgress({ loaded, total, });
     });
 
     this._pdfDataRangeTransport.addProgressiveReadListener((chunk) => {
@@ -77,12 +77,17 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
     },
 
     _onProgress: function PDFDataTransportStream_onDataProgress(evt) {
-       if (this._rangeReaders.length > 0) {
+       if (evt.total === undefined && this._rangeReaders.length > 0) {
          // Reporting to first range reader.
          var firstReader = this._rangeReaders[0];
          if (firstReader.onProgress) {
            firstReader.onProgress({ loaded: evt.loaded, });
+           return;
          }
+       }
+       let fullReader = this._fullRequestReader;
+       if (fullReader && fullReader.onProgress) {
+         fullReader.onProgress({ loaded: evt.loaded, total: evt.total, });
        }
     },
 
