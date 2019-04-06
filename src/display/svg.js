@@ -432,6 +432,14 @@ SVGGraphics = class SVGGraphics {
     this.embeddedFonts = Object.create(null);
     this.cssStyle = null;
     this.forceDataSchema = !!forceDataSchema;
+
+    // In `src/shared/util.js` the operator names are mapped to IDs.
+    // The list below represents the reverse of that, i.e., it maps IDs
+    // to operator names.
+    this._operatorIdMapping = [];
+    for (const op in OPS) {
+      this._operatorIdMapping[OPS[op]] = op;
+    }
   }
 
   save() {
@@ -493,11 +501,7 @@ SVGGraphics = class SVGGraphics {
   }
 
   convertOpList(operatorList) {
-    const REVOPS = [];
-    for (const op in OPS) {
-      REVOPS[OPS[op]] = op;
-    }
-
+    const operatorIdMapping = this._operatorIdMapping;
     const argsArray = operatorList.argsArray;
     const fnArray = operatorList.fnArray;
     const opList = [];
@@ -505,7 +509,7 @@ SVGGraphics = class SVGGraphics {
       const fnId = fnArray[i];
       opList.push({
         'fnId': fnId,
-        'fn': REVOPS[fnId],
+        'fn': operatorIdMapping[fnId],
         'args': argsArray[i],
       });
     }
