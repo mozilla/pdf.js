@@ -269,6 +269,10 @@ PDFViewerApplication.externalServices = {
           break;
         case 'progressiveRead':
           pdfDataRangeTransport.onDataProgressiveRead(args.chunk);
+
+          // Don't forget to report loading progress as well, since otherwise
+          // the loadingBar won't update when `disableRange=true` is set.
+          pdfDataRangeTransport.onDataProgress(args.loaded, args.total);
           break;
         case 'progressiveDone':
           if (pdfDataRangeTransport) {
