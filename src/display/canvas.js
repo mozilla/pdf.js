@@ -888,14 +888,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.lineDashOffset = dashPhase;
       }
     },
-    setRenderingIntent: function CanvasGraphics_setRenderingIntent(intent) {
-      // Maybe if we one day fully support color spaces this will be important
-      // for now we can ignore.
-      // TODO set rendering intent?
+    setRenderingIntent(intent) {
+      // This operation is ignored since we haven't found a use case for it yet.
     },
-    setFlatness: function CanvasGraphics_setFlatness(flatness) {
-      // There's no way to control this with canvas, but we can safely ignore.
-      // TODO set flatness?
+    setFlatness(flatness) {
+      // This operation is ignored since we haven't found a use case for it yet.
     },
     setGState: function CanvasGraphics_setGState(states) {
       for (var i = 0, ii = states.length; i < ii; i++) {
