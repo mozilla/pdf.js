@@ -515,6 +515,7 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
  * Abstract class to support range requests file loading.
  * @param {number} length
  * @param {Uint8Array} initialData
+ * @param {boolean} progressiveDone
  */
 class PDFDataRangeTransport {
   constructor(length, initialData, progressiveDone = false) {
@@ -551,10 +552,10 @@ class PDFDataRangeTransport {
     }
   }
 
-  onDataProgress(loaded) {
+  onDataProgress(loaded, total) {
     this._readyCapability.promise.then(() => {
       for (const listener of this._progressListeners) {
-        listener(loaded);
+        listener(loaded, total);
       }
     });
   }
