@@ -62,6 +62,7 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/encodings_spec',
     'pdfjs-test/unit/evaluator_spec',
     'pdfjs-test/unit/function_spec',
+    'pdfjs-test/unit/fetch_stream_spec',
     'pdfjs-test/unit/message_handler_spec',
     'pdfjs-test/unit/metadata_spec',
     'pdfjs-test/unit/murmurhash3_spec',
