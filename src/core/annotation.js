@@ -1116,8 +1116,6 @@ class PopupAnnotation extends Annotation {
     let parentSubtype = parentItem.get('Subtype');
     this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
     this.data.parentId = dict.getRaw('Parent').toString();
-    this.data.title = stringToPDFString(parentItem.get('T') || '');
-    this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
     this.data.open = dict.get('Open') || false;
 
     if (!parentItem.has('C')) {
@@ -1137,6 +1135,18 @@ class PopupAnnotation extends Annotation {
         this.setFlags(parentFlags);
       }
     }
+
+    if (parentItem.has('RT')) {
+      if ((parentItem.get('RT').name ||
+        AnnotationReplyType.REPLY) === AnnotationReplyType.GROUP) {
+        // If parent item is group reply,
+        // we have to take data of it's master(IRT)
+        parentItem = parentItem.get('IRT');
+      }
+    }
+
+    this.data.title = stringToPDFString(parentItem.get('T') || '');
+    this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
   }
 }
 
