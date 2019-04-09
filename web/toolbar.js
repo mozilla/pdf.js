@@ -134,6 +134,12 @@ class Toolbar {
       });
     });
 
+    items.presentationModeColumnButton.addEventListener('click', function() {
+      eventBus.dispatch('presentationmodecolumn', { source: self, });
+    });
+    items.presentationModeRowButton.addEventListener('click', function() {
+      eventBus.dispatch('presentationmoderow', { source: self, });
+    });
     items.presentationModeButton.addEventListener('click', function() {
       eventBus.dispatch('presentationmode', { source: self, });
     });

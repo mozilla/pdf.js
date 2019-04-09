@@ -60,6 +60,10 @@ class SecondaryToolbar {
     this.toggleButton = options.toggleButton;
     this.toolbarButtonContainer = options.toolbarButtonContainer;
     this.buttons = [
+      { element: options.presentationModeColumnButton, eventName: 'presentationmodecolumn',
+        close: true, },
+      { element: options.presentationModeRowButton, eventName: 'presentationmoderow',
+        close: true, },
       { element: options.presentationModeButton, eventName: 'presentationmode',
         close: true, },
       { element: options.openFileButton, eventName: 'openfile', close: true, },

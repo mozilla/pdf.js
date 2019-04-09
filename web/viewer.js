@@ -75,6 +75,8 @@ function getViewerConfiguration() {
       viewFind: document.getElementById('viewFind'),
       openFile: document.getElementById('openFile'),
       print: document.getElementById('print'),
+      presentationModeColumnButton: document.getElementById('presentationMode_column'),
+      presentationModeRowButton: document.getElementById('presentationMode_row'),
       presentationModeButton: document.getElementById('presentationMode'),
       download: document.getElementById('download'),
       viewBookmark: document.getElementById('viewBookmark'),
@@ -84,6 +86,10 @@ function getViewerConfiguration() {
       toggleButton: document.getElementById('secondaryToolbarToggle'),
       toolbarButtonContainer:
         document.getElementById('secondaryToolbarButtonContainer'),
+      presentationModeColumnButton:
+        document.getElementById('secondaryPresentationMode_column'),
+      presentationModeRowButton:
+        document.getElementById('secondaryPresentationMode_row'),
       presentationModeButton:
         document.getElementById('secondaryPresentationMode'),
       openFileButton: document.getElementById('secondaryOpenFile'),
