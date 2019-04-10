@@ -83,6 +83,9 @@ class AnnotationElementFactory {
       case AnnotationType.POLYLINE:
         return new PolylineAnnotationElement(parameters);
 
+      case AnnotationType.CARET:
+        return new CaretAnnotationElement(parameters);
+
       case AnnotationType.INK:
         return new InkAnnotationElement(parameters);
 
@@ -1014,6 +1017,30 @@ class PolygonAnnotationElement extends PolylineAnnotationElement {
 
     this.containerClassName = 'polygonAnnotation';
     this.svgElementName = 'svg:polygon';
+  }
+}
+
+class CaretAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    const isRenderable = !!(parameters.data.hasPopup ||
+                            parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+  }
+
+  /**
+   * Render the caret annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof CaretAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = 'caretAnnotation';
+
+    if (!this.data.hasPopup) {
+      this._createPopup(this.container, null, this.data);
+    }
+    return this.container;
   }
 }
 
