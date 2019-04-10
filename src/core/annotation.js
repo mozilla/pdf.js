@@ -107,6 +107,9 @@ class AnnotationFactory {
       case 'Polygon':
         return new PolygonAnnotation(parameters);
 
+      case 'Caret':
+        return new CaretAnnotation(parameters);
+
       case 'Ink':
         return new InkAnnotation(parameters);
 
@@ -1023,6 +1026,15 @@ class PolygonAnnotation extends PolylineAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.POLYGON;
+  }
+}
+
+class CaretAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.CARET;
+    this._preparePopup(parameters.dict);
   }
 }
 
