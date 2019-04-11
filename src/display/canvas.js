@@ -805,11 +805,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         if (fnId !== OPS.dependency) {
           this[fnId].apply(this, argsArray[i]);
         } else {
-          var deps = argsArray[i];
-          for (var n = 0, nn = deps.length; n < nn; n++) {
-            var depObjId = deps[n];
-            var common = depObjId[0] === 'g' && depObjId[1] === '_';
-            var objsPool = common ? commonObjs : objs;
+          for (const depObjId of argsArray[i]) {
+            const objsPool = depObjId.startsWith('g_') ? commonObjs : objs;
 
             // If the promise isn't resolved yet, add the continueCallback
             // to the promise and bail out.
@@ -1930,7 +1927,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintJpegXObject: function CanvasGraphics_paintJpegXObject(objId, w, h) {
-      var domImage = this.objs.get(objId);
+      const domImage = this.processingType3 ? this.commonObjs.get(objId) :
+                                              this.objs.get(objId);
       if (!domImage) {
         warn('Dependent image isn\'t ready yet');
         return;
@@ -2067,7 +2065,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintImageXObject: function CanvasGraphics_paintImageXObject(objId) {
-      var imgData = this.objs.get(objId);
+      const imgData = this.processingType3 ? this.commonObjs.get(objId) :
+                                             this.objs.get(objId);
       if (!imgData) {
         warn('Dependent image isn\'t ready yet');
         return;
@@ -2079,7 +2078,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     paintImageXObjectRepeat:
       function CanvasGraphics_paintImageXObjectRepeat(objId, scaleX, scaleY,
                                                           positions) {
-      var imgData = this.objs.get(objId);
+      const imgData = this.processingType3 ? this.commonObjs.get(objId) :
+                                             this.objs.get(objId);
       if (!imgData) {
         warn('Dependent image isn\'t ready yet');
         return;
