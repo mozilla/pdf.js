@@ -5,7 +5,7 @@
     "@babel/core": "^7.4.0",
     "@babel/plugin-transform-modules-commonjs": "^7.4.0",
     "@babel/plugin-transform-runtime": "^7.4.0",
-    "@babel/preset-env": "^7.4.2",
+    "@babel/preset-env": "^7.4.3",
     "@babel/runtime": "^7.4.2",
     "acorn": "^6.1.1",
     "autoprefixer": "^9.5.0",

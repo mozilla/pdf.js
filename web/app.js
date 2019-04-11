@@ -1086,6 +1086,11 @@ let PDFViewerApplication = {
     });
 
     Promise.all([onePageRendered, animationStarted]).then(() => {
+      if(this.appConfig.queryStr){
+        this.findBar.findField.value = this.appConfig.queryStr;
+        this.findBar.dispatchEvent('');
+      }
+
       pdfDocument.getOutline().then((outline) => {
         this.pdfOutlineViewer.render({ outline, });
       });
@@ -1562,6 +1567,9 @@ function webViewerInitialized() {
     let params = parseQueryString(queryString);
     file = 'file' in params ? params.file : AppOptions.get('defaultUrl');
     validateFileURL(file);
+
+    //add callback when rendered , call parent method
+    PDFViewerApplication.appConfig.queryStr = params.querystr;
   } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     file = window.location.href.split('#')[0];
   } else if (PDFJSDev.test('CHROME')) {
