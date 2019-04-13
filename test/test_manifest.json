@@ -4007,6 +4007,13 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-freetext",
+       "file": "pdfs/annotation-freetext.pdf",
+       "md5": "6ca19ce632ead3aed08f22e588510e2f",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "annotation-line",
        "file": "pdfs/annotation-line.pdf",
        "md5": "fde60608be2748f10fb6522cba425ca1",
