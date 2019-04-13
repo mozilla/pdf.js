@@ -71,6 +71,9 @@ class AnnotationElementFactory {
       case AnnotationType.POPUP:
         return new PopupAnnotationElement(parameters);
 
+      case AnnotationType.FREETEXT:
+        return new FreeTextAnnotationElement(parameters);
+
       case AnnotationType.LINE:
         return new LineAnnotationElement(parameters);
 
@@ -804,6 +807,30 @@ class PopupElement {
       this.hideElement.setAttribute('hidden', true);
       this.container.style.zIndex -= 1;
     }
+  }
+}
+
+class FreeTextAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    const isRenderable = !!(parameters.data.hasPopup ||
+                            parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+  }
+
+  /**
+   * Render the free text annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof FreeTextAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = 'freeTextAnnotation';
+
+    if (!this.data.hasPopup) {
+      this._createPopup(this.container, null, this.data);
+    }
+    return this.container;
   }
 }
 

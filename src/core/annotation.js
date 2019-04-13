@@ -92,6 +92,9 @@ class AnnotationFactory {
       case 'Popup':
         return new PopupAnnotation(parameters);
 
+      case 'FreeText':
+        return new FreeTextAnnotation(parameters);
+
       case 'Line':
         return new LineAnnotation(parameters);
 
@@ -961,6 +964,14 @@ class PopupAnnotation extends Annotation {
         this.setFlags(parentFlags);
       }
     }
+  }
+}
+
+class FreeTextAnnotation extends MarkupAnnotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.FREETEXT;
   }
 }
 

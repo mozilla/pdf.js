@@ -183,6 +183,7 @@
 .annotationLayer .underlineAnnotation,
 .annotationLayer .squigglyAnnotation,
 .annotationLayer .strikeoutAnnotation,
+.annotationLayer .freeTextAnnotation,
 .annotationLayer .lineAnnotation svg line,
 .annotationLayer .squareAnnotation svg rect,
 .annotationLayer .circleAnnotation svg ellipse,
