@@ -18,8 +18,9 @@ import {
   NodeFileReaderFactory, TEST_PDFS_PATH
 } from './test_utils';
 import {
-  createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
-  OPS, PasswordException, PasswordResponses, PermissionFlag, StreamType
+  createPromiseCapability, FontType, InvalidPDFException, isEmptyObj,
+  MissingPDFException, OPS, PasswordException, PasswordResponses,
+  PermissionFlag, StreamType
 } from '../../src/shared/util';
 import {
   DOMCanvasFactory, RenderingCancelledException, StatTimer
@@ -642,6 +643,27 @@ describe('api', function() {
     it('gets non-default page mode', function(done) {
       doc.getPageMode().then(function(mode) {
         expect(mode).toEqual('UseOutlines');
+        done();
+      }).catch(done.fail);
+    });
+
+    it('gets default viewer preferences', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getViewerPreferences();
+      }).then(function(prefs) {
+        expect(typeof prefs === 'object' && prefs !== null &&
+               isEmptyObj(prefs)).toEqual(true);
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
+    it('gets non-default viewer preferences', function(done) {
+      doc.getViewerPreferences().then(function(prefs) {
+        expect(prefs).toEqual({
+          Direction: 'L2R',
+        });
         done();
       }).catch(done.fail);
     });

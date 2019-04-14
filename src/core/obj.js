@@ -14,9 +14,10 @@
  */
 
 import {
-  bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
-  info, InvalidPDFException, isBool, isNum, isString, PermissionFlag, shadow,
-  stringToPDFString, stringToUTF8String, unreachable, warn
+  assert, bytesToString, createPromiseCapability, createValidAbsoluteUrl,
+  FormatError, info, InvalidPDFException, isBool, isNum, isString,
+  PermissionFlag, shadow, stringToPDFString, stringToUTF8String, unreachable,
+  warn
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -413,6 +414,136 @@ class Catalog {
       }
     }
     return shadow(this, 'pageMode', pageMode);
+  }
+
+  get viewerPreferences() {
+    const ViewerPreferencesValidators = {
+      HideToolbar: isBool,
+      HideMenubar: isBool,
+      HideWindowUI: isBool,
+      FitWindow: isBool,
+      CenterWindow: isBool,
+      DisplayDocTitle: isBool,
+      NonFullScreenPageMode: isName,
+      Direction: isName,
+      ViewArea: isName,
+      ViewClip: isName,
+      PrintArea: isName,
+      PrintClip: isName,
+      PrintScaling: isName,
+      Duplex: isName,
+      PickTrayByPDFSize: isBool,
+      PrintPageRange: Array.isArray,
+      NumCopies: Number.isInteger,
+    };
+
+    const obj = this.catDict.get('ViewerPreferences');
+    const prefs = Object.create(null);
+
+    if (isDict(obj)) {
+      for (const key in ViewerPreferencesValidators) {
+        if (!obj.has(key)) {
+          continue;
+        }
+        const value = obj.get(key);
+        // Make sure the (standard) value conforms to the specification.
+        if (!ViewerPreferencesValidators[key](value)) {
+          info(`Bad value in ViewerPreferences for "${key}".`);
+          continue;
+        }
+        let prefValue;
+
+        switch (key) {
+          case 'NonFullScreenPageMode':
+            switch (value.name) {
+              case 'UseNone':
+              case 'UseOutlines':
+              case 'UseThumbs':
+              case 'UseOC':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'UseNone';
+            }
+            break;
+          case 'Direction':
+            switch (value.name) {
+              case 'L2R':
+              case 'R2L':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'L2R';
+            }
+            break;
+          case 'ViewArea':
+          case 'ViewClip':
+          case 'PrintArea':
+          case 'PrintClip':
+            switch (value.name) {
+              case 'MediaBox':
+              case 'CropBox':
+              case 'BleedBox':
+              case 'TrimBox':
+              case 'ArtBox':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'CropBox';
+            }
+            break;
+          case 'PrintScaling':
+            switch (value.name) {
+              case 'None':
+              case 'AppDefault':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'AppDefault';
+            }
+            break;
+          case 'Duplex':
+            switch (value.name) {
+              case 'Simplex':
+              case 'DuplexFlipShortEdge':
+              case 'DuplexFlipLongEdge':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'None';
+            }
+            break;
+          case 'PrintPageRange':
+            const length = value.length;
+            if (length % 2 !== 0) { // The number of elements must be even.
+              break;
+            }
+            const isValid = value.every((page, i, arr) => {
+              return (Number.isInteger(page) && page > 0) &&
+                     (i === 0 || page >= arr[i - 1]) && page <= this.numPages;
+            });
+            if (isValid) {
+              prefValue = value;
+            }
+            break;
+          case 'NumCopies':
+            if (value > 0) {
+              prefValue = value;
+            }
+            break;
+          default:
+            assert(typeof value === 'boolean');
+            prefValue = value;
+        }
+
+        if (prefValue !== undefined) {
+          prefs[key] = prefValue;
+        } else {
+          info(`Bad value in ViewerPreferences for "${key}".`);
+        }
+      }
+    }
+    return shadow(this, 'viewerPreferences', prefs);
   }
 
   get openActionDestination() {
