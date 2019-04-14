@@ -624,11 +624,17 @@ class WidgetAnnotation extends Annotation {
 
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
 
-    // Hide signatures because we cannot validate them, and unset the fieldValue
-    // since it's (most likely) a `Dict` which is non-serializable and will thus
-    // cause errors when sending annotations to the main-thread (issue 10347).
+    // Hide signatures because we cannot validate them, and replace fieldValue
+    // with the signature, the content range, and signer's name only, since it's
+    // (most likely) a `Dict` which is non-serializable and will thus cause
+    // errors when sending annotations to the main-thread (issue 10347).
     if (data.fieldType === 'Sig') {
-      data.fieldValue = null;
+      data.fieldValue = {
+        ByteRange: data.fieldValue.get('ByteRange'),
+        Contents: data.fieldValue.get('Contents'),
+        Name: data.fieldValue.get('Name'),
+      };
+
       this.setFlags(AnnotationFlag.HIDDEN);
     }
   }
