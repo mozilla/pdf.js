@@ -525,7 +525,11 @@ var WorkerMessageHandler = {
       return pdfManager.ensureCatalog('pageMode');
     });
 
-    handler.on('getOpenActionDestination', function(data) {
+    handler.on('GetViewerPreferences', function(data) {
+      return pdfManager.ensureCatalog('viewerPreferences');
+    });
+
+    handler.on('GetOpenActionDestination', function(data) {
       return pdfManager.ensureCatalog('openActionDestination');
     });
 
