@@ -81,18 +81,18 @@ var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {
     },
 
     _onProgress: function PDFDataTransportStream_onDataProgress(evt) {
-       if (evt.total === undefined && this._rangeReaders.length > 0) {
-         // Reporting to first range reader.
-         var firstReader = this._rangeReaders[0];
-         if (firstReader.onProgress) {
-           firstReader.onProgress({ loaded: evt.loaded, });
-           return;
-         }
-       }
-       let fullReader = this._fullRequestReader;
-       if (fullReader && fullReader.onProgress) {
-         fullReader.onProgress({ loaded: evt.loaded, total: evt.total, });
-       }
+      if (evt.total === undefined) {
+        // Reporting to first range reader, if it exists.
+        let firstReader = this._rangeReaders[0];
+        if (firstReader && firstReader.onProgress) {
+          firstReader.onProgress({ loaded: evt.loaded, });
+        }
+      } else {
+        let fullReader = this._fullRequestReader;
+        if (fullReader && fullReader.onProgress) {
+          fullReader.onProgress({ loaded: evt.loaded, total: evt.total, });
+        }
+      }
     },
 
     _onProgressiveDone() {
