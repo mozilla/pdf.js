@@ -113,9 +113,9 @@ More learning resources can be found at:
 
 + https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
 
-### API reference
+The API documentation can be found at:
 
-We’re currently working on [better API docs](https://mozilla.github.io/pdf.js/api/draft/index.html), but the API is well documented in [api.js](https://github.com/mozilla/pdf.js/blob/master/src/display/api.js).
++ https://mozilla.github.io/pdf.js/api/
 
 ## Questions
 
