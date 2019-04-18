@@ -2003,6 +2003,7 @@ class WorkerTransport {
           });
           break;
         case 'FontPath':
+        case 'FontType3Res':
           this.commonObjs.resolve(id, exportedData);
           break;
         default:
