@@ -73,6 +73,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.builtInCMapCache = builtInCMapCache;
     this.options = options || DefaultPartialEvaluatorOptions;
     this.pdfFunctionFactory = pdfFunctionFactory;
+    this.parsingType3Font = false;
 
     this.fetchBuiltInCMap = async (name) => {
       if (this.builtInCMapCache.has(name)) {
@@ -293,21 +294,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    buildPaintImageXObject({ resources, image, isInline = false, operatorList,
-                             cacheKey, imageCache,
-                             forceDisableNativeImageDecoder = false, }) {
+    async buildPaintImageXObject({ resources, image, isInline = false,
+                                   operatorList, cacheKey, imageCache,
+                                   forceDisableNativeImageDecoder = false, }) {
       var dict = image.dict;
       var w = dict.get('Width', 'W');
       var h = dict.get('Height', 'H');
 
       if (!(w && isNum(w)) || !(h && isNum(h))) {
         warn('Image dimensions are missing, or not numbers.');
-        return Promise.resolve();
+        return;
       }
       var maxImageSize = this.options.maxImageSize;
       if (maxImageSize !== -1 && w * h > maxImageSize) {
         warn('Image exceeded maximum allowed size and was removed.');
-        return Promise.resolve();
+        return;
       }
 
       var imageMask = (dict.get('ImageMask', 'IM') || false);
@@ -343,7 +344,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             args,
           };
         }
-        return Promise.resolve();
+        return;
       }
 
       var softMask = (dict.get('SMask', 'SM') || false);
@@ -364,14 +365,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // any other kind.
         imgData = imageObj.createImageData(/* forceRGBA = */ true);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
-        return Promise.resolve();
+        return;
       }
 
       const nativeImageDecoderSupport = forceDisableNativeImageDecoder ?
         NativeImageDecoding.NONE : this.options.nativeImageDecoderSupport;
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
-      var objId = 'img_' + this.idFactory.createObjId();
+      let objId = 'img_' + this.idFactory.createObjId();
+
+      if (this.parsingType3Font) {
+        assert(nativeImageDecoderSupport === NativeImageDecoding.NONE,
+          'Type3 image resources should be completely decoded in the worker.');
+
+        objId = `g_${this.pdfManager.docId}_type3res_${objId}`;
+      }
 
       if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
           !softMask && !mask && image instanceof JpegStream &&
@@ -428,7 +436,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList.addDependency(objId);
       args = [objId, w, h];
 
-      PDFImage.buildImage({
+      const imgPromise = PDFImage.buildImage({
         handler: this.handler,
         xref: this.xref,
         res: resources,
@@ -438,12 +446,29 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         pdfFunctionFactory: this.pdfFunctionFactory,
       }).then((imageObj) => {
         var imgData = imageObj.createImageData(/* forceRGBA = */ false);
+
+        if (this.parsingType3Font) {
+          return this.handler.sendWithPromise('commonobj',
+            [objId, 'FontType3Res', imgData], [imgData.data.buffer]);
+        }
         this.handler.send('obj', [objId, this.pageIndex, 'Image', imgData],
           [imgData.data.buffer]);
       }).catch((reason) => {
         warn('Unable to decode image: ' + reason);
+
+        if (this.parsingType3Font) {
+          return this.handler.sendWithPromise('commonobj',
+                                              [objId, 'FontType3Res', null]);
+        }
         this.handler.send('obj', [objId, this.pageIndex, 'Image', null]);
       });
+
+      if (this.parsingType3Font) {
+        // In the very rare case where a Type3 image resource is being parsed,
+        // wait for the image to be both decoded *and* sent to simplify the
+        // rendering code on the main-thread (see issue10717.pdf).
+        await imgPromise;
+      }
 
       operatorList.addOp(OPS.paintImageXObject, args);
       if (cacheKey) {
@@ -452,7 +477,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           args,
         };
       }
-      return Promise.resolve();
     },
 
     handleSMask: function PartialEvaluator_handleSmask(smask, resources,
@@ -2622,9 +2646,15 @@ var TranslatedFont = (function TranslatedFontClosure() {
       // When parsing Type3 glyphs, always ignore them if there are errors.
       // Compared to the parsing of e.g. an entire page, it doesn't really
       // make sense to only be able to render a Type3 glyph partially.
+      //
+      // Also, ensure that any Type3 image resources (which should be very rare
+      // in practice) are completely decoded on the worker-thread, to simplify
+      // the rendering code on the main-thread (see issue10717.pdf).
       var type3Options = Object.create(evaluator.options);
       type3Options.ignoreErrors = false;
+      type3Options.nativeImageDecoderSupport = NativeImageDecoding.NONE;
       var type3Evaluator = evaluator.clone(type3Options);
+      type3Evaluator.parsingType3Font = true;
 
       var translatedFont = this.font;
       var loadCharProcsPromise = Promise.resolve();
