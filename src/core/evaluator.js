@@ -1259,6 +1259,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           };
         }
         textContentItem.fontName = font.loadedName;
+        textContentItem.originalFontName = font.name;
 
         // 9.4.4 Text Space Details
         var tsm = [textState.fontSize * textState.textHScale, 0,
@@ -1339,6 +1340,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           height: textChunk.height,
           transform: textChunk.transform,
           fontName: textChunk.fontName,
+          originalFontName: textChunk.originalFontName,
         };
       }
 
