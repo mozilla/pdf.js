@@ -13,30 +13,25 @@
  * limitations under the License.
  */
 
-import { Page } from '../../src/core/document';
+import { createIdFactory } from './test_utils';
 
 describe('document', function () {
   describe('Page', function () {
     it('should create correct objId using the idFactory', function () {
-      var page1 = new Page({
-        pdfManager: { },
-        pageIndex: 0,
-      });
-      var page2 = new Page({
-        pdfManager: { },
-        pageIndex: 1,
-      });
-
-      var idFactory1 = page1.idFactory, idFactory2 = page2.idFactory;
+      const idFactory1 = createIdFactory(/* pageIndex = */ 0);
+      const idFactory2 = createIdFactory(/* pageIndex = */ 1);
 
       expect(idFactory1.createObjId()).toEqual('p0_1');
       expect(idFactory1.createObjId()).toEqual('p0_2');
+      expect(idFactory1.getDocId()).toEqual('g_d0');
 
       expect(idFactory2.createObjId()).toEqual('p1_1');
       expect(idFactory2.createObjId()).toEqual('p1_2');
+      expect(idFactory2.getDocId()).toEqual('g_d0');
 
       expect(idFactory1.createObjId()).toEqual('p0_3');
       expect(idFactory1.createObjId()).toEqual('p0_4');
+      expect(idFactory1.getDocId()).toEqual('g_d0');
     });
   });
 });
