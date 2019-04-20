@@ -61,10 +61,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     isEvalSupported: true,
   };
 
-  function PartialEvaluator({ pdfManager, xref, handler, pageIndex, idFactory,
-                              fontCache, builtInCMapCache, options = null,
+  function PartialEvaluator({ xref, handler, pageIndex, idFactory, fontCache,
+                              builtInCMapCache, options = null,
                               pdfFunctionFactory, }) {
-    this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
     this.pageIndex = pageIndex;
@@ -372,13 +371,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         NativeImageDecoding.NONE : this.options.nativeImageDecoderSupport;
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
-      let objId = 'img_' + this.idFactory.createObjId();
+      let objId = `img_${this.idFactory.createObjId()}`;
 
       if (this.parsingType3Font) {
         assert(nativeImageDecoderSupport === NativeImageDecoding.NONE,
           'Type3 image resources should be completely decoded in the worker.');
 
-        objId = `g_${this.pdfManager.docId}_type3res_${objId}`;
+        objId = `${this.idFactory.getDocId()}_type3res_${objId}`;
       }
 
       if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
@@ -774,13 +773,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (!fontID) {
           fontID = this.idFactory.createObjId();
         }
-        this.fontCache.put('id_' + fontID, fontCapability.promise);
+        this.fontCache.put(`id_${fontID}`, fontCapability.promise);
       }
       assert(fontID, 'The "fontID" must be defined.');
 
       // Keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page.
-      font.loadedName = 'g_' + this.pdfManager.docId + '_f' + fontID;
+      font.loadedName = `${this.idFactory.getDocId()}_f${fontID}`;
 
       font.translated = fontCapability.promise;
 
