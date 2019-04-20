@@ -675,6 +675,14 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @return {Promise} A promise that is resolved with an {Object} containing
+   *   the viewer preferences.
+   */
+  getViewerPreferences() {
+    return this._transport.getViewerPreferences();
+  }
+
+  /**
    * @return {Promise} A promise that is resolved with an {Array} containing the
    *   destination, or `null` when no open action is present in the PDF file.
    */
@@ -2247,8 +2255,12 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise('GetPageMode', null);
   }
 
+  getViewerPreferences() {
+    return this.messageHandler.sendWithPromise('GetViewerPreferences', null);
+  }
+
   getOpenActionDestination() {
-    return this.messageHandler.sendWithPromise('getOpenActionDestination',
+    return this.messageHandler.sendWithPromise('GetOpenActionDestination',
                                                null);
   }
 
