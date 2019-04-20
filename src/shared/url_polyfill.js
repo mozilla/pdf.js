@@ -14,17 +14,17 @@
  */
 /* eslint-disable no-restricted-globals */
 
-if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('GENERIC')) {
+if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   // The `URL` constructor is assumed to be available in the extension builds.
   exports.URL = URL;
 } else {
   let isURLSupported = false;
   try {
-    if (typeof URL === 'function' && typeof URL.prototype === 'object' &&
-        ('origin' in URL.prototype)) {
-      const u = new URL('b', 'http://a');
-      u.pathname = 'c%20d';
-      isURLSupported = (u.href === 'http://a/c%20d');
+    if (typeof URL === "function" && typeof URL.prototype === "object" &&
+        ("origin" in URL.prototype)) {
+      const u = new URL("b", "http://a");
+      u.pathname = "c%20d";
+      isURLSupported = (u.href === "http://a/c%20d");
     }
   } catch (ex) {
     // The `URL` constructor cannot be used.
@@ -32,21 +32,21 @@ if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('GENERIC')) {
 
   if (isURLSupported) {
     exports.URL = URL;
-  } else if (typeof PDFJSDev !== 'undefined' &&
-             PDFJSDev.test('IMAGE_DECODERS')) {
+  } else if (typeof PDFJSDev !== "undefined" &&
+             PDFJSDev.test("IMAGE_DECODERS")) {
     class DummyURL {
       constructor() {
-        throw new Error('The current image decoders doesn\'t utilize the ' +
-                        '`URL` constructor, hence it shouldn\'t need to be ' +
-                        'polyfilled for the IMAGE_DECODERS build target.');
+        throw new Error("The current image decoders doesn't utilize the " +
+                        "`URL` constructor, hence it shouldn't need to be " +
+                        "polyfilled for the IMAGE_DECODERS build target.");
       }
     }
     exports.URL = DummyURL;
   } else {
-    const PolyfillURL = require('../../external/url/url-lib').URL;
+    const PolyfillURL = require("../../external/url/url-lib").URL;
 
     // Attempt to copy over the static methods.
-    const OriginalURL = require('./global_scope').URL;
+    const OriginalURL = require("./global_scope").URL;
     if (OriginalURL) {
       PolyfillURL.createObjectURL = function(blob) {
         // IE extension allows a second optional options argument, see

@@ -14,7 +14,7 @@
  */
 /* eslint no-var: error */
 
-import { assert, warn } from '../shared/util';
+import { assert, warn } from "../shared/util";
 
 function getLookupTableFactory(initializer) {
   let lookup;
@@ -36,7 +36,7 @@ const MissingDataException = (function MissingDataExceptionClosure() {
   }
 
   MissingDataException.prototype = new Error();
-  MissingDataException.prototype.name = 'MissingDataException';
+  MissingDataException.prototype.name = "MissingDataException";
   MissingDataException.constructor = MissingDataException;
 
   return MissingDataException;
@@ -48,7 +48,7 @@ const XRefEntryException = (function XRefEntryExceptionClosure() {
   }
 
   XRefEntryException.prototype = new Error();
-  XRefEntryException.prototype.name = 'XRefEntryException';
+  XRefEntryException.prototype.name = "XRefEntryException";
   XRefEntryException.constructor = XRefEntryException;
 
   return XRefEntryException;
@@ -60,7 +60,7 @@ const XRefParseException = (function XRefParseExceptionClosure() {
   }
 
   XRefParseException.prototype = new Error();
-  XRefParseException.prototype.name = 'XRefParseException';
+  XRefParseException.prototype.name = "XRefParseException";
   XRefParseException.constructor = XRefParseException;
 
   return XRefParseException;
@@ -108,15 +108,15 @@ function getInheritableProperty({ dict, key, getArray = false,
       warn(`getInheritableProperty: maximum loop count exceeded for "${key}"`);
       break;
     }
-    dict = dict.get('Parent');
+    dict = dict.get("Parent");
   }
   return values;
 }
 
 const ROMAN_NUMBER_MAP = [
-  '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
-  '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
-  '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'
+  "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM",
+  "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC",
+  "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"
 ];
 
 /**
@@ -128,12 +128,12 @@ const ROMAN_NUMBER_MAP = [
  */
 function toRomanNumerals(number, lowerCase = false) {
   assert(Number.isInteger(number) && number > 0,
-         'The number should be a positive integer.');
+         "The number should be a positive integer.");
   let pos, romanBuf = [];
   // Thousands
   while (number >= 1000) {
     number -= 1000;
-    romanBuf.push('M');
+    romanBuf.push("M");
   }
   // Hundreds
   pos = (number / 100) | 0;
@@ -146,7 +146,7 @@ function toRomanNumerals(number, lowerCase = false) {
   // Ones
   romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
 
-  const romanStr = romanBuf.join('');
+  const romanStr = romanBuf.join("");
   return (lowerCase ? romanStr.toLowerCase() : romanStr);
 }
 

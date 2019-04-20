@@ -16,10 +16,10 @@
 
 import {
   assert, FormatError, info, unreachable, UNSUPPORTED_FEATURES, Util, warn
-} from '../shared/util';
-import { ColorSpace } from './colorspace';
-import { isStream } from './primitives';
-import { MissingDataException } from './core_utils';
+} from "../shared/util";
+import { ColorSpace } from "./colorspace";
+import { isStream } from "./primitives";
+import { MissingDataException } from "./core_utils";
 
 var ShadingType = {
   FUNCTION_BASED: 1,
@@ -34,7 +34,7 @@ var ShadingType = {
 var Pattern = (function PatternClosure() {
   // Constructor should define this.getPattern
   function Pattern() {
-    unreachable('should not call Pattern constructor');
+    unreachable("should not call Pattern constructor");
   }
 
   Pattern.prototype = {
@@ -48,7 +48,7 @@ var Pattern = (function PatternClosure() {
   Pattern.parseShading = function(shading, matrix, xref, res, handler,
                                   pdfFunctionFactory) {
     var dict = isStream(shading) ? shading.dict : shading;
-    var type = dict.get('ShadingType');
+    var type = dict.get("ShadingType");
 
     try {
       switch (type) {
@@ -64,13 +64,13 @@ var Pattern = (function PatternClosure() {
           return new Shadings.Mesh(shading, matrix, xref, res,
                                    pdfFunctionFactory);
         default:
-          throw new FormatError('Unsupported ShadingType: ' + type);
+          throw new FormatError("Unsupported ShadingType: " + type);
       }
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
       }
-      handler.send('UnsupportedFeature',
+      handler.send("UnsupportedFeature",
                    { featureId: UNSUPPORTED_FEATURES.shadingPattern, });
       warn(ex);
       return new Shadings.Dummy();
@@ -90,23 +90,23 @@ Shadings.SMALL_NUMBER = 1e-6;
 Shadings.RadialAxial = (function RadialAxialClosure() {
   function RadialAxial(dict, matrix, xref, res, pdfFunctionFactory) {
     this.matrix = matrix;
-    this.coordsArr = dict.getArray('Coords');
-    this.shadingType = dict.get('ShadingType');
-    this.type = 'Pattern';
-    var cs = dict.get('ColorSpace', 'CS');
+    this.coordsArr = dict.getArray("Coords");
+    this.shadingType = dict.get("ShadingType");
+    this.type = "Pattern";
+    var cs = dict.get("ColorSpace", "CS");
     cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
     this.cs = cs;
 
     var t0 = 0.0, t1 = 1.0;
-    if (dict.has('Domain')) {
-      var domainArr = dict.getArray('Domain');
+    if (dict.has("Domain")) {
+      var domainArr = dict.getArray("Domain");
       t0 = domainArr[0];
       t1 = domainArr[1];
     }
 
     var extendStart = false, extendEnd = false;
-    if (dict.has('Extend')) {
-      var extendArr = dict.getArray('Extend');
+    if (dict.has("Extend")) {
+      var extendArr = dict.getArray("Extend");
       extendStart = extendArr[0];
       extendEnd = extendArr[1];
     }
@@ -124,14 +124,14 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       var distance = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
       if (r1 <= r2 + distance &&
           r2 <= r1 + distance) {
-        warn('Unsupported radial gradient.');
+        warn("Unsupported radial gradient.");
       }
     }
 
     this.extendStart = extendStart;
     this.extendEnd = extendEnd;
 
-    var fnObj = dict.get('Function');
+    var fnObj = dict.get("Function");
     var fn = pdfFunctionFactory.createFromArray(fnObj);
 
     // 10 samples seems good enough for now, but probably won't work
@@ -146,7 +146,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     if (t0 >= t1 || step <= 0) {
       // Acrobat doesn't seem to handle these cases so we'll ignore for
       // now.
-      info('Bad shading domain.');
+      info("Bad shading domain.");
       return;
     }
 
@@ -160,9 +160,9 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       colorStops.push([(i - t0) / diff, cssColor]);
     }
 
-    var background = 'transparent';
-    if (dict.has('Background')) {
-      rgbColor = cs.getRgb(dict.get('Background'), 0);
+    var background = "transparent";
+    if (dict.has("Background")) {
+      rgbColor = cs.getRgb(dict.get("Background"), 0);
       background = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
     }
 
@@ -191,13 +191,13 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
         p1 = [coordsArr[2], coordsArr[3]];
         r0 = null;
         r1 = null;
-        type = 'axial';
+        type = "axial";
       } else if (shadingType === ShadingType.RADIAL) {
         p0 = [coordsArr[0], coordsArr[1]];
         p1 = [coordsArr[3], coordsArr[4]];
         r0 = coordsArr[2];
         r1 = coordsArr[5];
-        type = 'radial';
+        type = "radial";
       } else {
         unreachable(`getPattern type unknown: ${shadingType}`);
       }
@@ -213,7 +213,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
         }
       }
 
-      return ['RadialAxial', type, this.colorStops, p0, p1, r0, r1];
+      return ["RadialAxial", type, this.colorStops, p0, p1, r0, r1];
     },
   };
 
@@ -329,7 +329,7 @@ Shadings.Mesh = (function MeshClosure() {
       var color = reader.readComponents();
       if (verticesLeft === 0) { // ignoring flags if we started a triangle
         if (!(0 <= f && f <= 2)) {
-          throw new FormatError('Unknown type4 flag');
+          throw new FormatError("Unknown type4 flag");
         }
         switch (f) {
           case 0:
@@ -354,7 +354,7 @@ Shadings.Mesh = (function MeshClosure() {
       reader.align();
     }
     mesh.figures.push({
-      type: 'triangles',
+      type: "triangles",
       coords: new Int32Array(ps),
       colors: new Int32Array(ps),
     });
@@ -372,7 +372,7 @@ Shadings.Mesh = (function MeshClosure() {
       colors.push(color);
     }
     mesh.figures.push({
-      type: 'lattice',
+      type: "lattice",
       coords: new Int32Array(ps),
       colors: new Int32Array(ps),
       verticesPerRow,
@@ -405,7 +405,7 @@ Shadings.Mesh = (function MeshClosure() {
 
   function buildFigureFromPatch(mesh, index) {
     var figure = mesh.figures[index];
-    assert(figure.type === 'patch', 'Unexpected patch mesh figure');
+    assert(figure.type === "patch", "Unexpected patch mesh figure");
 
     var coords = mesh.coords, colors = mesh.colors;
     var pi = figure.coords;
@@ -479,7 +479,7 @@ Shadings.Mesh = (function MeshClosure() {
     figureColors[verticesPerRow * splitYBy + splitXBy] = ci[3];
 
     mesh.figures[index] = {
-      type: 'lattice',
+      type: "lattice",
       coords: figureCoords,
       colors: figureColors,
       verticesPerRow,
@@ -495,7 +495,7 @@ Shadings.Mesh = (function MeshClosure() {
     while (reader.hasData) {
       var f = reader.readFlag();
       if (!(0 <= f && f <= 3)) {
-        throw new FormatError('Unknown type6 flag');
+        throw new FormatError("Unknown type6 flag");
       }
       var i, ii;
       var pi = coords.length;
@@ -592,7 +592,7 @@ Shadings.Mesh = (function MeshClosure() {
           3 * (coords[ps[2]][1] + coords[ps[8]][1])) / 9
       ]);
       mesh.figures.push({
-        type: 'patch',
+        type: "patch",
         coords: new Int32Array(ps), // making copies of ps and cs
         colors: new Int32Array(cs),
       });
@@ -607,7 +607,7 @@ Shadings.Mesh = (function MeshClosure() {
     while (reader.hasData) {
       var f = reader.readFlag();
       if (!(0 <= f && f <= 3)) {
-        throw new FormatError('Unknown type7 flag');
+        throw new FormatError("Unknown type7 flag");
       }
       var i, ii;
       var pi = coords.length;
@@ -659,7 +659,7 @@ Shadings.Mesh = (function MeshClosure() {
           break;
       }
       mesh.figures.push({
-        type: 'patch',
+        type: "patch",
         coords: new Int32Array(ps), // making copies of ps and cs
         colors: new Int32Array(cs),
       });
@@ -713,20 +713,20 @@ Shadings.Mesh = (function MeshClosure() {
 
   function Mesh(stream, matrix, xref, res, pdfFunctionFactory) {
     if (!isStream(stream)) {
-      throw new FormatError('Mesh data is not a stream');
+      throw new FormatError("Mesh data is not a stream");
     }
     var dict = stream.dict;
     this.matrix = matrix;
-    this.shadingType = dict.get('ShadingType');
-    this.type = 'Pattern';
-    this.bbox = dict.getArray('BBox');
-    var cs = dict.get('ColorSpace', 'CS');
+    this.shadingType = dict.get("ShadingType");
+    this.type = "Pattern";
+    this.bbox = dict.getArray("BBox");
+    var cs = dict.get("ColorSpace", "CS");
     cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
     this.cs = cs;
-    this.background = dict.has('Background') ?
-      cs.getRgb(dict.get('Background'), 0) : null;
+    this.background = dict.has("Background") ?
+      cs.getRgb(dict.get("Background"), 0) : null;
 
-    var fnObj = dict.get('Function');
+    var fnObj = dict.get("Function");
     var fn = fnObj ? pdfFunctionFactory.createFromArray(fnObj) : null;
 
     this.coords = [];
@@ -734,10 +734,10 @@ Shadings.Mesh = (function MeshClosure() {
     this.figures = [];
 
     var decodeContext = {
-      bitsPerCoordinate: dict.get('BitsPerCoordinate'),
-      bitsPerComponent: dict.get('BitsPerComponent'),
-      bitsPerFlag: dict.get('BitsPerFlag'),
-      decode: dict.getArray('Decode'),
+      bitsPerCoordinate: dict.get("BitsPerCoordinate"),
+      bitsPerComponent: dict.get("BitsPerComponent"),
+      bitsPerFlag: dict.get("BitsPerFlag"),
+      decode: dict.getArray("Decode"),
       colorFn: fn,
       colorSpace: cs,
       numComps: fn ? 1 : cs.numComps,
@@ -750,9 +750,9 @@ Shadings.Mesh = (function MeshClosure() {
         decodeType4Shading(this, reader);
         break;
       case ShadingType.LATTICE_FORM_MESH:
-        var verticesPerRow = dict.get('VerticesPerRow') | 0;
+        var verticesPerRow = dict.get("VerticesPerRow") | 0;
         if (verticesPerRow < 2) {
-          throw new FormatError('Invalid VerticesPerRow');
+          throw new FormatError("Invalid VerticesPerRow");
         }
         decodeType5Shading(this, reader, verticesPerRow);
         break;
@@ -765,7 +765,7 @@ Shadings.Mesh = (function MeshClosure() {
         patchMesh = true;
         break;
       default:
-        unreachable('Unsupported mesh type.');
+        unreachable("Unsupported mesh type.");
         break;
     }
 
@@ -784,7 +784,7 @@ Shadings.Mesh = (function MeshClosure() {
 
   Mesh.prototype = {
     getIR: function Mesh_getIR() {
-      return ['Mesh', this.shadingType, this.coords, this.colors, this.figures,
+      return ["Mesh", this.shadingType, this.coords, this.colors, this.figures,
         this.bounds, this.matrix, this.bbox, this.background];
     },
   };
@@ -794,24 +794,24 @@ Shadings.Mesh = (function MeshClosure() {
 
 Shadings.Dummy = (function DummyClosure() {
   function Dummy() {
-    this.type = 'Pattern';
+    this.type = "Pattern";
   }
 
   Dummy.prototype = {
     getIR: function Dummy_getIR() {
-      return ['Dummy'];
+      return ["Dummy"];
     },
   };
   return Dummy;
 })();
 
 function getTilingPatternIR(operatorList, dict, args) {
-  let matrix = dict.getArray('Matrix');
-  let bbox = Util.normalizeRect(dict.getArray('BBox'));
-  let xstep = dict.get('XStep');
-  let ystep = dict.get('YStep');
-  let paintType = dict.get('PaintType');
-  let tilingType = dict.get('TilingType');
+  let matrix = dict.getArray("Matrix");
+  let bbox = Util.normalizeRect(dict.getArray("BBox"));
+  let xstep = dict.get("XStep");
+  let ystep = dict.get("YStep");
+  let paintType = dict.get("PaintType");
+  let tilingType = dict.get("TilingType");
 
   // Ensure that the pattern has a non-zero width and height, to prevent errors
   // in `pattern_helper.js` (fixes issue8330.pdf).
@@ -820,7 +820,7 @@ function getTilingPatternIR(operatorList, dict, args) {
   }
 
   return [
-    'TilingPattern', args, operatorList, matrix, bbox, xstep, ystep,
+    "TilingPattern", args, operatorList, matrix, bbox, xstep, ystep,
     paintType, tilingType
   ];
 }

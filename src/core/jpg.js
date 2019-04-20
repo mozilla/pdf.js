@@ -14,15 +14,15 @@
  */
 /* eslint-disable no-multi-spaces */
 
-import { assert, warn } from '../shared/util';
+import { assert, warn } from "../shared/util";
 
 let JpegError = (function JpegErrorClosure() {
   function JpegError(msg) {
-    this.message = 'JPEG error: ' + msg;
+    this.message = "JPEG error: " + msg;
   }
 
   JpegError.prototype = new Error();
-  JpegError.prototype.name = 'JpegError';
+  JpegError.prototype.name = "JpegError";
   JpegError.constructor = JpegError;
 
   return JpegError;
@@ -35,7 +35,7 @@ let DNLMarkerError = (function DNLMarkerErrorClosure() {
   }
 
   DNLMarkerError.prototype = new Error();
-  DNLMarkerError.prototype.name = 'DNLMarkerError';
+  DNLMarkerError.prototype.name = "DNLMarkerError";
   DNLMarkerError.constructor = DNLMarkerError;
 
   return DNLMarkerError;
@@ -47,7 +47,7 @@ let EOIMarkerError = (function EOIMarkerErrorClosure() {
   }
 
   EOIMarkerError.prototype = new Error();
-  EOIMarkerError.prototype.name = 'EOIMarkerError';
+  EOIMarkerError.prototype.name = "EOIMarkerError";
   EOIMarkerError.constructor = EOIMarkerError;
 
   return EOIMarkerError;
@@ -158,11 +158,11 @@ var JpegImage = (function JpegImageClosure() {
             const scanLines = (data[offset++] << 8) | data[offset++];
             if (scanLines > 0 && scanLines !== frame.scanLines) {
               throw new DNLMarkerError(
-                'Found DNL marker (0xFFDC) while parsing scan data', scanLines);
+                "Found DNL marker (0xFFDC) while parsing scan data", scanLines);
             }
           } else if (nextByte === 0xD9) { // EOI == 0xFFD9
             throw new EOIMarkerError(
-              'Found EOI marker (0xFFD9) while parsing scan data');
+              "Found EOI marker (0xFFD9) while parsing scan data");
           }
           throw new JpegError(
             `unexpected marker ${((bitsData << 8) | nextByte).toString(16)}`);
@@ -177,11 +177,11 @@ var JpegImage = (function JpegImageClosure() {
       var node = tree;
       while (true) {
         node = node[readBit()];
-        if (typeof node === 'number') {
+        if (typeof node === "number") {
           return node;
         }
-        if (typeof node !== 'object') {
-          throw new JpegError('invalid huffman sequence');
+        if (typeof node !== "object") {
+          throw new JpegError("invalid huffman sequence");
         }
       }
     }
@@ -289,7 +289,7 @@ var JpegImage = (function JpegImageClosure() {
               }
             } else {
               if (s !== 1) {
-                throw new JpegError('invalid ACn encoding');
+                throw new JpegError("invalid ACn encoding");
               }
               successiveACNextValue = receiveAndExtend(s);
               successiveACState = r ? 2 : 3;
@@ -406,13 +406,13 @@ var JpegImage = (function JpegImageClosure() {
       // Some bad images seem to pad Scan blocks with e.g. zero bytes, skip past
       // those to attempt to find a valid marker (fixes issue4090.pdf).
       if (fileMarker && fileMarker.invalid) {
-        warn('decodeScan - unexpected MCU data, current marker is: ' +
+        warn("decodeScan - unexpected MCU data, current marker is: " +
              fileMarker.invalid);
         offset = fileMarker.offset;
       }
       var marker = fileMarker && fileMarker.marker;
       if (!marker || marker <= 0xFF00) {
-        throw new JpegError('marker was not found');
+        throw new JpegError("marker was not found");
       }
 
       if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
@@ -426,7 +426,7 @@ var JpegImage = (function JpegImageClosure() {
     // Some images include more Scan blocks than expected, skip past those and
     // attempt to find the next valid marker (fixes issue8182.pdf).
     if (fileMarker && fileMarker.invalid) {
-      warn('decodeScan - unexpected Scan data, current marker is: ' +
+      warn("decodeScan - unexpected Scan data, current marker is: " +
            fileMarker.invalid);
       offset = fileMarker.offset;
     }
@@ -446,7 +446,7 @@ var JpegImage = (function JpegImageClosure() {
     var t;
 
     if (!qt) {
-      throw new JpegError('missing required Quantization Table.');
+      throw new JpegError("missing required Quantization Table.");
     }
 
     // inverse DCT on rows
@@ -686,7 +686,7 @@ var JpegImage = (function JpegImageClosure() {
 
         var fileMarker = findNextFileMarker(data, endOffset, offset);
         if (fileMarker && fileMarker.invalid) {
-          warn('readDataBlock - incorrect length, current marker is: ' +
+          warn("readDataBlock - incorrect length, current marker is: " +
                fileMarker.invalid);
           endOffset = fileMarker.offset;
         }
@@ -727,7 +727,7 @@ var JpegImage = (function JpegImageClosure() {
       var huffmanTablesAC = [], huffmanTablesDC = [];
       var fileMarker = readUint16();
       if (fileMarker !== 0xFFD8) { // SOI (Start of Image)
-        throw new JpegError('SOI not found');
+        throw new JpegError("SOI not found");
       }
 
       fileMarker = readUint16();
@@ -802,7 +802,7 @@ var JpegImage = (function JpegImageClosure() {
                   tableData[z] = readUint16();
                 }
               } else {
-                throw new JpegError('DQT - invalid table spec');
+                throw new JpegError("DQT - invalid table spec");
               }
               quantizationTables[quantizationTableSpec & 15] = tableData;
             }
@@ -812,7 +812,7 @@ var JpegImage = (function JpegImageClosure() {
           case 0xFFC1: // SOF1 (Start of Frame, Extended DCT)
           case 0xFFC2: // SOF2 (Start of Frame, Progressive DCT)
             if (frame) {
-              throw new JpegError('Only single frame JPEGs supported');
+              throw new JpegError("Only single frame JPEGs supported");
             }
             readUint16(); // skip data length
             frame = {};
@@ -938,12 +938,12 @@ var JpegImage = (function JpegImageClosure() {
             }
             let nextFileMarker = findNextFileMarker(data, offset - 2);
             if (nextFileMarker && nextFileMarker.invalid) {
-              warn('JpegImage.parse - unexpected data, current marker is: ' +
+              warn("JpegImage.parse - unexpected data, current marker is: " +
                    nextFileMarker.invalid);
               offset = nextFileMarker.offset;
               break;
             }
-            throw new JpegError('unknown marker ' + fileMarker.toString(16));
+            throw new JpegError("unknown marker " + fileMarker.toString(16));
         }
         fileMarker = readUint16();
       }
@@ -1180,12 +1180,12 @@ var JpegImage = (function JpegImageClosure() {
     },
 
     getData({ width, height, forceRGB = false, isSourcePDF = false, }) {
-      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING && !LIB')) {
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING && !LIB")) {
         assert(isSourcePDF === true,
           'JpegImage.getData: Unexpected "isSourcePDF" value for PDF files.');
       }
       if (this.numComponents > 4) {
-        throw new JpegError('Unsupported color mode');
+        throw new JpegError("Unsupported color mode");
       }
       // Type of data: Uint8ClampedArray(width * height * numComponents)
       var data = this._getLinearizedBlockData(width, height, isSourcePDF);

@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+  "../../node_modules/pdfjs-dist/build/pdf.worker.js";
 
-var DEFAULT_URL = '../../test/pdfs/f1040.pdf';
+var DEFAULT_URL = "../../test/pdfs/f1040.pdf";
 var DEFAULT_SCALE = 1.0;
 
-var container = document.getElementById('pageContainer');
+var container = document.getElementById("pageContainer");
 
 // Fetch the PDF document from the URL using promises.
 var loadingTask = pdfjsLib.getDocument(DEFAULT_URL);

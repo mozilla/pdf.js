@@ -16,8 +16,8 @@
 
 import {
   arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj
-} from '../shared/util';
-import { MissingDataException } from './core_utils';
+} from "../shared/util";
+import { MissingDataException } from "./core_utils";
 
 class ChunkedStream {
   constructor(length, chunkSize, manager) {
@@ -459,7 +459,7 @@ class ChunkedStreamManager {
   }
 
   onProgress(args) {
-    this.msgHandler.send('DocProgress', {
+    this.msgHandler.send("DocProgress", {
       loaded: this.stream.numChunksLoaded * this.chunkSize + args.loaded,
       total: this.length,
     });
@@ -531,7 +531,7 @@ class ChunkedStreamManager {
       capability.resolve();
     }
 
-    this.msgHandler.send('DocProgress', {
+    this.msgHandler.send("DocProgress", {
       loaded: this.stream.numChunksLoaded * this.chunkSize,
       total: this.length,
     });
@@ -552,11 +552,11 @@ class ChunkedStreamManager {
   abort() {
     this.aborted = true;
     if (this.pdfNetworkStream) {
-      this.pdfNetworkStream.cancelAllRequests('abort');
+      this.pdfNetworkStream.cancelAllRequests("abort");
     }
     for (const requestId in this.promisesByRequest) {
       this.promisesByRequest[requestId].reject(
-        new Error('Request was aborted'));
+        new Error("Request was aborted"));
     }
   }
 }

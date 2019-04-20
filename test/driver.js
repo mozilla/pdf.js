@@ -14,20 +14,20 @@
  */
 /* globals pdfjsLib, pdfjsViewer */
 
-'use strict';
+"use strict";
 
 const WAITING_TIME = 100; // ms
 const PDF_TO_CSS_UNITS = 96.0 / 72.0;
-const CMAP_URL = '../external/bcmaps/';
+const CMAP_URL = "../external/bcmaps/";
 const CMAP_PACKED = true;
-const IMAGE_RESOURCES_PATH = '/web/images/';
-const WORKER_SRC = '../build/generic/build/pdf.worker.js';
+const IMAGE_RESOURCES_PATH = "/web/images/";
+const WORKER_SRC = "../build/generic/build/pdf.worker.js";
 
 /**
  * @class
  */
 var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
-  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var SVG_NS = "http://www.w3.org/2000/svg";
 
   var textLayerStylePromise = null;
   function getTextLayerStyle() {
@@ -36,7 +36,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
     }
     textLayerStylePromise = new Promise(function (resolve) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', './text_layer_test.css');
+      xhr.open("GET", "./text_layer_test.css");
       xhr.onload = function () {
         resolve(xhr.responseText);
       };
@@ -49,23 +49,23 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
                               enhanceTextSelection) {
     return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
-      var svg = document.createElementNS(SVG_NS, 'svg:svg');
-      svg.setAttribute('width', viewport.width + 'px');
-      svg.setAttribute('height', viewport.height + 'px');
+      var svg = document.createElementNS(SVG_NS, "svg:svg");
+      svg.setAttribute("width", viewport.width + "px");
+      svg.setAttribute("height", viewport.height + "px");
       // items are transformed to have 1px font size
-      svg.setAttribute('font-size', 1);
+      svg.setAttribute("font-size", 1);
 
       // Adding element to host our HTML (style + text layer div).
-      var foreignObject = document.createElementNS(SVG_NS, 'svg:foreignObject');
-      foreignObject.setAttribute('x', '0');
-      foreignObject.setAttribute('y', '0');
-      foreignObject.setAttribute('width', viewport.width + 'px');
-      foreignObject.setAttribute('height', viewport.height + 'px');
-      var style = document.createElement('style');
+      var foreignObject = document.createElementNS(SVG_NS, "svg:foreignObject");
+      foreignObject.setAttribute("x", "0");
+      foreignObject.setAttribute("y", "0");
+      foreignObject.setAttribute("width", viewport.width + "px");
+      foreignObject.setAttribute("height", viewport.height + "px");
+      var style = document.createElement("style");
       var stylePromise = getTextLayerStyle();
       foreignObject.appendChild(style);
-      var div = document.createElement('div');
-      div.className = 'textLayer';
+      var div = document.createElement("div");
+      div.className = "textLayer";
       foreignObject.appendChild(div);
 
       // Rendering text layer as HTML.
@@ -84,13 +84,13 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
         var svg_xml = unescape(encodeURIComponent(
           (new XMLSerializer()).serializeToString(svg)));
         var img = new Image();
-        img.src = 'data:image/svg+xml;base64,' + btoa(svg_xml);
+        img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
         img.onload = function () {
           ctx.drawImage(img, 0, 0);
           resolve();
         };
         img.onerror = function(e) {
-          reject(new Error('Error rasterizing text layer ' + e));
+          reject(new Error("Error rasterizing text layer " + e));
         };
       });
     });
@@ -103,7 +103,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
  * @class
  */
 var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
-  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const SVG_NS = "http://www.w3.org/2000/svg";
 
   /**
    * For the reference tests, the entire annotation layer must be visible. To
@@ -116,11 +116,11 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
    */
   let styles = {
     common: {
-      file: '../web/annotation_layer_builder.css',
+      file: "../web/annotation_layer_builder.css",
       promise: null,
     },
     overrides: {
-      file: './annotation_layer_builder_overrides.css',
+      file: "./annotation_layer_builder_overrides.css",
       promise: null,
     },
   };
@@ -135,12 +135,12 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     for (let key in styles) {
       styles[key].promise = new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest();
-        xhr.open('GET', styles[key].file);
+        xhr.open("GET", styles[key].file);
         xhr.onload = function() {
           resolve(xhr.responseText);
         };
         xhr.onerror = function(e) {
-          reject(new Error('Error fetching annotation style ' + e));
+          reject(new Error("Error fetching annotation style " + e));
         };
         xhr.send(null);
       });
@@ -154,7 +154,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     for (var i = 0, ii = images.length; i < ii; i++) {
       var imagePromise = new Promise(function(resolve, reject) {
         var xhr = new XMLHttpRequest();
-        xhr.responseType = 'blob';
+        xhr.responseType = "blob";
         xhr.onload = function() {
           var reader = new FileReader();
           reader.onloadend = function() {
@@ -163,9 +163,9 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           reader.readAsDataURL(xhr.response);
         };
         xhr.onerror = function(e) {
-          reject(new Error('Error fetching inline annotation image ' + e));
+          reject(new Error("Error fetching inline annotation image " + e));
         };
-        xhr.open('GET', images[i].src);
+        xhr.open("GET", images[i].src);
         xhr.send();
       });
       imagePromises.push(imagePromise);
@@ -178,21 +178,21 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
                                     renderInteractiveForms) {
     return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
-      var svg = document.createElementNS(SVG_NS, 'svg:svg');
-      svg.setAttribute('width', viewport.width + 'px');
-      svg.setAttribute('height', viewport.height + 'px');
+      var svg = document.createElementNS(SVG_NS, "svg:svg");
+      svg.setAttribute("width", viewport.width + "px");
+      svg.setAttribute("height", viewport.height + "px");
 
       // Adding element to host our HTML (style + annotation layer div).
-      var foreignObject = document.createElementNS(SVG_NS, 'svg:foreignObject');
-      foreignObject.setAttribute('x', '0');
-      foreignObject.setAttribute('y', '0');
-      foreignObject.setAttribute('width', viewport.width + 'px');
-      foreignObject.setAttribute('height', viewport.height + 'px');
-      var style = document.createElement('style');
+      var foreignObject = document.createElementNS(SVG_NS, "svg:foreignObject");
+      foreignObject.setAttribute("x", "0");
+      foreignObject.setAttribute("y", "0");
+      foreignObject.setAttribute("width", viewport.width + "px");
+      foreignObject.setAttribute("height", viewport.height + "px");
+      var style = document.createElement("style");
       var stylePromise = getAnnotationLayerStyle();
       foreignObject.appendChild(style);
-      var div = document.createElement('div');
-      div.className = 'annotationLayer';
+      var div = document.createElement("div");
+      div.className = "annotationLayer";
 
       // Rendering annotation layer as HTML.
       stylePromise.then(function (common, overrides) {
@@ -211,7 +211,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
         pdfjsLib.AnnotationLayer.render(parameters);
 
         // Inline SVG images from text annotations.
-        var images = div.getElementsByTagName('img');
+        var images = div.getElementsByTagName("img");
         var imagePromises = inlineAnnotationImages(images);
         var converted = Promise.all(imagePromises).then(function(data) {
           var loadedPromises = [];
@@ -220,7 +220,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
             loadedPromises.push(new Promise(function (resolve, reject) {
               images[i].onload = resolve;
               images[i].onerror = function(e) {
-                reject(new Error('Error loading image ' + e));
+                reject(new Error("Error loading image " + e));
               };
             }));
           }
@@ -235,13 +235,13 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           var svg_xml = unescape(encodeURIComponent(
             (new XMLSerializer()).serializeToString(svg)));
           var img = new Image();
-          img.src = 'data:image/svg+xml;base64,' + btoa(svg_xml);
+          img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
           img.onload = function () {
             ctx.drawImage(img, 0, 0);
             resolve();
           };
           img.onerror = function(e) {
-            reject(new Error('Error rasterizing annotation layer ' + e));
+            reject(new Error("Error rasterizing annotation layer " + e));
           };
         });
       });
@@ -290,16 +290,16 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       JSON.parse(parameters.testFilter) : [];
 
     // Create a working canvas
-    this.canvas = document.createElement('canvas');
+    this.canvas = document.createElement("canvas");
   }
 
   Driver.prototype = {
     _getQueryStringParameters: function Driver_getQueryStringParameters() {
       var queryString = window.location.search.substring(1);
-      var values = queryString.split('&');
+      var values = queryString.split("&");
       var parameters = {};
       for (var i = 0, ii = values.length; i < ii; i++) {
-        var value = values[i].split('=');
+        var value = values[i].split("=");
         parameters[unescape(value[0])] = unescape(value[1]);
       }
       return parameters;
@@ -308,19 +308,19 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     run: function Driver_run() {
       var self = this;
       window.onerror = function(message, source, line, column, error) {
-        self._info('Error: ' + message + ' Script: ' + source + ' Line: ' +
-                   line + ' Column: ' + column + ' StackTrace: ' + error);
+        self._info("Error: " + message + " Script: " + source + " Line: " +
+                   line + " Column: " + column + " StackTrace: " + error);
       };
-      this._info('User agent: ' + navigator.userAgent);
+      this._info("User agent: " + navigator.userAgent);
       this._log('Harness thinks this browser is "' + this.browser +
         '" with path "' + this.appPath + '"\n');
       this._log('Fetching manifest "' + this.manifestFile + '"... ');
 
       var r = new XMLHttpRequest();
-      r.open('GET', this.manifestFile, false);
+      r.open("GET", this.manifestFile, false);
       r.onreadystatechange = function() {
         if (r.readyState === 4) {
-          self._log('done\n');
+          self._log("done\n");
           self.manifest = JSON.parse(r.responseText);
           if (self.testFilter && self.testFilter.length) {
             self.manifest = self.manifest.filter(function(item) {
@@ -332,7 +332,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         }
       };
       if (this.delay > 0) {
-        this._log('\nDelaying for ' + this.delay + ' ms...\n');
+        this._log("\nDelaying for " + this.delay + " ms...\n");
       }
       // When gathering the stats the numbers seem to be more reliable
       // if the browser is given more time to start.
@@ -342,7 +342,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     },
 
     _nextTask() {
-      let failure = '';
+      let failure = "";
 
       this._cleanup().then(() => {
         if (this.currentTask === this.manifest.length) {
@@ -372,12 +372,12 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
             task.pdfDoc = doc;
             this._nextPage(task, failure);
           }, (err) => {
-            failure = 'Loading PDF document: ' + err;
+            failure = "Loading PDF document: " + err;
             this._nextPage(task, failure);
           });
           return;
         } catch (e) {
-          failure = 'Loading PDF document: ' + this._exceptionToString(e);
+          failure = "Loading PDF document: " + this._exceptionToString(e);
         }
         this._nextPage(task, failure);
       });
@@ -409,13 +409,13 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     },
 
     _exceptionToString: function Driver_exceptionToString(e) {
-      if (typeof e !== 'object') {
+      if (typeof e !== "object") {
         return String(e);
       }
-      if (!('message' in e)) {
+      if (!("message" in e)) {
         return JSON.stringify(e);
       }
-      return e.message + ('stack' in e ? ' at ' + e.stack.split('\n')[0] : '');
+      return e.message + ("stack" in e ? " at " + e.stack.split("\n")[0] : "");
     },
 
     _getLastPageNumber: function Driver_getLastPageNumber(task) {
@@ -431,14 +431,14 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
     _nextPage: function Driver_nextPage(task, loadError) {
       var self = this;
-      var failure = loadError || '';
+      var failure = loadError || "";
       var ctx;
 
       if (!task.pdfDoc) {
-        var dataUrl = this.canvas.toDataURL('image/png');
+        var dataUrl = this.canvas.toDataURL("image/png");
         this._sendResult(dataUrl, task, failure, function () {
-          self._log('done' + (failure ? ' (failed !: ' + failure + ')' : '') +
-            '\n');
+          self._log("done" + (failure ? " (failed !: " + failure + ")" : "") +
+            "\n");
           self.currentTask++;
           self._nextTask();
         });
@@ -447,7 +447,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
       if (task.pageNum > this._getLastPageNumber(task)) {
         if (++task.round < task.rounds) {
-          this._log(' Round ' + (1 + task.round) + '\n');
+          this._log(" Round " + (1 + task.round) + "\n");
           task.pageNum = task.firstPage || 1;
         } else {
           this.currentTask++;
@@ -457,8 +457,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       }
 
       if (task.skipPages && task.skipPages.includes(task.pageNum)) {
-        this._log(' Skipping page ' + task.pageNum + '/' +
-                  task.pdfDoc.numPages + '...\n');
+        this._log(" Skipping page " + task.pageNum + "/" +
+                  task.pdfDoc.numPages + "...\n");
         task.pageNum++;
         this._nextPage(task);
         return;
@@ -466,10 +466,10 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
       if (!failure) {
         try {
-          this._log(' Loading page ' + task.pageNum + '/' +
-            task.pdfDoc.numPages + '... ');
+          this._log(" Loading page " + task.pageNum + "/" +
+            task.pdfDoc.numPages + "... ");
           this.canvas.mozOpaque = true;
-          ctx = this.canvas.getContext('2d', { alpha: false, });
+          ctx = this.canvas.getContext("2d", { alpha: false, });
           task.pdfDoc.getPage(task.pageNum).then(function(page) {
             var viewport = page.getViewport({ scale: PDF_TO_CSS_UNITS, });
             self.canvas.width = viewport.width;
@@ -481,16 +481,16 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
             var textLayerCanvas, annotationLayerCanvas;
             var initPromise;
-            if (task.type === 'text') {
+            if (task.type === "text") {
               // Using a dummy canvas for PDF context drawing operations
               textLayerCanvas = self.textLayerCanvas;
               if (!textLayerCanvas) {
-                textLayerCanvas = document.createElement('canvas');
+                textLayerCanvas = document.createElement("canvas");
                 self.textLayerCanvas = textLayerCanvas;
               }
               textLayerCanvas.width = viewport.width;
               textLayerCanvas.height = viewport.height;
-              var textLayerContext = textLayerCanvas.getContext('2d');
+              var textLayerContext = textLayerCanvas.getContext("2d");
               textLayerContext.clearRect(0, 0,
                 textLayerCanvas.width, textLayerCanvas.height);
               var enhanceText = !!task.enhance;
@@ -513,19 +513,19 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
                 // Create a dummy canvas for the drawing operations.
                 annotationLayerCanvas = self.annotationLayerCanvas;
                 if (!annotationLayerCanvas) {
-                  annotationLayerCanvas = document.createElement('canvas');
+                  annotationLayerCanvas = document.createElement("canvas");
                   self.annotationLayerCanvas = annotationLayerCanvas;
                 }
                 annotationLayerCanvas.width = viewport.width;
                 annotationLayerCanvas.height = viewport.height;
                 var annotationLayerContext =
-                  annotationLayerCanvas.getContext('2d');
+                  annotationLayerCanvas.getContext("2d");
                 annotationLayerContext.clearRect(0, 0,
                   annotationLayerCanvas.width, annotationLayerCanvas.height);
 
                 // The annotation builder will draw its content on the canvas.
                 initPromise =
-                  page.getAnnotations({ intent: 'display', }).then(
+                  page.getAnnotations({ intent: "display", }).then(
                     function(annotations) {
                       return rasterizeAnnotationLayer(annotationLayerContext,
                                                       viewport, annotations,
@@ -548,8 +548,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
               // if text layer is present, compose it on top of the page
               if (textLayerCanvas) {
                 ctx.save();
-                ctx.globalCompositeOperation = 'screen';
-                ctx.fillStyle = 'rgb(128, 255, 128)'; // making it green
+                ctx.globalCompositeOperation = "screen";
+                ctx.fillStyle = "rgb(128, 255, 128)"; // making it green
                 ctx.fillRect(0, 0, viewport.width, viewport.height);
                 ctx.restore();
                 ctx.drawImage(textLayerCanvas, 0, 0);
@@ -569,45 +569,45 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
                 completeRender(false);
               });
             }).catch(function (error) {
-              completeRender('render : ' + error);
+              completeRender("render : " + error);
             });
           },
           function(error) {
-            self._snapshot(task, 'render : ' + error);
+            self._snapshot(task, "render : " + error);
           });
         } catch (e) {
-          failure = 'page setup : ' + this._exceptionToString(e);
+          failure = "page setup : " + this._exceptionToString(e);
           this._snapshot(task, failure);
         }
       }
     },
 
     _clearCanvas: function Driver_clearCanvas() {
-      var ctx = this.canvas.getContext('2d', { alpha: false, });
+      var ctx = this.canvas.getContext("2d", { alpha: false, });
       ctx.beginPath();
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     },
 
     _snapshot: function Driver_snapshot(task, failure) {
       var self = this;
-      this._log('Snapshotting... ');
+      this._log("Snapshotting... ");
 
-      var dataUrl = this.canvas.toDataURL('image/png');
+      var dataUrl = this.canvas.toDataURL("image/png");
       this._sendResult(dataUrl, task, failure, function () {
-        self._log('done' + (failure ? ' (failed !: ' + failure + ')' : '') +
-          '\n');
+        self._log("done" + (failure ? " (failed !: " + failure + ")" : "") +
+          "\n");
         task.pageNum++;
         self._nextPage(task);
       });
     },
 
     _quit: function Driver_quit() {
-      this._log('Done !');
-      this.end.textContent = 'Tests finished. Close this window!';
+      this._log("Done !");
+      this.end.textContent = "Tests finished. Close this window!";
 
       // Send the quit request
       var r = new XMLHttpRequest();
-      r.open('POST', '/tellMeToQuit?path=' + escape(this.appPath), false);
+      r.open("POST", "/tellMeToQuit?path=" + escape(this.appPath), false);
       r.onreadystatechange = function(e) {
         if (r.readyState === 4) {
           window.close();
@@ -617,7 +617,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     },
 
     _info: function Driver_info(message) {
-      this._send('/info', JSON.stringify({
+      this._send("/info", JSON.stringify({
         browser: this.browser,
         message,
       }));
@@ -627,12 +627,12 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       // Using insertAdjacentHTML yields a large performance gain and
       // reduces runtime significantly.
       if (this.output.insertAdjacentHTML) {
-        this.output.insertAdjacentHTML('BeforeEnd', message);
+        this.output.insertAdjacentHTML("BeforeEnd", message);
       } else {
         this.output.textContent += message;
       }
 
-      if (message.lastIndexOf('\n') >= 0 && !this.disableScrolling.checked) {
+      if (message.lastIndexOf("\n") >= 0 && !this.disableScrolling.checked) {
         // Scroll to the bottom of the page
         this.output.scrollTop = this.output.scrollHeight;
       }
@@ -662,14 +662,14 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         snapshot,
         stats: task.stats.times,
       });
-      this._send('/submit_task_results', result, callback);
+      this._send("/submit_task_results", result, callback);
     },
 
     _send: function Driver_send(url, message, callback) {
       var self = this;
       var r = new XMLHttpRequest();
-      r.open('POST', url, true);
-      r.setRequestHeader('Content-Type', 'application/json');
+      r.open("POST", url, true);
+      r.setRequestHeader("Content-Type", "application/json");
       r.onreadystatechange = function(e) {
         if (r.readyState === 4) {
           self.inFlightRequests--;

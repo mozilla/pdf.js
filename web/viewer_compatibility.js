@@ -14,9 +14,9 @@
  */
 
 let compatibilityParams = Object.create(null);
-if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const userAgent =
-    (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    (typeof navigator !== "undefined" && navigator.userAgent) || "";
   const isAndroid = /Android/.test(userAgent);
   const isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
 

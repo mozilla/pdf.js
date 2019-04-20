@@ -32,7 +32,7 @@ GlobalWorkerOptions.workerPort = (GlobalWorkerOptions.workerPort === undefined ?
  * @var {string}
  */
 GlobalWorkerOptions.workerSrc = (GlobalWorkerOptions.workerSrc === undefined ?
-                                 '' : GlobalWorkerOptions.workerSrc);
+                                 "" : GlobalWorkerOptions.workerSrc);
 
 export {
   GlobalWorkerOptions,

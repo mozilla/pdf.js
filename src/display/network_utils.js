@@ -15,20 +15,20 @@
 
 import {
   assert, MissingPDFException, UnexpectedResponseException
-} from '../shared/util';
+} from "../shared/util";
 import {
   getFilenameFromContentDispositionHeader
-} from './content_disposition';
+} from "./content_disposition";
 
 function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
                                             rangeChunkSize, disableRange, }) {
-  assert(rangeChunkSize > 0, 'Range chunk size must be larger than zero');
+  assert(rangeChunkSize > 0, "Range chunk size must be larger than zero");
   let returnValues = {
     allowRangeRequests: false,
     suggestedLength: undefined,
   };
 
-  let length = parseInt(getResponseHeader('Content-Length'), 10);
+  let length = parseInt(getResponseHeader("Content-Length"), 10);
   if (!Number.isInteger(length)) {
     return returnValues;
   }
@@ -44,12 +44,12 @@ function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
   if (disableRange || !isHttp) {
     return returnValues;
   }
-  if (getResponseHeader('Accept-Ranges') !== 'bytes') {
+  if (getResponseHeader("Accept-Ranges") !== "bytes") {
     return returnValues;
   }
 
-  let contentEncoding = getResponseHeader('Content-Encoding') || 'identity';
-  if (contentEncoding !== 'identity') {
+  let contentEncoding = getResponseHeader("Content-Encoding") || "identity";
+  if (contentEncoding !== "identity") {
     return returnValues;
   }
 
@@ -58,7 +58,7 @@ function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
 }
 
 function extractFilenameFromHeader(getResponseHeader) {
-  const contentDisposition = getResponseHeader('Content-Disposition');
+  const contentDisposition = getResponseHeader("Content-Disposition");
   if (contentDisposition) {
     let filename = getFilenameFromContentDispositionHeader(contentDisposition);
     if (/\.pdf$/i.test(filename)) {
@@ -73,7 +73,7 @@ function createResponseStatusError(status, url) {
     return new MissingPDFException('Missing PDF "' + url + '".');
   }
   return new UnexpectedResponseException(
-    'Unexpected server response (' + status +
+    "Unexpected server response (" + status +
     ') while retrieving PDF "' + url + '".', status);
 }
 

@@ -161,7 +161,10 @@
     "no-whitespace-before-property": "error",
     "object-curly-spacing": ["error", "always"],
     "operator-linebreak": ["error", "after", { "overrides": { ":": "ignore", } }],
-    "quotes": ["error", "single"],
+    "quotes": ["error", "double", {
+      "allowTemplateLiterals": true,
+      "avoidEscape": true,
+    }],
     "semi-spacing": ["error", { "before": false, "after": true, }],
     "semi": ["error", "always"],
     "space-before-blocks": ["error", "always"],

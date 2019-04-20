@@ -25,7 +25,7 @@
  *   or -1 when EOF is reached.
  */
 
-import { info } from '../shared/util';
+import { info } from "../shared/util";
 
 let CCITTFaxDecoder = (function CCITTFaxDecoder() {
 
@@ -461,23 +461,23 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
    * @param {Object} options - (optional) Decoding options.
    */
   function CCITTFaxDecoder(source, options = {}) {
-    if (!source || typeof source.next !== 'function') {
+    if (!source || typeof source.next !== "function") {
       throw new Error('CCITTFaxDecoder - invalid "source" parameter.');
     }
     this.source = source;
     this.eof = false;
 
-    this.encoding = options['K'] || 0;
-    this.eoline = options['EndOfLine'] || false;
-    this.byteAlign = options['EncodedByteAlign'] || false;
-    this.columns = options['Columns'] || 1728;
-    this.rows = options['Rows'] || 0;
-    let eoblock = options['EndOfBlock'];
+    this.encoding = options["K"] || 0;
+    this.eoline = options["EndOfLine"] || false;
+    this.byteAlign = options["EncodedByteAlign"] || false;
+    this.columns = options["Columns"] || 1728;
+    this.rows = options["Rows"] || 0;
+    let eoblock = options["EndOfBlock"];
     if (eoblock === null || eoblock === undefined) {
       eoblock = true;
     }
     this.eoblock = eoblock;
-    this.black = options['BlackIs1'] || false;
+    this.black = options["BlackIs1"] || false;
 
     this.codingLine = new Uint32Array(this.columns + 1);
     this.refLine = new Uint32Array(this.columns + 2);
@@ -668,7 +668,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                 this.eof = true;
                 break;
               default:
-                info('bad 2d code');
+                info("bad 2d code");
                 this._addPixels(columns, 0);
                 this.err = true;
             }
@@ -739,7 +739,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
               for (i = 0; i < 4; ++i) {
                 code1 = this._lookBits(12);
                 if (code1 !== 1) {
-                  info('bad rtc code: ' + code1);
+                  info("bad rtc code: " + code1);
                 }
                 this._eatBits(12);
                 if (this.encoding > 0) {
@@ -830,7 +830,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
 
       if (a1 > codingLine[codingPos]) {
         if (a1 > this.columns) {
-          info('row is wrong length');
+          info("row is wrong length");
           this.err = true;
           a1 = this.columns;
         }
@@ -852,7 +852,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
 
       if (a1 > codingLine[codingPos]) {
         if (a1 > this.columns) {
-          info('row is wrong length');
+          info("row is wrong length");
           this.err = true;
           a1 = this.columns;
         }
@@ -863,7 +863,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
         codingLine[codingPos] = a1;
       } else if (a1 < codingLine[codingPos]) {
         if (a1 < 0) {
-          info('invalid code');
+          info("invalid code");
           this.err = true;
           a1 = 0;
         }
@@ -925,7 +925,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           return result[1];
         }
       }
-      info('Bad two dim code');
+      info("Bad two dim code");
       return ccittEOF;
     },
 
@@ -962,7 +962,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           return result[1];
         }
       }
-      info('bad white code');
+      info("bad white code");
       this._eatBits(1);
       return 1;
     },
@@ -1005,7 +1005,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           return result[1];
         }
       }
-      info('bad black code');
+      info("bad black code");
       this._eatBits(1);
       return 1;
     },

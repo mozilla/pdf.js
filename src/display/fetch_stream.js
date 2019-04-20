@@ -15,20 +15,20 @@
 
 import {
   AbortException, assert, createPromiseCapability
-} from '../shared/util';
+} from "../shared/util";
 import {
   createResponseStatusError, extractFilenameFromHeader,
   validateRangeRequestCapabilities, validateResponseStatus
-} from './network_utils';
+} from "./network_utils";
 
 function createFetchOptions(headers, withCredentials, abortController) {
   return {
-    method: 'GET',
+    method: "GET",
     headers,
     signal: abortController && abortController.signal,
-    mode: 'cors',
-    credentials: withCredentials ? 'include' : 'same-origin',
-    redirect: 'follow',
+    mode: "cors",
+    credentials: withCredentials ? "include" : "same-origin",
+    redirect: "follow",
   };
 }
 
@@ -88,7 +88,7 @@ class PDFFetchStreamReader {
       this._disableRange = true;
     }
 
-    if (typeof AbortController !== 'undefined') {
+    if (typeof AbortController !== "undefined") {
       this._abortController = new AbortController();
     }
     this._isStreamingSupported = !source.disableStream;
@@ -97,7 +97,7 @@ class PDFFetchStreamReader {
     this._headers = new Headers();
     for (let property in this._stream.httpHeaders) {
       let value = this._stream.httpHeaders[property];
-      if (typeof value === 'undefined') {
+      if (typeof value === "undefined") {
         continue;
       }
       this._headers.append(property, value);
@@ -132,7 +132,7 @@ class PDFFetchStreamReader {
       // We need to stop reading when range is supported and streaming is
       // disabled.
       if (!this._isStreamingSupported && this._isRangeSupported) {
-        this.cancel(new AbortException('streaming is disabled'));
+        this.cancel(new AbortException("streaming is disabled"));
       }
     }).catch(this._headersCapability.reject);
 
@@ -196,21 +196,21 @@ class PDFFetchStreamRangeReader {
     this._readCapability = createPromiseCapability();
     this._isStreamingSupported = !source.disableStream;
 
-    if (typeof AbortController !== 'undefined') {
+    if (typeof AbortController !== "undefined") {
       this._abortController = new AbortController();
     }
 
     this._headers = new Headers();
     for (let property in this._stream.httpHeaders) {
       let value = this._stream.httpHeaders[property];
-      if (typeof value === 'undefined') {
+      if (typeof value === "undefined") {
         continue;
       }
       this._headers.append(property, value);
     }
 
-    let rangeStr = begin + '-' + (end - 1);
-    this._headers.append('Range', 'bytes=' + rangeStr);
+    let rangeStr = begin + "-" + (end - 1);
+    this._headers.append("Range", "bytes=" + rangeStr);
     let url = source.url;
     fetch(url, createFetchOptions(this._headers, this._withCredentials,
         this._abortController)).then((response) => {

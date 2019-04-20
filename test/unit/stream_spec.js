@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { PredictorStream, Stream } from '../../src/core/stream';
-import { Dict } from '../../src/core/primitives';
+import { PredictorStream, Stream } from "../../src/core/stream";
+import { Dict } from "../../src/core/primitives";
 
-describe('stream', function() {
+describe("stream", function() {
   beforeEach(function() {
     jasmine.addMatchers({
       toMatchTypedArray(util, customEqualityTesters) {
@@ -25,8 +25,8 @@ describe('stream', function() {
             var result = {};
             if (actual.length !== expected.length) {
               result.pass = false;
-              result.message = 'Array length: ' + actual.length +
-                ', expected: ' + expected.length;
+              result.message = "Array length: " + actual.length +
+                ", expected: " + expected.length;
               return result;
             }
             result.pass = true;
@@ -43,13 +43,13 @@ describe('stream', function() {
       },
     });
   });
-  describe('PredictorStream', function() {
-    it('should decode simple predictor data', function() {
+  describe("PredictorStream", function() {
+    it("should decode simple predictor data", function() {
       var dict = new Dict();
-      dict.set('Predictor', 12);
-      dict.set('Colors', 1);
-      dict.set('BitsPerComponent', 8);
-      dict.set('Columns', 2);
+      dict.set("Predictor", 12);
+      dict.set("Colors", 1);
+      dict.set("BitsPerComponent", 8);
+      dict.set("Columns", 2);
 
       var input = new Stream(new Uint8Array([2, 100, 3, 2, 1, 255, 2, 1, 255]),
                              0, 9, dict);

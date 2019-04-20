@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus, scrollIntoView } from './ui_utils';
-import { createPromiseCapability } from 'pdfjs-lib';
-import { getCharacterType } from './pdf_find_utils';
+import { getGlobalEventBus, scrollIntoView } from "./ui_utils";
+import { createPromiseCapability } from "pdfjs-lib";
+import { getCharacterType } from "./pdf_find_utils";
 
 const FindState = {
   FOUND: 0,
@@ -29,25 +29,25 @@ const MATCH_SCROLL_OFFSET_TOP = -50; // px
 const MATCH_SCROLL_OFFSET_LEFT = -400; // px
 
 const CHARACTERS_TO_NORMALIZE = {
-  '\u2018': '\'', // Left single quotation mark
-  '\u2019': '\'', // Right single quotation mark
-  '\u201A': '\'', // Single low-9 quotation mark
-  '\u201B': '\'', // Single high-reversed-9 quotation mark
-  '\u201C': '"', // Left double quotation mark
-  '\u201D': '"', // Right double quotation mark
-  '\u201E': '"', // Double low-9 quotation mark
-  '\u201F': '"', // Double high-reversed-9 quotation mark
-  '\u00BC': '1/4', // Vulgar fraction one quarter
-  '\u00BD': '1/2', // Vulgar fraction one half
-  '\u00BE': '3/4', // Vulgar fraction three quarters
+  "\u2018": "'", // Left single quotation mark
+  "\u2019": "'", // Right single quotation mark
+  "\u201A": "'", // Single low-9 quotation mark
+  "\u201B": "'", // Single high-reversed-9 quotation mark
+  "\u201C": '"', // Left double quotation mark
+  "\u201D": '"', // Right double quotation mark
+  "\u201E": '"', // Double low-9 quotation mark
+  "\u201F": '"', // Double high-reversed-9 quotation mark
+  "\u00BC": "1/4", // Vulgar fraction one quarter
+  "\u00BD": "1/2", // Vulgar fraction one half
+  "\u00BE": "3/4", // Vulgar fraction three quarters
 };
 
 let normalizationRegex = null;
 function normalize(text) {
   if (!normalizationRegex) {
     // Compile the regular expression for text normalization once.
-    const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join('');
-    normalizationRegex = new RegExp(`[${replace}]`, 'g');
+    const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join("");
+    normalizationRegex = new RegExp(`[${replace}]`, "g");
   }
   return text.replace(normalizationRegex, function(ch) {
     return CHARACTERS_TO_NORMALIZE[ch];
@@ -72,7 +72,7 @@ class PDFFindController {
     this._eventBus = eventBus;
 
     this._reset();
-    eventBus.on('findbarclose', this._onFindBarClose.bind(this));
+    eventBus.on("findbarclose", this._onFindBarClose.bind(this));
   }
 
   get highlightMatches() {
@@ -122,7 +122,7 @@ class PDFFindController {
       this._dirtyMatch = true;
     }
     this._state = state;
-    if (cmd !== 'findhighlightallchange') {
+    if (cmd !== "findhighlightallchange") {
       this._updateUIState(FindState.PENDING);
     }
 
@@ -142,7 +142,7 @@ class PDFFindController {
         clearTimeout(this._findTimeout);
         this._findTimeout = null;
       }
-      if (cmd === 'find') {
+      if (cmd === "find") {
         // Trigger the find action with a small delay to avoid starting the
         // search when the user is still typing (saving resources).
         this._findTimeout = setTimeout(() => {
@@ -153,7 +153,7 @@ class PDFFindController {
         // Immediately trigger searching for non-'find' operations, when the
         // current state needs to be reset and matches re-calculated.
         this._nextMatch();
-      } else if (cmd === 'findagain') {
+      } else if (cmd === "findagain") {
         this._nextMatch();
 
         // When the findbar was previously closed, and `highlightAll` is set,
@@ -161,7 +161,7 @@ class PDFFindController {
         if (findbarClosed && this._state.highlightAll) {
           this._updateAllPages();
         }
-      } else if (cmd === 'findhighlightallchange') {
+      } else if (cmd === "findhighlightallchange") {
         // If there was a pending search operation, synchronously trigger a new
         // search *first* to ensure that the correct matches are highlighted.
         if (pendingTimeout) {
@@ -240,7 +240,7 @@ class PDFFindController {
       return true;
     }
     switch (cmd) {
-      case 'findagain':
+      case "findagain":
         const pageNumber = this._selected.pageIdx + 1;
         const linkService = this._linkService;
         // Only treat a 'findagain' event as a new search operation when it's
@@ -257,7 +257,7 @@ class PDFFindController {
           break;
         }
         return false;
-      case 'findhighlightallchange':
+      case "findhighlightallchange":
         return false;
     }
     return true;
@@ -457,12 +457,12 @@ class PDFFindController {
           }
 
           // Store the normalized page content (text items) as one string.
-          this._pageContents[i] = normalize(strBuf.join(''));
+          this._pageContents[i] = normalize(strBuf.join(""));
           extractTextCapability.resolve(i);
         }, (reason) => {
           console.error(`Unable to get text content for page ${i + 1}`, reason);
           // Page error -- assuming no text content.
-          this._pageContents[i] = '';
+          this._pageContents[i] = "";
           extractTextCapability.resolve(i);
         });
       });
@@ -477,14 +477,14 @@ class PDFFindController {
       this._linkService.page = index + 1;
     }
 
-    this._eventBus.dispatch('updatetextlayermatches', {
+    this._eventBus.dispatch("updatetextlayermatches", {
       source: this,
       pageIndex: index,
     });
   }
 
   _updateAllPages() {
-    this._eventBus.dispatch('updatetextlayermatches', {
+    this._eventBus.dispatch("updatetextlayermatches", {
       source: this,
       pageIndex: -1,
     });
@@ -525,7 +525,7 @@ class PDFFindController {
     }
 
     // If there's no query there's no point in searching.
-    if (this._query === '') {
+    if (this._query === "") {
       this._updateUIState(FindState.FOUND);
       return;
     }
@@ -587,7 +587,7 @@ class PDFFindController {
 
   _nextPageMatch() {
     if (this._resumePageIdx !== null) {
-      console.error('There can only be one pending page.');
+      console.error("There can only be one pending page.");
     }
 
     let matches = null;
@@ -694,14 +694,14 @@ class PDFFindController {
   }
 
   _updateUIResultsCount() {
-    this._eventBus.dispatch('updatefindmatchescount', {
+    this._eventBus.dispatch("updatefindmatchescount", {
       source: this,
       matchesCount: this._requestMatchesCount(),
     });
   }
 
   _updateUIState(state, previous) {
-    this._eventBus.dispatch('updatefindcontrolstate', {
+    this._eventBus.dispatch("updatefindcontrolstate", {
       source: this,
       state,
       previous,

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, ImageKind, OPS } from '../shared/util';
+import { assert, ImageKind, OPS } from "../shared/util";
 
 var QueueOptimizer = (function QueueOptimizerClosure() {
   function addState(parentState, pattern, checkFn, iterateFn, processFn) {
@@ -538,7 +538,7 @@ var OperatorList = (function OperatorListClosure() {
     this.messageHandler = messageHandler;
     this.fnArray = [];
     this.argsArray = [];
-    if (messageHandler && this.intent !== 'oplist') {
+    if (messageHandler && this.intent !== "oplist") {
       this.optimizer = new QueueOptimizer(this);
     } else {
       this.optimizer = new NullOptimizer(this);
@@ -616,8 +616,8 @@ var OperatorList = (function OperatorListClosure() {
           case OPS.paintImageMaskXObject:
             const arg = argsArray[i][0]; // first param in imgData
 
-            if (typeof PDFJSDev === 'undefined' ||
-                PDFJSDev.test('!PRODUCTION || TESTING')) {
+            if (typeof PDFJSDev === "undefined" ||
+                PDFJSDev.test("!PRODUCTION || TESTING")) {
               assert(arg.data instanceof Uint8ClampedArray,
                      'OperatorList._transfers: Unsupported "arg.data" type.');
             }
@@ -635,7 +635,7 @@ var OperatorList = (function OperatorListClosure() {
       const length = this.length;
       this._totalLength += length;
 
-      this.messageHandler.send('RenderPageChunk', {
+      this.messageHandler.send("RenderPageChunk", {
         operatorList: {
           fnArray: this.fnArray,
           argsArray: this.argsArray,

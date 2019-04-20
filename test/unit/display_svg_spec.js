@@ -14,14 +14,14 @@
  */
 /* globals __non_webpack_require__ */
 
-import { setStubs, unsetStubs } from '../../examples/node/domstubs';
-import { buildGetDocumentParams } from './test_utils';
-import { getDocument } from '../../src/display/api';
-import isNodeJS from '../../src/shared/is_node';
-import { NativeImageDecoding } from '../../src/shared/util';
-import { SVGGraphics } from '../../src/display/svg';
+import { setStubs, unsetStubs } from "../../examples/node/domstubs";
+import { buildGetDocumentParams } from "./test_utils";
+import { getDocument } from "../../src/display/api";
+import isNodeJS from "../../src/shared/is_node";
+import { NativeImageDecoding } from "../../src/shared/util";
+import { SVGGraphics } from "../../src/display/svg";
 
-const XLINK_NS = 'http://www.w3.org/1999/xlink';
+const XLINK_NS = "http://www.w3.org/1999/xlink";
 
 // withZlib(true, callback); = run test with require('zlib') if possible.
 // withZlib(false, callback); = run test without require('zlib').deflateSync.
@@ -31,7 +31,7 @@ function withZlib(isZlibRequired, callback) {
     // We could try to polyfill zlib in the browser, e.g. using pako.
     // For now, only support zlib functionality on Node.js
     if (!isNodeJS()) {
-      throw new Error('zlib test can only be run in Node.js');
+      throw new Error("zlib test can only be run in Node.js");
     }
 
     return callback();
@@ -42,11 +42,11 @@ function withZlib(isZlibRequired, callback) {
     return callback();
   }
 
-  var zlib = __non_webpack_require__('zlib');
+  var zlib = __non_webpack_require__("zlib");
   var deflateSync = zlib.deflateSync;
   zlib.deflateSync = disabledDeflateSync;
   function disabledDeflateSync() {
-    throw new Error('zlib.deflateSync is explicitly disabled for testing.');
+    throw new Error("zlib.deflateSync is explicitly disabled for testing.");
   }
   function restoreDeflateSync() {
     if (zlib.deflateSync === disabledDeflateSync) {
@@ -58,11 +58,11 @@ function withZlib(isZlibRequired, callback) {
   return promise;
 }
 
-describe('SVGGraphics', function () {
+describe("SVGGraphics", function () {
   var loadingTask;
   var page;
   beforeAll(function(done) {
-    loadingTask = getDocument(buildGetDocumentParams('xobject-image.pdf', {
+    loadingTask = getDocument(buildGetDocumentParams("xobject-image.pdf", {
       nativeImageDecoderSupport: NativeImageDecoding.DISPLAY,
     }));
     loadingTask.promise.then(function(doc) {
@@ -76,7 +76,7 @@ describe('SVGGraphics', function () {
     loadingTask.destroy().then(done);
   });
 
-  describe('paintImageXObject', function() {
+  describe("paintImageXObject", function() {
     function getSVGImage() {
       var svgGfx;
       return page.getOperatorList().then(function(opList) {
@@ -93,7 +93,7 @@ describe('SVGGraphics', function () {
         };
 
         // This points to the XObject image in xobject-image.pdf.
-        var xobjectObjId = 'img_p0_1';
+        var xobjectObjId = "img_p0_1";
         if (isNodeJS()) {
           setStubs(global);
         }
@@ -111,7 +111,7 @@ describe('SVGGraphics', function () {
 
     it('should fail require("zlib") unless in Node.js', function() {
       function testFunc() {
-        __non_webpack_require__('zlib');
+        __non_webpack_require__("zlib");
       }
       // Verifies that the script loader replaces __non_webpack_require__ with
       // require.
@@ -124,15 +124,15 @@ describe('SVGGraphics', function () {
       }
     });
 
-    it('should produce a reasonably small svg:image', function(done) {
+    it("should produce a reasonably small svg:image", function(done) {
       if (!isNodeJS()) {
-        pending('zlib.deflateSync is not supported in non-Node environments.');
+        pending("zlib.deflateSync is not supported in non-Node environments.");
       }
       withZlib(true, getSVGImage).then(function(svgImg) {
-        expect(svgImg.nodeName).toBe('svg:image');
-        expect(svgImg.getAttributeNS(null, 'width')).toBe('200px');
-        expect(svgImg.getAttributeNS(null, 'height')).toBe('100px');
-        var imgUrl = svgImg.getAttributeNS(XLINK_NS, 'href');
+        expect(svgImg.nodeName).toBe("svg:image");
+        expect(svgImg.getAttributeNS(null, "width")).toBe("200px");
+        expect(svgImg.getAttributeNS(null, "height")).toBe("100px");
+        var imgUrl = svgImg.getAttributeNS(XLINK_NS, "href");
         // forceDataSchema = true, so the generated URL should be a data:-URL.
         expect(imgUrl).toMatch(/^data:image\/png;base64,/);
         // Test whether the generated image has a reasonable file size.
@@ -143,12 +143,12 @@ describe('SVGGraphics', function () {
       }).then(done, done.fail);
     });
 
-    it('should be able to produce a svg:image without zlib', function(done) {
+    it("should be able to produce a svg:image without zlib", function(done) {
       withZlib(false, getSVGImage).then(function(svgImg) {
-        expect(svgImg.nodeName).toBe('svg:image');
-        expect(svgImg.getAttributeNS(null, 'width')).toBe('200px');
-        expect(svgImg.getAttributeNS(null, 'height')).toBe('100px');
-        var imgUrl = svgImg.getAttributeNS(XLINK_NS, 'href');
+        expect(svgImg.nodeName).toBe("svg:image");
+        expect(svgImg.getAttributeNS(null, "width")).toBe("200px");
+        expect(svgImg.getAttributeNS(null, "height")).toBe("100px");
+        var imgUrl = svgImg.getAttributeNS(XLINK_NS, "href");
         expect(imgUrl).toMatch(/^data:image\/png;base64,/);
         // The size of our naively generated PNG file is excessive :(
         expect(imgUrl.length).toBe(80246);

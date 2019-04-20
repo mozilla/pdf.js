@@ -18,12 +18,12 @@ import {
   getVerbosityLevel, info, InvalidPDFException, MissingPDFException,
   PasswordException, setVerbosityLevel, UnexpectedResponseException,
   UnknownErrorException, UNSUPPORTED_FEATURES, VerbosityLevel, warn
-} from '../shared/util';
-import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
-import isNodeJS from '../shared/is_node';
-import { MessageHandler } from '../shared/message_handler';
-import { Ref } from './primitives';
-import { XRefParseException } from './core_utils';
+} from "../shared/util";
+import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager";
+import isNodeJS from "../shared/is_node";
+import { MessageHandler } from "../shared/message_handler";
+import { Ref } from "./primitives";
+import { XRefParseException } from "./core_utils";
 
 var WorkerTask = (function WorkerTaskClosure() {
   function WorkerTask(name) {
@@ -47,7 +47,7 @@ var WorkerTask = (function WorkerTaskClosure() {
 
     ensureNotTerminated() {
       if (this.terminated) {
-        throw new Error('Worker task was terminated');
+        throw new Error("Worker task was terminated");
       }
     },
   };
@@ -95,11 +95,11 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
     this._isRangeSupported = false;
     this._isStreamingSupported = false;
 
-    let readableStream = this._msgHandler.sendWithStream('GetReader');
+    let readableStream = this._msgHandler.sendWithStream("GetReader");
 
     this._reader = readableStream.getReader();
 
-    this._headersReady = this._msgHandler.sendWithPromise('ReaderHeadersReady').
+    this._headersReady = this._msgHandler.sendWithPromise("ReaderHeadersReady").
         then((data) => {
       this._isStreamingSupported = data.isStreamingSupported;
       this._isRangeSupported = data.isRangeSupported;
@@ -144,7 +144,7 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
     this._msgHandler = msgHandler;
     this.onProgress = null;
 
-    let readableStream = this._msgHandler.sendWithStream('GetRangeReader',
+    let readableStream = this._msgHandler.sendWithStream("GetRangeReader",
                                                          { begin, end, });
 
     this._reader = readableStream.getReader();
@@ -174,7 +174,7 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
 var WorkerMessageHandler = {
   setup(handler, port) {
     var testMessageProcessed = false;
-    handler.on('test', function wphSetupTest(data) {
+    handler.on("test", function wphSetupTest(data) {
       if (testMessageProcessed) {
         return; // we already processed 'test' message once
       }
@@ -182,7 +182,7 @@ var WorkerMessageHandler = {
 
       // check if Uint8Array can be sent to worker
       if (!(data instanceof Uint8Array)) {
-        handler.send('test', false);
+        handler.send("test", false);
         return;
       }
       // making sure postMessage transfers are working
@@ -190,7 +190,7 @@ var WorkerMessageHandler = {
       handler.postMessageTransfers = supportTransfers;
       // check if the response property is supported by xhr
       var xhr = new XMLHttpRequest();
-      var responseExists = 'response' in xhr;
+      var responseExists = "response" in xhr;
       // check if the property is actually implemented
       try {
         xhr.responseType; // eslint-disable-line no-unused-expressions
@@ -198,20 +198,20 @@ var WorkerMessageHandler = {
         responseExists = false;
       }
       if (!responseExists) {
-        handler.send('test', false);
+        handler.send("test", false);
         return;
       }
-      handler.send('test', {
+      handler.send("test", {
         supportTypedArray: true,
         supportTransfers,
       });
     });
 
-    handler.on('configure', function wphConfigure(data) {
+    handler.on("configure", function wphConfigure(data) {
       setVerbosityLevel(data.verbosity);
     });
 
-    handler.on('GetDocRequest', function wphSetupDoc(data) {
+    handler.on("GetDocRequest", function wphSetupDoc(data) {
       return WorkerMessageHandler.createDocumentHandler(data, port);
     });
   },
@@ -226,10 +226,10 @@ var WorkerMessageHandler = {
 
     let apiVersion = docParams.apiVersion;
     let workerVersion =
-      typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
-    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING')) &&
+      typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : null;
+    if ((typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) &&
         apiVersion === null) {
-      warn('Ignoring apiVersion/workerVersion check in TESTING builds.');
+      warn("Ignoring apiVersion/workerVersion check in TESTING builds.");
     } else if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` +
                       `the Worker version "${workerVersion}".`);
@@ -237,7 +237,7 @@ var WorkerMessageHandler = {
 
     var docId = docParams.docId;
     var docBaseUrl = docParams.docBaseUrl;
-    var workerHandlerName = docParams.docId + '_worker';
+    var workerHandlerName = docParams.docId + "_worker";
     var handler = new MessageHandler(workerHandlerName, docId, port);
 
     // Ensure that postMessage transfers are always correctly enabled/disabled,
@@ -246,7 +246,7 @@ var WorkerMessageHandler = {
 
     function ensureNotTerminated() {
       if (terminated) {
-        throw new Error('Worker was terminated');
+        throw new Error("Worker was terminated");
       }
     }
 
@@ -261,19 +261,19 @@ var WorkerMessageHandler = {
     }
 
     async function loadDocument(recoveryMode) {
-      await pdfManager.ensureDoc('checkHeader');
-      await pdfManager.ensureDoc('parseStartXRef');
-      await pdfManager.ensureDoc('parse', [recoveryMode]);
+      await pdfManager.ensureDoc("checkHeader");
+      await pdfManager.ensureDoc("parseStartXRef");
+      await pdfManager.ensureDoc("parse", [recoveryMode]);
 
       if (!recoveryMode) {
         // Check that at least the first page can be successfully loaded,
         // since otherwise the XRef table is definitely not valid.
-        await pdfManager.ensureDoc('checkFirstPage');
+        await pdfManager.ensureDoc("checkFirstPage");
       }
 
       const [numPages, fingerprint] = await Promise.all([
-        pdfManager.ensureDoc('numPages'),
-        pdfManager.ensureDoc('fingerprint'),
+        pdfManager.ensureDoc("numPages"),
+        pdfManager.ensureDoc("fingerprint"),
       ]);
       return { numPages, fingerprint, };
     }
@@ -338,7 +338,7 @@ var WorkerMessageHandler = {
       var flushChunks = function () {
         var pdfFile = arraysToBytes(cachedChunks);
         if (source.length && pdfFile.length !== source.length) {
-          warn('reported HTTP length is different from actual');
+          warn("reported HTTP length is different from actual");
         }
         // the data is array, instantiating directly from it
         try {
@@ -365,7 +365,7 @@ var WorkerMessageHandler = {
             var data = chunk.value;
             loaded += arrayByteLength(data);
             if (!fullRequest.isStreamingSupported) {
-              handler.send('DocProgress', {
+              handler.send("DocProgress", {
                 loaded,
                 total: Math.max(loaded, fullRequest.contentLength || 0),
               });
@@ -390,7 +390,7 @@ var WorkerMessageHandler = {
       });
 
       cancelXHRs = function () {
-        pdfStream.cancelAllRequests('abort');
+        pdfStream.cancelAllRequests("abort");
       };
 
       return pdfManagerCapability.promise;
@@ -399,32 +399,32 @@ var WorkerMessageHandler = {
     function setupDoc(data) {
       function onSuccess(doc) {
         ensureNotTerminated();
-        handler.send('GetDoc', { pdfInfo: doc, });
+        handler.send("GetDoc", { pdfInfo: doc, });
       }
 
       function onFailure(e) {
         ensureNotTerminated();
 
         if (e instanceof PasswordException) {
-          var task = new WorkerTask('PasswordException: response ' + e.code);
+          var task = new WorkerTask("PasswordException: response " + e.code);
           startWorkerTask(task);
 
-          handler.sendWithPromise('PasswordRequest', e).then(function (data) {
+          handler.sendWithPromise("PasswordRequest", e).then(function (data) {
             finishWorkerTask(task);
             pdfManager.updatePassword(data.password);
             pdfManagerReady();
           }).catch(function (boundException) {
             finishWorkerTask(task);
-            handler.send('PasswordException', boundException);
+            handler.send("PasswordException", boundException);
           }.bind(null, e));
         } else if (e instanceof InvalidPDFException) {
-          handler.send('InvalidPDF', e);
+          handler.send("InvalidPDF", e);
         } else if (e instanceof MissingPDFException) {
-          handler.send('MissingPDF', e);
+          handler.send("MissingPDF", e);
         } else if (e instanceof UnexpectedResponseException) {
-          handler.send('UnexpectedResponse', e);
+          handler.send("UnexpectedResponse", e);
         } else {
-          handler.send('UnknownError',
+          handler.send("UnknownError",
                        new UnknownErrorException(e.message, e.toString()));
         }
       }
@@ -465,23 +465,23 @@ var WorkerMessageHandler = {
           // We were in a process of setting up the manager, but it got
           // terminated in the middle.
           newPdfManager.terminate();
-          throw new Error('Worker was terminated');
+          throw new Error("Worker was terminated");
         }
         pdfManager = newPdfManager;
 
         pdfManager.onLoadedStream().then(function(stream) {
-          handler.send('DataLoaded', { length: stream.bytes.byteLength, });
+          handler.send("DataLoaded", { length: stream.bytes.byteLength, });
         });
       }).then(pdfManagerReady, onFailure);
     }
 
-    handler.on('GetPage', function wphSetupGetPage(data) {
+    handler.on("GetPage", function wphSetupGetPage(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
         return Promise.all([
-          pdfManager.ensure(page, 'rotate'),
-          pdfManager.ensure(page, 'ref'),
-          pdfManager.ensure(page, 'userUnit'),
-          pdfManager.ensure(page, 'view'),
+          pdfManager.ensure(page, "rotate"),
+          pdfManager.ensure(page, "ref"),
+          pdfManager.ensure(page, "userUnit"),
+          pdfManager.ensure(page, "view"),
         ]).then(function([rotate, ref, userUnit, view]) {
           return {
             rotate,
@@ -493,98 +493,98 @@ var WorkerMessageHandler = {
       });
     });
 
-    handler.on('GetPageIndex', function wphSetupGetPageIndex(data) {
+    handler.on("GetPageIndex", function wphSetupGetPageIndex(data) {
       var ref = new Ref(data.ref.num, data.ref.gen);
       var catalog = pdfManager.pdfDocument.catalog;
       return catalog.getPageIndex(ref);
     });
 
-    handler.on('GetDestinations',
+    handler.on("GetDestinations",
       function wphSetupGetDestinations(data) {
-        return pdfManager.ensureCatalog('destinations');
+        return pdfManager.ensureCatalog("destinations");
       }
     );
 
-    handler.on('GetDestination',
+    handler.on("GetDestination",
       function wphSetupGetDestination(data) {
-        return pdfManager.ensureCatalog('getDestination', [data.id]);
+        return pdfManager.ensureCatalog("getDestination", [data.id]);
       }
     );
 
-    handler.on('GetPageLabels',
+    handler.on("GetPageLabels",
       function wphSetupGetPageLabels(data) {
-        return pdfManager.ensureCatalog('pageLabels');
+        return pdfManager.ensureCatalog("pageLabels");
       }
     );
 
-    handler.on('GetPageLayout', function wphSetupGetPageLayout(data) {
-      return pdfManager.ensureCatalog('pageLayout');
+    handler.on("GetPageLayout", function wphSetupGetPageLayout(data) {
+      return pdfManager.ensureCatalog("pageLayout");
     });
 
-    handler.on('GetPageMode', function wphSetupGetPageMode(data) {
-      return pdfManager.ensureCatalog('pageMode');
+    handler.on("GetPageMode", function wphSetupGetPageMode(data) {
+      return pdfManager.ensureCatalog("pageMode");
     });
 
-    handler.on('GetViewerPreferences', function(data) {
-      return pdfManager.ensureCatalog('viewerPreferences');
+    handler.on("GetViewerPreferences", function(data) {
+      return pdfManager.ensureCatalog("viewerPreferences");
     });
 
-    handler.on('GetOpenActionDestination', function(data) {
-      return pdfManager.ensureCatalog('openActionDestination');
+    handler.on("GetOpenActionDestination", function(data) {
+      return pdfManager.ensureCatalog("openActionDestination");
     });
 
-    handler.on('GetAttachments',
+    handler.on("GetAttachments",
       function wphSetupGetAttachments(data) {
-        return pdfManager.ensureCatalog('attachments');
+        return pdfManager.ensureCatalog("attachments");
       }
     );
 
-    handler.on('GetJavaScript',
+    handler.on("GetJavaScript",
       function wphSetupGetJavaScript(data) {
-        return pdfManager.ensureCatalog('javaScript');
+        return pdfManager.ensureCatalog("javaScript");
       }
     );
 
-    handler.on('GetOutline',
+    handler.on("GetOutline",
       function wphSetupGetOutline(data) {
-        return pdfManager.ensureCatalog('documentOutline');
+        return pdfManager.ensureCatalog("documentOutline");
       }
     );
 
-    handler.on('GetPermissions', function(data) {
-      return pdfManager.ensureCatalog('permissions');
+    handler.on("GetPermissions", function(data) {
+      return pdfManager.ensureCatalog("permissions");
     });
 
-    handler.on('GetMetadata',
+    handler.on("GetMetadata",
       function wphSetupGetMetadata(data) {
-        return Promise.all([pdfManager.ensureDoc('documentInfo'),
-                            pdfManager.ensureCatalog('metadata')]);
+        return Promise.all([pdfManager.ensureDoc("documentInfo"),
+                            pdfManager.ensureCatalog("metadata")]);
       }
     );
 
-    handler.on('GetData', function wphSetupGetData(data) {
+    handler.on("GetData", function wphSetupGetData(data) {
       pdfManager.requestLoadedStream();
       return pdfManager.onLoadedStream().then(function(stream) {
         return stream.bytes;
       });
     });
 
-    handler.on('GetStats',
+    handler.on("GetStats",
       function wphSetupGetStats(data) {
         return pdfManager.pdfDocument.xref.stats;
       }
     );
 
-    handler.on('GetAnnotations', function({ pageIndex, intent, }) {
+    handler.on("GetAnnotations", function({ pageIndex, intent, }) {
       return pdfManager.getPage(pageIndex).then(function(page) {
         return page.getAnnotationsData(intent);
       });
     });
 
-    handler.on('RenderPageRequest', function wphSetupRenderPage(data) {
+    handler.on("RenderPageRequest", function wphSetupRenderPage(data) {
       var pageIndex = data.pageIndex;
       pdfManager.getPage(pageIndex).then(function(page) {
-        var task = new WorkerTask('RenderPageRequest: page ' + pageIndex);
+        var task = new WorkerTask("RenderPageRequest: page " + pageIndex);
         startWorkerTask(task);
 
         // NOTE: Keep this condition in sync with the `info` helper function.
@@ -611,33 +611,33 @@ var WorkerMessageHandler = {
 
           // For compatibility with older behavior, generating unknown
           // unsupported feature notification on errors.
-          handler.send('UnsupportedFeature',
+          handler.send("UnsupportedFeature",
                        { featureId: UNSUPPORTED_FEATURES.unknown, });
 
           var minimumStackMessage =
-            'worker.js: while trying to getPage() and getOperatorList()';
+            "worker.js: while trying to getPage() and getOperatorList()";
 
           var wrappedException;
 
           // Turn the error into an obj that can be serialized
-          if (typeof e === 'string') {
+          if (typeof e === "string") {
             wrappedException = {
               message: e,
               stack: minimumStackMessage,
             };
-          } else if (typeof e === 'object') {
+          } else if (typeof e === "object") {
             wrappedException = {
               message: e.message || e.toString(),
               stack: e.stack || minimumStackMessage,
             };
           } else {
             wrappedException = {
-              message: 'Unknown exception type: ' + (typeof e),
+              message: "Unknown exception type: " + (typeof e),
               stack: minimumStackMessage,
             };
           }
 
-          handler.send('PageError', {
+          handler.send("PageError", {
             pageIndex,
             error: wrappedException,
             intent: data.intent,
@@ -646,13 +646,13 @@ var WorkerMessageHandler = {
       });
     }, this);
 
-    handler.on('GetTextContent', function wphExtractText(data, sink) {
+    handler.on("GetTextContent", function wphExtractText(data, sink) {
       var pageIndex = data.pageIndex;
       sink.onPull = function (desiredSize) { };
       sink.onCancel = function (reason) { };
 
       pdfManager.getPage(pageIndex).then(function(page) {
-        var task = new WorkerTask('GetTextContent: page ' + pageIndex);
+        var task = new WorkerTask("GetTextContent: page " + pageIndex);
         startWorkerTask(task);
 
         // NOTE: Keep this condition in sync with the `info` helper function.
@@ -683,15 +683,15 @@ var WorkerMessageHandler = {
       });
     });
 
-    handler.on('FontFallback', function(data) {
+    handler.on("FontFallback", function(data) {
       return pdfManager.fontFallback(data.id, handler);
     });
 
-    handler.on('Cleanup', function wphCleanup(data) {
+    handler.on("Cleanup", function wphCleanup(data) {
       return pdfManager.cleanup();
     });
 
-    handler.on('Terminate', function wphTerminate(data) {
+    handler.on("Terminate", function wphTerminate(data) {
       terminated = true;
       if (pdfManager) {
         pdfManager.terminate();
@@ -715,27 +715,27 @@ var WorkerMessageHandler = {
       });
     });
 
-    handler.on('Ready', function wphReady(data) {
+    handler.on("Ready", function wphReady(data) {
       setupDoc(docParams);
       docParams = null; // we don't need docParams anymore -- saving memory.
     });
     return workerHandlerName;
   },
   initializeFromPort(port) {
-    var handler = new MessageHandler('worker', 'main', port);
+    var handler = new MessageHandler("worker", "main", port);
     WorkerMessageHandler.setup(handler, port);
-    handler.send('ready', null);
+    handler.send("ready", null);
   },
 };
 
 function isMessagePort(maybePort) {
-  return typeof maybePort.postMessage === 'function' &&
-         ('onmessage' in maybePort);
+  return typeof maybePort.postMessage === "function" &&
+         ("onmessage" in maybePort);
 }
 
 // Worker thread (and not node.js)?
-if (typeof window === 'undefined' && !isNodeJS() &&
-    typeof self !== 'undefined' && isMessagePort(self)) {
+if (typeof window === "undefined" && !isNodeJS() &&
+    typeof self !== "undefined" && isMessagePort(self)) {
   WorkerMessageHandler.initializeFromPort(self);
 }
 

@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-import { assert, FormatError, ImageKind, info, warn } from '../shared/util';
-import { isName, isStream, Name } from './primitives';
-import { ColorSpace } from './colorspace';
-import { DecodeStream } from './stream';
-import { JpegStream } from './jpeg_stream';
-import { JpxImage } from './jpx';
+import { assert, FormatError, ImageKind, info, warn } from "../shared/util";
+import { isName, isStream, Name } from "./primitives";
+import { ColorSpace } from "./colorspace";
+import { DecodeStream } from "./stream";
+import { JpegStream } from "./jpeg_stream";
+import { JpxImage } from "./jpx";
 
 var PDFImage = (function PDFImageClosure() {
   /**
@@ -28,7 +28,7 @@ var PDFImage = (function PDFImageClosure() {
   function handleImageData(image, nativeDecoder) {
     if (nativeDecoder && nativeDecoder.canDecode(image)) {
       return nativeDecoder.decode(image).catch((reason) => {
-        warn('Native image decoding failed -- trying to recover: ' +
+        warn("Native image decoding failed -- trying to recover: " +
              (reason && reason.message));
         return image;
       });
@@ -84,10 +84,10 @@ var PDFImage = (function PDFImageClosure() {
     this.image = image;
     var dict = image.dict;
 
-    const filter = dict.get('Filter');
+    const filter = dict.get("Filter");
     if (isName(filter)) {
       switch (filter.name) {
-        case 'JPXDecode':
+        case "JPXDecode":
           var jpxImage = new JpxImage();
           jpxImage.parseImageProperties(image.stream);
           image.stream.reset();
@@ -97,7 +97,7 @@ var PDFImage = (function PDFImageClosure() {
           image.bitsPerComponent = jpxImage.bitsPerComponent;
           image.numComps = jpxImage.componentsCount;
           break;
-        case 'JBIG2Decode':
+        case "JBIG2Decode":
           image.bitsPerComponent = 1;
           image.numComps = 1;
           break;
@@ -105,14 +105,14 @@ var PDFImage = (function PDFImageClosure() {
     }
     // TODO cache rendered images?
 
-    let width = dict.get('Width', 'W');
-    let height = dict.get('Height', 'H');
+    let width = dict.get("Width", "W");
+    let height = dict.get("Height", "H");
 
     if ((Number.isInteger(image.width) && image.width > 0) &&
         (Number.isInteger(image.height) && image.height > 0) &&
         (image.width !== width || image.height !== height)) {
-      warn('PDFImage - using the Width/Height of the image data, ' +
-           'rather than the image dictionary.');
+      warn("PDFImage - using the Width/Height of the image data, " +
+           "rather than the image dictionary.");
       width = image.width;
       height = image.height;
     }
@@ -123,13 +123,13 @@ var PDFImage = (function PDFImageClosure() {
     this.width = width;
     this.height = height;
 
-    this.interpolate = dict.get('Interpolate', 'I') || false;
-    this.imageMask = dict.get('ImageMask', 'IM') || false;
-    this.matte = dict.get('Matte') || false;
+    this.interpolate = dict.get("Interpolate", "I") || false;
+    this.imageMask = dict.get("ImageMask", "IM") || false;
+    this.matte = dict.get("Matte") || false;
 
     var bitsPerComponent = image.bitsPerComponent;
     if (!bitsPerComponent) {
-      bitsPerComponent = dict.get('BitsPerComponent', 'BPC');
+      bitsPerComponent = dict.get("BitsPerComponent", "BPC");
       if (!bitsPerComponent) {
         if (this.imageMask) {
           bitsPerComponent = 1;
@@ -142,22 +142,22 @@ var PDFImage = (function PDFImageClosure() {
     this.bpc = bitsPerComponent;
 
     if (!this.imageMask) {
-      var colorSpace = dict.get('ColorSpace', 'CS');
+      var colorSpace = dict.get("ColorSpace", "CS");
       if (!colorSpace) {
-        info('JPX images (which do not require color spaces)');
+        info("JPX images (which do not require color spaces)");
         switch (image.numComps) {
           case 1:
-            colorSpace = Name.get('DeviceGray');
+            colorSpace = Name.get("DeviceGray");
             break;
           case 3:
-            colorSpace = Name.get('DeviceRGB');
+            colorSpace = Name.get("DeviceRGB");
             break;
           case 4:
-            colorSpace = Name.get('DeviceCMYK');
+            colorSpace = Name.get("DeviceCMYK");
             break;
           default:
             throw new Error(`JPX images with ${image.numComps} ` +
-                            'color components not supported.');
+                            "color components not supported.");
         }
       }
       let resources = isInline ? res : null;
@@ -166,7 +166,7 @@ var PDFImage = (function PDFImageClosure() {
       this.numComps = this.colorSpace.numComps;
     }
 
-    this.decode = dict.getArray('Decode', 'D');
+    this.decode = dict.getArray("Decode", "D");
     this.needsDecode = false;
     if (this.decode &&
         ((this.colorSpace &&
@@ -178,7 +178,7 @@ var PDFImage = (function PDFImageClosure() {
       var max = (1 << bitsPerComponent) - 1;
       this.decodeCoefficients = [];
       this.decodeAddends = [];
-      const isIndexed = this.colorSpace && this.colorSpace.name === 'Indexed';
+      const isIndexed = this.colorSpace && this.colorSpace.name === "Indexed";
       for (var i = 0, j = 0; i < this.decode.length; i += 2, ++j) {
         var dmin = this.decode[i];
         var dmax = this.decode[i + 1];
@@ -198,9 +198,9 @@ var PDFImage = (function PDFImageClosure() {
       });
     } else if (mask) {
       if (isStream(mask)) {
-        var maskDict = mask.dict, imageMask = maskDict.get('ImageMask', 'IM');
+        var maskDict = mask.dict, imageMask = maskDict.get("ImageMask", "IM");
         if (!imageMask) {
-          warn('Ignoring /Mask in image without /ImageMask.');
+          warn("Ignoring /Mask in image without /ImageMask.");
         } else {
           this.mask = new PDFImage({
             xref,
@@ -228,8 +228,8 @@ var PDFImage = (function PDFImageClosure() {
     var smaskPromise;
     var maskPromise;
 
-    var smask = image.dict.get('SMask');
-    var mask = image.dict.get('Mask');
+    var smask = image.dict.get("SMask");
+    var mask = image.dict.get("Mask");
 
     if (smask) {
       smaskPromise = handleImageData(smask, nativeDecoder);
@@ -242,7 +242,7 @@ var PDFImage = (function PDFImageClosure() {
         } else if (Array.isArray(mask)) {
           maskPromise = Promise.resolve(mask);
         } else {
-          warn('Unsupported mask format.');
+          warn("Unsupported mask format.");
           maskPromise = Promise.resolve(null);
         }
       } else {
@@ -265,8 +265,8 @@ var PDFImage = (function PDFImageClosure() {
 
   PDFImage.createMask = function({ imgArray, width, height,
                                    imageIsFromDecodeStream, inverseDecode, }) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(imgArray instanceof Uint8ClampedArray,
              'PDFImage.createMask: Unsupported "imgArray" type.');
     }
@@ -425,8 +425,8 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     fillOpacity(rgbaBuf, width, height, actualHeight, image) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(rgbaBuf instanceof Uint8ClampedArray,
                'PDFImage.fillOpacity: Unsupported "rgbaBuf" type.');
       }
@@ -479,7 +479,7 @@ var PDFImage = (function PDFImageClosure() {
             alphaBuf[i] = opacity;
           }
         } else {
-          throw new FormatError('Unknown mask format.');
+          throw new FormatError("Unknown mask format.");
         }
       }
 
@@ -496,8 +496,8 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     undoPreblend(buffer, width, height) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(buffer instanceof Uint8ClampedArray,
                'PDFImage.undoPreblend: Unsupported "buffer" type.');
       }
@@ -555,9 +555,9 @@ var PDFImage = (function PDFImageClosure() {
         // Similarly, if it is a 24-bit-per pixel RGB image without any
         // complications, we avoid expanding by 1.333x to RGBA form.
         var kind;
-        if (this.colorSpace.name === 'DeviceGray' && bpc === 1) {
+        if (this.colorSpace.name === "DeviceGray" && bpc === 1) {
           kind = ImageKind.GRAYSCALE_1BPP;
-        } else if (this.colorSpace.name === 'DeviceRGB' && bpc === 8 &&
+        } else if (this.colorSpace.name === "DeviceRGB" && bpc === 8 &&
                    !this.needsDecode) {
           kind = ImageKind.RGB_24BPP;
         }
@@ -581,7 +581,7 @@ var PDFImage = (function PDFImageClosure() {
           if (this.needsDecode) {
             // Invert the buffer (which must be grayscale if we reached here).
             assert(kind === ImageKind.GRAYSCALE_1BPP,
-                   'PDFImage.createImageData: The image must be grayscale.');
+                   "PDFImage.createImageData: The image must be grayscale.");
             var buffer = imgData.data;
             for (var i = 0, ii = buffer.length; i < ii; i++) {
               buffer[i] ^= 0xff;
@@ -592,13 +592,13 @@ var PDFImage = (function PDFImageClosure() {
         if (this.image instanceof JpegStream && !this.smask && !this.mask) {
           let imageLength = originalHeight * rowBytes;
           switch (this.colorSpace.name) {
-            case 'DeviceGray':
+            case "DeviceGray":
               // Avoid truncating the image, since `JpegImage.getData`
               // will expand the image data when `forceRGB === true`.
               imageLength *= 3;
               /* falls through */
-            case 'DeviceRGB':
-            case 'DeviceCMYK':
+            case "DeviceRGB":
+            case "DeviceCMYK":
               imgData.kind = ImageKind.RGB_24BPP;
               imgData.data = this.getImageBytes(imageLength,
                 drawWidth, drawHeight, /* forceRGB = */ true);
@@ -647,8 +647,8 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     fillGrayBuffer(buffer) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(buffer instanceof Uint8ClampedArray,
                'PDFImage.fillGrayBuffer: Unsupported "buffer" type.');
       }

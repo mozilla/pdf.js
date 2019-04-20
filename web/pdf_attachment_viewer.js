@@ -16,7 +16,7 @@
 import {
   createObjectURL, createPromiseCapability, getFilenameFromUrl,
   removeNullCharacters
-} from 'pdfjs-lib';
+} from "pdfjs-lib";
 
 /**
  * @typedef {Object} PDFAttachmentViewerOptions
@@ -41,7 +41,7 @@ class PDFAttachmentViewer {
 
     this.reset();
 
-    this.eventBus.on('fileattachmentannotation',
+    this.eventBus.on("fileattachmentannotation",
       this._appendAttachment.bind(this));
   }
 
@@ -49,7 +49,7 @@ class PDFAttachmentViewer {
     this.attachments = null;
 
     // Remove the attachments from the DOM.
-    this.container.textContent = '';
+    this.container.textContent = "";
 
     if (!keepRenderedCapability) {
       // NOTE: The *only* situation in which the `_renderedCapability` should
@@ -64,7 +64,7 @@ class PDFAttachmentViewer {
   _dispatchEvent(attachmentsCount) {
     this._renderedCapability.resolve();
 
-    this.eventBus.dispatch('attachmentsloaded', {
+    this.eventBus.dispatch("attachmentsloaded", {
       source: this,
       attachmentsCount,
     });
@@ -81,21 +81,21 @@ class PDFAttachmentViewer {
     let blobUrl;
     button.onclick = function() {
       if (!blobUrl) {
-        blobUrl = createObjectURL(content, 'application/pdf');
+        blobUrl = createObjectURL(content, "application/pdf");
       }
       let viewerUrl;
-      if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         // The current URL is the viewer, let's use it and append the file.
-        viewerUrl = '?file=' + encodeURIComponent(blobUrl + '#' + filename);
-      } else if (PDFJSDev.test('CHROME')) {
+        viewerUrl = "?file=" + encodeURIComponent(blobUrl + "#" + filename);
+      } else if (PDFJSDev.test("CHROME")) {
         // In the Chrome extension, the URL is rewritten using the history API
         // in viewer.js, so an absolute URL must be generated.
         // eslint-disable-next-line no-undef
-        viewerUrl = chrome.runtime.getURL('/content/web/viewer.html') +
-          '?file=' + encodeURIComponent(blobUrl + '#' + filename);
-      } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+        viewerUrl = chrome.runtime.getURL("/content/web/viewer.html") +
+          "?file=" + encodeURIComponent(blobUrl + "#" + filename);
+      } else if (PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
         // Let Firefox's content handler catch the URL and display the PDF.
-        viewerUrl = blobUrl + '?' + encodeURIComponent(filename);
+        viewerUrl = blobUrl + "?" + encodeURIComponent(filename);
       }
       window.open(viewerUrl);
       return false;
@@ -107,7 +107,7 @@ class PDFAttachmentViewer {
    */
   _bindLink(button, content, filename) {
     button.onclick = () => {
-      this.downloadManager.downloadData(content, filename, '');
+      this.downloadManager.downloadData(content, filename, "");
       return false;
     };
   }
@@ -137,9 +137,9 @@ class PDFAttachmentViewer {
       let item = attachments[names[i]];
       let filename = removeNullCharacters(getFilenameFromUrl(item.filename));
 
-      let div = document.createElement('div');
-      div.className = 'attachmentsItem';
-      let button = document.createElement('button');
+      let div = document.createElement("div");
+      div.className = "attachmentsItem";
+      let button = document.createElement("button");
       button.textContent = filename;
       if (/\.pdf$/i.test(filename) &&
           !this.downloadManager.disableCreateObjectURL) {

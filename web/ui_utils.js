@@ -14,7 +14,7 @@
  */
 
 const CSS_UNITS = 96.0 / 72.0;
-const DEFAULT_SCALE_VALUE = 'auto';
+const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
 const MIN_SCALE = 0.10;
 const MAX_SCALE = 10.0;
@@ -31,8 +31,8 @@ const PresentationModeState = {
 };
 
 const RendererType = {
-  CANVAS: 'canvas',
-  SVG: 'svg',
+  CANVAS: "canvas",
+  SVG: "svg",
 };
 
 const TextLayerMode = {
@@ -61,7 +61,7 @@ function formatL10nValue(text, args) {
     return text;
   }
   return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
-    return (name in args ? args[name] : '{{' + name + '}}');
+    return (name in args ? args[name] : "{{" + name + "}}");
   });
 }
 
@@ -71,11 +71,11 @@ function formatL10nValue(text, args) {
  */
 let NullL10n = {
   async getLanguage() {
-    return 'en-us';
+    return "en-us";
   },
 
   async getDirection() {
-    return 'ltr';
+    return "ltr";
   },
 
   async get(property, args, fallback) {
@@ -120,7 +120,7 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   // producing the error. See also animationStarted.
   let parent = element.offsetParent;
   if (!parent) {
-    console.error('offsetParent is not set -- cannot scroll');
+    console.error("offsetParent is not set -- cannot scroll");
     return;
   }
   let offsetY = element.offsetTop + element.clientTop;
@@ -128,7 +128,7 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   while ((parent.clientHeight === parent.scrollHeight &&
           parent.clientWidth === parent.scrollWidth) ||
          (skipOverflowHiddenElements &&
-          getComputedStyle(parent).overflow === 'hidden')) {
+          getComputedStyle(parent).overflow === "hidden")) {
     if (parent.dataset._scaleY) {
       offsetY /= parent.dataset._scaleY;
       offsetX /= parent.dataset._scaleX;
@@ -190,7 +190,7 @@ function watchScroll(viewAreaElement, callback) {
   };
 
   let rAF = null;
-  viewAreaElement.addEventListener('scroll', debounceScroll, true);
+  viewAreaElement.addEventListener("scroll", debounceScroll, true);
   return state;
 }
 
@@ -198,10 +198,10 @@ function watchScroll(viewAreaElement, callback) {
  * Helper function to parse query string (e.g. ?param1=value&parm2=...).
  */
 function parseQueryString(query) {
-  let parts = query.split('&');
+  let parts = query.split("&");
   let params = Object.create(null);
   for (let i = 0, ii = parts.length; i < ii; ++i) {
-    let param = parts[i].split('=');
+    let param = parts[i].split("=");
     let key = param[0].toLowerCase();
     let value = param.length > 1 ? param[1] : null;
     params[decodeURIComponent(key)] = decodeURIComponent(value);
@@ -544,10 +544,10 @@ function noContextMenuHandler(evt) {
 
 function isDataSchema(url) {
   let i = 0, ii = url.length;
-  while (i < ii && url[i].trim() === '') {
+  while (i < ii && url[i].trim() === "") {
     i++;
   }
-  return url.substring(i, i + 5).toLowerCase() === 'data:';
+  return url.substring(i, i + 5).toLowerCase() === "data:";
 }
 
 /**
@@ -557,12 +557,12 @@ function isDataSchema(url) {
  *   unknown, or the protocol is unsupported.
  * @returns {string} Guessed PDF filename.
  */
-function getPDFFileNameFromURL(url, defaultFilename = 'document.pdf') {
-  if (typeof url !== 'string') {
+function getPDFFileNameFromURL(url, defaultFilename = "document.pdf") {
+  if (typeof url !== "string") {
     return defaultFilename;
   }
   if (isDataSchema(url)) {
-    console.warn('getPDFFileNameFromURL: ' +
+    console.warn("getPDFFileNameFromURL: " +
                  'ignoring "data:" URL for performance reasons.');
     return defaultFilename;
   }
@@ -576,7 +576,7 @@ function getPDFFileNameFromURL(url, defaultFilename = 'document.pdf') {
                           reFilename.exec(splitURI[3]);
   if (suggestedFilename) {
     suggestedFilename = suggestedFilename[0];
-    if (suggestedFilename.includes('%')) {
+    if (suggestedFilename.includes("%")) {
       // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
       try {
         suggestedFilename =
@@ -631,8 +631,8 @@ function isPortraitOrientation(size) {
 }
 
 const WaitOnType = {
-  EVENT: 'event',
-  TIMEOUT: 'timeout',
+  EVENT: "event",
+  TIMEOUT: "timeout",
 };
 
 /**
@@ -654,9 +654,9 @@ const WaitOnType = {
  */
 function waitOnEventOrTimeout({ target, name, delay = 0, }) {
   return new Promise(function(resolve, reject) {
-    if (typeof target !== 'object' || !(name && typeof name === 'string') ||
+    if (typeof target !== "object" || !(name && typeof name === "string") ||
         !(Number.isInteger(delay) && delay >= 0)) {
-      throw new Error('waitOnEventOrTimeout - invalid parameters.');
+      throw new Error("waitOnEventOrTimeout - invalid parameters.");
     }
 
     function handler(type) {
@@ -688,8 +688,8 @@ function waitOnEventOrTimeout({ target, name, delay = 0, }) {
  * Promise that is resolved when DOM window becomes visible.
  */
 let animationStarted = new Promise(function (resolve) {
-  if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) &&
-      typeof window === 'undefined') {
+  if ((typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB")) &&
+      typeof window === "undefined") {
     // Prevent "ReferenceError: window is not defined" errors when running the
     // unit-tests in Node.js/Travis.
     setTimeout(resolve, 20);
@@ -757,7 +757,7 @@ class EventBus {
       const obj = args[0];
       for (let key in obj) {
         const value = obj[key];
-        if (key === 'source') {
+        if (key === "source") {
           if (value === window || value === document) {
             return; // No need to re-dispatch (already) global events.
           }
@@ -766,7 +766,7 @@ class EventBus {
         details[key] = value;
       }
     }
-    const event = document.createEvent('CustomEvent');
+    const event = document.createEvent("CustomEvent");
     event.initCustomEvent(eventName, true, true, details);
     document.dispatchEvent(event);
   }
@@ -789,14 +789,14 @@ class ProgressBar {
     this.visible = true;
 
     // Fetch the sub-elements for later.
-    this.div = document.querySelector(id + ' .progress');
+    this.div = document.querySelector(id + " .progress");
     // Get the loading bar element, so it can be resized to fit the viewer.
     this.bar = this.div.parentNode;
 
     // Get options, with sensible defaults.
     this.height = height || 100;
     this.width = width || 100;
-    this.units = units || '%';
+    this.units = units || "%";
 
     // Initialize heights.
     this.div.style.height = this.height + this.units;
@@ -805,12 +805,12 @@ class ProgressBar {
 
   _updateBar() {
     if (this._indeterminate) {
-      this.div.classList.add('indeterminate');
+      this.div.classList.add("indeterminate");
       this.div.style.width = this.width + this.units;
       return;
     }
 
-    this.div.classList.remove('indeterminate');
+    this.div.classList.remove("indeterminate");
     let progressSize = this.width * this._percent / 100;
     this.div.style.width = progressSize + this.units;
   }
@@ -832,8 +832,8 @@ class ProgressBar {
     let container = viewer.parentNode;
     let scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
-      this.bar.setAttribute('style', 'width: calc(100% - ' +
-                                     scrollbarWidth + 'px);');
+      this.bar.setAttribute("style", "width: calc(100% - " +
+                                     scrollbarWidth + "px);");
     }
   }
 
@@ -842,8 +842,8 @@ class ProgressBar {
       return;
     }
     this.visible = false;
-    this.bar.classList.add('hidden');
-    document.body.classList.remove('loadingInProgress');
+    this.bar.classList.add("hidden");
+    document.body.classList.remove("loadingInProgress");
   }
 
   show() {
@@ -851,8 +851,8 @@ class ProgressBar {
       return;
     }
     this.visible = true;
-    document.body.classList.add('loadingInProgress');
-    this.bar.classList.remove('hidden');
+    document.body.classList.add("loadingInProgress");
+    this.bar.classList.remove("hidden");
   }
 }
 

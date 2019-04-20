@@ -16,25 +16,25 @@
 import {
   createResponseStatusError, extractFilenameFromHeader,
   validateRangeRequestCapabilities, validateResponseStatus
-} from '../../src/display/network_utils';
+} from "../../src/display/network_utils";
 import {
   MissingPDFException, UnexpectedResponseException
-} from '../../src/shared/util';
+} from "../../src/shared/util";
 
-describe('network_utils', function() {
-  describe('validateRangeRequestCapabilities', function() {
-    it('rejects range chunk sizes that are not larger than zero', function() {
+describe("network_utils", function() {
+  describe("validateRangeRequestCapabilities", function() {
+    it("rejects range chunk sizes that are not larger than zero", function() {
       expect(function() {
         validateRangeRequestCapabilities({ rangeChunkSize: 0, });
-      }).toThrow(new Error('Range chunk size must be larger than zero'));
+      }).toThrow(new Error("Range chunk size must be larger than zero"));
     });
 
-    it('rejects disabled or non-HTTP range requests', function() {
+    it("rejects disabled or non-HTTP range requests", function() {
       expect(validateRangeRequestCapabilities({
         disableRange: true,
         isHttp: true,
         getResponseHeader: (headerName) => {
-          if (headerName === 'Content-Length') {
+          if (headerName === "Content-Length") {
             return 8;
           }
         },
@@ -48,7 +48,7 @@ describe('network_utils', function() {
         disableRange: false,
         isHttp: false,
         getResponseHeader: (headerName) => {
-          if (headerName === 'Content-Length') {
+          if (headerName === "Content-Length") {
             return 8;
           }
         },
@@ -59,14 +59,14 @@ describe('network_utils', function() {
       });
     });
 
-    it('rejects invalid Accept-Ranges header values', function() {
+    it("rejects invalid Accept-Ranges header values", function() {
       expect(validateRangeRequestCapabilities({
         disableRange: false,
         isHttp: true,
         getResponseHeader: (headerName) => {
-          if (headerName === 'Accept-Ranges') {
-            return 'none';
-          } else if (headerName === 'Content-Length') {
+          if (headerName === "Accept-Ranges") {
+            return "none";
+          } else if (headerName === "Content-Length") {
             return 8;
           }
         },
@@ -77,16 +77,16 @@ describe('network_utils', function() {
       });
     });
 
-    it('rejects invalid Content-Encoding header values', function() {
+    it("rejects invalid Content-Encoding header values", function() {
       expect(validateRangeRequestCapabilities({
         disableRange: false,
         isHttp: true,
         getResponseHeader: (headerName) => {
-          if (headerName === 'Accept-Ranges') {
-            return 'bytes';
-          } else if (headerName === 'Content-Encoding') {
-            return 'gzip';
-          } else if (headerName === 'Content-Length') {
+          if (headerName === "Accept-Ranges") {
+            return "bytes";
+          } else if (headerName === "Content-Encoding") {
+            return "gzip";
+          } else if (headerName === "Content-Length") {
             return 8;
           }
         },
@@ -97,17 +97,17 @@ describe('network_utils', function() {
       });
     });
 
-    it('rejects invalid Content-Length header values', function() {
+    it("rejects invalid Content-Length header values", function() {
       expect(validateRangeRequestCapabilities({
         disableRange: false,
         isHttp: true,
         getResponseHeader: (headerName) => {
-          if (headerName === 'Accept-Ranges') {
-            return 'bytes';
-          } else if (headerName === 'Content-Encoding') {
+          if (headerName === "Accept-Ranges") {
+            return "bytes";
+          } else if (headerName === "Content-Encoding") {
             return null;
-          } else if (headerName === 'Content-Length') {
-            return 'eight';
+          } else if (headerName === "Content-Length") {
+            return "eight";
           }
         },
         rangeChunkSize: 64,
@@ -117,16 +117,16 @@ describe('network_utils', function() {
       });
     });
 
-    it('rejects file sizes that are too small for range requests', function() {
+    it("rejects file sizes that are too small for range requests", function() {
       expect(validateRangeRequestCapabilities({
         disableRange: false,
         isHttp: true,
         getResponseHeader: (headerName) => {
-          if (headerName === 'Accept-Ranges') {
-            return 'bytes';
-          } else if (headerName === 'Content-Encoding') {
+          if (headerName === "Accept-Ranges") {
+            return "bytes";
+          } else if (headerName === "Content-Encoding") {
             return null;
-          } else if (headerName === 'Content-Length') {
+          } else if (headerName === "Content-Length") {
             return 8;
           }
         },
@@ -137,16 +137,16 @@ describe('network_utils', function() {
       });
     });
 
-    it('accepts file sizes large enough for range requests', function() {
+    it("accepts file sizes large enough for range requests", function() {
       expect(validateRangeRequestCapabilities({
         disableRange: false,
         isHttp: true,
         getResponseHeader: (headerName) => {
-          if (headerName === 'Accept-Ranges') {
-            return 'bytes';
-          } else if (headerName === 'Content-Encoding') {
+          if (headerName === "Accept-Ranges") {
+            return "bytes";
+          } else if (headerName === "Content-Encoding") {
             return null;
-          } else if (headerName === 'Content-Length') {
+          } else if (headerName === "Content-Length") {
             return 8192;
           }
         },
@@ -158,164 +158,164 @@ describe('network_utils', function() {
     });
   });
 
-  describe('extractFilenameFromHeader', function() {
-    it('returns null when content disposition header is blank', function() {
+  describe("extractFilenameFromHeader", function() {
+    it("returns null when content disposition header is blank", function() {
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
+        if (headerName === "Content-Disposition") {
           return null;
         }
       })).toBeNull();
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
+        if (headerName === "Content-Disposition") {
           return undefined;
         }
       })).toBeNull();
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return '';
+        if (headerName === "Content-Disposition") {
+          return "";
         }
       })).toBeNull();
     });
 
-    it('gets the filename from the response header', function() {
+    it("gets the filename from the response header", function() {
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'inline';
+        if (headerName === "Content-Disposition") {
+          return "inline";
         }
       })).toBeNull();
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'attachment';
+        if (headerName === "Content-Disposition") {
+          return "attachment";
         }
       })).toBeNull();
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
+        if (headerName === "Content-Disposition") {
           return 'attachment; filename="filename.pdf"';
         }
-      })).toEqual('filename.pdf');
+      })).toEqual("filename.pdf");
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
+        if (headerName === "Content-Disposition") {
           return 'attachment; filename="filename.pdf and spaces.pdf"';
         }
-      })).toEqual('filename.pdf and spaces.pdf');
+      })).toEqual("filename.pdf and spaces.pdf");
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
+        if (headerName === "Content-Disposition") {
           return 'attachment; filename="tl;dr.pdf"';
         }
-      })).toEqual('tl;dr.pdf');
+      })).toEqual("tl;dr.pdf");
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'attachment; filename=filename.pdf';
+        if (headerName === "Content-Disposition") {
+          return "attachment; filename=filename.pdf";
         }
-      })).toEqual('filename.pdf');
+      })).toEqual("filename.pdf");
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'attachment; filename=filename.pdf someotherparam';
+        if (headerName === "Content-Disposition") {
+          return "attachment; filename=filename.pdf someotherparam";
         }
-      })).toEqual('filename.pdf');
+      })).toEqual("filename.pdf");
     });
 
-    it('gets the filename from the response header (RFC 6266)', function() {
+    it("gets the filename from the response header (RFC 6266)", function() {
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'attachment; filename*=filename.pdf';
+        if (headerName === "Content-Disposition") {
+          return "attachment; filename*=filename.pdf";
         }
-      })).toEqual('filename.pdf');
+      })).toEqual("filename.pdf");
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'attachment; filename*=\'\'filename.pdf';
+        if (headerName === "Content-Disposition") {
+          return "attachment; filename*=''filename.pdf";
         }
-      })).toEqual('filename.pdf');
+      })).toEqual("filename.pdf");
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'attachment; filename*=utf-8\'\'filename.pdf';
+        if (headerName === "Content-Disposition") {
+          return "attachment; filename*=utf-8''filename.pdf";
         }
-      })).toEqual('filename.pdf');
+      })).toEqual("filename.pdf");
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'attachment; filename=no.pdf; filename*=utf-8\'\'filename.pdf';
+        if (headerName === "Content-Disposition") {
+          return "attachment; filename=no.pdf; filename*=utf-8''filename.pdf";
         }
-      })).toEqual('filename.pdf');
+      })).toEqual("filename.pdf");
 
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'attachment; filename*=utf-8\'\'filename.pdf; filename=no.pdf';
+        if (headerName === "Content-Disposition") {
+          return "attachment; filename*=utf-8''filename.pdf; filename=no.pdf";
         }
-      })).toEqual('filename.pdf');
+      })).toEqual("filename.pdf");
     });
 
-    it('gets the filename from the response header (RFC 2231)', function() {
+    it("gets the filename from the response header (RFC 2231)", function() {
       // Tests continuations (RFC 2231 section 3, via RFC 5987 section 3.1).
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
-          return 'attachment; filename*0=filename; filename*1=.pdf';
+        if (headerName === "Content-Disposition") {
+          return "attachment; filename*0=filename; filename*1=.pdf";
         }
-      })).toEqual('filename.pdf');
+      })).toEqual("filename.pdf");
     });
 
-    it('only extracts filename with pdf extension', function () {
+    it("only extracts filename with pdf extension", function () {
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
+        if (headerName === "Content-Disposition") {
           return 'attachment; filename="filename.png"';
         }
       })).toBeNull();
     });
 
-    it('extension validation is case insensitive', function () {
+    it("extension validation is case insensitive", function () {
       expect(extractFilenameFromHeader((headerName) => {
-        if (headerName === 'Content-Disposition') {
+        if (headerName === "Content-Disposition") {
           return 'form-data; name="fieldName"; filename="file.PdF"';
         }
-      })).toEqual('file.PdF');
+      })).toEqual("file.PdF");
     });
   });
 
-  describe('createResponseStatusError', function() {
-    it('handles missing PDF file responses', function() {
-      expect(createResponseStatusError(404, 'https://foo.com/bar.pdf')).toEqual(
+  describe("createResponseStatusError", function() {
+    it("handles missing PDF file responses", function() {
+      expect(createResponseStatusError(404, "https://foo.com/bar.pdf")).toEqual(
         new MissingPDFException('Missing PDF "https://foo.com/bar.pdf".')
       );
 
-      expect(createResponseStatusError(0, 'file://foo.pdf')).toEqual(
+      expect(createResponseStatusError(0, "file://foo.pdf")).toEqual(
         new MissingPDFException('Missing PDF "file://foo.pdf".')
       );
     });
 
-    it('handles unexpected responses', function() {
-      expect(createResponseStatusError(302, 'https://foo.com/bar.pdf')).toEqual(
+    it("handles unexpected responses", function() {
+      expect(createResponseStatusError(302, "https://foo.com/bar.pdf")).toEqual(
         new UnexpectedResponseException(
-          'Unexpected server response (302) while retrieving PDF ' +
+          "Unexpected server response (302) while retrieving PDF " +
           '"https://foo.com/bar.pdf".'
         )
       );
 
-      expect(createResponseStatusError(0, 'https://foo.com/bar.pdf')).toEqual(
+      expect(createResponseStatusError(0, "https://foo.com/bar.pdf")).toEqual(
         new UnexpectedResponseException(
-          'Unexpected server response (0) while retrieving PDF ' +
+          "Unexpected server response (0) while retrieving PDF " +
           '"https://foo.com/bar.pdf".'
         )
       );
     });
   });
 
-  describe('validateResponseStatus', function() {
-    it('accepts valid response statuses', function() {
+  describe("validateResponseStatus", function() {
+    it("accepts valid response statuses", function() {
       expect(validateResponseStatus(200)).toEqual(true);
       expect(validateResponseStatus(206)).toEqual(true);
     });
 
-    it('rejects invalid response statuses', function() {
+    it("rejects invalid response statuses", function() {
       expect(validateResponseStatus(302)).toEqual(false);
       expect(validateResponseStatus(404)).toEqual(false);
       expect(validateResponseStatus(null)).toEqual(false);

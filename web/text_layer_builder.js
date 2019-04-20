@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus } from './ui_utils';
-import { renderTextLayer } from 'pdfjs-lib';
+import { getGlobalEventBus } from "./ui_utils";
+import { renderTextLayer } from "pdfjs-lib";
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
 
@@ -64,12 +64,12 @@ class TextLayerBuilder {
     this.renderingDone = true;
 
     if (!this.enhanceTextSelection) {
-      let endOfContent = document.createElement('div');
-      endOfContent.className = 'endOfContent';
+      let endOfContent = document.createElement("div");
+      endOfContent.className = "endOfContent";
       this.textLayerDiv.appendChild(endOfContent);
     }
 
-    this.eventBus.dispatch('textlayerrendered', {
+    this.eventBus.dispatch("textlayerrendered", {
       source: this,
       pageNumber: this.pageNumber,
       numTextDivs: this.textDivs.length,
@@ -114,7 +114,7 @@ class TextLayerBuilder {
           this._updateMatches();
         }
       };
-      this.eventBus.on('updatetextlayermatches',
+      this.eventBus.on("updatetextlayermatches",
                        this._onUpdateTextLayerMatches);
     }
   }
@@ -128,7 +128,7 @@ class TextLayerBuilder {
       this.textLayerRenderTask = null;
     }
     if (this._onUpdateTextLayerMatches) {
-      this.eventBus.off('updatetextlayermatches',
+      this.eventBus.off("updatetextlayermatches",
                         this._onUpdateTextLayerMatches);
       this._onUpdateTextLayerMatches = null;
     }
@@ -168,7 +168,7 @@ class TextLayerBuilder {
       }
 
       if (i === textContentItemsStr.length) {
-        console.error('Could not find a matching mapping');
+        console.error("Could not find a matching mapping");
       }
 
       let match = {
@@ -220,7 +220,7 @@ class TextLayerBuilder {
 
     function beginText(begin, className) {
       let divIdx = begin.divIdx;
-      textDivs[divIdx].textContent = '';
+      textDivs[divIdx].textContent = "";
       appendTextToDiv(divIdx, 0, begin.offset, className);
     }
 
@@ -229,7 +229,7 @@ class TextLayerBuilder {
       let content = textContentItemsStr[divIdx].substring(fromOffset, toOffset);
       let node = document.createTextNode(content);
       if (className) {
-        let span = document.createElement('span');
+        let span = document.createElement("span");
         span.className = className;
         span.appendChild(node);
         div.appendChild(span);
@@ -252,7 +252,7 @@ class TextLayerBuilder {
       let begin = match.begin;
       let end = match.end;
       const isSelected = (isSelectedPage && i === selectedMatchIdx);
-      const highlightSuffix = (isSelected ? ' selected' : '');
+      const highlightSuffix = (isSelected ? " selected" : "");
 
       if (isSelected) { // Attempt to scroll the selected match into view.
         findController.scrollMatchIntoView({
@@ -276,14 +276,14 @@ class TextLayerBuilder {
 
       if (begin.divIdx === end.divIdx) {
         appendTextToDiv(begin.divIdx, begin.offset, end.offset,
-                        'highlight' + highlightSuffix);
+                        "highlight" + highlightSuffix);
       } else {
         appendTextToDiv(begin.divIdx, begin.offset, infinity.offset,
-                        'highlight begin' + highlightSuffix);
+                        "highlight begin" + highlightSuffix);
         for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
-          textDivs[n0].className = 'highlight middle' + highlightSuffix;
+          textDivs[n0].className = "highlight middle" + highlightSuffix;
         }
-        beginText(end, 'highlight end' + highlightSuffix);
+        beginText(end, "highlight end" + highlightSuffix);
       }
       prevEnd = end;
     }
@@ -310,7 +310,7 @@ class TextLayerBuilder {
       for (let n = begin, end = match.end.divIdx; n <= end; n++) {
         let div = textDivs[n];
         div.textContent = textContentItemsStr[n];
-        div.className = '';
+        div.className = "";
       }
       clearedUntilDivIdx = match.end.divIdx + 1;
     }
@@ -338,11 +338,11 @@ class TextLayerBuilder {
     let div = this.textLayerDiv;
     let expandDivsTimer = null;
 
-    div.addEventListener('mousedown', (evt) => {
+    div.addEventListener("mousedown", (evt) => {
       if (this.enhanceTextSelection && this.textLayerRenderTask) {
         this.textLayerRenderTask.expandTextDivs(true);
-        if ((typeof PDFJSDev === 'undefined' ||
-             !PDFJSDev.test('FIREFOX || MOZCENTRAL')) &&
+        if ((typeof PDFJSDev === "undefined" ||
+             !PDFJSDev.test("FIREFOX || MOZCENTRAL")) &&
             expandDivsTimer) {
           clearTimeout(expandDivsTimer);
           expandDivsTimer = null;
@@ -350,34 +350,34 @@ class TextLayerBuilder {
         return;
       }
 
-      let end = div.querySelector('.endOfContent');
+      let end = div.querySelector(".endOfContent");
       if (!end) {
         return;
       }
-      if (typeof PDFJSDev === 'undefined' ||
-          !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+      if (typeof PDFJSDev === "undefined" ||
+          !PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
         // On non-Firefox browsers, the selection will feel better if the height
         // of the `endOfContent` div is adjusted to start at mouse click
         // location. This avoids flickering when the selection moves up.
         // However it does not work when selection is started on empty space.
         let adjustTop = evt.target !== div;
-        if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
           adjustTop = adjustTop && window.getComputedStyle(end).
-            getPropertyValue('-moz-user-select') !== 'none';
+            getPropertyValue("-moz-user-select") !== "none";
         }
         if (adjustTop) {
           let divBounds = div.getBoundingClientRect();
           let r = Math.max(0, (evt.pageY - divBounds.top) / divBounds.height);
-          end.style.top = (r * 100).toFixed(2) + '%';
+          end.style.top = (r * 100).toFixed(2) + "%";
         }
       }
-      end.classList.add('active');
+      end.classList.add("active");
     });
 
-    div.addEventListener('mouseup', () => {
+    div.addEventListener("mouseup", () => {
       if (this.enhanceTextSelection && this.textLayerRenderTask) {
-        if (typeof PDFJSDev === 'undefined' ||
-            !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+        if (typeof PDFJSDev === "undefined" ||
+            !PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
           expandDivsTimer = setTimeout(() => {
             if (this.textLayerRenderTask) {
               this.textLayerRenderTask.expandTextDivs(false);
@@ -390,15 +390,15 @@ class TextLayerBuilder {
         return;
       }
 
-      let end = div.querySelector('.endOfContent');
+      let end = div.querySelector(".endOfContent");
       if (!end) {
         return;
       }
-      if (typeof PDFJSDev === 'undefined' ||
-          !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        end.style.top = '';
+      if (typeof PDFJSDev === "undefined" ||
+          !PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
+        end.style.top = "";
       }
-      end.classList.remove('active');
+      end.classList.remove("active");
     });
   }
 }

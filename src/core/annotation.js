@@ -17,13 +17,13 @@
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
   AnnotationType, OPS, stringToBytes, stringToPDFString, Util, warn
-} from '../shared/util';
-import { Catalog, FileSpec, ObjectLoader } from './obj';
-import { Dict, isDict, isName, isRef, isStream } from './primitives';
-import { ColorSpace } from './colorspace';
-import { getInheritableProperty } from './core_utils';
-import { OperatorList } from './operator_list';
-import { Stream } from './stream';
+} from "../shared/util";
+import { Catalog, FileSpec, ObjectLoader } from "./obj";
+import { Dict, isDict, isName, isRef, isStream } from "./primitives";
+import { ColorSpace } from "./colorspace";
+import { getInheritableProperty } from "./core_utils";
+import { OperatorList } from "./operator_list";
+import { Stream } from "./stream";
 
 class AnnotationFactory {
   /**
@@ -38,7 +38,7 @@ class AnnotationFactory {
    * @return {Promise} A promise that is resolved with an {Annotation} instance.
    */
   static create(xref, ref, pdfManager, idFactory) {
-    return pdfManager.ensure(this, '_create',
+    return pdfManager.ensure(this, "_create",
                              [xref, ref, pdfManager, idFactory]);
   }
 
@@ -53,7 +53,7 @@ class AnnotationFactory {
     let id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
     // Determine the annotation's subtype.
-    let subtype = dict.get('Subtype');
+    let subtype = dict.get("Subtype");
     subtype = isName(subtype) ? subtype.name : null;
 
     // Return the right annotation object based on the subtype and field type.
@@ -67,79 +67,79 @@ class AnnotationFactory {
     };
 
     switch (subtype) {
-      case 'Link':
+      case "Link":
         return new LinkAnnotation(parameters);
 
-      case 'Text':
+      case "Text":
         return new TextAnnotation(parameters);
 
-      case 'Widget':
-        let fieldType = getInheritableProperty({ dict, key: 'FT', });
+      case "Widget":
+        let fieldType = getInheritableProperty({ dict, key: "FT", });
         fieldType = isName(fieldType) ? fieldType.name : null;
 
         switch (fieldType) {
-          case 'Tx':
+          case "Tx":
             return new TextWidgetAnnotation(parameters);
-          case 'Btn':
+          case "Btn":
             return new ButtonWidgetAnnotation(parameters);
-          case 'Ch':
+          case "Ch":
             return new ChoiceWidgetAnnotation(parameters);
         }
         warn('Unimplemented widget field type "' + fieldType + '", ' +
-             'falling back to base field type.');
+             "falling back to base field type.");
         return new WidgetAnnotation(parameters);
 
-      case 'Popup':
+      case "Popup":
         return new PopupAnnotation(parameters);
 
-      case 'FreeText':
+      case "FreeText":
         return new FreeTextAnnotation(parameters);
 
-      case 'Line':
+      case "Line":
         return new LineAnnotation(parameters);
 
-      case 'Square':
+      case "Square":
         return new SquareAnnotation(parameters);
 
-      case 'Circle':
+      case "Circle":
         return new CircleAnnotation(parameters);
 
-      case 'PolyLine':
+      case "PolyLine":
         return new PolylineAnnotation(parameters);
 
-      case 'Polygon':
+      case "Polygon":
         return new PolygonAnnotation(parameters);
 
-      case 'Caret':
+      case "Caret":
         return new CaretAnnotation(parameters);
 
-      case 'Ink':
+      case "Ink":
         return new InkAnnotation(parameters);
 
-      case 'Highlight':
+      case "Highlight":
         return new HighlightAnnotation(parameters);
 
-      case 'Underline':
+      case "Underline":
         return new UnderlineAnnotation(parameters);
 
-      case 'Squiggly':
+      case "Squiggly":
         return new SquigglyAnnotation(parameters);
 
-      case 'StrikeOut':
+      case "StrikeOut":
         return new StrikeOutAnnotation(parameters);
 
-      case 'Stamp':
+      case "Stamp":
         return new StampAnnotation(parameters);
 
-      case 'FileAttachment':
+      case "FileAttachment":
         return new FileAttachmentAnnotation(parameters);
 
       default:
         if (!subtype) {
-          warn('Annotation is missing the required /Subtype.');
+          warn("Annotation is missing the required /Subtype.");
         } else {
           warn('Unimplemented annotation type "' + subtype + '", ' +
-               'falling back to base annotation.');
+               "falling back to base annotation.");
         }
         return new Annotation(parameters);
     }
@@ -176,9 +176,9 @@ class Annotation {
   constructor(params) {
     let dict = params.dict;
 
-    this.setFlags(dict.get('F'));
-    this.setRectangle(dict.getArray('Rect'));
-    this.setColor(dict.getArray('C'));
+    this.setFlags(dict.get("F"));
+    this.setRectangle(dict.getArray("Rect"));
+    this.setColor(dict.getArray("C"));
     this.setBorderStyle(dict);
     this.setAppearance(dict);
 
@@ -336,17 +336,17 @@ class Annotation {
     if (!isDict(borderStyle)) {
       return;
     }
-    if (borderStyle.has('BS')) {
-      let dict = borderStyle.get('BS');
-      let dictType = dict.get('Type');
+    if (borderStyle.has("BS")) {
+      let dict = borderStyle.get("BS");
+      let dictType = dict.get("Type");
 
-      if (!dictType || isName(dictType, 'Border')) {
-        this.borderStyle.setWidth(dict.get('W'));
-        this.borderStyle.setStyle(dict.get('S'));
-        this.borderStyle.setDashArray(dict.getArray('D'));
+      if (!dictType || isName(dictType, "Border")) {
+        this.borderStyle.setWidth(dict.get("W"));
+        this.borderStyle.setStyle(dict.get("S"));
+        this.borderStyle.setDashArray(dict.getArray("D"));
       }
-    } else if (borderStyle.has('Border')) {
-      let array = borderStyle.getArray('Border');
+    } else if (borderStyle.has("Border")) {
+      let array = borderStyle.getArray("Border");
       if (Array.isArray(array) && array.length >= 3) {
         this.borderStyle.setHorizontalCornerRadius(array[0]);
         this.borderStyle.setVerticalCornerRadius(array[1]);
@@ -376,13 +376,13 @@ class Annotation {
   setAppearance(dict) {
     this.appearance = null;
 
-    let appearanceStates = dict.get('AP');
+    let appearanceStates = dict.get("AP");
     if (!isDict(appearanceStates)) {
       return;
     }
 
     // In case the normal appearance is a stream, then it is used directly.
-    let normalAppearanceState = appearanceStates.get('N');
+    let normalAppearanceState = appearanceStates.get("N");
     if (isStream(normalAppearanceState)) {
       this.appearance = normalAppearanceState;
       return;
@@ -393,7 +393,7 @@ class Annotation {
 
     // In case the normal appearance is a dictionary, the `AS` entry provides
     // the key of the stream in this dictionary.
-    let as = dict.get('AS');
+    let as = dict.get("AS");
     if (!isName(as) || !normalAppearanceState.has(as.name)) {
       return;
     }
@@ -401,7 +401,7 @@ class Annotation {
   }
 
   loadResources(keys) {
-    return this.appearance.dict.getAsync('Resources').then((resources) => {
+    return this.appearance.dict.getAsync("Resources").then((resources) => {
       if (!resources) {
         return;
       }
@@ -421,17 +421,17 @@ class Annotation {
     let data = this.data;
     let appearanceDict = this.appearance.dict;
     let resourcesPromise = this.loadResources([
-      'ExtGState',
-      'ColorSpace',
-      'Pattern',
-      'Shading',
-      'XObject',
-      'Font',
+      "ExtGState",
+      "ColorSpace",
+      "Pattern",
+      "Shading",
+      "XObject",
+      "Font",
       // ProcSet
       // Properties
     ]);
-    let bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
-    let matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
+    let bbox = appearanceDict.getArray("BBox") || [0, 0, 1, 1];
+    let matrix = appearanceDict.getArray("Matrix") || [1, 0, 0, 1, 0, 0];
     let transform = getTransformMatrix(data.rect, bbox, matrix);
 
     return resourcesPromise.then((resources) => {
@@ -495,23 +495,23 @@ class AnnotationBorderStyle {
       return;
     }
     switch (style.name) {
-      case 'S':
+      case "S":
         this.style = AnnotationBorderStyleType.SOLID;
         break;
 
-      case 'D':
+      case "D":
         this.style = AnnotationBorderStyleType.DASHED;
         break;
 
-      case 'B':
+      case "B":
         this.style = AnnotationBorderStyleType.BEVELED;
         break;
 
-      case 'I':
+      case "I":
         this.style = AnnotationBorderStyleType.INSET;
         break;
 
-      case 'U':
+      case "U":
         this.style = AnnotationBorderStyleType.UNDERLINE;
         break;
 
@@ -588,14 +588,14 @@ class MarkupAnnotation extends Annotation {
     super(parameters);
     const dict = parameters.dict;
 
-    if (!dict.has('C')) {
+    if (!dict.has("C")) {
       // Fall back to the default background color.
       this.data.color = null;
     }
 
-    this.data.hasPopup = dict.has('Popup');
-    this.data.title = stringToPDFString(dict.get('T') || '');
-    this.data.contents = stringToPDFString(dict.get('Contents') || '');
+    this.data.hasPopup = dict.has("Popup");
+    this.data.title = stringToPDFString(dict.get("T") || "");
+    this.data.contents = stringToPDFString(dict.get("Contents") || "");
   }
 }
 
@@ -608,16 +608,16 @@ class WidgetAnnotation extends Annotation {
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
-    data.fieldValue = getInheritableProperty({ dict, key: 'V',
+    data.fieldValue = getInheritableProperty({ dict, key: "V",
                                                getArray: true, });
-    data.alternativeText = stringToPDFString(dict.get('TU') || '');
-    data.defaultAppearance = getInheritableProperty({ dict, key: 'DA', }) || '';
-    let fieldType = getInheritableProperty({ dict, key: 'FT', });
+    data.alternativeText = stringToPDFString(dict.get("TU") || "");
+    data.defaultAppearance = getInheritableProperty({ dict, key: "DA", }) || "";
+    let fieldType = getInheritableProperty({ dict, key: "FT", });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
-    this.fieldResources = getInheritableProperty({ dict, key: 'DR', }) ||
+    this.fieldResources = getInheritableProperty({ dict, key: "DR", }) ||
                           Dict.empty;
 
-    data.fieldFlags = getInheritableProperty({ dict, key: 'Ff', });
+    data.fieldFlags = getInheritableProperty({ dict, key: "Ff", });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
       data.fieldFlags = 0;
     }
@@ -627,7 +627,7 @@ class WidgetAnnotation extends Annotation {
     // Hide signatures because we cannot validate them, and unset the fieldValue
     // since it's (most likely) a `Dict` which is non-serializable and will thus
     // cause errors when sending annotations to the main-thread (issue 10347).
-    if (data.fieldType === 'Sig') {
+    if (data.fieldType === "Sig") {
       data.fieldValue = null;
       this.setFlags(AnnotationFlag.HIDDEN);
     }
@@ -645,26 +645,26 @@ class WidgetAnnotation extends Annotation {
   _constructFieldName(dict) {
     // Both the `Parent` and `T` fields are optional. While at least one of
     // them should be provided, bad PDF generators may fail to do so.
-    if (!dict.has('T') && !dict.has('Parent')) {
-      warn('Unknown field name, falling back to empty field name.');
-      return '';
+    if (!dict.has("T") && !dict.has("Parent")) {
+      warn("Unknown field name, falling back to empty field name.");
+      return "";
     }
 
     // If no parent exists, the partial and fully qualified names are equal.
-    if (!dict.has('Parent')) {
-      return stringToPDFString(dict.get('T'));
+    if (!dict.has("Parent")) {
+      return stringToPDFString(dict.get("T"));
     }
 
     // Form the fully qualified field name by appending the partial name to
     // the parent's fully qualified name, separated by a period.
     let fieldName = [];
-    if (dict.has('T')) {
-      fieldName.unshift(stringToPDFString(dict.get('T')));
+    if (dict.has("T")) {
+      fieldName.unshift(stringToPDFString(dict.get("T")));
     }
 
     let loopDict = dict;
-    while (loopDict.has('Parent')) {
-      loopDict = loopDict.get('Parent');
+    while (loopDict.has("Parent")) {
+      loopDict = loopDict.get("Parent");
       if (!isDict(loopDict)) {
         // Even though it is not allowed according to the PDF specification,
         // bad PDF generators may provide a `Parent` entry that is not a
@@ -672,11 +672,11 @@ class WidgetAnnotation extends Annotation {
         break;
       }
 
-      if (loopDict.has('T')) {
-        fieldName.unshift(stringToPDFString(loopDict.get('T')));
+      if (loopDict.has("T")) {
+        fieldName.unshift(stringToPDFString(loopDict.get("T")));
       }
     }
-    return fieldName.join('.');
+    return fieldName.join(".");
   }
 
   /**
@@ -710,17 +710,17 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     const dict = params.dict;
 
     // The field value is always a string.
-    this.data.fieldValue = stringToPDFString(this.data.fieldValue || '');
+    this.data.fieldValue = stringToPDFString(this.data.fieldValue || "");
 
     // Determine the alignment of text in the field.
-    let alignment = getInheritableProperty({ dict, key: 'Q', });
+    let alignment = getInheritableProperty({ dict, key: "Q", });
     if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
       alignment = null;
     }
     this.data.textAlignment = alignment;
 
     // Determine the maximum length of text in the field.
-    let maximumLength = getInheritableProperty({ dict, key: 'MaxLen', });
+    let maximumLength = getInheritableProperty({ dict, key: "MaxLen", });
     if (!Number.isInteger(maximumLength) || maximumLength < 0) {
       maximumLength = null;
     }
@@ -777,7 +777,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     } else if (this.data.pushButton) {
       this._processPushButton(params);
     } else {
-      warn('Invalid field flags for button widget annotation');
+      warn("Invalid field flags for button widget annotation");
     }
   }
 
@@ -786,12 +786,12 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       this.data.fieldValue = this.data.fieldValue.name;
     }
 
-    const customAppearance = params.dict.get('AP');
+    const customAppearance = params.dict.get("AP");
     if (!isDict(customAppearance)) {
       return;
     }
 
-    const exportValueOptionsDict = customAppearance.get('D');
+    const exportValueOptionsDict = customAppearance.get("D");
     if (!isDict(exportValueOptionsDict)) {
       return;
     }
@@ -802,7 +802,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return;
     }
 
-    this.data.exportValue = exportValues[0] === 'Off' ?
+    this.data.exportValue = exportValues[0] === "Off" ?
       exportValues[1] : exportValues[0];
   }
 
@@ -811,26 +811,26 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     // The parent field's `V` entry holds a `Name` object with the appearance
     // state of whichever child field is currently in the "on" state.
-    let fieldParent = params.dict.get('Parent');
-    if (isDict(fieldParent) && fieldParent.has('V')) {
-      let fieldParentValue = fieldParent.get('V');
+    let fieldParent = params.dict.get("Parent");
+    if (isDict(fieldParent) && fieldParent.has("V")) {
+      let fieldParentValue = fieldParent.get("V");
       if (isName(fieldParentValue)) {
         this.data.fieldValue = fieldParentValue.name;
       }
     }
 
     // The button's value corresponds to its appearance state.
-    let appearanceStates = params.dict.get('AP');
+    let appearanceStates = params.dict.get("AP");
     if (!isDict(appearanceStates)) {
       return;
     }
-    let normalAppearanceState = appearanceStates.get('N');
+    let normalAppearanceState = appearanceStates.get("N");
     if (!isDict(normalAppearanceState)) {
       return;
     }
     let keys = normalAppearanceState.getKeys();
     for (let i = 0, ii = keys.length; i < ii; i++) {
-      if (keys[i] !== 'Off') {
+      if (keys[i] !== "Off") {
         this.data.buttonValue = keys[i];
         break;
       }
@@ -838,8 +838,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   _processPushButton(params) {
-    if (!params.dict.has('A')) {
-      warn('Push buttons without action dictionaries are not supported');
+    if (!params.dict.has("A")) {
+      warn("Push buttons without action dictionaries are not supported");
       return;
     }
 
@@ -866,7 +866,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // inherit the options from a parent annotation (issue 8094).
     this.data.options = [];
 
-    let options = getInheritableProperty({ dict: params.dict, key: 'Opt', });
+    let options = getInheritableProperty({ dict: params.dict, key: "Opt", });
     if (Array.isArray(options)) {
       let xref = params.xref;
       for (let i = 0, ii = options.length; i < ii; i++) {
@@ -903,12 +903,12 @@ class TextAnnotation extends MarkupAnnotation {
     this.data.annotationType = AnnotationType.TEXT;
 
     if (this.data.hasAppearance) {
-      this.data.name = 'NoIcon';
+      this.data.name = "NoIcon";
     } else {
       this.data.rect[1] = this.data.rect[3] - DEFAULT_ICON_SIZE;
       this.data.rect[2] = this.data.rect[0] + DEFAULT_ICON_SIZE;
-      this.data.name = parameters.dict.has('Name') ?
-                       parameters.dict.get('Name').name : 'Note';
+      this.data.name = parameters.dict.has("Name") ?
+                       parameters.dict.get("Name").name : "Note";
     }
 
   }
@@ -935,23 +935,23 @@ class PopupAnnotation extends Annotation {
     this.data.annotationType = AnnotationType.POPUP;
 
     let dict = parameters.dict;
-    let parentItem = dict.get('Parent');
+    let parentItem = dict.get("Parent");
     if (!parentItem) {
-      warn('Popup annotation has a missing or invalid parent annotation.');
+      warn("Popup annotation has a missing or invalid parent annotation.");
       return;
     }
 
-    let parentSubtype = parentItem.get('Subtype');
+    let parentSubtype = parentItem.get("Subtype");
     this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
-    this.data.parentId = dict.getRaw('Parent').toString();
-    this.data.title = stringToPDFString(parentItem.get('T') || '');
-    this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
+    this.data.parentId = dict.getRaw("Parent").toString();
+    this.data.title = stringToPDFString(parentItem.get("T") || "");
+    this.data.contents = stringToPDFString(parentItem.get("Contents") || "");
 
-    if (!parentItem.has('C')) {
+    if (!parentItem.has("C")) {
       // Fall back to the default background color.
       this.data.color = null;
     } else {
-      this.setColor(parentItem.getArray('C'));
+      this.setColor(parentItem.getArray("C"));
       this.data.color = this.color;
     }
 
@@ -959,7 +959,7 @@ class PopupAnnotation extends Annotation {
     // that is most likely a bug. Fallback to inherit the flags from the parent
     // annotation (this is consistent with the behaviour in Adobe Reader).
     if (!this.viewable) {
-      let parentFlags = parentItem.get('F');
+      let parentFlags = parentItem.get("F");
       if (this._isViewable(parentFlags)) {
         this.setFlags(parentFlags);
       }
@@ -982,7 +982,7 @@ class LineAnnotation extends MarkupAnnotation {
     this.data.annotationType = AnnotationType.LINE;
 
     let dict = parameters.dict;
-    this.data.lineCoordinates = Util.normalizeRect(dict.getArray('L'));
+    this.data.lineCoordinates = Util.normalizeRect(dict.getArray("L"));
   }
 }
 
@@ -1012,7 +1012,7 @@ class PolylineAnnotation extends MarkupAnnotation {
     // horizontal and vertical coordinates, respectively, of each vertex.
     // Convert this to an array of objects with x and y coordinates.
     let dict = parameters.dict;
-    let rawVertices = dict.getArray('Vertices');
+    let rawVertices = dict.getArray("Vertices");
 
     this.data.vertices = [];
     for (let i = 0, ii = rawVertices.length; i < ii; i += 2) {
@@ -1050,7 +1050,7 @@ class InkAnnotation extends MarkupAnnotation {
     let dict = parameters.dict;
     const xref = parameters.xref;
 
-    let originalInkLists = dict.getArray('InkList');
+    let originalInkLists = dict.getArray("InkList");
     this.data.inkLists = [];
     for (let i = 0, ii = originalInkLists.length; i < ii; ++i) {
       // The raw ink lists array contains arrays of numbers representing
@@ -1112,7 +1112,7 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
-    let file = new FileSpec(parameters.dict.get('FS'), parameters.xref);
+    let file = new FileSpec(parameters.dict.get("FS"), parameters.xref);
 
     this.data.annotationType = AnnotationType.FILEATTACHMENT;
     this.data.file = file.serializable;

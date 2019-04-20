@@ -16,9 +16,9 @@
 import {
   animationStarted, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, MAX_SCALE,
   MIN_SCALE, noContextMenuHandler, NullL10n
-} from './ui_utils';
+} from "./ui_utils";
 
-const PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
+const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
 const SCALE_SELECT_CONTAINER_PADDING = 8;
 const SCALE_SELECT_PADDING = 22;
 
@@ -97,63 +97,63 @@ class Toolbar {
     let { eventBus, items, } = this;
     let self = this;
 
-    items.previous.addEventListener('click', function() {
-      eventBus.dispatch('previouspage', { source: self, });
+    items.previous.addEventListener("click", function() {
+      eventBus.dispatch("previouspage", { source: self, });
     });
 
-    items.next.addEventListener('click', function() {
-      eventBus.dispatch('nextpage', { source: self, });
+    items.next.addEventListener("click", function() {
+      eventBus.dispatch("nextpage", { source: self, });
     });
 
-    items.zoomIn.addEventListener('click', function() {
-      eventBus.dispatch('zoomin', { source: self, });
+    items.zoomIn.addEventListener("click", function() {
+      eventBus.dispatch("zoomin", { source: self, });
     });
 
-    items.zoomOut.addEventListener('click', function() {
-      eventBus.dispatch('zoomout', { source: self, });
+    items.zoomOut.addEventListener("click", function() {
+      eventBus.dispatch("zoomout", { source: self, });
     });
 
-    items.pageNumber.addEventListener('click', function() {
+    items.pageNumber.addEventListener("click", function() {
       this.select();
     });
 
-    items.pageNumber.addEventListener('change', function() {
-      eventBus.dispatch('pagenumberchanged', {
+    items.pageNumber.addEventListener("change", function() {
+      eventBus.dispatch("pagenumberchanged", {
         source: self,
         value: this.value,
       });
     });
 
-    items.scaleSelect.addEventListener('change', function() {
-      if (this.value === 'custom') {
+    items.scaleSelect.addEventListener("change", function() {
+      if (this.value === "custom") {
         return;
       }
-      eventBus.dispatch('scalechanged', {
+      eventBus.dispatch("scalechanged", {
         source: self,
         value: this.value,
       });
     });
 
-    items.presentationModeButton.addEventListener('click', function() {
-      eventBus.dispatch('presentationmode', { source: self, });
+    items.presentationModeButton.addEventListener("click", function() {
+      eventBus.dispatch("presentationmode", { source: self, });
     });
 
-    items.openFile.addEventListener('click', function() {
-      eventBus.dispatch('openfile', { source: self, });
+    items.openFile.addEventListener("click", function() {
+      eventBus.dispatch("openfile", { source: self, });
     });
 
-    items.print.addEventListener('click', function() {
-      eventBus.dispatch('print', { source: self, });
+    items.print.addEventListener("click", function() {
+      eventBus.dispatch("print", { source: self, });
     });
 
-    items.download.addEventListener('click', function() {
-      eventBus.dispatch('download', { source: self, });
+    items.download.addEventListener("click", function() {
+      eventBus.dispatch("download", { source: self, });
     });
 
     // Suppress context menus for some controls.
     items.scaleSelect.oncontextmenu = noContextMenuHandler;
 
-    eventBus.on('localized', () => {
+    eventBus.on("localized", () => {
       this._localized();
     });
   }
@@ -173,10 +173,10 @@ class Toolbar {
 
     if (resetNumPages) {
       if (this.hasPageLabels) {
-        items.pageNumber.type = 'text';
+        items.pageNumber.type = "text";
       } else {
-        items.pageNumber.type = 'number';
-        this.l10n.get('of_pages', { pagesCount, }, 'of {{pagesCount}}').
+        items.pageNumber.type = "number";
+        this.l10n.get("of_pages", { pagesCount, }, "of {{pagesCount}}").
             then((msg) => {
           items.numPages.textContent = msg;
         });
@@ -186,8 +186,8 @@ class Toolbar {
 
     if (this.hasPageLabels) {
       items.pageNumber.value = this.pageLabel;
-      this.l10n.get('page_of_pages', { pageNumber, pagesCount, },
-                    '({{pageNumber}} of {{pagesCount}})').then((msg) => {
+      this.l10n.get("page_of_pages", { pageNumber, pagesCount, },
+                    "({{pageNumber}} of {{pagesCount}})").then((msg) => {
         items.numPages.textContent = msg;
       });
     } else {
@@ -201,8 +201,8 @@ class Toolbar {
     items.zoomIn.disabled = (pageScale >= MAX_SCALE);
 
     let customScale = Math.round(pageScale * 10000) / 100;
-    this.l10n.get('page_scale_percent', { scale: customScale, },
-                  '{{scale}}%').then((msg) => {
+    this.l10n.get("page_scale_percent", { scale: customScale, },
+                  "{{scale}}%").then((msg) => {
       let options = items.scaleSelect.options;
       let predefinedValueFound = false;
       for (let i = 0, ii = options.length; i < ii; i++) {
@@ -236,15 +236,15 @@ class Toolbar {
       // Note: If the window is narrow enough that the zoom box is not
       //       visible, we temporarily show it to be able to adjust its width.
       if (container.clientWidth === 0) {
-        container.setAttribute('style', 'display: inherit;');
+        container.setAttribute("style", "display: inherit;");
       }
       if (container.clientWidth > 0) {
-        select.setAttribute('style', 'min-width: inherit;');
+        select.setAttribute("style", "min-width: inherit;");
         let width = select.clientWidth + SCALE_SELECT_CONTAINER_PADDING;
-        select.setAttribute('style', 'min-width: ' +
-                                     (width + SCALE_SELECT_PADDING) + 'px;');
-        container.setAttribute('style', 'min-width: ' + width + 'px; ' +
-                                        'max-width: ' + width + 'px;');
+        select.setAttribute("style", "min-width: " +
+                                     (width + SCALE_SELECT_PADDING) + "px;");
+        container.setAttribute("style", "min-width: " + width + "px; " +
+                                        "max-width: " + width + "px;");
       }
     });
   }

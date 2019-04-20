@@ -17,7 +17,7 @@ limitations under the License.
 /* import-globals-from pdfHandler.js */
 
 (function() {
-  'use strict';
+  "use strict";
 
   if (!chrome.fileBrowserHandler) {
     // Not on Chromium OS, bail out
@@ -33,7 +33,7 @@ limitations under the License.
    * @param {Object} details Object of type FileHandlerExecuteEventDetails
    */
   function onExecuteFileBrowserHandler(id, details) {
-    if (id !== 'open-as-pdf') {
+    if (id !== "open-as-pdf") {
       return;
     }
     var fileEntries = details.entries;
@@ -70,7 +70,7 @@ limitations under the License.
     var url = fileEntry.toURL();
     // Use drive: alias to get shorter (more human-readable) URLs.
     url = url.replace(/^filesystem:chrome-extension:\/\/[a-p]{32}\/external\//,
-                      'drive:');
+                      "drive:");
     url = getViewerURL(url);
 
     if (windowId) {
@@ -83,7 +83,7 @@ limitations under the License.
       });
     } else {
       chrome.windows.create({
-        type: 'normal',
+        type: "normal",
         focused: true,
         url: url,
       }, function(chromeWindow) {

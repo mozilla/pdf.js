@@ -13,42 +13,42 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
-var fs = require('fs');
-var https = require('https');
-var path = require('path');
+var fs = require("fs");
+var https = require("https");
+var path = require("path");
 
 // Defines all languages that have a translation at mozilla-central.
 // This is used in gulpfile.js for the `importl10n` command.
 var langCodes = [
-  'ach', 'af', 'ak', 'an', 'ar', 'as', 'ast', 'az', 'be', 'bg', 'bn-BD',
-  'bn-IN', 'br', 'brx', 'bs', 'ca', 'cak', 'crh', 'cs', 'csb', 'cy', 'da', 'de',
-  'el', 'en-CA', 'en-GB', 'en-ZA', 'eo', 'es-AR', 'es-CL', 'es-ES', 'es-MX',
-  'et', 'eu', 'fa', 'ff', 'fi', 'fr', 'fy-NL', 'ga-IE', 'gd', 'gl', 'gn',
-  'gu-IN', 'he', 'hi-IN', 'hr', 'hsb', 'hto', 'hu', 'hy-AM', 'ia', 'id', 'is',
-  'it', 'ja', 'ka', 'kab', 'kk', 'km', 'kn', 'ko', 'kok', 'ks', 'ku', 'lg',
-  'lij', 'lo', 'lt', 'ltg', 'lv', 'mai', 'meh', 'mk', 'ml', 'mn', 'mr', 'ms',
-  'my', 'nb-NO', 'ne-NP', 'nl', 'nn-NO', 'nso', 'oc', 'or', 'pa-IN', 'pl',
-  'pt-BR', 'pt-PT', 'rm', 'ro', 'ru', 'rw', 'sah', 'sat', 'si', 'sk', 'sl',
-  'son', 'sq', 'sr', 'sv-SE', 'sw', 'ta', 'ta-LK', 'te', 'th', 'tl', 'tn', 'tr',
-  'tsz', 'uk', 'ur', 'uz', 'vi', 'wo', 'xh', 'zam', 'zh-CN', 'zh-TW', 'zu'
+  "ach", "af", "ak", "an", "ar", "as", "ast", "az", "be", "bg", "bn-BD",
+  "bn-IN", "br", "brx", "bs", "ca", "cak", "crh", "cs", "csb", "cy", "da", "de",
+  "el", "en-CA", "en-GB", "en-ZA", "eo", "es-AR", "es-CL", "es-ES", "es-MX",
+  "et", "eu", "fa", "ff", "fi", "fr", "fy-NL", "ga-IE", "gd", "gl", "gn",
+  "gu-IN", "he", "hi-IN", "hr", "hsb", "hto", "hu", "hy-AM", "ia", "id", "is",
+  "it", "ja", "ka", "kab", "kk", "km", "kn", "ko", "kok", "ks", "ku", "lg",
+  "lij", "lo", "lt", "ltg", "lv", "mai", "meh", "mk", "ml", "mn", "mr", "ms",
+  "my", "nb-NO", "ne-NP", "nl", "nn-NO", "nso", "oc", "or", "pa-IN", "pl",
+  "pt-BR", "pt-PT", "rm", "ro", "ru", "rw", "sah", "sat", "si", "sk", "sl",
+  "son", "sq", "sr", "sv-SE", "sw", "ta", "ta-LK", "te", "th", "tl", "tn", "tr",
+  "tsz", "uk", "ur", "uz", "vi", "wo", "xh", "zam", "zh-CN", "zh-TW", "zu"
 ];
 
 function normalizeText(s) {
-  return s.replace(/\r\n?/g, '\n').replace(/\uFEFF/g, '');
+  return s.replace(/\r\n?/g, "\n").replace(/\uFEFF/g, "");
 }
 
 function downloadLanguageFiles(root, langCode, callback) {
-  console.log('Downloading ' + langCode + '...');
+  console.log("Downloading " + langCode + "...");
 
   // Constants for constructing the URLs. Translations are taken from the
   // Nightly channel as those are the most recent ones.
-  var MOZ_CENTRAL_ROOT = 'https://hg.mozilla.org/l10n-central/';
-  var MOZ_CENTRAL_PDFJS_DIR = '/raw-file/default/browser/pdfviewer/';
+  var MOZ_CENTRAL_ROOT = "https://hg.mozilla.org/l10n-central/";
+  var MOZ_CENTRAL_PDFJS_DIR = "/raw-file/default/browser/pdfviewer/";
 
   // Defines which files to download for each language.
-  var files = ['chrome.properties', 'viewer.properties'];
+  var files = ["chrome.properties", "viewer.properties"];
   var downloadsLeft = files.length;
 
   var outputDir = path.join(root, langCode);
@@ -65,13 +65,13 @@ function downloadLanguageFiles(root, langCode, callback) {
       // Not all files exist for each language. Files without translations have
       // been removed (https://bugzilla.mozilla.org/show_bug.cgi?id=1443175).
       if (response.statusCode === 200) {
-        var content = '';
-        response.setEncoding('utf8');
-        response.on('data', function(chunk) {
+        var content = "";
+        response.setEncoding("utf8");
+        response.on("data", function(chunk) {
           content += chunk;
         });
-        response.on('end', function() {
-          fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
+        response.on("end", function() {
+          fs.writeFileSync(outputPath, normalizeText(content), "utf8");
           downloadsLeft--;
           if (downloadsLeft === 0) {
             callback();

@@ -14,52 +14,52 @@
  */
 /* globals __non_webpack_require__ */
 
-import { assert } from '../../src/shared/util';
-import isNodeJS from '../../src/shared/is_node';
-import { PDFNodeStream } from '../../src/display/node_stream';
+import { assert } from "../../src/shared/util";
+import isNodeJS from "../../src/shared/is_node";
+import { PDFNodeStream } from "../../src/display/node_stream";
 
 // Make sure that we only running this script is Node.js environments.
 assert(isNodeJS());
 
-let path = __non_webpack_require__('path');
-let url = __non_webpack_require__('url');
-let http = __non_webpack_require__('http');
-let fs = __non_webpack_require__('fs');
+let path = __non_webpack_require__("path");
+let url = __non_webpack_require__("url");
+let http = __non_webpack_require__("http");
+let fs = __non_webpack_require__("fs");
 
-describe('node_stream', function() {
+describe("node_stream", function() {
   let server = null;
   let port = null;
-  let pdf = url.parse(encodeURI('file://' + path.join(process.cwd(),
-                      './test/pdfs/tracemonkey.pdf'))).href;
+  let pdf = url.parse(encodeURI("file://" + path.join(process.cwd(),
+                      "./test/pdfs/tracemonkey.pdf"))).href;
   let pdfLength = 1016315;
 
   beforeAll((done) => {
     // Create http server to serve pdf data for tests.
     server = http.createServer((request, response) => {
-      let filePath = process.cwd() + '/test/pdfs' + request.url;
+      let filePath = process.cwd() + "/test/pdfs" + request.url;
       fs.lstat(filePath, (error, stat) => {
         if (error) {
           response.writeHead(404);
           response.end(`File ${request.url} not found!`);
           return;
         }
-        if (!request.headers['range']) {
+        if (!request.headers["range"]) {
           let contentLength = stat.size;
           let stream = fs.createReadStream(filePath);
           response.writeHead(200, {
-            'Content-Type': 'application/pdf',
-            'Content-Length': contentLength,
-            'Accept-Ranges': 'bytes',
+            "Content-Type": "application/pdf",
+            "Content-Length": contentLength,
+            "Accept-Ranges": "bytes",
           });
           stream.pipe(response);
         } else {
           let [start, end] =
-            request.headers['range'].split('=')[1].split('-').map((x) => {
+            request.headers["range"].split("=")[1].split("-").map((x) => {
               return Number(x);
             });
           let stream = fs.createReadStream(filePath, { start, end, });
           response.writeHead(206, {
-            'Content-Type': 'application/pdf',
+            "Content-Type": "application/pdf",
           });
           stream.pipe(response);
         }
@@ -75,7 +75,7 @@ describe('node_stream', function() {
     done();
   });
 
-  it('read both http(s) and filesystem pdf files', function(done) {
+  it("read both http(s) and filesystem pdf files", function(done) {
     let stream1 = new PDFNodeStream({
       url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
       rangeChunkSize: 65536,
@@ -139,7 +139,7 @@ describe('node_stream', function() {
     });
   });
 
-  it('read custom ranges for both http(s) and filesystem urls',
+  it("read custom ranges for both http(s) and filesystem urls",
       function(done) {
     let rangeSize = 32768;
     let stream1 = new PDFNodeStream({
@@ -167,14 +167,14 @@ describe('node_stream', function() {
       isStreamingSupported1 = fullReader1.isStreamingSupported;
       isRangeSupported1 = fullReader1.isRangeSupported;
       // we shall be able to close the full reader without issues
-      fullReader1.cancel('Don\'t need full reader');
+      fullReader1.cancel("Don't need full reader");
       fullReaderCancelled1 = true;
     });
 
     let promise2 = fullReader2.headersReady.then(function () {
       isStreamingSupported2 = fullReader2.isStreamingSupported;
       isRangeSupported2 = fullReader2.isRangeSupported;
-      fullReader2.cancel('Don\'t need full reader');
+      fullReader2.cancel("Don't need full reader");
       fullReaderCancelled2 = true;
     });
 

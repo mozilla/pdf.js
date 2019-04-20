@@ -18,7 +18,7 @@
  */
 /* eslint no-var: error */
 
-import { isArrayBuffer, isString } from '../shared/util';
+import { isArrayBuffer, isString } from "../shared/util";
 
 const SEED = 0xc3d2e1f0;
 // Workaround for missing math precision in JS.
@@ -49,8 +49,8 @@ class MurmurHash3_64 {
       data = input;
       length = data.byteLength;
     } else {
-      throw new Error('Wrong data format in MurmurHash3_64_update. ' +
-                      'Input must be a string or array.');
+      throw new Error("Wrong data format in MurmurHash3_64_update. " +
+                      "Input must be a string or array.");
     }
 
     const blockCounts = length >> 2;
@@ -123,7 +123,7 @@ class MurmurHash3_64 {
     h1 ^= h2 >>> 1;
 
     const hex1 = (h1 >>> 0).toString(16), hex2 = (h2 >>> 0).toString(16);
-    return hex1.padStart(8, '0') + hex2.padStart(8, '0');
+    return hex1.padStart(8, "0") + hex2.padStart(8, "0");
   }
 }
 

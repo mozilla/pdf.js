@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-import { PDFNetworkStream } from '../../src/display/network';
+import { PDFNetworkStream } from "../../src/display/network";
 
-describe('network', function() {
-  var pdf1 = new URL('../pdfs/tracemonkey.pdf', window.location).href;
+describe("network", function() {
+  var pdf1 = new URL("../pdfs/tracemonkey.pdf", window.location).href;
   var pdf1Length = 1016315;
 
-  it('read without stream and range', function(done) {
+  it("read without stream and range", function(done) {
     var stream = new PDFNetworkStream({
       url: pdf1,
       rangeChunkSize: 65536,
@@ -60,7 +60,7 @@ describe('network', function() {
     });
   });
 
-  it('read custom ranges', function (done) {
+  it("read custom ranges", function (done) {
     // We don't test on browsers that don't support range request, so
     // requiring this test to pass.
     var rangeSize = 32768;
@@ -79,7 +79,7 @@ describe('network', function() {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // we shall be able to close the full reader without issues
-      fullReader.cancel('Don\'t need full reader');
+      fullReader.cancel("Don't need full reader");
       fullReaderCancelled = true;
     });
 

@@ -15,23 +15,23 @@
 
 import {
   getPageSizeInches, getPDFFileNameFromURL, isPortraitOrientation, NullL10n
-} from './ui_utils';
-import { createPromiseCapability } from 'pdfjs-lib';
+} from "./ui_utils";
+import { createPromiseCapability } from "pdfjs-lib";
 
-const DEFAULT_FIELD_CONTENT = '-';
+const DEFAULT_FIELD_CONTENT = "-";
 
 // See https://en.wikibooks.org/wiki/Lentis/Conversion_to_the_Metric_Standard_in_the_United_States
-const NON_METRIC_LOCALES = ['en-us', 'en-lr', 'my'];
+const NON_METRIC_LOCALES = ["en-us", "en-lr", "my"];
 
 // Should use the format: `width x height`, in portrait orientation.
 // See https://en.wikipedia.org/wiki/Paper_size
 const US_PAGE_NAMES = {
-  '8.5x11': 'Letter',
-  '8.5x14': 'Legal',
+  "8.5x11": "Letter",
+  "8.5x14": "Legal",
 };
 const METRIC_PAGE_NAMES = {
-  '297x420': 'A3',
-  '210x297': 'A4',
+  "297x420": "A3",
+  "210x297": "A4",
 };
 
 function getPageName(size, isPortrait, pageNames) {
@@ -67,16 +67,16 @@ class PDFDocumentProperties {
     this._reset();
 
     if (closeButton) { // Bind the event listener for the Close button.
-      closeButton.addEventListener('click', this.close.bind(this));
+      closeButton.addEventListener("click", this.close.bind(this));
     }
     this.overlayManager.register(this.overlayName, this.container,
                                  this.close.bind(this));
 
     if (eventBus) {
-      eventBus.on('pagechanging', (evt) => {
+      eventBus.on("pagechanging", (evt) => {
         this._currentPageNumber = evt.pageNumber;
       });
-      eventBus.on('rotationchanging', (evt) => {
+      eventBus.on("rotationchanging", (evt) => {
         this._pagesRotation = evt.pagesRotation;
       });
     }
@@ -92,7 +92,7 @@ class PDFDocumentProperties {
    */
   open() {
     let freezeFieldData = (data) => {
-      Object.defineProperty(this, 'fieldData', {
+      Object.defineProperty(this, "fieldData", {
         value: Object.freeze(data),
         writable: false,
         enumerable: true,
@@ -108,8 +108,8 @@ class PDFDocumentProperties {
       // If the document properties were previously fetched (for this PDF file),
       // just update the dialog immediately to avoid redundant lookups.
       if (this.fieldData &&
-          currentPageNumber === this.fieldData['_currentPageNumber'] &&
-          pagesRotation === this.fieldData['_pagesRotation']) {
+          currentPageNumber === this.fieldData["_currentPageNumber"] &&
+          pagesRotation === this.fieldData["_pagesRotation"]) {
         this._updateUI();
         return;
       }
@@ -120,7 +120,7 @@ class PDFDocumentProperties {
         return Promise.all([
           info,
           metadata,
-          contentDispositionFilename || getPDFFileNameFromURL(this.url || ''),
+          contentDispositionFilename || getPDFFileNameFromURL(this.url || ""),
           this._parseFileSize(this.maybeFileSize),
           this._parseDate(info.CreationDate),
           this._parseDate(info.ModDate),
@@ -133,22 +133,22 @@ class PDFDocumentProperties {
       }).then(([info, metadata, fileName, fileSize, creationDate, modDate,
                 pageSize, isLinearized]) => {
         freezeFieldData({
-          'fileName': fileName,
-          'fileSize': fileSize,
-          'title': info.Title,
-          'author': info.Author,
-          'subject': info.Subject,
-          'keywords': info.Keywords,
-          'creationDate': creationDate,
-          'modificationDate': modDate,
-          'creator': info.Creator,
-          'producer': info.Producer,
-          'version': info.PDFFormatVersion,
-          'pageCount': this.pdfDocument.numPages,
-          'pageSize': pageSize,
-          'linearized': isLinearized,
-          '_currentPageNumber': currentPageNumber,
-          '_pagesRotation': pagesRotation,
+          "fileName": fileName,
+          "fileSize": fileSize,
+          "title": info.Title,
+          "author": info.Author,
+          "subject": info.Subject,
+          "keywords": info.Keywords,
+          "creationDate": creationDate,
+          "modificationDate": modDate,
+          "creator": info.Creator,
+          "producer": info.Producer,
+          "version": info.PDFFormatVersion,
+          "pageCount": this.pdfDocument.numPages,
+          "pageSize": pageSize,
+          "linearized": isLinearized,
+          "_currentPageNumber": currentPageNumber,
+          "_pagesRotation": pagesRotation,
         });
         this._updateUI();
 
@@ -159,11 +159,11 @@ class PDFDocumentProperties {
         this.maybeFileSize = length;
         return this._parseFileSize(length);
       }).then((fileSize) => {
-        if (fileSize === this.fieldData['fileSize']) {
+        if (fileSize === this.fieldData["fileSize"]) {
           return; // The fileSize has already been correctly set.
         }
         let data = Object.assign(Object.create(null), this.fieldData);
-        data['fileSize'] = fileSize;
+        data["fileSize"] = fileSize;
 
         freezeFieldData(data);
         this._updateUI();
@@ -261,15 +261,15 @@ class PDFDocumentProperties {
     if (!kb) {
       return Promise.resolve(undefined);
     } else if (kb < 1024) {
-      return this.l10n.get('document_properties_kb', {
+      return this.l10n.get("document_properties_kb", {
         size_kb: (+kb.toPrecision(3)).toLocaleString(),
         size_b: fileSize.toLocaleString(),
-      }, '{{size_kb}} KB ({{size_b}} bytes)');
+      }, "{{size_kb}} KB ({{size_b}} bytes)");
     }
-    return this.l10n.get('document_properties_mb', {
+    return this.l10n.get("document_properties_mb", {
       size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
       size_b: fileSize.toLocaleString(),
-    }, '{{size_mb}} MB ({{size_b}} bytes)');
+    }, "{{size_mb}} MB ({{size_b}} bytes)");
   }
 
   /**
@@ -333,29 +333,29 @@ class PDFDocumentProperties {
       }
     }
     if (name) {
-      pageName = this.l10n.get('document_properties_page_size_name_' +
+      pageName = this.l10n.get("document_properties_page_size_name_" +
                                name.toLowerCase(), null, name);
     }
 
     return Promise.all([
       (this._isNonMetricLocale ? sizeInches : sizeMillimeters),
-      this.l10n.get('document_properties_page_size_unit_' +
-                    (this._isNonMetricLocale ? 'inches' : 'millimeters'), null,
-                    this._isNonMetricLocale ? 'in' : 'mm'),
+      this.l10n.get("document_properties_page_size_unit_" +
+                    (this._isNonMetricLocale ? "inches" : "millimeters"), null,
+                    this._isNonMetricLocale ? "in" : "mm"),
       pageName,
-      this.l10n.get('document_properties_page_size_orientation_' +
-                    (isPortrait ? 'portrait' : 'landscape'), null,
-                    isPortrait ? 'portrait' : 'landscape'),
+      this.l10n.get("document_properties_page_size_orientation_" +
+                    (isPortrait ? "portrait" : "landscape"), null,
+                    isPortrait ? "portrait" : "landscape"),
     ]).then(([{ width, height, }, unit, name, orientation]) => {
-      return this.l10n.get('document_properties_page_size_dimension_' +
-                           (name ? 'name_' : '') + 'string', {
+      return this.l10n.get("document_properties_page_size_dimension_" +
+                           (name ? "name_" : "") + "string", {
           width: width.toLocaleString(),
           height: height.toLocaleString(),
           unit,
           name,
           orientation,
-        }, '{{width}} × {{height}} {{unit}} (' +
-           (name ? '{{name}}, ' : '') + '{{orientation}})');
+        }, "{{width}} × {{height}} {{unit}} (" +
+           (name ? "{{name}}, " : "") + "{{orientation}})");
     });
   }
 
@@ -373,7 +373,7 @@ class PDFDocumentProperties {
     let dateToParse = inputDate;
 
     // Remove the D: prefix if it is available.
-    if (dateToParse.substring(0, 2) === 'D:') {
+    if (dateToParse.substring(0, 2) === "D:") {
       dateToParse = dateToParse.substring(2);
     }
 
@@ -392,10 +392,10 @@ class PDFDocumentProperties {
 
     // As per spec, utRel = 'Z' means equal to universal time.
     // The other cases ('-' and '+') have to be handled here.
-    if (utRel === '-') {
+    if (utRel === "-") {
       hours += offsetHours;
       minutes += offsetMinutes;
-    } else if (utRel === '+') {
+    } else if (utRel === "+") {
       hours -= offsetHours;
       minutes -= offsetMinutes;
     }
@@ -404,18 +404,18 @@ class PDFDocumentProperties {
     let date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
     let dateString = date.toLocaleDateString();
     let timeString = date.toLocaleTimeString();
-    return this.l10n.get('document_properties_date_string',
+    return this.l10n.get("document_properties_date_string",
                          { date: dateString, time: timeString, },
-                         '{{date}}, {{time}}');
+                         "{{date}}, {{time}}");
   }
 
   /**
    * @private
    */
   _parseLinearization(isLinearized) {
-    return this.l10n.get('document_properties_linearized_' +
-                         (isLinearized ? 'yes' : 'no'), null,
-                         (isLinearized ? 'Yes' : 'No'));
+    return this.l10n.get("document_properties_linearized_" +
+                         (isLinearized ? "yes" : "no"), null,
+                         (isLinearized ? "Yes" : "No"));
   }
 }
 

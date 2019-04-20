@@ -15,11 +15,11 @@
 
 import {
   addLinkAttributes, DOMSVGFactory, getFilenameFromUrl, LinkTarget
-} from './display_utils';
+} from "./display_utils";
 import {
   AnnotationBorderStyleType, AnnotationType, stringToPDFString, unreachable,
   Util, warn
-} from '../shared/util';
+} from "../shared/util";
 
 /**
  * @typedef {Object} AnnotationElementParameters
@@ -54,16 +54,16 @@ class AnnotationElementFactory {
         let fieldType = parameters.data.fieldType;
 
         switch (fieldType) {
-          case 'Tx':
+          case "Tx":
             return new TextWidgetAnnotationElement(parameters);
-          case 'Btn':
+          case "Btn":
             if (parameters.data.radioButton) {
               return new RadioButtonWidgetAnnotationElement(parameters);
             } else if (parameters.data.checkBox) {
               return new CheckboxWidgetAnnotationElement(parameters);
             }
             return new PushButtonWidgetAnnotationElement(parameters);
-          case 'Ch':
+          case "Ch":
             return new ChoiceWidgetAnnotationElement(parameters);
         }
         return new WidgetAnnotationElement(parameters);
@@ -147,11 +147,11 @@ class AnnotationElement {
    */
   _createContainer(ignoreBorder = false) {
     let data = this.data, page = this.page, viewport = this.viewport;
-    let container = document.createElement('section');
+    let container = document.createElement("section");
     let width = data.rect[2] - data.rect[0];
     let height = data.rect[3] - data.rect[1];
 
-    container.setAttribute('data-annotation-id', data.id);
+    container.setAttribute("data-annotation-id", data.id);
 
     // Do *not* modify `data.rect`, since that will corrupt the annotation
     // position on subsequent calls to `_createContainer` (see issue 6804).
@@ -162,11 +162,11 @@ class AnnotationElement {
       page.view[3] - data.rect[3] + page.view[1]
     ]);
 
-    container.style.transform = 'matrix(' + viewport.transform.join(',') + ')';
-    container.style.transformOrigin = -rect[0] + 'px ' + -rect[1] + 'px';
+    container.style.transform = "matrix(" + viewport.transform.join(",") + ")";
+    container.style.transformOrigin = -rect[0] + "px " + -rect[1] + "px";
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
-      container.style.borderWidth = data.borderStyle.width + 'px';
+      container.style.borderWidth = data.borderStyle.width + "px";
       if (data.borderStyle.style !== AnnotationBorderStyleType.UNDERLINE) {
         // Underline styles only have a bottom border, so we do not need
         // to adjust for all borders. This yields a similar result as
@@ -178,29 +178,29 @@ class AnnotationElement {
       let horizontalRadius = data.borderStyle.horizontalCornerRadius;
       let verticalRadius = data.borderStyle.verticalCornerRadius;
       if (horizontalRadius > 0 || verticalRadius > 0) {
-        let radius = horizontalRadius + 'px / ' + verticalRadius + 'px';
+        let radius = horizontalRadius + "px / " + verticalRadius + "px";
         container.style.borderRadius = radius;
       }
 
       switch (data.borderStyle.style) {
         case AnnotationBorderStyleType.SOLID:
-          container.style.borderStyle = 'solid';
+          container.style.borderStyle = "solid";
           break;
 
         case AnnotationBorderStyleType.DASHED:
-          container.style.borderStyle = 'dashed';
+          container.style.borderStyle = "dashed";
           break;
 
         case AnnotationBorderStyleType.BEVELED:
-          warn('Unimplemented border style: beveled');
+          warn("Unimplemented border style: beveled");
           break;
 
         case AnnotationBorderStyleType.INSET:
-          warn('Unimplemented border style: inset');
+          warn("Unimplemented border style: inset");
           break;
 
         case AnnotationBorderStyleType.UNDERLINE:
-          container.style.borderBottomStyle = 'solid';
+          container.style.borderBottomStyle = "solid";
           break;
 
         default:
@@ -217,11 +217,11 @@ class AnnotationElement {
       }
     }
 
-    container.style.left = rect[0] + 'px';
-    container.style.top = rect[1] + 'px';
+    container.style.left = rect[0] + "px";
+    container.style.top = rect[1] + "px";
 
-    container.style.width = width + 'px';
-    container.style.height = height + 'px';
+    container.style.width = width + "px";
+    container.style.height = height + "px";
 
     return container;
   }
@@ -240,7 +240,7 @@ class AnnotationElement {
   _createPopup(container, trigger, data) {
     // If no trigger element is specified, create it.
     if (!trigger) {
-      trigger = document.createElement('div');
+      trigger = document.createElement("div");
       trigger.style.height = container.style.height;
       trigger.style.width = container.style.width;
       container.appendChild(trigger);
@@ -269,7 +269,7 @@ class AnnotationElement {
    * @memberof AnnotationElement
    */
   render() {
-    unreachable('Abstract method `AnnotationElement.render` called');
+    unreachable("Abstract method `AnnotationElement.render` called");
   }
 }
 
@@ -288,10 +288,10 @@ class LinkAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'linkAnnotation';
+    this.container.className = "linkAnnotation";
 
     let { data, linkService, } = this;
-    let link = document.createElement('a');
+    let link = document.createElement("a");
 
     addLinkAttributes(link, {
       url: data.url,
@@ -329,7 +329,7 @@ class LinkAnnotationElement extends AnnotationElement {
       return false;
     };
     if (destination) {
-      link.className = 'internalLink';
+      link.className = "internalLink";
     }
   }
 
@@ -342,12 +342,12 @@ class LinkAnnotationElement extends AnnotationElement {
    * @memberof LinkAnnotationElement
    */
   _bindNamedAction(link, action) {
-    link.href = this.linkService.getAnchorUrl('');
+    link.href = this.linkService.getAnchorUrl("");
     link.onclick = () => {
       this.linkService.executeNamedAction(action);
       return false;
     };
-    link.className = 'internalLink';
+    link.className = "internalLink";
   }
 }
 
@@ -366,15 +366,15 @@ class TextAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'textAnnotation';
+    this.container.className = "textAnnotation";
 
-    let image = document.createElement('img');
+    let image = document.createElement("img");
     image.style.height = this.container.style.height;
     image.style.width = this.container.style.width;
-    image.src = this.imageResourcesPath + 'annotation-' +
-      this.data.name.toLowerCase() + '.svg';
-    image.alt = '[{{type}} Annotation]';
-    image.dataset.l10nId = 'text_annotation_type';
+    image.src = this.imageResourcesPath + "annotation-" +
+      this.data.name.toLowerCase() + ".svg";
+    image.alt = "[{{type}} Annotation]";
+    image.dataset.l10nId = "text_annotation_type";
     image.dataset.l10nArgs = JSON.stringify({ type: this.data.name, });
 
     if (!this.data.hasPopup) {
@@ -415,9 +415,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    const TEXT_ALIGNMENT = ['left', 'center', 'right'];
+    const TEXT_ALIGNMENT = ["left", "center", "right"];
 
-    this.container.className = 'textWidgetAnnotation';
+    this.container.className = "textWidgetAnnotation";
 
     let element = null;
     if (this.renderInteractiveForms) {
@@ -425,12 +425,12 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
       //       from parsing the elements correctly for the reference tests.
       if (this.data.multiLine) {
-        element = document.createElement('textarea');
+        element = document.createElement("textarea");
         element.textContent = this.data.fieldValue;
       } else {
-        element = document.createElement('input');
-        element.type = 'text';
-        element.setAttribute('value', this.data.fieldValue);
+        element = document.createElement("input");
+        element.type = "text";
+        element.setAttribute("value", this.data.fieldValue);
       }
 
       element.disabled = this.data.readOnly;
@@ -443,14 +443,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         let fieldWidth = this.data.rect[2] - this.data.rect[0];
         let combWidth = fieldWidth / this.data.maxLen;
 
-        element.classList.add('comb');
-        element.style.letterSpacing = 'calc(' + combWidth + 'px - 1ch)';
+        element.classList.add("comb");
+        element.style.letterSpacing = "calc(" + combWidth + "px - 1ch)";
       }
     } else {
-      element = document.createElement('div');
+      element = document.createElement("div");
       element.textContent = this.data.fieldValue;
-      element.style.verticalAlign = 'middle';
-      element.style.display = 'table-cell';
+      element.style.verticalAlign = "middle";
+      element.style.display = "table-cell";
 
       let font = null;
       if (this.data.fontRefName &&
@@ -479,21 +479,21 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
   _setTextStyle(element, font) {
     // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
     let style = element.style;
-    style.fontSize = this.data.fontSize + 'px';
-    style.direction = (this.data.fontDirection < 0 ? 'rtl' : 'ltr');
+    style.fontSize = this.data.fontSize + "px";
+    style.direction = (this.data.fontDirection < 0 ? "rtl" : "ltr");
 
     if (!font) {
       return;
     }
 
     style.fontWeight = (font.black ?
-      (font.bold ? '900' : 'bold') :
-      (font.bold ? 'bold' : 'normal'));
-    style.fontStyle = (font.italic ? 'italic' : 'normal');
+      (font.bold ? "900" : "bold") :
+      (font.bold ? "bold" : "normal"));
+    style.fontStyle = (font.italic ? "italic" : "normal");
 
     // Use a reasonable default font if the font doesn't specify a fallback.
-    let fontFamily = font.loadedName ? '"' + font.loadedName + '", ' : '';
-    let fallbackName = font.fallbackName || 'Helvetica, sans-serif';
+    let fontFamily = font.loadedName ? '"' + font.loadedName + '", ' : "";
+    let fallbackName = font.fallbackName || "Helvetica, sans-serif";
     style.fontFamily = fontFamily + fallbackName;
   }
 }
@@ -512,13 +512,13 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'buttonWidgetAnnotation checkBox';
+    this.container.className = "buttonWidgetAnnotation checkBox";
 
-    let element = document.createElement('input');
+    let element = document.createElement("input");
     element.disabled = this.data.readOnly;
-    element.type = 'checkbox';
-    if (this.data.fieldValue && this.data.fieldValue !== 'Off') {
-      element.setAttribute('checked', true);
+    element.type = "checkbox";
+    if (this.data.fieldValue && this.data.fieldValue !== "Off") {
+      element.setAttribute("checked", true);
     }
 
     this.container.appendChild(element);
@@ -540,14 +540,14 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'buttonWidgetAnnotation radioButton';
+    this.container.className = "buttonWidgetAnnotation radioButton";
 
-    let element = document.createElement('input');
+    let element = document.createElement("input");
     element.disabled = this.data.readOnly;
-    element.type = 'radio';
+    element.type = "radio";
     element.name = this.data.fieldName;
     if (this.data.fieldValue === this.data.buttonValue) {
-      element.setAttribute('checked', true);
+      element.setAttribute("checked", true);
     }
 
     this.container.appendChild(element);
@@ -569,7 +569,7 @@ class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
     // equal to that of a link annotation, but may have more functionality, such
     // as performing actions on form fields (resetting, submitting, et cetera).
     let container = super.render();
-    container.className = 'buttonWidgetAnnotation pushButton';
+    container.className = "buttonWidgetAnnotation pushButton";
     return container;
   }
 }
@@ -588,9 +588,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'choiceWidgetAnnotation';
+    this.container.className = "choiceWidgetAnnotation";
 
-    let selectElement = document.createElement('select');
+    let selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
 
     if (!this.data.combo) {
@@ -606,12 +606,12 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     for (let i = 0, ii = this.data.options.length; i < ii; i++) {
       let option = this.data.options[i];
 
-      let optionElement = document.createElement('option');
+      let optionElement = document.createElement("option");
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
 
       if (this.data.fieldValue.includes(option.displayValue)) {
-        optionElement.setAttribute('selected', true);
+        optionElement.setAttribute("selected", true);
       }
 
       selectElement.appendChild(optionElement);
@@ -639,15 +639,15 @@ class PopupAnnotationElement extends AnnotationElement {
     // Do not render popup annotations for parent elements with these types as
     // they create the popups themselves (because of custom trigger divs).
     const IGNORE_TYPES = [
-      'Line',
-      'Square',
-      'Circle',
-      'PolyLine',
-      'Polygon',
-      'Ink',
+      "Line",
+      "Square",
+      "Circle",
+      "PolyLine",
+      "Polygon",
+      "Ink",
     ];
 
-    this.container.className = 'popupAnnotation';
+    this.container.className = "popupAnnotation";
 
     if (IGNORE_TYPES.includes(this.data.parentType)) {
       return this.container;
@@ -672,8 +672,8 @@ class PopupAnnotationElement extends AnnotationElement {
     let parentLeft = parseFloat(parentElement.style.left);
     let parentWidth = parseFloat(parentElement.style.width);
     this.container.style.transformOrigin =
-      -(parentLeft + parentWidth) + 'px -' + parentElement.style.top;
-    this.container.style.left = (parentLeft + parentWidth) + 'px';
+      -(parentLeft + parentWidth) + "px -" + parentElement.style.top;
+    this.container.style.left = (parentLeft + parentWidth) + "px";
 
     this.container.appendChild(popup.render());
     return this.container;
@@ -702,18 +702,18 @@ class PopupElement {
   render() {
     const BACKGROUND_ENLIGHT = 0.7;
 
-    let wrapper = document.createElement('div');
-    wrapper.className = 'popupWrapper';
+    let wrapper = document.createElement("div");
+    wrapper.className = "popupWrapper";
 
     // For Popup annotations we hide the entire section because it contains
     // only the popup. However, for Text annotations without a separate Popup
     // annotation, we cannot hide the entire container as the image would
     // disappear too. In that special case, hiding the wrapper suffices.
     this.hideElement = (this.hideWrapper ? wrapper : this.container);
-    this.hideElement.setAttribute('hidden', true);
+    this.hideElement.setAttribute("hidden", true);
 
-    let popup = document.createElement('div');
-    popup.className = 'popup';
+    let popup = document.createElement("div");
+    popup.className = "popup";
 
     let color = this.color;
     if (color) {
@@ -725,14 +725,14 @@ class PopupElement {
     }
 
     let contents = this._formatContents(this.contents);
-    let title = document.createElement('h1');
+    let title = document.createElement("h1");
     title.textContent = this.title;
 
     // Attach the event listeners to the trigger element.
-    this.trigger.addEventListener('click', this._toggle.bind(this));
-    this.trigger.addEventListener('mouseover', this._show.bind(this, false));
-    this.trigger.addEventListener('mouseout', this._hide.bind(this, false));
-    popup.addEventListener('click', this._hide.bind(this, true));
+    this.trigger.addEventListener("click", this._toggle.bind(this));
+    this.trigger.addEventListener("mouseover", this._show.bind(this, false));
+    this.trigger.addEventListener("mouseout", this._hide.bind(this, false));
+    popup.addEventListener("click", this._hide.bind(this, true));
 
     popup.appendChild(title);
     popup.appendChild(contents);
@@ -749,13 +749,13 @@ class PopupElement {
    * @returns {HTMLParagraphElement}
    */
   _formatContents(contents) {
-    let p = document.createElement('p');
+    let p = document.createElement("p");
     let lines = contents.split(/(?:\r\n?|\n)/);
     for (let i = 0, ii = lines.length; i < ii; ++i) {
       let line = lines[i];
       p.appendChild(document.createTextNode(line));
       if (i < (ii - 1)) {
-        p.appendChild(document.createElement('br'));
+        p.appendChild(document.createElement("br"));
       }
     }
     return p;
@@ -786,8 +786,8 @@ class PopupElement {
     if (pin) {
       this.pinned = true;
     }
-    if (this.hideElement.hasAttribute('hidden')) {
-      this.hideElement.removeAttribute('hidden');
+    if (this.hideElement.hasAttribute("hidden")) {
+      this.hideElement.removeAttribute("hidden");
       this.container.style.zIndex += 1;
     }
   }
@@ -803,8 +803,8 @@ class PopupElement {
     if (unpin) {
       this.pinned = false;
     }
-    if (!this.hideElement.hasAttribute('hidden') && !this.pinned) {
-      this.hideElement.setAttribute('hidden', true);
+    if (!this.hideElement.hasAttribute("hidden") && !this.pinned) {
+      this.hideElement.setAttribute("hidden", true);
       this.container.style.zIndex -= 1;
     }
   }
@@ -825,7 +825,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'freeTextAnnotation';
+    this.container.className = "freeTextAnnotation";
 
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
@@ -849,7 +849,7 @@ class LineAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'lineAnnotation';
+    this.container.className = "lineAnnotation";
 
     // Create an invisible line with the same starting and ending coordinates
     // that acts as the trigger for the popup. Only the line itself should
@@ -861,13 +861,13 @@ class LineAnnotationElement extends AnnotationElement {
 
     // PDF coordinates are calculated from a bottom left origin, so transform
     // the line coordinates to a top left origin for the SVG element.
-    let line = this.svgFactory.createElement('svg:line');
-    line.setAttribute('x1', data.rect[2] - data.lineCoordinates[0]);
-    line.setAttribute('y1', data.rect[3] - data.lineCoordinates[1]);
-    line.setAttribute('x2', data.rect[2] - data.lineCoordinates[2]);
-    line.setAttribute('y2', data.rect[3] - data.lineCoordinates[3]);
-    line.setAttribute('stroke-width', data.borderStyle.width);
-    line.setAttribute('stroke', 'transparent');
+    let line = this.svgFactory.createElement("svg:line");
+    line.setAttribute("x1", data.rect[2] - data.lineCoordinates[0]);
+    line.setAttribute("y1", data.rect[3] - data.lineCoordinates[1]);
+    line.setAttribute("x2", data.rect[2] - data.lineCoordinates[2]);
+    line.setAttribute("y2", data.rect[3] - data.lineCoordinates[3]);
+    line.setAttribute("stroke-width", data.borderStyle.width);
+    line.setAttribute("stroke", "transparent");
 
     svg.appendChild(line);
     this.container.append(svg);
@@ -895,7 +895,7 @@ class SquareAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'squareAnnotation';
+    this.container.className = "squareAnnotation";
 
     // Create an invisible square with the same rectangle that acts as the
     // trigger for the popup. Only the square itself should trigger the
@@ -909,14 +909,14 @@ class SquareAnnotationElement extends AnnotationElement {
     // the borders outside the square by default. This behavior cannot be
     // changed programmatically, so correct for that here.
     let borderWidth = data.borderStyle.width;
-    let square = this.svgFactory.createElement('svg:rect');
-    square.setAttribute('x', borderWidth / 2);
-    square.setAttribute('y', borderWidth / 2);
-    square.setAttribute('width', width - borderWidth);
-    square.setAttribute('height', height - borderWidth);
-    square.setAttribute('stroke-width', borderWidth);
-    square.setAttribute('stroke', 'transparent');
-    square.setAttribute('fill', 'none');
+    let square = this.svgFactory.createElement("svg:rect");
+    square.setAttribute("x", borderWidth / 2);
+    square.setAttribute("y", borderWidth / 2);
+    square.setAttribute("width", width - borderWidth);
+    square.setAttribute("height", height - borderWidth);
+    square.setAttribute("stroke-width", borderWidth);
+    square.setAttribute("stroke", "transparent");
+    square.setAttribute("fill", "none");
 
     svg.appendChild(square);
     this.container.append(svg);
@@ -944,7 +944,7 @@ class CircleAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'circleAnnotation';
+    this.container.className = "circleAnnotation";
 
     // Create an invisible circle with the same ellipse that acts as the
     // trigger for the popup. Only the circle itself should trigger the
@@ -958,14 +958,14 @@ class CircleAnnotationElement extends AnnotationElement {
     // the borders outside the circle by default. This behavior cannot be
     // changed programmatically, so correct for that here.
     let borderWidth = data.borderStyle.width;
-    let circle = this.svgFactory.createElement('svg:ellipse');
-    circle.setAttribute('cx', width / 2);
-    circle.setAttribute('cy', height / 2);
-    circle.setAttribute('rx', (width / 2) - (borderWidth / 2));
-    circle.setAttribute('ry', (height / 2) - (borderWidth / 2));
-    circle.setAttribute('stroke-width', borderWidth);
-    circle.setAttribute('stroke', 'transparent');
-    circle.setAttribute('fill', 'none');
+    let circle = this.svgFactory.createElement("svg:ellipse");
+    circle.setAttribute("cx", width / 2);
+    circle.setAttribute("cy", height / 2);
+    circle.setAttribute("rx", (width / 2) - (borderWidth / 2));
+    circle.setAttribute("ry", (height / 2) - (borderWidth / 2));
+    circle.setAttribute("stroke-width", borderWidth);
+    circle.setAttribute("stroke", "transparent");
+    circle.setAttribute("fill", "none");
 
     svg.appendChild(circle);
     this.container.append(svg);
@@ -984,8 +984,8 @@ class PolylineAnnotationElement extends AnnotationElement {
                           parameters.data.title || parameters.data.contents);
     super(parameters, isRenderable, /* ignoreBorder = */ true);
 
-    this.containerClassName = 'polylineAnnotation';
-    this.svgElementName = 'svg:polyline';
+    this.containerClassName = "polylineAnnotation";
+    this.svgElementName = "svg:polyline";
   }
 
   /**
@@ -1015,16 +1015,16 @@ class PolylineAnnotationElement extends AnnotationElement {
     for (let i = 0, ii = vertices.length; i < ii; i++) {
       let x = vertices[i].x - data.rect[0];
       let y = data.rect[3] - vertices[i].y;
-      points.push(x + ',' + y);
+      points.push(x + "," + y);
     }
-    points = points.join(' ');
+    points = points.join(" ");
 
     let borderWidth = data.borderStyle.width;
     let polyline = this.svgFactory.createElement(this.svgElementName);
-    polyline.setAttribute('points', points);
-    polyline.setAttribute('stroke-width', borderWidth);
-    polyline.setAttribute('stroke', 'transparent');
-    polyline.setAttribute('fill', 'none');
+    polyline.setAttribute("points", points);
+    polyline.setAttribute("stroke-width", borderWidth);
+    polyline.setAttribute("stroke", "transparent");
+    polyline.setAttribute("fill", "none");
 
     svg.appendChild(polyline);
     this.container.append(svg);
@@ -1042,8 +1042,8 @@ class PolygonAnnotationElement extends PolylineAnnotationElement {
     // Polygons are specific forms of polylines, so reuse their logic.
     super(parameters);
 
-    this.containerClassName = 'polygonAnnotation';
-    this.svgElementName = 'svg:polygon';
+    this.containerClassName = "polygonAnnotation";
+    this.svgElementName = "svg:polygon";
   }
 }
 
@@ -1062,7 +1062,7 @@ class CaretAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'caretAnnotation';
+    this.container.className = "caretAnnotation";
 
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
@@ -1077,11 +1077,11 @@ class InkAnnotationElement extends AnnotationElement {
                           parameters.data.title || parameters.data.contents);
     super(parameters, isRenderable, /* ignoreBorder = */ true);
 
-    this.containerClassName = 'inkAnnotation';
+    this.containerClassName = "inkAnnotation";
 
     // Use the polyline SVG element since it allows us to use coordinates
     // directly and to draw both straight lines and curves.
-    this.svgElementName = 'svg:polyline';
+    this.svgElementName = "svg:polyline";
   }
 
   /**
@@ -1113,17 +1113,17 @@ class InkAnnotationElement extends AnnotationElement {
       for (let j = 0, jj = inkList.length; j < jj; j++) {
         let x = inkList[j].x - data.rect[0];
         let y = data.rect[3] - inkList[j].y;
-        points.push(x + ',' + y);
+        points.push(x + "," + y);
       }
 
-      points = points.join(' ');
+      points = points.join(" ");
 
       let borderWidth = data.borderStyle.width;
       let polyline = this.svgFactory.createElement(this.svgElementName);
-      polyline.setAttribute('points', points);
-      polyline.setAttribute('stroke-width', borderWidth);
-      polyline.setAttribute('stroke', 'transparent');
-      polyline.setAttribute('fill', 'none');
+      polyline.setAttribute("points", points);
+      polyline.setAttribute("stroke-width", borderWidth);
+      polyline.setAttribute("stroke", "transparent");
+      polyline.setAttribute("fill", "none");
 
       // Create the popup ourselves so that we can bind it to the polyline
       // instead of to the entire container (which is the default).
@@ -1153,7 +1153,7 @@ class HighlightAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'highlightAnnotation';
+    this.container.className = "highlightAnnotation";
 
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
@@ -1177,7 +1177,7 @@ class UnderlineAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'underlineAnnotation';
+    this.container.className = "underlineAnnotation";
 
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
@@ -1201,7 +1201,7 @@ class SquigglyAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'squigglyAnnotation';
+    this.container.className = "squigglyAnnotation";
 
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
@@ -1225,7 +1225,7 @@ class StrikeOutAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'strikeoutAnnotation';
+    this.container.className = "strikeoutAnnotation";
 
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
@@ -1249,7 +1249,7 @@ class StampAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'stampAnnotation';
+    this.container.className = "stampAnnotation";
 
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
@@ -1267,7 +1267,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     this.content = content;
 
     if (this.linkService.eventBus) {
-      this.linkService.eventBus.dispatch('fileattachmentannotation', {
+      this.linkService.eventBus.dispatch("fileattachmentannotation", {
         source: this,
         id: stringToPDFString(filename),
         filename,
@@ -1285,12 +1285,12 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'fileAttachmentAnnotation';
+    this.container.className = "fileAttachmentAnnotation";
 
-    let trigger = document.createElement('div');
+    let trigger = document.createElement("div");
     trigger.style.height = this.container.style.height;
     trigger.style.width = this.container.style.width;
-    trigger.addEventListener('dblclick', this._download.bind(this));
+    trigger.addEventListener("dblclick", this._download.bind(this));
 
     if (!this.data.hasPopup && (this.data.title || this.data.contents)) {
       this._createPopup(this.container, trigger, this.data);
@@ -1308,10 +1308,10 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
    */
   _download() {
     if (!this.downloadManager) {
-      warn('Download cannot be started due to unavailable download manager');
+      warn("Download cannot be started due to unavailable download manager");
       return;
     }
-    this.downloadManager.downloadData(this.content, this.filename, '');
+    this.downloadManager.downloadData(this.content, this.filename, "");
   }
 }
 
@@ -1349,7 +1349,7 @@ class AnnotationLayer {
         viewport: parameters.viewport,
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
-        imageResourcesPath: parameters.imageResourcesPath || '',
+        imageResourcesPath: parameters.imageResourcesPath || "",
         renderInteractiveForms: parameters.renderInteractiveForms || false,
         svgFactory: new DOMSVGFactory(),
       });
@@ -1373,10 +1373,10 @@ class AnnotationLayer {
         '[data-annotation-id="' + data.id + '"]');
       if (element) {
         element.style.transform =
-          'matrix(' + parameters.viewport.transform.join(',') + ')';
+          "matrix(" + parameters.viewport.transform.join(",") + ")";
       }
     }
-    parameters.div.removeAttribute('hidden');
+    parameters.div.removeAttribute("hidden");
   }
 }
 

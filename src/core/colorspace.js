@@ -15,8 +15,8 @@
 
 import {
   assert, FormatError, info, isString, shadow, unreachable, warn
-} from '../shared/util';
-import { isDict, isName, isStream } from './primitives';
+} from "../shared/util";
+import { isDict, isName, isStream } from "./primitives";
 
 /**
  * Resizes an RGB image with 3 components.
@@ -55,7 +55,7 @@ function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
 class ColorSpace {
   constructor(name, numComps) {
     if (this.constructor === ColorSpace) {
-      unreachable('Cannot initialize ColorSpace.');
+      unreachable("Cannot initialize ColorSpace.");
     }
     this.name = name;
     this.numComps = numComps;
@@ -77,7 +77,7 @@ class ColorSpace {
    * The result placed into the dest array starting from the destOffset.
    */
   getRgbItem(src, srcOffset, dest, destOffset) {
-    unreachable('Should not call ColorSpace.getRgbItem');
+    unreachable("Should not call ColorSpace.getRgbItem");
   }
 
   /**
@@ -90,7 +90,7 @@ class ColorSpace {
    * array).
    */
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    unreachable('Should not call ColorSpace.getRgbBuffer');
+    unreachable("Should not call ColorSpace.getRgbBuffer");
   }
 
   /**
@@ -99,7 +99,7 @@ class ColorSpace {
    * |alpha01| is either 0 (RGB output) or 1 (RGBA output).
    */
   getOutputLength(inputLength, alpha01) {
-    unreachable('Should not call ColorSpace.getOutputLength');
+    unreachable("Should not call ColorSpace.getOutputLength");
   }
 
   /**
@@ -123,8 +123,8 @@ class ColorSpace {
    */
   fillRgb(dest, originalWidth, originalHeight, width, height, actualHeight,
           bpc, comps, alpha01) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(dest instanceof Uint8ClampedArray,
              'ColorSpace.fillRgb: Unsupported "dest" type.');
     }
@@ -136,7 +136,7 @@ class ColorSpace {
     if (this.isPassthrough(bpc)) {
       rgbBuf = comps;
     } else if (this.numComps === 1 && count > numComponentColors &&
-               this.name !== 'DeviceGray' && this.name !== 'DeviceRGB') {
+               this.name !== "DeviceGray" && this.name !== "DeviceRGB") {
       // Optimization: create a color map when there is just one component and
       // we are converting more colors than the size of the color map. We
       // don't build the map if the colorspace is gray or rgb since those
@@ -208,7 +208,7 @@ class ColorSpace {
    * which are [0,100], [-128, 127], [-128, 127].
    */
   get usesZeroToOneRange() {
-    return shadow(this, 'usesZeroToOneRange', true);
+    return shadow(this, "usesZeroToOneRange", true);
   }
 
   static parse(cs, xref, res, pdfFunctionFactory) {
@@ -221,40 +221,40 @@ class ColorSpace {
     let whitePoint, blackPoint, gamma;
 
     switch (name) {
-      case 'DeviceGrayCS':
+      case "DeviceGrayCS":
         return this.singletons.gray;
-      case 'DeviceRgbCS':
+      case "DeviceRgbCS":
         return this.singletons.rgb;
-      case 'DeviceCmykCS':
+      case "DeviceCmykCS":
         return this.singletons.cmyk;
-      case 'CalGrayCS':
+      case "CalGrayCS":
         whitePoint = IR[1];
         blackPoint = IR[2];
         gamma = IR[3];
         return new CalGrayCS(whitePoint, blackPoint, gamma);
-      case 'CalRGBCS':
+      case "CalRGBCS":
         whitePoint = IR[1];
         blackPoint = IR[2];
         gamma = IR[3];
         let matrix = IR[4];
         return new CalRGBCS(whitePoint, blackPoint, gamma, matrix);
-      case 'PatternCS':
+      case "PatternCS":
         let basePatternCS = IR[1];
         if (basePatternCS) {
           basePatternCS = this.fromIR(basePatternCS);
         }
         return new PatternCS(basePatternCS);
-      case 'IndexedCS':
+      case "IndexedCS":
         let baseIndexedCS = IR[1];
         let hiVal = IR[2];
         let lookup = IR[3];
         return new IndexedCS(this.fromIR(baseIndexedCS), hiVal, lookup);
-      case 'AlternateCS':
+      case "AlternateCS":
         let numComps = IR[1];
         let alt = IR[2];
         let tintFn = IR[3];
         return new AlternateCS(numComps, this.fromIR(alt), tintFn);
-      case 'LabCS':
+      case "LabCS":
         whitePoint = IR[1];
         blackPoint = IR[2];
         let range = IR[3];
@@ -268,20 +268,20 @@ class ColorSpace {
     cs = xref.fetchIfRef(cs);
     if (isName(cs)) {
       switch (cs.name) {
-        case 'DeviceGray':
-        case 'G':
-          return 'DeviceGrayCS';
-        case 'DeviceRGB':
-        case 'RGB':
-          return 'DeviceRgbCS';
-        case 'DeviceCMYK':
-        case 'CMYK':
-          return 'DeviceCmykCS';
-        case 'Pattern':
-          return ['PatternCS', null];
+        case "DeviceGray":
+        case "G":
+          return "DeviceGrayCS";
+        case "DeviceRGB":
+        case "RGB":
+          return "DeviceRgbCS";
+        case "DeviceCMYK":
+        case "CMYK":
+          return "DeviceCmykCS";
+        case "Pattern":
+          return ["PatternCS", null];
         default:
           if (isDict(res)) {
-            let colorSpaces = res.get('ColorSpace');
+            let colorSpaces = res.get("ColorSpace");
             if (isDict(colorSpaces)) {
               let resCS = colorSpaces.get(cs.name);
               if (resCS) {
@@ -301,33 +301,33 @@ class ColorSpace {
       let numComps, params, alt, whitePoint, blackPoint, gamma;
 
       switch (mode) {
-        case 'DeviceGray':
-        case 'G':
-          return 'DeviceGrayCS';
-        case 'DeviceRGB':
-        case 'RGB':
-          return 'DeviceRgbCS';
-        case 'DeviceCMYK':
-        case 'CMYK':
-          return 'DeviceCmykCS';
-        case 'CalGray':
+        case "DeviceGray":
+        case "G":
+          return "DeviceGrayCS";
+        case "DeviceRGB":
+        case "RGB":
+          return "DeviceRgbCS";
+        case "DeviceCMYK":
+        case "CMYK":
+          return "DeviceCmykCS";
+        case "CalGray":
           params = xref.fetchIfRef(cs[1]);
-          whitePoint = params.getArray('WhitePoint');
-          blackPoint = params.getArray('BlackPoint');
-          gamma = params.get('Gamma');
-          return ['CalGrayCS', whitePoint, blackPoint, gamma];
-        case 'CalRGB':
+          whitePoint = params.getArray("WhitePoint");
+          blackPoint = params.getArray("BlackPoint");
+          gamma = params.get("Gamma");
+          return ["CalGrayCS", whitePoint, blackPoint, gamma];
+        case "CalRGB":
           params = xref.fetchIfRef(cs[1]);
-          whitePoint = params.getArray('WhitePoint');
-          blackPoint = params.getArray('BlackPoint');
-          gamma = params.getArray('Gamma');
-          let matrix = params.getArray('Matrix');
-          return ['CalRGBCS', whitePoint, blackPoint, gamma, matrix];
-        case 'ICCBased':
+          whitePoint = params.getArray("WhitePoint");
+          blackPoint = params.getArray("BlackPoint");
+          gamma = params.getArray("Gamma");
+          let matrix = params.getArray("Matrix");
+          return ["CalRGBCS", whitePoint, blackPoint, gamma, matrix];
+        case "ICCBased":
           let stream = xref.fetchIfRef(cs[1]);
           let dict = stream.dict;
-          numComps = dict.get('N');
-          alt = dict.get('Alternate');
+          numComps = dict.get("N");
+          alt = dict.get("Alternate");
           if (alt) {
             let altIR = this.parseToIR(alt, xref, res, pdfFunctionFactory);
             // Parse the /Alternate CS to ensure that the number of components
@@ -336,25 +336,25 @@ class ColorSpace {
             if (altCS.numComps === numComps) {
               return altIR;
             }
-            warn('ICCBased color space: Ignoring incorrect /Alternate entry.');
+            warn("ICCBased color space: Ignoring incorrect /Alternate entry.");
           }
           if (numComps === 1) {
-            return 'DeviceGrayCS';
+            return "DeviceGrayCS";
           } else if (numComps === 3) {
-            return 'DeviceRgbCS';
+            return "DeviceRgbCS";
           } else if (numComps === 4) {
-            return 'DeviceCmykCS';
+            return "DeviceCmykCS";
           }
           break;
-        case 'Pattern':
+        case "Pattern":
           let basePatternCS = cs[1] || null;
           if (basePatternCS) {
             basePatternCS = this.parseToIR(basePatternCS, xref, res,
                                            pdfFunctionFactory);
           }
-          return ['PatternCS', basePatternCS];
-        case 'Indexed':
-        case 'I':
+          return ["PatternCS", basePatternCS];
+        case "Indexed":
+        case "I":
           let baseIndexedCS = this.parseToIR(cs[1], xref, res,
                                              pdfFunctionFactory);
           let hiVal = xref.fetchIfRef(cs[2]) + 1;
@@ -362,20 +362,20 @@ class ColorSpace {
           if (isStream(lookup)) {
             lookup = lookup.getBytes();
           }
-          return ['IndexedCS', baseIndexedCS, hiVal, lookup];
-        case 'Separation':
-        case 'DeviceN':
+          return ["IndexedCS", baseIndexedCS, hiVal, lookup];
+        case "Separation":
+        case "DeviceN":
           let name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
           alt = this.parseToIR(cs[2], xref, res, pdfFunctionFactory);
           let tintFn = pdfFunctionFactory.create(xref.fetchIfRef(cs[3]));
-          return ['AlternateCS', numComps, alt, tintFn];
-        case 'Lab':
+          return ["AlternateCS", numComps, alt, tintFn];
+        case "Lab":
           params = xref.fetchIfRef(cs[1]);
-          whitePoint = params.getArray('WhitePoint');
-          blackPoint = params.getArray('BlackPoint');
-          let range = params.getArray('Range');
-          return ['LabCS', whitePoint, blackPoint, range];
+          whitePoint = params.getArray("WhitePoint");
+          blackPoint = params.getArray("BlackPoint");
+          let range = params.getArray("Range");
+          return ["LabCS", whitePoint, blackPoint, range];
         default:
           throw new FormatError(`unimplemented color space object "${mode}"`);
       }
@@ -397,7 +397,7 @@ class ColorSpace {
       return true;
     }
     if (numComps * 2 !== decode.length) {
-      warn('The decode map is not the correct length');
+      warn("The decode map is not the correct length");
       return true;
     }
     for (let i = 0, ii = decode.length; i < ii; i += 2) {
@@ -409,15 +409,15 @@ class ColorSpace {
   }
 
   static get singletons() {
-    return shadow(this, 'singletons', {
+    return shadow(this, "singletons", {
       get gray() {
-        return shadow(this, 'gray', new DeviceGrayCS());
+        return shadow(this, "gray", new DeviceGrayCS());
       },
       get rgb() {
-        return shadow(this, 'rgb', new DeviceRgbCS());
+        return shadow(this, "rgb", new DeviceRgbCS());
       },
       get cmyk() {
-        return shadow(this, 'cmyk', new DeviceCmykCS());
+        return shadow(this, "cmyk", new DeviceCmykCS());
       },
     });
   }
@@ -433,15 +433,15 @@ class ColorSpace {
  */
 class AlternateCS extends ColorSpace {
   constructor(numComps, base, tintFn) {
-    super('Alternate', numComps);
+    super("Alternate", numComps);
     this.base = base;
     this.tintFn = tintFn;
     this.tmpBuf = new Float32Array(base.numComps);
   }
 
   getRgbItem(src, srcOffset, dest, destOffset) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(dest instanceof Uint8ClampedArray,
              'AlternateCS.getRgbItem: Unsupported "dest" type.');
     }
@@ -451,8 +451,8 @@ class AlternateCS extends ColorSpace {
   }
 
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(dest instanceof Uint8ClampedArray,
              'AlternateCS.getRgbBuffer: Unsupported "dest" type.');
     }
@@ -501,12 +501,12 @@ class AlternateCS extends ColorSpace {
 
 class PatternCS extends ColorSpace {
   constructor(baseCS) {
-    super('Pattern', null);
+    super("Pattern", null);
     this.base = baseCS;
   }
 
   isDefaultDecode(decodeMap, bpc) {
-    unreachable('Should not call PatternCS.isDefaultDecode');
+    unreachable("Should not call PatternCS.isDefaultDecode");
   }
 }
 
@@ -515,7 +515,7 @@ class PatternCS extends ColorSpace {
  */
 class IndexedCS extends ColorSpace {
   constructor(base, highVal, lookup) {
-    super('Indexed', 1);
+    super("Indexed", 1);
     this.base = base;
     this.highVal = highVal;
 
@@ -539,8 +539,8 @@ class IndexedCS extends ColorSpace {
   }
 
   getRgbItem(src, srcOffset, dest, destOffset) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(dest instanceof Uint8ClampedArray,
              'IndexedCS.getRgbItem: Unsupported "dest" type.');
     }
@@ -550,8 +550,8 @@ class IndexedCS extends ColorSpace {
   }
 
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(dest instanceof Uint8ClampedArray,
              'IndexedCS.getRgbBuffer: Unsupported "dest" type.');
     }
@@ -576,11 +576,11 @@ class IndexedCS extends ColorSpace {
       return true;
     }
     if (decodeMap.length !== 2) {
-      warn('Decode map length is not correct');
+      warn("Decode map length is not correct");
       return true;
     }
     if (!Number.isInteger(bpc) || bpc < 1) {
-      warn('Bits per component is not correct');
+      warn("Bits per component is not correct");
       return true;
     }
     return decodeMap[0] === 0 && decodeMap[1] === (1 << bpc) - 1;
@@ -592,12 +592,12 @@ class IndexedCS extends ColorSpace {
  */
 class DeviceGrayCS extends ColorSpace {
   constructor() {
-    super('DeviceGray', 1);
+    super("DeviceGray", 1);
   }
 
   getRgbItem(src, srcOffset, dest, destOffset) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(dest instanceof Uint8ClampedArray,
              'DeviceGrayCS.getRgbItem: Unsupported "dest" type.');
     }
@@ -606,8 +606,8 @@ class DeviceGrayCS extends ColorSpace {
   }
 
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(dest instanceof Uint8ClampedArray,
              'DeviceGrayCS.getRgbBuffer: Unsupported "dest" type.');
     }
@@ -632,12 +632,12 @@ class DeviceGrayCS extends ColorSpace {
  */
 class DeviceRgbCS extends ColorSpace {
   constructor() {
-    super('DeviceRGB', 3);
+    super("DeviceRGB", 3);
   }
 
   getRgbItem(src, srcOffset, dest, destOffset) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(dest instanceof Uint8ClampedArray,
              'DeviceRgbCS.getRgbItem: Unsupported "dest" type.');
     }
@@ -647,8 +647,8 @@ class DeviceRgbCS extends ColorSpace {
   }
 
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
+    if (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) {
       assert(dest instanceof Uint8ClampedArray,
              'DeviceRgbCS.getRgbBuffer: Unsupported "dest" type.');
     }
@@ -723,12 +723,12 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
 
   class DeviceCmykCS extends ColorSpace {
     constructor() {
-      super('DeviceCMYK', 4);
+      super("DeviceCMYK", 4);
     }
 
     getRgbItem(src, srcOffset, dest, destOffset) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(dest instanceof Uint8ClampedArray,
                'DeviceCmykCS.getRgbItem: Unsupported "dest" type.');
       }
@@ -736,8 +736,8 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
     }
 
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(dest instanceof Uint8ClampedArray,
                'DeviceCmykCS.getRgbBuffer: Unsupported "dest" type.');
       }
@@ -781,11 +781,11 @@ const CalGrayCS = (function CalGrayCSClosure() {
 
   class CalGrayCS extends ColorSpace {
     constructor(whitePoint, blackPoint, gamma) {
-      super('CalGray', 1);
+      super("CalGray", 1);
 
       if (!whitePoint) {
         throw new FormatError(
-          'WhitePoint missing - required for color space CalGray');
+          "WhitePoint missing - required for color space CalGray");
       }
       blackPoint = blackPoint || [0, 0, 0];
       gamma = gamma || 1;
@@ -804,7 +804,7 @@ const CalGrayCS = (function CalGrayCSClosure() {
       // Validate variables as per spec.
       if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
         throw new FormatError(`Invalid WhitePoint components for ${this.name}` +
-                              ', no fallback available');
+                              ", no fallback available");
       }
 
       if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
@@ -819,14 +819,14 @@ const CalGrayCS = (function CalGrayCSClosure() {
 
       if (this.G < 1) {
         info(`Invalid Gamma: ${this.G} for ${this.name}, ` +
-             'falling back to default.');
+             "falling back to default.");
         this.G = 1;
       }
     }
 
     getRgbItem(src, srcOffset, dest, destOffset) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(dest instanceof Uint8ClampedArray,
                'CalGrayCS.getRgbItem: Unsupported "dest" type.');
       }
@@ -834,8 +834,8 @@ const CalGrayCS = (function CalGrayCSClosure() {
     }
 
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(dest instanceof Uint8ClampedArray,
                'CalGrayCS.getRgbBuffer: Unsupported "dest" type.');
       }
@@ -1048,11 +1048,11 @@ const CalRGBCS = (function CalRGBCSClosure() {
 
   class CalRGBCS extends ColorSpace {
     constructor(whitePoint, blackPoint, gamma, matrix) {
-      super('CalRGB', 3);
+      super("CalRGB", 3);
 
       if (!whitePoint) {
         throw new FormatError(
-          'WhitePoint missing - required for color space CalRGB');
+          "WhitePoint missing - required for color space CalRGB");
       }
       blackPoint = blackPoint || new Float32Array(3);
       gamma = gamma || new Float32Array([1, 1, 1]);
@@ -1086,12 +1086,12 @@ const CalRGBCS = (function CalRGBCSClosure() {
       // Validate variables as per spec.
       if (XW < 0 || ZW < 0 || YW !== 1) {
         throw new FormatError(`Invalid WhitePoint components for ${this.name}` +
-                              ', no fallback available');
+                              ", no fallback available");
       }
 
       if (XB < 0 || YB < 0 || ZB < 0) {
         info(`Invalid BlackPoint for ${this.name} [${XB}, ${YB}, ${ZB}], ` +
-             'falling back to default.');
+             "falling back to default.");
         this.blackPoint = new Float32Array(3);
       }
 
@@ -1103,8 +1103,8 @@ const CalRGBCS = (function CalRGBCSClosure() {
     }
 
     getRgbItem(src, srcOffset, dest, destOffset) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(dest instanceof Uint8ClampedArray,
                'CalRGBCS.getRgbItem: Unsupported "dest" type.');
       }
@@ -1112,8 +1112,8 @@ const CalRGBCS = (function CalRGBCSClosure() {
     }
 
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(dest instanceof Uint8ClampedArray,
               'CalRGBCS.getRgbBuffer: Unsupported "dest" type.');
       }
@@ -1206,11 +1206,11 @@ const LabCS = (function LabCSClosure() {
 
   class LabCS extends ColorSpace {
     constructor(whitePoint, blackPoint, range) {
-      super('Lab', 3);
+      super("Lab", 3);
 
       if (!whitePoint) {
         throw new FormatError(
-          'WhitePoint missing - required for color space Lab');
+          "WhitePoint missing - required for color space Lab");
       }
       blackPoint = blackPoint || [0, 0, 0];
       range = range || [-100, 100, -100, 100];
@@ -1233,16 +1233,16 @@ const LabCS = (function LabCSClosure() {
       // Validate vars as per spec
       if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
         throw new FormatError(
-          'Invalid WhitePoint components, no fallback available');
+          "Invalid WhitePoint components, no fallback available");
       }
 
       if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
-        info('Invalid BlackPoint, falling back to default');
+        info("Invalid BlackPoint, falling back to default");
         this.XB = this.YB = this.ZB = 0;
       }
 
       if (this.amin > this.amax || this.bmin > this.bmax) {
-        info('Invalid Range, falling back to defaults');
+        info("Invalid Range, falling back to defaults");
         this.amin = -100;
         this.amax = 100;
         this.bmin = -100;
@@ -1251,8 +1251,8 @@ const LabCS = (function LabCSClosure() {
     }
 
     getRgbItem(src, srcOffset, dest, destOffset) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(dest instanceof Uint8ClampedArray,
                'LabCS.getRgbItem: Unsupported "dest" type.');
       }
@@ -1260,8 +1260,8 @@ const LabCS = (function LabCSClosure() {
     }
 
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('!PRODUCTION || TESTING')) {
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) {
         assert(dest instanceof Uint8ClampedArray,
                'LabCS.getRgbBuffer: Unsupported "dest" type.');
       }
@@ -1284,7 +1284,7 @@ const LabCS = (function LabCSClosure() {
     }
 
     get usesZeroToOneRange() {
-      return shadow(this, 'usesZeroToOneRange', false);
+      return shadow(this, "usesZeroToOneRange", false);
     }
   }
   return LabCS;

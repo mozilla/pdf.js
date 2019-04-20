@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { addLinkAttributes, LinkTarget, removeNullCharacters } from 'pdfjs-lib';
+import { addLinkAttributes, LinkTarget, removeNullCharacters } from "pdfjs-lib";
 
-const DEFAULT_TITLE = '\u2013';
+const DEFAULT_TITLE = "\u2013";
 
 /**
  * @typedef {Object} PDFOutlineViewerOptions
@@ -40,7 +40,7 @@ class PDFOutlineViewer {
 
     this.reset();
 
-    eventBus.on('toggleoutlinetree', this.toggleOutlineTree.bind(this));
+    eventBus.on("toggleoutlinetree", this.toggleOutlineTree.bind(this));
   }
 
   reset() {
@@ -48,18 +48,18 @@ class PDFOutlineViewer {
     this.lastToggleIsShow = true;
 
     // Remove the outline from the DOM.
-    this.container.textContent = '';
+    this.container.textContent = "";
 
     // Ensure that the left (right in RTL locales) margin is always reset,
     // to prevent incorrect outline alignment if a new document is opened.
-    this.container.classList.remove('outlineWithDeepNesting');
+    this.container.classList.remove("outlineWithDeepNesting");
   }
 
   /**
    * @private
    */
   _dispatchEvent(outlineCount) {
-    this.eventBus.dispatch('outlineloaded', {
+    this.eventBus.dispatch("outlineloaded", {
       source: this,
       outlineCount,
     });
@@ -93,16 +93,16 @@ class PDFOutlineViewer {
    * @private
    */
   _setStyles(element, { bold, italic, }) {
-    let styleStr = '';
+    let styleStr = "";
     if (bold) {
-      styleStr += 'font-weight: bold;';
+      styleStr += "font-weight: bold;";
     }
     if (italic) {
-      styleStr += 'font-style: italic;';
+      styleStr += "font-style: italic;";
     }
 
     if (styleStr) {
-      element.setAttribute('style', styleStr);
+      element.setAttribute("style", styleStr);
     }
   }
 
@@ -113,14 +113,14 @@ class PDFOutlineViewer {
    * @private
    */
   _addToggleButton(div) {
-    let toggler = document.createElement('div');
-    toggler.className = 'outlineItemToggler';
+    let toggler = document.createElement("div");
+    toggler.className = "outlineItemToggler";
     toggler.onclick = (evt) => {
       evt.stopPropagation();
-      toggler.classList.toggle('outlineItemsHidden');
+      toggler.classList.toggle("outlineItemsHidden");
 
       if (evt.shiftKey) {
-        let shouldShowAll = !toggler.classList.contains('outlineItemsHidden');
+        let shouldShowAll = !toggler.classList.contains("outlineItemsHidden");
         this._toggleOutlineItem(div, shouldShowAll);
       }
     };
@@ -138,8 +138,8 @@ class PDFOutlineViewer {
    */
   _toggleOutlineItem(root, show = false) {
     this.lastToggleIsShow = show;
-    for (const toggler of root.querySelectorAll('.outlineItemToggler')) {
-      toggler.classList.toggle('outlineItemsHidden', !show);
+    for (const toggler of root.querySelectorAll(".outlineItemToggler")) {
+      toggler.classList.toggle("outlineItemsHidden", !show);
     }
   }
 
@@ -177,10 +177,10 @@ class PDFOutlineViewer {
       for (let i = 0, len = levelData.items.length; i < len; i++) {
         let item = levelData.items[i];
 
-        let div = document.createElement('div');
-        div.className = 'outlineItem';
+        let div = document.createElement("div");
+        div.className = "outlineItem";
 
-        let element = document.createElement('a');
+        let element = document.createElement("a");
         this._bindLink(element, item);
         this._setStyles(element, item);
         element.textContent =
@@ -192,8 +192,8 @@ class PDFOutlineViewer {
           hasAnyNesting = true;
           this._addToggleButton(div);
 
-          let itemsDiv = document.createElement('div');
-          itemsDiv.className = 'outlineItems';
+          let itemsDiv = document.createElement("div");
+          itemsDiv.className = "outlineItems";
           div.appendChild(itemsDiv);
           queue.push({ parent: itemsDiv, items: item.items, });
         }
@@ -203,7 +203,7 @@ class PDFOutlineViewer {
       }
     }
     if (hasAnyNesting) {
-      this.container.classList.add('outlineWithDeepNesting');
+      this.container.classList.add("outlineWithDeepNesting");
     }
 
     this.container.appendChild(fragment);

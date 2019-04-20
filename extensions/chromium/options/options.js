@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-'use strict';
-var storageAreaName = chrome.storage.sync ? 'sync' : 'local';
+"use strict";
+var storageAreaName = chrome.storage.sync ? "sync" : "local";
 var storageArea = chrome.storage[storageAreaName];
 
 Promise.all([
@@ -39,11 +39,11 @@ Promise.all([
     // Get the storage schema - a dictionary of preferences.
     var x = new XMLHttpRequest();
     var schema_location = chrome.runtime.getManifest().storage.managed_schema;
-    x.open('get', chrome.runtime.getURL(schema_location));
+    x.open("get", chrome.runtime.getURL(schema_location));
     x.onload = function() {
       resolve(x.response.properties);
     };
-    x.responseType = 'json';
+    x.responseType = "json";
     x.send();
   })
 ]).then(function(values) {
@@ -70,24 +70,24 @@ Promise.all([
 
     // A DOM element with a method renderPreference.
     var renderPreference;
-    if (prefSchema.type === 'boolean') {
+    if (prefSchema.type === "boolean") {
       // Most prefs are booleans, render them in a generic way.
       renderPreference = renderBooleanPref(prefSchema.title,
                                            prefSchema.description,
                                            prefName);
-    } else if (prefSchema.type === 'integer' && prefSchema.enum) {
+    } else if (prefSchema.type === "integer" && prefSchema.enum) {
       // Most other prefs are integer-valued enumerations, render them in a
       // generic way too.
       // Unlike the renderBooleanPref branch, each preference handled by this
       // branch still needs its own template in options.html with
       // id="$prefName-template".
       renderPreference = renderEnumPref(prefSchema.title, prefName);
-    } else if (prefName === 'defaultZoomValue') {
+    } else if (prefName === "defaultZoomValue") {
       renderPreference = renderDefaultZoomValue(prefSchema.title);
     } else {
       // Should NEVER be reached. Only happens if a new type of preference is
       // added to the storage manifest.
-      console.error('Don\'t know how to handle ' + prefName + '!');
+      console.error("Don't know how to handle " + prefName + "!");
       return;
     }
 
@@ -99,7 +99,7 @@ Promise.all([
   var renderedPrefNames = Object.keys(renderPreferenceFunctions);
 
   // Reset button to restore default settings.
-  document.getElementById('reset-button').onclick = function() {
+  document.getElementById("reset-button").onclick = function() {
     userPrefs = {};
     storageArea.remove(prefNames, function() {
       renderedPrefNames.forEach(function(prefName) {
@@ -111,12 +111,12 @@ Promise.all([
   // Automatically update the UI when the preferences were changed elsewhere.
   chrome.storage.onChanged.addListener(function(changes, areaName) {
     var prefs = areaName === storageAreaName ? userPrefs :
-                areaName === 'managed' ? managedPrefs : null;
+                areaName === "managed" ? managedPrefs : null;
     if (prefs) {
       renderedPrefNames.forEach(function(prefName) {
         var prefChanges = changes[prefName];
         if (prefChanges) {
-          if ('newValue' in prefChanges) {
+          if ("newValue" in prefChanges) {
             userPrefs[prefName] = prefChanges.newValue;
           } else {
             // Otherwise the pref was deleted
@@ -137,7 +137,7 @@ function importTemplate(id) {
 // function which updates the UI with the preference.
 
 function renderBooleanPref(shortDescription, description, prefName) {
-  var wrapper = importTemplate('checkbox-template');
+  var wrapper = importTemplate("checkbox-template");
   wrapper.title = description;
 
   var checkbox = wrapper.querySelector('input[type="checkbox"]');
@@ -146,8 +146,8 @@ function renderBooleanPref(shortDescription, description, prefName) {
     pref[prefName] = this.checked;
     storageArea.set(pref);
   };
-  wrapper.querySelector('span').textContent = shortDescription;
-  document.getElementById('settings-boxes').appendChild(wrapper);
+  wrapper.querySelector("span").textContent = shortDescription;
+  document.getElementById("settings-boxes").appendChild(wrapper);
 
   function renderPreference(value) {
     checkbox.checked = value;
@@ -156,15 +156,15 @@ function renderBooleanPref(shortDescription, description, prefName) {
 }
 
 function renderEnumPref(shortDescription, prefName) {
-  var wrapper = importTemplate(prefName + '-template');
-  var select = wrapper.querySelector('select');
+  var wrapper = importTemplate(prefName + "-template");
+  var select = wrapper.querySelector("select");
   select.onchange = function() {
     var pref = {};
     pref[prefName] = parseInt(this.value);
     storageArea.set(pref);
   };
-  wrapper.querySelector('span').textContent = shortDescription;
-  document.getElementById('settings-boxes').appendChild(wrapper);
+  wrapper.querySelector("span").textContent = shortDescription;
+  document.getElementById("settings-boxes").appendChild(wrapper);
 
   function renderPreference(value) {
     select.value = value;
@@ -173,24 +173,24 @@ function renderEnumPref(shortDescription, prefName) {
 }
 
 function renderDefaultZoomValue(shortDescription) {
-  var wrapper = importTemplate('defaultZoomValue-template');
-  var select = wrapper.querySelector('select');
+  var wrapper = importTemplate("defaultZoomValue-template");
+  var select = wrapper.querySelector("select");
   select.onchange = function() {
     storageArea.set({
       defaultZoomValue: this.value,
     });
   };
-  wrapper.querySelector('span').textContent = shortDescription;
-  document.getElementById('settings-boxes').appendChild(wrapper);
+  wrapper.querySelector("span").textContent = shortDescription;
+  document.getElementById("settings-boxes").appendChild(wrapper);
 
   function renderPreference(value) {
-    value = value || 'auto';
+    value = value || "auto";
     select.value = value;
-    var customOption = select.querySelector('option.custom-zoom');
+    var customOption = select.querySelector("option.custom-zoom");
     if (select.selectedIndex === -1 && value) {
       // Custom zoom percentage, e.g. set via managed preferences.
       // [zoom] or [zoom],[left],[top]
-      customOption.text = value.indexOf(',') > 0 ? value : value + '%';
+      customOption.text = value.indexOf(",") > 0 ? value : value + "%";
       customOption.value = value;
       customOption.hidden = false;
       customOption.selected = true;

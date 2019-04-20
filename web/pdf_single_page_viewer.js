@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-import { BaseViewer } from './base_viewer';
-import { shadow } from 'pdfjs-lib';
+import { BaseViewer } from "./base_viewer";
+import { shadow } from "pdfjs-lib";
 
 class PDFSinglePageViewer extends BaseViewer {
   constructor(options) {
     super(options);
 
-    this.eventBus.on('pagesinit', (evt) => {
+    this.eventBus.on("pagesinit", (evt) => {
       // Since the pages are placed in a `DocumentFragment`, make sure that
       // the current page becomes visible upon loading of the document.
       this._ensurePageViewVisible();
@@ -32,7 +32,7 @@ class PDFSinglePageViewer extends BaseViewer {
     // `PDFSinglePageViewer`, we cannot append them to the `viewer` DOM element.
     // Instead, they are placed in a `DocumentFragment`, and only the current
     // page is displayed in the viewer (refer to `this._ensurePageViewVisible`).
-    return shadow(this, '_setDocumentViewerElement', this._shadowViewer);
+    return shadow(this, "_setDocumentViewerElement", this._shadowViewer);
   }
 
   _resetView() {
@@ -54,7 +54,7 @@ class PDFSinglePageViewer extends BaseViewer {
       case 1: // The normal page-switching case.
         if (viewerNodes[0] !== previousPageView.div) {
           throw new Error(
-            '_ensurePageViewVisible: Unexpected previously visible page.');
+            "_ensurePageViewVisible: Unexpected previously visible page.");
         }
         if (pageView === previousPageView) {
           break; // The correct page is already visible.
@@ -67,7 +67,7 @@ class PDFSinglePageViewer extends BaseViewer {
         break;
       default:
         throw new Error(
-          '_ensurePageViewVisible: Only one page should be visible at a time.');
+          "_ensurePageViewVisible: Only one page should be visible at a time.");
     }
     this._previousPageNumber = this._currentPageNumber;
   }
@@ -108,7 +108,7 @@ class PDFSinglePageViewer extends BaseViewer {
 
   get _isScrollModeHorizontal() {
     // The Scroll/Spread modes are never used in `PDFSinglePageViewer`.
-    return shadow(this, '_isScrollModeHorizontal', false);
+    return shadow(this, "_isScrollModeHorizontal", false);
   }
 
   _updateScrollMode() { }

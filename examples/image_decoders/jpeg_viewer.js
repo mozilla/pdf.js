@@ -13,30 +13,30 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
 if (!pdfjsImageDecoders.JpegImage) {
-  alert('Please build the pdfjs-dist library using `gulp dist-install`');
+  alert("Please build the pdfjs-dist library using `gulp dist-install`");
 }
 
-var JPEG_IMAGE = 'fish.jpg';
+var JPEG_IMAGE = "fish.jpg";
 
-var jpegCanvas = document.getElementById('jpegCanvas');
-var jpegCtx = jpegCanvas.getContext('2d');
+var jpegCanvas = document.getElementById("jpegCanvas");
+var jpegCtx = jpegCanvas.getContext("2d");
 
 // Load the image data, and convert it to a Uint8Array.
 //
 var nonBinaryRequest = false;
 var request = new XMLHttpRequest();
-request.open('GET', JPEG_IMAGE, false);
+request.open("GET", JPEG_IMAGE, false);
 try {
-  request.responseType = 'arraybuffer';
-  nonBinaryRequest = request.responseType !== 'arraybuffer';
+  request.responseType = "arraybuffer";
+  nonBinaryRequest = request.responseType !== "arraybuffer";
 } catch (e) {
   nonBinaryRequest = true;
 }
 if (nonBinaryRequest && request.overrideMimeType) {
-  request.overrideMimeType('text/plain; charset=x-user-defined');
+  request.overrideMimeType("text/plain; charset=x-user-defined");
 }
 request.send(null);
 

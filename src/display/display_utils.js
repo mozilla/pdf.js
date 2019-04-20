@@ -17,18 +17,18 @@
 import {
   assert, CMapCompressionType, removeNullCharacters, stringToBytes,
   unreachable, URL, Util, warn
-} from '../shared/util';
+} from "../shared/util";
 
-const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
-const SVG_NS = 'http://www.w3.org/2000/svg';
+const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 class DOMCanvasFactory {
   create(width, height) {
     if (width <= 0 || height <= 0) {
-      throw new Error('Invalid canvas size');
+      throw new Error("Invalid canvas size");
     }
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
     canvas.width = width;
     canvas.height = height;
     return {
@@ -39,10 +39,10 @@ class DOMCanvasFactory {
 
   reset(canvasAndContext, width, height) {
     if (!canvasAndContext.canvas) {
-      throw new Error('Canvas is not specified');
+      throw new Error("Canvas is not specified");
     }
     if (width <= 0 || height <= 0) {
-      throw new Error('Invalid canvas size');
+      throw new Error("Invalid canvas size");
     }
     canvasAndContext.canvas.width = width;
     canvasAndContext.canvas.height = height;
@@ -50,7 +50,7 @@ class DOMCanvasFactory {
 
   destroy(canvasAndContext) {
     if (!canvasAndContext.canvas) {
-      throw new Error('Canvas is not specified');
+      throw new Error("Canvas is not specified");
     }
     // Zeroing the width and height cause Firefox to release graphics
     // resources immediately, which can greatly reduce memory consumption.
@@ -74,13 +74,13 @@ class DOMCMapReaderFactory {
         'the "cMapUrl" and "cMapPacked" API parameters are provided.');
     }
     if (!name) {
-      throw new Error('CMap name must be specified.');
+      throw new Error("CMap name must be specified.");
     }
-    const url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+    const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
     const compressionType = (this.isCompressed ? CMapCompressionType.BINARY :
                                                  CMapCompressionType.NONE);
 
-    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) ||
+    if ((typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
         (isFetchSupported() && isValidFetchUrl(url, document.baseURI))) {
       return fetch(url).then(async (response) => {
         if (!response.ok) {
@@ -94,7 +94,7 @@ class DOMCMapReaderFactory {
         }
         return { cMapData, compressionType, };
       }).catch((reason) => {
-        throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` +
+        throw new Error(`Unable to load ${this.isCompressed ? "binary " : ""}` +
                         `CMap at: ${url}`);
       });
     }
@@ -102,10 +102,10 @@ class DOMCMapReaderFactory {
     // The Fetch API is not supported.
     return new Promise((resolve, reject) => {
       const request = new XMLHttpRequest();
-      request.open('GET', url, true);
+      request.open("GET", url, true);
 
       if (this.isCompressed) {
-        request.responseType = 'arraybuffer';
+        request.responseType = "arraybuffer";
       }
       request.onreadystatechange = () => {
         if (request.readyState !== XMLHttpRequest.DONE) {
@@ -128,7 +128,7 @@ class DOMCMapReaderFactory {
 
       request.send(null);
     }).catch((reason) => {
-      throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` +
+      throw new Error(`Unable to load ${this.isCompressed ? "binary " : ""}` +
                       `CMap at: ${url}`);
     });
   }
@@ -136,20 +136,20 @@ class DOMCMapReaderFactory {
 
 class DOMSVGFactory {
   create(width, height) {
-    assert(width > 0 && height > 0, 'Invalid SVG dimensions');
+    assert(width > 0 && height > 0, "Invalid SVG dimensions");
 
-    const svg = document.createElementNS(SVG_NS, 'svg:svg');
-    svg.setAttribute('version', '1.1');
-    svg.setAttribute('width', width + 'px');
-    svg.setAttribute('height', height + 'px');
-    svg.setAttribute('preserveAspectRatio', 'none');
-    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    const svg = document.createElementNS(SVG_NS, "svg:svg");
+    svg.setAttribute("version", "1.1");
+    svg.setAttribute("width", width + "px");
+    svg.setAttribute("height", height + "px");
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
 
     return svg;
   }
 
   createElement(type) {
-    assert(typeof type === 'string', 'Invalid SVG element type');
+    assert(typeof type === "string", "Invalid SVG element type");
 
     return document.createElementNS(SVG_NS, type);
   }
@@ -314,7 +314,7 @@ const RenderingCancelledException = (function RenderingCancelledException() {
   }
 
   RenderingCancelledException.prototype = new Error();
-  RenderingCancelledException.prototype.name = 'RenderingCancelledException';
+  RenderingCancelledException.prototype.name = "RenderingCancelledException";
   RenderingCancelledException.constructor = RenderingCancelledException;
 
   return RenderingCancelledException;
@@ -329,11 +329,11 @@ const LinkTarget = {
 };
 
 const LinkTargetStringMap = [
-  '',
-  '_self',
-  '_blank',
-  '_parent',
-  '_top',
+  "",
+  "_self",
+  "_blank",
+  "_parent",
+  "_top",
 ];
 
 /**
@@ -352,7 +352,7 @@ const LinkTargetStringMap = [
  * @param {ExternalLinkParameters} params
  */
 function addLinkAttributes(link, { url, target, rel, } = {}) {
-  link.href = link.title = (url ? removeNullCharacters(url) : '');
+  link.href = link.title = (url ? removeNullCharacters(url) : "");
 
   if (url) {
     const LinkTargetValues = Object.values(LinkTarget);
@@ -360,17 +360,17 @@ function addLinkAttributes(link, { url, target, rel, } = {}) {
       LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
     link.target = LinkTargetStringMap[targetIndex];
 
-    link.rel = (typeof rel === 'string' ? rel : DEFAULT_LINK_REL);
+    link.rel = (typeof rel === "string" ? rel : DEFAULT_LINK_REL);
   }
 }
 
 // Gets the file name from a given URL.
 function getFilenameFromUrl(url) {
-  const anchor = url.indexOf('#');
-  const query = url.indexOf('?');
+  const anchor = url.indexOf("#");
+  const query = url.indexOf("?");
   const end = Math.min(anchor > 0 ? anchor : url.length,
                        query > 0 ? query : url.length);
-  return url.substring(url.lastIndexOf('/', end) + 1, end);
+  return url.substring(url.lastIndexOf("/", end) + 1, end);
 }
 
 class StatTimer {
@@ -385,7 +385,7 @@ class StatTimer {
       return;
     }
     if (name in this.started) {
-      warn('Timer is already running for ' + name);
+      warn("Timer is already running for " + name);
     }
     this.started[name] = Date.now();
   }
@@ -395,12 +395,12 @@ class StatTimer {
       return;
     }
     if (!(name in this.started)) {
-      warn('Timer has not been started for ' + name);
+      warn("Timer has not been started for " + name);
     }
     this.times.push({
-      'name': name,
-      'start': this.started[name],
-      'end': Date.now(),
+      "name": name,
+      "start": this.started[name],
+      "end": Date.now(),
     });
     // Remove timer from started so it can be called again.
     delete this.started[name];
@@ -408,7 +408,7 @@ class StatTimer {
 
   toString() {
     // Find the longest name for padding purposes.
-    let out = '', longest = 0;
+    let out = "", longest = 0;
     for (const time of this.times) {
       const name = time.name;
       if (name.length > longest) {
@@ -433,7 +433,7 @@ class StatTimer {
  */
 class DummyStatTimer {
   constructor() {
-    unreachable('Cannot initialize DummyStatTimer.');
+    unreachable("Cannot initialize DummyStatTimer.");
   }
 
   static time(name) {}
@@ -441,22 +441,22 @@ class DummyStatTimer {
   static timeEnd(name) {}
 
   static toString() {
-    return '';
+    return "";
   }
 }
 
 function isFetchSupported() {
-  return (typeof fetch !== 'undefined' &&
-          typeof Response !== 'undefined' && 'body' in Response.prototype &&
+  return (typeof fetch !== "undefined" &&
+          typeof Response !== "undefined" && "body" in Response.prototype &&
           // eslint-disable-next-line no-restricted-globals
-          typeof ReadableStream !== 'undefined');
+          typeof ReadableStream !== "undefined");
 }
 
 function isValidFetchUrl(url, baseUrl) {
   try {
     const { protocol, } = baseUrl ? new URL(url, baseUrl) : new URL(url);
     // The Fetch API only supports the http/https protocols, and not file/ftp.
-    return (protocol === 'http:' || protocol === 'https:');
+    return (protocol === "http:" || protocol === "https:");
   } catch (ex) {
     return false; // `new URL()` will throw on incorrect data.
   }
@@ -464,7 +464,7 @@ function isValidFetchUrl(url, baseUrl) {
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = src;
 
     script.onload = resolve;
@@ -477,18 +477,18 @@ function loadScript(src) {
 
 // Deprecated API function -- display regardless of the `verbosity` setting.
 function deprecated(details) {
-  console.log('Deprecated API usage: ' + details);
+  console.log("Deprecated API usage: " + details);
 }
 
 function releaseImageResources(img) {
-  assert(img instanceof Image, 'Invalid `img` parameter.');
+  assert(img instanceof Image, "Invalid `img` parameter.");
 
   const url = img.src;
-  if (typeof url === 'string' && url.startsWith('blob:') &&
+  if (typeof url === "string" && url.startsWith("blob:") &&
       URL.revokeObjectURL) {
     URL.revokeObjectURL(url);
   }
-  img.removeAttribute('src');
+  img.removeAttribute("src");
 }
 
 export {

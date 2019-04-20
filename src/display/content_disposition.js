@@ -31,7 +31,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   let needsEncodingFixup = true;
 
   // filename*=ext-value ("ext-value" from RFC 5987, referenced by RFC 6266).
-  let tmp = toParamRegExp('filename\\*', 'i').exec(contentDisposition);
+  let tmp = toParamRegExp("filename\\*", "i").exec(contentDisposition);
   if (tmp) {
     tmp = tmp[1];
     let filename = rfc2616unquote(tmp);
@@ -52,7 +52,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   }
 
   // filename=value (RFC 5987, section 4.1).
-  tmp = toParamRegExp('filename', 'i').exec(contentDisposition);
+  tmp = toParamRegExp("filename", "i").exec(contentDisposition);
   if (tmp) {
     tmp = tmp[1];
     let filename = rfc2616unquote(tmp);
@@ -65,14 +65,14 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   // declarations...
   function toParamRegExp(attributePattern, flags) {
     return new RegExp(
-      '(?:^|;)\\s*' + attributePattern + '\\s*=\\s*' +
+      "(?:^|;)\\s*" + attributePattern + "\\s*=\\s*" +
       // Captures: value = token | quoted-string
       // (RFC 2616, section 3.6 and referenced by RFC 6266 4.1)
-      '(' +
+      "(" +
         '[^";\\s][^;\\s]*' +
-      '|' +
+      "|" +
         '"(?:[^"\\\\]|\\\\"?)+"?' +
-      ')', flags);
+      ")", flags);
   }
   function textdecode(encoding, value) {
     if (encoding) {
@@ -104,10 +104,10 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   function fixupEncoding(value) {
     if (needsEncodingFixup && /[\x80-\xff]/.test(value)) {
       // Maybe multi-byte UTF-8.
-      value = textdecode('utf-8', value);
+      value = textdecode("utf-8", value);
       if (needsEncodingFixup) {
         // Try iso-8859-1 encoding.
-        value = textdecode('iso-8859-1', value);
+        value = textdecode("iso-8859-1", value);
       }
     }
     return value;
@@ -116,7 +116,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     let matches = [], match;
     // Iterate over all filename*n= and filename*n*= with n being an integer
     // of at least zero. Any non-zero number must not start with '0'.
-    let iter = toParamRegExp('filename\\*((?!0\\d)\\d+)(\\*?)', 'ig');
+    let iter = toParamRegExp("filename\\*((?!0\\d)\\d+)(\\*?)", "ig");
     while ((match = iter.exec(contentDisposition)) !== null) {
       let [, n, quot, part] = match;
       n = parseInt(n, 10);
@@ -145,7 +145,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
       }
       parts.push(part);
     }
-    return parts.join('');
+    return parts.join("");
   }
   function rfc2616unquote(value) {
     if (value.startsWith('"')) {
@@ -157,7 +157,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
           parts[i] = parts[i].slice(0, quotindex);
           parts.length = i + 1; // Truncates and stop the iteration.
         }
-        parts[i] = parts[i].replace(/\\(.)/g, '$1');
+        parts[i] = parts[i].replace(/\\(.)/g, "$1");
       }
       value = parts.join('"');
     }
@@ -165,7 +165,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   }
   function rfc5987decode(extvalue) {
     // Decodes "ext-value" from RFC 5987.
-    let encodingend = extvalue.indexOf('\'');
+    let encodingend = extvalue.indexOf("'");
     if (encodingend === -1) {
       // Some servers send "filename*=" without encoding 'language' prefix,
       // e.g. in https://github.com/Rob--W/open-in-browser/issues/26
@@ -175,7 +175,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     let encoding = extvalue.slice(0, encodingend);
     let langvalue = extvalue.slice(encodingend + 1);
     // Ignore language (RFC 5987 section 3.2.1, and RFC 6266 section 4.1 ).
-    let value = langvalue.replace(/^[^']*'/, '');
+    let value = langvalue.replace(/^[^']*'/, "");
     return textdecode(encoding, value);
   }
   function rfc2047decode(value) {
@@ -189,7 +189,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
 
     // Firefox also decodes words even where RFC 2047 section 5 states:
     // "An 'encoded-word' MUST NOT appear within a 'quoted-string'."
-    if (!value.startsWith('=?') || /[\x00-\x19\x80-\xff]/.test(value)) {
+    if (!value.startsWith("=?") || /[\x00-\x19\x80-\xff]/.test(value)) {
       return value;
     }
     // RFC 2047, section 2.4
@@ -201,9 +201,9 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     //        ... but Firefox permits ? and space.
     return value.replace(/=\?([\w-]*)\?([QqBb])\?((?:[^?]|\?(?!=))*)\?=/g,
       function(_, charset, encoding, text) {
-        if (encoding === 'q' || encoding === 'Q') {
+        if (encoding === "q" || encoding === "Q") {
           // RFC 2047 section 4.2.
-          text = text.replace(/_/g, ' ');
+          text = text.replace(/_/g, " ");
           text = text.replace(/=([0-9a-fA-F]{2})/g, function(_, hex) {
             return String.fromCharCode(parseInt(hex, 16));
           });
@@ -217,7 +217,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
       });
   }
 
-  return '';
+  return "";
 }
 
 export {

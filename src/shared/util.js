@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 
-import './compatibility';
-import { ReadableStream } from './streams_polyfill';
-import { URL } from './url_polyfill';
+import "./compatibility";
+import { ReadableStream } from "./streams_polyfill";
+import { URL } from "./url_polyfill";
 
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
 const NativeImageDecoding = {
-  NONE: 'none',
-  DECODE: 'decode',
-  DISPLAY: 'display',
+  NONE: "none",
+  DECODE: "decode",
+  DISPLAY: "display",
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
@@ -266,12 +266,12 @@ const OPS = {
 };
 
 const UNSUPPORTED_FEATURES = {
-  unknown: 'unknown',
-  forms: 'forms',
-  javaScript: 'javaScript',
-  smask: 'smask',
-  shadingPattern: 'shadingPattern',
-  font: 'font',
+  unknown: "unknown",
+  forms: "forms",
+  javaScript: "javaScript",
+  smask: "smask",
+  shadingPattern: "shadingPattern",
+  font: "font",
 };
 
 const PasswordResponses = {
@@ -296,14 +296,14 @@ function getVerbosityLevel() {
 // end users.
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
-    console.log('Info: ' + msg);
+    console.log("Info: " + msg);
   }
 }
 
 // Non-fatal warnings.
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
-    console.log('Warning: ' + msg);
+    console.log("Warning: " + msg);
   }
 }
 
@@ -321,7 +321,7 @@ function assert(cond, msg) {
 function isSameOrigin(baseUrl, otherUrl) {
   try {
     var base = new URL(baseUrl);
-    if (!base.origin || base.origin === 'null') {
+    if (!base.origin || base.origin === "null") {
       return false; // non-HTTP url
     }
   } catch (e) {
@@ -338,11 +338,11 @@ function _isValidProtocol(url) {
     return false;
   }
   switch (url.protocol) {
-    case 'http:':
-    case 'https:':
-    case 'ftp:':
-    case 'mailto:':
-    case 'tel:':
+    case "http:":
+    case "https:":
+    case "ftp:":
+    case "mailto:":
+    case "tel:":
       return true;
     default:
       return false;
@@ -379,7 +379,7 @@ function shadow(obj, prop, value) {
 
 var PasswordException = (function PasswordExceptionClosure() {
   function PasswordException(msg, code) {
-    this.name = 'PasswordException';
+    this.name = "PasswordException";
     this.message = msg;
     this.code = code;
   }
@@ -392,7 +392,7 @@ var PasswordException = (function PasswordExceptionClosure() {
 
 var UnknownErrorException = (function UnknownErrorExceptionClosure() {
   function UnknownErrorException(msg, details) {
-    this.name = 'UnknownErrorException';
+    this.name = "UnknownErrorException";
     this.message = msg;
     this.details = details;
   }
@@ -405,7 +405,7 @@ var UnknownErrorException = (function UnknownErrorExceptionClosure() {
 
 var InvalidPDFException = (function InvalidPDFExceptionClosure() {
   function InvalidPDFException(msg) {
-    this.name = 'InvalidPDFException';
+    this.name = "InvalidPDFException";
     this.message = msg;
   }
 
@@ -417,7 +417,7 @@ var InvalidPDFException = (function InvalidPDFExceptionClosure() {
 
 var MissingPDFException = (function MissingPDFExceptionClosure() {
   function MissingPDFException(msg) {
-    this.name = 'MissingPDFException';
+    this.name = "MissingPDFException";
     this.message = msg;
   }
 
@@ -430,7 +430,7 @@ var MissingPDFException = (function MissingPDFExceptionClosure() {
 var UnexpectedResponseException =
     (function UnexpectedResponseExceptionClosure() {
   function UnexpectedResponseException(msg, status) {
-    this.name = 'UnexpectedResponseException';
+    this.name = "UnexpectedResponseException";
     this.message = msg;
     this.status = status;
   }
@@ -450,7 +450,7 @@ let FormatError = (function FormatErrorClosure() {
   }
 
   FormatError.prototype = new Error();
-  FormatError.prototype.name = 'FormatError';
+  FormatError.prototype.name = "FormatError";
   FormatError.constructor = FormatError;
 
   return FormatError;
@@ -461,7 +461,7 @@ let FormatError = (function FormatErrorClosure() {
  */
 let AbortException = (function AbortExceptionClosure() {
   function AbortException(msg) {
-    this.name = 'AbortException';
+    this.name = "AbortException";
     this.message = msg;
   }
 
@@ -474,16 +474,16 @@ let AbortException = (function AbortExceptionClosure() {
 var NullCharactersRegExp = /\x00/g;
 
 function removeNullCharacters(str) {
-  if (typeof str !== 'string') {
-    warn('The argument for removeNullCharacters must be a string.');
+  if (typeof str !== "string") {
+    warn("The argument for removeNullCharacters must be a string.");
     return str;
   }
-  return str.replace(NullCharactersRegExp, '');
+  return str.replace(NullCharactersRegExp, "");
 }
 
 function bytesToString(bytes) {
-  assert(bytes !== null && typeof bytes === 'object' &&
-         bytes.length !== undefined, 'Invalid argument for bytesToString');
+  assert(bytes !== null && typeof bytes === "object" &&
+         bytes.length !== undefined, "Invalid argument for bytesToString");
   var length = bytes.length;
   var MAX_ARGUMENT_COUNT = 8192;
   if (length < MAX_ARGUMENT_COUNT) {
@@ -495,11 +495,11 @@ function bytesToString(bytes) {
     var chunk = bytes.subarray(i, chunkEnd);
     strBuf.push(String.fromCharCode.apply(null, chunk));
   }
-  return strBuf.join('');
+  return strBuf.join("");
 }
 
 function stringToBytes(str) {
-  assert(typeof str === 'string', 'Invalid argument for stringToBytes');
+  assert(typeof str === "string", "Invalid argument for stringToBytes");
   var length = str.length;
   var bytes = new Uint8Array(length);
   for (var i = 0; i < length; ++i) {
@@ -544,7 +544,7 @@ function arraysToBytes(arr) {
   for (i = 0; i < ii; i++) {
     item = arr[i];
     if (!(item instanceof Uint8Array)) {
-      if (typeof item === 'string') {
+      if (typeof item === "string") {
         item = stringToBytes(item);
       } else {
         item = new Uint8Array(item);
@@ -597,7 +597,7 @@ function isLittleEndian() {
 // Checks if it's possible to eval JS expressions.
 function isEvalSupported() {
   try {
-    new Function(''); // eslint-disable-line no-new, no-new-func
+    new Function(""); // eslint-disable-line no-new, no-new-func
     return true;
   } catch (e) {
     return false;
@@ -607,7 +607,7 @@ function isEvalSupported() {
 var Util = (function UtilClosure() {
   function Util() {}
 
-  var rgbBuf = ['rgb(', 0, ',', 0, ',', 0, ')'];
+  var rgbBuf = ["rgb(", 0, ",", 0, ",", 0, ")"];
 
   // makeCssRgb() can be called thousands of times. Using |rgbBuf| avoids
   // creating many intermediate strings.
@@ -615,7 +615,7 @@ var Util = (function UtilClosure() {
     rgbBuf[1] = r;
     rgbBuf[3] = g;
     rgbBuf[5] = b;
-    return rgbBuf.join('');
+    return rgbBuf.join("");
   };
 
   // Concatenates two transformation matrices together and returns the result.
@@ -778,7 +778,7 @@ const PDFStringTranslateTable = [
 
 function stringToPDFString(str) {
   var i, n = str.length, strBuf = [];
-  if (str[0] === '\xFE' && str[1] === '\xFF') {
+  if (str[0] === "\xFE" && str[1] === "\xFF") {
     // UTF16BE BOM
     for (i = 2; i < n; i += 2) {
       strBuf.push(String.fromCharCode(
@@ -790,7 +790,7 @@ function stringToPDFString(str) {
       strBuf.push(code ? String.fromCharCode(code) : str.charAt(i));
     }
   }
-  return strBuf.join('');
+  return strBuf.join("");
 }
 
 function stringToUTF8String(str) {
@@ -809,19 +809,19 @@ function isEmptyObj(obj) {
 }
 
 function isBool(v) {
-  return typeof v === 'boolean';
+  return typeof v === "boolean";
 }
 
 function isNum(v) {
-  return typeof v === 'number';
+  return typeof v === "number";
 }
 
 function isString(v) {
-  return typeof v === 'string';
+  return typeof v === "string";
 }
 
 function isArrayBuffer(v) {
-  return typeof v === 'object' && v !== null && v.byteLength !== undefined;
+  return typeof v === "object" && v !== null && v.byteLength !== undefined;
 }
 
 function isArrayEqual(arr1, arr2) {
@@ -858,7 +858,7 @@ function createPromiseCapability() {
   const capability = Object.create(null);
   let isSettled = false;
 
-  Object.defineProperty(capability, 'settled', {
+  Object.defineProperty(capability, "settled", {
     get() {
       return isSettled;
     },
@@ -879,7 +879,7 @@ function createPromiseCapability() {
 var createObjectURL = (function createObjectURLClosure() {
   // Blob/createObjectURL is not available, falling back to data schema.
   var digits =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
   return function createObjectURL(data, contentType, forceDataSchema = false) {
     if (!forceDataSchema && URL.createObjectURL) {
@@ -887,7 +887,7 @@ var createObjectURL = (function createObjectURLClosure() {
       return URL.createObjectURL(blob);
     }
 
-    var buffer = 'data:' + contentType + ';base64,';
+    var buffer = "data:" + contentType + ";base64,";
     for (var i = 0, ii = data.length; i < ii; i += 3) {
       var b1 = data[i] & 0xFF;
       var b2 = data[i + 1] & 0xFF;

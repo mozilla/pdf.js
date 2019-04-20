@@ -18,25 +18,25 @@
 import {
   createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNum, OPS,
   TextRenderingMode, Util, warn
-} from '../shared/util';
-import { DOMSVGFactory } from './display_utils';
-import isNodeJS from '../shared/is_node';
+} from "../shared/util";
+import { DOMSVGFactory } from "./display_utils";
+import isNodeJS from "../shared/is_node";
 
 let SVGGraphics = function() {
-  throw new Error('Not implemented: SVGGraphics');
+  throw new Error("Not implemented: SVGGraphics");
 };
 
-if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
 const SVG_DEFAULTS = {
-  fontStyle: 'normal',
-  fontWeight: 'normal',
-  fillColor: '#000000',
+  fontStyle: "normal",
+  fontWeight: "normal",
+  fillColor: "#000000",
 };
-const XML_NS = 'http://www.w3.org/XML/1998/namespace';
-const XLINK_NS = 'http://www.w3.org/1999/xlink';
-const LINE_CAP_STYLES = ['butt', 'round', 'square'];
-const LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
+const XML_NS = "http://www.w3.org/XML/1998/namespace";
+const XLINK_NS = "http://www.w3.org/1999/xlink";
+const LINE_CAP_STYLES = ["butt", "round", "square"];
+const LINE_JOIN_STYLES = ["miter", "round", "bevel"];
 
 const convertImgDataToPng = (function() {
   const PNG_HEADER =
@@ -133,11 +133,11 @@ const convertImgDataToPng = (function() {
         // eslint-disable-next-line no-undef
         input = new Buffer(literals);
       }
-      const output = __non_webpack_require__('zlib')
+      const output = __non_webpack_require__("zlib")
         .deflateSync(input, { level: 9, });
       return output instanceof Uint8Array ? output : new Uint8Array(output);
     } catch (e) {
-      warn('Not compressing PNG because zlib.deflateSync is unavailable: ' + e);
+      warn("Not compressing PNG because zlib.deflateSync is unavailable: " + e);
     }
 
     return deflateSyncUncompressed(literals);
@@ -208,7 +208,7 @@ const convertImgDataToPng = (function() {
         lineSize = width * 4;
         break;
       default:
-        throw new Error('invalid format');
+        throw new Error("invalid format");
     }
 
     // prefix every row with predictor 0
@@ -257,13 +257,13 @@ const convertImgDataToPng = (function() {
     let offset = 0;
     data.set(PNG_HEADER, offset);
     offset += PNG_HEADER.length;
-    writePngChunk('IHDR', ihdr, data, offset);
+    writePngChunk("IHDR", ihdr, data, offset);
     offset += CHUNK_WRAPPER_SIZE + ihdr.length;
-    writePngChunk('IDATA', idat, data, offset);
+    writePngChunk("IDATA", idat, data, offset);
     offset += CHUNK_WRAPPER_SIZE + idat.length;
-    writePngChunk('IEND', new Uint8Array(0), data, offset);
+    writePngChunk("IEND", new Uint8Array(0), data, offset);
 
-    return createObjectURL(data, 'image/png', forceDataSchema);
+    return createObjectURL(data, "image/png", forceDataSchema);
   }
 
   return function convertImgDataToPng(imgData, forceDataSchema, isMask) {
@@ -301,13 +301,13 @@ class SVGExtraState {
 
     // Default foreground and background colors
     this.fillColor = SVG_DEFAULTS.fillColor;
-    this.strokeColor = '#000000';
+    this.strokeColor = "#000000";
 
     this.fillAlpha = 1;
     this.strokeAlpha = 1;
     this.lineWidth = 1;
-    this.lineJoin = '';
-    this.lineCap = '';
+    this.lineJoin = "";
+    this.lineCap = "";
     this.miterLimit = 0;
 
     this.dashArray = [];
@@ -319,7 +319,7 @@ class SVGExtraState {
     this.activeClipUrl = null;
     this.clipGroup = null;
 
-    this.maskId = '';
+    this.maskId = "";
   }
 
   clone() {
@@ -338,14 +338,14 @@ function opListToTree(opList) {
   const tmp = [];
 
   for (const opListElement of opList) {
-    if (opListElement.fn === 'save') {
-      opTree.push({ 'fnId': 92, 'fn': 'group', 'items': [], });
+    if (opListElement.fn === "save") {
+      opTree.push({ "fnId": 92, "fn": "group", "items": [], });
       tmp.push(opTree);
       opTree = opTree[opTree.length - 1].items;
       continue;
     }
 
-    if (opListElement.fn === 'restore') {
+    if (opListElement.fn === "restore") {
       opTree = tmp.pop();
     } else {
       opTree.push(opListElement);
@@ -367,15 +367,15 @@ function pf(value) {
   }
   const s = value.toFixed(10);
   let i = s.length - 1;
-  if (s[i] !== '0') {
+  if (s[i] !== "0") {
     return s;
   }
 
   // Remove trailing zeros.
   do {
     i--;
-  } while (s[i] === '0');
-  return s.substring(0, s[i] === '.' ? i : i + 1);
+  } while (s[i] === "0");
+  return s.substring(0, s[i] === "." ? i : i + 1);
 }
 
 /**
@@ -391,7 +391,7 @@ function pm(m) {
   if (m[4] === 0 && m[5] === 0) {
     if (m[1] === 0 && m[2] === 0) {
       if (m[0] === 1 && m[3] === 1) {
-        return '';
+        return "";
       }
       return `scale(${pf(m[0])} ${pf(m[3])})`;
     }
@@ -472,7 +472,7 @@ SVGGraphics = class SVGGraphics {
       }
 
       for (const obj of argsArray[i]) {
-        const objsPool = obj.startsWith('g_') ? this.commonObjs : this.objs;
+        const objsPool = obj.startsWith("g_") ? this.commonObjs : this.objs;
         const promise = new Promise((resolve) => {
           objsPool.get(obj, resolve);
         });
@@ -508,9 +508,9 @@ SVGGraphics = class SVGGraphics {
     for (let i = 0, ii = fnArray.length; i < ii; i++) {
       const fnId = fnArray[i];
       opList.push({
-        'fnId': fnId,
-        'fn': operatorIdMapping[fnId],
-        'args': argsArray[i],
+        "fnId": fnId,
+        "fn": operatorIdMapping[fnId],
+        "args": argsArray[i],
       });
     }
     return opListToTree(opList);
@@ -624,10 +624,10 @@ SVGGraphics = class SVGGraphics {
           this.eoFillStroke();
           break;
         case OPS.clip:
-          this.clip('nonzero');
+          this.clip("nonzero");
           break;
         case OPS.eoClip:
-          this.clip('evenodd');
+          this.clip("evenodd");
           break;
         case OPS.paintSolidColorImageMask:
           this.paintSolidColorImageMask();
@@ -705,13 +705,13 @@ SVGGraphics = class SVGGraphics {
     current.y = current.lineY = 0;
 
     current.xcoords = [];
-    current.tspan = this.svgFactory.createElement('svg:tspan');
-    current.tspan.setAttributeNS(null, 'font-family', current.fontFamily);
-    current.tspan.setAttributeNS(null, 'font-size',
+    current.tspan = this.svgFactory.createElement("svg:tspan");
+    current.tspan.setAttributeNS(null, "font-family", current.fontFamily);
+    current.tspan.setAttributeNS(null, "font-size",
                                  `${pf(current.fontSize)}px`);
-    current.tspan.setAttributeNS(null, 'y', pf(-current.y));
+    current.tspan.setAttributeNS(null, "y", pf(-current.y));
 
-    current.txtElement = this.svgFactory.createElement('svg:text');
+    current.txtElement = this.svgFactory.createElement("svg:text");
     current.txtElement.appendChild(current.tspan);
   }
 
@@ -722,9 +722,9 @@ SVGGraphics = class SVGGraphics {
     current.textMatrix = IDENTITY_MATRIX;
     current.lineMatrix = IDENTITY_MATRIX;
     current.textMatrixScale = 1;
-    current.tspan = this.svgFactory.createElement('svg:tspan');
-    current.txtElement = this.svgFactory.createElement('svg:text');
-    current.txtgrp = this.svgFactory.createElement('svg:g');
+    current.tspan = this.svgFactory.createElement("svg:tspan");
+    current.txtElement = this.svgFactory.createElement("svg:text");
+    current.txtgrp = this.svgFactory.createElement("svg:g");
     current.xcoords = [];
   }
 
@@ -734,11 +734,11 @@ SVGGraphics = class SVGGraphics {
     current.y = current.lineY += y;
 
     current.xcoords = [];
-    current.tspan = this.svgFactory.createElement('svg:tspan');
-    current.tspan.setAttributeNS(null, 'font-family', current.fontFamily);
-    current.tspan.setAttributeNS(null, 'font-size',
+    current.tspan = this.svgFactory.createElement("svg:tspan");
+    current.tspan.setAttributeNS(null, "font-family", current.fontFamily);
+    current.tspan.setAttributeNS(null, "font-size",
                                  `${pf(current.fontSize)}px`);
-    current.tspan.setAttributeNS(null, 'y', pf(-current.y));
+    current.tspan.setAttributeNS(null, "y", pf(-current.y));
   }
 
   showText(glyphs) {
@@ -790,17 +790,17 @@ SVGGraphics = class SVGGraphics {
       current.x += x * textHScale;
     }
 
-    current.tspan.setAttributeNS(null, 'x',
-                                 current.xcoords.map(pf).join(' '));
-    current.tspan.setAttributeNS(null, 'y', pf(-current.y));
-    current.tspan.setAttributeNS(null, 'font-family', current.fontFamily);
-    current.tspan.setAttributeNS(null, 'font-size',
+    current.tspan.setAttributeNS(null, "x",
+                                 current.xcoords.map(pf).join(" "));
+    current.tspan.setAttributeNS(null, "y", pf(-current.y));
+    current.tspan.setAttributeNS(null, "font-family", current.fontFamily);
+    current.tspan.setAttributeNS(null, "font-size",
                                  `${pf(current.fontSize)}px`);
     if (current.fontStyle !== SVG_DEFAULTS.fontStyle) {
-      current.tspan.setAttributeNS(null, 'font-style', current.fontStyle);
+      current.tspan.setAttributeNS(null, "font-style", current.fontStyle);
     }
     if (current.fontWeight !== SVG_DEFAULTS.fontWeight) {
-      current.tspan.setAttributeNS(null, 'font-weight', current.fontWeight);
+      current.tspan.setAttributeNS(null, "font-weight", current.fontWeight);
     }
 
     const fillStrokeMode = current.textRenderingMode &
@@ -808,17 +808,17 @@ SVGGraphics = class SVGGraphics {
     if (fillStrokeMode === TextRenderingMode.FILL ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE) {
       if (current.fillColor !== SVG_DEFAULTS.fillColor) {
-        current.tspan.setAttributeNS(null, 'fill', current.fillColor);
+        current.tspan.setAttributeNS(null, "fill", current.fillColor);
       }
       if (current.fillAlpha < 1) {
-        current.tspan.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
+        current.tspan.setAttributeNS(null, "fill-opacity", current.fillAlpha);
       }
     } else if (current.textRenderingMode === TextRenderingMode.ADD_TO_PATH) {
       // Workaround for Firefox: We must set fill="transparent" because
       // fill="none" would generate an empty clipping path.
-      current.tspan.setAttributeNS(null, 'fill', 'transparent');
+      current.tspan.setAttributeNS(null, "fill", "transparent");
     } else {
-      current.tspan.setAttributeNS(null, 'fill', 'none');
+      current.tspan.setAttributeNS(null, "fill", "none");
     }
 
     if (fillStrokeMode === TextRenderingMode.STROKE ||
@@ -836,9 +836,9 @@ SVGGraphics = class SVGGraphics {
       textMatrix[5] += current.textRise;
     }
 
-    current.txtElement.setAttributeNS(null, 'transform',
+    current.txtElement.setAttributeNS(null, "transform",
                                       `${pm(textMatrix)} scale(1, -1)`);
-    current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
+    current.txtElement.setAttributeNS(XML_NS, "xml:space", "preserve");
     current.txtElement.appendChild(current.tspan);
     current.txtgrp.appendChild(current.txtElement);
 
@@ -852,8 +852,8 @@ SVGGraphics = class SVGGraphics {
 
   addFontStyle(fontObj) {
     if (!this.cssStyle) {
-      this.cssStyle = this.svgFactory.createElement('svg:style');
-      this.cssStyle.setAttributeNS(null, 'type', 'text/css');
+      this.cssStyle = this.svgFactory.createElement("svg:style");
+      this.cssStyle.setAttributeNS(null, "type", "text/css");
       this.defs.appendChild(this.cssStyle);
     }
 
@@ -879,9 +879,9 @@ SVGGraphics = class SVGGraphics {
     current.fontMatrix = (fontObj.fontMatrix ?
                           fontObj.fontMatrix : FONT_IDENTITY_MATRIX);
 
-    const bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
-                                 (fontObj.bold ? 'bold' : 'normal');
-    const italic = fontObj.italic ? 'italic' : 'normal';
+    const bold = fontObj.black ? (fontObj.bold ? "bolder" : "bold") :
+                                 (fontObj.bold ? "bold" : "normal");
+    const italic = fontObj.italic ? "italic" : "normal";
 
     if (size < 0) {
       size = -size;
@@ -894,8 +894,8 @@ SVGGraphics = class SVGGraphics {
     current.fontWeight = bold;
     current.fontStyle = italic;
 
-    current.tspan = this.svgFactory.createElement('svg:tspan');
-    current.tspan.setAttributeNS(null, 'y', pf(-current.y));
+    current.tspan = this.svgFactory.createElement("svg:tspan");
+    current.tspan.setAttributeNS(null, "y", pf(-current.y));
     current.xcoords = [];
   }
 
@@ -905,7 +905,7 @@ SVGGraphics = class SVGGraphics {
         current.txtElement && current.txtElement.hasChildNodes()) {
       // If no glyphs are shown (i.e. no child nodes), no clipping occurs.
       current.element = current.txtElement;
-      this.clip('nonzero');
+      this.clip("nonzero");
       this.endPath();
     }
   }
@@ -943,7 +943,7 @@ SVGGraphics = class SVGGraphics {
 
   setFillRGBColor(r, g, b) {
     this.current.fillColor = Util.makeCssRgb(r, g, b);
-    this.current.tspan = this.svgFactory.createElement('svg:tspan');
+    this.current.tspan = this.svgFactory.createElement("svg:tspan");
     this.current.xcoords = [];
   }
 
@@ -968,12 +968,12 @@ SVGGraphics = class SVGGraphics {
     const x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
     const y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
 
-    const rect = this.svgFactory.createElement('svg:rect');
-    rect.setAttributeNS(null, 'x', x0);
-    rect.setAttributeNS(null, 'y', y0);
-    rect.setAttributeNS(null, 'width', x1 - x0);
-    rect.setAttributeNS(null, 'height', y1 - y0);
-    rect.setAttributeNS(null, 'fill', this._makeShadingPattern(args));
+    const rect = this.svgFactory.createElement("svg:rect");
+    rect.setAttributeNS(null, "x", x0);
+    rect.setAttributeNS(null, "y", y0);
+    rect.setAttributeNS(null, "width", x1 - x0);
+    rect.setAttributeNS(null, "height", y1 - y0);
+    rect.setAttributeNS(null, "fill", this._makeShadingPattern(args));
     this._ensureTransformGroup().appendChild(rect);
   }
 
@@ -981,8 +981,8 @@ SVGGraphics = class SVGGraphics {
    * @private
    */
   _makeColorN_Pattern(args) {
-    if (args[0] === 'TilingPattern') {
-      warn('Unimplemented pattern TilingPattern');
+    if (args[0] === "TilingPattern") {
+      warn("Unimplemented pattern TilingPattern");
       return null;
     }
     return this._makeShadingPattern(args);
@@ -993,54 +993,54 @@ SVGGraphics = class SVGGraphics {
    */
   _makeShadingPattern(args) {
     switch (args[0]) {
-      case 'RadialAxial':
+      case "RadialAxial":
         const shadingId = `shading${shadingCount++}`;
         const colorStops = args[2];
         let gradient;
 
         switch (args[1]) {
-          case 'axial':
+          case "axial":
             const point0 = args[3];
             const point1 = args[4];
-            gradient = this.svgFactory.createElement('svg:linearGradient');
-            gradient.setAttributeNS(null, 'id', shadingId);
-            gradient.setAttributeNS(null, 'gradientUnits', 'userSpaceOnUse');
-            gradient.setAttributeNS(null, 'x1', point0[0]);
-            gradient.setAttributeNS(null, 'y1', point0[1]);
-            gradient.setAttributeNS(null, 'x2', point1[0]);
-            gradient.setAttributeNS(null, 'y2', point1[1]);
+            gradient = this.svgFactory.createElement("svg:linearGradient");
+            gradient.setAttributeNS(null, "id", shadingId);
+            gradient.setAttributeNS(null, "gradientUnits", "userSpaceOnUse");
+            gradient.setAttributeNS(null, "x1", point0[0]);
+            gradient.setAttributeNS(null, "y1", point0[1]);
+            gradient.setAttributeNS(null, "x2", point1[0]);
+            gradient.setAttributeNS(null, "y2", point1[1]);
             break;
-          case 'radial':
+          case "radial":
             const focalPoint = args[3];
             const circlePoint = args[4];
             const focalRadius = args[5];
             const circleRadius = args[6];
-            gradient = this.svgFactory.createElement('svg:radialGradient');
-            gradient.setAttributeNS(null, 'id', shadingId);
-            gradient.setAttributeNS(null, 'gradientUnits', 'userSpaceOnUse');
-            gradient.setAttributeNS(null, 'cx', circlePoint[0]);
-            gradient.setAttributeNS(null, 'cy', circlePoint[1]);
-            gradient.setAttributeNS(null, 'r', circleRadius);
-            gradient.setAttributeNS(null, 'fx', focalPoint[0]);
-            gradient.setAttributeNS(null, 'fy', focalPoint[1]);
-            gradient.setAttributeNS(null, 'fr', focalRadius);
+            gradient = this.svgFactory.createElement("svg:radialGradient");
+            gradient.setAttributeNS(null, "id", shadingId);
+            gradient.setAttributeNS(null, "gradientUnits", "userSpaceOnUse");
+            gradient.setAttributeNS(null, "cx", circlePoint[0]);
+            gradient.setAttributeNS(null, "cy", circlePoint[1]);
+            gradient.setAttributeNS(null, "r", circleRadius);
+            gradient.setAttributeNS(null, "fx", focalPoint[0]);
+            gradient.setAttributeNS(null, "fy", focalPoint[1]);
+            gradient.setAttributeNS(null, "fr", focalRadius);
             break;
           default:
             throw new Error(`Unknown RadialAxial type: ${args[1]}`);
         }
         for (const colorStop of colorStops) {
-          const stop = this.svgFactory.createElement('svg:stop');
-          stop.setAttributeNS(null, 'offset', colorStop[0]);
-          stop.setAttributeNS(null, 'stop-color', colorStop[1]);
+          const stop = this.svgFactory.createElement("svg:stop");
+          stop.setAttributeNS(null, "offset", colorStop[0]);
+          stop.setAttributeNS(null, "stop-color", colorStop[1]);
           gradient.appendChild(stop);
         }
         this.defs.appendChild(gradient);
         return `url(#${shadingId})`;
-      case 'Mesh':
-        warn('Unimplemented pattern Mesh');
+      case "Mesh":
+        warn("Unimplemented pattern Mesh");
         return null;
-      case 'Dummy':
-        return 'hotpink';
+      case "Dummy":
+        return "hotpink";
       default:
         throw new Error(`Unknown IR type: ${args[0]}`);
     }
@@ -1066,61 +1066,61 @@ SVGGraphics = class SVGGraphics {
           const height = args[j++];
           const xw = x + width;
           const yh = y + height;
-          d.push('M', pf(x), pf(y), 'L', pf(xw), pf(y), 'L', pf(xw), pf(yh),
-                 'L', pf(x), pf(yh), 'Z');
+          d.push("M", pf(x), pf(y), "L", pf(xw), pf(y), "L", pf(xw), pf(yh),
+                 "L", pf(x), pf(yh), "Z");
           break;
         case OPS.moveTo:
           x = args[j++];
           y = args[j++];
-          d.push('M', pf(x), pf(y));
+          d.push("M", pf(x), pf(y));
           break;
         case OPS.lineTo:
           x = args[j++];
           y = args[j++];
-          d.push('L', pf(x), pf(y));
+          d.push("L", pf(x), pf(y));
           break;
         case OPS.curveTo:
           x = args[j + 4];
           y = args[j + 5];
-          d.push('C', pf(args[j]), pf(args[j + 1]), pf(args[j + 2]),
+          d.push("C", pf(args[j]), pf(args[j + 1]), pf(args[j + 2]),
                  pf(args[j + 3]), pf(x), pf(y));
           j += 6;
           break;
         case OPS.curveTo2:
           x = args[j + 2];
           y = args[j + 3];
-          d.push('C', pf(x), pf(y), pf(args[j]), pf(args[j + 1]),
+          d.push("C", pf(x), pf(y), pf(args[j]), pf(args[j + 1]),
                  pf(args[j + 2]), pf(args[j + 3]));
           j += 4;
           break;
         case OPS.curveTo3:
           x = args[j + 2];
           y = args[j + 3];
-          d.push('C', pf(args[j]), pf(args[j + 1]), pf(x), pf(y),
+          d.push("C", pf(args[j]), pf(args[j + 1]), pf(x), pf(y),
                  pf(x), pf(y));
           j += 4;
           break;
         case OPS.closePath:
-          d.push('Z');
+          d.push("Z");
           break;
       }
     }
 
-    d = d.join(' ');
+    d = d.join(" ");
 
     if (current.path && ops.length > 0 && ops[0] !== OPS.rectangle &&
         ops[0] !== OPS.moveTo) {
       // If a path does not start with an OPS.rectangle or OPS.moveTo, it has
       // probably been divided into two OPS.constructPath operators by
       // OperatorList. Append the commands to the previous path element.
-      d = current.path.getAttributeNS(null, 'd') + d;
+      d = current.path.getAttributeNS(null, "d") + d;
     } else {
-      current.path = this.svgFactory.createElement('svg:path');
+      current.path = this.svgFactory.createElement("svg:path");
       this._ensureTransformGroup().appendChild(current.path);
     }
 
-    current.path.setAttributeNS(null, 'd', d);
-    current.path.setAttributeNS(null, 'fill', 'none');
+    current.path.setAttributeNS(null, "d", d);
+    current.path.setAttributeNS(null, "fill", "none");
 
     // Saving a reference in current.element so that it can be addressed
     // in 'fill' and 'stroke'
@@ -1140,16 +1140,16 @@ SVGGraphics = class SVGGraphics {
 
     // Add the current path to a clipping path.
     const clipId = `clippath${clipCount++}`;
-    const clipPath = this.svgFactory.createElement('svg:clipPath');
-    clipPath.setAttributeNS(null, 'id', clipId);
-    clipPath.setAttributeNS(null, 'transform', pm(this.transformMatrix));
+    const clipPath = this.svgFactory.createElement("svg:clipPath");
+    clipPath.setAttributeNS(null, "id", clipId);
+    clipPath.setAttributeNS(null, "transform", pm(this.transformMatrix));
 
     // A deep clone is needed when text is used as a clipping path.
     const clipElement = current.element.cloneNode(true);
-    if (this.pendingClip === 'evenodd') {
-      clipElement.setAttributeNS(null, 'clip-rule', 'evenodd');
+    if (this.pendingClip === "evenodd") {
+      clipElement.setAttributeNS(null, "clip-rule", "evenodd");
     } else {
-      clipElement.setAttributeNS(null, 'clip-rule', 'nonzero');
+      clipElement.setAttributeNS(null, "clip-rule", "nonzero");
     }
     this.pendingClip = null;
     clipPath.appendChild(clipElement);
@@ -1163,7 +1163,7 @@ SVGGraphics = class SVGGraphics {
         prev.clipGroup = null;
       });
       // Intersect with the previous clipping path.
-      clipPath.setAttributeNS(null, 'clip-path', current.activeClipUrl);
+      clipPath.setAttributeNS(null, "clip-path", current.activeClipUrl);
     }
     current.activeClipUrl = `url(#${clipId})`;
 
@@ -1177,8 +1177,8 @@ SVGGraphics = class SVGGraphics {
   closePath() {
     const current = this.current;
     if (current.path) {
-      const d = `${current.path.getAttributeNS(null, 'd')}Z`;
-      current.path.setAttributeNS(null, 'd', d);
+      const d = `${current.path.getAttributeNS(null, "d")}Z`;
+      current.path.setAttributeNS(null, "d", d);
     }
   }
 
@@ -1209,34 +1209,34 @@ SVGGraphics = class SVGGraphics {
   setGState(states) {
     for (const [key, value] of states) {
       switch (key) {
-        case 'LW':
+        case "LW":
           this.setLineWidth(value);
           break;
-        case 'LC':
+        case "LC":
           this.setLineCap(value);
           break;
-        case 'LJ':
+        case "LJ":
           this.setLineJoin(value);
           break;
-        case 'ML':
+        case "ML":
           this.setMiterLimit(value);
           break;
-        case 'D':
+        case "D":
           this.setDash(value[0], value[1]);
           break;
-        case 'RI':
+        case "RI":
           this.setRenderingIntent(value);
           break;
-        case 'FL':
+        case "FL":
           this.setFlatness(value);
           break;
-        case 'Font':
+        case "Font":
           this.setFont(value);
           break;
-        case 'CA':
+        case "CA":
           this.setStrokeAlpha(value);
           break;
-        case 'ca':
+        case "ca":
           this.setFillAlpha(value);
           break;
         default:
@@ -1249,8 +1249,8 @@ SVGGraphics = class SVGGraphics {
   fill() {
     const current = this.current;
     if (current.element) {
-      current.element.setAttributeNS(null, 'fill', current.fillColor);
-      current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
+      current.element.setAttributeNS(null, "fill", current.fillColor);
+      current.element.setAttributeNS(null, "fill-opacity", current.fillAlpha);
       this.endPath();
     }
   }
@@ -1259,7 +1259,7 @@ SVGGraphics = class SVGGraphics {
     const current = this.current;
     if (current.element) {
       this._setStrokeAttributes(current.element);
-      current.element.setAttributeNS(null, 'fill', 'none');
+      current.element.setAttributeNS(null, "fill", "none");
       this.endPath();
     }
   }
@@ -1275,22 +1275,22 @@ SVGGraphics = class SVGGraphics {
         return lineWidthScale * value;
       });
     }
-    element.setAttributeNS(null, 'stroke', current.strokeColor);
-    element.setAttributeNS(null, 'stroke-opacity', current.strokeAlpha);
-    element.setAttributeNS(null, 'stroke-miterlimit', pf(current.miterLimit));
-    element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
-    element.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
-    element.setAttributeNS(null, 'stroke-width',
-                           pf(lineWidthScale * current.lineWidth) + 'px');
-    element.setAttributeNS(null, 'stroke-dasharray',
-                           dashArray.map(pf).join(' '));
-    element.setAttributeNS(null, 'stroke-dashoffset',
-                           pf(lineWidthScale * current.dashPhase) + 'px');
+    element.setAttributeNS(null, "stroke", current.strokeColor);
+    element.setAttributeNS(null, "stroke-opacity", current.strokeAlpha);
+    element.setAttributeNS(null, "stroke-miterlimit", pf(current.miterLimit));
+    element.setAttributeNS(null, "stroke-linecap", current.lineCap);
+    element.setAttributeNS(null, "stroke-linejoin", current.lineJoin);
+    element.setAttributeNS(null, "stroke-width",
+                           pf(lineWidthScale * current.lineWidth) + "px");
+    element.setAttributeNS(null, "stroke-dasharray",
+                           dashArray.map(pf).join(" "));
+    element.setAttributeNS(null, "stroke-dashoffset",
+                           pf(lineWidthScale * current.dashPhase) + "px");
   }
 
   eoFill() {
     if (this.current.element) {
-      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      this.current.element.setAttributeNS(null, "fill-rule", "evenodd");
     }
     this.fill();
   }
@@ -1304,7 +1304,7 @@ SVGGraphics = class SVGGraphics {
 
   eoFillStroke() {
     if (this.current.element) {
-      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      this.current.element.setAttributeNS(null, "fill-rule", "evenodd");
     }
     this.fillStroke();
   }
@@ -1325,25 +1325,25 @@ SVGGraphics = class SVGGraphics {
   }
 
   paintSolidColorImageMask() {
-    const rect = this.svgFactory.createElement('svg:rect');
-    rect.setAttributeNS(null, 'x', '0');
-    rect.setAttributeNS(null, 'y', '0');
-    rect.setAttributeNS(null, 'width', '1px');
-    rect.setAttributeNS(null, 'height', '1px');
-    rect.setAttributeNS(null, 'fill', this.current.fillColor);
+    const rect = this.svgFactory.createElement("svg:rect");
+    rect.setAttributeNS(null, "x", "0");
+    rect.setAttributeNS(null, "y", "0");
+    rect.setAttributeNS(null, "width", "1px");
+    rect.setAttributeNS(null, "height", "1px");
+    rect.setAttributeNS(null, "fill", this.current.fillColor);
 
     this._ensureTransformGroup().appendChild(rect);
   }
 
   paintJpegXObject(objId, w, h) {
     const imgObj = this.objs.get(objId);
-    const imgEl = this.svgFactory.createElement('svg:image');
-    imgEl.setAttributeNS(XLINK_NS, 'xlink:href', imgObj.src);
-    imgEl.setAttributeNS(null, 'width', pf(w));
-    imgEl.setAttributeNS(null, 'height', pf(h));
-    imgEl.setAttributeNS(null, 'x', '0');
-    imgEl.setAttributeNS(null, 'y', pf(-h));
-    imgEl.setAttributeNS(null, 'transform',
+    const imgEl = this.svgFactory.createElement("svg:image");
+    imgEl.setAttributeNS(XLINK_NS, "xlink:href", imgObj.src);
+    imgEl.setAttributeNS(null, "width", pf(w));
+    imgEl.setAttributeNS(null, "height", pf(h));
+    imgEl.setAttributeNS(null, "x", "0");
+    imgEl.setAttributeNS(null, "y", pf(-h));
+    imgEl.setAttributeNS(null, "transform",
                          `scale(${pf(1 / w)} ${pf(-1 / h)})`);
 
     this._ensureTransformGroup().appendChild(imgEl);
@@ -1363,21 +1363,21 @@ SVGGraphics = class SVGGraphics {
     const height = imgData.height;
 
     const imgSrc = convertImgDataToPng(imgData, this.forceDataSchema, !!mask);
-    const cliprect = this.svgFactory.createElement('svg:rect');
-    cliprect.setAttributeNS(null, 'x', '0');
-    cliprect.setAttributeNS(null, 'y', '0');
-    cliprect.setAttributeNS(null, 'width', pf(width));
-    cliprect.setAttributeNS(null, 'height', pf(height));
+    const cliprect = this.svgFactory.createElement("svg:rect");
+    cliprect.setAttributeNS(null, "x", "0");
+    cliprect.setAttributeNS(null, "y", "0");
+    cliprect.setAttributeNS(null, "width", pf(width));
+    cliprect.setAttributeNS(null, "height", pf(height));
     this.current.element = cliprect;
-    this.clip('nonzero');
+    this.clip("nonzero");
 
-    const imgEl = this.svgFactory.createElement('svg:image');
-    imgEl.setAttributeNS(XLINK_NS, 'xlink:href', imgSrc);
-    imgEl.setAttributeNS(null, 'x', '0');
-    imgEl.setAttributeNS(null, 'y', pf(-height));
-    imgEl.setAttributeNS(null, 'width', pf(width) + 'px');
-    imgEl.setAttributeNS(null, 'height', pf(height) + 'px');
-    imgEl.setAttributeNS(null, 'transform',
+    const imgEl = this.svgFactory.createElement("svg:image");
+    imgEl.setAttributeNS(XLINK_NS, "xlink:href", imgSrc);
+    imgEl.setAttributeNS(null, "x", "0");
+    imgEl.setAttributeNS(null, "y", pf(-height));
+    imgEl.setAttributeNS(null, "width", pf(width) + "px");
+    imgEl.setAttributeNS(null, "height", pf(height) + "px");
+    imgEl.setAttributeNS(null, "transform",
                          `scale(${pf(1 / width)} ${pf(-1 / height)})`);
     if (mask) {
       mask.appendChild(imgEl);
@@ -1393,16 +1393,16 @@ SVGGraphics = class SVGGraphics {
     const fillColor = current.fillColor;
 
     current.maskId = `mask${maskCount++}`;
-    const mask = this.svgFactory.createElement('svg:mask');
-    mask.setAttributeNS(null, 'id', current.maskId);
+    const mask = this.svgFactory.createElement("svg:mask");
+    mask.setAttributeNS(null, "id", current.maskId);
 
-    const rect = this.svgFactory.createElement('svg:rect');
-    rect.setAttributeNS(null, 'x', '0');
-    rect.setAttributeNS(null, 'y', '0');
-    rect.setAttributeNS(null, 'width', pf(width));
-    rect.setAttributeNS(null, 'height', pf(height));
-    rect.setAttributeNS(null, 'fill', fillColor);
-    rect.setAttributeNS(null, 'mask', `url(#${current.maskId})`);
+    const rect = this.svgFactory.createElement("svg:rect");
+    rect.setAttributeNS(null, "x", "0");
+    rect.setAttributeNS(null, "y", "0");
+    rect.setAttributeNS(null, "width", pf(width));
+    rect.setAttributeNS(null, "height", pf(height));
+    rect.setAttributeNS(null, "fill", fillColor);
+    rect.setAttributeNS(null, "mask", `url(#${current.maskId})`);
 
     this.defs.appendChild(mask);
     this._ensureTransformGroup().appendChild(rect);
@@ -1420,13 +1420,13 @@ SVGGraphics = class SVGGraphics {
       const width = bbox[2] - bbox[0];
       const height = bbox[3] - bbox[1];
 
-      const cliprect = this.svgFactory.createElement('svg:rect');
-      cliprect.setAttributeNS(null, 'x', bbox[0]);
-      cliprect.setAttributeNS(null, 'y', bbox[1]);
-      cliprect.setAttributeNS(null, 'width', pf(width));
-      cliprect.setAttributeNS(null, 'height', pf(height));
+      const cliprect = this.svgFactory.createElement("svg:rect");
+      cliprect.setAttributeNS(null, "x", bbox[0]);
+      cliprect.setAttributeNS(null, "y", bbox[1]);
+      cliprect.setAttributeNS(null, "width", pf(width));
+      cliprect.setAttributeNS(null, "height", pf(height));
       this.current.element = cliprect;
-      this.clip('nonzero');
+      this.clip("nonzero");
       this.endPath();
     }
   }
@@ -1440,14 +1440,14 @@ SVGGraphics = class SVGGraphics {
     const svg = this.svgFactory.create(viewport.width, viewport.height);
 
     // Create the definitions element.
-    const definitions = this.svgFactory.createElement('svg:defs');
+    const definitions = this.svgFactory.createElement("svg:defs");
     svg.appendChild(definitions);
     this.defs = definitions;
 
     // Create the root group element, which acts a container for all other
     // groups and applies the viewport transform.
-    const rootGroup = this.svgFactory.createElement('svg:g');
-    rootGroup.setAttributeNS(null, 'transform', pm(viewport.transform));
+    const rootGroup = this.svgFactory.createElement("svg:g");
+    rootGroup.setAttributeNS(null, "transform", pm(viewport.transform));
     svg.appendChild(rootGroup);
 
     // For the construction of the SVG image we are only interested in the
@@ -1463,8 +1463,8 @@ SVGGraphics = class SVGGraphics {
    */
   _ensureClipGroup() {
     if (!this.current.clipGroup) {
-      const clipGroup = this.svgFactory.createElement('svg:g');
-      clipGroup.setAttributeNS(null, 'clip-path', this.current.activeClipUrl);
+      const clipGroup = this.svgFactory.createElement("svg:g");
+      clipGroup.setAttributeNS(null, "clip-path", this.current.activeClipUrl);
       this.svg.appendChild(clipGroup);
       this.current.clipGroup = clipGroup;
     }
@@ -1476,8 +1476,8 @@ SVGGraphics = class SVGGraphics {
    */
   _ensureTransformGroup() {
     if (!this.tgrp) {
-      this.tgrp = this.svgFactory.createElement('svg:g');
-      this.tgrp.setAttributeNS(null, 'transform', pm(this.transformMatrix));
+      this.tgrp = this.svgFactory.createElement("svg:g");
+      this.tgrp.setAttributeNS(null, "transform", pm(this.transformMatrix));
       if (this.current.activeClipUrl) {
         this._ensureClipGroup().appendChild(this.tgrp);
       } else {

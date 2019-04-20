@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-import { assert, createPromiseCapability, stringToBytes } from '../shared/util';
+import { assert, createPromiseCapability, stringToBytes } from "../shared/util";
 import {
   createResponseStatusError, extractFilenameFromHeader,
   validateRangeRequestCapabilities
-} from './network_utils';
+} from "./network_utils";
 
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
   throw new Error('Module "./network" shall not ' +
-                  'be used with FIREFOX or MOZCENTRAL build.');
+                  "be used with FIREFOX or MOZCENTRAL build.");
 }
 
 var OK_RESPONSE = 200;
@@ -44,7 +44,7 @@ function NetworkManager(url, args) {
 
 function getArrayBuffer(xhr) {
   var data = xhr.response;
-  if (typeof data !== 'string') {
+  if (typeof data !== "string") {
     return data;
   }
   let array = stringToBytes(data);
@@ -74,23 +74,23 @@ NetworkManager.prototype = {
       xhr,
     };
 
-    xhr.open('GET', this.url);
+    xhr.open("GET", this.url);
     xhr.withCredentials = this.withCredentials;
     for (var property in this.httpHeaders) {
       var value = this.httpHeaders[property];
-      if (typeof value === 'undefined') {
+      if (typeof value === "undefined") {
         continue;
       }
       xhr.setRequestHeader(property, value);
     }
-    if (this.isHttp && 'begin' in args && 'end' in args) {
-      var rangeStr = args.begin + '-' + (args.end - 1);
-      xhr.setRequestHeader('Range', 'bytes=' + rangeStr);
+    if (this.isHttp && "begin" in args && "end" in args) {
+      var rangeStr = args.begin + "-" + (args.end - 1);
+      xhr.setRequestHeader("Range", "bytes=" + rangeStr);
       pendingRequest.expectedStatus = 206;
     } else {
       pendingRequest.expectedStatus = 200;
     }
-    xhr.responseType = 'arraybuffer';
+    xhr.responseType = "arraybuffer";
 
     if (args.onError) {
       xhr.onerror = function(evt) {
@@ -173,7 +173,7 @@ NetworkManager.prototype = {
 
     var chunk = getArrayBuffer(xhr);
     if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
-      var rangeHeader = xhr.getResponseHeader('Content-Range');
+      var rangeHeader = xhr.getResponseHeader("Content-Range");
       var matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
       var begin = parseInt(matches[1], 10);
       pendingRequest.onDone({

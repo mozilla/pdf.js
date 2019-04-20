@@ -15,11 +15,11 @@
 
 import {
   bytesToString, FONT_IDENTITY_MATRIX, FormatError, unreachable, warn
-} from '../shared/util';
-import { CFFParser } from './cff_parser';
-import { getGlyphsUnicode } from './glyphlist';
-import { StandardEncoding } from './encodings';
-import { Stream } from './stream';
+} from "../shared/util";
+import { CFFParser } from "./cff_parser";
+import { getGlyphsUnicode } from "./glyphlist";
+import { StandardEncoding } from "./encodings";
+import { Stream } from "./stream";
 
 var FontRendererFactory = (function FontRendererFactoryClosure() {
   function getLong(data, offset) {
@@ -144,13 +144,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
   function compileGlyf(code, cmds, font) {
     function moveTo(x, y) {
-      cmds.push({ cmd: 'moveTo', args: [x, y], });
+      cmds.push({ cmd: "moveTo", args: [x, y], });
     }
     function lineTo(x, y) {
-      cmds.push({ cmd: 'lineTo', args: [x, y], });
+      cmds.push({ cmd: "lineTo", args: [x, y], });
     }
     function quadraticCurveTo(xa, ya, x, y) {
-      cmds.push({ cmd: 'quadraticCurveTo', args: [xa, ya, x, y], });
+      cmds.push({ cmd: "quadraticCurveTo", args: [xa, ya, x, y], });
     }
 
     var i = 0;
@@ -196,11 +196,11 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         }
         var subglyph = font.glyphs[glyphIndex];
         if (subglyph) {
-          cmds.push({ cmd: 'save', });
-          cmds.push({ cmd: 'transform',
+          cmds.push({ cmd: "save", });
+          cmds.push({ cmd: "transform",
                      args: [scaleX, scale01, scale10, scaleY, x, y], });
           compileGlyf(subglyph, cmds, font);
-          cmds.push({ cmd: 'restore', });
+          cmds.push({ cmd: "restore", });
         }
       } while ((flags & 0x20));
     } else {
@@ -302,13 +302,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     var stems = 0;
 
     function moveTo(x, y) {
-      cmds.push({ cmd: 'moveTo', args: [x, y], });
+      cmds.push({ cmd: "moveTo", args: [x, y], });
     }
     function lineTo(x, y) {
-      cmds.push({ cmd: 'lineTo', args: [x, y], });
+      cmds.push({ cmd: "lineTo", args: [x, y], });
     }
     function bezierCurveTo(x1, y1, x2, y2, x, y) {
-      cmds.push({ cmd: 'bezierCurveTo', args: [x1, y1, x2, y2, x, y], });
+      cmds.push({ cmd: "bezierCurveTo", args: [x1, y1, x2, y2, x, y], });
     }
 
     function parse(code) {
@@ -386,7 +386,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                   subrCode = subrs[n];
                 }
               } else {
-                warn('Invalid fd index for glyph index.');
+                warn("Invalid fd index for glyph index.");
               }
             } else {
               subrCode = font.subrs[n + font.subrsBias];
@@ -457,13 +457,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
               var bchar = stack.pop();
               y = stack.pop();
               x = stack.pop();
-              cmds.push({ cmd: 'save', });
-              cmds.push({ cmd: 'translate', args: [x, y], });
+              cmds.push({ cmd: "save", });
+              cmds.push({ cmd: "translate", args: [x, y], });
               var cmap = lookupCmap(font.cmap, String.fromCharCode(
                 font.glyphNameMap[StandardEncoding[achar]]));
               compileCharString(font.glyphs[cmap.glyphId], cmds, font,
                                 cmap.glyphId);
-              cmds.push({ cmd: 'restore', });
+              cmds.push({ cmd: "restore", });
 
               cmap = lookupCmap(font.cmap, String.fromCharCode(
                 font.glyphNameMap[StandardEncoding[bchar]]));
@@ -621,7 +621,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   class CompiledFont {
     constructor(fontMatrix) {
       if (this.constructor === CompiledFont) {
-        unreachable('Cannot initialize CompiledFont.');
+        unreachable("Cannot initialize CompiledFont.");
       }
       this.fontMatrix = fontMatrix;
 
@@ -654,26 +654,26 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         let fdIndex = this.fdSelect.getFDIndex(glyphId);
         if (fdIndex >= 0 && fdIndex < this.fdArray.length) {
           let fontDict = this.fdArray[fdIndex];
-          fontMatrix = fontDict.getByName('FontMatrix') || FONT_IDENTITY_MATRIX;
+          fontMatrix = fontDict.getByName("FontMatrix") || FONT_IDENTITY_MATRIX;
         } else {
-          warn('Invalid fd index for glyph index.');
+          warn("Invalid fd index for glyph index.");
         }
       }
 
       const cmds = [];
-      cmds.push({ cmd: 'save', });
-      cmds.push({ cmd: 'transform', args: fontMatrix.slice(), });
-      cmds.push({ cmd: 'scale', args: ['size', '-size'], });
+      cmds.push({ cmd: "save", });
+      cmds.push({ cmd: "transform", args: fontMatrix.slice(), });
+      cmds.push({ cmd: "scale", args: ["size", "-size"], });
 
       this.compileGlyphImpl(code, cmds, glyphId);
 
-      cmds.push({ cmd: 'restore', });
+      cmds.push({ cmd: "restore", });
 
       return cmds;
     }
 
     compileGlyphImpl() {
-      unreachable('Children classes should implement this.');
+      unreachable("Children classes should implement this.");
     }
 
     hasBuiltPath(unicode) {
@@ -731,20 +731,20 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         var offset = getLong(data, p + 8);
         var length = getLong(data, p + 12);
         switch (tag) {
-          case 'cmap':
+          case "cmap":
             cmap = parseCmap(data, offset, offset + length);
             break;
-          case 'glyf':
+          case "glyf":
             glyf = data.subarray(offset, offset + length);
             break;
-          case 'loca':
+          case "loca":
             loca = data.subarray(offset, offset + length);
             break;
-          case 'head':
+          case "head":
             unitsPerEm = getUshort(data, offset + 18);
             indexToLocFormat = getUshort(data, offset + 50);
             break;
-          case 'CFF ':
+          case "CFF ":
             cff = parseCff(data, offset, offset + length, seacAnalysisEnabled);
             break;
         }

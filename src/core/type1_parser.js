@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { isSpace, warn } from '../shared/util';
-import { getEncoding } from './encodings';
-import { Stream } from './stream';
+import { isSpace, warn } from "../shared/util";
+import { getEncoding } from "./encodings";
+import { Stream } from "./stream";
 
 // Hinting is currently disabled due to unknown problems on windows
 // in tracemonkey and various other pdfs with type1 fonts.
@@ -61,21 +61,21 @@ var HINTING_ENABLED = false;
  */
 var Type1CharString = (function Type1CharStringClosure() {
   var COMMAND_MAP = {
-    'hstem': [1],
-    'vstem': [3],
-    'vmoveto': [4],
-    'rlineto': [5],
-    'hlineto': [6],
-    'vlineto': [7],
-    'rrcurveto': [8],
-    'callsubr': [10],
-    'flex': [12, 35],
-    'drop': [12, 18],
-    'endchar': [14],
-    'rmoveto': [21],
-    'hmoveto': [22],
-    'vhcurveto': [30],
-    'hvcurveto': [31],
+    "hstem": [1],
+    "vstem": [3],
+    "vmoveto": [4],
+    "rlineto": [5],
+    "hlineto": [6],
+    "vlineto": [7],
+    "rrcurveto": [8],
+    "callsubr": [10],
+    "flex": [12, 35],
+    "drop": [12, 18],
+    "endchar": [14],
+    "rmoveto": [21],
+    "hmoveto": [22],
+    "vhcurveto": [30],
+    "hvcurveto": [31],
   };
 
   function Type1CharString() {
@@ -444,7 +444,7 @@ var Type1Parser = (function Type1ParserClosure() {
       var array = [];
       while (true) {
         var token = this.getToken();
-        if (token === null || token === ']' || token === '}') {
+        if (token === null || token === "]" || token === "}") {
           break;
         }
         array.push(parseFloat(token || 0));
@@ -468,7 +468,7 @@ var Type1Parser = (function Type1ParserClosure() {
       var token = this.getToken();
 
       // Use 1 and 0 since that's what type2 charstrings use.
-      return token === 'true' ? 1 : 0;
+      return token === "true" ? 1 : 0;
     },
 
     nextChar: function Type1_nextChar() {
@@ -499,7 +499,7 @@ var Type1Parser = (function Type1ParserClosure() {
         this.nextChar();
         return String.fromCharCode(ch);
       }
-      var token = '';
+      var token = "";
       do {
         token += String.fromCharCode(ch);
         ch = this.nextChar();
@@ -525,22 +525,22 @@ var Type1Parser = (function Type1ParserClosure() {
 
       var subrs = [], charstrings = [];
       var privateData = Object.create(null);
-      privateData['lenIV'] = 4;
+      privateData["lenIV"] = 4;
       var program = {
         subrs: [],
         charstrings: [],
         properties: {
-          'privateData': privateData,
+          "privateData": privateData,
         },
       };
       var token, length, data, lenIV, encoded;
       while ((token = this.getToken()) !== null) {
-        if (token !== '/') {
+        if (token !== "/") {
           continue;
         }
         token = this.getToken();
         switch (token) {
-          case 'CharStrings':
+          case "CharStrings":
             // The number immediately following CharStrings must be greater or
             // equal to the number of CharStrings.
             this.getToken();
@@ -549,22 +549,22 @@ var Type1Parser = (function Type1ParserClosure() {
             this.getToken(); // read in 'begin'
             while (true) {
               token = this.getToken();
-              if (token === null || token === 'end') {
+              if (token === null || token === "end") {
                 break;
               }
 
-              if (token !== '/') {
+              if (token !== "/") {
                 continue;
               }
               var glyph = this.getToken();
               length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
               data = (length > 0 ? stream.getBytes(length) : new Uint8Array(0));
-              lenIV = program.properties.privateData['lenIV'];
+              lenIV = program.properties.privateData["lenIV"];
               encoded = this.readCharStrings(data, lenIV);
               this.nextChar();
               token = this.getToken(); // read in 'ND' or '|-'
-              if (token === 'noaccess') {
+              if (token === "noaccess") {
                 this.getToken(); // read in 'def'
               }
               charstrings.push({
@@ -573,28 +573,28 @@ var Type1Parser = (function Type1ParserClosure() {
               });
             }
             break;
-          case 'Subrs':
+          case "Subrs":
             this.readInt(); // num
             this.getToken(); // read in 'array'
-            while (this.getToken() === 'dup') {
+            while (this.getToken() === "dup") {
               var index = this.readInt();
               length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
               data = (length > 0 ? stream.getBytes(length) : new Uint8Array(0));
-              lenIV = program.properties.privateData['lenIV'];
+              lenIV = program.properties.privateData["lenIV"];
               encoded = this.readCharStrings(data, lenIV);
               this.nextChar();
               token = this.getToken(); // read in 'NP' or '|'
-              if (token === 'noaccess') {
+              if (token === "noaccess") {
                 this.getToken(); // read in 'put'
               }
               subrs[index] = encoded;
             }
             break;
-          case 'BlueValues':
-          case 'OtherBlues':
-          case 'FamilyBlues':
-          case 'FamilyOtherBlues':
+          case "BlueValues":
+          case "OtherBlues":
+          case "FamilyBlues":
+          case "FamilyOtherBlues":
             var blueArray = this.readNumberArray();
             // *Blue* values may contain invalid data: disables reading of
             // those values when hinting is disabled.
@@ -603,24 +603,24 @@ var Type1Parser = (function Type1ParserClosure() {
               program.properties.privateData[token] = blueArray;
             }
             break;
-          case 'StemSnapH':
-          case 'StemSnapV':
+          case "StemSnapH":
+          case "StemSnapV":
             program.properties.privateData[token] = this.readNumberArray();
             break;
-          case 'StdHW':
-          case 'StdVW':
+          case "StdHW":
+          case "StdVW":
             program.properties.privateData[token] =
               this.readNumberArray()[0];
             break;
-          case 'BlueShift':
-          case 'lenIV':
-          case 'BlueFuzz':
-          case 'BlueScale':
-          case 'LanguageGroup':
-          case 'ExpansionFactor':
+          case "BlueShift":
+          case "lenIV":
+          case "BlueFuzz":
+          case "BlueScale":
+          case "LanguageGroup":
+          case "ExpansionFactor":
             program.properties.privateData[token] = this.readNumber();
             break;
-          case 'ForceBold':
+          case "ForceBold":
             program.properties.privateData[token] = this.readBoolean();
             break;
         }
@@ -654,16 +654,16 @@ var Type1Parser = (function Type1ParserClosure() {
     extractFontHeader: function Type1Parser_extractFontHeader(properties) {
       var token;
       while ((token = this.getToken()) !== null) {
-        if (token !== '/') {
+        if (token !== "/") {
           continue;
         }
         token = this.getToken();
         switch (token) {
-          case 'FontMatrix':
+          case "FontMatrix":
             var matrix = this.readNumberArray();
             properties.fontMatrix = matrix;
             break;
-          case 'Encoding':
+          case "Encoding":
             var encodingArg = this.getToken();
             var encoding;
             if (!/^\d+$/.test(encodingArg)) {
@@ -677,13 +677,13 @@ var Type1Parser = (function Type1ParserClosure() {
               for (var j = 0; j < size; j++) {
                 token = this.getToken();
                 // skipping till first dup or def (e.g. ignoring for statement)
-                while (token !== 'dup' && token !== 'def') {
+                while (token !== "dup" && token !== "def") {
                   token = this.getToken();
                   if (token === null) {
                     return; // invalid header
                   }
                 }
-                if (token === 'def') {
+                if (token === "def") {
                   break; // read all array data
                 }
                 var index = this.readInt();
@@ -695,7 +695,7 @@ var Type1Parser = (function Type1ParserClosure() {
             }
             properties.builtInEncoding = encoding;
             break;
-          case 'FontBBox':
+          case "FontBBox":
             var fontBBox = this.readNumberArray();
             // adjusting ascent/descent
             properties.ascent = Math.max(fontBBox[3], fontBBox[1]);

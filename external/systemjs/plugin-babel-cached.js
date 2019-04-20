@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var babel = require('plugin-babel');
+var babel = require("plugin-babel");
 
 var cacheExpiration = 60 /* min */ * 60 * 1000;
 var dbVersion = 1;
-var dbName = 'babelcache';
-var dbCacheTable = 'translated';
+var dbName = "babelcache";
+var dbCacheTable = "translated";
 var dbPromise;
 
 function getDb() {
@@ -26,14 +26,14 @@ function getDb() {
       var request = indexedDB.open(dbName, dbVersion);
       request.onupgradeneeded = function() {
         var db = request.result;
-        db.createObjectStore(dbCacheTable, { keyPath: 'address', });
+        db.createObjectStore(dbCacheTable, { keyPath: "address", });
       };
       request.onsuccess = function() {
         var db = request.result;
         resolve(db);
       };
       request.onerror = function () {
-        console.warn('getDb: ' + request.error);
+        console.warn("getDb: " + request.error);
         reject(request.error);
       };
     });
@@ -43,7 +43,7 @@ function getDb() {
 
 function storeCache(address, hashCode, translated, format) {
   return getDb().then(function (db) {
-    var tx = db.transaction(dbCacheTable, 'readwrite');
+    var tx = db.transaction(dbCacheTable, "readwrite");
     var store = tx.objectStore(dbCacheTable);
     store.put({
       address: address,
@@ -65,7 +65,7 @@ function storeCache(address, hashCode, translated, format) {
 
 function loadCache(address, hashCode) {
   return getDb().then(function (db) {
-    var tx = db.transaction(dbCacheTable, 'readonly');
+    var tx = db.transaction(dbCacheTable, "readonly");
     var store = tx.objectStore(dbCacheTable);
     var getAddress = store.get(address);
     return new Promise(function (resolve, reject) {
@@ -85,13 +85,13 @@ function loadCache(address, hashCode) {
   });
 }
 
-var encoder = new TextEncoder('utf-8');
+var encoder = new TextEncoder("utf-8");
 function sha256(str) {
   var buffer = encoder.encode(str);
-  return crypto.subtle.digest('SHA-256', buffer).then(function (hash) {
+  return crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
     var data = new Int32Array(hash);
-    return data[0].toString(36) + '-' + data[1].toString(36) + '-' +
-           data[2].toString(36) + '-' + data[3].toString(36);
+    return data[0].toString(36) + "-" + data[1].toString(36) + "-" +
+           data[2].toString(36) + "-" + data[3].toString(36);
   });
 }
 

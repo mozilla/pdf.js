@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-import { BaseViewer } from './base_viewer';
-import { shadow } from 'pdfjs-lib';
+import { BaseViewer } from "./base_viewer";
+import { shadow } from "pdfjs-lib";
 
 class PDFViewer extends BaseViewer {
   get _setDocumentViewerElement() {
-    return shadow(this, '_setDocumentViewerElement', this.viewer);
+    return shadow(this, "_setDocumentViewerElement", this.viewer);
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {

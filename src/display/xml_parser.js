@@ -32,7 +32,7 @@ const XMLParserErrorCode = {
 
 function isWhitespace(s, index) {
   const ch = s[index];
-  return ch === ' ' || ch === '\n' || ch === '\r' || ch === '\t';
+  return ch === " " || ch === "\n" || ch === "\r" || ch === "\t";
 }
 
 function isWhitespaceString(s) {
@@ -47,19 +47,19 @@ function isWhitespaceString(s) {
 class XMLParserBase {
   _resolveEntities(s) {
     return s.replace(/&([^;]+);/g, (all, entity) => {
-      if (entity.substring(0, 2) === '#x') {
+      if (entity.substring(0, 2) === "#x") {
         return String.fromCharCode(parseInt(entity.substring(2), 16));
-      } else if (entity.substring(0, 1) === '#') {
+      } else if (entity.substring(0, 1) === "#") {
         return String.fromCharCode(parseInt(entity.substring(1), 10));
       }
       switch (entity) {
-        case 'lt':
-          return '<';
-        case 'gt':
-          return '>';
-        case 'amp':
-          return '&';
-        case 'quot':
+        case "lt":
+          return "<";
+        case "gt":
+          return ">";
+        case "amp":
+          return "&";
+        case "quot":
           return '\"';
       }
       return this.onResolveEntity(entity);
@@ -76,27 +76,27 @@ class XMLParserBase {
     }
 
     while (pos < s.length && !isWhitespace(s, pos) &&
-           s[pos] !== '>' && s[pos] !== '/') {
+           s[pos] !== ">" && s[pos] !== "/") {
       ++pos;
     }
     name = s.substring(start, pos);
     skipWs();
-    while (pos < s.length && s[pos] !== '>' &&
-           s[pos] !== '/' && s[pos] !== '?') {
+    while (pos < s.length && s[pos] !== ">" &&
+           s[pos] !== "/" && s[pos] !== "?") {
       skipWs();
-      let attrName = '', attrValue = '';
-      while (pos < s.length && !isWhitespace(s, pos) && s[pos] !== '=') {
+      let attrName = "", attrValue = "";
+      while (pos < s.length && !isWhitespace(s, pos) && s[pos] !== "=") {
         attrName += s[pos];
         ++pos;
       }
       skipWs();
-      if (s[pos] !== '=') {
+      if (s[pos] !== "=") {
         return null;
       }
       ++pos;
       skipWs();
       const attrEndChar = s[pos];
-      if (attrEndChar !== '\"' && attrEndChar !== '\'') {
+      if (attrEndChar !== '\"' && attrEndChar !== "'") {
         return null;
       }
       const attrEndIndex = s.indexOf(attrEndChar, ++pos);
@@ -128,13 +128,13 @@ class XMLParserBase {
     }
 
     while (pos < s.length && !isWhitespace(s, pos) &&
-           s[pos] !== '>' && s[pos] !== '/') {
+           s[pos] !== ">" && s[pos] !== "/") {
       ++pos;
     }
     name = s.substring(start, pos);
     skipWs();
     const attrStart = pos;
-    while (pos < s.length && (s[pos] !== '?' || s[pos + 1] !== '>')) {
+    while (pos < s.length && (s[pos] !== "?" || s[pos + 1] !== ">")) {
       ++pos;
     }
     value = s.substring(attrStart, pos);
@@ -150,14 +150,14 @@ class XMLParserBase {
     while (i < s.length) {
       const ch = s[i];
       let j = i;
-      if (ch === '<') {
+      if (ch === "<") {
         ++j;
         const ch2 = s[j];
         let q;
         switch (ch2) {
-          case '/':
+          case "/":
             ++j;
-            q = s.indexOf('>', j);
+            q = s.indexOf(">", j);
             if (q < 0) {
               this.onError(XMLParserErrorCode.UnterminatedElement);
               return;
@@ -165,43 +165,43 @@ class XMLParserBase {
             this.onEndElement(s.substring(j, q));
             j = q + 1;
             break;
-          case '?':
+          case "?":
             ++j;
             const pi = this._parseProcessingInstruction(s, j);
-            if (s.substring(j + pi.parsed, j + pi.parsed + 2) !== '?>') {
+            if (s.substring(j + pi.parsed, j + pi.parsed + 2) !== "?>") {
               this.onError(XMLParserErrorCode.UnterminatedXmlDeclaration);
               return;
             }
             this.onPi(pi.name, pi.value);
             j += pi.parsed + 2;
             break;
-          case '!':
-            if (s.substring(j + 1, j + 3) === '--') {
-              q = s.indexOf('-->', j + 3);
+          case "!":
+            if (s.substring(j + 1, j + 3) === "--") {
+              q = s.indexOf("-->", j + 3);
               if (q < 0) {
                 this.onError(XMLParserErrorCode.UnterminatedComment);
                 return;
               }
               this.onComment(s.substring(j + 3, q));
               j = q + 3;
-            } else if (s.substring(j + 1, j + 8) === '[CDATA[') {
-              q = s.indexOf(']]>', j + 8);
+            } else if (s.substring(j + 1, j + 8) === "[CDATA[") {
+              q = s.indexOf("]]>", j + 8);
               if (q < 0) {
                 this.onError(XMLParserErrorCode.UnterminatedCdat);
                 return;
               }
               this.onCdata(s.substring(j + 8, q));
               j = q + 3;
-            } else if (s.substring(j + 1, j + 8) === 'DOCTYPE') {
-              const q2 = s.indexOf('[', j + 8);
+            } else if (s.substring(j + 1, j + 8) === "DOCTYPE") {
+              const q2 = s.indexOf("[", j + 8);
               let complexDoctype = false;
-              q = s.indexOf('>', j + 8);
+              q = s.indexOf(">", j + 8);
               if (q < 0) {
                 this.onError(XMLParserErrorCode.UnterminatedDoctypeDeclaration);
                 return;
               }
               if (q2 > 0 && q > q2) {
-                q = s.indexOf(']>', j + 8);
+                q = s.indexOf("]>", j + 8);
                 if (q < 0) {
                   this.onError(
                     XMLParserErrorCode.UnterminatedDoctypeDeclaration);
@@ -226,10 +226,10 @@ class XMLParserBase {
             }
             let isClosed = false;
             if (s.substring(j + content.parsed,
-                            j + content.parsed + 2) === '/>') {
+                            j + content.parsed + 2) === "/>") {
               isClosed = true;
             } else if (s.substring(j + content.parsed,
-                       j + content.parsed + 1) !== '>') {
+                       j + content.parsed + 1) !== ">") {
               this.onError(XMLParserErrorCode.UnterminatedElement);
               return;
             }
@@ -238,7 +238,7 @@ class XMLParserBase {
             break;
         }
       } else {
-        while (j < s.length && s[j] !== '<') {
+        while (j < s.length && s[j] !== "<") {
           j++;
         }
         const text = s.substring(i, j);
@@ -274,7 +274,7 @@ class SimpleDOMNode {
     this.nodeName = nodeName;
     this.nodeValue = nodeValue;
 
-    Object.defineProperty(this, 'parentNode', { value: null, writable: true, });
+    Object.defineProperty(this, "parentNode", { value: null, writable: true, });
   }
 
   get firstChild() {
@@ -295,11 +295,11 @@ class SimpleDOMNode {
 
   get textContent() {
     if (!this.childNodes) {
-      return this.nodeValue || '';
+      return this.nodeValue || "";
     }
     return this.childNodes.map(function(child) {
       return child.textContent;
-    }).join('');
+    }).join("");
   }
 
   hasChildNodes() {
@@ -336,8 +336,8 @@ class SimpleXMLParser extends XMLParserBase {
 
   onResolveEntity(name) {
     switch (name) {
-      case 'apos':
-        return '\'';
+      case "apos":
+        return "'";
     }
     return super.onResolveEntity(name);
   }
@@ -346,12 +346,12 @@ class SimpleXMLParser extends XMLParserBase {
     if (isWhitespaceString(text)) {
       return;
     }
-    const node = new SimpleDOMNode('#text', text);
+    const node = new SimpleDOMNode("#text", text);
     this._currentFragment.push(node);
   }
 
   onCdata(text) {
-    const node = new SimpleDOMNode('#text', text);
+    const node = new SimpleDOMNode("#text", text);
     this._currentFragment.push(node);
   }
 

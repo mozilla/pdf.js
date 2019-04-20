@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { CSS_UNITS, NullL10n } from './ui_utils';
-import { PDFPrintServiceFactory, PDFViewerApplication } from './app';
-import { URL } from 'pdfjs-lib';
+import { CSS_UNITS, NullL10n } from "./ui_utils";
+import { PDFPrintServiceFactory, PDFViewerApplication } from "./app";
+import { URL } from "pdfjs-lib";
 
 let activeService = null;
 let overlayManager = null;
@@ -32,12 +32,12 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
   scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
 
   // The physical size of the img as specified by the PDF document.
-  let width = Math.floor(size.width * CSS_UNITS) + 'px';
-  let height = Math.floor(size.height * CSS_UNITS) + 'px';
+  let width = Math.floor(size.width * CSS_UNITS) + "px";
+  let height = Math.floor(size.height * CSS_UNITS) + "px";
 
-  let ctx = scratchCanvas.getContext('2d');
+  let ctx = scratchCanvas.getContext("2d");
   ctx.save();
-  ctx.fillStyle = 'rgb(255, 255, 255)';
+  ctx.fillStyle = "rgb(255, 255, 255)";
   ctx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
   ctx.restore();
 
@@ -46,7 +46,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
       canvasContext: ctx,
       transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
       viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation, }),
-      intent: 'print',
+      intent: "print",
     };
     return pdfPage.render(renderContext).promise;
   }).then(function() {
@@ -63,26 +63,26 @@ function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
   this.printContainer = printContainer;
   this.l10n = l10n || NullL10n;
   this.disableCreateObjectURL =
-    pdfDocument.loadingParams['disableCreateObjectURL'];
+    pdfDocument.loadingParams["disableCreateObjectURL"];
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
-  this.scratchCanvas = document.createElement('canvas');
+  this.scratchCanvas = document.createElement("canvas");
 }
 
 PDFPrintService.prototype = {
   layout() {
     this.throwIfInactive();
 
-    let body = document.querySelector('body');
-    body.setAttribute('data-pdfjsprinting', true);
+    let body = document.querySelector("body");
+    body.setAttribute("data-pdfjsprinting", true);
 
     let hasEqualPageSizes = this.pagesOverview.every(function(size) {
       return size.width === this.pagesOverview[0].width &&
              size.height === this.pagesOverview[0].height;
     }, this);
     if (!hasEqualPageSizes) {
-      console.warn('Not all pages have the same size. The printed ' +
-                   'result may be incorrect!');
+      console.warn("Not all pages have the same size. The printed " +
+                   "result may be incorrect!");
     }
 
     // Insert a @page + size rule to make sure that the page size is correctly
@@ -94,14 +94,14 @@ PDFPrintService.prototype = {
     // In browsers where @page + size is not supported (such as Firefox,
     // https://bugzil.la/851441), the next stylesheet will be ignored and the
     // user has to select the correct paper size in the UI if wanted.
-    this.pageStyleSheet = document.createElement('style');
+    this.pageStyleSheet = document.createElement("style");
     let pageSize = this.pagesOverview[0];
     this.pageStyleSheet.textContent =
       // "size:<width> <height>" is what we need. But also add "A4" because
       // Firefox incorrectly reports support for the other value.
-      '@supports ((size:A4) and (size:1pt 1pt)) {' +
-      '@page { size: ' + pageSize.width + 'pt ' + pageSize.height + 'pt;}' +
-      '}';
+      "@supports ((size:A4) and (size:1pt 1pt)) {" +
+      "@page { size: " + pageSize.width + "pt " + pageSize.height + "pt;}" +
+      "}";
     body.appendChild(this.pageStyleSheet);
   },
 
@@ -112,7 +112,7 @@ PDFPrintService.prototype = {
       // us.
       return;
     }
-    this.printContainer.textContent = '';
+    this.printContainer.textContent = "";
     if (this.pageStyleSheet) {
       this.pageStyleSheet.remove();
       this.pageStyleSheet = null;
@@ -121,10 +121,10 @@ PDFPrintService.prototype = {
     this.scratchCanvas = null;
     activeService = null;
     ensureOverlay().then(function() {
-      if (overlayManager.active !== 'printServiceOverlay') {
+      if (overlayManager.active !== "printServiceOverlay") {
         return; // overlay was already closed
       }
-      overlayManager.close('printServiceOverlay');
+      overlayManager.close("printServiceOverlay");
     });
   },
 
@@ -150,12 +150,12 @@ PDFPrintService.prototype = {
 
   useRenderedPage(printItem) {
     this.throwIfInactive();
-    let img = document.createElement('img');
+    let img = document.createElement("img");
     img.style.width = printItem.width;
     img.style.height = printItem.height;
 
     let scratchCanvas = this.scratchCanvas;
-    if (('toBlob' in scratchCanvas) && !this.disableCreateObjectURL) {
+    if (("toBlob" in scratchCanvas) && !this.disableCreateObjectURL) {
       scratchCanvas.toBlob(function(blob) {
         img.src = URL.createObjectURL(blob);
       });
@@ -163,7 +163,7 @@ PDFPrintService.prototype = {
       img.src = scratchCanvas.toDataURL();
     }
 
-    let wrapper = document.createElement('div');
+    let wrapper = document.createElement("div");
     wrapper.appendChild(img);
     this.printContainer.appendChild(wrapper);
 
@@ -197,7 +197,7 @@ PDFPrintService.prototype = {
 
   throwIfInactive() {
     if (!this.active) {
-      throw new Error('This print request was cancelled or completed.');
+      throw new Error("This print request was cancelled or completed.");
     }
   },
 };
@@ -205,23 +205,23 @@ PDFPrintService.prototype = {
 let print = window.print;
 window.print = function print() {
   if (activeService) {
-    console.warn('Ignored window.print() because of a pending print job.');
+    console.warn("Ignored window.print() because of a pending print job.");
     return;
   }
   ensureOverlay().then(function() {
     if (activeService) {
-      overlayManager.open('printServiceOverlay');
+      overlayManager.open("printServiceOverlay");
     }
   });
 
   try {
-    dispatchEvent('beforeprint');
+    dispatchEvent("beforeprint");
   } finally {
     if (!activeService) {
-      console.error('Expected print service to be initialized.');
+      console.error("Expected print service to be initialized.");
       ensureOverlay().then(function() {
-        if (overlayManager.active === 'printServiceOverlay') {
-          overlayManager.close('printServiceOverlay');
+        if (overlayManager.active === "printServiceOverlay") {
+          overlayManager.close("printServiceOverlay");
         }
       });
       return; // eslint-disable-line no-unsafe-finally
@@ -245,25 +245,25 @@ window.print = function print() {
 };
 
 function dispatchEvent(eventType) {
-  let event = document.createEvent('CustomEvent');
-  event.initCustomEvent(eventType, false, false, 'custom');
+  let event = document.createEvent("CustomEvent");
+  event.initCustomEvent(eventType, false, false, "custom");
   window.dispatchEvent(event);
 }
 
 function abort() {
   if (activeService) {
     activeService.destroy();
-    dispatchEvent('afterprint');
+    dispatchEvent("afterprint");
   }
 }
 
 function renderProgress(index, total, l10n) {
-  let progressContainer = document.getElementById('printServiceOverlay');
+  let progressContainer = document.getElementById("printServiceOverlay");
   let progress = Math.round(100 * index / total);
-  let progressBar = progressContainer.querySelector('progress');
-  let progressPerc = progressContainer.querySelector('.relative-progress');
+  let progressBar = progressContainer.querySelector("progress");
+  let progressPerc = progressContainer.querySelector(".relative-progress");
   progressBar.value = progress;
-  l10n.get('print_progress_percent', { progress, }, progress + '%').
+  l10n.get("print_progress_percent", { progress, }, progress + "%").
       then((msg) => {
     progressPerc.textContent = msg;
   });
@@ -271,7 +271,7 @@ function renderProgress(index, total, l10n) {
 
 let hasAttachEvent = !!document.attachEvent;
 
-window.addEventListener('keydown', function(event) {
+window.addEventListener("keydown", function(event) {
   // Intercept Cmd/Ctrl + P in all browsers.
   // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
   if (event.keyCode === /* P= */ 80 && (event.ctrlKey || event.metaKey) &&
@@ -292,7 +292,7 @@ window.addEventListener('keydown', function(event) {
   }
 }, true);
 if (hasAttachEvent) {
-  document.attachEvent('onkeydown', function(event) {
+  document.attachEvent("onkeydown", function(event) {
     event = event || window.event;
     if (event.keyCode === /* P= */ 80 && event.ctrlKey) {
       event.keyCode = 0;
@@ -301,16 +301,16 @@ if (hasAttachEvent) {
   });
 }
 
-if ('onbeforeprint' in window) {
+if ("onbeforeprint" in window) {
   // Do not propagate before/afterprint events when they are not triggered
   // from within this polyfill. (FF /IE / Chrome 63+).
   let stopPropagationIfNeeded = function(event) {
-    if (event.detail !== 'custom' && event.stopImmediatePropagation) {
+    if (event.detail !== "custom" && event.stopImmediatePropagation) {
       event.stopImmediatePropagation();
     }
   };
-  window.addEventListener('beforeprint', stopPropagationIfNeeded);
-  window.addEventListener('afterprint', stopPropagationIfNeeded);
+  window.addEventListener("beforeprint", stopPropagationIfNeeded);
+  window.addEventListener("afterprint", stopPropagationIfNeeded);
 }
 
 let overlayPromise;
@@ -318,12 +318,12 @@ function ensureOverlay() {
   if (!overlayPromise) {
     overlayManager = PDFViewerApplication.overlayManager;
     if (!overlayManager) {
-      throw new Error('The overlay manager has not yet been initialized.');
+      throw new Error("The overlay manager has not yet been initialized.");
     }
 
-    overlayPromise = overlayManager.register('printServiceOverlay',
-      document.getElementById('printServiceOverlay'), abort, true);
-    document.getElementById('printCancel').onclick = abort;
+    overlayPromise = overlayManager.register("printServiceOverlay",
+      document.getElementById("printServiceOverlay"), abort, true);
+    document.getElementById("printCancel").onclick = abort;
   }
   return overlayPromise;
 }
@@ -333,7 +333,7 @@ PDFPrintServiceFactory.instance = {
 
   createPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
     if (activeService) {
-      throw new Error('The print service is created and active.');
+      throw new Error("The print service is created and active.");
     }
     activeService = new PDFPrintService(pdfDocument, pagesOverview,
                                         printContainer, l10n);

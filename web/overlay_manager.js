@@ -41,9 +41,9 @@ class OverlayManager {
                  canForceClose = false) {
     let container;
     if (!name || !element || !(container = element.parentNode)) {
-      throw new Error('Not enough parameters.');
+      throw new Error("Not enough parameters.");
     } else if (this._overlays[name]) {
-      throw new Error('The overlay is already registered.');
+      throw new Error("The overlay is already registered.");
     }
     this._overlays[name] = {
       element,
@@ -60,9 +60,9 @@ class OverlayManager {
    */
   async unregister(name) {
     if (!this._overlays[name]) {
-      throw new Error('The overlay does not exist.');
+      throw new Error("The overlay does not exist.");
     } else if (this._active === name) {
-      throw new Error('The overlay cannot be removed while it is active.');
+      throw new Error("The overlay cannot be removed while it is active.");
     }
     delete this._overlays[name];
   }
@@ -74,21 +74,21 @@ class OverlayManager {
    */
   async open(name) {
     if (!this._overlays[name]) {
-      throw new Error('The overlay does not exist.');
+      throw new Error("The overlay does not exist.");
     } else if (this._active) {
       if (this._overlays[name].canForceClose) {
         this._closeThroughCaller();
       } else if (this._active === name) {
-        throw new Error('The overlay is already active.');
+        throw new Error("The overlay is already active.");
       } else {
-        throw new Error('Another overlay is currently active.');
+        throw new Error("Another overlay is currently active.");
       }
     }
     this._active = name;
-    this._overlays[this._active].element.classList.remove('hidden');
-    this._overlays[this._active].container.classList.remove('hidden');
+    this._overlays[this._active].element.classList.remove("hidden");
+    this._overlays[this._active].container.classList.remove("hidden");
 
-    window.addEventListener('keydown', this._keyDownBound);
+    window.addEventListener("keydown", this._keyDownBound);
   }
 
   /**
@@ -98,17 +98,17 @@ class OverlayManager {
    */
   async close(name) {
     if (!this._overlays[name]) {
-      throw new Error('The overlay does not exist.');
+      throw new Error("The overlay does not exist.");
     } else if (!this._active) {
-      throw new Error('The overlay is currently not active.');
+      throw new Error("The overlay is currently not active.");
     } else if (this._active !== name) {
-      throw new Error('Another overlay is currently active.');
+      throw new Error("Another overlay is currently active.");
     }
-    this._overlays[this._active].container.classList.add('hidden');
-    this._overlays[this._active].element.classList.add('hidden');
+    this._overlays[this._active].container.classList.add("hidden");
+    this._overlays[this._active].element.classList.add("hidden");
     this._active = null;
 
-    window.removeEventListener('keydown', this._keyDownBound);
+    window.removeEventListener("keydown", this._keyDownBound);
   }
 
   /**

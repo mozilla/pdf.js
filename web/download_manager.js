@@ -15,26 +15,26 @@
 
 import {
   apiCompatibilityParams, createObjectURL, createValidAbsoluteUrl, URL
-} from 'pdfjs-lib';
+} from "pdfjs-lib";
 
-if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
+if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("CHROME || GENERIC")) {
   throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
-                  'outside CHROME and GENERIC builds.');
+                  "outside CHROME and GENERIC builds.");
 }
 
 const DISABLE_CREATE_OBJECT_URL =
   apiCompatibilityParams.disableCreateObjectURL || false;
 
 function download(blobUrl, filename) {
-  let a = document.createElement('a');
+  let a = document.createElement("a");
   if (!a.click) {
     throw new Error('DownloadManager: "a.click()" is not supported.');
   }
   a.href = blobUrl;
-  a.target = '_parent';
+  a.target = "_parent";
   // Use a.download if available. This increases the likelihood that
   // the file is downloaded instead of opened by another PDF plugin.
-  if ('download' in a) {
+  if ("download" in a) {
     a.download = filename;
   }
   // <a> must be in the document for IE and recent Firefox versions,
@@ -50,10 +50,10 @@ class DownloadManager {
   }
 
   downloadUrl(url, filename) {
-    if (!createValidAbsoluteUrl(url, 'http://example.com')) {
+    if (!createValidAbsoluteUrl(url, "http://example.com")) {
       return; // restricted/invalid URL
     }
-    download(url + '#pdfjs.action=download', filename);
+    download(url + "#pdfjs.action=download", filename);
   }
 
   downloadData(data, filename, contentType) {

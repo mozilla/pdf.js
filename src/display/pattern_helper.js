@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError, info, Util } from '../shared/util';
+import { FormatError, info, Util } from "../shared/util";
 
 var ShadingIRs = {};
 
@@ -26,12 +26,12 @@ ShadingIRs.RadialAxial = {
     var r0 = raw[5];
     var r1 = raw[6];
     return {
-      type: 'Pattern',
+      type: "Pattern",
       getPattern: function RadialAxial_getPattern(ctx) {
         var grad;
-        if (type === 'axial') {
+        if (type === "axial") {
           grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
-        } else if (type === 'radial') {
+        } else if (type === "radial") {
           grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
         }
 
@@ -115,7 +115,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
     var cs = figure.colors;
     var i, ii;
     switch (figure.type) {
-      case 'lattice':
+      case "lattice":
         var verticesPerRow = figure.verticesPerRow;
         var rows = Math.floor(ps.length / verticesPerRow) - 1;
         var cols = verticesPerRow - 1;
@@ -131,7 +131,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
           }
         }
         break;
-      case 'triangles':
+      case "triangles":
         for (i = 0, ii = ps.length; i < ii; i += 3) {
           drawTriangle(data, context,
             ps[i], ps[i + 1], ps[i + 2],
@@ -139,7 +139,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
         }
         break;
       default:
-        throw new Error('illegal figure');
+        throw new Error("illegal figure");
     }
   }
 
@@ -188,12 +188,12 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
         context,
       });
       // https://bugzilla.mozilla.org/show_bug.cgi?id=972126
-      tmpCanvas = cachedCanvases.getCanvas('mesh', paddedWidth, paddedHeight,
+      tmpCanvas = cachedCanvases.getCanvas("mesh", paddedWidth, paddedHeight,
                                            false);
       tmpCanvas.context.drawImage(canvas, BORDER_SIZE, BORDER_SIZE);
       canvas = tmpCanvas.canvas;
     } else {
-      tmpCanvas = cachedCanvases.getCanvas('mesh', paddedWidth, paddedHeight,
+      tmpCanvas = cachedCanvases.getCanvas("mesh", paddedWidth, paddedHeight,
                                            false);
       var tmpCtx = tmpCanvas.context;
 
@@ -236,7 +236,7 @@ ShadingIRs.Mesh = {
     // var bbox = raw[7];
     var background = raw[8];
     return {
-      type: 'Pattern',
+      type: "Pattern",
       getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
         var scale;
         if (shadingFill) {
@@ -269,7 +269,7 @@ ShadingIRs.Mesh = {
         ctx.scale(temporaryPatternCanvas.scaleX,
                   temporaryPatternCanvas.scaleY);
 
-        return ctx.createPattern(temporaryPatternCanvas.canvas, 'no-repeat');
+        return ctx.createPattern(temporaryPatternCanvas.canvas, "no-repeat");
       },
     };
   },
@@ -278,9 +278,9 @@ ShadingIRs.Mesh = {
 ShadingIRs.Dummy = {
   fromIR: function Dummy_fromIR() {
     return {
-      type: 'Pattern',
+      type: "Pattern",
       getPattern: function Dummy_fromIR_getPattern() {
-        return 'hotpink';
+        return "hotpink";
       },
     };
   },
@@ -313,7 +313,7 @@ var TilingPattern = (function TilingPatternClosure() {
     this.color = color;
     this.canvasGraphicsFactory = canvasGraphicsFactory;
     this.baseTransform = baseTransform;
-    this.type = 'Pattern';
+    this.type = "Pattern";
     this.ctx = ctx;
   }
 
@@ -328,7 +328,7 @@ var TilingPattern = (function TilingPatternClosure() {
       var color = this.color;
       var canvasGraphicsFactory = this.canvasGraphicsFactory;
 
-      info('TilingType: ' + tilingType);
+      info("TilingType: " + tilingType);
 
       // A tiling pattern as defined by PDF spec 8.7.2 is a cell whose size is
       // described by bbox, and may repeat regularly by shifting the cell by
@@ -367,7 +367,7 @@ var TilingPattern = (function TilingPatternClosure() {
       var dimy = this.getSizeAndScale(ystep, this.ctx.canvas.height,
         combinedScale[1]);
 
-      var tmpCanvas = owner.cachedCanvases.getCanvas('pattern',
+      var tmpCanvas = owner.cachedCanvases.getCanvas("pattern",
         dimx.size, dimy.size, true);
       var tmpCtx = tmpCanvas.context;
       var graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
@@ -452,7 +452,7 @@ var TilingPattern = (function TilingPatternClosure() {
 
       var temporaryPatternCanvas = this.createPatternCanvas(owner);
 
-      return ctx.createPattern(temporaryPatternCanvas, 'repeat');
+      return ctx.createPattern(temporaryPatternCanvas, "repeat");
     },
   };
 

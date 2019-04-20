@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-import { createIdFactory, XRefMock } from './test_utils';
-import { Dict, Name } from '../../src/core/primitives';
-import { FormatError, OPS } from '../../src/shared/util';
-import { Stream, StringStream } from '../../src/core/stream';
-import { OperatorList } from '../../src/core/operator_list';
-import { PartialEvaluator } from '../../src/core/evaluator';
-import { WorkerTask } from '../../src/core/worker';
+import { createIdFactory, XRefMock } from "./test_utils";
+import { Dict, Name } from "../../src/core/primitives";
+import { FormatError, OPS } from "../../src/shared/util";
+import { Stream, StringStream } from "../../src/core/stream";
+import { OperatorList } from "../../src/core/operator_list";
+import { PartialEvaluator } from "../../src/core/evaluator";
+import { WorkerTask } from "../../src/core/worker";
 
-describe('evaluator', function() {
+describe("evaluator", function() {
   function HandlerMock() {
     this.inputs = [];
   }
@@ -39,7 +39,7 @@ describe('evaluator', function() {
 
   function runOperatorListCheck(evaluator, stream, resources, callback) {
     var result = new OperatorList();
-    var task = new WorkerTask('OperatorListCheck');
+    var task = new WorkerTask("OperatorListCheck");
     evaluator.getOperatorList({
       stream,
       task,
@@ -68,9 +68,9 @@ describe('evaluator', function() {
     partialEvaluator = null;
   });
 
-  describe('splitCombinedOperations', function() {
-    it('should reject unknown operations', function(done) {
-      var stream = new StringStream('fTT');
+  describe("splitCombinedOperations", function() {
+    it("should reject unknown operations", function(done) {
+      var stream = new StringStream("fTT");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function(result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
@@ -81,8 +81,8 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle one operation', function(done) {
-      var stream = new StringStream('Q');
+    it("should handle one operation", function(done) {
+      var stream = new StringStream("Q");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function(result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
@@ -92,10 +92,10 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle two glued operations', function(done) {
+    it("should handle two glued operations", function(done) {
       var resources = new ResourcesMock();
       resources.Res1 = {};
-      var stream = new StringStream('/Res1 DoQ');
+      var stream = new StringStream("/Res1 DoQ");
       runOperatorListCheck(partialEvaluator, stream, resources,
           function(result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
@@ -106,8 +106,8 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle three glued operations', function(done) {
-      var stream = new StringStream('fff');
+    it("should handle three glued operations", function(done) {
+      var stream = new StringStream("fff");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
@@ -119,10 +119,10 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle three glued operations #2', function(done) {
+    it("should handle three glued operations #2", function(done) {
       var resources = new ResourcesMock();
       resources.Res1 = {};
-      var stream = new StringStream('B*Bf*');
+      var stream = new StringStream("B*Bf*");
       runOperatorListCheck(partialEvaluator, stream, resources,
           function(result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
@@ -134,8 +134,8 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle glued operations and operands', function(done) {
-      var stream = new StringStream('f5 Ts');
+    it("should handle glued operations and operands", function(done) {
+      var stream = new StringStream("f5 Ts");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
@@ -149,8 +149,8 @@ describe('evaluator', function() {
       });
     });
 
-    it('should handle glued operations and literals', function(done) {
-      var stream = new StringStream('trueifalserinulln');
+    it("should handle glued operations and literals", function(done) {
+      var stream = new StringStream("trueifalserinulln");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
@@ -169,9 +169,9 @@ describe('evaluator', function() {
     });
   });
 
-  describe('validateNumberOfArgs', function() {
-    it('should execute if correct number of arguments', function(done) {
-      var stream = new StringStream('5 1 d0');
+  describe("validateNumberOfArgs", function() {
+    it("should execute if correct number of arguments", function(done) {
+      var stream = new StringStream("5 1 d0");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
         expect(result.argsArray[0][0]).toEqual(5);
@@ -180,8 +180,8 @@ describe('evaluator', function() {
         done();
       });
     });
-    it('should execute if too many arguments', function(done) {
-      var stream = new StringStream('5 1 4 d0');
+    it("should execute if too many arguments", function(done) {
+      var stream = new StringStream("5 1 4 d0");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
         expect(result.argsArray[0][0]).toEqual(1);
@@ -190,8 +190,8 @@ describe('evaluator', function() {
         done();
       });
     });
-    it('should execute if nested commands', function(done) {
-      var stream = new StringStream('/F2 /GS2 gs 5.711 Tf');
+    it("should execute if nested commands", function(done) {
+      var stream = new StringStream("/F2 /GS2 gs 5.711 Tf");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
         expect(result.fnArray.length).toEqual(3);
@@ -205,8 +205,8 @@ describe('evaluator', function() {
         done();
       });
     });
-    it('should skip if too few arguments', function(done) {
-      var stream = new StringStream('5 d0');
+    it("should skip if too few arguments", function(done) {
+      var stream = new StringStream("5 d0");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
         expect(result.argsArray).toEqual([]);
@@ -215,13 +215,13 @@ describe('evaluator', function() {
       });
     });
 
-    it('should error if (many) path operators have too few arguments ' +
-       '(bug 1443140)', function(done) {
+    it("should error if (many) path operators have too few arguments " +
+       "(bug 1443140)", function(done) {
       const NUM_INVALID_OPS = 25;
       const tempArr = new Array(NUM_INVALID_OPS + 1);
 
       // Non-path operators, should be ignored.
-      const invalidMoveText = tempArr.join('10 Td\n');
+      const invalidMoveText = tempArr.join("10 Td\n");
       const moveTextStream = new StringStream(invalidMoveText);
       runOperatorListCheck(partialEvaluator, moveTextStream,
                            new ResourcesMock(), function(result) {
@@ -231,19 +231,19 @@ describe('evaluator', function() {
       });
 
       // Path operators, should throw error.
-      const invalidLineTo = tempArr.join('20 l\n');
+      const invalidLineTo = tempArr.join("20 l\n");
       const lineToStream = new StringStream(invalidLineTo);
       runOperatorListCheck(partialEvaluator, lineToStream, new ResourcesMock(),
           function(error) {
         expect(error instanceof FormatError).toEqual(true);
         expect(error.message).toEqual(
-          'Invalid command l: expected 2 args, but received 1 args.');
+          "Invalid command l: expected 2 args, but received 1 args.");
         done();
       });
     });
 
-    it('should close opened saves', function(done) {
-      var stream = new StringStream('qq');
+    it("should close opened saves", function(done) {
+      var stream = new StringStream("qq");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
@@ -255,27 +255,27 @@ describe('evaluator', function() {
         done();
       });
     });
-    it('should error on paintXObject if name is missing', function(done) {
-      var stream = new StringStream('/ Do');
+    it("should error on paintXObject if name is missing", function(done) {
+      var stream = new StringStream("/ Do");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function(result) {
         expect(result instanceof FormatError).toEqual(true);
-        expect(result.message).toEqual('XObject must be referred to by name.');
+        expect(result.message).toEqual("XObject must be referred to by name.");
         done();
       });
     });
-    it('should skip paintXObject if subtype is PS', function(done) {
+    it("should skip paintXObject if subtype is PS", function(done) {
       var xobjStreamDict = new Dict();
-      xobjStreamDict.set('Subtype', Name.get('PS'));
+      xobjStreamDict.set("Subtype", Name.get("PS"));
       var xobjStream = new Stream([], 0, 0, xobjStreamDict);
 
       var xobjs = new Dict();
-      xobjs.set('Res1', xobjStream);
+      xobjs.set("Res1", xobjStream);
 
       var resources = new Dict();
-      resources.set('XObject', xobjs);
+      resources.set("XObject", xobjs);
 
-      var stream = new StringStream('/Res1 Do');
+      var stream = new StringStream("/Res1 Do");
       runOperatorListCheck(partialEvaluator, stream, resources,
           function(result) {
         expect(result.argsArray).toEqual([]);
@@ -285,12 +285,12 @@ describe('evaluator', function() {
     });
   });
 
-  describe('thread control', function() {
-    it('should abort operator list parsing', function (done) {
-      var stream = new StringStream('qqQQ');
+  describe("thread control", function() {
+    it("should abort operator list parsing", function (done) {
+      var stream = new StringStream("qqQQ");
       var resources = new ResourcesMock();
       var result = new OperatorList();
-      var task = new WorkerTask('OperatorListAbort');
+      var task = new WorkerTask("OperatorListAbort");
       task.terminate();
       partialEvaluator.getOperatorList({
         stream,
@@ -303,10 +303,10 @@ describe('evaluator', function() {
         done();
       });
     });
-    it('should abort text parsing parsing', function (done) {
+    it("should abort text parsing parsing", function (done) {
       var resources = new ResourcesMock();
-      var stream = new StringStream('qqQQ');
-      var task = new WorkerTask('TextContentAbort');
+      var stream = new StringStream("qqQQ");
+      var task = new WorkerTask("TextContentAbort");
       task.terminate();
       partialEvaluator.getTextContent({
         stream,
@@ -319,13 +319,13 @@ describe('evaluator', function() {
     });
   });
 
-  describe('operator list', function () {
+  describe("operator list", function () {
     function MessageHandlerMock() { }
     MessageHandlerMock.prototype = {
       send() { },
     };
 
-    it('should get correct total length after flushing', function () {
+    it("should get correct total length after flushing", function () {
       var operatorList = new OperatorList(null, new MessageHandlerMock());
       operatorList.addOp(OPS.save, null);
       operatorList.addOp(OPS.restore, null);

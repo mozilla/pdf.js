@@ -15,16 +15,16 @@
 
 import {
   info, log2, readUint16, readUint32, warn
-} from '../shared/util';
-import { ArithmeticDecoder } from './arithmetic_decoder';
+} from "../shared/util";
+import { ArithmeticDecoder } from "./arithmetic_decoder";
 
 let JpxError = (function JpxErrorClosure() {
   function JpxError(msg) {
-    this.message = 'JPX error: ' + msg;
+    this.message = "JPX error: " + msg;
   }
 
   JpxError.prototype = new Error();
-  JpxError.prototype.name = 'JpxError';
+  JpxError.prototype.name = "JpxError";
   JpxError.constructor = JpxError;
 
   return JpxError;
@@ -33,10 +33,10 @@ let JpxError = (function JpxErrorClosure() {
 var JpxImage = (function JpxImageClosure() {
   // Table E.1
   var SubbandsGainLog2 = {
-    'LL': 0,
-    'LH': 1,
-    'HL': 1,
-    'HH': 2,
+    "LL": 0,
+    "LH": 1,
+    "HL": 1,
+    "HH": 2,
   };
   function JpxImage() {
     this.failOnCorruptedImage = false;
@@ -69,7 +69,7 @@ var JpxImage = (function JpxImageClosure() {
           lbox = length - position + headerSize;
         }
         if (lbox < headerSize) {
-          throw new JpxError('Invalid box field size');
+          throw new JpxError("Invalid box field size");
         }
         var dataLength = lbox - headerSize;
         var jumpDataLength = true;
@@ -89,11 +89,11 @@ var JpxImage = (function JpxImageClosure() {
                 case 18: // this indicates a YUV colorspace
                   break;
                 default:
-                  warn('Unknown colorspace ' + colorspace);
+                  warn("Unknown colorspace " + colorspace);
                   break;
               }
             } else if (method === 2) {
-              info('ICC profile not supported');
+              info("ICC profile not supported");
             }
             break;
           case 0x6A703263: // 'jp2c'
@@ -101,7 +101,7 @@ var JpxImage = (function JpxImageClosure() {
             break;
           case 0x6A502020: // 'jP\024\024'
             if (readUint32(data, position) !== 0x0d0a870a) {
-              warn('Invalid JP2 signature');
+              warn("Invalid JP2 signature");
             }
             break;
           // The following header types are valid but currently not used:
@@ -116,7 +116,7 @@ var JpxImage = (function JpxImageClosure() {
                                                  (tbox >> 16) & 0xFF,
                                                  (tbox >> 8) & 0xFF,
                                                  tbox & 0xFF);
-            warn('Unsupported header type ' + tbox + ' (' + headerType + ')');
+            warn("Unsupported header type " + tbox + " (" + headerType + ")");
             break;
         }
         if (jumpDataLength) {
@@ -147,7 +147,7 @@ var JpxImage = (function JpxImageClosure() {
           return;
         }
       }
-      throw new JpxError('No size marker found in JPX stream');
+      throw new JpxError("No size marker found in JPX stream");
     },
     parseCodestream: function JpxImage_parseCodestream(data, start, end) {
       var context = {};
@@ -216,7 +216,7 @@ var JpxImage = (function JpxImageClosure() {
                   scalarExpounded = true;
                   break;
                 default:
-                  throw new Error('Invalid SQcd value ' + sqcd);
+                  throw new Error("Invalid SQcd value " + sqcd);
               }
               qcd.noQuantization = (spqcdSize === 8);
               qcd.scalarExpounded = scalarExpounded;
@@ -268,7 +268,7 @@ var JpxImage = (function JpxImageClosure() {
                   scalarExpounded = true;
                   break;
                 default:
-                  throw new Error('Invalid SQcd value ' + sqcd);
+                  throw new Error("Invalid SQcd value " + sqcd);
               }
               qcc.noQuantization = (spqcdSize === 8);
               qcc.scalarExpounded = scalarExpounded;
@@ -330,24 +330,24 @@ var JpxImage = (function JpxImageClosure() {
               }
               var unsupported = [];
               if (cod.selectiveArithmeticCodingBypass) {
-                unsupported.push('selectiveArithmeticCodingBypass');
+                unsupported.push("selectiveArithmeticCodingBypass");
               }
               if (cod.resetContextProbabilities) {
-                unsupported.push('resetContextProbabilities');
+                unsupported.push("resetContextProbabilities");
               }
               if (cod.terminationOnEachCodingPass) {
-                unsupported.push('terminationOnEachCodingPass');
+                unsupported.push("terminationOnEachCodingPass");
               }
               if (cod.verticallyStripe) {
-                unsupported.push('verticallyStripe');
+                unsupported.push("verticallyStripe");
               }
               if (cod.predictableTermination) {
-                unsupported.push('predictableTermination');
+                unsupported.push("predictableTermination");
               }
               if (unsupported.length > 0) {
                 doNotRecover = true;
-                throw new Error('Unsupported COD options (' +
-                                unsupported.join(', ') + ')');
+                throw new Error("Unsupported COD options (" +
+                                unsupported.join(", ") + ")");
               }
               if (context.mainHeader) {
                 context.COD = cod;
@@ -394,10 +394,10 @@ var JpxImage = (function JpxImageClosure() {
               // skipping content
               break;
             case 0xFF53: // Coding style component (COC)
-              throw new Error('Codestream code 0xFF53 (COC) is ' +
-                              'not implemented');
+              throw new Error("Codestream code 0xFF53 (COC) is " +
+                              "not implemented");
             default:
-              throw new Error('Unknown codestream code: ' + code.toString(16));
+              throw new Error("Unknown codestream code: " + code.toString(16));
           }
           position += length;
         }
@@ -405,7 +405,7 @@ var JpxImage = (function JpxImageClosure() {
         if (doNotRecover || this.failOnCorruptedImage) {
           throw new JpxError(e.message);
         } else {
-          warn('JPX: Trying to recover from: ' + e.message);
+          warn("JPX: Trying to recover from: " + e.message);
         }
       }
       this.tiles = transformComponents(context);
@@ -655,7 +655,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         r = 0;
       }
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
   function ResolutionLayerComponentPositionIterator(context) {
@@ -695,7 +695,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         l = 0;
       }
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
   function ResolutionPositionComponentLayerIterator(context) {
@@ -754,7 +754,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         p = 0;
       }
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
   function PositionComponentResolutionLayerIterator(context) {
@@ -801,7 +801,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         px = 0;
       }
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
   function ComponentPositionResolutionLayerIterator(context) {
@@ -847,7 +847,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         py = 0;
       }
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
   function getPrecinctIndexIfExist(
@@ -951,7 +951,7 @@ var JpxImage = (function JpxImageClosure() {
         if (r === 0) {
           // one sub-band (LL) with last decomposition
           subband = {};
-          subband.type = 'LL';
+          subband.type = "LL";
           subband.tbx0 = Math.ceil(component.tcx0 / scale);
           subband.tby0 = Math.ceil(component.tcy0 / scale);
           subband.tbx1 = Math.ceil(component.tcx1 / scale);
@@ -965,7 +965,7 @@ var JpxImage = (function JpxImageClosure() {
           var resolutionSubbands = [];
           // three sub-bands (HL, LH and HH) with rest of decompositions
           subband = {};
-          subband.type = 'HL';
+          subband.type = "HL";
           subband.tbx0 = Math.ceil(component.tcx0 / bscale - 0.5);
           subband.tby0 = Math.ceil(component.tcy0 / bscale);
           subband.tbx1 = Math.ceil(component.tcx1 / bscale - 0.5);
@@ -976,7 +976,7 @@ var JpxImage = (function JpxImageClosure() {
           resolutionSubbands.push(subband);
 
           subband = {};
-          subband.type = 'LH';
+          subband.type = "LH";
           subband.tbx0 = Math.ceil(component.tcx0 / bscale);
           subband.tby0 = Math.ceil(component.tcy0 / bscale - 0.5);
           subband.tbx1 = Math.ceil(component.tcx1 / bscale);
@@ -987,7 +987,7 @@ var JpxImage = (function JpxImageClosure() {
           resolutionSubbands.push(subband);
 
           subband = {};
-          subband.type = 'HH';
+          subband.type = "HH";
           subband.tbx0 = Math.ceil(component.tcx0 / bscale - 0.5);
           subband.tby0 = Math.ceil(component.tcy0 / bscale - 0.5);
           subband.tbx1 = Math.ceil(component.tcx1 / bscale - 0.5);
@@ -1117,13 +1117,13 @@ var JpxImage = (function JpxImageClosure() {
         var codeblockIncluded = false;
         var firstTimeInclusion = false;
         var valueReady;
-        if (codeblock['included'] !== undefined) {
+        if (codeblock["included"] !== undefined) {
           codeblockIncluded = !!readBits(1);
         } else {
           // reading inclusion tree
           precinct = codeblock.precinct;
           var inclusionTree, zeroBitPlanesTree;
-          if (precinct['inclusionTree'] !== undefined) {
+          if (precinct["inclusionTree"] !== undefined) {
             inclusionTree = precinct.inclusionTree;
           } else {
             // building inclusion and zero bit-planes trees
@@ -1191,7 +1191,7 @@ var JpxImage = (function JpxImageClosure() {
       while (queue.length > 0) {
         var packetItem = queue.shift();
         codeblock = packetItem.codeblock;
-        if (codeblock['data'] === undefined) {
+        if (codeblock["data"] === undefined) {
           codeblock.data = [];
         }
         codeblock.data.push({
@@ -1211,8 +1211,8 @@ var JpxImage = (function JpxImageClosure() {
     var y0 = subband.tby0;
     var width = subband.tbx1 - subband.tbx0;
     var codeblocks = subband.codeblocks;
-    var right = subband.type.charAt(0) === 'H' ? 1 : 0;
-    var bottom = subband.type.charAt(1) === 'H' ? levelWidth : 0;
+    var right = subband.type.charAt(0) === "H" ? 1 : 0;
+    var bottom = subband.type.charAt(1) === "H" ? levelWidth : 0;
 
     for (var i = 0, ii = codeblocks.length; i < ii; ++i) {
       var codeblock = codeblocks[i];
@@ -1221,7 +1221,7 @@ var JpxImage = (function JpxImageClosure() {
       if (blockWidth === 0 || blockHeight === 0) {
         continue;
       }
-      if (codeblock['data'] === undefined) {
+      if (codeblock["data"] === undefined) {
         continue;
       }
 
@@ -1277,7 +1277,7 @@ var JpxImage = (function JpxImageClosure() {
       position = 0;
       // Do the interleaving of Section F.3.3 here, so we do not need
       // to copy later. LL level is not interleaved, just copied.
-      var interleave = (subband.type !== 'LL');
+      var interleave = (subband.type !== "LL");
       for (j = 0; j < blockHeight; j++) {
         var row = (offset / width) | 0; // row in the non-interleaved subband
         var levelOffset = 2 * row * (levelWidth - width) + right + bottom;
@@ -1642,8 +1642,8 @@ var JpxImage = (function JpxImageClosure() {
       this.width = width;
       this.height = height;
 
-      this.contextLabelTable = (subband === 'HH' ? HHContextLabel :
-        (subband === 'HL' ? HLContextLabel : LLAndLHContextsLabel));
+      this.contextLabelTable = (subband === "HH" ? HHContextLabel :
+        (subband === "HL" ? HLContextLabel : LLAndLHContextsLabel));
 
       var coefficientCount = width * height;
 
@@ -1952,7 +1952,7 @@ var JpxImage = (function JpxImageClosure() {
                      (decoder.readBit(contexts, UNIFORM_CONTEXT) << 1) |
                       decoder.readBit(contexts, UNIFORM_CONTEXT);
         if (symbol !== 0xA) {
-          throw new JpxError('Invalid segmentation symbol');
+          throw new JpxError("Invalid segmentation symbol");
         }
       },
     };

@@ -16,7 +16,7 @@
 import {
   AbortException, assert, createPromiseCapability, MissingPDFException,
   ReadableStream, UnexpectedResponseException, UnknownErrorException
-} from './util';
+} from "./util";
 
 async function resolveCall(fn, args, thisArg = null) {
   if (!fn) {
@@ -26,15 +26,15 @@ async function resolveCall(fn, args, thisArg = null) {
 }
 
 function wrapReason(reason) {
-  if (typeof reason !== 'object') {
+  if (typeof reason !== "object") {
     return reason;
   }
   switch (reason.name) {
-    case 'AbortException':
+    case "AbortException":
       return new AbortException(reason.message);
-    case 'MissingPDFException':
+    case "MissingPDFException":
       return new MissingPDFException(reason.message);
-    case 'UnexpectedResponseException':
+    case "UnexpectedResponseException":
       return new UnexpectedResponseException(reason.message, reason.status);
     default:
       return new UnknownErrorException(reason.message, reason.details);
@@ -88,7 +88,7 @@ function MessageHandler(sourceName, targetName, comObj) {
       if (data.callbackId in callbacksCapabilities) {
         let callback = callbacksCapabilities[callbackId];
         delete callbacksCapabilities[callbackId];
-        if ('error' in data) {
+        if ("error" in data) {
           callback.reject(wrapReason(data.error));
         } else {
           callback.resolve(data.data);
@@ -129,7 +129,7 @@ function MessageHandler(sourceName, targetName, comObj) {
       throw new Error(`Unknown action from worker: ${data.action}`);
     }
   };
-  comObj.addEventListener('message', this._onComObjOnMessage);
+  comObj.addEventListener("message", this._onComObjOnMessage);
 }
 
 MessageHandler.prototype = {
@@ -222,7 +222,7 @@ MessageHandler.prototype = {
         this.postMessage({
           sourceName,
           targetName,
-          stream: 'pull',
+          stream: "pull",
           streamId,
           desiredSize: controller.desiredSize,
         });
@@ -238,7 +238,7 @@ MessageHandler.prototype = {
         this.postMessage({
           sourceName,
           targetName,
-          stream: 'cancel',
+          stream: "cancel",
           reason,
           streamId,
         });
@@ -277,7 +277,7 @@ MessageHandler.prototype = {
           this.sinkCapability = createPromiseCapability();
           this.ready = this.sinkCapability.promise;
         }
-        sendStreamRequest({ stream: 'enqueue', chunk, transfers, });
+        sendStreamRequest({ stream: "enqueue", chunk, transfers, });
       },
 
       close() {
@@ -285,7 +285,7 @@ MessageHandler.prototype = {
           return;
         }
         this.isCancelled = true;
-        sendStreamRequest({ stream: 'close', });
+        sendStreamRequest({ stream: "close", });
         delete self.streamSinks[streamId];
       },
 
@@ -294,7 +294,7 @@ MessageHandler.prototype = {
           return;
         }
         this.isCancelled = true;
-        sendStreamRequest({ stream: 'error', reason, });
+        sendStreamRequest({ stream: "error", reason, });
       },
 
       sinkCapability: capability,
@@ -309,9 +309,9 @@ MessageHandler.prototype = {
     streamSink.ready = streamSink.sinkCapability.promise;
     this.streamSinks[streamId] = streamSink;
     resolveCall(action[0], [data.data, streamSink], action[1]).then(() => {
-      sendStreamRequest({ stream: 'start_complete', success: true, });
+      sendStreamRequest({ stream: "start_complete", success: true, });
     }, (reason) => {
-      sendStreamRequest({ stream: 'start_complete', success: false, reason, });
+      sendStreamRequest({ stream: "start_complete", success: false, reason, });
     });
   },
 
@@ -340,18 +340,18 @@ MessageHandler.prototype = {
     };
 
     switch (data.stream) {
-      case 'start_complete':
+      case "start_complete":
         resolveOrReject(this.streamControllers[data.streamId].startCall,
                         data.success, wrapReason(data.reason));
         break;
-      case 'pull_complete':
+      case "pull_complete":
         resolveOrReject(this.streamControllers[data.streamId].pullCall,
                         data.success, wrapReason(data.reason));
         break;
-      case 'pull':
+      case "pull":
         // Ignore any pull after close is called.
         if (!this.streamSinks[data.streamId]) {
-          sendStreamResponse({ stream: 'pull_complete', success: true, });
+          sendStreamResponse({ stream: "pull_complete", success: true, });
           break;
         }
         // Pull increases the desiredSize property of sink,
@@ -364,22 +364,22 @@ MessageHandler.prototype = {
         // Reset desiredSize property of sink on every pull.
         this.streamSinks[data.streamId].desiredSize = data.desiredSize;
         resolveCall(this.streamSinks[data.streamId].onPull).then(() => {
-          sendStreamResponse({ stream: 'pull_complete', success: true, });
+          sendStreamResponse({ stream: "pull_complete", success: true, });
         }, (reason) => {
-          sendStreamResponse({ stream: 'pull_complete',
+          sendStreamResponse({ stream: "pull_complete",
                                success: false, reason, });
         });
         break;
-      case 'enqueue':
+      case "enqueue":
         assert(this.streamControllers[data.streamId],
-               'enqueue should have stream controller');
+               "enqueue should have stream controller");
         if (!this.streamControllers[data.streamId].isClosed) {
           this.streamControllers[data.streamId].controller.enqueue(data.chunk);
         }
         break;
-      case 'close':
+      case "close":
         assert(this.streamControllers[data.streamId],
-               'close should have stream controller');
+               "close should have stream controller");
         if (this.streamControllers[data.streamId].isClosed) {
           break;
         }
@@ -387,27 +387,27 @@ MessageHandler.prototype = {
         this.streamControllers[data.streamId].controller.close();
         deleteStreamController();
         break;
-      case 'error':
+      case "error":
         assert(this.streamControllers[data.streamId],
-               'error should have stream controller');
+               "error should have stream controller");
         this.streamControllers[data.streamId].controller.
           error(wrapReason(data.reason));
         deleteStreamController();
         break;
-      case 'cancel_complete':
+      case "cancel_complete":
         resolveOrReject(this.streamControllers[data.streamId].cancelCall,
                         data.success, wrapReason(data.reason));
         deleteStreamController();
         break;
-      case 'cancel':
+      case "cancel":
         if (!this.streamSinks[data.streamId]) {
           break;
         }
         resolveCall(this.streamSinks[data.streamId].onCancel,
                     [wrapReason(data.reason)]).then(() => {
-          sendStreamResponse({ stream: 'cancel_complete', success: true, });
+          sendStreamResponse({ stream: "cancel_complete", success: true, });
         }, (reason) => {
-          sendStreamResponse({ stream: 'cancel_complete',
+          sendStreamResponse({ stream: "cancel_complete",
                                success: false, reason, });
         });
         this.streamSinks[data.streamId].sinkCapability.
@@ -416,7 +416,7 @@ MessageHandler.prototype = {
         delete this.streamSinks[data.streamId];
         break;
       default:
-        throw new Error('Unexpected stream case');
+        throw new Error("Unexpected stream case");
     }
   },
 
@@ -435,7 +435,7 @@ MessageHandler.prototype = {
   },
 
   destroy() {
-    this.comObj.removeEventListener('message', this._onComObjOnMessage);
+    this.comObj.removeEventListener("message", this._onComObjOnMessage);
   },
 };
 

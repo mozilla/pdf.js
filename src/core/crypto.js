@@ -16,9 +16,9 @@
 import {
   bytesToString, FormatError, PasswordException, PasswordResponses,
   stringToBytes, unreachable, utf8StringToString, warn
-} from '../shared/util';
-import { isDict, isName, Name } from './primitives';
-import { DecryptStream } from './stream';
+} from "../shared/util";
+import { isDict, isName, Name } from "./primitives";
+import { DecryptStream } from "./stream";
 
 var ARCFourCipher = (function ARCFourCipherClosure() {
   function ARCFourCipher(key) {
@@ -632,7 +632,7 @@ var NullCipher = (function NullCipherClosure() {
 class AESBaseCipher {
   constructor() {
     if (this.constructor === AESBaseCipher) {
-      unreachable('Cannot initialize AESBaseCipher.');
+      unreachable("Cannot initialize AESBaseCipher.");
     }
 
     this._s = new Uint8Array([
@@ -745,7 +745,7 @@ class AESBaseCipher {
   }
 
   _expandKey(cipherKey) {
-    unreachable('Cannot call `_expandKey` on the base class');
+    unreachable("Cannot call `_expandKey` on the base class");
   }
 
   _decrypt(input, key) {
@@ -1522,22 +1522,22 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     return userPassword;
   }
 
-  var identityName = Name.get('Identity');
+  var identityName = Name.get("Identity");
 
   function CipherTransformFactory(dict, fileId, password) {
-    var filter = dict.get('Filter');
-    if (!isName(filter, 'Standard')) {
-      throw new FormatError('unknown encryption method');
+    var filter = dict.get("Filter");
+    if (!isName(filter, "Standard")) {
+      throw new FormatError("unknown encryption method");
     }
     this.dict = dict;
-    var algorithm = dict.get('V');
+    var algorithm = dict.get("V");
     if (!Number.isInteger(algorithm) ||
         (algorithm !== 1 && algorithm !== 2 && algorithm !== 4 &&
          algorithm !== 5)) {
-      throw new FormatError('unsupported encryption algorithm');
+      throw new FormatError("unsupported encryption algorithm");
     }
     this.algorithm = algorithm;
-    var keyLength = dict.get('Length');
+    var keyLength = dict.get("Length");
     if (!keyLength) {
       // Spec asks to rely on encryption dictionary's Length entry, however
       // some PDFs don't have it. Trying to recover.
@@ -1546,12 +1546,12 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         keyLength = 40;
       } else {
         // Trying to find default handler -- it usually has Length.
-        var cfDict = dict.get('CF');
-        var streamCryptoName = dict.get('StmF');
+        var cfDict = dict.get("CF");
+        var streamCryptoName = dict.get("StmF");
         if (isDict(cfDict) && isName(streamCryptoName)) {
           cfDict.suppressEncryption = true; // See comment below.
           var handlerDict = cfDict.get(streamCryptoName.name);
-          keyLength = (handlerDict && handlerDict.get('Length')) || 128;
+          keyLength = (handlerDict && handlerDict.get("Length")) || 128;
           if (keyLength < 40) {
             // Sometimes it's incorrect value of bits, generators specify bytes.
             keyLength <<= 3;
@@ -1561,17 +1561,17 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     }
     if (!Number.isInteger(keyLength) ||
         keyLength < 40 || (keyLength % 8) !== 0) {
-      throw new FormatError('invalid key length');
+      throw new FormatError("invalid key length");
     }
 
     // prepare keys
-    var ownerPassword = stringToBytes(dict.get('O')).subarray(0, 32);
-    var userPassword = stringToBytes(dict.get('U')).subarray(0, 32);
-    var flags = dict.get('P');
-    var revision = dict.get('R');
+    var ownerPassword = stringToBytes(dict.get("O")).subarray(0, 32);
+    var userPassword = stringToBytes(dict.get("U")).subarray(0, 32);
+    var flags = dict.get("P");
+    var revision = dict.get("R");
     // meaningful when V is 4 or 5
     var encryptMetadata = ((algorithm === 4 || algorithm === 5) &&
-                           dict.get('EncryptMetadata') !== false);
+                           dict.get("EncryptMetadata") !== false);
     this.encryptMetadata = encryptMetadata;
 
     var fileIdBytes = stringToBytes(fileId);
@@ -1581,8 +1581,8 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         try {
           password = utf8StringToString(password);
         } catch (ex) {
-          warn('CipherTransformFactory: ' +
-               'Unable to convert UTF8 encoded password.');
+          warn("CipherTransformFactory: " +
+               "Unable to convert UTF8 encoded password.");
         }
       }
       passwordBytes = stringToBytes(password);
@@ -1594,14 +1594,14 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
                                      ownerPassword, userPassword, flags,
                                      revision, keyLength, encryptMetadata);
     } else {
-      var ownerValidationSalt = stringToBytes(dict.get('O')).subarray(32, 40);
-      var ownerKeySalt = stringToBytes(dict.get('O')).subarray(40, 48);
-      var uBytes = stringToBytes(dict.get('U')).subarray(0, 48);
-      var userValidationSalt = stringToBytes(dict.get('U')).subarray(32, 40);
-      var userKeySalt = stringToBytes(dict.get('U')).subarray(40, 48);
-      var ownerEncryption = stringToBytes(dict.get('OE'));
-      var userEncryption = stringToBytes(dict.get('UE'));
-      var perms = stringToBytes(dict.get('Perms'));
+      var ownerValidationSalt = stringToBytes(dict.get("O")).subarray(32, 40);
+      var ownerKeySalt = stringToBytes(dict.get("O")).subarray(40, 48);
+      var uBytes = stringToBytes(dict.get("U")).subarray(0, 48);
+      var userValidationSalt = stringToBytes(dict.get("U")).subarray(32, 40);
+      var userKeySalt = stringToBytes(dict.get("U")).subarray(40, 48);
+      var ownerEncryption = stringToBytes(dict.get("OE"));
+      var userEncryption = stringToBytes(dict.get("UE"));
+      var perms = stringToBytes(dict.get("Perms"));
       encryptionKey =
         createEncryptionKey20(revision, passwordBytes,
           ownerPassword, ownerValidationSalt,
@@ -1611,7 +1611,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
           userEncryption, perms);
     }
     if (!encryptionKey && !password) {
-      throw new PasswordException('No password given',
+      throw new PasswordException("No password given",
                                   PasswordResponses.NEED_PASSWORD);
     } else if (!encryptionKey && password) {
       // Attempting use the password as an owner password
@@ -1623,14 +1623,14 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     }
 
     if (!encryptionKey) {
-      throw new PasswordException('Incorrect Password',
+      throw new PasswordException("Incorrect Password",
                                   PasswordResponses.INCORRECT_PASSWORD);
     }
 
     this.encryptionKey = encryptionKey;
 
     if (algorithm >= 4) {
-      var cf = dict.get('CF');
+      var cf = dict.get("CF");
       if (isDict(cf)) {
         // The 'CF' dictionary itself should not be encrypted, and by setting
         // `suppressEncryption` we can prevent an infinite loop inside of
@@ -1639,9 +1639,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         cf.suppressEncryption = true;
       }
       this.cf = cf;
-      this.stmf = dict.get('StmF') || identityName;
-      this.strf = dict.get('StrF') || identityName;
-      this.eff = dict.get('EFF') || this.stmf;
+      this.stmf = dict.get("StmF") || identityName;
+      this.strf = dict.get("StrF") || identityName;
+      this.eff = dict.get("EFF") || this.stmf;
     }
   }
 
@@ -1667,34 +1667,34 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   function buildCipherConstructor(cf, name, num, gen, key) {
     if (!isName(name)) {
-      throw new FormatError('Invalid crypt filter name.');
+      throw new FormatError("Invalid crypt filter name.");
     }
     var cryptFilter = cf.get(name.name);
     var cfm;
     if (cryptFilter !== null && cryptFilter !== undefined) {
-      cfm = cryptFilter.get('CFM');
+      cfm = cryptFilter.get("CFM");
     }
-    if (!cfm || cfm.name === 'None') {
+    if (!cfm || cfm.name === "None") {
       return function cipherTransformFactoryBuildCipherConstructorNone() {
         return new NullCipher();
       };
     }
-    if (cfm.name === 'V2') {
+    if (cfm.name === "V2") {
       return function cipherTransformFactoryBuildCipherConstructorV2() {
         return new ARCFourCipher(buildObjectKey(num, gen, key, false));
       };
     }
-    if (cfm.name === 'AESV2') {
+    if (cfm.name === "AESV2") {
       return function cipherTransformFactoryBuildCipherConstructorAESV2() {
         return new AES128Cipher(buildObjectKey(num, gen, key, true));
       };
     }
-    if (cfm.name === 'AESV3') {
+    if (cfm.name === "AESV3") {
       return function cipherTransformFactoryBuildCipherConstructorAESV3() {
         return new AES256Cipher(key);
       };
     }
-    throw new FormatError('Unknown crypto method');
+    throw new FormatError("Unknown crypto method");
   }
 
   CipherTransformFactory.prototype = {

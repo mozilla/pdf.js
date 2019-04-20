@@ -15,7 +15,7 @@ limitations under the License.
 */
 /* import-globals-from pdfHandler.js */
 
-'use strict';
+"use strict";
 /**
  * This file is one part of the Referer persistency implementation. The other
  * part resides in chromecom.js.
@@ -43,12 +43,12 @@ var g_referrers = {};
 
 (function() {
   var requestFilter = {
-    urls: ['*://*/*'],
-    types: ['main_frame', 'sub_frame'],
+    urls: ["*://*/*"],
+    types: ["main_frame", "sub_frame"],
   };
   chrome.webRequest.onSendHeaders.addListener(function(details) {
     g_requestHeaders[details.requestId] = details.requestHeaders;
-  }, requestFilter, ['requestHeaders']);
+  }, requestFilter, ["requestHeaders"]);
   chrome.webRequest.onBeforeRedirect.addListener(forgetHeaders, requestFilter);
   chrome.webRequest.onCompleted.addListener(forgetHeaders, requestFilter);
   chrome.webRequest.onErrorOccurred.addListener(forgetHeaders, requestFilter);
@@ -62,8 +62,8 @@ var g_referrers = {};
  */
 function saveReferer(details) {
   var referer = g_requestHeaders[details.requestId] &&
-      getHeaderFromHeaders(g_requestHeaders[details.requestId], 'referer');
-  referer = referer && referer.value || '';
+      getHeaderFromHeaders(g_requestHeaders[details.requestId], "referer");
+  referer = referer && referer.value || "";
   if (!g_referrers[details.tabId]) {
     g_referrers[details.tabId] = {};
   }
@@ -78,11 +78,11 @@ chrome.tabs.onRemoved.addListener(function(tabId) {
 // to matching PDF resource requests (only if the Referer is non-empty). The
 // handler is removed as soon as the PDF viewer frame is unloaded.
 chrome.runtime.onConnect.addListener(function onReceivePort(port) {
-  if (port.name !== 'chromecom-referrer') {
+  if (port.name !== "chromecom-referrer") {
     return;
   }
   // Note: sender.frameId is only set in Chrome 41+.
-  if (!('frameId' in port.sender)) {
+  if (!("frameId" in port.sender)) {
     port.disconnect();
     return;
   }
@@ -90,7 +90,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
   var frameId = port.sender.frameId;
 
   // If the PDF is viewed for the first time, then the referer will be set here.
-  var referer = g_referrers[tabId] && g_referrers[tabId][frameId] || '';
+  var referer = g_referrers[tabId] && g_referrers[tabId][frameId] || "";
   port.onMessage.addListener(function(data) {
     // If the viewer was opened directly (without opening a PDF URL first), then
     // the background script does not know about g_referrers, but the viewer may
@@ -103,9 +103,9 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
       // Only add a blocking request handler if the referer has to be rewritten.
       chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, {
         urls: [data.requestUrl],
-        types: ['xmlhttprequest'],
+        types: ["xmlhttprequest"],
         tabId: tabId,
-      }, ['blocking', 'requestHeaders']);
+      }, ["blocking", "requestHeaders"]);
     }
     // Acknowledge the message, and include the latest referer for this frame.
     port.postMessage(referer);
@@ -123,22 +123,22 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
   // Expose some response headers for fetch API calls from PDF.js;
   // This is a work-around for https://crbug.com/784528
   chrome.webRequest.onHeadersReceived.addListener(exposeOnHeadersReceived, {
-    urls: ['https://*/*'],
-    types: ['xmlhttprequest'],
+    urls: ["https://*/*"],
+    types: ["xmlhttprequest"],
     tabId: tabId,
-  }, ['blocking', 'responseHeaders']);
+  }, ["blocking", "responseHeaders"]);
 
   function onBeforeSendHeaders(details) {
     if (details.frameId !== frameId) {
       return;
     }
     var headers = details.requestHeaders;
-    var refererHeader = getHeaderFromHeaders(headers, 'referer');
+    var refererHeader = getHeaderFromHeaders(headers, "referer");
     if (!refererHeader) {
-      refererHeader = { name: 'Referer', };
+      refererHeader = { name: "Referer", };
       headers.push(refererHeader);
     } else if (refererHeader.value &&
-        refererHeader.value.lastIndexOf('chrome-extension:', 0) !== 0) {
+        refererHeader.value.lastIndexOf("chrome-extension:", 0) !== 0) {
       // Sanity check. If the referer is set, and the value is not the URL of
       // this extension, then the request was not initiated by this extension.
       return;
@@ -152,14 +152,14 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
       return;
     }
     var headers = details.responseHeaders;
-    var aceh = getHeaderFromHeaders(headers, 'access-control-expose-headers');
+    var aceh = getHeaderFromHeaders(headers, "access-control-expose-headers");
     // List of headers that PDF.js uses in src/display/network_utils.js
     var acehValue =
-      'accept-ranges,content-encoding,content-length,content-disposition';
+      "accept-ranges,content-encoding,content-length,content-disposition";
     if (aceh) {
-      aceh.value += ',' + acehValue;
+      aceh.value += "," + acehValue;
     } else {
-      aceh = { name: 'Access-Control-Expose-Headers', value: acehValue, };
+      aceh = { name: "Access-Control-Expose-Headers", value: acehValue, };
       headers.push(aceh);
     }
     return { responseHeaders: headers, };

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
 var base64alphabet =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
 function decodeFontData(base64) { // eslint-disable-line no-unused-vars
   var result = [];
@@ -25,12 +25,12 @@ function decodeFontData(base64) { // eslint-disable-line no-unused-vars
   var bits = 0, bitsLength = 0;
   for (var i = 0, ii = base64.length; i < ii; i++) {
     var ch = base64[i];
-    if (ch <= ' ') {
+    if (ch <= " ") {
       continue;
     }
     var index = base64alphabet.indexOf(ch);
     if (index < 0) {
-      throw new Error('Invalid character');
+      throw new Error("Invalid character");
     }
     if (index >= 64) {
       break;
@@ -47,7 +47,7 @@ function decodeFontData(base64) { // eslint-disable-line no-unused-vars
 }
 
 function encodeFontData(data) {
-  var buffer = '';
+  var buffer = "";
   var i, n;
   for (i = 0, n = data.length; i < n; i += 3) {
     var b1 = data[i] & 0xFF;
@@ -64,18 +64,18 @@ function encodeFontData(data) {
 
 function ttx(data, callback) { // eslint-disable-line no-unused-vars
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', '/ttx');
+  xhr.open("POST", "/ttx");
 
   var encodedData = encodeFontData(data);
-  xhr.setRequestHeader('Content-type', 'text/plain');
-  xhr.setRequestHeader('Content-length', encodedData.length);
+  xhr.setRequestHeader("Content-type", "text/plain");
+  xhr.setRequestHeader("Content-length", encodedData.length);
 
   xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
     if (xhr.readyState === 4) {
       if (xhr.status === 200) {
         callback(xhr.responseText);
       } else {
-        callback('<error>Transport error: ' + xhr.statusText + '</error>');
+        callback("<error>Transport error: " + xhr.statusText + "</error>");
       }
     }
   };

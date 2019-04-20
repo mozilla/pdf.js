@@ -8,6 +8,7 @@ external/cmapscompress/
 external/builder/fixtures/
 external/builder/fixtures_esprima/
 external/streams/
+external/url/
 src/shared/cffStandardStrings.js
 src/shared/fonts_utils.js
 test/tmp/

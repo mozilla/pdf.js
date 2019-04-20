@@ -17,27 +17,27 @@
 import {
   assert, FormatError, info, isArrayBuffer, isBool, isNum, isSpace, isString,
   OPS, shadow, stringToBytes, stringToPDFString, Util, warn
-} from '../shared/util';
-import { Catalog, ObjectLoader, XRef } from './obj';
-import { Dict, isDict, isName, isStream, Ref } from './primitives';
+} from "../shared/util";
+import { Catalog, ObjectLoader, XRef } from "./obj";
+import { Dict, isDict, isName, isStream, Ref } from "./primitives";
 import {
   getInheritableProperty, MissingDataException, XRefEntryException,
   XRefParseException
-} from './core_utils';
-import { NullStream, Stream, StreamsSequenceStream } from './stream';
-import { AnnotationFactory } from './annotation';
-import { calculateMD5 } from './crypto';
-import { Linearization } from './parser';
-import { OperatorList } from './operator_list';
-import { PartialEvaluator } from './evaluator';
-import { PDFFunctionFactory } from './function';
+} from "./core_utils";
+import { NullStream, Stream, StreamsSequenceStream } from "./stream";
+import { AnnotationFactory } from "./annotation";
+import { calculateMD5 } from "./crypto";
+import { Linearization } from "./parser";
+import { OperatorList } from "./operator_list";
+import { PartialEvaluator } from "./evaluator";
+import { PDFFunctionFactory } from "./function";
 
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
 function isAnnotationRenderable(annotation, intent) {
-  return (intent === 'display' && annotation.viewable) ||
-         (intent === 'print' && annotation.printable);
+  return (intent === "display" && annotation.viewable) ||
+         (intent === "print" && annotation.printable);
 }
 
 class Page {
@@ -83,43 +83,43 @@ class Page {
   }
 
   get content() {
-    return this.pageDict.get('Contents');
+    return this.pageDict.get("Contents");
   }
 
   get resources() {
     // For robustness: The spec states that a \Resources entry has to be
     // present, but can be empty. Some documents still omit it; in this case
     // we return an empty dictionary.
-    return shadow(this, 'resources',
-                  this._getInheritableProperty('Resources') || Dict.empty);
+    return shadow(this, "resources",
+                  this._getInheritableProperty("Resources") || Dict.empty);
   }
 
   get mediaBox() {
-    const mediaBox = this._getInheritableProperty('MediaBox',
+    const mediaBox = this._getInheritableProperty("MediaBox",
                                                   /* getArray = */ true);
     // Reset invalid media box to letter size.
     if (!Array.isArray(mediaBox) || mediaBox.length !== 4) {
-      return shadow(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
+      return shadow(this, "mediaBox", LETTER_SIZE_MEDIABOX);
     }
-    return shadow(this, 'mediaBox', mediaBox);
+    return shadow(this, "mediaBox", mediaBox);
   }
 
   get cropBox() {
-    const cropBox = this._getInheritableProperty('CropBox',
+    const cropBox = this._getInheritableProperty("CropBox",
                                                  /* getArray = */ true);
     // Reset invalid crop box to media box.
     if (!Array.isArray(cropBox) || cropBox.length !== 4) {
-      return shadow(this, 'cropBox', this.mediaBox);
+      return shadow(this, "cropBox", this.mediaBox);
     }
-    return shadow(this, 'cropBox', cropBox);
+    return shadow(this, "cropBox", cropBox);
   }
 
   get userUnit() {
-    let obj = this.pageDict.get('UserUnit');
+    let obj = this.pageDict.get("UserUnit");
     if (!isNum(obj) || obj <= 0) {
       obj = DEFAULT_USER_UNIT;
     }
-    return shadow(this, 'userUnit', obj);
+    return shadow(this, "userUnit", obj);
   }
 
   get view() {
@@ -129,15 +129,15 @@ class Page {
     // effectively reduced to their intersection with the media box."
     const mediaBox = this.mediaBox, cropBox = this.cropBox;
     if (mediaBox === cropBox) {
-      return shadow(this, 'view', mediaBox);
+      return shadow(this, "view", mediaBox);
     }
 
     const intersection = Util.intersect(cropBox, mediaBox);
-    return shadow(this, 'view', intersection || mediaBox);
+    return shadow(this, "view", intersection || mediaBox);
   }
 
   get rotate() {
-    let rotate = this._getInheritableProperty('Rotate') || 0;
+    let rotate = this._getInheritableProperty("Rotate") || 0;
 
     // Normalize rotation so it's a multiple of 90 and between 0 and 270.
     if (rotate % 90 !== 0) {
@@ -149,7 +149,7 @@ class Page {
       // rotation. The following is the other implementation of modulo.
       rotate = ((rotate % 360) + 360) % 360;
     }
-    return shadow(this, 'rotate', rotate);
+    return shadow(this, "rotate", rotate);
   }
 
   getContentStream() {
@@ -176,7 +176,7 @@ class Page {
   loadResources(keys) {
     if (!this.resourcesPromise) {
       // TODO: add async `_getInheritableProperty` and remove this.
-      this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
+      this.resourcesPromise = this.pdfManager.ensure(this, "resources");
     }
     return this.resourcesPromise.then(() => {
       const objectLoader = new ObjectLoader(this.resources, keys, this.xref);
@@ -186,14 +186,14 @@ class Page {
 
   getOperatorList({ handler, task, intent, renderInteractiveForms, }) {
     const contentStreamPromise = this.pdfManager.ensure(this,
-                                                        'getContentStream');
+                                                        "getContentStream");
     const resourcesPromise = this.loadResources([
-      'ExtGState',
-      'ColorSpace',
-      'Pattern',
-      'Shading',
-      'XObject',
-      'Font',
+      "ExtGState",
+      "ColorSpace",
+      "Pattern",
+      "Shading",
+      "XObject",
+      "Font",
     ]);
 
     const partialEvaluator = new PartialEvaluator({
@@ -211,7 +211,7 @@ class Page {
     const pageListPromise = dataPromises.then(([contentStream]) => {
       const opList = new OperatorList(intent, handler, this.pageIndex);
 
-      handler.send('StartRenderPage', {
+      handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(this.resources),
         pageIndex: this.pageIndex,
         intent,
@@ -261,11 +261,11 @@ class Page {
   extractTextContent({ handler, task, normalizeWhitespace, sink,
                        combineTextItems, }) {
     const contentStreamPromise = this.pdfManager.ensure(this,
-                                                        'getContentStream');
+                                                        "getContentStream");
     const resourcesPromise = this.loadResources([
-      'ExtGState',
-      'XObject',
-      'Font',
+      "ExtGState",
+      "XObject",
+      "Font",
     ]);
 
     const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
@@ -305,13 +305,13 @@ class Page {
   }
 
   get annotations() {
-    return shadow(this, 'annotations',
-                  this._getInheritableProperty('Annots') || []);
+    return shadow(this, "annotations",
+                  this._getInheritableProperty("Annots") || []);
   }
 
   get _parsedAnnotations() {
     const parsedAnnotations =
-      this.pdfManager.ensure(this, 'annotations').then(() => {
+      this.pdfManager.ensure(this, "annotations").then(() => {
         const annotationRefs = this.annotations;
         const annotationPromises = [];
         for (let i = 0, ii = annotationRefs.length; i < ii; i++) {
@@ -329,13 +329,13 @@ class Page {
         });
       });
 
-    return shadow(this, '_parsedAnnotations', parsedAnnotations);
+    return shadow(this, "_parsedAnnotations", parsedAnnotations);
   }
 }
 
 const FINGERPRINT_FIRST_BYTES = 1024;
-const EMPTY_FINGERPRINT = '\x00\x00\x00\x00\x00\x00\x00' +
-                          '\x00\x00\x00\x00\x00\x00\x00\x00\x00';
+const EMPTY_FINGERPRINT = "\x00\x00\x00\x00\x00\x00\x00" +
+                          "\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
 function find(stream, needle, limit, backwards) {
   const pos = stream.pos;
@@ -348,7 +348,7 @@ function find(stream, needle, limit, backwards) {
   for (let i = 0; i < limit; ++i) {
     strBuf.push(String.fromCharCode(stream.getByte()));
   }
-  const str = strBuf.join('');
+  const str = strBuf.join("");
 
   stream.pos = pos;
   const index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
@@ -373,10 +373,10 @@ class PDFDocument {
     } else if (isArrayBuffer(arg)) {
       stream = new Stream(arg);
     } else {
-      throw new Error('PDFDocument: Unknown argument type');
+      throw new Error("PDFDocument: Unknown argument type");
     }
     if (stream.length <= 0) {
-      throw new Error('PDFDocument: Stream must have data');
+      throw new Error("PDFDocument: Stream must have data");
     }
 
     this.pdfManager = pdfManager;
@@ -393,17 +393,17 @@ class PDFDocument {
   parse(recoveryMode) {
     this.setup(recoveryMode);
 
-    const version = this.catalog.catDict.get('Version');
+    const version = this.catalog.catDict.get("Version");
     if (isName(version)) {
       this.pdfFormatVersion = version.name;
     }
 
     // Check if AcroForms are present in the document.
     try {
-      this.acroForm = this.catalog.catDict.get('AcroForm');
+      this.acroForm = this.catalog.catDict.get("AcroForm");
       if (this.acroForm) {
-        this.xfa = this.acroForm.get('XFA');
-        const fields = this.acroForm.get('Fields');
+        this.xfa = this.acroForm.get("XFA");
+        const fields = this.acroForm.get("Fields");
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
         }
@@ -412,13 +412,13 @@ class PDFDocument {
       if (ex instanceof MissingDataException) {
         throw ex;
       }
-      info('Cannot fetch AcroForm entry; assuming no AcroForms are present');
+      info("Cannot fetch AcroForm entry; assuming no AcroForms are present");
       this.acroForm = null;
     }
 
     // Check if a Collection dictionary is present in the document.
     try {
-      const collection = this.catalog.catDict.get('Collection');
+      const collection = this.catalog.catDict.get("Collection");
       if (isDict(collection) && collection.getKeys().length > 0) {
         this.collection = collection;
       }
@@ -426,7 +426,7 @@ class PDFDocument {
       if (ex instanceof MissingDataException) {
         throw ex;
       }
-      info('Cannot fetch Collection dictionary.');
+      info("Cannot fetch Collection dictionary.");
     }
   }
 
@@ -440,7 +440,7 @@ class PDFDocument {
       }
       info(err);
     }
-    return shadow(this, 'linearization', linearization);
+    return shadow(this, "linearization", linearization);
   }
 
   get startXRef() {
@@ -450,13 +450,13 @@ class PDFDocument {
     if (this.linearization) {
       // Find the end of the first object.
       stream.reset();
-      if (find(stream, 'endobj', 1024)) {
+      if (find(stream, "endobj", 1024)) {
         startXRef = stream.pos + 6;
       }
     } else {
       // Find `startxref` by checking backwards from the end of the file.
       const step = 1024;
-      const startXRefLength = 'startxref'.length;
+      const startXRefLength = "startxref".length;
       let found = false, pos = stream.end;
 
       while (!found && pos > 0) {
@@ -465,7 +465,7 @@ class PDFDocument {
           pos = 0;
         }
         stream.pos = pos;
-        found = find(stream, 'startxref', step, true);
+        found = find(stream, "startxref", step, true);
       }
 
       if (found) {
@@ -474,7 +474,7 @@ class PDFDocument {
         do {
           ch = stream.getByte();
         } while (isSpace(ch));
-        let str = '';
+        let str = "";
         while (ch >= 0x20 && ch <= 0x39) { // < '9'
           str += String.fromCharCode(ch);
           ch = stream.getByte();
@@ -485,7 +485,7 @@ class PDFDocument {
         }
       }
     }
-    return shadow(this, 'startXRef', startXRef);
+    return shadow(this, "startXRef", startXRef);
   }
 
   // Find the header, get the PDF format version and setup the
@@ -494,7 +494,7 @@ class PDFDocument {
     const stream = this.stream;
     stream.reset();
 
-    if (!find(stream, '%PDF-', 1024)) {
+    if (!find(stream, "%PDF-", 1024)) {
       // May not be a PDF file, but don't throw an error and let
       // parsing continue.
       return;
@@ -503,7 +503,7 @@ class PDFDocument {
 
     // Read the PDF format version.
     const MAX_PDF_VERSION_LENGTH = 12;
-    let version = '', ch;
+    let version = "", ch;
     while ((ch = stream.getByte()) > 0x20) { // Space
       if (version.length >= MAX_PDF_VERSION_LENGTH) {
         break;
@@ -528,7 +528,7 @@ class PDFDocument {
   get numPages() {
     const linearization = this.linearization;
     const num = linearization ? linearization.numPages : this.catalog.numPages;
-    return shadow(this, 'numPages', num);
+    return shadow(this, "numPages", num);
   }
 
   get documentInfo() {
@@ -554,12 +554,12 @@ class PDFDocument {
 
     let infoDict;
     try {
-      infoDict = this.xref.trailer.get('Info');
+      infoDict = this.xref.trailer.get("Info");
     } catch (err) {
       if (err instanceof MissingDataException) {
         throw err;
       }
-      info('The document information dictionary is invalid.');
+      info("The document information dictionary is invalid.");
     }
 
     if (isDict(infoDict)) {
@@ -571,12 +571,12 @@ class PDFDocument {
         if (DocumentInfoValidators[key]) {
           // Make sure the (standard) value conforms to the specification.
           if (DocumentInfoValidators[key](value)) {
-            docInfo[key] = (typeof value !== 'string' ?
+            docInfo[key] = (typeof value !== "string" ?
                             value : stringToPDFString(value));
           } else {
             info(`Bad value in document info for "${key}".`);
           }
-        } else if (typeof key === 'string') {
+        } else if (typeof key === "string") {
           // For custom values, only accept white-listed types to prevent
           // errors that would occur when trying to send non-serializable
           // objects to the main-thread (for example `Dict` or `Stream`).
@@ -590,19 +590,19 @@ class PDFDocument {
             continue;
           }
 
-          if (!docInfo['Custom']) {
-            docInfo['Custom'] = Object.create(null);
+          if (!docInfo["Custom"]) {
+            docInfo["Custom"] = Object.create(null);
           }
-          docInfo['Custom'][key] = customValue;
+          docInfo["Custom"][key] = customValue;
         }
       }
     }
-    return shadow(this, 'documentInfo', docInfo);
+    return shadow(this, "documentInfo", docInfo);
   }
 
   get fingerprint() {
     let hash;
-    const idArray = this.xref.trailer.get('ID');
+    const idArray = this.xref.trailer.get("ID");
     if (Array.isArray(idArray) && idArray[0] && isString(idArray[0]) &&
         idArray[0] !== EMPTY_FINGERPRINT) {
       hash = stringToBytes(idArray[0]);
@@ -615,12 +615,12 @@ class PDFDocument {
         FINGERPRINT_FIRST_BYTES), 0, FINGERPRINT_FIRST_BYTES);
     }
 
-    let fingerprint = '';
+    let fingerprint = "";
     for (let i = 0, ii = hash.length; i < ii; i++) {
       const hex = hash[i].toString(16);
-      fingerprint += (hex.length === 1 ? '0' + hex : hex);
+      fingerprint += (hex.length === 1 ? "0" + hex : hex);
     }
-    return shadow(this, 'fingerprint', fingerprint);
+    return shadow(this, "fingerprint", fingerprint);
   }
 
   _getLinearizationPage(pageIndex) {
@@ -630,15 +630,15 @@ class PDFDocument {
     const ref = new Ref(linearization.objectNumberFirst, 0);
     return this.xref.fetchAsync(ref).then((obj) => {
       // Ensure that the object that was found is actually a Page dictionary.
-      if (isDict(obj, 'Page') ||
-          (isDict(obj) && !obj.has('Type') && obj.has('Contents'))) {
+      if (isDict(obj, "Page") ||
+          (isDict(obj) && !obj.has("Type") && obj.has("Contents"))) {
         if (ref && !catalog.pageKidsCountCache.has(ref)) {
           catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
         }
         return [obj, ref];
       }
-      throw new FormatError('The Linearization dictionary doesn\'t point ' +
-                            'to a valid Page dictionary.');
+      throw new FormatError("The Linearization dictionary doesn't point " +
+                            "to a valid Page dictionary.");
     }).catch((reason) => {
       info(reason);
       return catalog.getPageDict(pageIndex);

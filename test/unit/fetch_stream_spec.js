@@ -14,13 +14,13 @@
  */
 /* eslint no-var: error */
 
-import { PDFFetchStream } from '../../src/display/fetch_stream';
+import { PDFFetchStream } from "../../src/display/fetch_stream";
 
-describe('fetch_stream', function() {
-  const pdfUrl = new URL('../pdfs/tracemonkey.pdf', window.location).href;
+describe("fetch_stream", function() {
+  const pdfUrl = new URL("../pdfs/tracemonkey.pdf", window.location).href;
   const pdfLength = 1016315;
 
-  it('read with streaming', function(done) {
+  it("read with streaming", function(done) {
     const stream = new PDFFetchStream({
       url: pdfUrl,
       disableStream: false,
@@ -56,7 +56,7 @@ describe('fetch_stream', function() {
     }).catch(done.fail);
   });
 
-  it('read ranges with streaming', function(done) {
+  it("read ranges with streaming", function(done) {
     const rangeSize = 32768;
     const stream = new PDFFetchStream({
       url: pdfUrl,
@@ -72,7 +72,7 @@ describe('fetch_stream', function() {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // We shall be able to close full reader without any issue.
-      fullReader.cancel(new Error('Don\'t need full reader'));
+      fullReader.cancel(new Error("Don't need full reader"));
       fullReaderCancelled = true;
     });
 

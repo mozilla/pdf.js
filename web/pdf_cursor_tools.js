@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { GrabToPan } from './grab_to_pan';
+import { GrabToPan } from "./grab_to_pan";
 
 const CursorTool = {
   SELECT: 0, // The default value.
@@ -111,7 +111,7 @@ class PDFCursorTools {
    * @private
    */
   _dispatchEvent() {
-    this.eventBus.dispatch('cursortoolchanged', {
+    this.eventBus.dispatch("cursortoolchanged", {
       source: this,
       tool: this.active,
     });
@@ -121,11 +121,11 @@ class PDFCursorTools {
    * @private
    */
   _addEventListeners() {
-    this.eventBus.on('switchcursortool', (evt) => {
+    this.eventBus.on("switchcursortool", (evt) => {
       this.switchTool(evt.tool);
     });
 
-    this.eventBus.on('presentationmodechanged', (evt) => {
+    this.eventBus.on("presentationmodechanged", (evt) => {
       if (evt.switchInProgress) {
         return;
       }

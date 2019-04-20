@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, createPromiseCapability } from '../shared/util';
+import { assert, createPromiseCapability } from "../shared/util";
 
  /** @implements {IPDFStream} */
 var PDFDataTransportStream = (function PDFDataTransportStreamClosure() {

@@ -16,12 +16,12 @@
 import {
   assert, bytesToString, isEvalSupported, shadow, string32, unreachable,
   UNSUPPORTED_FEATURES, warn
-} from '../shared/util';
+} from "../shared/util";
 
 class BaseFontLoader {
   constructor({ docId, onUnsupportedFeature, }) {
     if (this.constructor === BaseFontLoader) {
-      unreachable('Cannot initialize BaseFontLoader.');
+      unreachable("Cannot initialize BaseFontLoader.");
     }
     this.docId = docId;
     this._onUnsupportedFeature = onUnsupportedFeature;
@@ -38,9 +38,9 @@ class BaseFontLoader {
   insertRule(rule) {
     let styleElement = this.styleElement;
     if (!styleElement) {
-      styleElement = this.styleElement = document.createElement('style');
+      styleElement = this.styleElement = document.createElement("style");
       styleElement.id = `PDFJS_FONT_STYLE_TAG_${this.docId}`;
-      document.documentElement.getElementsByTagName('head')[0].appendChild(
+      document.documentElement.getElementsByTagName("head")[0].appendChild(
         styleElement);
     }
 
@@ -102,37 +102,37 @@ class BaseFontLoader {
   }
 
   _queueLoadingCallback(callback) {
-    unreachable('Abstract method `_queueLoadingCallback`.');
+    unreachable("Abstract method `_queueLoadingCallback`.");
   }
 
   get isFontLoadingAPISupported() {
-    unreachable('Abstract method `isFontLoadingAPISupported`.');
+    unreachable("Abstract method `isFontLoadingAPISupported`.");
   }
 
   get isSyncFontLoadingSupported() {
-    unreachable('Abstract method `isSyncFontLoadingSupported`.');
+    unreachable("Abstract method `isSyncFontLoadingSupported`.");
   }
 
   get _loadTestFont() {
-    unreachable('Abstract method `_loadTestFont`.');
+    unreachable("Abstract method `_loadTestFont`.");
   }
 
   _prepareFontLoadEvent(rules, fontsToLoad, request) {
-    unreachable('Abstract method `_prepareFontLoadEvent`.');
+    unreachable("Abstract method `_prepareFontLoadEvent`.");
   }
 }
 
 let FontLoader;
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
 
 FontLoader = class MozcentralFontLoader extends BaseFontLoader {
   get isFontLoadingAPISupported() {
-    return shadow(this, 'isFontLoadingAPISupported',
-                  typeof document !== 'undefined' && !!document.fonts);
+    return shadow(this, "isFontLoadingAPISupported",
+                  typeof document !== "undefined" && !!document.fonts);
   }
 
   get isSyncFontLoadingSupported() {
-    return shadow(this, 'isSyncFontLoadingSupported', true);
+    return shadow(this, "isSyncFontLoadingSupported", true);
   }
 };
 
@@ -149,10 +149,10 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
   }
 
   get isFontLoadingAPISupported() {
-    let supported = (typeof document !== 'undefined' && !!document.fonts);
+    let supported = (typeof document !== "undefined" && !!document.fonts);
 
-    if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) &&
-        (supported && typeof navigator !== 'undefined')) {
+    if ((typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) &&
+        (supported && typeof navigator !== "undefined")) {
       // The Firefox Font Loading API does not work with `mozPrintCallback`
       // prior to version 63; see https://bugzilla.mozilla.org/show_bug.cgi?id=1473742
       const m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(navigator.userAgent);
@@ -160,13 +160,13 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
         supported = false;
       }
     }
-    return shadow(this, 'isFontLoadingAPISupported', supported);
+    return shadow(this, "isFontLoadingAPISupported", supported);
   }
 
   get isSyncFontLoadingSupported() {
     let supported = false;
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
-      if (typeof navigator === 'undefined') {
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
+      if (typeof navigator === "undefined") {
         // Node.js - we can pretend that sync font loading is supported.
         supported = true;
       } else {
@@ -179,12 +179,12 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
         // TODO - other browsers...
       }
     }
-    return shadow(this, 'isSyncFontLoadingSupported', supported);
+    return shadow(this, "isSyncFontLoadingSupported", supported);
   }
 
   _queueLoadingCallback(callback) {
     function completeRequest() {
-      assert(!request.done, 'completeRequest() cannot be called twice.');
+      assert(!request.done, "completeRequest() cannot be called twice.");
       request.done = true;
 
       // Sending all completed requests in order of how they were queued.
@@ -210,30 +210,30 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
       // This is a CFF font with 1 glyph for '.' that fills its entire width and
       // height.
       return atob(
-        'T1RUTwALAIAAAwAwQ0ZGIDHtZg4AAAOYAAAAgUZGVE1lkzZwAAAEHAAAABxHREVGABQA' +
-        'FQAABDgAAAAeT1MvMlYNYwkAAAEgAAAAYGNtYXABDQLUAAACNAAAAUJoZWFk/xVFDQAA' +
-        'ALwAAAA2aGhlYQdkA+oAAAD0AAAAJGhtdHgD6AAAAAAEWAAAAAZtYXhwAAJQAAAAARgA' +
-        'AAAGbmFtZVjmdH4AAAGAAAAAsXBvc3T/hgAzAAADeAAAACAAAQAAAAEAALZRFsRfDzz1' +
-        'AAsD6AAAAADOBOTLAAAAAM4KHDwAAAAAA+gDIQAAAAgAAgAAAAAAAAABAAADIQAAAFoD' +
-        '6AAAAAAD6AABAAAAAAAAAAAAAAAAAAAAAQAAUAAAAgAAAAQD6AH0AAUAAAKKArwAAACM' +
-        'AooCvAAAAeAAMQECAAACAAYJAAAAAAAAAAAAAQAAAAAAAAAAAAAAAFBmRWQAwAAuAC4D' +
-        'IP84AFoDIQAAAAAAAQAAAAAAAAAAACAAIAABAAAADgCuAAEAAAAAAAAAAQAAAAEAAAAA' +
-        'AAEAAQAAAAEAAAAAAAIAAQAAAAEAAAAAAAMAAQAAAAEAAAAAAAQAAQAAAAEAAAAAAAUA' +
-        'AQAAAAEAAAAAAAYAAQAAAAMAAQQJAAAAAgABAAMAAQQJAAEAAgABAAMAAQQJAAIAAgAB' +
-        'AAMAAQQJAAMAAgABAAMAAQQJAAQAAgABAAMAAQQJAAUAAgABAAMAAQQJAAYAAgABWABY' +
-        'AAAAAAAAAwAAAAMAAAAcAAEAAAAAADwAAwABAAAAHAAEACAAAAAEAAQAAQAAAC7//wAA' +
-        'AC7////TAAEAAAAAAAABBgAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-        'AAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
-        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAD/gwAyAAAAAQAAAAAAAAAAAAAAAAAA' +
-        'AAABAAQEAAEBAQJYAAEBASH4DwD4GwHEAvgcA/gXBIwMAYuL+nz5tQXkD5j3CBLnEQAC' +
-        'AQEBIVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYAAABAQAADwACAQEEE/t3' +
-        'Dov6fAH6fAT+fPp8+nwHDosMCvm1Cvm1DAz6fBQAAAAAAAABAAAAAMmJbzEAAAAAzgTj' +
-        'FQAAAADOBOQpAAEAAAAAAAAADAAUAAQAAAABAAAAAgABAAAAAAAAAAAD6AAAAAAAAA==');
+        "T1RUTwALAIAAAwAwQ0ZGIDHtZg4AAAOYAAAAgUZGVE1lkzZwAAAEHAAAABxHREVGABQA" +
+        "FQAABDgAAAAeT1MvMlYNYwkAAAEgAAAAYGNtYXABDQLUAAACNAAAAUJoZWFk/xVFDQAA" +
+        "ALwAAAA2aGhlYQdkA+oAAAD0AAAAJGhtdHgD6AAAAAAEWAAAAAZtYXhwAAJQAAAAARgA" +
+        "AAAGbmFtZVjmdH4AAAGAAAAAsXBvc3T/hgAzAAADeAAAACAAAQAAAAEAALZRFsRfDzz1" +
+        "AAsD6AAAAADOBOTLAAAAAM4KHDwAAAAAA+gDIQAAAAgAAgAAAAAAAAABAAADIQAAAFoD" +
+        "6AAAAAAD6AABAAAAAAAAAAAAAAAAAAAAAQAAUAAAAgAAAAQD6AH0AAUAAAKKArwAAACM" +
+        "AooCvAAAAeAAMQECAAACAAYJAAAAAAAAAAAAAQAAAAAAAAAAAAAAAFBmRWQAwAAuAC4D" +
+        "IP84AFoDIQAAAAAAAQAAAAAAAAAAACAAIAABAAAADgCuAAEAAAAAAAAAAQAAAAEAAAAA" +
+        "AAEAAQAAAAEAAAAAAAIAAQAAAAEAAAAAAAMAAQAAAAEAAAAAAAQAAQAAAAEAAAAAAAUA" +
+        "AQAAAAEAAAAAAAYAAQAAAAMAAQQJAAAAAgABAAMAAQQJAAEAAgABAAMAAQQJAAIAAgAB" +
+        "AAMAAQQJAAMAAgABAAMAAQQJAAQAAgABAAMAAQQJAAUAAgABAAMAAQQJAAYAAgABWABY" +
+        "AAAAAAAAAwAAAAMAAAAcAAEAAAAAADwAAwABAAAAHAAEACAAAAAEAAQAAQAAAC7//wAA" +
+        "AC7////TAAEAAAAAAAABBgAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+        "AAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAD/gwAyAAAAAQAAAAAAAAAAAAAAAAAA" +
+        "AAABAAQEAAEBAQJYAAEBASH4DwD4GwHEAvgcA/gXBIwMAYuL+nz5tQXkD5j3CBLnEQAC" +
+        "AQEBIVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYAAABAQAADwACAQEEE/t3" +
+        "Dov6fAH6fAT+fPp8+nwHDosMCvm1Cvm1DAz6fBQAAAAAAAABAAAAAMmJbzEAAAAAzgTj" +
+        "FQAAAADOBOQpAAEAAAAAAAAADAAUAAQAAAABAAAAAgABAAAAAAAAAAAD6AAAAAAAAA==");
     };
-    return shadow(this, '_loadTestFont', getLoadTestFont());
+    return shadow(this, "_loadTestFont", getLoadTestFont());
   }
 
   _prepareFontLoadEvent(rules, fonts, request) {
@@ -257,22 +257,22 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
     let i, ii;
 
     // The temporary canvas is used to determine if fonts are loaded.
-    let canvas = document.createElement('canvas');
+    let canvas = document.createElement("canvas");
     canvas.width = 1;
     canvas.height = 1;
-    let ctx = canvas.getContext('2d');
+    let ctx = canvas.getContext("2d");
 
     let called = 0;
     function isFontReady(name, callback) {
       called++;
       // With setTimeout clamping this gives the font ~100ms to load.
       if (called > 30) {
-        warn('Load test font never loaded.');
+        warn("Load test font never loaded.");
         callback();
         return;
       }
-      ctx.font = '30px ' + name;
-      ctx.fillText('.', 0, 20);
+      ctx.font = "30px " + name;
+      ctx.fillText(".", 0, 20);
       let imageData = ctx.getImageData(0, 0, 1, 1);
       if (imageData.data[3] > 0) {
         callback();
@@ -299,7 +299,7 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
       checksum = (checksum - XXXX_VALUE + int32(loadTestFontId, i)) | 0;
     }
     if (i < loadTestFontId.length) { // align to 4 bytes boundary
-      checksum = (checksum - XXXX_VALUE + int32(loadTestFontId + 'XXX', i)) | 0;
+      checksum = (checksum - XXXX_VALUE + int32(loadTestFontId + "XXX", i)) | 0;
     }
     data = spliceString(data, CFF_CHECKSUM_OFFSET, 4, string32(checksum));
 
@@ -313,13 +313,13 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
     }
     names.push(loadTestFontId);
 
-    let div = document.createElement('div');
-    div.setAttribute('style', 'visibility: hidden;' +
-                              'width: 10px; height: 10px;' +
-                              'position: absolute; top: 0px; left: 0px;');
+    let div = document.createElement("div");
+    div.setAttribute("style", "visibility: hidden;" +
+                              "width: 10px; height: 10px;" +
+                              "position: absolute; top: 0px; left: 0px;");
     for (i = 0, ii = names.length; i < ii; ++i) {
-      let span = document.createElement('span');
-      span.textContent = 'Hi';
+      let span = document.createElement("span");
+      span.textContent = "Hi";
       span.style.fontFamily = names[i];
       div.appendChild(span);
     }
@@ -337,7 +337,7 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
 
 const IsEvalSupportedCached = {
   get value() {
-    return shadow(this, 'value', isEvalSupported());
+    return shadow(this, "value", isEvalSupported());
   },
 };
 
@@ -393,7 +393,7 @@ class FontFaceObject {
 
     let cmds, current;
     try {
-      cmds = objs.get(this.loadedName + '_path_' + character);
+      cmds = objs.get(this.loadedName + "_path_" + character);
     } catch (ex) {
       if (!this.ignoreErrors) {
         throw ex;
@@ -410,19 +410,19 @@ class FontFaceObject {
 
     // If we can, compile cmds into JS for MAXIMUM SPEED...
     if (this.isEvalSupported && IsEvalSupportedCached.value) {
-      let args, js = '';
+      let args, js = "";
       for (let i = 0, ii = cmds.length; i < ii; i++) {
         current = cmds[i];
 
         if (current.args !== undefined) {
-          args = current.args.join(',');
+          args = current.args.join(",");
         } else {
-          args = '';
+          args = "";
         }
-        js += 'c.' + current.cmd + '(' + args + ');\n';
+        js += "c." + current.cmd + "(" + args + ");\n";
       }
       // eslint-disable-next-line no-new-func
-      return this.compiledGlyphs[character] = new Function('c', 'size', js);
+      return this.compiledGlyphs[character] = new Function("c", "size", js);
     }
     // ... but fall back on using Function.prototype.apply() if we're
     // blocked from using eval() for whatever reason (like CSP policies).
@@ -430,7 +430,7 @@ class FontFaceObject {
       for (let i = 0, ii = cmds.length; i < ii; i++) {
         current = cmds[i];
 
-        if (current.cmd === 'scale') {
+        if (current.cmd === "scale") {
           current.args = [size, -size];
         }
         c[current.cmd].apply(c, current.args);

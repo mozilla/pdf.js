@@ -20,13 +20,13 @@ import {
   PresentationModeState, RendererType, SCROLLBAR_PADDING, scrollIntoView,
   ScrollMode, SpreadMode, TextLayerMode, UNKNOWN_SCALE, VERTICAL_PADDING,
   watchScroll
-} from './ui_utils';
-import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
-import { AnnotationLayerBuilder } from './annotation_layer_builder';
-import { createPromiseCapability } from 'pdfjs-lib';
-import { PDFPageView } from './pdf_page_view';
-import { SimpleLinkService } from './pdf_link_service';
-import { TextLayerBuilder } from './text_layer_builder';
+} from "./ui_utils";
+import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue";
+import { AnnotationLayerBuilder } from "./annotation_layer_builder";
+import { createPromiseCapability } from "pdfjs-lib";
+import { PDFPageView } from "./pdf_page_view";
+import { SimpleLinkService } from "./pdf_link_service";
+import { TextLayerBuilder } from "./text_layer_builder";
 
 const DEFAULT_CACHE_SIZE = 10;
 
@@ -124,7 +124,7 @@ class BaseViewer {
    */
   constructor(options) {
     if (this.constructor === BaseViewer) {
-      throw new Error('Cannot initialize BaseViewer.');
+      throw new Error("Cannot initialize BaseViewer.");
     }
     this._name = this.constructor.name;
 
@@ -137,7 +137,7 @@ class BaseViewer {
     this.removePageBorders = options.removePageBorders || false;
     this.textLayerMode = Number.isInteger(options.textLayerMode) ?
       options.textLayerMode : TextLayerMode.ENABLE;
-    this.imageResourcesPath = options.imageResourcesPath || '';
+    this.imageResourcesPath = options.imageResourcesPath || "";
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
@@ -160,12 +160,12 @@ class BaseViewer {
     this._resetView();
 
     if (this.removePageBorders) {
-      this.viewer.classList.add('removePageBorders');
+      this.viewer.classList.add("removePageBorders");
     }
     // Defer the dispatching of this event, to give other viewer components
     // time to initialize *and* register 'baseviewerinit' event listeners.
     Promise.resolve().then(() => {
-      this.eventBus.dispatch('baseviewerinit', { source: this, });
+      this.eventBus.dispatch("baseviewerinit", { source: this, });
     });
   }
 
@@ -196,7 +196,7 @@ class BaseViewer {
    */
   set currentPageNumber(val) {
     if (!Number.isInteger(val)) {
-      throw new Error('Invalid page number.');
+      throw new Error("Invalid page number.");
     }
     if (!this.pdfDocument) {
       return;
@@ -225,7 +225,7 @@ class BaseViewer {
     }
     this._currentPageNumber = val;
 
-    this.eventBus.dispatch('pagechanging', {
+    this.eventBus.dispatch("pagechanging", {
       source: this,
       pageNumber: val,
       pageLabel: this._pageLabels && this._pageLabels[val - 1],
@@ -279,7 +279,7 @@ class BaseViewer {
    */
   set currentScale(val) {
     if (isNaN(val)) {
-      throw new Error('Invalid numeric scale.');
+      throw new Error("Invalid numeric scale.");
     }
     if (!this.pdfDocument) {
       return;
@@ -316,7 +316,7 @@ class BaseViewer {
    */
   set pagesRotation(rotation) {
     if (!isValidRotation(rotation)) {
-      throw new Error('Invalid pages rotation angle.');
+      throw new Error("Invalid pages rotation angle.");
     }
     if (!this.pdfDocument) {
       return;
@@ -338,7 +338,7 @@ class BaseViewer {
       this._setScale(this._currentScaleValue, true);
     }
 
-    this.eventBus.dispatch('rotationchanging', {
+    this.eventBus.dispatch("rotationchanging", {
       source: this,
       pagesRotation: rotation,
       pageNumber,
@@ -351,7 +351,7 @@ class BaseViewer {
 
   get _setDocumentViewerElement() {
     // In most viewers, e.g. `PDFViewer`, this should return `this.viewer`.
-    throw new Error('Not implemented: _setDocumentViewerElement');
+    throw new Error("Not implemented: _setDocumentViewerElement");
   }
 
   /**
@@ -378,7 +378,7 @@ class BaseViewer {
 
     pagesCapability.promise.then(() => {
       this._pageViewsReady = true;
-      this.eventBus.dispatch('pagesloaded', {
+      this.eventBus.dispatch("pagesloaded", {
         source: this,
         pagesCount,
       });
@@ -443,7 +443,7 @@ class BaseViewer {
       // starts to create the correct size canvas. Wait until one page is
       // rendered so we don't tie up too many resources early on.
       onePageRenderedCapability.promise.then(() => {
-        if (pdfDocument.loadingParams['disableAutoFetch']) {
+        if (pdfDocument.loadingParams["disableAutoFetch"]) {
           // XXX: Printing is semi-broken with auto fetch disabled.
           pagesCapability.resolve();
           return;
@@ -469,7 +469,7 @@ class BaseViewer {
         }
       });
 
-      this.eventBus.dispatch('pagesinit', { source: this, });
+      this.eventBus.dispatch("pagesinit", { source: this, });
 
       if (this.findController) {
         this.findController.setDocument(pdfDocument); // Enable searching.
@@ -478,7 +478,7 @@ class BaseViewer {
         this.update();
       }
     }).catch((reason) => {
-      console.error('Unable to initialize viewer', reason);
+      console.error("Unable to initialize viewer", reason);
     });
   }
 
@@ -521,7 +521,7 @@ class BaseViewer {
     this._spreadMode = SpreadMode.NONE;
 
     // Remove the pages from the DOM...
-    this.viewer.textContent = '';
+    this.viewer.textContent = "";
     // ... and reset the Scroll mode CSS class(es) afterwards.
     this._updateScrollMode();
   }
@@ -542,7 +542,7 @@ class BaseViewer {
 
     if (isSameScale(this._currentScale, newScale)) {
       if (preset) {
-        this.eventBus.dispatch('scalechanging', {
+        this.eventBus.dispatch("scalechanging", {
           source: this,
           scale: newScale,
           presetValue: newValue,
@@ -561,7 +561,7 @@ class BaseViewer {
       if (this._location &&
           !(this.isInPresentationMode || this.isChangingPresentationMode)) {
         page = this._location.pageNumber;
-        dest = [null, { name: 'XYZ', }, this._location.left,
+        dest = [null, { name: "XYZ", }, this._location.left,
                 this._location.top, null];
       }
       this.scrollPageIntoView({
@@ -571,7 +571,7 @@ class BaseViewer {
       });
     }
 
-    this.eventBus.dispatch('scalechanging', {
+    this.eventBus.dispatch("scalechanging", {
       source: this,
       scale: newScale,
       presetValue: preset ? newValue : undefined,
@@ -604,19 +604,19 @@ class BaseViewer {
       let pageHeightScale = (this.container.clientHeight - vPadding) /
                             currentPage.height * currentPage.scale;
       switch (value) {
-        case 'page-actual':
+        case "page-actual":
           scale = 1;
           break;
-        case 'page-width':
+        case "page-width":
           scale = pageWidthScale;
           break;
-        case 'page-height':
+        case "page-height":
           scale = pageHeightScale;
           break;
-        case 'page-fit':
+        case "page-fit":
           scale = Math.min(pageWidthScale, pageHeightScale);
           break;
-        case 'auto':
+        case "auto":
           // For pages in landscape mode, fit the page height to the viewer
           // *unless* the page would thus become too wide to fit horizontally.
           let horizontalScale = isPortraitOrientation(currentPage) ?
@@ -685,7 +685,7 @@ class BaseViewer {
       pageView.scale / CSS_UNITS;
     let scale = 0;
     switch (destArray[1].name) {
-      case 'XYZ':
+      case "XYZ":
         x = destArray[2];
         y = destArray[3];
         scale = destArray[4];
@@ -696,14 +696,14 @@ class BaseViewer {
         x = x !== null ? x : 0;
         y = y !== null ? y : pageHeight;
         break;
-      case 'Fit':
-      case 'FitB':
-        scale = 'page-fit';
+      case "Fit":
+      case "FitB":
+        scale = "page-fit";
         break;
-      case 'FitH':
-      case 'FitBH':
+      case "FitH":
+      case "FitBH":
         y = destArray[2];
-        scale = 'page-width';
+        scale = "page-width";
         // According to the PDF spec, section 12.3.2.2, a `null` value in the
         // parameter should maintain the position relative to the new page.
         if (y === null && this._location) {
@@ -711,14 +711,14 @@ class BaseViewer {
           y = this._location.top;
         }
         break;
-      case 'FitV':
-      case 'FitBV':
+      case "FitV":
+      case "FitBV":
         x = destArray[2];
         width = pageWidth;
         height = pageHeight;
-        scale = 'page-height';
+        scale = "page-height";
         break;
-      case 'FitR':
+      case "FitR":
         x = destArray[2];
         y = destArray[3];
         width = destArray[4] - x;
@@ -744,7 +744,7 @@ class BaseViewer {
       this.currentScaleValue = DEFAULT_SCALE_VALUE;
     }
 
-    if (scale === 'page-fit' && !destArray[4]) {
+    if (scale === "page-fit" && !destArray[4]) {
       this._scrollIntoView({
         pageDiv: pageView.div,
         pageNumber,
@@ -781,8 +781,8 @@ class BaseViewer {
       Math.round(currentScale * 10000) / 100 : currentScaleValue;
 
     let pageNumber = firstPage.id;
-    let pdfOpenParams = '#page=' + pageNumber;
-    pdfOpenParams += '&zoom=' + normalizedScaleValue;
+    let pdfOpenParams = "#page=" + pageNumber;
+    pdfOpenParams += "&zoom=" + normalizedScaleValue;
     let currentPageView = this._pages[pageNumber - 1];
     let container = this.container;
     let topLeft = currentPageView.getPagePoint(
@@ -790,7 +790,7 @@ class BaseViewer {
       (container.scrollTop - firstPage.y));
     let intLeft = Math.round(topLeft[0]);
     let intTop = Math.round(topLeft[1]);
-    pdfOpenParams += ',' + intLeft + ',' + intTop;
+    pdfOpenParams += "," + intLeft + "," + intTop;
 
     this._location = {
       pageNumber,
@@ -803,7 +803,7 @@ class BaseViewer {
   }
 
   _updateHelper(visiblePages) {
-    throw new Error('Not implemented: _updateHelper');
+    throw new Error("Not implemented: _updateHelper");
   }
 
   update() {
@@ -821,7 +821,7 @@ class BaseViewer {
     this._updateHelper(visiblePages); // Run any class-specific update code.
 
     this._updateLocation(visible.first);
-    this.eventBus.dispatch('updateviewarea', {
+    this.eventBus.dispatch("updateviewarea", {
       source: this,
       location: this._location,
     });
@@ -946,7 +946,7 @@ class BaseViewer {
       this._pagesRequests[pageNumber] = null;
       return pdfPage;
     }).catch((reason) => {
-      console.error('Unable to get page for page view', reason);
+      console.error("Unable to get page for page view", reason);
       // Page error -- there is nothing can be done.
       this._pagesRequests[pageNumber] = null;
     });
@@ -998,7 +998,7 @@ class BaseViewer {
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = '',
+  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = "",
                                renderInteractiveForms = false,
                                l10n = NullL10n) {
     return new AnnotationLayerBuilder({
@@ -1077,7 +1077,7 @@ class BaseViewer {
       throw new Error(`Invalid scroll mode: ${mode}`);
     }
     this._scrollMode = mode;
-    this.eventBus.dispatch('scrollmodechanged', { source: this, mode, });
+    this.eventBus.dispatch("scrollmodechanged", { source: this, mode, });
 
     this._updateScrollMode(/* pageNumber = */ this._currentPageNumber);
   }
@@ -1085,9 +1085,9 @@ class BaseViewer {
   _updateScrollMode(pageNumber = null) {
     const scrollMode = this._scrollMode, viewer = this.viewer;
 
-    viewer.classList.toggle('scrollHorizontal',
+    viewer.classList.toggle("scrollHorizontal",
                             scrollMode === ScrollMode.HORIZONTAL);
-    viewer.classList.toggle('scrollWrapped',
+    viewer.classList.toggle("scrollWrapped",
                             scrollMode === ScrollMode.WRAPPED);
 
     if (!this.pdfDocument || !pageNumber) {
@@ -1123,7 +1123,7 @@ class BaseViewer {
       throw new Error(`Invalid spread mode: ${mode}`);
     }
     this._spreadMode = mode;
-    this.eventBus.dispatch('spreadmodechanged', { source: this, mode, });
+    this.eventBus.dispatch("spreadmodechanged", { source: this, mode, });
 
     this._updateSpreadMode(/* pageNumber = */ this._currentPageNumber);
   }
@@ -1134,7 +1134,7 @@ class BaseViewer {
     }
     const viewer = this.viewer, pages = this._pages;
     // Temporarily remove all the pages from the DOM.
-    viewer.textContent = '';
+    viewer.textContent = "";
 
     if (this._spreadMode === SpreadMode.NONE) {
       for (let i = 0, iMax = pages.length; i < iMax; ++i) {
@@ -1145,8 +1145,8 @@ class BaseViewer {
       let spread = null;
       for (let i = 0, iMax = pages.length; i < iMax; ++i) {
         if (spread === null) {
-          spread = document.createElement('div');
-          spread.className = 'spread';
+          spread = document.createElement("div");
+          spread.className = "spread";
           viewer.appendChild(spread);
         } else if (i % 2 === parity) {
           spread = spread.cloneNode(false);

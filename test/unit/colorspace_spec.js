@@ -13,23 +13,23 @@
  * limitations under the License.
  */
 
-import { Dict, Name, Ref } from '../../src/core/primitives';
-import { Stream, StringStream } from '../../src/core/stream';
-import { ColorSpace } from '../../src/core/colorspace';
-import { PDFFunctionFactory } from '../../src/core/function';
-import { XRefMock } from './test_utils';
+import { Dict, Name, Ref } from "../../src/core/primitives";
+import { Stream, StringStream } from "../../src/core/stream";
+import { ColorSpace } from "../../src/core/colorspace";
+import { PDFFunctionFactory } from "../../src/core/function";
+import { XRefMock } from "./test_utils";
 
-describe('colorspace', function () {
-  describe('ColorSpace', function () {
-    it('should be true if decode is not an array', function () {
-      expect(ColorSpace.isDefaultDecode('string', 0)).toBeTruthy();
+describe("colorspace", function () {
+  describe("ColorSpace", function () {
+    it("should be true if decode is not an array", function () {
+      expect(ColorSpace.isDefaultDecode("string", 0)).toBeTruthy();
     });
-    it('should be true if length of decode array is not correct',
+    it("should be true if length of decode array is not correct",
         function () {
       expect(ColorSpace.isDefaultDecode([0], 1)).toBeTruthy();
       expect(ColorSpace.isDefaultDecode([0, 1, 0], 1)).toBeTruthy();
     });
-    it('should be true if decode map matches the default decode map',
+    it("should be true if decode map matches the default decode map",
         function () {
       expect(ColorSpace.isDefaultDecode([], 0)).toBeTruthy();
 
@@ -46,9 +46,9 @@ describe('colorspace', function () {
     });
   });
 
-  describe('DeviceGrayCS', function () {
-    it('should handle the case when cs is a Name object', function () {
-      let cs = Name.get('DeviceGray');
+  describe("DeviceGrayCS", function () {
+    it("should handle the case when cs is a Name object", function () {
+      let cs = Name.get("DeviceGray");
       let xref = new XRefMock([{
         ref: new Ref(10, 0),
         data: new Dict(),
@@ -88,11 +88,11 @@ describe('colorspace', function () {
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(testDest).toEqual(expectedDest);
     });
-    it('should handle the case when cs is an indirect object', function () {
+    it("should handle the case when cs is an indirect object", function () {
       let cs = new Ref(10, 0);
       let xref = new XRefMock([{
         ref: cs,
-        data: Name.get('DeviceGray'),
+        data: Name.get("DeviceGray"),
       }]);
       let res = new Dict();
 
@@ -124,9 +124,9 @@ describe('colorspace', function () {
     });
   });
 
-  describe('DeviceRgbCS', function () {
-    it('should handle the case when cs is a Name object', function () {
-      let cs = Name.get('DeviceRGB');
+  describe("DeviceRgbCS", function () {
+    it("should handle the case when cs is a Name object", function () {
+      let cs = Name.get("DeviceRGB");
       let xref = new XRefMock([{
         ref: new Ref(10, 0),
         data: new Dict(),
@@ -171,11 +171,11 @@ describe('colorspace', function () {
       expect(colorSpace.isPassthrough(8)).toBeTruthy();
       expect(testDest).toEqual(expectedDest);
     });
-    it('should handle the case when cs is an indirect object', function () {
+    it("should handle the case when cs is an indirect object", function () {
       let cs = new Ref(10, 0);
       let xref = new XRefMock([{
         ref: cs,
-        data: Name.get('DeviceRGB'),
+        data: Name.get("DeviceRGB"),
       }]);
       let res = new Dict();
 
@@ -212,9 +212,9 @@ describe('colorspace', function () {
     });
   });
 
-  describe('DeviceCmykCS', function () {
-    it('should handle the case when cs is a Name object', function () {
-      let cs = Name.get('DeviceCMYK');
+  describe("DeviceCmykCS", function () {
+    it("should handle the case when cs is a Name object", function () {
+      let cs = Name.get("DeviceCMYK");
       let xref = new XRefMock([{
         ref: new Ref(10, 0),
         data: new Dict(),
@@ -259,11 +259,11 @@ describe('colorspace', function () {
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(testDest).toEqual(expectedDest);
     });
-    it('should handle the case when cs is an indirect object', function () {
+    it("should handle the case when cs is an indirect object", function () {
       let cs = new Ref(10, 0);
       let xref = new XRefMock([{
         ref: cs,
-        data: Name.get('DeviceCMYK'),
+        data: Name.get("DeviceCMYK"),
       }]);
       let res = new Dict();
 
@@ -300,15 +300,15 @@ describe('colorspace', function () {
     });
   });
 
-  describe('CalGrayCS', function () {
-    it('should handle the case when cs is an array', function () {
+  describe("CalGrayCS", function () {
+    it("should handle the case when cs is an array", function () {
       let params = new Dict();
-      params.set('WhitePoint', [1, 1, 1]);
-      params.set('BlackPoint', [0, 0, 0]);
-      params.set('Gamma', 2.0);
+      params.set("WhitePoint", [1, 1, 1]);
+      params.set("BlackPoint", [0, 0, 0]);
+      params.set("Gamma", 2.0);
 
       let cs = [
-        Name.get('CalGray'),
+        Name.get("CalGray"),
         params,
       ];
       let xref = new XRefMock([{
@@ -352,16 +352,16 @@ describe('colorspace', function () {
     });
   });
 
-  describe('CalRGBCS', function () {
-    it('should handle the case when cs is an array', function () {
+  describe("CalRGBCS", function () {
+    it("should handle the case when cs is an array", function () {
       let params = new Dict();
-      params.set('WhitePoint', [1, 1, 1]);
-      params.set('BlackPoint', [0, 0, 0]);
-      params.set('Gamma', [1, 1, 1]);
-      params.set('Matrix', [1, 0, 0, 0, 1, 0, 0, 0, 1]);
+      params.set("WhitePoint", [1, 1, 1]);
+      params.set("BlackPoint", [0, 0, 0]);
+      params.set("Gamma", [1, 1, 1]);
+      params.set("Matrix", [1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
       let cs = [
-        Name.get('CalRGB'),
+        Name.get("CalRGB"),
         params,
       ];
       let xref = new XRefMock([{
@@ -403,15 +403,15 @@ describe('colorspace', function () {
     });
   });
 
-  describe('LabCS', function () {
-    it('should handle the case when cs is an array', function () {
+  describe("LabCS", function () {
+    it("should handle the case when cs is an array", function () {
       let params = new Dict();
-      params.set('WhitePoint', [1, 1, 1]);
-      params.set('BlackPoint', [0, 0, 0]);
-      params.set('Range', [-100, 100, -100, 100]);
+      params.set("WhitePoint", [1, 1, 1]);
+      params.set("BlackPoint", [0, 0, 0]);
+      params.set("Range", [-100, 100, -100, 100]);
 
       let cs = [
-        Name.get('Lab'),
+        Name.get("Lab"),
         params,
       ];
       let xref = new XRefMock([{
@@ -454,16 +454,16 @@ describe('colorspace', function () {
     });
   });
 
-  describe('IndexedCS', function () {
-    it('should handle the case when cs is an array', function () {
+  describe("IndexedCS", function () {
+    it("should handle the case when cs is an array", function () {
       let lookup = new Uint8Array([
         23, 155, 35,
         147, 69, 93,
         255, 109, 70
       ]);
       let cs = [
-        Name.get('Indexed'),
-        Name.get('DeviceRGB'),
+        Name.get("Indexed"),
+        Name.get("DeviceRGB"),
         2,
         lookup,
       ];
@@ -501,26 +501,26 @@ describe('colorspace', function () {
     });
   });
 
-  describe('AlternateCS', function () {
-    it('should handle the case when cs is an array', function () {
+  describe("AlternateCS", function () {
+    it("should handle the case when cs is an array", function () {
       let fnDict = new Dict();
-      fnDict.set('FunctionType', 4);
-      fnDict.set('Domain', [0.0, 1.0]);
-      fnDict.set('Range', [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0]);
-      fnDict.set('Length', 58);
+      fnDict.set("FunctionType", 4);
+      fnDict.set("Domain", [0.0, 1.0]);
+      fnDict.set("Range", [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0]);
+      fnDict.set("Length", 58);
 
-      let fn = new StringStream('{ dup 0.84 mul ' +
-                                'exch 0.00 exch ' +
-                                'dup 0.44 mul ' +
-                                'exch 0.21 mul }');
+      let fn = new StringStream("{ dup 0.84 mul " +
+                                "exch 0.00 exch " +
+                                "dup 0.44 mul " +
+                                "exch 0.21 mul }");
       fn = new Stream(fn.bytes, 0, 58, fnDict);
 
       let fnRef = new Ref(10, 0);
 
       let cs = [
-        Name.get('Separation'),
-        Name.get('LogoGreen'),
-        Name.get('DeviceCMYK'),
+        Name.get("Separation"),
+        Name.get("LogoGreen"),
+        Name.get("DeviceCMYK"),
         fnRef,
       ];
       let xref = new XRefMock([{

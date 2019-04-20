@@ -19,8 +19,8 @@
  * license.
  */
 
-import { FormatError, isSpace, stringToBytes } from '../shared/util';
-import { isDict } from './primitives';
+import { FormatError, isSpace, stringToBytes } from "../shared/util";
+import { isDict } from "./primitives";
 
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
@@ -438,7 +438,7 @@ var FlateStream = (function FlateStreamClosure() {
     var b;
     while (codeSize < bits) {
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad encoding in flate stream');
+        throw new FormatError("Bad encoding in flate stream");
       }
       codeBuf |= b << codeSize;
       codeSize += 8;
@@ -471,7 +471,7 @@ var FlateStream = (function FlateStreamClosure() {
     var codeLen = code >> 16;
     var codeVal = code & 0xffff;
     if (codeLen < 1 || codeSize < codeLen) {
-      throw new FormatError('Bad encoding in flate stream');
+      throw new FormatError("Bad encoding in flate stream");
     }
     this.codeBuf = (codeBuf >> codeLen);
     this.codeSize = (codeSize - codeLen);
@@ -533,26 +533,26 @@ var FlateStream = (function FlateStreamClosure() {
       var b;
 
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad block header in flate stream');
+        throw new FormatError("Bad block header in flate stream");
       }
       var blockLen = b;
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad block header in flate stream');
+        throw new FormatError("Bad block header in flate stream");
       }
       blockLen |= (b << 8);
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad block header in flate stream');
+        throw new FormatError("Bad block header in flate stream");
       }
       var check = b;
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad block header in flate stream');
+        throw new FormatError("Bad block header in flate stream");
       }
       check |= (b << 8);
       if (check !== (~blockLen & 0xffff) &&
           (blockLen !== 0 || check !== 0)) {
         // Ignoring error for bad "empty" block (see issue 1277)
         throw new FormatError(
-          'Bad uncompressed block length in flate stream');
+          "Bad uncompressed block length in flate stream");
       }
 
       this.codeBuf = 0;
@@ -627,7 +627,7 @@ var FlateStream = (function FlateStreamClosure() {
       distCodeTable =
         this.generateHuffmanTable(codeLengths.subarray(numLitCodes, codes));
     } else {
-      throw new FormatError('Unknown block type in flate stream');
+      throw new FormatError("Unknown block type in flate stream");
     }
 
     buffer = this.buffer;
@@ -679,7 +679,7 @@ var PredictorStream = (function PredictorStreamClosure() {
     if (!isDict(params)) {
       return str; // no prediction
     }
-    var predictor = this.predictor = params.get('Predictor') || 1;
+    var predictor = this.predictor = params.get("Predictor") || 1;
 
     if (predictor <= 1) {
       return str; // no prediction
@@ -697,9 +697,9 @@ var PredictorStream = (function PredictorStreamClosure() {
     this.str = str;
     this.dict = str.dict;
 
-    var colors = this.colors = params.get('Colors') || 1;
-    var bits = this.bits = params.get('BitsPerComponent') || 8;
-    var columns = this.columns = params.get('Columns') || 1;
+    var colors = this.colors = params.get("Colors") || 1;
+    var bits = this.bits = params.get("BitsPerComponent") || 8;
+    var columns = this.columns = params.get("Columns") || 1;
 
     this.pixBytes = (colors * bits + 7) >> 3;
     this.rowBytes = (columns * colors * bits + 7) >> 3;

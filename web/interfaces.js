@@ -152,7 +152,7 @@ class IPDFAnnotationLayerFactory {
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = '',
+  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = "",
                                renderInteractiveForms = false,
                                l10n = undefined) {}
 }

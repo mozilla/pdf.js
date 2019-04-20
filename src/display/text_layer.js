@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { AbortException, createPromiseCapability, Util } from '../shared/util';
-import globalScope from '../shared/global_scope';
+import { AbortException, createPromiseCapability, Util } from "../shared/util";
+import globalScope from "../shared/global_scope";
 
 /**
  * Text layer render parameters.
@@ -50,12 +50,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
   // Text layers may contain many thousands of divs, and using `styleBuf` avoids
   // creating many intermediate strings when building their 'style' properties.
-  var styleBuf = ['left: ', 0, 'px; top: ', 0, 'px; font-size: ', 0,
-                  'px; font-family: ', '', ';'];
+  var styleBuf = ["left: ", 0, "px; top: ", 0, "px; font-size: ", 0,
+                  "px; font-family: ", "", ";"];
 
   function appendText(task, geom, styles) {
     // Initialize all used properties to keep the caches monomorphic.
-    var textDiv = document.createElement('span');
+    var textDiv = document.createElement("span");
     var textDivProperties = {
       style: null,
       angle: 0,
@@ -103,8 +103,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
     styleBuf[3] = top;
     styleBuf[5] = fontHeight;
     styleBuf[7] = style.fontFamily;
-    textDivProperties.style = styleBuf.join('');
-    textDiv.setAttribute('style', textDivProperties.style);
+    textDivProperties.style = styleBuf.join("");
+    textDiv.setAttribute("style", textDivProperties.style);
 
     textDiv.textContent = geom.str;
     // `fontName` is only used by the FontInspector, and we only use `dataset`
@@ -510,14 +510,14 @@ var renderTextLayer = (function renderTextLayerClosure() {
     cancel: function TextLayer_cancel() {
       this._canceled = true;
       if (this._reader) {
-        this._reader.cancel(new AbortException('TextLayer task cancelled.'));
+        this._reader.cancel(new AbortException("TextLayer task cancelled."));
         this._reader = null;
       }
       if (this._renderTimer !== null) {
         clearTimeout(this._renderTimer);
         this._renderTimer = null;
       }
-      this._capability.reject(new Error('TextLayer task cancelled.'));
+      this._capability.reject(new Error("TextLayer task cancelled."));
     },
 
     _processItems(items, styleCache) {
@@ -541,14 +541,14 @@ var renderTextLayer = (function renderTextLayerClosure() {
       // Only build font string and set to context if different from last.
       if (fontSize !== this._layoutTextLastFontSize ||
           fontFamily !== this._layoutTextLastFontFamily) {
-        this._layoutTextCtx.font = fontSize + ' ' + fontFamily;
+        this._layoutTextCtx.font = fontSize + " " + fontFamily;
         this._layoutTextLastFontSize = fontSize;
         this._layoutTextLastFontFamily = fontFamily;
       }
 
       let width = this._layoutTextCtx.measureText(textDiv.textContent).width;
 
-      let transform = '';
+      let transform = "";
       if (textDivProperties.canvasWidth !== 0 && width > 0) {
         textDivProperties.scale = textDivProperties.canvasWidth / width;
         transform = `scaleX(${textDivProperties.scale})`;
@@ -569,12 +569,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       let styleCache = Object.create(null);
 
       // The temporary canvas is used to measure text length in the DOM.
-      let canvas = document.createElement('canvas');
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC')) {
+      let canvas = document.createElement("canvas");
+      if (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("FIREFOX || MOZCENTRAL || GENERIC")) {
          canvas.mozOpaque = true;
       }
-      this._layoutTextCtx = canvas.getContext('2d', { alpha: false, });
+      this._layoutTextCtx = canvas.getContext("2d", { alpha: false, });
 
       if (this._textContent) {
         let textItems = this._textContent.items;
@@ -599,7 +599,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         pump();
       } else {
         throw new Error('Neither "textContent" nor "textContentStream"' +
-          ' parameters specified.');
+          " parameters specified.");
       }
 
       capability.promise.then(() => {
@@ -632,42 +632,42 @@ var renderTextLayer = (function renderTextLayerClosure() {
           continue;
         }
         if (expandDivs) {
-          var transform = '', padding = '';
+          var transform = "", padding = "";
 
           if (divProperties.scale !== 1) {
-            transform = 'scaleX(' + divProperties.scale + ')';
+            transform = "scaleX(" + divProperties.scale + ")";
           }
           if (divProperties.angle !== 0) {
-            transform = 'rotate(' + divProperties.angle + 'deg) ' + transform;
+            transform = "rotate(" + divProperties.angle + "deg) " + transform;
           }
           if (divProperties.paddingLeft !== 0) {
-            padding += ' padding-left: ' +
-              (divProperties.paddingLeft / divProperties.scale) + 'px;';
-            transform += ' translateX(' +
-              (-divProperties.paddingLeft / divProperties.scale) + 'px)';
+            padding += " padding-left: " +
+              (divProperties.paddingLeft / divProperties.scale) + "px;";
+            transform += " translateX(" +
+              (-divProperties.paddingLeft / divProperties.scale) + "px)";
           }
           if (divProperties.paddingTop !== 0) {
-            padding += ' padding-top: ' + divProperties.paddingTop + 'px;';
-            transform += ' translateY(' + (-divProperties.paddingTop) + 'px)';
+            padding += " padding-top: " + divProperties.paddingTop + "px;";
+            transform += " translateY(" + (-divProperties.paddingTop) + "px)";
           }
           if (divProperties.paddingRight !== 0) {
-            padding += ' padding-right: ' +
-              (divProperties.paddingRight / divProperties.scale) + 'px;';
+            padding += " padding-right: " +
+              (divProperties.paddingRight / divProperties.scale) + "px;";
           }
           if (divProperties.paddingBottom !== 0) {
-            padding += ' padding-bottom: ' +
-              divProperties.paddingBottom + 'px;';
+            padding += " padding-bottom: " +
+              divProperties.paddingBottom + "px;";
           }
 
-          if (padding !== '') {
-            div.setAttribute('style', divProperties.style + padding);
+          if (padding !== "") {
+            div.setAttribute("style", divProperties.style + padding);
           }
-          if (transform !== '') {
+          if (transform !== "") {
             div.style.transform = transform;
           }
         } else {
           div.style.padding = 0;
-          div.style.transform = divProperties.originalTransform || '';
+          div.style.transform = divProperties.originalTransform || "";
         }
       }
     },

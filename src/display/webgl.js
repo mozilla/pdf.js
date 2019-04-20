@@ -14,7 +14,7 @@
  */
 /* eslint-disable no-multi-str */
 
-import { shadow } from '../shared/util';
+import { shadow } from "../shared/util";
 
 class WebGLContext {
   constructor({ enable = false, }) {
@@ -26,7 +26,7 @@ class WebGLContext {
     if (enabled) {
       enabled = WebGLUtils.tryInitGL();
     }
-    return shadow(this, 'isEnabled', enabled);
+    return shadow(this, "isEnabled", enabled);
   }
 
   composeSMask({ layer, mask, properties, }) {
@@ -51,7 +51,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!compiled) {
       var errorMsg = gl.getShaderInfoLog(shader);
-      throw new Error('Error during shader compilation: ' + errorMsg);
+      throw new Error("Error during shader compilation: " + errorMsg);
     }
     return shader;
   }
@@ -70,7 +70,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
     if (!linked) {
       var errorMsg = gl.getProgramInfoLog(program);
-      throw new Error('Error during program linking: ' + errorMsg);
+      throw new Error("Error during program linking: " + errorMsg);
     }
     return program;
   }
@@ -97,12 +97,12 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     }
 
     // The temporary canvas is used in the WebGL context.
-    currentCanvas = document.createElement('canvas');
-    currentGL = currentCanvas.getContext('webgl',
+    currentCanvas = document.createElement("canvas");
+    currentGL = currentCanvas.getContext("webgl",
       { premultipliedalpha: false, });
   }
 
-  var smaskVertexShaderCode = '\
+  var smaskVertexShaderCode = "\
   attribute vec2 a_position;                                    \
   attribute vec2 a_texCoord;                                    \
                                                                 \
@@ -115,9 +115,9 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);          \
                                                                 \
     v_texCoord = a_texCoord;                                    \
-  }                                                             ';
+  }                                                             ";
 
-  var smaskFragmentShaderCode = '\
+  var smaskFragmentShaderCode = "\
   precision mediump float;                                      \
                                                                 \
   uniform vec4 u_backdrop;                                      \
@@ -144,7 +144,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     imageColor.a *= lum;                                        \
     imageColor.rgb *= imageColor.a;                             \
     gl_FragColor = imageColor;                                  \
-  }                                                             ';
+  }                                                             ";
 
   var smaskCache = null;
 
@@ -166,14 +166,14 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var cache = {};
     cache.gl = gl;
     cache.canvas = canvas;
-    cache.resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    cache.positionLocation = gl.getAttribLocation(program, 'a_position');
-    cache.backdropLocation = gl.getUniformLocation(program, 'u_backdrop');
-    cache.subtypeLocation = gl.getUniformLocation(program, 'u_subtype');
+    cache.resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+    cache.positionLocation = gl.getAttribLocation(program, "a_position");
+    cache.backdropLocation = gl.getUniformLocation(program, "u_backdrop");
+    cache.subtypeLocation = gl.getUniformLocation(program, "u_subtype");
 
-    var texCoordLocation = gl.getAttribLocation(program, 'a_texCoord');
-    var texLayerLocation = gl.getUniformLocation(program, 'u_image');
-    var texMaskLocation = gl.getUniformLocation(program, 'u_mask');
+    var texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
+    var texLayerLocation = gl.getUniformLocation(program, "u_image");
+    var texMaskLocation = gl.getUniformLocation(program, "u_mask");
 
     // provide texture coordinates for the rectangle.
     var texCoordBuffer = gl.createBuffer();
@@ -213,7 +213,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
       gl.uniform4f(cache.resolutionLocation, 0, 0, 0, 0);
     }
     gl.uniform1i(cache.subtypeLocation,
-                 properties.subtype === 'Luminosity' ? 1 : 0);
+                 properties.subtype === "Luminosity" ? 1 : 0);
 
     // Create a textures
     var texture = createTexture(gl, layer, gl.TEXTURE0);
@@ -250,7 +250,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     return canvas;
   }
 
-  var figuresVertexShaderCode = '\
+  var figuresVertexShaderCode = "\
   attribute vec2 a_position;                                    \
   attribute vec3 a_color;                                       \
                                                                 \
@@ -266,16 +266,16 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);          \
                                                                 \
     v_color = vec4(a_color / 255.0, 1.0);                       \
-  }                                                             ';
+  }                                                             ";
 
-  var figuresFragmentShaderCode = '\
+  var figuresFragmentShaderCode = "\
   precision mediump float;                                      \
                                                                 \
   varying vec4 v_color;                                         \
                                                                 \
   void main() {                                                 \
     gl_FragColor = v_color;                                     \
-  }                                                             ';
+  }                                                             ";
 
   var figuresCache = null;
 
@@ -297,11 +297,11 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var cache = {};
     cache.gl = gl;
     cache.canvas = canvas;
-    cache.resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    cache.scaleLocation = gl.getUniformLocation(program, 'u_scale');
-    cache.offsetLocation = gl.getUniformLocation(program, 'u_offset');
-    cache.positionLocation = gl.getAttribLocation(program, 'a_position');
-    cache.colorLocation = gl.getAttribLocation(program, 'a_color');
+    cache.resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+    cache.scaleLocation = gl.getUniformLocation(program, "u_scale");
+    cache.offsetLocation = gl.getUniformLocation(program, "u_offset");
+    cache.positionLocation = gl.getAttribLocation(program, "a_position");
+    cache.colorLocation = gl.getAttribLocation(program, "a_color");
 
     figuresCache = cache;
   }
@@ -322,11 +322,11 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var i, ii, rows;
     for (i = 0, ii = figures.length; i < ii; i++) {
       switch (figures[i].type) {
-        case 'lattice':
+        case "lattice":
           rows = (figures[i].coords.length / figures[i].verticesPerRow) | 0;
           count += (rows - 1) * (figures[i].verticesPerRow - 1) * 6;
           break;
-        case 'triangles':
+        case "triangles":
           count += figures[i].coords.length;
           break;
       }
@@ -339,7 +339,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     for (i = 0, ii = figures.length; i < ii; i++) {
       var figure = figures[i], ps = figure.coords, cs = figure.colors;
       switch (figure.type) {
-        case 'lattice':
+        case "lattice":
           var cols = figure.verticesPerRow;
           rows = (ps.length / cols) | 0;
           for (var row = 1; row < rows; row++) {
@@ -381,7 +381,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
             }
           }
           break;
-        case 'triangles':
+        case "triangles":
           for (var j = 0, jj = ps.length; j < jj; j++) {
             coords[pIndex] = coordsMap[ps[j]];
             coords[pIndex + 1] = coordsMap[ps[j] + 1];

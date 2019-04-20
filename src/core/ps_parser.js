@@ -14,8 +14,8 @@
  */
 /* eslint no-var: error */
 
-import { FormatError, isSpace, shadow } from '../shared/util';
-import { EOF } from './primitives';
+import { FormatError, isSpace, shadow } from "../shared/util";
+import { EOF } from "./primitives";
 
 class PostScriptParser {
   constructor(lexer) {
@@ -79,7 +79,7 @@ class PostScriptParser {
       // The true block is right after the 'if' so it just falls through on true
       // else it jumps and skips the true block.
       this.operators[conditionLocation] = this.operators.length;
-      this.operators[conditionLocation + 1] = 'jz';
+      this.operators[conditionLocation + 1] = "jz";
     } else if (this.accept(PostScriptTokenTypes.LBRACE)) {
       const jumpLocation = this.operators.length;
       this.operators.push(null, null);
@@ -89,12 +89,12 @@ class PostScriptParser {
       this.expect(PostScriptTokenTypes.IFELSE);
       // The jump is added at the end of the true block to skip the false block.
       this.operators[jumpLocation] = this.operators.length;
-      this.operators[jumpLocation + 1] = 'j';
+      this.operators[jumpLocation + 1] = "j";
 
       this.operators[conditionLocation] = endOfTrue;
-      this.operators[conditionLocation + 1] = 'jz';
+      this.operators[conditionLocation + 1] = "jz";
     } else {
-      throw new FormatError('PS Function: error parsing conditional.');
+      throw new FormatError("PS Function: error parsing conditional.");
     }
   }
 }
@@ -127,23 +127,23 @@ const PostScriptToken = (function PostScriptTokenClosure() {
     }
 
     static get LBRACE() {
-      return shadow(this, 'LBRACE',
-                    new PostScriptToken(PostScriptTokenTypes.LBRACE, '{'));
+      return shadow(this, "LBRACE",
+                    new PostScriptToken(PostScriptTokenTypes.LBRACE, "{"));
     }
 
     static get RBRACE() {
-      return shadow(this, 'RBRACE',
-                    new PostScriptToken(PostScriptTokenTypes.RBRACE, '}'));
+      return shadow(this, "RBRACE",
+                    new PostScriptToken(PostScriptTokenTypes.RBRACE, "}"));
     }
 
     static get IF() {
-      return shadow(this, 'IF',
-                    new PostScriptToken(PostScriptTokenTypes.IF, 'IF'));
+      return shadow(this, "IF",
+                    new PostScriptToken(PostScriptTokenTypes.IF, "IF"));
     }
 
     static get IFELSE() {
-      return shadow(this, 'IFELSE',
-                    new PostScriptToken(PostScriptTokenTypes.IFELSE, 'IFELSE'));
+      return shadow(this, "IFELSE",
+                    new PostScriptToken(PostScriptTokenTypes.IFELSE, "IFELSE"));
     }
   }
   return PostScriptToken;
@@ -204,11 +204,11 @@ class PostScriptLexer {
            ((ch >= 0x41 && ch <= 0x5A) || (ch >= 0x61 && ch <= 0x7A))) {
       strBuf.push(String.fromCharCode(ch));
     }
-    const str = strBuf.join('');
+    const str = strBuf.join("");
     switch (str.toLowerCase()) {
-      case 'if':
+      case "if":
         return PostScriptToken.IF;
-      case 'ifelse':
+      case "ifelse":
         return PostScriptToken.IFELSE;
       default:
         return PostScriptToken.getOperator(str);
@@ -229,7 +229,7 @@ class PostScriptLexer {
         break;
       }
     }
-    const value = parseFloat(strBuf.join(''));
+    const value = parseFloat(strBuf.join(""));
     if (isNaN(value)) {
       throw new FormatError(`Invalid floating point number: ${value}`);
     }

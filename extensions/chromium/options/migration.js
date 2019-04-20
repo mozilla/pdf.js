@@ -16,7 +16,7 @@ limitations under the License.
 /* eslint strict: ["error", "function"] */
 
 (function() {
-  'use strict';
+  "use strict";
   var storageLocal = chrome.storage.local;
   var storageSync = chrome.storage.sync;
 
@@ -40,12 +40,12 @@ limitations under the License.
   function getStorageNames(callback) {
     var x = new XMLHttpRequest();
     var schema_location = chrome.runtime.getManifest().storage.managed_schema;
-    x.open('get', chrome.runtime.getURL(schema_location));
+    x.open("get", chrome.runtime.getURL(schema_location));
     x.onload = function() {
       var storageKeys = Object.keys(x.response.properties);
       callback(storageKeys);
     };
-    x.responseType = 'json';
+    x.responseType = "json";
     x.send();
   }
 
@@ -54,7 +54,7 @@ limitations under the License.
   function migrateToSyncStorage(values) {
     storageSync.set(values, function() {
       if (chrome.runtime.lastError) {
-        console.error('Failed to migrate settings due to an error: ' +
+        console.error("Failed to migrate settings due to an error: " +
             chrome.runtime.lastError.message);
         return;
       }
@@ -64,7 +64,7 @@ limitations under the License.
         // backend is corrupt), but since storageSync.set succeeded, consider
         // the migration successful.
         console.log(
-            'Successfully migrated preferences from local to sync storage.');
+            "Successfully migrated preferences from local to sync storage.");
         migrateRenamedStorage();
       });
     });
@@ -76,31 +76,31 @@ limitations under the License.
   // duplicated in web/chromecom.js too.
   function migrateRenamedStorage() {
     storageSync.get([
-      'enableHandToolOnLoad',
-      'cursorToolOnLoad',
-      'disableTextLayer',
-      'enhanceTextSelection',
-      'textLayerMode',
-      'showPreviousViewOnLoad',
-      'disablePageMode',
-      'viewOnLoad',
+      "enableHandToolOnLoad",
+      "cursorToolOnLoad",
+      "disableTextLayer",
+      "enhanceTextSelection",
+      "textLayerMode",
+      "showPreviousViewOnLoad",
+      "disablePageMode",
+      "viewOnLoad",
     ], function(items) {
       // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
-      if (typeof items.enableHandToolOnLoad === 'boolean') {
+      if (typeof items.enableHandToolOnLoad === "boolean") {
         if (items.enableHandToolOnLoad) {
           storageSync.set({
             cursorToolOnLoad: 1,
           }, function() {
             if (!chrome.runtime.lastError) {
-              storageSync.remove('enableHandToolOnLoad');
+              storageSync.remove("enableHandToolOnLoad");
             }
           });
         } else {
-          storageSync.remove('enableHandToolOnLoad');
+          storageSync.remove("enableHandToolOnLoad");
         }
       }
       // Migration code for https://github.com/mozilla/pdf.js/pull/9479.
-      if (typeof items.disableTextLayer === 'boolean') {
+      if (typeof items.disableTextLayer === "boolean") {
         var textLayerMode = items.disableTextLayer ? 0 :
           items.enhanceTextSelection ? 2 : 1;
         if (textLayerMode !== 1) {
@@ -109,25 +109,25 @@ limitations under the License.
             textLayerMode: textLayerMode,
           }, function() {
             if (!chrome.runtime.lastError) {
-              storageSync.remove(['disableTextLayer', 'enhanceTextSelection']);
+              storageSync.remove(["disableTextLayer", "enhanceTextSelection"]);
             }
           });
         } else {
-          storageSync.remove(['disableTextLayer', 'enhanceTextSelection']);
+          storageSync.remove(["disableTextLayer", "enhanceTextSelection"]);
         }
       }
       // Migration code for https://github.com/mozilla/pdf.js/pull/10502.
-      if (typeof items.showPreviousViewOnLoad === 'boolean') {
+      if (typeof items.showPreviousViewOnLoad === "boolean") {
         if (!items.showPreviousViewOnLoad) {
           storageSync.set({
             viewOnLoad: 1,
           }, function() {
             if (!chrome.runtime.lastError) {
-              storageSync.remove(['showPreviousViewOnLoad', 'disablePageMode']);
+              storageSync.remove(["showPreviousViewOnLoad", "disablePageMode"]);
             }
           });
         } else {
-          storageSync.remove(['showPreviousViewOnLoad', 'disablePageMode']);
+          storageSync.remove(["showPreviousViewOnLoad", "disablePageMode"]);
         }
       }
     });

@@ -74,12 +74,12 @@ var Dict = (function DictClosure() {
     get: function Dict_get(key1, key2, key3) {
       var value;
       var xref = this.xref, suppressEncryption = this.suppressEncryption;
-      if (typeof (value = this._map[key1]) !== 'undefined' ||
-          key1 in this._map || typeof key2 === 'undefined') {
+      if (typeof (value = this._map[key1]) !== "undefined" ||
+          key1 in this._map || typeof key2 === "undefined") {
         return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
       }
-      if (typeof (value = this._map[key2]) !== 'undefined' ||
-          key2 in this._map || typeof key3 === 'undefined') {
+      if (typeof (value = this._map[key2]) !== "undefined" ||
+          key2 in this._map || typeof key3 === "undefined") {
         return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
       }
       value = this._map[key3] || null;
@@ -90,15 +90,15 @@ var Dict = (function DictClosure() {
     getAsync: function Dict_getAsync(key1, key2, key3) {
       var value;
       var xref = this.xref, suppressEncryption = this.suppressEncryption;
-      if (typeof (value = this._map[key1]) !== 'undefined' ||
-          key1 in this._map || typeof key2 === 'undefined') {
+      if (typeof (value = this._map[key1]) !== "undefined" ||
+          key1 in this._map || typeof key2 === "undefined") {
         if (xref) {
           return xref.fetchIfRefAsync(value, suppressEncryption);
         }
         return Promise.resolve(value);
       }
-      if (typeof (value = this._map[key2]) !== 'undefined' ||
-          key2 in this._map || typeof key3 === 'undefined') {
+      if (typeof (value = this._map[key2]) !== "undefined" ||
+          key2 in this._map || typeof key3 === "undefined") {
         if (xref) {
           return xref.fetchIfRefAsync(value, suppressEncryption);
         }
@@ -269,7 +269,7 @@ function isCmd(v, cmd) {
 
 function isDict(v, type) {
   return v instanceof Dict &&
-         (type === undefined || isName(v.get('Type'), type));
+         (type === undefined || isName(v.get("Type"), type));
 }
 
 function isRef(v) {
@@ -281,7 +281,7 @@ function isRefsEqual(v1, v2) {
 }
 
 function isStream(v) {
-  return typeof v === 'object' && v !== null && v.getBytes !== undefined;
+  return typeof v === "object" && v !== null && v.getBytes !== undefined;
 }
 
 export {

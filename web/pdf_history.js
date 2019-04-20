@@ -15,7 +15,7 @@
 
 import {
   getGlobalEventBus, isValidRotation, parseQueryString, waitOnEventOrTimeout
-} from './ui_utils';
+} from "./ui_utils";
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
 const HASH_CHANGE_TIMEOUT = 1000; // milliseconds
@@ -79,10 +79,10 @@ class PDFHistory {
 
     // Ensure that we don't miss either a 'presentationmodechanged' or a
     // 'pagesloaded' event, by registering the listeners immediately.
-    this.eventBus.on('presentationmodechanged', (evt) => {
+    this.eventBus.on("presentationmodechanged", (evt) => {
       this._isViewerInPresentationMode = evt.active || evt.switchInProgress;
     });
-    this.eventBus.on('pagesloaded', (evt) => {
+    this.eventBus.on("pagesloaded", (evt) => {
       this._isPagesLoaded = !!evt.pagesCount;
     });
   }
@@ -93,7 +93,7 @@ class PDFHistory {
    * @param {InitializeParameters} params
    */
   initialize({ fingerprint, resetHistory = false, updateUrl = false, }) {
-    if (!fingerprint || typeof fingerprint !== 'string') {
+    if (!fingerprint || typeof fingerprint !== "string") {
       console.error(
         'PDFHistory.initialize: The "fingerprint" must be a non-empty string.');
       return;
@@ -170,12 +170,12 @@ class PDFHistory {
     if (!this.initialized) {
       return;
     }
-    if (namedDest && typeof namedDest !== 'string') {
-      console.error('PDFHistory.push: ' +
+    if (namedDest && typeof namedDest !== "string") {
+      console.error("PDFHistory.push: " +
                     `"${namedDest}" is not a valid namedDest parameter.`);
       return;
     } else if (!Array.isArray(explicitDest)) {
-      console.error('PDFHistory.push: ' +
+      console.error("PDFHistory.push: " +
                     `"${explicitDest}" is not a valid explicitDest parameter.`);
       return;
     } else if (!(Number.isInteger(pageNumber) &&
@@ -183,7 +183,7 @@ class PDFHistory {
       // Allow an unset `pageNumber` if and only if the history is still empty;
       // please refer to the `this._destination.page = null;` comment above.
       if (pageNumber !== null || this._destination) {
-        console.error('PDFHistory.push: ' +
+        console.error("PDFHistory.push: " +
                       `"${pageNumber}" is not a valid pageNumber parameter.`);
         return;
       }
@@ -291,7 +291,7 @@ class PDFHistory {
       destination,
     };
 
-    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") &&
         window.history.state && window.history.state.chromecomState) {
       // history.state.chromecomState is managed by chromecom.js.
       newState.chromecomState = window.history.state.chromecomState;
@@ -300,30 +300,30 @@ class PDFHistory {
 
     let newUrl;
     if (this._updateUrl && destination && destination.hash) {
-      const baseUrl = document.location.href.split('#')[0];
-      if (!baseUrl.startsWith('file://')) { // Prevent errors in Firefox.
+      const baseUrl = document.location.href.split("#")[0];
+      if (!baseUrl.startsWith("file://")) { // Prevent errors in Firefox.
         newUrl = `${baseUrl}#${destination.hash}`;
       }
     }
     if (shouldReplace) {
       if (newUrl) {
-        window.history.replaceState(newState, '', newUrl);
+        window.history.replaceState(newState, "", newUrl);
       } else {
-        window.history.replaceState(newState, '');
+        window.history.replaceState(newState, "");
       }
     } else {
       this._maxUid = this._uid;
       if (newUrl) {
-        window.history.pushState(newState, '', newUrl);
+        window.history.pushState(newState, "", newUrl);
       } else {
-        window.history.pushState(newState, '');
+        window.history.pushState(newState, "");
       }
     }
 
-    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") &&
         top === window) {
       // eslint-disable-next-line no-undef
-      chrome.runtime.sendMessage('showPageAction');
+      chrome.runtime.sendMessage("showPageAction");
     }
   }
 
@@ -390,12 +390,12 @@ class PDFHistory {
       if (checkReload) {
         // Potentially accept the history entry, even if the fingerprints don't
         // match, when the viewer was reloaded (see issue 6847).
-        if (typeof state.fingerprint !== 'string' ||
+        if (typeof state.fingerprint !== "string" ||
             state.fingerprint.length !== this.fingerprint.length) {
           return false;
         }
-        const [perfEntry] = performance.getEntriesByType('navigation');
-        if (!perfEntry || perfEntry.type !== 'reload') {
+        const [perfEntry] = performance.getEntriesByType("navigation");
+        if (!perfEntry || perfEntry.type !== "reload") {
           return false;
         }
       } else {
@@ -407,7 +407,7 @@ class PDFHistory {
     if (!Number.isInteger(state.uid) || state.uid < 0) {
       return false;
     }
-    if (state.destination === null || typeof state.destination !== 'object') {
+    if (state.destination === null || typeof state.destination !== "object") {
       return false;
     }
     return true;
@@ -502,7 +502,7 @@ class PDFHistory {
     this._currentHash = newHash;
 
     if (!state ||
-        (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
+        (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") &&
          state.chromecomState && !this._isValidState(state))) {
       // This case corresponds to the user changing the hash of the document.
       this._uid++;
@@ -535,7 +535,7 @@ class PDFHistory {
       this._blockHashChange++;
       waitOnEventOrTimeout({
         target: window,
-        name: 'hashchange',
+        name: "hashchange",
         delay: HASH_CHANGE_TIMEOUT,
       }).then(() => {
         this._blockHashChange--;
@@ -588,14 +588,14 @@ class PDFHistory {
       }
     };
 
-    eventBus.on('updateviewarea', _boundEvents.updateViewarea);
-    window.addEventListener('popstate', _boundEvents.popState);
-    window.addEventListener('pagehide', _boundEvents.pageHide);
+    eventBus.on("updateviewarea", _boundEvents.updateViewarea);
+    window.addEventListener("popstate", _boundEvents.popState);
+    window.addEventListener("pagehide", _boundEvents.pageHide);
   }
 }
 
 function isDestHashesEqual(destHash, pushHash) {
-  if (typeof destHash !== 'string' || typeof pushHash !== 'string') {
+  if (typeof destHash !== "string" || typeof pushHash !== "string") {
     return false;
   }
   if (destHash === pushHash) {
@@ -616,7 +616,7 @@ function isDestArraysEqual(firstDest, secondDest) {
     if (Array.isArray(first) || Array.isArray(second)) {
       return false;
     }
-    if (first !== null && typeof first === 'object' && second !== null) {
+    if (first !== null && typeof first === "object" && second !== null) {
       if (Object.keys(first).length !== Object.keys(second).length) {
         return false;
       }

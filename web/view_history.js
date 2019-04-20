@@ -30,8 +30,8 @@ class ViewHistory {
     this.cacheSize = cacheSize;
 
     this._initializedPromise = this._readFromStorage().then((databaseStr) => {
-      let database = JSON.parse(databaseStr || '{}');
-      if (!('files' in database)) {
+      let database = JSON.parse(databaseStr || "{}");
+      if (!("files" in database)) {
         database.files = [];
       } else {
         while (database.files.length >= this.cacheSize) {
@@ -57,20 +57,20 @@ class ViewHistory {
   async _writeToStorage() {
     let databaseStr = JSON.stringify(this.database);
 
-    if (typeof PDFJSDev !== 'undefined' &&
-        PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-      sessionStorage.setItem('pdfjs.history', databaseStr);
+    if (typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
+      sessionStorage.setItem("pdfjs.history", databaseStr);
       return;
     }
-    localStorage.setItem('pdfjs.history', databaseStr);
+    localStorage.setItem("pdfjs.history", databaseStr);
   }
 
   async _readFromStorage() {
-    if (typeof PDFJSDev !== 'undefined' &&
-        PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-      return sessionStorage.getItem('pdfjs.history');
+    if (typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
+      return sessionStorage.getItem("pdfjs.history");
     }
-    return localStorage.getItem('pdfjs.history');
+    return localStorage.getItem("pdfjs.history");
   }
 
   async set(name, val) {
