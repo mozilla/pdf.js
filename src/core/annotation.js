@@ -50,7 +50,7 @@ class AnnotationFactory {
     if (!isDict(dict)) {
       return;
     }
-    let id = isRef(ref) ? ref.toString() : 'annot_' + idFactory.createObjId();
+    let id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
     // Determine the annotation's subtype.
     let subtype = dict.get('Subtype');
