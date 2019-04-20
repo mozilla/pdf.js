@@ -54,13 +54,15 @@ class Page {
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
-    const uniquePrefix = `p${this.pageIndex}_`;
     const idCounters = {
       obj: 0,
     };
     this.idFactory = {
       createObjId() {
-        return uniquePrefix + (++idCounters.obj);
+        return `p${pageIndex}_${++idCounters.obj}`;
+      },
+      getDocId() {
+        return `g_${pdfManager.docId}`;
       },
     };
   }
@@ -195,7 +197,6 @@ class Page {
     ]);
 
     const partialEvaluator = new PartialEvaluator({
-      pdfManager: this.pdfManager,
       xref: this.xref,
       handler,
       pageIndex: this.pageIndex,
@@ -270,7 +271,6 @@ class Page {
     const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
     return dataPromises.then(([contentStream]) => {
       const partialEvaluator = new PartialEvaluator({
-        pdfManager: this.pdfManager,
         xref: this.xref,
         handler,
         pageIndex: this.pageIndex,
