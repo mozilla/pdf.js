@@ -822,14 +822,30 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return fontCapability.promise;
     },
 
-    buildPath: function PartialEvaluator_buildPath(operatorList, fn, args) {
+    buildPath(operatorList, fn, args, parsingText = false) {
       var lastIndex = operatorList.length - 1;
       if (!args) {
         args = [];
       }
       if (lastIndex < 0 ||
           operatorList.fnArray[lastIndex] !== OPS.constructPath) {
+        // Handle corrupt PDF documents that contains path operators inside of
+        // text objects, which may shift subsequent text, by enclosing the path
+        // operator in save/restore operators (fixes issue10542_reduced.pdf).
+        //
+        // Note that this will effectively disable the optimization in the
+        // `else` branch below, but given that this type of corruption is
+        // *extremely* rare that shouldn't really matter much in practice.
+        if (parsingText) {
+          warn(`Encountered path operator "${fn}" inside of a text object.`);
+          operatorList.addOp(OPS.save, null);
+        }
+
         operatorList.addOp(OPS.constructPath, [[fn], args]);
+
+        if (parsingText) {
+          operatorList.addOp(OPS.restore, null);
+        }
       } else {
         var opArgs = operatorList.argsArray[lastIndex];
         opArgs[0].push(fn);
@@ -881,6 +897,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var self = this;
       var xref = this.xref;
+      let parsingText = false;
       var imageCache = Object.create(null);
 
       var xobjs = (resources.get('XObject') || Dict.empty);
@@ -999,6 +1016,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
                 }));
               return;
+            case OPS.beginText:
+              parsingText = true;
+              break;
+            case OPS.endText:
+              parsingText = false;
+              break;
             case OPS.endInlineImage:
               var cacheKey = args[0].cacheKey;
               if (cacheKey) {
@@ -1158,10 +1181,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.curveTo2:
             case OPS.curveTo3:
             case OPS.closePath:
-              self.buildPath(operatorList, fn, args);
-              continue;
             case OPS.rectangle:
-              self.buildPath(operatorList, fn, args);
+              self.buildPath(operatorList, fn, args, parsingText);
               continue;
             case OPS.markPoint:
             case OPS.markPointProps:

@@ -848,6 +848,13 @@
        "firstPage": 2,
        "type": "eq"
     },
+    {  "id": "issue10542",
+       "file": "pdfs/issue10542_reduced.pdf",
+       "md5": "92406cb903be6c7a63221ba61fcb8eaf",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue6289",
        "file": "pdfs/issue6289.pdf",
        "md5": "0869f3d147c734ec484ffd492104095d",
