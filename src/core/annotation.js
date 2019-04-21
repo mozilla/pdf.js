@@ -16,7 +16,7 @@
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, OPS, stringToBytes, stringToPDFString, Util, warn
+  AnnotationType, isString, OPS, stringToBytes, stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
@@ -176,6 +176,8 @@ class Annotation {
   constructor(params) {
     let dict = params.dict;
 
+    this.setCreationDate(dict.get('CreationDate'));
+    this.setModificationDate(dict.get('M'));
     this.setFlags(dict.get('F'));
     this.setRectangle(dict.getArray('Rect'));
     this.setColor(dict.getArray('C'));
@@ -187,8 +189,10 @@ class Annotation {
       annotationFlags: this.flags,
       borderStyle: this.borderStyle,
       color: this.color,
+      creationDate: this.creationDate,
       hasAppearance: !!this.appearance,
       id: params.id,
+      modificationDate: this.modificationDate,
       rect: this.rectangle,
       subtype: params.subtype,
     };
@@ -237,6 +241,31 @@ class Annotation {
       return false;
     }
     return this._isPrintable(this.flags);
+  }
+
+  /**
+   * Set the creation date.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {string} creationDate - PDF date string that indicates when the
+   *                                annotation was originally created
+   */
+  setCreationDate(creationDate) {
+    this.creationDate = isString(creationDate) ? creationDate : null;
+  }
+
+  /**
+   * Set the modification date.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {string} modificationDate - PDF date string that indicates when the
+   *                                    annotation was last modified
+   */
+  setModificationDate(modificationDate) {
+    this.modificationDate = isString(modificationDate) ?
+                            modificationDate : null;
   }
 
   /**
@@ -946,6 +975,20 @@ class PopupAnnotation extends Annotation {
     this.data.parentId = dict.getRaw('Parent').toString();
     this.data.title = stringToPDFString(parentItem.get('T') || '');
     this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
+
+    if (!parentItem.has('CreationDate')) {
+      this.data.creationDate = null;
+    } else {
+      this.setCreationDate(parentItem.get('CreationDate'));
+      this.data.creationDate = this.creationDate;
+    }
+
+    if (!parentItem.has('M')) {
+      this.data.modificationDate = null;
+    } else {
+      this.setModificationDate(parentItem.get('M'));
+      this.data.modificationDate = this.modificationDate;
+    }
 
     if (!parentItem.has('C')) {
       // Fall back to the default background color.
