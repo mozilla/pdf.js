@@ -35,3 +35,9 @@
 .annotationLayer .popupWrapper {
   display: block;
 }
+
+.annotationLayer .popup h1,
+.annotationLayer .popup p {
+  margin: 0;
+  padding: 0;
+}

@@ -14,7 +14,8 @@
  */
 
 import {
-  addLinkAttributes, DOMSVGFactory, getFilenameFromUrl, LinkTarget
+  addLinkAttributes, DOMSVGFactory, getFilenameFromUrl, LinkTarget,
+  PDFDateString
 } from './display_utils';
 import {
   AnnotationBorderStyleType, AnnotationType, stringToPDFString, unreachable,
@@ -251,6 +252,7 @@ class AnnotationElement {
       trigger,
       color: data.color,
       title: data.title,
+      modificationDate: data.modificationDate,
       contents: data.contents,
       hideWrapper: true,
     });
@@ -664,6 +666,7 @@ class PopupAnnotationElement extends AnnotationElement {
       trigger: parentElement,
       color: this.data.color,
       title: this.data.title,
+      modificationDate: this.data.modificationDate,
       contents: this.data.contents,
     });
 
@@ -686,6 +689,7 @@ class PopupElement {
     this.trigger = parameters.trigger;
     this.color = parameters.color;
     this.title = parameters.title;
+    this.modificationDate = parameters.modificationDate;
     this.contents = parameters.contents;
     this.hideWrapper = parameters.hideWrapper || false;
 
@@ -724,9 +728,27 @@ class PopupElement {
       popup.style.backgroundColor = Util.makeCssRgb(r | 0, g | 0, b | 0);
     }
 
-    let contents = this._formatContents(this.contents);
     let title = document.createElement('h1');
     title.textContent = this.title;
+    popup.appendChild(title);
+
+    // The modification date is shown in the popup instead of the creation
+    // date if it is available and can be parsed correctly, which is
+    // consistent with other viewers such as Adobe Acrobat.
+    const dateObject = PDFDateString.toDateObject(this.modificationDate);
+    if (dateObject) {
+      const modificationDate = document.createElement('span');
+      modificationDate.textContent = '{{date}}, {{time}}';
+      modificationDate.dataset.l10nId = 'annotation_date_string';
+      modificationDate.dataset.l10nArgs = JSON.stringify({
+        date: dateObject.toLocaleDateString(),
+        time: dateObject.toLocaleTimeString(),
+      });
+      popup.appendChild(modificationDate);
+    }
+
+    let contents = this._formatContents(this.contents);
+    popup.appendChild(contents);
 
     // Attach the event listeners to the trigger element.
     this.trigger.addEventListener('click', this._toggle.bind(this));
@@ -734,8 +756,6 @@ class PopupElement {
     this.trigger.addEventListener('mouseout', this._hide.bind(this, false));
     popup.addEventListener('click', this._hide.bind(this, true));
 
-    popup.appendChild(title);
-    popup.appendChild(contents);
     wrapper.appendChild(popup);
     return wrapper;
   }
