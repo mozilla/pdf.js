@@ -43,7 +43,10 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#if !PRODUCTION-->
     <link rel="resource" type="application/l10n" href="locale/locale.properties">
 <!--#endif-->
-
+    <!--[if lt IE 11]>
+      script(src='lib/es5-shim.min.js')
+      script(src='lib/polyfill.js')
+    <![endif]-->
 <!--#if !PRODUCTION-->
     <script src="../node_modules/systemjs/dist/system.js"></script>
     <script src="../systemjs.config.js"></script>
