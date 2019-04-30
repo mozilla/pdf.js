@@ -414,40 +414,42 @@ class Annotation {
   }
 
   getOperatorList(evaluator, task, renderForms) {
-    if (!this.appearance) {
-      return Promise.resolve(new OperatorList());
-    }
+    return Promise.resolve(new OperatorList());
 
-    let data = this.data;
-    let appearanceDict = this.appearance.dict;
-    let resourcesPromise = this.loadResources([
-      'ExtGState',
-      'ColorSpace',
-      'Pattern',
-      'Shading',
-      'XObject',
-      'Font',
-      // ProcSet
-      // Properties
-    ]);
-    let bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
-    let matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
-    let transform = getTransformMatrix(data.rect, bbox, matrix);
+    // if (!this.appearance) {
+    //   return Promise.resolve(new OperatorList());
+    // }
 
-    return resourcesPromise.then((resources) => {
-      let opList = new OperatorList();
-      opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
-      return evaluator.getOperatorList({
-        stream: this.appearance,
-        task,
-        resources,
-        operatorList: opList,
-      }).then(() => {
-        opList.addOp(OPS.endAnnotation, []);
-        this.appearance.reset();
-        return opList;
-      });
-    });
+    // let data = this.data;
+    // let appearanceDict = this.appearance.dict;
+    // let resourcesPromise = this.loadResources([
+    //   'ExtGState',
+    //   'ColorSpace',
+    //   'Pattern',
+    //   'Shading',
+    //   'XObject',
+    //   'Font',
+    //   // ProcSet
+    //   // Properties
+    // ]);
+    // let bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
+    // let matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
+    // let transform = getTransformMatrix(data.rect, bbox, matrix);
+
+    // return resourcesPromise.then((resources) => {
+    //   let opList = new OperatorList();
+    //   opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
+    //   return evaluator.getOperatorList({
+    //     stream: this.appearance,
+    //     task,
+    //     resources,
+    //     operatorList: opList,
+    //   }).then(() => {
+    //     opList.addOp(OPS.endAnnotation, []);
+    //     this.appearance.reset();
+    //     return opList;
+    //   });
+    // });
   }
 }
 

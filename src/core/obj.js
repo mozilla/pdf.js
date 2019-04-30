@@ -984,6 +984,7 @@ class Catalog {
           }
 
           if (js) {
+            resultObj.js = js;
             // Attempt to recover valid URLs from `JS` entries with certain
             // white-listed formats:
             //  - window.open('http://example.com')
