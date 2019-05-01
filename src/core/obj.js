@@ -912,6 +912,12 @@ class Catalog {
       const actionName = actionType.name;
 
       switch (actionName) {
+        case 'ResetForm':
+          const fields = action.get('Fields');
+          resultObj.reset = {
+            fields,
+          };
+          break;
         case 'URI':
           url = action.get('URI');
           if (isName(url)) {
