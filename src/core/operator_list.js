@@ -525,6 +525,8 @@ var NullOptimizer = (function NullOptimizerClosure() {
     },
 
     flush() { },
+
+    reset() { },
   };
 
   return NullOptimizer;
@@ -538,7 +540,7 @@ var OperatorList = (function OperatorListClosure() {
     this.messageHandler = messageHandler;
     this.fnArray = [];
     this.argsArray = [];
-    if (messageHandler && this.intent !== 'oplist') {
+    if (messageHandler && intent !== 'oplist') {
       this.optimizer = new QueueOptimizer(this);
     } else {
       this.optimizer = new NullOptimizer(this);
