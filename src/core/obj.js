@@ -912,12 +912,16 @@ class Catalog {
       const actionName = actionType.name;
 
       switch (actionName) {
+        case 'Hide':
+          resultObj.hide = {
+            H: action.get('H'),
+            T: action.get('T'),
+          };
+          break;
         case 'ResetForm':
-          const fields = action.get('Fields');
-          const flags = action.get('Flags');
           resultObj.reset = {
-            fields,
-            flags,
+            Fields: action.get('Fields'),
+            Flags: action.get('Flags'),
           };
           break;
         case 'URI':
