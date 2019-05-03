@@ -914,8 +914,10 @@ class Catalog {
       switch (actionName) {
         case 'ResetForm':
           const fields = action.get('Fields');
+          const flags = action.get('Flags');
           resultObj.reset = {
             fields,
+            flags,
           };
           break;
         case 'URI':
