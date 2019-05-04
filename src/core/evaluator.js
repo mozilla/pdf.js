@@ -853,9 +853,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
     },
 
-    handleColorN: function PartialEvaluator_handleColorN(operatorList, fn, args,
-                                                         cs, patterns,
-                                                         resources, task) {
+    async handleColorN(operatorList, fn, args, cs, patterns, resources, task) {
       // compile tiling patterns
       var patternName = args[args.length - 1];
       // SCN/scn applies patterns along with normal colors
@@ -875,13 +873,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           pattern = Pattern.parseShading(shading, matrix, this.xref, resources,
                                          this.handler, this.pdfFunctionFactory);
           operatorList.addOp(fn, pattern.getIR());
-          return Promise.resolve();
+          return undefined;
         }
-        return Promise.reject(new Error('Unknown PatternType: ' + typeNum));
+        throw new FormatError(`Unknown PatternType: ${typeNum}`);
       }
-      // TODO shall we fail here?
-      operatorList.addOp(fn, args);
-      return Promise.resolve();
+      throw new FormatError(`Unknown PatternName: ${patternName}`);
     },
 
     getOperatorList({ stream, task, resources, operatorList,
