@@ -15,7 +15,8 @@
 /* eslint no-var: error */
 
 import {
-  DOMCanvasFactory, DOMSVGFactory, getFilenameFromUrl, isValidFetchUrl
+  DOMCanvasFactory, DOMSVGFactory, getFilenameFromUrl, isValidFetchUrl,
+  PDFDateString
 } from '../../src/display/display_utils';
 import isNodeJS from '../../src/shared/is_node';
 
@@ -218,6 +219,72 @@ describe('display_utils', function() {
     it('handles supported Fetch protocols', function() {
       expect(isValidFetchUrl('http://www.example.com')).toEqual(true);
       expect(isValidFetchUrl('https://www.example.com')).toEqual(true);
+    });
+  });
+
+  describe('PDFDateString', function() {
+    describe('toDateObject', function() {
+      it('converts PDF date strings to JavaScript `Date` objects', function() {
+        const expectations = {
+          undefined: null,
+          null: null,
+          42: null,
+          '2019': null,
+          'D2019': null,
+          'D:': null,
+          'D:201': null,
+          'D:2019': new Date(Date.UTC(2019, 0, 1, 0, 0, 0)),
+          'D:20190': new Date(Date.UTC(2019, 0, 1, 0, 0, 0)),
+          'D:201900': new Date(Date.UTC(2019, 0, 1, 0, 0, 0)),
+          'D:201913': new Date(Date.UTC(2019, 0, 1, 0, 0, 0)),
+          'D:201902': new Date(Date.UTC(2019, 1, 1, 0, 0, 0)),
+          'D:2019020': new Date(Date.UTC(2019, 1, 1, 0, 0, 0)),
+          'D:20190200': new Date(Date.UTC(2019, 1, 1, 0, 0, 0)),
+          'D:20190232': new Date(Date.UTC(2019, 1, 1, 0, 0, 0)),
+          'D:20190203': new Date(Date.UTC(2019, 1, 3, 0, 0, 0)),
+          // Invalid dates like the 31th of April are handled by JavaScript:
+          'D:20190431': new Date(Date.UTC(2019, 4, 1, 0, 0, 0)),
+          'D:201902030': new Date(Date.UTC(2019, 1, 3, 0, 0, 0)),
+          'D:2019020300': new Date(Date.UTC(2019, 1, 3, 0, 0, 0)),
+          'D:2019020324': new Date(Date.UTC(2019, 1, 3, 0, 0, 0)),
+          'D:2019020304': new Date(Date.UTC(2019, 1, 3, 4, 0, 0)),
+          'D:20190203040': new Date(Date.UTC(2019, 1, 3, 4, 0, 0)),
+          'D:201902030400': new Date(Date.UTC(2019, 1, 3, 4, 0, 0)),
+          'D:201902030460': new Date(Date.UTC(2019, 1, 3, 4, 0, 0)),
+          'D:201902030405': new Date(Date.UTC(2019, 1, 3, 4, 5, 0)),
+          'D:2019020304050': new Date(Date.UTC(2019, 1, 3, 4, 5, 0)),
+          'D:20190203040500': new Date(Date.UTC(2019, 1, 3, 4, 5, 0)),
+          'D:20190203040560': new Date(Date.UTC(2019, 1, 3, 4, 5, 0)),
+          'D:20190203040506': new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          'D:20190203040506F': new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          'D:20190203040506Z': new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          'D:20190203040506-': new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          'D:20190203040506+': new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          'D:20190203040506+\'': new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          'D:20190203040506+0': new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          'D:20190203040506+01': new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          'D:20190203040506+00\'': new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          'D:20190203040506+24\'': new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          'D:20190203040506+01\'': new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          'D:20190203040506+01\'0': new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          'D:20190203040506+01\'00': new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          'D:20190203040506+01\'60': new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          'D:20190203040506+0102': new Date(Date.UTC(2019, 1, 3, 3, 3, 6)),
+          'D:20190203040506+01\'02': new Date(Date.UTC(2019, 1, 3, 3, 3, 6)),
+          'D:20190203040506+01\'02\'': new Date(Date.UTC(2019, 1, 3, 3, 3, 6)),
+          // Offset hour and minute that result in a day change:
+          'D:20190203040506+05\'07': new Date(Date.UTC(2019, 1, 2, 22, 58, 6)),
+        };
+
+        for (const [input, expectation] of Object.entries(expectations)) {
+          const result = PDFDateString.toDateObject(input);
+          if (result) {
+            expect(result.getTime()).toEqual(expectation.getTime());
+          } else {
+            expect(result).toEqual(expectation);
+          }
+        }
+      });
     });
   });
 });
