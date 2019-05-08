@@ -99,7 +99,17 @@ describe('parser', function() {
         for (const number of numbers) {
           const input = new StringStream(number);
           const lexer = new Lexer(input);
-          expect(lexer.getNumber()).toEqual(parseFloat(number));
+
+          const result = lexer.getNumber(), expected = parseFloat(number);
+
+          if (result !== expected && Math.abs(result - expected) < 1e-15) {
+            console.error(`Fuzzy matching "${result}" with "${expected}" to ` +
+                          'work-around rounding bugs in Chromium browsers.');
+
+            expect(true).toEqual(true);
+            continue;
+          }
+          expect(result).toEqual(expected);
         }
       });
 
