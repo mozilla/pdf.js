@@ -913,20 +913,12 @@ class Catalog {
       const actionName = actionType.name;
       switch (actionName) {
         case 'Hide':
-          // resultObj.hide = {
-          //   H: action.get('H'),
-          //   T: action.get('T'),
-          // };
           resultObj.extraActions.hide = {
             H: action.get('H'),
             T: action.get('T'),
           };
           break;
         case 'ResetForm':
-          // resultObj.reset = {
-          //   Fields: action.get('Fields'),
-          //   Flags: action.get('Flags'),
-          // };
           resultObj.extraActions.reset = {
             Fields: action.get('Fields'),
             Flags: action.get('Flags'),
@@ -1004,7 +996,6 @@ class Catalog {
           }
 
           if (js) {
-            // resultObj.js = js;
             resultObj.extraActions.javascript = { js, };
             // Attempt to recover valid URLs from `JS` entries with certain
             // white-listed formats:
