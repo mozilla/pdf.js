@@ -1044,6 +1044,44 @@ class Catalog {
         resultObj.dest = dest;
       }
     }
+
+    const createJSAction = (action, actionType) => {
+      if (action) {
+        const jsAction = action.get('JS');
+        if (jsAction) {
+          let js;
+          if (isStream(jsAction)) {
+            js = bytesToString(jsAction.getBytes());
+          } else if (isString(jsAction)) {
+            js = jsAction;
+          }
+          resultObj.additionalActions = resultObj.additionalActions || {};
+          resultObj.additionalActions[actionType] = {
+            js,
+            actionType,
+          };
+
+          if (actionType === 'C') {
+            const calcOrderArr =
+              destDict.xref.topDict.get('Root').get('AcroForm').get('CO');
+            resultObj.additionalActions[actionType].calculationOrder =
+              calcOrderArr.reduce((acc, element) => {
+                const name = destDict.xref.fetchIfRef(element).get('T');
+                acc.push(name);
+                return acc;
+              }, []);
+          }
+        }
+      }
+    };
+
+    const additionalActions = destDict.get('AA');
+    if (isDict(additionalActions)) {
+      createJSAction(additionalActions.get('K'), 'K');
+      createJSAction(additionalActions.get('F'), 'F');
+      createJSAction(additionalActions.get('V'), 'V');
+      createJSAction(additionalActions.get('C'), 'C');
+    }
   }
 }
 

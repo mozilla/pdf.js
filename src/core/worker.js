@@ -431,22 +431,30 @@ var WorkerMessageHandler = {
 
       function pdfManagerReady() {
         ensureNotTerminated();
-
-        loadDocument(false).then(onSuccess, function loadFailure(ex) {
+        pdfManager.requestLoadedStream();
+        pdfManager.onLoadedStream().then(function() {
           ensureNotTerminated();
 
-          // Try again with recoveryMode == true
-          if (!(ex instanceof XRefParseException)) {
-            onFailure(ex);
-            return;
-          }
-          pdfManager.requestLoadedStream();
-          pdfManager.onLoadedStream().then(function() {
-            ensureNotTerminated();
+          loadDocument(false).then(onSuccess, onFailure);
+        });
 
-            loadDocument(true).then(onSuccess, onFailure);
-          });
-        }, onFailure);
+        // ensureNotTerminated();
+
+        // loadDocument(false).then(onSuccess, function loadFailure(ex) {
+        //   ensureNotTerminated();
+
+        //   // Try again with recoveryMode == true
+        //   if (!(ex instanceof XRefParseException)) {
+        //     onFailure(ex);
+        //     return;
+        //   }
+        //   pdfManager.requestLoadedStream();
+        //   pdfManager.onLoadedStream().then(function() {
+        //     ensureNotTerminated();
+
+        //     loadDocument(true).then(onSuccess, onFailure);
+        //   });
+        // }, onFailure);
       }
 
       ensureNotTerminated();
