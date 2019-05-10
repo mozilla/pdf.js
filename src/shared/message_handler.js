@@ -20,7 +20,7 @@ import {
 
 async function resolveCall(fn, args, thisArg = null) {
   if (!fn) {
-    return;
+    return undefined;
   }
   return fn.apply(thisArg, args);
 }

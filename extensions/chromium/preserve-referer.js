@@ -130,7 +130,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
 
   function onBeforeSendHeaders(details) {
     if (details.frameId !== frameId) {
-      return;
+      return undefined;
     }
     var headers = details.requestHeaders;
     var refererHeader = getHeaderFromHeaders(headers, 'referer');
@@ -141,7 +141,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
         refererHeader.value.lastIndexOf('chrome-extension:', 0) !== 0) {
       // Sanity check. If the referer is set, and the value is not the URL of
       // this extension, then the request was not initiated by this extension.
-      return;
+      return undefined;
     }
     refererHeader.value = referer;
     return { requestHeaders: headers, };
@@ -149,7 +149,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
 
   function exposeOnHeadersReceived(details) {
     if (details.frameId !== frameId) {
-      return;
+      return undefined;
     }
     var headers = details.responseHeaders;
     var aceh = getHeaderFromHeaders(headers, 'access-control-expose-headers');

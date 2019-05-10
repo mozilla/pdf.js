@@ -221,6 +221,7 @@ function isLeftMouseReleased(event) {
     // Safari 6.0+
     return event.which === 0;
   }
+  return false;
 }
 
 export {
