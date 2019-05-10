@@ -109,7 +109,7 @@ describe('node_stream', function() {
     let read1 = function () {
       return fullReader1.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         len1 += result.value.byteLength;
         return read1();
@@ -118,7 +118,7 @@ describe('node_stream', function() {
     let read2 = function () {
       return fullReader2.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         len2 += result.value.byteLength;
         return read2();
@@ -195,7 +195,7 @@ describe('node_stream', function() {
     let read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         lenResult.value += result.value.byteLength;
         return read(reader, lenResult);

@@ -57,6 +57,7 @@
 
     // Best Practices
     "accessor-pairs": ["error", { "setWithoutGet": true, }],
+    "consistent-return": "error",
     "curly": ["error", "all"],
     "eqeqeq": ["error", "always"],
     "no-caller": "error",

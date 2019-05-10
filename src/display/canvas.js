@@ -1435,7 +1435,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var fontSize = current.fontSize;
       if (fontSize === 0) {
-        return;
+        return undefined;
       }
 
       var ctx = this.ctx;
