@@ -973,6 +973,7 @@ var JpegImage = (function JpegImageClosure() {
         });
       }
       this.numComponents = this.components.length;
+      return undefined;
     },
 
     _getLinearizedBlockData(width, height, isSourcePDF = false) {

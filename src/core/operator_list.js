@@ -71,6 +71,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         case 3:
           return fnArray[i] === OPS.restore;
       }
+      throw new Error(`iterateInlineImageGroup - invalid pos: ${pos}`);
     },
     function foundInlineImageGroup(context, i) {
       var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
@@ -173,6 +174,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         case 3:
           return fnArray[i] === OPS.restore;
       }
+      throw new Error(`iterateImageMaskGroup - invalid pos: ${pos}`);
     },
     function foundImageMaskGroup(context, i) {
       var MIN_IMAGES_IN_MASKS_BLOCK = 10;
@@ -266,7 +268,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       return argsArray[iFirstTransform][1] === 0 &&
              argsArray[iFirstTransform][2] === 0;
     },
-    function (context, i) {
+    function iterateImageGroup(context, i) {
       var fnArray = context.fnArray, argsArray = context.argsArray;
       var iFirstSave = context.iCurr - 3;
       var pos = (i - iFirstSave) % 4;
@@ -300,6 +302,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         case 3:
           return fnArray[i] === OPS.restore;
       }
+      throw new Error(`iterateImageGroup - invalid pos: ${pos}`);
     },
     function (context, i) {
       var MIN_IMAGES_IN_BLOCK = 3;
@@ -346,7 +349,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   addState(InitialState,
     [OPS.beginText, OPS.setFont, OPS.setTextMatrix, OPS.showText, OPS.endText],
     null,
-    function (context, i) {
+    function iterateShowTextGroup(context, i) {
       var fnArray = context.fnArray, argsArray = context.argsArray;
       var iFirstSave = context.iCurr - 4;
       var pos = (i - iFirstSave) % 5;
@@ -372,6 +375,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         case 4:
           return fnArray[i] === OPS.endText;
       }
+      throw new Error(`iterateShowTextGroup - invalid pos: ${pos}`);
     },
     function (context, i) {
       var MIN_CHARS_IN_BLOCK = 3;

@@ -292,6 +292,7 @@ window.addEventListener('keydown', function(event) {
   }
 }, true);
 if (hasAttachEvent) {
+  // eslint-disable-next-line consistent-return
   document.attachEvent('onkeydown', function(event) {
     event = event || window.event;
     if (event.keyCode === /* P= */ 80 && event.ctrlKey) {
