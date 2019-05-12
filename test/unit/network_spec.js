@@ -39,7 +39,7 @@ describe('network', function() {
     var read = function () {
       return fullReader.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         count++;
         len += result.value.byteLength;
@@ -94,7 +94,7 @@ describe('network', function() {
     var read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         lenResult.value += result.value.byteLength;
         return read(reader, lenResult);

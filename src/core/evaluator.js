@@ -302,12 +302,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (!(w && isNum(w)) || !(h && isNum(h))) {
         warn('Image dimensions are missing, or not numbers.');
-        return;
+        return undefined;
       }
       var maxImageSize = this.options.maxImageSize;
       if (maxImageSize !== -1 && w * h > maxImageSize) {
         warn('Image exceeded maximum allowed size and was removed.');
-        return;
+        return undefined;
       }
 
       var imageMask = (dict.get('ImageMask', 'IM') || false);
@@ -343,7 +343,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             args,
           };
         }
-        return;
+        return undefined;
       }
 
       var softMask = (dict.get('SMask', 'SM') || false);
@@ -364,7 +364,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // any other kind.
         imgData = imageObj.createImageData(/* forceRGBA = */ true);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
-        return;
+        return undefined;
       }
 
       const nativeImageDecoderSupport = forceDisableNativeImageDecoder ?
@@ -452,6 +452,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         this.handler.send('obj', [objId, this.pageIndex, 'Image', imgData],
           [imgData.data.buffer]);
+        return undefined;
       }).catch((reason) => {
         warn('Unable to decode image: ' + reason);
 
@@ -460,6 +461,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                               [objId, 'FontType3Res', null]);
         }
         this.handler.send('obj', [objId, this.pageIndex, 'Image', null]);
+        return undefined;
       });
 
       if (this.parsingType3Font) {
@@ -476,6 +478,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           args,
         };
       }
+      return undefined;
     },
 
     handleSMask: function PartialEvaluator_handleSmask(smask, resources,

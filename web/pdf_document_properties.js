@@ -256,10 +256,10 @@ class PDFDocumentProperties {
   /**
    * @private
    */
-  _parseFileSize(fileSize = 0) {
+  async _parseFileSize(fileSize = 0) {
     let kb = fileSize / 1024;
     if (!kb) {
-      return Promise.resolve(undefined);
+      return undefined;
     } else if (kb < 1024) {
       return this.l10n.get('document_properties_kb', {
         size_kb: (+kb.toPrecision(3)).toLocaleString(),
@@ -275,9 +275,9 @@ class PDFDocumentProperties {
   /**
    * @private
    */
-  _parsePageSize(pageSizeInches, pagesRotation) {
+  async _parsePageSize(pageSizeInches, pagesRotation) {
     if (!pageSizeInches) {
-      return Promise.resolve(undefined);
+      return undefined;
     }
     // Take the viewer rotation into account as well; compare with Adobe Reader.
     if (pagesRotation % 180 !== 0) {
@@ -362,15 +362,15 @@ class PDFDocumentProperties {
   /**
    * @private
    */
-  _parseDate(inputDate) {
+  async _parseDate(inputDate) {
     const dateObject = PDFDateString.toDateObject(inputDate);
-    if (dateObject) {
-      const dateString = dateObject.toLocaleDateString();
-      const timeString = dateObject.toLocaleTimeString();
-      return this.l10n.get('document_properties_date_string',
-                           { date: dateString, time: timeString, },
-                           '{{date}}, {{time}}');
+    if (!dateObject) {
+      return undefined;
     }
+    return this.l10n.get('document_properties_date_string', {
+        date: dateObject.toLocaleDateString(),
+        time: dateObject.toLocaleTimeString(),
+      }, '{{date}}, {{time}}');
   }
 
   /**

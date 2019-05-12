@@ -266,6 +266,7 @@ class Catalog {
     } else if (this.catDict.has('Dests')) { // Simple destination dictionary.
       return this.catDict.get('Dests');
     }
+    return undefined;
   }
 
   get pageLabels() {
@@ -1596,7 +1597,7 @@ var XRef = (function XRefClosure() {
       }
 
       if (recoveryMode) {
-        return;
+        return undefined;
       }
       throw new XRefParseException();
     },

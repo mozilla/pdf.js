@@ -2021,13 +2021,14 @@ class WorkerTransport {
 
     messageHandler.on('obj', function(data) {
       if (this.destroyed) {
-        return; // Ignore any pending requests if the worker was terminated.
+        // Ignore any pending requests if the worker was terminated.
+        return undefined;
       }
 
       const [id, pageIndex, type, imageData] = data;
       const pageProxy = this.pageCache[pageIndex];
       if (pageProxy.objs.has(id)) {
-        return;
+        return undefined;
       }
 
       switch (type) {
@@ -2064,6 +2065,7 @@ class WorkerTransport {
         default:
           throw new Error(`Got unknown object type ${type}`);
       }
+      return undefined;
     }, this);
 
     messageHandler.on('DocProgress', function(data) {

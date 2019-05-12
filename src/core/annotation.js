@@ -48,7 +48,7 @@ class AnnotationFactory {
   static _create(xref, ref, pdfManager, idFactory) {
     let dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
-      return;
+      return undefined;
     }
     let id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
@@ -432,7 +432,7 @@ class Annotation {
   loadResources(keys) {
     return this.appearance.dict.getAsync('Resources').then((resources) => {
       if (!resources) {
-        return;
+        return undefined;
       }
       let objectLoader = new ObjectLoader(resources, keys, resources.xref);
 

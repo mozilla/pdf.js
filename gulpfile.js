@@ -365,7 +365,7 @@ function getTempFile(prefix, suffix) {
 
 function createTestSource(testsName, bot) {
   var source = stream.Readable({ objectMode: true, });
-  source._read = function () {
+  source._read = function() {
     console.log();
     console.log('### Running ' + testsName + ' tests');
 
@@ -409,6 +409,7 @@ function createTestSource(testsName, bot) {
     testProcess.on('close', function (code) {
       source.push(null);
     });
+    return undefined;
   };
   return source;
 }
@@ -1245,9 +1246,10 @@ gulp.task('gh-pages-prepare', function () {
 gulp.task('wintersmith', function (done) {
   var wintersmith = require('wintersmith');
   var env = wintersmith('docs/config.json');
-  env.build(GH_PAGES_DIR, function (error) {
+  env.build(GH_PAGES_DIR, function(error) {
     if (error) {
-      return done(error);
+      done(error);
+      return;
     }
     replaceInFile(GH_PAGES_DIR + '/getting_started/index.html',
                   /STABLE_VERSION/g, config.stableVersion);

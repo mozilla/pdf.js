@@ -39,7 +39,7 @@ describe('fetch_stream', function() {
     const read = function() {
       return fullReader.read().then(function(result) {
         if (result.done) {
-          return;
+          return undefined;
         }
 
         len += result.value.byteLength;
@@ -85,7 +85,7 @@ describe('fetch_stream', function() {
     const read = function(reader, lenResult) {
       return reader.read().then(function(result) {
         if (result.done) {
-          return;
+          return undefined;
         }
 
         lenResult.value += result.value.byteLength;
