@@ -343,6 +343,220 @@ describe('annotation', function() {
 
       expect(markupAnnotation.creationDate).toEqual(null);
     });
+
+    it('should not parse IRT/RT when not defined', function (done) {
+      dict.set('Type', Name.get('Annot'));
+      dict.set('Subtype', Name.get('Text'));
+
+      const xref = new XRefMock([
+        { ref, data: dict, },
+      ]);
+
+      AnnotationFactory.create(xref, ref, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.inReplyTo).toBeUndefined();
+        expect(data.replyType).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should parse IRT and set default RT when not defined.',
+        function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+
+      const replyRef = new Ref(820, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.inReplyTo).toEqual(annotationRef.toString());
+        expect(data.replyType).toEqual('R');
+        done();
+      }, done.fail);
+    });
+
+    it('should parse IRT/RT for a group type', function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('T', 'ParentTitle');
+      annotationDict.set('Contents', 'ParentText');
+      annotationDict.set('CreationDate', 'D:20180423');
+      annotationDict.set('M', 'D:20190423');
+      annotationDict.set('C', [0, 0, 1]);
+
+      const popupRef = new Ref(820, 0);
+      const popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('Parent', annotationRef);
+      annotationDict.set('Popup', popupRef);
+
+      const replyRef = new Ref(821, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('Group'));
+      replyDict.set('T', 'ReplyTitle');
+      replyDict.set('Contents', 'ReplyText');
+      replyDict.set('CreationDate', 'D:20180523');
+      replyDict.set('M', 'D:20190523');
+      replyDict.set('C', [0.4]);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: popupRef, data: popupDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      popupDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.inReplyTo).toEqual(annotationRef.toString());
+        expect(data.replyType).toEqual('Group');
+        expect(data.title).toEqual('ParentTitle');
+        expect(data.contents).toEqual('ParentText');
+        expect(data.creationDate).toEqual('D:20180423');
+        expect(data.modificationDate).toEqual('D:20190423');
+        expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
+        expect(data.hasPopup).toEqual(true);
+        done();
+      }, done.fail);
+    });
+
+    it('should parse IRT/RT for a reply type', function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('T', 'ParentTitle');
+      annotationDict.set('Contents', 'ParentText');
+      annotationDict.set('CreationDate', 'D:20180423');
+      annotationDict.set('M', 'D:20190423');
+      annotationDict.set('C', [0, 0, 1]);
+
+      const popupRef = new Ref(820, 0);
+      const popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('Parent', annotationRef);
+      annotationDict.set('Popup', popupRef);
+
+      const replyRef = new Ref(821, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('R'));
+      replyDict.set('T', 'ReplyTitle');
+      replyDict.set('Contents', 'ReplyText');
+      replyDict.set('CreationDate', 'D:20180523');
+      replyDict.set('M', 'D:20190523');
+      replyDict.set('C', [0.4]);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: popupRef, data: popupDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      popupDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.inReplyTo).toEqual(annotationRef.toString());
+        expect(data.replyType).toEqual('R');
+        expect(data.title).toEqual('ReplyTitle');
+        expect(data.contents).toEqual('ReplyText');
+        expect(data.creationDate).toEqual('D:20180523');
+        expect(data.modificationDate).toEqual('D:20190523');
+        expect(data.color).toEqual(new Uint8ClampedArray([102, 102, 102]));
+        expect(data.hasPopup).toEqual(false);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('TextAnnotation', function() {
+    it('should not parse state model and state when not defined',
+        function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('Contents', 'TestText');
+
+      const replyRef = new Ref(820, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('R'));
+      replyDict.set('Contents', 'ReplyText');
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.stateModel).toBeNull();
+        expect(data.state).toBeNull();
+        done();
+      }, done.fail);
+    });
+
+    it('should correctly parse state model and state when defined',
+        function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+
+      const replyRef = new Ref(820, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('R'));
+      replyDict.set('StateModel', 'Review');
+      replyDict.set('State', 'Rejected');
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.stateModel).toEqual('Review');
+        expect(data.state).toEqual('Rejected');
+        done();
+      }, done.fail);
+    });
   });
 
   describe('LinkAnnotation', function() {
@@ -1537,6 +1751,58 @@ describe('annotation', function() {
         expect(data.annotationFlags).toEqual(25);
         // The popup should inherit the `viewable` property of the parent.
         expect(viewable).toEqual(true);
+        done();
+      }, done.fail);
+    });
+
+    it('should correctly inherit Contents from group-master annotation ' +
+       'if parent has ReplyType == Group', function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('T', 'Correct Title');
+      annotationDict.set('Contents', 'Correct Text');
+      annotationDict.set('M', 'D:20190423');
+      annotationDict.set('C', [0, 0, 1]);
+
+      const replyRef = new Ref(820, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('Group'));
+      replyDict.set('T', 'Reply Title');
+      replyDict.set('Contents', 'Reply Text');
+      replyDict.set('M', 'D:20190523');
+      replyDict.set('C', [0.4]);
+
+      const popupRef = new Ref(821, 0);
+      const popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('T', 'Wrong Title');
+      popupDict.set('Contents', 'Wrong Text');
+      popupDict.set('Parent', replyRef);
+      popupDict.set('M', 'D:20190623');
+      popupDict.set('C', [0.8]);
+      replyDict.set('Popup', popupRef);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, },
+        { ref: popupRef, data: popupDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      popupDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, popupRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.title).toEqual('Correct Title');
+        expect(data.contents).toEqual('Correct Text');
+        expect(data.modificationDate).toEqual('D:20190423');
+        expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
         done();
       }, done.fail);
     });

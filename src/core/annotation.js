@@ -16,8 +16,8 @@
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, assert, isString, OPS, stringToBytes, stringToPDFString, Util,
-  warn
+  AnnotationReplyType, AnnotationType, assert, isString, OPS, stringToBytes,
+  stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
@@ -643,16 +643,61 @@ class MarkupAnnotation extends Annotation {
     super(parameters);
 
     const dict = parameters.dict;
-    if (!dict.has('C')) {
-      // Fall back to the default background color.
-      this.data.color = null;
+
+    if (dict.has('IRT')) {
+      const rawIRT = dict.getRaw('IRT');
+      this.data.inReplyTo = isRef(rawIRT) ? rawIRT.toString() : null;
+
+      const rt = dict.get('RT');
+      this.data.replyType = isName(rt) ? rt.name : AnnotationReplyType.REPLY;
     }
 
-    this.setCreationDate(dict.get('CreationDate'));
-    this.data.creationDate = this.creationDate;
+    if (this.data.replyType === AnnotationReplyType.GROUP) {
+      // Subordinate annotations in a group should inherit
+      // the group attributes from the primary annotation.
+      const parent = dict.get('IRT');
 
-    this.data.hasPopup = dict.has('Popup');
-    this.data.title = stringToPDFString(dict.get('T') || '');
+      this.data.title = stringToPDFString(parent.get('T') || '');
+
+      this.setContents(parent.get('Contents'));
+      this.data.contents = this.contents;
+
+      if (!parent.has('CreationDate')) {
+        this.data.creationDate = null;
+      } else {
+        this.setCreationDate(parent.get('CreationDate'));
+        this.data.creationDate = this.creationDate;
+      }
+
+      if (!parent.has('M')) {
+        this.data.modificationDate = null;
+      } else {
+        this.setModificationDate(parent.get('M'));
+        this.data.modificationDate = this.modificationDate;
+      }
+
+      this.data.hasPopup = parent.has('Popup');
+
+      if (!parent.has('C')) {
+        // Fall back to the default background color.
+        this.data.color = null;
+      } else {
+        this.setColor(parent.getArray('C'));
+        this.data.color = this.color;
+      }
+    } else {
+      this.data.title = stringToPDFString(dict.get('T') || '');
+
+      this.setCreationDate(dict.get('CreationDate'));
+      this.data.creationDate = this.creationDate;
+
+      this.data.hasPopup = dict.has('Popup');
+
+      if (!dict.has('C')) {
+        // Fall back to the default background color.
+        this.data.color = null;
+      }
+    }
   }
 
   /**
@@ -969,6 +1014,7 @@ class TextAnnotation extends MarkupAnnotation {
 
     super(parameters);
 
+    const dict = parameters.dict;
     this.data.annotationType = AnnotationType.TEXT;
 
     if (this.data.hasAppearance) {
@@ -976,10 +1022,17 @@ class TextAnnotation extends MarkupAnnotation {
     } else {
       this.data.rect[1] = this.data.rect[3] - DEFAULT_ICON_SIZE;
       this.data.rect[2] = this.data.rect[0] + DEFAULT_ICON_SIZE;
-      this.data.name = parameters.dict.has('Name') ?
-                       parameters.dict.get('Name').name : 'Note';
+      this.data.name = dict.has('Name') ?
+                       dict.get('Name').name : 'Note';
     }
 
+    if (dict.has('State')) {
+      this.data.state = dict.get('State') || null;
+      this.data.stateModel = dict.get('StateModel') || null;
+    } else {
+      this.data.state = null;
+      this.data.stateModel = null;
+    }
   }
 }
 
@@ -1012,9 +1065,15 @@ class PopupAnnotation extends Annotation {
 
     let parentSubtype = parentItem.get('Subtype');
     this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
-    this.data.parentId = dict.getRaw('Parent').toString();
-    this.data.title = stringToPDFString(parentItem.get('T') || '');
-    this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
+    const rawParent = dict.getRaw('Parent');
+    this.data.parentId = isRef(rawParent) ? rawParent.toString() : null;
+
+    const rt = parentItem.get('RT');
+    if (isName(rt, AnnotationReplyType.GROUP)) {
+      // Subordinate annotations in a group should inherit
+      // the group attributes from the primary annotation.
+      parentItem = parentItem.get('IRT');
+    }
 
     if (!parentItem.has('M')) {
       this.data.modificationDate = null;
@@ -1040,6 +1099,9 @@ class PopupAnnotation extends Annotation {
         this.setFlags(parentFlags);
       }
     }
+
+    this.data.title = stringToPDFString(parentItem.get('T') || '');
+    this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
   }
 }
 
