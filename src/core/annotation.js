@@ -60,7 +60,6 @@ class AnnotationFactory {
     let parameters = {
       xref,
       dict,
-      ref: isRef(ref) ? ref : null,
       subtype,
       id,
       pdfManager,
