@@ -173,8 +173,9 @@ function getTransformMatrix(rect, bbox, matrix) {
 
 class Annotation {
   constructor(params) {
-    let dict = params.dict;
+    const dict = params.dict;
 
+    this.setContents(dict.get('Contents'));
     this.setCreationDate(dict.get('CreationDate'));
     this.setModificationDate(dict.get('M'));
     this.setFlags(dict.get('F'));
@@ -188,6 +189,7 @@ class Annotation {
       annotationFlags: this.flags,
       borderStyle: this.borderStyle,
       color: this.color,
+      contents: this.contents,
       creationDate: this.creationDate,
       hasAppearance: !!this.appearance,
       id: params.id,
@@ -240,6 +242,19 @@ class Annotation {
       return false;
     }
     return this._isPrintable(this.flags);
+  }
+
+  /**
+   * Set the contents.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {string} contents - Text to display for the annotation or, if the
+   *                            type of annotation does not display text, a
+   *                            description of the annotation's contents
+   */
+  setContents(contents) {
+    this.contents = stringToPDFString(contents || '');
   }
 
   /**
@@ -623,7 +638,6 @@ class MarkupAnnotation extends Annotation {
 
     this.data.hasPopup = dict.has('Popup');
     this.data.title = stringToPDFString(dict.get('T') || '');
-    this.data.contents = stringToPDFString(dict.get('Contents') || '');
   }
 }
 

@@ -131,6 +131,20 @@ describe('annotation', function() {
       dict = ref = null;
     });
 
+    it('should set and get valid contents', function() {
+      const annotation = new Annotation({ dict, ref, });
+      annotation.setContents('Foo bar baz');
+
+      expect(annotation.contents).toEqual('Foo bar baz');
+    });
+
+    it('should not set and get invalid contents', function() {
+      const annotation = new Annotation({ dict, ref, });
+      annotation.setContents(undefined);
+
+      expect(annotation.contents).toEqual('');
+    });
+
     it('should set and get a valid creation date', function() {
       const annotation = new Annotation({ dict, ref, });
       annotation.setCreationDate('D:20190422');
