@@ -1326,9 +1326,6 @@ gulp.task('dist-pre', gulp.series('generic', 'components', 'image_decoders',
       'node-ensure': '^0.0.0', // shim for node for require.ensure
       'worker-loader': '^2.0.0', // used in external/dist/webpack.json
     },
-    peerDependencies: {
-      'webpack': '^3.0.0 || ^4.0.0-alpha.0 || ^4.0.0', // from 'worker-loader'
-    },
     browser: {
       'fs': false,
       'http': false,
