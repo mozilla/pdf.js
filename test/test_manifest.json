@@ -3474,6 +3474,12 @@
       "type": "eq",
       "about": "A CIDFontType0 font with a CFF font that isn't actually CID."
     },
+    {  "id": "scorecard_reduced",
+       "file": "pdfs/scorecard_reduced.pdf",
+       "md5": "aa8ed0827092c963eea64adb718a3806",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug921409",
       "file": "pdfs/bug921409.pdf",
       "md5": "920e88dde0f5436ebe0df0281e1c30ca",
