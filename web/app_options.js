@@ -233,6 +233,11 @@ if (typeof PDFJSDev === 'undefined' ||
     value: (typeof navigator !== 'undefined' ? navigator.language : 'en-US'),
     kind: OptionKind.VIEWER,
   };
+  defaultOptions.printResolution = {
+    /** @type {number} */
+    value: 150,
+    kind: OptionKind.VIEWER,
+  };
 }
 
 const userOptions = Object.create(null);
