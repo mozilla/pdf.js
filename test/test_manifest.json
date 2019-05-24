@@ -654,6 +654,12 @@
        "type": "eq",
        "about": "Type1 font with |Ref|s in the Differences array of the Encoding dictionary."
     },
+    {  "id": "issue8092",
+       "file": "pdfs/issue8092.pdf",
+       "md5": "e4f3376b35fd132580246c3db1fbd738",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "franz_2",
        "file": "pdfs/franz_2.pdf",
        "md5": "9d301ed8816e879891115b5cc3c39559",
