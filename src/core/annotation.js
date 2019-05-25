@@ -173,9 +173,9 @@ function getTransformMatrix(rect, bbox, matrix) {
 
 class Annotation {
   constructor(params) {
-    let dict = params.dict;
+    const dict = params.dict;
 
-    this.setCreationDate(dict.get('CreationDate'));
+    this.setContents(dict.get('Contents'));
     this.setModificationDate(dict.get('M'));
     this.setFlags(dict.get('F'));
     this.setRectangle(dict.getArray('Rect'));
@@ -188,7 +188,7 @@ class Annotation {
       annotationFlags: this.flags,
       borderStyle: this.borderStyle,
       color: this.color,
-      creationDate: this.creationDate,
+      contents: this.contents,
       hasAppearance: !!this.appearance,
       id: params.id,
       modificationDate: this.modificationDate,
@@ -243,15 +243,16 @@ class Annotation {
   }
 
   /**
-   * Set the creation date.
+   * Set the contents.
    *
    * @public
    * @memberof Annotation
-   * @param {string} creationDate - PDF date string that indicates when the
-   *                                annotation was originally created
+   * @param {string} contents - Text to display for the annotation or, if the
+   *                            type of annotation does not display text, a
+   *                            description of the annotation's contents
    */
-  setCreationDate(creationDate) {
-    this.creationDate = isString(creationDate) ? creationDate : null;
+  setContents(contents) {
+    this.contents = stringToPDFString(contents || '');
   }
 
   /**
@@ -614,16 +615,30 @@ class AnnotationBorderStyle {
 class MarkupAnnotation extends Annotation {
   constructor(parameters) {
     super(parameters);
-    const dict = parameters.dict;
 
+    const dict = parameters.dict;
     if (!dict.has('C')) {
       // Fall back to the default background color.
       this.data.color = null;
     }
 
+    this.setCreationDate(dict.get('CreationDate'));
+    this.data.creationDate = this.creationDate;
+
     this.data.hasPopup = dict.has('Popup');
     this.data.title = stringToPDFString(dict.get('T') || '');
-    this.data.contents = stringToPDFString(dict.get('Contents') || '');
+  }
+
+  /**
+   * Set the creation date.
+   *
+   * @public
+   * @memberof MarkupAnnotation
+   * @param {string} creationDate - PDF date string that indicates when the
+   *                                annotation was originally created
+   */
+  setCreationDate(creationDate) {
+    this.creationDate = isString(creationDate) ? creationDate : null;
   }
 }
 
@@ -975,13 +990,6 @@ class PopupAnnotation extends Annotation {
     this.data.title = stringToPDFString(parentItem.get('T') || '');
     this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
 
-    if (!parentItem.has('CreationDate')) {
-      this.data.creationDate = null;
-    } else {
-      this.setCreationDate(parentItem.get('CreationDate'));
-      this.data.creationDate = this.creationDate;
-    }
-
     if (!parentItem.has('M')) {
       this.data.modificationDate = null;
     } else {
@@ -1165,4 +1173,5 @@ export {
   Annotation,
   AnnotationBorderStyle,
   AnnotationFactory,
+  MarkupAnnotation,
 };
