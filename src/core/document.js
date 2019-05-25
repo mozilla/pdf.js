@@ -627,7 +627,7 @@ class PDFDocument {
     const { catalog, linearization, } = this;
     assert(linearization && linearization.pageFirst === pageIndex);
 
-    const ref = new Ref(linearization.objectNumberFirst, 0);
+    const ref = Ref.get(linearization.objectNumberFirst, 0);
     return this.xref.fetchAsync(ref).then((obj) => {
       // Ensure that the object that was found is actually a Page dictionary.
       if (isDict(obj, 'Page') ||

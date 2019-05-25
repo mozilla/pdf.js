@@ -150,7 +150,7 @@ class Parser {
     if (Number.isInteger(buf1)) { // indirect reference or integer
       const num = buf1;
       if (Number.isInteger(this.buf1) && isCmd(this.buf2, 'R')) {
-        const ref = new Ref(num, this.buf1);
+        const ref = Ref.get(num, this.buf1);
         this.shift();
         this.shift();
         return ref;

@@ -14,6 +14,8 @@
  */
 /* uses XRef */
 
+import { assert } from '../shared/util';
+
 var EOF = {};
 
 var Name = (function NameClosure() {
@@ -176,6 +178,8 @@ var Dict = (function DictClosure() {
 })();
 
 var Ref = (function RefClosure() {
+  const refCache = Object.create(null);
+
   function Ref(num, gen) {
     this.num = num;
     this.gen = gen;
@@ -185,11 +189,17 @@ var Ref = (function RefClosure() {
     toString: function Ref_toString() {
       // This function is hot, so we make the string as compact as possible.
       // |this.gen| is almost always zero, so we treat that case specially.
-      if (this.gen !== 0) {
-        return `${this.num}R${this.gen}`;
+      if (this.gen === 0) {
+        return `${this.num}R`;
       }
-      return `${this.num}R`;
+      return `${this.num}R${this.gen}`;
     },
+  };
+
+  Ref.get = function(num, gen) {
+    const key = (gen === 0 ? `${num}R` : `${num}R${gen}`);
+    const refValue = refCache[key];
+    return (refValue ? refValue : (refCache[key] = new Ref(num, gen)));
   };
 
   return Ref;
@@ -277,6 +287,11 @@ function isRef(v) {
 }
 
 function isRefsEqual(v1, v2) {
+  if (typeof PDFJSDev === 'undefined' ||
+      PDFJSDev.test('!PRODUCTION || TESTING')) {
+    assert(v1 instanceof Ref && v2 instanceof Ref,
+           'isRefsEqual: Both parameters should be `Ref`s.');
+  }
   return v1.num === v2.num && v1.gen === v2.gen;
 }
 
