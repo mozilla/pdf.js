@@ -14,7 +14,7 @@
  */
 
 import {
-  Annotation, AnnotationBorderStyle, AnnotationFactory
+  Annotation, AnnotationBorderStyle, AnnotationFactory, MarkupAnnotation
 } from '../../src/core/annotation';
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
@@ -131,18 +131,18 @@ describe('annotation', function() {
       dict = ref = null;
     });
 
-    it('should set and get a valid creation date', function() {
+    it('should set and get valid contents', function() {
       const annotation = new Annotation({ dict, ref, });
-      annotation.setCreationDate('D:20190422');
+      annotation.setContents('Foo bar baz');
 
-      expect(annotation.creationDate).toEqual('D:20190422');
+      expect(annotation.contents).toEqual('Foo bar baz');
     });
 
-    it('should set and get an invalid creation date', function() {
+    it('should not set and get invalid contents', function() {
       const annotation = new Annotation({ dict, ref, });
-      annotation.setCreationDate(undefined);
+      annotation.setContents(undefined);
 
-      expect(annotation.creationDate).toEqual(null);
+      expect(annotation.contents).toEqual('');
     });
 
     it('should set and get a valid modification date', function() {
@@ -152,7 +152,7 @@ describe('annotation', function() {
       expect(annotation.modificationDate).toEqual('D:20190422');
     });
 
-    it('should set and get an invalid modification date', function() {
+    it('should not set and get an invalid modification date', function() {
       const annotation = new Annotation({ dict, ref, });
       annotation.setModificationDate(undefined);
 
@@ -314,6 +314,34 @@ describe('annotation', function() {
       borderStyle.setVerticalCornerRadius('three');
 
       expect(borderStyle.verticalCornerRadius).toEqual(0);
+    });
+  });
+
+  describe('MarkupAnnotation', function() {
+    let dict, ref;
+
+    beforeAll(function(done) {
+      dict = new Dict();
+      ref = new Ref(1, 0);
+      done();
+    });
+
+    afterAll(function() {
+      dict = ref = null;
+    });
+
+    it('should set and get a valid creation date', function() {
+      const markupAnnotation = new MarkupAnnotation({ dict, ref, });
+      markupAnnotation.setCreationDate('D:20190422');
+
+      expect(markupAnnotation.creationDate).toEqual('D:20190422');
+    });
+
+    it('should not set and get an invalid creation date', function() {
+      const markupAnnotation = new MarkupAnnotation({ dict, ref, });
+      markupAnnotation.setCreationDate(undefined);
+
+      expect(markupAnnotation.creationDate).toEqual(null);
     });
   });
 
@@ -1432,7 +1460,6 @@ describe('annotation', function() {
       const parentDict = new Dict();
       parentDict.set('Type', Name.get('Annot'));
       parentDict.set('Subtype', Name.get('Text'));
-      parentDict.set('CreationDate', 'D:20190422');
       parentDict.set('M', 'D:20190423');
       parentDict.set('C', [0, 0, 1]);
 
@@ -1449,7 +1476,6 @@ describe('annotation', function() {
       AnnotationFactory.create(xref, popupRef, pdfManagerMock,
           idFactoryMock).then(({ data, viewable, }) => {
         expect(data.annotationType).toEqual(AnnotationType.POPUP);
-        expect(data.creationDate).toEqual('D:20190422');
         expect(data.modificationDate).toEqual('D:20190423');
         expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
         done();
@@ -1474,7 +1500,6 @@ describe('annotation', function() {
       AnnotationFactory.create(xref, popupRef, pdfManagerMock,
           idFactoryMock).then(({ data, viewable, }) => {
         expect(data.annotationType).toEqual(AnnotationType.POPUP);
-        expect(data.creationDate).toEqual(null);
         expect(data.modificationDate).toEqual(null);
         expect(data.color).toEqual(null);
         done();
