@@ -176,7 +176,6 @@ class Annotation {
     const dict = params.dict;
 
     this.setContents(dict.get('Contents'));
-    this.setCreationDate(dict.get('CreationDate'));
     this.setModificationDate(dict.get('M'));
     this.setFlags(dict.get('F'));
     this.setRectangle(dict.getArray('Rect'));
@@ -190,7 +189,6 @@ class Annotation {
       borderStyle: this.borderStyle,
       color: this.color,
       contents: this.contents,
-      creationDate: this.creationDate,
       hasAppearance: !!this.appearance,
       id: params.id,
       modificationDate: this.modificationDate,
@@ -255,18 +253,6 @@ class Annotation {
    */
   setContents(contents) {
     this.contents = stringToPDFString(contents || '');
-  }
-
-  /**
-   * Set the creation date.
-   *
-   * @public
-   * @memberof Annotation
-   * @param {string} creationDate - PDF date string that indicates when the
-   *                                annotation was originally created
-   */
-  setCreationDate(creationDate) {
-    this.creationDate = isString(creationDate) ? creationDate : null;
   }
 
   /**
@@ -629,15 +615,30 @@ class AnnotationBorderStyle {
 class MarkupAnnotation extends Annotation {
   constructor(parameters) {
     super(parameters);
-    const dict = parameters.dict;
 
+    const dict = parameters.dict;
     if (!dict.has('C')) {
       // Fall back to the default background color.
       this.data.color = null;
     }
 
+    this.setCreationDate(dict.get('CreationDate'));
+    this.data.creationDate = this.creationDate;
+
     this.data.hasPopup = dict.has('Popup');
     this.data.title = stringToPDFString(dict.get('T') || '');
+  }
+
+  /**
+   * Set the creation date.
+   *
+   * @public
+   * @memberof MarkupAnnotation
+   * @param {string} creationDate - PDF date string that indicates when the
+   *                                annotation was originally created
+   */
+  setCreationDate(creationDate) {
+    this.creationDate = isString(creationDate) ? creationDate : null;
   }
 }
 
@@ -989,13 +990,6 @@ class PopupAnnotation extends Annotation {
     this.data.title = stringToPDFString(parentItem.get('T') || '');
     this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
 
-    if (!parentItem.has('CreationDate')) {
-      this.data.creationDate = null;
-    } else {
-      this.setCreationDate(parentItem.get('CreationDate'));
-      this.data.creationDate = this.creationDate;
-    }
-
     if (!parentItem.has('M')) {
       this.data.modificationDate = null;
     } else {
@@ -1179,4 +1173,5 @@ export {
   Annotation,
   AnnotationBorderStyle,
   AnnotationFactory,
+  MarkupAnnotation,
 };
