@@ -42,7 +42,7 @@ describe('core_utils', function() {
     });
 
     it('fetches the property if it is not inherited', function() {
-      const ref = new Ref(10, 0);
+      const ref = Ref.get(10, 0);
       const xref = new XRefMock([{ ref, data: 'quux', }]);
       const dict = new Dict(xref);
 
@@ -58,7 +58,7 @@ describe('core_utils', function() {
 
     it('fetches the property if it is inherited and present on one level',
         function() {
-      const ref = new Ref(10, 0);
+      const ref = Ref.get(10, 0);
       const xref = new XRefMock([{ ref, data: 'quux', }]);
       const firstDict = new Dict(xref);
       const secondDict = new Dict(xref);
@@ -78,7 +78,7 @@ describe('core_utils', function() {
 
     it('fetches the property if it is inherited and present on multiple levels',
         function() {
-      const ref = new Ref(10, 0);
+      const ref = Ref.get(10, 0);
       const xref = new XRefMock([{ ref, data: 'quux', }]);
       const firstDict = new Dict(xref);
       const secondDict = new Dict(xref);
