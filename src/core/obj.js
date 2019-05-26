@@ -20,8 +20,8 @@ import {
   warn
 } from '../shared/util';
 import {
-  Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
-  RefSetCache
+  clearPrimitiveCaches, Dict, isCmd, isDict, isName, isRef, isRefsEqual,
+  isStream, Ref, RefSet, RefSetCache
 } from './primitives';
 import { Lexer, Parser } from './parser';
 import {
@@ -662,6 +662,7 @@ class Catalog {
   }
 
   cleanup() {
+    clearPrimitiveCaches();
     this.pageKidsCountCache.clear();
 
     const promises = [];
