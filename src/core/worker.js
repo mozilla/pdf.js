@@ -494,7 +494,7 @@ var WorkerMessageHandler = {
     });
 
     handler.on('GetPageIndex', function wphSetupGetPageIndex(data) {
-      var ref = new Ref(data.ref.num, data.ref.gen);
+      var ref = Ref.get(data.ref.num, data.ref.gen);
       var catalog = pdfManager.pdfDocument.catalog;
       return catalog.getPageIndex(ref);
     });
