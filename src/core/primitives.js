@@ -19,34 +19,42 @@ import { assert } from '../shared/util';
 var EOF = {};
 
 var Name = (function NameClosure() {
+  let nameCache = Object.create(null);
+
   function Name(name) {
     this.name = name;
   }
 
   Name.prototype = {};
 
-  var nameCache = Object.create(null);
-
   Name.get = function Name_get(name) {
     var nameValue = nameCache[name];
     return (nameValue ? nameValue : (nameCache[name] = new Name(name)));
+  };
+
+  Name._clearCache = function() {
+    nameCache = Object.create(null);
   };
 
   return Name;
 })();
 
 var Cmd = (function CmdClosure() {
+  let cmdCache = Object.create(null);
+
   function Cmd(cmd) {
     this.cmd = cmd;
   }
 
   Cmd.prototype = {};
 
-  var cmdCache = Object.create(null);
-
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
     return (cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd)));
+  };
+
+  Cmd._clearCache = function() {
+    cmdCache = Object.create(null);
   };
 
   return Cmd;
@@ -178,7 +186,7 @@ var Dict = (function DictClosure() {
 })();
 
 var Ref = (function RefClosure() {
-  const refCache = Object.create(null);
+  let refCache = Object.create(null);
 
   function Ref(num, gen) {
     this.num = num;
@@ -200,6 +208,10 @@ var Ref = (function RefClosure() {
     const key = (gen === 0 ? `${num}R` : `${num}R${gen}`);
     const refValue = refCache[key];
     return (refValue ? refValue : (refCache[key] = new Ref(num, gen)));
+  };
+
+  Ref._clearCache = function() {
+    refCache = Object.create(null);
   };
 
   return Ref;
@@ -299,8 +311,15 @@ function isStream(v) {
   return typeof v === 'object' && v !== null && v.getBytes !== undefined;
 }
 
+function clearPrimitiveCaches() {
+  Cmd._clearCache();
+  Name._clearCache();
+  Ref._clearCache();
+}
+
 export {
   EOF,
+  clearPrimitiveCaches,
   Cmd,
   Dict,
   Name,
