@@ -19,10 +19,10 @@ import {
   PasswordException, setVerbosityLevel, UnexpectedResponseException,
   UnknownErrorException, UNSUPPORTED_FEATURES, VerbosityLevel, warn
 } from '../shared/util';
+import { clearPrimitiveCaches, Ref } from './primitives';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
 import isNodeJS from '../shared/is_node';
 import { MessageHandler } from '../shared/message_handler';
-import { Ref } from './primitives';
 import { XRefParseException } from './core_utils';
 
 var WorkerTask = (function WorkerTaskClosure() {
@@ -700,6 +700,7 @@ var WorkerMessageHandler = {
       if (cancelXHRs) {
         cancelXHRs();
       }
+      clearPrimitiveCaches();
 
       var waitOn = [];
       WorkerTasks.forEach(function (task) {
