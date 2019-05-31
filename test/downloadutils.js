@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand */
+/* eslint-disable object-shorthand, mozilla/use-includes-instead-of-indexOf */
 
 'use strict';
 
@@ -22,7 +22,22 @@ var crypto = require('crypto');
 var http = require('http');
 var https = require('https');
 
+function rewriteWebArchiveUrl(url) {
+  // Web Archive URLs need to be transformed to add `if_` after the ID.
+  // Without this, an HTML page containing an iframe with the PDF file
+  // will be served instead (issue 8920).
+  var webArchiveRegex =
+    /(^https?:\/\/web\.archive\.org\/web\/)(\d+)(\/https?:\/\/.+)/g;
+  var urlParts = webArchiveRegex.exec(url);
+  if (urlParts) {
+    return urlParts[1] + (urlParts[2] + 'if_') + urlParts[3];
+  }
+  return url;
+}
+
 function downloadFile(file, url, callback, redirects) {
+  url = rewriteWebArchiveUrl(url);
+
   var completed = false;
   var protocol = /^https:\/\//.test(url) ? https : http;
   protocol.get(url, function (response) {
@@ -60,7 +75,7 @@ function downloadFile(file, url, callback, redirects) {
     });
     response.pipe(stream);
     stream.on('finish', function() {
-      stream.close();
+      stream.end();
       if (!completed) {
         completed = true;
         callback();

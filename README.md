@@ -21,7 +21,7 @@ Please don't forget to tag the commit you deployed and push the tags to the repo
     $ git push --tags origin mc-master
 
 # ORIGINAL README BELOW
-# PDF.js
+# PDF.js [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js)
 
 PDF.js is a Portable Document Format (PDF) viewer that is built with HTML5.
 
@@ -50,15 +50,9 @@ Feel free to stop by #pdfjs on irc.mozilla.org for questions or guidance.
 
 ### Browser Extensions
 
-#### Firefox (and Seamonkey)
+#### Firefox
 
-PDF.js is built into version 19+ of Firefox, however, one extension is still available:
-
-+ [Development Version](http://mozilla.github.io/pdf.js/extensions/firefox/pdf.js.xpi) - This extension is mainly intended for developers/testers, and it is updated every time new code is merged into the PDF.js codebase. It should be quite stable but might break from time to time.
-
-  + Please note that the extension is *not* guaranteed to be compatible with Firefox versions that are *older* than the current ESR version, see the [Release Calendar](https://wiki.mozilla.org/RapidRelease/Calendar#Past_branch_dates).
-
-  + The extension should also work in Seamonkey, provided that it is based on a Firefox version as above (see [Which version of Firefox does SeaMonkey 2.x correspond with?](https://wiki.mozilla.org/SeaMonkey/FAQ#General)), but we do *not* guarantee compatibility.
+PDF.js is built into version 19+ of Firefox.
 
 #### Chrome
 
@@ -72,10 +66,10 @@ directory `build/chromium`.
 
 To get a local copy of the current code, clone it using git:
 
-    $ git clone git://github.com/mozilla/pdf.js.git
+    $ git clone https://github.com/mozilla/pdf.js.git
     $ cd pdf.js
 
-Next, install Node.js via the [official package](http://nodejs.org) or via
+Next, install Node.js via the [official package](https://nodejs.org) or via
 [nvm](https://github.com/creationix/nvm). You need to install the gulp package
 globally (see also [gulp's getting started](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md#getting-started)):
 
@@ -118,22 +112,25 @@ or to build it from source. We supply pre-built versions for usage with NPM and 
 the `pdfjs-dist` name. For more information and examples please refer to the
 [wiki page](https://github.com/mozilla/pdf.js/wiki/Setup-pdf.js-in-a-website) on this subject.
 
+## Including via a CDN
+
+PDF.js is hosted on several free CDNs:
+ - https://www.jsdelivr.com/package/npm/pdfjs-dist
+ - https://cdnjs.com/libraries/pdf.js
+ - https://unpkg.com/pdfjs-dist/
+
 ## Learning
 
 You can play with the PDF.js API directly from your browser using the live demos below:
 
-+ [Interactive examples](http://mozilla.github.io/pdf.js/examples/index.html#interactive-examples)
++ [Interactive examples](https://mozilla.github.io/pdf.js/examples/index.html#interactive-examples)
 
-The repository contains a hello world example that you can run locally:
-
-+ [examples/helloworld/](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/)
-
-More examples can be found in the examples folder. Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
+More examples can be found in the [examples folder](https://github.com/mozilla/pdf.js/tree/master/examples/). Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
 
 For an introduction to the PDF.js code, check out the presentation by our
 contributor Julian Viereck:
 
-+ http://www.youtube.com/watch?v=Iv15UY-4Fg8
++ https://www.youtube.com/watch?v=Iv15UY-4Fg8
 
 More learning resources can be found at:
 
@@ -145,7 +142,7 @@ Check out our FAQs and get answers to common questions:
 
 + https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions
 
-Talk to us on IRC:
+Talk to us on IRC (Internet Relay Chat):
 
 + #pdfjs on irc.mozilla.org
 
@@ -155,4 +152,4 @@ File an issue:
 
 Follow us on twitter: @pdfjs
 
-+ http://twitter.com/#!/pdfjs
++ https://twitter.com/pdfjs

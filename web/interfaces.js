@@ -23,12 +23,27 @@ class IPDFLinkService {
   /**
    * @returns {number}
    */
+  get pagesCount() {}
+
+  /**
+   * @returns {number}
+   */
   get page() {}
 
   /**
    * @param {number} value
    */
   set page(value) {}
+
+  /**
+   * @returns {number}
+   */
+  get rotation() {}
+
+  /**
+   * @param {number} value
+   */
+  set rotation(value) {}
 
   /**
    * @param dest - The PDF destination object.
@@ -58,11 +73,6 @@ class IPDFLinkService {
   executeNamedAction(action) {}
 
   /**
-   * @param {Object} params
-   */
-  onFileAttachmentAnnotation({ id, filename, content, }) {}
-
-  /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
@@ -73,10 +83,22 @@ class IPDFLinkService {
  * @interface
  */
 class IPDFHistory {
-  forward() {}
+  /**
+   * @param {string} fingerprint - The PDF document's unique fingerprint.
+   * @param {boolean} resetHistory - (optional) Reset the browsing history.
+   */
+  initialize(fingerprint, resetHistory = false) {}
+
+  /**
+   * @param {Object} params
+   */
+  push({ namedDest, explicitDest, pageNumber, }) {}
+
+  pushCurrentPosition() {}
+
   back() {}
-  push(params) {}
-  updateNextHashParam(hash) {}
+
+  forward() {}
 }
 
 /**
@@ -123,11 +145,13 @@ class IPDFAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
-   * @param {IL10n} l10n
+   * @param {string} imageResourcesPath - (optional) Path for image resources,
+   *   mainly for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
+   * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(pageDiv, pdfPage,
+  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = '',
                                renderInteractiveForms = false,
                                l10n = undefined) {}
 }
@@ -137,9 +161,14 @@ class IPDFAnnotationLayerFactory {
  */
 class IL10n {
   /**
+   * @returns {Promise<string>} - Resolves to the current locale.
+   */
+  async getLanguage() {}
+
+  /**
    * @returns {Promise<string>} - Resolves to 'rtl' or 'ltr'.
    */
-  getDirection() {}
+  async getDirection() {}
 
   /**
    * Translates text identified by the key and adds/formats data using the args
@@ -150,12 +179,12 @@ class IL10n {
    * @param {string} fallback
    * @returns {Promise<string>}
    */
-  get(key, args, fallback) { }
+  async get(key, args, fallback) { }
 
   /**
    * Translates HTML element.
    * @param {HTMLElement} element
    * @returns {Promise<void>}
    */
-  translate(element) { }
+  async translate(element) { }
 }

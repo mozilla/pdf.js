@@ -16,18 +16,18 @@
 
 'use strict';
 
-let DEFAULT_URL = '';
-
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+  var defaultUrl; // eslint-disable-line no-var
+
   (function rewriteUrlClosure() {
     // Run this code outside DOMContentLoaded to make sure that the URL
     // is rewritten as soon as possible.
     let queryString = document.location.search.slice(1);
     let m = /(^|&)file=([^&]*)/.exec(queryString);
-    DEFAULT_URL = m ? decodeURIComponent(m[2]) : '';
+    defaultUrl = m ? decodeURIComponent(m[2]) : '';
 
     // Example: chrome-extension://.../http://example.com/file.pdf
-    let humanReadableUrl = '/' + DEFAULT_URL + location.hash;
+    let humanReadableUrl = '/' + defaultUrl + location.hash;
     history.replaceState(history.state, '', humanReadableUrl);
     if (top === window) {
       chrome.runtime.sendMessage('showPageAction');
@@ -35,9 +35,10 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
   })();
 }
 
-let pdfjsWebApp;
+let pdfjsWebApp, pdfjsWebAppOptions;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
   pdfjsWebApp = require('./app.js');
+  pdfjsWebAppOptions = require('./app_options.js');
 }
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
@@ -95,6 +96,12 @@ function getViewerConfiguration() {
       pageRotateCcwButton: document.getElementById('pageRotateCcw'),
       cursorSelectToolButton: document.getElementById('cursorSelectTool'),
       cursorHandToolButton: document.getElementById('cursorHandTool'),
+      scrollVerticalButton: document.getElementById('scrollVertical'),
+      scrollHorizontalButton: document.getElementById('scrollHorizontal'),
+      scrollWrappedButton: document.getElementById('scrollWrapped'),
+      spreadNoneButton: document.getElementById('spreadNone'),
+      spreadOddButton: document.getElementById('spreadOdd'),
+      spreadEvenButton: document.getElementById('spreadEven'),
       documentPropertiesButton: document.getElementById('documentProperties'),
     },
     fullscreen: {
@@ -105,8 +112,8 @@ function getViewerConfiguration() {
     },
     sidebar: {
       // Divs (and sidebar button)
-      mainContainer: document.getElementById('mainContainer'),
       outerContainer: document.getElementById('outerContainer'),
+      viewerContainer: document.getElementById('viewerContainer'),
       toggleButton: document.getElementById('sidebarToggle'),
       // Buttons
       thumbnailButton: document.getElementById('viewThumbnail'),
@@ -117,15 +124,19 @@ function getViewerConfiguration() {
       outlineView: document.getElementById('outlineView'),
       attachmentsView: document.getElementById('attachmentsView'),
     },
+    sidebarResizer: {
+      outerContainer: document.getElementById('outerContainer'),
+      resizer: document.getElementById('sidebarResizer'),
+    },
     findBar: {
       bar: document.getElementById('findbar'),
       toggleButton: document.getElementById('viewFind'),
       findField: document.getElementById('findInput'),
       highlightAllCheckbox: document.getElementById('findHighlightAll'),
       caseSensitiveCheckbox: document.getElementById('findMatchCase'),
+      entireWordCheckbox: document.getElementById('findEntireWord'),
       findMsg: document.getElementById('findMsg'),
       findResultsCount: document.getElementById('findResultsCount'),
-      findStatusIcon: document.getElementById('findStatusIcon'),
       findPreviousButton: document.getElementById('findPrevious'),
       findNextButton: document.getElementById('findNext'),
     },
@@ -154,6 +165,8 @@ function getViewerConfiguration() {
         'producer': document.getElementById('producerField'),
         'version': document.getElementById('versionField'),
         'pageCount': document.getElementById('pageCountField'),
+        'pageSize': document.getElementById('pageSizeField'),
+        'linearized': document.getElementById('linearizedField'),
       },
     },
     errorWrapper: {
@@ -167,7 +180,6 @@ function getViewerConfiguration() {
     printContainer: document.getElementById('printContainer'),
     openFileInputName: 'fileInput',
     debuggerScriptPath: './debugger.js',
-    defaultUrl: DEFAULT_URL,
   };
 }
 
@@ -176,14 +188,21 @@ function webViewerLoad() {
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     Promise.all([
       SystemJS.import('pdfjs-web/app'),
+      SystemJS.import('pdfjs-web/app_options'),
       SystemJS.import('pdfjs-web/genericcom'),
       SystemJS.import('pdfjs-web/pdf_print_service'),
-    ]).then(function([app, ...otherModules]) {
+    ]).then(function([app, appOptions, ...otherModules]) {
       window.PDFViewerApplication = app.PDFViewerApplication;
+      window.PDFViewerApplicationOptions = appOptions.AppOptions;
       app.PDFViewerApplication.run(config);
     });
   } else {
+    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+      pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
+    }
+
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
+    window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
     pdfjsWebApp.PDFViewerApplication.run(config);
   }
 }

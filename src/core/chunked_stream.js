@@ -14,7 +14,7 @@
  */
 
 import {
-  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj, isInt,
+  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj,
   MissingDataException
 } from '../shared/util';
 
@@ -181,16 +181,17 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
 
-    // returns subarray of original buffer
-    // should only be read
-    getBytes: function ChunkedStream_getBytes(length) {
+    // Returns subarray of original buffer, should only be read.
+    getBytes(length, forceClamped = false) {
       var bytes = this.bytes;
       var pos = this.pos;
       var strEnd = this.end;
 
       if (!length) {
         this.ensureRange(pos, strEnd);
-        return bytes.subarray(pos, strEnd);
+        let subarray = bytes.subarray(pos, strEnd);
+        // `this.bytes` is always a `Uint8Array` here.
+        return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
       }
 
       var end = pos + length;
@@ -200,7 +201,9 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       this.ensureRange(pos, end);
 
       this.pos = end;
-      return bytes.subarray(pos, end);
+      let subarray = bytes.subarray(pos, end);
+      // `this.bytes` is always a `Uint8Array` here.
+      return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
     },
 
     peekByte: function ChunkedStream_peekByte() {
@@ -209,8 +212,8 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       return peekedByte;
     },
 
-    peekBytes: function ChunkedStream_peekBytes(length) {
-      var bytes = this.getBytes(length);
+    peekBytes(length, forceClamped = false) {
+      var bytes = this.getBytes(length, forceClamped);
       this.pos -= bytes.length;
       return bytes;
     },
@@ -411,7 +414,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         var beginChunk = this.getBeginChunk(ranges[i].begin);
         var endChunk = this.getEndChunk(ranges[i].end);
         for (var chunk = beginChunk; chunk < endChunk; ++chunk) {
-          if (chunksToRequest.indexOf(chunk) < 0) {
+          if (!chunksToRequest.includes(chunk)) {
             chunksToRequest.push(chunk);
           }
         }
@@ -518,7 +521,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         } else {
           nextEmptyChunk = this.stream.nextEmptyChunk(endChunk);
         }
-        if (isInt(nextEmptyChunk)) {
+        if (Number.isInteger(nextEmptyChunk)) {
           this._requestChunks([nextEmptyChunk]);
         }
       }

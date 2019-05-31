@@ -14,7 +14,7 @@
  */
 
 import { AbortException, createPromiseCapability, Util } from '../shared/util';
-import { CustomStyle, getDefaultSetting } from './dom_utils';
+import globalScope from '../shared/global_scope';
 
 /**
  * Text layer render parameters.
@@ -48,7 +48,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     return !NonWhitespaceRegexp.test(str);
   }
 
-  // Text layers may contain many thousand div's, and using `styleBuf` avoids
+  // Text layers may contain many thousands of divs, and using `styleBuf` avoids
   // creating many intermediate strings when building their 'style' properties.
   var styleBuf = ['left: ', 0, 'px; top: ', 0, 'px; font-size: ', 0,
                   'px; font-family: ', '', ';'];
@@ -107,11 +107,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
     textDiv.setAttribute('style', textDivProperties.style);
 
     textDiv.textContent = geom.str;
-    // |fontName| is only used by the Font Inspector. This test will succeed
-    // when e.g. the Font Inspector is off but the Stepper is on, but it's
-    // not worth the effort to do a more accurate test. We only use `dataset`
-    // here to make the font name available for the debugger.
-    if (getDefaultSetting('pdfBug')) {
+    // `fontName` is only used by the FontInspector, and we only use `dataset`
+    // here to make the font name available in the debugger.
+    if (task._fontInspectorEnabled) {
       textDiv.dataset.fontName = geom.fontName;
     }
     if (angle !== 0) {
@@ -342,7 +340,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         var xNew;
         if (affectedBoundary.x2 > boundary.x1) {
           // In the middle of the previous element, new x shall be at the
-          // boundary start. Extending if further if the affected bondary
+          // boundary start. Extending if further if the affected boundary
           // placed on top of the current one.
           xNew = affectedBoundary.index > boundary.index ?
             affectedBoundary.x1New : boundary.x1;
@@ -479,6 +477,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
     this._enhanceTextSelection = !!enhanceTextSelection;
+    this._fontInspectorEnabled = !!(globalScope.FontInspector &&
+                                    globalScope.FontInspector.enabled);
 
     this._reader = null;
     this._layoutTextLastFontSize = null;
@@ -531,8 +531,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
       if (fontSize !== this._layoutTextLastFontSize ||
           fontFamily !== this._layoutTextLastFontFamily) {
         this._layoutTextCtx.font = fontSize + ' ' + fontFamily;
-        this._lastFontSize = fontSize;
-        this._lastFontFamily = fontFamily;
+        this._layoutTextLastFontSize = fontSize;
+        this._layoutTextLastFontFamily = fontFamily;
       }
 
       let width = this._layoutTextCtx.measureText(textDiv.textContent).width;
@@ -547,7 +547,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
       if (transform !== '') {
         textDivProperties.originalTransform = transform;
-        CustomStyle.setProp('transform', textDiv, transform);
+        textDiv.style.transform = transform;
       }
       this._textDivProperties.set(textDiv, textDivProperties);
       textLayerFrag.appendChild(textDiv);
@@ -578,10 +578,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
               return;
             }
 
-            Util.extendObj(styleCache, value.styles);
+            Object.assign(styleCache, value.styles);
             this._processItems(value.items, styleCache);
             pump();
-
           }, capability.reject);
         };
 
@@ -653,12 +652,11 @@ var renderTextLayer = (function renderTextLayerClosure() {
             div.setAttribute('style', divProperties.style + padding);
           }
           if (transform !== '') {
-            CustomStyle.setProp('transform', div, transform);
+            div.style.transform = transform;
           }
         } else {
           div.style.padding = 0;
-          CustomStyle.setProp('transform', div,
-                              divProperties.originalTransform || '');
+          div.style.transform = divProperties.originalTransform || '';
         }
       }
     },

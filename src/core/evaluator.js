@@ -16,11 +16,11 @@
 import {
   AbortException, assert, CMapCompressionType, createPromiseCapability,
   FONT_IDENTITY_MATRIX, FormatError, getLookupTableFactory, IDENTITY_MATRIX,
-  ImageKind, info, isArray, isNum, isString, NativeImageDecoding, OPS,
+  info, isNum, isString, NativeImageDecoding, OPS, stringToPDFString,
   TextRenderingMode, UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
-import { DecodeStream, JpegStream, Stream } from './stream';
+import { DecodeStream, Stream } from './stream';
 import {
   Dict, isCmd, isDict, isEOF, isName, isRef, isStream, Name
 } from './primitives';
@@ -38,13 +38,15 @@ import {
   getSerifFonts, getStdFontMap, getSymbolsFonts
 } from './standard_fonts';
 import { getTilingPatternIR, Pattern } from './pattern';
-import { isPDFFunction, PDFFunction } from './function';
 import { Lexer, Parser } from './parser';
 import { bidi } from './bidi';
 import { ColorSpace } from './colorspace';
 import { getGlyphsUnicode } from './glyphlist';
 import { getMetrics } from './metrics';
+import { isPDFFunction } from './function';
+import { JpegStream } from './jpeg_stream';
 import { MurmurHash3_64 } from './murmurhash3';
+import { OperatorList } from './operator_list';
 import { PDFImage } from './image';
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
@@ -54,29 +56,34 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     disableFontFace: false,
     nativeImageDecoderSupport: NativeImageDecoding.DECODE,
     ignoreErrors: false,
+    isEvalSupported: true,
   };
 
-  function NativeImageDecoder(xref, resources, handler, forceDataSchema) {
+  function NativeImageDecoder({ xref, resources, handler,
+                                forceDataSchema = false,
+                                pdfFunctionFactory, }) {
     this.xref = xref;
     this.resources = resources;
     this.handler = handler;
     this.forceDataSchema = forceDataSchema;
+    this.pdfFunctionFactory = pdfFunctionFactory;
   }
   NativeImageDecoder.prototype = {
     canDecode(image) {
       return image instanceof JpegStream &&
-             NativeImageDecoder.isDecodable(image, this.xref, this.resources);
+             NativeImageDecoder.isDecodable(image, this.xref, this.resources,
+                                            this.pdfFunctionFactory);
     },
     decode(image) {
       // For natively supported JPEGs send them to the main thread for decoding.
       var dict = image.dict;
       var colorSpace = dict.get('ColorSpace', 'CS');
-      colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources);
-      var numComps = colorSpace.numComps;
-      var decodePromise = this.handler.sendWithPromise('JpegDecode',
-        [image.getIR(this.forceDataSchema), numComps]);
-      return decodePromise.then(function (message) {
-        var data = message.data;
+      colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources,
+                                    this.pdfFunctionFactory);
+
+      return this.handler.sendWithPromise('JpegDecode', [
+        image.getIR(this.forceDataSchema), colorSpace.numComps
+      ]).then(function({ data, width, height, }) {
         return new Stream(data, 0, data.length, image.dict);
       });
     },
@@ -85,32 +92,35 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
    * Checks if the image can be decoded and displayed by the browser without any
    * further processing such as color space conversions.
    */
-  NativeImageDecoder.isSupported =
-      function NativeImageDecoder_isSupported(image, xref, res) {
+  NativeImageDecoder.isSupported = function(image, xref, res,
+                                            pdfFunctionFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
     }
-    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res);
+    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
+                              pdfFunctionFactory);
     return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
   /**
    * Checks if the image can be decoded by the browser.
    */
-  NativeImageDecoder.isDecodable =
-      function NativeImageDecoder_isDecodable(image, xref, res) {
+  NativeImageDecoder.isDecodable = function(image, xref, res,
+                                            pdfFunctionFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
     }
-    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res);
+    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
+                              pdfFunctionFactory);
     return (cs.numComps === 1 || cs.numComps === 3) &&
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
 
   function PartialEvaluator({ pdfManager, xref, handler, pageIndex, idFactory,
-                              fontCache, builtInCMapCache, options = null, }) {
+                              fontCache, builtInCMapCache, options = null,
+                              pdfFunctionFactory, }) {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
@@ -119,21 +129,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.options = options || DefaultPartialEvaluatorOptions;
+    this.pdfFunctionFactory = pdfFunctionFactory;
 
-    this.fetchBuiltInCMap = (name) => {
-      var cachedCMap = this.builtInCMapCache[name];
-      if (cachedCMap) {
-        return Promise.resolve(cachedCMap);
+    this.fetchBuiltInCMap = async (name) => {
+      if (this.builtInCMapCache.has(name)) {
+        return this.builtInCMapCache.get(name);
       }
-      return this.handler.sendWithPromise('FetchBuiltInCMap', {
-        name,
-      }).then((data) => {
-        if (data.compressionType !== CMapCompressionType.NONE) {
-          // Given the size of uncompressed CMaps, only cache compressed ones.
-          this.builtInCMapCache[name] = data;
-        }
-        return data;
-      });
+      const data = await this.handler.sendWithPromise('FetchBuiltInCMap',
+                                                      { name, });
+      if (data.compressionType !== CMapCompressionType.NONE) {
+        // Given the size of uncompressed CMaps, only cache compressed ones.
+        this.builtInCMapCache.set(name, data);
+      }
+      return data;
     };
   }
 
@@ -302,12 +310,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         };
 
         var groupSubtype = group.get('S');
-        var colorSpace;
+        var colorSpace = null;
         if (isName(groupSubtype, 'Transparency')) {
           groupOptions.isolated = (group.get('I') || false);
           groupOptions.knockout = (group.get('K') || false);
-          colorSpace = (group.has('CS') ?
-            ColorSpace.parse(group.get('CS'), this.xref, resources) : null);
+          if (group.has('CS')) {
+            colorSpace = ColorSpace.parse(group.get('CS'), this.xref, resources,
+                                          this.pdfFunctionFactory);
+          }
         }
 
         if (smask && smask.backdrop) {
@@ -335,22 +345,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    buildPaintImageXObject:
-        function PartialEvaluator_buildPaintImageXObject(resources, image,
-                                                         inline, operatorList,
-                                                         cacheKey, imageCache) {
+    buildPaintImageXObject({ resources, image, isInline = false, operatorList,
+                             cacheKey, imageCache,
+                             forceDisableNativeImageDecoder = false, }) {
       var dict = image.dict;
       var w = dict.get('Width', 'W');
       var h = dict.get('Height', 'H');
 
       if (!(w && isNum(w)) || !(h && isNum(h))) {
         warn('Image dimensions are missing, or not numbers.');
-        return;
+        return Promise.resolve();
       }
       var maxImageSize = this.options.maxImageSize;
       if (maxImageSize !== -1 && w * h > maxImageSize) {
         warn('Image exceeded maximum allowed size and was removed.');
-        return;
+        return Promise.resolve();
       }
 
       var imageMask = (dict.get('ImageMask', 'IM') || false);
@@ -365,13 +374,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var width = dict.get('Width', 'W');
         var height = dict.get('Height', 'H');
         var bitStrideLength = (width + 7) >> 3;
-        var imgArray = image.getBytes(bitStrideLength * height);
+        var imgArray = image.getBytes(bitStrideLength * height,
+                                      /* forceClamped = */ true);
         var decode = dict.getArray('Decode', 'D');
-        var inverseDecode = (!!decode && decode[0] > 0);
 
-        imgData = PDFImage.createMask(imgArray, width, height,
-                                      image instanceof DecodeStream,
-                                      inverseDecode);
+        imgData = PDFImage.createMask({
+          imgArray,
+          width,
+          height,
+          imageIsFromDecodeStream: image instanceof DecodeStream,
+          inverseDecode: (!!decode && decode[0] > 0),
+        });
         imgData.cached = true;
         args = [imgData];
         operatorList.addOp(OPS.paintImageMaskXObject, args);
@@ -381,7 +394,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             args,
           };
         }
-        return;
+        return Promise.resolve();
       }
 
       var softMask = (dict.get('SMask', 'SM') || false);
@@ -389,38 +402,63 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var SMALL_IMAGE_DIMENSIONS = 200;
       // Inlining small images into the queue as RGB data
-      if (inline && !softMask && !mask && !(image instanceof JpegStream) &&
+      if (isInline && !softMask && !mask && !(image instanceof JpegStream) &&
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
-        var imageObj = new PDFImage(this.xref, resources, image,
-                                    inline, null, null);
+        let imageObj = new PDFImage({
+          xref: this.xref,
+          res: resources,
+          image,
+          isInline,
+          pdfFunctionFactory: this.pdfFunctionFactory,
+        });
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
         imgData = imageObj.createImageData(/* forceRGBA = */ true);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
-        return;
+        return Promise.resolve();
       }
 
-      var nativeImageDecoderSupport = this.options.nativeImageDecoderSupport;
+      const nativeImageDecoderSupport = forceDisableNativeImageDecoder ?
+        NativeImageDecoding.NONE : this.options.nativeImageDecoderSupport;
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
       var objId = 'img_' + this.idFactory.createObjId();
-      operatorList.addDependency(objId);
-      args = [objId, w, h];
 
       if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
           !softMask && !mask && image instanceof JpegStream &&
-          NativeImageDecoder.isSupported(image, this.xref, resources)) {
+          NativeImageDecoder.isSupported(image, this.xref, resources,
+                                         this.pdfFunctionFactory)) {
         // These JPEGs don't need any more processing so we can just send it.
-        operatorList.addOp(OPS.paintJpegXObject, args);
-        this.handler.send('obj', [objId, this.pageIndex, 'JpegStream',
-                                  image.getIR(this.options.forceDataSchema)]);
-        if (cacheKey) {
-          imageCache[cacheKey] = {
-            fn: OPS.paintJpegXObject,
-            args,
-          };
-        }
-        return;
+        return this.handler.sendWithPromise('obj', [
+          objId, this.pageIndex, 'JpegStream',
+          image.getIR(this.options.forceDataSchema)
+        ]).then(function() {
+          // Only add the dependency once we know that the native JPEG decoding
+          // succeeded, to ensure that rendering will always complete.
+          operatorList.addDependency(objId);
+          args = [objId, w, h];
+
+          operatorList.addOp(OPS.paintJpegXObject, args);
+          if (cacheKey) {
+            imageCache[cacheKey] = {
+              fn: OPS.paintJpegXObject,
+              args,
+            };
+          }
+        }, (reason) => {
+          warn('Native JPEG decoding failed -- trying to recover: ' +
+               (reason && reason.message));
+          // Try to decode the JPEG image with the built-in decoder instead.
+          return this.buildPaintImageXObject({
+            resources,
+            image,
+            isInline,
+            operatorList,
+            cacheKey,
+            imageCache,
+            forceDisableNativeImageDecoder: true,
+          });
+        });
       }
 
       // Creates native image decoder only if a JPEG image or mask is present.
@@ -428,12 +466,28 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (nativeImageDecoderSupport === NativeImageDecoding.DECODE &&
           (image instanceof JpegStream || mask instanceof JpegStream ||
            softMask instanceof JpegStream)) {
-        nativeImageDecoder = new NativeImageDecoder(this.xref, resources,
-          this.handler, this.options.forceDataSchema);
+        nativeImageDecoder = new NativeImageDecoder({
+          xref: this.xref,
+          resources,
+          handler: this.handler,
+          forceDataSchema: this.options.forceDataSchema,
+          pdfFunctionFactory: this.pdfFunctionFactory,
+        });
       }
 
-      PDFImage.buildImage(this.handler, this.xref, resources, image, inline,
-                          nativeImageDecoder).then((imageObj) => {
+      // Ensure that the dependency is added before the image is decoded.
+      operatorList.addDependency(objId);
+      args = [objId, w, h];
+
+      PDFImage.buildImage({
+        handler: this.handler,
+        xref: this.xref,
+        res: resources,
+        image,
+        isInline,
+        nativeDecoder: nativeImageDecoder,
+        pdfFunctionFactory: this.pdfFunctionFactory,
+      }).then((imageObj) => {
         var imgData = imageObj.createImageData(/* forceRGBA = */ false);
         this.handler.send('obj', [objId, this.pageIndex, 'Image', imgData],
           [imgData.data.buffer]);
@@ -449,6 +503,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           args,
         };
       }
+      return Promise.resolve();
     },
 
     handleSMask: function PartialEvaluator_handleSmask(smask, resources,
@@ -464,7 +519,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // we will build a map of integer values in range 0..255 to be fast.
       var transferObj = smask.get('TR');
       if (isPDFFunction(transferObj)) {
-        var transferFn = PDFFunction.parse(this.xref, transferObj);
+        let transferFn = this.pdfFunctionFactory.create(transferObj);
         var transferMap = new Uint8Array(256);
         var tmp = new Float32Array(1);
         for (var i = 0; i < 256; i++) {
@@ -553,7 +608,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var glyphs = font.charsToGlyphs(chars);
       var isAddToPathSet = !!(state.textRenderingMode &
                               TextRenderingMode.ADD_TO_PATH_FLAG);
-      if (font.data && (isAddToPathSet || this.options.disableFontFace)) {
+      if (font.data && (isAddToPathSet || this.options.disableFontFace ||
+                        state.fillColorSpace.name === 'Pattern')) {
         var buildPath = (fontChar) => {
           if (!font.renderer.hasBuiltPath(fontChar)) {
             var path = font.renderer.getPathJs(fontChar);
@@ -850,7 +906,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var shading = dict.get('Shading');
           var matrix = dict.getArray('Matrix');
           pattern = Pattern.parseShading(shading, matrix, this.xref, resources,
-                                         this.handler);
+                                         this.handler, this.pdfFunctionFactory);
           operatorList.addOp(fn, pattern.getIR());
           return Promise.resolve();
         }
@@ -917,52 +973,71 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.paintXObject:
               // eagerly compile XForm objects
               var name = args[0].name;
-              if (!name) {
-                warn('XObject must be referred to by name.');
-                continue;
-              }
-              if (imageCache[name] !== undefined) {
+              if (name && imageCache[name] !== undefined) {
                 operatorList.addOp(imageCache[name].fn, imageCache[name].args);
                 args = null;
                 continue;
               }
 
-              var xobj = xobjs.get(name);
-              if (xobj) {
+              next(new Promise(function(resolveXObject, rejectXObject) {
+                if (!name) {
+                  throw new FormatError('XObject must be referred to by name.');
+                }
+
+                let xobj = xobjs.get(name);
+                if (!xobj) {
+                  operatorList.addOp(fn, args);
+                  resolveXObject();
+                  return;
+                }
                 if (!isStream(xobj)) {
                   throw new FormatError('XObject should be a stream');
                 }
 
-                var type = xobj.dict.get('Subtype');
+                let type = xobj.dict.get('Subtype');
                 if (!isName(type)) {
                   throw new FormatError('XObject should have a Name subtype');
                 }
 
                 if (type.name === 'Form') {
                   stateManager.save();
-                  next(self.buildFormXObject(resources, xobj, null,
-                                             operatorList, task,
-                                             stateManager.state.clone()).
-                    then(function () {
+                  self.buildFormXObject(resources, xobj, null, operatorList,
+                                        task, stateManager.state.clone()).
+                    then(function() {
                       stateManager.restore();
-                    }));
+                      resolveXObject();
+                    }, rejectXObject);
                   return;
                 } else if (type.name === 'Image') {
-                  self.buildPaintImageXObject(resources, xobj, false,
-                    operatorList, name, imageCache);
-                  args = null;
-                  continue;
+                  self.buildPaintImageXObject({
+                    resources,
+                    image: xobj,
+                    operatorList,
+                    cacheKey: name,
+                    imageCache,
+                  }).then(resolveXObject, rejectXObject);
+                  return;
                 } else if (type.name === 'PS') {
                   // PostScript XObjects are unused when viewing documents.
                   // See section 4.7.1 of Adobe's PDF reference.
                   info('Ignored XObject subtype PS');
-                  continue;
                 } else {
                   throw new FormatError(
                     `Unhandled XObject subtype ${type.name}`);
                 }
-              }
-              break;
+                resolveXObject();
+              }).catch(function(reason) {
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the XObject -- sending unsupported feature
+                  // notification and allow rendering to continue.
+                  self.handler.send('UnsupportedFeature',
+                    { featureId: UNSUPPORTED_FEATURES.unknown, });
+                  warn(`getOperatorList - ignoring XObject: "${reason}".`);
+                  return;
+                }
+                throw reason;
+              }));
+              return;
             case OPS.setFont:
               var fontSize = args[1];
               // eagerly collect all fonts
@@ -983,10 +1058,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   continue;
                 }
               }
-              self.buildPaintImageXObject(resources, args[0], true,
-                operatorList, cacheKey, imageCache);
-              args = null;
-              continue;
+              next(self.buildPaintImageXObject({
+                resources,
+                image: args[0],
+                isInline: true,
+                operatorList,
+                cacheKey,
+                imageCache,
+              }));
+              return;
             case OPS.showText:
               args[0] = self.handleText(args[0], stateManager.state);
               break;
@@ -1025,11 +1105,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
             case OPS.setFillColorSpace:
               stateManager.state.fillColorSpace =
-                ColorSpace.parse(args[0], xref, resources);
+                ColorSpace.parse(args[0], xref, resources,
+                                 self.pdfFunctionFactory);
               continue;
             case OPS.setStrokeColorSpace:
               stateManager.state.strokeColorSpace =
-                ColorSpace.parse(args[0], xref, resources);
+                ColorSpace.parse(args[0], xref, resources,
+                                 self.pdfFunctionFactory);
               continue;
             case OPS.setFillColor:
               cs = stateManager.state.fillColorSpace;
@@ -1102,7 +1184,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var shadingFill = Pattern.parseShading(shading, null, xref,
-                resources, self.handler);
+                resources, self.handler, self.pdfFunctionFactory);
               var patternIR = shadingFill.getIR();
               args = [patternIR];
               fn = OPS.shadingFill;
@@ -1176,7 +1258,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // notification and allow rendering to continue.
           this.handler.send('UnsupportedFeature',
                             { featureId: UNSUPPORTED_FEATURES.unknown, });
-          warn('getOperatorList - ignoring errors during task: ' + task.name);
+          warn(`getOperatorList - ignoring errors during "${task.name}" ` +
+               `task: "${reason}".`);
 
           closePendingRestoreOPS();
           return;
@@ -1301,7 +1384,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           textContentItem.fakeMultiSpaceMax = 0;
           textContentItem.textRunBreakAllowed = false;
         }
-
 
         textContentItem.initialized = true;
         return textContentItem;
@@ -1633,73 +1715,93 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var name = args[0].name;
-              if (name in skipEmptyXObjs) {
+              if (name && skipEmptyXObjs[name] !== undefined) {
                 break;
               }
 
-              var xobj = xobjs.get(name);
-              if (!xobj) {
-                break;
-              }
-              if (!isStream(xobj)) {
-                throw new FormatError('XObject should be a stream');
-              }
-
-              var type = xobj.dict.get('Subtype');
-              if (!isName(type)) {
-                throw new FormatError('XObject should have a Name subtype');
-              }
-
-              if (type.name !== 'Form') {
-                skipEmptyXObjs[name] = true;
-                break;
-              }
-
-              // Use a new `StateManager` to prevent incorrect positioning of
-              // textItems *after* the Form XObject, since errors in the data
-              // can otherwise prevent `restore` operators from being executed.
-              // NOTE: This is only an issue when `options.ignoreErrors = true`.
-              var currentState = stateManager.state.clone();
-              var xObjStateManager = new StateManager(currentState);
-
-              var matrix = xobj.dict.getArray('Matrix');
-              if (isArray(matrix) && matrix.length === 6) {
-                xObjStateManager.transform(matrix);
-              }
-
-              // Enqueue the `textContent` chunk before parsing the /Form
-              // XObject.
-              enqueueChunk();
-              let sinkWrapper = {
-                enqueueInvoked: false,
-
-                enqueue(chunk, size) {
-                  this.enqueueInvoked = true;
-                  sink.enqueue(chunk, size);
-                },
-
-                get desiredSize() {
-                  return sink.desiredSize;
-                },
-
-                get ready() {
-                  return sink.ready;
-                },
-              };
-
-              next(self.getTextContent({
-                stream: xobj,
-                task,
-                resources: xobj.dict.get('Resources') || resources,
-                stateManager: xObjStateManager,
-                normalizeWhitespace,
-                combineTextItems,
-                sink: sinkWrapper,
-                seenStyles,
-              }).then(function() {
-                if (!sinkWrapper.enqueueInvoked) {
-                  skipEmptyXObjs[name] = true;
+              next(new Promise(function(resolveXObject, rejectXObject) {
+                if (!name) {
+                  throw new FormatError('XObject must be referred to by name.');
                 }
+
+                let xobj = xobjs.get(name);
+                if (!xobj) {
+                  resolveXObject();
+                  return;
+                }
+                if (!isStream(xobj)) {
+                  throw new FormatError('XObject should be a stream');
+                }
+
+                let type = xobj.dict.get('Subtype');
+                if (!isName(type)) {
+                  throw new FormatError('XObject should have a Name subtype');
+                }
+
+                if (type.name !== 'Form') {
+                  skipEmptyXObjs[name] = true;
+                  resolveXObject();
+                  return;
+                }
+
+                // Use a new `StateManager` to prevent incorrect positioning of
+                // textItems *after* the Form XObject, since errors in the data
+                // can otherwise prevent `restore` operators from executing.
+                // NOTE: Only an issue when `options.ignoreErrors === true`.
+                let currentState = stateManager.state.clone();
+                let xObjStateManager = new StateManager(currentState);
+
+                let matrix = xobj.dict.getArray('Matrix');
+                if (Array.isArray(matrix) && matrix.length === 6) {
+                  xObjStateManager.transform(matrix);
+                }
+
+                // Enqueue the `textContent` chunk before parsing the /Form
+                // XObject.
+                enqueueChunk();
+                let sinkWrapper = {
+                  enqueueInvoked: false,
+
+                  enqueue(chunk, size) {
+                    this.enqueueInvoked = true;
+                    sink.enqueue(chunk, size);
+                  },
+
+                  get desiredSize() {
+                    return sink.desiredSize;
+                  },
+
+                  get ready() {
+                    return sink.ready;
+                  },
+                };
+
+                self.getTextContent({
+                  stream: xobj,
+                  task,
+                  resources: xobj.dict.get('Resources') || resources,
+                  stateManager: xObjStateManager,
+                  normalizeWhitespace,
+                  combineTextItems,
+                  sink: sinkWrapper,
+                  seenStyles,
+                }).then(function() {
+                  if (!sinkWrapper.enqueueInvoked) {
+                    skipEmptyXObjs[name] = true;
+                  }
+                  resolveXObject();
+                }, rejectXObject);
+              }).catch(function(reason) {
+                if (reason instanceof AbortException) {
+                  return;
+                }
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the XObject -- allow text-extraction to
+                  // continue.
+                  warn(`getTextContent - ignoring XObject: "${reason}".`);
+                  return;
+                }
+                throw reason;
               }));
               return;
             case OPS.setGState:
@@ -1742,7 +1844,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         if (this.options.ignoreErrors) {
           // Error(s) in the TextContent -- allow text-extraction to continue.
-          warn('getTextContent - ignoring errors during task: ' + task.name);
+          warn(`getTextContent - ignoring errors during "${task.name}" ` +
+               `task: "${reason}".`);
 
           flushTextContentItem();
           enqueueChunk();
@@ -1766,8 +1869,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var cidSystemInfo = dict.get('CIDSystemInfo');
         if (isDict(cidSystemInfo)) {
           properties.cidSystemInfo = {
-            registry: cidSystemInfo.get('Registry'),
-            ordering: cidSystemInfo.get('Ordering'),
+            registry: stringToPDFString(cidSystemInfo.get('Registry')),
+            ordering: stringToPDFString(cidSystemInfo.get('Ordering')),
             supplement: cidSystemInfo.get('Supplement'),
           };
         }
@@ -1864,97 +1967,115 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     /**
+     * @returns {ToUnicodeMap}
+     * @private
+     */
+    _buildSimpleFontToUnicode(properties) {
+      assert(!properties.composite, 'Must be a simple font.');
+
+      let toUnicode = [], charcode, glyphName;
+      let encoding = properties.defaultEncoding.slice();
+      let baseEncodingName = properties.baseEncodingName;
+      // Merge in the differences array.
+      let differences = properties.differences;
+      for (charcode in differences) {
+        glyphName = differences[charcode];
+        if (glyphName === '.notdef') {
+          // Skip .notdef to prevent rendering errors, e.g. boxes appearing
+          // where there should be spaces (fixes issue5256.pdf).
+          continue;
+        }
+        encoding[charcode] = glyphName;
+      }
+      let glyphsUnicodeMap = getGlyphsUnicode();
+      for (charcode in encoding) {
+        // a) Map the character code to a character name.
+        glyphName = encoding[charcode];
+        // b) Look up the character name in the Adobe Glyph List (see the
+        //    Bibliography) to obtain the corresponding Unicode value.
+        if (glyphName === '') {
+          continue;
+        } else if (glyphsUnicodeMap[glyphName] === undefined) {
+          // (undocumented) c) Few heuristics to recognize unknown glyphs
+          // NOTE: Adobe Reader does not do this step, but OSX Preview does
+          let code = 0;
+          switch (glyphName[0]) {
+            case 'G': // Gxx glyph
+              if (glyphName.length === 3) {
+                code = parseInt(glyphName.substring(1), 16);
+              }
+              break;
+            case 'g': // g00xx glyph
+              if (glyphName.length === 5) {
+                code = parseInt(glyphName.substring(1), 16);
+              }
+              break;
+            case 'C': // Cddd glyph
+            case 'c': // cddd glyph
+              if (glyphName.length >= 3) {
+                code = +glyphName.substring(1);
+              }
+              break;
+            default:
+              // 'uniXXXX'/'uXXXX{XX}' glyphs
+              let unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
+              if (unicode !== -1) {
+                code = unicode;
+              }
+          }
+          if (code) {
+            // If `baseEncodingName` is one the predefined encodings, and `code`
+            // equals `charcode`, using the glyph defined in the baseEncoding
+            // seems to yield a better `toUnicode` mapping (fixes issue 5070).
+            if (baseEncodingName && code === +charcode) {
+              let baseEncoding = getEncoding(baseEncodingName);
+              if (baseEncoding && (glyphName = baseEncoding[charcode])) {
+                toUnicode[charcode] =
+                  String.fromCharCode(glyphsUnicodeMap[glyphName]);
+                continue;
+              }
+            }
+            toUnicode[charcode] = String.fromCharCode(code);
+          }
+          continue;
+        }
+        toUnicode[charcode] = String.fromCharCode(glyphsUnicodeMap[glyphName]);
+      }
+      return new ToUnicodeMap(toUnicode);
+    },
+
+    /**
      * Builds a char code to unicode map based on section 9.10 of the spec.
      * @param {Object} properties Font properties object.
      * @return {Promise} A Promise that is resolved with a
      *   {ToUnicodeMap|IdentityToUnicodeMap} object.
      */
-    buildToUnicode: function PartialEvaluator_buildToUnicode(properties) {
+    buildToUnicode(properties) {
       properties.hasIncludedToUnicodeMap =
         !!properties.toUnicode && properties.toUnicode.length > 0;
+
       // Section 9.10.2 Mapping Character Codes to Unicode Values
       if (properties.hasIncludedToUnicodeMap) {
+        // Some fonts contain incomplete ToUnicode data, causing issues with
+        // text-extraction. For simple fonts, containing encoding information,
+        // use a fallback ToUnicode map to improve this (fixes issue8229.pdf).
+        if (!properties.composite && properties.hasEncoding) {
+          properties.fallbackToUnicode =
+            this._buildSimpleFontToUnicode(properties);
+        }
+
         return Promise.resolve(properties.toUnicode);
       }
+
       // According to the spec if the font is a simple font we should only map
       // to unicode if the base encoding is MacRoman, MacExpert, or WinAnsi or
       // the differences array only contains adobe standard or symbol set names,
-      // in pratice it seems better to always try to create a toUnicode
-      // map based of the default encoding.
-      var toUnicode, charcode, glyphName;
+      // in pratice it seems better to always try to create a toUnicode map
+      // based of the default encoding.
       if (!properties.composite /* is simple font */) {
-        toUnicode = [];
-        var encoding = properties.defaultEncoding.slice();
-        var baseEncodingName = properties.baseEncodingName;
-        // Merge in the differences array.
-        var differences = properties.differences;
-        for (charcode in differences) {
-          glyphName = differences[charcode];
-          if (glyphName === '.notdef') {
-            // Skip .notdef to prevent rendering errors, e.g. boxes appearing
-            // where there should be spaces (fixes issue5256.pdf).
-            continue;
-          }
-          encoding[charcode] = glyphName;
-        }
-        var glyphsUnicodeMap = getGlyphsUnicode();
-        for (charcode in encoding) {
-          // a) Map the character code to a character name.
-          glyphName = encoding[charcode];
-          // b) Look up the character name in the Adobe Glyph List (see the
-          //    Bibliography) to obtain the corresponding Unicode value.
-          if (glyphName === '') {
-            continue;
-          } else if (glyphsUnicodeMap[glyphName] === undefined) {
-            // (undocumented) c) Few heuristics to recognize unknown glyphs
-            // NOTE: Adobe Reader does not do this step, but OSX Preview does
-            var code = 0;
-            switch (glyphName[0]) {
-              case 'G': // Gxx glyph
-                if (glyphName.length === 3) {
-                  code = parseInt(glyphName.substr(1), 16);
-                }
-                break;
-              case 'g': // g00xx glyph
-                if (glyphName.length === 5) {
-                  code = parseInt(glyphName.substr(1), 16);
-                }
-                break;
-              case 'C': // Cddd glyph
-              case 'c': // cddd glyph
-                if (glyphName.length >= 3) {
-                  code = +glyphName.substr(1);
-                }
-                break;
-              default:
-                // 'uniXXXX'/'uXXXX{XX}' glyphs
-                var unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
-                if (unicode !== -1) {
-                  code = unicode;
-                }
-            }
-            if (code) {
-              // If |baseEncodingName| is one the predefined encodings,
-              // and |code| equals |charcode|, using the glyph defined in the
-              // baseEncoding seems to yield a better |toUnicode| mapping
-              // (fixes issue 5070).
-              if (baseEncodingName && code === +charcode) {
-                var baseEncoding = getEncoding(baseEncodingName);
-                if (baseEncoding && (glyphName = baseEncoding[charcode])) {
-                  toUnicode[charcode] =
-                    String.fromCharCode(glyphsUnicodeMap[glyphName]);
-                  continue;
-                }
-              }
-              toUnicode[charcode] = String.fromCharCode(code);
-            }
-            continue;
-          }
-          toUnicode[charcode] =
-            String.fromCharCode(glyphsUnicodeMap[glyphName]);
-        }
-        return Promise.resolve(new ToUnicodeMap(toUnicode));
+        return Promise.resolve(this._buildSimpleFontToUnicode(properties));
       }
+
       // If the font is a composite font that uses one of the predefined CMaps
       // listed in Table 118 (except Identity–H and Identity–V) or whose
       // descendant CIDFont uses the Adobe-GB1, Adobe-CNS1, Adobe-Japan1, or
@@ -1973,12 +2094,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // b) Obtain the registry and ordering of the character collection used
         // by the font’s CMap (for example, Adobe and Japan1) from its
         // CIDSystemInfo dictionary.
-        var registry = properties.cidSystemInfo.registry;
-        var ordering = properties.cidSystemInfo.ordering;
+        let registry = properties.cidSystemInfo.registry;
+        let ordering = properties.cidSystemInfo.ordering;
         // c) Construct a second CMap name by concatenating the registry and
         // ordering obtained in step (b) in the format registry–ordering–UCS2
         // (for example, Adobe–Japan1–UCS2).
-        var ucs2CMapName = Name.get(registry + '-' + ordering + '-UCS2');
+        let ucs2CMapName = Name.get(registry + '-' + ordering + '-UCS2');
         // d) Obtain the CMap with the name constructed in step (c) (available
         // from the ASN Web site; see the Bibliography).
         return CMapFactory.create({
@@ -1986,15 +2107,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           fetchBuiltInCMap: this.fetchBuiltInCMap,
           useCMap: null,
         }).then(function (ucs2CMap) {
-          var cMap = properties.cMap;
-          toUnicode = [];
+          let cMap = properties.cMap;
+          let toUnicode = [];
           cMap.forEach(function(charcode, cid) {
             if (cid > 0xffff) {
               throw new FormatError('Max size of CID is 65,535');
             }
             // e) Map the CID obtained in step (a) according to the CMap
             // obtained in step (d), producing a Unicode value.
-            var ucs2 = ucs2CMap.lookup(cid);
+            let ucs2 = ucs2CMap.lookup(cid);
             if (ucs2) {
               toUnicode[charcode] =
                 String.fromCharCode((ucs2.charCodeAt(0) << 8) +
@@ -2082,14 +2203,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var defaultVMetrics;
       var i, ii, j, jj, start, code, widths;
       if (properties.composite) {
-        defaultWidth = dict.get('DW') || 1000;
+        defaultWidth = dict.has('DW') ? dict.get('DW') : 1000;
 
         widths = dict.get('W');
         if (widths) {
           for (i = 0, ii = widths.length; i < ii; i++) {
             start = xref.fetchIfRef(widths[i++]);
             code = xref.fetchIfRef(widths[i]);
-            if (isArray(code)) {
+            if (Array.isArray(code)) {
               for (j = 0, jj = code.length; j < jj; j++) {
                 glyphsWidths[start++] = xref.fetchIfRef(code[j]);
               }
@@ -2110,7 +2231,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             for (i = 0, ii = vmetrics.length; i < ii; i++) {
               start = xref.fetchIfRef(vmetrics[i++]);
               code = xref.fetchIfRef(vmetrics[i]);
-              if (isArray(code)) {
+              if (Array.isArray(code)) {
                 for (j = 0, jj = code.length; j < jj; j++) {
                   glyphsVMetrics[start++] = [
                     xref.fetchIfRef(code[j++]),
@@ -2258,7 +2379,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (!df) {
           throw new FormatError('Descendant fonts are not specified');
         }
-        dict = (isArray(df) ? this.xref.fetchIfRef(df[0]) : df);
+        dict = (Array.isArray(df) ? this.xref.fetchIfRef(df[0]) : df);
 
         type = dict.get('Subtype');
         if (!isName(type)) {
@@ -2283,7 +2404,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               hash.update(entry.name);
             } else if (isRef(entry)) {
               hash.update(entry.toString());
-            } else if (isArray(entry)) {
+            } else if (Array.isArray(entry)) {
               // 'Differences' array (fixes bug1157493.pdf).
               var diffLength = entry.length, diffBuf = new Array(diffLength);
 
@@ -2571,121 +2692,6 @@ var TranslatedFont = (function TranslatedFontClosure() {
   return TranslatedFont;
 })();
 
-var OperatorList = (function OperatorListClosure() {
-  var CHUNK_SIZE = 1000;
-  var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
-
-  function getTransfers(queue) {
-    var transfers = [];
-    var fnArray = queue.fnArray, argsArray = queue.argsArray;
-    for (var i = 0, ii = queue.length; i < ii; i++) {
-      switch (fnArray[i]) {
-        case OPS.paintInlineImageXObject:
-        case OPS.paintInlineImageXObjectGroup:
-        case OPS.paintImageMaskXObject:
-          var arg = argsArray[i][0]; // first param in imgData
-          if (!arg.cached) {
-            transfers.push(arg.data.buffer);
-          }
-          break;
-      }
-    }
-    return transfers;
-  }
-
-  function OperatorList(intent, messageHandler, pageIndex) {
-    this.messageHandler = messageHandler;
-    this.fnArray = [];
-    this.argsArray = [];
-    this.dependencies = Object.create(null);
-    this._totalLength = 0;
-    this.pageIndex = pageIndex;
-    this.intent = intent;
-  }
-
-  OperatorList.prototype = {
-    get length() {
-      return this.argsArray.length;
-    },
-
-    /**
-     * @returns {number} The total length of the entire operator list,
-     *                   since `this.length === 0` after flushing.
-     */
-    get totalLength() {
-      return (this._totalLength + this.length);
-    },
-
-    addOp(fn, args) {
-      this.fnArray.push(fn);
-      this.argsArray.push(args);
-      if (this.messageHandler) {
-        if (this.fnArray.length >= CHUNK_SIZE) {
-          this.flush();
-        } else if (this.fnArray.length >= CHUNK_SIZE_ABOUT &&
-                   (fn === OPS.restore || fn === OPS.endText)) {
-          // heuristic to flush on boundary of restore or endText
-          this.flush();
-        }
-      }
-    },
-
-    addDependency(dependency) {
-      if (dependency in this.dependencies) {
-        return;
-      }
-      this.dependencies[dependency] = true;
-      this.addOp(OPS.dependency, [dependency]);
-    },
-
-    addDependencies(dependencies) {
-      for (var key in dependencies) {
-        this.addDependency(key);
-      }
-    },
-
-    addOpList(opList) {
-      Util.extendObj(this.dependencies, opList.dependencies);
-      for (var i = 0, ii = opList.length; i < ii; i++) {
-        this.addOp(opList.fnArray[i], opList.argsArray[i]);
-      }
-    },
-
-    getIR() {
-      return {
-        fnArray: this.fnArray,
-        argsArray: this.argsArray,
-        length: this.length,
-      };
-    },
-
-    flush(lastChunk) {
-      if (this.intent !== 'oplist') {
-        new QueueOptimizer().optimize(this);
-      }
-      var transfers = getTransfers(this);
-      var length = this.length;
-      this._totalLength += length;
-
-      this.messageHandler.send('RenderPageChunk', {
-        operatorList: {
-          fnArray: this.fnArray,
-          argsArray: this.argsArray,
-          lastChunk,
-          length,
-        },
-        pageIndex: this.pageIndex,
-        intent: this.intent,
-      }, transfers);
-      this.dependencies = Object.create(null);
-      this.fnArray.length = 0;
-      this.argsArray.length = 0;
-    },
-  };
-
-  return OperatorList;
-})();
-
 var StateManager = (function StateManagerClosure() {
   function StateManager(initialState) {
     this.state = initialState;
@@ -2923,6 +2929,8 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
     t['null'] = null;
   });
 
+  const MAX_INVALID_PATH_OPS = 20;
+
   function EvaluatorPreprocessor(stream, xref, stateManager) {
     this.opMap = getOPMap();
     // TODO(mduan): pass array of knownCommands rather than this.opMap
@@ -2930,6 +2938,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
     this.parser = new Parser(new Lexer(stream, this.opMap), false, xref);
     this.stateManager = stateManager;
     this.nonProcessedArgs = [];
+    this._numInvalidPathOPS = 0;
   }
 
   EvaluatorPreprocessor.prototype = {
@@ -2967,7 +2976,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
           // Check that the command is valid
           var opSpec = this.opMap[cmd];
           if (!opSpec) {
-            warn('Unknown command "' + cmd + '"');
+            warn(`Unknown command "${cmd}".`);
             continue;
           }
 
@@ -2993,18 +3002,28 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
             }
 
             if (argsLength < numArgs) {
+              const partialMsg = `command ${cmd}: expected ${numArgs} args, ` +
+                                 `but received ${argsLength} args.`;
+
+              // Incomplete path operators, in particular, can result in fairly
+              // chaotic rendering artifacts. Hence the following heuristics is
+              // used to error, rather than just warn, once a number of invalid
+              // path operators have been encountered (fixes bug1443140.pdf).
+              if ((fn >= OPS.moveTo && fn <= OPS.endPath) && // Path operator
+                  ++this._numInvalidPathOPS > MAX_INVALID_PATH_OPS) {
+                throw new FormatError(`Invalid ${partialMsg}`);
+              }
               // If we receive too few arguments, it's not possible to execute
               // the command, hence we skip the command.
-              warn('Skipping command ' + fn + ': expected ' + numArgs +
-                   ' args, but received ' + argsLength + ' args.');
+              warn(`Skipping ${partialMsg}`);
               if (args !== null) {
                 args.length = 0;
               }
               continue;
             }
           } else if (argsLength > numArgs) {
-            info('Command ' + fn + ': expected [0,' + numArgs +
-                 '] args, but received ' + argsLength + ' args.');
+            info(`Command ${cmd}: expected [0, ${numArgs}] args, ` +
+                 `but received ${argsLength} args.`);
           }
 
           // TODO figure out how to type-check vararg functions
@@ -3048,411 +3067,6 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
   return EvaluatorPreprocessor;
 })();
 
-var QueueOptimizer = (function QueueOptimizerClosure() {
-  function addState(parentState, pattern, fn) {
-    var state = parentState;
-    for (var i = 0, ii = pattern.length - 1; i < ii; i++) {
-      var item = pattern[i];
-      state = (state[item] || (state[item] = []));
-    }
-    state[pattern[pattern.length - 1]] = fn;
-  }
-
-  function handlePaintSolidColorImageMask(iFirstSave, count, fnArray,
-                                          argsArray) {
-    // Handles special case of mainly LaTeX documents which use image masks to
-    // draw lines with the current fill style.
-    // 'count' groups of (save, transform, paintImageMaskXObject, restore)+
-    // have been found at iFirstSave.
-    var iFirstPIMXO = iFirstSave + 2;
-    for (var i = 0; i < count; i++) {
-      var arg = argsArray[iFirstPIMXO + 4 * i];
-      var imageMask = arg.length === 1 && arg[0];
-      if (imageMask && imageMask.width === 1 && imageMask.height === 1 &&
-          (!imageMask.data.length ||
-           (imageMask.data.length === 1 && imageMask.data[0] === 0))) {
-        fnArray[iFirstPIMXO + 4 * i] = OPS.paintSolidColorImageMask;
-        continue;
-      }
-      break;
-    }
-    return count - i;
-  }
-
-  var InitialState = [];
-
-  // This replaces (save, transform, paintInlineImageXObject, restore)+
-  // sequences with one |paintInlineImageXObjectGroup| operation.
-  addState(InitialState,
-    [OPS.save, OPS.transform, OPS.paintInlineImageXObject, OPS.restore],
-    function foundInlineImageGroup(context) {
-      var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
-      var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
-      var MAX_WIDTH = 1000;
-      var IMAGE_PADDING = 1;
-
-      var fnArray = context.fnArray, argsArray = context.argsArray;
-      var curr = context.iCurr;
-      var iFirstSave = curr - 3;
-      var iFirstTransform = curr - 2;
-      var iFirstPIIXO = curr - 1;
-
-      // Look for the quartets.
-      var i = iFirstSave + 4;
-      var ii = fnArray.length;
-      while (i + 3 < ii) {
-        if (fnArray[i] !== OPS.save ||
-            fnArray[i + 1] !== OPS.transform ||
-            fnArray[i + 2] !== OPS.paintInlineImageXObject ||
-            fnArray[i + 3] !== OPS.restore) {
-          break;    // ops don't match
-        }
-        i += 4;
-      }
-
-      // At this point, i is the index of the first op past the last valid
-      // quartet.
-      var count = Math.min((i - iFirstSave) / 4,
-                           MAX_IMAGES_IN_INLINE_IMAGES_BLOCK);
-      if (count < MIN_IMAGES_IN_INLINE_IMAGES_BLOCK) {
-        return i;
-      }
-
-      // assuming that heights of those image is too small (~1 pixel)
-      // packing as much as possible by lines
-      var maxX = 0;
-      var map = [], maxLineHeight = 0;
-      var currentX = IMAGE_PADDING, currentY = IMAGE_PADDING;
-      var q;
-      for (q = 0; q < count; q++) {
-        var transform = argsArray[iFirstTransform + (q << 2)];
-        var img = argsArray[iFirstPIIXO + (q << 2)][0];
-        if (currentX + img.width > MAX_WIDTH) {
-          // starting new line
-          maxX = Math.max(maxX, currentX);
-          currentY += maxLineHeight + 2 * IMAGE_PADDING;
-          currentX = 0;
-          maxLineHeight = 0;
-        }
-        map.push({
-          transform,
-          x: currentX, y: currentY,
-          w: img.width, h: img.height,
-        });
-        currentX += img.width + 2 * IMAGE_PADDING;
-        maxLineHeight = Math.max(maxLineHeight, img.height);
-      }
-      var imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
-      var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
-      var imgData = new Uint8Array(imgWidth * imgHeight * 4);
-      var imgRowSize = imgWidth << 2;
-      for (q = 0; q < count; q++) {
-        var data = argsArray[iFirstPIIXO + (q << 2)][0].data;
-        // Copy image by lines and extends pixels into padding.
-        var rowSize = map[q].w << 2;
-        var dataOffset = 0;
-        var offset = (map[q].x + map[q].y * imgWidth) << 2;
-        imgData.set(data.subarray(0, rowSize), offset - imgRowSize);
-        for (var k = 0, kk = map[q].h; k < kk; k++) {
-          imgData.set(data.subarray(dataOffset, dataOffset + rowSize), offset);
-          dataOffset += rowSize;
-          offset += imgRowSize;
-        }
-        imgData.set(data.subarray(dataOffset - rowSize, dataOffset), offset);
-        while (offset >= 0) {
-          data[offset - 4] = data[offset];
-          data[offset - 3] = data[offset + 1];
-          data[offset - 2] = data[offset + 2];
-          data[offset - 1] = data[offset + 3];
-          data[offset + rowSize] = data[offset + rowSize - 4];
-          data[offset + rowSize + 1] = data[offset + rowSize - 3];
-          data[offset + rowSize + 2] = data[offset + rowSize - 2];
-          data[offset + rowSize + 3] = data[offset + rowSize - 1];
-          offset -= imgRowSize;
-        }
-      }
-
-      // Replace queue items.
-      fnArray.splice(iFirstSave, count * 4, OPS.paintInlineImageXObjectGroup);
-      argsArray.splice(iFirstSave, count * 4,
-        [{ width: imgWidth, height: imgHeight, kind: ImageKind.RGBA_32BPP,
-           data: imgData, }, map]);
-
-      return iFirstSave + 1;
-    });
-
-  // This replaces (save, transform, paintImageMaskXObject, restore)+
-  // sequences with one |paintImageMaskXObjectGroup| or one
-  // |paintImageMaskXObjectRepeat| operation.
-  addState(InitialState,
-    [OPS.save, OPS.transform, OPS.paintImageMaskXObject, OPS.restore],
-    function foundImageMaskGroup(context) {
-      var MIN_IMAGES_IN_MASKS_BLOCK = 10;
-      var MAX_IMAGES_IN_MASKS_BLOCK = 100;
-      var MAX_SAME_IMAGES_IN_MASKS_BLOCK = 1000;
-
-      var fnArray = context.fnArray, argsArray = context.argsArray;
-      var curr = context.iCurr;
-      var iFirstSave = curr - 3;
-      var iFirstTransform = curr - 2;
-      var iFirstPIMXO = curr - 1;
-
-      // Look for the quartets.
-      var i = iFirstSave + 4;
-      var ii = fnArray.length;
-      while (i + 3 < ii) {
-        if (fnArray[i] !== OPS.save ||
-            fnArray[i + 1] !== OPS.transform ||
-            fnArray[i + 2] !== OPS.paintImageMaskXObject ||
-            fnArray[i + 3] !== OPS.restore) {
-          break;    // ops don't match
-        }
-        i += 4;
-      }
-
-      // At this point, i is the index of the first op past the last valid
-      // quartet.
-      var count = (i - iFirstSave) / 4;
-      count = handlePaintSolidColorImageMask(iFirstSave, count, fnArray,
-                                             argsArray);
-      if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
-        return i;
-      }
-
-      var q;
-      var isSameImage = false;
-      var iTransform, transformArgs;
-      var firstPIMXOArg0 = argsArray[iFirstPIMXO][0];
-      if (argsArray[iFirstTransform][1] === 0 &&
-          argsArray[iFirstTransform][2] === 0) {
-        isSameImage = true;
-        var firstTransformArg0 = argsArray[iFirstTransform][0];
-        var firstTransformArg3 = argsArray[iFirstTransform][3];
-        iTransform = iFirstTransform + 4;
-        var iPIMXO = iFirstPIMXO + 4;
-        for (q = 1; q < count; q++, iTransform += 4, iPIMXO += 4) {
-          transformArgs = argsArray[iTransform];
-          if (argsArray[iPIMXO][0] !== firstPIMXOArg0 ||
-              transformArgs[0] !== firstTransformArg0 ||
-              transformArgs[1] !== 0 ||
-              transformArgs[2] !== 0 ||
-              transformArgs[3] !== firstTransformArg3) {
-            if (q < MIN_IMAGES_IN_MASKS_BLOCK) {
-              isSameImage = false;
-            } else {
-              count = q;
-            }
-            break; // different image or transform
-          }
-        }
-      }
-
-      if (isSameImage) {
-        count = Math.min(count, MAX_SAME_IMAGES_IN_MASKS_BLOCK);
-        var positions = new Float32Array(count * 2);
-        iTransform = iFirstTransform;
-        for (q = 0; q < count; q++, iTransform += 4) {
-          transformArgs = argsArray[iTransform];
-          positions[(q << 1)] = transformArgs[4];
-          positions[(q << 1) + 1] = transformArgs[5];
-        }
-
-        // Replace queue items.
-        fnArray.splice(iFirstSave, count * 4, OPS.paintImageMaskXObjectRepeat);
-        argsArray.splice(iFirstSave, count * 4,
-          [firstPIMXOArg0, firstTransformArg0, firstTransformArg3, positions]);
-      } else {
-        count = Math.min(count, MAX_IMAGES_IN_MASKS_BLOCK);
-        var images = [];
-        for (q = 0; q < count; q++) {
-          transformArgs = argsArray[iFirstTransform + (q << 2)];
-          var maskParams = argsArray[iFirstPIMXO + (q << 2)][0];
-          images.push({ data: maskParams.data, width: maskParams.width,
-                        height: maskParams.height,
-                        transform: transformArgs, });
-        }
-
-        // Replace queue items.
-        fnArray.splice(iFirstSave, count * 4, OPS.paintImageMaskXObjectGroup);
-        argsArray.splice(iFirstSave, count * 4, [images]);
-      }
-
-      return iFirstSave + 1;
-    });
-
-  // This replaces (save, transform, paintImageXObject, restore)+ sequences
-  // with one paintImageXObjectRepeat operation, if the |transform| and
-  // |paintImageXObjectRepeat| ops are appropriate.
-  addState(InitialState,
-    [OPS.save, OPS.transform, OPS.paintImageXObject, OPS.restore],
-    function (context) {
-      var MIN_IMAGES_IN_BLOCK = 3;
-      var MAX_IMAGES_IN_BLOCK = 1000;
-
-      var fnArray = context.fnArray, argsArray = context.argsArray;
-      var curr = context.iCurr;
-      var iFirstSave = curr - 3;
-      var iFirstTransform = curr - 2;
-      var iFirstPIXO = curr - 1;
-      var iFirstRestore = curr;
-
-      if (argsArray[iFirstTransform][1] !== 0 ||
-          argsArray[iFirstTransform][2] !== 0) {
-        return iFirstRestore + 1;   // transform has the wrong form
-      }
-
-      // Look for the quartets.
-      var firstPIXOArg0 = argsArray[iFirstPIXO][0];
-      var firstTransformArg0 = argsArray[iFirstTransform][0];
-      var firstTransformArg3 = argsArray[iFirstTransform][3];
-      var i = iFirstSave + 4;
-      var ii = fnArray.length;
-      while (i + 3 < ii) {
-        if (fnArray[i] !== OPS.save ||
-            fnArray[i + 1] !== OPS.transform ||
-            fnArray[i + 2] !== OPS.paintImageXObject ||
-            fnArray[i + 3] !== OPS.restore) {
-          break;    // ops don't match
-        }
-        if (argsArray[i + 1][0] !== firstTransformArg0 ||
-            argsArray[i + 1][1] !== 0 ||
-            argsArray[i + 1][2] !== 0 ||
-            argsArray[i + 1][3] !== firstTransformArg3) {
-          break;    // transforms don't match
-        }
-        if (argsArray[i + 2][0] !== firstPIXOArg0) {
-          break;    // images don't match
-        }
-        i += 4;
-      }
-
-      // At this point, i is the index of the first op past the last valid
-      // quartet.
-      var count = Math.min((i - iFirstSave) / 4, MAX_IMAGES_IN_BLOCK);
-      if (count < MIN_IMAGES_IN_BLOCK) {
-        return i;
-      }
-
-      // Extract the (x,y) positions from all of the matching transforms.
-      var positions = new Float32Array(count * 2);
-      var iTransform = iFirstTransform;
-      for (var q = 0; q < count; q++, iTransform += 4) {
-        var transformArgs = argsArray[iTransform];
-        positions[(q << 1)] = transformArgs[4];
-        positions[(q << 1) + 1] = transformArgs[5];
-      }
-
-      // Replace queue items.
-      var args = [firstPIXOArg0, firstTransformArg0, firstTransformArg3,
-                  positions];
-      fnArray.splice(iFirstSave, count * 4, OPS.paintImageXObjectRepeat);
-      argsArray.splice(iFirstSave, count * 4, args);
-
-      return iFirstSave + 1;
-    });
-
-  // This replaces (beginText, setFont, setTextMatrix, showText, endText)+
-  // sequences with (beginText, setFont, (setTextMatrix, showText)+, endText)+
-  // sequences, if the font for each one is the same.
-  addState(InitialState,
-    [OPS.beginText, OPS.setFont, OPS.setTextMatrix, OPS.showText, OPS.endText],
-    function (context) {
-      var MIN_CHARS_IN_BLOCK = 3;
-      var MAX_CHARS_IN_BLOCK = 1000;
-
-      var fnArray = context.fnArray, argsArray = context.argsArray;
-      var curr = context.iCurr;
-      var iFirstBeginText = curr - 4;
-      var iFirstSetFont = curr - 3;
-      var iFirstSetTextMatrix = curr - 2;
-      var iFirstShowText = curr - 1;
-      var iFirstEndText = curr;
-
-      // Look for the quintets.
-      var firstSetFontArg0 = argsArray[iFirstSetFont][0];
-      var firstSetFontArg1 = argsArray[iFirstSetFont][1];
-      var i = iFirstBeginText + 5;
-      var ii = fnArray.length;
-      while (i + 4 < ii) {
-        if (fnArray[i] !== OPS.beginText ||
-            fnArray[i + 1] !== OPS.setFont ||
-            fnArray[i + 2] !== OPS.setTextMatrix ||
-            fnArray[i + 3] !== OPS.showText ||
-            fnArray[i + 4] !== OPS.endText) {
-          break;    // ops don't match
-        }
-        if (argsArray[i + 1][0] !== firstSetFontArg0 ||
-            argsArray[i + 1][1] !== firstSetFontArg1) {
-          break;    // fonts don't match
-        }
-        i += 5;
-      }
-
-      // At this point, i is the index of the first op past the last valid
-      // quintet.
-      var count = Math.min(((i - iFirstBeginText) / 5), MAX_CHARS_IN_BLOCK);
-      if (count < MIN_CHARS_IN_BLOCK) {
-        return i;
-      }
-
-      // If the preceding quintet is (<something>, setFont, setTextMatrix,
-      // showText, endText), include that as well. (E.g. <something> might be
-      // |dependency|.)
-      var iFirst = iFirstBeginText;
-      if (iFirstBeginText >= 4 &&
-          fnArray[iFirstBeginText - 4] === fnArray[iFirstSetFont] &&
-          fnArray[iFirstBeginText - 3] === fnArray[iFirstSetTextMatrix] &&
-          fnArray[iFirstBeginText - 2] === fnArray[iFirstShowText] &&
-          fnArray[iFirstBeginText - 1] === fnArray[iFirstEndText] &&
-          argsArray[iFirstBeginText - 4][0] === firstSetFontArg0 &&
-          argsArray[iFirstBeginText - 4][1] === firstSetFontArg1) {
-        count++;
-        iFirst -= 5;
-      }
-
-      // Remove (endText, beginText, setFont) trios.
-      var iEndText = iFirst + 4;
-      for (var q = 1; q < count; q++) {
-        fnArray.splice(iEndText, 3);
-        argsArray.splice(iEndText, 3);
-        iEndText += 2;
-      }
-
-      return iEndText + 1;
-    });
-
-  function QueueOptimizer() {}
-
-  QueueOptimizer.prototype = {
-    optimize: function QueueOptimizer_optimize(queue) {
-      var fnArray = queue.fnArray, argsArray = queue.argsArray;
-      var context = {
-        iCurr: 0,
-        fnArray,
-        argsArray,
-      };
-      var state;
-      var i = 0, ii = fnArray.length;
-      while (i < ii) {
-        state = (state || InitialState)[fnArray[i]];
-        if (typeof state === 'function') { // we found some handler
-          context.iCurr = i;
-          // state() returns the index of the first non-matching op (if we
-          // didn't match) or the first op past the modified ops (if we did
-          // match and replace).
-          i = state(context);
-          state = undefined;    // reset the state machine
-          ii = context.fnArray.length;
-        } else {
-          i++;
-        }
-      }
-    },
-  };
-  return QueueOptimizer;
-})();
-
 export {
-  OperatorList,
   PartialEvaluator,
 };

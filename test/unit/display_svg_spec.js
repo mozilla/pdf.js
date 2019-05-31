@@ -14,10 +14,11 @@
  */
 /* globals __non_webpack_require__ */
 
-import { isNodeJS, NativeImageDecoding } from '../../src/shared/util';
 import { setStubs, unsetStubs } from '../../examples/node/domstubs';
 import { buildGetDocumentParams } from './test_utils';
 import { getDocument } from '../../src/display/api';
+import isNodeJS from '../../src/shared/is_node';
+import { NativeImageDecoding } from '../../src/shared/util';
 import { SVGGraphics } from '../../src/display/svg';
 
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
@@ -107,6 +108,21 @@ describe('SVGGraphics', function () {
         return svgImg;
       });
     }
+
+    it('should fail require("zlib") unless in Node.js', function() {
+      function testFunc() {
+        __non_webpack_require__('zlib');
+      }
+      // Verifies that the script loader replaces __non_webpack_require__ with
+      // require.
+      expect(testFunc.toString()).toMatch(/\srequire\(["']zlib["']\)/);
+      if (isNodeJS()) {
+        expect(testFunc).not.toThrow();
+      } else {
+        // require not defined, require('zlib') not a module, etc.
+        expect(testFunc).toThrow();
+      }
+    });
 
     it('should produce a reasonably small svg:image', function(done) {
       if (!isNodeJS()) {

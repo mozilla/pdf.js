@@ -1,0 +1,9 @@
+{
+  "extends": [
+    ../.eslintrc
+  ],
+
+  "rules": {
+    "no-restricted-globals": "off",
+  },
+}

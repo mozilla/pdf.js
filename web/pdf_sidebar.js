@@ -29,12 +29,10 @@ const SidebarView = {
  * @typedef {Object} PDFSidebarOptions
  * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {PDFThumbnailViewer} pdfThumbnailViewer - The thumbnail viewer.
- * @property {PDFOutlineViewer} pdfOutlineViewer - The outline viewer.
- * @property {HTMLDivElement} mainContainer - The main container
- *   (in which the viewer element is placed).
  * @property {HTMLDivElement} outerContainer - The outer container
  *   (encasing both the viewer and sidebar elements).
- * @property {EventBus} eventBus - The application event bus.
+ * @property {HTMLDivElement} viewerContainer - The viewer container
+ *   (in which the viewer element is placed).
  * @property {HTMLButtonElement} toggleButton - The button used for
  *   opening/closing the sidebar.
  * @property {HTMLButtonElement} thumbnailButton - The button used to show
@@ -56,9 +54,10 @@ const SidebarView = {
 class PDFSidebar {
   /**
    * @param {PDFSidebarOptions} options
+   * @param {EventBus} eventBus - The application event bus.
    * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, l10n = NullL10n) {
+  constructor(options, eventBus, l10n = NullL10n) {
     this.isOpen = false;
     this.active = SidebarView.THUMBS;
     this.isInitialViewSet = false;
@@ -71,11 +70,9 @@ class PDFSidebar {
 
     this.pdfViewer = options.pdfViewer;
     this.pdfThumbnailViewer = options.pdfThumbnailViewer;
-    this.pdfOutlineViewer = options.pdfOutlineViewer;
 
-    this.mainContainer = options.mainContainer;
     this.outerContainer = options.outerContainer;
-    this.eventBus = options.eventBus;
+    this.viewerContainer = options.viewerContainer;
     this.toggleButton = options.toggleButton;
 
     this.thumbnailButton = options.thumbnailButton;
@@ -88,6 +85,7 @@ class PDFSidebar {
 
     this.disableNotification = options.disableNotification || false;
 
+    this.eventBus = eventBus;
     this.l10n = l10n;
 
     this._addEventListeners();
@@ -126,7 +124,7 @@ class PDFSidebar {
    * @param {number} view - The sidebar view that should become visible,
    *                        must be one of the values in {SidebarView}.
    */
-  setInitialView(view) {
+  setInitialView(view = SidebarView.NONE) {
     if (this.isInitialViewSet) {
       return;
     }
@@ -382,8 +380,8 @@ class PDFSidebar {
    * @private
    */
   _addEventListeners() {
-    this.mainContainer.addEventListener('transitionend', (evt) => {
-      if (evt.target === this.mainContainer) {
+    this.viewerContainer.addEventListener('transitionend', (evt) => {
+      if (evt.target === this.viewerContainer) {
         this.outerContainer.classList.remove('sidebarMoving');
       }
     });
@@ -397,7 +395,7 @@ class PDFSidebar {
       this.switchView(SidebarView.OUTLINE);
     });
     this.outlineButton.addEventListener('dblclick', () => {
-      this.pdfOutlineViewer.toggleOutlineTree();
+      this.eventBus.dispatch('toggleoutlinetree', { source: this, });
     });
 
     this.attachmentsButton.addEventListener('click', () => {
@@ -420,17 +418,31 @@ class PDFSidebar {
     });
 
     this.eventBus.on('attachmentsloaded', (evt) => {
-      let attachmentsCount = evt.attachmentsCount;
+      if (evt.attachmentsCount) {
+        this.attachmentsButton.disabled = false;
 
-      this.attachmentsButton.disabled = !attachmentsCount;
-
-      if (attachmentsCount) {
         this._showUINotification(SidebarView.ATTACHMENTS);
-      } else if (this.active === SidebarView.ATTACHMENTS) {
-        // If the attachment view was opened during document load, switch away
-        // from it if it turns out that the document has no attachments.
-        this.switchView(SidebarView.THUMBS);
+        return;
       }
+
+      // Attempt to avoid temporarily disabling, and switching away from, the
+      // attachment view for documents that do not contain proper attachments
+      // but *only* FileAttachment annotations. Hence we defer those operations
+      // slightly to allow time for parsing any FileAttachment annotations that
+      // may be present on the *initially* rendered page of the document.
+      Promise.resolve().then(() => {
+        if (this.attachmentsView.hasChildNodes()) {
+          // FileAttachment annotations were appended to the attachment view.
+          return;
+        }
+        this.attachmentsButton.disabled = true;
+
+        if (this.active === SidebarView.ATTACHMENTS) {
+          // If the attachment view was opened during document load, switch away
+          // from it if it turns out that the document has no attachments.
+          this.switchView(SidebarView.THUMBS);
+        }
+      });
     });
 
     // Update the thumbnailViewer, if visible, when exiting presentation mode.

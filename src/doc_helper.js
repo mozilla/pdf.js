@@ -12,31 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable strict */
 
 /*
  NOTE: This file is created as a helper to assist with JSDoc html files.
        It is not for use in the executable code.
 */
-
-/**
- * PDFJS scope object that contains all functions, objects and variables related
- * to the PDF.js.
- * @constructor
- */
-function PDFJS() {
-  // Mock class constructor. See src/display/api.js.
-}
-
-/**
- * Controls the logging level.
- * The constants from PDFJS.VERBOSITY_LEVELS should be used:
- * - errors
- * - warnings [default]
- * - infos
- * @var {number}
- */
-PDFJS.verbosity = PDFJS.VERBOSITY_LEVELS.warnings;
 
 /**
  * Represents the eventual result of an asynchronous operation.

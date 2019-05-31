@@ -48,7 +48,7 @@ function WebServer() {
   this.cacheExpirationTime = 0;
   this.disableRangeRequests = false;
   this.hooks = {
-    'GET': [],
+    'GET': [crossOriginHandler],
     'POST': [],
   };
 }
@@ -294,5 +294,19 @@ WebServer.prototype = {
 
   },
 };
+
+// This supports the "Cross-origin" test in test/unit/api_spec.js
+// It is here instead of test.js so that when the test will still complete as
+// expected if the user does "gulp server" and then visits
+// http://localhost:8888/test/unit/unit_test.html?spec=Cross-origin
+function crossOriginHandler(req, res) {
+  if (req.url === '/test/pdfs/basicapi.pdf?cors=withCredentials') {
+    res.setHeader('Access-Control-Allow-Origin', req.headers['origin']);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  if (req.url === '/test/pdfs/basicapi.pdf?cors=withoutCredentials') {
+    res.setHeader('Access-Control-Allow-Origin', req.headers['origin']);
+  }
+}
 
 exports.WebServer = WebServer;
