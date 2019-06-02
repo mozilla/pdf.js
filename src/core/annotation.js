@@ -16,7 +16,8 @@
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, isString, OPS, stringToBytes, stringToPDFString, Util, warn
+  AnnotationType, assert, isString, OPS, stringToBytes, stringToPDFString, Util,
+  warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
@@ -361,6 +362,11 @@ class Annotation {
    * @param {Dict} borderStyle - The border style dictionary
    */
   setBorderStyle(borderStyle) {
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(this.rectangle, 'setRectangle must have been called previously.');
+    }
+
     this.borderStyle = new AnnotationBorderStyle();
     if (!isDict(borderStyle)) {
       return;
@@ -370,7 +376,7 @@ class Annotation {
       let dictType = dict.get('Type');
 
       if (!dictType || isName(dictType, 'Border')) {
-        this.borderStyle.setWidth(dict.get('W'));
+        this.borderStyle.setWidth(dict.get('W'), this.rectangle);
         this.borderStyle.setStyle(dict.get('S'));
         this.borderStyle.setDashArray(dict.getArray('D'));
       }
@@ -379,7 +385,7 @@ class Annotation {
       if (Array.isArray(array) && array.length >= 3) {
         this.borderStyle.setHorizontalCornerRadius(array[0]);
         this.borderStyle.setVerticalCornerRadius(array[1]);
-        this.borderStyle.setWidth(array[2]);
+        this.borderStyle.setWidth(array[2], this.rectangle);
 
         if (array.length === 4) { // Dash array available
           this.borderStyle.setDashArray(array[3]);
@@ -497,9 +503,16 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {integer} width - The width
+   * @param {integer} width - The width.
+   * @param {Array} rect - The annotation `Rect` entry.
    */
-  setWidth(width) {
+  setWidth(width, rect = [0, 0, 0, 0]) {
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(Array.isArray(rect) && rect.length === 4,
+             'A valid `rect` parameter must be provided.');
+    }
+
     // Some corrupt PDF generators may provide the width as a `Name`,
     // rather than as a number (fixes issue 10385).
     if (isName(width)) {
@@ -507,6 +520,19 @@ class AnnotationBorderStyle {
       return;
     }
     if (Number.isInteger(width)) {
+      if (width > 0) {
+        const maxWidth = (rect[2] - rect[0]) / 2;
+        const maxHeight = (rect[3] - rect[1]) / 2;
+
+        // Ignore large `width`s, since they lead to the Annotation overflowing
+        // the size set by the `Rect` entry thus causing the `annotationLayer`
+        // to render it over the surrounding document (fixes bug1552113.pdf).
+        if ((maxWidth > 0 && maxHeight > 0) &&
+            (width > maxWidth || width > maxHeight)) {
+          warn(`AnnotationBorderStyle.setWidth - ignoring width: ${width}`);
+          width = 1;
+        }
+      }
       this.width = width;
     }
   }
