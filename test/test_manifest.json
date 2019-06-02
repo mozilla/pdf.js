@@ -680,6 +680,15 @@
        "annotations": true,
        "about": "Annotation with (unsupported) file:// URL."
     },
+    {  "id": "bug1552113",
+       "file": "pdfs/bug1552113.pdf",
+       "md5": "dafb7ba1328e8deaab2e3619c94bf974",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true,
+       "about": "Annotation with (ridiculously) large border width."
+    },
     {  "id": "issue4934",
        "file": "pdfs/issue4934.pdf",
        "md5": "6099da44f677702ae65a648b51a2226d",
