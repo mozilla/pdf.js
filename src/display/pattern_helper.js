@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError, info, isArray, Util } from '../shared/util';
-import { WebGLUtils } from './webgl';
+import { FormatError, info, Util } from '../shared/util';
 
 var ShadingIRs = {};
 
@@ -145,7 +144,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
   }
 
   function createMeshCanvas(bounds, combinesScale, coords, colors, figures,
-                            backgroundColor, cachedCanvases) {
+                            backgroundColor, cachedCanvases, webGLContext) {
     // we will increase scale on some weird factor to let antialiasing take
     // care of "rough" edges
     var EXPECTED_SCALE = 1.1;
@@ -180,10 +179,14 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
     var paddedHeight = height + BORDER_SIZE * 2;
 
     var canvas, tmpCanvas, i, ii;
-    if (WebGLUtils.isEnabled) {
-      canvas = WebGLUtils.drawFigures(width, height, backgroundColor,
-                                      figures, context);
-
+    if (webGLContext.isEnabled) {
+      canvas = webGLContext.drawFigures({
+        width,
+        height,
+        backgroundColor,
+        figures,
+        context,
+      });
       // https://bugzilla.mozilla.org/show_bug.cgi?id=972126
       tmpCanvas = cachedCanvases.getCanvas('mesh', paddedWidth, paddedHeight,
                                            false);
@@ -248,12 +251,11 @@ ShadingIRs.Mesh = {
           }
         }
 
-
         // Rasterizing on the main thread since sending/queue large canvases
         // might cause OOM.
         var temporaryPatternCanvas = createMeshCanvas(bounds, scale, coords,
           colors, figures, shadingFill ? null : background,
-          owner.cachedCanvases);
+          owner.cachedCanvases, owner.webGLContext);
 
         if (!shadingFill) {
           ctx.setTransform.apply(ctx, owner.baseTransform);
@@ -360,7 +362,7 @@ var TilingPattern = (function TilingPatternClosure() {
       var graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
       graphics.groupLevel = owner.groupLevel;
 
-      this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
+      this.setFillAndStrokeStyleToContext(graphics, paintType, color);
 
       this.setScale(width, height, xstep, ystep);
       this.transformToScale(graphics);
@@ -391,7 +393,7 @@ var TilingPattern = (function TilingPatternClosure() {
     },
 
     clipBbox: function clipBbox(graphics, bbox, x0, y0, x1, y1) {
-      if (isArray(bbox) && bbox.length === 4) {
+      if (Array.isArray(bbox) && bbox.length === 4) {
         var bboxWidth = x1 - x0;
         var bboxHeight = y1 - y0;
         graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
@@ -401,17 +403,23 @@ var TilingPattern = (function TilingPatternClosure() {
     },
 
     setFillAndStrokeStyleToContext:
-      function setFillAndStrokeStyleToContext(context, paintType, color) {
+      function setFillAndStrokeStyleToContext(graphics, paintType, color) {
+        let context = graphics.ctx, current = graphics.current;
         switch (paintType) {
           case PaintType.COLORED:
             var ctx = this.ctx;
             context.fillStyle = ctx.fillStyle;
             context.strokeStyle = ctx.strokeStyle;
+            current.fillColor = ctx.fillStyle;
+            current.strokeColor = ctx.strokeStyle;
             break;
           case PaintType.UNCOLORED:
             var cssColor = Util.makeCssRgb(color[0], color[1], color[2]);
             context.fillStyle = cssColor;
             context.strokeStyle = cssColor;
+            // Set color needed by image masks (fixes issues 3226 and 8741).
+            current.fillColor = cssColor;
+            current.strokeColor = cssColor;
             break;
           default:
             throw new FormatError(`Unsupported paint type: ${paintType}`);

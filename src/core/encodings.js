@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-var ExpertEncoding = [
+const ExpertEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   'space', 'exclamsmall', 'Hungarumlautsmall', '', 'dollaroldstyle',
@@ -56,7 +56,7 @@ var ExpertEncoding = [
   'Ucircumflexsmall', 'Udieresissmall', 'Yacutesmall', 'Thornsmall',
   'Ydieresissmall'];
 
-var MacExpertEncoding = [
+const MacExpertEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   'space', 'exclamsmall', 'Hungarumlautsmall', 'centoldstyle',
@@ -86,7 +86,7 @@ var MacExpertEncoding = [
   'eightinferior', 'seveninferior', 'Scaronsmall', '', 'centinferior',
   'twoinferior', '', 'Dieresissmall', '', 'Caronsmall', 'osuperior',
   'fiveinferior', '', 'commainferior', 'periodinferior', 'Yacutesmall', '',
-  'dollarinferior', '', 'Thornsmall', '', 'nineinferior', 'zeroinferior',
+  'dollarinferior', '', '', 'Thornsmall', '', 'nineinferior', 'zeroinferior',
   'Zcaronsmall', 'AEsmall', 'Oslashsmall', 'questiondownsmall',
   'oneinferior', 'Lslashsmall', '', '', '', '', '', '', 'Cedillasmall', '',
   '', '', '', '', 'OEsmall', 'figuredash', 'hyphensuperior', '', '', '', '',
@@ -96,9 +96,9 @@ var MacExpertEncoding = [
   'rsuperior', 'tsuperior', '', '', 'isuperior', 'ssuperior', 'dsuperior',
   '', '', '', '', '', 'lsuperior', 'Ogoneksmall', 'Brevesmall',
   'Macronsmall', 'bsuperior', 'nsuperior', 'msuperior', 'commasuperior',
-  'periodsuperior', 'Dotaccentsmall', 'Ringsmall'];
+  'periodsuperior', 'Dotaccentsmall', 'Ringsmall', '', '', '', ''];
 
-var MacRomanEncoding = [
+const MacRomanEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
@@ -134,7 +134,7 @@ var MacRomanEncoding = [
   'tilde', 'macron', 'breve', 'dotaccent', 'ring', 'cedilla', 'hungarumlaut',
   'ogonek', 'caron'];
 
-var StandardEncoding = [
+const StandardEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
@@ -159,9 +159,10 @@ var StandardEncoding = [
   '', 'hungarumlaut', 'ogonek', 'caron', 'emdash', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', 'AE', '', 'ordfeminine', '', '',
   '', '', 'Lslash', 'Oslash', 'OE', 'ordmasculine', '', '', '', '', '', 'ae',
-  '', '', '', 'dotlessi', '', '', 'lslash', 'oslash', 'oe', 'germandbls'];
+  '', '', '', 'dotlessi', '', '', 'lslash', 'oslash', 'oe', 'germandbls', '',
+  '', '', ''];
 
-var WinAnsiEncoding = [
+const WinAnsiEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
@@ -197,7 +198,7 @@ var WinAnsiEncoding = [
   'ugrave', 'uacute', 'ucircumflex', 'udieresis', 'yacute', 'thorn',
   'ydieresis'];
 
-var SymbolSetEncoding = [
+const SymbolSetEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   'space', 'exclam', 'universal', 'numbersign', 'existential', 'percent',
@@ -233,9 +234,9 @@ var SymbolSetEncoding = [
   '', 'angleright', 'integral', 'integraltp', 'integralex', 'integralbt',
   'parenrighttp', 'parenrightex', 'parenrightbt', 'bracketrighttp',
   'bracketrightex', 'bracketrightbt', 'bracerighttp', 'bracerightmid',
-  'bracerightbt'];
+  'bracerightbt', ''];
 
-var ZapfDingbatsEncoding = [
+const ZapfDingbatsEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   'space', 'a1', 'a2', 'a202', 'a3', 'a4', 'a5', 'a119', 'a118', 'a117',
@@ -259,7 +260,7 @@ var ZapfDingbatsEncoding = [
   'a192', 'a166', 'a167', 'a168', 'a169', 'a170', 'a171', 'a172', 'a173',
   'a162', 'a174', 'a175', 'a176', 'a177', 'a178', 'a179', 'a193', 'a180',
   'a199', 'a181', 'a200', 'a182', '', 'a201', 'a183', 'a184', 'a197', 'a185',
-  'a194', 'a198', 'a186', 'a195', 'a187', 'a188', 'a189', 'a190', 'a191'];
+  'a194', 'a198', 'a186', 'a195', 'a187', 'a188', 'a189', 'a190', 'a191', ''];
 
 function getEncoding(encodingName) {
   switch (encodingName) {

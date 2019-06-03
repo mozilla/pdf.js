@@ -17,6 +17,8 @@
  * Hashes roughly 100 KB per millisecond on i7 3.4 GHz.
  */
 
+import { isArrayBuffer, isString } from '../shared/util';
+
 var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
   // Workaround for missing math precision in JS.
   var MASK_HIGH = 0xffff0000;
@@ -30,11 +32,11 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
 
   MurmurHash3_64.prototype = {
     update: function MurmurHash3_64_update(input) {
-      var i;
-      if (typeof input === 'string') {
-        var data = new Uint8Array(input.length * 2);
-        var length = 0;
-        for (i = 0; i < input.length; i++) {
+      let data, length;
+      if (isString(input)) {
+        data = new Uint8Array(input.length * 2);
+        length = 0;
+        for (let i = 0, ii = input.length; i < ii; i++) {
           var code = input.charCodeAt(i);
           if (code <= 0xff) {
             data[length++] = code;
@@ -43,7 +45,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
             data[length++] = code & 0xff;
           }
         }
-      } else if (typeof input === 'object' && ('byteLength' in input)) {
+      } else if (isArrayBuffer(input)) {
         data = input;
         length = data.byteLength;
       } else {
@@ -64,7 +66,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
       var C1_LOW = C1 & MASK_LOW;
       var C2_LOW = C2 & MASK_LOW;
 
-      for (i = 0; i < blockCounts; i++) {
+      for (let i = 0; i < blockCounts; i++) {
         if (i & 1) {
           k1 = dataUint32[i];
           k1 = (k1 * C1 & MASK_HIGH) | (k1 * C1_LOW & MASK_LOW);

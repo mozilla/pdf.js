@@ -150,6 +150,10 @@ var Type1CharString = (function Type1CharStringClosure() {
                 break;
               }
               subrNumber = this.stack.pop();
+              if (!subrs[subrNumber]) {
+                error = true;
+                break;
+              }
               error = this.convert(subrs[subrNumber], subrs,
                                    seacAnalysisEnabled);
               break;
@@ -324,7 +328,7 @@ var Type1CharString = (function Type1CharStringClosure() {
       var start = stackLength - howManyArgs;
       for (var i = start; i < stackLength; i++) {
         var value = this.stack[i];
-        if (value === (value | 0)) { // int
+        if (Number.isInteger(value)) {
           this.output.push(28, (value >> 8) & 0xff, value & 0xff);
         } else { // fixed point
           value = (65536 * value) | 0;
@@ -503,6 +507,15 @@ var Type1Parser = (function Type1ParserClosure() {
       return token;
     },
 
+    readCharStrings: function Type1Parser_readCharStrings(bytes, lenIV) {
+      if (lenIV === -1) {
+        // This isn't in the spec, but Adobe's tx program handles -1
+        // as plain text.
+        return bytes;
+      }
+      return decrypt(bytes, CHAR_STRS_ENCRYPT_KEY, lenIV);
+    },
+
     /*
      * Returns an object containing a Subrs array and a CharStrings
      * array extracted from and eexec encrypted block of data
@@ -546,11 +559,9 @@ var Type1Parser = (function Type1ParserClosure() {
               var glyph = this.getToken();
               length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
-              data = stream.makeSubStream(stream.pos, length);
+              data = (length > 0 ? stream.getBytes(length) : new Uint8Array(0));
               lenIV = program.properties.privateData['lenIV'];
-              encoded = decrypt(data.getBytes(), CHAR_STRS_ENCRYPT_KEY, lenIV);
-              // Skip past the required space and binary data.
-              stream.skip(length);
+              encoded = this.readCharStrings(data, lenIV);
               this.nextChar();
               token = this.getToken(); // read in 'ND' or '|-'
               if (token === 'noaccess') {
@@ -565,15 +576,13 @@ var Type1Parser = (function Type1ParserClosure() {
           case 'Subrs':
             this.readInt(); // num
             this.getToken(); // read in 'array'
-            while ((token = this.getToken()) === 'dup') {
+            while (this.getToken() === 'dup') {
               var index = this.readInt();
               length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
-              data = stream.makeSubStream(stream.pos, length);
+              data = (length > 0 ? stream.getBytes(length) : new Uint8Array(0));
               lenIV = program.properties.privateData['lenIV'];
-              encoded = decrypt(data.getBytes(), CHAR_STRS_ENCRYPT_KEY, lenIV);
-              // Skip past the required space and binary data.
-              stream.skip(length);
+              encoded = this.readCharStrings(data, lenIV);
               this.nextChar();
               token = this.getToken(); // read in 'NP' or '|'
               if (token === 'noaccess') {

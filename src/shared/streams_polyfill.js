@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-restricted-globals */
 
 let isReadableStreamSupported = false;
 if (typeof ReadableStream !== 'undefined') {
@@ -31,9 +32,17 @@ if (typeof ReadableStream !== 'undefined') {
 if (isReadableStreamSupported) {
   exports.ReadableStream = ReadableStream;
 } else {
-  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
-    throw new Error('ReadableStream polyfill is not found for Chrome bundle');
+  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('IMAGE_DECODERS')) {
+    class DummyReadableStream {
+      constructor() {
+        throw new Error('The current image decoders are synchronous, ' +
+                        'hence `ReadableStream` shouldn\'t need to be ' +
+                        'polyfilled for the IMAGE_DECODERS build target.');
+      }
+    }
+    exports.ReadableStream = DummyReadableStream;
+  } else {
+    exports.ReadableStream =
+      require('../../external/streams/streams-lib').ReadableStream;
   }
-  exports.ReadableStream =
-    require('../../external/streams/streams-lib').ReadableStream;
 }

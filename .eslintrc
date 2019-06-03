@@ -1,8 +1,13 @@
 {
   "parserOptions": {
-    "ecmaVersion": 6,
+    "ecmaVersion": 8,
     "sourceType": "module",
   },
+
+  "plugins": [
+    "mozilla",
+    "unicorn",
+  ],
 
   "env": {
     "browser": true,
@@ -18,7 +23,13 @@
   },
 
   "rules": {
+    // Plugins
+    "mozilla/avoid-removeChild": "error",
+    "mozilla/use-includes-instead-of-indexOf": "error",
+    "unicorn/no-array-instanceof": "error",
+
     // Possible errors
+    "for-direction": "error",
     "no-cond-assign": ["error", "except-parens"],
     "no-constant-condition": ["error", { "checkLoops": false, }],
     "no-dupe-args": "error",
@@ -89,6 +100,20 @@
     "no-catch-shadow": "error",
     "no-delete-var": "error",
     "no-label-var": "error",
+    "no-restricted-globals": ["error",
+      {
+        "name": "ReadableStream",
+        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
+      },
+      {
+        "name": "URL",
+        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
+      },
+      {
+        "name": "WritableStream",
+        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
+      },
+    ],
     "no-shadow-restricted-names": "error",
     "no-shadow": "off",
     "no-undef-init": "error",
@@ -118,11 +143,15 @@
     "key-spacing": ["error", { "beforeColon": false, "afterColon": true, "mode": "strict", }],
     "keyword-spacing": ["error", { "before": true, "after": true, }],
     "linebreak-style": ["error", "unix"],
-    "max-len": ["error", 80],
+    "lines-between-class-members": ["error", "always"],
+    "max-len": ["error", {
+      "code": 80,
+      "ignoreUrls": true
+    }],
     "new-cap": ["error", { "newIsCap": true, "capIsNew": false, }],
     "new-parens": "error",
     "no-array-constructor": "error",
-    "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 0, "maxBOF": 1, }],
+    "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0, "maxBOF": 1, }],
     "no-new-object": "error",
     "no-tabs": "error",
     "no-trailing-spaces": ["error", { "skipBlankLines": false, }],
@@ -138,10 +167,6 @@
     "space-infix-ops": ["error", { "int32Hint": false }],
     "space-unary-ops": ["error", { "words": true, "nonwords": false, }],
     "spaced-comment": ["error", "always", {
-      "line": {
-        "exceptions": ["//", "#else", "#endif"],
-        "markers": ["#if", "#elif", "#include", "#expand", "#error"],
-      },
       "block": {
         "balanced": true,
       }
@@ -164,6 +189,7 @@
     "no-useless-computed-key": "error",
     "no-useless-constructor": "error",
     "no-useless-rename": "error",
+    "no-var": "off",
     "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],

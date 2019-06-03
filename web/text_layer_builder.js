@@ -15,8 +15,11 @@
 
 import { getGlobalEventBus } from './dom_events';
 import { renderTextLayer } from 'pdfjs-lib';
+import { scrollIntoView } from './ui_utils';
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
+const MATCH_SCROLL_OFFSET_TOP = -50;
+const MATCH_SCROLL_OFFSET_LEFT = -400;
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -52,6 +55,9 @@ class TextLayerBuilder {
     this.findController = findController;
     this.textLayerRenderTask = null;
     this.enhanceTextSelection = enhanceTextSelection;
+
+    this._boundEvents = Object.create(null);
+    this._bindEvents();
 
     this._bindMouse();
   }
@@ -243,9 +249,17 @@ class TextLayerBuilder {
       let isSelected = (isSelectedPage && i === selectedMatchIdx);
       let highlightSuffix = (isSelected ? ' selected' : '');
 
+      // Scroll the selected match into view.
       if (this.findController) {
-        this.findController.updateMatchPosition(pageIdx, i, textDivs,
-                                                begin.divIdx);
+        if (this.findController.selected.matchIdx === i &&
+            this.findController.selected.pageIdx === pageIdx) {
+          const spot = {
+            top: MATCH_SCROLL_OFFSET_TOP,
+            left: MATCH_SCROLL_OFFSET_LEFT,
+          };
+          scrollIntoView(textDivs[begin.divIdx], spot,
+                         /* skipOverflowHiddenElements = */ true);
+        }
       }
 
       // Match inside new div.
@@ -303,7 +317,7 @@ class TextLayerBuilder {
       clearedUntilDivIdx = match.end.divIdx + 1;
     }
 
-    if (this.findController === null || !this.findController.active) {
+    if (!this.findController || !this.findController.highlightMatches) {
       return;
     }
 
@@ -318,6 +332,40 @@ class TextLayerBuilder {
 
     this.matches = this.convertMatches(pageMatches, pageMatchesLength);
     this.renderMatches(this.matches);
+  }
+
+  /**
+   * @private
+   */
+  _bindEvents() {
+    const { eventBus, _boundEvents, } = this;
+
+    _boundEvents.pageCancelled = (evt) => {
+      if (evt.pageNumber !== this.pageNumber) {
+        return;
+      }
+      if (this.textLayerRenderTask) {
+        console.error('TextLayerBuilder._bindEvents: `this.cancel()` should ' +
+          'have been called when the page was reset, or rendering cancelled.');
+        return;
+      }
+      // Ensure that all event listeners are cleaned up when the page is reset,
+      // since re-rendering will create new `TextLayerBuilder` instances and the
+      // number of (stale) event listeners would otherwise grow without bound.
+      for (const name in _boundEvents) {
+        eventBus.off(name.toLowerCase(), _boundEvents[name]);
+        delete _boundEvents[name];
+      }
+    };
+    _boundEvents.updateTextLayerMatches = (evt) => {
+      if (evt.pageIndex !== this.pageIdx && evt.pageIndex !== -1) {
+        return;
+      }
+      this.updateMatches();
+    };
+
+    eventBus.on('pagecancelled', _boundEvents.pageCancelled);
+    eventBus.on('updatetextlayermatches', _boundEvents.updateTextLayerMatches);
   }
 
   /**

@@ -14,18 +14,39 @@
  */
 
 import {
-  Ascii85Stream, AsciiHexStream, CCITTFaxStream, FlateStream, Jbig2Stream,
-  JpegStream, JpxStream, LZWStream, NullStream, PredictorStream, RunLengthStream
+  Ascii85Stream, AsciiHexStream, FlateStream, LZWStream, NullStream,
+  PredictorStream, RunLengthStream
 } from './stream';
 import {
-  assert, FormatError, info, isArray, isInt, isNum, isString,
+  assert, bytesToString, FormatError, info, isNum, isSpace, isString,
   MissingDataException, StreamType, warn
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
 } from './primitives';
+import { CCITTFaxStream } from './ccitt_stream';
+import { Jbig2Stream } from './jbig2_stream';
+import { JpegStream } from './jpeg_stream';
+import { JpxStream } from './jpx_stream';
 
-var MAX_LENGTH_TO_CACHE = 1000;
+const MAX_LENGTH_TO_CACHE = 1000;
+const MAX_ADLER32_LENGTH = 5552;
+
+function computeAdler32(bytes) {
+  let bytesLength = bytes.length;
+  if (typeof PDFJSDev === 'undefined' ||
+      PDFJSDev.test('!PRODUCTION || TESTING')) {
+    assert(bytesLength < MAX_ADLER32_LENGTH,
+           'computeAdler32: Unsupported "bytes" length.');
+  }
+  let a = 1, b = 0;
+  for (let i = 0; i < bytesLength; ++i) {
+    // No modulo required in the loop if `bytesLength < 5552`.
+    a += bytes[i] & 0xFF;
+    b += a;
+  }
+  return ((b % 65521) << 16) | (a % 65521);
+}
 
 var Parser = (function ParserClosure() {
   function Parser(lexer, allowStreams, xref, recoveryMode) {
@@ -121,9 +142,9 @@ var Parser = (function ParserClosure() {
         }
       }
 
-      if (isInt(buf1)) { // indirect reference or integer
+      if (Number.isInteger(buf1)) { // indirect reference or integer
         var num = buf1;
-        if (isInt(this.buf1) && isCmd(this.buf2, 'R')) {
+        if (Number.isInteger(this.buf1) && isCmd(this.buf2, 'R')) {
           var ref = new Ref(num, this.buf1);
           this.shift();
           this.shift();
@@ -147,10 +168,10 @@ var Parser = (function ParserClosure() {
      * Find the end of the stream by searching for the /EI\s/.
      * @returns {number} The inline stream length.
      */
-    findDefaultInlineStreamEnd:
-        function Parser_findDefaultInlineStreamEnd(stream) {
-      var E = 0x45, I = 0x49, SPACE = 0x20, LF = 0xA, CR = 0xD;
-      var startPos = stream.pos, state = 0, ch, i, n, followingBytes;
+    findDefaultInlineStreamEnd(stream) {
+      const E = 0x45, I = 0x49, SPACE = 0x20, LF = 0xA, CR = 0xD;
+      const n = 10, NUL = 0x0;
+      let startPos = stream.pos, state = 0, ch, maybeEIPos;
       while ((ch = stream.getByte()) !== -1) {
         if (state === 0) {
           state = (ch === E) ? 1 : 0;
@@ -159,11 +180,24 @@ var Parser = (function ParserClosure() {
         } else {
           assert(state === 2);
           if (ch === SPACE || ch === LF || ch === CR) {
-            // Let's check the next five bytes are ASCII... just be sure.
-            n = 5;
-            followingBytes = stream.peekBytes(n);
-            for (i = 0; i < n; i++) {
+            maybeEIPos = stream.pos;
+            // Let's check that the next `n` bytes are ASCII... just to be sure.
+            let followingBytes = stream.peekBytes(n);
+            for (let i = 0, ii = followingBytes.length; i < ii; i++) {
               ch = followingBytes[i];
+              if (ch === NUL && followingBytes[i + 1] !== NUL) {
+                // NUL bytes are not supposed to occur *outside* of inline
+                // images, but some PDF generators violate that assumption,
+                // thus breaking the EI detection heuristics used below.
+                //
+                // However, we can't unconditionally treat NUL bytes as "ASCII",
+                // since that *could* result in inline images being truncated.
+                //
+                // To attempt to address this, we'll still treat any *sequence*
+                // of NUL bytes as non-ASCII, but for a *single* NUL byte we'll
+                // continue checking the `followingBytes` (fixes issue8823.pdf).
+                continue;
+              }
               if (ch !== LF && ch !== CR && (ch < SPACE || ch > 0x7F)) {
                 // Not a LF, CR, SPACE or any visible ASCII character, i.e.
                 // it's binary stuff. Resetting the state.
@@ -177,6 +211,15 @@ var Parser = (function ParserClosure() {
           } else {
             state = 0;
           }
+        }
+      }
+
+      if (ch === -1) {
+        warn('findDefaultInlineStreamEnd: ' +
+             'Reached the end of the stream without finding a valid EI marker');
+        if (maybeEIPos) {
+          warn('... trying to recover by using the last "EI" occurrence.');
+          stream.skip(-(stream.pos - maybeEIPos)); // Reset the stream position.
         }
       }
       return ((stream.pos - 4) - startPos);
@@ -345,7 +388,7 @@ var Parser = (function ParserClosure() {
       var stream = lexer.stream;
 
       // Parse dictionary.
-      var dict = new Dict(this.xref);
+      let dict = new Dict(this.xref), dictLength;
       while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
         if (!isName(this.buf1)) {
           throw new FormatError('Dictionary key must be a name object');
@@ -357,12 +400,15 @@ var Parser = (function ParserClosure() {
         }
         dict.set(key, this.getObj(cipherTransform));
       }
+      if (lexer.beginInlineImagePos !== -1) {
+        dictLength = stream.pos - lexer.beginInlineImagePos;
+      }
 
       // Extract the name of the first (i.e. the current) image filter.
       var filter = dict.get('Filter', 'F'), filterName;
       if (isName(filter)) {
         filterName = filter.name;
-      } else if (isArray(filter)) {
+      } else if (Array.isArray(filter)) {
         var filterZero = this.xref.fetchIfRef(filter[0]);
         if (isName(filterZero)) {
           filterName = filterZero.name;
@@ -370,7 +416,7 @@ var Parser = (function ParserClosure() {
       }
 
       // Parse image stream.
-      var startPos = stream.pos, length, i, ii;
+      let startPos = stream.pos, length;
       if (filterName === 'DCTDecode' || filterName === 'DCT') {
         length = this.findDCTDecodeInlineStreamEnd(stream);
       } else if (filterName === 'ASCII85Decode' || filterName === 'A85') {
@@ -384,26 +430,28 @@ var Parser = (function ParserClosure() {
 
       // Cache all images below the MAX_LENGTH_TO_CACHE threshold by their
       // adler32 checksum.
-      var adler32;
-      if (length < MAX_LENGTH_TO_CACHE) {
+      let cacheKey;
+      if (length < MAX_LENGTH_TO_CACHE && dictLength < MAX_ADLER32_LENGTH) {
         var imageBytes = imageStream.getBytes();
         imageStream.reset();
 
-        var a = 1;
-        var b = 0;
-        for (i = 0, ii = imageBytes.length; i < ii; ++i) {
-          // No modulo required in the loop if imageBytes.length < 5552.
-          a += imageBytes[i] & 0xff;
-          b += a;
-        }
-        adler32 = ((b % 65521) << 16) | (a % 65521);
+        const initialStreamPos = stream.pos;
+        // Set the stream position to the beginning of the dictionary data...
+        stream.pos = lexer.beginInlineImagePos;
+        // ... and fetch the bytes of the *entire* dictionary.
+        let dictBytes = stream.getBytes(dictLength);
+        // Finally, don't forget to reset the stream position.
+        stream.pos = initialStreamPos;
 
-        if (this.imageCache.adler32 === adler32) {
+        cacheKey = computeAdler32(imageBytes) + '_' + computeAdler32(dictBytes);
+
+        let cacheEntry = this.imageCache[cacheKey];
+        if (cacheEntry !== undefined) {
           this.buf2 = Cmd.get('EI');
           this.shift();
 
-          this.imageCache[adler32].reset();
-          return this.imageCache[adler32];
+          cacheEntry.reset();
+          return cacheEntry;
         }
       }
 
@@ -413,9 +461,9 @@ var Parser = (function ParserClosure() {
 
       imageStream = this.filter(imageStream, dict, length);
       imageStream.dict = dict;
-      if (adler32 !== undefined) {
-        imageStream.cacheKey = 'inline_' + length + '_' + adler32;
-        this.imageCache[adler32] = imageStream;
+      if (cacheKey !== undefined) {
+        imageStream.cacheKey = 'inline_' + length + '_' + cacheKey;
+        this.imageCache[cacheKey] = imageStream;
       }
 
       this.buf2 = Cmd.get('EI');
@@ -423,68 +471,97 @@ var Parser = (function ParserClosure() {
 
       return imageStream;
     },
+
+    _findStreamLength(startPos, signature) {
+      const { stream, } = this.lexer;
+      stream.pos = startPos;
+
+      const SCAN_BLOCK_LENGTH = 2048;
+      const signatureLength = signature.length;
+
+      while (stream.pos < stream.end) {
+        const scanBytes = stream.peekBytes(SCAN_BLOCK_LENGTH);
+        const scanLength = scanBytes.length - signatureLength;
+
+        if (scanLength <= 0) {
+          break;
+        }
+        let pos = 0;
+        while (pos < scanLength) {
+          let j = 0;
+          while (j < signatureLength && scanBytes[pos + j] === signature[j]) {
+            j++;
+          }
+          if (j >= signatureLength) { // `signature` found.
+            stream.pos += pos;
+            return (stream.pos - startPos);
+          }
+          pos++;
+        }
+        stream.pos += scanLength;
+      }
+      return -1;
+    },
+
     makeStream: function Parser_makeStream(dict, cipherTransform) {
       var lexer = this.lexer;
       var stream = lexer.stream;
 
       // get stream start position
       lexer.skipToNextLine();
-      var pos = stream.pos - 1;
+      const startPos = stream.pos - 1;
 
       // get length
       var length = dict.get('Length');
-      if (!isInt(length)) {
+      if (!Number.isInteger(length)) {
         info('Bad ' + length + ' attribute in stream');
         length = 0;
       }
 
       // skip over the stream data
-      stream.pos = pos + length;
+      stream.pos = startPos + length;
       lexer.nextChar();
 
       // Shift '>>' and check whether the new object marks the end of the stream
       if (this.tryShift() && isCmd(this.buf2, 'endstream')) {
         this.shift(); // 'stream'
       } else {
-        // bad stream length, scanning for endstream
-        stream.pos = pos;
-        var SCAN_BLOCK_SIZE = 2048;
-        var ENDSTREAM_SIGNATURE_LENGTH = 9;
-        var ENDSTREAM_SIGNATURE = [0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65,
-                                   0x61, 0x6D];
-        var skipped = 0, found = false, i, j;
-        while (stream.pos < stream.end) {
-          var scanBytes = stream.peekBytes(SCAN_BLOCK_SIZE);
-          var scanLength = scanBytes.length - ENDSTREAM_SIGNATURE_LENGTH;
-          if (scanLength <= 0) {
-            break;
-          }
-          found = false;
-          i = 0;
-          while (i < scanLength) {
-            j = 0;
-            while (j < ENDSTREAM_SIGNATURE_LENGTH &&
-                   scanBytes[i + j] === ENDSTREAM_SIGNATURE[j]) {
-              j++;
-            }
-            if (j >= ENDSTREAM_SIGNATURE_LENGTH) {
-              found = true;
+        // Bad stream length, scanning for endstream command.
+        const ENDSTREAM_SIGNATURE = new Uint8Array([
+          0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6D]);
+        let actualLength = this._findStreamLength(startPos,
+                                                  ENDSTREAM_SIGNATURE);
+        if (actualLength < 0) {
+          // Only allow limited truncation of the endstream signature,
+          // to prevent false positives.
+          const MAX_TRUNCATION = 1;
+          // Check if the PDF generator included truncated endstream commands,
+          // such as e.g. "endstrea" (fixes issue10004.pdf).
+          for (let i = 1; i <= MAX_TRUNCATION; i++) {
+            const end = ENDSTREAM_SIGNATURE.length - i;
+            const TRUNCATED_SIGNATURE = ENDSTREAM_SIGNATURE.slice(0, end);
+
+            let maybeLength = this._findStreamLength(startPos,
+                                                     TRUNCATED_SIGNATURE);
+            if (maybeLength >= 0) {
+              // Ensure that the byte immediately following the truncated
+              // endstream command is a space, to prevent false positives.
+              const lastByte = stream.peekBytes(end + 1)[end];
+              if (!isSpace(lastByte)) {
+                break;
+              }
+              info(`Found "${bytesToString(TRUNCATED_SIGNATURE)}" when ` +
+                   'searching for endstream command.');
+              actualLength = maybeLength;
               break;
             }
-            i++;
           }
-          if (found) {
-            skipped += i;
-            stream.pos += i;
-            break;
+
+          if (actualLength < 0) {
+            throw new FormatError('Missing endstream command.');
           }
-          skipped += scanLength;
-          stream.pos += scanLength;
         }
-        if (!found) {
-          throw new FormatError('Missing endstream');
-        }
-        length = skipped;
+        length = actualLength;
 
         lexer.nextChar();
         this.shift();
@@ -492,7 +569,7 @@ var Parser = (function ParserClosure() {
       }
       this.shift(); // 'endstream'
 
-      stream = stream.makeSubStream(pos, length, dict);
+      stream = stream.makeSubStream(startPos, length, dict);
       if (cipherTransform) {
         stream = cipherTransform.createStream(stream, length);
       }
@@ -504,14 +581,15 @@ var Parser = (function ParserClosure() {
       var filter = dict.get('Filter', 'F');
       var params = dict.get('DecodeParms', 'DP');
       if (isName(filter)) {
-        if (isArray(params)) {
-          params = this.xref.fetchIfRef(params[0]);
+        if (Array.isArray(params)) {
+          warn('/DecodeParms should not contain an Array, ' +
+               'when /Filter contains a Name.');
         }
         return this.makeFilter(stream, filter.name, length, params);
       }
 
       var maybeLength = length;
-      if (isArray(filter)) {
+      if (Array.isArray(filter)) {
         var filterArray = filter;
         var paramsArray = params;
         for (var i = 0, ii = filterArray.length; i < ii; ++i) {
@@ -521,7 +599,7 @@ var Parser = (function ParserClosure() {
           }
 
           params = null;
-          if (isArray(paramsArray) && (i in paramsArray)) {
+          if (Array.isArray(paramsArray) && (i in paramsArray)) {
             params = this.xref.fetchIfRef(paramsArray[i]);
           }
           stream = this.makeFilter(stream, filter.name, maybeLength, params);
@@ -537,7 +615,7 @@ var Parser = (function ParserClosure() {
       // when we can be absolutely certain that it actually is empty.
       if (maybeLength === 0) {
         warn('Empty "' + name + '" stream.');
-        return new NullStream(stream);
+        return new NullStream();
       }
       try {
         var xrefStreamStats = this.xref.stats.streamTypes;
@@ -597,7 +675,7 @@ var Parser = (function ParserClosure() {
           throw ex;
         }
         warn('Invalid stream: \"' + ex + '\"');
-        return new NullStream(stream);
+        return new NullStream();
       }
     },
   };
@@ -625,6 +703,8 @@ var Lexer = (function LexerClosure() {
     // 'fa', 'fal', 'fals'. The prefixes are not needed, if the command has no
     // other commands or literals as a prefix. The knowCommands is optional.
     this.knownCommands = knownCommands;
+
+    this.beginInlineImagePos = -1;
   }
 
   // A '1' in this array means the character is white space. A '1' or
@@ -670,7 +750,7 @@ var Lexer = (function LexerClosure() {
       var ch = this.currentChar;
       var eNotation = false;
       var divideBy = 0; // different from 0 if it's a floating point value
-      var sign = 1;
+      var sign = 0;
 
       if (ch === 0x2D) { // '-'
         sign = -1;
@@ -681,10 +761,7 @@ var Lexer = (function LexerClosure() {
           ch = this.nextChar();
         }
       } else if (ch === 0x2B) { // '+'
-        ch = this.nextChar();
-      }
-      if (ch === 0x2E) { // '.'
-        divideBy = 10;
+        sign = 1;
         ch = this.nextChar();
       }
       if (ch === 0x0A || ch === 0x0D) { // LF, CR
@@ -693,11 +770,22 @@ var Lexer = (function LexerClosure() {
           ch = this.nextChar();
         } while (ch === 0x0A || ch === 0x0D);
       }
+      if (ch === 0x2E) { // '.'
+        divideBy = 10;
+        ch = this.nextChar();
+      }
       if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+        if (divideBy === 10 && sign === 0 &&
+            (isSpace(ch) || ch === /* EOF = */ -1)) {
+          // This is consistent with Adobe Reader (fixes issue9252.pdf).
+          warn('Lexer.getNumber - treating a single decimal point as zero.');
+          return 0;
+        }
         throw new FormatError(
           `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`);
       }
 
+      sign = sign || 1;
       var baseValue = ch - 0x30; // '0'
       var powerValue = 0;
       var powerValueSign = 1;
@@ -1019,6 +1107,13 @@ var Lexer = (function LexerClosure() {
       if (str === 'null') {
         return null;
       }
+
+      if (str === 'BI') {
+        // Keep track of the current stream position, since it's needed in order
+        // to correctly cache inline images; see `Parser.makeInlineImage`.
+        this.beginInlineImagePos = this.stream.pos;
+      }
+
       return Cmd.get(str);
     },
     skipToNextLine: function Lexer_skipToNextLine() {
@@ -1046,7 +1141,7 @@ var Linearization = {
   create: function LinearizationCreate(stream) {
     function getInt(name, allowZeroValue) {
       var obj = linDict.get(name);
-      if (isInt(obj) && (allowZeroValue ? obj >= 0 : obj > 0)) {
+      if (Number.isInteger(obj) && (allowZeroValue ? obj >= 0 : obj > 0)) {
         return obj;
       }
       throw new Error('The "' + name + '" parameter in the linearization ' +
@@ -1054,10 +1149,10 @@ var Linearization = {
     }
     function getHints() {
       var hints = linDict.get('H'), hintsLength, item;
-      if (isArray(hints) &&
+      if (Array.isArray(hints) &&
           ((hintsLength = hints.length) === 2 || hintsLength === 4)) {
         for (var index = 0; index < hintsLength; index++) {
-          if (!(isInt(item = hints[index]) && item > 0)) {
+          if (!(Number.isInteger(item = hints[index]) && item > 0)) {
             throw new Error('Hint (' + index +
                             ') in the linearization dictionary is invalid.');
           }
@@ -1072,7 +1167,8 @@ var Linearization = {
     var obj3 = parser.getObj();
     var linDict = parser.getObj();
     var obj, length;
-    if (!(isInt(obj1) && isInt(obj2) && isCmd(obj3, 'obj') && isDict(linDict) &&
+    if (!(Number.isInteger(obj1) && Number.isInteger(obj2) &&
+          isCmd(obj3, 'obj') && isDict(linDict) &&
           isNum(obj = linDict.get('Linearized')) && obj > 0)) {
       return null; // No valid linearization dictionary found.
     } else if ((length = getInt('L')) !== stream.length) {

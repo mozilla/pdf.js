@@ -15,11 +15,13 @@
 
 import {
   arrayByteLength, arraysToBytes, assert, createPromiseCapability, info,
-  InvalidPDFException, isNodeJS, MessageHandler, MissingPDFException,
-  PasswordException, setVerbosityLevel, UnexpectedResponseException,
-  UnknownErrorException, UNSUPPORTED_FEATURES, warn, XRefParseException
+  InvalidPDFException, MissingPDFException, PasswordException,
+  setVerbosityLevel, UnexpectedResponseException, UnknownErrorException,
+  UNSUPPORTED_FEATURES, warn, XRefParseException
 } from '../shared/util';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
+import isNodeJS from '../shared/is_node';
+import { MessageHandler } from '../shared/message_handler';
 import { Ref } from './primitives';
 
 var WorkerTask = (function WorkerTaskClosure() {
@@ -99,6 +101,16 @@ IPDFStreamReader.prototype = {
    * @returns {Promise}
    */
   get headersReady() {
+    return null;
+  },
+
+  /**
+   * Gets the Content-Disposition filename. It is defined after the headersReady
+   * promise is resolved.
+   * @returns {string|null} The filename, or `null` if the Content-Disposition
+   *                        header is missing/invalid.
+   */
+  get filename() {
     return null;
   },
 
@@ -323,7 +335,7 @@ var WorkerMessageHandler = {
 
       // check if Uint8Array can be sent to worker
       if (!(data instanceof Uint8Array)) {
-        handler.send('test', 'main', false);
+        handler.send('test', false);
         return;
       }
       // making sure postMessage transfers are working
@@ -364,13 +376,24 @@ var WorkerMessageHandler = {
     var cancelXHRs = null;
     var WorkerTasks = [];
 
+    let apiVersion = docParams.apiVersion;
+    let workerVersion =
+      typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
+    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING')) &&
+        apiVersion === null) {
+      warn('Ignoring apiVersion/workerVersion check in TESTING builds.');
+    } else if (apiVersion !== workerVersion) {
+      throw new Error(`The API version "${apiVersion}" does not match ` +
+                      `the Worker version "${workerVersion}".`);
+    }
+
     var docId = docParams.docId;
     var docBaseUrl = docParams.docBaseUrl;
     var workerHandlerName = docParams.docId + '_worker';
     var handler = new MessageHandler(workerHandlerName, docId, port);
 
-    // Ensure that postMessage transfers are correctly enabled/disabled,
-    // to prevent "DataCloneError" in older versions of IE (see issue 6957).
+    // Ensure that postMessage transfers are always correctly enabled/disabled,
+    // to prevent "DataCloneError" in browsers without transfers support.
     handler.postMessageTransfers = docParams.postMessageTransfers;
 
     function ensureNotTerminated() {
@@ -393,19 +416,15 @@ var WorkerMessageHandler = {
       var loadDocumentCapability = createPromiseCapability();
 
       var parseSuccess = function parseSuccess() {
-        var numPagesPromise = pdfManager.ensureDoc('numPages');
-        var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
-        var encryptedPromise = pdfManager.ensureXRef('encrypt');
-        Promise.all([numPagesPromise, fingerprintPromise,
-                     encryptedPromise]).then(function onDocReady(results) {
-          var doc = {
-            numPages: results[0],
-            fingerprint: results[1],
-            encrypted: !!results[2],
-          };
-          loadDocumentCapability.resolve(doc);
-        },
-        parseFailure);
+        Promise.all([
+          pdfManager.ensureDoc('numPages'),
+          pdfManager.ensureDoc('fingerprint'),
+        ]).then(function([numPages, fingerprint]) {
+          loadDocumentCapability.resolve({
+            numPages,
+            fingerprint,
+          });
+        }, parseFailure);
       };
 
       var parseFailure = function parseFailure(e) {
@@ -558,9 +577,9 @@ var WorkerMessageHandler = {
             finishWorkerTask(task);
             pdfManager.updatePassword(data.password);
             pdfManagerReady();
-          }).catch(function (ex) {
+          }).catch(function (boundException) {
             finishWorkerTask(task);
-            handler.send('PasswordException', ex);
+            handler.send('PasswordException', boundException);
           }.bind(null, e));
         } else if (e instanceof InvalidPDFException) {
           handler.send('InvalidPDF', e);
@@ -598,10 +617,11 @@ var WorkerMessageHandler = {
 
       var evaluatorOptions = {
         forceDataSchema: data.disableCreateObjectURL,
-        maxImageSize: data.maxImageSize === undefined ? -1 : data.maxImageSize,
+        maxImageSize: data.maxImageSize,
         disableFontFace: data.disableFontFace,
         nativeImageDecoderSupport: data.nativeImageDecoderSupport,
         ignoreErrors: data.ignoreErrors,
+        isEvalSupported: data.isEvalSupported,
       };
 
       getPdfManager(data, evaluatorOptions).then(function (newPdfManager) {
@@ -611,9 +631,8 @@ var WorkerMessageHandler = {
           newPdfManager.terminate();
           throw new Error('Worker was terminated');
         }
-
         pdfManager = newPdfManager;
-        handler.send('PDFManagerReady', null);
+
         pdfManager.onLoadedStream().then(function(stream) {
           handler.send('DataLoaded', { length: stream.bytes.byteLength, });
         });
@@ -622,19 +641,17 @@ var WorkerMessageHandler = {
 
     handler.on('GetPage', function wphSetupGetPage(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
-        var rotatePromise = pdfManager.ensure(page, 'rotate');
-        var refPromise = pdfManager.ensure(page, 'ref');
-        var userUnitPromise = pdfManager.ensure(page, 'userUnit');
-        var viewPromise = pdfManager.ensure(page, 'view');
-
         return Promise.all([
-          rotatePromise, refPromise, userUnitPromise, viewPromise
-        ]).then(function(results) {
+          pdfManager.ensure(page, 'rotate'),
+          pdfManager.ensure(page, 'ref'),
+          pdfManager.ensure(page, 'userUnit'),
+          pdfManager.ensure(page, 'view'),
+        ]).then(function([rotate, ref, userUnit, view]) {
           return {
-            rotate: results[0],
-            ref: results[1],
-            userUnit: results[2],
-            view: results[3],
+            rotate,
+            ref,
+            userUnit,
+            view,
           };
         });
       });
@@ -686,6 +703,10 @@ var WorkerMessageHandler = {
       }
     );
 
+    handler.on('GetPermissions', function(data) {
+      return pdfManager.ensureCatalog('permissions');
+    });
+
     handler.on('GetMetadata',
       function wphSetupGetMetadata(data) {
         return Promise.all([pdfManager.ensureDoc('documentInfo'),
@@ -706,9 +727,9 @@ var WorkerMessageHandler = {
       }
     );
 
-    handler.on('GetAnnotations', function wphSetupGetAnnotations(data) {
-      return pdfManager.getPage(data.pageIndex).then(function(page) {
-        return pdfManager.ensure(page, 'getAnnotationsData', [data.intent]);
+    handler.on('GetAnnotations', function({ pageIndex, intent, }) {
+      return pdfManager.getPage(pageIndex).then(function(page) {
+        return page.getAnnotationsData(intent);
       });
     });
 

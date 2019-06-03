@@ -15,41 +15,48 @@
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, isArray, isInt, OPS, stringToBytes, stringToPDFString, Util,
-  warn
+  AnnotationType, getInheritableProperty, OPS, stringToBytes, stringToPDFString,
+  Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
 import { ColorSpace } from './colorspace';
-import { OperatorList } from './evaluator';
+import { OperatorList } from './operator_list';
 import { Stream } from './stream';
 
-/**
- * @class
- * @alias AnnotationFactory
- */
-function AnnotationFactory() {}
-AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
+class AnnotationFactory {
   /**
+   * Create an `Annotation` object of the correct type for the given reference
+   * to an annotation dictionary. This yields a promise that is resolved when
+   * the `Annotation` object is constructed.
+   *
    * @param {XRef} xref
    * @param {Object} ref
    * @param {PDFManager} pdfManager
    * @param {Object} idFactory
-   * @returns {Annotation}
+   * @return {Promise} A promise that is resolved with an {Annotation} instance.
    */
-  create: function AnnotationFactory_create(xref, ref, pdfManager, idFactory) {
-    var dict = xref.fetchIfRef(ref);
+  static create(xref, ref, pdfManager, idFactory) {
+    return pdfManager.ensure(this, '_create',
+                             [xref, ref, pdfManager, idFactory]);
+  }
+
+  /**
+   * @private
+   */
+  static _create(xref, ref, pdfManager, idFactory) {
+    let dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
     }
-    var id = isRef(ref) ? ref.toString() : 'annot_' + idFactory.createObjId();
+    let id = isRef(ref) ? ref.toString() : 'annot_' + idFactory.createObjId();
 
     // Determine the annotation's subtype.
-    var subtype = dict.get('Subtype');
+    let subtype = dict.get('Subtype');
     subtype = isName(subtype) ? subtype.name : null;
 
     // Return the right annotation object based on the subtype and field type.
-    var parameters = {
+    let parameters = {
       xref,
       dict,
       ref: isRef(ref) ? ref : null,
@@ -66,7 +73,7 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
         return new TextAnnotation(parameters);
 
       case 'Widget':
-        var fieldType = Util.getInheritableProperty(dict, 'FT');
+        let fieldType = getInheritableProperty({ dict, key: 'FT', });
         fieldType = isName(fieldType) ? fieldType.name : null;
 
         switch (fieldType) {
@@ -87,6 +94,21 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
       case 'Line':
         return new LineAnnotation(parameters);
 
+      case 'Square':
+        return new SquareAnnotation(parameters);
+
+      case 'Circle':
+        return new CircleAnnotation(parameters);
+
+      case 'PolyLine':
+        return new PolylineAnnotation(parameters);
+
+      case 'Polygon':
+        return new PolygonAnnotation(parameters);
+
+      case 'Ink':
+        return new InkAnnotation(parameters);
+
       case 'Highlight':
         return new HighlightAnnotation(parameters);
 
@@ -98,6 +120,9 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
 
       case 'StrikeOut':
         return new StrikeOutAnnotation(parameters);
+
+      case 'Stamp':
+        return new StampAnnotation(parameters);
 
       case 'FileAttachment':
         return new FileAttachmentAnnotation(parameters);
@@ -111,38 +136,38 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
         }
         return new Annotation(parameters);
     }
-  },
-};
+  }
+}
 
-var Annotation = (function AnnotationClosure() {
+function getTransformMatrix(rect, bbox, matrix) {
   // 12.5.5: Algorithm: Appearance streams
-  function getTransformMatrix(rect, bbox, matrix) {
-    var bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
-    var minX = bounds[0];
-    var minY = bounds[1];
-    var maxX = bounds[2];
-    var maxY = bounds[3];
+  let bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
+  let minX = bounds[0];
+  let minY = bounds[1];
+  let maxX = bounds[2];
+  let maxY = bounds[3];
 
-    if (minX === maxX || minY === maxY) {
-      // From real-life file, bbox was [0, 0, 0, 0]. In this case,
-      // just apply the transform for rect
-      return [1, 0, 0, 1, rect[0], rect[1]];
-    }
-
-    var xRatio = (rect[2] - rect[0]) / (maxX - minX);
-    var yRatio = (rect[3] - rect[1]) / (maxY - minY);
-    return [
-      xRatio,
-      0,
-      0,
-      yRatio,
-      rect[0] - minX * xRatio,
-      rect[1] - minY * yRatio
-    ];
+  if (minX === maxX || minY === maxY) {
+    // From real-life file, bbox was [0, 0, 0, 0]. In this case,
+    // just apply the transform for rect
+    return [1, 0, 0, 1, rect[0], rect[1]];
   }
 
-  function Annotation(params) {
-    var dict = params.dict;
+  let xRatio = (rect[2] - rect[0]) / (maxX - minX);
+  let yRatio = (rect[3] - rect[1]) / (maxY - minY);
+  return [
+    xRatio,
+    0,
+    0,
+    yRatio,
+    rect[0] - minX * xRatio,
+    rect[1] - minY * yRatio
+  ];
+}
+
+class Annotation {
+  constructor(params) {
+    let dict = params.dict;
 
     this.setFlags(dict.get('F'));
     this.setRectangle(dict.getArray('Rect'));
@@ -151,306 +176,297 @@ var Annotation = (function AnnotationClosure() {
     this.setAppearance(dict);
 
     // Expose public properties using a data object.
-    this.data = {};
-    this.data.id = params.id;
-    this.data.subtype = params.subtype;
-    this.data.annotationFlags = this.flags;
-    this.data.rect = this.rectangle;
-    this.data.color = this.color;
-    this.data.borderStyle = this.borderStyle;
-    this.data.hasAppearance = !!this.appearance;
+    this.data = {
+      annotationFlags: this.flags,
+      borderStyle: this.borderStyle,
+      color: this.color,
+      hasAppearance: !!this.appearance,
+      id: params.id,
+      rect: this.rectangle,
+      subtype: params.subtype,
+    };
   }
 
-  Annotation.prototype = {
-    /**
-     * @private
-     */
-    _hasFlag: function Annotation_hasFlag(flags, flag) {
-      return !!(flags & flag);
-    },
+  /**
+   * @private
+   */
+  _hasFlag(flags, flag) {
+    return !!(flags & flag);
+  }
 
-    /**
-     * @private
-     */
-    _isViewable: function Annotation_isViewable(flags) {
-      return !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
-             !this._hasFlag(flags, AnnotationFlag.HIDDEN) &&
-             !this._hasFlag(flags, AnnotationFlag.NOVIEW);
-    },
+  /**
+   * @private
+   */
+  _isViewable(flags) {
+    return !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
+           !this._hasFlag(flags, AnnotationFlag.HIDDEN) &&
+           !this._hasFlag(flags, AnnotationFlag.NOVIEW);
+  }
 
-    /**
-     * @private
-     */
-    _isPrintable: function AnnotationFlag_isPrintable(flags) {
-      return this._hasFlag(flags, AnnotationFlag.PRINT) &&
-             !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
-             !this._hasFlag(flags, AnnotationFlag.HIDDEN);
-    },
+  /**
+   * @private
+   */
+  _isPrintable(flags) {
+    return this._hasFlag(flags, AnnotationFlag.PRINT) &&
+           !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
+           !this._hasFlag(flags, AnnotationFlag.HIDDEN);
+  }
 
-    /**
-     * @return {boolean}
-     */
-    get viewable() {
-      if (this.flags === 0) {
-        return true;
-      }
-      return this._isViewable(this.flags);
-    },
+  /**
+   * @return {boolean}
+   */
+  get viewable() {
+    if (this.flags === 0) {
+      return true;
+    }
+    return this._isViewable(this.flags);
+  }
 
-    /**
-     * @return {boolean}
-     */
-    get printable() {
-      if (this.flags === 0) {
-        return false;
-      }
-      return this._isPrintable(this.flags);
-    },
+  /**
+   * @return {boolean}
+   */
+  get printable() {
+    if (this.flags === 0) {
+      return false;
+    }
+    return this._isPrintable(this.flags);
+  }
 
-    /**
-     * Set the flags.
-     *
-     * @public
-     * @memberof Annotation
-     * @param {number} flags - Unsigned 32-bit integer specifying annotation
-     *                         characteristics
-     * @see {@link shared/util.js}
-     */
-    setFlags: function Annotation_setFlags(flags) {
-      this.flags = (isInt(flags) && flags > 0) ? flags : 0;
-    },
+  /**
+   * Set the flags.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {number} flags - Unsigned 32-bit integer specifying annotation
+   *                         characteristics
+   * @see {@link shared/util.js}
+   */
+  setFlags(flags) {
+    this.flags = (Number.isInteger(flags) && flags > 0) ? flags : 0;
+  }
 
-    /**
-     * Check if a provided flag is set.
-     *
-     * @public
-     * @memberof Annotation
-     * @param {number} flag - Hexadecimal representation for an annotation
-     *                        characteristic
-     * @return {boolean}
-     * @see {@link shared/util.js}
-     */
-    hasFlag: function Annotation_hasFlag(flag) {
-      return this._hasFlag(this.flags, flag);
-    },
+  /**
+   * Check if a provided flag is set.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {number} flag - Hexadecimal representation for an annotation
+   *                        characteristic
+   * @return {boolean}
+   * @see {@link shared/util.js}
+   */
+  hasFlag(flag) {
+    return this._hasFlag(this.flags, flag);
+  }
 
-    /**
-     * Set the rectangle.
-     *
-     * @public
-     * @memberof Annotation
-     * @param {Array} rectangle - The rectangle array with exactly four entries
-     */
-    setRectangle: function Annotation_setRectangle(rectangle) {
-      if (isArray(rectangle) && rectangle.length === 4) {
-        this.rectangle = Util.normalizeRect(rectangle);
-      } else {
-        this.rectangle = [0, 0, 0, 0];
-      }
-    },
+  /**
+   * Set the rectangle.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {Array} rectangle - The rectangle array with exactly four entries
+   */
+  setRectangle(rectangle) {
+    if (Array.isArray(rectangle) && rectangle.length === 4) {
+      this.rectangle = Util.normalizeRect(rectangle);
+    } else {
+      this.rectangle = [0, 0, 0, 0];
+    }
+  }
 
-    /**
-     * Set the color and take care of color space conversion.
-     *
-     * @public
-     * @memberof Annotation
-     * @param {Array} color - The color array containing either 0
-     *                        (transparent), 1 (grayscale), 3 (RGB) or
-     *                        4 (CMYK) elements
-     */
-    setColor: function Annotation_setColor(color) {
-      var rgbColor = new Uint8Array(3); // Black in RGB color space (default)
-      if (!isArray(color)) {
+  /**
+   * Set the color and take care of color space conversion.
+   * The default value is black, in RGB color space.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {Array} color - The color array containing either 0
+   *                        (transparent), 1 (grayscale), 3 (RGB) or
+   *                        4 (CMYK) elements
+   */
+  setColor(color) {
+    let rgbColor = new Uint8ClampedArray(3);
+    if (!Array.isArray(color)) {
+      this.color = rgbColor;
+      return;
+    }
+
+    switch (color.length) {
+      case 0: // Transparent, which we indicate with a null value
+        this.color = null;
+        break;
+
+      case 1: // Convert grayscale to RGB
+        ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
         this.color = rgbColor;
-        return;
+        break;
+
+      case 3: // Convert RGB percentages to RGB
+        ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
+        this.color = rgbColor;
+        break;
+
+      case 4: // Convert CMYK to RGB
+        ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
+        this.color = rgbColor;
+        break;
+
+      default:
+        this.color = rgbColor;
+        break;
+    }
+  }
+
+  /**
+   * Set the border style (as AnnotationBorderStyle object).
+   *
+   * @public
+   * @memberof Annotation
+   * @param {Dict} borderStyle - The border style dictionary
+   */
+  setBorderStyle(borderStyle) {
+    this.borderStyle = new AnnotationBorderStyle();
+    if (!isDict(borderStyle)) {
+      return;
+    }
+    if (borderStyle.has('BS')) {
+      let dict = borderStyle.get('BS');
+      let dictType = dict.get('Type');
+
+      if (!dictType || isName(dictType, 'Border')) {
+        this.borderStyle.setWidth(dict.get('W'));
+        this.borderStyle.setStyle(dict.get('S'));
+        this.borderStyle.setDashArray(dict.getArray('D'));
       }
+    } else if (borderStyle.has('Border')) {
+      let array = borderStyle.getArray('Border');
+      if (Array.isArray(array) && array.length >= 3) {
+        this.borderStyle.setHorizontalCornerRadius(array[0]);
+        this.borderStyle.setVerticalCornerRadius(array[1]);
+        this.borderStyle.setWidth(array[2]);
 
-      switch (color.length) {
-        case 0: // Transparent, which we indicate with a null value
-          this.color = null;
-          break;
-
-        case 1: // Convert grayscale to RGB
-          ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
-          this.color = rgbColor;
-          break;
-
-        case 3: // Convert RGB percentages to RGB
-          ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
-          this.color = rgbColor;
-          break;
-
-        case 4: // Convert CMYK to RGB
-          ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
-          this.color = rgbColor;
-          break;
-
-        default:
-          this.color = rgbColor;
-          break;
-      }
-    },
-
-    /**
-     * Set the border style (as AnnotationBorderStyle object).
-     *
-     * @public
-     * @memberof Annotation
-     * @param {Dict} borderStyle - The border style dictionary
-     */
-    setBorderStyle: function Annotation_setBorderStyle(borderStyle) {
-      this.borderStyle = new AnnotationBorderStyle();
-      if (!isDict(borderStyle)) {
-        return;
-      }
-      if (borderStyle.has('BS')) {
-        var dict = borderStyle.get('BS');
-        var dictType = dict.get('Type');
-
-        if (!dictType || isName(dictType, 'Border')) {
-          this.borderStyle.setWidth(dict.get('W'));
-          this.borderStyle.setStyle(dict.get('S'));
-          this.borderStyle.setDashArray(dict.getArray('D'));
+        if (array.length === 4) { // Dash array available
+          this.borderStyle.setDashArray(array[3]);
         }
-      } else if (borderStyle.has('Border')) {
-        var array = borderStyle.getArray('Border');
-        if (isArray(array) && array.length >= 3) {
-          this.borderStyle.setHorizontalCornerRadius(array[0]);
-          this.borderStyle.setVerticalCornerRadius(array[1]);
-          this.borderStyle.setWidth(array[2]);
-
-          if (array.length === 4) { // Dash array available
-            this.borderStyle.setDashArray(array[3]);
-          }
-        }
-      } else {
-        // There are no border entries in the dictionary. According to the
-        // specification, we should draw a solid border of width 1 in that
-        // case, but Adobe Reader did not implement that part of the
-        // specification and instead draws no border at all, so we do the same.
-        // See also https://github.com/mozilla/pdf.js/issues/6179.
-        this.borderStyle.setWidth(0);
       }
-    },
+    } else {
+      // There are no border entries in the dictionary. According to the
+      // specification, we should draw a solid border of width 1 in that
+      // case, but Adobe Reader did not implement that part of the
+      // specification and instead draws no border at all, so we do the same.
+      // See also https://github.com/mozilla/pdf.js/issues/6179.
+      this.borderStyle.setWidth(0);
+    }
+  }
 
-    /**
-     * Set the (normal) appearance.
-     *
-     * @public
-     * @memberof Annotation
-     * @param {Dict} dict - The annotation's data dictionary
-     */
-    setAppearance: function Annotation_setAppearance(dict) {
-      this.appearance = null;
+  /**
+   * Set the (normal) appearance.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {Dict} dict - The annotation's data dictionary
+   */
+  setAppearance(dict) {
+    this.appearance = null;
 
-      var appearanceStates = dict.get('AP');
-      if (!isDict(appearanceStates)) {
+    let appearanceStates = dict.get('AP');
+    if (!isDict(appearanceStates)) {
+      return;
+    }
+
+    // In case the normal appearance is a stream, then it is used directly.
+    let normalAppearanceState = appearanceStates.get('N');
+    if (isStream(normalAppearanceState)) {
+      this.appearance = normalAppearanceState;
+      return;
+    }
+    if (!isDict(normalAppearanceState)) {
+      return;
+    }
+
+    // In case the normal appearance is a dictionary, the `AS` entry provides
+    // the key of the stream in this dictionary.
+    let as = dict.get('AS');
+    if (!isName(as) || !normalAppearanceState.has(as.name)) {
+      return;
+    }
+    this.appearance = normalAppearanceState.get(as.name);
+  }
+
+  /**
+   * Prepare the annotation for working with a popup in the display layer.
+   *
+   * @private
+   * @memberof Annotation
+   * @param {Dict} dict - The annotation's data dictionary
+   */
+  _preparePopup(dict) {
+    if (!dict.has('C')) {
+      // Fall back to the default background color.
+      this.data.color = null;
+    }
+
+    this.data.hasPopup = dict.has('Popup');
+    this.data.title = stringToPDFString(dict.get('T') || '');
+    this.data.contents = stringToPDFString(dict.get('Contents') || '');
+  }
+
+  loadResources(keys) {
+    return this.appearance.dict.getAsync('Resources').then((resources) => {
+      if (!resources) {
         return;
       }
+      let objectLoader = new ObjectLoader(resources, keys, resources.xref);
 
-      // In case the normal appearance is a stream, then it is used directly.
-      var normalAppearanceState = appearanceStates.get('N');
-      if (isStream(normalAppearanceState)) {
-        this.appearance = normalAppearanceState;
-        return;
-      }
-      if (!isDict(normalAppearanceState)) {
-        return;
-      }
-
-      // In case the normal appearance is a dictionary, the `AS` entry provides
-      // the key of the stream in this dictionary.
-      var as = dict.get('AS');
-      if (!isName(as) || !normalAppearanceState.has(as.name)) {
-        return;
-      }
-      this.appearance = normalAppearanceState.get(as.name);
-    },
-
-    /**
-     * Prepare the annotation for working with a popup in the display layer.
-     *
-     * @private
-     * @memberof Annotation
-     * @param {Dict} dict - The annotation's data dictionary
-     */
-    _preparePopup: function Annotation_preparePopup(dict) {
-      if (!dict.has('C')) {
-        // Fall back to the default background color.
-        this.data.color = null;
-      }
-
-      this.data.hasPopup = dict.has('Popup');
-      this.data.title = stringToPDFString(dict.get('T') || '');
-      this.data.contents = stringToPDFString(dict.get('Contents') || '');
-    },
-
-    loadResources: function Annotation_loadResources(keys) {
-      return this.appearance.dict.getAsync('Resources').then((resources) => {
-        if (!resources) {
-          return;
-        }
-        let objectLoader = new ObjectLoader(resources, keys, resources.xref);
-
-        return objectLoader.load().then(function() {
-          return resources;
-        });
+      return objectLoader.load().then(function() {
+        return resources;
       });
-    },
+    });
+  }
 
-    getOperatorList: function Annotation_getOperatorList(evaluator, task,
-                                                         renderForms) {
-      if (!this.appearance) {
-        return Promise.resolve(new OperatorList());
-      }
+  getOperatorList(evaluator, task, renderForms) {
+    if (!this.appearance) {
+      return Promise.resolve(new OperatorList());
+    }
 
-      var data = this.data;
-      var appearanceDict = this.appearance.dict;
-      var resourcesPromise = this.loadResources([
-        'ExtGState',
-        'ColorSpace',
-        'Pattern',
-        'Shading',
-        'XObject',
-        'Font'
-        // ProcSet
-        // Properties
-      ]);
-      var bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
-      var matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
-      var transform = getTransformMatrix(data.rect, bbox, matrix);
+    let data = this.data;
+    let appearanceDict = this.appearance.dict;
+    let resourcesPromise = this.loadResources([
+      'ExtGState',
+      'ColorSpace',
+      'Pattern',
+      'Shading',
+      'XObject',
+      'Font',
+      // ProcSet
+      // Properties
+    ]);
+    let bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
+    let matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
+    let transform = getTransformMatrix(data.rect, bbox, matrix);
 
-      return resourcesPromise.then((resources) => {
-        var opList = new OperatorList();
-        opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
-        return evaluator.getOperatorList({
-          stream: this.appearance,
-          task,
-          resources,
-          operatorList: opList,
-        }).then(() => {
-          opList.addOp(OPS.endAnnotation, []);
-          this.appearance.reset();
-          return opList;
-        });
+    return resourcesPromise.then((resources) => {
+      let opList = new OperatorList();
+      opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
+      return evaluator.getOperatorList({
+        stream: this.appearance,
+        task,
+        resources,
+        operatorList: opList,
+      }).then(() => {
+        opList.addOp(OPS.endAnnotation, []);
+        this.appearance.reset();
+        return opList;
       });
-    },
-  };
-
-  return Annotation;
-})();
+    });
+  }
+}
 
 /**
  * Contains all data regarding an annotation's border style.
- *
- * @class
  */
-var AnnotationBorderStyle = (function AnnotationBorderStyleClosure() {
-  /**
-   * @constructor
-   * @private
-   */
-  function AnnotationBorderStyle() {
+class AnnotationBorderStyle {
+  constructor() {
     this.width = 1;
     this.style = AnnotationBorderStyleType.SOLID;
     this.dashArray = [3];
@@ -458,145 +474,140 @@ var AnnotationBorderStyle = (function AnnotationBorderStyleClosure() {
     this.verticalCornerRadius = 0;
   }
 
-  AnnotationBorderStyle.prototype = {
-    /**
-     * Set the width.
-     *
-     * @public
-     * @memberof AnnotationBorderStyle
-     * @param {integer} width - The width
-     */
-    setWidth: function AnnotationBorderStyle_setWidth(width) {
-      if (width === (width | 0)) {
-        this.width = width;
-      }
-    },
+  /**
+   * Set the width.
+   *
+   * @public
+   * @memberof AnnotationBorderStyle
+   * @param {integer} width - The width
+   */
+  setWidth(width) {
+    if (Number.isInteger(width)) {
+      this.width = width;
+    }
+  }
 
-    /**
-     * Set the style.
-     *
-     * @public
-     * @memberof AnnotationBorderStyle
-     * @param {Object} style - The style object
-     * @see {@link shared/util.js}
-     */
-    setStyle: function AnnotationBorderStyle_setStyle(style) {
-      if (!style) {
-        return;
-      }
-      switch (style.name) {
-        case 'S':
-          this.style = AnnotationBorderStyleType.SOLID;
+  /**
+   * Set the style.
+   *
+   * @public
+   * @memberof AnnotationBorderStyle
+   * @param {Object} style - The style object
+   * @see {@link shared/util.js}
+   */
+  setStyle(style) {
+    if (!style) {
+      return;
+    }
+    switch (style.name) {
+      case 'S':
+        this.style = AnnotationBorderStyleType.SOLID;
+        break;
+
+      case 'D':
+        this.style = AnnotationBorderStyleType.DASHED;
+        break;
+
+      case 'B':
+        this.style = AnnotationBorderStyleType.BEVELED;
+        break;
+
+      case 'I':
+        this.style = AnnotationBorderStyleType.INSET;
+        break;
+
+      case 'U':
+        this.style = AnnotationBorderStyleType.UNDERLINE;
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Set the dash array.
+   *
+   * @public
+   * @memberof AnnotationBorderStyle
+   * @param {Array} dashArray - The dash array with at least one element
+   */
+  setDashArray(dashArray) {
+    // We validate the dash array, but we do not use it because CSS does not
+    // allow us to change spacing of dashes. For more information, visit
+    // http://www.w3.org/TR/css3-background/#the-border-style.
+    if (Array.isArray(dashArray) && dashArray.length > 0) {
+      // According to the PDF specification: the elements in `dashArray`
+      // shall be numbers that are nonnegative and not all equal to zero.
+      let isValid = true;
+      let allZeros = true;
+      for (let i = 0, len = dashArray.length; i < len; i++) {
+        let element = dashArray[i];
+        let validNumber = (+element >= 0);
+        if (!validNumber) {
+          isValid = false;
           break;
-
-        case 'D':
-          this.style = AnnotationBorderStyleType.DASHED;
-          break;
-
-        case 'B':
-          this.style = AnnotationBorderStyleType.BEVELED;
-          break;
-
-        case 'I':
-          this.style = AnnotationBorderStyleType.INSET;
-          break;
-
-        case 'U':
-          this.style = AnnotationBorderStyleType.UNDERLINE;
-          break;
-
-        default:
-          break;
-      }
-    },
-
-    /**
-     * Set the dash array.
-     *
-     * @public
-     * @memberof AnnotationBorderStyle
-     * @param {Array} dashArray - The dash array with at least one element
-     */
-    setDashArray: function AnnotationBorderStyle_setDashArray(dashArray) {
-      // We validate the dash array, but we do not use it because CSS does not
-      // allow us to change spacing of dashes. For more information, visit
-      // http://www.w3.org/TR/css3-background/#the-border-style.
-      if (isArray(dashArray) && dashArray.length > 0) {
-        // According to the PDF specification: the elements in a dashArray
-        // shall be numbers that are nonnegative and not all equal to zero.
-        var isValid = true;
-        var allZeros = true;
-        for (var i = 0, len = dashArray.length; i < len; i++) {
-          var element = dashArray[i];
-          var validNumber = (+element >= 0);
-          if (!validNumber) {
-            isValid = false;
-            break;
-          } else if (element > 0) {
-            allZeros = false;
-          }
+        } else if (element > 0) {
+          allZeros = false;
         }
-        if (isValid && !allZeros) {
-          this.dashArray = dashArray;
-        } else {
-          this.width = 0; // Adobe behavior when the array is invalid.
-        }
-      } else if (dashArray) {
+      }
+      if (isValid && !allZeros) {
+        this.dashArray = dashArray;
+      } else {
         this.width = 0; // Adobe behavior when the array is invalid.
       }
-    },
+    } else if (dashArray) {
+      this.width = 0; // Adobe behavior when the array is invalid.
+    }
+  }
 
-    /**
-     * Set the horizontal corner radius (from a Border dictionary).
-     *
-     * @public
-     * @memberof AnnotationBorderStyle
-     * @param {integer} radius - The horizontal corner radius
-     */
-    setHorizontalCornerRadius:
-        function AnnotationBorderStyle_setHorizontalCornerRadius(radius) {
-      if (radius === (radius | 0)) {
-        this.horizontalCornerRadius = radius;
-      }
-    },
+  /**
+   * Set the horizontal corner radius (from a Border dictionary).
+   *
+   * @public
+   * @memberof AnnotationBorderStyle
+   * @param {integer} radius - The horizontal corner radius
+   */
+  setHorizontalCornerRadius(radius) {
+    if (Number.isInteger(radius)) {
+      this.horizontalCornerRadius = radius;
+    }
+  }
 
-    /**
-     * Set the vertical corner radius (from a Border dictionary).
-     *
-     * @public
-     * @memberof AnnotationBorderStyle
-     * @param {integer} radius - The vertical corner radius
-     */
-    setVerticalCornerRadius:
-        function AnnotationBorderStyle_setVerticalCornerRadius(radius) {
-      if (radius === (radius | 0)) {
-        this.verticalCornerRadius = radius;
-      }
-    },
-  };
+  /**
+   * Set the vertical corner radius (from a Border dictionary).
+   *
+   * @public
+   * @memberof AnnotationBorderStyle
+   * @param {integer} radius - The vertical corner radius
+   */
+  setVerticalCornerRadius(radius) {
+    if (Number.isInteger(radius)) {
+      this.verticalCornerRadius = radius;
+    }
+  }
+}
 
-  return AnnotationBorderStyle;
-})();
+class WidgetAnnotation extends Annotation {
+  constructor(params) {
+    super(params);
 
-var WidgetAnnotation = (function WidgetAnnotationClosure() {
-  function WidgetAnnotation(params) {
-    Annotation.call(this, params);
-
-    var dict = params.dict;
-    var data = this.data;
+    let dict = params.dict;
+    let data = this.data;
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
-    data.fieldValue = Util.getInheritableProperty(dict, 'V',
-                                                  /* getArray = */ true);
+    data.fieldValue = getInheritableProperty({ dict, key: 'V',
+                                               getArray: true, });
     data.alternativeText = stringToPDFString(dict.get('TU') || '');
-    data.defaultAppearance = Util.getInheritableProperty(dict, 'DA') || '';
-    var fieldType = Util.getInheritableProperty(dict, 'FT');
+    data.defaultAppearance = getInheritableProperty({ dict, key: 'DA', }) || '';
+    let fieldType = getInheritableProperty({ dict, key: 'FT', });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
-    this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
+    this.fieldResources = getInheritableProperty({ dict, key: 'DR', }) ||
+                          Dict.empty;
 
-    data.fieldFlags = Util.getInheritableProperty(dict, 'Ff');
-    if (!isInt(data.fieldFlags) || data.fieldFlags < 0) {
+    data.fieldFlags = getInheritableProperty({ dict, key: 'Ff', });
+    if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
       data.fieldFlags = 0;
     }
 
@@ -608,88 +619,95 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     }
   }
 
-  Util.inherit(WidgetAnnotation, Annotation, {
-    /**
-     * Construct the (fully qualified) field name from the (partial) field
-     * names of the field and its ancestors.
-     *
-     * @private
-     * @memberof WidgetAnnotation
-     * @param {Dict} dict - Complete widget annotation dictionary
-     * @return {string}
-     */
-    _constructFieldName: function WidgetAnnotation_constructFieldName(dict) {
-      // Both the `Parent` and `T` fields are optional. While at least one of
-      // them should be provided, bad PDF generators may fail to do so.
-      if (!dict.has('T') && !dict.has('Parent')) {
-        warn('Unknown field name, falling back to empty field name.');
-        return '';
+  /**
+   * Construct the (fully qualified) field name from the (partial) field
+   * names of the field and its ancestors.
+   *
+   * @private
+   * @memberof WidgetAnnotation
+   * @param {Dict} dict - Complete widget annotation dictionary
+   * @return {string}
+   */
+  _constructFieldName(dict) {
+    // Both the `Parent` and `T` fields are optional. While at least one of
+    // them should be provided, bad PDF generators may fail to do so.
+    if (!dict.has('T') && !dict.has('Parent')) {
+      warn('Unknown field name, falling back to empty field name.');
+      return '';
+    }
+
+    // If no parent exists, the partial and fully qualified names are equal.
+    if (!dict.has('Parent')) {
+      return stringToPDFString(dict.get('T'));
+    }
+
+    // Form the fully qualified field name by appending the partial name to
+    // the parent's fully qualified name, separated by a period.
+    let fieldName = [];
+    if (dict.has('T')) {
+      fieldName.unshift(stringToPDFString(dict.get('T')));
+    }
+
+    let loopDict = dict;
+    while (loopDict.has('Parent')) {
+      loopDict = loopDict.get('Parent');
+      if (!isDict(loopDict)) {
+        // Even though it is not allowed according to the PDF specification,
+        // bad PDF generators may provide a `Parent` entry that is not a
+        // dictionary, but `null` for example (issue 8143).
+        break;
       }
 
-      // If no parent exists, the partial and fully qualified names are equal.
-      if (!dict.has('Parent')) {
-        return stringToPDFString(dict.get('T'));
+      if (loopDict.has('T')) {
+        fieldName.unshift(stringToPDFString(loopDict.get('T')));
       }
+    }
+    return fieldName.join('.');
+  }
 
-      // Form the fully qualified field name by appending the partial name to
-      // the parent's fully qualified name, separated by a period.
-      var fieldName = [];
-      if (dict.has('T')) {
-        fieldName.unshift(stringToPDFString(dict.get('T')));
-      }
+  /**
+   * Check if a provided field flag is set.
+   *
+   * @public
+   * @memberof WidgetAnnotation
+   * @param {number} flag - Hexadecimal representation for an annotation
+   *                        field characteristic
+   * @return {boolean}
+   * @see {@link shared/util.js}
+   */
+  hasFieldFlag(flag) {
+    return !!(this.data.fieldFlags & flag);
+  }
 
-      var loopDict = dict;
-      while (loopDict.has('Parent')) {
-        loopDict = loopDict.get('Parent');
-        if (!isDict(loopDict)) {
-          // Even though it is not allowed according to the PDF specification,
-          // bad PDF generators may provide a `Parent` entry that is not a
-          // dictionary, but `null` for example (issue 8143).
-          break;
-        }
+  getOperatorList(evaluator, task, renderForms) {
+    // Do not render form elements on the canvas when interactive forms are
+    // enabled. The display layer is responsible for rendering them instead.
+    if (renderForms) {
+      return Promise.resolve(new OperatorList());
+    }
+    return super.getOperatorList(evaluator, task, renderForms);
+  }
+}
 
-        if (loopDict.has('T')) {
-          fieldName.unshift(stringToPDFString(loopDict.get('T')));
-        }
-      }
-      return fieldName.join('.');
-    },
+class TextWidgetAnnotation extends WidgetAnnotation {
+  constructor(params) {
+    super(params);
 
-    /**
-     * Check if a provided field flag is set.
-     *
-     * @public
-     * @memberof WidgetAnnotation
-     * @param {number} flag - Hexadecimal representation for an annotation
-     *                        field characteristic
-     * @return {boolean}
-     * @see {@link shared/util.js}
-     */
-    hasFieldFlag: function WidgetAnnotation_hasFieldFlag(flag) {
-      return !!(this.data.fieldFlags & flag);
-    },
-  });
-
-  return WidgetAnnotation;
-})();
-
-var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
-  function TextWidgetAnnotation(params) {
-    WidgetAnnotation.call(this, params);
+    const dict = params.dict;
 
     // The field value is always a string.
     this.data.fieldValue = stringToPDFString(this.data.fieldValue || '');
 
     // Determine the alignment of text in the field.
-    var alignment = Util.getInheritableProperty(params.dict, 'Q');
-    if (!isInt(alignment) || alignment < 0 || alignment > 2) {
+    let alignment = getInheritableProperty({ dict, key: 'Q', });
+    if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
       alignment = null;
     }
     this.data.textAlignment = alignment;
 
     // Determine the maximum length of text in the field.
-    var maximumLength = Util.getInheritableProperty(params.dict, 'MaxLen');
-    if (!isInt(maximumLength) || maximumLength < 0) {
+    let maximumLength = getInheritableProperty({ dict, key: 'MaxLen', });
+    if (!Number.isInteger(maximumLength) || maximumLength < 0) {
       maximumLength = null;
     }
     this.data.maxLen = maximumLength;
@@ -703,117 +721,125 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
                      this.data.maxLen !== null;
   }
 
-  Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
-    getOperatorList:
-        function TextWidgetAnnotation_getOperatorList(evaluator, task,
-                                                      renderForms) {
-      var operatorList = new OperatorList();
+  getOperatorList(evaluator, task, renderForms) {
+    if (renderForms || this.appearance) {
+      return super.getOperatorList(evaluator, task, renderForms);
+    }
 
-      // Do not render form elements on the canvas when interactive forms are
-      // enabled. The display layer is responsible for rendering them instead.
-      if (renderForms) {
-        return Promise.resolve(operatorList);
-      }
+    let operatorList = new OperatorList();
 
-      if (this.appearance) {
-        return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                         renderForms);
-      }
+    // Even if there is an appearance stream, ignore it. This is the
+    // behaviour used by Adobe Reader.
+    if (!this.data.defaultAppearance) {
+      return Promise.resolve(operatorList);
+    }
 
-      // Even if there is an appearance stream, ignore it. This is the
-      // behaviour used by Adobe Reader.
-      if (!this.data.defaultAppearance) {
-        return Promise.resolve(operatorList);
-      }
+    let stream = new Stream(stringToBytes(this.data.defaultAppearance));
+    return evaluator.getOperatorList({
+      stream,
+      task,
+      resources: this.fieldResources,
+      operatorList,
+    }).then(function () {
+      return operatorList;
+    });
+  }
+}
 
-      var stream = new Stream(stringToBytes(this.data.defaultAppearance));
-      return evaluator.getOperatorList({
-        stream,
-        task,
-        resources: this.fieldResources,
-        operatorList,
-      }).then(function () {
-        return operatorList;
-      });
-    },
-  });
-
-  return TextWidgetAnnotation;
-})();
-
-var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
-  function ButtonWidgetAnnotation(params) {
-    WidgetAnnotation.call(this, params);
+class ButtonWidgetAnnotation extends WidgetAnnotation {
+  constructor(params) {
+    super(params);
 
     this.data.checkBox = !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
                          !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
+                            !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    this.data.pushButton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+
     if (this.data.checkBox) {
-      if (!isName(this.data.fieldValue)) {
-        return;
-      }
+      this._processCheckBox(params);
+    } else if (this.data.radioButton) {
+      this._processRadioButton(params);
+    } else if (this.data.pushButton) {
+      this._processPushButton(params);
+    } else {
+      warn('Invalid field flags for button widget annotation');
+    }
+  }
+
+  _processCheckBox(params) {
+    if (isName(this.data.fieldValue)) {
       this.data.fieldValue = this.data.fieldValue.name;
     }
 
-    this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
-                            !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    if (this.data.radioButton) {
-      this.data.fieldValue = this.data.buttonValue = null;
+    const customAppearance = params.dict.get('AP');
+    if (!isDict(customAppearance)) {
+      return;
+    }
 
-      // The parent field's `V` entry holds a `Name` object with the appearance
-      // state of whichever child field is currently in the "on" state.
-      var fieldParent = params.dict.get('Parent');
-      if (isDict(fieldParent) && fieldParent.has('V')) {
-        var fieldParentValue = fieldParent.get('V');
-        if (isName(fieldParentValue)) {
-          this.data.fieldValue = fieldParentValue.name;
-        }
-      }
+    const exportValueOptionsDict = customAppearance.get('D');
+    if (!isDict(exportValueOptionsDict)) {
+      return;
+    }
 
-      // The button's value corresponds to its appearance state.
-      var appearanceStates = params.dict.get('AP');
-      if (!isDict(appearanceStates)) {
-        return;
+    const exportValues = exportValueOptionsDict.getKeys();
+    const hasCorrectOptionCount = exportValues.length === 2;
+    if (!hasCorrectOptionCount) {
+      return;
+    }
+
+    this.data.exportValue = exportValues[0] === 'Off' ?
+      exportValues[1] : exportValues[0];
+  }
+
+  _processRadioButton(params) {
+    this.data.fieldValue = this.data.buttonValue = null;
+
+    // The parent field's `V` entry holds a `Name` object with the appearance
+    // state of whichever child field is currently in the "on" state.
+    let fieldParent = params.dict.get('Parent');
+    if (isDict(fieldParent) && fieldParent.has('V')) {
+      let fieldParentValue = fieldParent.get('V');
+      if (isName(fieldParentValue)) {
+        this.data.fieldValue = fieldParentValue.name;
       }
-      var normalAppearanceState = appearanceStates.get('N');
-      if (!isDict(normalAppearanceState)) {
-        return;
-      }
-      var keys = normalAppearanceState.getKeys();
-      for (var i = 0, ii = keys.length; i < ii; i++) {
-        if (keys[i] !== 'Off') {
-          this.data.buttonValue = keys[i];
-          break;
-        }
+    }
+
+    // The button's value corresponds to its appearance state.
+    let appearanceStates = params.dict.get('AP');
+    if (!isDict(appearanceStates)) {
+      return;
+    }
+    let normalAppearanceState = appearanceStates.get('N');
+    if (!isDict(normalAppearanceState)) {
+      return;
+    }
+    let keys = normalAppearanceState.getKeys();
+    for (let i = 0, ii = keys.length; i < ii; i++) {
+      if (keys[i] !== 'Off') {
+        this.data.buttonValue = keys[i];
+        break;
       }
     }
   }
 
-  Util.inherit(ButtonWidgetAnnotation, WidgetAnnotation, {
-    getOperatorList:
-        function ButtonWidgetAnnotation_getOperatorList(evaluator, task,
-                                                        renderForms) {
-      var operatorList = new OperatorList();
+  _processPushButton(params) {
+    if (!params.dict.has('A')) {
+      warn('Push buttons without action dictionaries are not supported');
+      return;
+    }
 
-      // Do not render form elements on the canvas when interactive forms are
-      // enabled. The display layer is responsible for rendering them instead.
-      if (renderForms) {
-        return Promise.resolve(operatorList);
-      }
+    Catalog.parseDestDictionary({
+      destDict: params.dict,
+      resultObj: this.data,
+      docBaseUrl: params.pdfManager.docBaseUrl,
+    });
+  }
+}
 
-      if (this.appearance) {
-        return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                         renderForms);
-      }
-      return Promise.resolve(operatorList);
-    },
-  });
-
-  return ButtonWidgetAnnotation;
-})();
-
-var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
-  function ChoiceWidgetAnnotation(params) {
-    WidgetAnnotation.call(this, params);
+class ChoiceWidgetAnnotation extends WidgetAnnotation {
+  constructor(params) {
+    super(params);
 
     // Determine the options. The options array may consist of strings or
     // arrays. If the array consists of arrays, then the first element of
@@ -826,16 +852,17 @@ var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
     // inherit the options from a parent annotation (issue 8094).
     this.data.options = [];
 
-    var options = Util.getInheritableProperty(params.dict, 'Opt');
-    if (isArray(options)) {
-      var xref = params.xref;
-      for (var i = 0, ii = options.length; i < ii; i++) {
-        var option = xref.fetchIfRef(options[i]);
-        var isOptionArray = isArray(option);
+    let options = getInheritableProperty({ dict: params.dict, key: 'Opt', });
+    if (Array.isArray(options)) {
+      let xref = params.xref;
+      for (let i = 0, ii = options.length; i < ii; i++) {
+        let option = xref.fetchIfRef(options[i]);
+        let isOptionArray = Array.isArray(option);
 
         this.data.options[i] = {
           exportValue: isOptionArray ? xref.fetchIfRef(option[0]) : option,
-          displayValue: isOptionArray ? xref.fetchIfRef(option[1]) : option,
+          displayValue: stringToPDFString(isOptionArray ?
+                                          xref.fetchIfRef(option[1]) : option),
         };
       }
     }
@@ -843,7 +870,7 @@ var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
     // Determine the field value. In this case, it may be a string or an
     // array of strings. For convenience in the display layer, convert the
     // string to an array of one string as well.
-    if (!isArray(this.data.fieldValue)) {
+    if (!Array.isArray(this.data.fieldValue)) {
       this.data.fieldValue = [this.data.fieldValue];
     }
 
@@ -851,32 +878,13 @@ var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
     this.data.combo = this.hasFieldFlag(AnnotationFieldFlag.COMBO);
     this.data.multiSelect = this.hasFieldFlag(AnnotationFieldFlag.MULTISELECT);
   }
+}
 
-  Util.inherit(ChoiceWidgetAnnotation, WidgetAnnotation, {
-    getOperatorList:
-        function ChoiceWidgetAnnotation_getOperatorList(evaluator, task,
-                                                        renderForms) {
-      var operatorList = new OperatorList();
+class TextAnnotation extends Annotation {
+  constructor(parameters) {
+    const DEFAULT_ICON_SIZE = 22; // px
 
-      // Do not render form elements on the canvas when interactive forms are
-      // enabled. The display layer is responsible for rendering them instead.
-      if (renderForms) {
-        return Promise.resolve(operatorList);
-      }
-
-      return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                       renderForms);
-    },
-  });
-
-  return ChoiceWidgetAnnotation;
-})();
-
-var TextAnnotation = (function TextAnnotationClosure() {
-  var DEFAULT_ICON_SIZE = 22; // px
-
-  function TextAnnotation(parameters) {
-    Annotation.call(this, parameters);
+    super(parameters);
 
     this.data.annotationType = AnnotationType.TEXT;
 
@@ -890,45 +898,36 @@ var TextAnnotation = (function TextAnnotationClosure() {
     }
     this._preparePopup(parameters.dict);
   }
+}
 
-  Util.inherit(TextAnnotation, Annotation, {});
+class LinkAnnotation extends Annotation {
+  constructor(params) {
+    super(params);
 
-  return TextAnnotation;
-})();
-
-var LinkAnnotation = (function LinkAnnotationClosure() {
-  function LinkAnnotation(params) {
-    Annotation.call(this, params);
-
-    var data = this.data;
-    data.annotationType = AnnotationType.LINK;
+    this.data.annotationType = AnnotationType.LINK;
 
     Catalog.parseDestDictionary({
       destDict: params.dict,
-      resultObj: data,
+      resultObj: this.data,
       docBaseUrl: params.pdfManager.docBaseUrl,
     });
   }
+}
 
-  Util.inherit(LinkAnnotation, Annotation, {});
-
-  return LinkAnnotation;
-})();
-
-var PopupAnnotation = (function PopupAnnotationClosure() {
-  function PopupAnnotation(parameters) {
-    Annotation.call(this, parameters);
+class PopupAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
 
     this.data.annotationType = AnnotationType.POPUP;
 
-    var dict = parameters.dict;
-    var parentItem = dict.get('Parent');
+    let dict = parameters.dict;
+    let parentItem = dict.get('Parent');
     if (!parentItem) {
       warn('Popup annotation has a missing or invalid parent annotation.');
       return;
     }
 
-    var parentSubtype = parentItem.get('Subtype');
+    let parentSubtype = parentItem.get('Subtype');
     this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
     this.data.parentId = dict.getRaw('Parent').toString();
     this.data.title = stringToPDFString(parentItem.get('T') || '');
@@ -946,101 +945,161 @@ var PopupAnnotation = (function PopupAnnotationClosure() {
     // that is most likely a bug. Fallback to inherit the flags from the parent
     // annotation (this is consistent with the behaviour in Adobe Reader).
     if (!this.viewable) {
-      var parentFlags = parentItem.get('F');
+      let parentFlags = parentItem.get('F');
       if (this._isViewable(parentFlags)) {
         this.setFlags(parentFlags);
       }
     }
   }
+}
 
-  Util.inherit(PopupAnnotation, Annotation, {});
-
-  return PopupAnnotation;
-})();
-
-var LineAnnotation = (function LineAnnotationClosure() {
-  function LineAnnotation(parameters) {
-    Annotation.call(this, parameters);
+class LineAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
 
     this.data.annotationType = AnnotationType.LINE;
 
-    var dict = parameters.dict;
+    let dict = parameters.dict;
     this.data.lineCoordinates = Util.normalizeRect(dict.getArray('L'));
     this._preparePopup(dict);
   }
+}
 
-  Util.inherit(LineAnnotation, Annotation, {});
+class SquareAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
 
-  return LineAnnotation;
-})();
+    this.data.annotationType = AnnotationType.SQUARE;
+    this._preparePopup(parameters.dict);
+  }
+}
 
-var HighlightAnnotation = (function HighlightAnnotationClosure() {
-  function HighlightAnnotation(parameters) {
-    Annotation.call(this, parameters);
+class CircleAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.CIRCLE;
+    this._preparePopup(parameters.dict);
+  }
+}
+
+class PolylineAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.POLYLINE;
+
+    // The vertices array is an array of numbers representing the alternating
+    // horizontal and vertical coordinates, respectively, of each vertex.
+    // Convert this to an array of objects with x and y coordinates.
+    let dict = parameters.dict;
+    let rawVertices = dict.getArray('Vertices');
+
+    this.data.vertices = [];
+    for (let i = 0, ii = rawVertices.length; i < ii; i += 2) {
+      this.data.vertices.push({
+        x: rawVertices[i],
+        y: rawVertices[i + 1],
+      });
+    }
+
+    this._preparePopup(dict);
+  }
+}
+
+class PolygonAnnotation extends PolylineAnnotation {
+  constructor(parameters) {
+    // Polygons are specific forms of polylines, so reuse their logic.
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.POLYGON;
+  }
+}
+
+class InkAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.INK;
+
+    let dict = parameters.dict;
+    const xref = parameters.xref;
+
+    let originalInkLists = dict.getArray('InkList');
+    this.data.inkLists = [];
+    for (let i = 0, ii = originalInkLists.length; i < ii; ++i) {
+      // The raw ink lists array contains arrays of numbers representing
+      // the alternating horizontal and vertical coordinates, respectively,
+      // of each vertex. Convert this to an array of objects with x and y
+      // coordinates.
+      this.data.inkLists.push([]);
+      for (let j = 0, jj = originalInkLists[i].length; j < jj; j += 2) {
+        this.data.inkLists[i].push({
+          x: xref.fetchIfRef(originalInkLists[i][j]),
+          y: xref.fetchIfRef(originalInkLists[i][j + 1]),
+        });
+      }
+    }
+    this._preparePopup(dict);
+  }
+}
+
+class HighlightAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
 
     this.data.annotationType = AnnotationType.HIGHLIGHT;
     this._preparePopup(parameters.dict);
   }
+}
 
-  Util.inherit(HighlightAnnotation, Annotation, {});
-
-  return HighlightAnnotation;
-})();
-
-var UnderlineAnnotation = (function UnderlineAnnotationClosure() {
-  function UnderlineAnnotation(parameters) {
-    Annotation.call(this, parameters);
+class UnderlineAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
 
     this.data.annotationType = AnnotationType.UNDERLINE;
     this._preparePopup(parameters.dict);
   }
+}
 
-  Util.inherit(UnderlineAnnotation, Annotation, {});
-
-  return UnderlineAnnotation;
-})();
-
-var SquigglyAnnotation = (function SquigglyAnnotationClosure() {
-  function SquigglyAnnotation(parameters) {
-    Annotation.call(this, parameters);
+class SquigglyAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
 
     this.data.annotationType = AnnotationType.SQUIGGLY;
     this._preparePopup(parameters.dict);
   }
+}
 
-  Util.inherit(SquigglyAnnotation, Annotation, {});
-
-  return SquigglyAnnotation;
-})();
-
-var StrikeOutAnnotation = (function StrikeOutAnnotationClosure() {
-  function StrikeOutAnnotation(parameters) {
-    Annotation.call(this, parameters);
+class StrikeOutAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
 
     this.data.annotationType = AnnotationType.STRIKEOUT;
     this._preparePopup(parameters.dict);
   }
+}
 
-  Util.inherit(StrikeOutAnnotation, Annotation, {});
+class StampAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
 
-  return StrikeOutAnnotation;
-})();
+    this.data.annotationType = AnnotationType.STAMP;
+    this._preparePopup(parameters.dict);
+  }
+}
 
-var FileAttachmentAnnotation = (function FileAttachmentAnnotationClosure() {
-  function FileAttachmentAnnotation(parameters) {
-    Annotation.call(this, parameters);
+class FileAttachmentAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
 
-    var file = new FileSpec(parameters.dict.get('FS'), parameters.xref);
+    let file = new FileSpec(parameters.dict.get('FS'), parameters.xref);
 
     this.data.annotationType = AnnotationType.FILEATTACHMENT;
     this.data.file = file.serializable;
     this._preparePopup(parameters.dict);
   }
-
-  Util.inherit(FileAttachmentAnnotation, Annotation, {});
-
-  return FileAttachmentAnnotation;
-})();
+}
 
 export {
   Annotation,

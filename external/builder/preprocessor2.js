@@ -168,7 +168,7 @@ function postprocessNode(ctx, node) {
       if (node.callee.type === 'MemberExpression' &&
           isPDFJSPreprocessor(node.callee.object) &&
           node.callee.property.type === 'Identifier') {
-        // PDFJSDev.xxxx(arg1, arg2, ...) => tranform
+        // PDFJSDev.xxxx(arg1, arg2, ...) => transform
         var action = node.callee.property.name;
         return handlePreprocessorAction(ctx, action,
                                         node.arguments, node.loc);
@@ -288,6 +288,7 @@ function preprocessPDFJSCode(ctx, code) {
     },
   };
   var parseOptions = {
+    ecmaVersion: 8,
     locations: true,
     sourceFile: ctx.sourceFile,
     sourceType: 'module',

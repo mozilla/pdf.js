@@ -14,7 +14,7 @@
  */
 
 import {
-  createObjectURL, createPromiseCapability, getFilenameFromUrl, PDFJS,
+  createObjectURL, createPromiseCapability, getFilenameFromUrl,
   removeNullCharacters
 } from 'pdfjs-lib';
 
@@ -35,13 +35,12 @@ class PDFAttachmentViewer {
    * @param {PDFAttachmentViewerOptions} options
    */
   constructor({ container, eventBus, downloadManager, }) {
-    this.attachments = null;
-
     this.container = container;
     this.eventBus = eventBus;
     this.downloadManager = downloadManager;
 
-    this._renderedCapability = createPromiseCapability();
+    this.reset();
+
     this.eventBus.on('fileattachmentannotation',
       this._appendAttachment.bind(this));
   }
@@ -63,21 +62,21 @@ class PDFAttachmentViewer {
    * @private
    */
   _dispatchEvent(attachmentsCount) {
+    this._renderedCapability.resolve();
+
     this.eventBus.dispatch('attachmentsloaded', {
       source: this,
       attachmentsCount,
     });
-
-    this._renderedCapability.resolve();
   }
 
   /**
    * @private
    */
   _bindPdfLink(button, content, filename) {
-    if (PDFJS.disableCreateObjectURL) {
-      throw new Error('bindPdfLink: ' +
-                      'Unsupported "PDFJS.disableCreateObjectURL" value.');
+    if (this.downloadManager.disableCreateObjectURL) {
+      throw new Error(
+        'bindPdfLink: Unsupported "disableCreateObjectURL" value.');
     }
     let blobUrl;
     button.onclick = function() {
@@ -142,7 +141,8 @@ class PDFAttachmentViewer {
       div.className = 'attachmentsItem';
       let button = document.createElement('button');
       button.textContent = filename;
-      if (/\.pdf$/i.test(filename) && !PDFJS.disableCreateObjectURL) {
+      if (/\.pdf$/i.test(filename) &&
+          !this.downloadManager.disableCreateObjectURL) {
         this._bindPdfLink(button, item.content, filename);
       } else {
         this._bindLink(button, item.content, filename);

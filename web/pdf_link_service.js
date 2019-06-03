@@ -19,6 +19,11 @@ import { parseQueryString } from './ui_utils';
 /**
  * @typedef {Object} PDFLinkServiceOptions
  * @property {EventBus} eventBus - The application event bus.
+ * @property {number} externalLinkTarget - (optional) Specifies the `target`
+ *   attribute for external links. Must use one of the values from {LinkTarget}.
+ *   Defaults to using no target.
+ * @property {string} externalLinkRel - (optional) Specifies the `rel` attribute
+ *   for external links. Defaults to stripping the referrer.
  */
 
 /**
@@ -30,8 +35,12 @@ class PDFLinkService {
   /**
    * @param {PDFLinkServiceOptions} options
    */
-  constructor({ eventBus, } = {}) {
+  constructor({ eventBus, externalLinkTarget = null,
+                externalLinkRel = null, } = {}) {
     this.eventBus = eventBus || getGlobalEventBus();
+    this.externalLinkTarget = externalLinkTarget;
+    this.externalLinkRel = externalLinkRel;
+
     this.baseUrl = null;
     this.pdfDocument = null;
     this.pdfViewer = null;
@@ -40,7 +49,7 @@ class PDFLinkService {
     this._pagesRefCache = null;
   }
 
-  setDocument(pdfDocument, baseUrl) {
+  setDocument(pdfDocument, baseUrl = null) {
     this.baseUrl = baseUrl;
     this.pdfDocument = pdfDocument;
     this._pagesRefCache = Object.create(null);
@@ -76,6 +85,20 @@ class PDFLinkService {
   }
 
   /**
+   * @returns {number}
+   */
+  get rotation() {
+    return this.pdfViewer.pagesRotation;
+  }
+
+  /**
+   * @param {number} value
+   */
+  set rotation(value) {
+    this.pdfViewer.pagesRotation = value;
+  }
+
+  /**
    * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
   navigateTo(dest) {
@@ -98,7 +121,7 @@ class PDFLinkService {
           });
           return;
         }
-      } else if ((destRef | 0) === destRef) { // Integer
+      } else if (Number.isInteger(destRef)) {
         pageNumber = destRef + 1;
       } else {
         console.error(`PDFLinkService.navigateTo: "${destRef}" is not ` +
@@ -111,18 +134,17 @@ class PDFLinkService {
         return;
       }
 
+      if (this.pdfHistory) {
+        // Update the browser history before scrolling the new destination into
+        // view, to be able to accurately capture the current document position.
+        this.pdfHistory.pushCurrentPosition();
+        this.pdfHistory.push({ namedDest, explicitDest, pageNumber, });
+      }
+
       this.pdfViewer.scrollPageIntoView({
         pageNumber,
         destArray: explicitDest,
       });
-
-      if (this.pdfHistory) { // Update the browsing history, if enabled.
-        this.pdfHistory.push({
-          dest: explicitDest,
-          hash: namedDest,
-          page: pageNumber,
-        });
-      }
     };
 
     new Promise((resolve, reject) => {
@@ -140,7 +162,7 @@ class PDFLinkService {
         explicitDest: dest,
       });
     }).then((data) => {
-      if (!(data.explicitDest instanceof Array)) {
+      if (!Array.isArray(data.explicitDest)) {
         console.error(`PDFLinkService.navigateTo: "${data.explicitDest}" is` +
                       ` not a valid destination array, for dest="${dest}".`);
         return;
@@ -157,7 +179,7 @@ class PDFLinkService {
     if (typeof dest === 'string') {
       return this.getAnchorUrl('#' + escape(dest));
     }
-    if (dest instanceof Array) {
+    if (Array.isArray(dest)) {
       let str = JSON.stringify(dest);
       return this.getAnchorUrl('#' + escape(str));
     }
@@ -179,7 +201,7 @@ class PDFLinkService {
    */
   setHash(hash) {
     let pageNumber, dest;
-    if (hash.indexOf('=') >= 0) {
+    if (hash.includes('=')) {
       let params = parseQueryString(hash);
       if ('search' in params) {
         this.eventBus.dispatch('findfromurlhash', {
@@ -190,9 +212,6 @@ class PDFLinkService {
       }
       // borrowing syntax from "Parameters for Opening PDF Files"
       if ('nameddest' in params) {
-        if (this.pdfHistory) {
-          this.pdfHistory.updateNextHashParam(params.nameddest);
-        }
         this.navigateTo(params.nameddest);
         return;
       }
@@ -205,7 +224,7 @@ class PDFLinkService {
         let zoomArg = zoomArgs[0];
         let zoomArgNumber = parseFloat(zoomArg);
 
-        if (zoomArg.indexOf('Fit') === -1) {
+        if (!zoomArg.includes('Fit')) {
           // If the zoomArg is a number, it has to get divided by 100. If it's
           // a string, it should stay as it is.
           dest = [null, { name: 'XYZ', },
@@ -250,19 +269,11 @@ class PDFLinkService {
         });
       }
     } else { // Named (or explicit) destination.
-      if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
-          /^\d+$/.test(hash) && hash <= this.pagesCount) {
-        console.warn('PDFLinkService_setHash: specifying a page number ' +
-                     'directly after the hash symbol (#) is deprecated, ' +
-                     `please use the "#page=${hash}" form instead.`);
-        this.page = hash | 0;
-      }
-
       dest = unescape(hash);
       try {
         dest = JSON.parse(dest);
 
-        if (!(dest instanceof Array)) {
+        if (!Array.isArray(dest)) {
           // Avoid incorrectly rejecting a valid named destination, such as
           // e.g. "4.3" or "true", because `JSON.parse` converted its type.
           dest = dest.toString();
@@ -270,9 +281,6 @@ class PDFLinkService {
       } catch (ex) {}
 
       if (typeof dest === 'string' || isValidExplicitDestination(dest)) {
-        if (this.pdfHistory) {
-          this.pdfHistory.updateNextHashParam(dest);
-        }
         this.navigateTo(dest);
         return;
       }
@@ -330,22 +338,13 @@ class PDFLinkService {
   }
 
   /**
-   * @param {Object} params
-   */
-  onFileAttachmentAnnotation({ id, filename, content, }) {
-    this.eventBus.dispatch('fileattachmentannotation', {
-      source: this,
-      id,
-      filename,
-      content,
-    });
-  }
-
-  /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
   cachePageRef(pageNum, pageRef) {
+    if (!pageRef) {
+      return;
+    }
     let refStr = pageRef.num + ' ' + pageRef.gen + ' R';
     this._pagesRefCache[refStr] = pageNum;
   }
@@ -357,7 +356,7 @@ class PDFLinkService {
 }
 
 function isValidExplicitDestination(dest) {
-  if (!(dest instanceof Array)) {
+  if (!Array.isArray(dest)) {
     return false;
   }
   let destLength = dest.length, allowNull = true;
@@ -366,9 +365,8 @@ function isValidExplicitDestination(dest) {
   }
   let page = dest[0];
   if (!(typeof page === 'object' &&
-        typeof page.num === 'number' && (page.num | 0) === page.num &&
-        typeof page.gen === 'number' && (page.gen | 0) === page.gen) &&
-      !(typeof page === 'number' && (page | 0) === page && page >= 0)) {
+        Number.isInteger(page.num) && Number.isInteger(page.gen)) &&
+      !(Number.isInteger(page) && page >= 0)) {
     return false;
   }
   let zoom = dest[1];
@@ -410,21 +408,51 @@ function isValidExplicitDestination(dest) {
   return true;
 }
 
+/**
+ * @implements {IPDFLinkService}
+ */
 class SimpleLinkService {
+  constructor() {
+    this.externalLinkTarget = null;
+    this.externalLinkRel = null;
+  }
+
+  /**
+   * @returns {number}
+   */
+  get pagesCount() {
+    return 0;
+  }
+
   /**
    * @returns {number}
    */
   get page() {
     return 0;
   }
+
   /**
    * @param {number} value
    */
   set page(value) {}
+
+  /**
+   * @returns {number}
+   */
+  get rotation() {
+    return 0;
+  }
+
+  /**
+   * @param {number} value
+   */
+  set rotation(value) {}
+
   /**
    * @param dest - The PDF destination object.
    */
   navigateTo(dest) {}
+
   /**
    * @param dest - The PDF destination object.
    * @returns {string} The hyperlink to the PDF object.
@@ -432,6 +460,7 @@ class SimpleLinkService {
   getDestinationHash(dest) {
     return '#';
   }
+
   /**
    * @param hash - The PDF parameters/hash.
    * @returns {string} The hyperlink to the PDF object.
@@ -439,18 +468,17 @@ class SimpleLinkService {
   getAnchorUrl(hash) {
     return '#';
   }
+
   /**
    * @param {string} hash
    */
   setHash(hash) {}
+
   /**
    * @param {string} action
    */
   executeNamedAction(action) {}
-  /**
-   * @param {Object} params
-   */
-  onFileAttachmentAnnotation({ id, filename, content, }) {}
+
   /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.

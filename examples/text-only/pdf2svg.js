@@ -18,7 +18,8 @@ var PAGE_NUMBER = 1;
 var PAGE_SCALE = 1.5;
 var SVG_NS = 'http://www.w3.org/2000/svg';
 
-PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
 function buildSVG(viewport, textContent) {
   // Building SVG with size of the viewport (for simplicity)
@@ -32,8 +33,8 @@ function buildSVG(viewport, textContent) {
   textContent.items.forEach(function (textItem) {
     // we have to take in account viewport transform, which includes scale,
     // rotation and Y-axis flip, and not forgetting to flip text.
-    var tx = PDFJS.Util.transform(
-      PDFJS.Util.transform(viewport.transform, textItem.transform),
+    var tx = pdfjsLib.Util.transform(
+      pdfjsLib.Util.transform(viewport.transform, textItem.transform),
       [1, 0, 0, -1, 0, 0]);
     var style = textContent.styles[textItem.fontName];
     // adding text element
@@ -48,7 +49,7 @@ function buildSVG(viewport, textContent) {
 
 function pageLoaded() {
   // Loading document and page text content
-  PDFJS.getDocument({url: PDF_PATH}).then(function (pdfDocument) {
+  pdfjsLib.getDocument({url: PDF_PATH}).then(function (pdfDocument) {
     pdfDocument.getPage(PAGE_NUMBER).then(function (page) {
       var viewport = page.getViewport(PAGE_SCALE);
       page.getTextContent().then(function (textContent) {
@@ -61,7 +62,7 @@ function pageLoaded() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  if (typeof PDFJS === 'undefined') {
+  if (typeof pdfjsLib === 'undefined') {
     alert('Built version of PDF.js was not found.\n' +
           'Please run `gulp dist-install`.');
     return;

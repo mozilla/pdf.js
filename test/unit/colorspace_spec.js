@@ -16,6 +16,7 @@
 import { Dict, Name, Ref } from '../../src/core/primitives';
 import { Stream, StringStream } from '../../src/core/stream';
 import { ColorSpace } from '../../src/core/colorspace';
+import { PDFFunctionFactory } from '../../src/core/function';
 import { XRefMock } from './test_utils';
 
 describe('colorspace', function () {
@@ -54,11 +55,14 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
-      let testDest = new Uint8Array(4 * 4 * 3);
-      let expectedDest = new Uint8Array([
+      let testDest = new Uint8ClampedArray(4 * 4 * 3);
+      let expectedDest = new Uint8ClampedArray([
         27, 27, 27,
         27, 27, 27,
         125, 125, 125,
@@ -79,7 +83,7 @@ describe('colorspace', function () {
       colorSpace.fillRgb(testDest, 2, 2, 4, 4, 4, 8, testSrc, 0);
 
       expect(colorSpace.getRgb(new Float32Array([0.1]), 0))
-        .toEqual(new Uint8Array([25, 25, 25]));
+        .toEqual(new Uint8ClampedArray([26, 26, 26]));
       expect(colorSpace.getOutputLength(2, 0)).toEqual(6);
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(testDest).toEqual(expectedDest);
@@ -92,11 +96,14 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
-      let testDest = new Uint8Array(3 * 3 * 3);
-      let expectedDest = new Uint8Array([
+      let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      let expectedDest = new Uint8ClampedArray([
         27, 27, 27,
         27, 27, 27,
         125, 125, 125,
@@ -110,7 +117,7 @@ describe('colorspace', function () {
       colorSpace.fillRgb(testDest, 2, 2, 3, 3, 3, 8, testSrc, 0);
 
       expect(colorSpace.getRgb(new Float32Array([0.2]), 0))
-        .toEqual(new Uint8Array([51, 51, 51]));
+        .toEqual(new Uint8ClampedArray([51, 51, 51]));
       expect(colorSpace.getOutputLength(3, 1)).toEqual(12);
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(testDest).toEqual(expectedDest);
@@ -126,7 +133,10 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250,
@@ -134,8 +144,8 @@ describe('colorspace', function () {
         111, 25, 198,
         21, 147, 255
       ]);
-      let testDest = new Uint8Array(4 * 4 * 3);
-      let expectedDest = new Uint8Array([
+      let testDest = new Uint8ClampedArray(4 * 4 * 3);
+      let expectedDest = new Uint8ClampedArray([
         27, 125, 250,
         27, 125, 250,
         131, 139, 140,
@@ -156,7 +166,7 @@ describe('colorspace', function () {
       colorSpace.fillRgb(testDest, 2, 2, 4, 4, 4, 8, testSrc, 0);
 
       expect(colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3]), 0))
-        .toEqual(new Uint8Array([25, 51, 76]));
+        .toEqual(new Uint8ClampedArray([26, 51, 77]));
       expect(colorSpace.getOutputLength(4, 0)).toEqual(4);
       expect(colorSpace.isPassthrough(8)).toBeTruthy();
       expect(testDest).toEqual(expectedDest);
@@ -169,7 +179,10 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250,
@@ -177,8 +190,8 @@ describe('colorspace', function () {
         111, 25, 198,
         21, 147, 255
       ]);
-      let testDest = new Uint8Array(3 * 3 * 3);
-      let expectedDest = new Uint8Array([
+      let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      let expectedDest = new Uint8ClampedArray([
         27, 125, 250,
         27, 125, 250,
         131, 139, 140,
@@ -192,7 +205,7 @@ describe('colorspace', function () {
       colorSpace.fillRgb(testDest, 2, 2, 3, 3, 3, 8, testSrc, 0);
 
       expect(colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3]), 0))
-        .toEqual(new Uint8Array([25, 51, 76]));
+        .toEqual(new Uint8ClampedArray([26, 51, 77]));
       expect(colorSpace.getOutputLength(4, 1)).toEqual(5);
       expect(colorSpace.isPassthrough(8)).toBeTruthy();
       expect(testDest).toEqual(expectedDest);
@@ -208,7 +221,10 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250, 128,
@@ -216,29 +232,29 @@ describe('colorspace', function () {
         111, 25, 198, 78,
         21, 147, 255, 69
       ]);
-      let testDest = new Uint8Array(4 * 4 * 3);
-      let expectedDest = new Uint8Array([
-        135, 80, 18,
-        135, 80, 18,
-        113, 102, 97,
-        113, 102, 97,
-        135, 80, 18,
-        135, 80, 18,
-        113, 102, 97,
-        113, 102, 97,
-        112, 143, 75,
-        112, 143, 75,
+      let testDest = new Uint8ClampedArray(4 * 4 * 3);
+      let expectedDest = new Uint8ClampedArray([
+        135, 81, 18,
+        135, 81, 18,
+        114, 102, 97,
+        114, 102, 97,
+        135, 81, 18,
+        135, 81, 18,
+        114, 102, 97,
+        114, 102, 97,
+        112, 144, 75,
+        112, 144, 75,
         188, 98, 27,
         188, 98, 27,
-        112, 143, 75,
-        112, 143, 75,
+        112, 144, 75,
+        112, 144, 75,
         188, 98, 27,
         188, 98, 27
       ]);
       colorSpace.fillRgb(testDest, 2, 2, 4, 4, 4, 8, testSrc, 0);
 
       expect(colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3, 1]),
-        0)).toEqual(new Uint8Array([31, 27, 20]));
+        0)).toEqual(new Uint8ClampedArray([32, 28, 21]));
       expect(colorSpace.getOutputLength(4, 0)).toEqual(3);
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(testDest).toEqual(expectedDest);
@@ -251,7 +267,10 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250, 128,
@@ -259,22 +278,22 @@ describe('colorspace', function () {
         111, 25, 198, 78,
         21, 147, 255, 69
       ]);
-      let testDest = new Uint8Array(3 * 3 * 3);
-      let expectedDest = new Uint8Array([
-        135, 80, 18,
-        135, 80, 18,
-        113, 102, 97,
-        135, 80, 18,
-        135, 80, 18,
-        113, 102, 97,
-        112, 143, 75,
-        112, 143, 75,
+      let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      let expectedDest = new Uint8ClampedArray([
+        135, 81, 18,
+        135, 81, 18,
+        114, 102, 97,
+        135, 81, 18,
+        135, 81, 18,
+        114, 102, 97,
+        112, 144, 75,
+        112, 144, 75,
         188, 98, 27
       ]);
       colorSpace.fillRgb(testDest, 2, 2, 3, 3, 3, 8, testSrc, 0);
 
       expect(colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3, 1]), 0))
-        .toEqual(new Uint8Array([31, 27, 20]));
+        .toEqual(new Uint8ClampedArray([32, 28, 21]));
       expect(colorSpace.getOutputLength(4, 1)).toEqual(4);
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(testDest).toEqual(expectedDest);
@@ -298,11 +317,14 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
-      let testDest = new Uint8Array(4 * 4 * 3);
-      let expectedDest = new Uint8Array([
+      let testDest = new Uint8ClampedArray(4 * 4 * 3);
+      let expectedDest = new Uint8ClampedArray([
         25, 25, 25,
         25, 25, 25,
         143, 143, 143,
@@ -313,17 +335,17 @@ describe('colorspace', function () {
         143, 143, 143,
         251, 251, 251,
         251, 251, 251,
-        148, 148, 148,
-        148, 148, 148,
+        149, 149, 149,
+        149, 149, 149,
         251, 251, 251,
         251, 251, 251,
-        148, 148, 148,
-        148, 148, 148
+        149, 149, 149,
+        149, 149, 149
       ]);
       colorSpace.fillRgb(testDest, 2, 2, 4, 4, 4, 8, testSrc, 0);
 
       expect(colorSpace.getRgb(new Float32Array([1.0]), 0))
-        .toEqual(new Uint8Array([255, 255, 255]));
+        .toEqual(new Uint8ClampedArray([255, 255, 255]));
       expect(colorSpace.getOutputLength(4, 0)).toEqual(12);
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(testDest).toEqual(expectedDest);
@@ -348,7 +370,10 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250,
@@ -356,8 +381,8 @@ describe('colorspace', function () {
         111, 25, 198,
         21, 147, 255
       ]);
-      let testDest = new Uint8Array(3 * 3 * 3);
-      let expectedDest = new Uint8Array([
+      let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      let expectedDest = new Uint8ClampedArray([
         0, 238, 255,
         0, 238, 255,
         185, 196, 195,
@@ -371,7 +396,7 @@ describe('colorspace', function () {
       colorSpace.fillRgb(testDest, 2, 2, 3, 3, 3, 8, testSrc, 0);
 
       expect(colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3]), 0))
-        .toEqual(new Uint8Array([0, 147, 151]));
+        .toEqual(new Uint8ClampedArray([0, 147, 151]));
       expect(colorSpace.getOutputLength(4, 0)).toEqual(4);
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(testDest).toEqual(expectedDest);
@@ -395,7 +420,10 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([
         27, 25, 50,
@@ -403,22 +431,22 @@ describe('colorspace', function () {
         11, 25, 98,
         21, 47, 55
       ]);
-      let testDest = new Uint8Array(3 * 3 * 3);
-      let expectedDest = new Uint8Array([
+      let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      let expectedDest = new Uint8ClampedArray([
         0, 49, 101,
         0, 49, 101,
-        0, 53, 116,
+        0, 53, 117,
         0, 49, 101,
         0, 49, 101,
-        0, 53, 116,
-        0, 40, 39,
-        0, 40, 39,
+        0, 53, 117,
+        0, 41, 40,
+        0, 41, 40,
         0, 43, 90
       ]);
       colorSpace.fillRgb(testDest, 2, 2, 3, 3, 3, 8, testSrc, 0);
 
       expect(colorSpace.getRgb([55, 25, 35], 0))
-        .toEqual(new Uint8Array([188, 99, 61]));
+        .toEqual(new Uint8ClampedArray([188, 100, 61]));
       expect(colorSpace.getOutputLength(4, 0)).toEqual(4);
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(colorSpace.isDefaultDecode([0, 1])).toBeTruthy();
@@ -445,11 +473,14 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([2, 2, 0, 1]);
-      let testDest = new Uint8Array(3 * 3 * 3);
-      let expectedDest = new Uint8Array([
+      let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      let expectedDest = new Uint8ClampedArray([
         255, 109, 70,
         255, 109, 70,
         255, 109, 70,
@@ -462,7 +493,8 @@ describe('colorspace', function () {
       ]);
       colorSpace.fillRgb(testDest, 2, 2, 3, 3, 3, 8, testSrc, 0);
 
-      expect(colorSpace.getRgb([2], 0)).toEqual(new Uint8Array([255, 109, 70]));
+      expect(colorSpace.getRgb([2], 0)).toEqual(
+        new Uint8ClampedArray([255, 109, 70]));
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(colorSpace.isDefaultDecode([0, 1])).toBeTruthy();
       expect(testDest).toEqual(expectedDest);
@@ -497,25 +529,28 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
       let testSrc = new Uint8Array([27, 25, 50, 31]);
-      let testDest = new Uint8Array(3 * 3 * 3);
-      let expectedDest = new Uint8Array([
-        227, 243, 242,
-        227, 243, 242,
-        228, 243, 242,
-        227, 243, 242,
-        227, 243, 242,
-        228, 243, 242,
-        203, 233, 229,
-        203, 233, 229,
-        222, 241, 239
+      let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      let expectedDest = new Uint8ClampedArray([
+        226, 242, 241,
+        226, 242, 241,
+        229, 244, 242,
+        226, 242, 241,
+        226, 242, 241,
+        229, 244, 242,
+        203, 232, 229,
+        203, 232, 229,
+        222, 241, 238
       ]);
       colorSpace.fillRgb(testDest, 2, 2, 3, 3, 3, 8, testSrc, 0);
 
       expect(colorSpace.getRgb([0.1], 0))
-        .toEqual(new Uint8Array([228, 243, 241]));
+        .toEqual(new Uint8ClampedArray([228, 243, 242]));
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
       expect(colorSpace.isDefaultDecode([0, 1])).toBeTruthy();
       expect(testDest).toEqual(expectedDest);

@@ -24,7 +24,6 @@ self.importScripts = (function (importScripts) {
   };
 })(importScripts);
 
-importScripts('./shared/compatibility.js');
 importScripts('../node_modules/systemjs/dist/system.js');
 importScripts('../systemjs.config.js');
 

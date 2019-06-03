@@ -12,11 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 
 'use strict';
 
 var FontInspector = (function FontInspectorClosure() {
-  var fonts;
+  var fonts, createObjectURL;
   var active = false;
   var fontAttribute = 'data-font-name';
   function removeSelection() {
@@ -74,6 +75,8 @@ var FontInspector = (function FontInspectorClosure() {
 
       fonts = document.createElement('div');
       panel.appendChild(fonts);
+
+      createObjectURL = pdfjsLib.createObjectURL;
     },
     cleanup: function cleanup() {
       fonts.textContent = '';
@@ -118,10 +121,7 @@ var FontInspector = (function FontInspectorClosure() {
         url = /url\(['"]?([^\)"']+)/.exec(url);
         download.href = url[1];
       } else if (fontObj.data) {
-        url = URL.createObjectURL(new Blob([fontObj.data], {
-          type: fontObj.mimeType,
-        }));
-        download.href = url;
+        download.href = createObjectURL(fontObj.data, fontObj.mimeType);
       }
       download.textContent = 'Download';
       var logIt = document.createElement('a');
@@ -262,7 +262,7 @@ var Stepper = (function StepperClosure() {
     if (typeof args === 'string') {
       var MAX_STRING_LENGTH = 75;
       return args.length <= MAX_STRING_LENGTH ? args :
-        args.substr(0, MAX_STRING_LENGTH) + '...';
+        args.substring(0, MAX_STRING_LENGTH) + '...';
     }
     if (typeof args !== 'object' || args === null) {
       return args;
@@ -337,7 +337,7 @@ var Stepper = (function StepperClosure() {
         line.className = 'line';
         line.dataset.idx = i;
         chunk.appendChild(line);
-        var checked = this.breakPoints.indexOf(i) !== -1;
+        var checked = this.breakPoints.includes(i);
         var args = operatorList.argsArray[i] || [];
 
         var breakCell = c('td');
@@ -461,7 +461,6 @@ var Stats = (function Stats() {
     manager: null,
     init(pdfjsLib) {
       this.panel.setAttribute('style', 'padding: 5px;');
-      pdfjsLib.PDFJS.enableStats = true;
     },
     enabled: false,
     active: false,
@@ -520,7 +519,7 @@ window.PDFBug = (function PDFBugClosure() {
       }
       for (var i = 0; i < tools.length; ++i) {
         var tool = tools[i];
-        if (all || ids.indexOf(tool.id) !== -1) {
+        if (all || ids.includes(tool.id)) {
           tool.enabled = true;
         }
       }

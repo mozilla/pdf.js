@@ -21,6 +21,8 @@ import { SimpleLinkService } from './pdf_link_service';
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
+ * @property {string} imageResourcesPath - (optional) Path for image resources,
+ *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
@@ -32,15 +34,18 @@ class AnnotationLayerBuilder {
    * @param {AnnotationLayerBuilderOptions} options
    */
   constructor({ pageDiv, pdfPage, linkService, downloadManager,
-                renderInteractiveForms = false, l10n = NullL10n, }) {
+                imageResourcesPath = '', renderInteractiveForms = false,
+                l10n = NullL10n, }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
     this.linkService = linkService;
     this.downloadManager = downloadManager;
+    this.imageResourcesPath = imageResourcesPath;
     this.renderInteractiveForms = renderInteractiveForms;
     this.l10n = l10n;
 
     this.div = null;
+    this._cancelled = false;
   }
 
   /**
@@ -49,11 +54,16 @@ class AnnotationLayerBuilder {
    */
   render(viewport, intent = 'display') {
     this.pdfPage.getAnnotations({ intent, }).then((annotations) => {
+      if (this._cancelled) {
+        return;
+      }
+
       let parameters = {
         viewport: viewport.clone({ dontFlip: true, }),
         div: this.div,
         annotations,
         page: this.pdfPage,
+        imageResourcesPath: this.imageResourcesPath,
         renderInteractiveForms: this.renderInteractiveForms,
         linkService: this.linkService,
         downloadManager: this.downloadManager,
@@ -80,6 +90,10 @@ class AnnotationLayerBuilder {
     });
   }
 
+  cancel() {
+    this._cancelled = true;
+  }
+
   hide() {
     if (!this.div) {
       return;
@@ -95,15 +109,19 @@ class DefaultAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {string} imageResourcesPath - (optional) Path for image resources,
+   *   mainly for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(pageDiv, pdfPage, renderInteractiveForms = false,
+  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = '',
+                               renderInteractiveForms = false,
                                l10n = NullL10n) {
     return new AnnotationLayerBuilder({
       pageDiv,
       pdfPage,
+      imageResourcesPath,
       renderInteractiveForms,
       linkService: new SimpleLinkService(),
       l10n,

@@ -27,7 +27,7 @@
       "default": 0
     },
     "enableHandToolOnLoad": {
-      "description": "Deprecated. Set cursorToolOnLoad to 1 to enable the hand tool by default.",
+      "description": "DEPRECATED. Set cursorToolOnLoad to 1 to enable the hand tool by default.",
       "type": "boolean",
       "default": false
     },
@@ -44,6 +44,10 @@
     "enableWebGL": {
       "title": "Enable WebGL",
       "description": "Whether to enable WebGL.",
+      "type": "boolean",
+      "default": false
+    },
+    "eventBusDispatchToDOM": {
       "type": "boolean",
       "default": false
     },
@@ -76,10 +80,25 @@
       "default": false
     },
     "disableTextLayer": {
-      "title": "Disable text selection layer",
-      "description": "Whether to disable the text selection layer.",
+      "description": "DEPRECATED. Set textLayerMode to 0 to disable the text selection layer by default.",
       "type": "boolean",
       "default": false
+    },
+    "enhanceTextSelection": {
+      "description": "DEPRECATED. Set textLayerMode to 2 to use the enhanced text selection layer by default.",
+      "type": "boolean",
+      "default": false
+    },
+    "textLayerMode": {
+      "title": "Text layer mode",
+      "description": "Controls if the text layer is enabled, and the selection mode that is used.\n 0 = Disabled.\n 1 = Enabled.\n 2 = (Experimental) Enabled, with enhanced text selection.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "default": 1
     },
     "useOnlyCssZoom": {
       "type": "boolean",
@@ -112,10 +131,6 @@
       "description": "Whether to prevent the extension from reporting the extension and browser version to the extension developers.",
       "default": false
     },
-    "enhanceTextSelection": {
-      "type": "boolean",
-      "default": false
-    },
     "renderer": {
       "type": "string",
       "enum": [
@@ -133,6 +148,28 @@
       "description": "When enabled, pages whose orientation differ from the first page are rotated when printed.",
       "type": "boolean",
       "default": false
+    },
+    "scrollModeOnLoad": {
+      "title": "Scroll mode on load",
+      "description": "Controls how the viewer scrolls upon load.\n 0 = Vertical scrolling.\n 1 = Horizontal scrolling.\n 2 = Wrapped scrolling.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "default": 0
+    },
+    "spreadModeOnLoad": {
+      "title": "Spread mode on load",
+      "description": "Whether the viewer should join pages into spreads upon load.\n 0 = No spreads.\n 1 = Odd spreads.\n 2 = Even spreads.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "default": 0
     }
   }
 }
