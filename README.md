@@ -7,14 +7,24 @@ To build for use in MasterControl during developmental testing you can run
     $ gulp mc-build
     
 This will build PDF.js in a minified form and zip it up in a file named `mcPDFjs-<version>.zip`.
+
+It's likely you're looking for the `mc-deploy-snapshot` below.
    
 
-### Deploying to Artifactory
+### Deploying an artifact to Artifactory
+Please make sure you don't have any uncommitted changes as they'd be zipped and deployed in the artifact too. Create the following environment variables with your artifactory credentials. The password could use your artifactory API key.  `artifactory_username` and `artifactory_password`. The following commands will first call `mc-build`.
+
+#### Deploying a snapshot 
+You should be able to deploy a snapshot to artifactory by running the following command.
+
+    $ gulp mc-deploy-snapshot
+
+#### Deploying a release 
 This will deploy straight to our libs-release-local repo, **you have been warned**.
 
-First make sure the version is correct in pdfjs.config. Please make sure you don't have any uncommitted changes as they'd be zipped and deployed in the release version too. Create the following environment variables with your artifactory credentials. The password could use your artifactory API key.  `artifactory_username` and `artifactory_password`. Then run:
+First make sure the version is correct in pdfjs.config.  Then run:
 
-    $ gulp mc-deploy
+    $ gulp mc-deploy-release
     
 Please don't forget to tag the commit you deployed and push the tags to the repository with a command similar to the following:
 

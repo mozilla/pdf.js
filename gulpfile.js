@@ -67,7 +67,8 @@ var MOZCENTRAL_DIFF_FILE = 'mozcentral.diff';
 
 var REPO = 'git@github.com:mozilla/pdf.js.git';
 var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
-var ARTIFACTORY_REPO_URL = 'https://labs.mastercontrol.com/artifactory/libs-release-local/';
+var ARTIFACTORY_RELEASE_REPO_URL = 'https://labs.mastercontrol.com/artifactory/libs-release-local/';
+var ARTIFACTORY_SNAPSHOT_REPO_URL = 'https://labs.mastercontrol.com/artifactory/libs-snapshot-local/';
 
 var builder = require('./external/builder/builder.js');
 
@@ -219,9 +220,16 @@ function getTargetName() {
   return 'mcPDFjs-' + getVersionJSON().version + '.zip';
 }
 
-function getDeployUrl() {
+function getDeployUrl(isRelease = false) {
   var version = getVersionJSON().version;
-  return ARTIFACTORY_REPO_URL + 'com/mastercontrol/mcPDFjs/' + version;
+  var repoURL;
+  if(isRelease){
+    repoURL = ARTIFACTORY_RELEASE_REPO_URL;
+  } else {
+    repoURL = ARTIFACTORY_SNAPSHOT_REPO_URL;
+    version = version + '-SNAPSHOT';
+  }
+  return repoURL + 'com/mastercontrol/mcPDFjs/' + version;
 }
 
 function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
@@ -1009,8 +1017,15 @@ gulp.task('mc-build', ['minified'], function(done) {
     });
 });
 
-gulp.task('mc-deploy', ['mc-build'], function(done) {
-  var deployUrl = getDeployUrl();
+gulp.task('mc-deploy-snapshot', ['mc-build'], function(done) {
+  mcDeploy(getDeployUrl(), done);
+});
+
+gulp.task('mc-deploy-release', ['mc-build'], function(done) {
+  mcDeploy(getDeployUrl(true), done);
+});
+
+function mcDeploy(deployUrl, done){
   console.log('### Deploying ' + getTargetName() + ' to ' + deployUrl)
   gulp.src(BUILD_DIR + getTargetName())
     .pipe(artifactoryUpload({
@@ -1018,13 +1033,13 @@ gulp.task('mc-deploy', ['mc-build'], function(done) {
       username: process.env.artifactory_username,
       password: process.env.artifactory_password,
     }))
-    .on('error', gutil.log)
+    .on('error', console.log)
     .on('end', function() {
       console.log('Done uploading ' + getTargetName() + ' to ' + deployUrl);
       console.log('### Please make sure to tag and push!');
       done();
     });
-});
+};
 
 gulp.task('testing-pre', function() {
   process.env['TESTING'] = 'true';
