@@ -109,7 +109,7 @@ var ScaleJS = (function ScaleJSClosure() {
        is less than (originalHeight * rowBytes) */
     resizeOriginalImage(originalImage,
                         originalHeight, rowBytes) {
-      var drawImage = new Uint8Array(originalHeight * rowBytes);
+      var drawImage = new Uint8ClampedArray(originalHeight * rowBytes);
       drawImage.set(originalImage);
       drawImage.fill(255, originalImage.length, originalHeight * rowBytes);
       return drawImage;
@@ -117,56 +117,53 @@ var ScaleJS = (function ScaleJSClosure() {
 
     scaleMainArea(newImage, img, rowBytes, newRowBytes,
                   stopRow, stopCol, scale) {
-      /* m1 and m2 are lookup tables; they map the number of white pixels
+      /* m is a lookup tables; it maps the number of white pixels
          (that will be converted to a new pixel), with the color value
          for the new pixel */
-      var m1;
-      var m2;
+      var m;
       // idx is the index of the new Image array
       var idx;
       // Indexes used to parse the main image area
       var row, col;
 
       if (scale === 2) {
-        m1 = [0, 64, 64, 128];
-        m2 = [0, 64, 64, 127];
+        m = [0, 64, 64, 128];
 
         for (row = 0; row < stopRow; row += scale) {
           for (col = 0; col < stopCol; col++) {
             // Calculate the new image pixel index
             idx = row * newRowBytes / 2 + col * 4;
             // Calculate and set each new pixel
-            newImage[idx++] = m1[img[row * rowBytes + col] >> 6 & 0x03] +
-                              m2[img[(row + 1) * rowBytes + col] >> 6 & 0x03];
+            newImage[idx++] = m[img[row * rowBytes + col] >> 6 & 0x03] +
+                              m[img[(row + 1) * rowBytes + col] >> 6 & 0x03];
 
-            newImage[idx++] = m1[img[row * rowBytes + col] >> 4 & 0x03] +
-                              m2[img[(row + 1) * rowBytes + col] >> 4 & 0x03];
+            newImage[idx++] = m[img[row * rowBytes + col] >> 4 & 0x03] +
+                              m[img[(row + 1) * rowBytes + col] >> 4 & 0x03];
 
-            newImage[idx++] = m1[img[row * rowBytes + col] >> 2 & 0x03] +
-                              m2[img[(row + 1) * rowBytes + col] >> 2 & 0x03];
+            newImage[idx++] = m[img[row * rowBytes + col] >> 2 & 0x03] +
+                              m[img[(row + 1) * rowBytes + col] >> 2 & 0x03];
 
-            newImage[idx++] = m1[img[row * rowBytes + col] >> 0 & 0x03] +
-                              m2[img[(row + 1) * rowBytes + col] >> 0 & 0x03];
+            newImage[idx++] = m[img[row * rowBytes + col] >> 0 & 0x03] +
+                              m[img[(row + 1) * rowBytes + col] >> 0 & 0x03];
           }
         }
       } else if (scale === 4) {
-        m1 = [0, 16, 16, 32, 16, 32, 32, 48, 16, 32, 32, 48, 32, 48, 48, 64];
-        m2 = [0, 16, 16, 32, 16, 32, 32, 48, 16, 32, 32, 48, 32, 48, 48, 63];
+        m = [0, 16, 16, 32, 16, 32, 32, 48, 16, 32, 32, 48, 32, 48, 48, 64];
 
         for (row = 0; row < stopRow; row += scale) {
           for (col = 0; col < stopCol; col++) {
             // Calculate the new image pixel index from the group
             idx = row * newRowBytes / 4 + col * 2;
             // Calculate and set each new pixel
-            newImage[idx++] = m1[img[row * rowBytes + col] >> 4 & 0x0F] +
-                              m1[img[(row + 1) * rowBytes + col] >> 4 & 0x0F] +
-                              m1[img[(row + 2) * rowBytes + col] >> 4 & 0x0F] +
-                              m2[img[(row + 3) * rowBytes + col] >> 4 & 0x0F];
+            newImage[idx++] = m[img[row * rowBytes + col] >> 4 & 0x0F] +
+                              m[img[(row + 1) * rowBytes + col] >> 4 & 0x0F] +
+                              m[img[(row + 2) * rowBytes + col] >> 4 & 0x0F] +
+                              m[img[(row + 3) * rowBytes + col] >> 4 & 0x0F];
 
-            newImage[idx++] = m1[img[row * rowBytes + col] >> 0 & 0x0F] +
-                              m1[img[(row + 1) * rowBytes + col] >> 0 & 0x0F] +
-                              m1[img[(row + 2) * rowBytes + col] >> 0 & 0x0F] +
-                              m2[img[(row + 3) * rowBytes + col] >> 0 & 0x0F];
+            newImage[idx++] = m[img[row * rowBytes + col] >> 0 & 0x0F] +
+                              m[img[(row + 1) * rowBytes + col] >> 0 & 0x0F] +
+                              m[img[(row + 2) * rowBytes + col] >> 0 & 0x0F] +
+                              m[img[(row + 3) * rowBytes + col] >> 0 & 0x0F];
           }
         }
       }
@@ -183,8 +180,7 @@ var ScaleJS = (function ScaleJSClosure() {
       }
 
       // Set the default multiplication factors
-      var multFactor1 = 256 / (scale * offsetY);
-      var multFactor2 = 255 / (scale * offsetY);
+      var multFactor = 256 / (scale * offsetY);
 
       // Calculate how many groups of pixels we have on the last column
       var lastColPixelGroups = Math.ceil(offsetX / scale);
@@ -227,21 +223,15 @@ var ScaleJS = (function ScaleJSClosure() {
                         break;
                 }
               }
-              multFactor1 = 256 / (offsetXMod * offsetY);
-              multFactor2 = 255 / (offsetXMod * offsetY);
+              multFactor = 256 / (offsetXMod * offsetY);
             }
 
             // Calculate the new pixel value
             pixValue = 0;
 
             for (var j = 0; j < offsetY; j++) {
-              if (j < offsetY - 1) {
                 pixValue += this.bitCount(img[(row + j) * rowBytes + col] >>
-                                              shiftValue & mask) * multFactor1;
-              } else {
-                pixValue += this.bitCount(img[(row + j) * rowBytes + col] >>
-                                              shiftValue & mask) * multFactor2;
-              }
+                                              shiftValue & mask) * multFactor;
             }
 
             // Set the new pixel value
@@ -273,7 +263,7 @@ var ScaleJS = (function ScaleJSClosure() {
       // Calculate the new image height
       var newHeight = Math.ceil(originalHeight / scale);
       // Allocate memory for the new image
-      var newImage = new Uint8Array(newHeight * newRowBytes);
+      var newImage = new Uint8ClampedArray(newHeight * newRowBytes);
 
       /* Calculate offsets. If the image width is not a multiple of 8
          then we have less than 8 pixels in the last byte. These are
@@ -379,7 +369,7 @@ var ScaleJS = (function ScaleJSClosure() {
       // Number of Bytes in a row in the new image
       var newRowBytes = drawWidth * numComps;
 
-      var newImage = new Uint8Array(drawHeight * newRowBytes);
+      var newImage = new Uint8ClampedArray(drawHeight * newRowBytes);
 
       // Calculate Overflow
       var overflowRowCnt = originalHeight % scale;
