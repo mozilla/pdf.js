@@ -1526,7 +1526,14 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 #PDFBug table {
   font-size: 10px;
 }
-
+/* -----------------tanglinhai 改造page布局成absolute,改善性能 start------------------ */
+#viewer{
+  position: relative;
+}
+#viewer .page{
+  position: absolute;
+}
+/* -----------------tanglinhai 改造page布局成absolute,改善性能 end------------------ */
 #viewer.textLayer-visible .textLayer {
   opacity: 1.0;
 }

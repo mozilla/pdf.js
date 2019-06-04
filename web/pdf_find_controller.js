@@ -213,7 +213,11 @@ class PDFFindController {
     this._pageContents = []; // Stores the normalized text for each page.
     this._matchesCountTotal = 0;
     this._pagesToSearch = null;
-    this._pendingFindMatches = Object.create(null);
+    //---------------------------------tanglinhai 如何页数太多，全部加载太慢了 start-----------------------------------
+    this._extractTextCapabilities = [];
+    this._extractStartedFlags = [];
+    //---------------------------------tanglinhai 如何页数太多，全部加载太慢了 end-----------------------------------
+    this._pendingFindMatches = [];
     this._resumePageIdx = null;
     this._dirtyMatch = false;
     clearTimeout(this._findTimeout);
@@ -432,6 +436,33 @@ class PDFFindController {
     }
   }
 
+
+  _getTextContent(promise, pageIndex, context, extractTextCapability) {
+    context._extractStartedFlags[pageIndex] = true;
+    return promise.then(function () {
+        return context._pdfDocument.getPage(pageIndex + 1).then(function (pdfPage) {
+          return pdfPage.getTextContent({
+            normalizeWhitespace: true
+          });
+        }).then(function (textContent) {
+          var textItems = textContent.items;
+          var strBuf = [];
+
+          for (var j = 0, jj = textItems.length; j < jj; j++) {
+            strBuf.push(textItems[j].str);
+          }
+
+          context._pageContents[pageIndex] = normalize(strBuf.join(''));
+          extractTextCapability.resolve(pageIndex);
+        }, function (reason) {
+          console.error("Unable to get text content for page ".concat(pageIndex + 1), reason);
+          context._pageContents[pageIndex] = '';
+          extractTextCapability.resolve(pageIndex);
+        });
+      });
+  }
+
+
   _extractText() {
     // Perform text extraction once if this method is called multiple times.
     if (this._extractTextPromises.length > 0) {
@@ -442,8 +473,13 @@ class PDFFindController {
     for (let i = 0, ii = this._linkService.pagesCount; i < ii; i++) {
       const extractTextCapability = createPromiseCapability();
       this._extractTextPromises[i] = extractTextCapability.promise;
-
-      promise = promise.then(() => {
+      //---------------------------------tanglinhai 如何页数太多，全部加载太慢了 start-----------------------------------
+      this._extractStartedFlags[i] = false;
+      this._extractTextCapabilities[i] = extractTextCapability;
+      if(!this._state.searchInCurrPage || (this._state.searchInCurrPage && this._linkService.page - 1 == i))
+        promise = this._getTextContent(promise, i, this, extractTextCapability);
+      //---------------------------------tanglinhai 如何页数太多，全部加载太慢了 end-----------------------------------
+      /*promise = promise.then(() => {
         return this._pdfDocument.getPage(i + 1).then((pdfPage) => {
           return pdfPage.getTextContent({
             normalizeWhitespace: true,
@@ -465,7 +501,7 @@ class PDFFindController {
           this._pageContents[i] = '';
           extractTextCapability.resolve(i);
         });
-      });
+      });*/
     }
   }
 
@@ -492,7 +528,7 @@ class PDFFindController {
 
   _nextMatch() {
     const previous = this._state.findPrevious;
-    const currentPageIndex = this._linkService.page - 1;
+    const currentPageIndex = this._state.searchInCurrPage && this._state.page ? this._state.page - 1 : this._linkService.page - 1;
     const numPages = this._linkService.pagesCount;
 
     this._highlightMatches = true;
@@ -510,18 +546,39 @@ class PDFFindController {
       this._matchesCountTotal = 0;
 
       this._updateAllPages(); // Wipe out any previously highlighted matches.
-
-      for (let i = 0; i < numPages; i++) {
-        // Start finding the matches as soon as the text is extracted.
-        if (this._pendingFindMatches[i] === true) {
-          continue;
+      //---------------------------------tanglinhai 只在当前页面搜索 start-----------------------------------
+      if (!this._state.searchInCurrPage) {
+      //---------------------------------tanglinhai 只在当前页面搜索 end-----------------------------------
+        var promise = Promise.resolve();
+        for (let i = 0; i < numPages; i++) {
+          // Start finding the matches as soon as the text is extracted.
+          if (this._pendingFindMatches[i] === true) {
+            continue;
+          }
+          this._pendingFindMatches[i] = true;
+          //---------------------------------tanglinhai 只在当前页面搜索 start-----------------------------------
+          if(!this._extractStartedFlags[i])
+              promise = this._getTextContent(promise, i, this, this._extractTextCapabilities[i])
+          //---------------------------------tanglinhai 只在当前页面搜索 end-----------------------------------
+          this._extractTextPromises[i].then((pageIdx) => {
+            this._pendingFindMatches[pageIdx] = false;
+            this._calculateMatch(pageIdx);
+          });
         }
-        this._pendingFindMatches[i] = true;
-        this._extractTextPromises[i].then((pageIdx) => {
-          delete this._pendingFindMatches[pageIdx];
-          this._calculateMatch(pageIdx);
-        });
+      //---------------------------------tanglinhai 只在当前页面搜索 start-----------------------------------
+      } else {
+        this._resumePageIdx = currentPageIndex;
+        if (!this._pendingFindMatches[currentPageIndex]) {
+          this._pendingFindMatches[currentPageIndex] = true;
+          !this._extractStartedFlags[currentPageIndex] && this._getTextContent(
+              Promise.resolve(), currentPageIndex, this, this._extractTextCapabilities[currentPageIndex]);
+          this._extractTextPromises[currentPageIndex].then((pageIdx) => {
+            this._pendingFindMatches[pageIdx] = false;
+            this._calculateMatch(pageIdx);
+          });
+        }
       }
+      //---------------------------------tanglinhai 只在当前页面搜索 end-----------------------------------
     }
 
     // If there's no query there's no point in searching.
@@ -552,10 +609,16 @@ class PDFFindController {
       }
       // We went beyond the current page's matches, so we advance to
       // the next page.
-      this._advanceOffsetPage(previous);
+      //---------------------------------tanglinhai 只在当前页面搜索 start-----------------------------------
+      if (!this._state.searchInCurrPage)
+      //---------------------------------tanglinhai 只在当前页面搜索 end-----------------------------------
+        this._advanceOffsetPage(previous);
     }
     // Start searching through the page.
-    this._nextPageMatch();
+    //---------------------------------tanglinhai 只在当前页面搜索 start-----------------------------------
+    if (!this._state.searchInCurrPage)
+    //---------------------------------tanglinhai 只在当前页面搜索 end-----------------------------------
+      this._nextPageMatch();
   }
 
   _matchesReady(matches) {
@@ -570,7 +633,10 @@ class PDFFindController {
       return true;
     }
     // No matches, so attempt to search the next page.
-    this._advanceOffsetPage(previous);
+    // --------------------------------tanglinhai 只在当前页面搜索参数 start---------------------------------
+    if(!this._state.searchInCurrPage)
+    // --------------------------------tanglinhai 只在当前页面搜索参数 end---------------------------------
+      this._advanceOffsetPage(previous);
     if (offset.wrapped) {
       offset.matchIdx = null;
       if (this._pagesToSearch < 0) {
@@ -594,7 +660,11 @@ class PDFFindController {
     do {
       const pageIdx = this._offset.pageIdx;
       matches = this._pageMatches[pageIdx];
-      if (!matches) {
+      //if (!matches) {
+      // --------------------------------tanglinhai 只在当前页面搜索参数 start---------------------------------
+      if (!matches || this._state.searchInCurrPage) {
+        this._state.searchInCurrPage && this._matchesReady(matches);
+      // --------------------------------tanglinhai 只在当前页面搜索参数 end---------------------------------
         // The matches don't exist yet for processing by `_matchesReady`,
         // so set a resume point for when they do exist.
         this._resumePageIdx = pageIdx;

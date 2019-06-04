@@ -1086,11 +1086,11 @@ let PDFViewerApplication = {
     });
 
     Promise.all([onePageRendered, animationStarted]).then(() => {
-      if(this.appConfig.queryStr){
+/*      if(this.appConfig.queryStr){
         this.findBar.findField.value = this.appConfig.queryStr;
         this.findBar.dispatchEvent('');
       }
-
+*/
       pdfDocument.getOutline().then((outline) => {
         this.pdfOutlineViewer.render({ outline, });
       });
@@ -1569,7 +1569,7 @@ function webViewerInitialized() {
     validateFileURL(file);
 
     //add callback when rendered , call parent method
-    PDFViewerApplication.appConfig.queryStr = params.querystr;
+    //PDFViewerApplication.appConfig.queryStr = params.querystr;
   } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     file = window.location.href.split('#')[0];
   } else if (PDFJSDev.test('CHROME')) {
@@ -2027,6 +2027,9 @@ function webViewerFind(evt) {
     entireWord: evt.entireWord,
     highlightAll: evt.highlightAll,
     findPrevious: evt.findPrevious,
+    //---------------------------------tanglinhai 只在当前页面搜索 start-----------------------------------
+    searchInCurrPage: evt.searchInCurrPage
+    //---------------------------------tanglinhai 只在当前页面搜索 end-----------------------------------
   });
 }
 
@@ -2038,6 +2041,10 @@ function webViewerFindFromUrlHash(evt) {
     entireWord: false,
     highlightAll: true,
     findPrevious: false,
+    //---------------------------------tanglinhai 只在当前页面搜索 start-----------------------------------
+    page: evt.page,
+    searchInCurrPage: evt.searchInCurrPage
+    //---------------------------------tanglinhai 只在当前页面搜索 end-----------------------------------
   });
 }
 

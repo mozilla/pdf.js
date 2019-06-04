@@ -810,10 +810,8 @@ class BaseViewer {
   _updateHelper(visiblePages) {
     throw new Error('Not implemented: _updateHelper');
   }
-  //update() {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-  update(isShouldReset) {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
+
+  update() {
     const visible = this._getVisiblePages();
     const visiblePages = visible.views, numVisiblePages = visiblePages.length;
 
@@ -823,10 +821,7 @@ class BaseViewer {
     const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
     this._buffer.resize(newCacheSize, visiblePages);
 
-    //this.renderingQueue.renderHighestPriority(visible);
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    this.renderingQueue.renderHighestPriority(visible, isShouldReset);
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
+    this.renderingQueue.renderHighestPriority(visible);
 
     this._updateHelper(visiblePages); // Run any class-specific update code.
 
@@ -964,10 +959,7 @@ class BaseViewer {
     return promise;
   }
 
-  //forceRendering(currentlyVisiblePages) {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-  forceRendering(currentlyVisiblePages, isShouldReset) {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
+  forceRendering(currentlyVisiblePages) {
     let visiblePages = currentlyVisiblePages || this._getVisiblePages();
     let scrollAhead = (this._isScrollModeHorizontal ?
                        this.scroll.right : this.scroll.down);
@@ -980,13 +972,6 @@ class BaseViewer {
       });
       return true;
     }
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    else if(isShouldReset){
-      for(var i=0;i<visiblePages.views.length;i++){
-        visiblePages.views[i].view.reset();
-      }
-    }
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     return false;
   }
 
@@ -1120,13 +1105,7 @@ class BaseViewer {
       this._setScale(this._currentScaleValue, true);
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
-    //this.update();
-    // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 start--------------------------
-    this.update(true);
-    /*for (let i = 0, iMax = this._pages.length; i < iMax; ++i) {
-      this._pages[i].reset();
-    }*/
-    // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 end--------------------------
+    this.update();
   }
 
   /**
@@ -1169,10 +1148,6 @@ class BaseViewer {
     } else {
       const parity = this._spreadMode - 1;
       let spread = null;
-      // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 start--------------------------
-      var accumulateTop = 0;
-      var containerW = this.container.clientWidth;
-      // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 end--------------------------
       for (let i = 0, iMax = pages.length; i < iMax; ++i) {
         if (spread === null) {
           spread = document.createElement('div');
@@ -1183,18 +1158,6 @@ class BaseViewer {
           viewer.appendChild(spread);
         }
         spread.appendChild(pages[i].div);
-        // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 start--------------------------
-        if (i % 2 != parity || i == iMax - 1) {
-          var totalW = parseInt(spread.childNodes[0].style.width) + (spread.childNodes.length > 1 ? parseInt(spread.childNodes[1].style.width) : 0);
-          var maxH = spread.childNodes.length > 1 ? Math.max(parseInt(spread.childNodes[0].style.height), parseInt(spread.childNodes[1].style.height)) : parseInt(spread.childNodes[0].style.height);
-          var leftCss = '';
-          if(containerW > totalW){
-            leftCss = 'left:50%;transform:translateX(-50%);';
-          }
-          spread.style.cssText = 'top:'+accumulateTop+'px;'+leftCss;
-          accumulateTop += maxH + 10;
-        }
-        // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 end--------------------------
       }
     }
 
@@ -1202,13 +1165,7 @@ class BaseViewer {
       return;
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
-    //this.update();
-    // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 start--------------------------
-    this.update(true);
-    /*for (let i = 0, iMax = this._pages.length; i < iMax; ++i) {
-      this._pages[i].reset();
-    }*/
-    // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 end--------------------------
+    this.update();
   }
 }
 

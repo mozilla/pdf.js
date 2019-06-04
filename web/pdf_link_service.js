@@ -206,6 +206,10 @@ class PDFLinkService {
         this.eventBus.dispatch('findfromurlhash', {
           source: this,
           query: params['search'].replace(/"/g, ''),
+          //----------------------------------tanglinhai 当前页面搜索url参数设置 start------------------------------------
+          searchInCurrPage: params['searchincurrpage'] === 'true',
+          page: params['page'],
+          //----------------------------------tanglinhai 当前页面搜索url参数设置 end------------------------------------
           phraseSearch: (params['phrase'] === 'true'),
         });
       }

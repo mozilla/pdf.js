@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import {
   approximateFraction, CSS_UNITS, DEFAULT_SCALE, getGlobalEventBus,
-  getOutputScale, NullL10n, RendererType, roundToDivide, ScrollMode, SpreadMode, TextLayerMode
+  getOutputScale, NullL10n, RendererType, roundToDivide, TextLayerMode
 } from './ui_utils';
 import {
   createPromiseCapability, RenderingCancelledException, SVGGraphics
@@ -107,9 +108,8 @@ class PDFPageView {
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     this.viewer = options.viewer;
     var pageIndex_ = this.id -1;
-    var containerW = this.viewer.container.clientWidth;
-    //div.style.left = containerW <= Math.floor(this.viewport.width)? '0px' : (containerW - Math.floor(this.viewport.width))/2 + 'px';
-    if(containerW > Math.floor(this.viewport.width)){
+    //div.style.left = this.viewer.containerW <= Math.floor(this.viewport.width)? '0px' : (this.viewer.containerW - Math.floor(this.viewport.width))/2 + 'px';
+    if(this.viewer.containerW > Math.floor(this.viewport.width)){
       div.style.left = '50%';
       div.style.transform = 'translateX(-50%)';
     }else{
@@ -172,262 +172,26 @@ class PDFPageView {
 
     let div = this.div;
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    var startTime = new Date().getTime();
+    //div.style.left = this.viewer.containerW <= Math.floor(this.viewport.width)? '0px' : (this.viewer.containerW - Math.floor(this.viewport.width))/2 + 'px';
+    if(this.viewer.containerW > Math.floor(this.viewport.width)){
+      div.style.left = '50%';
+      div.style.transform = 'translateX(-50%)';
+    }else{
+      div.style.left = '0px';
+      div.style.transform = 'none';
+    }
+
     var pageIndex_ = this.id -1;
     var viewportTotalHeight = 0;
-    //div.style.left = containerW <= Math.floor(this.viewport.width)? '0px' : (containerW - Math.floor(this.viewport.width))/2 + 'px';
-    if(this.viewer.scrollMode == ScrollMode.WRAPPED){//平铺模式
-      var containerW = this.viewer.container.clientWidth;
-      var lineMaxH = 0;
-      var lineMaxW = 0;
-      var lineItemCount = 0;
-      var lineItems = [];
-      if(this.viewer.spreadMode == SpreadMode.NONE){//平铺+单页
-        /*var isSizeChange = Math.floor(this.viewport.width) != parseInt(div.style.width) ||
-                          Math.floor(this.viewport.height) != parseInt(div.style.height);*/
-        for(var i=0;i<this.viewer._pages.length;i++){
-          var page_ = this.viewer._pages[i];
-          /*if(i > pageIndex_){
-            break;
-          }*/
-          var pageW_ = Math.floor(page_.viewport.width) + 10;
-          var pageH_ = Math.floor(page_.viewport.height) + 10;
-          var lineMaxW_ = lineMaxW + pageW_;
-          if(lineMaxW_ > containerW){
-            /*if(lineItemCount < 2){
-              lineMaxH = pageH_;
-            }else{
-              lineMaxH = Math.max(lineMaxH, pageH_);
-            }*/
-            viewportTotalHeight += lineMaxH;
-            //if (pageIndex_ == i/* || (isSizeChange && pageIndex_ < i)*/) {//
-              page_.div.style.top = viewportTotalHeight+'px';
-              page_.div.style.left = '0px';
-              page_.div.style.transform = 'none';
-              /*if(!isSizeChange)
-                break;*/
-            //}
-            lineMaxH = pageH_;
-            lineMaxW = pageW_;
-            lineItemCount = 1;
-          }else{
-            lineItemCount++;
-            if(lineItemCount < 2){
-              lineMaxH = pageH_;
-            }else{
-              lineMaxH = Math.max(lineMaxH, pageH_);
-            }
-            //if (pageIndex_ == i/* || (isSizeChange && pageIndex_ < i)*/) {//
-              page_.div.style.top = viewportTotalHeight+'px';
-              page_.div.style.left = lineMaxW+'px';
-              page_.div.style.transform = 'none';
-              /*if(!isSizeChange)
-                break;*/
-            //}
-            lineMaxW = lineMaxW_;
-          }
-        }
-      }else{//平铺+双页或者书籍
-        if(!div.nextSibling){
-          /*var isSizeChange = (!div.previousSibling && 
-                  (Math.floor(this.viewport.width) != parseInt(div.style.width) ||
-                    Math.floor(this.viewport.height) != parseInt(div.style.height))) ||
-                (div.previousSibling && 
-                  (Math.floor(this.viewport.width) != parseInt(div.style.width) ||
-                    Math.floor(this.viewport.height) > Math.floor(this.viewer._pages[pageIndex_-1].viewport.height)));*/
-          const parity = this.viewer.spreadMode % 2;
-          const iMax = this.viewer._pages.length;
-          //if(pageIndex_ % 2 === parity || this.id == iMax){
-            for (let i = 0; i < iMax; ++i) {
-              /*if(i > pageIndex_){
-                break;
-              }*/
-              var spreadMaxH;
-              var spreadW;
-              if(i % 2 === parity || i == iMax - 1){
-                var page_ = this.viewer._pages[i];
-                if(
-                    ((i == iMax - 1 && iMax > 1) && 
-                      ((this.viewer.spreadMode == SpreadMode.ODD && iMax%2 == 0) || 
-                      (this.viewer.spreadMode == SpreadMode.EVEN && iMax%2 == 1)))   ||
-                    (i < iMax - 1 && i - 1 > -1)
-                  ){
-                  spreadMaxH = Math.max(Math.floor(page_.viewport.height), Math.floor(this.viewer._pages[i-1].viewport.height)) + 10;
-                  spreadW = Math.floor(page_.viewport.width) + Math.floor(this.viewer._pages[i-1].viewport.width) + 20;
-                }else {
-                  spreadMaxH = Math.floor(page_.viewport.height) + 10;
-                  spreadW = Math.floor(page_.viewport.width) + 10;
-                }
-                var lineMaxW_ = lineMaxW + spreadW;
-                if(lineMaxW_ > containerW){
-                  /*if(i > parity){
-                    lineMaxH = spreadMaxH;
-                  }*/
-                  viewportTotalHeight += lineMaxH;
-                  //if (pageIndex_ == i/* || (isSizeChange && pageIndex_ < i)*/) {//
-                    page_.div.parentNode.style.top = viewportTotalHeight+'px';
-                    page_.div.parentNode.style.left = '0px';
-                    page_.div.parentNode.style.transform = 'none';
-                    /*if(!isSizeChange)
-                      break;*/
-                  //}
-                  lineMaxH = spreadMaxH;
-                  lineMaxW = spreadW;
-                  lineItemCount = 1;
-                }else{
-                  lineItemCount++;
-                  if(lineItemCount < 2){
-                    lineMaxH = spreadMaxH;
-                  }else{
-                    lineMaxH = Math.max(lineMaxH, spreadMaxH);
-                  }
-                  /*if(i > parity && lineMaxW_ == spreadW){
-                    lineMaxH = spreadMaxH;
-                    viewportTotalHeight += lineMaxH;
-                  }else{
-                    lineMaxH = Math.max(lineMaxH, spreadMaxH);
-                  }*/
-                  //if (pageIndex_ == i/* || (isSizeChange && pageIndex_ < i)*/) {//
-                    page_.div.parentNode.style.top = viewportTotalHeight+'px';
-                    page_.div.parentNode.style.left = lineMaxW+'px';
-                    page_.div.parentNode.style.transform = 'none';
-                    /*if(!isSizeChange)
-                      break;*/
-                  //}
-                  lineMaxW = lineMaxW_;
-                }
-              }
-            }
-          //}
-        }
+    var isHeightChange = Math.floor(this.viewport.height) != parseInt(div.style.height);
+    for(var i=0;i<this.viewer._pages.length;i++){
+      if (pageIndex_ == i || (isHeightChange && pageIndex_ < i)) {
+        this.viewer._pages[i].div.style.top = viewportTotalHeight + 'px';
+        if(!isHeightChange)
+          break;
       }
-    }else if(this.viewer.scrollMode == ScrollMode.HORIZONTAL){//水平滚动模式
-      var containerH = this.viewer.container.clientHeight;
-      /*if(containerH > Math.floor(this.viewport.height)){
-        div.style.top = '50%';
-        div.style.transform = 'translateY(-50%)';
-      }else{
-        div.style.top = '0px';
-        div.style.transform = 'none';
-      }*/
-
-      //var isWidthChange = Math.floor(this.viewport.width) != parseInt(div.style.width);
-      
-      if(this.viewer.spreadMode == SpreadMode.NONE){//水平+单页
-        for(var i=0;i<this.viewer._pages.length;i++){
-          //if (pageIndex_ == i/* || (isWidthChange && pageIndex_ < i)*/) {
-            var page_ = this.viewer._pages[i];
-            page_.div.style.left = viewportTotalHeight + 'px';
-            if(containerH > Math.floor(page_.viewport.height)){
-              page_.div.style.top = '50%';
-              page_.div.style.transform = 'translateY(-50%)';
-            }else{
-              page_.div.style.top = '0px';
-              page_.div.style.transform = 'none';
-            }
-            /*if(!isWidthChange)
-              break;*/
-          //}
-          viewportTotalHeight += Math.floor(this.viewer._pages[i].viewport.width) + 10;
-        }
-      }else{//水平+双页或者书籍
-        if(!div.nextSibling){
-          const parity = this.viewer.spreadMode % 2;
-          const iMax = this.viewer._pages.length;
-          var containerH = this.viewer.container.clientHeight;
-          //if(pageIndex_ % 2 === parity || this.id == iMax){
-            for (let i = 0; i < iMax; ++i) {
-              var page_ = this.viewer._pages[i];
-              var maxH = 0;
-              if(i % 2 === parity || i == iMax - 1){
-                var leftCss = 'left:'+viewportTotalHeight+'px;';
-                if(
-                    ((i == iMax - 1 && iMax > 1) && 
-                      ((this.viewer.spreadMode == SpreadMode.ODD && iMax%2 == 0) || 
-                      (this.viewer.spreadMode == SpreadMode.EVEN && iMax%2 == 1)))   ||
-                    (i < iMax - 1 && i - 1 > -1)
-                  ){
-                  viewportTotalHeight += Math.floor(page_.viewport.width) + Math.floor(this.viewer._pages[i-1].viewport.width) + 20;
-                  maxH = Math.max(Math.floor(page_.viewport.height), Math.floor(this.viewer._pages[i-1].viewport.height));
-                }else{
-                  viewportTotalHeight += Math.floor(page_.viewport.width) + 10;
-                  maxH = Math.floor(page_.viewport.height);
-                }
-                var topCss = '';
-                if(containerH > maxH){
-                  topCss = 'top:50%;transform:translateY(-50%);';
-                }
-                page_.div.parentNode.style.cssText = leftCss + topCss;
-              }
-            }
-          //}
-        }
-      }
-
-      
-    }else if(this.viewer.spreadMode == SpreadMode.NONE){//垂直+单页
-      var containerW = this.viewer.container.clientWidth;
-      /*if(containerW > Math.floor(this.viewport.width)){
-        div.style.left = '50%';
-        div.style.transform = 'translateX(-50%)';
-      }else{
-        div.style.left = '0px';
-        div.style.transform = 'none';
-      }*/
-
-      //var isHeightChange = Math.floor(this.viewport.height) != parseInt(div.style.height);
-      for(var i=0;i<this.viewer._pages.length;i++){
-        var page_ = this.viewer._pages[i];
-        //if (pageIndex_ == i/* || (isHeightChange && pageIndex_ < i)*/) {
-          page_.div.style.top = viewportTotalHeight + 'px';
-          if(containerW > Math.floor(page_.viewport.width)){
-            page_.div.style.left = '50%';
-            page_.div.style.transform = 'translateX(-50%)';
-          }else{
-            page_.div.style.left = '0px';
-            page_.div.style.transform = 'none';
-          }
-          /*if(!isHeightChange)
-            break;*/
-        //}
-        viewportTotalHeight += Math.floor(page_.viewport.height) + 10;
-      }
-    }else{//垂直+双页或者书籍
-      var containerW = this.viewer.container.clientWidth;
-      if(!div.nextSibling){
-        const parity = this.viewer.spreadMode % 2;
-        const iMax = this.viewer._pages.length;
-        //if(pageIndex_ % 2 === parity || this.id == iMax){
-          for (let i = 0; i < iMax; ++i) {
-            /*if(i == pageIndex_){
-              break;
-            }*/
-            if(i % 2 === parity || i == iMax - 1){
-              var page_ = this.viewer._pages[i];
-              var topCss = 'top:'+viewportTotalHeight+'px;';
-              var leftCss = '';
-              if(
-                  ((i == iMax - 1 && iMax > 1) && 
-                    ((this.viewer.spreadMode == SpreadMode.ODD && iMax%2 == 0) || 
-                    (this.viewer.spreadMode == SpreadMode.EVEN && iMax%2 == 1)))   ||
-                  (i < iMax - 1 && i - 1 > -1)
-                ){
-                var totalW = Math.floor(page_.viewport.width) + Math.floor(this.viewer._pages[i-1].viewport.width) + 20;
-                viewportTotalHeight += Math.max(Math.floor(page_.viewport.height), Math.floor(this.viewer._pages[i-1].viewport.height)) + 10;
-              }else{
-                var totalW = Math.floor(page_.viewport.width) + 10;
-                viewportTotalHeight += Math.floor(page_.viewport.height) + 10;
-              }
-              if(containerW > totalW){
-                leftCss = 'left:50%;transform:translateX(-50%);';
-              }
-              page_.div.parentNode.style.cssText = topCss + leftCss;
-            }
-          }
-        //}
-      }
+      viewportTotalHeight += Math.floor(this.viewer._pages[i].viewport.height) + 10;
     }
-    console.log('第'+pageIndex_+'页,reset耗时(秒)：'+(new Date().getTime()-startTime)/1000);
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
@@ -563,9 +327,8 @@ class PDFPageView {
       Math.floor(height) + 'px';
 
     //----------------------------------tanglinhai 页面放大缩小调整top值 start------------------------------------
-    var containerW = this.viewer.container.clientWidth;
-    //target.style.left = target.parentNode.style.left = div.style.left = containerW <= Math.floor(width)? '0px' : (containerW - Math.floor(width))/ + 'px';
-    if(containerW > Math.floor(width)){
+    //target.style.left = target.parentNode.style.left = div.style.left = this.viewer.containerW <= Math.floor(width)? '0px' : (this.viewer.containerW - Math.floor(width))/ + 'px';
+    if(this.viewer.containerW > Math.floor(width)){
       div.style.left = '50%';
       div.style.transform = 'translateX(-50%)';
     }else{

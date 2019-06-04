@@ -169,7 +169,7 @@ function createWebpackConfig(defines, output) {
         'pdfjs-lib': path.join(__dirname, 'web/pdfjs'),
       },
     },
-    devtool: enableSourceMaps ? 'source-map' : undefined,
+    devtool: 0 && enableSourceMaps ? 'source-map' : undefined,
     module: {
       rules: [
         {

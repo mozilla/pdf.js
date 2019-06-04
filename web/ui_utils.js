@@ -106,6 +106,23 @@ function getOutputScale(ctx) {
   };
 }
 
+
+function getOffsetTop(view){
+  var ele = view.div;
+  return ele.offsetTop + ele.clientTop +
+              (view.viewer.spreadMode == SpreadMode.ODD || 
+              view.viewer.spreadMode == SpreadMode.EVEN ? 
+              ele.parentNode.offsetTop + ele.parentNode.clientTop : 0);
+}
+
+function getOffsetLeft(view){
+  var ele = view.div;
+  return ele.offsetLeft + ele.clientLeft +
+              (view.viewer.spreadMode == SpreadMode.ODD || 
+              view.viewer.spreadMode == SpreadMode.EVEN ? 
+              ele.parentNode.offsetLeft + ele.parentNode.clientLeft : 0);
+}
+
 /**
  * Scrolls specified element into view of its parent.
  * @param {Object} element - The element to be visible.
@@ -119,16 +136,19 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
   let parent = element.offsetParent;
+  
   if (!parent) {
     console.error('offsetParent is not set -- cannot scroll');
     return;
   }
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
-  while ((parent.clientHeight === parent.scrollHeight &&
-          parent.clientWidth === parent.scrollWidth) ||
-         (skipOverflowHiddenElements &&
-          getComputedStyle(parent).overflow === 'hidden')) {
+  while (
+    //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 start ----------------------
+    (PDFViewerApplication.pdfViewer.spreadMode != 0 && parent.getAttribute('class') == 'spread') ||
+    //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 end ----------------------
+    (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth) ||
+    (skipOverflowHiddenElements && getComputedStyle(parent).overflow === 'hidden')) {
     if (parent.dataset._scaleY) {
       offsetY /= parent.dataset._scaleY;
       offsetX /= parent.dataset._scaleX;
@@ -140,6 +160,9 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
       return; // no need to scroll
     }
   }
+  //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 start ----------------------
+  parent = parent.offsetParent;
+  //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 end ----------------------
   if (spot) {
     if (spot.top !== undefined) {
       offsetY += spot.top;
@@ -340,7 +363,6 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   if (index < 2) {
     return index;
   }
-
   // That aside, the possible cases are represented below.
   //
   //     ****  = fully hidden
@@ -365,7 +387,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   // page's top. If the found page is partially visible, we're definitely not in
   // case 3, and this assumption is correct.
   let elt = views[index].div;
-  let pageTop = elt.offsetTop + elt.clientTop;
+  let pageTop = getOffsetTop(views[index]);
 
   if (pageTop >= top) {
     // The found page is fully visible, so we're actually either in case 3 or 4,
@@ -374,7 +396,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
     // we do need to backtrack to that row. In both cases, the previous page is
     // in the previous row, so use its top instead.
     elt = views[index - 1].div;
-    pageTop = elt.offsetTop + elt.clientTop;
+    pageTop = getOffsetTop(views[index - 1]);
   }
 
   // Now we backtrack to the first page that still has its bottom below
@@ -387,7 +409,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   // unchanged, so we use a distinct loop variable.)
   for (let i = index - 2; i >= 0; --i) {
     elt = views[i].div;
-    if (elt.offsetTop + elt.clientTop + elt.clientHeight <= pageTop) {
+    if (getOffsetTop(views[i]) + elt.clientHeight <= pageTop) {
       // We have reached the previous row, so stop now.
       // This loop is expected to terminate relatively quickly because the
       // number of pages per row is expected to be small.
@@ -441,15 +463,15 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   // the border). Adding clientWidth/Height gets us the bottom-right corner of
   // the padding edge.
   function isElementBottomAfterViewTop(view) {
-    const element = view.div;
-    const elementBottom =
-      element.offsetTop + element.clientTop + element.clientHeight;
+    let element = view.div;
+    let elementBottom = 
+      getOffsetTop(view) + element.clientHeight;
     return elementBottom > top;
   }
   function isElementRightAfterViewLeft(view) {
-    const element = view.div;
-    const elementRight =
-      element.offsetLeft + element.clientLeft + element.clientWidth;
+    let element = view.div;
+    let elementRight =
+      getOffsetLeft(view) + element.clientWidth;
     return elementRight > left;
   }
 
@@ -483,8 +505,8 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
 
   for (let i = firstVisibleElementInd; i < numViews; i++) {
     const view = views[i], element = view.div;
-    const currentWidth = element.offsetLeft + element.clientLeft;
-    const currentHeight = element.offsetTop + element.clientTop;
+    const currentWidth = getOffsetLeft(view);
+    const currentHeight = getOffsetTop(view);
     const viewWidth = element.clientWidth, viewHeight = element.clientHeight;
     const viewRight = currentWidth + viewWidth;
     const viewBottom = currentHeight + viewHeight;
