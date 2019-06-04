@@ -1192,6 +1192,47 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return visitor.buffer;
   }
 
+  function parseJbig2(data) {
+    let position = 0, end = data.length;
+
+    if (data[position] !== 0x97 || data[position + 1] !== 0x4A ||
+        data[position + 2] !== 0x42 || data[position + 3] !== 0x32 ||
+        data[position + 4] !== 0x0D || data[position + 5] !== 0x0A ||
+        data[position + 6] !== 0x1A || data[position + 7] !== 0x0A) {
+      throw new Jbig2Error('parseJbig2 - invalid header.');
+    }
+
+    let header = Object.create(null);
+    position += 8;
+    const flags = data[position++];
+    header.randomAccess = !(flags & 1);
+    if (!(flags & 2)) {
+      header.numberOfPages = readUint32(data, position);
+      position += 4;
+    }
+
+    let segments = readSegments(header, data, position, end);
+    let visitor = new SimpleSegmentVisitor();
+    processSegments(segments, visitor);
+
+    const { width, height, } = visitor.currentPageInfo;
+    const bitPacked = visitor.buffer;
+    let imgData = new Uint8ClampedArray(width * height);
+    let q = 0, k = 0;
+    for (let i = 0; i < height; i++) {
+      let mask = 0, buffer;
+      for (let j = 0; j < width; j++) {
+        if (!mask) {
+          mask = 128; buffer = bitPacked[k++];
+        }
+        imgData[q++] = (buffer & mask) ? 0 : 255;
+        mask >>= 1;
+      }
+    }
+
+    return { imgData, width, height, };
+  }
+
   function SimpleSegmentVisitor() {}
 
   SimpleSegmentVisitor.prototype = {
@@ -2095,8 +2136,15 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function Jbig2Image() {}
 
   Jbig2Image.prototype = {
-    parseChunks: function Jbig2Image_parseChunks(chunks) {
+    parseChunks(chunks) {
       return parseJbig2Chunks(chunks);
+    },
+
+    parse(data) {
+      const { imgData, width, height, } = parseJbig2(data);
+      this.width = width;
+      this.height = height;
+      return imgData;
     },
   };
 

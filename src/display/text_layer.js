@@ -48,14 +48,14 @@ var renderTextLayer = (function renderTextLayerClosure() {
     return !NonWhitespaceRegexp.test(str);
   }
 
-  // Text layers may contain many thousand div's, and using `styleBuf` avoids
+  // Text layers may contain many thousands of divs, and using `styleBuf` avoids
   // creating many intermediate strings when building their 'style' properties.
   var styleBuf = ['left: ', 0, 'px; top: ', 0, 'px; font-size: ', 0,
                   'px; font-family: ', '', ';'];
 
   function appendText(task, geom, styles) {
     // Initialize all used properties to keep the caches monomorphic.
-    var textDiv = document.createElement('div');
+    var textDiv = document.createElement('span');
     var textDivProperties = {
       style: null,
       angle: 0,
@@ -340,7 +340,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         var xNew;
         if (affectedBoundary.x2 > boundary.x1) {
           // In the middle of the previous element, new x shall be at the
-          // boundary start. Extending if further if the affected bondary
+          // boundary start. Extending if further if the affected boundary
           // placed on top of the current one.
           xNew = affectedBoundary.index > boundary.index ?
             affectedBoundary.x1New : boundary.x1;
@@ -490,6 +490,17 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._capability = createPromiseCapability();
     this._renderTimer = null;
     this._bounds = [];
+
+    // Always clean-up the temporary canvas once rendering is no longer pending.
+    this._capability.promise.finally(() => {
+      if (this._layoutTextCtx) {
+        // Zeroing the width and height cause Firefox to release graphics
+        // resources immediately, which can greatly reduce memory consumption.
+        this._layoutTextCtx.canvas.width = 0;
+        this._layoutTextCtx.canvas.height = 0;
+        this._layoutTextCtx = null;
+      }
+    });
   }
   TextLayerRenderTask.prototype = {
     get promise() {
@@ -497,16 +508,16 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
 
     cancel: function TextLayer_cancel() {
+      this._canceled = true;
       if (this._reader) {
-        this._reader.cancel(new AbortException('text layer task cancelled'));
+        this._reader.cancel(new AbortException('TextLayer task cancelled.'));
         this._reader = null;
       }
-      this._canceled = true;
       if (this._renderTimer !== null) {
         clearTimeout(this._renderTimer);
         this._renderTimer = null;
       }
-      this._capability.reject('canceled');
+      this._capability.reject(new Error('TextLayer task cancelled.'));
     },
 
     _processItems(items, styleCache) {
@@ -531,8 +542,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
       if (fontSize !== this._layoutTextLastFontSize ||
           fontFamily !== this._layoutTextLastFontFamily) {
         this._layoutTextCtx.font = fontSize + ' ' + fontFamily;
-        this._lastFontSize = fontSize;
-        this._lastFontFamily = fontFamily;
+        this._layoutTextLastFontSize = fontSize;
+        this._layoutTextLastFontFamily = fontFamily;
       }
 
       let width = this._layoutTextCtx.measureText(textDiv.textContent).width;
@@ -540,12 +551,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       let transform = '';
       if (textDivProperties.canvasWidth !== 0 && width > 0) {
         textDivProperties.scale = textDivProperties.canvasWidth / width;
-        transform = 'scaleX(' + textDivProperties.scale + ')';
+        transform = `scaleX(${textDivProperties.scale})`;
       }
       if (textDivProperties.angle !== 0) {
-        transform = 'rotate(' + textDivProperties.angle + 'deg) ' + transform;
+        transform = `rotate(${textDivProperties.angle}deg) ${transform}`;
       }
-      if (transform !== '') {
+      if (transform.length > 0) {
         textDivProperties.originalTransform = transform;
         textDiv.style.transform = transform;
       }
@@ -578,10 +589,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
               return;
             }
 
-            Util.extendObj(styleCache, value.styles);
+            Object.assign(styleCache, value.styles);
             this._processItems(value.items, styleCache);
             pump();
-
           }, capability.reject);
         };
 

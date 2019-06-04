@@ -28,13 +28,14 @@
   //
   // Asynchronous download PDF
   //
-  pdfjsLib.getDocument(url).then(function getPdfHelloWorld(pdf) {
+  var loadingTask = pdfjsLib.getDocument(url);
+  loadingTask.promise.then(function(pdf) {
     //
     // Fetch the first page
     //
-    pdf.getPage(1).then(function getPageHelloWorld(page) {
+    pdf.getPage(1).then(function(page) {
       var scale = 1.5;
-      var viewport = page.getViewport(scale);
+      var viewport = page.getViewport({ scale: scale, });
 
       //
       // Prepare canvas using PDF page dimensions
@@ -49,7 +50,7 @@
       //
       var renderContext = {
         canvasContext: context,
-        viewport: viewport
+        viewport: viewport,
       };
       page.render(renderContext);
     });

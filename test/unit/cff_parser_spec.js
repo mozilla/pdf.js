@@ -14,7 +14,7 @@
  */
 
 import {
-  CFFCompiler, CFFParser, CFFStrings
+  CFFCharset, CFFCompiler, CFFFDSelect, CFFParser, CFFStrings
 } from '../../src/core/cff_parser';
 import { SEAC_ANALYSIS_ENABLED } from '../../src/core/fonts';
 import { Stream } from '../../src/core/stream';
@@ -52,7 +52,7 @@ describe('CFFParser', function() {
                       'f78e14';
     var fontArr = [];
     for (var i = 0, ii = exampleFont.length; i < ii; i += 2) {
-      var hex = exampleFont.substr(i, 2);
+      var hex = exampleFont.substring(i, i + 2);
       fontArr.push(parseInt(hex, 16));
     }
     fontData = new Stream(fontArr);
@@ -311,7 +311,7 @@ describe('CFFParser', function() {
     var fdSelect = parser.parseFDSelect(0, 2);
 
     expect(fdSelect.fdSelect).toEqual([0, 1]);
-    expect(fdSelect.raw).toEqual(bytes);
+    expect(fdSelect.format).toEqual(0);
   });
 
   it('parses fdselect format 3', function() {
@@ -327,7 +327,7 @@ describe('CFFParser', function() {
     var fdSelect = parser.parseFDSelect(0, 4);
 
     expect(fdSelect.fdSelect).toEqual([9, 9, 0xa, 0xa]);
-    expect(fdSelect.raw).toEqual(bytes);
+    expect(fdSelect.format).toEqual(3);
   });
 
   it('parses invalid fdselect format 3 (bug 1146106)', function() {
@@ -343,8 +343,7 @@ describe('CFFParser', function() {
     var fdSelect = parser.parseFDSelect(0, 4);
 
     expect(fdSelect.fdSelect).toEqual([9, 9, 0xa, 0xa]);
-    bytes[3] = bytes[4] = 0x00; // The adjusted first range, first gid.
-    expect(fdSelect.raw).toEqual(bytes);
+    expect(fdSelect.format).toEqual(3);
   });
 
   // TODO fdArray
@@ -398,6 +397,83 @@ describe('CFFCompiler', function() {
     nameIndex = parser.parseIndex(0);
     names = parser.parseNameIndex(nameIndex.obj);
     expect(names[0].length).toEqual(127);
+  });
+
+  it('compiles fdselect format 0', function() {
+    var fdSelect = new CFFFDSelect(0, [3, 2, 1]);
+    var c = new CFFCompiler();
+    var out = c.compileFDSelect(fdSelect);
+    expect(out).toEqual([
+      0, // format
+      3, // gid: 0 fd 3
+      2, // gid: 1 fd 3
+      1, // gid: 2 fd 3
+    ]);
+  });
+
+  it('compiles fdselect format 3', function() {
+    var fdSelect = new CFFFDSelect(3, [0, 0, 1, 1]);
+    var c = new CFFCompiler();
+    var out = c.compileFDSelect(fdSelect);
+    expect(out).toEqual([
+      3, // format
+      0, // nRanges (high)
+      2, // nRanges (low)
+      0, // range struct 0 - first (high)
+      0, // range struct 0 - first (low)
+      0, // range struct 0 - fd
+      0, // range struct 0 - first (high)
+      2, // range struct 0 - first (low)
+      1, // range struct 0 - fd
+      0, // sentinel (high)
+      4, // sentinel (low)
+    ]);
+  });
+
+  it('compiles fdselect format 3, single range', function() {
+    var fdSelect = new CFFFDSelect(3, [0, 0]);
+    var c = new CFFCompiler();
+    var out = c.compileFDSelect(fdSelect);
+    expect(out).toEqual([
+      3, // format
+      0, // nRanges (high)
+      1, // nRanges (low)
+      0, // range struct 0 - first (high)
+      0, // range struct 0 - first (low)
+      0, // range struct 0 - fd
+      0, // sentinel (high)
+      2, // sentinel (low)
+    ]);
+  });
+
+  it('compiles charset of CID font', function() {
+    var charset = new CFFCharset();
+    var c = new CFFCompiler();
+    var numGlyphs = 7;
+    var out = c.compileCharset(charset, numGlyphs, new CFFStrings(), true);
+    // All CID charsets get turned into a simple format 2.
+    expect(out).toEqual([
+      2, // format
+      0, // cid (high)
+      0, // cid (low)
+      0, // nLeft (high)
+      numGlyphs - 1, // nLeft (low)
+    ]);
+  });
+
+  it('compiles charset of non CID font', function() {
+    var charset = new CFFCharset(false, 0, ['space', 'exclam']);
+    var c = new CFFCompiler();
+    var numGlyphs = 3;
+    var out = c.compileCharset(charset, numGlyphs, new CFFStrings(), false);
+    // All non-CID fonts use a format 0 charset.
+    expect(out).toEqual([
+      0, // format
+      0, // sid of 'space' (high)
+      1, // sid of 'space' (low)
+      0, // sid of 'exclam' (high)
+      2, // sid of 'exclam' (low)
+    ]);
   });
 
   // TODO a lot more compiler tests

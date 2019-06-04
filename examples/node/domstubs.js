@@ -1,7 +1,7 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-function xmlEncode(s){
+function xmlEncode(s) {
   var i = 0, ch;
   s = String(s);
   while (i < s.length && (ch = s[i]) !== '&' && ch !== '<' &&
@@ -50,7 +50,7 @@ function DOMElement(name) {
   if (name === 'style') {
     this.sheet = {
       cssRules: [],
-      insertRule: function (rule) {
+      insertRule: function(rule) {
         this.cssRules.push(rule);
       },
     };
@@ -96,9 +96,13 @@ DOMElement.prototype = {
 
   appendChild: function DOMElement_appendChild(element) {
     var childNodes = this.childNodes;
-    if (childNodes.indexOf(element) === -1) {
+    if (!childNodes.includes(element)) {
       childNodes.push(element);
     }
+  },
+
+  hasChildNodes: function DOMElement_hasChildNodes() {
+    return this.childNodes.length !== 0;
   },
 
   cloneNode: function DOMElement_cloneNode() {
@@ -124,8 +128,8 @@ DOMElement.prototype = {
 
   getSerializer: function DOMElement_getSerializer() {
     return new DOMElementSerializer(this);
-  }
-}
+  },
+};
 
 function DOMElementSerializer(node) {
   this._node = node;
@@ -152,10 +156,12 @@ DOMElementSerializer.prototype = {
           return ' xmlns:xlink="http://www.w3.org/1999/xlink"' +
                  ' xmlns:svg="http://www.w3.org/2000/svg"';
         }
+        /* falls through */
       case 2:  // Initialize variables for looping over attributes.
         ++this._state;
         this._loopIndex = 0;
         this._attributeKeys = Object.keys(node.attributes);
+        /* falls through */
       case 3:  // Serialize any attributes and end opening tag.
         if (this._loopIndex < this._attributeKeys.length) {
           var name = this._attributeKeys[this._loopIndex++];
@@ -170,6 +176,7 @@ DOMElementSerializer.prototype = {
         }
         ++this._state;
         this._loopIndex = 0;
+        /* falls through */
       case 5:  // Serialize child nodes (only for non-tspan/style elements).
         var value;
         while (true) {
@@ -186,6 +193,7 @@ DOMElementSerializer.prototype = {
             break;
           }
         }
+        /* falls through */
       case 6:  // Ending tag.
         ++this._state;
         return '</' + node.nodeName + '>';
@@ -198,48 +206,48 @@ DOMElementSerializer.prototype = {
 };
 
 const document = {
-  childNodes : [],
+  childNodes: [],
 
   get currentScript() {
-    return { src: '' };
+    return { src: '', };
   },
 
   get documentElement() {
     return this;
   },
 
-  createElementNS: function (NS, element) {
+  createElementNS: function(NS, element) {
     var elObject = new DOMElement(element);
     return elObject;
   },
 
-  createElement: function (element) {
+  createElement: function(element) {
     return this.createElementNS('', element);
   },
 
-  getElementsByTagName: function (element) {
+  getElementsByTagName: function(element) {
     if (element === 'head') {
       return [this.head || (this.head = new DOMElement('head'))];
     }
     return [];
-  }
+  },
 };
 
-function Image () {
+function Image() {
   this._src = null;
   this.onload = null;
 }
 Image.prototype = {
-  get src () {
+  get src() {
     return this._src;
   },
-  set src (value) {
+  set src(value) {
     this._src = value;
     if (this.onload) {
       this.onload();
     }
-  }
-}
+  },
+};
 
 exports.document = document;
 exports.Image = Image;

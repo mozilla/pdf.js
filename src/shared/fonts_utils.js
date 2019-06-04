@@ -253,7 +253,7 @@ var Type2Parser = function type2Parser(aFilePath) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', aFilePath, false);
   xhr.responseType = 'arraybuffer';
-  xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
+  xhr.expected = document.URL.startsWith('file:') ? 0 : 200;
   xhr.send(null);
   this.data = new Stream(xhr.response);
 

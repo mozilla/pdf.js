@@ -107,7 +107,7 @@ class PDFRenderingQueue {
 
     let numVisible = visibleViews.length;
     if (numVisible === 0) {
-      return false;
+      return null;
     }
     for (let i = 0; i < numVisible; ++i) {
       let view = visibleViews[i].view;
@@ -162,10 +162,9 @@ class PDFRenderingQueue {
         break;
       case RenderingStates.INITIAL:
         this.highestPriorityPage = view.renderingId;
-        let continueRendering = () => {
+        view.draw().finally(() => {
           this.renderHighestPriority();
-        };
-        view.draw().then(continueRendering, continueRendering);
+        });
         break;
     }
     return true;

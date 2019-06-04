@@ -12,8 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* Copyright 1996-2003 Glyph & Cog, LLC
+ *
+ * The flate stream implementation contained in this file is a JavaScript port
+ * of XPDF's implementation, made available under the Apache 2.0 open source
+ * license.
+ */
 
-import { FormatError, isSpace, stringToBytes, Util } from '../shared/util';
+import { FormatError, isSpace, stringToBytes } from '../shared/util';
 import { isDict } from './primitives';
 
 var Stream = (function StreamClosure() {
@@ -56,30 +62,33 @@ var Stream = (function StreamClosure() {
       var b3 = this.getByte();
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
-    // returns subarray of original buffer
-    // should only be read
-    getBytes: function Stream_getBytes(length) {
+    // Returns subarray of original buffer, should only be read.
+    getBytes(length, forceClamped = false) {
       var bytes = this.bytes;
       var pos = this.pos;
       var strEnd = this.end;
 
       if (!length) {
-        return bytes.subarray(pos, strEnd);
+        let subarray = bytes.subarray(pos, strEnd);
+        // `this.bytes` is always a `Uint8Array` here.
+        return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
       }
       var end = pos + length;
       if (end > strEnd) {
         end = strEnd;
       }
       this.pos = end;
-      return bytes.subarray(pos, end);
+      let subarray = bytes.subarray(pos, end);
+      // `this.bytes` is always a `Uint8Array` here.
+      return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
     },
     peekByte: function Stream_peekByte() {
       var peekedByte = this.getByte();
       this.pos--;
       return peekedByte;
     },
-    peekBytes: function Stream_peekBytes(length) {
-      var bytes = this.getBytes(length);
+    peekBytes(length, forceClamped = false) {
+      var bytes = this.getBytes(length, forceClamped);
       this.pos -= bytes.length;
       return bytes;
     },
@@ -123,6 +132,8 @@ var DecodeStream = (function DecodeStreamClosure() {
   var emptyBuffer = new Uint8Array(0);
 
   function DecodeStream(maybeMinBufferLength) {
+    this._rawMinBufferLength = maybeMinBufferLength || 0;
+
     this.pos = 0;
     this.bufferLength = 0;
     this.eof = false;
@@ -181,7 +192,7 @@ var DecodeStream = (function DecodeStreamClosure() {
       var b3 = this.getByte();
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
-    getBytes: function DecodeStream_getBytes(length) {
+    getBytes(length, forceClamped = false) {
       var end, pos = this.pos;
 
       if (length) {
@@ -203,15 +214,18 @@ var DecodeStream = (function DecodeStreamClosure() {
       }
 
       this.pos = end;
-      return this.buffer.subarray(pos, end);
+      let subarray = this.buffer.subarray(pos, end);
+      // `this.buffer` is either a `Uint8Array` or `Uint8ClampedArray` here.
+      return (forceClamped && !(subarray instanceof Uint8ClampedArray) ?
+              new Uint8ClampedArray(subarray) : subarray);
     },
     peekByte: function DecodeStream_peekByte() {
       var peekedByte = this.getByte();
       this.pos--;
       return peekedByte;
     },
-    peekBytes: function DecodeStream_peekBytes(length) {
-      var bytes = this.getBytes(length);
+    peekBytes(length, forceClamped = false) {
+      var bytes = this.getBytes(length, forceClamped);
       this.pos -= bytes.length;
       return bytes;
     },
@@ -245,7 +259,17 @@ var DecodeStream = (function DecodeStreamClosure() {
 var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
   function StreamsSequenceStream(streams) {
     this.streams = streams;
-    DecodeStream.call(this, /* maybeLength = */ null);
+
+    let maybeLength = 0;
+    for (let i = 0, ii = streams.length; i < ii; i++) {
+      const stream = streams[i];
+      if (stream instanceof DecodeStream) {
+        maybeLength += stream._rawMinBufferLength;
+      } else {
+        maybeLength += stream.length;
+      }
+    }
+    DecodeStream.call(this, maybeLength);
   }
 
   StreamsSequenceStream.prototype = Object.create(DecodeStream.prototype);
@@ -274,7 +298,7 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
     for (var i = 0, ii = this.streams.length; i < ii; i++) {
       var stream = this.streams[i];
       if (stream.getBaseStreams) {
-        Util.appendToArray(baseStreams, stream.getBaseStreams());
+        baseStreams.push(...stream.getBaseStreams());
       }
     }
     return baseStreams;

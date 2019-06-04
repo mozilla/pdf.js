@@ -20,7 +20,7 @@ let https = __non_webpack_require__('https');
 let url = __non_webpack_require__('url');
 
 import {
-  AbortException, assert, createPromiseCapability
+  AbortException, assert, createPromiseCapability, MissingPDFException
 } from '../shared/util';
 import {
   extractFilenameFromHeader, validateRangeRequestCapabilities
@@ -54,19 +54,26 @@ class PDFNodeStream {
     this.isFsUrl = this.url.protocol === 'file:';
     this.httpHeaders = (this.isHttp && source.httpHeaders) || {};
 
-    this._fullRequest = null;
+    this._fullRequestReader = null;
     this._rangeRequestReaders = [];
   }
 
+  get _progressiveDataLength() {
+    return (this._fullRequestReader ? this._fullRequestReader._loaded : 0);
+  }
+
   getFullReader() {
-    assert(!this._fullRequest);
-    this._fullRequest = this.isFsUrl ?
+    assert(!this._fullRequestReader);
+    this._fullRequestReader = this.isFsUrl ?
       new PDFNodeStreamFsFullReader(this) :
       new PDFNodeStreamFullReader(this);
-    return this._fullRequest;
+    return this._fullRequestReader;
   }
 
   getRangeReader(start, end) {
+    if (end <= this._progressiveDataLength) {
+      return null;
+    }
     let rangeReader = this.isFsUrl ?
       new PDFNodeStreamFsRangeReader(this, start, end) :
       new PDFNodeStreamRangeReader(this, start, end);
@@ -75,8 +82,8 @@ class PDFNodeStream {
   }
 
   cancelAllRequests(reason) {
-    if (this._fullRequest) {
-      this._fullRequest.cancel(reason);
+    if (this._fullRequestReader) {
+      this._fullRequestReader.cancel(reason);
     }
 
     let readers = this._rangeRequestReaders.slice(0);
@@ -90,8 +97,7 @@ class BaseFullReader {
   constructor(stream) {
     this._url = stream.url;
     this._done = false;
-    this._errored = false;
-    this._reason = null;
+    this._storedError = null;
     this.onProgress = null;
     let source = stream.source;
     this._contentLength = source.length; // optional
@@ -132,31 +138,30 @@ class BaseFullReader {
     return this._isStreamingSupported;
   }
 
-  read() {
-    return this._readCapability.promise.then(() => {
-      if (this._done) {
-        return Promise.resolve({ value: undefined, done: true, });
-      }
-      if (this._errored) {
-        return Promise.reject(this._reason);
-      }
+  async read() {
+    await this._readCapability.promise;
+    if (this._done) {
+      return { value: undefined, done: true, };
+    }
+    if (this._storedError) {
+      throw this._storedError;
+    }
 
-      let chunk = this._readableStream.read();
-      if (chunk === null) {
-        this._readCapability = createPromiseCapability();
-        return this.read();
-      }
-      this._loaded += chunk.length;
-      if (this.onProgress) {
-        this.onProgress({
-          loaded: this._loaded,
-          total: this._contentLength,
-        });
-      }
-      // Ensure that `read()` method returns ArrayBuffer.
-      let buffer = new Uint8Array(chunk).buffer;
-      return Promise.resolve({ value: buffer, done: false, });
-    });
+    let chunk = this._readableStream.read();
+    if (chunk === null) {
+      this._readCapability = createPromiseCapability();
+      return this.read();
+    }
+    this._loaded += chunk.length;
+    if (this.onProgress) {
+      this.onProgress({
+        loaded: this._loaded,
+        total: this._contentLength,
+      });
+    }
+    // Ensure that `read()` method returns ArrayBuffer.
+    let buffer = new Uint8Array(chunk).buffer;
+    return { value: buffer, done: false, };
   }
 
   cancel(reason) {
@@ -170,8 +175,7 @@ class BaseFullReader {
   }
 
   _error(reason) {
-    this._errored = true;
-    this._reason = reason;
+    this._storedError = reason;
     this._readCapability.resolve();
   }
 
@@ -199,8 +203,8 @@ class BaseFullReader {
     }
 
     // Destroy ReadableStream if already in errored state.
-    if (this._errored) {
-      this._readableStream.destroy(this._reason);
+    if (this._storedError) {
+      this._readableStream.destroy(this._storedError);
     }
   }
 }
@@ -209,8 +213,7 @@ class BaseRangeReader {
   constructor(stream) {
     this._url = stream.url;
     this._done = false;
-    this._errored = false;
-    this._reason = null;
+    this._storedError = null;
     this.onProgress = null;
     this._loaded = 0;
     this._readableStream = null;
@@ -223,28 +226,27 @@ class BaseRangeReader {
     return this._isStreamingSupported;
   }
 
-  read() {
-    return this._readCapability.promise.then(() => {
-      if (this._done) {
-        return Promise.resolve({ value: undefined, done: true, });
-      }
-      if (this._errored) {
-        return Promise.reject(this._reason);
-      }
+  async read() {
+    await this._readCapability.promise;
+    if (this._done) {
+      return { value: undefined, done: true, };
+    }
+    if (this._storedError) {
+      throw this._storedError;
+    }
 
-      let chunk = this._readableStream.read();
-      if (chunk === null) {
-        this._readCapability = createPromiseCapability();
-        return this.read();
-      }
-      this._loaded += chunk.length;
-      if (this.onProgress) {
-        this.onProgress({ loaded: this._loaded, });
-      }
-      // Ensure that `read()` method returns ArrayBuffer.
-      let buffer = new Uint8Array(chunk).buffer;
-      return Promise.resolve({ value: buffer, done: false, });
-    });
+    let chunk = this._readableStream.read();
+    if (chunk === null) {
+      this._readCapability = createPromiseCapability();
+      return this.read();
+    }
+    this._loaded += chunk.length;
+    if (this.onProgress) {
+      this.onProgress({ loaded: this._loaded, });
+    }
+    // Ensure that `read()` method returns ArrayBuffer.
+    let buffer = new Uint8Array(chunk).buffer;
+    return { value: buffer, done: false, };
   }
 
   cancel(reason) {
@@ -258,8 +260,7 @@ class BaseRangeReader {
   }
 
   _error(reason) {
-    this._errored = true;
-    this._reason = reason;
+    this._storedError = reason;
     this._readCapability.resolve();
   }
 
@@ -281,8 +282,8 @@ class BaseRangeReader {
     });
 
     // Destroy readableStream if already in errored state.
-    if (this._errored) {
-      this._readableStream.destroy(this._reason);
+    if (this._storedError) {
+      this._readableStream.destroy(this._storedError);
     }
   }
 }
@@ -304,6 +305,12 @@ class PDFNodeStreamFullReader extends BaseFullReader {
     super(stream);
 
     let handleResponse = (response) => {
+      if (response.statusCode === 404) {
+        const error = new MissingPDFException(`Missing PDF "${this._url}".`);
+        this._storedError = error;
+        this._headersCapability.reject(error);
+        return;
+      }
       this._headersCapability.resolve();
       this._setReadableStream(response);
 
@@ -339,8 +346,7 @@ class PDFNodeStreamFullReader extends BaseFullReader {
     }
 
     this._request.on('error', (reason) => {
-      this._errored = true;
-      this._reason = reason;
+      this._storedError = reason;
       this._headersCapability.reject(reason);
     });
     // Note: `request.end(data)` is used to write `data` to request body
@@ -364,22 +370,28 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
     }
     this._httpHeaders['Range'] = `bytes=${start}-${end - 1}`;
 
+    let handleResponse = (response) => {
+      if (response.statusCode === 404) {
+        const error = new MissingPDFException(`Missing PDF "${this._url}".`);
+        this._storedError = error;
+        return;
+      }
+      this._setReadableStream(response);
+    };
+
     this._request = null;
     if (this._url.protocol === 'http:') {
-      this._request = http.request(createRequestOptions(
-        this._url, this._httpHeaders), (response) => {
-          this._setReadableStream(response);
-        });
+      this._request = http.request(
+        createRequestOptions(this._url, this._httpHeaders),
+        handleResponse);
     } else {
-      this._request = https.request(createRequestOptions(
-        this._url, this._httpHeaders), (response) => {
-          this._setReadableStream(response);
-        });
+      this._request = https.request(
+        createRequestOptions(this._url, this._httpHeaders),
+        handleResponse);
     }
 
     this._request.on('error', (reason) => {
-      this._errored = true;
-      this._reason = reason;
+      this._storedError = reason;
     });
     this._request.end();
   }
@@ -398,8 +410,10 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
 
     fs.lstat(path, (error, stat) => {
       if (error) {
-        this._errored = true;
-        this._reason = error;
+        if (error.code === 'ENOENT') {
+          error = new MissingPDFException(`Missing PDF "${path}".`);
+        }
+        this._storedError = error;
         this._headersCapability.reject(error);
         return;
       }

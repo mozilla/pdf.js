@@ -35,7 +35,9 @@ class Metadata {
   }
 
   _repair(data) {
-    return data.replace(/>\\376\\377([^<]+)/g, function(all, codes) {
+    // Start by removing any "junk" before the first tag (see issue 10395).
+    return data.replace(/^([^<]+)/, '').replace(/>\\376\\377([^<]+)/g,
+        function(all, codes) {
       let bytes = codes.replace(/\\([0-3])([0-7])([0-7])/g,
           function(code, d1, d2, d3) {
         return String.fromCharCode(d1 * 64 + d2 * 8 + d3 * 1);
@@ -104,7 +106,8 @@ class Metadata {
   }
 
   get(name) {
-    return this._metadata[name] || null;
+    const data = this._metadata[name];
+    return (typeof data !== 'undefined' ? data : null);
   }
 
   getAll() {

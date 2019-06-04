@@ -14,20 +14,23 @@
  */
 
 import {
-  buildGetDocumentParams, NodeFileReaderFactory, TEST_PDFS_PATH
+  buildGetDocumentParams, DOMFileReaderFactory, NodeCanvasFactory,
+  NodeFileReaderFactory, TEST_PDFS_PATH
 } from './test_utils';
 import {
-  createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
-  OPS, PasswordException, PasswordResponses, StreamType, stringToBytes
+  createPromiseCapability, FontType, InvalidPDFException, isEmptyObj,
+  MissingPDFException, OPS, PasswordException, PasswordResponses,
+  PermissionFlag, StreamType
 } from '../../src/shared/util';
 import {
-  DOMCanvasFactory, RenderingCancelledException
-} from '../../src/display/dom_utils';
+  DOMCanvasFactory, RenderingCancelledException, StatTimer
+} from '../../src/display/display_utils';
 import {
   getDocument, PDFDataRangeTransport, PDFDocumentProxy, PDFPageProxy, PDFWorker
 } from '../../src/display/api';
 import { GlobalWorkerOptions } from '../../src/display/worker_options';
 import isNodeJS from '../../src/shared/is_node';
+import { Metadata } from '../../src/display/metadata';
 
 describe('api', function() {
   let basicApiFileName = 'basicapi.pdf';
@@ -38,8 +41,7 @@ describe('api', function() {
 
   beforeAll(function(done) {
     if (isNodeJS()) {
-      // NOTE: To support running the canvas-related tests in Node.js,
-      // a `NodeCanvasFactory` would need to be added (in test_utils.js).
+      CanvasFactory = new NodeCanvasFactory();
     } else {
       CanvasFactory = new DOMCanvasFactory();
     }
@@ -62,14 +64,11 @@ describe('api', function() {
     it('creates pdf doc from URL', function(done) {
       var loadingTask = getDocument(basicApiGetDocumentParams);
 
-      var isProgressReportedResolved = false;
       var progressReportedCapability = createPromiseCapability();
-
       // Attach the callback that is used to report loading progress;
       // similarly to how viewer.js works.
       loadingTask.onProgress = function (progressData) {
-        if (!isProgressReportedResolved) {
-          isProgressReportedResolved = true;
+        if (!progressReportedCapability.settled) {
           progressReportedCapability.resolve(progressData);
         }
       };
@@ -79,13 +78,11 @@ describe('api', function() {
         loadingTask.promise
       ];
       Promise.all(promises).then(function (data) {
-        expect((data[0].loaded / data[0].total) > 0).toEqual(true);
+        expect((data[0].loaded / data[0].total) >= 0).toEqual(true);
         expect(data[1] instanceof PDFDocumentProxy).toEqual(true);
         expect(loadingTask).toEqual(data[1].loadingTask);
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('creates pdf doc from URL and aborts before worker initialized',
         function(done) {
@@ -110,47 +107,41 @@ describe('api', function() {
       destroyed.then(function (data) {
         expect(true).toEqual(true);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('creates pdf doc from typed array', function(done) {
-      var typedArrayPdf;
+      let typedArrayPdfPromise;
       if (isNodeJS()) {
-        typedArrayPdf = NodeFileReaderFactory.fetch({
+        typedArrayPdfPromise = NodeFileReaderFactory.fetch({
           path: TEST_PDFS_PATH.node + basicApiFileName,
         });
       } else {
-        let nonBinaryRequest = false;
-        let request = new XMLHttpRequest();
-        request.open('GET', TEST_PDFS_PATH.dom + basicApiFileName, false);
-        try {
-          request.responseType = 'arraybuffer';
-          nonBinaryRequest = request.responseType !== 'arraybuffer';
-        } catch (e) {
-          nonBinaryRequest = true;
-        }
-        if (nonBinaryRequest && request.overrideMimeType) {
-          request.overrideMimeType('text/plain; charset=x-user-defined');
-        }
-        request.send(null);
-
-        if (nonBinaryRequest) {
-          typedArrayPdf = stringToBytes(request.responseText);
-        } else {
-          typedArrayPdf = new Uint8Array(request.response);
-        }
+        typedArrayPdfPromise = DOMFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH.dom + basicApiFileName,
+        });
       }
-      // Sanity check to make sure that we fetched the entire PDF file.
-      expect(typedArrayPdf.length).toEqual(basicApiFileLength);
 
-      var loadingTask = getDocument(typedArrayPdf);
-      loadingTask.promise.then(function(data) {
-        expect(data instanceof PDFDocumentProxy).toEqual(true);
-        loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      typedArrayPdfPromise.then((typedArrayPdf) => {
+        // Sanity check to make sure that we fetched the entire PDF file.
+        expect(typedArrayPdf.length).toEqual(basicApiFileLength);
+
+        const loadingTask = getDocument(typedArrayPdf);
+
+        const progressReportedCapability = createPromiseCapability();
+        loadingTask.onProgress = function(data) {
+          progressReportedCapability.resolve(data);
+        };
+
+        return Promise.all([
+          loadingTask.promise,
+          progressReportedCapability.promise,
+        ]).then(function(data) {
+          expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
+          expect(data[1].loaded / data[1].total).toEqual(1);
+
+          loadingTask.destroy().then(done);
+        });
+      }).catch(done.fail);
     });
     it('creates pdf doc from invalid PDF file', function(done) {
       // A severely corrupt PDF file (even Adobe Reader fails to open it).
@@ -163,9 +154,6 @@ describe('api', function() {
       });
     });
     it('creates pdf doc from non-existent URL', function(done) {
-      if (isNodeJS()) {
-        pending('XMLHttpRequest is not supported in Node.js.');
-      }
       var loadingTask = getDocument(
         buildGetDocumentParams('non-existent.pdf'));
       loadingTask.promise.then(function(error) {
@@ -179,25 +167,20 @@ describe('api', function() {
         function (done) {
       var loadingTask = getDocument(buildGetDocumentParams('pr6531_1.pdf'));
 
-      var isPasswordNeededResolved = false;
       var passwordNeededCapability = createPromiseCapability();
-      var isPasswordIncorrectResolved = false;
       var passwordIncorrectCapability = createPromiseCapability();
-
       // Attach the callback that is used to request a password;
       // similarly to how viewer.js handles passwords.
       loadingTask.onPassword = function (updatePassword, reason) {
         if (reason === PasswordResponses.NEED_PASSWORD &&
-            !isPasswordNeededResolved) {
-          isPasswordNeededResolved = true;
+            !passwordNeededCapability.settled) {
           passwordNeededCapability.resolve();
 
           updatePassword('qwerty'); // Provide an incorrect password.
           return;
         }
         if (reason === PasswordResponses.INCORRECT_PASSWORD &&
-            !isPasswordIncorrectResolved) {
-          isPasswordIncorrectResolved = true;
+            !passwordIncorrectCapability.settled) {
           passwordIncorrectCapability.resolve();
 
           updatePassword('asdfasdf'); // Provide the correct password.
@@ -215,9 +198,7 @@ describe('api', function() {
       Promise.all(promises).then(function (data) {
         expect(data[2] instanceof PDFDocumentProxy).toEqual(true);
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('creates pdf doc from PDF file protected with only a user password',
         function (done) {
@@ -259,9 +240,7 @@ describe('api', function() {
       });
       Promise.all([result1, result2, result3]).then(function () {
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('creates pdf doc from password protected PDF file and aborts/throws ' +
@@ -311,18 +290,16 @@ describe('api', function() {
 
       Promise.all([result1, result2]).then(function () {
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
   });
 
   describe('PDFWorker', function() {
-    if (isNodeJS()) {
-      pending('Worker is not supported in Node.js.');
-    }
-
     it('worker created or destroyed', function (done) {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       var worker = new PDFWorker({ name: 'test1', });
       worker.promise.then(function () {
         expect(worker.name).toEqual('test1');
@@ -335,11 +312,13 @@ describe('api', function() {
         expect(!!worker.port).toEqual(false);
         expect(worker.destroyed).toEqual(true);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('worker created or destroyed by getDocument', function (done) {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       var loadingTask = getDocument(basicApiGetDocumentParams);
       var worker;
       loadingTask.promise.then(function () {
@@ -355,11 +334,13 @@ describe('api', function() {
         expect(!!destroyedWorker).toEqual(false);
         expect(worker.destroyed).toEqual(true);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('worker created and can be used in getDocument', function (done) {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       var worker = new PDFWorker({ name: 'test1', });
       var loadingTask = getDocument(
         buildGetDocumentParams(basicApiFileName, {
@@ -380,11 +361,13 @@ describe('api', function() {
         expect(worker.destroyed).toEqual(false);
         worker.destroy();
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('creates more than one worker', function (done) {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       var worker1 = new PDFWorker({ name: 'test1', });
       var worker2 = new PDFWorker({ name: 'test2', });
       var worker3 = new PDFWorker({ name: 'test3', });
@@ -398,11 +381,13 @@ describe('api', function() {
         worker2.destroy();
         worker3.destroy();
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets current workerSrc', function() {
+      if (isNodeJS()) {
+        pending('Worker is not supported in Node.js.');
+      }
+
       let workerSrc = PDFWorker.getWorkerSrc();
       expect(typeof workerSrc).toEqual('string');
       expect(workerSrc).toEqual(GlobalWorkerOptions.workerSrc);
@@ -438,9 +423,7 @@ describe('api', function() {
         expect(data instanceof PDFPageProxy).toEqual(true);
         expect(data.pageIndex).toEqual(0);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets non-existent page', function(done) {
       var outOfRangePromise = doc.getPage(100);
@@ -466,9 +449,7 @@ describe('api', function() {
       Promise.all([outOfRangePromise, nonIntegerPromise, nonNumberPromise]).
         then(function () {
           done();
-        }).catch(function (reason) {
-          done.fail(reason);
-        });
+        }).catch(done.fail);
     });
     it('gets page index', function(done) {
       // reference to second page
@@ -477,9 +458,7 @@ describe('api', function() {
       promise.then(function(pageIndex) {
         expect(pageIndex).toEqual(1);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets invalid page index', function (done) {
       var ref = { num: 3, gen: 0, }; // Reference to a font dictionary.
@@ -499,9 +478,7 @@ describe('api', function() {
           chapter1: [{ gen: 0, num: 17, }, { name: 'XYZ', }, 0, 841.89, null],
         });
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets a destination, from /Dests dictionary', function(done) {
       var promise = doc.getDestination('chapter1');
@@ -509,9 +486,7 @@ describe('api', function() {
         expect(data).toEqual([{ gen: 0, num: 17, }, { name: 'XYZ', },
                               0, 841.89, null]);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets a non-existent destination, from /Dests dictionary',
         function(done) {
@@ -519,9 +494,7 @@ describe('api', function() {
       promise.then(function(data) {
         expect(data).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets destinations, from /Names (NameTree) dictionary', function(done) {
@@ -536,9 +509,7 @@ describe('api', function() {
         });
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets a destination, from /Names (NameTree) dictionary', function(done) {
       var loadingTask = getDocument(buildGetDocumentParams('issue6204.pdf'));
@@ -550,9 +521,7 @@ describe('api', function() {
                                      0, 375, null]);
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets a non-existent destination, from /Names (NameTree) dictionary',
         function(done) {
@@ -564,9 +533,33 @@ describe('api', function() {
         expect(destination).toEqual(null);
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
+      }).catch(done.fail);
+    });
+
+    it('gets non-string destination', function(done) {
+      let numberPromise = doc.getDestination(4.3);
+      let booleanPromise = doc.getDestination(true);
+      let arrayPromise = doc.getDestination([
+        { num: 17, gen: 0, }, { name: 'XYZ', }, 0, 841.89, null]);
+
+      numberPromise = numberPromise.then(function() {
+        throw new Error('shall fail for non-string destination.');
+      }, function(reason) {
+        expect(reason instanceof Error).toEqual(true);
       });
+      booleanPromise = booleanPromise.then(function() {
+        throw new Error('shall fail for non-string destination.');
+      }, function(reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+      arrayPromise = arrayPromise.then(function() {
+        throw new Error('shall fail for non-string destination.');
+      }, function(reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+
+      Promise.all([numberPromise, booleanPromise, arrayPromise]).then(
+        done, done.fail);
     });
 
     it('gets non-existent page labels', function (done) {
@@ -574,9 +567,7 @@ describe('api', function() {
       promise.then(function (data) {
         expect(data).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets page labels', function (done) {
       // PageLabels with Roman/Arabic numerals.
@@ -617,9 +608,25 @@ describe('api', function() {
           loadingTask2.destroy(),
           loadingTask3.destroy()
         ]).then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
+    });
+
+    it('gets default page layout', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getPageLayout();
+      }).then(function(mode) {
+        expect(mode).toEqual('');
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
+    it('gets non-default page layout', function(done) {
+      doc.getPageLayout().then(function(mode) {
+        expect(mode).toEqual('SinglePage');
+        done();
+      }).catch(done.fail);
     });
 
     it('gets default page mode', function(done) {
@@ -631,17 +638,52 @@ describe('api', function() {
         expect(mode).toEqual('UseNone');
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets non-default page mode', function(done) {
       doc.getPageMode().then(function(mode) {
         expect(mode).toEqual('UseOutlines');
         done();
-      }).catch(function(reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
+    });
+
+    it('gets default viewer preferences', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getViewerPreferences();
+      }).then(function(prefs) {
+        expect(typeof prefs === 'object' && prefs !== null &&
+               isEmptyObj(prefs)).toEqual(true);
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
+    it('gets non-default viewer preferences', function(done) {
+      doc.getViewerPreferences().then(function(prefs) {
+        expect(prefs).toEqual({
+          Direction: 'L2R',
+        });
+        done();
+      }).catch(done.fail);
+    });
+
+    it('gets default open action destination', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getOpenActionDestination();
+      }).then(function(dest) {
+        expect(dest).toEqual(null);
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
+    it('gets non-default open action destination', function(done) {
+      doc.getOpenActionDestination().then(function(dest) {
+        expect(dest).toEqual([{ num: 15, gen: 0, }, { name: 'FitH', }, null]);
+        done();
+      }).catch(done.fail);
     });
 
     it('gets non-existent attachments', function(done) {
@@ -649,9 +691,7 @@ describe('api', function() {
       promise.then(function (data) {
         expect(data).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets attachments', function(done) {
       if (isNodeJS()) { // The PDF file used is a linked test-case.
@@ -668,9 +708,7 @@ describe('api', function() {
         expect(attachment.content.length).toEqual(30098);
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets javascript', function(done) {
@@ -678,9 +716,7 @@ describe('api', function() {
       promise.then(function (data) {
         expect(data).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     // Keep this in sync with the pattern in viewer.js. The pattern is used to
     // detect whether or not to automatically start printing.
@@ -696,9 +732,7 @@ describe('api', function() {
         expect(data).toEqual(['print({});']);
         expect(data[0]).toMatch(viewerPrintRegExp);
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets javascript with printing instructions (JS action)',
         function(done) {
@@ -712,9 +746,7 @@ describe('api', function() {
           ['this.print({bUI:true,bSilent:false,bShrinkToFit:true});']);
         expect(data[0]).toMatch(viewerPrintRegExp);
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets non-existent outline', function(done) {
       var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
@@ -726,41 +758,37 @@ describe('api', function() {
         expect(outline).toEqual(null);
 
         loadingTask.destroy().then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets outline', function(done) {
       var promise = doc.getOutline();
       promise.then(function(outline) {
         // Two top level entries.
-        expect(outline instanceof Array).toEqual(true);
+        expect(Array.isArray(outline)).toEqual(true);
         expect(outline.length).toEqual(2);
         // Make sure some basic attributes are set.
         var outlineItem = outline[1];
         expect(outlineItem.title).toEqual('Chapter 1');
-        expect(outlineItem.dest instanceof Array).toEqual(true);
+        expect(Array.isArray(outlineItem.dest)).toEqual(true);
         expect(outlineItem.url).toEqual(null);
         expect(outlineItem.unsafeUrl).toBeUndefined();
         expect(outlineItem.newWindow).toBeUndefined();
 
         expect(outlineItem.bold).toEqual(true);
         expect(outlineItem.italic).toEqual(false);
-        expect(outlineItem.color).toEqual(new Uint8Array([0, 64, 128]));
+        expect(outlineItem.color).toEqual(new Uint8ClampedArray([0, 64, 128]));
 
         expect(outlineItem.items.length).toEqual(1);
         expect(outlineItem.items[0].title).toEqual('Paragraph 1.1');
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets outline containing a url', function(done) {
       var loadingTask = getDocument(buildGetDocumentParams('issue3214.pdf'));
 
       loadingTask.promise.then(function (pdfDocument) {
         pdfDocument.getOutline().then(function (outline) {
-          expect(outline instanceof Array).toEqual(true);
+          expect(Array.isArray(outline)).toEqual(true);
           expect(outline.length).toEqual(5);
 
           var outlineItemTwo = outline[2];
@@ -773,53 +801,136 @@ describe('api', function() {
           var outlineItemOne = outline[1];
           expect(outlineItemOne.bold).toEqual(false);
           expect(outlineItemOne.italic).toEqual(true);
-          expect(outlineItemOne.color).toEqual(new Uint8Array([0, 0, 0]));
+          expect(outlineItemOne.color).toEqual(
+            new Uint8ClampedArray([0, 0, 0]));
 
           loadingTask.destroy().then(done);
         });
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
+
+    it('gets non-existent permissions', function(done) {
+      doc.getPermissions().then(function(permissions) {
+        expect(permissions).toEqual(null);
+
+        done();
+      }).catch(done.fail);
+    });
+
+    it('gets permissions', function (done) {
+      // Editing not allowed.
+      const loadingTask0 =
+        getDocument(buildGetDocumentParams('issue9972-1.pdf'));
+      const promise0 = loadingTask0.promise.then(function(pdfDocument) {
+        return pdfDocument.getPermissions();
+      });
+
+      // Printing not allowed.
+      const loadingTask1 =
+        getDocument(buildGetDocumentParams('issue9972-2.pdf'));
+      const promise1 = loadingTask1.promise.then(function(pdfDocument) {
+        return pdfDocument.getPermissions();
+      });
+
+      // Copying not allowed.
+      const loadingTask2 =
+        getDocument(buildGetDocumentParams('issue9972-3.pdf'));
+      const promise2 = loadingTask2.promise.then(function(pdfDocument) {
+        return pdfDocument.getPermissions();
+      });
+
+      const totalPermissionCount = Object.keys(PermissionFlag).length;
+      Promise.all([promise0, promise1, promise2]).then(function(permissions) {
+        expect(permissions[0].length).toEqual(totalPermissionCount - 1);
+        expect(permissions[0].includes(PermissionFlag.MODIFY_CONTENTS))
+          .toBeFalsy();
+
+        expect(permissions[1].length).toEqual(totalPermissionCount - 2);
+        expect(permissions[1].includes(PermissionFlag.PRINT)).toBeFalsy();
+        expect(permissions[1].includes(PermissionFlag.PRINT_HIGH_QUALITY))
+          .toBeFalsy();
+
+        expect(permissions[2].length).toEqual(totalPermissionCount - 1);
+        expect(permissions[2].includes(PermissionFlag.COPY)).toBeFalsy();
+
+        Promise.all([
+          loadingTask0.destroy(),
+          loadingTask1.destroy(),
+          loadingTask2.destroy(),
+        ]).then(done);
+      }).catch(done.fail);
+    });
+
     it('gets metadata', function(done) {
       var promise = doc.getMetadata();
-      promise.then(function(metadata) {
-        expect(metadata.info['Title']).toEqual('Basic API Test');
-        expect(metadata.info['PDFFormatVersion']).toEqual('1.7');
-        expect(metadata.metadata.get('dc:title')).toEqual('Basic API Test');
-        expect(metadata.contentDispositionFilename).toEqual(null);
+      promise.then(function({ info, metadata, contentDispositionFilename, }) {
+        expect(info['Title']).toEqual('Basic API Test');
+        // Custom, non-standard, information dictionary entries.
+        expect(info['Custom']).toEqual(undefined);
+        // The following are PDF.js specific, non-standard, properties.
+        expect(info['PDFFormatVersion']).toEqual('1.7');
+        expect(info['IsLinearized']).toEqual(false);
+        expect(info['IsAcroFormPresent']).toEqual(false);
+        expect(info['IsXFAPresent']).toEqual(false);
+        expect(info['IsCollectionPresent']).toEqual(false);
+
+        expect(metadata instanceof Metadata).toEqual(true);
+        expect(metadata.get('dc:title')).toEqual('Basic API Test');
+
+        expect(contentDispositionFilename).toEqual(null);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
+    it('gets metadata, with custom info dict entries', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getMetadata();
+      }).then(function({ info, metadata, contentDispositionFilename, }) {
+        expect(info['Creator']).toEqual('TeX');
+        expect(info['Producer']).toEqual('pdfeTeX-1.21a');
+        expect(info['CreationDate']).toEqual('D:20090401163925-07\'00\'');
+        // Custom, non-standard, information dictionary entries.
+        const custom = info['Custom'];
+        expect(typeof custom === 'object' && custom !== null).toEqual(true);
+
+        expect(custom['PTEX.Fullbanner']).toEqual('This is pdfeTeX, ' +
+          'Version 3.141592-1.21a-2.2 (Web2C 7.5.4) kpathsea version 3.5.6');
+        // The following are PDF.js specific, non-standard, properties.
+        expect(info['PDFFormatVersion']).toEqual('1.4');
+        expect(info['IsLinearized']).toEqual(false);
+        expect(info['IsAcroFormPresent']).toEqual(false);
+        expect(info['IsXFAPresent']).toEqual(false);
+        expect(info['IsCollectionPresent']).toEqual(false);
+
+        expect(metadata).toEqual(null);
+        expect(contentDispositionFilename).toEqual(null);
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
+    });
+
     it('gets data', function(done) {
       var promise = doc.getData();
       promise.then(function (data) {
         expect(data instanceof Uint8Array).toEqual(true);
         expect(data.length).toEqual(basicApiFileLength);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets download info', function(done) {
       var promise = doc.getDownloadInfo();
       promise.then(function (data) {
         expect(data).toEqual({ length: basicApiFileLength, });
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
-    it('gets stats', function(done) {
+    it('gets document stats', function(done) {
       var promise = doc.getStats();
       promise.then(function (stats) {
         expect(stats).toEqual({ streamTypes: [], fontTypes: [], });
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('checks that fingerprints are unique', function(done) {
@@ -844,9 +955,7 @@ describe('api', function() {
           loadingTask1.destroy(),
           loadingTask2.destroy()
         ]).then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     describe('Cross-origin', function() {
@@ -885,7 +994,7 @@ describe('api', function() {
         return _checkCanLoad(false, filename, options);
       }
       afterEach(function(done) {
-        if (loadingTask) {
+        if (loadingTask && !loadingTask.destroyed) {
           loadingTask.destroy().then(done);
         } else {
           done();
@@ -940,9 +1049,7 @@ describe('api', function() {
           page = data;
           done();
         });
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     afterAll(function(done) {
@@ -964,16 +1071,8 @@ describe('api', function() {
     it('gets view', function () {
       expect(page.view).toEqual([0, 0, 595.28, 841.89]);
     });
-
-    it('gets page size (in inches)', function() {
-      const { width, height, } = page.pageSizeInches;
-
-      expect(+width.toPrecision(3)).toEqual(8.27);
-      expect(+height.toPrecision(4)).toEqual(11.69);
-    });
-
     it('gets viewport', function () {
-      var viewport = page.getViewport(1.5, 90);
+      var viewport = page.getViewport({ scale: 1.5, rotation: 90, });
       expect(viewport.viewBox).toEqual(page.view);
       expect(viewport.scale).toEqual(1.5);
       expect(viewport.rotation).toEqual(90);
@@ -984,8 +1083,9 @@ describe('api', function() {
     it('gets viewport respecting "dontFlip" argument', function () {
       const scale = 1;
       const rotation = 135;
-      let viewport = page.getViewport(scale, rotation);
-      let dontFlipViewport = page.getViewport(scale, rotation, true);
+      let viewport = page.getViewport({ scale, rotation, });
+      let dontFlipViewport = page.getViewport({ scale, rotation,
+                                                dontFlip: true, });
 
       expect(dontFlipViewport).not.toEqual(viewport);
       expect(dontFlipViewport).toEqual(viewport.clone({ dontFlip: true, }));
@@ -1010,9 +1110,7 @@ describe('api', function() {
       Promise.all([defaultPromise, displayPromise, printPromise]).then(
           function () {
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets annotations containing relative URLs (bug 766086)',
@@ -1072,9 +1170,7 @@ describe('api', function() {
           docBaseUrlLoadingTask.destroy(),
           invalidDocBaseUrlLoadingTask.destroy()
         ]).then(done);
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
 
     it('gets text content', function (done) {
@@ -1096,10 +1192,41 @@ describe('api', function() {
         // A simple check that ensures the two `textContent` object match.
         expect(JSON.stringify(data[0])).toEqual(JSON.stringify(data[1]));
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
+
+    it('gets text content, with correct properties (issue 8276)',
+        function(done) {
+      const loadingTask = getDocument(
+        buildGetDocumentParams('issue8276_reduced.pdf'));
+
+      loadingTask.promise.then((pdfDoc) => {
+        pdfDoc.getPage(1).then((pdfPage) => {
+          pdfPage.getTextContent().then(({ items, styles, }) => {
+            expect(items.length).toEqual(1);
+            expect(Object.keys(styles)).toEqual(['Times']);
+
+            expect(items[0]).toEqual({
+              dir: 'ltr',
+              fontName: 'Times',
+              height: 18,
+              str: 'Issue 8276',
+              transform: [18, 0, 0, 18, 441.81, 708.4499999999999],
+              width: 77.49,
+            });
+            expect(styles.Times).toEqual({
+              fontFamily: 'serif',
+              ascent: NaN,
+              descent: NaN,
+              vertical: false,
+            });
+
+            loadingTask.destroy().then(done);
+          });
+        });
+      }).catch(done.fail);
+    });
+
     it('gets operator list', function(done) {
       var promise = page.getOperatorList();
       promise.then(function (oplist) {
@@ -1107,9 +1234,7 @@ describe('api', function() {
         expect(!!oplist.argsArray).toEqual(true);
         expect(oplist.lastChunk).toEqual(true);
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
     it('gets operatorList with JPEG image (issue 4888)', function(done) {
       let loadingTask = getDocument(buildGetDocumentParams('cmykjpeg.pdf'));
@@ -1119,18 +1244,17 @@ describe('api', function() {
           pdfPage.getOperatorList().then((opList) => {
             let imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
             let imgArgs = opList.argsArray[imgIndex];
-            let { data: imgData, } = pdfPage.objs.get(imgArgs[0]);
+            let { data, } = pdfPage.objs.get(imgArgs[0]);
 
-            expect(imgData instanceof Uint8ClampedArray).toEqual(true);
-            expect(imgData.length).toEqual(90000);
-            done();
+            expect(data instanceof Uint8ClampedArray).toEqual(true);
+            expect(data.length).toEqual(90000);
+
+            loadingTask.destroy().then(done);
           });
         });
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
-    it('gets stats after parsing page', function (done) {
+    it('gets document stats after parsing page', function(done) {
       var promise = page.getOperatorList().then(function () {
         return pdfDocument.getStats();
       });
@@ -1144,20 +1268,85 @@ describe('api', function() {
         expect(stats).toEqual({ streamTypes: expectedStreamTypes,
                                 fontTypes: expectedFontTypes, });
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
+    });
+
+    it('gets page stats after parsing page, without `pdfBug` set',
+        function(done) {
+      page.getOperatorList().then((opList) => {
+        return page.stats;
+      }).then((stats) => {
+        expect(stats).toEqual(null);
+        done();
+      }, done.fail);
+    });
+    it('gets page stats after parsing page, with `pdfBug` set', function(done) {
+      let loadingTask = getDocument(
+        buildGetDocumentParams(basicApiFileName, { pdfBug: true, }));
+
+      loadingTask.promise.then((pdfDoc) => {
+        return pdfDoc.getPage(1).then((pdfPage) => {
+          return pdfPage.getOperatorList().then((opList) => {
+            return pdfPage.stats;
+          });
+        });
+      }).then((stats) => {
+        expect(stats instanceof StatTimer).toEqual(true);
+        expect(stats.times.length).toEqual(1);
+
+        let [statEntry] = stats.times;
+        expect(statEntry.name).toEqual('Page Request');
+        expect(statEntry.end - statEntry.start).toBeGreaterThan(0);
+
+        loadingTask.destroy().then(done);
+      }, done.fail);
+    });
+    it('gets page stats after rendering page, with `pdfBug` set',
+        function(done) {
+      let loadingTask = getDocument(
+        buildGetDocumentParams(basicApiFileName, { pdfBug: true, }));
+      let canvasAndCtx;
+
+      loadingTask.promise.then((pdfDoc) => {
+        return pdfDoc.getPage(1).then((pdfPage) => {
+          let viewport = pdfPage.getViewport({ scale: 1, });
+          canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+          let renderTask = pdfPage.render({
+            canvasContext: canvasAndCtx.context,
+            canvasFactory: CanvasFactory,
+            viewport,
+          });
+          return renderTask.promise.then(() => {
+            return pdfPage.stats;
+          });
+        });
+      }).then((stats) => {
+        expect(stats instanceof StatTimer).toEqual(true);
+        expect(stats.times.length).toEqual(3);
+
+        let [statEntryOne, statEntryTwo, statEntryThree] = stats.times;
+        expect(statEntryOne.name).toEqual('Page Request');
+        expect(statEntryOne.end - statEntryOne.start).toBeGreaterThan(0);
+
+        expect(statEntryTwo.name).toEqual('Rendering');
+        expect(statEntryTwo.end - statEntryTwo.start).toBeGreaterThan(0);
+
+        expect(statEntryThree.name).toEqual('Overall');
+        expect(statEntryThree.end - statEntryThree.start).toBeGreaterThan(0);
+
+        CanvasFactory.destroy(canvasAndCtx);
+        loadingTask.destroy().then(done);
+      }, done.fail);
     });
 
     it('cancels rendering of page', function(done) {
-      if (isNodeJS()) {
-        pending('TODO: Support Canvas testing in Node.js.');
-      }
-      var viewport = page.getViewport(1);
+      var viewport = page.getViewport({ scale: 1, });
       var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       var renderTask = page.render({
         canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
         viewport,
       });
       renderTask.cancel();
@@ -1171,19 +1360,48 @@ describe('api', function() {
         done();
       });
     });
+
+    it('re-render page, using the same canvas, after cancelling rendering',
+        function(done) {
+      let viewport = page.getViewport({ scale: 1, });
+      let canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+      let renderTask = page.render({
+        canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
+        viewport,
+      });
+      renderTask.cancel();
+
+      renderTask.promise.then(() => {
+        throw new Error('shall cancel rendering');
+      }, (reason) => {
+        expect(reason instanceof RenderingCancelledException).toEqual(true);
+      }).then(() => {
+        let reRenderTask = page.render({
+          canvasContext: canvasAndCtx.context,
+          canvasFactory: CanvasFactory,
+          viewport,
+        });
+        return reRenderTask.promise;
+      }).then(() => {
+        CanvasFactory.destroy(canvasAndCtx);
+        done();
+      }, done.fail);
+    });
+
     it('multiple render() on the same canvas', function(done) {
-      if (isNodeJS()) {
-        pending('TODO: Support Canvas testing in Node.js.');
-      }
-      var viewport = page.getViewport(1);
+      var viewport = page.getViewport({ scale: 1, });
       var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       var renderTask1 = page.render({
         canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
         viewport,
       });
       var renderTask2 = page.render({
         canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
         viewport,
       });
 
@@ -1198,10 +1416,7 @@ describe('api', function() {
       ]).then(done);
     });
   });
-  describe('Multiple PDFJS instances', function() {
-    if (isNodeJS()) {
-      pending('TODO: Support Canvas testing in Node.js.');
-    }
+  describe('Multiple `getDocument` instances', function() {
     // Regression test for https://github.com/mozilla/pdf.js/issues/6205
     // A PDF using the Helvetica font.
     var pdf1 = buildGetDocumentParams('tracemonkey.pdf');
@@ -1210,48 +1425,36 @@ describe('api', function() {
     // A PDF using the Arial font.
     var pdf3 = buildGetDocumentParams('issue6068.pdf');
     var loadingTasks = [];
-    var pdfDocuments = [];
 
     // Render the first page of the given PDF file.
     // Fulfills the promise with the base64-encoded version of the PDF.
-    function renderPDF(filename) {
-      var loadingTask = getDocument(filename);
+    async function renderPDF(filename) {
+      const loadingTask = getDocument(filename);
       loadingTasks.push(loadingTask);
-      return loadingTask.promise
-        .then(function(pdf) {
-          pdfDocuments.push(pdf);
-          return pdf.getPage(1);
-        }).then(function(page) {
-          var viewport = page.getViewport(1.2);
-          var canvasAndCtx = CanvasFactory.create(viewport.width,
-                                                  viewport.height);
-          return page.render({
-            canvasContext: canvasAndCtx.context,
-            viewport,
-          }).then(function() {
-            var data = canvasAndCtx.canvas.toDataURL();
-            CanvasFactory.destroy(canvasAndCtx);
-            return data;
-          });
-        });
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 1.2, });
+      const canvasAndCtx = CanvasFactory.create(viewport.width,
+                                                viewport.height);
+      const renderTask = page.render({
+        canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
+        viewport,
+      });
+      await renderTask.promise;
+      const data = canvasAndCtx.canvas.toDataURL();
+      CanvasFactory.destroy(canvasAndCtx);
+      return data;
     }
 
     afterEach(function(done) {
       // Issue 6205 reported an issue with font rendering, so clear the loaded
       // fonts so that we can see whether loading PDFs in parallel does not
       // cause any issues with the rendered fonts.
-      var destroyPromises = pdfDocuments.map(function(pdfDocument) {
-        return pdfDocument.destroy();
-      });
-
-      // Destroy the workers.
-      var destroyPromises2 = loadingTasks.map(function(loadingTask) {
+      const destroyPromises = loadingTasks.map(function(loadingTask) {
         return loadingTask.destroy();
       });
-
-      Promise.all(destroyPromises.concat(destroyPromises2)).then(function() {
-        done();
-      });
+      Promise.all(destroyPromises).then(done);
     });
 
     it('should correctly render PDFs in parallel', function(done) {
@@ -1277,104 +1480,116 @@ describe('api', function() {
       });
       promiseDone.then(function() {
         done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+      }).catch(done.fail);
     });
   });
-  describe('PDFDataRangeTransport', function () {
-    if (isNodeJS()) {
-      pending('XMLHttpRequest is not supported in Node.js.');
-    }
-    var pdfPath = new URL('../pdfs/tracemonkey.pdf', window.location).href;
-    var loadPromise;
-    function getDocumentData() {
-      if (loadPromise) {
-        return loadPromise;
+
+  describe('PDFDataRangeTransport', function() {
+    let dataPromise;
+
+    beforeAll(function(done) {
+      const fileName = 'tracemonkey.pdf';
+      if (isNodeJS()) {
+        dataPromise = NodeFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH.node + fileName,
+        });
+      } else {
+        dataPromise = DOMFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH.dom + fileName,
+        });
       }
-      loadPromise = new Promise(function (resolve, reject) {
-        var xhr = new XMLHttpRequest(pdfPath);
-        xhr.open('GET', pdfPath);
-        xhr.responseType = 'arraybuffer';
-        xhr.onload = function () {
-          resolve(new Uint8Array(xhr.response));
-        };
-        xhr.onerror = function () {
-          reject(new Error('PDF is not loaded'));
-        };
-        xhr.send();
-      });
-      return loadPromise;
-    }
-    it('should fetch document info and page using ranges', function (done) {
-      var transport;
-      var initialDataLength = 4000;
-      var fetches = 0;
-      var getDocumentPromise = getDocumentData().then(function (data) {
-        var initialData = data.subarray(0, initialDataLength);
-        transport = new PDFDataRangeTransport(data.length, initialData);
-        transport.requestDataRange = function (begin, end) {
+      done();
+    });
+
+    afterAll(function() {
+      dataPromise = null;
+    });
+
+    it('should fetch document info and page using ranges', function(done) {
+      const initialDataLength = 4000;
+      let fetches = 0, loadingTask;
+
+      dataPromise.then(function(data) {
+        const initialData = data.subarray(0, initialDataLength);
+        const transport = new PDFDataRangeTransport(data.length, initialData);
+        transport.requestDataRange = function(begin, end) {
           fetches++;
-          waitSome(function () {
+          waitSome(function() {
             transport.onDataProgress(4000);
             transport.onDataRange(begin, data.subarray(begin, end));
           });
         };
-        var loadingTask = getDocument(transport);
+        loadingTask = getDocument(transport);
         return loadingTask.promise;
-      });
-      var pdfDocument;
-      var getPagePromise = getDocumentPromise.then(function (pdfDocument_) {
-        pdfDocument = pdfDocument_;
-        var pagePromise = pdfDocument.getPage(10);
-        return pagePromise;
-      });
-
-      getPagePromise.then(function (page) {
+      }).then(function(pdfDocument) {
         expect(pdfDocument.numPages).toEqual(14);
-        expect(page.rotate).toEqual(0);
+
+        return pdfDocument.getPage(10);
+      }).then(function(pdfPage) {
+        expect(pdfPage.rotate).toEqual(0);
         expect(fetches).toBeGreaterThan(2);
-        done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
     });
+
     it('should fetch document info and page using range and streaming',
-        function (done) {
-      var transport;
-      var initialDataLength = 4000;
-      var fetches = 0;
-      var getDocumentPromise = getDocumentData().then(function (data) {
-        var initialData = data.subarray(0, initialDataLength);
-        transport = new PDFDataRangeTransport(data.length, initialData);
-        transport.requestDataRange = function (begin, end) {
+        function(done) {
+      const initialDataLength = 4000;
+      let fetches = 0, loadingTask;
+
+      dataPromise.then(function(data) {
+        const initialData = data.subarray(0, initialDataLength);
+        const transport = new PDFDataRangeTransport(data.length, initialData);
+        transport.requestDataRange = function(begin, end) {
           fetches++;
           if (fetches === 1) {
-            // send rest of the data on first range request.
+            // Send rest of the data on first range request.
             transport.onDataProgressiveRead(data.subarray(initialDataLength));
           }
-          waitSome(function () {
+          waitSome(function() {
             transport.onDataRange(begin, data.subarray(begin, end));
           });
         };
-        var loadingTask = getDocument(transport);
+        loadingTask = getDocument(transport);
         return loadingTask.promise;
-      });
-      var pdfDocument;
-      var getPagePromise = getDocumentPromise.then(function (pdfDocument_) {
-        pdfDocument = pdfDocument_;
-        var pagePromise = pdfDocument.getPage(10);
-        return pagePromise;
-      });
-
-      getPagePromise.then(function (page) {
+      }).then(function(pdfDocument) {
         expect(pdfDocument.numPages).toEqual(14);
-        expect(page.rotate).toEqual(0);
+
+        return pdfDocument.getPage(10);
+      }).then(function(pdfPage) {
+        expect(pdfPage.rotate).toEqual(0);
         expect(fetches).toEqual(1);
-        done();
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
+
+        waitSome(function() {
+          loadingTask.destroy().then(done);
+        });
+      }).catch(done.fail);
+    });
+
+    it('should fetch document info and page, without range, ' +
+       'using complete initialData', function(done) {
+      let fetches = 0, loadingTask;
+
+      dataPromise.then(function(data) {
+        const transport =
+          new PDFDataRangeTransport(data.length, data,
+                                    /* progressiveDone = */ true);
+        transport.requestDataRange = function(begin, end) {
+          fetches++;
+        };
+        loadingTask = getDocument({ disableRange: true, range: transport, });
+        return loadingTask.promise;
+      }).then(function(pdfDocument) {
+        expect(pdfDocument.numPages).toEqual(14);
+
+        return pdfDocument.getPage(10);
+      }).then(function(pdfPage) {
+        expect(pdfPage.rotate).toEqual(0);
+        expect(fetches).toEqual(0);
+
+        loadingTask.destroy().then(done);
+      }).catch(done.fail);
     });
   });
 });

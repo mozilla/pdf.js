@@ -144,9 +144,6 @@
 
 .annotationLayer .buttonWidgetAnnotation.checkBox input,
 .annotationLayer .buttonWidgetAnnotation.radioButton input {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  -ms-appearance: none;
   appearance: none;
   padding: 0;
 }
@@ -161,36 +158,47 @@
   z-index: 200;
   max-width: 20em;
   background-color: #FFFF99;
-  box-shadow: 0px 2px 5px #333;
+  box-shadow: 0px 2px 5px #888;
   border-radius: 2px;
-  padding: 0.6em;
+  padding: 6px;
   margin-left: 5px;
   cursor: pointer;
   font: message-box;
+  font-size: 9px;
   word-wrap: break-word;
 }
 
+.annotationLayer .popup > * {
+  font-size: 9px;
+}
+
 .annotationLayer .popup h1 {
-  font-size: 1em;
-  border-bottom: 1px solid #000000;
-  margin: 0;
-  padding-bottom: 0.2em;
+  display: inline-block;
+}
+
+.annotationLayer .popup span {
+  display: inline-block;
+  margin-left: 5px;
 }
 
 .annotationLayer .popup p {
-  margin: 0;
-  padding-top: 0.2em;
+  border-top: 1px solid #333;
+  margin-top: 2px;
+  padding-top: 2px;
 }
 
 .annotationLayer .highlightAnnotation,
 .annotationLayer .underlineAnnotation,
 .annotationLayer .squigglyAnnotation,
 .annotationLayer .strikeoutAnnotation,
+.annotationLayer .freeTextAnnotation,
 .annotationLayer .lineAnnotation svg line,
 .annotationLayer .squareAnnotation svg rect,
 .annotationLayer .circleAnnotation svg ellipse,
 .annotationLayer .polylineAnnotation svg polyline,
 .annotationLayer .polygonAnnotation svg polygon,
+.annotationLayer .caretAnnotation,
+.annotationLayer .inkAnnotation svg polyline,
 .annotationLayer .stampAnnotation,
 .annotationLayer .fileAttachmentAnnotation {
   cursor: pointer;

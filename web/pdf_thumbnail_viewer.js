@@ -166,7 +166,7 @@ class PDFThumbnailViewer {
 
     pdfDocument.getPage(1).then((firstPage) => {
       let pagesCount = pdfDocument.numPages;
-      let viewport = firstPage.getViewport(1.0);
+      let viewport = firstPage.getViewport({ scale: 1, });
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let thumbnail = new PDFThumbnailView({
           container: this.container,
@@ -208,7 +208,7 @@ class PDFThumbnailViewer {
     }
     if (!labels) {
       this._pageLabels = null;
-    } else if (!(labels instanceof Array &&
+    } else if (!(Array.isArray(labels) &&
                  this.pdfDocument.numPages === labels.length)) {
       this._pageLabels = null;
       console.error('PDFThumbnailViewer_setPageLabels: Invalid page labels.');

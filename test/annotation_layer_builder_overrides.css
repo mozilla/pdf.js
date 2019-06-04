@@ -19,6 +19,11 @@
   position: absolute;
 }
 
+.annotationLayer .buttonWidgetAnnotation.checkBox input,
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
+  -webkit-appearance: none;
+}
+
 .annotationLayer .linkAnnotation > a,
 .annotationLayer .buttonWidgetAnnotation.pushButton > a {
   opacity: 0.2;
@@ -29,4 +34,10 @@
 .annotationLayer .popupAnnotation,
 .annotationLayer .popupWrapper {
   display: block;
+}
+
+.annotationLayer .popup h1,
+.annotationLayer .popup p {
+  margin: 0;
+  padding: 0;
 }

@@ -15,6 +15,8 @@
 
 import { CSS_UNITS, NullL10n } from './ui_utils';
 import { PDFPrintServiceFactory, PDFViewerApplication } from './app';
+import { AppOptions } from './app_options';
+import { URL } from 'pdfjs-lib';
 
 let activeService = null;
 let overlayManager = null;
@@ -25,7 +27,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
   let scratchCanvas = activeService.scratchCanvas;
 
   // The size of the canvas in pixels for printing.
-  const PRINT_RESOLUTION = 150;
+  const PRINT_RESOLUTION = AppOptions.get('printResolution') || 150;
   const PRINT_UNITS = PRINT_RESOLUTION / 72.0;
   scratchCanvas.width = Math.floor(size.width * PRINT_UNITS);
   scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
@@ -44,7 +46,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
     let renderContext = {
       canvasContext: ctx,
       transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
-      viewport: pdfPage.getViewport(1, size.rotation),
+      viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation, }),
       intent: 'print',
     };
     return pdfPage.render(renderContext).promise;
@@ -291,6 +293,7 @@ window.addEventListener('keydown', function(event) {
   }
 }, true);
 if (hasAttachEvent) {
+  // eslint-disable-next-line consistent-return
   document.attachEvent('onkeydown', function(event) {
     event = event || window.event;
     if (event.keyCode === /* P= */ 80 && event.ctrlKey) {
