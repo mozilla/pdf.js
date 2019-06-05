@@ -71,6 +71,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         case 3:
           return fnArray[i] === OPS.restore;
       }
+      throw new Error(`iterateInlineImageGroup - invalid pos: ${pos}`);
     },
     function foundInlineImageGroup(context, i) {
       var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
@@ -173,6 +174,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         case 3:
           return fnArray[i] === OPS.restore;
       }
+      throw new Error(`iterateImageMaskGroup - invalid pos: ${pos}`);
     },
     function foundImageMaskGroup(context, i) {
       var MIN_IMAGES_IN_MASKS_BLOCK = 10;
@@ -266,7 +268,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       return argsArray[iFirstTransform][1] === 0 &&
              argsArray[iFirstTransform][2] === 0;
     },
-    function (context, i) {
+    function iterateImageGroup(context, i) {
       var fnArray = context.fnArray, argsArray = context.argsArray;
       var iFirstSave = context.iCurr - 3;
       var pos = (i - iFirstSave) % 4;
@@ -300,6 +302,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         case 3:
           return fnArray[i] === OPS.restore;
       }
+      throw new Error(`iterateImageGroup - invalid pos: ${pos}`);
     },
     function (context, i) {
       var MIN_IMAGES_IN_BLOCK = 3;
@@ -346,7 +349,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   addState(InitialState,
     [OPS.beginText, OPS.setFont, OPS.setTextMatrix, OPS.showText, OPS.endText],
     null,
-    function (context, i) {
+    function iterateShowTextGroup(context, i) {
       var fnArray = context.fnArray, argsArray = context.argsArray;
       var iFirstSave = context.iCurr - 4;
       var pos = (i - iFirstSave) % 5;
@@ -372,6 +375,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         case 4:
           return fnArray[i] === OPS.endText;
       }
+      throw new Error(`iterateShowTextGroup - invalid pos: ${pos}`);
     },
     function (context, i) {
       var MIN_CHARS_IN_BLOCK = 3;
@@ -525,6 +529,8 @@ var NullOptimizer = (function NullOptimizerClosure() {
     },
 
     flush() { },
+
+    reset() { },
   };
 
   return NullOptimizer;
@@ -534,35 +540,11 @@ var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 1000;
   var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
-  function getTransfers(queue) {
-    var transfers = [];
-    var fnArray = queue.fnArray, argsArray = queue.argsArray;
-    for (var i = 0, ii = queue.length; i < ii; i++) {
-      switch (fnArray[i]) {
-        case OPS.paintInlineImageXObject:
-        case OPS.paintInlineImageXObjectGroup:
-        case OPS.paintImageMaskXObject:
-          var arg = argsArray[i][0]; // first param in imgData
-
-          if (typeof PDFJSDev === 'undefined' ||
-              PDFJSDev.test('!PRODUCTION || TESTING')) {
-            assert(arg.data instanceof Uint8ClampedArray,
-                   'OperatorList - getTransfers: Unsupported "arg.data" type.');
-          }
-          if (!arg.cached) {
-            transfers.push(arg.data.buffer);
-          }
-          break;
-      }
-    }
-    return transfers;
-  }
-
   function OperatorList(intent, messageHandler, pageIndex) {
     this.messageHandler = messageHandler;
     this.fnArray = [];
     this.argsArray = [];
-    if (messageHandler && this.intent !== 'oplist') {
+    if (messageHandler && intent !== 'oplist') {
       this.optimizer = new QueueOptimizer(this);
     } else {
       this.optimizer = new NullOptimizer(this);
@@ -630,10 +612,33 @@ var OperatorList = (function OperatorListClosure() {
       };
     },
 
-    flush(lastChunk) {
+    get _transfers() {
+      const transfers = [];
+      const { fnArray, argsArray, length, } = this;
+      for (let i = 0; i < length; i++) {
+        switch (fnArray[i]) {
+          case OPS.paintInlineImageXObject:
+          case OPS.paintInlineImageXObjectGroup:
+          case OPS.paintImageMaskXObject:
+            const arg = argsArray[i][0]; // first param in imgData
+
+            if (typeof PDFJSDev === 'undefined' ||
+                PDFJSDev.test('!PRODUCTION || TESTING')) {
+              assert(arg.data instanceof Uint8ClampedArray,
+                     'OperatorList._transfers: Unsupported "arg.data" type.');
+            }
+            if (!arg.cached) {
+              transfers.push(arg.data.buffer);
+            }
+            break;
+        }
+      }
+      return transfers;
+    },
+
+    flush(lastChunk = false) {
       this.optimizer.flush();
-      var transfers = getTransfers(this);
-      var length = this.length;
+      const length = this.length;
       this._totalLength += length;
 
       this.messageHandler.send('RenderPageChunk', {
@@ -645,7 +650,8 @@ var OperatorList = (function OperatorListClosure() {
         },
         pageIndex: this.pageIndex,
         intent: this.intent,
-      }, transfers);
+      }, this._transfers);
+
       this.dependencies = Object.create(null);
       this.fnArray.length = 0;
       this.argsArray.length = 0;

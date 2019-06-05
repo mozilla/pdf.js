@@ -14,11 +14,11 @@
  */
 
 import {
-  CMapCompressionType, FormatError, isString, MissingDataException, unreachable,
-  warn
+  CMapCompressionType, FormatError, isString, unreachable, warn
 } from '../shared/util';
 import { isCmd, isEOF, isName, isStream } from './primitives';
 import { Lexer } from './parser';
+import { MissingDataException } from './core_utils';
 import { Stream } from './stream';
 
 var BUILT_IN_CMAPS = [
@@ -228,7 +228,7 @@ class CMap {
     while (low <= high) {
       this._map[low++] = dstLow;
       // Only the last byte has to be incremented.
-      dstLow = dstLow.substr(0, lastByte) +
+      dstLow = dstLow.substring(0, lastByte) +
                String.fromCharCode(dstLow.charCodeAt(lastByte) + 1);
     }
   }

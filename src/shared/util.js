@@ -17,7 +17,8 @@ import './compatibility';
 import { ReadableStream } from './streams_polyfill';
 import { URL } from './url_polyfill';
 
-var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
+const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
+const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
 const NativeImageDecoding = {
   NONE: 'none',
@@ -25,7 +26,19 @@ const NativeImageDecoding = {
   DISPLAY: 'display',
 };
 
-var TextRenderingMode = {
+// Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
+const PermissionFlag = {
+  PRINT: 0x04,
+  MODIFY_CONTENTS: 0x08,
+  COPY: 0x10,
+  MODIFY_ANNOTATIONS: 0x20,
+  FILL_INTERACTIVE_FORMS: 0x100,
+  COPY_FOR_ACCESSIBILITY: 0x200,
+  ASSEMBLE: 0x400,
+  PRINT_HIGH_QUALITY: 0x800,
+};
+
+const TextRenderingMode = {
   FILL: 0,
   STROKE: 1,
   FILL_STROKE: 2,
@@ -38,13 +51,13 @@ var TextRenderingMode = {
   ADD_TO_PATH_FLAG: 4,
 };
 
-var ImageKind = {
+const ImageKind = {
   GRAYSCALE_1BPP: 1,
   RGB_24BPP: 2,
   RGBA_32BPP: 3,
 };
 
-var AnnotationType = {
+const AnnotationType = {
   TEXT: 1,
   LINK: 2,
   FREETEXT: 3,
@@ -73,7 +86,7 @@ var AnnotationType = {
   REDACT: 26,
 };
 
-var AnnotationFlag = {
+const AnnotationFlag = {
   INVISIBLE: 0x01,
   HIDDEN: 0x02,
   PRINT: 0x04,
@@ -86,7 +99,7 @@ var AnnotationFlag = {
   LOCKEDCONTENTS: 0x200,
 };
 
-var AnnotationFieldFlag = {
+const AnnotationFieldFlag = {
   READONLY: 0x0000001,
   REQUIRED: 0x0000002,
   NOEXPORT: 0x0000004,
@@ -108,7 +121,7 @@ var AnnotationFieldFlag = {
   COMMITONSELCHANGE: 0x4000000,
 };
 
-var AnnotationBorderStyleType = {
+const AnnotationBorderStyleType = {
   SOLID: 1,
   DASHED: 2,
   BEVELED: 3,
@@ -116,7 +129,7 @@ var AnnotationBorderStyleType = {
   UNDERLINE: 5,
 };
 
-var StreamType = {
+const StreamType = {
   UNKNOWN: 0,
   FLATE: 1,
   LZW: 2,
@@ -129,7 +142,7 @@ var StreamType = {
   RL: 9,
 };
 
-var FontType = {
+const FontType = {
   UNKNOWN: 0,
   TYPE1: 1,
   TYPE1C: 2,
@@ -149,14 +162,14 @@ const VerbosityLevel = {
   INFOS: 5,
 };
 
-var CMapCompressionType = {
+const CMapCompressionType = {
   NONE: 0,
   BINARY: 1,
   STREAM: 2,
 };
 
 // All the possible operations for an operator list.
-var OPS = {
+const OPS = {
   // Intentionally start from 1 so it is easy to spot bad operators that will be
   // 0's.
   dependency: 1,
@@ -252,6 +265,20 @@ var OPS = {
   constructPath: 91,
 };
 
+const UNSUPPORTED_FEATURES = {
+  unknown: 'unknown',
+  forms: 'forms',
+  javaScript: 'javaScript',
+  smask: 'smask',
+  shadingPattern: 'shadingPattern',
+  font: 'font',
+};
+
+const PasswordResponses = {
+  NEED_PASSWORD: 1,
+  INCORRECT_PASSWORD: 2,
+};
+
 let verbosity = VerbosityLevel.WARNINGS;
 
 function setVerbosityLevel(level) {
@@ -280,11 +307,6 @@ function warn(msg) {
   }
 }
 
-// Deprecated API function -- display regardless of the `verbosity` setting.
-function deprecated(details) {
-  console.log('Deprecated API usage: ' + details);
-}
-
 function unreachable(msg) {
   throw new Error(msg);
 }
@@ -294,15 +316,6 @@ function assert(cond, msg) {
     unreachable(msg);
   }
 }
-
-var UNSUPPORTED_FEATURES = {
-  unknown: 'unknown',
-  forms: 'forms',
-  javaScript: 'javaScript',
-  smask: 'smask',
-  shadingPattern: 'shadingPattern',
-  font: 'font',
-};
 
 // Checks if URLs have the same origin. For non-HTTP based URLs, returns false.
 function isSameOrigin(baseUrl, otherUrl) {
@@ -320,7 +333,7 @@ function isSameOrigin(baseUrl, otherUrl) {
 }
 
 // Checks if URLs use one of the whitelisted protocols, e.g. to avoid XSS.
-function isValidProtocol(url) {
+function _isValidProtocol(url) {
   if (!url) {
     return false;
   }
@@ -337,7 +350,8 @@ function isValidProtocol(url) {
 }
 
 /**
- * Attempts to create a valid absolute URL (utilizing `isValidProtocol`).
+ * Attempts to create a valid absolute URL.
+ *
  * @param {URL|string} url - An absolute, or relative, URL.
  * @param {URL|string} baseUrl - An absolute URL.
  * @returns Either a valid {URL}, or `null` otherwise.
@@ -348,7 +362,7 @@ function createValidAbsoluteUrl(url, baseUrl) {
   }
   try {
     var absoluteUrl = baseUrl ? new URL(url, baseUrl) : new URL(url);
-    if (isValidProtocol(absoluteUrl)) {
+    if (_isValidProtocol(absoluteUrl)) {
       return absoluteUrl;
     }
   } catch (ex) { /* `new URL()` will throw on incorrect data. */ }
@@ -362,23 +376,6 @@ function shadow(obj, prop, value) {
                                      writable: false, });
   return value;
 }
-
-function getLookupTableFactory(initializer) {
-  var lookup;
-  return function () {
-    if (initializer) {
-      lookup = Object.create(null);
-      initializer(lookup);
-      initializer = null;
-    }
-    return lookup;
-  };
-}
-
-var PasswordResponses = {
-  NEED_PASSWORD: 1,
-  INCORRECT_PASSWORD: 2,
-};
 
 var PasswordException = (function PasswordExceptionClosure() {
   function PasswordException(msg, code) {
@@ -442,32 +439,6 @@ var UnexpectedResponseException =
   UnexpectedResponseException.constructor = UnexpectedResponseException;
 
   return UnexpectedResponseException;
-})();
-
-var MissingDataException = (function MissingDataExceptionClosure() {
-  function MissingDataException(begin, end) {
-    this.begin = begin;
-    this.end = end;
-    this.message = 'Missing data [' + begin + ', ' + end + ')';
-  }
-
-  MissingDataException.prototype = new Error();
-  MissingDataException.prototype.name = 'MissingDataException';
-  MissingDataException.constructor = MissingDataException;
-
-  return MissingDataException;
-})();
-
-var XRefParseException = (function XRefParseExceptionClosure() {
-  function XRefParseException(msg) {
-    this.message = msg;
-  }
-
-  XRefParseException.prototype = new Error();
-  XRefParseException.prototype.name = 'XRefParseException';
-  XRefParseException.constructor = XRefParseException;
-
-  return XRefParseException;
 })();
 
 /**
@@ -633,55 +604,6 @@ function isEvalSupported() {
   }
 }
 
-/**
- * Get the value of an inheritable property.
- *
- * If the PDF specification explicitly lists a property in a dictionary as
- * inheritable, then the value of the property may be present in the dictionary
- * itself or in one or more parents of the dictionary.
- *
- * If the key is not found in the tree, `undefined` is returned. Otherwise,
- * the value for the key is returned or, if `stopWhenFound` is `false`, a list
- * of values is returned. To avoid infinite loops, the traversal is stopped when
- * the loop limit is reached.
- *
- * @param {Dict} dict - Dictionary from where to start the traversal.
- * @param {string} key - The key of the property to find the value for.
- * @param {boolean} getArray - Whether or not the value should be fetched as an
- *   array. The default value is `false`.
- * @param {boolean} stopWhenFound - Whether or not to stop the traversal when
- *   the key is found. If set to `false`, we always walk up the entire parent
- *   chain, for example to be able to find `\Resources` placed on multiple
- *   levels of the tree. The default value is `true`.
- */
-function getInheritableProperty({ dict, key, getArray = false,
-                                  stopWhenFound = true, }) {
-  const LOOP_LIMIT = 100;
-  let loopCount = 0;
-  let values;
-
-  while (dict) {
-    const value = getArray ? dict.getArray(key) : dict.get(key);
-    if (value !== undefined) {
-      if (stopWhenFound) {
-        return value;
-      }
-      if (!values) {
-        values = [];
-      }
-      values.push(value);
-    }
-    if (++loopCount > LOOP_LIMIT) {
-      warn(`getInheritableProperty: maximum loop count exceeded for "${key}"`);
-      break;
-    }
-    dict = dict.get('Parent');
-  }
-  return values;
-}
-
-var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
-
 var Util = (function UtilClosure() {
   function Util() {}
 
@@ -842,44 +764,7 @@ var Util = (function UtilClosure() {
   return Util;
 })();
 
-const ROMAN_NUMBER_MAP = [
-  '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
-  '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
-  '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'
-];
-
-/**
- * Converts positive integers to (upper case) Roman numerals.
- * @param {integer} number - The number that should be converted.
- * @param {boolean} lowerCase - Indicates if the result should be converted
- *   to lower case letters. The default value is `false`.
- * @return {string} The resulting Roman number.
- */
-function toRomanNumerals(number, lowerCase = false) {
-  assert(Number.isInteger(number) && number > 0,
-         'The number should be a positive integer.');
-  let pos, romanBuf = [];
-  // Thousands
-  while (number >= 1000) {
-    number -= 1000;
-    romanBuf.push('M');
-  }
-  // Hundreds
-  pos = (number / 100) | 0;
-  number %= 100;
-  romanBuf.push(ROMAN_NUMBER_MAP[pos]);
-  // Tens
-  pos = (number / 10) | 0;
-  number %= 10;
-  romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
-  // Ones
-  romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
-
-  const romanStr = romanBuf.join('');
-  return (lowerCase ? romanStr.toLowerCase() : romanStr);
-}
-
-var PDFStringTranslateTable = [
+const PDFStringTranslateTable = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0x2D8, 0x2C7, 0x2C6, 0x2D9, 0x2DD, 0x2DB, 0x2DA, 0x2DC, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -939,6 +824,15 @@ function isArrayBuffer(v) {
   return typeof v === 'object' && v !== null && v.byteLength !== undefined;
 }
 
+function isArrayEqual(arr1, arr2) {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+  return arr1.every(function(element, index) {
+    return element === arr2[index];
+  });
+}
+
 // Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
 function isSpace(ch) {
   return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
@@ -948,23 +842,36 @@ function isSpace(ch) {
  * Promise Capability object.
  *
  * @typedef {Object} PromiseCapability
- * @property {Promise} promise - A promise object.
- * @property {function} resolve - Fulfills the promise.
- * @property {function} reject - Rejects the promise.
+ * @property {Promise} promise - A Promise object.
+ * @property {boolean} settled - If the Promise has been fulfilled/rejected.
+ * @property {function} resolve - Fulfills the Promise.
+ * @property {function} reject - Rejects the Promise.
  */
 
 /**
  * Creates a promise capability object.
  * @alias createPromiseCapability
  *
- * @return {PromiseCapability} A capability object contains:
- * - a Promise, resolve and reject methods.
+ * @return {PromiseCapability}
  */
 function createPromiseCapability() {
-  var capability = {};
-  capability.promise = new Promise(function (resolve, reject) {
-    capability.resolve = resolve;
-    capability.reject = reject;
+  const capability = Object.create(null);
+  let isSettled = false;
+
+  Object.defineProperty(capability, 'settled', {
+    get() {
+      return isSettled;
+    },
+  });
+  capability.promise = new Promise(function(resolve, reject) {
+    capability.resolve = function(data) {
+      isSettled = true;
+      resolve(data);
+    };
+    capability.reject = function(reason) {
+      isSettled = true;
+      reject(reason);
+    };
   });
   return capability;
 }
@@ -1009,18 +916,16 @@ export {
   CMapCompressionType,
   AbortException,
   InvalidPDFException,
-  MissingDataException,
   MissingPDFException,
   NativeImageDecoding,
   PasswordException,
   PasswordResponses,
+  PermissionFlag,
   StreamType,
   TextRenderingMode,
   UnexpectedResponseException,
   UnknownErrorException,
   Util,
-  toRomanNumerals,
-  XRefParseException,
   FormatError,
   arrayByteLength,
   arraysToBytes,
@@ -1028,12 +933,10 @@ export {
   bytesToString,
   createPromiseCapability,
   createObjectURL,
-  deprecated,
-  getInheritableProperty,
-  getLookupTableFactory,
   getVerbosityLevel,
   info,
   isArrayBuffer,
+  isArrayEqual,
   isBool,
   isEmptyObj,
   isNum,

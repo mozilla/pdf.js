@@ -59,6 +59,7 @@ function getHeaderFromHeaders(headers, headerName) {
       return header;
     }
   }
+  return undefined;
 }
 
 /**
@@ -86,6 +87,7 @@ function isPdfFile(details) {
       }
     }
   }
+  return false;
 }
 
 /**
@@ -108,16 +110,17 @@ function getHeadersWithContentDispositionAttachment(details) {
     cdHeader.value = 'attachment' + cdHeader.value.replace(/^[^;]+/i, '');
     return { responseHeaders: headers, };
   }
+  return undefined;
 }
 
 chrome.webRequest.onHeadersReceived.addListener(
   function(details) {
     if (details.method !== 'GET') {
       // Don't intercept POST requests until http://crbug.com/104058 is fixed.
-      return;
+      return undefined;
     }
     if (!isPdfFile(details)) {
-      return;
+      return undefined;
     }
     if (isPdfDownloadable(details)) {
       // Force download by ensuring that Content-Disposition: attachment is set
@@ -142,7 +145,7 @@ chrome.webRequest.onHeadersReceived.addListener(
 chrome.webRequest.onBeforeRequest.addListener(
   function(details) {
     if (isPdfDownloadable(details)) {
-      return;
+      return undefined;
     }
 
     var viewerUrl = getViewerURL(details.url);
@@ -200,7 +203,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     // sensitive (local) file in a frame.
     if (!sender.tab) {
       sendResponse('');
-      return;
+      return undefined;
     }
     // TODO: This should be the URL of the parent frame, not the tab. But
     // chrome-extension:-URLs are not visible in the webNavigation API
@@ -209,11 +212,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     var parentUrl = sender.tab.url;
     if (!parentUrl) {
       sendResponse('');
-      return;
+      return undefined;
     }
     if (parentUrl.lastIndexOf('file:', 0) === 0) {
       sendResponse('file://');
-      return;
+      return undefined;
     }
     // The regexp should always match for valid URLs, but in case it doesn't,
     // just give the full URL (e.g. data URLs).
@@ -240,6 +243,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       });
     }
   }
+  return undefined;
 });
 
 // Remove keys from storage that were once part of the deleted feature-detect.js

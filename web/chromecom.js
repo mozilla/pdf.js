@@ -300,7 +300,7 @@ function setReferer(url, callback) {
 let storageArea = chrome.storage.sync || chrome.storage.local;
 
 class ChromePreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
+  async _writeToStorage(prefObj) {
     return new Promise((resolve) => {
       if (prefObj === this.defaults) {
         let keysToRemove = Object.keys(this.defaults);
@@ -317,7 +317,7 @@ class ChromePreferences extends BasePreferences {
     });
   }
 
-  _readFromStorage(prefObj) {
+  async _readFromStorage(prefObj) {
     return new Promise((resolve) => {
       let getPreferences = (defaultPrefs) => {
         if (chrome.runtime.lastError) {
@@ -341,6 +341,8 @@ class ChromePreferences extends BasePreferences {
           enableHandToolOnLoad: false,
           disableTextLayer: false,
           enhanceTextSelection: false,
+          showPreviousViewOnLoad: true,
+          disablePageMode: false,
         }, this.defaults);
 
         chrome.storage.managed.get(defaultManagedPrefs, function(items) {
@@ -369,6 +371,13 @@ class ChromePreferences extends BasePreferences {
           }
           delete items.disableTextLayer;
           delete items.enhanceTextSelection;
+
+          // Migration code for https://github.com/mozilla/pdf.js/pull/10502.
+          if (!items.showPreviousViewOnLoad && !items.viewOnLoad) {
+            items.viewOnLoad = 1;
+          }
+          delete items.showPreviousViewOnLoad;
+          delete items.disablePageMode;
 
           getPreferences(items);
         });

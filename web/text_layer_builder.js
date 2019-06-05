@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus } from './dom_events';
+import { getGlobalEventBus } from './ui_utils';
 import { renderTextLayer } from 'pdfjs-lib';
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
@@ -53,6 +53,7 @@ class TextLayerBuilder {
     this.textLayerRenderTask = null;
     this.enhanceTextSelection = enhanceTextSelection;
 
+    this._onUpdateTextLayerMatches = null;
     this._bindMouse();
   }
 
@@ -102,10 +103,20 @@ class TextLayerBuilder {
     this.textLayerRenderTask.promise.then(() => {
       this.textLayerDiv.appendChild(textLayerFrag);
       this._finishRendering();
-      this.updateMatches();
+      this._updateMatches();
     }, function (reason) {
       // Cancelled or failed to render text layer; skipping errors.
     });
+
+    if (!this._onUpdateTextLayerMatches) {
+      this._onUpdateTextLayerMatches = (evt) => {
+        if (evt.pageIndex === this.pageIdx || evt.pageIndex === -1) {
+          this._updateMatches();
+        }
+      };
+      this.eventBus.on('updatetextlayermatches',
+                       this._onUpdateTextLayerMatches);
+    }
   }
 
   /**
@@ -115,6 +126,11 @@ class TextLayerBuilder {
     if (this.textLayerRenderTask) {
       this.textLayerRenderTask.cancel();
       this.textLayerRenderTask = null;
+    }
+    if (this._onUpdateTextLayerMatches) {
+      this.eventBus.off('updatetextlayermatches',
+                        this._onUpdateTextLayerMatches);
+      this._onUpdateTextLayerMatches = null;
     }
   }
 
@@ -128,24 +144,25 @@ class TextLayerBuilder {
     this.textContent = textContent;
   }
 
-  convertMatches(matches, matchesLength) {
-    let i = 0;
-    let iIndex = 0;
-    let textContentItemsStr = this.textContentItemsStr;
-    let end = textContentItemsStr.length - 1;
-    let queryLen = (this.findController === null ?
-                    0 : this.findController.state.query.length);
-    let ret = [];
+  _convertMatches(matches, matchesLength) {
+    // Early exit if there is nothing to convert.
     if (!matches) {
-      return ret;
+      return [];
     }
-    for (let m = 0, len = matches.length; m < len; m++) {
+    const { findController, textContentItemsStr, } = this;
+
+    let i = 0, iIndex = 0;
+    const end = textContentItemsStr.length - 1;
+    const queryLen = findController.state.query.length;
+    const result = [];
+
+    for (let m = 0, mm = matches.length; m < mm; m++) {
       // Calculate the start position.
       let matchIdx = matches[m];
 
       // Loop over the divIdxs.
-      while (i !== end && matchIdx >=
-             (iIndex + textContentItemsStr[i].length)) {
+      while (i !== end &&
+             matchIdx >= (iIndex + textContentItemsStr[i].length)) {
         iIndex += textContentItemsStr[i].length;
         i++;
       }
@@ -170,8 +187,8 @@ class TextLayerBuilder {
 
       // Somewhat the same array as above, but use > instead of >= to get
       // the end position right.
-      while (i !== end && matchIdx >
-             (iIndex + textContentItemsStr[i].length)) {
+      while (i !== end &&
+             matchIdx > (iIndex + textContentItemsStr[i].length)) {
         iIndex += textContentItemsStr[i].length;
         i++;
       }
@@ -180,28 +197,22 @@ class TextLayerBuilder {
         divIdx: i,
         offset: matchIdx - iIndex,
       };
-      ret.push(match);
+      result.push(match);
     }
-
-    return ret;
+    return result;
   }
 
-  renderMatches(matches) {
+  _renderMatches(matches) {
     // Early exit if there is nothing to render.
     if (matches.length === 0) {
       return;
     }
+    const { findController, pageIdx, textContentItemsStr, textDivs, } = this;
 
-    let textContentItemsStr = this.textContentItemsStr;
-    let textDivs = this.textDivs;
+    const isSelectedPage = (pageIdx === findController.selected.pageIdx);
+    const selectedMatchIdx = findController.selected.matchIdx;
+    const highlightAll = findController.state.highlightAll;
     let prevEnd = null;
-    let pageIdx = this.pageIdx;
-    let isSelectedPage = (this.findController === null ?
-      false : (pageIdx === this.findController.selected.pageIdx));
-    let selectedMatchIdx = (this.findController === null ?
-                            -1 : this.findController.selected.matchIdx);
-    let highlightAll = (this.findController === null ?
-                        false : this.findController.state.highlightAll);
     let infinity = {
       divIdx: -1,
       offset: undefined,
@@ -240,12 +251,15 @@ class TextLayerBuilder {
       let match = matches[i];
       let begin = match.begin;
       let end = match.end;
-      let isSelected = (isSelectedPage && i === selectedMatchIdx);
-      let highlightSuffix = (isSelected ? ' selected' : '');
+      const isSelected = (isSelectedPage && i === selectedMatchIdx);
+      const highlightSuffix = (isSelected ? ' selected' : '');
 
-      if (this.findController) {
-        this.findController.updateMatchPosition(pageIdx, i, textDivs,
-                                                begin.divIdx);
+      if (isSelected) { // Attempt to scroll the selected match into view.
+        findController.scrollMatchIntoView({
+          element: textDivs[begin.divIdx],
+          pageIndex: pageIdx,
+          matchIndex: selectedMatchIdx,
+        });
       }
 
       // Match inside new div.
@@ -279,20 +293,18 @@ class TextLayerBuilder {
     }
   }
 
-  updateMatches() {
+  _updateMatches() {
     // Only show matches when all rendering is done.
     if (!this.renderingDone) {
       return;
     }
-
-    // Clear all matches.
-    let matches = this.matches;
-    let textDivs = this.textDivs;
-    let textContentItemsStr = this.textContentItemsStr;
+    const {
+      findController, matches, pageIdx, textContentItemsStr, textDivs,
+    } = this;
     let clearedUntilDivIdx = -1;
 
     // Clear all current matches.
-    for (let i = 0, len = matches.length; i < len; i++) {
+    for (let i = 0, ii = matches.length; i < ii; i++) {
       let match = matches[i];
       let begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
       for (let n = begin, end = match.end.divIdx; n <= end; n++) {
@@ -303,21 +315,16 @@ class TextLayerBuilder {
       clearedUntilDivIdx = match.end.divIdx + 1;
     }
 
-    if (this.findController === null || !this.findController.active) {
+    if (!findController || !findController.highlightMatches) {
       return;
     }
-
-    // Convert the matches on the page controller into the match format
+    // Convert the matches on the `findController` into the match format
     // used for the textLayer.
-    let pageMatches, pageMatchesLength;
-    if (this.findController !== null) {
-      pageMatches = this.findController.pageMatches[this.pageIdx] || null;
-      pageMatchesLength = (this.findController.pageMatchesLength) ?
-        this.findController.pageMatchesLength[this.pageIdx] || null : null;
-    }
+    const pageMatches = findController.pageMatches[pageIdx] || null;
+    const pageMatchesLength = findController.pageMatchesLength[pageIdx] || null;
 
-    this.matches = this.convertMatches(pageMatches, pageMatchesLength);
-    this.renderMatches(this.matches);
+    this.matches = this._convertMatches(pageMatches, pageMatchesLength);
+    this._renderMatches(this.matches);
   }
 
   /**

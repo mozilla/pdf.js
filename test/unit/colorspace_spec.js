@@ -50,7 +50,7 @@ describe('colorspace', function () {
     it('should handle the case when cs is a Name object', function () {
       let cs = Name.get('DeviceGray');
       let xref = new XRefMock([{
-        ref: new Ref(10, 0),
+        ref: Ref.get(10, 0),
         data: new Dict(),
       }]);
       let res = new Dict();
@@ -89,7 +89,7 @@ describe('colorspace', function () {
       expect(testDest).toEqual(expectedDest);
     });
     it('should handle the case when cs is an indirect object', function () {
-      let cs = new Ref(10, 0);
+      let cs = Ref.get(10, 0);
       let xref = new XRefMock([{
         ref: cs,
         data: Name.get('DeviceGray'),
@@ -128,7 +128,7 @@ describe('colorspace', function () {
     it('should handle the case when cs is a Name object', function () {
       let cs = Name.get('DeviceRGB');
       let xref = new XRefMock([{
-        ref: new Ref(10, 0),
+        ref: Ref.get(10, 0),
         data: new Dict(),
       }]);
       let res = new Dict();
@@ -172,7 +172,7 @@ describe('colorspace', function () {
       expect(testDest).toEqual(expectedDest);
     });
     it('should handle the case when cs is an indirect object', function () {
-      let cs = new Ref(10, 0);
+      let cs = Ref.get(10, 0);
       let xref = new XRefMock([{
         ref: cs,
         data: Name.get('DeviceRGB'),
@@ -216,7 +216,7 @@ describe('colorspace', function () {
     it('should handle the case when cs is a Name object', function () {
       let cs = Name.get('DeviceCMYK');
       let xref = new XRefMock([{
-        ref: new Ref(10, 0),
+        ref: Ref.get(10, 0),
         data: new Dict(),
       }]);
       let res = new Dict();
@@ -260,7 +260,7 @@ describe('colorspace', function () {
       expect(testDest).toEqual(expectedDest);
     });
     it('should handle the case when cs is an indirect object', function () {
-      let cs = new Ref(10, 0);
+      let cs = Ref.get(10, 0);
       let xref = new XRefMock([{
         ref: cs,
         data: Name.get('DeviceCMYK'),
@@ -312,7 +312,7 @@ describe('colorspace', function () {
         params,
       ];
       let xref = new XRefMock([{
-        ref: new Ref(10, 0),
+        ref: Ref.get(10, 0),
         data: new Dict(),
       }]);
       let res = new Dict();
@@ -365,7 +365,7 @@ describe('colorspace', function () {
         params,
       ];
       let xref = new XRefMock([{
-        ref: new Ref(10, 0),
+        ref: Ref.get(10, 0),
         data: new Dict(),
       }]);
       let res = new Dict();
@@ -415,7 +415,7 @@ describe('colorspace', function () {
         params,
       ];
       let xref = new XRefMock([{
-        ref: new Ref(10, 0),
+        ref: Ref.get(10, 0),
         data: new Dict(),
       }]);
       let res = new Dict();
@@ -468,7 +468,7 @@ describe('colorspace', function () {
         lookup,
       ];
       let xref = new XRefMock([{
-        ref: new Ref(10, 0),
+        ref: Ref.get(10, 0),
         data: new Dict(),
       }]);
       let res = new Dict();
@@ -496,7 +496,7 @@ describe('colorspace', function () {
       expect(colorSpace.getRgb([2], 0)).toEqual(
         new Uint8ClampedArray([255, 109, 70]));
       expect(colorSpace.isPassthrough(8)).toBeFalsy();
-      expect(colorSpace.isDefaultDecode([0, 1])).toBeTruthy();
+      expect(colorSpace.isDefaultDecode([0, 1], 1)).toBeTruthy();
       expect(testDest).toEqual(expectedDest);
     });
   });
@@ -515,7 +515,7 @@ describe('colorspace', function () {
                                 'exch 0.21 mul }');
       fn = new Stream(fn.bytes, 0, 58, fnDict);
 
-      let fnRef = new Ref(10, 0);
+      let fnRef = Ref.get(10, 0);
 
       let cs = [
         Name.get('Separation'),

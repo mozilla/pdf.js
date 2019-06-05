@@ -1,4 +1,4 @@
-/* Copyright 2014 Mozilla Foundation
+/* Copyright 2018 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-unused-vars */
-
-'use strict';
 
 /**
  * @interface
  */
 class IPDFLinkService {
+  /**
+   * @returns {number}
+   */
+  get pagesCount() {}
+
   /**
    * @returns {number}
    */
@@ -68,15 +70,15 @@ class IPDFLinkService {
   executeNamedAction(action) {}
 
   /**
-   * @param {Object} params
-   */
-  onFileAttachmentAnnotation({ id, filename, content, }) {}
-
-  /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
   cachePageRef(pageNum, pageRef) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageVisible(pageNumber) {}
 }
 
 /**
@@ -84,15 +86,14 @@ class IPDFLinkService {
  */
 class IPDFHistory {
   /**
-   * @param {string} fingerprint - The PDF document's unique fingerprint.
-   * @param {boolean} resetHistory - (optional) Reset the browsing history.
+   * @param {Object} params
    */
-  initialize(fingerprint, resetHistory = false) {}
+  initialize({ fingerprint, resetHistory = false, updateUrl = false, }) {}
 
   /**
    * @param {Object} params
    */
-  push({ namedDest, explicitDest, pageNumber, }) {}
+  push({ namedDest = null, explicitDest, pageNumber, }) {}
 
   pushCurrentPosition() {}
 
@@ -163,12 +164,12 @@ class IL10n {
   /**
    * @returns {Promise<string>} - Resolves to the current locale.
    */
-  getLanguage() {}
+  async getLanguage() {}
 
   /**
    * @returns {Promise<string>} - Resolves to 'rtl' or 'ltr'.
    */
-  getDirection() {}
+  async getDirection() {}
 
   /**
    * Translates text identified by the key and adds/formats data using the args
@@ -179,12 +180,21 @@ class IL10n {
    * @param {string} fallback
    * @returns {Promise<string>}
    */
-  get(key, args, fallback) { }
+  async get(key, args, fallback) { }
 
   /**
    * Translates HTML element.
    * @param {HTMLElement} element
    * @returns {Promise<void>}
    */
-  translate(element) { }
+  async translate(element) { }
 }
+
+export {
+  IPDFLinkService,
+  IPDFHistory,
+  IRenderableView,
+  IPDFTextLayerFactory,
+  IPDFAnnotationLayerFactory,
+  IL10n,
+};

@@ -8,7 +8,7 @@ The issue tracking system is designed to record a single technical problem. A bu
 
 If you are developing a custom solution, first check the examples at https://github.com/mozilla/pdf.js#learning and search existing issues. If this does not help, please prepare a short well-documented example that demonstrates the problem and make it accessible online on your website, JS Bin, GitHub, etc. before opening a new issue or contacting us on the IRC channel -- keep in mind that just code snippets won't help us troubleshoot the problem.
 
-Note that the translations for PDF.js in the `l10n` folder are synchronized with the Nightly channel of Mozilla Firefox. This means that we will only accept pull requests that add strings currently missing in the Nightly channel, but keep in mind that the changes will be overwritten when we synchronize again.
+Note that the translations for PDF.js in the `l10n` folder are imported from the Nightly channel of Mozilla Firefox, such that we don't have to maintain them ourselves. This means that we will not accept pull requests that add new languages and/or modify existing translations, unless the corresponding changes have been made in Mozilla Firefox first.
 
 See also:
 - https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions

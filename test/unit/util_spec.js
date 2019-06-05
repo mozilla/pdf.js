@@ -14,12 +14,11 @@
  */
 
 import {
-  bytesToString, getInheritableProperty, isArrayBuffer, isBool, isEmptyObj,
-  isNum, isSpace, isString, log2, ReadableStream, removeNullCharacters,
-  stringToBytes, stringToPDFString, URL
+  bytesToString, createPromiseCapability, createValidAbsoluteUrl, isArrayBuffer,
+  isBool, isEmptyObj, isNum, isSameOrigin, isSpace, isString, log2,
+  ReadableStream, removeNullCharacters, string32, stringToBytes,
+  stringToPDFString, URL
 } from '../../src/shared/util';
-import { Dict, Ref } from '../../src/core/primitives';
-import { XRefMock } from './test_utils';
 
 describe('util', function() {
   describe('bytesToString', function() {
@@ -50,106 +49,6 @@ describe('util', function() {
       let string = Array(length + 1).join('a');
 
       expect(bytesToString(bytes)).toEqual(string);
-    });
-  });
-
-  describe('getInheritableProperty', function() {
-    it('handles non-dictionary arguments', function() {
-      expect(getInheritableProperty({ dict: null, key: 'foo', }))
-        .toEqual(undefined);
-      expect(getInheritableProperty({ dict: undefined, key: 'foo', }))
-        .toEqual(undefined);
-    });
-
-    it('handles dictionaries that do not contain the property', function() {
-      // Empty dictionary.
-      const emptyDict = new Dict();
-      expect(getInheritableProperty({ dict: emptyDict, key: 'foo', }))
-        .toEqual(undefined);
-
-      // Filled dictionary with a different property.
-      const filledDict = new Dict();
-      filledDict.set('bar', 'baz');
-      expect(getInheritableProperty({ dict: filledDict, key: 'foo', }))
-        .toEqual(undefined);
-    });
-
-    it('fetches the property if it is not inherited', function() {
-      const ref = new Ref(10, 0);
-      const xref = new XRefMock([{ ref, data: 'quux', }]);
-      const dict = new Dict(xref);
-
-      // Regular values should be fetched.
-      dict.set('foo', 'bar');
-      expect(getInheritableProperty({ dict, key: 'foo', })).toEqual('bar');
-
-      // Array value should be fetched (with references resolved).
-      dict.set('baz', ['qux', ref]);
-      expect(getInheritableProperty({ dict, key: 'baz', getArray: true, }))
-        .toEqual(['qux', 'quux']);
-    });
-
-    it('fetches the property if it is inherited and present on one level',
-        function() {
-      const ref = new Ref(10, 0);
-      const xref = new XRefMock([{ ref, data: 'quux', }]);
-      const firstDict = new Dict(xref);
-      const secondDict = new Dict(xref);
-      firstDict.set('Parent', secondDict);
-
-      // Regular values should be fetched.
-      secondDict.set('foo', 'bar');
-      expect(getInheritableProperty({ dict: firstDict, key: 'foo', }))
-        .toEqual('bar');
-
-      // Array value should be fetched (with references resolved).
-      secondDict.set('baz', ['qux', ref]);
-      expect(getInheritableProperty({ dict: firstDict, key: 'baz',
-                                      getArray: true, }))
-        .toEqual(['qux', 'quux']);
-    });
-
-    it('fetches the property if it is inherited and present on multiple levels',
-        function() {
-      const ref = new Ref(10, 0);
-      const xref = new XRefMock([{ ref, data: 'quux', }]);
-      const firstDict = new Dict(xref);
-      const secondDict = new Dict(xref);
-      firstDict.set('Parent', secondDict);
-
-      // Regular values should be fetched.
-      firstDict.set('foo', 'bar1');
-      secondDict.set('foo', 'bar2');
-      expect(getInheritableProperty({ dict: firstDict, key: 'foo', }))
-        .toEqual('bar1');
-      expect(getInheritableProperty({ dict: firstDict, key: 'foo',
-                                      getArray: false, stopWhenFound: false, }))
-        .toEqual(['bar1', 'bar2']);
-
-      // Array value should be fetched (with references resolved).
-      firstDict.set('baz', ['qux1', ref]);
-      secondDict.set('baz', ['qux2', ref]);
-      expect(getInheritableProperty({ dict: firstDict, key: 'baz',
-                                      getArray: true, stopWhenFound: false, }))
-        .toEqual([['qux1', 'quux'], ['qux2', 'quux']]);
-    });
-
-    it('stops searching when the loop limit is reached', function() {
-      const dict = new Dict();
-      let currentDict = dict;
-      let parentDict = null;
-      for (let i = 0; i < 150; i++) { // Exceeds the loop limit of 100.
-        parentDict = new Dict();
-        currentDict.set('Parent', parentDict);
-        currentDict = parentDict;
-      }
-      parentDict.set('foo', 'bar'); // Never found because of loop limit.
-      expect(getInheritableProperty({ dict, key: 'foo', })).toEqual(undefined);
-
-      dict.set('foo', 'baz');
-      expect(getInheritableProperty({ dict, key: 'foo', getArray: false,
-                                      stopWhenFound: false, }))
-        .toEqual(['baz']);
     });
   });
 
@@ -253,6 +152,14 @@ describe('util', function() {
     });
   });
 
+  describe('string32', function() {
+    it('converts unsigned 32-bit integers to strings', function() {
+      expect(string32(0x74727565)).toEqual('true');
+      expect(string32(0x74797031)).toEqual('typ1');
+      expect(string32(0x4F54544F)).toEqual('OTTO');
+    });
+  });
+
   describe('stringToBytes', function() {
     it('handles non-string arguments', function() {
       expect(function() {
@@ -321,6 +228,98 @@ describe('util', function() {
     it('should have property `href`', function() {
       const url = new URL('https://example.com');
       expect(typeof url.href).toEqual('string');
+    });
+  });
+
+  describe('isSameOrigin', function() {
+    it('handles invalid base URLs', function() {
+      // The base URL is not valid.
+      expect(isSameOrigin('/foo', '/bar')).toEqual(false);
+
+      // The base URL has no origin.
+      expect(isSameOrigin('blob:foo', '/bar')).toEqual(false);
+    });
+
+    it('correctly checks if the origin of both URLs matches', function() {
+      expect(isSameOrigin('https://www.mozilla.org/foo',
+                          'https://www.mozilla.org/bar')).toEqual(true);
+      expect(isSameOrigin('https://www.mozilla.org/foo',
+                          'https://www.example.com/bar')).toEqual(false);
+    });
+  });
+
+  describe('createValidAbsoluteUrl', function() {
+    it('handles invalid URLs', function() {
+      expect(createValidAbsoluteUrl(undefined, undefined)).toEqual(null);
+      expect(createValidAbsoluteUrl(null, null)).toEqual(null);
+      expect(createValidAbsoluteUrl('/foo', '/bar')).toEqual(null);
+    });
+
+    it('handles URLs that do not use a whitelisted protocol', function() {
+      expect(createValidAbsoluteUrl('magnet:?foo', null)).toEqual(null);
+    });
+
+    it('correctly creates a valid URL for whitelisted protocols', function() {
+      // `http` protocol
+      expect(createValidAbsoluteUrl('http://www.mozilla.org/foo', null))
+        .toEqual(new URL('http://www.mozilla.org/foo'));
+      expect(createValidAbsoluteUrl('/foo', 'http://www.mozilla.org'))
+        .toEqual(new URL('http://www.mozilla.org/foo'));
+
+      // `https` protocol
+      expect(createValidAbsoluteUrl('https://www.mozilla.org/foo', null))
+        .toEqual(new URL('https://www.mozilla.org/foo'));
+      expect(createValidAbsoluteUrl('/foo', 'https://www.mozilla.org'))
+        .toEqual(new URL('https://www.mozilla.org/foo'));
+
+      // `ftp` protocol
+      expect(createValidAbsoluteUrl('ftp://www.mozilla.org/foo', null))
+        .toEqual(new URL('ftp://www.mozilla.org/foo'));
+      expect(createValidAbsoluteUrl('/foo', 'ftp://www.mozilla.org'))
+        .toEqual(new URL('ftp://www.mozilla.org/foo'));
+
+      // `mailto` protocol (base URLs have no meaning and should yield `null`)
+      expect(createValidAbsoluteUrl('mailto:foo@bar.baz', null))
+        .toEqual(new URL('mailto:foo@bar.baz'));
+      expect(createValidAbsoluteUrl('/foo', 'mailto:foo@bar.baz'))
+        .toEqual(null);
+
+      // `tel` protocol (base URLs have no meaning and should yield `null`)
+      expect(createValidAbsoluteUrl('tel:+0123456789', null))
+        .toEqual(new URL('tel:+0123456789'));
+      expect(createValidAbsoluteUrl('/foo', 'tel:0123456789'))
+        .toEqual(null);
+    });
+  });
+
+  describe('createPromiseCapability', function() {
+    it('should resolve with correct data', function(done) {
+      const promiseCapability = createPromiseCapability();
+      expect(promiseCapability.settled).toEqual(false);
+
+      promiseCapability.resolve({ test: 'abc', });
+
+      promiseCapability.promise.then(function(data) {
+        expect(promiseCapability.settled).toEqual(true);
+
+        expect(data).toEqual({ test: 'abc', });
+        done();
+      }, done.fail);
+    });
+
+    it('should reject with correct reason', function(done) {
+      const promiseCapability = createPromiseCapability();
+      expect(promiseCapability.settled).toEqual(false);
+
+      promiseCapability.reject(new Error('reason'));
+
+      promiseCapability.promise.then(done.fail, function(reason) {
+        expect(promiseCapability.settled).toEqual(true);
+
+        expect(reason instanceof Error).toEqual(true);
+        expect(reason.message).toEqual('reason');
+        done();
+      });
     });
   });
 });

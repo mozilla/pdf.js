@@ -12,14 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
-import { getLookupTableFactory } from '../shared/util';
+import { getLookupTableFactory } from './core_utils';
 
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1
  * fonts and their acronyms.
  */
-var getStdFontMap = getLookupTableFactory(function (t) {
+const getStdFontMap = getLookupTableFactory(function (t) {
   t['ArialNarrow'] = 'Helvetica';
   t['ArialNarrow-Bold'] = 'Helvetica-Bold';
   t['ArialNarrow-BoldItalic'] = 'Helvetica-BoldOblique';
@@ -82,7 +83,7 @@ var getStdFontMap = getLookupTableFactory(function (t) {
  * Holds the map of the non-standard fonts that might be included as
  * a standard fonts without glyph data.
  */
-var getNonStdFontMap = getLookupTableFactory(function (t) {
+const getNonStdFontMap = getLookupTableFactory(function (t) {
   t['Calibri'] = 'Helvetica';
   t['Calibri-Bold'] = 'Helvetica-Bold';
   t['Calibri-BoldItalic'] = 'Helvetica-BoldOblique';
@@ -120,7 +121,7 @@ var getNonStdFontMap = getLookupTableFactory(function (t) {
   t['Wingdings'] = 'ZapfDingbats';
 });
 
-var getSerifFonts = getLookupTableFactory(function (t) {
+const getSerifFonts = getLookupTableFactory(function (t) {
   t['Adobe Jenson'] = true;
   t['Adobe Text'] = true;
   t['Albertus'] = true;
@@ -256,7 +257,7 @@ var getSerifFonts = getLookupTableFactory(function (t) {
   t['XITS'] = true;
 });
 
-var getSymbolsFonts = getLookupTableFactory(function (t) {
+const getSymbolsFonts = getLookupTableFactory(function (t) {
   t['Dingbats'] = true;
   t['Symbol'] = true;
   t['ZapfDingbats'] = true;
@@ -265,7 +266,7 @@ var getSymbolsFonts = getLookupTableFactory(function (t) {
 // Glyph map for well-known standard fonts. Sometimes Ghostscript uses CID
 // fonts, but does not embed the CID to GID mapping. The mapping is incomplete
 // for all glyphs, but common for some set of the standard fonts.
-var getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
+const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
   t[2] = 10; t[3] = 32; t[4] = 33; t[5] = 34; t[6] = 35; t[7] = 36; t[8] = 37;
   t[9] = 38; t[10] = 39; t[11] = 40; t[12] = 41; t[13] = 42; t[14] = 43;
   t[15] = 44; t[16] = 45; t[17] = 46; t[18] = 47; t[19] = 48; t[20] = 49;
@@ -355,7 +356,7 @@ var getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
 // The glyph map for ArialBlack differs slightly from the glyph map used for
 // other well-known standard fonts. Hence we use this (incomplete) CID to GID
 // mapping to adjust the glyph map for non-embedded ArialBlack fonts.
-var getSupplementalGlyphMapForArialBlack =
+const getSupplementalGlyphMapForArialBlack =
     getLookupTableFactory(function (t) {
   t[227] = 322; t[264] = 261; t[291] = 346;
 });
@@ -363,7 +364,7 @@ var getSupplementalGlyphMapForArialBlack =
 // The glyph map for Calibri (a Windows font) differs from the glyph map used
 // in the standard fonts. Hence we use this (incomplete) CID to GID mapping to
 // adjust the glyph map for non-embedded Calibri fonts.
-let getSupplementalGlyphMapForCalibri = getLookupTableFactory(function(t) {
+const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function(t) {
   t[1] = 32; t[4] = 65; t[17] = 66; t[18] = 67; t[24] = 68; t[28] = 69;
   t[38] = 70; t[39] = 71; t[44] = 72; t[47] = 73; t[58] = 74; t[60] = 75;
   t[62] = 76; t[68] = 77; t[69] = 78; t[75] = 79; t[87] = 80; t[89] = 81;

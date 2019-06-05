@@ -41,6 +41,20 @@ const TextLayerMode = {
   ENABLE_ENHANCE: 2,
 };
 
+const ScrollMode = {
+  UNKNOWN: -1,
+  VERTICAL: 0, // Default value.
+  HORIZONTAL: 1,
+  WRAPPED: 2,
+};
+
+const SpreadMode = {
+  UNKNOWN: -1,
+  NONE: 0, // Default value.
+  ODD: 1,
+  EVEN: 2,
+};
+
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
@@ -56,21 +70,19 @@ function formatL10nValue(text, args) {
  * @implements {IL10n}
  */
 let NullL10n = {
-  getLanguage() {
-    return Promise.resolve('en-us');
+  async getLanguage() {
+    return 'en-us';
   },
 
-  getDirection() {
-    return Promise.resolve('ltr');
+  async getDirection() {
+    return 'ltr';
   },
 
-  get(property, args, fallback) {
-    return Promise.resolve(formatL10nValue(fallback, args));
+  async get(property, args, fallback) {
+    return formatL10nValue(fallback, args);
   },
 
-  translate(element) {
-    return Promise.resolve();
-  },
+  async translate(element) { },
 };
 
 /**
@@ -415,8 +427,8 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  */
 function getVisibleElements(scrollEl, views, sortByVisibility = false,
                             horizontal = false) {
-  let top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
-  let left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
+  const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
+  const left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
 
   // Throughout this "generic" function, comments will assume we're working with
   // PDF document pages, which is the most important and complex case. In this
@@ -429,27 +441,27 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   // the border). Adding clientWidth/Height gets us the bottom-right corner of
   // the padding edge.
   function isElementBottomAfterViewTop(view) {
-    let element = view.div;
-    let elementBottom =
+    const element = view.div;
+    const elementBottom =
       element.offsetTop + element.clientTop + element.clientHeight;
     return elementBottom > top;
   }
   function isElementRightAfterViewLeft(view) {
-    let element = view.div;
-    let elementRight =
+    const element = view.div;
+    const elementRight =
       element.offsetLeft + element.clientLeft + element.clientWidth;
     return elementRight > left;
   }
 
-  let visible = [], view, element;
-  let currentHeight, viewHeight, viewBottom, hiddenHeight;
-  let currentWidth, viewWidth, viewRight, hiddenWidth;
-  let percentVisible;
-  let firstVisibleElementInd = views.length === 0 ? 0 :
+  const visible = [], numViews = views.length;
+  let firstVisibleElementInd = numViews === 0 ? 0 :
     binarySearchFirstItem(views, horizontal ? isElementRightAfterViewLeft :
                                               isElementBottomAfterViewTop);
 
-  if (views.length > 0 && !horizontal) {
+  // Please note the return value of the `binarySearchFirstItem` function when
+  // no valid element is found (hence the `firstVisibleElementInd` check below).
+  if (firstVisibleElementInd > 0 && firstVisibleElementInd < numViews &&
+      !horizontal) {
     // In wrapped scrolling (or vertical scrolling with spreads), with some page
     // sizes, isElementBottomAfterViewTop doesn't satisfy the binary search
     // condition: there can be pages with bottoms above the view top between
@@ -469,15 +481,13 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   // we pass `right`, without needing the code below that handles the -1 case.
   let lastEdge = horizontal ? right : -1;
 
-  for (let i = firstVisibleElementInd, ii = views.length; i < ii; i++) {
-    view = views[i];
-    element = view.div;
-    currentWidth = element.offsetLeft + element.clientLeft;
-    currentHeight = element.offsetTop + element.clientTop;
-    viewWidth = element.clientWidth;
-    viewHeight = element.clientHeight;
-    viewRight = currentWidth + viewWidth;
-    viewBottom = currentHeight + viewHeight;
+  for (let i = firstVisibleElementInd; i < numViews; i++) {
+    const view = views[i], element = view.div;
+    const currentWidth = element.offsetLeft + element.clientLeft;
+    const currentHeight = element.offsetTop + element.clientTop;
+    const viewWidth = element.clientWidth, viewHeight = element.clientHeight;
+    const viewRight = currentWidth + viewWidth;
+    const viewBottom = currentHeight + viewHeight;
 
     if (lastEdge === -1) {
       // As commented above, this is only needed in non-horizontal cases.
@@ -496,24 +506,22 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
       continue;
     }
 
-    hiddenHeight = Math.max(0, top - currentHeight) +
-      Math.max(0, viewBottom - bottom);
-    hiddenWidth = Math.max(0, left - currentWidth) +
-      Math.max(0, viewRight - right);
-    percentVisible = ((viewHeight - hiddenHeight) * (viewWidth - hiddenWidth) *
-      100 / viewHeight / viewWidth) | 0;
-
+    const hiddenHeight = Math.max(0, top - currentHeight) +
+                         Math.max(0, viewBottom - bottom);
+    const hiddenWidth = Math.max(0, left - currentWidth) +
+                        Math.max(0, viewRight - right);
+    const percent = ((viewHeight - hiddenHeight) * (viewWidth - hiddenWidth) *
+                     100 / viewHeight / viewWidth) | 0;
     visible.push({
       id: view.id,
       x: currentWidth,
       y: currentHeight,
       view,
-      percent: percentVisible,
+      percent,
     });
   }
 
-  let first = visible[0];
-  let last = visible[visible.length - 1];
+  const first = visible[0], last = visible[visible.length - 1];
 
   if (sortByVisibility) {
     visible.sort(function(a, b) {
@@ -539,7 +547,7 @@ function isDataSchema(url) {
   while (i < ii && url[i].trim() === '') {
     i++;
   }
-  return url.substr(i, 5).toLowerCase() === 'data:';
+  return url.substring(i, i + 5).toLowerCase() === 'data:';
 }
 
 /**
@@ -550,6 +558,9 @@ function isDataSchema(url) {
  * @returns {string} Guessed PDF filename.
  */
 function getPDFFileNameFromURL(url, defaultFilename = 'document.pdf') {
+  if (typeof url !== 'string') {
+    return defaultFilename;
+  }
   if (isDataSchema(url)) {
     console.warn('getPDFFileNameFromURL: ' +
                  'ignoring "data:" URL for performance reasons.');
@@ -603,6 +614,16 @@ function normalizeWheelEventDelta(evt) {
 
 function isValidRotation(angle) {
   return Number.isInteger(angle) && angle % 90 === 0;
+}
+
+function isValidScrollMode(mode) {
+  return (Number.isInteger(mode) && Object.values(ScrollMode).includes(mode) &&
+          mode !== ScrollMode.UNKNOWN);
+}
+
+function isValidSpreadMode(mode) {
+  return (Number.isInteger(mode) && Object.values(SpreadMode).includes(mode) &&
+          mode !== SpreadMode.UNKNOWN);
 }
 
 function isPortraitOrientation(size) {
@@ -683,8 +704,9 @@ let animationStarted = new Promise(function (resolve) {
  * used.
  */
 class EventBus {
-  constructor() {
+  constructor({ dispatchToDOM = false, } = {}) {
     this._listeners = Object.create(null);
+    this._dispatchToDOM = dispatchToDOM === true;
   }
 
   on(eventName, listener) {
@@ -708,16 +730,54 @@ class EventBus {
   dispatch(eventName) {
     let eventListeners = this._listeners[eventName];
     if (!eventListeners || eventListeners.length === 0) {
+      if (this._dispatchToDOM) {
+        const args = Array.prototype.slice.call(arguments, 1);
+        this._dispatchDOMEvent(eventName, args);
+      }
       return;
     }
     // Passing all arguments after the eventName to the listeners.
-    let args = Array.prototype.slice.call(arguments, 1);
+    const args = Array.prototype.slice.call(arguments, 1);
     // Making copy of the listeners array in case if it will be modified
     // during dispatch.
     eventListeners.slice(0).forEach(function (listener) {
       listener.apply(null, args);
     });
+    if (this._dispatchToDOM) {
+      this._dispatchDOMEvent(eventName, args);
+    }
   }
+
+  /**
+   * @private
+   */
+  _dispatchDOMEvent(eventName, args = null) {
+    const details = Object.create(null);
+    if (args && args.length > 0) {
+      const obj = args[0];
+      for (let key in obj) {
+        const value = obj[key];
+        if (key === 'source') {
+          if (value === window || value === document) {
+            return; // No need to re-dispatch (already) global events.
+          }
+          continue; // Ignore the `source` property.
+        }
+        details[key] = value;
+      }
+    }
+    const event = document.createEvent('CustomEvent');
+    event.initCustomEvent(eventName, true, true, details);
+    document.dispatchEvent(event);
+  }
+}
+
+let globalEventBus = null;
+function getGlobalEventBus(dispatchToDOM = false) {
+  if (!globalEventBus) {
+    globalEventBus = new EventBus({ dispatchToDOM, });
+  }
+  return globalEventBus;
 }
 
 function clamp(v, min, max) {
@@ -827,12 +887,17 @@ export {
   SCROLLBAR_PADDING,
   VERTICAL_PADDING,
   isValidRotation,
+  isValidScrollMode,
+  isValidSpreadMode,
   isPortraitOrientation,
   PresentationModeState,
   RendererType,
   TextLayerMode,
+  ScrollMode,
+  SpreadMode,
   NullL10n,
   EventBus,
+  getGlobalEventBus,
   ProgressBar,
   getPDFFileNameFromURL,
   noContextMenuHandler,

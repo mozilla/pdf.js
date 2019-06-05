@@ -54,6 +54,7 @@
 !issue8088.pdf
 !issue8125.pdf
 !issue8229.pdf
+!issue8276_reduced.pdf
 !issue8372.pdf
 !issue8424.pdf
 !issue8480.pdf
@@ -72,6 +73,11 @@
 !issue9458.pdf
 !issue9915_reduced.pdf
 !issue9940.pdf
+!issue10388_reduced.pdf
+!issue10438_reduced.pdf
+!issue10529.pdf
+!issue10542_reduced.pdf
+!issue10665_reduced.pdf
 !bad-PageLabels.pdf
 !decodeACSuccessive.pdf
 !filled-background.pdf
@@ -87,7 +93,10 @@
 !bug1200096.pdf
 !bug1068432.pdf
 !bug1146106.pdf
+!bug1245391_reduced.pdf
 !bug1252420.pdf
+!bug1513120_reduced.pdf
+!bug1552113.pdf
 !issue9949.pdf
 !bug1308536.pdf
 !bug1337429.pdf
@@ -114,6 +123,7 @@
 !issue5686.pdf
 !issue3928.pdf
 !clippath.pdf
+!issue8795_reduced.pdf
 !close-path-bug.pdf
 !issue6019.pdf
 !issue6621.pdf
@@ -124,6 +134,7 @@
 !issue6541.pdf
 !issue2948.pdf
 !issue6231_1.pdf
+!issue10402.pdf
 !issue7074_reduced.pdf
 !issue6413.pdf
 !issue4630.pdf
@@ -233,6 +244,7 @@
 !bug1151216.pdf
 !bug1175962.pdf
 !bug1020226.pdf
+!issue9534_reduced.pdf
 !basicapi.pdf
 !issue2884_reduced.pdf
 !mixedfonts.pdf
@@ -247,6 +259,7 @@
 !bug878026.pdf
 !issue1045.pdf
 !issue5010.pdf
+!issue10339_reduced.pdf
 !issue4934.pdf
 !issue4650.pdf
 !issue6721_reduced.pdf
@@ -263,6 +276,7 @@
 !annotation-tx3.pdf
 !coons-allflags-withfunction.pdf
 !tensor-allflags-withfunction.pdf
+!issue10084_reduced.pdf
 !issue4246.pdf
 !issue4461.pdf
 !issue4573.pdf
@@ -271,6 +285,7 @@
 !text_clip_cff_cid.pdf
 !issue4801.pdf
 !issue5334.pdf
+!annotation-caret-ink.pdf
 !bug1186827.pdf
 !issue215.pdf
 !issue5044.pdf
@@ -279,8 +294,10 @@
 !issue5540.pdf
 !issue5549.pdf
 !issue5475.pdf
+!issue10519_reduced.pdf
 !annotation-border-styles.pdf
 !IdentityToUnicodeMap_charCodeOf.pdf
+!PDFJS-9279-reduced.pdf
 !issue5481.pdf
 !issue5567.pdf
 !issue5701.pdf
@@ -303,11 +320,13 @@
 !issue7014.pdf
 !issue8187.pdf
 !annotation-link-text-popup.pdf
+!issue9278.pdf
 !annotation-text-without-popup.pdf
 !annotation-underline.pdf
 !annotation-strikeout.pdf
 !annotation-squiggly.pdf
 !annotation-highlight.pdf
+!annotation-freetext.pdf
 !annotation-line.pdf
 !annotation-square-circle.pdf
 !annotation-stamp.pdf
@@ -324,3 +343,8 @@
 !transparent.pdf
 !xobject-image.pdf
 !ccitt_EndOfBlock_false.pdf
+!issue9972-1.pdf
+!issue9972-2.pdf
+!issue9972-3.pdf
+!tiling-pattern-box.pdf
+!tiling-pattern-large-steps.pdf

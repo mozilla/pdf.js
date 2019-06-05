@@ -38,33 +38,34 @@ var container = document.getElementById('viewerContainer');
 // (Optionally) enable hyperlinks within PDF files.
 var pdfLinkService = new pdfjsViewer.PDFLinkService();
 
+// (Optionally) enable find controller.
+var pdfFindController = new pdfjsViewer.PDFFindController({
+  linkService: pdfLinkService,
+});
+
 var pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
   container: container,
   linkService: pdfLinkService,
+  findController: pdfFindController,
 });
 pdfLinkService.setViewer(pdfSinglePageViewer);
 
-// (Optionally) enable find controller.
-var pdfFindController = new pdfjsViewer.PDFFindController({
-  pdfViewer: pdfSinglePageViewer,
-});
-pdfSinglePageViewer.setFindController(pdfFindController);
-
-container.addEventListener('pagesinit', function () {
+document.addEventListener('pagesinit', function () {
   // We can use pdfSinglePageViewer now, e.g. let's change default scale.
   pdfSinglePageViewer.currentScaleValue = 'page-width';
 
   if (SEARCH_FOR) { // We can try search for things
-    pdfFindController.executeCommand('find', {query: SEARCH_FOR});
+    pdfFindController.executeCommand('find', { query: SEARCH_FOR, });
   }
 });
 
 // Loading document.
-pdfjsLib.getDocument({
+var loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
-}).then(function(pdfDocument) {
+});
+loadingTask.promise.then(function(pdfDocument) {
   // Document loaded, specifying document for the viewer and
   // the (optional) linkService.
   pdfSinglePageViewer.setDocument(pdfDocument);

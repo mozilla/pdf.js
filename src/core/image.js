@@ -169,18 +169,22 @@ var PDFImage = (function PDFImageClosure() {
     this.decode = dict.getArray('Decode', 'D');
     this.needsDecode = false;
     if (this.decode &&
-        ((this.colorSpace && !this.colorSpace.isDefaultDecode(this.decode)) ||
-         (isMask && !ColorSpace.isDefaultDecode(this.decode, 1)))) {
+        ((this.colorSpace &&
+          !this.colorSpace.isDefaultDecode(this.decode, bitsPerComponent)) ||
+         (isMask &&
+          !ColorSpace.isDefaultDecode(this.decode, /* numComps = */ 1)))) {
       this.needsDecode = true;
       // Do some preprocessing to avoid more math.
       var max = (1 << bitsPerComponent) - 1;
       this.decodeCoefficients = [];
       this.decodeAddends = [];
+      const isIndexed = this.colorSpace && this.colorSpace.name === 'Indexed';
       for (var i = 0, j = 0; i < this.decode.length; i += 2, ++j) {
         var dmin = this.decode[i];
         var dmax = this.decode[i + 1];
-        this.decodeCoefficients[j] = dmax - dmin;
-        this.decodeAddends[j] = max * dmin;
+        this.decodeCoefficients[j] = isIndexed ? ((dmax - dmin) / max) :
+                                                 (dmax - dmin);
+        this.decodeAddends[j] = isIndexed ? dmin : (max * dmin);
       }
     }
 

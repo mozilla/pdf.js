@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus } from './dom_events';
-import { parseQueryString } from './ui_utils';
+import { getGlobalEventBus, parseQueryString } from './ui_utils';
 
 /**
  * @typedef {Object} PDFLinkServiceOptions
@@ -49,7 +48,7 @@ class PDFLinkService {
     this._pagesRefCache = null;
   }
 
-  setDocument(pdfDocument, baseUrl) {
+  setDocument(pdfDocument, baseUrl = null) {
     this.baseUrl = baseUrl;
     this.pdfDocument = pdfDocument;
     this._pagesRefCache = Object.create(null);
@@ -338,18 +337,6 @@ class PDFLinkService {
   }
 
   /**
-   * @param {Object} params
-   */
-  onFileAttachmentAnnotation({ id, filename, content, }) {
-    this.eventBus.dispatch('fileattachmentannotation', {
-      source: this,
-      id,
-      filename,
-      content,
-    });
-  }
-
-  /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
@@ -364,6 +351,13 @@ class PDFLinkService {
   _cachedPageNumber(pageRef) {
     let refStr = pageRef.num + ' ' + pageRef.gen + ' R';
     return (this._pagesRefCache && this._pagesRefCache[refStr]) || null;
+  }
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageVisible(pageNumber) {
+    return this.pdfViewer.isPageVisible(pageNumber);
   }
 }
 
@@ -420,10 +414,20 @@ function isValidExplicitDestination(dest) {
   return true;
 }
 
+/**
+ * @implements {IPDFLinkService}
+ */
 class SimpleLinkService {
   constructor() {
     this.externalLinkTarget = null;
     this.externalLinkRel = null;
+  }
+
+  /**
+   * @returns {number}
+   */
+  get pagesCount() {
+    return 0;
   }
 
   /**
@@ -482,15 +486,17 @@ class SimpleLinkService {
   executeNamedAction(action) {}
 
   /**
-   * @param {Object} params
-   */
-  onFileAttachmentAnnotation({ id, filename, content, }) {}
-
-  /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
   cachePageRef(pageNum, pageRef) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageVisible(pageNumber) {
+    return true;
+  }
 }
 
 export {

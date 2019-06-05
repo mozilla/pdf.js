@@ -14,9 +14,8 @@
  */
 
 import {
-  isValidRotation, parseQueryString, waitOnEventOrTimeout
+  getGlobalEventBus, isValidRotation, parseQueryString, waitOnEventOrTimeout
 } from './ui_utils';
-import { getGlobalEventBus } from './dom_events';
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
 const HASH_CHANGE_TIMEOUT = 1000; // milliseconds
@@ -29,6 +28,14 @@ const UPDATE_VIEWAREA_TIMEOUT = 1000; // milliseconds
  * @typedef {Object} PDFHistoryOptions
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {EventBus} eventBus - The application event bus.
+ */
+
+/**
+ * @typedef {Object} InitializeParameters
+ * @property {string} fingerprint - The PDF document's unique fingerprint.
+ * @property {boolean} resetHistory - (optional) Reset the browsing history.
+ * @property {boolean} updateUrl - (optional) Attempt to update the document
+ *   URL, with the current hash, when pushing/replacing browser history entries.
  */
 
 /**
@@ -83,10 +90,9 @@ class PDFHistory {
   /**
    * Initialize the history for the PDF document, using either the current
    * browser history entry or the document hash, whichever is present.
-   * @param {string} fingerprint - The PDF document's unique fingerprint.
-   * @param {boolean} resetHistory - (optional) Reset the browsing history.
+   * @param {InitializeParameters} params
    */
-  initialize(fingerprint, resetHistory = false) {
+  initialize({ fingerprint, resetHistory = false, updateUrl = false, }) {
     if (!fingerprint || typeof fingerprint !== 'string') {
       console.error(
         'PDFHistory.initialize: The "fingerprint" must be a non-empty string.');
@@ -94,6 +100,7 @@ class PDFHistory {
     }
     let reInitialized = this.initialized && this.fingerprint !== fingerprint;
     this.fingerprint = fingerprint;
+    this._updateUrl = (updateUrl === true);
 
     if (!this.initialized) {
       this._bindEvents();
@@ -113,7 +120,7 @@ class PDFHistory {
     this._destination = null;
     this._position = null;
 
-    if (!this._isValidState(state) || resetHistory) {
+    if (!this._isValidState(state, /* checkReload = */ true) || resetHistory) {
       let { hash, page, rotation, } = parseCurrentHash(this.linkService);
 
       if (!hash || reInitialized || resetHistory) {
@@ -159,16 +166,27 @@ class PDFHistory {
    * Push an internal destination to the browser history.
    * @param {PushParameters}
    */
-  push({ namedDest, explicitDest, pageNumber, }) {
+  push({ namedDest = null, explicitDest, pageNumber, }) {
     if (!this.initialized) {
       return;
     }
-    if ((namedDest && typeof namedDest !== 'string') ||
-        !Array.isArray(explicitDest) ||
-        !(Number.isInteger(pageNumber) &&
-          pageNumber > 0 && pageNumber <= this.linkService.pagesCount)) {
-      console.error('PDFHistory.push: Invalid parameters.');
+    if (namedDest && typeof namedDest !== 'string') {
+      console.error('PDFHistory.push: ' +
+                    `"${namedDest}" is not a valid namedDest parameter.`);
       return;
+    } else if (!Array.isArray(explicitDest)) {
+      console.error('PDFHistory.push: ' +
+                    `"${explicitDest}" is not a valid explicitDest parameter.`);
+      return;
+    } else if (!(Number.isInteger(pageNumber) &&
+                 pageNumber > 0 && pageNumber <= this.linkService.pagesCount)) {
+      // Allow an unset `pageNumber` if and only if the history is still empty;
+      // please refer to the `this._destination.page = null;` comment above.
+      if (pageNumber !== null || this._destination) {
+        console.error('PDFHistory.push: ' +
+                      `"${pageNumber}" is not a valid pageNumber parameter.`);
+        return;
+      }
     }
 
     let hash = namedDest || JSON.stringify(explicitDest);
@@ -280,11 +298,26 @@ class PDFHistory {
     }
     this._updateInternalState(destination, newState.uid);
 
+    let newUrl;
+    if (this._updateUrl && destination && destination.hash) {
+      const baseUrl = document.location.href.split('#')[0];
+      if (!baseUrl.startsWith('file://')) { // Prevent errors in Firefox.
+        newUrl = `${baseUrl}#${destination.hash}`;
+      }
+    }
     if (shouldReplace) {
-      window.history.replaceState(newState, '');
+      if (newUrl) {
+        window.history.replaceState(newState, '', newUrl);
+      } else {
+        window.history.replaceState(newState, '');
+      }
     } else {
       this._maxUid = this._uid;
-      window.history.pushState(newState, '');
+      if (newUrl) {
+        window.history.pushState(newState, '', newUrl);
+      } else {
+        window.history.pushState(newState, '');
+      }
     }
 
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
@@ -330,8 +363,8 @@ class PDFHistory {
     }
 
     let forceReplace = false;
-    if (this._destination.page === position.first ||
-        this._destination.page === position.page) {
+    if (this._destination.page >= position.first &&
+        this._destination.page <= position.page) {
       // When the `page` of `this._destination` is still visible, do not
       // update the browsing history when `this._destination` either:
       //  - contains an internal destination, since in this case we
@@ -349,14 +382,27 @@ class PDFHistory {
   /**
    * @private
    */
-  _isValidState(state) {
+  _isValidState(state, checkReload = false) {
     if (!state) {
       return false;
     }
     if (state.fingerprint !== this.fingerprint) {
-      // This should only occur in viewers with support for opening more than
-      // one PDF document, e.g. the GENERIC viewer.
-      return false;
+      if (checkReload) {
+        // Potentially accept the history entry, even if the fingerprints don't
+        // match, when the viewer was reloaded (see issue 6847).
+        if (typeof state.fingerprint !== 'string' ||
+            state.fingerprint.length !== this.fingerprint.length) {
+          return false;
+        }
+        const [perfEntry] = performance.getEntriesByType('navigation');
+        if (!perfEntry || perfEntry.type !== 'reload') {
+          return false;
+        }
+      } else {
+        // This should only occur in viewers with support for opening more than
+        // one PDF document, e.g. the GENERIC viewer.
+        return false;
+      }
     }
     if (!Number.isInteger(state.uid) || state.uid < 0) {
       return false;

@@ -146,12 +146,13 @@ class PDFThumbnailView {
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
     let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = pdfPage.getViewport(1, totalRotation);
+    this.viewport = pdfPage.getViewport({ scale: 1, rotation: totalRotation, });
     this.reset();
   }
 
   reset() {
     this.cancelRendering();
+    this.renderingState = RenderingStates.INITIAL;
 
     this.pageWidth = this.viewport.width;
     this.pageHeight = this.viewport.height;
@@ -195,12 +196,15 @@ class PDFThumbnailView {
     this.reset();
   }
 
+  /**
+   * PLEASE NOTE: Most likely you want to use the `this.reset()` method,
+   *              rather than calling this one directly.
+   */
   cancelRendering() {
     if (this.renderTask) {
       this.renderTask.cancel();
       this.renderTask = null;
     }
-    this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
   }
 

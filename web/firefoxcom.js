@@ -124,13 +124,13 @@ class DownloadManager {
 }
 
 class FirefoxPreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
+  async _writeToStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('setPreferences', prefObj, resolve);
     });
   }
 
-  _readFromStorage(prefObj) {
+  async _readFromStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request('getPreferences', prefObj, function(prefStr) {
         let readPrefs = JSON.parse(prefStr);
@@ -145,21 +145,20 @@ class MozL10n {
     this.mozL10n = mozL10n;
   }
 
-  getLanguage() {
-    return Promise.resolve(this.mozL10n.getLanguage());
+  async getLanguage() {
+    return this.mozL10n.getLanguage();
   }
 
-  getDirection() {
-    return Promise.resolve(this.mozL10n.getDirection());
+  async getDirection() {
+    return this.mozL10n.getDirection();
   }
 
-  get(property, args, fallback) {
-    return Promise.resolve(this.mozL10n.get(property, args, fallback));
+  async get(property, args, fallback) {
+    return this.mozL10n.get(property, args, fallback);
   }
 
-  translate(element) {
+  async translate(element) {
     this.mozL10n.translate(element);
-    return Promise.resolve();
   }
 }
 
@@ -168,46 +167,76 @@ class MozL10n {
     'find',
     'findagain',
     'findhighlightallchange',
-    'findcasesensitivitychange'
+    'findcasesensitivitychange',
+    'findentirewordchange',
+    'findbarclose',
   ];
-  let handleEvent = function(evt) {
+  const handleEvent = function({ type, detail, }) {
     if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    if (type === 'findbarclose') {
+      PDFViewerApplication.eventBus.dispatch('findbarclose', {
+        source: window,
+      });
       return;
     }
     PDFViewerApplication.eventBus.dispatch('find', {
       source: window,
-      type: evt.type.substring('find'.length),
-      query: evt.detail.query,
+      type: type.substring('find'.length),
+      query: detail.query,
       phraseSearch: true,
-      caseSensitive: !!evt.detail.caseSensitive,
-      highlightAll: !!evt.detail.highlightAll,
-      findPrevious: !!evt.detail.findPrevious,
+      caseSensitive: !!detail.caseSensitive,
+      entireWord: !!detail.entireWord,
+      highlightAll: !!detail.highlightAll,
+      findPrevious: !!detail.findPrevious,
     });
   };
 
-  for (let i = 0, len = events.length; i < len; i++) {
-    window.addEventListener(events[i], handleEvent);
+  for (const event of events) {
+    window.addEventListener(event, handleEvent);
   }
 })();
 
-function FirefoxComDataRangeTransport(length, initialData) {
-  PDFDataRangeTransport.call(this, length, initialData);
+(function listenZoomEvents() {
+  const events = [
+    'zoomin',
+    'zoomout',
+    'zoomreset',
+  ];
+  const handleEvent = function({ type, detail, }) {
+    if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch(type, {
+      source: window,
+      ignoreDuplicate: (type === 'zoomreset' ? true : undefined),
+    });
+  };
+
+  for (const event of events) {
+    window.addEventListener(event, handleEvent);
+  }
+})();
+
+class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
+  requestDataRange(begin, end) {
+    FirefoxCom.request('requestDataRange', { begin, end, });
+  }
+
+  abort() {
+    // Sync call to ensure abort is really started.
+    FirefoxCom.requestSync('abortLoading', null);
+  }
 }
-FirefoxComDataRangeTransport.prototype =
-  Object.create(PDFDataRangeTransport.prototype);
-FirefoxComDataRangeTransport.prototype.requestDataRange =
-    function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
-  FirefoxCom.request('requestDataRange', { begin, end, });
-};
-FirefoxComDataRangeTransport.prototype.abort =
-    function FirefoxComDataRangeTransport_abort() {
-  // Sync call to ensure abort is really started.
-  FirefoxCom.requestSync('abortLoading', null);
-};
 
 PDFViewerApplication.externalServices = {
   updateFindControlState(data) {
     FirefoxCom.request('updateFindControlState', data);
+  },
+
+  updateFindMatchesCount(data) {
+    FirefoxCom.request('updateFindMatchesCount', data);
   },
 
   initPassiveLoading(callbacks) {
@@ -227,7 +256,7 @@ PDFViewerApplication.externalServices = {
       switch (args.pdfjsLoadAction) {
         case 'supportsRangedLoading':
           pdfDataRangeTransport =
-            new FirefoxComDataRangeTransport(args.length, args.data);
+            new FirefoxComDataRangeTransport(args.length, args.data, args.done);
 
           callbacks.onOpenWithTransport(args.pdfUrl, args.length,
                                         pdfDataRangeTransport);
@@ -240,6 +269,15 @@ PDFViewerApplication.externalServices = {
           break;
         case 'progressiveRead':
           pdfDataRangeTransport.onDataProgressiveRead(args.chunk);
+
+          // Don't forget to report loading progress as well, since otherwise
+          // the loadingBar won't update when `disableRange=true` is set.
+          pdfDataRangeTransport.onDataProgress(args.loaded, args.total);
+          break;
+        case 'progressiveDone':
+          if (pdfDataRangeTransport) {
+            pdfDataRangeTransport.onDataProgressiveDone();
+          }
           break;
         case 'progress':
           callbacks.onProgress(args.loaded, args.total);

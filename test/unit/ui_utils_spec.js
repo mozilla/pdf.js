@@ -80,6 +80,12 @@ describe('ui_utils', function() {
       expect(getPDFFileNameFromURL('/pdfs/file3.txt', '')).toEqual('');
     });
 
+    it('gets fallback filename when url is not a string', function() {
+      expect(getPDFFileNameFromURL(null)).toEqual('document.pdf');
+
+      expect(getPDFFileNameFromURL(null, 'file.pdf')).toEqual('file.pdf');
+    });
+
     it('gets PDF filename from URL containing leading/trailing whitespace',
         function() {
       // Relative URL
@@ -156,7 +162,7 @@ describe('ui_utils', function() {
       var typedArray = new Uint8Array([1, 2, 3, 4, 5]);
       var blobUrl = createObjectURL(typedArray, 'application/pdf');
       // Sanity check to ensure that a "blob:" URL was returned.
-      expect(blobUrl.indexOf('blob:') === 0).toEqual(true);
+      expect(blobUrl.startsWith('blob:')).toEqual(true);
 
       expect(getPDFFileNameFromURL(blobUrl + '?file.pdf')).toEqual('file.pdf');
     });
@@ -167,7 +173,7 @@ describe('ui_utils', function() {
       var dataUrl = createObjectURL(typedArray, 'application/pdf',
                                     /* forceDataSchema = */ true);
       // Sanity check to ensure that a "data:" URL was returned.
-      expect(dataUrl.indexOf('data:') === 0).toEqual(true);
+      expect(dataUrl.startsWith('data:')).toEqual(true);
 
       expect(getPDFFileNameFromURL(dataUrl + '?file1.pdf')).
         toEqual('document.pdf');
@@ -182,10 +188,23 @@ describe('ui_utils', function() {
     it('dispatch event', function () {
       var eventBus = new EventBus();
       var count = 0;
-      eventBus.on('test', function () {
+      eventBus.on('test', function(evt) {
+        expect(evt).toEqual(undefined);
         count++;
       });
       eventBus.dispatch('test');
+      expect(count).toEqual(1);
+    });
+    it('dispatch event with arguments', function() {
+      const eventBus = new EventBus();
+      let count = 0;
+      eventBus.on('test', function(evt) {
+        expect(evt).toEqual({ abc: 123, });
+        count++;
+      });
+      eventBus.dispatch('test', {
+        abc: 123,
+      });
       expect(count).toEqual(1);
     });
     it('dispatch different event', function () {
@@ -261,6 +280,80 @@ describe('ui_utils', function() {
       eventBus.dispatch('test');
       eventBus.dispatch('test');
       expect(count).toEqual(2);
+    });
+
+    it('should not, by default, re-dispatch to DOM', function(done) {
+      if (isNodeJS()) {
+        pending('Document in not supported in Node.js.');
+      }
+      const eventBus = new EventBus();
+      let count = 0;
+      eventBus.on('test', function(evt) {
+        expect(evt).toEqual(undefined);
+        count++;
+      });
+      function domEventListener() {
+        done.fail('shall not dispatch DOM event.');
+      }
+      document.addEventListener('test', domEventListener);
+
+      eventBus.dispatch('test');
+
+      Promise.resolve().then(() => {
+        expect(count).toEqual(1);
+
+        document.removeEventListener('test', domEventListener);
+        done();
+      });
+    });
+    it('should re-dispatch to DOM', function(done) {
+      if (isNodeJS()) {
+        pending('Document in not supported in Node.js.');
+      }
+      const eventBus = new EventBus({ dispatchToDOM: true, });
+      let count = 0;
+      eventBus.on('test', function(evt) {
+        expect(evt).toEqual(undefined);
+        count++;
+      });
+      function domEventListener(evt) {
+        expect(evt.detail).toEqual({});
+        count++;
+      }
+      document.addEventListener('test', domEventListener);
+
+      eventBus.dispatch('test');
+
+      Promise.resolve().then(() => {
+        expect(count).toEqual(2);
+
+        document.removeEventListener('test', domEventListener);
+        done();
+      });
+    });
+    it('should re-dispatch to DOM, with arguments (without internal listeners)',
+        function(done) {
+      if (isNodeJS()) {
+        pending('Document in not supported in Node.js.');
+      }
+      const eventBus = new EventBus({ dispatchToDOM: true, });
+      let count = 0;
+      function domEventListener(evt) {
+        expect(evt.detail).toEqual({ abc: 123, });
+        count++;
+      }
+      document.addEventListener('test', domEventListener);
+
+      eventBus.dispatch('test', {
+        abc: 123,
+      });
+
+      Promise.resolve().then(() => {
+        expect(count).toEqual(1);
+
+        document.removeEventListener('test', domEventListener);
+        done();
+      });
     });
   });
 
@@ -595,6 +688,66 @@ describe('ui_utils', function() {
         [[10, 50], [20, 20], [30, 10]],
       ]);
       scrollOverDocument(pages, true);
+    });
+
+    it('handles `sortByVisibility` correctly', function() {
+      const scrollEl = {
+        scrollTop: 75,
+        scrollLeft: 0,
+        clientHeight: 750,
+        clientWidth: 1500,
+      };
+      const views = makePages([
+        [[100, 150]],
+        [[100, 150]],
+        [[100, 150]],
+      ]);
+
+      const visible = getVisibleElements(scrollEl, views);
+      const visibleSorted = getVisibleElements(scrollEl, views,
+                                               /* sortByVisibility = */ true);
+
+      const viewsOrder = [], viewsSortedOrder = [];
+      for (const view of visible.views) {
+        viewsOrder.push(view.id);
+      }
+      for (const view of visibleSorted.views) {
+        viewsSortedOrder.push(view.id);
+      }
+      expect(viewsOrder).toEqual([0, 1, 2]);
+      expect(viewsSortedOrder).toEqual([1, 2, 0]);
+    });
+
+    it('handles views being empty', function() {
+      const scrollEl = {
+        scrollTop: 10,
+        scrollLeft: 0,
+        clientHeight: 750,
+        clientWidth: 1500,
+      };
+      const views = [];
+
+      expect(getVisibleElements(scrollEl, views)).toEqual({
+        first: undefined, last: undefined, views: [],
+      });
+    });
+
+    it('handles all views being hidden (without errors)', function() {
+      const scrollEl = {
+        scrollTop: 100000,
+        scrollLeft: 0,
+        clientHeight: 750,
+        clientWidth: 1500,
+      };
+      const views = makePages([
+        [[100, 150]],
+        [[100, 150]],
+        [[100, 150]],
+      ]);
+
+      expect(getVisibleElements(scrollEl, views)).toEqual({
+        first: undefined, last: undefined, views: [],
+      });
     });
 
     // This sub-suite is for a notionally internal helper function for
