@@ -811,6 +811,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       if (isName(fieldParentValue)) {
         this.data.fieldValue = fieldParentValue.name;
       }
+    } else {
+      const fieldValue = params.dict.get('V')
+      if (isName(fieldValue)) {
+        this.data.fieldValue = fieldValue.name
+      }
     }
 
     // The button's value corresponds to its appearance state.
