@@ -7,18 +7,19 @@ var ScaleJS = (function ScaleJSClosure() {
       var testColor = '#ffffff';
       var colorData = new Uint8ClampedArray(4);
       var scale = 0;
-      var canvas = document.createElement('canvas');
-      var context = canvas.getContext('2d');
-
-      while (colorData[0] !== 255) {
-        scale += 1;
-        canvas.width = width / scale;
-        canvas.height = height / scale;
-        context.fillStyle = testColor;
-        context.fillRect(0, 0, 1, 1);
-        colorData = context.getImageData(0, 0, 1, 1).data;
-      }
-
+      if(document){
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+  
+        while (colorData[0] !== 255) {
+          scale += 1;
+          canvas.width = width / scale;
+          canvas.height = height / scale;
+          context.fillStyle = testColor;
+          context.fillRect(0, 0, 1, 1);
+          colorData = context.getImageData(0, 0, 1, 1).data;
+        }
+    }
       return scale;
     },
 
