@@ -55,7 +55,6 @@ class Page {
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
-    const uniquePrefix = `p${this.pageIndex}_`;
     const idCounters = {
       obj: 0,
     };
@@ -572,6 +571,7 @@ class PDFDocument {
       IsLinearized: !!this.linearization,
       IsAcroFormPresent: !!this.acroForm,
       IsXFAPresent: !!this.xfa,
+      IsCollectionPresent: !!this.collection,
     };
 
     let infoDict;
