@@ -296,10 +296,11 @@ function getTestManifest() {
         testFilter.splice(i, 1);
         return true;
       }
+      return false;
     });
     if (testFilter.length) {
       console.error('Unrecognized test IDs: ' + testFilter.join(' '));
-      return;
+      return undefined;
     }
   }
   return manifest;
@@ -320,7 +321,7 @@ function checkEq(task, results, browser, masterMode) {
       continue;
     }
     var testSnapshot = pageResults[page].snapshot;
-    if (testSnapshot && testSnapshot.indexOf('data:image/png;base64,') === 0) {
+    if (testSnapshot && testSnapshot.startsWith('data:image/png;base64,')) {
       testSnapshot = Buffer.from(testSnapshot.substring(22), 'base64');
     } else {
       console.error('Valid snapshot was not found.');

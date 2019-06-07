@@ -77,12 +77,12 @@ select {
   display: none;
 }
 
-.pdfPresentationMode:fullscreen .textLayer > div {
+.pdfPresentationMode:fullscreen .textLayer > span {
   cursor: none;
 }
 
 .pdfPresentationMode.pdfPresentationModeControls > *,
-.pdfPresentationMode.pdfPresentationModeControls .textLayer > div {
+.pdfPresentationMode.pdfPresentationModeControls .textLayer > span {
   cursor: default;
 }
 
@@ -1103,6 +1103,11 @@ html[dir='rtl'] .verticalToolbarSeparator {
   -webkit-overflow-scrolling: touch;
 }
 
+#thumbnailView > a:active,
+#thumbnailView > a:focus {
+  outline: 0;
+}
+
 .thumbnail {
   margin: 0 10px 5px 10px;
 }
@@ -1518,19 +1523,19 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   mix-blend-mode: screen;
 }
 
-#viewer.textLayer-visible .textLayer > div {
+#viewer.textLayer-visible .textLayer > span {
   background-color: rgba(255, 255, 0, 0.1);
   color: black;
   border: solid 1px rgba(255, 0, 0, 0.5);
   box-sizing: border-box;
 }
 
-#viewer.textLayer-hover .textLayer > div:hover {
+#viewer.textLayer-hover .textLayer > span:hover {
   background-color: white;
   color: black;
 }
 
-#viewer.textLayer-shadow .textLayer > div {
+#viewer.textLayer-shadow .textLayer > span {
   background-color: rgba(255,255,255, .6);
   color: black;
 }
@@ -1566,7 +1571,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   display: none;
 }
 
-@media screen and (min-resolution: 2dppx) {
+@media screen and (min-resolution: 1.1dppx) {
   /* Rules for Retina screens */
   .toolbarButton::before {
     transform: scale(0.5);

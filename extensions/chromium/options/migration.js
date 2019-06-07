@@ -81,6 +81,9 @@ limitations under the License.
       'disableTextLayer',
       'enhanceTextSelection',
       'textLayerMode',
+      'showPreviousViewOnLoad',
+      'disablePageMode',
+      'viewOnLoad',
     ], function(items) {
       // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
       if (typeof items.enableHandToolOnLoad === 'boolean') {
@@ -111,6 +114,20 @@ limitations under the License.
           });
         } else {
           storageSync.remove(['disableTextLayer', 'enhanceTextSelection']);
+        }
+      }
+      // Migration code for https://github.com/mozilla/pdf.js/pull/10502.
+      if (typeof items.showPreviousViewOnLoad === 'boolean') {
+        if (!items.showPreviousViewOnLoad) {
+          storageSync.set({
+            viewOnLoad: 1,
+          }, function() {
+            if (!chrome.runtime.lastError) {
+              storageSync.remove(['showPreviousViewOnLoad', 'disablePageMode']);
+            }
+          });
+        } else {
+          storageSync.remove(['showPreviousViewOnLoad', 'disablePageMode']);
         }
       }
     });

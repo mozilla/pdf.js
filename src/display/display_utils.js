@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 import {
-  assert, CMapCompressionType, removeNullCharacters, stringToBytes,
-  unreachable, Util, warn
+  assert, CMapCompressionType, isString, removeNullCharacters, stringToBytes,
+  unreachable, URL, Util, warn
 } from '../shared/util';
 
 const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
@@ -24,10 +25,10 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 class DOMCanvasFactory {
   create(width, height) {
     if (width <= 0 || height <= 0) {
-      throw new Error('invalid canvas size');
+      throw new Error('Invalid canvas size');
     }
-    let canvas = document.createElement('canvas');
-    let context = canvas.getContext('2d');
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
     canvas.width = width;
     canvas.height = height;
     return {
@@ -38,10 +39,10 @@ class DOMCanvasFactory {
 
   reset(canvasAndContext, width, height) {
     if (!canvasAndContext.canvas) {
-      throw new Error('canvas is not specified');
+      throw new Error('Canvas is not specified');
     }
     if (width <= 0 || height <= 0) {
-      throw new Error('invalid canvas size');
+      throw new Error('Invalid canvas size');
     }
     canvasAndContext.canvas.width = width;
     canvasAndContext.canvas.height = height;
@@ -49,7 +50,7 @@ class DOMCanvasFactory {
 
   destroy(canvasAndContext) {
     if (!canvasAndContext.canvas) {
-      throw new Error('canvas is not specified');
+      throw new Error('Canvas is not specified');
     }
     // Zeroing the width and height cause Firefox to release graphics
     // resources immediately, which can greatly reduce memory consumption.
@@ -66,19 +67,41 @@ class DOMCMapReaderFactory {
     this.isCompressed = isCompressed;
   }
 
-  fetch({ name, }) {
+  async fetch({ name, }) {
     if (!this.baseUrl) {
-      return Promise.reject(new Error(
+      throw new Error(
         'The CMap "baseUrl" parameter must be specified, ensure that ' +
-        'the "cMapUrl" and "cMapPacked" API parameters are provided.'));
+        'the "cMapUrl" and "cMapPacked" API parameters are provided.');
     }
     if (!name) {
-      return Promise.reject(new Error('CMap name must be specified.'));
+      throw new Error('CMap name must be specified.');
     }
-    return new Promise((resolve, reject) => {
-      let url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+    const url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+    const compressionType = (this.isCompressed ? CMapCompressionType.BINARY :
+                                                 CMapCompressionType.NONE);
 
-      let request = new XMLHttpRequest();
+    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) ||
+        (isFetchSupported() && isValidFetchUrl(url, document.baseURI))) {
+      return fetch(url).then(async (response) => {
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+        let cMapData;
+        if (this.isCompressed) {
+          cMapData = new Uint8Array(await response.arrayBuffer());
+        } else {
+          cMapData = stringToBytes(await response.text());
+        }
+        return { cMapData, compressionType, };
+      }).catch((reason) => {
+        throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` +
+                        `CMap at: ${url}`);
+      });
+    }
+
+    // The Fetch API is not supported.
+    return new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest();
       request.open('GET', url, true);
 
       if (this.isCompressed) {
@@ -89,27 +112,24 @@ class DOMCMapReaderFactory {
           return;
         }
         if (request.status === 200 || request.status === 0) {
-          let data;
+          let cMapData;
           if (this.isCompressed && request.response) {
-            data = new Uint8Array(request.response);
+            cMapData = new Uint8Array(request.response);
           } else if (!this.isCompressed && request.responseText) {
-            data = stringToBytes(request.responseText);
+            cMapData = stringToBytes(request.responseText);
           }
-          if (data) {
-            resolve({
-              cMapData: data,
-              compressionType: this.isCompressed ?
-                CMapCompressionType.BINARY : CMapCompressionType.NONE,
-            });
+          if (cMapData) {
+            resolve({ cMapData, compressionType, });
             return;
           }
         }
-        reject(new Error('Unable to load ' +
-                         (this.isCompressed ? 'binary ' : '') +
-                         'CMap at: ' + url));
+        reject(new Error(request.statusText));
       };
 
       request.send(null);
+    }).catch((reason) => {
+      throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` +
+                      `CMap at: ${url}`);
     });
   }
 }
@@ -118,7 +138,7 @@ class DOMSVGFactory {
   create(width, height) {
     assert(width > 0 && height > 0, 'Invalid SVG dimensions');
 
-    let svg = document.createElementNS(SVG_NS, 'svg:svg');
+    const svg = document.createElementNS(SVG_NS, 'svg:svg');
     svg.setAttribute('version', '1.1');
     svg.setAttribute('width', width + 'px');
     svg.setAttribute('height', height + 'px');
@@ -140,11 +160,11 @@ class DOMSVGFactory {
  * @property {Array} viewBox - The xMin, yMin, xMax and yMax coordinates.
  * @property {number} scale - The scale of the viewport.
  * @property {number} rotation - The rotation, in degrees, of the viewport.
- * @property {number} offsetX - (optional) The vertical, i.e. x-axis, offset.
+ * @property {number} offsetX - (optional) The horizontal, i.e. x-axis, offset.
  *   The default value is `0`.
- * @property {number} offsetY - (optional) The horizontal, i.e. y-axis, offset.
+ * @property {number} offsetY - (optional) The vertical, i.e. y-axis, offset.
  *   The default value is `0`.
- * @property {boolean} dontFlip - (optional) If true, the x-axis will not be
+ * @property {boolean} dontFlip - (optional) If true, the y-axis will not be
  *   flipped. The default value is `false`.
  */
 
@@ -175,8 +195,8 @@ class PageViewport {
 
     // creating transform to convert pdf coordinate system to the normal
     // canvas like coordinates taking in account scale and rotation
-    let centerX = (viewBox[2] + viewBox[0]) / 2;
-    let centerY = (viewBox[3] + viewBox[1]) / 2;
+    const centerX = (viewBox[2] + viewBox[0]) / 2;
+    const centerY = (viewBox[3] + viewBox[1]) / 2;
     let rotateA, rotateB, rotateC, rotateD;
     rotation = rotation % 360;
     rotation = rotation < 0 ? rotation + 360 : rotation;
@@ -268,9 +288,9 @@ class PageViewport {
    * @see {@link convertToViewportPoint}
    */
   convertToViewportRectangle(rect) {
-    let tl = Util.applyTransform([rect[0], rect[1]], this.transform);
-    let br = Util.applyTransform([rect[2], rect[3]], this.transform);
-    return [tl[0], tl[1], br[0], br[1]];
+    const topLeft = Util.applyTransform([rect[0], rect[1]], this.transform);
+    const bottomRight = Util.applyTransform([rect[2], rect[3]], this.transform);
+    return [topLeft[0], topLeft[1], bottomRight[0], bottomRight[1]];
   }
 
   /**
@@ -287,7 +307,7 @@ class PageViewport {
   }
 }
 
-var RenderingCancelledException = (function RenderingCancelledException() {
+const RenderingCancelledException = (function RenderingCancelledException() {
   function RenderingCancelledException(msg, type) {
     this.message = msg;
     this.type = type;
@@ -313,7 +333,7 @@ const LinkTargetStringMap = [
   '_self',
   '_blank',
   '_parent',
-  '_top'
+  '_top',
 ];
 
 /**
@@ -336,7 +356,7 @@ function addLinkAttributes(link, { url, target, rel, } = {}) {
 
   if (url) {
     const LinkTargetValues = Object.values(LinkTarget);
-    let targetIndex =
+    const targetIndex =
       LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
     link.target = LinkTargetStringMap[targetIndex];
 
@@ -346,11 +366,10 @@ function addLinkAttributes(link, { url, target, rel, } = {}) {
 
 // Gets the file name from a given URL.
 function getFilenameFromUrl(url) {
-  var anchor = url.indexOf('#');
-  var query = url.indexOf('?');
-  var end = Math.min(
-    anchor > 0 ? anchor : url.length,
-    query > 0 ? query : url.length);
+  const anchor = url.indexOf('#');
+  const query = url.indexOf('?');
+  const end = Math.min(anchor > 0 ? anchor : url.length,
+                       query > 0 ? query : url.length);
   return url.substring(url.lastIndexOf('/', end) + 1, end);
 }
 
@@ -388,19 +407,17 @@ class StatTimer {
   }
 
   toString() {
-    let times = this.times;
     // Find the longest name for padding purposes.
     let out = '', longest = 0;
-    for (let i = 0, ii = times.length; i < ii; ++i) {
-      let name = times[i]['name'];
+    for (const time of this.times) {
+      const name = time.name;
       if (name.length > longest) {
         longest = name.length;
       }
     }
-    for (let i = 0, ii = times.length; i < ii; ++i) {
-      let span = times[i];
-      let duration = span.end - span.start;
-      out += `${span['name'].padEnd(longest)} ${duration}ms\n`;
+    for (const time of this.times) {
+      const duration = time.end - time.start;
+      out += `${time.name.padEnd(longest)} ${duration}ms\n`;
     }
     return out;
   }
@@ -428,9 +445,26 @@ class DummyStatTimer {
   }
 }
 
+function isFetchSupported() {
+  return (typeof fetch !== 'undefined' &&
+          typeof Response !== 'undefined' && 'body' in Response.prototype &&
+          // eslint-disable-next-line no-restricted-globals
+          typeof ReadableStream !== 'undefined');
+}
+
+function isValidFetchUrl(url, baseUrl) {
+  try {
+    const { protocol, } = baseUrl ? new URL(url, baseUrl) : new URL(url);
+    // The Fetch API only supports the http/https protocols, and not file/ftp.
+    return (protocol === 'http:' || protocol === 'https:');
+  } catch (ex) {
+    return false; // `new URL()` will throw on incorrect data.
+  }
+}
+
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    let script = document.createElement('script');
+    const script = document.createElement('script');
     script.src = src;
 
     script.onload = resolve;
@@ -439,6 +473,107 @@ function loadScript(src) {
     };
     (document.head || document.documentElement).appendChild(script);
   });
+}
+
+// Deprecated API function -- display regardless of the `verbosity` setting.
+function deprecated(details) {
+  console.log('Deprecated API usage: ' + details);
+}
+
+function releaseImageResources(img) {
+  assert(img instanceof Image, 'Invalid `img` parameter.');
+
+  const url = img.src;
+  if (typeof url === 'string' && url.startsWith('blob:') &&
+      URL.revokeObjectURL) {
+    URL.revokeObjectURL(url);
+  }
+  img.removeAttribute('src');
+}
+
+let pdfDateStringRegex;
+
+class PDFDateString {
+ /**
+  * Convert a PDF date string to a JavaScript `Date` object.
+  *
+  * The PDF date string format is described in section 7.9.4 of the official
+  * PDF 32000-1:2008 specification. However, in the PDF 1.7 reference (sixth
+  * edition) Adobe describes the same format including a trailing apostrophe.
+  * This syntax in incorrect, but Adobe Acrobat creates PDF files that contain
+  * them. We ignore all apostrophes as they are not necessary for date parsing.
+  *
+  * Moreover, Adobe Acrobat doesn't handle changing the date to universal time
+  * and doesn't use the user's time zone (effectively ignoring the HH' and mm'
+  * parts of the date string).
+  *
+  * @param {string} input
+  * @return {Date|null}
+  */
+  static toDateObject(input) {
+    if (!input || !isString(input)) {
+      return null;
+    }
+
+    // Lazily initialize the regular expression.
+    if (!pdfDateStringRegex) {
+      pdfDateStringRegex = new RegExp(
+        '^D:' + // Prefix (required)
+        '(\\d{4})' + // Year (required)
+        '(\\d{2})?' + // Month (optional)
+        '(\\d{2})?' + // Day (optional)
+        '(\\d{2})?' + // Hour (optional)
+        '(\\d{2})?' + // Minute (optional)
+        '(\\d{2})?' + // Second (optional)
+        '([Z|+|-])?' + // Universal time relation (optional)
+        '(\\d{2})?' + // Offset hour (optional)
+        '\'?' + // Splitting apostrophe (optional)
+        '(\\d{2})?' + // Offset minute (optional)
+        '\'?' // Trailing apostrophe (optional)
+      );
+    }
+
+    // Optional fields that don't satisfy the requirements from the regular
+    // expression (such as incorrect digit counts or numbers that are out of
+    // range) will fall back the defaults from the specification.
+    const matches = pdfDateStringRegex.exec(input);
+    if (!matches) {
+      return null;
+    }
+
+    // JavaScript's `Date` object expects the month to be between 0 and 11
+    // instead of 1 and 12, so we have to correct for that.
+    const year = parseInt(matches[1], 10);
+    let month = parseInt(matches[2], 10);
+    month = (month >= 1 && month <= 12) ? month - 1 : 0;
+    let day = parseInt(matches[3], 10);
+    day = (day >= 1 && day <= 31) ? day : 1;
+    let hour = parseInt(matches[4], 10);
+    hour = (hour >= 0 && hour <= 23) ? hour : 0;
+    let minute = parseInt(matches[5], 10);
+    minute = (minute >= 0 && minute <= 59) ? minute : 0;
+    let second = parseInt(matches[6], 10);
+    second = (second >= 0 && second <= 59) ? second : 0;
+    const universalTimeRelation = matches[7] || 'Z';
+    let offsetHour = parseInt(matches[8], 10);
+    offsetHour = (offsetHour >= 0 && offsetHour <= 23) ? offsetHour : 0;
+    let offsetMinute = parseInt(matches[9], 10) || 0;
+    offsetMinute = (offsetMinute >= 0 && offsetMinute <= 59) ? offsetMinute : 0;
+
+    // Universal time relation 'Z' means that the local time is equal to the
+    // universal time, whereas the relations '+'/'-' indicate that the local
+    // time is later respectively earlier than the universal time. Every date
+    // is normalized to universal time.
+    if (universalTimeRelation === '-') {
+      hour += offsetHour;
+      minute += offsetMinute;
+    } else if (universalTimeRelation === '+') {
+      hour -= offsetHour;
+      minute -= offsetMinute;
+    }
+
+    return new Date(Date.UTC(year, month, day, hour, minute, second));
+  }
 }
 
 export {
@@ -453,5 +588,10 @@ export {
   DOMSVGFactory,
   StatTimer,
   DummyStatTimer,
+  isFetchSupported,
+  isValidFetchUrl,
   loadScript,
+  deprecated,
+  releaseImageResources,
+  PDFDateString,
 };

@@ -325,7 +325,10 @@ function compileType3Glyph(imgData) {
 
       coords.push(p % width1);
       coords.push((p / width1) | 0);
-      --count;
+
+      if (!points[p]) {
+        --count;
+      }
     } while (p0 !== p);
     outlines.push(coords);
     --i;
@@ -726,7 +729,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
   CanvasGraphics.prototype = {
 
-    beginDrawing({ transform, viewport, transparency,
+    beginDrawing({ transform, viewport, transparency = false,
                    background = null, }) {
       // For pdfs that use blend modes we have to clear the canvas else certain
       // blend modes can look wrong since we'd be blending with a white
@@ -802,15 +805,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         if (fnId !== OPS.dependency) {
           this[fnId].apply(this, argsArray[i]);
         } else {
-          var deps = argsArray[i];
-          for (var n = 0, nn = deps.length; n < nn; n++) {
-            var depObjId = deps[n];
-            var common = depObjId[0] === 'g' && depObjId[1] === '_';
-            var objsPool = common ? commonObjs : objs;
+          for (const depObjId of argsArray[i]) {
+            const objsPool = depObjId.startsWith('g_') ? commonObjs : objs;
 
             // If the promise isn't resolved yet, add the continueCallback
             // to the promise and bail out.
-            if (!objsPool.isResolved(depObjId)) {
+            if (!objsPool.has(depObjId)) {
               objsPool.get(depObjId, continueCallback);
               return i;
             }
@@ -885,14 +885,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.lineDashOffset = dashPhase;
       }
     },
-    setRenderingIntent: function CanvasGraphics_setRenderingIntent(intent) {
-      // Maybe if we one day fully support color spaces this will be important
-      // for now we can ignore.
-      // TODO set rendering intent?
+    setRenderingIntent(intent) {
+      // This operation is ignored since we haven't found a use case for it yet.
     },
-    setFlatness: function CanvasGraphics_setFlatness(flatness) {
-      // There's no way to control this with canvas, but we can safely ignore.
-      // TODO set flatness?
+    setFlatness(flatness) {
+      // This operation is ignored since we haven't found a use case for it yet.
     },
     setGState: function CanvasGraphics_setGState(states) {
       for (var i = 0, ii = states.length; i < ii; i++) {
@@ -1317,7 +1314,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var name = fontObj.loadedName || 'sans-serif';
       var bold = fontObj.black ? '900' : (fontObj.bold ? 'bold' : 'normal');
       var italic = fontObj.italic ? 'italic' : 'normal';
-      var typeface = '"' + name + '", ' + fontObj.fallbackName;
+      var typeface = `"${name}", ${fontObj.fallbackName}`;
 
       // Some font backends cannot handle fonts below certain size.
       // Keeping the font at minimal size and using the fontSizeScale to change
@@ -1327,8 +1324,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                             size > MAX_FONT_SIZE ? MAX_FONT_SIZE : size;
       this.current.fontSizeScale = size / browserFontSize;
 
-      var rule = italic + ' ' + bold + ' ' + browserFontSize + 'px ' + typeface;
-      this.ctx.font = rule;
+      this.ctx.font = `${italic} ${bold} ${browserFontSize}px ${typeface}`;
     },
     setTextRenderingMode: function CanvasGraphics_setTextRenderingMode(mode) {
       this.current.textRenderingMode = mode;
@@ -1415,7 +1411,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     get isFontSubpixelAAEnabled() {
       // Checks if anti-aliasing is enabled when scaled text is painted.
       // On Windows GDI scaled fonts looks bad.
-      var ctx = this.canvasFactory.create(10, 10).context;
+      const { context: ctx, } =
+        this.cachedCanvases.getCanvas('isFontSubpixelAAEnabled', 10, 10);
       ctx.scale(1.5, 1);
       ctx.fillText('I', 0, 10);
       var data = ctx.getImageData(0, 0, 10, 10).data;
@@ -1438,7 +1435,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var fontSize = current.fontSize;
       if (fontSize === 0) {
-        return;
+        return undefined;
       }
 
       var ctx = this.ctx;
@@ -1750,7 +1747,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       this.baseTransform = this.ctx.mozCurrentTransform;
 
-      if (Array.isArray(bbox) && bbox.length === 4) {
+      if (bbox) {
         var width = bbox[2] - bbox[0];
         var height = bbox[3] - bbox[1];
         this.ctx.rect(bbox[0], bbox[1], width, height);
@@ -1930,7 +1927,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintJpegXObject: function CanvasGraphics_paintJpegXObject(objId, w, h) {
-      var domImage = this.objs.get(objId);
+      const domImage = this.processingType3 ? this.commonObjs.get(objId) :
+                                              this.objs.get(objId);
       if (!domImage) {
         warn('Dependent image isn\'t ready yet');
         return;
@@ -2067,7 +2065,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintImageXObject: function CanvasGraphics_paintImageXObject(objId) {
-      var imgData = this.objs.get(objId);
+      const imgData = this.processingType3 ? this.commonObjs.get(objId) :
+                                             this.objs.get(objId);
       if (!imgData) {
         warn('Dependent image isn\'t ready yet');
         return;
@@ -2079,7 +2078,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     paintImageXObjectRepeat:
       function CanvasGraphics_paintImageXObjectRepeat(objId, scaleX, scaleY,
                                                           positions) {
-      var imgData = this.objs.get(objId);
+      const imgData = this.processingType3 ? this.commonObjs.get(objId) :
+                                             this.objs.get(objId);
       if (!imgData) {
         warn('Dependent image isn\'t ready yet');
         return;

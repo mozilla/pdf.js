@@ -14,16 +14,16 @@
  */
 
 import {
-  Annotation, AnnotationBorderStyle, AnnotationFactory
+  Annotation, AnnotationBorderStyle, AnnotationFactory, MarkupAnnotation
 } from '../../src/core/annotation';
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
   AnnotationType, stringToBytes, stringToUTF8String
 } from '../../src/shared/util';
+import { createIdFactory, XRefMock } from './test_utils';
 import { Dict, Name, Ref } from '../../src/core/primitives';
 import { Lexer, Parser } from '../../src/core/parser';
 import { StringStream } from '../../src/core/stream';
-import { XRefMock } from './test_utils';
 
 describe('annotation', function() {
   class PDFManagerMock {
@@ -43,26 +43,13 @@ describe('annotation', function() {
     }
   }
 
-  class IdFactoryMock {
-    constructor(params) {
-      this.uniquePrefix = params.prefix || 'p0_';
-      this.idCounters = {
-        obj: params.startObjId || 0,
-      };
-    }
-
-    createObjId() {
-      return this.uniquePrefix + (++this.idCounters.obj);
-    }
-  }
-
   let pdfManagerMock, idFactoryMock;
 
   beforeAll(function(done) {
     pdfManagerMock = new PDFManagerMock({
       docBaseUrl: null,
     });
-    idFactoryMock = new IdFactoryMock({ });
+    idFactoryMock = createIdFactory(/* pageIndex = */ 0);
     done();
   });
 
@@ -77,7 +64,7 @@ describe('annotation', function() {
       annotationDict.set('Type', Name.get('Annot'));
       annotationDict.set('Subtype', Name.get('Link'));
 
-      const annotationRef = new Ref(10, 0);
+      const annotationRef = Ref.get(10, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -97,10 +84,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
 
       const xref = new XRefMock();
-      const idFactory = new IdFactoryMock({
-        prefix: 'p0_',
-        startObjId: 0,
-      });
+      const idFactory = createIdFactory(/* pageIndex = */ 0);
 
       const annotation1 = AnnotationFactory.create(xref, annotationDict,
           pdfManagerMock, idFactory).then(({ data, }) => {
@@ -121,7 +105,7 @@ describe('annotation', function() {
       const annotationDict = new Dict();
       annotationDict.set('Type', Name.get('Annot'));
 
-      const annotationRef = new Ref(1, 0);
+      const annotationRef = Ref.get(1, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -139,12 +123,40 @@ describe('annotation', function() {
 
     beforeAll(function(done) {
       dict = new Dict();
-      ref = new Ref(1, 0);
+      ref = Ref.get(1, 0);
       done();
     });
 
     afterAll(function() {
       dict = ref = null;
+    });
+
+    it('should set and get valid contents', function() {
+      const annotation = new Annotation({ dict, ref, });
+      annotation.setContents('Foo bar baz');
+
+      expect(annotation.contents).toEqual('Foo bar baz');
+    });
+
+    it('should not set and get invalid contents', function() {
+      const annotation = new Annotation({ dict, ref, });
+      annotation.setContents(undefined);
+
+      expect(annotation.contents).toEqual('');
+    });
+
+    it('should set and get a valid modification date', function() {
+      const annotation = new Annotation({ dict, ref, });
+      annotation.setModificationDate('D:20190422');
+
+      expect(annotation.modificationDate).toEqual('D:20190422');
+    });
+
+    it('should not set and get an invalid modification date', function() {
+      const annotation = new Annotation({ dict, ref, });
+      annotation.setModificationDate(undefined);
+
+      expect(annotation.modificationDate).toEqual(null);
     });
 
     it('should set and get flags', function() {
@@ -335,6 +347,17 @@ describe('annotation', function() {
       expect(borderStyle.width).toEqual(1);
     });
 
+    it('should set the width to zero, when the input is a `Name` (issue 10385)',
+        function() {
+      const borderStyleZero = new AnnotationBorderStyle();
+      borderStyleZero.setWidth(Name.get('0'));
+      const borderStyleFive = new AnnotationBorderStyle();
+      borderStyleFive.setWidth(Name.get('5'));
+
+      expect(borderStyleZero.width).toEqual(0);
+      expect(borderStyleFive.width).toEqual(0);
+    });
+
     it('should set and get a valid style', function() {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setStyle(Name.get('D'));
@@ -393,6 +416,34 @@ describe('annotation', function() {
     });
   });
 
+  describe('MarkupAnnotation', function() {
+    let dict, ref;
+
+    beforeAll(function(done) {
+      dict = new Dict();
+      ref = Ref.get(1, 0);
+      done();
+    });
+
+    afterAll(function() {
+      dict = ref = null;
+    });
+
+    it('should set and get a valid creation date', function() {
+      const markupAnnotation = new MarkupAnnotation({ dict, ref, });
+      markupAnnotation.setCreationDate('D:20190422');
+
+      expect(markupAnnotation.creationDate).toEqual('D:20190422');
+    });
+
+    it('should not set and get an invalid creation date', function() {
+      const markupAnnotation = new MarkupAnnotation({ dict, ref, });
+      markupAnnotation.setCreationDate(undefined);
+
+      expect(markupAnnotation.creationDate).toEqual(null);
+    });
+  });
+
   describe('LinkAnnotation', function() {
     it('should correctly parse a URI action', function(done) {
       const actionDict = new Dict();
@@ -405,7 +456,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(820, 0);
+      const annotationRef = Ref.get(820, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -433,7 +484,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(353, 0);
+      const annotationRef = Ref.get(353, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -466,7 +517,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(8, 0);
+      const annotationRef = Ref.get(8, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -496,7 +547,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(798, 0);
+      const annotationRef = Ref.get(798, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -525,7 +576,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(489, 0);
+      const annotationRef = Ref.get(489, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -554,7 +605,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(489, 0);
+      const annotationRef = Ref.get(489, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -586,7 +637,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(495, 0);
+      const annotationRef = Ref.get(495, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -615,7 +666,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(489, 0);
+      const annotationRef = Ref.get(489, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -652,7 +703,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(88, 0);
+      const annotationRef = Ref.get(88, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -690,7 +741,7 @@ describe('annotation', function() {
         annotationDict.set('Subtype', Name.get('Link'));
         annotationDict.set('A', actionDict);
 
-        const annotationRef = new Ref(46, 0);
+        const annotationRef = Ref.get(46, 0);
         const xref = new XRefMock([
           { ref: annotationRef, data: annotationDict, }
         ]);
@@ -745,7 +796,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      const annotationRef = new Ref(12, 0);
+      const annotationRef = Ref.get(12, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -766,7 +817,7 @@ describe('annotation', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('Dest', Name.get('LI0'));
 
-      const annotationRef = new Ref(583, 0);
+      const annotationRef = Ref.get(583, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -786,10 +837,10 @@ describe('annotation', function() {
       const annotationDict = new Dict();
       annotationDict.set('Type', Name.get('Annot'));
       annotationDict.set('Subtype', Name.get('Link'));
-      annotationDict.set('Dest', [new Ref(17, 0), Name.get('XYZ'),
+      annotationDict.set('Dest', [Ref.get(17, 0), Name.get('XYZ'),
                                   0, 841.89, null]);
 
-      const annotationRef = new Ref(10, 0);
+      const annotationRef = Ref.get(10, 0);
       const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -819,7 +870,7 @@ describe('annotation', function() {
       // section 12.3.3, but there are PDF files where it's a dictionary.
       annotationDict.set('Dest', destDict);
 
-      let annotationRef = new Ref(798, 0);
+      let annotationRef = Ref.get(798, 0);
       let xref = new XRefMock([
         { ref: annotationRef, data: annotationDict, }
       ]);
@@ -850,7 +901,7 @@ describe('annotation', function() {
     });
 
     it('should handle unknown field names', function(done) {
-      const widgetRef = new Ref(20, 0);
+      const widgetRef = Ref.get(20, 0);
       const xref = new XRefMock([
         { ref: widgetRef, data: widgetDict, }
       ]);
@@ -867,7 +918,7 @@ describe('annotation', function() {
         function(done) {
       widgetDict.set('T', 'foo');
 
-      const widgetRef = new Ref(21, 0);
+      const widgetRef = Ref.get(21, 0);
       const xref = new XRefMock([
         { ref: widgetRef, data: widgetDict, }
       ]);
@@ -892,7 +943,7 @@ describe('annotation', function() {
       widgetDict.set('Parent', secondParent);
       widgetDict.set('T', 'baz');
 
-      const widgetRef = new Ref(22, 0);
+      const widgetRef = Ref.get(22, 0);
       const xref = new XRefMock([
         { ref: widgetRef, data: widgetDict, }
       ]);
@@ -914,7 +965,7 @@ describe('annotation', function() {
       widgetDict.set('Parent', parentDict);
       widgetDict.set('T', 'bar');
 
-      const widgetRef = new Ref(22, 0);
+      const widgetRef = Ref.get(22, 0);
       const xref = new XRefMock([
         { ref: widgetRef, data: widgetDict, }
       ]);
@@ -945,7 +996,7 @@ describe('annotation', function() {
 
     it('should handle unknown text alignment, maximum length and flags',
         function(done) {
-      const textWidgetRef = new Ref(124, 0);
+      const textWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
@@ -968,7 +1019,7 @@ describe('annotation', function() {
       textWidgetDict.set('MaxLen', 'five');
       textWidgetDict.set('Ff', 'readonly');
 
-      const textWidgetRef = new Ref(43, 0);
+      const textWidgetRef = Ref.get(43, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
@@ -992,7 +1043,7 @@ describe('annotation', function() {
       textWidgetDict.set('Ff', AnnotationFieldFlag.READONLY +
                                AnnotationFieldFlag.MULTILINE);
 
-      const textWidgetRef = new Ref(84, 0);
+      const textWidgetRef = Ref.get(84, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
@@ -1011,7 +1062,7 @@ describe('annotation', function() {
     it('should reject comb fields without a maximum length', function(done) {
       textWidgetDict.set('Ff', AnnotationFieldFlag.COMB);
 
-      const textWidgetRef = new Ref(46, 0);
+      const textWidgetRef = Ref.get(46, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
@@ -1028,7 +1079,7 @@ describe('annotation', function() {
       textWidgetDict.set('MaxLen', 20);
       textWidgetDict.set('Ff', AnnotationFieldFlag.COMB);
 
-      const textWidgetRef = new Ref(46, 0);
+      const textWidgetRef = Ref.get(46, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict, }
       ]);
@@ -1060,7 +1111,7 @@ describe('annotation', function() {
           textWidgetDict.set('MaxLen', 20);
           textWidgetDict.set('Ff', flags);
 
-          const textWidgetRef = new Ref(93, 0);
+          const textWidgetRef = Ref.get(93, 0);
           const xref = new XRefMock([
             { ref: textWidgetRef, data: textWidgetDict, }
           ]);
@@ -1074,7 +1125,7 @@ describe('annotation', function() {
 
             // Remove the last invalid flag for the next iteration.
             if (!valid) {
-              flags -= invalidFieldFlags.splice(-1, 1);
+              flags -= invalidFieldFlags.pop();
             }
           });
         });
@@ -1109,7 +1160,7 @@ describe('annotation', function() {
       appearanceStatesDict.set('D', exportValueOptionsDict);
       buttonWidgetDict.set('AP', appearanceStatesDict);
 
-      const buttonWidgetRef = new Ref(124, 0);
+      const buttonWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([
         { ref: buttonWidgetRef, data: buttonWidgetDict, }
       ]);
@@ -1128,7 +1179,7 @@ describe('annotation', function() {
     it('should handle checkboxes without export value', function(done) {
       buttonWidgetDict.set('V', Name.get('1'));
 
-      const buttonWidgetRef = new Ref(124, 0);
+      const buttonWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([
         { ref: buttonWidgetRef, data: buttonWidgetDict, }
       ]);
@@ -1157,7 +1208,7 @@ describe('annotation', function() {
       buttonWidgetDict.set('Parent', parentDict);
       buttonWidgetDict.set('AP', appearanceStatesDict);
 
-      const buttonWidgetRef = new Ref(124, 0);
+      const buttonWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([
         { ref: buttonWidgetRef, data: buttonWidgetDict, }
       ]);
@@ -1183,7 +1234,7 @@ describe('annotation', function() {
       buttonWidgetDict.set('Ff', AnnotationFieldFlag.RADIO);
       buttonWidgetDict.set('AP', appearanceStatesDict);
 
-      const buttonWidgetRef = new Ref(124, 0);
+      const buttonWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([
         { ref: buttonWidgetRef, data: buttonWidgetDict, }
       ]);
@@ -1216,7 +1267,7 @@ describe('annotation', function() {
     });
 
     it('should handle missing option arrays', function(done) {
-      const choiceWidgetRef = new Ref(122, 0);
+      const choiceWidgetRef = Ref.get(122, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
@@ -1230,9 +1281,9 @@ describe('annotation', function() {
     });
 
     it('should handle option arrays with array elements', function(done) {
-      const optionBarRef = new Ref(20, 0);
+      const optionBarRef = Ref.get(20, 0);
       const optionBarStr = 'Bar';
-      const optionOneRef = new Ref(10, 0);
+      const optionOneRef = Ref.get(10, 0);
       const optionOneArr = ['bar_export', optionBarRef];
 
       const options = [['foo_export', 'Foo'], optionOneRef];
@@ -1243,7 +1294,7 @@ describe('annotation', function() {
 
       choiceWidgetDict.set('Opt', options);
 
-      const choiceWidgetRef = new Ref(123, 0);
+      const choiceWidgetRef = Ref.get(123, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, },
         { ref: optionBarRef, data: optionBarStr, },
@@ -1259,7 +1310,7 @@ describe('annotation', function() {
     });
 
     it('should handle option arrays with string elements', function(done) {
-      const optionBarRef = new Ref(10, 0);
+      const optionBarRef = Ref.get(10, 0);
       const optionBarStr = 'Bar';
 
       const options = ['Foo', optionBarRef];
@@ -1270,7 +1321,7 @@ describe('annotation', function() {
 
       choiceWidgetDict.set('Opt', options);
 
-      const choiceWidgetRef = new Ref(981, 0);
+      const choiceWidgetRef = Ref.get(981, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, },
         { ref: optionBarRef, data: optionBarStr, }
@@ -1299,7 +1350,7 @@ describe('annotation', function() {
 
       choiceWidgetDict.set('Parent', parentDict);
 
-      const choiceWidgetRef = new Ref(123, 0);
+      const choiceWidgetRef = Ref.get(123, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, },
       ]);
@@ -1324,7 +1375,7 @@ describe('annotation', function() {
 
       choiceWidgetDict.set('Opt', options);
 
-      const choiceWidgetRef = new Ref(984, 0);
+      const choiceWidgetRef = Ref.get(984, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, },
       ]);
@@ -1342,7 +1393,7 @@ describe('annotation', function() {
 
       choiceWidgetDict.set('V', fieldValue);
 
-      const choiceWidgetRef = new Ref(968, 0);
+      const choiceWidgetRef = Ref.get(968, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
@@ -1360,7 +1411,7 @@ describe('annotation', function() {
 
       choiceWidgetDict.set('V', fieldValue);
 
-      const choiceWidgetRef = new Ref(978, 0);
+      const choiceWidgetRef = Ref.get(978, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
@@ -1374,7 +1425,7 @@ describe('annotation', function() {
     });
 
     it('should handle unknown flags', function(done) {
-      const choiceWidgetRef = new Ref(166, 0);
+      const choiceWidgetRef = Ref.get(166, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
@@ -1392,7 +1443,7 @@ describe('annotation', function() {
     it('should not set invalid flags', function(done) {
       choiceWidgetDict.set('Ff', 'readonly');
 
-      const choiceWidgetRef = new Ref(165, 0);
+      const choiceWidgetRef = Ref.get(165, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
@@ -1412,7 +1463,7 @@ describe('annotation', function() {
                                  AnnotationFieldFlag.COMBO +
                                  AnnotationFieldFlag.MULTISELECT);
 
-      const choiceWidgetRef = new Ref(512, 0);
+      const choiceWidgetRef = Ref.get(512, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, }
       ]);
@@ -1435,7 +1486,7 @@ describe('annotation', function() {
       lineDict.set('Subtype', Name.get('Line'));
       lineDict.set('L', [1, 2, 3, 4]);
 
-      const lineRef = new Ref(122, 0);
+      const lineRef = Ref.get(122, 0);
       const xref = new XRefMock([
         { ref: lineRef, data: lineDict, }
       ]);
@@ -1463,20 +1514,20 @@ describe('annotation', function() {
       const lexer = new Lexer(fileStream);
       const parser = new Parser(lexer, /* allowStreams = */ true);
 
-      const fileStreamRef = new Ref(18, 0);
+      const fileStreamRef = Ref.get(18, 0);
       const fileStreamDict = parser.getObj();
 
       const embeddedFileDict = new Dict();
       embeddedFileDict.set('F', fileStreamRef);
 
-      const fileSpecRef = new Ref(19, 0);
+      const fileSpecRef = Ref.get(19, 0);
       const fileSpecDict = new Dict();
       fileSpecDict.set('Type', Name.get('Filespec'));
       fileSpecDict.set('Desc', '');
       fileSpecDict.set('EF', embeddedFileDict);
       fileSpecDict.set('UF', 'Test.txt');
 
-      const fileAttachmentRef = new Ref(20, 0);
+      const fileAttachmentRef = Ref.get(20, 0);
       const fileAttachmentDict = new Dict();
       fileAttachmentDict.set('Type', Name.get('Annot'));
       fileAttachmentDict.set('Subtype', Name.get('FileAttachment'));
@@ -1504,6 +1555,56 @@ describe('annotation', function() {
   });
 
   describe('PopupAnnotation', function() {
+    it('should inherit properties from its parent', function(done) {
+      const parentDict = new Dict();
+      parentDict.set('Type', Name.get('Annot'));
+      parentDict.set('Subtype', Name.get('Text'));
+      parentDict.set('M', 'D:20190423');
+      parentDict.set('C', [0, 0, 1]);
+
+      const popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('Parent', parentDict);
+
+      const popupRef = Ref.get(13, 0);
+      const xref = new XRefMock([
+        { ref: popupRef, data: popupDict, }
+      ]);
+
+      AnnotationFactory.create(xref, popupRef, pdfManagerMock,
+          idFactoryMock).then(({ data, viewable, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.POPUP);
+        expect(data.modificationDate).toEqual('D:20190423');
+        expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
+        done();
+      }, done.fail);
+    });
+
+    it('should handle missing parent properties', function(done) {
+      const parentDict = new Dict();
+      parentDict.set('Type', Name.get('Annot'));
+      parentDict.set('Subtype', Name.get('Text'));
+
+      const popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('Parent', parentDict);
+
+      const popupRef = Ref.get(13, 0);
+      const xref = new XRefMock([
+        { ref: popupRef, data: popupDict, }
+      ]);
+
+      AnnotationFactory.create(xref, popupRef, pdfManagerMock,
+          idFactoryMock).then(({ data, viewable, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.POPUP);
+        expect(data.modificationDate).toEqual(null);
+        expect(data.color).toEqual(null);
+        done();
+      }, done.fail);
+    });
+
     it('should inherit the parent flags when the Popup is not viewable, ' +
        'but the parent is (PR 7352)', function(done) {
       const parentDict = new Dict();
@@ -1517,7 +1618,7 @@ describe('annotation', function() {
       popupDict.set('F', 25); // not viewable
       popupDict.set('Parent', parentDict);
 
-      const popupRef = new Ref(13, 0);
+      const popupRef = Ref.get(13, 0);
       const xref = new XRefMock([
         { ref: popupRef, data: popupDict, }
       ]);
@@ -1530,6 +1631,61 @@ describe('annotation', function() {
         expect(data.annotationFlags).toEqual(25);
         // The popup should inherit the `viewable` property of the parent.
         expect(viewable).toEqual(true);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('InkAnnotation', function() {
+    it('should handle a single ink list', function(done) {
+      const inkDict = new Dict();
+      inkDict.set('Type', Name.get('Annot'));
+      inkDict.set('Subtype', Name.get('Ink'));
+      inkDict.set('InkList', [[1, 1, 1, 2, 2, 2, 3, 3]]);
+
+      const inkRef = Ref.get(142, 0);
+      const xref = new XRefMock([
+        { ref: inkRef, data: inkDict, }
+      ]);
+
+      AnnotationFactory.create(xref, inkRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.INK);
+        expect(data.inkLists.length).toEqual(1);
+        expect(data.inkLists[0]).toEqual([
+          { x: 1, y: 1, },
+          { x: 1, y: 2, },
+          { x: 2, y: 2, },
+          { x: 3, y: 3, },
+        ]);
+        done();
+      }, done.fail);
+    });
+
+    it('should handle multiple ink lists', function(done) {
+      const inkDict = new Dict();
+      inkDict.set('Type', Name.get('Annot'));
+      inkDict.set('Subtype', Name.get('Ink'));
+      inkDict.set('InkList', [
+        [1, 1, 1, 2],
+        [3, 3, 4, 5],
+      ]);
+
+      const inkRef = Ref.get(143, 0);
+      const xref = new XRefMock([
+        { ref: inkRef, data: inkDict, }
+      ]);
+
+      AnnotationFactory.create(xref, inkRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.INK);
+        expect(data.inkLists.length).toEqual(2);
+        expect(data.inkLists[0]).toEqual([
+          { x: 1, y: 1, }, { x: 1, y: 2, }
+        ]);
+        expect(data.inkLists[1]).toEqual([
+          { x: 3, y: 3, }, { x: 4, y: 5, }
+        ]);
         done();
       }, done.fail);
     });

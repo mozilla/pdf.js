@@ -18,12 +18,12 @@ import { Metadata } from '../../src/display/metadata';
 
 describe('metadata', function() {
   it('should handle valid metadata', function() {
-    var validData = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
+    const data = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
       '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\'>' +
       '<rdf:Description xmlns:dc=\'http://purl.org/dc/elements/1.1/\'>' +
       '<dc:title><rdf:Alt><rdf:li xml:lang="x-default">Foo bar baz</rdf:li>' +
       '</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>';
-    var metadata = new Metadata(validData);
+    const metadata = new Metadata(data);
 
     expect(metadata.has('dc:title')).toBeTruthy();
     expect(metadata.has('dc:qux')).toBeFalsy();
@@ -35,12 +35,12 @@ describe('metadata', function() {
   });
 
   it('should repair and handle invalid metadata', function() {
-    var invalidData = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
+    const data = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
       '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\'>' +
       '<rdf:Description xmlns:dc=\'http://purl.org/dc/elements/1.1/\'>' +
       '<dc:title>\\376\\377\\000P\\000D\\000F\\000&</dc:title>' +
       '</rdf:Description></rdf:RDF></x:xmpmeta>';
-    var metadata = new Metadata(invalidData);
+    const metadata = new Metadata(data);
 
     expect(metadata.has('dc:title')).toBeTruthy();
     expect(metadata.has('dc:qux')).toBeFalsy();
@@ -52,7 +52,7 @@ describe('metadata', function() {
   });
 
   it('should repair and handle invalid metadata (bug 1424938)', function() {
-    let invalidData = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\' ' +
+    const data = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\' ' +
       'x:xmptk=\'XMP toolkit 2.9.1-13, framework 1.6\'>' +
       '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\' ' +
       'xmlns:iX=\'http://ns.adobe.com/iX/1.0/\'>' +
@@ -82,7 +82,7 @@ describe('metadata', function() {
       '<dc:creator><rdf:Seq><rdf:li>\\376\\377\\000O\\000D\\000I\\000S' +
       '</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF>' +
       '</x:xmpmeta>';
-    let metadata = new Metadata(invalidData);
+    const metadata = new Metadata(data);
 
     expect(metadata.has('dc:title')).toBeTruthy();
     expect(metadata.has('dc:qux')).toBeFalsy();
@@ -99,7 +99,7 @@ describe('metadata', function() {
   });
 
   it('should gracefully handle incomplete tags (issue 8884)', function() {
-    let data = '<?xpacket begin="Ã¯Â»Â¿" id="W5M0MpCehiHzreSzNTczkc9d' +
+    const data = '<?xpacket begin="Ã¯Â»Â¿" id="W5M0MpCehiHzreSzNTczkc9d' +
       '<x:xmpmeta xmlns:x="adobe:ns:meta/">' +
       '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
       '<rdf:Description rdf:about=""' +
@@ -123,8 +123,133 @@ describe('metadata', function() {
       '</rdf:RDF>' +
       '</x:xmpmeta>' +
       '<?xpacket end="w"?>';
-    let metadata = new Metadata(data);
+    const metadata = new Metadata(data);
 
     expect(isEmptyObj(metadata.getAll())).toEqual(true);
+  });
+
+  it('should gracefully handle "junk" before the actual metadata (issue 10395)',
+      function() {
+    const data = 'ï»¿<?xpacket begin="ï»¿" id="W5M0MpCehiHzreSzNTczkc9d"?>' +
+      '<x:xmpmeta x:xmptk="TallComponents PDFObjects 1.0" ' +
+      'xmlns:x="adobe:ns:meta/">' +
+      '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
+      '<rdf:Description rdf:about="" ' +
+      'xmlns:pdf="http://ns.adobe.com/pdf/1.3/">' +
+      '<pdf:Producer>PDFKit.NET 4.0.102.0</pdf:Producer>' +
+      '<pdf:Keywords></pdf:Keywords>' +
+      '<pdf:PDFVersion>1.7</pdf:PDFVersion></rdf:Description>' +
+      '<rdf:Description rdf:about="" ' +
+      'xmlns:xap="http://ns.adobe.com/xap/1.0/">' +
+      '<xap:CreateDate>2018-12-27T13:50:36-08:00</xap:CreateDate>' +
+      '<xap:ModifyDate>2018-12-27T13:50:38-08:00</xap:ModifyDate>' +
+      '<xap:CreatorTool></xap:CreatorTool>' +
+      '<xap:MetadataDate>2018-12-27T13:50:38-08:00</xap:MetadataDate>' +
+      '</rdf:Description><rdf:Description rdf:about="" ' +
+      'xmlns:dc="http://purl.org/dc/elements/1.1/">' +
+      '<dc:creator><rdf:Seq><rdf:li></rdf:li></rdf:Seq></dc:creator>' +
+      '<dc:subject><rdf:Bag /></dc:subject>' +
+      '<dc:description><rdf:Alt><rdf:li xml:lang="x-default">' +
+      '</rdf:li></rdf:Alt></dc:description>' +
+      '<dc:title><rdf:Alt><rdf:li xml:lang="x-default"></rdf:li>' +
+      '</rdf:Alt></dc:title><dc:format>application/pdf</dc:format>' +
+      '</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
+    const metadata = new Metadata(data);
+
+    expect(metadata.has('dc:title')).toBeTruthy();
+    expect(metadata.has('dc:qux')).toBeFalsy();
+
+    expect(metadata.get('dc:title')).toEqual('');
+    expect(metadata.get('dc:qux')).toEqual(null);
+
+    expect(metadata.getAll()).toEqual({
+      'dc:creator': '',
+      'dc:description': '',
+      'dc:format': 'application/pdf',
+      'dc:subject': '',
+      'dc:title': '',
+      'pdf:keywords': '',
+      'pdf:pdfversion': '1.7',
+      'pdf:producer': 'PDFKit.NET 4.0.102.0',
+      'xap:createdate': '2018-12-27T13:50:36-08:00',
+      'xap:creatortool': '',
+      'xap:metadatadate': '2018-12-27T13:50:38-08:00',
+      'xap:modifydate': '2018-12-27T13:50:38-08:00',
+    });
+  });
+
+  it('should correctly handle metadata containing "&apos" (issue 10407)',
+      function() {
+    const data = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
+      '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\'>' +
+      '<rdf:Description xmlns:dc=\'http://purl.org/dc/elements/1.1/\'>' +
+      '<dc:title><rdf:Alt>' +
+      '<rdf:li xml:lang="x-default">&apos;Foo bar baz&apos;</rdf:li>' +
+      '</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>';
+    const metadata = new Metadata(data);
+
+    expect(metadata.has('dc:title')).toBeTruthy();
+    expect(metadata.has('dc:qux')).toBeFalsy();
+
+    expect(metadata.get('dc:title')).toEqual('\'Foo bar baz\'');
+    expect(metadata.get('dc:qux')).toEqual(null);
+
+    expect(metadata.getAll()).toEqual({ 'dc:title': '\'Foo bar baz\'', });
+  });
+
+  it('should gracefully handle unbalanced end tags (issue 10410)', function() {
+    const data = '<?xpacket begin="Ã¯Â»Â¿" id="W5M0MpCehiHzreSzNTczkc9d"?>' +
+      '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
+      '<rdf:Description rdf:about="" ' +
+      'xmlns:pdf="http://ns.adobe.com/pdf/1.3/">' +
+      '<pdf:Producer>Soda PDF 5</pdf:Producer></rdf:Description>' +
+      '<rdf:Description rdf:about="" ' +
+      'xmlns:xap="http://ns.adobe.com/xap/1.0/">' +
+      '<xap:CreateDate>2018-10-02T08:14:49-05:00</xap:CreateDate>' +
+      '<xap:CreatorTool>Soda PDF 5</xap:CreatorTool>' +
+      '<xap:MetadataDate>2018-10-02T08:14:49-05:00</xap:MetadataDate> ' +
+      '<xap:ModifyDate>2018-10-02T08:14:49-05:00</xap:ModifyDate>' +
+      '</rdf:Description><rdf:Description rdf:about="" ' +
+      'xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/">' +
+      '<xmpMM:DocumentID>uuid:00000000-1c84-3cf9-89ba-bef0e729c831' +
+      '</xmpMM:DocumentID></rdf:Description>' +
+      '</rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
+    const metadata = new Metadata(data);
+
+    expect(isEmptyObj(metadata.getAll())).toEqual(true);
+  });
+
+  it('should not be vulnerable to the billion laughs attack', function() {
+    const data = '<?xml version="1.0"?>' +
+      '<!DOCTYPE lolz [' +
+      '  <!ENTITY lol "lol">' +
+      '  <!ENTITY lol1 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">' +
+      '  <!ENTITY lol2 "&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;">' +
+      '  <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">' +
+      '  <!ENTITY lol4 "&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;">' +
+      '  <!ENTITY lol5 "&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;">' +
+      '  <!ENTITY lol6 "&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;">' +
+      '  <!ENTITY lol7 "&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;">' +
+      '  <!ENTITY lol8 "&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;">' +
+      '  <!ENTITY lol9 "&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;">' +
+      ']>' +
+      '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
+      '  <rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/">' +
+      '    <dc:title>' +
+      '      <rdf:Alt>' +
+      '        <rdf:li xml:lang="x-default">a&lol9;b</rdf:li>' +
+      '      </rdf:Alt>' +
+      '    </dc:title>' +
+      '  </rdf:Description>' +
+      '</rdf:RDF>';
+    const metadata = new Metadata(data);
+
+    expect(metadata.has('dc:title')).toBeTruthy();
+    expect(metadata.has('dc:qux')).toBeFalsy();
+
+    expect(metadata.get('dc:title')).toEqual('a&lol9;b');
+    expect(metadata.get('dc:qux')).toEqual(null);
+
+    expect(metadata.getAll()).toEqual({ 'dc:title': 'a&lol9;b', });
   });
 });

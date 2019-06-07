@@ -32,32 +32,31 @@ if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('GENERIC')) {
 
   if (isURLSupported) {
     exports.URL = URL;
-  } else {
-    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('IMAGE_DECODERS')) {
-      class DummyURL {
-        constructor() {
-          throw new Error('The current image decoders doesn\'t utilize the ' +
-                          '`URL` constructor, hence it shouldn\'t need to be ' +
-                          'polyfilled for the IMAGE_DECODERS build target.');
-        }
+  } else if (typeof PDFJSDev !== 'undefined' &&
+             PDFJSDev.test('IMAGE_DECODERS')) {
+    class DummyURL {
+      constructor() {
+        throw new Error('The current image decoders doesn\'t utilize the ' +
+                        '`URL` constructor, hence it shouldn\'t need to be ' +
+                        'polyfilled for the IMAGE_DECODERS build target.');
       }
-      exports.URL = DummyURL;
-    } else {
-      const PolyfillURL = require('../../external/url/url-lib').URL;
-
-      // Attempt to copy over the static methods.
-      const OriginalURL = require('./global_scope').URL;
-      if (OriginalURL) {
-        PolyfillURL.createObjectURL = function(blob) {
-          // IE extension allows a second optional options argument, see
-          // http://msdn.microsoft.com/en-us/library/ie/hh772302(v=vs.85).aspx
-          return OriginalURL.createObjectURL.apply(OriginalURL, arguments);
-        };
-        PolyfillURL.revokeObjectURL = function(url) {
-          OriginalURL.revokeObjectURL(url);
-        };
-      }
-      exports.URL = PolyfillURL;
     }
+    exports.URL = DummyURL;
+  } else {
+    const PolyfillURL = require('../../external/url/url-lib').URL;
+
+    // Attempt to copy over the static methods.
+    const OriginalURL = require('./global_scope').URL;
+    if (OriginalURL) {
+      PolyfillURL.createObjectURL = function(blob) {
+        // IE extension allows a second optional options argument, see
+        // http://msdn.microsoft.com/en-us/library/ie/hh772302(v=vs.85).aspx
+        return OriginalURL.createObjectURL.apply(OriginalURL, arguments);
+      };
+      PolyfillURL.revokeObjectURL = function(url) {
+        OriginalURL.revokeObjectURL(url);
+      };
+    }
+    exports.URL = PolyfillURL;
   }
 }
