@@ -144,6 +144,7 @@ class Catalog {
       const title = outlineDict.get('Title');
       const flags = outlineDict.get('F') || 0;
       const color = outlineDict.getArray('C');
+      const count = outlineDict.get('Count');
       let rgbColor = blackColor;
 
       // We only need to parse the color when it's valid, and non-default.
@@ -159,7 +160,7 @@ class Catalog {
         newWindow: data.newWindow,
         title: stringToPDFString(title),
         color: rgbColor,
-        count: outlineDict.get('Count'),
+        count: Number.isInteger(count) ? count : undefined,
         bold: !!(flags & 2),
         italic: !!(flags & 1),
         items: [],
