@@ -15,13 +15,17 @@
 
 import { BaseViewer } from './base_viewer';
 import { shadow } from 'pdfjs-lib';
+import {
+  getOffsetTop, getOffsetLeft,
+} from './ui_utils';
+
 
 class PDFViewer extends BaseViewer {
   get _setDocumentViewerElement() {
     return shadow(this, '_setDocumentViewerElement', this.viewer);
   }
-
-  _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
+  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+  /*_scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
     if (!pageSpot && !this.isInPresentationMode) {
       const left = pageDiv.offsetLeft + pageDiv.clientLeft;
       const right = left + pageDiv.clientWidth;
@@ -32,7 +36,23 @@ class PDFViewer extends BaseViewer {
       }
     }
     super._scrollIntoView({ pageDiv, pageSpot, pageNumber, });
+  }*/
+  _scrollIntoView({ pageView, pageSpot = null, pageNumber = null, }) {
+    if (!pageSpot && !this.isInPresentationMode) {
+      const pageDiv = pageView.div;
+      const left = getOffsetLeft(pageView);
+      const right = left + pageDiv.clientWidth;
+      const { scrollLeft, clientWidth, } = this.container;
+      if (this._isScrollModeHorizontal ||
+          left < scrollLeft || right > scrollLeft + clientWidth) {
+        pageSpot = { left: 0, top: 0, };
+      }
+    }
+    super._scrollIntoView({ pageView, pageSpot, pageNumber, });
   }
+
+  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
+  
 
   _getVisiblePages() {
     if (this.isInPresentationMode) {

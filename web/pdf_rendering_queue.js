@@ -90,9 +90,9 @@ class PDFRenderingQueue {
       return;
     }
 
-    if (this.onIdle) {
+    /*if (this.onIdle) {
       this.idleTimeout = setTimeout(this.onIdle.bind(this), CLEANUP_TIMEOUT);
-    }
+    }*/
   }
 
   /**

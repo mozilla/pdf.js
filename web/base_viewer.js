@@ -19,7 +19,7 @@ import {
   isValidSpreadMode, MAX_AUTO_SCALE, moveToEndOfArray, NullL10n,
   PresentationModeState, RendererType, SCROLLBAR_PADDING, scrollIntoView,
   ScrollMode, SpreadMode, TextLayerMode, UNKNOWN_SCALE, VERTICAL_PADDING,
-  watchScroll
+  watchScroll, getOffsetTop, getOffsetLeft,
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
@@ -440,9 +440,10 @@ class BaseViewer {
         bindOnAfterAndBeforeDraw(pageView);
         this._pages.push(pageView);
       }
-      if (this._spreadMode !== SpreadMode.NONE) {
+
+      /*if (this._spreadMode !== SpreadMode.NONE) {
         this._updateSpreadMode();
-      }
+      }*/
 
       // Fetch all the pages since the viewport is needed before printing
       // starts to create the correct size canvas. Wait until one page is
@@ -538,8 +539,34 @@ class BaseViewer {
     this.update();
   }
 
-  _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
-    scrollIntoView(pageDiv, pageSpot);
+  _scrollIntoView({ pageView, pageSpot = null, pageNumber = null, }) {
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能, 确保div是否已经添加到页面上 start-------------------------
+    /*if(!pageView.isDivAddedToContainer){
+      if(this._spreadMode == SpreadMode.NONE){
+        this.viewer.appendChild(pageView.div);
+      }else{
+        const parity = this._spreadMode % 2;
+        const pageIdx = pageView.id - 1;
+        const pageCount = this._pages.length;
+        let pageViewSibling;
+        if(pageIdx % 2 === parity || pageIdx == pageCount - 1){
+          pageViewSibling = this._pages[pageIdx-1];
+        }else{
+          pageViewSibling = this._pages[pageIdx+1];
+        }
+        if(pageViewSibling && pageViewSibling.isDivAddedToContainer){
+          pageViewSibling.div.parentNode.appendChild(pageView.div);
+        }else{
+          var spread = document.createElement('div');
+          spread.className = 'spread';
+          spread.appendChild(pageView.div);
+          this.viewer.appendChild(spread);
+        }
+      }
+      pageView.isDivAddedToContainer = true;
+    }*/
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能, 确保div是否已经添加到页面上 end-------------------------
+    scrollIntoView(pageView.div, pageSpot);
   }
 
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {
@@ -648,7 +675,10 @@ class BaseViewer {
     }
 
     let pageView = this._pages[this._currentPageNumber - 1];
-    this._scrollIntoView({ pageDiv: pageView.div, });
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+    //this._scrollIntoView({ pageDiv: pageView.div, });
+    this._scrollIntoView({ pageView: pageView, });
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   }
 
   /**
@@ -750,10 +780,16 @@ class BaseViewer {
     }
 
     if (scale === 'page-fit' && !destArray[4]) {
-      this._scrollIntoView({
+      //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+      /*this._scrollIntoView({
         pageDiv: pageView.div,
         pageNumber,
+      });*/
+      this._scrollIntoView({
+        pageView: pageView,
+        pageNumber,
       });
+      //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       return;
     }
 
@@ -772,7 +808,10 @@ class BaseViewer {
       top = Math.max(top, 0);
     }
     this._scrollIntoView({
-      pageDiv: pageView.div,
+      //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+      //pageDiv: pageView.div,
+      pageView: pageView,
+      //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       pageSpot: { left, top, },
       pageNumber,
     });
@@ -810,11 +849,17 @@ class BaseViewer {
   _updateHelper(visiblePages) {
     throw new Error('Not implemented: _updateHelper');
   }
-  //update() {
   //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+  //update() {
   update(isShouldReset) {
   //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
-    const visible = this._getVisiblePages();
+    let visible = this._getVisiblePages();
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+    if(visible.views.length == 0) {
+      visible = this._getCurrentVisiblePage();
+    }
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
+    
     const visiblePages = visible.views, numVisiblePages = visiblePages.length;
 
     if (numVisiblePages === 0) {
@@ -823,8 +868,8 @@ class BaseViewer {
     const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
     this._buffer.resize(newCacheSize, visiblePages);
 
-    //this.renderingQueue.renderHighestPriority(visible);
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+    //this.renderingQueue.renderHighestPriority(visible);
     this.renderingQueue.renderHighestPriority(visible, isShouldReset);
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 
@@ -884,13 +929,21 @@ class BaseViewer {
     // NOTE: Compute the `x` and `y` properties of the current view,
     // since `this._updateLocation` depends of them being available.
     const element = pageView.div;
-
-    const view = {
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+    /*const view = {
       id: pageView.id,
       x: element.offsetLeft + element.clientLeft,
       y: element.offsetTop + element.clientTop,
       view: pageView,
+    };*/
+    const view = {
+      id: pageView.id,
+      x: getOffsetLeft(pageView),
+      y: getOffsetTop(pageView),
+      view: pageView,
     };
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
+    
     return { first: view, last: view, views: [view], };
   }
 
@@ -951,6 +1004,12 @@ class BaseViewer {
     }
     let promise = this.pdfDocument.getPage(pageNumber).then((pdfPage) => {
       if (!pageView.pdfPage) {
+        //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+        if(!pageView.isDivAddedToContainer){
+          pageView.viewer.viewer.appendChild(pageView.div);
+          pageView.isDivAddedToContainer = true;
+        }
+        //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
         pageView.setPdfPage(pdfPage);
       }
       this._pagesRequests[pageNumber] = null;
@@ -981,7 +1040,7 @@ class BaseViewer {
       return true;
     }
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    else if(isShouldReset){
+    else if(isShouldReset){debugger
       for(var i=0;i<visiblePages.views.length;i++){
         visiblePages.views[i].view.reset();
       }

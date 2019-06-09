@@ -106,7 +106,7 @@ function getOutputScale(ctx) {
   };
 }
 
-
+//-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
 function getOffsetTop(view){
   var ele = view.div;
   return ele.offsetTop + ele.clientTop +
@@ -122,7 +122,7 @@ function getOffsetLeft(view){
               view.viewer.spreadMode == SpreadMode.EVEN ? 
               ele.parentNode.offsetLeft + ele.parentNode.clientLeft : 0);
 }
-
+//-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 /**
  * Scrolls specified element into view of its parent.
  * @param {Object} element - The element to be visible.
@@ -447,6 +447,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  *   out horizontally instead of vertically
  * @returns {Object} `{ first, last, views: [{ id, x, y, view, percent }] }`
  */
+
 function getVisibleElements(scrollEl, views, sortByVisibility = false,
                             horizontal = false) {
   const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
@@ -556,6 +557,116 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   }
   return { first, last, views: visible, };
 }
+
+/*function getVisibleElements(scrollEl, views, sortByVisibility = false,
+                            horizontal = false) {
+  const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
+  const left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
+
+  // Throughout this "generic" function, comments will assume we're working with
+  // PDF document pages, which is the most important and complex case. In this
+  // case, the visible elements we're actually interested is the page canvas,
+  // which is contained in a wrapper which adds no padding/border/margin, which
+  // is itself contained in `view.div` which adds no padding (but does add a
+  // border). So, as specified in this function's doc comment, this function
+  // does all of its work on the padding edge of the provided views, starting at
+  // offsetLeft/Top (which includes margin) and adding clientLeft/Top (which is
+  // the border). Adding clientWidth/Height gets us the bottom-right corner of
+  // the padding edge.
+  function isElementBottomAfterViewTop(view) {
+    let element = view.div;
+    let elementBottom = 
+      getOffsetTop(view) + element.clientHeight;
+    return elementBottom > top;
+  }
+  function isElementRightAfterViewLeft(view) {
+    let element = view.div;
+    let elementRight =
+      getOffsetLeft(view) + element.clientWidth;
+    return elementRight > left;
+  }
+
+  const visible = [], numViews = views.length;
+  let firstVisibleElementInd = numViews === 0 ? 0 :
+    binarySearchFirstItem(views, horizontal ? isElementRightAfterViewLeft :
+                                              isElementBottomAfterViewTop);
+
+  // Please note the return value of the `binarySearchFirstItem` function when
+  // no valid element is found (hence the `firstVisibleElementInd` check below).
+  if (firstVisibleElementInd > 0 && firstVisibleElementInd < numViews &&
+      !horizontal) {
+    // In wrapped scrolling (or vertical scrolling with spreads), with some page
+    // sizes, isElementBottomAfterViewTop doesn't satisfy the binary search
+    // condition: there can be pages with bottoms above the view top between
+    // pages with bottoms below. This function detects and corrects that error;
+    // see it for more comments.
+    firstVisibleElementInd =
+      backtrackBeforeAllVisibleElements(firstVisibleElementInd, views, top);
+  }
+
+  // lastEdge acts as a cutoff for us to stop looping, because we know all
+  // subsequent pages will be hidden.
+  //
+  // When using wrapped scrolling or vertical scrolling with spreads, we can't
+  // simply stop the first time we reach a page below the bottom of the view;
+  // the tops of subsequent pages on the same row could still be visible. In
+  // horizontal scrolling, we don't have that issue, so we can stop as soon as
+  // we pass `right`, without needing the code below that handles the -1 case.
+  let lastEdge = horizontal ? right : -1;
+
+  for (let i = firstVisibleElementInd; i < numViews; i++) {
+    const view = views[i], element = view.div;
+    const currentWidth = getOffsetLeft(view);
+    const currentHeight = getOffsetTop(view);
+    const viewWidth = element.clientWidth, viewHeight = element.clientHeight;
+    const viewRight = currentWidth + viewWidth;
+    const viewBottom = currentHeight + viewHeight;
+
+    if (lastEdge === -1) {
+      // As commented above, this is only needed in non-horizontal cases.
+      // Setting lastEdge to the bottom of the first page that is partially
+      // visible ensures that the next page fully below lastEdge is on the
+      // next row, which has to be fully hidden along with all subsequent rows.
+      if (viewBottom >= bottom) {
+        lastEdge = viewBottom;
+      }
+    } else if ((horizontal ? currentWidth : currentHeight) > lastEdge) {
+      break;
+    }
+
+    if (viewBottom <= top || currentHeight >= bottom ||
+        viewRight <= left || currentWidth >= right) {
+      continue;
+    }
+
+    const hiddenHeight = Math.max(0, top - currentHeight) +
+                         Math.max(0, viewBottom - bottom);
+    const hiddenWidth = Math.max(0, left - currentWidth) +
+                        Math.max(0, viewRight - right);
+    const percent = ((viewHeight - hiddenHeight) * (viewWidth - hiddenWidth) *
+                     100 / viewHeight / viewWidth) | 0;
+    visible.push({
+      id: view.id,
+      x: currentWidth,
+      y: currentHeight,
+      view,
+      percent,
+    });
+  }
+
+  const first = visible[0], last = visible[visible.length - 1];
+
+  if (sortByVisibility) {
+    visible.sort(function(a, b) {
+      let pc = a.percent - b.percent;
+      if (Math.abs(pc) > 0.001) {
+        return -pc;
+      }
+      return a.id - b.id; // ensure stability
+    });
+  }
+  return { first, last, views: visible, };
+}*/
 
 /**
  * Event handler to suppress context menu.
@@ -938,4 +1049,8 @@ export {
   WaitOnType,
   waitOnEventOrTimeout,
   moveToEndOfArray,
+  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+  getOffsetTop,
+  getOffsetLeft,
+  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 };
