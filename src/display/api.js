@@ -1004,7 +1004,7 @@ class PDFPageProxy {
     const stats = this._stats;
     stats.time('Overall');
 
-    // If there was a pending destroy cancel it so no cleanup happens during
+    // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
     this.pendingCleanup = false;
 
@@ -1044,7 +1044,9 @@ class PDFPageProxy {
         intentState.renderTasks.splice(i, 1);
       }
 
-      if (this.cleanupAfterRender) {
+      // Attempt to reduce memory usage during *printing*, by always running
+      // cleanup once rendering has finished (regardless of cleanupAfterRender).
+      if (this.cleanupAfterRender || renderingIntent === 'print') {
         this.pendingCleanup = true;
       }
       this._tryCleanup();
