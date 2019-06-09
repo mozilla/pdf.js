@@ -715,6 +715,7 @@ class PDFDocumentProxy {
    *     bold: boolean,
    *     italic: boolean,
    *     color: rgb Uint8ClampedArray,
+   *     count: integer or undefined,
    *     dest: dest obj,
    *     url: string,
    *     items: array of more items like this
