@@ -58,8 +58,8 @@ class DownloadManager {
 
   downloadData(data, filename, contentType) {
     if (navigator.msSaveBlob) { // IE10 and above
-      return navigator.msSaveBlob(new Blob([data], { type: contentType, }),
-                                  filename);
+      navigator.msSaveBlob(new Blob([data], { type: contentType, }), filename);
+      return;
     }
     let blobUrl = createObjectURL(data, contentType,
                                   this.disableCreateObjectURL);

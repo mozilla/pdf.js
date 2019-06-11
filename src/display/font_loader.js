@@ -19,18 +19,15 @@ import {
 } from '../shared/util';
 
 class BaseFontLoader {
-  constructor(docId) {
+  constructor({ docId, onUnsupportedFeature, }) {
     if (this.constructor === BaseFontLoader) {
       unreachable('Cannot initialize BaseFontLoader.');
     }
     this.docId = docId;
+    this._onUnsupportedFeature = onUnsupportedFeature;
 
     this.nativeFontFaces = [];
     this.styleElement = null;
-    this.loadingContext = {
-      requests: [],
-      nextRequestId: 0,
-    };
   }
 
   addNativeFontFace(nativeFontFace) {
@@ -64,72 +61,49 @@ class BaseFontLoader {
     }
   }
 
-  bind(fonts, callback) {
-    const rules = [];
-    const fontsToLoad = [];
-    const fontLoadPromises = [];
-    const getNativeFontPromise = function(nativeFontFace) {
-      // Return a promise that is always fulfilled, even when the font fails to
-      // load.
-      return nativeFontFace.loaded.catch(function(reason) {
-        warn(`Failed to load font "${nativeFontFace.family}": ${reason}`);
-      });
-    };
-
-    for (const font of fonts) {
-      // Add the font to the DOM only once; skip if the font is already loaded.
-      if (font.attached || font.missingFile) {
-        continue;
-      }
-      font.attached = true;
-
-      if (this.isFontLoadingAPISupported) {
-        const nativeFontFace = font.createNativeFontFace();
-        if (nativeFontFace) {
-          this.addNativeFontFace(nativeFontFace);
-          fontLoadPromises.push(getNativeFontPromise(nativeFontFace));
-        }
-      } else {
-        const rule = font.createFontFaceRule();
-        if (rule) {
-          this.insertRule(rule);
-          rules.push(rule);
-          fontsToLoad.push(font);
-        }
-      }
+  async bind(font) {
+    // Add the font to the DOM only once; skip if the font is already loaded.
+    if (font.attached || font.missingFile) {
+      return undefined;
     }
+    font.attached = true;
 
-    const request = this._queueLoadingCallback(callback);
     if (this.isFontLoadingAPISupported) {
-      Promise.all(fontLoadPromises).then(request.complete);
-    } else if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
-      this._prepareFontLoadEvent(rules, fontsToLoad, request);
-    } else {
-      request.complete();
+      const nativeFontFace = font.createNativeFontFace();
+      if (nativeFontFace) {
+        this.addNativeFontFace(nativeFontFace);
+        try {
+          await nativeFontFace.loaded;
+        } catch (ex) {
+          this._onUnsupportedFeature({ featureId: UNSUPPORTED_FEATURES.font, });
+          warn(`Failed to load font '${nativeFontFace.family}': '${ex}'.`);
+
+          // When font loading failed, fall back to the built-in font renderer.
+          font.disableFontFace = true;
+          throw ex;
+        }
+      }
+      return undefined; // The font was, asynchronously, loaded.
     }
+
+    // !this.isFontLoadingAPISupported
+    const rule = font.createFontFaceRule();
+    if (rule) {
+      this.insertRule(rule);
+
+      if (this.isSyncFontLoadingSupported) {
+        return undefined; // The font was, synchronously, loaded.
+      }
+      return new Promise((resolve) => {
+        const request = this._queueLoadingCallback(resolve);
+        this._prepareFontLoadEvent([rule], [font], request);
+      });
+    }
+    return undefined;
   }
 
   _queueLoadingCallback(callback) {
-    function completeRequest() {
-      assert(!request.done, 'completeRequest() cannot be called twice.');
-      request.done = true;
-
-      // Sending all completed requests in order of how they were queued.
-      while (context.requests.length > 0 && context.requests[0].done) {
-        const otherRequest = context.requests.shift();
-        setTimeout(otherRequest.callback, 0);
-      }
-    }
-
-    const context = this.loadingContext;
-    const request = {
-      id: `pdfjs-font-loading-${context.nextRequestId++}`,
-      done: false,
-      complete: completeRequest,
-      callback,
-    };
-    context.requests.push(request);
-    return request;
+    unreachable('Abstract method `_queueLoadingCallback`.');
   }
 
   get isFontLoadingAPISupported() {
@@ -168,6 +142,10 @@ FontLoader = class MozcentralFontLoader extends BaseFontLoader {
 FontLoader = class GenericFontLoader extends BaseFontLoader {
   constructor(docId) {
     super(docId);
+    this.loadingContext = {
+      requests: [],
+      nextRequestId: 0,
+    };
     this.loadTestFontId = 0;
   }
 
@@ -203,6 +181,29 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
       }
     }
     return shadow(this, 'isSyncFontLoadingSupported', supported);
+  }
+
+  _queueLoadingCallback(callback) {
+    function completeRequest() {
+      assert(!request.done, 'completeRequest() cannot be called twice.');
+      request.done = true;
+
+      // Sending all completed requests in order of how they were queued.
+      while (context.requests.length > 0 && context.requests[0].done) {
+        const otherRequest = context.requests.shift();
+        setTimeout(otherRequest.callback, 0);
+      }
+    }
+
+    const context = this.loadingContext;
+    const request = {
+      id: `pdfjs-font-loading-${context.nextRequestId++}`,
+      done: false,
+      complete: completeRequest,
+      callback,
+    };
+    context.requests.push(request);
+    return request;
   }
 
   get _loadTestFont() {

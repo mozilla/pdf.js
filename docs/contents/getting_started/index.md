@@ -39,7 +39,7 @@ Before downloading PDF.js please take a moment to understand the different layer
 
 <div class="row">
   <div class="col-md-6">
-    <h3>Pre-built</h3>
+    <h3>Prebuilt</h3>
     <p>
       Includes the generic build of PDF.js and the viewer.
     </p>
@@ -66,49 +66,51 @@ PDF.js is hosted on several free CDNs:
 
 ## File Layout Overview
 
+Note that we only mention the most relevant files and folders.
+
 ### Prebuilt
 
 ```
-├── LICENSE
 ├── build/
 │   ├── pdf.js                             - display layer
-│   └── pdf.worker.js                      - core layer
-└── web/
-    ├── cmaps/                             - character maps(required by core)
-    ├── compressed.tracemonkey-pldi-09.pdf - test pdf
-    ├── debugger.js                        - helpful pdf debugging features
-    ├── images/                            - images for the viewer and annotation icons
-    ├── l10n.js                            - localization
-    ├── locale/                            - translation files
-    ├── viewer.css                         - viewer style sheet
-    ├── viewer.html                        - viewer html
-    └── viewer.js                          - viewer layer
+│   ├── pdf.js.map                         - display layer's source map
+│   ├── pdf.worker.js                      - core layer
+│   └── pdf.worker.js.map                  - core layer's source map
+├── web/
+│   ├── cmaps/                             - character maps (required by core)
+│   ├── compressed.tracemonkey-pldi-09.pdf - PDF file for testing purposes
+│   ├── debugger.js                        - helpful debugging features
+│   ├── images/                            - images for the viewer and annotation icons
+│   ├── locale/                            - translation files
+│   ├── viewer.css                         - viewer style sheet
+│   ├── viewer.html                        - viewer layout
+│   ├── viewer.js                          - viewer layer
+│   └── viewer.js.map                      - viewer layer's source map
+└── LICENSE
 ```
 
 ### Source
 
 ```
-├── AUTHORS
-├── CONTRIBUTING.md
-├── LICENSE
-├── README.md
-├── build/                                 - output of build steps (empty)
-├── docs/                                  - this
-├── examples/                              - bare bones examples
-├── extensions/                            - various browser extensions
+├── docs/                                  - website source code
+├── examples/                              - simple usage examples
+├── extensions/                            - browser extension source code
 ├── external/                              - third party code
 ├── l10n/                                  - translation files
-├── gulpfile.js                            - build script
-├── package.json
 ├── src/
 │   ├── core/                              - core layer
 │   ├── display/                           - display layer
-│   ├── images/
-│   ├── pdf.js                             - wrapper file that everything is bundled into
-│   ├── shared/                            - shared code between core and display layers
+│   ├── shared/                            - shared code between the core and display layers
+│   ├── interfaces.js                      - interface definitions for the core/display layers
+│   ├── pdf.*.js                           - wrapper files for bundling
 │   └── worker_loader.js                   - used for developer builds to load worker files
-├── test/                                  - reference, unit, and font tests
-└── web/                                   - viewer layer
+├── test/                                  - unit, font and reference tests
+├── web/                                   - viewer layer
+├── LICENSE
+├── README.md
+├── gulpfile.js                            - build scripts/logic
+├── package-lock.json                      - pinned dependency versions
+└── package.json                           - package definition and dependencies
 ```
 
 ## Trying the Viewer

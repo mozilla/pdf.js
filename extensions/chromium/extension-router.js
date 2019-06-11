@@ -43,7 +43,7 @@ limitations under the License.
     // Find the (url-encoded) colon and verify that the scheme is whitelisted.
     var schemeIndex = url.search(/:|%3A/i);
     if (schemeIndex === -1) {
-      return;
+      return undefined;
     }
     var scheme = url.slice(0, schemeIndex).toLowerCase();
     if (schemes.includes(scheme)) {
@@ -53,6 +53,7 @@ limitations under the License.
       }
       return url;
     }
+    return undefined;
   }
 
   // TODO(rob): Use declarativeWebRequest once declared URL-encoding is
@@ -72,6 +73,7 @@ limitations under the License.
       console.log('Redirecting ' + details.url + ' to ' + url);
       return { redirectUrl: url, };
     }
+    return undefined;
   }, {
     types: ['main_frame', 'sub_frame'],
     urls: schemes.map(function(scheme) {

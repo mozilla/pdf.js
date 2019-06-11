@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+import { createPromiseCapability, PDFDateString } from 'pdfjs-lib';
 import {
   getPageSizeInches, getPDFFileNameFromURL, isPortraitOrientation, NullL10n
 } from './ui_utils';
-import { createPromiseCapability } from 'pdfjs-lib';
 
 const DEFAULT_FIELD_CONTENT = '-';
 
@@ -256,10 +256,10 @@ class PDFDocumentProperties {
   /**
    * @private
    */
-  _parseFileSize(fileSize = 0) {
+  async _parseFileSize(fileSize = 0) {
     let kb = fileSize / 1024;
     if (!kb) {
-      return Promise.resolve(undefined);
+      return undefined;
     } else if (kb < 1024) {
       return this.l10n.get('document_properties_kb', {
         size_kb: (+kb.toPrecision(3)).toLocaleString(),
@@ -275,9 +275,9 @@ class PDFDocumentProperties {
   /**
    * @private
    */
-  _parsePageSize(pageSizeInches, pagesRotation) {
+  async _parsePageSize(pageSizeInches, pagesRotation) {
     if (!pageSizeInches) {
-      return Promise.resolve(undefined);
+      return undefined;
     }
     // Take the viewer rotation into account as well; compare with Adobe Reader.
     if (pagesRotation % 180 !== 0) {
@@ -362,51 +362,15 @@ class PDFDocumentProperties {
   /**
    * @private
    */
-  _parseDate(inputDate) {
-    if (!inputDate) {
-      return;
+  async _parseDate(inputDate) {
+    const dateObject = PDFDateString.toDateObject(inputDate);
+    if (!dateObject) {
+      return undefined;
     }
-    // This is implemented according to the PDF specification, but note that
-    // Adobe Reader doesn't handle changing the date to universal time
-    // and doesn't use the user's time zone (they're effectively ignoring
-    // the HH' and mm' parts of the date string).
-    let dateToParse = inputDate;
-
-    // Remove the D: prefix if it is available.
-    if (dateToParse.substring(0, 2) === 'D:') {
-      dateToParse = dateToParse.substring(2);
-    }
-
-    // Get all elements from the PDF date string.
-    // JavaScript's `Date` object expects the month to be between
-    // 0 and 11 instead of 1 and 12, so we're correcting for this.
-    let year = parseInt(dateToParse.substring(0, 4), 10);
-    let month = parseInt(dateToParse.substring(4, 6), 10) - 1;
-    let day = parseInt(dateToParse.substring(6, 8), 10);
-    let hours = parseInt(dateToParse.substring(8, 10), 10);
-    let minutes = parseInt(dateToParse.substring(10, 12), 10);
-    let seconds = parseInt(dateToParse.substring(12, 14), 10);
-    let utRel = dateToParse.substring(14, 15);
-    let offsetHours = parseInt(dateToParse.substring(15, 17), 10);
-    let offsetMinutes = parseInt(dateToParse.substring(18, 20), 10);
-
-    // As per spec, utRel = 'Z' means equal to universal time.
-    // The other cases ('-' and '+') have to be handled here.
-    if (utRel === '-') {
-      hours += offsetHours;
-      minutes += offsetMinutes;
-    } else if (utRel === '+') {
-      hours -= offsetHours;
-      minutes -= offsetMinutes;
-    }
-
-    // Return the new date format from the user's locale.
-    let date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
-    let dateString = date.toLocaleDateString();
-    let timeString = date.toLocaleTimeString();
-    return this.l10n.get('document_properties_date_string',
-                         { date: dateString, time: timeString, },
-                         '{{date}}, {{time}}');
+    return this.l10n.get('document_properties_date_string', {
+        date: dateObject.toLocaleDateString(),
+        time: dateObject.toLocaleTimeString(),
+      }, '{{date}}, {{time}}');
   }
 
   /**

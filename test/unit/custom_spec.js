@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { buildGetDocumentParams } from './test_utils';
-import { DOMCanvasFactory } from '../../src/display/dom_utils';
+import { buildGetDocumentParams, NodeCanvasFactory } from './test_utils';
+import { DOMCanvasFactory } from '../../src/display/display_utils';
 import { getDocument } from '../../src/display/api';
 import isNodeJS from '../../src/shared/is_node';
 
@@ -37,8 +37,7 @@ describe('custom canvas rendering', function() {
 
   beforeAll(function(done) {
     if (isNodeJS()) {
-      // NOTE: To support running the canvas-related tests in Node.js,
-      // a `NodeCanvasFactory` would need to be added (in test_utils.js).
+      CanvasFactory = new NodeCanvasFactory();
     } else {
       CanvasFactory = new DOMCanvasFactory();
     }
@@ -48,9 +47,7 @@ describe('custom canvas rendering', function() {
     }).then(function(data) {
       page = data;
       done();
-    }).catch(function (reason) {
-      done.fail(reason);
-    });
+    }).catch(done.fail);
   });
 
   afterAll(function(done) {
@@ -60,49 +57,35 @@ describe('custom canvas rendering', function() {
   });
 
   it('renders to canvas with a default white background', function(done) {
-    if (isNodeJS()) {
-      pending('TODO: Support Canvas testing in Node.js.');
-    }
-    var viewport = page.getViewport(1);
+    var viewport = page.getViewport({ scale: 1, });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
-    page.render({
+    const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
       viewport,
-    }).then(function() {
-      var { r, g, b, a, } = getTopLeftPixel(canvasAndCtx.context);
-      CanvasFactory.destroy(canvasAndCtx);
-      expect(r).toEqual(255);
-      expect(g).toEqual(255);
-      expect(b).toEqual(255);
-      expect(a).toEqual(255);
-      done();
-    }).catch(function (reason) {
-      done(reason);
     });
+    renderTask.promise.then(function() {
+      expect(getTopLeftPixel(canvasAndCtx.context)).toEqual(
+        { r: 255, g: 255, b: 255, a: 255, });
+      CanvasFactory.destroy(canvasAndCtx);
+      done();
+    }).catch(done.fail);
   });
 
   it('renders to canvas with a custom background', function(done) {
-    if (isNodeJS()) {
-      pending('TODO: Support Canvas testing in Node.js.');
-    }
-    var viewport = page.getViewport(1);
+    var viewport = page.getViewport({ scale: 1, });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
-    page.render({
+    const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
       viewport,
       background: 'rgba(255,0,0,1.0)',
-    }).then(function() {
-      var { r, g, b, a, } = getTopLeftPixel(canvasAndCtx.context);
-      CanvasFactory.destroy(canvasAndCtx);
-      expect(r).toEqual(255);
-      expect(g).toEqual(0);
-      expect(b).toEqual(0);
-      expect(a).toEqual(255);
-      done();
-    }).catch(function (reason) {
-      done(reason);
     });
+    renderTask.promise.then(function() {
+      expect(getTopLeftPixel(canvasAndCtx.context)).toEqual(
+        { r: 255, g: 0, b: 0, a: 255, });
+      CanvasFactory.destroy(canvasAndCtx);
+      done();
+    }).catch(done.fail);
   });
 });

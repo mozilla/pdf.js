@@ -14,7 +14,7 @@
  */
 /* no-babel-preset */
 
-var getLookupTableFactory = require('../shared/util').getLookupTableFactory;
+var getLookupTableFactory = require('./core_utils').getLookupTableFactory;
 
 var getGlyphsUnicode = getLookupTableFactory(function (t) {
   t['A'] = 0x0041;

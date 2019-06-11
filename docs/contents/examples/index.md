@@ -20,10 +20,11 @@ The object structure of PDF.js loosely follows the structure of an actual PDF. A
 pdfjsLib.getDocument('helloworld.pdf')
 ```
 
-Remember though that PDF.js uses promises, so the above will return a promise that is resolved with the document object.
+Remember though that PDF.js uses promises, and the above will return a `PDFDocumentLoadingTask` instance that has a `promise` property which is resolved with the document object.
 
 ```js
-pdfjsLib.getDocument('helloworld.pdf').then(function(pdf) {
+var loadingTask = pdfjsLib.getDocument('helloworld.pdf');
+loadingTask.promise.then(function(pdf) {
   // you can now use *pdf* here
 });
 ```
@@ -42,7 +43,7 @@ Each PDF page has its own viewport which defines the size in pixels(72DPI) and i
 
 ```js
 var scale = 1.5;
-var viewport = page.getViewport(scale);
+var viewport = page.getViewport({ scale: scale, });
 
 var canvas = document.getElementById('the-canvas');
 var context = canvas.getContext('2d');
@@ -60,9 +61,9 @@ Alternatively, if you want the canvas to render to a certain pixel size you coul
 
 ```js
 var desiredWidth = 100;
-var viewport = page.getViewport(1);
+var viewport = page.getViewport({ scale: 1, });
 var scale = desiredWidth / viewport.width;
-var scaledViewport = page.getViewport(scale);
+var scaledViewport = page.getViewport({ scale: scale, });
 ```
 
 ## Interactive examples

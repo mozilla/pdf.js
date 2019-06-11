@@ -2,10 +2,20 @@
   "type": "object",
   "properties": {
     "showPreviousViewOnLoad": {
-      "title": "Show previous position of PDF upon load",
-      "description": "Whether to view PDF documents in the last page and position upon opening the viewer.",
+      "description": "DEPRECATED. Set viewOnLoad to 1 to disable showing the last page/position on load.",
       "type": "boolean",
       "default": true
+    },
+    "viewOnLoad": {
+      "title": "View position on load",
+      "description": "The position in the document upon load.\n -1 = Default (uses OpenAction if available, otherwise equal to `viewOnLoad = 0`).\n 0 = The last viewed page/position.\n 1 = The initial page/position.",
+      "type": "integer",
+      "enum": [
+        -1,
+        0,
+        1
+      ],
+      "default": 0
     },
     "defaultZoomValue": {
       "title": "Default zoom level",
@@ -16,15 +26,16 @@
     },
     "sidebarViewOnLoad": {
       "title": "Sidebar state on load",
-      "description": "Controls the state of the sidebar upon load.\n 0 = do not show sidebar.\n 1 = show thumbnails in sidebar.\n 2 = show document outline in sidebar.\n 3 = Show attachments in sidebar.",
+      "description": "Controls the state of the sidebar upon load.\n -1 = Default (uses PageMode if available, otherwise the last position if available/enabled).\n 0 = Do not show sidebar.\n 1 = Show thumbnails in sidebar.\n 2 = Show document outline in sidebar.\n 3 = Show attachments in sidebar.",
       "type": "integer",
       "enum": [
+        -1,
         0,
         1,
         2,
         3
       ],
-      "default": 0
+      "default": -1
     },
     "enableHandToolOnLoad": {
       "description": "DEPRECATED. Set cursorToolOnLoad to 1 to enable the hand tool by default.",
@@ -122,6 +133,7 @@
       "default": false
     },
     "disablePageMode": {
+      "description": "DEPRECATED.",
       "type": "boolean",
       "default": false
     },
@@ -143,6 +155,10 @@
       "type": "boolean",
       "default": false
     },
+    "historyUpdateUrl": {
+      "type": "boolean",
+      "default": false
+    },
     "enablePrintAutoRotate": {
       "title": "Automatically rotate printed pages",
       "description": "When enabled, pages whose orientation differ from the first page are rotated when printed.",
@@ -151,25 +167,27 @@
     },
     "scrollModeOnLoad": {
       "title": "Scroll mode on load",
-      "description": "Controls how the viewer scrolls upon load.\n 0 = Vertical scrolling.\n 1 = Horizontal scrolling.\n 2 = Wrapped scrolling.",
+      "description": "Controls how the viewer scrolls upon load.\n -1 = Default (uses the last position if available/enabled).\n 0 = Vertical scrolling.\n 1 = Horizontal scrolling.\n 2 = Wrapped scrolling.",
       "type": "integer",
       "enum": [
+        -1,
         0,
         1,
         2
       ],
-      "default": 0
+      "default": -1
     },
     "spreadModeOnLoad": {
       "title": "Spread mode on load",
-      "description": "Whether the viewer should join pages into spreads upon load.\n 0 = No spreads.\n 1 = Odd spreads.\n 2 = Even spreads.",
+      "description": "Whether the viewer should join pages into spreads upon load.\n -1 = Default (uses the last position if available/enabled).\n 0 = No spreads.\n 1 = Odd spreads.\n 2 = Even spreads.",
       "type": "integer",
       "enum": [
+        -1,
         0,
         1,
         2
       ],
-      "default": 0
+      "default": -1
     }
   }
 }

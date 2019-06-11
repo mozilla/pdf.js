@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-import { ScrollMode, SpreadMode } from './base_viewer';
+import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from './ui_utils';
 import { CursorTool } from './pdf_cursor_tools';
 import { PDFSinglePageViewer } from './pdf_single_page_viewer';
-import { SCROLLBAR_PADDING } from './ui_utils';
 
 /**
  * @typedef {Object} SecondaryToolbarOptions
@@ -189,42 +188,26 @@ class SecondaryToolbar {
   }
 
   _bindCursorToolsListener(buttons) {
-    this.eventBus.on('cursortoolchanged', function(evt) {
-      buttons.cursorSelectToolButton.classList.remove('toggled');
-      buttons.cursorHandToolButton.classList.remove('toggled');
-
-      switch (evt.tool) {
-        case CursorTool.SELECT:
-          buttons.cursorSelectToolButton.classList.add('toggled');
-          break;
-        case CursorTool.HAND:
-          buttons.cursorHandToolButton.classList.add('toggled');
-          break;
-      }
+    this.eventBus.on('cursortoolchanged', function({ tool, }) {
+      buttons.cursorSelectToolButton.classList.toggle('toggled',
+        tool === CursorTool.SELECT);
+      buttons.cursorHandToolButton.classList.toggle('toggled',
+        tool === CursorTool.HAND);
     });
   }
 
   _bindScrollModeListener(buttons) {
-    function scrollModeChanged(evt) {
-      buttons.scrollVerticalButton.classList.remove('toggled');
-      buttons.scrollHorizontalButton.classList.remove('toggled');
-      buttons.scrollWrappedButton.classList.remove('toggled');
-
-      switch (evt.mode) {
-        case ScrollMode.VERTICAL:
-          buttons.scrollVerticalButton.classList.add('toggled');
-          break;
-        case ScrollMode.HORIZONTAL:
-          buttons.scrollHorizontalButton.classList.add('toggled');
-          break;
-        case ScrollMode.WRAPPED:
-          buttons.scrollWrappedButton.classList.add('toggled');
-          break;
-      }
+    function scrollModeChanged({ mode, }) {
+      buttons.scrollVerticalButton.classList.toggle('toggled',
+        mode === ScrollMode.VERTICAL);
+      buttons.scrollHorizontalButton.classList.toggle('toggled',
+        mode === ScrollMode.HORIZONTAL);
+      buttons.scrollWrappedButton.classList.toggle('toggled',
+        mode === ScrollMode.WRAPPED);
 
       // Temporarily *disable* the Spread buttons when horizontal scrolling is
       // enabled, since the non-default Spread modes doesn't affect the layout.
-      const isScrollModeHorizontal = (evt.mode === ScrollMode.HORIZONTAL);
+      const isScrollModeHorizontal = (mode === ScrollMode.HORIZONTAL);
       buttons.spreadNoneButton.disabled = isScrollModeHorizontal;
       buttons.spreadOddButton.disabled = isScrollModeHorizontal;
       buttons.spreadEvenButton.disabled = isScrollModeHorizontal;
@@ -239,22 +222,13 @@ class SecondaryToolbar {
   }
 
   _bindSpreadModeListener(buttons) {
-    function spreadModeChanged(evt) {
-      buttons.spreadNoneButton.classList.remove('toggled');
-      buttons.spreadOddButton.classList.remove('toggled');
-      buttons.spreadEvenButton.classList.remove('toggled');
-
-      switch (evt.mode) {
-        case SpreadMode.NONE:
-          buttons.spreadNoneButton.classList.add('toggled');
-          break;
-        case SpreadMode.ODD:
-          buttons.spreadOddButton.classList.add('toggled');
-          break;
-        case SpreadMode.EVEN:
-          buttons.spreadEvenButton.classList.add('toggled');
-          break;
-      }
+    function spreadModeChanged({ mode, }) {
+      buttons.spreadNoneButton.classList.toggle('toggled',
+        mode === SpreadMode.NONE);
+      buttons.spreadOddButton.classList.toggle('toggled',
+        mode === SpreadMode.ODD);
+      buttons.spreadEvenButton.classList.toggle('toggled',
+        mode === SpreadMode.EVEN);
     }
     this.eventBus.on('spreadmodechanged', spreadModeChanged);
 

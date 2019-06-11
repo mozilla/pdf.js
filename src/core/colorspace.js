@@ -110,6 +110,13 @@ class ColorSpace {
   }
 
   /**
+   * Refer to the static `ColorSpace.isDefaultDecode` method below.
+   */
+  isDefaultDecode(decodeMap, bpc) {
+    return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
+  }
+
+  /**
    * Fills in the RGB colors in the destination buffer.  alpha01 indicates
    * how many alpha components there are in the dest array; it will be either
    * 0 (RGB array) or 1 (RGBA array).
@@ -379,18 +386,17 @@ class ColorSpace {
   /**
    * Checks if a decode map matches the default decode map for a color space.
    * This handles the general decode maps where there are two values per
-   * component. e.g. [0, 1, 0, 1, 0, 1] for a RGB color.
+   * component, e.g. [0, 1, 0, 1, 0, 1] for a RGB color.
    * This does not handle Lab, Indexed, or Pattern decode maps since they are
    * slightly different.
-   * @param {Array} decode Decode map (usually from an image).
-   * @param {Number} n Number of components the color space has.
+   * @param {Array} decode - Decode map (usually from an image).
+   * @param {Number} numComps - Number of components the color space has.
    */
-  static isDefaultDecode(decode, n) {
+  static isDefaultDecode(decode, numComps) {
     if (!Array.isArray(decode)) {
       return true;
     }
-
-    if (n * 2 !== decode.length) {
+    if (numComps * 2 !== decode.length) {
       warn('The decode map is not the correct length');
       return true;
     }
@@ -491,16 +497,16 @@ class AlternateCS extends ColorSpace {
                                      this.base.numComps / this.numComps,
                                      alpha01);
   }
-
-  isDefaultDecode(decodeMap) {
-    return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-  }
 }
 
 class PatternCS extends ColorSpace {
   constructor(baseCS) {
     super('Pattern', null);
     this.base = baseCS;
+  }
+
+  isDefaultDecode(decodeMap, bpc) {
+    unreachable('Should not call PatternCS.isDefaultDecode');
   }
 }
 
@@ -565,8 +571,19 @@ class IndexedCS extends ColorSpace {
     return this.base.getOutputLength(inputLength * this.base.numComps, alpha01);
   }
 
-  isDefaultDecode(decodeMap) {
-    return true; // Indexed color maps shouldn't be changed.
+  isDefaultDecode(decodeMap, bpc) {
+    if (!Array.isArray(decodeMap)) {
+      return true;
+    }
+    if (decodeMap.length !== 2) {
+      warn('Decode map length is not correct');
+      return true;
+    }
+    if (!Number.isInteger(bpc) || bpc < 1) {
+      warn('Bits per component is not correct');
+      return true;
+    }
+    return decodeMap[0] === 0 && decodeMap[1] === (1 << bpc) - 1;
   }
 }
 
@@ -607,10 +624,6 @@ class DeviceGrayCS extends ColorSpace {
 
   getOutputLength(inputLength, alpha01) {
     return inputLength * (3 + alpha01);
-  }
-
-  isDefaultDecode(decodeMap) {
-    return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
   }
 }
 
@@ -659,10 +672,6 @@ class DeviceRgbCS extends ColorSpace {
 
   isPassthrough(bits) {
     return bits === 8;
-  }
-
-  isDefaultDecode(decodeMap) {
-    return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
   }
 }
 
@@ -742,10 +751,6 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
 
     getOutputLength(inputLength, alpha01) {
       return (inputLength / 4 * (3 + alpha01)) | 0;
-    }
-
-    isDefaultDecode(decodeMap) {
-      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   }
   return DeviceCmykCS;
@@ -845,10 +850,6 @@ const CalGrayCS = (function CalGrayCSClosure() {
 
     getOutputLength(inputLength, alpha01) {
       return inputLength * (3 + alpha01);
-    }
-
-    isDefaultDecode(decodeMap) {
-      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   }
   return CalGrayCS;
@@ -1128,10 +1129,6 @@ const CalRGBCS = (function CalRGBCSClosure() {
     getOutputLength(inputLength, alpha01) {
       return (inputLength * (3 + alpha01) / 3) | 0;
     }
-
-    isDefaultDecode(decodeMap) {
-      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    }
   }
   return CalRGBCS;
 })();
@@ -1280,7 +1277,7 @@ const LabCS = (function LabCSClosure() {
       return (inputLength * (3 + alpha01) / 3) | 0;
     }
 
-    isDefaultDecode(decodeMap) {
+    isDefaultDecode(decodeMap, bpc) {
       // XXX: Decoding is handled with the lab conversion because of the strange
       // ranges that are used.
       return true;

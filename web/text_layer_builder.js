@@ -13,13 +13,10 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus } from './dom_events';
+import { getGlobalEventBus } from './ui_utils';
 import { renderTextLayer } from 'pdfjs-lib';
-import { scrollIntoView } from './ui_utils';
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
-const MATCH_SCROLL_OFFSET_TOP = -50;
-const MATCH_SCROLL_OFFSET_LEFT = -400;
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -56,9 +53,7 @@ class TextLayerBuilder {
     this.textLayerRenderTask = null;
     this.enhanceTextSelection = enhanceTextSelection;
 
-    this._boundEvents = Object.create(null);
-    this._bindEvents();
-
+    this._onUpdateTextLayerMatches = null;
     this._bindMouse();
   }
 
@@ -112,6 +107,16 @@ class TextLayerBuilder {
     }, function (reason) {
       // Cancelled or failed to render text layer; skipping errors.
     });
+
+    if (!this._onUpdateTextLayerMatches) {
+      this._onUpdateTextLayerMatches = (evt) => {
+        if (evt.pageIndex === this.pageIdx || evt.pageIndex === -1) {
+          this._updateMatches();
+        }
+      };
+      this.eventBus.on('updatetextlayermatches',
+                       this._onUpdateTextLayerMatches);
+    }
   }
 
   /**
@@ -121,6 +126,11 @@ class TextLayerBuilder {
     if (this.textLayerRenderTask) {
       this.textLayerRenderTask.cancel();
       this.textLayerRenderTask = null;
+    }
+    if (this._onUpdateTextLayerMatches) {
+      this.eventBus.off('updatetextlayermatches',
+                        this._onUpdateTextLayerMatches);
+      this._onUpdateTextLayerMatches = null;
     }
   }
 
@@ -241,18 +251,15 @@ class TextLayerBuilder {
       let match = matches[i];
       let begin = match.begin;
       let end = match.end;
-      let isSelected = (isSelectedPage && i === selectedMatchIdx);
-      let highlightSuffix = (isSelected ? ' selected' : '');
+      const isSelected = (isSelectedPage && i === selectedMatchIdx);
+      const highlightSuffix = (isSelected ? ' selected' : '');
 
-      // Scroll the selected match into view.
-      if (findController.selected.matchIdx === i &&
-          findController.selected.pageIdx === pageIdx) {
-        const spot = {
-          top: MATCH_SCROLL_OFFSET_TOP,
-          left: MATCH_SCROLL_OFFSET_LEFT,
-        };
-        scrollIntoView(textDivs[begin.divIdx], spot,
-                       /* skipOverflowHiddenElements = */ true);
+      if (isSelected) { // Attempt to scroll the selected match into view.
+        findController.scrollMatchIntoView({
+          element: textDivs[begin.divIdx],
+          pageIndex: pageIdx,
+          matchIndex: selectedMatchIdx,
+        });
       }
 
       // Match inside new div.
@@ -318,40 +325,6 @@ class TextLayerBuilder {
 
     this.matches = this._convertMatches(pageMatches, pageMatchesLength);
     this._renderMatches(this.matches);
-  }
-
-  /**
-   * @private
-   */
-  _bindEvents() {
-    const { eventBus, _boundEvents, } = this;
-
-    _boundEvents.pageCancelled = (evt) => {
-      if (evt.pageNumber !== this.pageNumber) {
-        return;
-      }
-      if (this.textLayerRenderTask) {
-        console.error('TextLayerBuilder._bindEvents: `this.cancel()` should ' +
-          'have been called when the page was reset, or rendering cancelled.');
-        return;
-      }
-      // Ensure that all event listeners are cleaned up when the page is reset,
-      // since re-rendering will create new `TextLayerBuilder` instances and the
-      // number of (stale) event listeners would otherwise grow without bound.
-      for (const name in _boundEvents) {
-        eventBus.off(name.toLowerCase(), _boundEvents[name]);
-        delete _boundEvents[name];
-      }
-    };
-    _boundEvents.updateTextLayerMatches = (evt) => {
-      if (evt.pageIndex !== this.pageIdx && evt.pageIndex !== -1) {
-        return;
-      }
-      this._updateMatches();
-    };
-
-    eventBus.on('pagecancelled', _boundEvents.pageCancelled);
-    eventBus.on('updatetextlayermatches', _boundEvents.updateTextLayerMatches);
   }
 
   /**

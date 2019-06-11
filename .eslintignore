@@ -2,7 +2,6 @@ build/
 l10n/
 docs/
 node_modules/
-examples/
 external/bcmaps/
 external/webL10n/
 external/cmapscompress/

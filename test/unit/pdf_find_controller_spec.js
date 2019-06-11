@@ -71,28 +71,144 @@ describe('pdf_find_controller', function() {
     pdfFindController = null;
   });
 
-  it('performs a basic search', function(done) {
-    pdfFindController.executeCommand('find', { query: 'Dynamic', });
+  function testSearch({ parameters, matchesPerPage, selectedMatch, }) {
+    return new Promise(function(resolve) {
+      pdfFindController.executeCommand('find', parameters);
 
-    const matchesPerPage = [11, 5, 0, 3, 0, 0, 0, 1, 1, 1, 0, 3, 4, 4];
-    const totalPages = matchesPerPage.length;
-    const totalMatches = matchesPerPage.reduce((a, b) => {
-      return a + b;
-    });
-
-    eventBus.on('updatefindmatchescount',
-        function onUpdateFindMatchesCount(evt) {
-      if (pdfFindController.pageMatches.length !== totalPages) {
-        return;
+      // The `updatefindmatchescount` event is only emitted if the page contains
+      // at least one match for the query, so the last non-zero item in the
+      // matches per page array corresponds to the page for which the final
+      // `updatefindmatchescount` event is emitted. If this happens, we know
+      // that any subsequent pages won't trigger the event anymore and we
+      // can start comparing the matches per page. This logic is necessary
+      // because we call the `pdfFindController.pageMatches` getter directly
+      // after receiving the event and the underlying `_pageMatches` array
+      // is only extended when a page is processed, so it will only contain
+      // entries for the pages processed until the time when the final event
+      // was emitted.
+      let totalPages = matchesPerPage.length;
+      for (let i = totalPages - 1; i >= 0; i--) {
+        if (matchesPerPage[i] > 0) {
+          totalPages = i + 1;
+          break;
+        }
       }
-      eventBus.off('updatefindmatchescount', onUpdateFindMatchesCount);
 
-      expect(evt.matchesCount.total).toBe(totalMatches);
-      for (let i = 0; i < totalPages; i++) {
-        expect(pdfFindController.pageMatches[i].length)
-          .toEqual(matchesPerPage[i]);
-      }
-      done();
+      const totalMatches = matchesPerPage.reduce((a, b) => {
+        return a + b;
+      });
+
+      eventBus.on('updatefindmatchescount',
+          function onUpdateFindMatchesCount(evt) {
+        if (pdfFindController.pageMatches.length !== totalPages) {
+          return;
+        }
+        eventBus.off('updatefindmatchescount', onUpdateFindMatchesCount);
+
+        expect(evt.matchesCount.total).toBe(totalMatches);
+        for (let i = 0; i < totalPages; i++) {
+          expect(pdfFindController.pageMatches[i].length)
+            .toEqual(matchesPerPage[i]);
+        }
+        expect(pdfFindController.selected.pageIdx)
+          .toEqual(selectedMatch.pageIndex);
+        expect(pdfFindController.selected.matchIdx)
+          .toEqual(selectedMatch.matchIndex);
+
+        resolve();
+      });
     });
+  }
+
+  it('performs a normal search', function(done) {
+    testSearch({
+      parameters: {
+        query: 'Dynamic',
+        caseSensitive: false,
+        entireWord: false,
+        phraseSearch: true,
+        findPrevious: false,
+      },
+      matchesPerPage: [11, 5, 0, 3, 0, 0, 0, 1, 1, 1, 0, 3, 4, 4],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+    }).then(done);
+  });
+
+  it('performs a normal search and finds the previous result', function(done) {
+    // Page 14 (with page index 13) contains five results. By default, the
+    // first result (match index 0) is selected, so the previous result
+    // should be the fifth result (match index 4).
+    testSearch({
+      parameters: {
+        query: 'conference',
+        caseSensitive: false,
+        entireWord: false,
+        phraseSearch: true,
+        findPrevious: true,
+      },
+      matchesPerPage: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+      selectedMatch: {
+        pageIndex: 13,
+        matchIndex: 4,
+      },
+    }).then(done);
+  });
+
+  it('performs a case sensitive search', function(done) {
+    testSearch({
+      parameters: {
+        query: 'Dynamic',
+        caseSensitive: true,
+        entireWord: false,
+        phraseSearch: true,
+        findPrevious: false,
+      },
+      matchesPerPage: [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+    }).then(done);
+  });
+
+  it('performs an entire word search', function(done) {
+    // Page 13 contains both 'Government' and 'Governmental', so the latter
+    // should not be found with entire word search.
+    testSearch({
+      parameters: {
+        query: 'Government',
+        caseSensitive: false,
+        entireWord: true,
+        phraseSearch: true,
+        findPrevious: false,
+      },
+      matchesPerPage: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+      selectedMatch: {
+        pageIndex: 12,
+        matchIndex: 0,
+      },
+    }).then(done);
+  });
+
+  it('performs a multiple term (no phrase) search', function(done) {
+    // Page 9 contains 'alternate' and pages 6 and 9 contain 'solution'.
+    // Both should be found for multiple term (no phrase) search.
+    testSearch({
+      parameters: {
+        query: 'alternate solution',
+        caseSensitive: false,
+        entireWord: false,
+        phraseSearch: false,
+        findPrevious: false,
+      },
+      matchesPerPage: [0, 0, 0, 0, 0, 1, 0, 0, 4, 0, 0, 0, 0, 0],
+      selectedMatch: {
+        pageIndex: 5,
+        matchIndex: 0,
+      },
+    }).then(done);
   });
 });

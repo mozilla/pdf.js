@@ -14,32 +14,21 @@
  */
 
 import {
-  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, isPortraitOrientation,
-  isValidRotation, MAX_AUTO_SCALE, moveToEndOfArray, NullL10n,
-  PresentationModeState, RendererType, SCROLLBAR_PADDING, TextLayerMode,
-  UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
+  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getGlobalEventBus,
+  getVisibleElements, isPortraitOrientation, isValidRotation, isValidScrollMode,
+  isValidSpreadMode, MAX_AUTO_SCALE, moveToEndOfArray, NullL10n,
+  PresentationModeState, RendererType, SCROLLBAR_PADDING, scrollIntoView,
+  ScrollMode, SpreadMode, TextLayerMode, UNKNOWN_SCALE, VERTICAL_PADDING,
+  watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
 import { createPromiseCapability } from 'pdfjs-lib';
-import { getGlobalEventBus } from './dom_events';
 import { PDFPageView } from './pdf_page_view';
 import { SimpleLinkService } from './pdf_link_service';
 import { TextLayerBuilder } from './text_layer_builder';
 
 const DEFAULT_CACHE_SIZE = 10;
-
-const ScrollMode = {
-  VERTICAL: 0, // The default value.
-  HORIZONTAL: 1,
-  WRAPPED: 2,
-};
-
-const SpreadMode = {
-  NONE: 0, // The default value.
-  ODD: 1,
-  EVEN: 2,
-};
 
 /**
  * @typedef {Object} PDFViewerOptions
@@ -213,10 +202,14 @@ class BaseViewer {
       return;
     }
     // The intent can be to just reset a scroll position and/or scale.
-    this._setCurrentPageNumber(val, /* resetCurrentPageView = */ true);
+    if (!this._setCurrentPageNumber(val, /* resetCurrentPageView = */ true)) {
+      console.error(
+        `${this._name}.currentPageNumber: "${val}" is not a valid page.`);
+    }
   }
 
   /**
+   * @return {boolean} Whether the pageNumber is valid (within bounds).
    * @private
    */
   _setCurrentPageNumber(val, resetCurrentPageView = false) {
@@ -224,27 +217,24 @@ class BaseViewer {
       if (resetCurrentPageView) {
         this._resetCurrentPageView();
       }
-      return;
+      return true;
     }
 
     if (!(0 < val && val <= this.pagesCount)) {
-      console.error(
-        `${this._name}._setCurrentPageNumber: "${val}" is out of bounds.`);
-      return;
+      return false;
     }
+    this._currentPageNumber = val;
 
-    let arg = {
+    this.eventBus.dispatch('pagechanging', {
       source: this,
       pageNumber: val,
       pageLabel: this._pageLabels && this._pageLabels[val - 1],
-    };
-    this._currentPageNumber = val;
-    this.eventBus.dispatch('pagechanging', arg);
-    this.eventBus.dispatch('pagechange', arg);
+    });
 
     if (resetCurrentPageView) {
       this._resetCurrentPageView();
     }
+    return true;
   }
 
   /**
@@ -259,14 +249,21 @@ class BaseViewer {
    * @param {string} val - The page label.
    */
   set currentPageLabel(val) {
-    let pageNumber = val | 0; // Fallback page number.
+    if (!this.pdfDocument) {
+      return;
+    }
+    let page = val | 0; // Fallback page number.
     if (this._pageLabels) {
       let i = this._pageLabels.indexOf(val);
       if (i >= 0) {
-        pageNumber = i + 1;
+        page = i + 1;
       }
     }
-    this.currentPageNumber = pageNumber;
+    // The intent can be to just reset a scroll position and/or scale.
+    if (!this._setCurrentPageNumber(page, /* resetCurrentPageView = */ true)) {
+      console.error(
+        `${this._name}.currentPageLabel: "${val}" is not a valid page.`);
+    }
   }
 
   /**
@@ -282,7 +279,7 @@ class BaseViewer {
    */
   set currentScale(val) {
     if (isNaN(val)) {
-      throw new Error('Invalid numeric scale');
+      throw new Error('Invalid numeric scale.');
     }
     if (!this.pdfDocument) {
       return;
@@ -353,6 +350,7 @@ class BaseViewer {
   }
 
   get _setDocumentViewerElement() {
+    // In most viewers, e.g. `PDFViewer`, this should return `this.viewer`.
     throw new Error('Not implemented: _setDocumentViewerElement');
   }
 
@@ -386,8 +384,7 @@ class BaseViewer {
       });
     });
 
-    let isOnePageRenderedResolved = false;
-    let onePageRenderedCapability = createPromiseCapability();
+    const onePageRenderedCapability = createPromiseCapability();
     this.onePageRendered = onePageRenderedCapability.promise;
 
     let bindOnAfterAndBeforeDraw = (pageView) => {
@@ -398,8 +395,7 @@ class BaseViewer {
         this._buffer.push(pageView);
       };
       pageView.onAfterDraw = () => {
-        if (!isOnePageRenderedResolved) {
-          isOnePageRenderedResolved = true;
+        if (!onePageRenderedCapability.settled) {
           onePageRenderedCapability.resolve();
         }
       };
@@ -412,7 +408,7 @@ class BaseViewer {
     // viewport for all pages
     firstPagePromise.then((pdfPage) => {
       let scale = this.currentScale;
-      let viewport = pdfPage.getViewport(scale * CSS_UNITS);
+      let viewport = pdfPage.getViewport({ scale: scale * CSS_UNITS, });
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let textLayerFactory = null;
         if (this.textLayerMode !== TextLayerMode.DISABLE) {
@@ -538,17 +534,7 @@ class BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
-    throw new Error('Not implemented: _scrollIntoView');
-  }
-
-  _setScaleDispatchEvent(newScale, newValue, preset = false) {
-    let arg = {
-      source: this,
-      scale: newScale,
-      presetValue: preset ? newValue : undefined,
-    };
-    this.eventBus.dispatch('scalechanging', arg);
-    this.eventBus.dispatch('scalechange', arg);
+    scrollIntoView(pageDiv, pageSpot);
   }
 
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {
@@ -556,7 +542,11 @@ class BaseViewer {
 
     if (isSameScale(this._currentScale, newScale)) {
       if (preset) {
-        this._setScaleDispatchEvent(newScale, newValue, true);
+        this.eventBus.dispatch('scalechanging', {
+          source: this,
+          scale: newScale,
+          presetValue: newValue,
+        });
       }
       return;
     }
@@ -581,7 +571,11 @@ class BaseViewer {
       });
     }
 
-    this._setScaleDispatchEvent(newScale, newValue, preset);
+    this.eventBus.dispatch('scalechanging', {
+      source: this,
+      scale: newScale,
+      presetValue: preset ? newValue : undefined,
+    });
 
     if (this.defaultRenderingQueue) {
       this.update();
@@ -665,23 +659,21 @@ class BaseViewer {
    * Scrolls page into view.
    * @param {ScrollPageIntoViewParameters} params
    */
-  scrollPageIntoView(params) {
+  scrollPageIntoView({ pageNumber, destArray = null,
+                       allowNegativeOffset = false, }) {
     if (!this.pdfDocument) {
       return;
     }
-    let pageNumber = params.pageNumber || 0;
-    let dest = params.destArray || null;
-    let allowNegativeOffset = params.allowNegativeOffset || false;
-
-    if (this.isInPresentationMode || !dest) {
-      this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
+    const pageView = (Number.isInteger(pageNumber) &&
+                      this._pages[pageNumber - 1]);
+    if (!pageView) {
+      console.error(`${this._name}.scrollPageIntoView: ` +
+        `"${pageNumber}" is not a valid pageNumber parameter.`);
       return;
     }
 
-    let pageView = this._pages[pageNumber - 1];
-    if (!pageView) {
-      console.error(
-        `${this._name}.scrollPageIntoView: Invalid "pageNumber" parameter.`);
+    if (this.isInPresentationMode || !destArray) {
+      this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
       return;
     }
     let x = 0, y = 0;
@@ -692,11 +684,11 @@ class BaseViewer {
     let pageHeight = (changeOrientation ? pageView.width : pageView.height) /
       pageView.scale / CSS_UNITS;
     let scale = 0;
-    switch (dest[1].name) {
+    switch (destArray[1].name) {
       case 'XYZ':
-        x = dest[2];
-        y = dest[3];
-        scale = dest[4];
+        x = destArray[2];
+        y = destArray[3];
+        scale = destArray[4];
         // If x and/or y coordinates are not supplied, default to
         // _top_ left of the page (not the obvious bottom left,
         // since aligning the bottom of the intended page with the
@@ -710,7 +702,7 @@ class BaseViewer {
         break;
       case 'FitH':
       case 'FitBH':
-        y = dest[2];
+        y = destArray[2];
         scale = 'page-width';
         // According to the PDF spec, section 12.3.2.2, a `null` value in the
         // parameter should maintain the position relative to the new page.
@@ -721,16 +713,16 @@ class BaseViewer {
         break;
       case 'FitV':
       case 'FitBV':
-        x = dest[2];
+        x = destArray[2];
         width = pageWidth;
         height = pageHeight;
         scale = 'page-height';
         break;
       case 'FitR':
-        x = dest[2];
-        y = dest[3];
-        width = dest[4] - x;
-        height = dest[5] - y;
+        x = destArray[2];
+        y = destArray[3];
+        width = destArray[4] - x;
+        height = destArray[5] - y;
         let hPadding = this.removePageBorders ? 0 : SCROLLBAR_PADDING;
         let vPadding = this.removePageBorders ? 0 : VERTICAL_PADDING;
 
@@ -741,8 +733,8 @@ class BaseViewer {
         scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
         break;
       default:
-        console.error(`${this._name}.scrollPageIntoView: "${dest[1].name}" ` +
-                      'is not a valid destination type.');
+        console.error(`${this._name}.scrollPageIntoView: ` +
+          `"${destArray[1].name}" is not a valid destination type.`);
         return;
     }
 
@@ -752,7 +744,7 @@ class BaseViewer {
       this.currentScaleValue = DEFAULT_SCALE_VALUE;
     }
 
-    if (scale === 'page-fit' && !dest[4]) {
+    if (scale === 'page-fit' && !destArray[4]) {
       this._scrollIntoView({
         pageDiv: pageView.div,
         pageNumber,
@@ -779,17 +771,6 @@ class BaseViewer {
       pageSpot: { left, top, },
       pageNumber,
     });
-  }
-
-  /**
-   * visiblePages is optional; if present, it should be an array of pages and in
-   * practice its length is going to be numVisiblePages, but this is not
-   * required. The new size of the buffer depends only on numVisiblePages.
-   */
-  _resizeBuffer(numVisiblePages, visiblePages) {
-    let suggestedCacheSize = Math.max(DEFAULT_CACHE_SIZE,
-                                      2 * numVisiblePages + 1);
-    this._buffer.resize(suggestedCacheSize, visiblePages);
   }
 
   _updateLocation(firstPage) {
@@ -821,8 +802,29 @@ class BaseViewer {
     };
   }
 
+  _updateHelper(visiblePages) {
+    throw new Error('Not implemented: _updateHelper');
+  }
+
   update() {
-    throw new Error('Not implemented: update');
+    const visible = this._getVisiblePages();
+    const visiblePages = visible.views, numVisiblePages = visiblePages.length;
+
+    if (numVisiblePages === 0) {
+      return;
+    }
+    const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
+    this._buffer.resize(newCacheSize, visiblePages);
+
+    this.renderingQueue.renderHighestPriority(visible);
+
+    this._updateHelper(visiblePages); // Run any class-specific update code.
+
+    this._updateLocation(visible.first);
+    this.eventBus.dispatch('updateviewarea', {
+      source: this,
+      location: this._location,
+    });
   }
 
   containsElement(element) {
@@ -834,7 +836,10 @@ class BaseViewer {
   }
 
   get _isScrollModeHorizontal() {
-    throw new Error('Not implemented: _isScrollModeHorizontal');
+    // Used to ensure that pre-rendering of the next/previous page works
+    // correctly, since Scroll/Spread modes are ignored in Presentation Mode.
+    return (this.isInPresentationMode ?
+            false : this._scrollMode === ScrollMode.HORIZONTAL);
   }
 
   get isInPresentationMode() {
@@ -855,8 +860,50 @@ class BaseViewer {
       false : (this.container.scrollHeight > this.container.clientHeight));
   }
 
+  /**
+   * Helper method for `this._getVisiblePages`. Should only ever be used when
+   * the viewer can only display a single page at a time, for example in:
+   *  - `PDFSinglePageViewer`.
+   *  - `PDFViewer` with Presentation Mode active.
+   */
+  _getCurrentVisiblePage() {
+    if (!this.pagesCount) {
+      return { views: [], };
+    }
+    const pageView = this._pages[this._currentPageNumber - 1];
+    // NOTE: Compute the `x` and `y` properties of the current view,
+    // since `this._updateLocation` depends of them being available.
+    const element = pageView.div;
+
+    const view = {
+      id: pageView.id,
+      x: element.offsetLeft + element.clientLeft,
+      y: element.offsetTop + element.clientTop,
+      view: pageView,
+    };
+    return { first: view, last: view, views: [view], };
+  }
+
   _getVisiblePages() {
-    throw new Error('Not implemented: _getVisiblePages');
+    return getVisibleElements(this.container, this._pages, true,
+                              this._isScrollModeHorizontal);
+  }
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageVisible(pageNumber) {
+    if (!this.pdfDocument) {
+      return false;
+    }
+    if (this.pageNumber < 1 || pageNumber > this.pagesCount) {
+      console.error(
+        `${this._name}.isPageVisible: "${pageNumber}" is out of bounds.`);
+      return false;
+    }
+    return this._getVisiblePages().views.some(function(view) {
+      return (view.id === pageNumber);
+    });
   }
 
   cleanup() {
@@ -987,7 +1034,7 @@ class BaseViewer {
    */
   getPagesOverview() {
     let pagesOverview = this._pages.map(function(pageView) {
-      let viewport = pageView.pdfPage.getViewport(1);
+      let viewport = pageView.pdfPage.getViewport({ scale: 1, });
       return {
         width: viewport.width,
         height: viewport.height,
@@ -1026,7 +1073,7 @@ class BaseViewer {
     if (this._scrollMode === mode) {
       return; // The Scroll mode didn't change.
     }
-    if (!Number.isInteger(mode) || !Object.values(ScrollMode).includes(mode)) {
+    if (!isValidScrollMode(mode)) {
       throw new Error(`Invalid scroll mode: ${mode}`);
     }
     this._scrollMode = mode;
@@ -1052,7 +1099,7 @@ class BaseViewer {
     if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
       this._setScale(this._currentScaleValue, true);
     }
-    this.scrollPageIntoView({ pageNumber, });
+    this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
   }
 
@@ -1072,7 +1119,7 @@ class BaseViewer {
     if (this._spreadMode === mode) {
       return; // The Spread mode didn't change.
     }
-    if (!Number.isInteger(mode) || !Object.values(SpreadMode).includes(mode)) {
+    if (!isValidSpreadMode(mode)) {
       throw new Error(`Invalid spread mode: ${mode}`);
     }
     this._spreadMode = mode;
@@ -1112,13 +1159,11 @@ class BaseViewer {
     if (!pageNumber) {
       return;
     }
-    this.scrollPageIntoView({ pageNumber, });
+    this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
   }
 }
 
 export {
   BaseViewer,
-  ScrollMode,
-  SpreadMode,
 };

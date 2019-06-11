@@ -55,7 +55,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
   function appendText(task, geom, styles) {
     // Initialize all used properties to keep the caches monomorphic.
-    var textDiv = document.createElement('div');
+    var textDiv = document.createElement('span');
     var textDivProperties = {
       style: null,
       angle: 0,
@@ -490,6 +490,17 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._capability = createPromiseCapability();
     this._renderTimer = null;
     this._bounds = [];
+
+    // Always clean-up the temporary canvas once rendering is no longer pending.
+    this._capability.promise.finally(() => {
+      if (this._layoutTextCtx) {
+        // Zeroing the width and height cause Firefox to release graphics
+        // resources immediately, which can greatly reduce memory consumption.
+        this._layoutTextCtx.canvas.width = 0;
+        this._layoutTextCtx.canvas.height = 0;
+        this._layoutTextCtx = null;
+      }
+    });
   }
   TextLayerRenderTask.prototype = {
     get promise() {
@@ -497,16 +508,16 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
 
     cancel: function TextLayer_cancel() {
+      this._canceled = true;
       if (this._reader) {
-        this._reader.cancel(new AbortException('text layer task cancelled'));
+        this._reader.cancel(new AbortException('TextLayer task cancelled.'));
         this._reader = null;
       }
-      this._canceled = true;
       if (this._renderTimer !== null) {
         clearTimeout(this._renderTimer);
         this._renderTimer = null;
       }
-      this._capability.reject('canceled');
+      this._capability.reject(new Error('TextLayer task cancelled.'));
     },
 
     _processItems(items, styleCache) {
@@ -540,12 +551,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       let transform = '';
       if (textDivProperties.canvasWidth !== 0 && width > 0) {
         textDivProperties.scale = textDivProperties.canvasWidth / width;
-        transform = 'scaleX(' + textDivProperties.scale + ')';
+        transform = `scaleX(${textDivProperties.scale})`;
       }
       if (textDivProperties.angle !== 0) {
-        transform = 'rotate(' + textDivProperties.angle + 'deg) ' + transform;
+        transform = `rotate(${textDivProperties.angle}deg) ${transform}`;
       }
-      if (transform !== '') {
+      if (transform.length > 0) {
         textDivProperties.originalTransform = transform;
         textDiv.style.transform = transform;
       }

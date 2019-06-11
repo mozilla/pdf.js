@@ -23,11 +23,6 @@ if ((typeof PDFJSDev === 'undefined' ||
 
 globalScope._pdfjsCompatibilityChecked = true;
 
-// In the Chrome extension, most of the polyfills are unnecessary.
-// We support down to Chrome 49, because it's still commonly used by Windows XP
-// users - https://github.com/mozilla/pdf.js/issues/9397
-if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
-
 const isNodeJS = require('./is_node');
 
 const hasDOM = typeof window === 'object' && typeof document === 'object';
@@ -54,25 +49,6 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   };
 })();
 
-// Provides document.currentScript support
-// Support: IE, Chrome<29.
-(function checkCurrentScript() {
-  if (!hasDOM) {
-    return;
-  }
-  if ('currentScript' in document) {
-    return;
-  }
-  Object.defineProperty(document, 'currentScript', {
-    get() {
-      var scripts = document.getElementsByTagName('script');
-      return scripts[scripts.length - 1];
-    },
-    enumerable: true,
-    configurable: true,
-  });
-})();
-
 // Provides support for ChildNode.remove in legacy browsers.
 // Support: IE.
 (function checkChildNodeRemove() {
@@ -90,6 +66,35 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   };
 })();
 
+// Provides support for DOMTokenList.prototype.{add, remove}, with more than
+// one parameter, in legacy browsers.
+// Support: IE
+(function checkDOMTokenListAddRemove() {
+  if (!hasDOM || isNodeJS()) {
+    return;
+  }
+  const div = document.createElement('div');
+  div.classList.add('testOne', 'testTwo');
+
+  if (div.classList.contains('testOne') === true &&
+      div.classList.contains('testTwo') === true) {
+    return;
+  }
+  const OriginalDOMTokenListAdd = DOMTokenList.prototype.add;
+  const OriginalDOMTokenListRemove = DOMTokenList.prototype.remove;
+
+  DOMTokenList.prototype.add = function(...tokens) {
+    for (let token of tokens) {
+      OriginalDOMTokenListAdd.call(this, token);
+    }
+  };
+  DOMTokenList.prototype.remove = function(...tokens) {
+    for (let token of tokens) {
+      OriginalDOMTokenListRemove.call(this, token);
+    }
+  };
+})();
+
 // Provides support for DOMTokenList.prototype.toggle, with the optional
 // "force" parameter, in legacy browsers.
 // Support: IE
@@ -101,15 +106,29 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   if (div.classList.toggle('test', 0) === false) {
     return;
   }
-  const originalDOMTokenListToggle = DOMTokenList.prototype.toggle;
 
   DOMTokenList.prototype.toggle = function(token) {
-    if (arguments.length > 1) {
-      const force = !!arguments[1];
-      return (this[force ? 'add' : 'remove'](token), force);
-    }
-    return originalDOMTokenListToggle(token);
+    let force = (arguments.length > 1 ? !!arguments[1] : !this.contains(token));
+    return (this[force ? 'add' : 'remove'](token), force);
   };
+})();
+
+// Provides support for String.prototype.startsWith in legacy browsers.
+// Support: IE, Chrome<41
+(function checkStringStartsWith() {
+  if (String.prototype.startsWith) {
+    return;
+  }
+  require('core-js/fn/string/starts-with');
+})();
+
+// Provides support for String.prototype.endsWith in legacy browsers.
+// Support: IE, Chrome<41
+(function checkStringEndsWith() {
+  if (String.prototype.endsWith) {
+    return;
+  }
+  require('core-js/fn/string/ends-with');
 })();
 
 // Provides support for String.prototype.includes in legacy browsers.
@@ -128,6 +147,15 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
     return;
   }
   require('core-js/fn/array/includes');
+})();
+
+// Provides support for Array.from in legacy browsers.
+// Support: IE
+(function checkArrayFrom() {
+  if (Array.from) {
+    return;
+  }
+  require('core-js/fn/array/from');
 })();
 
 // Provides support for Object.assign in legacy browsers.
@@ -166,14 +194,15 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   Number.isInteger = require('core-js/fn/number/is-integer');
 })();
 
-// Support: IE, Safari<8, Chrome<32
+// Support: IE, Safari<11, Chrome<63
 (function checkPromise() {
   if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('IMAGE_DECODERS')) {
     // The current image decoders are synchronous, hence `Promise` shouldn't
     // need to be polyfilled for the IMAGE_DECODERS build target.
     return;
   }
-  if (globalScope.Promise) {
+  if (globalScope.Promise && (globalScope.Promise.prototype &&
+                              globalScope.Promise.prototype.finally)) {
     return;
   }
   globalScope.Promise = require('core-js/fn/promise');
@@ -185,6 +214,14 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
     return;
   }
   globalScope.WeakMap = require('core-js/fn/weak-map');
+})();
+
+// Support: IE11
+(function checkWeakSet() {
+  if (globalScope.WeakSet) {
+    return;
+  }
+  globalScope.WeakSet = require('core-js/fn/weak-set');
 })();
 
 // Provides support for String.codePointAt in legacy browsers.
@@ -213,7 +250,23 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   require('core-js/es6/symbol');
 })();
 
-} // End of !PDFJSDev.test('CHROME')
+// Provides support for String.prototype.padStart in legacy browsers.
+// Support: IE, Chrome<57
+(function checkStringPadStart() {
+  if (String.prototype.padStart) {
+    return;
+  }
+  require('core-js/fn/string/pad-start');
+})();
+
+// Provides support for String.prototype.padEnd in legacy browsers.
+// Support: IE, Chrome<57
+(function checkStringPadEnd() {
+  if (String.prototype.padEnd) {
+    return;
+  }
+  require('core-js/fn/string/pad-end');
+})();
 
 // Provides support for Object.values in legacy browsers.
 // Support: IE, Chrome<54

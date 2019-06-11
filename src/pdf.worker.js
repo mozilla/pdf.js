@@ -16,9 +16,9 @@
 
 'use strict';
 
-var pdfjsVersion = PDFJSDev.eval('BUNDLE_VERSION');
-var pdfjsBuild = PDFJSDev.eval('BUNDLE_BUILD');
+const pdfjsVersion = PDFJSDev.eval('BUNDLE_VERSION');
+const pdfjsBuild = PDFJSDev.eval('BUNDLE_BUILD');
 
-var pdfjsCoreWorker = require('./core/worker.js');
+const pdfjsCoreWorker = require('./core/worker.js');
 
 exports.WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;

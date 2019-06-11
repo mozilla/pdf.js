@@ -162,7 +162,7 @@ describe('ui_utils', function() {
       var typedArray = new Uint8Array([1, 2, 3, 4, 5]);
       var blobUrl = createObjectURL(typedArray, 'application/pdf');
       // Sanity check to ensure that a "blob:" URL was returned.
-      expect(blobUrl.indexOf('blob:') === 0).toEqual(true);
+      expect(blobUrl.startsWith('blob:')).toEqual(true);
 
       expect(getPDFFileNameFromURL(blobUrl + '?file.pdf')).toEqual('file.pdf');
     });
@@ -173,7 +173,7 @@ describe('ui_utils', function() {
       var dataUrl = createObjectURL(typedArray, 'application/pdf',
                                     /* forceDataSchema = */ true);
       // Sanity check to ensure that a "data:" URL was returned.
-      expect(dataUrl.indexOf('data:') === 0).toEqual(true);
+      expect(dataUrl.startsWith('data:')).toEqual(true);
 
       expect(getPDFFileNameFromURL(dataUrl + '?file1.pdf')).
         toEqual('document.pdf');
@@ -688,6 +688,66 @@ describe('ui_utils', function() {
         [[10, 50], [20, 20], [30, 10]],
       ]);
       scrollOverDocument(pages, true);
+    });
+
+    it('handles `sortByVisibility` correctly', function() {
+      const scrollEl = {
+        scrollTop: 75,
+        scrollLeft: 0,
+        clientHeight: 750,
+        clientWidth: 1500,
+      };
+      const views = makePages([
+        [[100, 150]],
+        [[100, 150]],
+        [[100, 150]],
+      ]);
+
+      const visible = getVisibleElements(scrollEl, views);
+      const visibleSorted = getVisibleElements(scrollEl, views,
+                                               /* sortByVisibility = */ true);
+
+      const viewsOrder = [], viewsSortedOrder = [];
+      for (const view of visible.views) {
+        viewsOrder.push(view.id);
+      }
+      for (const view of visibleSorted.views) {
+        viewsSortedOrder.push(view.id);
+      }
+      expect(viewsOrder).toEqual([0, 1, 2]);
+      expect(viewsSortedOrder).toEqual([1, 2, 0]);
+    });
+
+    it('handles views being empty', function() {
+      const scrollEl = {
+        scrollTop: 10,
+        scrollLeft: 0,
+        clientHeight: 750,
+        clientWidth: 1500,
+      };
+      const views = [];
+
+      expect(getVisibleElements(scrollEl, views)).toEqual({
+        first: undefined, last: undefined, views: [],
+      });
+    });
+
+    it('handles all views being hidden (without errors)', function() {
+      const scrollEl = {
+        scrollTop: 100000,
+        scrollLeft: 0,
+        clientHeight: 750,
+        clientWidth: 1500,
+      };
+      const views = makePages([
+        [[100, 150]],
+        [[100, 150]],
+        [[100, 150]],
+      ]);
+
+      expect(getVisibleElements(scrollEl, views)).toEqual({
+        first: undefined, last: undefined, views: [],
+      });
     });
 
     // This sub-suite is for a notionally internal helper function for

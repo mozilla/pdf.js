@@ -60,7 +60,7 @@ function getViewerConfiguration() {
     appContainer: document.body,
     mainContainer: document.getElementById('viewerContainer'),
     viewerContainer: document.getElementById('viewer'),
-    eventBus: null, // using global event bus with DOM events
+    eventBus: null, // Using global event bus with (optional) DOM events.
     toolbar: {
       container: document.getElementById('toolbarViewer'),
       numPages: document.getElementById('numPages'),
@@ -203,6 +203,16 @@ function webViewerLoad() {
 
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
     window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
+
+    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
+      // Give custom implementations of the default viewer a simpler way to
+      // set various `AppOptions`, by dispatching an event once all viewer
+      // files are loaded but *before* the viewer initialization has run.
+      const event = document.createEvent('CustomEvent');
+      event.initCustomEvent('webviewerloaded', true, true, {});
+      document.dispatchEvent(event);
+    }
+
     pdfjsWebApp.PDFViewerApplication.run(config);
   }
 }
