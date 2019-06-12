@@ -1,0 +1,14 @@
+{
+  "name": "pdfjs-dist",
+  "version": "2.2.211",
+  "main": [
+    "build/pdf.js",
+    "build/pdf.worker.js"
+  ],
+  "ignore": [],
+  "keywords": [
+    "Mozilla",
+    "pdf",
+    "pdf.js"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "pdfjs-dist",
+  "version": "2.2.211",
+  "main": "build/pdf.js",
+  "description": "Generic build of Mozilla's PDF.js library.",
+  "keywords": [
+    "Mozilla",
+    "pdf",
+    "pdf.js"
+  ],
+  "homepage": "http://mozilla.github.io/pdf.js/",
+  "bugs": "https://github.com/mozilla/pdf.js/issues",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "node-ensure": "^0.0.0",
+    "worker-loader": "^2.0.0"
+  },
+  "peerDependencies": {
+    "webpack": "^3.0.0 || ^4.0.0-alpha.0 || ^4.0.0"
+  },
+  "browser": {
+    "fs": false,
+    "http": false,
+    "https": false,
+    "node-ensure": false,
+    "zlib": false
+  },
+  "format": "amd",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/macroplant/pdf.js"
+  }
+}
