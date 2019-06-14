@@ -982,10 +982,63 @@ SVGGraphics = class SVGGraphics {
    */
   _makeColorN_Pattern(args) {
     if (args[0] === 'TilingPattern') {
-      warn('Unimplemented pattern TilingPattern');
-      return null;
+      return this._makeTilingPattern(args);
     }
     return this._makeShadingPattern(args);
+  }
+
+  /**
+   * @private
+   */
+  _makeTilingPattern(args) {
+    const color = args[1];
+    const operatorList = args[2];
+    const matrix = args[3] || IDENTITY_MATRIX;
+    const [x0, y0, x1, y1] = args[4];
+    const xstep = args[5];
+    const ystep = args[6];
+    const paintType = args[7];
+
+    const tilingId = `shading${shadingCount++}`;
+    const [tx0, ty0] = Util.applyTransform([x0, y0], matrix);
+    const [tx1, ty1] = Util.applyTransform([x1, y1], matrix);
+    const [xscale, yscale] = Util.singularValueDecompose2dScale(matrix);
+    const txstep = xstep * xscale;
+    const tystep = ystep * yscale;
+
+    const tiling = this.svgFactory.createElement('svg:pattern');
+    tiling.setAttributeNS(null, 'id', tilingId);
+    tiling.setAttributeNS(null, 'patternUnits', 'userSpaceOnUse');
+    tiling.setAttributeNS(null, 'width', txstep);
+    tiling.setAttributeNS(null, 'height', tystep);
+    tiling.setAttributeNS(null, 'x', `${tx0}`);
+    tiling.setAttributeNS(null, 'y', `${ty0}`);
+
+    // Save current state.
+    const svg = this.svg;
+    const transformMatrix = this.transformMatrix;
+    const fillColor = this.current.fillColor;
+    const strokeColor = this.current.strokeColor;
+
+    const bbox = this.svgFactory.create(tx1 - tx0, ty1 - ty0);
+    this.svg = bbox;
+    this.transformMatrix = matrix;
+    if (paintType === 2) {
+      const cssColor = Util.makeCssRgb(...color);
+      this.current.fillColor = cssColor;
+      this.current.strokeColor = cssColor;
+    }
+    this.executeOpTree(this.convertOpList(operatorList));
+
+    // Restore saved state.
+    this.svg = svg;
+    this.transformMatrix = transformMatrix;
+    this.current.fillColor = fillColor;
+    this.current.strokeColor = strokeColor;
+
+    tiling.appendChild(bbox.childNodes[0]);
+    this.defs.appendChild(tiling);
+    return `url(#${tilingId})`;
   }
 
   /**
