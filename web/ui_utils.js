@@ -107,7 +107,7 @@ function getOutputScale(ctx) {
 }
 
 //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-function getOffsetTop(view){
+/*function getOffsetTop(view){
   var ele = view.div;
   return ele.offsetTop + ele.clientTop +
               (view.viewer.spreadMode == SpreadMode.ODD || 
@@ -121,6 +121,18 @@ function getOffsetLeft(view){
               (view.viewer.spreadMode == SpreadMode.ODD || 
               view.viewer.spreadMode == SpreadMode.EVEN ? 
               ele.parentNode.offsetLeft + ele.parentNode.clientLeft : 0);
+}*/
+
+function getOffsetTop(view){
+  return (view.viewer.spreadMode == SpreadMode.ODD || 
+              view.viewer.spreadMode == SpreadMode.EVEN ? 
+              view.position.spread.realTop : view.position.realTop);
+}
+
+function getOffsetLeft(view){
+  return (view.viewer.spreadMode == SpreadMode.ODD || 
+              view.viewer.spreadMode == SpreadMode.EVEN ? 
+              view.position.spread.realLeft : view.position.realLeft);
 }
 //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 /**
@@ -131,6 +143,86 @@ function getOffsetLeft(view){
  * @param {boolean} skipOverflowHiddenElements - Ignore elements that have
  *   the CSS rule `overflow: hidden;` set. The default is false.
  */
+
+
+//---------------------------------tanglinhai 改造page布局成absolute,改善性能 start ----------------------
+/*function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
+  // Assuming offsetParent is available (it's not available when viewer is in
+  // hidden iframe or object). We have to scroll: if the offsetParent is not set
+  // producing the error. See also animationStarted.
+  let parent = element.offsetParent;
+  
+  if (!parent) {
+    console.error('offsetParent is not set -- cannot scroll');
+    return;
+  }
+  let offsetY = element.offsetTop + element.clientTop;
+  let offsetX = element.offsetLeft + element.clientLeft;
+  while (
+    //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 start ----------------------
+    (PDFViewerApplication.pdfViewer.spreadMode != 0 && parent.getAttribute('class') == 'spread') ||
+    //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 end ----------------------
+    (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth) ||
+    (skipOverflowHiddenElements && getComputedStyle(parent).overflow === 'hidden')) {
+    if (parent.dataset._scaleY) {
+      offsetY /= parent.dataset._scaleY;
+      offsetX /= parent.dataset._scaleX;
+    }
+    offsetY += parent.offsetTop;
+    offsetX += parent.offsetLeft;
+    parent = parent.offsetParent;
+    if (!parent) {
+      return; // no need to scroll
+    }
+  }
+  //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 start ----------------------
+  parent = parent.offsetParent;
+  //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 end ----------------------
+  if (spot) {
+    if (spot.top !== undefined) {
+      offsetY += spot.top;
+    }
+    if (spot.left !== undefined) {
+      offsetX += spot.left;
+      parent.scrollLeft = offsetX;
+    }
+  }
+  parent.scrollTop = offsetY;
+}*/
+
+
+function util_scrollIntoView(pageView, spot){
+  var viewer = pageView.viewer;
+  var container = viewer.container;
+  var offsetY = (viewer.spreadMode == SpreadMode.ODD || 
+              viewer.spreadMode == SpreadMode.EVEN ? 
+              pageView.position.spread.realTop + (pageView.position.spread.height - pageView.position.height)/2 : pageView.position.realTop)
+  var offsetX = (viewer.spreadMode == SpreadMode.ODD || 
+              viewer.spreadMode == SpreadMode.EVEN ? 
+              pageView.position.spread.realLeft + (
+                  viewer.spreadMode % 2 === pageView.id - 1 && (
+                      (
+                        (pageView.id == viewer.pagesCount && viewer.pagesCount > 1) && 
+                        (
+                          (viewer.spreadMode == SpreadMode.ODD && viewer.pagesCount%2 == 0) || 
+                          (viewer.spreadMode == SpreadMode.EVEN && viewer.pagesCount%2 == 1)
+                        )
+                      )    ||
+                      (pageView.id < viewer.pagesCount && pageView.id > 1)
+                  ) ? viewer._pages[pageView.id-2].position.width : 0
+                )  : pageView.position.realLeft)
+  if (spot) {
+    if (spot.top !== undefined) {
+      offsetY += spot.top;
+    }
+    if (spot.left !== undefined) {
+      offsetX += spot.left;
+      container.scrollLeft = offsetX;
+    }
+  }
+  container.scrollTop = offsetY;
+}
+
 function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
@@ -174,6 +266,9 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   }
   parent.scrollTop = offsetY;
 }
+//---------------------------------tanglinhai 改造page布局成absolute,改善性能 end ----------------------
+
+
 
 /**
  * Helper function to start monitoring the scroll event and converting them into
@@ -363,6 +458,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   if (index < 2) {
     return index;
   }
+
   // That aside, the possible cases are represented below.
   //
   //     ****  = fully hidden
@@ -387,7 +483,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   // page's top. If the found page is partially visible, we're definitely not in
   // case 3, and this assumption is correct.
   let elt = views[index].div;
-  let pageTop = getOffsetTop(views[index]);
+  let pageTop = elt.offsetTop + elt.clientTop;
 
   if (pageTop >= top) {
     // The found page is fully visible, so we're actually either in case 3 or 4,
@@ -396,7 +492,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
     // we do need to backtrack to that row. In both cases, the previous page is
     // in the previous row, so use its top instead.
     elt = views[index - 1].div;
-    pageTop = getOffsetTop(views[index - 1]);
+    pageTop = elt.offsetTop + elt.clientTop;
   }
 
   // Now we backtrack to the first page that still has its bottom below
@@ -409,7 +505,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   // unchanged, so we use a distinct loop variable.)
   for (let i = index - 2; i >= 0; --i) {
     elt = views[i].div;
-    if (getOffsetTop(views[i]) + elt.clientHeight <= pageTop) {
+    if (elt.offsetTop + elt.clientTop + elt.clientHeight <= pageTop) {
       // We have reached the previous row, so stop now.
       // This loop is expected to terminate relatively quickly because the
       // number of pages per row is expected to be small.
@@ -419,6 +515,27 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   }
   return index;
 }
+/*function backtrackBeforeAllVisibleElements(index, views, top) {
+  if (index < 2) {
+    return index;
+  }
+  let elt = views[index].div;
+  let pageTop = getOffsetTop(views[index]);
+
+  if (pageTop >= top) {
+    elt = views[index - 1].div;
+    pageTop = getOffsetTop(views[index - 1]);
+  }
+
+  for (let i = index - 2; i >= 0; --i) {
+    elt = views[i].div;
+    if (getOffsetTop(views[i]) + elt.clientHeight <= pageTop) {
+      break;
+    }
+    index = i;
+  }
+  return index;
+}*/
 
 /**
  * Generic helper to find out what elements are visible within a scroll pane.
@@ -447,7 +564,248 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  *   out horizontally instead of vertically
  * @returns {Object} `{ first, last, views: [{ id, x, y, view, percent }] }`
  */
+//-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
+                            horizontal = false) {
+  var app = window.PDFViewerApplication;
+  var viewer = app.pdfViewer;
+  var container = viewer.viewer;
+  var currPageIdx = app.page - 1;
+  const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
+  const left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
+  /**
+   * (viewer.spreadMode == SpreadMode.ODD || 
+              viewer.spreadMode == SpreadMode.EVEN ? 
+              ele.parentNode.offsetTop + ele.parentNode.clientTop : 0)
+   */
+  const visible = [], numViews = views.length;
+  var currRow;
+  var currRowVisibleCount;
+  for (let i = currPageIdx; i > -1; i--) {
+    const view = views[i];
+    var p = view.position;
+    var pageTop;
+    var pageBottom;
+    var pageLeft;
+    var pageRight;
 
+    if(viewer._scrollMode == ScrollMode.HORIZONTAL){
+      if(viewer._spreadMode == SpreadMode.NONE) {//水平+单页
+        if(currRow != p.column){
+          if(currRow !== undefined && currRowVisibleCount == 0){
+            break;
+          }
+          currRow != p.column;
+          currRowVisibleCount = 0;
+        }
+      }else{//水平+双页或者书籍
+        if(currRow != p.spread.column){
+          if(currRow !== undefined && currRowVisibleCount == 0){
+            break;
+          }
+          currRow != p.column;
+          currRowVisibleCount = 0;
+        }
+      }
+    }else if(viewer._spreadMode == SpreadMode.NONE){//垂直+单页
+      if(currRow != p.row){
+        if(currRow !== undefined && currRowVisibleCount == 0){
+          break;
+        }
+        currRow != p.row;
+        currRowVisibleCount = 0;
+      }
+    }else{//垂直+双页或者书籍
+      if(currRow != p.spread.row){
+        if(currRow !== undefined && currRowVisibleCount == 0){
+          break;
+        }
+        currRow != p.row;
+        currRowVisibleCount = 0;
+      }
+    }
+
+
+    if(viewer._scrollMode == ScrollMode.WRAPPED){
+      if(viewer._spreadMode == SpreadMode.NONE){//平铺+单页
+        pageTop = p.realTop;
+        pageBottom = pageTop + p.height;
+        pageLeft = p.realLeft;
+        pageRight = p.realLeft + p.width;
+      }else{//平铺+双页或者书籍
+        const parity = viewer.spreadMode % 2;
+        pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
+        pageBottom = pageTop + p.height;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+        pageRight = pageLeft + p.width;
+      }
+    }else if(viewer._scrollMode == ScrollMode.HORIZONTAL){
+      var containerH = container.clientHeight;
+      if(viewer._spreadMode == SpreadMode.NONE) {//水平+单页
+        pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
+        pageBottom = p.realTop + p.height;
+        pageLeft = p.realLeft;
+        pageRight = p.realLeft + p.width;
+      }else{//水平+双页或者书籍
+        const parity = viewer.spreadMode % 2;
+        pageTop = p.spread.realTop + (p.spread.height - p.height)/2 + (containerH > p.spread.height ? (containerH - p.spread.height)/2 : 0);
+        pageBottom = pageTop + p.height;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+        pageRight = pageLeft + p.width;
+      }
+    }else if(viewer._spreadMode == SpreadMode.NONE){//垂直+单页
+      pageTop = p.realTop;
+      pageBottom = p.realTop + p.height;
+      pageLeft = p.realLeft;
+      pageRight = p.realLeft + p.width;
+    }else{//垂直+双页或者书籍
+      const parity = viewer.spreadMode % 2;
+      pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
+      pageBottom = pageTop + p.height;
+      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+      pageRight = pageLeft + p.width;
+    }
+    if (pageBottom <= top || pageTop >= bottom ||
+        pageRight <= left || pageLeft >= right) {
+      continue;
+    }
+    currRowVisibleCount ++;
+    const hiddenHeight = Math.max(0, top - pageTop) +
+                         Math.max(0, pageBottom - bottom);
+    const hiddenWidth = Math.max(0, left - pageLeft) +
+                        Math.max(0, pageRight - right);
+    const percent = ((p.height - hiddenHeight) * (p.width - hiddenWidth) *
+                     100 / p.height / p.width) | 0;
+    visible.push({
+      id: view.id,
+      x: pageLeft,
+      y: pageTop,
+      view,
+      percent,
+    });
+  }
+
+  currRow = undefined;
+  currRowVisibleCount = 0;
+  for (let i = currPageIdx + 1; i < app.pagesCount; i++) {
+    const view = views[i];
+    var p = view.position;
+    var pageTop;
+    var pageBottom;
+    var pageLeft;
+    var pageRight;
+
+    if(viewer._scrollMode == ScrollMode.HORIZONTAL){
+      if(viewer._spreadMode == SpreadMode.NONE) {//水平+单页
+        if(currRow != p.column){
+          if(currRow !== undefined && currRowVisibleCount == 0){
+            break;
+          }
+          currRow != p.column;
+          currRowVisibleCount = 0;
+        }
+      }else{//水平+双页或者书籍
+        if(currRow != p.spread.column){
+          if(currRow !== undefined && currRowVisibleCount == 0){
+            break;
+          }
+          currRow != p.column;
+          currRowVisibleCount = 0;
+        }
+      }
+    }else if(viewer._spreadMode == SpreadMode.NONE){//垂直+单页
+      if(currRow != p.row){
+        if(currRow !== undefined && currRowVisibleCount == 0){
+          break;
+        }
+        currRow != p.row;
+        currRowVisibleCount = 0;
+      }
+    }else{//垂直+双页或者书籍
+      if(currRow != p.spread.row){
+        if(currRow !== undefined && currRowVisibleCount == 0){
+          break;
+        }
+        currRow != p.row;
+        currRowVisibleCount = 0;
+      }
+    }
+
+
+    if(viewer._scrollMode == ScrollMode.WRAPPED){
+      if(viewer._spreadMode == SpreadMode.NONE){//平铺+单页
+        pageTop = p.realTop;
+        pageBottom = pageTop + p.height;
+        pageLeft = p.realLeft;
+        pageRight = p.realLeft + p.width;
+      }else{//平铺+双页或者书籍
+        const parity = viewer.spreadMode % 2;
+        pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
+        pageBottom = pageTop + p.height;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+        pageRight = pageLeft + p.width;
+      }
+    }else if(viewer._scrollMode == ScrollMode.HORIZONTAL){
+      var containerH = container.clientHeight;
+      if(viewer._spreadMode == SpreadMode.NONE) {//水平+单页
+        pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
+        pageBottom = p.realTop + p.height;
+        pageLeft = p.realLeft;
+        pageRight = p.realLeft + p.width;
+      }else{//水平+双页或者书籍
+        const parity = viewer.spreadMode % 2;
+        pageTop = p.spread.realTop + (p.spread.height - p.height)/2 + (containerH > p.spread.height ? (containerH - p.spread.height)/2 : 0);
+        pageBottom = pageTop + p.height;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+        pageRight = pageLeft + p.width;
+      }
+    }else if(viewer._spreadMode == SpreadMode.NONE){//垂直+单页
+      pageTop = p.realTop;
+      pageBottom = p.realTop + p.height;
+      pageLeft = p.realLeft;
+      pageRight = p.realLeft + p.width;
+    }else{//垂直+双页或者书籍
+      const parity = viewer.spreadMode % 2;
+      pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
+      pageBottom = pageTop + p.height;
+      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+      pageRight = pageLeft + p.width;
+    }
+    if (pageBottom <= top || pageTop >= bottom ||
+        pageRight <= left || pageLeft >= right) {
+      continue;
+    }
+    currRowVisibleCount ++;
+    const hiddenHeight = Math.max(0, top - pageTop) +
+                         Math.max(0, pageBottom - bottom);
+    const hiddenWidth = Math.max(0, left - pageLeft) +
+                        Math.max(0, pageRight - right);
+    const percent = ((p.height - hiddenHeight) * (p.width - hiddenWidth) *
+                     100 / p.height / p.width) | 0;
+    visible.push({
+      id: view.id,
+      x: pageLeft,
+      y: pageTop,
+      view,
+      percent,
+    });
+  }
+
+
+  const first = visible[0], last = visible[visible.length - 1];
+
+  if (sortByVisibility) {
+    visible.sort(function(a, b) {
+      let pc = a.percent - b.percent;
+      if (Math.abs(pc) > 0.001) {
+        return -pc;
+      }
+      return a.id - b.id; // ensure stability
+    });
+  }
+  return { first, last, views: visible, };
+}
+//-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 function getVisibleElements(scrollEl, views, sortByVisibility = false,
                             horizontal = false) {
   const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
@@ -464,15 +822,15 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   // the border). Adding clientWidth/Height gets us the bottom-right corner of
   // the padding edge.
   function isElementBottomAfterViewTop(view) {
-    let element = view.div;
-    let elementBottom = 
-      getOffsetTop(view) + element.clientHeight;
+    const element = view.div;
+    const elementBottom =
+      element.offsetTop + element.clientTop + element.clientHeight;
     return elementBottom > top;
   }
   function isElementRightAfterViewLeft(view) {
-    let element = view.div;
-    let elementRight =
-      getOffsetLeft(view) + element.clientWidth;
+    const element = view.div;
+    const elementRight =
+      element.offsetLeft + element.clientLeft + element.clientWidth;
     return elementRight > left;
   }
 
@@ -506,8 +864,8 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
 
   for (let i = firstVisibleElementInd; i < numViews; i++) {
     const view = views[i], element = view.div;
-    const currentWidth = getOffsetLeft(view);
-    const currentHeight = getOffsetTop(view);
+    const currentWidth = element.offsetLeft + element.clientLeft;
+    const currentHeight = element.offsetTop + element.clientTop;
     const viewWidth = element.clientWidth, viewHeight = element.clientHeight;
     const viewRight = currentWidth + viewWidth;
     const viewBottom = currentHeight + viewHeight;
@@ -557,116 +915,6 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   }
   return { first, last, views: visible, };
 }
-
-/*function getVisibleElements(scrollEl, views, sortByVisibility = false,
-                            horizontal = false) {
-  const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
-  const left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
-
-  // Throughout this "generic" function, comments will assume we're working with
-  // PDF document pages, which is the most important and complex case. In this
-  // case, the visible elements we're actually interested is the page canvas,
-  // which is contained in a wrapper which adds no padding/border/margin, which
-  // is itself contained in `view.div` which adds no padding (but does add a
-  // border). So, as specified in this function's doc comment, this function
-  // does all of its work on the padding edge of the provided views, starting at
-  // offsetLeft/Top (which includes margin) and adding clientLeft/Top (which is
-  // the border). Adding clientWidth/Height gets us the bottom-right corner of
-  // the padding edge.
-  function isElementBottomAfterViewTop(view) {
-    let element = view.div;
-    let elementBottom = 
-      getOffsetTop(view) + element.clientHeight;
-    return elementBottom > top;
-  }
-  function isElementRightAfterViewLeft(view) {
-    let element = view.div;
-    let elementRight =
-      getOffsetLeft(view) + element.clientWidth;
-    return elementRight > left;
-  }
-
-  const visible = [], numViews = views.length;
-  let firstVisibleElementInd = numViews === 0 ? 0 :
-    binarySearchFirstItem(views, horizontal ? isElementRightAfterViewLeft :
-                                              isElementBottomAfterViewTop);
-
-  // Please note the return value of the `binarySearchFirstItem` function when
-  // no valid element is found (hence the `firstVisibleElementInd` check below).
-  if (firstVisibleElementInd > 0 && firstVisibleElementInd < numViews &&
-      !horizontal) {
-    // In wrapped scrolling (or vertical scrolling with spreads), with some page
-    // sizes, isElementBottomAfterViewTop doesn't satisfy the binary search
-    // condition: there can be pages with bottoms above the view top between
-    // pages with bottoms below. This function detects and corrects that error;
-    // see it for more comments.
-    firstVisibleElementInd =
-      backtrackBeforeAllVisibleElements(firstVisibleElementInd, views, top);
-  }
-
-  // lastEdge acts as a cutoff for us to stop looping, because we know all
-  // subsequent pages will be hidden.
-  //
-  // When using wrapped scrolling or vertical scrolling with spreads, we can't
-  // simply stop the first time we reach a page below the bottom of the view;
-  // the tops of subsequent pages on the same row could still be visible. In
-  // horizontal scrolling, we don't have that issue, so we can stop as soon as
-  // we pass `right`, without needing the code below that handles the -1 case.
-  let lastEdge = horizontal ? right : -1;
-
-  for (let i = firstVisibleElementInd; i < numViews; i++) {
-    const view = views[i], element = view.div;
-    const currentWidth = getOffsetLeft(view);
-    const currentHeight = getOffsetTop(view);
-    const viewWidth = element.clientWidth, viewHeight = element.clientHeight;
-    const viewRight = currentWidth + viewWidth;
-    const viewBottom = currentHeight + viewHeight;
-
-    if (lastEdge === -1) {
-      // As commented above, this is only needed in non-horizontal cases.
-      // Setting lastEdge to the bottom of the first page that is partially
-      // visible ensures that the next page fully below lastEdge is on the
-      // next row, which has to be fully hidden along with all subsequent rows.
-      if (viewBottom >= bottom) {
-        lastEdge = viewBottom;
-      }
-    } else if ((horizontal ? currentWidth : currentHeight) > lastEdge) {
-      break;
-    }
-
-    if (viewBottom <= top || currentHeight >= bottom ||
-        viewRight <= left || currentWidth >= right) {
-      continue;
-    }
-
-    const hiddenHeight = Math.max(0, top - currentHeight) +
-                         Math.max(0, viewBottom - bottom);
-    const hiddenWidth = Math.max(0, left - currentWidth) +
-                        Math.max(0, viewRight - right);
-    const percent = ((viewHeight - hiddenHeight) * (viewWidth - hiddenWidth) *
-                     100 / viewHeight / viewWidth) | 0;
-    visible.push({
-      id: view.id,
-      x: currentWidth,
-      y: currentHeight,
-      view,
-      percent,
-    });
-  }
-
-  const first = visible[0], last = visible[visible.length - 1];
-
-  if (sortByVisibility) {
-    visible.sort(function(a, b) {
-      let pc = a.percent - b.percent;
-      if (Math.abs(pc) > 0.001) {
-        return -pc;
-      }
-      return a.id - b.id; // ensure stability
-    });
-  }
-  return { first, last, views: visible, };
-}*/
 
 /**
  * Event handler to suppress context menu.
@@ -1052,5 +1300,7 @@ export {
   //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
   getOffsetTop,
   getOffsetLeft,
+  util_scrollIntoView,
+  util_getVisibleElements
   //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 };

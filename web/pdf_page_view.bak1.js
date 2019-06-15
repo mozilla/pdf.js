@@ -447,7 +447,7 @@ class PDFPageView {
         //}
       }
     }
-    console.log('第'+pageIndex_+'页,reset耗时(秒)：'+(new Date().getTime()-startTime)/1000);
+    //console.log('第'+pageIndex_+'页,reset耗时(秒)：'+(new Date().getTime()-startTime)/1000);
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';

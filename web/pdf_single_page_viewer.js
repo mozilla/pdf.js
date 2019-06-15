@@ -50,6 +50,7 @@ class PDFSinglePageViewer extends BaseViewer {
     switch (viewerNodes.length) {
       case 0: // Should *only* occur on initial loading.
         this.viewer.appendChild(pageView.div);
+        this.viewer._buffer.push(pageView);
         break;
       case 1: // The normal page-switching case.
         if (viewerNodes[0] !== previousPageView.div) {
@@ -62,7 +63,7 @@ class PDFSinglePageViewer extends BaseViewer {
         // Switch visible pages, and reset the viewerContainer scroll position.
         this._shadowViewer.appendChild(previousPageView.div);
         this.viewer.appendChild(pageView.div);
-
+        this.viewer._buffer.push(pageView);
         this.container.scrollTop = 0;
         break;
       default:
