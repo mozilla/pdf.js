@@ -15,7 +15,7 @@
     "escodegen": "^1.11.1",
     "eslint": "^5.16.0",
     "eslint-plugin-import": "^2.17.3",
-    "eslint-plugin-mozilla": "^1.2.1",
+    "eslint-plugin-mozilla": "1.2.1",
     "eslint-plugin-no-unsanitized": "^3.0.2",
     "eslint-plugin-unicorn": "^7.1.0",
     "fancy-log": "^1.3.3",
