@@ -367,6 +367,9 @@ class BaseViewer {
       let pageView = this._pages[i];
       pageView.update(pageView.scale, rotation);
     }
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+    this._pages.length > 0 && this._pages[0].repositionAllPages();
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     // Prevent errors in case the rotation changes *before* the scale has been
     // set to a non-default value.
     if (this._currentScaleValue) {
@@ -448,7 +451,7 @@ class BaseViewer {
       let viewport = pdfPage.getViewport({ scale: scale * CSS_UNITS, });
 
 
-      var startTime = new Date().getTime();
+      //var startTime = new Date().getTime();
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let textLayerFactory = null;
         if (this.textLayerMode !== TextLayerMode.DISABLE) {
@@ -478,7 +481,7 @@ class BaseViewer {
         bindOnAfterAndBeforeDraw(pageView);
         this._pages.push(pageView);
       }
-      console.log('-----------firstPageInitDateTime-------------:'+(new Date().getTime() - startTime)/1000);
+      //console.log('-----------firstPageInitDateTime-------------:'+(new Date().getTime() - startTime)/1000);
 
       /*if (this._spreadMode !== SpreadMode.NONE) {
         this._updateSpreadMode();
@@ -503,12 +506,18 @@ class BaseViewer {
             this.linkService.cachePageRef(pageNum, pdfPage.ref);
             if (--getPagesLeft === 0) {
               pagesCapability.resolve();
+              //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+              this._pages[0].repositionAllPages();
+              //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
             }
           }, (reason) => {
             console.error(`Unable to get page ${pageNum} to initialize viewer`,
                           reason);
             if (--getPagesLeft === 0) {
               pagesCapability.resolve();
+              //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+              this._pages.length > 0 && this._pages[0].repositionAllPages();
+              //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
             }
           });
         }
@@ -633,7 +642,9 @@ class BaseViewer {
       this._pages[i].update(newScale);
     }
     this._currentScale = newScale;
-
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+    this._pages.length > 0 && this._pages[0].repositionAllPages();
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     if (!noScroll) {
       let page = this._currentPageNumber, dest;
       if (this._location &&
@@ -1089,11 +1100,11 @@ class BaseViewer {
       for(var i=0;i<visiblePages.views.length;i++){
         visiblePages.views[i].view.reset();
       }
-    }else{
+    }/*else{
       for(var i=0;i<visiblePages.views.length;i++){
         visiblePages.views[i].view.reposition();
       }
-    }
+    }*/
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     return false;
   }
@@ -1222,7 +1233,7 @@ class BaseViewer {
       return;
     }
 
-    var startTime = new Date().getTime();
+    //var startTime = new Date().getTime();
 
 
     // Temporarily remove all the pages from the DOM.
@@ -1230,10 +1241,10 @@ class BaseViewer {
     var pages = this._pages, maxI = pages.length;
     for(var i=0;i<maxI;i++){
       pages[i].isDivAddedToContainer = false;
-      pages[i].setInitPosition();
     }
     // 先加入第一个元素和最后一个元素
     if(maxI > 0){
+      pages[0].repositionAllPages();
       this._addPageDivBySpreadMode({ first:pages[0], last:pages[maxI-1], views: [{view:pages[0]}, {view:pages[maxI-1]}], });
     }
 
@@ -1253,7 +1264,7 @@ class BaseViewer {
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
 
 
-    console.log('-----------_updateScrollMode-------------:'+(new Date().getTime() - startTime)/1000);
+    //console.log('-----------_updateScrollMode-------------:'+(new Date().getTime() - startTime)/1000);
     //this.update();
     // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 start--------------------------
     this.update();
@@ -1329,8 +1340,8 @@ class BaseViewer {
       return;
     }
 
-    var startTime = new Date().getTime();
-    
+    //var startTime = new Date().getTime();
+
     const viewer = this.viewer, pages = this._pages, maxI = pages.length;
     // Temporarily remove all the pages from the DOM.
     viewer.textContent = '';
@@ -1338,11 +1349,11 @@ class BaseViewer {
 
     for(var i=0;i<maxI;i++){
       pages[i].isDivAddedToContainer = false;
-      pages[i].setInitPosition();
     }
 
     // 先加入第一个元素和最后一个元素
     if(maxI > 0){
+      pages[0].repositionAllPages();
       this._addPageDivBySpreadMode({ first:pages[0], last:pages[maxI-1], views: [{view:pages[0]}, {view:pages[maxI-1]}], });
     }
 
@@ -1357,7 +1368,7 @@ class BaseViewer {
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
 
-    console.log('-----------_updateScrollMode-------------:'+(new Date().getTime() - startTime)/1000);
+    //console.log('-----------_updateSpreadMode-------------:'+(new Date().getTime() - startTime)/1000);
 
     this.update();
   }

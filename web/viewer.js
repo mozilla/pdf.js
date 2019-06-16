@@ -60,6 +60,10 @@ function getViewerConfiguration() {
     appContainer: document.body,
     mainContainer: document.getElementById('viewerContainer'),
     viewerContainer: document.getElementById('viewer'),
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+    viewerLoading: document.getElementById('viewerLoading'),
+    viewerLoadingTxt: document.getElementById('viewerLoadingTxt'),
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     eventBus: null, // Using global event bus with (optional) DOM events.
     toolbar: {
       container: document.getElementById('toolbarViewer'),
@@ -212,7 +216,6 @@ function webViewerLoad() {
       event.initCustomEvent('webviewerloaded', true, true, {});
       document.dispatchEvent(event);
     }
-
     pdfjsWebApp.PDFViewerApplication.run(config);
   }
 }

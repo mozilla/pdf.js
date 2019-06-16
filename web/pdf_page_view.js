@@ -108,7 +108,17 @@ class PDFPageView {
     this.container = container;
     this.viewer = options.viewer;
     this.isDivAddedToContainer = false;
-    this.setInitPosition();
+    this.position = {
+      width: Math.floor(this.viewport.width) + 10,
+      height: Math.floor(this.viewport.height) + 10,
+      row: 0,
+      column: 0,
+      top: 0,
+      realTop: 0,
+      left: 0,
+      spread: this.getClonePositionSpreadObj()
+    };
+    //this.setInitPosition();
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
@@ -124,27 +134,30 @@ class PDFPageView {
   }
 
   //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-  setInitPosition() {
-    
-    this.position = {
-      width: Math.floor(this.viewport.width) + 10,
-      height: Math.floor(this.viewport.height) + 10,
-      row: 0,
-      column: 0,
-      top: 0,
-      realTop: 0,
-      left: 0,
-      spread: {
-        width: 0,
-        height: 0,
-        row: 0,
-        column: 0,
-        top: 0,
-        realTop: 0,
-        left: 0,
-      }
-    };
+  getClonePositionSpreadObj(spread) {
+    if(spread){
+      return {
+          width: spread.width,
+          height: spread.height,
+          row: spread.row,
+          column: spread.column,
+          top: spread.top,
+          realTop: spread.realTop,
+          left: spread.left,
+        }
+    }else
+      return {
+          width: 0,
+          height: 0,
+          row: 0,
+          column: 0,
+          top: 0,
+          realTop: 0,
+          left: 0,
+        }
+  }
 
+  setInitPosition() {
     var pageIndex_ = this.id -1;
     var containerW = this.container.clientWidth;
     var containerH = this.container.clientHeight;
@@ -543,46 +556,24 @@ class PDFPageView {
   //----------------tanglinhai 上一行居中代码 end --------------------------
 
   //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-  reposition(){
+  repositionAllPages(){
+    this.reposition(0);
+  }
+
+
+  reposition(pageIdx){
     //var startTime = new Date().getTime();
     var pages = this.viewer._pages;
     var pagesLen = pages.length;
-    var pageIndex_ = this.id -1;
+    var pageIndex_ = pageIdx > -1 ? pageIdx : this.id -1;
     var viewportTotalHeight = 0;
     var containerW = this.viewer.container.clientWidth;
     var containerH = this.viewer.container.clientHeight;
 
-    var newW = Math.floor(this.viewport.width) + 10;
+    /*var newW = Math.floor(this.viewport.width) + 10;
     var newH = Math.floor(this.viewport.height) + 10;
     var isWidthChange = newW != this.position.width;
-    var isHeightChange = newH != this.position.height;
-    if(isWidthChange){
-      if(this.viewer.spreadMode == SpreadMode.ODD || this.viewer.spreadMode == SpreadMode.EVEN){
-        this.position.spread.width = this.position.spread.width - this.position.width + newW;
-        /*var brotherPages = [pages[pageIndex_-1],pages[pageIndex_+1]];
-        for(var i=0;i<brotherPages.length;i++){
-          if(brotherPages[i].position.spread.row == this.position.spread.row &&
-                brotherPages[i].position.spread.column == this.position.spread.column){
-            brotherPages[i].position.spread = this.position.spread;
-          }
-        }*/
-      }
-      this.position.width = newW;
-    }
-    if(isHeightChange){
-      if(this.viewer.spreadMode == SpreadMode.ODD || this.viewer.spreadMode == SpreadMode.EVEN){
-        var brotherPages = [pages[pageIndex_-1],pages[pageIndex_+1]];
-        for(var i=0;i<brotherPages.length;i++){
-          if(brotherPages[i] && brotherPages[i].position.spread.row == this.position.spread.row &&
-                brotherPages[i].position.spread.column == this.position.spread.column){
-            this.position.spread.height = Math.max(brotherPages[i].position.height, newH);
-          }
-        }
-      }
-      this.position.height = newH;
-    }
-    
-    
+    var isHeightChange = newH != this.position.height;*/
 
 
     //div.style.left = containerW <= Math.floor(this.viewport.width)? '0px' : (containerW - Math.floor(this.viewport.width))/2 + 'px';
@@ -592,7 +583,7 @@ class PDFPageView {
       var lineItemCount = 0;
 
       if(this.viewer.spreadMode == SpreadMode.NONE){//平铺+单页
-        if(isWidthChange || isHeightChange) {
+        //if(isWidthChange || isHeightChange) {
           var column0Idx = pageIndex_ - this.position.column;
           //console.log('pageIndex_='+pageIndex_+',column0Idx='+column0Idx, ',column='+this.position.column);
           for(var i=column0Idx;i<pagesLen;i++){
@@ -667,14 +658,14 @@ class PDFPageView {
             if(page_.id == pagesLen)
               this.adjustLastLineLeft(pagesLen - 1, containerW);
           }
-        }
+        //}
       }else{//平铺+双页或者书籍
 
-        if(isWidthChange || isHeightChange) {
+        //if(isWidthChange || isHeightChange) {
           const parity = this.viewer.spreadMode % 2;
           var lastSpreadIdxDiff = pageIndex_ % 2 != parity ? 1 : 2;
-          var lastSpreadView = this.viewer.spreadMode == SpreadMode.ODD && this.id < 3 ||
-            this.viewer.spreadMode == SpreadMode.EVEN && this.id < 2 ? null : pages[pageIndex_ - lastSpreadIdxDiff];
+          var lastSpreadView = this.viewer.spreadMode == SpreadMode.ODD && pageIndex_ < 2 ||
+            this.viewer.spreadMode == SpreadMode.EVEN && pageIndex_ < 1 ? null : pages[pageIndex_ - lastSpreadIdxDiff];
 
           var spreadColumn0Idx = !lastSpreadView ? 0 : pageIndex_ - lastSpreadView.position.spread.column * 2 - lastSpreadIdxDiff;
           //console.log('=====lastSpreadView1=====',spreadColumn0Idx,'pageIndex_:'+pageIndex_,'lastSpreadIdxDiff:'+lastSpreadIdxDiff)
@@ -716,6 +707,7 @@ class PDFPageView {
               var spreadMaxH;
               var spreadW;
               var page_ = pages[i];
+              page_.position.spread = this.getClonePositionSpreadObj(page_.position.spread);
               if(
                   ((i == pagesLen - 1 && pagesLen > 1) && 
                     ((this.viewer.spreadMode == SpreadMode.ODD && pagesLen%2 == 0) || 
@@ -792,7 +784,7 @@ class PDFPageView {
                 this.adjustLastLineLeft(page_.id - 1, containerW, 'spread');
             }
           }
-        }
+        //}
       }
     }else if(this.viewer.scrollMode == ScrollMode.HORIZONTAL){//水平滚动模式
       
@@ -818,6 +810,7 @@ class PDFPageView {
           var spreadMaxH;
           var spreadW;
           if(i % 2 === parity || i == pagesLen - 1){
+            page_.position.spread = this.getClonePositionSpreadObj(page_.position.spread);
             if(
                   ((i == pagesLen && pagesLen > 1) && 
                     ((this.viewer.spreadMode == SpreadMode.ODD && pagesLen%2 == 0) || 
@@ -878,6 +871,7 @@ class PDFPageView {
         var spreadMaxH;
         var spreadW;
         if(i % 2 === parity || i == pagesLen - 1){
+          page_.position.spread = this.getClonePositionSpreadObj(page_.position.spread);
           if(
                 ((i == pagesLen - 1 && pagesLen > 1) && 
                   ((this.viewer.spreadMode == SpreadMode.ODD && pagesLen%2 == 0) || 
@@ -887,8 +881,8 @@ class PDFPageView {
             spreadMaxH = Math.max(page_.position.height, pages[i - 1].position.height);
             spreadW = page_.position.width + pages[i - 1].position.width;
 
-            pages[i - 1].position.spread.width = spreadW;
-            pages[i - 1].position.spread.height = spreadMaxH;
+            /*pages[i - 1].position.spread.width = spreadW;
+            pages[i - 1].position.spread.height = spreadMaxH;*/
           } else {
             spreadMaxH = page_.position.height;
             spreadW = page_.position.width;
@@ -925,11 +919,47 @@ class PDFPageView {
     this.renderingState = RenderingStates.INITIAL;
 
     let div = this.div;
-    div.style.width = Math.floor(this.viewport.width) + 'px';
-    div.style.height = Math.floor(this.viewport.height) + 'px';
+
 
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    this.reposition();
+    /*div.style.width = Math.floor(this.viewport.width) + 'px';
+    div.style.height = Math.floor(this.viewport.height) + 'px';*/
+
+    var newW = Math.floor(this.viewport.width);
+    var newH = Math.floor(this.viewport.height);
+    div.style.width = newW + 'px';
+    div.style.height = newH + 'px';
+
+    //console.log(this.id,Math.floor(this.viewport.width),Math.floor(this.viewport.height),'=========reset========',this.position.width,this.position.height);
+    //if(isWidthChange){
+      /*if(this.viewer.spreadMode == SpreadMode.ODD || this.viewer.spreadMode == SpreadMode.EVEN){
+        this.position.spread.width = this.position.spread.width - this.position.width + newW;
+        var brotherPages = [pages[pageIndex_-1],pages[pageIndex_+1]];
+        for(var i=0;i<brotherPages.length;i++){
+          if(brotherPages[i].position.spread.row == this.position.spread.row &&
+                brotherPages[i].position.spread.column == this.position.spread.column){
+            brotherPages[i].position.spread = this.position.spread;
+          }
+        }
+      }*/
+      this.position.width = newW + 10;
+    //}
+    //if(isHeightChange){
+      /*var pages = this.viewer._pages;
+      var pageIndex_ = this.id - 1;
+      if(this.viewer.spreadMode == SpreadMode.ODD || this.viewer.spreadMode == SpreadMode.EVEN){
+        var brotherPages = [pages[pageIndex_-1],pages[pageIndex_+1]];
+        for(var i=0;i<brotherPages.length;i++){
+          if(brotherPages[i] && brotherPages[i].position.spread.row == this.position.spread.row &&
+                brotherPages[i].position.spread.column == this.position.spread.column){
+            this.position.spread.height = Math.max(brotherPages[i].position.height, newH);
+          }
+        }
+      }*/
+      this.position.height = newH + 10;
+    //}
+
+    //this.reposition();
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     let childNodes = div.childNodes;
     let currentZoomLayerNode = (keepZoomLayer && this.zoomLayer) || null;

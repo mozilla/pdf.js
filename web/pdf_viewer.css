@@ -127,20 +127,18 @@
   margin-right: 0;
 }
 
-/* -----------------------------tanglinhai 修改大文件加载策略 start----------------------------- */
 
-.pdfPresentationMode .pdfViewer .spread {
-  position: relative !important;
-  top: auto !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-}
-
-/* -----------------------------tanglinhai 修改大文件加载策略 end----------------------------- */
 
 .pdfPresentationMode .pdfViewer .page,
 .pdfPresentationMode .pdfViewer .spread {
   display: block;
+  /* -----------------------------tanglinhai 修改大文件加载策略 start----------------------------- */
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  /*left: 50% !important;
+  transform: translateX(-50%) !important; */
+  /* -----------------------------tanglinhai 修改大文件加载策略 end----------------------------- */
 }
 
 .pdfPresentationMode .pdfViewer .page,
