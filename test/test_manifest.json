@@ -680,6 +680,15 @@
        "annotations": true,
        "about": "Annotation with (unsupported) file:// URL."
     },
+    {  "id": "bug1552113",
+       "file": "pdfs/bug1552113.pdf",
+       "md5": "dafb7ba1328e8deaab2e3619c94bf974",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true,
+       "about": "Annotation with (ridiculously) large border width."
+    },
     {  "id": "issue4934",
        "file": "pdfs/issue4934.pdf",
        "md5": "6099da44f677702ae65a648b51a2226d",
@@ -846,6 +855,13 @@
        "rounds": 1,
        "link": true,
        "firstPage": 2,
+       "type": "eq"
+    },
+    {  "id": "issue10542",
+       "file": "pdfs/issue10542_reduced.pdf",
+       "md5": "92406cb903be6c7a63221ba61fcb8eaf",
+       "rounds": 1,
+       "link": false,
        "type": "eq"
     },
     {  "id": "issue6289",
@@ -1251,6 +1267,16 @@
        "link": false,
        "rounds": 1,
        "type": "text"
+    },
+    {  "id": "issue10717",
+       "file": "pdfs/issue10717.pdf",
+       "md5": "6d2ed03db798cc6beb3c7bdf103f5c1a",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 1,
+       "lastPage": 2,
+       "type": "eq",
+       "about": "Type3 fonts with image resources; both pages need to be tested, otherwise the bug won't manifest."
     },
     {  "id": "close-path-bug",
        "file": "pdfs/close-path-bug.pdf",
@@ -3109,6 +3135,12 @@
       "lastPage": 4,
       "type": "load"
     },
+    {  "id": "issue10519",
+       "file": "pdfs/issue10519_reduced.pdf",
+       "md5": "8a2dae43c0ef47b0734bedaaa24f8c09",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3061",
       "file": "pdfs/issue3061.pdf",
       "md5": "696a7cb1b194d095ca3f7861779a606b",
@@ -4003,6 +4035,13 @@
     {  "id": "annotation-highlight",
        "file": "pdfs/annotation-highlight.pdf",
        "md5": "e13e198e3a69c32dc9ebdc704d3105e1",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
+    {  "id": "annotation-freetext",
+       "file": "pdfs/annotation-freetext.pdf",
+       "md5": "6ca19ce632ead3aed08f22e588510e2f",
        "rounds": 1,
        "type": "eq",
        "annotations": true

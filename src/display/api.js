@@ -675,6 +675,14 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @return {Promise} A promise that is resolved with an {Object} containing
+   *   the viewer preferences.
+   */
+  getViewerPreferences() {
+    return this._transport.getViewerPreferences();
+  }
+
+  /**
    * @return {Promise} A promise that is resolved with an {Array} containing the
    *   destination, or `null` when no open action is present in the PDF file.
    */
@@ -707,6 +715,7 @@ class PDFDocumentProxy {
    *     bold: boolean,
    *     italic: boolean,
    *     color: rgb Uint8ClampedArray,
+   *     count: integer or undefined,
    *     dest: dest obj,
    *     url: string,
    *     items: array of more items like this
@@ -996,7 +1005,7 @@ class PDFPageProxy {
     const stats = this._stats;
     stats.time('Overall');
 
-    // If there was a pending destroy cancel it so no cleanup happens during
+    // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
     this.pendingCleanup = false;
 
@@ -1036,7 +1045,9 @@ class PDFPageProxy {
         intentState.renderTasks.splice(i, 1);
       }
 
-      if (this.cleanupAfterRender) {
+      // Attempt to reduce memory usage during *printing*, by always running
+      // cleanup once rendering has finished (regardless of cleanupAfterRender).
+      if (this.cleanupAfterRender || renderingIntent === 'print') {
         this.pendingCleanup = true;
       }
       this._tryCleanup();
@@ -1369,7 +1380,7 @@ class LoopbackPort {
   }
 
   terminate() {
-    this._listeners = [];
+    this._listeners.length = 0;
   }
 }
 
@@ -1752,8 +1763,8 @@ class WorkerTransport {
         waitOn.push(page._destroy());
       }
     });
-    this.pageCache = [];
-    this.pagePromises = [];
+    this.pageCache.length = 0;
+    this.pagePromises.length = 0;
     // We also need to wait for the worker to finish its long running tasks.
     const terminated = this.messageHandler.sendWithPromise('Terminate', null);
     waitOn.push(terminated);
@@ -1838,6 +1849,21 @@ class WorkerTransport {
       assert(this._networkStream);
       const rangeReader =
         this._networkStream.getRangeReader(data.begin, data.end);
+
+      // When streaming is enabled, it's possible that the data requested here
+      // has already been fetched via the `_fullRequestReader` implementation.
+      // However, given that the PDF data is loaded asynchronously on the
+      // main-thread and then sent via `postMessage` to the worker-thread,
+      // it may not have been available during parsing (hence the attempt to
+      // use range requests here).
+      //
+      // To avoid wasting time and resources here, we'll thus *not* dispatch
+      // range requests if the data was already loaded but has not been sent to
+      // the worker-thread yet (which will happen via the `_fullRequestReader`).
+      if (!rangeReader) {
+        sink.close();
+        return;
+      }
 
       sink.onPull = () => {
         rangeReader.read().then(function({ value, done, }) {
@@ -1988,6 +2014,7 @@ class WorkerTransport {
           });
           break;
         case 'FontPath':
+        case 'FontType3Res':
           this.commonObjs.resolve(id, exportedData);
           break;
         default:
@@ -1997,13 +2024,14 @@ class WorkerTransport {
 
     messageHandler.on('obj', function(data) {
       if (this.destroyed) {
-        return; // Ignore any pending requests if the worker was terminated.
+        // Ignore any pending requests if the worker was terminated.
+        return undefined;
       }
 
       const [id, pageIndex, type, imageData] = data;
       const pageProxy = this.pageCache[pageIndex];
       if (pageProxy.objs.has(id)) {
-        return;
+        return undefined;
       }
 
       switch (type) {
@@ -2040,6 +2068,7 @@ class WorkerTransport {
         default:
           throw new Error(`Got unknown object type ${type}`);
       }
+      return undefined;
     }, this);
 
     messageHandler.on('DocProgress', function(data) {
@@ -2231,8 +2260,12 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise('GetPageMode', null);
   }
 
+  getViewerPreferences() {
+    return this.messageHandler.sendWithPromise('GetViewerPreferences', null);
+  }
+
   getOpenActionDestination() {
-    return this.messageHandler.sendWithPromise('getOpenActionDestination',
+    return this.messageHandler.sendWithPromise('GetOpenActionDestination',
                                                null);
   }
 

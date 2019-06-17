@@ -14,13 +14,14 @@
  */
 
 import {
-  bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
-  info, InvalidPDFException, isBool, isNum, isString, PermissionFlag, shadow,
-  stringToPDFString, stringToUTF8String, unreachable, warn
+  assert, bytesToString, createPromiseCapability, createValidAbsoluteUrl,
+  FormatError, info, InvalidPDFException, isBool, isNum, isString,
+  PermissionFlag, shadow, stringToPDFString, stringToUTF8String, unreachable,
+  warn
 } from '../shared/util';
 import {
-  Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
-  RefSetCache
+  clearPrimitiveCaches, Dict, isCmd, isDict, isName, isRef, isRefsEqual,
+  isStream, Ref, RefSet, RefSetCache
 } from './primitives';
 import { Lexer, Parser } from './parser';
 import {
@@ -143,6 +144,7 @@ class Catalog {
       const title = outlineDict.get('Title');
       const flags = outlineDict.get('F') || 0;
       const color = outlineDict.getArray('C');
+      const count = outlineDict.get('Count');
       let rgbColor = blackColor;
 
       // We only need to parse the color when it's valid, and non-default.
@@ -158,7 +160,7 @@ class Catalog {
         newWindow: data.newWindow,
         title: stringToPDFString(title),
         color: rgbColor,
-        count: outlineDict.get('Count'),
+        count: Number.isInteger(count) ? count : undefined,
         bold: !!(flags & 2),
         italic: !!(flags & 1),
         items: [],
@@ -265,6 +267,7 @@ class Catalog {
     } else if (this.catDict.has('Dests')) { // Simple destination dictionary.
       return this.catDict.get('Dests');
     }
+    return undefined;
   }
 
   get pageLabels() {
@@ -415,6 +418,136 @@ class Catalog {
     return shadow(this, 'pageMode', pageMode);
   }
 
+  get viewerPreferences() {
+    const ViewerPreferencesValidators = {
+      HideToolbar: isBool,
+      HideMenubar: isBool,
+      HideWindowUI: isBool,
+      FitWindow: isBool,
+      CenterWindow: isBool,
+      DisplayDocTitle: isBool,
+      NonFullScreenPageMode: isName,
+      Direction: isName,
+      ViewArea: isName,
+      ViewClip: isName,
+      PrintArea: isName,
+      PrintClip: isName,
+      PrintScaling: isName,
+      Duplex: isName,
+      PickTrayByPDFSize: isBool,
+      PrintPageRange: Array.isArray,
+      NumCopies: Number.isInteger,
+    };
+
+    const obj = this.catDict.get('ViewerPreferences');
+    const prefs = Object.create(null);
+
+    if (isDict(obj)) {
+      for (const key in ViewerPreferencesValidators) {
+        if (!obj.has(key)) {
+          continue;
+        }
+        const value = obj.get(key);
+        // Make sure the (standard) value conforms to the specification.
+        if (!ViewerPreferencesValidators[key](value)) {
+          info(`Bad value in ViewerPreferences for "${key}".`);
+          continue;
+        }
+        let prefValue;
+
+        switch (key) {
+          case 'NonFullScreenPageMode':
+            switch (value.name) {
+              case 'UseNone':
+              case 'UseOutlines':
+              case 'UseThumbs':
+              case 'UseOC':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'UseNone';
+            }
+            break;
+          case 'Direction':
+            switch (value.name) {
+              case 'L2R':
+              case 'R2L':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'L2R';
+            }
+            break;
+          case 'ViewArea':
+          case 'ViewClip':
+          case 'PrintArea':
+          case 'PrintClip':
+            switch (value.name) {
+              case 'MediaBox':
+              case 'CropBox':
+              case 'BleedBox':
+              case 'TrimBox':
+              case 'ArtBox':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'CropBox';
+            }
+            break;
+          case 'PrintScaling':
+            switch (value.name) {
+              case 'None':
+              case 'AppDefault':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'AppDefault';
+            }
+            break;
+          case 'Duplex':
+            switch (value.name) {
+              case 'Simplex':
+              case 'DuplexFlipShortEdge':
+              case 'DuplexFlipLongEdge':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'None';
+            }
+            break;
+          case 'PrintPageRange':
+            const length = value.length;
+            if (length % 2 !== 0) { // The number of elements must be even.
+              break;
+            }
+            const isValid = value.every((page, i, arr) => {
+              return (Number.isInteger(page) && page > 0) &&
+                     (i === 0 || page >= arr[i - 1]) && page <= this.numPages;
+            });
+            if (isValid) {
+              prefValue = value;
+            }
+            break;
+          case 'NumCopies':
+            if (value > 0) {
+              prefValue = value;
+            }
+            break;
+          default:
+            assert(typeof value === 'boolean');
+            prefValue = value;
+        }
+
+        if (prefValue !== undefined) {
+          prefs[key] = prefValue;
+        } else {
+          info(`Bad value in ViewerPreferences for "${key}".`);
+        }
+      }
+    }
+    return shadow(this, 'viewerPreferences', prefs);
+  }
+
   get openActionDestination() {
     const obj = this.catDict.get('OpenAction');
     let openActionDest = null;
@@ -530,6 +663,7 @@ class Catalog {
   }
 
   cleanup() {
+    clearPrimitiveCaches();
     this.pageKidsCountCache.clear();
 
     const promises = [];
@@ -1465,7 +1599,7 @@ var XRef = (function XRefClosure() {
       }
 
       if (recoveryMode) {
-        return;
+        return undefined;
       }
       throw new XRefParseException();
     },
@@ -1565,7 +1699,7 @@ var XRef = (function XRefClosure() {
 
     fetchCompressed(ref, xrefEntry, suppressEncryption = false) {
       var tableOffset = xrefEntry.offset;
-      var stream = this.fetch(new Ref(tableOffset, 0));
+      var stream = this.fetch(Ref.get(tableOffset, 0));
       if (!isStream(stream)) {
         throw new FormatError('bad ObjStm stream');
       }

@@ -1606,7 +1606,8 @@ var Font = (function FontClosure() {
         };
       }
 
-      function sanitizeMetrics(font, header, metrics, numGlyphs) {
+      function sanitizeMetrics(font, header, metrics, numGlyphs,
+                               dupFirstEntry) {
         if (!header) {
           if (metrics) {
             metrics.data = null;
@@ -1649,6 +1650,11 @@ var Font = (function FontClosure() {
           // the use of |numMissing * 2| when initializing the typed array.
           var entries = new Uint8Array(metrics.length + numMissing * 2);
           entries.set(metrics.data);
+          if (dupFirstEntry) {
+            // Set the sidebearing value of the duplicated glyph.
+            entries[metrics.length] = metrics.data[2];
+            entries[metrics.length + 1] = metrics.data[3];
+          }
           metrics.data = entries;
         }
       }
@@ -2366,7 +2372,8 @@ var Font = (function FontClosure() {
 
       // Ensure the hmtx table contains the advance width and
       // sidebearings information for numGlyphs in the maxp table
-      sanitizeMetrics(font, tables['hhea'], tables['hmtx'], numGlyphsOut);
+      sanitizeMetrics(font, tables['hhea'], tables['hmtx'], numGlyphsOut,
+                      dupFirstEntry);
 
       if (!tables['head']) {
         throw new FormatError('Required "head" table is not found');
