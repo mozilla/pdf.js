@@ -635,6 +635,9 @@ class BaseViewer {
           presetValue: newValue,
         });
       }
+      //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+      this._pages.length > 0 && this._pages[0].repositionAllPages();
+      //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       return;
     }
 
