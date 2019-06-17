@@ -1896,12 +1896,15 @@ function webViewerResize() {
     return;
   }
   let currentScaleValue = pdfViewer.currentScaleValue;
-  if (currentScaleValue === 'auto' ||
+  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+  /*if (currentScaleValue === 'auto' ||
       currentScaleValue === 'page-fit' ||
       currentScaleValue === 'page-width') {
     // Note: the scale is constant for 'page-actual'.
     pdfViewer.currentScaleValue = currentScaleValue;
-  }
+  }*/
+  pdfViewer.currentScaleValue = currentScaleValue;
+  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   pdfViewer.update();
 }
 
