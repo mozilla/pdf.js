@@ -449,9 +449,6 @@ class BaseViewer {
     firstPagePromise.then((pdfPage) => {
       let scale = this.currentScale;
       let viewport = pdfPage.getViewport({ scale: scale * CSS_UNITS, });
-
-
-      //var startTime = new Date().getTime();
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let textLayerFactory = null;
         if (this.textLayerMode !== TextLayerMode.DISABLE) {
@@ -481,7 +478,6 @@ class BaseViewer {
         bindOnAfterAndBeforeDraw(pageView);
         this._pages.push(pageView);
       }
-      //console.log('-----------firstPageInitDateTime-------------:'+(new Date().getTime() - startTime)/1000);
 
       /*if (this._spreadMode !== SpreadMode.NONE) {
         this._updateSpreadMode();
@@ -591,32 +587,6 @@ class BaseViewer {
   }
 
   _scrollIntoView({ pageView, pageSpot = null, pageNumber = null, }) {
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能, 确保div是否已经添加到页面上 start-------------------------
-    /*if(!pageView.isDivAddedToContainer){
-      if(this._spreadMode == SpreadMode.NONE){
-        this.viewer.appendChild(pageView.div);
-      }else{
-        const parity = this._spreadMode % 2;
-        const pageIdx = pageView.id - 1;
-        const pageCount = this._pages.length;
-        let pageViewSibling;
-        if(pageIdx % 2 === parity || pageIdx == pageCount - 1){
-          pageViewSibling = this._pages[pageIdx-1];
-        }else{
-          pageViewSibling = this._pages[pageIdx+1];
-        }
-        if(pageViewSibling && pageViewSibling.isDivAddedToContainer){
-          pageViewSibling.div.parentNode.appendChild(pageView.div);
-        }else{
-          var spread = document.createElement('div');
-          spread.className = 'spread';
-          spread.appendChild(pageView.div);
-          this.viewer.appendChild(spread);
-        }
-      }
-      pageView.isDivAddedToContainer = true;
-    }*/
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能, 确保div是否已经添加到页面上 end-------------------------
     if(this.isInPresentationMode){
       scrollIntoView(pageView.div, pageSpot);
     }else{
@@ -1103,11 +1073,7 @@ class BaseViewer {
       for(var i=0;i<visiblePages.views.length;i++){
         visiblePages.views[i].view.reset();
       }
-    }/*else{
-      for(var i=0;i<visiblePages.views.length;i++){
-        visiblePages.views[i].view.reposition();
-      }
-    }*/
+    }
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     return false;
   }
@@ -1236,9 +1202,6 @@ class BaseViewer {
       return;
     }
 
-    //var startTime = new Date().getTime();
-
-
     // Temporarily remove all the pages from the DOM.
     viewer.textContent = '';
     var pages = this._pages, maxI = pages.length;
@@ -1265,16 +1228,7 @@ class BaseViewer {
       this._setScale(this._currentScaleValue, true);
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
-
-
-    //console.log('-----------_updateScrollMode-------------:'+(new Date().getTime() - startTime)/1000);
-    //this.update();
-    // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 start--------------------------
     this.update();
-    /*for (let i = 0, iMax = this._pages.length; i < iMax; ++i) {
-      this._pages[i].reset();
-    }*/
-    // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 end--------------------------
   }
 
   /**
@@ -1342,9 +1296,6 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return;
     }
-
-    //var startTime = new Date().getTime();
-
     const viewer = this.viewer, pages = this._pages, maxI = pages.length;
     // Temporarily remove all the pages from the DOM.
     viewer.textContent = '';
@@ -1370,9 +1321,6 @@ class BaseViewer {
       return;
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
-
-    //console.log('-----------_updateSpreadMode-------------:'+(new Date().getTime() - startTime)/1000);
-
     this.update();
   }
   _addPageDivBySpreadMode(visiblePages = null, resetCss) {
@@ -1461,7 +1409,6 @@ class BaseViewer {
       }
     }
   }
-
   // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 end--------------------------
 
 }
