@@ -423,26 +423,47 @@ class PDFPageView {
     let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = pdfPage.getViewport({ scale: this.scale * CSS_UNITS,
                                           rotation: totalRotation, });
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+    /*if(!this.viewer._pageViewsReady && !this.viewer.firstSizeChangedPage){
+      var newW = Math.floor(this.viewport.width) + 10;
+      var newH = Math.floor(this.viewport.height) + 10;
+      var isWidthChange = newW != this.position.width;
+      var isHeightChange = newH != this.position.height;
+      if(isWidthChange || isHeightChange){
+        this.viewer.firstSizeChangedPage = this;
+      }
+    }*/
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
+
     this.stats = pdfPage.stats;
     this.reset();
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+    /*if(!this.viewer._pageViewsReady && this.viewer.firstSizeChangedPage 
+      && (this.id == this.viewer.pagesCount || this.id - this.viewer.firstSizeChangedPage.id > 2000)){
+      this.reposition(this.viewer.firstSizeChangedPage.id - 1);
+      this.viewer.firstSizeChangedPage = null;
+    }*/
+    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   }
 
   destroy() {
-    this.reset();
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     if(this.isDivAddedToContainer){
       if (this._spreadMode === SpreadMode.NONE) {
-        this.div = this.viewer.viewer.removeChild(this.div);
+        this.viewer.viewer.removeChild(this.div);
       } else {
         var spreadDiv = this.div.parentNode;
-        this.div = spreadDiv.removeChild(this.div);
-        if(spreadDiv.childNodes.length == 0){
+        if(spreadDiv.childNodes.length == 1){
           this.viewer.viewer.removeChild(spreadDiv);
+        }else {
+          spreadDiv.removeChild(this.div);
         }
       }
     }
     this.isDivAddedToContainer = false;
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
+    
+    this.reset();
     if (this.pdfPage) {
       this.pdfPage.cleanup();
     }
@@ -556,6 +577,7 @@ class PDFPageView {
 
 
   reposition(pageIdx){
+    var start = new Date().getTime();
     var pages = this.viewer._pages;
     var pagesLen = pages.length;
     var pageIndex_ = pageIdx > -1 ? pageIdx : this.id -1;
@@ -823,6 +845,9 @@ class PDFPageView {
         }
         page_.position.realLeft = page_.position.left = containerW > page_.position.width ? (containerW - page_.position.width)/2 : 0;
         this.setDivStyle(page_);
+        if(page_.id == 6417){
+          console.log(JSON.stringify(page_.position));
+        }
       }
     }else{//垂直+双页或者书籍
       const parity = this.viewer.spreadMode % 2;
@@ -871,6 +896,7 @@ class PDFPageView {
         }
       }
     }
+    console.log(pageIdx+'-------------reposition------------------:'+(new Date().getTime()-start)/1000.0);
   }
   //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   reset(keepZoomLayer = false, keepAnnotations = false) {

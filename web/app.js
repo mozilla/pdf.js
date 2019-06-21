@@ -621,10 +621,6 @@ let PDFViewerApplication = {
    *                      is opened.
    */
   async open(file, args) {
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    this.appConfig.viewerLoadingTxt.innerHTML = 'PDF下载完毕，当前正在加载PDF文档... ，请稍后！';
-    this.appConfig.viewerLoading.style.display = 'block';
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
       await this.close();
@@ -682,11 +678,12 @@ let PDFViewerApplication = {
     loadingTask.onUnsupportedFeature = this.fallback.bind(this);
 
     return loadingTask.promise.then((pdfDocument) => {
+      //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+      this.appConfig.viewerLoadingTxt.innerHTML = 'PDF下载完毕，当前正在加载PDF文档... ，请稍后！';
+      this.appConfig.viewerLoading.style.display = 'block';
+      //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       this.load(pdfDocument);
     }, (exception) => {
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-      this.appConfig.viewerLoading.style.display = 'none';
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       if (loadingTask !== this.pdfLoadingTask) {
         return undefined; // Ignore errors for previously opened PDF files.
       }
@@ -1008,12 +1005,6 @@ let PDFViewerApplication = {
             setTimeout(resolve, FORCE_PAGES_LOADED_TIMEOUT);
           }),
         ]);
-
-
-        //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-        this.appConfig.viewerLoading.style.display = 'none';
-        //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
-
 
         if (!initialBookmark && !hash) {
           return;

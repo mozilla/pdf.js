@@ -490,6 +490,10 @@ class BaseViewer {
         if (pdfDocument.loadingParams['disableAutoFetch']) {
           // XXX: Printing is semi-broken with auto fetch disabled.
           pagesCapability.resolve();
+          //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
+          this._pages.length > 0 && this._pages[0].repositionAllPages();
+          PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';
+          //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
           return;
         }
         let getPagesLeft = pagesCount;
@@ -504,6 +508,7 @@ class BaseViewer {
               pagesCapability.resolve();
               //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
               this._pages[0].repositionAllPages();
+              PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';
               //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
             }
           }, (reason) => {
@@ -513,6 +518,7 @@ class BaseViewer {
               pagesCapability.resolve();
               //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
               this._pages.length > 0 && this._pages[0].repositionAllPages();
+              PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';
               //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
             }
           });
@@ -1331,14 +1337,14 @@ class BaseViewer {
     if (this._spreadMode === SpreadMode.NONE) {
       for(let i=0;i<visiblePages.views.length;i++){
         var view = visiblePages.views[i].view;
+        if(resetCss){
+          view.div.style.top = view.position.realTop;
+          view.div.style.left = view.position.realLeft;
+        }
         if(!view.isDivAddedToContainer){
           viewer.appendChild(view.div);
           view.isDivAddedToContainer = true;
           this._buffer.push(view);
-        }
-        if(resetCss){
-          view.div.style.top = view.position.realTop;
-          view.div.style.left = view.position.realLeft;
         }
       }
     } else {
@@ -1377,12 +1383,13 @@ class BaseViewer {
               spread = _pages[pageIdx + 1].div.parentNode;
             }
           }
+          var isSpreadAdded = true;
           if(!spread){
+            isSpreadAdded = false;
             spread = document.createElement('div');
             spread.className = 'spread';
             spread.style.top = view.position.spread.realTop + 'px';
             spread.style.left = view.position.spread.realLeft + 'px';
-            viewer.appendChild(spread);
           }
           var brotherPages = [_pages[pageIdx-1],_pages[pageIdx+1]];
           var insertPageDom = null;
@@ -1399,6 +1406,8 @@ class BaseViewer {
           } else {
             spread.appendChild(view.div);
           }
+          if(!isSpreadAdded)
+            viewer.appendChild(spread);
           view.isDivAddedToContainer = true;
           this._buffer.push(view);
         } else if(resetCss){
