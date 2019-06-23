@@ -678,10 +678,8 @@ let PDFViewerApplication = {
     loadingTask.onUnsupportedFeature = this.fallback.bind(this);
 
     return loadingTask.promise.then((pdfDocument) => {
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
       this.appConfig.viewerLoadingTxt.innerHTML = 'PDF下载完毕，当前正在加载PDF文档... ，请稍后！';
       this.appConfig.viewerLoading.style.display = 'block';
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       this.load(pdfDocument);
     }, (exception) => {
       if (loadingTask !== this.pdfLoadingTask) {
@@ -1091,11 +1089,6 @@ let PDFViewerApplication = {
     });
 
     Promise.all([onePageRendered, animationStarted]).then(() => {
-/*      if(this.appConfig.queryStr){
-        this.findBar.findField.value = this.appConfig.queryStr;
-        this.findBar.dispatchEvent('');
-      }
-*/
       pdfDocument.getOutline().then((outline) => {
         this.pdfOutlineViewer.render({ outline, });
       });
@@ -1566,10 +1559,8 @@ function loadAndEnablePDFBug(enabledTabs) {
 
 function webViewerInitialized() {
   let appConfig = PDFViewerApplication.appConfig;
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
   appConfig.viewerLoadingTxt.innerHTML = '网络下载PDF文件中... 请耐心等待！';
   appConfig.viewerLoading.style.display = 'block';
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 
   let file;
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
@@ -1577,9 +1568,6 @@ function webViewerInitialized() {
     let params = parseQueryString(queryString);
     file = 'file' in params ? params.file : AppOptions.get('defaultUrl');
     validateFileURL(file);
-
-    //add callback when rendered , call parent method
-    //PDFViewerApplication.appConfig.queryStr = params.querystr;
   } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     file = window.location.href.split('#')[0];
   } else if (PDFJSDev.test('CHROME')) {
@@ -1887,15 +1875,7 @@ function webViewerResize() {
     return;
   }
   let currentScaleValue = pdfViewer.currentScaleValue;
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-  /*if (currentScaleValue === 'auto' ||
-      currentScaleValue === 'page-fit' ||
-      currentScaleValue === 'page-width') {
-    // Note: the scale is constant for 'page-actual'.
-    pdfViewer.currentScaleValue = currentScaleValue;
-  }*/
   pdfViewer.currentScaleValue = currentScaleValue;
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   pdfViewer.update();
 }
 
@@ -2040,9 +2020,7 @@ function webViewerFind(evt) {
     entireWord: evt.entireWord,
     highlightAll: evt.highlightAll,
     findPrevious: evt.findPrevious,
-    //---------------------------------tanglinhai 只在当前页面搜索 start-----------------------------------
     searchInCurrPage: evt.searchInCurrPage
-    //---------------------------------tanglinhai 只在当前页面搜索 end-----------------------------------
   });
 }
 
@@ -2054,10 +2032,8 @@ function webViewerFindFromUrlHash(evt) {
     entireWord: false,
     highlightAll: true,
     findPrevious: false,
-    //---------------------------------tanglinhai 只在当前页面搜索 start-----------------------------------
     page: evt.page,
     searchInCurrPage: evt.searchInCurrPage
-    //---------------------------------tanglinhai 只在当前页面搜索 end-----------------------------------
   });
 }
 

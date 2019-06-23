@@ -104,7 +104,6 @@ class PDFPageView {
     let div = document.createElement('div');
     div.className = 'page';
     this.div = div;
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     this.container = container;
     this.viewer = options.viewer;
     this.isDivAddedToContainer = false;
@@ -118,24 +117,18 @@ class PDFPageView {
       left: 0,
       spread: this.getClonePositionSpreadObj()
     };
-    //this.setInitPosition();
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
     div.setAttribute('data-page-number', this.id);
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    //container.appendChild(div);
-    if(this.id == 1 || this.id == this.viewer.pdfDocument.numPages){
+    if (this.id == 1 || this.id == this.viewer.pdfDocument.numPages) {
       container.appendChild(div);
       this.isDivAddedToContainer = true;
       this.viewer._buffer.push(this);
     }
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   }
 
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
   getClonePositionSpreadObj(spread) {
-    if(spread){
+    if (spread) {
       return {
           width: spread.width,
           height: spread.height,
@@ -163,11 +156,11 @@ class PDFPageView {
     var containerH = this.container.clientHeight;
     var pages = this.viewer._pages;
     const iMax = this.viewer.pdfDocument.numPages;
-    if(this.viewer.scrollMode == ScrollMode.WRAPPED){//平铺模式
+    if (this.viewer.scrollMode == ScrollMode.WRAPPED) {
       var lineMaxH = 0;
       var lineMaxW = 0;
-      if(this.viewer.spreadMode == SpreadMode.NONE){//平铺+单页
-        if(this.id == 1){
+      if (this.viewer.spreadMode == SpreadMode.NONE) {
+        if (this.id == 1) {
           this.position.row = 0;
           this.position.column = 0;
           this.position.realTop = this.position.top = 0;
@@ -175,28 +168,27 @@ class PDFPageView {
         }else{
           var lastPage = pages[pageIndex_-1];
           var column0Idx = pageIndex_-(lastPage.position.column+1);
-          for(var i=column0Idx;i <= pageIndex_;i++){
+          for (var i = column0Idx; i <= pageIndex_; i++) {
             lineMaxW += pages[i].position.width;
-            if(i < pageIndex_){
+            if (i < pageIndex_) {
               lineMaxH = Math.max(lineMaxH, pages[i].position.height);
             }
           }
-          if(lineMaxW > containerW){
+          if (lineMaxW > containerW) {
             this.position.row = lastPage.position.row + 1;
             this.position.column = 0;
             this.position.realTop = this.position.top = lastPage.position.top + lineMaxH;
             this.position.realLeft = this.position.left = 0;
-            //以上新的一行开始，可以 TODO 处理上一行左右居中问题待完成 。。。。
             this.adjustLastLineLeft(this.id - 2, containerW);
           }else{
             this.position.row = lastPage.position.row;
             this.position.column = lastPage.position.column + 1;
             this.position.realTop = this.position.top = lastPage.position.top;
-            if(lineMaxH > this.position.height){
+            if (lineMaxH > this.position.height) {
               this.position.realTop = this.position.top + (lineMaxH - this.position.height)/2
-            }else if(lineMaxH < this.position.height){
-              for(var i=column0Idx;i < pageIndex_;i++){
-                if(pages[i].position.height < this.position.height){
+            }else if (lineMaxH < this.position.height) {
+              for (var i = column0Idx;i < pageIndex_; i++) {
+                if (pages[i].position.height < this.position.height) {
                   pages[i].position.realTop = this.position.top + (this.position.height - pages[i].position.height)/2
                 }
               }
@@ -205,20 +197,19 @@ class PDFPageView {
           }
         }
         this.setDivStyle(this);
-        //以上新的一行开始，可以 TODO 处理上一行左右居中问题待完成 。。。。
-        if(this.id == iMax)
+        if (this.id == iMax)
           this.adjustLastLineLeft(this.id - 1, containerW);
-      }else{//平铺+双页或者书籍
+      }else{
         const parity = this.viewer.spreadMode % 2;
         var spreadMaxH;
         var spreadW;
-        if(pageIndex_ % 2 === parity || this.id == iMax){
-          if(
+        if (pageIndex_ % 2 === parity || this.id == iMax) {
+          if (
                 ((this.id == iMax && iMax > 1) && 
                   ((this.viewer.spreadMode == SpreadMode.ODD && iMax%2 == 0) || 
                   (this.viewer.spreadMode == SpreadMode.EVEN && iMax%2 == 1)))    ||
                 (this.id < iMax && this.id > 1)
-              ){
+              ) {
             spreadMaxH = Math.max(this.position.height, pages[pageIndex_ - 1].position.height);
             spreadW = this.position.width + pages[pageIndex_ - 1].position.width;
 
@@ -231,13 +222,13 @@ class PDFPageView {
           this.position.spread.width = spreadW;
           this.position.spread.height = spreadMaxH;
 
-          if(iMax == 1 || this.viewer.spreadMode == SpreadMode.ODD && this.id == 2 ||
-              this.viewer.spreadMode == SpreadMode.EVEN && this.id == 1){
+          if (iMax == 1 || this.viewer.spreadMode == SpreadMode.ODD && this.id == 2 ||
+              this.viewer.spreadMode == SpreadMode.EVEN && this.id == 1) {
             this.position.spread.row = 0;
             this.position.spread.column = 0;
             this.position.spread.realTop = this.position.spread.top = 0;
             this.position.spread.realLeft = this.position.spread.left = 0;
-            if(this.viewer.spreadMode == SpreadMode.ODD && this.id == 2){
+            if (this.viewer.spreadMode == SpreadMode.ODD && this.id == 2) {
               pages[0].position.spread = this.position.spread;
               pages[0].setDivStyle(pages[0], 'spread');
             }
@@ -246,47 +237,45 @@ class PDFPageView {
             var lastSpreadView = pages[pageIndex_ - lastSpreadIdxDiff];
             var spreadColumn0Idx = pageIndex_ - lastSpreadView.position.spread.column * 2 - lastSpreadIdxDiff;
             var maxI = pageIndex_ - lastSpreadIdxDiff;
-            for(var i = spreadColumn0Idx;i <= maxI;i+=2){
+            for (var i = spreadColumn0Idx; i <= maxI; i += 2) {
               lineMaxW += pages[i].position.spread.width;
               lineMaxH = Math.max(lineMaxH, pages[i].position.spread.height);
             }
             lineMaxW += spreadW;
-            if(lineMaxW > containerW){
+            if (lineMaxW > containerW) {
               this.position.spread.row = lastSpreadView.position.spread.row + 1;
               this.position.spread.column = 0;
               this.position.spread.realTop = this.position.spread.top = lastSpreadView.position.spread.top + lineMaxH;
               this.position.spread.realLeft = this.position.spread.left = 0;
-              //以上新的一行开始，可以 TODO 处理上一行左右居中问题待完成 。。。。
               this.adjustLastLineLeft(lastSpreadView.id - 1, containerW, 'spread');
             }else{
               this.position.spread.row = lastSpreadView.position.spread.row;
               this.position.spread.column = lastSpreadView.position.spread.column + 1;
               this.position.spread.realTop = this.position.spread.top = lastSpreadView.position.spread.top;
               this.position.spread.realLeft = this.position.spread.left = lastSpreadView.position.spread.left + lastSpreadView.position.spread.width;
-              if(lineMaxH > this.position.spread.height){
+              if (lineMaxH > this.position.spread.height) {
                 this.position.spread.realTop = this.position.spread.top + (lineMaxH - this.position.spread.height)/2
-              }else if(lineMaxH < this.position.spread.height){
-                for(var i = spreadColumn0Idx;i <= maxI;i+=2){
-                  if(pages[i].position.spread.height < this.position.spread.height){
+              }else if (lineMaxH < this.position.spread.height) {
+                for (var i = spreadColumn0Idx; i <= maxI; i += 2) {
+                  if (pages[i].position.spread.height < this.position.spread.height) {
                     pages[i].position.spread.realTop = this.position.spread.top + (this.position.spread.height - pages[i].position.spread.height)/2
                   }
                 }
               }
             }
-            if(pageIndex_ > 0 && lastSpreadIdxDiff == 2){
+            if (pageIndex_ > 0 && lastSpreadIdxDiff == 2) {
               pages[pageIndex_ - 1].position.spread = this.position.spread;
               pages[pageIndex_ - 1].setDivStyle(pages[pageIndex_ - 1], 'spread');
             }
           }
           this.setDivStyle(this, 'spread');
-          //以上新的一行开始，可以 TODO 处理上一行左右居中问题待完成 。。。。
-          if(this.id == iMax)
+          if (this.id == iMax)
             this.adjustLastLineLeft(this.id - 1, containerW, 'spread');
         }
       }
-    }else if(this.viewer.scrollMode == ScrollMode.HORIZONTAL){//水平滚动模式
-      if(this.viewer.spreadMode == SpreadMode.NONE) {//水平+单页
-        if(this.id == 1) {
+    }else if (this.viewer.scrollMode == ScrollMode.HORIZONTAL) {
+      if (this.viewer.spreadMode == SpreadMode.NONE) {
+        if (this.id == 1) {
           this.position.column = 0;
           this.position.realLeft = this.position.left = 0;
         }else{
@@ -296,17 +285,17 @@ class PDFPageView {
         }
         this.position.realTop = this.position.top = containerH > this.position.height ? (containerH - this.position.height)/2 : 0;
         this.setDivStyle(this);
-      }else{//水平+双页或者书籍
+      }else{
         const parity = this.viewer.spreadMode % 2;
         var spreadMaxH;
         var spreadW;
-        if(pageIndex_ % 2 === parity || this.id == iMax){
-          if(
+        if (pageIndex_ % 2 === parity || this.id == iMax) {
+          if (
                 ((this.id == iMax && iMax > 1) && 
                   ((this.viewer.spreadMode == SpreadMode.ODD && iMax%2 == 0) || 
                   (this.viewer.spreadMode == SpreadMode.EVEN && iMax%2 == 1)))    ||
                 (this.id < iMax && this.id > 1)
-              ){
+              ) {
             spreadMaxH = Math.max(this.position.height, pages[pageIndex_ - 1].position.height);
             spreadW = this.position.width + pages[pageIndex_ - 1].position.width;
 
@@ -319,11 +308,11 @@ class PDFPageView {
           this.position.spread.width = spreadW;
           this.position.spread.height = spreadMaxH;
 
-          if(iMax == 1 || this.viewer.spreadMode == SpreadMode.ODD && this.id == 2 ||
-              this.viewer.spreadMode == SpreadMode.EVEN && this.id == 1){
+          if (iMax == 1 || this.viewer.spreadMode == SpreadMode.ODD && this.id == 2 ||
+              this.viewer.spreadMode == SpreadMode.EVEN && this.id == 1) {
             this.position.spread.column = 0;
             this.position.spread.realLeft = this.position.spread.left = 0;
-            if(this.viewer.spreadMode == SpreadMode.ODD && this.id == 2){
+            if (this.viewer.spreadMode == SpreadMode.ODD && this.id == 2) {
               pages[0].position.spread = this.position.spread;
             }
           }else{
@@ -331,7 +320,7 @@ class PDFPageView {
             var lastSpreadView = pages[pageIndex_ - lastSpreadIdxDiff];
             this.position.spread.column = lastSpreadView.position.spread.column + 1;
             this.position.spread.realLeft = this.position.spread.left = lastSpreadView.position.spread.left + lastSpreadView.position.spread.width;
-            if(pageIndex_ > 0 && lastSpreadIdxDiff == 2){
+            if (pageIndex_ > 0 && lastSpreadIdxDiff == 2) {
               pages[pageIndex_ - 1].position.spread = this.position.spread;
             }
           }
@@ -339,8 +328,8 @@ class PDFPageView {
         }
         this.setDivStyle(this, 'spread');
       }
-    }else if(this.viewer.spreadMode == SpreadMode.NONE){//垂直+单页
-      if(this.id == 1) {
+    }else if (this.viewer.spreadMode == SpreadMode.NONE) {
+      if (this.id == 1) {
         this.position.row = 0;
         this.position.realTop = this.position.top = 0;
       }else{
@@ -350,18 +339,18 @@ class PDFPageView {
       }
       this.position.realLeft = this.position.left = containerW > this.position.width ? (containerW - this.position.width)/2 : 0;
       this.setDivStyle(this);
-    }else{//垂直+双页或者书籍
+    }else{
 
       const parity = this.viewer.spreadMode % 2;
       var spreadMaxH;
       var spreadW;
-      if(pageIndex_ % 2 === parity || this.id == iMax){
-        if(
+      if (pageIndex_ % 2 === parity || this.id == iMax) {
+        if (
               ((this.id == iMax && iMax > 1) && 
                 ((this.viewer.spreadMode == SpreadMode.ODD && iMax%2 == 0) || 
                 (this.viewer.spreadMode == SpreadMode.EVEN && iMax%2 == 1)))    ||
               (this.id < iMax && this.id > 1)
-            ){
+            ) {
           spreadMaxH = Math.max(this.position.height, pages[pageIndex_ - 1].position.height);
           spreadW = this.position.width + pages[pageIndex_ - 1].position.width;
 
@@ -374,11 +363,11 @@ class PDFPageView {
         this.position.spread.width = spreadW;
         this.position.spread.height = spreadMaxH;
 
-        if(iMax == 1 || this.viewer.spreadMode == SpreadMode.ODD && this.id == 2 ||
-            this.viewer.spreadMode == SpreadMode.EVEN && this.id == 1){
+        if (iMax == 1 || this.viewer.spreadMode == SpreadMode.ODD && this.id == 2 ||
+            this.viewer.spreadMode == SpreadMode.EVEN && this.id == 1) {
           this.position.spread.row = 0;
           this.position.spread.realTop = this.position.spread.top = 0;
-          if(this.viewer.spreadMode == SpreadMode.ODD && this.id == 2){
+          if (this.viewer.spreadMode == SpreadMode.ODD && this.id == 2) {
             pages[0].position.spread = this.position.spread;
           }
         }else{
@@ -386,7 +375,7 @@ class PDFPageView {
           var lastSpreadView = pages[pageIndex_ - lastSpreadIdxDiff];
           this.position.spread.row = lastSpreadView.position.spread.row + 1;
           this.position.spread.realTop = this.position.spread.top = lastSpreadView.position.spread.top + lastSpreadView.position.spread.height;
-          if(pageIndex_ > 0 && lastSpreadIdxDiff == 2){
+          if (pageIndex_ > 0 && lastSpreadIdxDiff == 2) {
             pages[pageIndex_ - 1].position.spread = this.position.spread;
           }
         }
@@ -399,14 +388,14 @@ class PDFPageView {
 
 
   setDivStyle(pageView, type) {
-    if(type != 'spread'){
+    if (type != 'spread') {
       var div = pageView.div;
       var cssStyle = pageView.position;
       div.style.left = cssStyle.realLeft + 'px';
       div.style.top = cssStyle.realTop + 'px';
     }else{
       var div = pageView.div.parentNode;
-      if(div){
+      if (div) {
         var cssStyle = pageView.position.spread;
         div.style.left = cssStyle.realLeft + 'px';
         div.style.top = cssStyle.realTop + 'px';
@@ -414,7 +403,6 @@ class PDFPageView {
     }
     
   }
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 
   setPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
@@ -423,35 +411,30 @@ class PDFPageView {
     let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = pdfPage.getViewport({ scale: this.scale * CSS_UNITS,
                                           rotation: totalRotation, });
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    //if(!this.viewer._pageViewsReady){
-      if(!this.viewer.firstSizeChangedPage || this.id < this.viewer.firstSizeChangedPage.id){
-        var newW = Math.floor(this.viewport.width) + 10;
-        var newH = Math.floor(this.viewport.height) + 10;
-        var isWidthChange = newW != this.position.width;
-        var isHeightChange = newH != this.position.height;
-        if(isWidthChange || isHeightChange){
-          this.viewer.firstSizeChangedPage = this;
-        }
-      }else if(this.id == this.viewer.pagesCount || this.id - this.viewer.firstSizeChangedPage.id > 2000){
-        this.reposition(this.viewer.firstSizeChangedPage.id - 1);
-        this.viewer.firstSizeChangedPage = null;
+    if (!this.viewer.firstSizeChangedPage || this.id < this.viewer.firstSizeChangedPage.id) {
+      var newW = Math.floor(this.viewport.width) + 10;
+      var newH = Math.floor(this.viewport.height) + 10;
+      var isWidthChange = newW != this.position.width;
+      var isHeightChange = newH != this.position.height;
+      if (isWidthChange || isHeightChange) {
+        this.viewer.firstSizeChangedPage = this;
       }
-    //}
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
+    }else if (this.id == this.viewer.pagesCount || this.id - this.viewer.firstSizeChangedPage.id > 2000) {
+      this.reposition(this.viewer.firstSizeChangedPage.id - 1);
+      this.viewer.firstSizeChangedPage = null;
+    }
 
     this.stats = pdfPage.stats;
     this.reset();
   }
 
   destroy() {
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    if(this.isDivAddedToContainer){
+    if (this.isDivAddedToContainer) {
       if (this._spreadMode === SpreadMode.NONE) {
         this.viewer.viewer.removeChild(this.div);
       } else {
         var spreadDiv = this.div.parentNode;
-        if(spreadDiv.childNodes.length == 1){
+        if (spreadDiv.childNodes.length == 1) {
           this.viewer.viewer.removeChild(spreadDiv);
         }else {
           spreadDiv.removeChild(this.div);
@@ -459,7 +442,6 @@ class PDFPageView {
       }
     }
     this.isDivAddedToContainer = false;
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     
     this.reset();
     if (this.pdfPage) {
@@ -491,91 +473,55 @@ class PDFPageView {
 
 
 
-  //----------------tanglinhai 上一行居中代码 start -------------------------- 
-  adjustLastLineLeft(lastLineLastEleIdx, containerW, type){
+  adjustLastLineLeft(lastLineLastEleIdx, containerW, type) {
     var pages = this.viewer._pages;
     var pagesLen = pages.length;
     var lastLineMaxW = 0;
-    if(type == 'spread'){
-      for(var j = lastLineLastEleIdx;j > -1;j-=2){
+    if (type == 'spread') {
+      for (var j = lastLineLastEleIdx; j > -1; j -= 2) {
         lastLineMaxW += pages[j].position.spread.width;
-        if(pages[j].position.spread.column == 0){
+        if (pages[j].position.spread.column == 0) {
           break;
         }
       }
-      /*var i=lastLineLastEleIdx+2;
-      if(i<pagesLen){
-        while(i<pagesLen){
-          if(pages[i].position.spread.column != 0){
-            lastLineMaxW += pages[i].position.spread.width;
-          }else{
-            break;
-          }
-          i+=2;
-        }
-      }else if(i - 1 < pagesLen && pages[i - 1].position.spread.column != 0){
-        lastLineMaxW += pages[i - 1].position.spread.width;
-      }*/
 
 
       var leftDiff = (containerW - lastLineMaxW)/2;
-      if(leftDiff > 0){
-        for(var j = lastLineLastEleIdx;j > -1;j-=2){
+      if (leftDiff > 0) {
+        for (var j = lastLineLastEleIdx; j > -1; j -= 2) {
           pages[j].position.spread.realLeft = pages[j].position.spread.left + leftDiff;
-          if(pages[j].isDivAddedToContainer)
+          if (pages[j].isDivAddedToContainer)
             pages[j].div.parentNode.style.left = pages[j].position.spread.realLeft+'px';
-          if(pages[j].position.spread.column == 0){
+          if (pages[j].position.spread.column == 0) {
             break;
           }
         }
-
-        /*var i=lastLineLastEleIdx+2;
-        if(i<pagesLen){
-          while(i<pagesLen){
-            if(pages[i].position.spread.column != 0){
-              pages[i].position.spread.realLeft = pages[i].position.spread.left + leftDiff;
-              if(pages[i].isDivAddedToContainer)
-                pages[i].div.parentNode.style.left = pages[i].position.spread.realLeft+'px';
-            }else{
-              break;
-            }
-            i+=2;
-          }
-        }else if(i - 1 < pagesLen && pages[i - 1].position.spread.column != 0){
-          pages[i - 1].position.spread.realLeft = pages[i - 1].position.spread.left + leftDiff;
-          if(pages[i - 1].isDivAddedToContainer)
-            pages[i - 1].div.parentNode.style.left = pages[i - 1].position.spread.realLeft+'px';
-        }*/
 
       }
     } else {
-      for(var j = lastLineLastEleIdx;j > -1;j--){
+      for (var j = lastLineLastEleIdx; j > -1; j--) {
         lastLineMaxW += pages[j].position.width;
-        if(pages[j].position.column == 0){
+        if (pages[j].position.column == 0) {
           break;
         }
       }
       var leftDiff = (containerW - lastLineMaxW)/2;
-      if(leftDiff > 0)
-      for(var j = lastLineLastEleIdx;j > -1;j--){
+      if (leftDiff > 0)
+      for (var j = lastLineLastEleIdx; j > -1; j--) {
         pages[j].position.realLeft = pages[j].position.left += leftDiff;
         pages[j].div.style.left = pages[j].position.realLeft+'px';
-        if(pages[j].position.column == 0){
+        if (pages[j].position.column == 0) {
           break;
         }
       }
     }
   }
-  //----------------tanglinhai 上一行居中代码 end --------------------------
-
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-  repositionAllPages(){
+  repositionAllPages() {
     this.reposition(0);
   }
 
 
-  reposition(pageIdx){
-    //var start = new Date().getTime();
+  reposition(pageIdx) {
     var pages = this.viewer._pages;
     var pagesLen = pages.length;
     var pageIndex_ = pageIdx > -1 ? pageIdx : this.id -1;
@@ -583,196 +529,181 @@ class PDFPageView {
     var containerW = this.viewer.container.clientWidth;
     var containerH = this.viewer.container.clientHeight;
 
-    /*var newW = Math.floor(this.viewport.width) + 10;
-    var newH = Math.floor(this.viewport.height) + 10;
-    var isWidthChange = newW != this.position.width;
-    var isHeightChange = newH != this.position.height;*/
-
-
-    //div.style.left = containerW <= Math.floor(this.viewport.width)? '0px' : (containerW - Math.floor(this.viewport.width))/2 + 'px';
-    if(this.viewer.scrollMode == ScrollMode.WRAPPED){//平铺模式
+    if (this.viewer.scrollMode == ScrollMode.WRAPPED) {
       var lineMaxH = 0;
       var lineMaxW = 0;
       var lineItemCount = 0;
 
-      if(this.viewer.spreadMode == SpreadMode.NONE){//平铺+单页
-        //if(isWidthChange || isHeightChange) {
-          var column0Idx = pageIndex_ - (pageIdx > -1 ? pages[pageIdx].position.column : this.position.column);
-          for(var i=column0Idx;i<pagesLen;i++){
-            var page_ = pages[i];
-            var lastPage_ = i == 0 ? null : pages[i-1];
-            var pageW_ = page_.position.width;
-            var pageH_ = page_.position.height;
-            var lineMaxW_ = lineMaxW + pageW_;
+      if (this.viewer.spreadMode == SpreadMode.NONE) {
+        var column0Idx = pageIndex_ - (pageIdx > -1 ? pages[pageIdx].position.column : this.position.column);
+        for (var i = column0Idx; i<pagesLen; i++) {
+          var page_ = pages[i];
+          var lastPage_ = i == 0 ? null : pages[i-1];
+          var pageW_ = page_.position.width;
+          var pageH_ = page_.position.height;
+          var lineMaxW_ = lineMaxW + pageW_;
 
-            if(i > 0 && lineMaxW_ > containerW){
-              page_.position.row = lastPage_ ? lastPage_.position.row + 1 : 0;
-              page_.position.column = 0;
-              page_.position.realTop = page_.position.top = lastPage_ ? lastPage_.position.top + lineMaxH : 0;
-              page_.position.realLeft = page_.position.left = 0;
-              lineMaxH = pageH_;
-              lineMaxW = pageW_;
-              lineItemCount = 1;
-              column0Idx = i;
+          if (i > 0 && lineMaxW_ > containerW) {
+            page_.position.row = lastPage_ ? lastPage_.position.row + 1 : 0;
+            page_.position.column = 0;
+            page_.position.realTop = page_.position.top = lastPage_ ? lastPage_.position.top + lineMaxH : 0;
+            page_.position.realLeft = page_.position.left = 0;
+            lineMaxH = pageH_;
+            lineMaxW = pageW_;
+            lineItemCount = 1;
+            column0Idx = i;
 
-              this.adjustLastLineLeft(i - 1, containerW);
-            }else{
-              lineItemCount++;
+            this.adjustLastLineLeft(i - 1, containerW);
+          }else{
+            lineItemCount++;
 
-              if(lastPage_){
-                page_.position.row = lastPage_.position.row;
-                page_.position.column = lineItemCount - 1;
-                if(lineItemCount == 1){
-                  var lastLineMaxH = 0;
-                  for(var j = i - 1;j > -1;j--){
-                    lastLineMaxH = Math.max(pages[j].position.height, lastLineMaxH);
-                    if(pages[j].position.column == 0){
-                      break;
-                    }
+            if (lastPage_) {
+              page_.position.row = lastPage_.position.row;
+              page_.position.column = lineItemCount - 1;
+              if (lineItemCount == 1) {
+                var lastLineMaxH = 0;
+                for (var j = i - 1; j > -1; j--) {
+                  lastLineMaxH = Math.max(pages[j].position.height, lastLineMaxH);
+                  if (pages[j].position.column == 0) {
+                    break;
                   }
-                  page_.position.realTop = page_.position.top = lastPage_.position.top + lastLineMaxH;
-                  page_.position.realLeft = page_.position.left = 0;
-                }else{
-                  page_.position.realTop = page_.position.top = lastPage_.position.top;  
-                  page_.position.realLeft = page_.position.left = lastPage_.position.left + lastPage_.position.width;
+                }
+                page_.position.realTop = page_.position.top = lastPage_.position.top + lastLineMaxH;
+                page_.position.realLeft = page_.position.left = 0;
+              }else{
+                page_.position.realTop = page_.position.top = lastPage_.position.top;  
+                page_.position.realLeft = page_.position.left = lastPage_.position.left + lastPage_.position.width;
 
-                  if(lineMaxH > page_.position.height){
-                    page_.position.realTop = page_.position.top + (lineMaxH - page_.position.height)/2
-                  }else if(lineMaxH < page_.position.height){
-                    for(var j=column0Idx;j < i;j++){
-                      if(pages[j].position.height < page_.position.height){
-                        pages[j].position.realTop = page_.position.top + (page_.position.height - pages[j].position.height)/2
-                        pages[j].div.style.top = pages[j].position.realTop+'px';
-                      }
+                if (lineMaxH > page_.position.height) {
+                  page_.position.realTop = page_.position.top + (lineMaxH - page_.position.height)/2
+                }else if (lineMaxH < page_.position.height) {
+                  for (var j = column0Idx; j < i; j++) {
+                    if (pages[j].position.height < page_.position.height) {
+                      pages[j].position.realTop = page_.position.top + (page_.position.height - pages[j].position.height)/2
+                      pages[j].div.style.top = pages[j].position.realTop+'px';
                     }
                   }
                 }
-              } else {
-                page_.position.row = 0;
-                page_.position.column = 0;
-                page_.position.realTop = page_.position.top = 0;
-                page_.position.realLeft = page_.position.left = 0;
               }
+            } else {
+              page_.position.row = 0;
+              page_.position.column = 0;
+              page_.position.realTop = page_.position.top = 0;
+              page_.position.realLeft = page_.position.left = 0;
+            }
 
-              
-              if(lineItemCount < 2){
-                lineMaxH = pageH_;
+            
+            if (lineItemCount < 2) {
+              lineMaxH = pageH_;
+            }else{
+              lineMaxH = Math.max(lineMaxH, pageH_);
+            }
+            lineMaxW = lineMaxW_;
+          }
+          this.setDivStyle(page_);
+          if (page_.id == pagesLen)
+            this.adjustLastLineLeft(pagesLen - 1, containerW);
+        }
+    }else{
+        const parity = this.viewer.spreadMode % 2;
+        var lastSpreadIdxDiff = pageIndex_ % 2 != parity ? 1 : 2;
+        var lastSpreadView = this.viewer.spreadMode == SpreadMode.ODD && pageIndex_ < 2 ||
+          this.viewer.spreadMode == SpreadMode.EVEN && pageIndex_ < 1 ? null : pages[pageIndex_ - lastSpreadIdxDiff];
+
+        var spreadColumn0Idx = !lastSpreadView ? 0 : pageIndex_ - lastSpreadView.position.spread.column * 2 - lastSpreadIdxDiff;
+        spreadColumn0Idx = spreadColumn0Idx % 2 == parity ? spreadColumn0Idx : spreadColumn0Idx - 1;
+        if (spreadColumn0Idx > -1) {
+          var maxI = pageIndex_ - lastSpreadIdxDiff;
+          for (var i = spreadColumn0Idx; i <= maxI; i += 2) {
+            lineMaxW += pages[i].position.spread.width;
+            lineMaxH = Math.max(lineMaxH, pages[i].position.spread.height);
+            lineItemCount++;
+          }
+        }
+        for (var i = pageIndex_; i < pagesLen; ++i) {
+          if (i % 2 === parity || i == pagesLen - 1) {
+            var spreadMaxH;
+            var spreadW;
+            var page_ = pages[i];
+            page_.position.spread = this.getClonePositionSpreadObj(page_.position.spread);
+            if (
+                ((i == pagesLen - 1 && pagesLen > 1) && 
+                  ((this.viewer.spreadMode == SpreadMode.ODD && pagesLen%2 == 0) || 
+                  (this.viewer.spreadMode == SpreadMode.EVEN && pagesLen%2 == 1)))   ||
+                (i < pagesLen - 1 && i > 0)
+              ) {
+              spreadMaxH = Math.max(page_.position.height, pages[i-1].position.height);
+              spreadW = page_.position.width + pages[i-1].position.width;
+            }else {
+              spreadMaxH = page_.position.height;
+              spreadW = page_.position.width;
+            }
+            
+            page_.position.spread.width = spreadW;
+            page_.position.spread.height = spreadMaxH;
+            var lastSpreadIdxDiff = i % 2 != parity ? 1 : 2;
+            lastSpreadView = pages[i - lastSpreadIdxDiff];
+
+            
+
+            var lineMaxW_ = lineMaxW + spreadW;
+            if (lastSpreadView && lineMaxW_ > containerW) {
+              page_.position.spread.row = lastSpreadView.position.spread.row + 1;
+              page_.position.spread.column = 0;
+              page_.position.spread.realTop = page_.position.spread.top = lastSpreadView.position.spread.top + lineMaxH;
+              page_.position.spread.realLeft = page_.position.spread.left = 0;
+
+              lineMaxH = spreadMaxH;
+              lineMaxW = spreadW;
+              lineItemCount = 1;
+              spreadColumn0Idx = i;
+              this.adjustLastLineLeft(lastSpreadView.id - 1, containerW, 'spread');
+            }else{
+              lineItemCount++;
+              if (lineItemCount < 2) {
+                lineMaxH = spreadMaxH;
               }else{
-                lineMaxH = Math.max(lineMaxH, pageH_);
+                lineMaxH = Math.max(lineMaxH, spreadMaxH);
+              }
+              if (lastSpreadView) {
+                page_.position.spread.row = lastSpreadView.position.spread.row;
+                page_.position.spread.column = lastSpreadView.position.spread.column + 1;
+                page_.position.spread.realTop = page_.position.spread.top = lastSpreadView.position.spread.top;
+                page_.position.spread.realLeft = page_.position.spread.left = lastSpreadView.position.spread.left + lastSpreadView.position.spread.width;
+                if (lineMaxH > page_.position.spread.height) {
+                  page_.position.spread.realTop = page_.position.spread.top + (lineMaxH - page_.position.spread.height)/2
+                }else if (lineMaxH < page_.position.spread.height) {
+                  for (var j = spreadColumn0Idx; j <= i; j += 2) {
+                    if (pages[j].position.spread.height < page_.position.spread.height) {
+                      pages[j].position.spread.realTop = pages[j].position.spread.top + (page_.position.spread.height - pages[j].position.spread.height)/2
+                      pages[j].parentNode.style.top = pages[j].position.spread.realTop+'px';
+                    }
+                  }
+                }
+              }else{
+                page_.position.spread.row = 0;
+                page_.position.spread.column = 0;
+                page_.position.spread.realTop = page_.position.spread.top = 0;
+                page_.position.spread.realLeft = page_.position.spread.left = 0;
               }
               lineMaxW = lineMaxW_;
             }
-            this.setDivStyle(page_);
-            //最后一行开始，可以 TODO 处理上一行左右居中问题待完成 。。。。
-            if(page_.id == pagesLen)
-              this.adjustLastLineLeft(pagesLen - 1, containerW);
-          }
-        //}
-      }else{//平铺+双页或者书籍
-
-        //if(isWidthChange || isHeightChange) {
-          const parity = this.viewer.spreadMode % 2;
-          var lastSpreadIdxDiff = pageIndex_ % 2 != parity ? 1 : 2;
-          var lastSpreadView = this.viewer.spreadMode == SpreadMode.ODD && pageIndex_ < 2 ||
-            this.viewer.spreadMode == SpreadMode.EVEN && pageIndex_ < 1 ? null : pages[pageIndex_ - lastSpreadIdxDiff];
-
-          var spreadColumn0Idx = !lastSpreadView ? 0 : pageIndex_ - lastSpreadView.position.spread.column * 2 - lastSpreadIdxDiff;
-          spreadColumn0Idx = spreadColumn0Idx % 2 == parity ? spreadColumn0Idx : spreadColumn0Idx - 1;
-          if(spreadColumn0Idx > -1){
-            var maxI = pageIndex_ - lastSpreadIdxDiff;
-            for(var i = spreadColumn0Idx;i <= maxI;i+=2){
-              lineMaxW += pages[i].position.spread.width;
-              lineMaxH = Math.max(lineMaxH, pages[i].position.spread.height);
-              lineItemCount++;
+            if (i > 0 && lastSpreadIdxDiff == 2) {
+              pages[i - 1].position.spread = page_.position.spread;
             }
+            this.setDivStyle(page_, 'spread');
+            if (page_.id == pagesLen)
+              this.adjustLastLineLeft(page_.id - 1, containerW, 'spread');
           }
-          for (var i = pageIndex_; i < pagesLen; ++i) {
-            if(i % 2 === parity || i == pagesLen - 1){
-              var spreadMaxH;
-              var spreadW;
-              var page_ = pages[i];
-              page_.position.spread = this.getClonePositionSpreadObj(page_.position.spread);
-              if(
-                  ((i == pagesLen - 1 && pagesLen > 1) && 
-                    ((this.viewer.spreadMode == SpreadMode.ODD && pagesLen%2 == 0) || 
-                    (this.viewer.spreadMode == SpreadMode.EVEN && pagesLen%2 == 1)))   ||
-                  (i < pagesLen - 1 && i > 0)
-                ){
-                spreadMaxH = Math.max(page_.position.height, pages[i-1].position.height);
-                spreadW = page_.position.width + pages[i-1].position.width;
-              }else {
-                spreadMaxH = page_.position.height;
-                spreadW = page_.position.width;
-              }
-              
-              page_.position.spread.width = spreadW;
-              page_.position.spread.height = spreadMaxH;
-              var lastSpreadIdxDiff = i % 2 != parity ? 1 : 2;
-              lastSpreadView = pages[i - lastSpreadIdxDiff];
-
-              
-
-              var lineMaxW_ = lineMaxW + spreadW;
-              if(lastSpreadView && lineMaxW_ > containerW){
-                page_.position.spread.row = lastSpreadView.position.spread.row + 1;
-                page_.position.spread.column = 0;
-                page_.position.spread.realTop = page_.position.spread.top = lastSpreadView.position.spread.top + lineMaxH;
-                page_.position.spread.realLeft = page_.position.spread.left = 0;
-
-                lineMaxH = spreadMaxH;
-                lineMaxW = spreadW;
-                lineItemCount = 1;
-                spreadColumn0Idx = i;
-                //以上新的一行开始，可以 TODO 处理上一行左右居中问题待完成 。。。。
-                this.adjustLastLineLeft(lastSpreadView.id - 1, containerW, 'spread');
-              }else{
-                lineItemCount++;
-                if(lineItemCount < 2){
-                  lineMaxH = spreadMaxH;
-                }else{
-                  lineMaxH = Math.max(lineMaxH, spreadMaxH);
-                }
-                if(lastSpreadView){
-                  page_.position.spread.row = lastSpreadView.position.spread.row;
-                  page_.position.spread.column = lastSpreadView.position.spread.column + 1;
-                  page_.position.spread.realTop = page_.position.spread.top = lastSpreadView.position.spread.top;
-                  page_.position.spread.realLeft = page_.position.spread.left = lastSpreadView.position.spread.left + lastSpreadView.position.spread.width;
-                  if(lineMaxH > page_.position.spread.height){
-                    page_.position.spread.realTop = page_.position.spread.top + (lineMaxH - page_.position.spread.height)/2
-                  }else if(lineMaxH < page_.position.spread.height){
-                    for(var j = spreadColumn0Idx;j <= i;j+=2){
-                      if(pages[j].position.spread.height < page_.position.spread.height){
-                        pages[j].position.spread.realTop = pages[j].position.spread.top + (page_.position.spread.height - pages[j].position.spread.height)/2
-                        pages[j].parentNode.style.top = pages[j].position.spread.realTop+'px';
-                      }
-                    }
-                  }
-                }else{
-                  page_.position.spread.row = 0;
-                  page_.position.spread.column = 0;
-                  page_.position.spread.realTop = page_.position.spread.top = 0;
-                  page_.position.spread.realLeft = page_.position.spread.left = 0;
-                }
-                lineMaxW = lineMaxW_;
-              }
-              if(i > 0 && lastSpreadIdxDiff == 2){
-                pages[i - 1].position.spread = page_.position.spread;
-              }
-              this.setDivStyle(page_, 'spread');
-              //最后一行开始，可以 TODO 处理上一行左右居中问题待完成 。。。。
-              if(page_.id == pagesLen)
-                this.adjustLastLineLeft(page_.id - 1, containerW, 'spread');
-            }
-          }
-        //}
+        }
       }
-    }else if(this.viewer.scrollMode == ScrollMode.HORIZONTAL){//水平滚动模式
+    }else if (this.viewer.scrollMode == ScrollMode.HORIZONTAL) {
       
-      if(this.viewer.spreadMode == SpreadMode.NONE){//水平+单页
+      if (this.viewer.spreadMode == SpreadMode.NONE) {
 
-        for(var i=pageIndex_;i<pagesLen;i++){
+        for (var i = pageIndex_; i < pagesLen; i++) {
           var page_ = pages[i];
-          if(i == 0){
+          if (i == 0) {
             page_.position.column = 0;
             page_.position.realLeft = page_.position.left = 0;
           }else{
@@ -789,14 +720,14 @@ class PDFPageView {
           var page_ = pages[i];
           var spreadMaxH;
           var spreadW;
-          if(i % 2 === parity || i == pagesLen - 1){
+          if (i % 2 === parity || i == pagesLen - 1) {
             page_.position.spread = this.getClonePositionSpreadObj(page_.position.spread);
-            if(
+            if (
                   ((i == pagesLen && pagesLen > 1) && 
                     ((this.viewer.spreadMode == SpreadMode.ODD && pagesLen%2 == 0) || 
                     (this.viewer.spreadMode == SpreadMode.EVEN && pagesLen%2 == 1)))    ||
                   (i < pagesLen - 1 && i > 0)
-                ){
+                ) {
               spreadMaxH = Math.max(page_.position.height, pages[i - 1].position.height);
               spreadW = page_.position.width + pages[i - 1].position.width;
 
@@ -809,11 +740,11 @@ class PDFPageView {
             page_.position.spread.width = spreadW;
             page_.position.spread.height = spreadMaxH;
 
-            if(pagesLen == 1 || this.viewer.spreadMode == SpreadMode.ODD && i == 1 ||
-                this.viewer.spreadMode == SpreadMode.EVEN && i == 0){
+            if (pagesLen == 1 || this.viewer.spreadMode == SpreadMode.ODD && i == 1 ||
+                this.viewer.spreadMode == SpreadMode.EVEN && i == 0) {
               page_.position.spread.column = 0;
               page_.position.spread.realLeft = page_.position.spread.left = 0;
-              if(this.viewer.spreadMode == SpreadMode.ODD && i == 1){
+              if (this.viewer.spreadMode == SpreadMode.ODD && i == 1) {
                 pages[0].position.spread = page_.position.spread;
               }
             }else{
@@ -821,7 +752,7 @@ class PDFPageView {
               var lastSpreadView = pages[i - lastSpreadIdxDiff];
               page_.position.spread.column = lastSpreadView.position.spread.column + 1;
               page_.position.spread.realLeft = page_.position.spread.left = lastSpreadView.position.spread.left + lastSpreadView.position.spread.width;
-              if(i > 0 && lastSpreadIdxDiff == 2){
+              if (i > 0 && lastSpreadIdxDiff == 2) {
                 pages[i - 1].position.spread = page_.position.spread;
               }
             }
@@ -830,10 +761,10 @@ class PDFPageView {
           }
         }
       }
-    }else if(this.viewer.spreadMode == SpreadMode.NONE){//垂直+单页
-      for(var i=pageIndex_;i<pagesLen;i++){
+    }else if (this.viewer.spreadMode == SpreadMode.NONE) {
+      for (var i = pageIndex_; i < pagesLen; i++) {
         var page_ = pages[i];
-        if(i == 0) {
+        if (i == 0) {
           page_.position.row = 0;
           page_.position.realTop = page_.position.top = 0;
         }else{
@@ -844,25 +775,22 @@ class PDFPageView {
         page_.position.realLeft = page_.position.left = containerW > page_.position.width ? (containerW - page_.position.width)/2 : 0;
         this.setDivStyle(page_);
       }
-    }else{//垂直+双页或者书籍
+    }else{
       const parity = this.viewer.spreadMode % 2;
       for (let i = pageIndex_; i < pagesLen; ++i) {
         var page_ = pages[i];
         var spreadMaxH;
         var spreadW;
-        if(i % 2 === parity || i == pagesLen - 1){
+        if (i % 2 === parity || i == pagesLen - 1) {
           page_.position.spread = this.getClonePositionSpreadObj(page_.position.spread);
-          if(
+          if (
                 ((i == pagesLen - 1 && pagesLen > 1) && 
                   ((this.viewer.spreadMode == SpreadMode.ODD && pagesLen%2 == 0) || 
                   (this.viewer.spreadMode == SpreadMode.EVEN && pagesLen%2 == 1)))    ||
                 (i < pagesLen - 1 && i > 0)
-              ){
+              ) {
             spreadMaxH = Math.max(page_.position.height, pages[i - 1].position.height);
             spreadW = page_.position.width + pages[i - 1].position.width;
-
-            /*pages[i - 1].position.spread.width = spreadW;
-            pages[i - 1].position.spread.height = spreadMaxH;*/
           } else {
             spreadMaxH = page_.position.height;
             spreadW = page_.position.width;
@@ -870,11 +798,11 @@ class PDFPageView {
           page_.position.spread.width = spreadW;
           page_.position.spread.height = spreadMaxH;
 
-          if(pagesLen == 1 || this.viewer.spreadMode == SpreadMode.ODD && i == 1 ||
-              this.viewer.spreadMode == SpreadMode.EVEN && i == 0){
+          if (pagesLen == 1 || this.viewer.spreadMode == SpreadMode.ODD && i == 1 ||
+              this.viewer.spreadMode == SpreadMode.EVEN && i == 0) {
             page_.position.spread.row = 0;
             page_.position.spread.realTop = page_.position.spread.top = 0;
-            if(this.viewer.spreadMode == SpreadMode.ODD && i == 1){
+            if (this.viewer.spreadMode == SpreadMode.ODD && i == 1) {
               pages[0].position.spread = page_.position.spread;
             }
           }else{
@@ -882,7 +810,7 @@ class PDFPageView {
             var lastSpreadView = pages[i - lastSpreadIdxDiff];
             page_.position.spread.row = lastSpreadView.position.spread.row + 1;
             page_.position.spread.realTop = page_.position.spread.top = lastSpreadView.position.spread.top + lastSpreadView.position.spread.height;
-            if(i > 0 && lastSpreadIdxDiff == 2){
+            if (i > 0 && lastSpreadIdxDiff == 2) {
               pages[i - 1].position.spread = page_.position.spread;
             }
           }
@@ -892,19 +820,12 @@ class PDFPageView {
       }
     }
     this.viewer._resetCurrentPageView();
-    //console.log(pageIdx+','+this.id+'-------------reposition------------------:'+(new Date().getTime()-start)/1000.0);
   }
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   reset(keepZoomLayer = false, keepAnnotations = false) {
     this.cancelRendering(keepAnnotations);
     this.renderingState = RenderingStates.INITIAL;
 
     let div = this.div;
-
-
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    /*div.style.width = Math.floor(this.viewport.width) + 'px';
-    div.style.height = Math.floor(this.viewport.height) + 'px';*/
 
     var newW = Math.floor(this.viewport.width);
     var newH = Math.floor(this.viewport.height);
@@ -914,8 +835,6 @@ class PDFPageView {
     this.position.width = newW + 10;
     this.position.height = newH + 10;
 
-    //this.reposition();
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     let childNodes = div.childNodes;
     let currentZoomLayerNode = (keepZoomLayer && this.zoomLayer) || null;
     let currentAnnotationNode = (keepAnnotations && this.annotationLayer &&
@@ -1045,12 +964,6 @@ class PDFPageView {
       Math.floor(width) + 'px';
     target.style.height = target.parentNode.style.height = div.style.height =
       Math.floor(height) + 'px';
-
-    //----------------------------------tanglinhai 页面放大缩小调整top值 start------------------------------------
-    /*var containerW = this.viewer.container.clientWidth;
-    div.style.left = containerW > Math.floor(width) ? (containerW - Math.floor(width))/2 + 'px' : 0;
-    var pageIndex_ = this.id -1;*/
-    //----------------------------------tanglinhai 页面放大缩小调整top值 end------------------------------------
     
     // The canvas may have been originally rotated; rotate relative to that.
     let relativeRotation = this.viewport.rotation -
@@ -1278,10 +1191,6 @@ class PDFPageView {
     let canvas = document.createElement('canvas');
     canvas.id = this.renderingId;
 
-
-    //-------------------------tanglinhai test start-------------------------
-    var this_ = this;
-    //-------------------------tanglinhai test end-------------------------
     // Keep the canvas hidden until the first draw callback, or until drawing
     // is complete when `!this.renderingQueue`, to prevent black flickering.
     canvas.setAttribute('hidden', 'hidden');

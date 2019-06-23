@@ -14,11 +14,9 @@
  */
 @import url(text_layer_builder.css);
 @import url(annotation_layer_builder.css);
-/* -----------------------------tanglinhai 修改大文件加载策略 start----------------------------- */
 .pdfViewer {
   height: 100%;
 }
-/* -----------------------------tanglinhai 修改大文件加载策略 end----------------------------- */
 .pdfViewer .canvasWrapper {
   overflow: hidden;
 }
@@ -59,9 +57,7 @@
 
 .pdfViewer.scrollHorizontal, .spread {
   white-space: nowrap;
-  /* -----------------------------tanglinhai 修改大文件加载策略 start----------------------------- */
   position: absolute;
-  /* -----------------------------tanglinhai 修改大文件加载策略 end----------------------------- */
 }
 
 .pdfViewer.removePageBorders,
@@ -87,14 +83,12 @@
   margin-right: -3.5px;
 }
 
-/* -----------------------------tanglinhai 修改大文件加载策略 start----------------------------- */
 .spread .page {
   position: relative !important;
   transform: none !important;
   left: auto !important;
   top: auto !important;
 }
-/* -----------------------------tanglinhai 修改大文件加载策略 end----------------------------- */
 
 .pdfViewer.removePageBorders .spread .page,
 .pdfViewer.removePageBorders.scrollHorizontal .page,
@@ -132,13 +126,9 @@
 .pdfPresentationMode .pdfViewer .page,
 .pdfPresentationMode .pdfViewer .spread {
   display: block;
-  /* -----------------------------tanglinhai 修改大文件加载策略 start----------------------------- */
   position: relative !important;
   top: auto !important;
   left: auto !important;
-  /*left: 50% !important;
-  transform: translateX(-50%) !important; */
-  /* -----------------------------tanglinhai 修改大文件加载策略 end----------------------------- */
 }
 
 .pdfPresentationMode .pdfViewer .page,

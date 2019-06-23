@@ -79,10 +79,7 @@ class PDFSinglePageViewer extends BaseViewer {
     }
     super._scrollUpdate();
   }
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-  //_scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
   _scrollIntoView({ pageView, pageSpot = null, pageNumber = null, }) {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     if (pageNumber) { // Ensure that `this._currentPageNumber` is correct.
       this._setCurrentPageNumber(pageNumber);
     }
@@ -92,10 +89,7 @@ class PDFSinglePageViewer extends BaseViewer {
     // Ensure that rendering always occurs, to avoid showing a blank page,
     // even if the current position doesn't change when the page is scrolled.
     this.update();
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    //super._scrollIntoView({ pageDiv, pageSpot, pageNumber, });
     super._scrollIntoView({ pageView, pageSpot, pageNumber, });
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     // Since scrolling is tracked using `requestAnimationFrame`, update the
     // scroll direction during the next `this._scrollUpdate` invocation.
     this._updateScrollDown = () => {

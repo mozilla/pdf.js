@@ -75,38 +75,30 @@ function PDFPageViewBuffer(size, viewer) {
     }
     data.push(view);
 
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     this.delSomeData(1);
-    /*if (data.length > size) {
-      data.shift().destroy();
-    }*/
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   };
 
 
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
   this.delSomeData = function(type) {
     var pagesCount = viewer.pdfDocument.numPages;
     if (data.length > size) {
-      //不删除 第一页和最后一页
       var delArr = [];
-      for(var i=0;i<data.length;i++){
-        if(data[i].id != 1 && data[i].id != pagesCount){
+      for (var i = 0; i < data.length; i++) {
+        if (data[i].id != 1 && data[i].id != pagesCount) {
           delArr = delArr.concat(data.splice(i, 1));
-          if(type == 1){
+          if (type == 1) {
             break;
           }
         }
-        if(data.length - size == delArr.length){
+        if (data.length - size == delArr.length) {
           break;
         }
       }
-      for(var i=0;i<delArr.length;i++){
+      for (i = 0; i < delArr.length; i++) {
         delArr[i].destroy();
       }
     }
   }
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   /**
    * After calling resize, the size of the buffer will be newSize. The optional
    * parameter pagesToKeep is, if present, an array of pages to push to the back
@@ -125,12 +117,7 @@ function PDFPageViewBuffer(size, viewer) {
         return pageIdsToKeep.has(page.id);
       });
     }
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     this.delSomeData();
-    /*while (data.length > size) {
-      data.shift().destroy();
-    }*/
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   };
 }
 
@@ -160,10 +147,8 @@ class BaseViewer {
     }
     this._name = this.constructor.name;
     this.container = options.container;
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     this.viewportTotalHeight = 0;
     this.containerW = options.container.clientWidth;
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     this.viewer = options.viewer || options.container.firstElementChild;
     this.eventBus = options.eventBus || getGlobalEventBus();
     this.linkService = options.linkService || new SimpleLinkService();
@@ -367,9 +352,7 @@ class BaseViewer {
       let pageView = this._pages[i];
       pageView.update(pageView.scale, rotation);
     }
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     this._pages.length > 0 && this._pages[0].repositionAllPages();
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     // Prevent errors in case the rotation changes *before* the scale has been
     // set to a non-default value.
     if (this._currentScaleValue) {
@@ -430,9 +413,7 @@ class BaseViewer {
         // Add the page to the buffer at the start of drawing. That way it can
         // be evicted from the buffer and destroyed even if we pause its
         // rendering.
-        // -------------------- tanglinhai 修改缓存加载机制 start ----------------------------
         // this._buffer.push(pageView);
-        // -------------------- tanglinhai 修改缓存加载机制 end ----------------------------
       };
       pageView.onAfterDraw = () => {
         if (!onePageRenderedCapability.settled) {
@@ -471,17 +452,11 @@ class BaseViewer {
           useOnlyCssZoom: this.useOnlyCssZoom,
           maxCanvasPixels: this.maxCanvasPixels,
           l10n: this.l10n,
-          //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
           viewer: this
-          //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
         });
         bindOnAfterAndBeforeDraw(pageView);
         this._pages.push(pageView);
       }
-
-      /*if (this._spreadMode !== SpreadMode.NONE) {
-        this._updateSpreadMode();
-      }*/
 
       // Fetch all the pages since the viewport is needed before printing
       // starts to create the correct size canvas. Wait until one page is
@@ -491,10 +466,6 @@ class BaseViewer {
         if (pdfDocument.loadingParams['disableAutoFetch']) {
           // XXX: Printing is semi-broken with auto fetch disabled.
           pagesCapability.resolve();
-          //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-          /*this._pages.length > 0 && this._pages[0].repositionAllPages();
-          PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';*/
-          //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
           return;
         }
         let getPagesLeft = pagesCount;
@@ -507,20 +478,12 @@ class BaseViewer {
             this.linkService.cachePageRef(pageNum, pdfPage.ref);
             if (--getPagesLeft === 0) {
               pagesCapability.resolve();
-              //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-              /*this._pages[0].repositionAllPages();
-              PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';*/
-              //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
             }
           }, (reason) => {
             console.error(`Unable to get page ${pageNum} to initialize viewer`,
                           reason);
             if (--getPagesLeft === 0) {
               pagesCapability.resolve();
-              //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-              /*this._pages.length > 0 && this._pages[0].repositionAllPages();
-              PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';*/
-              //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
             }
           });
         }
@@ -569,10 +532,7 @@ class BaseViewer {
     this._currentScale = UNKNOWN_SCALE;
     this._currentScaleValue = null;
     this._pageLabels = null;
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    //this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
     this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE, this);
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     this._location = null;
     this._pagesRotation = 0;
     this._pagesRequests = [];
@@ -594,9 +554,9 @@ class BaseViewer {
   }
 
   _scrollIntoView({ pageView, pageSpot = null, pageNumber = null, }) {
-    if(this.isInPresentationMode){
+    if (this.isInPresentationMode) {
       scrollIntoView(pageView.div, pageSpot);
-    }else{
+    } else {
       util_scrollIntoView(pageView, pageSpot);
     }
   }
@@ -612,9 +572,7 @@ class BaseViewer {
           presetValue: newValue,
         });
       }
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
       this._pages.length > 0 && this._pages[0].repositionAllPages();
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       return;
     }
 
@@ -622,9 +580,7 @@ class BaseViewer {
       this._pages[i].update(newScale);
     }
     this._currentScale = newScale;
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     this._pages.length > 0 && this._pages[0].repositionAllPages();
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     if (!noScroll) {
       let page = this._currentPageNumber, dest;
       if (this._location &&
@@ -712,10 +668,7 @@ class BaseViewer {
     }
 
     let pageView = this._pages[this._currentPageNumber - 1];
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    //this._scrollIntoView({ pageDiv: pageView.div, });
     this._scrollIntoView({ pageView: pageView, });
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   }
 
   /**
@@ -817,16 +770,10 @@ class BaseViewer {
     }
 
     if (scale === 'page-fit' && !destArray[4]) {
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-      /*this._scrollIntoView({
-        pageDiv: pageView.div,
-        pageNumber,
-      });*/
       this._scrollIntoView({
         pageView: pageView,
         pageNumber,
       });
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       return;
     }
 
@@ -845,10 +792,7 @@ class BaseViewer {
       top = Math.max(top, 0);
     }
     this._scrollIntoView({
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-      //pageDiv: pageView.div,
       pageView: pageView,
-      //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       pageSpot: { left, top, },
       pageNumber,
     });
@@ -886,16 +830,11 @@ class BaseViewer {
   _updateHelper(visiblePages) {
     throw new Error('Not implemented: _updateHelper');
   }
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-  //update() {
   update(isShouldReset) {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     let visible = this._getVisiblePages();
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    if(visible.views.length == 0) {
+    if (visible.views.length == 0) {
       visible = this._getCurrentVisiblePage();
     }
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     
     const visiblePages = visible.views, numVisiblePages = visiblePages.length;
 
@@ -905,10 +844,7 @@ class BaseViewer {
     const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
     this._buffer.resize(newCacheSize, visiblePages);
 
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    //this.renderingQueue.renderHighestPriority(visible);
     this.renderingQueue.renderHighestPriority(visible, isShouldReset);
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 
     this._updateHelper(visiblePages); // Run any class-specific update code.
 
@@ -966,7 +902,6 @@ class BaseViewer {
     // NOTE: Compute the `x` and `y` properties of the current view,
     // since `this._updateLocation` depends of them being available.
     const element = pageView.div;
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     /*const view = {
       id: pageView.id,
       x: element.offsetLeft + element.clientLeft,
@@ -979,7 +914,6 @@ class BaseViewer {
       y: getOffsetTop(pageView),
       view: pageView,
     };
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     
     return { first: view, last: view, views: [view], };
   }
@@ -1054,17 +988,12 @@ class BaseViewer {
     return promise;
   }
 
-  //forceRendering(currentlyVisiblePages) {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
   forceRendering(currentlyVisiblePages, isShouldReset) {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     let visiblePages = currentlyVisiblePages || this._getVisiblePages();
     let scrollAhead = (this._isScrollModeHorizontal ?
                        this.scroll.right : this.scroll.down);
 
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     this._addPageDivBySpreadMode(visiblePages, true);
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 
     let pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                           this._pages,
@@ -1074,14 +1003,11 @@ class BaseViewer {
         this.renderingQueue.renderView(pageView);
       });
       return true;
-    }
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    else if(isShouldReset){
-      for(var i=0;i<visiblePages.views.length;i++){
+    } else if (isShouldReset) {
+      for (var i = 0; i < visiblePages.views.length; i++) {
         visiblePages.views[i].view.reset();
       }
     }
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     return false;
   }
 
@@ -1212,17 +1138,17 @@ class BaseViewer {
     // Temporarily remove all the pages from the DOM.
     viewer.textContent = '';
     var pages = this._pages, maxI = pages.length;
-    for(var i=0;i<maxI;i++){
+    for (var i = 0; i < maxI; i++) {
       pages[i].isDivAddedToContainer = false;
     }
     // 先加入第一个元素和最后一个元素
-    if(maxI > 0){
+    if (maxI > 0) {
       pages[0].repositionAllPages();
       this._addPageDivBySpreadMode({ first:pages[0], last:pages[maxI-1], views: [{view:pages[0]}, {view:pages[maxI-1]}], });
     }
 
     let visible = this._getVisiblePages();
-    if(visible.views.length == 0) {
+    if (visible.views.length == 0) {
       visible = this._getCurrentVisiblePage();
     }
     this._addPageDivBySpreadMode(visible);
@@ -1265,8 +1191,7 @@ class BaseViewer {
 
 
 
-  // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 start--------------------------
-  /*_updateSpreadMode(pageNumber = null) {
+  /* _updateSpreadMode(pageNumber = null) {
     if (!this.pdfDocument) {
       return;
     }
@@ -1296,9 +1221,11 @@ class BaseViewer {
     if (!pageNumber) {
       return;
     }
-    this._setCurrentPageNumber(pageNumber, *//* resetCurrentPageView = *//* true);
+    this._setCurrentPageNumber(pageNumber, */
+    /* resetCurrentPageView = */
+    /* true);
     this.update();
-  }*/
+  } */
   _updateSpreadMode(pageNumber = null) {
     if (!this.pdfDocument) {
       return;
@@ -1308,18 +1235,18 @@ class BaseViewer {
     viewer.textContent = '';
 
 
-    for(var i=0;i<maxI;i++){
+    for (var i = 0; i < maxI; i++) {
       pages[i].isDivAddedToContainer = false;
     }
 
     // 先加入第一个元素和最后一个元素
-    if(maxI > 0){
+    if (maxI > 0) {
       pages[0].repositionAllPages();
       this._addPageDivBySpreadMode({ first:pages[0], last:pages[maxI-1], views: [{view:pages[0]}, {view:pages[maxI-1]}], });
     }
 
     let visible = this._getVisiblePages();
-    if(visible.views.length == 0) {
+    if (visible.views.length == 0) {
       visible = this._getCurrentVisiblePage();
     }
     this._addPageDivBySpreadMode(visible);
@@ -1331,18 +1258,18 @@ class BaseViewer {
     this.update();
   }
   _addPageDivBySpreadMode(visiblePages = null, resetCss) {
-    if(!visiblePages.views.length){
+    if (!visiblePages.views.length) {
       return;
     }
 
     if (this._spreadMode === SpreadMode.NONE) {
-      for(let i=0;i<visiblePages.views.length;i++){
+      for (let i = 0; i < visiblePages.views.length; i++) {
         var view = visiblePages.views[i].view;
-        if(resetCss){
+        if (resetCss) {
           view.div.style.top = view.position.realTop;
           view.div.style.left = view.position.realLeft;
         }
-        if(!view.isDivAddedToContainer){
+        if (!view.isDivAddedToContainer) {
           viewer.appendChild(view.div);
           view.isDivAddedToContainer = true;
           this._buffer.push(view);
@@ -1352,40 +1279,40 @@ class BaseViewer {
       const parity = this._spreadMode - 1;
       for (let i = 0, iMax = visiblePages.views.length; i < iMax; ++i) {
         var view = visiblePages.views[i].view;
-        if(!view.isDivAddedToContainer){
+        if (!view.isDivAddedToContainer) {
           let spread = null;
           var pageIdx = view.id - 1;
           var _pages = this._pages;
           var pagesLen = this.pagesCount;
-          if(pageIdx == 0){
-            if(_pages[1].position.spread.row == view.position.spread.row &&
+          if (pageIdx == 0) {
+            if (_pages[1].position.spread.row == view.position.spread.row &&
                 _pages[1].position.spread.column == view.position.spread.column &&
                 _pages[1].isDivAddedToContainer
-                ){
+                ) {
               spread = _pages[1].div.parentNode;
             }
-          }else if(pageIdx == pagesLen - 1){
-            if(_pages[pageIdx - 1].position.spread.row == view.position.spread.row &&
+          } else if (pageIdx == pagesLen - 1) {
+            if (_pages[pageIdx - 1].position.spread.row == view.position.spread.row &&
                 _pages[pageIdx - 1].position.spread.column == view.position.spread.column &&
                 _pages[pageIdx - 1].isDivAddedToContainer
-                ){
+                ) {
               spread = _pages[pageIdx - 1].div.parentNode;
             }
-          }else{
-            if(_pages[pageIdx - 1].position.spread.row == view.position.spread.row &&
+          } else {
+            if (_pages[pageIdx - 1].position.spread.row == view.position.spread.row &&
                 _pages[pageIdx - 1].position.spread.column == view.position.spread.column &&
                 _pages[pageIdx - 1].isDivAddedToContainer
-                ){
+                ) {
               spread = _pages[pageIdx - 1].div.parentNode;
-            }else if(_pages[pageIdx + 1].position.spread.row == view.position.spread.row &&
+            } else if (_pages[pageIdx + 1].position.spread.row == view.position.spread.row &&
                 _pages[pageIdx + 1].position.spread.column == view.position.spread.column &&
                 _pages[pageIdx + 1].isDivAddedToContainer
-                ){
+                ) {
               spread = _pages[pageIdx + 1].div.parentNode;
             }
           }
           var isSpreadAdded = true;
-          if(!spread){
+          if (!spread) {
             isSpreadAdded = false;
             spread = document.createElement('div');
             spread.className = 'spread';
@@ -1394,24 +1321,24 @@ class BaseViewer {
           }
           var brotherPages = [_pages[pageIdx-1],_pages[pageIdx+1]];
           var insertPageDom = null;
-          for(var j=0;j<brotherPages.length;j++){
-            if(brotherPages[j] && brotherPages[j].position.spread.row == view.position.spread.row &&
-                  brotherPages[j].position.spread.column == view.position.spread.column){
-              if(brotherPages[j].isDivAddedToContainer && view.id < brotherPages[j].id){
+          for (var j = 0; j < brotherPages.length; j++) {
+            if (brotherPages[j] && brotherPages[j].position.spread.row == view.position.spread.row &&
+                  brotherPages[j].position.spread.column == view.position.spread.column) {
+              if (brotherPages[j].isDivAddedToContainer && view.id < brotherPages[j].id) {
                 insertPageDom = brotherPages[j].div;
               }
             }
           }
-          if(insertPageDom) {
+          if (insertPageDom) {
             spread.insertBefore(view.div, insertPageDom);
           } else {
             spread.appendChild(view.div);
           }
-          if(!isSpreadAdded)
+          if (!isSpreadAdded)
             viewer.appendChild(spread);
           view.isDivAddedToContainer = true;
           this._buffer.push(view);
-        } else if(resetCss){
+        } else if (resetCss) {
           view.div.parentNode.style.top = view.position.spread.realTop + 'px';
           view.div.parentNode.style.left = view.position.spread.realLeft + 'px';
         }
@@ -1419,7 +1346,6 @@ class BaseViewer {
       }
     }
   }
-  // ------------------------tanglinhai 修改双页和书籍展示模式布局，提高性能 end--------------------------
 
 }
 

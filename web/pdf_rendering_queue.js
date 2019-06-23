@@ -62,20 +62,14 @@ class PDFRenderingQueue {
    * @param {Object} currentlyVisiblePages
    * @param {Boolean} isShouldReset
    */
-  //renderHighestPriority(currentlyVisiblePages) {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
   renderHighestPriority(currentlyVisiblePages, isShouldReset) {
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
     if (this.idleTimeout) {
       clearTimeout(this.idleTimeout);
       this.idleTimeout = null;
     }
 
     // Pages have a higher priority than thumbnails, so check them first.
-    //if (this.pdfViewer.forceRendering(currentlyVisiblePages)) {
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
     if (this.pdfViewer.forceRendering(currentlyVisiblePages, isShouldReset)) {
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
       return;
     }
     // No pages needed rendering, so check thumbnails.
@@ -90,9 +84,9 @@ class PDFRenderingQueue {
       return;
     }
 
-    /*if (this.onIdle) {
+    /* if (this.onIdle) {
       this.idleTimeout = setTimeout(this.onIdle.bind(this), CLEANUP_TIMEOUT);
-    }*/
+    } */
   }
 
   /**

@@ -24,8 +24,7 @@ class PDFViewer extends BaseViewer {
   get _setDocumentViewerElement() {
     return shadow(this, '_setDocumentViewerElement', this.viewer);
   }
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-  /*_scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
+  /* _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
     if (!pageSpot && !this.isInPresentationMode) {
       const left = pageDiv.offsetLeft + pageDiv.clientLeft;
       const right = left + pageDiv.clientWidth;
@@ -36,7 +35,7 @@ class PDFViewer extends BaseViewer {
       }
     }
     super._scrollIntoView({ pageDiv, pageSpot, pageNumber, });
-  }*/
+  } */
   _scrollIntoView({ pageView, pageSpot = null, pageNumber = null, }) {
     if (!pageSpot && !this.isInPresentationMode) {
       const pageDiv = pageView.div;
@@ -51,7 +50,6 @@ class PDFViewer extends BaseViewer {
     super._scrollIntoView({ pageView, pageSpot, pageNumber, });
   }
 
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   
 
   _getVisiblePages() {

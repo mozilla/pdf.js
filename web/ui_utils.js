@@ -106,8 +106,7 @@ function getOutputScale(ctx) {
   };
 }
 
-//-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-/*function getOffsetTop(view){
+/*function getOffsetTop(view) {
   var ele = view.div;
   return ele.offsetTop + ele.clientTop +
               (view.viewer.spreadMode == SpreadMode.ODD || 
@@ -115,7 +114,7 @@ function getOutputScale(ctx) {
               ele.parentNode.offsetTop + ele.parentNode.clientTop : 0);
 }
 
-function getOffsetLeft(view){
+function getOffsetLeft(view) {
   var ele = view.div;
   return ele.offsetLeft + ele.clientLeft +
               (view.viewer.spreadMode == SpreadMode.ODD || 
@@ -123,18 +122,17 @@ function getOffsetLeft(view){
               ele.parentNode.offsetLeft + ele.parentNode.clientLeft : 0);
 }*/
 
-function getOffsetTop(view){
+function getOffsetTop(view) {
   return (view.viewer.spreadMode == SpreadMode.ODD || 
               view.viewer.spreadMode == SpreadMode.EVEN ? 
               view.position.spread.realTop : view.position.realTop);
 }
 
-function getOffsetLeft(view){
+function getOffsetLeft(view) {
   return (view.viewer.spreadMode == SpreadMode.ODD || 
               view.viewer.spreadMode == SpreadMode.EVEN ? 
               view.position.spread.realLeft : view.position.realLeft);
 }
-//-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 /**
  * Scrolls specified element into view of its parent.
  * @param {Object} element - The element to be visible.
@@ -145,7 +143,6 @@ function getOffsetLeft(view){
  */
 
 
-//---------------------------------tanglinhai 改造page布局成absolute,改善性能 start ----------------------
 /*function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
@@ -159,9 +156,6 @@ function getOffsetLeft(view){
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
   while (
-    //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 start ----------------------
-    (PDFViewerApplication.pdfViewer.spreadMode != 0 && parent.getAttribute('class') == 'spread') ||
-    //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 end ----------------------
     (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth) ||
     (skipOverflowHiddenElements && getComputedStyle(parent).overflow === 'hidden')) {
     if (parent.dataset._scaleY) {
@@ -175,9 +169,6 @@ function getOffsetLeft(view){
       return; // no need to scroll
     }
   }
-  //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 start ----------------------
-  parent = parent.offsetParent;
-  //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 end ----------------------
   if (spot) {
     if (spot.top !== undefined) {
       offsetY += spot.top;
@@ -191,7 +182,7 @@ function getOffsetLeft(view){
 }*/
 
 
-function util_scrollIntoView(pageView, spot){
+function util_scrollIntoView(pageView, spot) {
   var viewer = pageView.viewer;
   var container = viewer.container;
   var offsetY = (viewer.spreadMode == SpreadMode.ODD || 
@@ -236,9 +227,7 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
   while (
-    //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 start ----------------------
     (PDFViewerApplication.pdfViewer.spreadMode != 0 && parent.getAttribute('class') == 'spread') ||
-    //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 end ----------------------
     (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth) ||
     (skipOverflowHiddenElements && getComputedStyle(parent).overflow === 'hidden')) {
     if (parent.dataset._scaleY) {
@@ -252,9 +241,7 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
       return; // no need to scroll
     }
   }
-  //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 start ----------------------
   parent = parent.offsetParent;
-  //---------------------------------tanglinhai viewer改成相对的了，所以要再往上取一级 end ----------------------
   if (spot) {
     if (spot.top !== undefined) {
       offsetY += spot.top;
@@ -266,7 +253,6 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   }
   parent.scrollTop = offsetY;
 }
-//---------------------------------tanglinhai 改造page布局成absolute,改善性能 end ----------------------
 
 
 
@@ -564,7 +550,6 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  *   out horizontally instead of vertically
  * @returns {Object} `{ first, last, views: [{ id, x, y, view, percent }] }`
  */
-//-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
 function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
                             horizontal = false) {
   var app = window.PDFViewerApplication;
@@ -589,35 +574,35 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
     var pageLeft;
     var pageRight;
 
-    if(viewer._scrollMode == ScrollMode.HORIZONTAL){
-      if(viewer._spreadMode == SpreadMode.NONE) {//水平+单页
-        if(currRow != p.column){
-          if(currRow !== undefined && currRowVisibleCount == 0){
+    if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
+      if (viewer._spreadMode == SpreadMode.NONE) {
+        if (currRow != p.column) {
+          if (currRow !== undefined && currRowVisibleCount == 0) {
             break;
           }
           currRow != p.column;
           currRowVisibleCount = 0;
         }
-      }else{//水平+双页或者书籍
-        if(currRow != p.spread.column){
-          if(currRow !== undefined && currRowVisibleCount == 0){
+      }else{
+        if (currRow != p.spread.column) {
+          if (currRow !== undefined && currRowVisibleCount == 0) {
             break;
           }
           currRow != p.column;
           currRowVisibleCount = 0;
         }
       }
-    }else if(viewer._spreadMode == SpreadMode.NONE){//垂直+单页
-      if(currRow != p.row){
-        if(currRow !== undefined && currRowVisibleCount == 0){
+    }else if (viewer._spreadMode == SpreadMode.NONE) {
+      if (currRow != p.row) {
+        if (currRow !== undefined && currRowVisibleCount == 0) {
           break;
         }
         currRow != p.row;
         currRowVisibleCount = 0;
       }
-    }else{//垂直+双页或者书籍
-      if(currRow != p.spread.row){
-        if(currRow !== undefined && currRowVisibleCount == 0){
+    }else{
+      if (currRow != p.spread.row) {
+        if (currRow !== undefined && currRowVisibleCount == 0) {
           break;
         }
         currRow != p.row;
@@ -626,39 +611,39 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
     }
 
 
-    if(viewer._scrollMode == ScrollMode.WRAPPED){
-      if(viewer._spreadMode == SpreadMode.NONE){//平铺+单页
+    if (viewer._scrollMode == ScrollMode.WRAPPED) {
+      if (viewer._spreadMode == SpreadMode.NONE) {
         pageTop = p.realTop;
         pageBottom = pageTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
-      }else{//平铺+双页或者书籍
+      }else{
         const parity = viewer.spreadMode % 2;
         pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
         pageBottom = pageTop + p.height;
         pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
-    }else if(viewer._scrollMode == ScrollMode.HORIZONTAL){
+    }else if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
       var containerH = container.clientHeight;
-      if(viewer._spreadMode == SpreadMode.NONE) {//水平+单页
+      if (viewer._spreadMode == SpreadMode.NONE) {
         pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
         pageBottom = p.realTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
-      }else{//水平+双页或者书籍
+      }else{
         const parity = viewer.spreadMode % 2;
         pageTop = p.spread.realTop + (p.spread.height - p.height)/2 + (containerH > p.spread.height ? (containerH - p.spread.height)/2 : 0);
         pageBottom = pageTop + p.height;
         pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
-    }else if(viewer._spreadMode == SpreadMode.NONE){//垂直+单页
+    }else if (viewer._spreadMode == SpreadMode.NONE) {
       pageTop = p.realTop;
       pageBottom = p.realTop + p.height;
       pageLeft = p.realLeft;
       pageRight = p.realLeft + p.width;
-    }else{//垂直+双页或者书籍
+    }else{
       const parity = viewer.spreadMode % 2;
       pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
       pageBottom = pageTop + p.height;
@@ -695,35 +680,35 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
     var pageLeft;
     var pageRight;
 
-    if(viewer._scrollMode == ScrollMode.HORIZONTAL){
-      if(viewer._spreadMode == SpreadMode.NONE) {//水平+单页
-        if(currRow != p.column){
-          if(currRow !== undefined && currRowVisibleCount == 0){
+    if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
+      if (viewer._spreadMode == SpreadMode.NONE) {
+        if (currRow != p.column) {
+          if (currRow !== undefined && currRowVisibleCount == 0) {
             break;
           }
           currRow != p.column;
           currRowVisibleCount = 0;
         }
-      }else{//水平+双页或者书籍
-        if(currRow != p.spread.column){
-          if(currRow !== undefined && currRowVisibleCount == 0){
+      }else{
+        if (currRow != p.spread.column) {
+          if (currRow !== undefined && currRowVisibleCount == 0) {
             break;
           }
           currRow != p.column;
           currRowVisibleCount = 0;
         }
       }
-    }else if(viewer._spreadMode == SpreadMode.NONE){//垂直+单页
-      if(currRow != p.row){
-        if(currRow !== undefined && currRowVisibleCount == 0){
+    }else if (viewer._spreadMode == SpreadMode.NONE) {
+      if (currRow != p.row) {
+        if (currRow !== undefined && currRowVisibleCount == 0) {
           break;
         }
         currRow != p.row;
         currRowVisibleCount = 0;
       }
-    }else{//垂直+双页或者书籍
-      if(currRow != p.spread.row){
-        if(currRow !== undefined && currRowVisibleCount == 0){
+    }else{
+      if (currRow != p.spread.row) {
+        if (currRow !== undefined && currRowVisibleCount == 0) {
           break;
         }
         currRow != p.row;
@@ -732,39 +717,39 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
     }
 
 
-    if(viewer._scrollMode == ScrollMode.WRAPPED){
-      if(viewer._spreadMode == SpreadMode.NONE){//平铺+单页
+    if (viewer._scrollMode == ScrollMode.WRAPPED) {
+      if (viewer._spreadMode == SpreadMode.NONE) {
         pageTop = p.realTop;
         pageBottom = pageTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
-      }else{//平铺+双页或者书籍
+      }else{
         const parity = viewer.spreadMode % 2;
         pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
         pageBottom = pageTop + p.height;
         pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
-    }else if(viewer._scrollMode == ScrollMode.HORIZONTAL){
+    }else if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
       var containerH = container.clientHeight;
-      if(viewer._spreadMode == SpreadMode.NONE) {//水平+单页
+      if (viewer._spreadMode == SpreadMode.NONE) {
         pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
         pageBottom = p.realTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
-      }else{//水平+双页或者书籍
+      }else{
         const parity = viewer.spreadMode % 2;
         pageTop = p.spread.realTop + (p.spread.height - p.height)/2 + (containerH > p.spread.height ? (containerH - p.spread.height)/2 : 0);
         pageBottom = pageTop + p.height;
         pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
-    }else if(viewer._spreadMode == SpreadMode.NONE){//垂直+单页
+    }else if (viewer._spreadMode == SpreadMode.NONE) {
       pageTop = p.realTop;
       pageBottom = p.realTop + p.height;
       pageLeft = p.realLeft;
       pageRight = p.realLeft + p.width;
-    }else{//垂直+双页或者书籍
+    }else{
       const parity = viewer.spreadMode % 2;
       pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
       pageBottom = pageTop + p.height;
@@ -805,7 +790,6 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
   }
   return { first, last, views: visible, };
 }
-//-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 function getVisibleElements(scrollEl, views, sortByVisibility = false,
                             horizontal = false) {
   const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
@@ -1297,10 +1281,8 @@ export {
   WaitOnType,
   waitOnEventOrTimeout,
   moveToEndOfArray,
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
   getOffsetTop,
   getOffsetLeft,
   util_scrollIntoView,
   util_getVisibleElements
-  //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 };
