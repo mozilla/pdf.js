@@ -107,7 +107,7 @@ function getOutputScale(ctx) {
 }
 
 /*function getOffsetTop(view) {
-  var ele = view.div;
+  let ele = view.div;
   return ele.offsetTop + ele.clientTop +
               (view.viewer.spreadMode == SpreadMode.ODD || 
               view.viewer.spreadMode == SpreadMode.EVEN ? 
@@ -115,7 +115,7 @@ function getOutputScale(ctx) {
 }
 
 function getOffsetLeft(view) {
-  var ele = view.div;
+  let ele = view.div;
   return ele.offsetLeft + ele.clientLeft +
               (view.viewer.spreadMode == SpreadMode.ODD || 
               view.viewer.spreadMode == SpreadMode.EVEN ? 
@@ -178,12 +178,12 @@ function getOffsetLeft(view) {
   parent.scrollTop = offsetY;
 }*/
 function util_scrollIntoView(pageView, spot) {
-  var viewer = pageView.viewer;
-  var container = viewer.container;
-  var offsetY = (viewer.spreadMode == SpreadMode.ODD || 
+  let viewer = pageView.viewer;
+  let container = viewer.container;
+  let offsetY = (viewer.spreadMode == SpreadMode.ODD || 
               viewer.spreadMode == SpreadMode.EVEN ? 
               pageView.position.spread.realTop + (pageView.position.spread.height - pageView.position.height)/2 : pageView.position.realTop)
-  var offsetX = (viewer.spreadMode == SpreadMode.ODD || 
+  let offsetX = (viewer.spreadMode == SpreadMode.ODD || 
               viewer.spreadMode == SpreadMode.EVEN ? 
               pageView.position.spread.realLeft + (
                   viewer.spreadMode % 2 === pageView.id - 1 && (
@@ -545,10 +545,10 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  */
 function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
                             horizontal = false) {
-  var app = window.PDFViewerApplication;
-  var viewer = app.pdfViewer;
-  var container = viewer.viewer;
-  var currPageIdx = app.page - 1;
+  let app = window.PDFViewerApplication;
+  let viewer = app.pdfViewer;
+  let container = viewer.viewer;
+  let currPageIdx = app.page - 1;
   const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
   const left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
   /**
@@ -557,15 +557,15 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
               ele.parentNode.offsetTop + ele.parentNode.clientTop : 0)
    */
   const visible = [], numViews = views.length;
-  var currRow;
-  var currRowVisibleCount;
+  let currRow;
+  let currRowVisibleCount;
   for (let i = currPageIdx; i > -1; i--) {
     const view = views[i];
-    var p = view.position;
-    var pageTop;
-    var pageBottom;
-    var pageLeft;
-    var pageRight;
+    let p = view.position;
+    let pageTop;
+    let pageBottom;
+    let pageLeft;
+    let pageRight;
 
     if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
       if (viewer._spreadMode == SpreadMode.NONE) {
@@ -616,7 +616,7 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         pageRight = pageLeft + p.width;
       }
     }else if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
-      var containerH = container.clientHeight;
+      let containerH = container.clientHeight;
       if (viewer._spreadMode == SpreadMode.NONE) {
         pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
         pageBottom = p.realTop + p.height;
@@ -665,11 +665,11 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
   currRowVisibleCount = 0;
   for (let i = currPageIdx + 1; i < app.pagesCount; i++) {
     const view = views[i];
-    var p = view.position;
-    var pageTop;
-    var pageBottom;
-    var pageLeft;
-    var pageRight;
+    let p = view.position;
+    let pageTop;
+    let pageBottom;
+    let pageLeft;
+    let pageRight;
 
     if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
       if (viewer._spreadMode == SpreadMode.NONE) {
@@ -720,7 +720,7 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         pageRight = pageLeft + p.width;
       }
     }else if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
-      var containerH = container.clientHeight;
+      let containerH = container.clientHeight;
       if (viewer._spreadMode == SpreadMode.NONE) {
         pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
         pageBottom = p.realTop + p.height;

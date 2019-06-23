@@ -441,9 +441,9 @@ class PDFFindController {
             normalizeWhitespace: true
           });
         }).then(function (textContent) {
-          var textItems = textContent.items;
-          var strBuf = [];
-          for (var j = 0, jj = textItems.length; j < jj; j++) {
+          let textItems = textContent.items;
+          let strBuf = [];
+          for (let j = 0, jj = textItems.length; j < jj; j++) {
             strBuf.push(textItems[j].str);
           }
           context._pageContents[pageIndex] = normalize(strBuf.join(''));
@@ -537,7 +537,7 @@ class PDFFindController {
 
       this._updateAllPages(); // Wipe out any previously highlighted matches.
       if (!this._state.searchInCurrPage) {
-        var promise = Promise.resolve();
+        let promise = Promise.resolve();
         for (let i = 0; i < numPages; i++) {
           // Start finding the matches as soon as the text is extracted.
           if (this._pendingFindMatches[i] === true) {

@@ -15,13 +15,13 @@
 
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getGlobalEventBus,
-  util_getVisibleElements, isPortraitOrientation, isValidRotation, isValidScrollMode,
-  isValidSpreadMode, MAX_AUTO_SCALE, moveToEndOfArray, NullL10n,
-  PresentationModeState, RendererType, SCROLLBAR_PADDING, util_scrollIntoView,scrollIntoView,
-  ScrollMode, SpreadMode, TextLayerMode, UNKNOWN_SCALE, VERTICAL_PADDING,
-  watchScroll, getOffsetTop, getOffsetLeft,
+  util_getVisibleElements, isPortraitOrientation, isValidRotation, 
+  isValidScrollMode, isValidSpreadMode, MAX_AUTO_SCALE, moveToEndOfArray, 
+  NullL10n, PresentationModeState, RendererType, SCROLLBAR_PADDING, 
+  util_scrollIntoView, scrollIntoView, ScrollMode, SpreadMode, TextLayerMode, 
+  UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll, getOffsetTop, getOffsetLeft,
 } from './ui_utils';
-import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
+import { PDFRenderingQueue, RenderingStates, } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
 import { createPromiseCapability } from 'pdfjs-lib';
 import { PDFPageView } from './pdf_page_view';
@@ -77,17 +77,17 @@ function PDFPageViewBuffer(size, viewer) {
     this.delSomeData(1);
   };
   this.delSomeData = function(type) {
-    var pagesCount = viewer.pdfDocument.numPages;
+    let pagesCount = viewer.pdfDocument.numPages;
     if (data.length > size) {
-      var delArr = [];
-      for (var i = 0; i < data.length; i++) {
-        if (data[i].id != 1 && data[i].id != pagesCount) {
+      let delArr = [];
+      for (let i = 0; i < data.length; i++) {
+        if (data[i].id !== 1 && data[i].id !== pagesCount) { // eslint-disable-line
           delArr = delArr.concat(data.splice(i, 1));
-          if (type == 1) {
+          if (type === 1) {
             break;
           }
         }
-        if (data.length - size == delArr.length) {
+        if (data.length - size === delArr.length) {
           break;
         }
       }
@@ -449,7 +449,7 @@ class BaseViewer {
           useOnlyCssZoom: this.useOnlyCssZoom,
           maxCanvasPixels: this.maxCanvasPixels,
           l10n: this.l10n,
-          viewer: this
+          viewer: this,
         });
         bindOnAfterAndBeforeDraw(pageView);
         this._pages.push(pageView);
@@ -459,7 +459,7 @@ class BaseViewer {
       // starts to create the correct size canvas. Wait until one page is
       // rendered so we don't tie up too many resources early on.
       onePageRenderedCapability.promise.then(() => {
-        PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';
+        window.PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';
         if (pdfDocument.loadingParams['disableAutoFetch']) {
           // XXX: Printing is semi-broken with auto fetch disabled.
           pagesCapability.resolve();
@@ -829,7 +829,7 @@ class BaseViewer {
   }
   update(isShouldReset) {
     let visible = this._getVisiblePages();
-    if (visible.views.length == 0) {
+    if (visible.views.length === 0) {
       visible = this._getCurrentVisiblePage();
     }
     const visiblePages = visible.views, numVisiblePages = visiblePages.length;
@@ -997,7 +997,7 @@ class BaseViewer {
       });
       return true;
     } else if (isShouldReset) {
-      for (var i = 0; i < visiblePages.views.length; i++) {
+      for (let i = 0; i < visiblePages.views.length; i++) {
         visiblePages.views[i].view.reset();
       }
     }
@@ -1129,17 +1129,21 @@ class BaseViewer {
     }
     // Temporarily remove all the pages from the DOM.
     viewer.textContent = '';
-    var pages = this._pages, maxI = pages.length;
-    for (var i = 0; i < maxI; i++) {
+    let pages = this._pages, maxI = pages.length;
+    for (let i = 0; i < maxI; i++) {
       pages[i].isDivAddedToContainer = false;
     }
     // 先加入第一个元素和最后一个元素
     if (maxI > 0) {
       pages[0].repositionAllPages();
-      this._addPageDivBySpreadMode({ first:pages[0], last:pages[maxI-1], views: [{view:pages[0]}, {view:pages[maxI-1]}], });
+      this._addPageDivBySpreadMode({ 
+        first: pages[0], 
+        last: pages[maxI - 1], 
+        views: [{ view: pages[0] }, { view: pages[maxI - 1] }], 
+      });
     }
     let visible = this._getVisiblePages();
-    if (visible.views.length == 0) {
+    if (visible.views.length === 0) {
       visible = this._getCurrentVisiblePage();
     }
     this._addPageDivBySpreadMode(visible);
@@ -1219,16 +1223,20 @@ class BaseViewer {
     const viewer = this.viewer, pages = this._pages, maxI = pages.length;
     // Temporarily remove all the pages from the DOM.
     viewer.textContent = '';
-    for (var i = 0; i < maxI; i++) {
+    for (let i = 0; i < maxI; i++) {
       pages[i].isDivAddedToContainer = false;
     }
     // 先加入第一个元素和最后一个元素
     if (maxI > 0) {
       pages[0].repositionAllPages();
-      this._addPageDivBySpreadMode({ first:pages[0], last:pages[maxI-1], views: [{view:pages[0]}, {view:pages[maxI-1]}], });
+      this._addPageDivBySpreadMode({ 
+        first: pages[0], 
+        last: pages[maxI - 1], 
+        views: [{ view: pages[0] }, { view: pages[maxI - 1] }], 
+      });
     }
     let visible = this._getVisiblePages();
-    if (visible.views.length == 0) {
+    if (visible.views.length === 0) {
       visible = this._getCurrentVisiblePage();
     }
     this._addPageDivBySpreadMode(visible);
@@ -1244,13 +1252,13 @@ class BaseViewer {
     }
     if (this._spreadMode === SpreadMode.NONE) {
       for (let i = 0; i < visiblePages.views.length; i++) {
-        var view = visiblePages.views[i].view;
+        let view = visiblePages.views[i].view;
         if (resetCss) {
           view.div.style.top = view.position.realTop;
           view.div.style.left = view.position.realLeft;
         }
         if (!view.isDivAddedToContainer) {
-          viewer.appendChild(view.div);
+          this.viewer.appendChild(view.div);
           view.isDivAddedToContainer = true;
           this._buffer.push(view);
         }
@@ -1258,40 +1266,40 @@ class BaseViewer {
     } else {
       const parity = this._spreadMode - 1;
       for (let i = 0, iMax = visiblePages.views.length; i < iMax; ++i) {
-        var view = visiblePages.views[i].view;
+        let view = visiblePages.views[i].view;
         if (!view.isDivAddedToContainer) {
           let spread = null;
-          var pageIdx = view.id - 1;
-          var _pages = this._pages;
-          var pagesLen = this.pagesCount;
-          if (pageIdx == 0) {
-            if (_pages[1].position.spread.row == view.position.spread.row &&
-                _pages[1].position.spread.column == view.position.spread.column &&
+          let pageIdx = view.id - 1;
+          let _pages = this._pages;
+          let pagesLen = this.pagesCount;
+          if (pageIdx === 0) {
+            if (_pages[1].position.spread.row === view.position.spread.row &&
+                _pages[1].position.spread.column === view.position.spread.column &&
                 _pages[1].isDivAddedToContainer
                 ) {
               spread = _pages[1].div.parentNode;
             }
-          } else if (pageIdx == pagesLen - 1) {
-            if (_pages[pageIdx - 1].position.spread.row == view.position.spread.row &&
-                _pages[pageIdx - 1].position.spread.column == view.position.spread.column &&
+          } else if (pageIdx === pagesLen - 1) {
+            if (_pages[pageIdx - 1].position.spread.row === view.position.spread.row &&
+                _pages[pageIdx - 1].position.spread.column === view.position.spread.column &&
                 _pages[pageIdx - 1].isDivAddedToContainer
                 ) {
               spread = _pages[pageIdx - 1].div.parentNode;
             }
           } else {
-            if (_pages[pageIdx - 1].position.spread.row == view.position.spread.row &&
-                _pages[pageIdx - 1].position.spread.column == view.position.spread.column &&
+            if (_pages[pageIdx - 1].position.spread.row === view.position.spread.row &&
+                _pages[pageIdx - 1].position.spread.column === view.position.spread.column &&
                 _pages[pageIdx - 1].isDivAddedToContainer
                 ) {
               spread = _pages[pageIdx - 1].div.parentNode;
-            } else if (_pages[pageIdx + 1].position.spread.row == view.position.spread.row &&
-                _pages[pageIdx + 1].position.spread.column == view.position.spread.column &&
+            } else if (_pages[pageIdx + 1].position.spread.row === view.position.spread.row &&
+                _pages[pageIdx + 1].position.spread.column === view.position.spread.column &&
                 _pages[pageIdx + 1].isDivAddedToContainer
                 ) {
               spread = _pages[pageIdx + 1].div.parentNode;
             }
           }
-          var isSpreadAdded = true;
+          let isSpreadAdded = true;
           if (!spread) {
             isSpreadAdded = false;
             spread = document.createElement('div');
@@ -1299,11 +1307,11 @@ class BaseViewer {
             spread.style.top = view.position.spread.realTop + 'px';
             spread.style.left = view.position.spread.realLeft + 'px';
           }
-          var brotherPages = [_pages[pageIdx-1],_pages[pageIdx+1]];
-          var insertPageDom = null;
-          for (var j = 0; j < brotherPages.length; j++) {
-            if (brotherPages[j] && brotherPages[j].position.spread.row == view.position.spread.row &&
-                  brotherPages[j].position.spread.column == view.position.spread.column) {
+          let brotherPages = [_pages[pageIdx-1], _pages[pageIdx + 1]];
+          let insertPageDom = null;
+          for (let j = 0; j < brotherPages.length; j++) {
+            if (brotherPages[j] && brotherPages[j].position.spread.row === view.position.spread.row &&
+                  brotherPages[j].position.spread.column === view.position.spread.column) {
               if (brotherPages[j].isDivAddedToContainer && view.id < brotherPages[j].id) {
                 insertPageDom = brotherPages[j].div;
               }
@@ -1314,8 +1322,9 @@ class BaseViewer {
           } else {
             spread.appendChild(view.div);
           }
-          if (!isSpreadAdded)
-            viewer.appendChild(spread);
+          if (!isSpreadAdded) {
+            this.viewer.appendChild(spread);
+          }
           view.isDivAddedToContainer = true;
           this._buffer.push(view);
         } else if (resetCss) {
