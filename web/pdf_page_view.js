@@ -210,7 +210,7 @@ class PDFPageView {
   }
 
   destroy() {
-    // Not only page content scroll loading, 
+    // Not only page content scroll loading,
     // but also page container page div page scroll loading
     if (this.isDivAddedToContainer) {
       if (this._spreadMode === SpreadMode.NONE) {
@@ -254,9 +254,9 @@ class PDFPageView {
   }
 
   /**
-   * [adjustLastLineLeft Adjust the horizontal 
+   * [adjustLastLineLeft Adjust the horizontal
    * middle style of the page on the previous line]
-   * @param  {[type]} lastLineLastEleIdx [Index of the last 
+   * @param  {[type]} lastLineLastEleIdx [Index of the last
    * page in the previous row]
    * @param  {[type]} containerW         [Vessel width]
    * @param  {[type]} type               [spread type]
@@ -682,7 +682,7 @@ class PDFPageView {
     let newH = Math.floor(this.viewport.height);
     div.style.width = newW + 'px';
     div.style.height = newH + 'px';
-    
+
     this.position.width = newW + 10;
     this.position.height = newH + 10;
 

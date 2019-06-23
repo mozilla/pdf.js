@@ -77,9 +77,9 @@ function PDFPageViewBuffer(size, viewer) {
     this.delSomeData(1);
   };
   /**
-   * [delSomeData Do not delete the first and last pages to 
+   * [delSomeData Do not delete the first and last pages to
    * determine the height of the container]
-   * @param  {[type]} type [Make a distinction between 
+   * @param  {[type]} type [Make a distinction between
    * adding a page or resize]
    */
   this.delSomeData = function(type) {
@@ -1265,7 +1265,7 @@ class BaseViewer {
   }
 
   /**
-   * [_addPageDivBySpreadMode Add div and spread according to 
+   * [_addPageDivBySpreadMode Add div and spread according to
    * the presentation mode of the page]
    * @param {[type]} visiblePages [visiblePages]
    * @param {[type]} resetCss     [Do you need to reset the location style?]
