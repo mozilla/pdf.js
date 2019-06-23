@@ -76,12 +76,18 @@ function PDFPageViewBuffer(size, viewer) {
     data.push(view);
     this.delSomeData(1);
   };
+  /**
+   * [delSomeData Do not delete the first and last pages to 
+   * determine the height of the container]
+   * @param  {[type]} type [Make a distinction between 
+   * adding a page or resize]
+   */
   this.delSomeData = function(type) {
     let pagesCount = viewer.pdfDocument.numPages;
     if (data.length > size) {
       let delArr = [];
       for (let i = 0; i < data.length; i++) {
-        if (data[i].id !== 1 && data[i].id !== pagesCount) { // eslint-disable-line
+        if (data[i].id !== 1 && data[i].id !== pagesCount) {
           delArr = delArr.concat(data.splice(i, 1));
           if (type === 1) {
             break;
@@ -144,7 +150,6 @@ class BaseViewer {
     }
     this._name = this.constructor.name;
     this.container = options.container;
-    this.viewportTotalHeight = 0;
     this.containerW = options.container.clientWidth;
     this.viewer = options.viewer || options.container.firstElementChild;
     this.eventBus = options.eventBus || getGlobalEventBus();
@@ -349,6 +354,7 @@ class BaseViewer {
       let pageView = this._pages[i];
       pageView.update(pageView.scale, rotation);
     }
+    // Reset the location of the page
     if (this._pages.length > 0) {
       this._pages[0].repositionAllPages();
     }
@@ -582,6 +588,7 @@ class BaseViewer {
       this._pages[i].update(newScale);
     }
     this._currentScale = newScale;
+    // Reset the location of the page
     if (this._pages.length > 0) {
       this._pages[0].repositionAllPages();
     }
@@ -995,6 +1002,7 @@ class BaseViewer {
     let visiblePages = currentlyVisiblePages || this._getVisiblePages();
     let scrollAhead = (this._isScrollModeHorizontal ?
                        this.scroll.right : this.scroll.down);
+    // Add a div DOM container for visible pages
     this._addPageDivBySpreadMode(visiblePages, true);
     let pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                           this._pages,
@@ -1141,7 +1149,7 @@ class BaseViewer {
     for (let i = 0; i < maxI; i++) {
       pages[i].isDivAddedToContainer = false;
     }
-    // 先加入第一个元素和最后一个元素
+    // add the first and last page containers and reposition
     if (maxI > 0) {
       pages[0].repositionAllPages();
       this._addPageDivBySpreadMode({
@@ -1235,6 +1243,7 @@ class BaseViewer {
     for (let i = 0; i < maxI; i++) {
       pages[i].isDivAddedToContainer = false;
     }
+    // add the first and last page containers and reposition
     if (maxI > 0) {
       pages[0].repositionAllPages();
       this._addPageDivBySpreadMode({
@@ -1255,6 +1264,12 @@ class BaseViewer {
     this.update();
   }
 
+  /**
+   * [_addPageDivBySpreadMode Add div and spread according to 
+   * the presentation mode of the page]
+   * @param {[type]} visiblePages [visiblePages]
+   * @param {[type]} resetCss     [Do you need to reset the location style?]
+   */
   _addPageDivBySpreadMode(visiblePages = null, resetCss) {
     if (!visiblePages.views.length) {
       return;

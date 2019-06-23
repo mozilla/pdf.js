@@ -110,7 +110,9 @@ class PDFPageView {
     this.div = div;
     this.container = container;
     this.viewer = options.viewer;
+    // flag of div is add to domtree or not.
     this.isDivAddedToContainer = false;
+    // the page size position and spread size position
     this.position = {
       width: Math.floor(this.viewport.width) + 10,
       height: Math.floor(this.viewport.height) + 10,
@@ -131,6 +133,11 @@ class PDFPageView {
     }
   }
 
+  /**
+   * [getClonePositionSpreadObj in same spread dom use same obj]
+   * @param  {[type]} spread [spread size position]
+   * @return {[type]}        [the same spread or new spread]
+   */
   getClonePositionSpreadObj(spread) {
     if (spread) {
       return {
@@ -154,6 +161,11 @@ class PDFPageView {
     };
   }
 
+  /**
+   * [setDivStyle set spreadNone spreadOdd spreadEven page position]
+   * @param {[type]} pageView [page view obj]
+   * @param {[type]} type     [is spread]
+   */
   setDivStyle(pageView, type) {
     if (type !== 'spread') {
       let div = pageView.div;
@@ -177,6 +189,7 @@ class PDFPageView {
     let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = pdfPage.getViewport({ scale: this.scale * CSS_UNITS,
                                           rotation: totalRotation, });
+    // 2000 pages updated once to change the location of the page
     if (!this.viewer.firstSizeChangedPage ||
                   this.id < this.viewer.firstSizeChangedPage.id) {
       let newW = Math.floor(this.viewport.width) + 10;
@@ -197,6 +210,8 @@ class PDFPageView {
   }
 
   destroy() {
+    // Not only page content scroll loading, 
+    // but also page container page div page scroll loading
     if (this.isDivAddedToContainer) {
       if (this._spreadMode === SpreadMode.NONE) {
         this.viewer.viewer.removeChild(this.div);
@@ -238,6 +253,14 @@ class PDFPageView {
     this.zoomLayer = null;
   }
 
+  /**
+   * [adjustLastLineLeft Adjust the horizontal 
+   * middle style of the page on the previous line]
+   * @param  {[type]} lastLineLastEleIdx [Index of the last 
+   * page in the previous row]
+   * @param  {[type]} containerW         [Vessel width]
+   * @param  {[type]} type               [spread type]
+   */
   adjustLastLineLeft(lastLineLastEleIdx, containerW, type) {
     let pages = this.viewer._pages;
     let lastLineMaxW = 0;
@@ -284,10 +307,17 @@ class PDFPageView {
     }
   }
 
+  /**
+   * [repositionAllPages reset all page position]
+   */
   repositionAllPages() {
     this.reposition(0);
   }
 
+  /**
+   * [reposition Relocate pages whose index is greater than pageIndex]
+   * @param  {[type]} pageIdx [pageIndex]
+   */
   reposition(pageIdx) {
     let pages = this.viewer._pages;
     let pagesLen = pages.length;
@@ -295,11 +325,12 @@ class PDFPageView {
     let containerW = this.viewer.container.clientWidth;
     let containerH = this.viewer.container.clientHeight;
 
+    // scrollWrapped
     if (this.viewer.scrollMode === ScrollMode.WRAPPED) {
       let lineMaxH = 0;
       let lineMaxW = 0;
       let lineItemCount = 0;
-
+      // scrollWrapped + spreadNone
       if (this.viewer.spreadMode === SpreadMode.NONE) {
         let column0Idx = pageIndex_ - (pageIdx > -1 ?
               pages[pageIdx].position.column : this.position.column);
@@ -378,7 +409,7 @@ class PDFPageView {
             this.adjustLastLineLeft(pagesLen - 1, containerW);
           }
         }
-    } else {
+      } else { // scrollWrapped + spreadOdd or spreadEven
         const parity = this.viewer.spreadMode % 2;
         let lastSpreadIdxDiff = pageIndex_ % 2 !== parity ? 1 : 2;
         let lastSpreadView = this.viewer.spreadMode ===
@@ -492,6 +523,7 @@ class PDFPageView {
         }
       }
     } else if (this.viewer.scrollMode === ScrollMode.HORIZONTAL) {
+      // scrollHorizontal + spreadNone
       if (this.viewer.spreadMode === SpreadMode.NONE) {
         for (let i = pageIndex_; i < pagesLen; i++) {
           let page_ = pages[i];
@@ -509,6 +541,7 @@ class PDFPageView {
           this.setDivStyle(page_);
         }
       } else {
+        // scrollHorizontal + spreadOdd or spreadEven
         const parity = this.viewer.spreadMode % 2;
         for (let i = pageIndex_; i < pagesLen; ++i) {
           let page_ = pages[i];
@@ -566,6 +599,7 @@ class PDFPageView {
         }
       }
     } else if (this.viewer.spreadMode === SpreadMode.NONE) {
+      // scrollVertical + spreadNone
       for (let i = pageIndex_; i < pagesLen; i++) {
         let page_ = pages[i];
         if (i === 0) {
@@ -582,6 +616,7 @@ class PDFPageView {
         this.setDivStyle(page_);
       }
     } else {
+      // scrollVertical + spreadOdd or spreadEven
       const parity = this.viewer.spreadMode % 2;
       for (let i = pageIndex_; i < pagesLen; ++i) {
         let page_ = pages[i];
@@ -647,7 +682,7 @@ class PDFPageView {
     let newH = Math.floor(this.viewport.height);
     div.style.width = newW + 'px';
     div.style.height = newH + 'px';
-
+    
     this.position.width = newW + 10;
     this.position.height = newH + 10;
 
