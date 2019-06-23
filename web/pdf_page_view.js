@@ -575,7 +575,7 @@ class PDFPageView {
   reposition(pageIdx) {
     let pages = this.viewer._pages;
     let pagesLen = pages.length;
-    let pageIndex_ = pageIdx > - 1 ? pageIdx : this.id - 1;
+    let pageIndex_ = pageIdx > -1 ? pageIdx : this.id - 1;
     let containerW = this.viewer.container.clientWidth;
     let containerH = this.viewer.container.clientHeight;
 
