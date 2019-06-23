@@ -50,8 +50,6 @@ class PDFViewer extends BaseViewer {
     super._scrollIntoView({ pageView, pageSpot, pageNumber, });
   }
 
-  
-
   _getVisiblePages() {
     if (this.isInPresentationMode) {
       // The algorithm in `getVisibleElements` doesn't work in all browsers and

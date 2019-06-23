@@ -1560,7 +1560,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   background-color: rgba(255,255,255, .6);
   color: black;
 }
-
 #viewerLoading{
   position: absolute;
   top: 32px;
@@ -1593,7 +1592,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   display: block;
   margin: auto;
 }
-
 
 .grab-to-pan-grab {
   cursor: url("images/grab.cur"), move !important;

@@ -433,8 +433,6 @@ class PDFFindController {
       this._updateUIResultsCount();
     }
   }
-
-
   _getTextContent(promise, pageIndex, context, extractTextCapability) {
     context._extractStartedFlags[pageIndex] = true;
     return promise.then(function () {
@@ -445,11 +443,9 @@ class PDFFindController {
         }).then(function (textContent) {
           var textItems = textContent.items;
           var strBuf = [];
-
           for (var j = 0, jj = textItems.length; j < jj; j++) {
             strBuf.push(textItems[j].str);
           }
-
           context._pageContents[pageIndex] = normalize(strBuf.join(''));
           extractTextCapability.resolve(pageIndex);
         }, function (reason) {
@@ -459,8 +455,6 @@ class PDFFindController {
         });
       });
   }
-
-
   _extractText() {
     // Perform text extraction once if this method is called multiple times.
     if (this._extractTextPromises.length > 0) {

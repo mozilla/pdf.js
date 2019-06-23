@@ -63,6 +63,7 @@ class PDFPageView {
   constructor(options) {
     let container = options.container;
     let defaultViewport = options.defaultViewport;
+
     this.id = options.id;
     this.renderingId = 'page' + this.id;
 
@@ -385,8 +386,6 @@ class PDFPageView {
     }
   }
 
-
-
   setDivStyle(pageView, type) {
     if (type != 'spread') {
       var div = pageView.div;
@@ -401,9 +400,7 @@ class PDFPageView {
         div.style.top = cssStyle.realTop + 'px';
       }
     }
-    
   }
-
   setPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
@@ -470,9 +467,6 @@ class PDFPageView {
     this.zoomLayer = null;
   }
 
-
-
-
   adjustLastLineLeft(lastLineLastEleIdx, containerW, type) {
     var pages = this.viewer._pages;
     var pagesLen = pages.length;
@@ -484,7 +478,6 @@ class PDFPageView {
           break;
         }
       }
-
 
       var leftDiff = (containerW - lastLineMaxW)/2;
       if (leftDiff > 0) {
@@ -519,7 +512,6 @@ class PDFPageView {
   repositionAllPages() {
     this.reposition(0);
   }
-
 
   reposition(pageIdx) {
     var pages = this.viewer._pages;
@@ -592,7 +584,6 @@ class PDFPageView {
               page_.position.realLeft = page_.position.left = 0;
             }
 
-            
             if (lineItemCount < 2) {
               lineMaxH = pageH_;
             }else{
@@ -643,9 +634,6 @@ class PDFPageView {
             page_.position.spread.height = spreadMaxH;
             var lastSpreadIdxDiff = i % 2 != parity ? 1 : 2;
             lastSpreadView = pages[i - lastSpreadIdxDiff];
-
-            
-
             var lineMaxW_ = lineMaxW + spreadW;
             if (lastSpreadView && lineMaxW_ > containerW) {
               page_.position.spread.row = lastSpreadView.position.spread.row + 1;
@@ -964,7 +952,6 @@ class PDFPageView {
       Math.floor(width) + 'px';
     target.style.height = target.parentNode.style.height = div.style.height =
       Math.floor(height) + 'px';
-    
     // The canvas may have been originally rotated; rotate relative to that.
     let relativeRotation = this.viewport.rotation -
                            this.paintedViewportMap.get(target).rotation;
@@ -1242,7 +1229,6 @@ class PDFPageView {
     canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
     canvas.style.width = roundToDivide(viewport.width, sfx[1]) + 'px';
     canvas.style.height = roundToDivide(viewport.height, sfy[1]) + 'px';
-
     // Add the viewport so it's known what it was originally drawn with.
     this.paintedViewportMap.set(canvas, viewport);
 
@@ -1265,6 +1251,7 @@ class PDFPageView {
         cont();
       }
     };
+
     renderTask.promise.then(function() {
       showCanvas();
       renderCapability.resolve(undefined);

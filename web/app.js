@@ -1003,7 +1003,6 @@ let PDFViewerApplication = {
             setTimeout(resolve, FORCE_PAGES_LOADED_TIMEOUT);
           }),
         ]);
-
         if (!initialBookmark && !hash) {
           return;
         }
@@ -1354,8 +1353,6 @@ let PDFViewerApplication = {
     eventBus.on('namedaction', webViewerNamedAction);
     eventBus.on('presentationmodechanged', webViewerPresentationModeChanged);
     eventBus.on('presentationmode', webViewerPresentationMode);
-    eventBus.on('presentationmodecolumn', webViewerPresentationModeColumn);
-    eventBus.on('presentationmoderow', webViewerPresentationModeRow);
     eventBus.on('openfile', webViewerOpenFile);
     eventBus.on('print', webViewerPrint);
     eventBus.on('download', webViewerDownload);
@@ -1431,8 +1428,6 @@ let PDFViewerApplication = {
     eventBus.off('namedaction', webViewerNamedAction);
     eventBus.off('presentationmodechanged', webViewerPresentationModeChanged);
     eventBus.off('presentationmode', webViewerPresentationMode);
-    eventBus.off('presentationmodecolumn', webViewerPresentationModeColumn);
-    eventBus.off('presentationmoderow', webViewerPresentationModeRow);
     eventBus.off('openfile', webViewerOpenFile);
     eventBus.off('print', webViewerPrint);
     eventBus.off('download', webViewerDownload);
@@ -1504,9 +1499,9 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       // IE10 / IE11 does not include an origin in `blob:`-URLs. So don't block
       // any blob:-URL. The browser's same-origin policy will block requests to
       // blob:-URLs from other origins, so this is safe.
-      /*if (origin !== viewerOrigin && protocol !== 'blob:') {
+      if (origin !== viewerOrigin && protocol !== 'blob:') {
         throw new Error('file origin does not match viewer\'s');
-      }*/
+      }
     } catch (ex) {
       let message = ex && ex.message;
       PDFViewerApplication.l10n.get('loading_error', null,
@@ -1930,16 +1925,6 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
 function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
 }
-
-function webViewerPresentationModeColumn() {
-  alert('webViewerPresentationModeColumn');
-}
-function webViewerPresentationModeRow() {
-  alert('webViewerPresentationModeRow');
-}
-
-
-
 function webViewerOpenFile() {
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     let openFileInputName = PDFViewerApplication.appConfig.openFileInputName;
@@ -2020,7 +2005,7 @@ function webViewerFind(evt) {
     entireWord: evt.entireWord,
     highlightAll: evt.highlightAll,
     findPrevious: evt.findPrevious,
-    searchInCurrPage: evt.searchInCurrPage
+    searchInCurrPage: evt.searchInCurrPage,
   });
 }
 
@@ -2033,7 +2018,7 @@ function webViewerFindFromUrlHash(evt) {
     highlightAll: true,
     findPrevious: false,
     page: evt.page,
-    searchInCurrPage: evt.searchInCurrPage
+    searchInCurrPage: evt.searchInCurrPage,
   });
 }
 

@@ -141,14 +141,11 @@ function getOffsetLeft(view) {
  * @param {boolean} skipOverflowHiddenElements - Ignore elements that have
  *   the CSS rule `overflow: hidden;` set. The default is false.
  */
-
-
 /*function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
   let parent = element.offsetParent;
-  
   if (!parent) {
     console.error('offsetParent is not set -- cannot scroll');
     return;
@@ -180,8 +177,6 @@ function getOffsetLeft(view) {
   }
   parent.scrollTop = offsetY;
 }*/
-
-
 function util_scrollIntoView(pageView, spot) {
   var viewer = pageView.viewer;
   var container = viewer.container;
@@ -253,8 +248,6 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   }
   parent.scrollTop = offsetY;
 }
-
-
 
 /**
  * Helper function to start monitoring the scroll event and converting them into
@@ -609,8 +602,6 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         currRowVisibleCount = 0;
       }
     }
-
-
     if (viewer._scrollMode == ScrollMode.WRAPPED) {
       if (viewer._spreadMode == SpreadMode.NONE) {
         pageTop = p.realTop;
@@ -715,8 +706,6 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         currRowVisibleCount = 0;
       }
     }
-
-
     if (viewer._scrollMode == ScrollMode.WRAPPED) {
       if (viewer._spreadMode == SpreadMode.NONE) {
         pageTop = p.realTop;
@@ -775,8 +764,6 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
       percent,
     });
   }
-
-
   const first = visible[0], last = visible[visible.length - 1];
 
   if (sortByVisibility) {

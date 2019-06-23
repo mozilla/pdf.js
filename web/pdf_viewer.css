@@ -52,7 +52,6 @@
   margin-left: 3.5px;
   margin-right: 3.5px;
   text-align: center;
-
 }
 
 .pdfViewer.scrollHorizontal, .spread {
@@ -82,7 +81,6 @@
   margin-left: -3.5px;
   margin-right: -3.5px;
 }
-
 .spread .page {
   position: relative !important;
   transform: none !important;
@@ -120,8 +118,6 @@
   margin-left: 0;
   margin-right: 0;
 }
-
-
 
 .pdfPresentationMode .pdfViewer .page,
 .pdfPresentationMode .pdfViewer .spread {

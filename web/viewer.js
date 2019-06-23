@@ -214,6 +214,7 @@ function webViewerLoad() {
       event.initCustomEvent('webviewerloaded', true, true, {});
       document.dispatchEvent(event);
     }
+
     pdfjsWebApp.PDFViewerApplication.run(config);
   }
 }

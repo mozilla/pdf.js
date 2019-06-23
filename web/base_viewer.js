@@ -74,11 +74,8 @@ function PDFPageViewBuffer(size, viewer) {
       data.splice(i, 1);
     }
     data.push(view);
-
     this.delSomeData(1);
   };
-
-
   this.delSomeData = function(type) {
     var pagesCount = viewer.pdfDocument.numPages;
     if (data.length > size) {
@@ -835,7 +832,6 @@ class BaseViewer {
     if (visible.views.length == 0) {
       visible = this._getCurrentVisiblePage();
     }
-    
     const visiblePages = visible.views, numVisiblePages = visiblePages.length;
 
     if (numVisiblePages === 0) {
@@ -914,7 +910,6 @@ class BaseViewer {
       y: getOffsetTop(pageView),
       view: pageView,
     };
-    
     return { first: view, last: view, views: [view], };
   }
 
@@ -992,9 +987,7 @@ class BaseViewer {
     let visiblePages = currentlyVisiblePages || this._getVisiblePages();
     let scrollAhead = (this._isScrollModeHorizontal ?
                        this.scroll.right : this.scroll.down);
-
     this._addPageDivBySpreadMode(visiblePages, true);
-
     let pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                           this._pages,
                                                           scrollAhead);
@@ -1134,7 +1127,6 @@ class BaseViewer {
     if (!this.pdfDocument || !pageNumber) {
       return;
     }
-
     // Temporarily remove all the pages from the DOM.
     viewer.textContent = '';
     var pages = this._pages, maxI = pages.length;
@@ -1146,14 +1138,11 @@ class BaseViewer {
       pages[0].repositionAllPages();
       this._addPageDivBySpreadMode({ first:pages[0], last:pages[maxI-1], views: [{view:pages[0]}, {view:pages[maxI-1]}], });
     }
-
     let visible = this._getVisiblePages();
     if (visible.views.length == 0) {
       visible = this._getCurrentVisiblePage();
     }
     this._addPageDivBySpreadMode(visible);
-
-
     // Non-numeric scale values can be sensitive to the scroll orientation.
     // Call this before re-scrolling to the current page, to ensure that any
     // changes in scale don't move the current page.
@@ -1188,9 +1177,6 @@ class BaseViewer {
 
     this._updateSpreadMode(/* pageNumber = */ this._currentPageNumber);
   }
-
-
-
   /* _updateSpreadMode(pageNumber = null) {
     if (!this.pdfDocument) {
       return;
@@ -1233,24 +1219,19 @@ class BaseViewer {
     const viewer = this.viewer, pages = this._pages, maxI = pages.length;
     // Temporarily remove all the pages from the DOM.
     viewer.textContent = '';
-
-
     for (var i = 0; i < maxI; i++) {
       pages[i].isDivAddedToContainer = false;
     }
-
     // 先加入第一个元素和最后一个元素
     if (maxI > 0) {
       pages[0].repositionAllPages();
       this._addPageDivBySpreadMode({ first:pages[0], last:pages[maxI-1], views: [{view:pages[0]}, {view:pages[maxI-1]}], });
     }
-
     let visible = this._getVisiblePages();
     if (visible.views.length == 0) {
       visible = this._getCurrentVisiblePage();
     }
     this._addPageDivBySpreadMode(visible);
-    
     if (!pageNumber) {
       return;
     }
@@ -1261,7 +1242,6 @@ class BaseViewer {
     if (!visiblePages.views.length) {
       return;
     }
-
     if (this._spreadMode === SpreadMode.NONE) {
       for (let i = 0; i < visiblePages.views.length; i++) {
         var view = visiblePages.views[i].view;
@@ -1342,13 +1322,10 @@ class BaseViewer {
           view.div.parentNode.style.top = view.position.spread.realTop + 'px';
           view.div.parentNode.style.left = view.position.spread.realLeft + 'px';
         }
-        
       }
     }
   }
-
 }
-
 
 export {
   BaseViewer,
