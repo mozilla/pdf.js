@@ -433,12 +433,13 @@ class PDFFindController {
       this._updateUIResultsCount();
     }
   }
+
   _getTextContent(promise, pageIndex, context, extractTextCapability) {
     context._extractStartedFlags[pageIndex] = true;
     return promise.then(function () {
         return context._pdfDocument.getPage(pageIndex + 1).then(function (pdfPage) {
           return pdfPage.getTextContent({
-            normalizeWhitespace: true
+            normalizeWhitespace: true,
           });
         }).then(function (textContent) {
           let textItems = textContent.items;
@@ -455,6 +456,7 @@ class PDFFindController {
         });
       });
   }
+
   _extractText() {
     // Perform text extraction once if this method is called multiple times.
     if (this._extractTextPromises.length > 0) {
@@ -468,7 +470,7 @@ class PDFFindController {
       this._extractStartedFlags[i] = false;
       this._extractTextCapabilities[i] = extractTextCapability;
       if (!this._state.searchInCurrPage || (this._state.searchInCurrPage &&
-            this._linkService.page - 1 == i)) {
+            this._linkService.page - 1 === i)) {
         promise = this._getTextContent(promise, i, this, extractTextCapability);
       }
       /* promise = promise.then(() => {
@@ -548,7 +550,8 @@ class PDFFindController {
           }
           this._pendingFindMatches[i] = true;
           if (!this._extractStartedFlags[i])
-              promise = this._getTextContent(promise, i, this, this._extractTextCapabilities[i])
+              promise = this._getTextContent(promise, i, this,
+                this._extractTextCapabilities[i]);
           this._extractTextPromises[i].then((pageIdx) => {
             this._pendingFindMatches[pageIdx] = false;
             this._calculateMatch(pageIdx);
@@ -559,7 +562,7 @@ class PDFFindController {
         if (!this._pendingFindMatches[currentPageIndex]) {
           this._pendingFindMatches[currentPageIndex] = true;
           !this._extractStartedFlags[currentPageIndex] && this._getTextContent(
-              Promise.resolve(), currentPageIndex, this, 
+              Promise.resolve(), currentPageIndex, this,
               this._extractTextCapabilities[currentPageIndex]);
           this._extractTextPromises[currentPageIndex].then((pageIdx) => {
             this._pendingFindMatches[pageIdx] = false;
@@ -597,12 +600,14 @@ class PDFFindController {
       }
       // We went beyond the current page's matches, so we advance to
       // the next page.
-      if (!this._state.searchInCurrPage)
+      if (!this._state.searchInCurrPage) {
         this._advanceOffsetPage(previous);
+      }
     }
     // Start searching through the page.
-    if (!this._state.searchInCurrPage)
+    if (!this._state.searchInCurrPage) {
       this._nextPageMatch();
+    }
   }
 
   _matchesReady(matches) {
@@ -617,8 +622,9 @@ class PDFFindController {
       return true;
     }
     // No matches, so attempt to search the next page.
-    if (!this._state.searchInCurrPage)
+    if (!this._state.searchInCurrPage) {
       this._advanceOffsetPage(previous);
+    }
     if (offset.wrapped) {
       offset.matchIdx = null;
       if (this._pagesToSearch < 0) {

@@ -15,10 +15,11 @@
 
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getGlobalEventBus,
-  getOffsetTop, getOffsetLeft, isPortraitOrientation, isValidRotation,
+  getOffsetLeft, getOffsetTop, isPortraitOrientation, isValidRotation,
   isValidScrollMode, isValidSpreadMode, MAX_AUTO_SCALE, moveToEndOfArray,
-  NullL10n, PresentationModeState, ScrollMode, SpreadMode, TextLayerMode,
-  UNKNOWN_SCALE, util_getVisibleElements, VERTICAL_PADDING, watchScroll
+  NullL10n, PresentationModeState, RendererType, SCROLLBAR_PADDING,
+  scrollIntoView, ScrollMode, SpreadMode, TextLayerMode, UNKNOWN_SCALE,
+  util_getVisibleElements, util_scrollIntoView, VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
@@ -670,8 +671,7 @@ class BaseViewer {
       this._setScale(this._currentScaleValue, true);
     }
 
-    let pageView = this._pages[this._currentPageNumber - 1];
-    this._scrollIntoView({ pageView: pageView, });
+    this._scrollIntoView({ pageView: this._pages[this._currentPageNumber - 1], });
   }
 
   /**
@@ -774,7 +774,7 @@ class BaseViewer {
 
     if (scale === 'page-fit' && !destArray[4]) {
       this._scrollIntoView({
-        pageView: pageView,
+        pageView: pageView, // eslint-disable-line
         pageNumber,
       });
       return;
@@ -795,7 +795,7 @@ class BaseViewer {
       top = Math.max(top, 0);
     }
     this._scrollIntoView({
-      pageView: pageView,
+      pageView: pageView, // eslint-disable-line
       pageSpot: { left, top, },
       pageNumber,
     });
@@ -1145,7 +1145,7 @@ class BaseViewer {
       this._addPageDivBySpreadMode({
         first: pages[0],
         last: pages[maxI - 1],
-        views: [{ view: pages[0] }, { view: pages[maxI - 1] }],
+        views: [{ view: pages[0] }, { view: pages[maxI - 1] },],
       });
     }
     let visible = this._getVisiblePages();

@@ -796,8 +796,9 @@ class PDFPageView {
                 pages[i - 1].position.spread = page_.position.spread;
               }
             }
-            page_.position.spread.realTop = page_.position.spread.top = 
-            containerH > page_.position.spread.height ? (containerH - page_.position.spread.height)/2 : 0;
+            page_.position.spread.realTop = page_.position.spread.top =
+            containerH > page_.position.spread.height ? 
+                                      (containerH - page_.position.spread.height)/2 : 0;
             this.setDivStyle(page_, 'spread');
           }
         }
@@ -859,7 +860,8 @@ class PDFPageView {
             }
           }
           page_.position.spread.realLeft = page_.position.spread.left = 
-          containerW > page_.position.spread.width ? (containerW - page_.position.spread.width)/2 : 0;
+          containerW > page_.position.spread.width ?
+                                      (containerW - page_.position.spread.width)/2 : 0;
           this.setDivStyle(page_, 'spread');
         }
       }

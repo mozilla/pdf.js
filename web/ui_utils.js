@@ -153,8 +153,10 @@ function getOffsetLeft(view) {
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
   while (
-    (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth) ||
-    (skipOverflowHiddenElements && getComputedStyle(parent).overflow === 'hidden')) {
+    (parent.clientHeight === parent.scrollHeight &&
+                      parent.clientWidth === parent.scrollWidth) ||
+    (skipOverflowHiddenElements &&
+                        getComputedStyle(parent).overflow === 'hidden')) {
     if (parent.dataset._scaleY) {
       offsetY /= parent.dataset._scaleY;
       offsetX /= parent.dataset._scaleX;
@@ -183,7 +185,7 @@ function util_scrollIntoView(pageView, spot) {
   let offsetY = (viewer.spreadMode === SpreadMode.ODD ||
               viewer.spreadMode === SpreadMode.EVEN ?
               pageView.position.spread.realTop + (pageView.position.spread.height -
-                pageView.position.height)/2 : pageView.position.realTop)
+                pageView.position.height) / 2 : pageView.position.realTop)
   let offsetX = (viewer.spreadMode === SpreadMode.ODD ||
               viewer.spreadMode === SpreadMode.EVEN ?
               pageView.position.spread.realLeft + (
@@ -197,7 +199,7 @@ function util_scrollIntoView(pageView, spot) {
                       ) ||
                       (pageView.id < viewer.pagesCount && pageView.id > 1)
                   ) ? viewer._pages[pageView.id - 2].position.width : 0
-                )  : pageView.position.realLeft)
+                ) : pageView.position.realLeft)
   if (spot) {
     if (spot.top !== undefined) {
       offsetY += spot.top;
@@ -223,8 +225,10 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
   while (
-    (PDFViewerApplication.pdfViewer.spreadMode !== 0 && parent.getAttribute('class') === 'spread') ||
-    (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth) ||
+    (PDFViewerApplication.pdfViewer.spreadMode !== 0 &&
+                                        parent.getAttribute('class') === 'spread') ||
+    (parent.clientHeight === parent.scrollHeight &&
+                                        parent.clientWidth === parent.scrollWidth) ||
     (skipOverflowHiddenElements && getComputedStyle(parent).overflow === 'hidden')) {
     if (parent.dataset._scaleY) {
       offsetY /= parent.dataset._scaleY;
@@ -611,23 +615,26 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         pageRight = p.realLeft + p.width;
       } else {
         const parity = viewer.spreadMode % 2;
-        pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
+        pageTop = p.spread.realTop + (p.spread.height - p.height) / 2;
         pageBottom = pageTop + p.height;
-        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft +
+                        views[i - 1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
     } else if (viewer._scrollMode === ScrollMode.HORIZONTAL) {
       let containerH = container.clientHeight;
       if (viewer._spreadMode === SpreadMode.NONE) {
-        pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
+        pageTop = p.realTop + (containerH > p.height ? (containerH - p.height) / 2 : 0);
         pageBottom = p.realTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
       } else {
         const parity = viewer.spreadMode % 2;
-        pageTop = p.spread.realTop + (p.spread.height - p.height)/2 + (containerH > p.spread.height ? (containerH - p.spread.height)/2 : 0);
+        pageTop = p.spread.realTop + (p.spread.height - p.height) / 2 +
+              (containerH > p.spread.height ? (containerH - p.spread.height) / 2 : 0);
         pageBottom = pageTop + p.height;
-        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft +
+                      views[i - 1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
     } else if (viewer._spreadMode === SpreadMode.NONE) {
@@ -637,9 +644,10 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
       pageRight = p.realLeft + p.width;
     } else {
       const parity = viewer.spreadMode % 2;
-      pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
+      pageTop = p.spread.realTop + (p.spread.height - p.height) / 2;
       pageBottom = pageTop + p.height;
-      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
+      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft +
+                        views[i - 1].position.width : p.spread.realLeft;
       pageRight = pageLeft + p.width;
     }
     if (pageBottom <= top || pageTop >= bottom ||
@@ -715,23 +723,26 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         pageRight = p.realLeft + p.width;
       } else {
         const parity = viewer.spreadMode % 2;
-        pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
+        pageTop = p.spread.realTop + (p.spread.height - p.height) / 2;
         pageBottom = pageTop + p.height;
-        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft +
+                          views[i - 1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
     } else if (viewer._scrollMode === ScrollMode.HORIZONTAL) {
       let containerH = container.clientHeight;
       if (viewer._spreadMode === SpreadMode.NONE) {
-        pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
+        pageTop = p.realTop + (containerH > p.height ? (containerH - p.height) / 2 : 0);
         pageBottom = p.realTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
       } else {
         const parity = viewer.spreadMode % 2;
-        pageTop = p.spread.realTop + (p.spread.height - p.height)/2 + (containerH > p.spread.height ? (containerH - p.spread.height)/2 : 0);
+        pageTop = p.spread.realTop + (p.spread.height - p.height) / 2 +
+                (containerH > p.spread.height ? (containerH - p.spread.height) / 2 : 0);
         pageBottom = pageTop + p.height;
-        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft +
+                                      views[i - 1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
     } else if (viewer._spreadMode === SpreadMode.NONE) {
@@ -741,9 +752,10 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
       pageRight = p.realLeft + p.width;
     } else {
       const parity = viewer.spreadMode % 2;
-      pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
+      pageTop = p.spread.realTop + (p.spread.height - p.height) / 2;
       pageBottom = pageTop + p.height;
-      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
+      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft +
+                                        views[i - 1].position.width : p.spread.realLeft;
       pageRight = pageLeft + p.width;
     }
     if (pageBottom <= top || pageTop >= bottom ||

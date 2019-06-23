@@ -79,7 +79,7 @@ class PDFSinglePageViewer extends BaseViewer {
     }
     super._scrollUpdate();
   }
-  
+
   _scrollIntoView({ pageView, pageSpot = null, pageNumber = null, }) {
     if (pageNumber) { // Ensure that `this._currentPageNumber` is correct.
       this._setCurrentPageNumber(pageNumber);
