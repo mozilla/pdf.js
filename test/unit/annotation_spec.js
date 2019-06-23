@@ -409,8 +409,10 @@ describe('annotation', function() {
         '/URI (http://www.example.com/\\303\\274\\303\\266\\303\\244)\n' +
         '>>\n'
       );
-      const lexer = new Lexer(actionStream);
-      const parser = new Parser(lexer);
+      const parser = new Parser({
+        lexer: new Lexer(actionStream),
+        xref: null,
+      });
       const actionDict = parser.getObj();
 
       const annotationDict = new Dict();
@@ -1412,8 +1414,11 @@ describe('annotation', function() {
         'Test attachment' +
         'endstream\n'
       );
-      const lexer = new Lexer(fileStream);
-      const parser = new Parser(lexer, /* allowStreams = */ true);
+      const parser = new Parser({
+        lexer: new Lexer(fileStream),
+        xref: null,
+        allowStreams: true,
+      });
 
       const fileStreamRef = Ref.get(18, 0);
       const fileStreamDict = parser.getObj();
