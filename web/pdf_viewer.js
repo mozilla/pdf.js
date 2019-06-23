@@ -15,10 +15,7 @@
 
 import { BaseViewer } from './base_viewer';
 import { shadow } from 'pdfjs-lib';
-import {
-  getOffsetTop, getOffsetLeft,
-} from './ui_utils';
-
+import { getOffsetLeft } from './ui_utils';
 
 class PDFViewer extends BaseViewer {
   get _setDocumentViewerElement() {
@@ -36,6 +33,7 @@ class PDFViewer extends BaseViewer {
     }
     super._scrollIntoView({ pageDiv, pageSpot, pageNumber, });
   } */
+  
   _scrollIntoView({ pageView, pageSpot = null, pageNumber = null, }) {
     if (!pageSpot && !this.isInPresentationMode) {
       const pageDiv = pageView.div;

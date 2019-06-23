@@ -469,7 +469,7 @@ class PDFFindController {
       this._extractTextCapabilities[i] = extractTextCapability;
       if (!this._state.searchInCurrPage || (this._state.searchInCurrPage && this._linkService.page - 1 == i))
         promise = this._getTextContent(promise, i, this, extractTextCapability);
-      /*promise = promise.then(() => {
+      /* promise = promise.then(() => {
         return this._pdfDocument.getPage(i + 1).then((pdfPage) => {
           return pdfPage.getTextContent({
             normalizeWhitespace: true,
@@ -491,7 +491,7 @@ class PDFFindController {
           this._pageContents[i] = '';
           extractTextCapability.resolve(i);
         });
-      });*/
+      }); */
     }
   }
 

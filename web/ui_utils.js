@@ -106,31 +106,31 @@ function getOutputScale(ctx) {
   };
 }
 
-/*function getOffsetTop(view) {
+/* function getOffsetTop(view) {
   let ele = view.div;
   return ele.offsetTop + ele.clientTop +
-              (view.viewer.spreadMode == SpreadMode.ODD || 
-              view.viewer.spreadMode == SpreadMode.EVEN ? 
+              (view.viewer.spreadMode === SpreadMode.ODD ||
+              view.viewer.spreadMode === SpreadMode.EVEN ?
               ele.parentNode.offsetTop + ele.parentNode.clientTop : 0);
 }
 
 function getOffsetLeft(view) {
   let ele = view.div;
   return ele.offsetLeft + ele.clientLeft +
-              (view.viewer.spreadMode == SpreadMode.ODD || 
-              view.viewer.spreadMode == SpreadMode.EVEN ? 
+              (view.viewer.spreadMode === SpreadMode.ODD ||
+              view.viewer.spreadMode === SpreadMode.EVEN ?
               ele.parentNode.offsetLeft + ele.parentNode.clientLeft : 0);
-}*/
+} */
 
 function getOffsetTop(view) {
-  return (view.viewer.spreadMode == SpreadMode.ODD || 
-              view.viewer.spreadMode == SpreadMode.EVEN ? 
+  return (view.viewer.spreadMode === SpreadMode.ODD ||
+              view.viewer.spreadMode === SpreadMode.EVEN ?
               view.position.spread.realTop : view.position.realTop);
 }
 
 function getOffsetLeft(view) {
-  return (view.viewer.spreadMode == SpreadMode.ODD || 
-              view.viewer.spreadMode == SpreadMode.EVEN ? 
+  return (view.viewer.spreadMode === SpreadMode.ODD ||
+              view.viewer.spreadMode === SpreadMode.EVEN ?
               view.position.spread.realLeft : view.position.realLeft);
 }
 /**
@@ -141,7 +141,7 @@ function getOffsetLeft(view) {
  * @param {boolean} skipOverflowHiddenElements - Ignore elements that have
  *   the CSS rule `overflow: hidden;` set. The default is false.
  */
-/*function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
+/* function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
@@ -176,26 +176,27 @@ function getOffsetLeft(view) {
     }
   }
   parent.scrollTop = offsetY;
-}*/
+} */
 function util_scrollIntoView(pageView, spot) {
   let viewer = pageView.viewer;
   let container = viewer.container;
-  let offsetY = (viewer.spreadMode == SpreadMode.ODD || 
-              viewer.spreadMode == SpreadMode.EVEN ? 
-              pageView.position.spread.realTop + (pageView.position.spread.height - pageView.position.height)/2 : pageView.position.realTop)
-  let offsetX = (viewer.spreadMode == SpreadMode.ODD || 
-              viewer.spreadMode == SpreadMode.EVEN ? 
+  let offsetY = (viewer.spreadMode === SpreadMode.ODD ||
+              viewer.spreadMode === SpreadMode.EVEN ?
+              pageView.position.spread.realTop + (pageView.position.spread.height -
+                pageView.position.height)/2 : pageView.position.realTop)
+  let offsetX = (viewer.spreadMode === SpreadMode.ODD ||
+              viewer.spreadMode === SpreadMode.EVEN ?
               pageView.position.spread.realLeft + (
                   viewer.spreadMode % 2 === pageView.id - 1 && (
                       (
-                        (pageView.id == viewer.pagesCount && viewer.pagesCount > 1) && 
+                        (pageView.id === viewer.pagesCount && viewer.pagesCount > 1) &&
                         (
-                          (viewer.spreadMode == SpreadMode.ODD && viewer.pagesCount%2 == 0) || 
-                          (viewer.spreadMode == SpreadMode.EVEN && viewer.pagesCount%2 == 1)
+                          (viewer.spreadMode === SpreadMode.ODD && viewer.pagesCount%2 === 0) ||
+                          (viewer.spreadMode === SpreadMode.EVEN && viewer.pagesCount%2 === 1)
                         )
-                      )    ||
+                      ) ||
                       (pageView.id < viewer.pagesCount && pageView.id > 1)
-                  ) ? viewer._pages[pageView.id-2].position.width : 0
+                  ) ? viewer._pages[pageView.id - 2].position.width : 0
                 )  : pageView.position.realLeft)
   if (spot) {
     if (spot.top !== undefined) {
@@ -214,7 +215,7 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
   let parent = element.offsetParent;
-  
+
   if (!parent) {
     console.error('offsetParent is not set -- cannot scroll');
     return;
@@ -222,7 +223,7 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
   while (
-    (PDFViewerApplication.pdfViewer.spreadMode != 0 && parent.getAttribute('class') == 'spread') ||
+    (PDFViewerApplication.pdfViewer.spreadMode !== 0 && parent.getAttribute('class') === 'spread') ||
     (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth) ||
     (skipOverflowHiddenElements && getComputedStyle(parent).overflow === 'hidden')) {
     if (parent.dataset._scaleY) {
@@ -494,7 +495,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   }
   return index;
 }
-/*function backtrackBeforeAllVisibleElements(index, views, top) {
+/* function backtrackBeforeAllVisibleElements(index, views, top) {
   if (index < 2) {
     return index;
   }
@@ -514,7 +515,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
     index = i;
   }
   return index;
-}*/
+} */
 
 /**
  * Generic helper to find out what elements are visible within a scroll pane.
@@ -552,8 +553,8 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
   const top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
   const left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
   /**
-   * (viewer.spreadMode == SpreadMode.ODD || 
-              viewer.spreadMode == SpreadMode.EVEN ? 
+   * (viewer.spreadMode === SpreadMode.ODD ||
+              viewer.spreadMode === SpreadMode.EVEN ?
               ele.parentNode.offsetTop + ele.parentNode.clientTop : 0)
    */
   const visible = [], numViews = views.length;
@@ -567,78 +568,78 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
     let pageLeft;
     let pageRight;
 
-    if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
-      if (viewer._spreadMode == SpreadMode.NONE) {
-        if (currRow != p.column) {
-          if (currRow !== undefined && currRowVisibleCount == 0) {
+    if (viewer._scrollMode === ScrollMode.HORIZONTAL) {
+      if (viewer._spreadMode === SpreadMode.NONE) {
+        if (currRow !== p.column) {
+          if (currRow !== undefined && currRowVisibleCount === 0) {
             break;
           }
-          currRow != p.column;
+          currRow !== p.column;
           currRowVisibleCount = 0;
         }
-      }else{
-        if (currRow != p.spread.column) {
-          if (currRow !== undefined && currRowVisibleCount == 0) {
+      } else {
+        if (currRow !== p.spread.column) {
+          if (currRow !== undefined && currRowVisibleCount === 0) {
             break;
           }
-          currRow != p.column;
+          currRow !== p.column;
           currRowVisibleCount = 0;
         }
       }
-    }else if (viewer._spreadMode == SpreadMode.NONE) {
-      if (currRow != p.row) {
-        if (currRow !== undefined && currRowVisibleCount == 0) {
+    } else if (viewer._spreadMode === SpreadMode.NONE) {
+      if (currRow !== p.row) {
+        if (currRow !== undefined && currRowVisibleCount === 0) {
           break;
         }
-        currRow != p.row;
+        currRow !== p.row;
         currRowVisibleCount = 0;
       }
-    }else{
-      if (currRow != p.spread.row) {
-        if (currRow !== undefined && currRowVisibleCount == 0) {
+    } else {
+      if (currRow !== p.spread.row) {
+        if (currRow !== undefined && currRowVisibleCount === 0) {
           break;
         }
-        currRow != p.row;
+        currRow !== p.row;
         currRowVisibleCount = 0;
       }
     }
-    if (viewer._scrollMode == ScrollMode.WRAPPED) {
-      if (viewer._spreadMode == SpreadMode.NONE) {
+    if (viewer._scrollMode === ScrollMode.WRAPPED) {
+      if (viewer._spreadMode === SpreadMode.NONE) {
         pageTop = p.realTop;
         pageBottom = pageTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
-      }else{
+      } else {
         const parity = viewer.spreadMode % 2;
         pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
         pageBottom = pageTop + p.height;
-        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
-    }else if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
+    } else if (viewer._scrollMode === ScrollMode.HORIZONTAL) {
       let containerH = container.clientHeight;
-      if (viewer._spreadMode == SpreadMode.NONE) {
+      if (viewer._spreadMode === SpreadMode.NONE) {
         pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
         pageBottom = p.realTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
-      }else{
+      } else {
         const parity = viewer.spreadMode % 2;
         pageTop = p.spread.realTop + (p.spread.height - p.height)/2 + (containerH > p.spread.height ? (containerH - p.spread.height)/2 : 0);
         pageBottom = pageTop + p.height;
-        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
-    }else if (viewer._spreadMode == SpreadMode.NONE) {
+    } else if (viewer._spreadMode === SpreadMode.NONE) {
       pageTop = p.realTop;
       pageBottom = p.realTop + p.height;
       pageLeft = p.realLeft;
       pageRight = p.realLeft + p.width;
-    }else{
+    } else {
       const parity = viewer.spreadMode % 2;
       pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
       pageBottom = pageTop + p.height;
-      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
       pageRight = pageLeft + p.width;
     }
     if (pageBottom <= top || pageTop >= bottom ||
@@ -671,78 +672,78 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
     let pageLeft;
     let pageRight;
 
-    if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
-      if (viewer._spreadMode == SpreadMode.NONE) {
-        if (currRow != p.column) {
-          if (currRow !== undefined && currRowVisibleCount == 0) {
+    if (viewer._scrollMode === ScrollMode.HORIZONTAL) {
+      if (viewer._spreadMode === SpreadMode.NONE) {
+        if (currRow !== p.column) {
+          if (currRow !== undefined && currRowVisibleCount === 0) {
             break;
           }
-          currRow != p.column;
+          currRow !== p.column;
           currRowVisibleCount = 0;
         }
-      }else{
-        if (currRow != p.spread.column) {
-          if (currRow !== undefined && currRowVisibleCount == 0) {
+      } else {
+        if (currRow !== p.spread.column) {
+          if (currRow !== undefined && currRowVisibleCount === 0) {
             break;
           }
-          currRow != p.column;
+          currRow !== p.column;
           currRowVisibleCount = 0;
         }
       }
-    }else if (viewer._spreadMode == SpreadMode.NONE) {
-      if (currRow != p.row) {
-        if (currRow !== undefined && currRowVisibleCount == 0) {
+    } else if (viewer._spreadMode === SpreadMode.NONE) {
+      if (currRow !== p.row) {
+        if (currRow !== undefined && currRowVisibleCount === 0) {
           break;
         }
-        currRow != p.row;
+        currRow !== p.row;
         currRowVisibleCount = 0;
       }
-    }else{
-      if (currRow != p.spread.row) {
-        if (currRow !== undefined && currRowVisibleCount == 0) {
+    } else {
+      if (currRow !== p.spread.row) {
+        if (currRow !== undefined && currRowVisibleCount === 0) {
           break;
         }
-        currRow != p.row;
+        currRow !== p.row;
         currRowVisibleCount = 0;
       }
     }
-    if (viewer._scrollMode == ScrollMode.WRAPPED) {
-      if (viewer._spreadMode == SpreadMode.NONE) {
+    if (viewer._scrollMode === ScrollMode.WRAPPED) {
+      if (viewer._spreadMode === SpreadMode.NONE) {
         pageTop = p.realTop;
         pageBottom = pageTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
-      }else{
+      } else {
         const parity = viewer.spreadMode % 2;
         pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
         pageBottom = pageTop + p.height;
-        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
-    }else if (viewer._scrollMode == ScrollMode.HORIZONTAL) {
+    } else if (viewer._scrollMode === ScrollMode.HORIZONTAL) {
       let containerH = container.clientHeight;
-      if (viewer._spreadMode == SpreadMode.NONE) {
+      if (viewer._spreadMode === SpreadMode.NONE) {
         pageTop = p.realTop + (containerH > p.height ? (containerH - p.height)/2 : 0);
         pageBottom = p.realTop + p.height;
         pageLeft = p.realLeft;
         pageRight = p.realLeft + p.width;
-      }else{
+      } else {
         const parity = viewer.spreadMode % 2;
         pageTop = p.spread.realTop + (p.spread.height - p.height)/2 + (containerH > p.spread.height ? (containerH - p.spread.height)/2 : 0);
         pageBottom = pageTop + p.height;
-        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+        pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
         pageRight = pageLeft + p.width;
       }
-    }else if (viewer._spreadMode == SpreadMode.NONE) {
+    } else if (viewer._spreadMode === SpreadMode.NONE) {
       pageTop = p.realTop;
       pageBottom = p.realTop + p.height;
       pageLeft = p.realLeft;
       pageRight = p.realLeft + p.width;
-    }else{
+    } else {
       const parity = viewer.spreadMode % 2;
       pageTop = p.spread.realTop + (p.spread.height - p.height)/2;
       pageBottom = pageTop + p.height;
-      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i-1].position.width : p.spread.realLeft;
+      pageLeft = i % 2 === parity && i > 0 ? p.spread.realLeft + views[i - 1].position.width : p.spread.realLeft;
       pageRight = pageLeft + p.width;
     }
     if (pageBottom <= top || pageTop >= bottom ||

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-const CLEANUP_TIMEOUT = 30000;
+// const CLEANUP_TIMEOUT = 30000;
 
 const RenderingStates = {
   INITIAL: 0,
