@@ -627,6 +627,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       // Using insertAdjacentHTML yields a large performance gain and
       // reduces runtime significantly.
       if (this.output.insertAdjacentHTML) {
+        // eslint-disable-next-line no-unsanitized/method
         this.output.insertAdjacentHTML('BeforeEnd', message);
       } else {
         this.output.textContent += message;

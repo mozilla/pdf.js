@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-unsanitized/method */
 
 import { assert, ImageKind, OPS } from '../shared/util';
 
