@@ -424,26 +424,24 @@ class PDFPageView {
     this.viewport = pdfPage.getViewport({ scale: this.scale * CSS_UNITS,
                                           rotation: totalRotation, });
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    /*if(!this.viewer._pageViewsReady && !this.viewer.firstSizeChangedPage){
-      var newW = Math.floor(this.viewport.width) + 10;
-      var newH = Math.floor(this.viewport.height) + 10;
-      var isWidthChange = newW != this.position.width;
-      var isHeightChange = newH != this.position.height;
-      if(isWidthChange || isHeightChange){
-        this.viewer.firstSizeChangedPage = this;
+    if(!this.viewer._pageViewsReady){
+      if(!this.viewer.firstSizeChangedPage || this.id < this.viewer.firstSizeChangedPage.id){
+        var newW = Math.floor(this.viewport.width) + 10;
+        var newH = Math.floor(this.viewport.height) + 10;
+        var isWidthChange = newW != this.position.width;
+        var isHeightChange = newH != this.position.height;
+        if(isWidthChange || isHeightChange){
+          this.viewer.firstSizeChangedPage = this;
+        }
+      }else if(this.id == this.viewer.pagesCount || this.id - this.viewer.firstSizeChangedPage.id > 2000){
+        this.reposition(this.viewer.firstSizeChangedPage.id - 1);
+        this.viewer.firstSizeChangedPage = null;
       }
-    }*/
+    }
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 
     this.stats = pdfPage.stats;
     this.reset();
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    /*if(!this.viewer._pageViewsReady && this.viewer.firstSizeChangedPage 
-      && (this.id == this.viewer.pagesCount || this.id - this.viewer.firstSizeChangedPage.id > 2000)){
-      this.reposition(this.viewer.firstSizeChangedPage.id - 1);
-      this.viewer.firstSizeChangedPage = null;
-    }*/
-    //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   }
 
   destroy() {
@@ -577,7 +575,7 @@ class PDFPageView {
 
 
   reposition(pageIdx){
-    var start = new Date().getTime();
+    //var start = new Date().getTime();
     var pages = this.viewer._pages;
     var pagesLen = pages.length;
     var pageIndex_ = pageIdx > -1 ? pageIdx : this.id -1;
@@ -599,7 +597,7 @@ class PDFPageView {
 
       if(this.viewer.spreadMode == SpreadMode.NONE){//平铺+单页
         //if(isWidthChange || isHeightChange) {
-          var column0Idx = pageIndex_ - this.position.column;
+          var column0Idx = pageIndex_ - (pageIdx > -1 ? pages[pageIdx].position.column : this.position.column);
           for(var i=column0Idx;i<pagesLen;i++){
             var page_ = pages[i];
             var lastPage_ = i == 0 ? null : pages[i-1];
@@ -845,9 +843,6 @@ class PDFPageView {
         }
         page_.position.realLeft = page_.position.left = containerW > page_.position.width ? (containerW - page_.position.width)/2 : 0;
         this.setDivStyle(page_);
-        if(page_.id == 6417){
-          console.log(JSON.stringify(page_.position));
-        }
       }
     }else{//垂直+双页或者书籍
       const parity = this.viewer.spreadMode % 2;
@@ -896,7 +891,8 @@ class PDFPageView {
         }
       }
     }
-    console.log(pageIdx+'-------------reposition------------------:'+(new Date().getTime()-start)/1000.0);
+    this.viewer._resetCurrentPageView();
+    //console.log(pageIdx+','+this.id+'-------------reposition------------------:'+(new Date().getTime()-start)/1000.0);
   }
   //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
   reset(keepZoomLayer = false, keepAnnotations = false) {

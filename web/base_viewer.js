@@ -487,12 +487,13 @@ class BaseViewer {
       // starts to create the correct size canvas. Wait until one page is
       // rendered so we don't tie up too many resources early on.
       onePageRenderedCapability.promise.then(() => {
+        PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';
         if (pdfDocument.loadingParams['disableAutoFetch']) {
           // XXX: Printing is semi-broken with auto fetch disabled.
           pagesCapability.resolve();
           //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-          this._pages.length > 0 && this._pages[0].repositionAllPages();
-          PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';
+          /*this._pages.length > 0 && this._pages[0].repositionAllPages();
+          PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';*/
           //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
           return;
         }
@@ -507,8 +508,8 @@ class BaseViewer {
             if (--getPagesLeft === 0) {
               pagesCapability.resolve();
               //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-              this._pages[0].repositionAllPages();
-              PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';
+              /*this._pages[0].repositionAllPages();
+              PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';*/
               //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
             }
           }, (reason) => {
@@ -517,8 +518,8 @@ class BaseViewer {
             if (--getPagesLeft === 0) {
               pagesCapability.resolve();
               //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-              this._pages.length > 0 && this._pages[0].repositionAllPages();
-              PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';
+              /*this._pages.length > 0 && this._pages[0].repositionAllPages();
+              PDFViewerApplication.appConfig.viewerLoading.style.display = 'none';*/
               //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
             }
           });
