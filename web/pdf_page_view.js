@@ -32,7 +32,8 @@ import { viewerCompatibilityParams } from './viewer_compatibility';
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IPDFTextLayerFactory} textLayerFactory
- * @property {number} textLayerMode - (optional) Controls if the text layer used
+ * @property {number} textLayerMode - (optional) Controls 
+ *   if the text layer used
  *   for selection and searching is created, and if the improved text selection
  *   behaviour is enabled. The constants from {TextLayerMode} should be used.
  *   The default value is `TextLayerMode.ENABLE`.
@@ -52,7 +53,8 @@ import { viewerCompatibilityParams } from './viewer_compatibility';
  * @property {IL10n} l10n - Localization service.
  */
 
-const MAX_CANVAS_PIXELS = viewerCompatibilityParams.maxCanvasPixels || 16777216;
+const MAX_CANVAS_PIXELS =
+                        viewerCompatibilityParams.maxCanvasPixels || 16777216;
 
 /**
  * @implements {IRenderableView}
@@ -180,7 +182,7 @@ class PDFPageView {
             this.position.row = lastPage.position.row + 1;
             this.position.column = 0;
             this.position.realTop = this.position.top =
-                                                  lastPage.position.top + lineMaxH;
+                                       lastPage.position.top + lineMaxH;
             this.position.realLeft = this.position.left = 0;
             this.adjustLastLineLeft(this.id - 2, containerW);
           } else {
@@ -189,7 +191,7 @@ class PDFPageView {
             this.position.realTop = this.position.top = lastPage.position.top;
             if (lineMaxH > this.position.height) {
               this.position.realTop = this.position.top +
-                                                (lineMaxH - this.position.height) / 2;
+                                        (lineMaxH - this.position.height) / 2;
             } else if (lineMaxH < this.position.height) {
               for (let i = column0Idx;i < pageIndex_; i++) {
                 if (pages[i].position.height < this.position.height) {
@@ -256,34 +258,41 @@ class PDFPageView {
             }
             lineMaxW += spreadW;
             if (lineMaxW > containerW) {
-              this.position.spread.row = lastSpreadView.position.spread.row + 1;
+              this.position.spread.row =
+                            lastSpreadView.position.spread.row + 1;
               this.position.spread.column = 0;
               this.position.spread.realTop = this.position.spread.top =
-                                  lastSpreadView.position.spread.top + lineMaxH;
+                           lastSpreadView.position.spread.top + lineMaxH;
               this.position.spread.realLeft = this.position.spread.left = 0;
-              this.adjustLastLineLeft(lastSpreadView.id - 1, containerW, 'spread');
+              this.adjustLastLineLeft(lastSpreadView.id - 1,
+                                       containerW, 'spread');
             } else {
               this.position.spread.row = lastSpreadView.position.spread.row;
-              this.position.spread.column = lastSpreadView.position.spread.column + 1;
+              this.position.spread.column =
+                              lastSpreadView.position.spread.column + 1;
               this.position.spread.realTop = this.position.spread.top =
                                         lastSpreadView.position.spread.top;
               this.position.spread.realLeft = this.position.spread.left =
-              lastSpreadView.position.spread.left + lastSpreadView.position.spread.width;
+              lastSpreadView.position.spread.left +
+                                   lastSpreadView.position.spread.width;
               if (lineMaxH > this.position.spread.height) {
                 this.position.spread.realTop = this.position.spread.top +
-                                  (lineMaxH - this.position.spread.height) / 2;
+                             (lineMaxH - this.position.spread.height) / 2;
               } else if (lineMaxH < this.position.spread.height) {
                 for (let i = spreadColumn0Idx; i <= maxI; i += 2) {
-                  if (pages[i].position.spread.height < this.position.spread.height) {
-                    pages[i].position.spread.realTop = this.position.spread.top +
-                          (this.position.spread.height - pages[i].position.spread.height) / 2;
+                  if (pages[i].position.spread.height <
+                                       this.position.spread.height) {
+                  pages[i].position.spread.realTop = this.position.spread.top +
+                          (this.position.spread.height -
+                                  pages[i].position.spread.height) / 2;
                   }
                 }
               }
             }
             if (pageIndex_ > 0 && lastSpreadIdxDiff === 2) {
               pages[pageIndex_ - 1].position.spread = this.position.spread;
-              pages[pageIndex_ - 1].setDivStyle(pages[pageIndex_ - 1], 'spread');
+              pages[pageIndex_ - 1].setDivStyle(pages[pageIndex_ - 1],
+                                                              'spread');
             }
           }
           this.setDivStyle(this, 'spread');
@@ -301,10 +310,11 @@ class PDFPageView {
           let lastPageView = pages[pageIndex_ - 1];
           this.position.column = lastPageView.position.column + 1;
           this.position.realLeft = this.position.left =
-                              lastPageView.position.left + lastPageView.position.width;
+                 lastPageView.position.left + lastPageView.position.width;
         }
         this.position.realTop = this.position.top =
-          containerH > this.position.height ? (containerH - this.position.height) / 2 : 0;
+          containerH > this.position.height ?
+                              (containerH - this.position.height) / 2 : 0;
         this.setDivStyle(this);
       } else {
         const parity = this.viewer.spreadMode % 2;
@@ -313,13 +323,16 @@ class PDFPageView {
         if (pageIndex_ % 2 === parity || this.id === iMax) {
           if (
                 ((this.id === iMax && iMax > 1) &&
-                  ((this.viewer.spreadMode === SpreadMode.ODD && iMax % 2 === 0) ||
-                  (this.viewer.spreadMode === SpreadMode.EVEN && iMax % 2 === 1))) ||
+                  ((this.viewer.spreadMode ===
+                              SpreadMode.ODD && iMax % 2 === 0) ||
+                  (this.viewer.spreadMode ===
+                              SpreadMode.EVEN && iMax % 2 === 1))) ||
                 (this.id < iMax && this.id > 1)
               ) {
             spreadMaxH = Math.max(this.position.height,
                                         pages[pageIndex_ - 1].position.height);
-            spreadW = this.position.width + pages[pageIndex_ - 1].position.width;
+            spreadW = this.position.width +
+                                          pages[pageIndex_ - 1].position.width;
 
             pages[pageIndex_ - 1].position.spread.width = spreadW;
             pages[pageIndex_ - 1].position.spread.height = spreadMaxH;
@@ -330,7 +343,8 @@ class PDFPageView {
           this.position.spread.width = spreadW;
           this.position.spread.height = spreadMaxH;
 
-          if (iMax === 1 || this.viewer.spreadMode === SpreadMode.ODD && this.id === 2 ||
+          if (iMax === 1 || this.viewer.spreadMode ===
+                                          SpreadMode.ODD && this.id === 2 ||
               this.viewer.spreadMode === SpreadMode.EVEN && this.id === 1) {
             this.position.spread.column = 0;
             this.position.spread.realLeft = this.position.spread.left = 0;
@@ -340,16 +354,18 @@ class PDFPageView {
           } else {
             let lastSpreadIdxDiff = pageIndex_ % 2 !== parity ? 1 : 2;
             let lastSpreadView = pages[pageIndex_ - lastSpreadIdxDiff];
-            this.position.spread.column = lastSpreadView.position.spread.column + 1;
+            this.position.spread.column =
+                                    lastSpreadView.position.spread.column + 1;
             this.position.spread.realLeft = this.position.spread.left =
-            lastSpreadView.position.spread.left + lastSpreadView.position.spread.width;
+            lastSpreadView.position.spread.left +
+                                        lastSpreadView.position.spread.width;
             if (pageIndex_ > 0 && lastSpreadIdxDiff === 2) {
               pages[pageIndex_ - 1].position.spread = this.position.spread;
             }
           }
           this.position.spread.realTop =
           this.position.spread.top = containerH > this.position.spread.height ?
-                                (containerH - this.position.spread.height) / 2 : 0;
+                      (containerH - this.position.spread.height) / 2 : 0;
         }
         this.setDivStyle(this, 'spread');
       }
@@ -364,7 +380,8 @@ class PDFPageView {
         lastPageView.position.top + lastPageView.position.height;
       }
       this.position.realLeft = this.position.left =
-      containerW > this.position.width ? (containerW - this.position.width) / 2 : 0;
+      containerW > this.position.width ?
+                                    (containerW - this.position.width) / 2 : 0;
       this.setDivStyle(this);
     } else {
 
@@ -374,13 +391,16 @@ class PDFPageView {
       if (pageIndex_ % 2 === parity || this.id === iMax) {
         if (
               ((this.id === iMax && iMax > 1) &&
-                ((this.viewer.spreadMode === SpreadMode.ODD && iMax % 2 === 0) ||
-                (this.viewer.spreadMode === SpreadMode.EVEN && iMax % 2 === 1))) ||
+                ((this.viewer.spreadMode ===
+                              SpreadMode.ODD && iMax % 2 === 0) ||
+                (this.viewer.spreadMode ===
+                              SpreadMode.EVEN && iMax % 2 === 1))) ||
               (this.id < iMax && this.id > 1)
             ) {
           spreadMaxH = Math.max(this.position.height,
                   pages[pageIndex_ - 1].position.height);
-          spreadW = this.position.width + pages[pageIndex_ - 1].position.width;
+          spreadW = this.position.width +
+                                  pages[pageIndex_ - 1].position.width;
 
           pages[pageIndex_ - 1].position.spread.width = spreadW;
           pages[pageIndex_ - 1].position.spread.height = spreadMaxH;
@@ -404,7 +424,8 @@ class PDFPageView {
           let lastSpreadView = pages[pageIndex_ - lastSpreadIdxDiff];
           this.position.spread.row = lastSpreadView.position.spread.row + 1;
           this.position.spread.realTop = this.position.spread.top =
-          lastSpreadView.position.spread.top + lastSpreadView.position.spread.height;
+          lastSpreadView.position.spread.top +
+                                      lastSpreadView.position.spread.height;
           if (pageIndex_ > 0 && lastSpreadIdxDiff === 2) {
             pages[pageIndex_ - 1].position.spread = this.position.spread;
           }
@@ -494,7 +515,8 @@ class PDFPageView {
     zoomLayerCanvas.height = 0;
 
     if (removeFromDOM) {
-      // Note: `ChildNode.remove` doesn't throw if the parent node is undefined.
+      // Note: `ChildNode.remove` doesn't throw
+      // if the parent node is undefined.
       this.zoomLayer.remove();
     }
     this.zoomLayer = null;
@@ -595,7 +617,8 @@ class PDFPageView {
               if (lineItemCount === 1) {
                 let lastLineMaxH = 0;
                 for (let j = i - 1; j > -1; j--) {
-                  lastLineMaxH = Math.max(pages[j].position.height, lastLineMaxH);
+                  lastLineMaxH = 
+                  Math.max(pages[j].position.height, lastLineMaxH);
                   if (pages[j].position.column === 0) {
                     break;
                   }
@@ -604,9 +627,10 @@ class PDFPageView {
                               lastPage_.position.top + lastLineMaxH;
                 page_.position.realLeft = page_.position.left = 0;
               } else {
-                page_.position.realTop = page_.position.top = lastPage_.position.top;
+                page_.position.realTop = page_.position.top =
+                                            lastPage_.position.top;
                 page_.position.realLeft = page_.position.left =
-                                  lastPage_.position.left + lastPage_.position.width;
+                lastPage_.position.left + lastPage_.position.width;
 
                 if (lineMaxH > page_.position.height) {
                   page_.position.realTop = page_.position.top +
@@ -615,8 +639,8 @@ class PDFPageView {
                   for (let j = column0Idx; j < i; j++) {
                     if (pages[j].position.height < page_.position.height) {
                       pages[j].position.realTop = page_.position.top +
-                          (page_.position.height - pages[j].position.height) / 2;
-                      pages[j].div.style.top = pages[j].position.realTop + 'px';
+                      (page_.position.height - pages[j].position.height) / 2;
+                    pages[j].div.style.top = pages[j].position.realTop + 'px';
                     }
                   }
                 }
@@ -649,7 +673,8 @@ class PDFPageView {
           null : pages[pageIndex_ - lastSpreadIdxDiff];
 
         let spreadColumn0Idx = !lastSpreadView ? 0 :
-        pageIndex_ - lastSpreadView.position.spread.column * 2 - lastSpreadIdxDiff;
+        pageIndex_ - lastSpreadView.position.spread.column * 2
+                              - lastSpreadIdxDiff;
         spreadColumn0Idx = spreadColumn0Idx % 2 === parity ?
         spreadColumn0Idx : spreadColumn0Idx - 1;
         if (spreadColumn0Idx > -1) {
@@ -669,8 +694,10 @@ class PDFPageView {
                   this.getClonePositionSpreadObj(page_.position.spread);
             if (
                 ((i === pagesLen - 1 && pagesLen > 1) &&
-                  ((this.viewer.spreadMode === SpreadMode.ODD && pagesLen % 2 === 0) ||
-                  (this.viewer.spreadMode === SpreadMode.EVEN && pagesLen % 2 === 1))) ||
+                  ((this.viewer.spreadMode ===
+                          SpreadMode.ODD && pagesLen % 2 === 0) ||
+                  (this.viewer.spreadMode ===
+                          SpreadMode.EVEN && pagesLen % 2 === 1))) ||
                 (i < pagesLen - 1 && i > 0)
               ) {
               spreadMaxH = Math.max(page_.position.height,
@@ -686,7 +713,8 @@ class PDFPageView {
             lastSpreadView = pages[i - lastSpreadIdxDiff];
             let lineMaxW_ = lineMaxW + spreadW;
             if (lastSpreadView && lineMaxW_ > containerW) {
-              page_.position.spread.row = lastSpreadView.position.spread.row + 1;
+              page_.position.spread.row =
+                                  lastSpreadView.position.spread.row + 1;
               page_.position.spread.column = 0;
               page_.position.spread.realTop = page_.position.spread.top =
                     lastSpreadView.position.spread.top + lineMaxH;
@@ -696,7 +724,8 @@ class PDFPageView {
               lineMaxW = spreadW;
               lineItemCount = 1;
               spreadColumn0Idx = i;
-              this.adjustLastLineLeft(lastSpreadView.id - 1, containerW, 'spread');
+              this.adjustLastLineLeft(lastSpreadView.id - 1,
+                                          containerW, 'spread');
             } else {
               lineItemCount++;
               if (lineItemCount < 2) {
@@ -706,20 +735,26 @@ class PDFPageView {
               }
               if (lastSpreadView) {
                 page_.position.spread.row = lastSpreadView.position.spread.row;
-                page_.position.spread.column = lastSpreadView.position.spread.column + 1;
+                page_.position.spread.column =
+                                    lastSpreadView.position.spread.column + 1;
                 page_.position.spread.realTop = page_.position.spread.top =
                 lastSpreadView.position.spread.top;
                 page_.position.spread.realLeft = page_.position.spread.left =
-                lastSpreadView.position.spread.left + lastSpreadView.position.spread.width;
+                lastSpreadView.position.spread.left +
+                                          lastSpreadView.position.spread.width;
                 if (lineMaxH > page_.position.spread.height) {
                   page_.position.spread.realTop = page_.position.spread.top +
                   (lineMaxH - page_.position.spread.height) / 2;
                 } else if (lineMaxH < page_.position.spread.height) {
                   for (let j = spreadColumn0Idx; j <= i; j += 2) {
-                    if (pages[j].position.spread.height < page_.position.spread.height) {
-                      pages[j].position.spread.realTop = pages[j].position.spread.top +
-                      (page_.position.spread.height - pages[j].position.spread.height) / 2;
-                      pages[j].parentNode.style.top = pages[j].position.spread.realTop + 'px';
+                    if (pages[j].position.spread.height <
+                                                page_.position.spread.height) {
+                      pages[j].position.spread.realTop =
+                                                pages[j].position.spread.top +
+                      (page_.position.spread.height -
+                                          pages[j].position.spread.height) / 2;
+                      pages[j].parentNode.style.top =
+                                      pages[j].position.spread.realTop + 'px';
                     }
                   }
                 }
@@ -727,7 +762,8 @@ class PDFPageView {
                 page_.position.spread.row = 0;
                 page_.position.spread.column = 0;
                 page_.position.spread.realTop = page_.position.spread.top = 0;
-                page_.position.spread.realLeft = page_.position.spread.left = 0;
+                page_.position.spread.realLeft =
+                                              page_.position.spread.left = 0;
               }
               lineMaxW = lineMaxW_;
             }
@@ -769,11 +805,14 @@ class PDFPageView {
                 this.getClonePositionSpreadObj(page_.position.spread);
             if (
                   ((i === pagesLen && pagesLen > 1) &&
-                    ((this.viewer.spreadMode === SpreadMode.ODD && pagesLen % 2 === 0) ||
-                    (this.viewer.spreadMode === SpreadMode.EVEN && pagesLen % 2 === 1))) ||
+                    ((this.viewer.spreadMode ===
+                              SpreadMode.ODD && pagesLen % 2 === 0) ||
+                    (this.viewer.spreadMode ===
+                              SpreadMode.EVEN && pagesLen % 2 === 1))) ||
                   (i < pagesLen - 1 && i > 0)
                 ) {
-              spreadMaxH = Math.max(page_.position.height, pages[i - 1].position.height);
+              spreadMaxH = Math.max(page_.position.height,
+                                            pages[i - 1].position.height);
               spreadW = page_.position.width + pages[i - 1].position.width;
 
               pages[i - 1].position.spread.width = spreadW;
@@ -785,7 +824,8 @@ class PDFPageView {
             page_.position.spread.width = spreadW;
             page_.position.spread.height = spreadMaxH;
 
-            if (pagesLen === 1 || this.viewer.spreadMode === SpreadMode.ODD && i === 1 ||
+            if (pagesLen === 1 || this.viewer.spreadMode ===
+                                            SpreadMode.ODD && i === 1 ||
                 this.viewer.spreadMode === SpreadMode.EVEN && i === 0) {
               page_.position.spread.column = 0;
               page_.position.spread.realLeft = page_.position.spread.left = 0;
@@ -795,16 +835,18 @@ class PDFPageView {
             } else {
               let lastSpreadIdxDiff = i % 2 !== parity ? 1 : 2;
               let lastSpreadView = pages[i - lastSpreadIdxDiff];
-              page_.position.spread.column = lastSpreadView.position.spread.column + 1;
+              page_.position.spread.column =
+                              lastSpreadView.position.spread.column + 1;
               page_.position.spread.realLeft = page_.position.spread.left =
-              lastSpreadView.position.spread.left + lastSpreadView.position.spread.width;
+              lastSpreadView.position.spread.left +
+                                          lastSpreadView.position.spread.width;
               if (i > 0 && lastSpreadIdxDiff === 2) {
                 pages[i - 1].position.spread = page_.position.spread;
               }
             }
             page_.position.spread.realTop = page_.position.spread.top =
             containerH > page_.position.spread.height ?
-                                      (containerH - page_.position.spread.height) / 2 : 0;
+                         (containerH - page_.position.spread.height) / 2 : 0;
             this.setDivStyle(page_, 'spread');
           }
         }
@@ -832,14 +874,18 @@ class PDFPageView {
         let spreadMaxH;
         let spreadW;
         if (i % 2 === parity || i === pagesLen - 1) {
-          page_.position.spread = this.getClonePositionSpreadObj(page_.position.spread);
+          page_.position.spread =
+                      this.getClonePositionSpreadObj(page_.position.spread);
           if (
                 ((i === pagesLen - 1 && pagesLen > 1) &&
-                  ((this.viewer.spreadMode === SpreadMode.ODD && pagesLen % 2 === 0) ||
-                  (this.viewer.spreadMode === SpreadMode.EVEN && pagesLen % 2 === 1))) ||
+                  ((this.viewer.spreadMode ===
+                      SpreadMode.ODD && pagesLen % 2 === 0) ||
+                  (this.viewer.spreadMode ===
+                      SpreadMode.EVEN && pagesLen % 2 === 1))) ||
                 (i < pagesLen - 1 && i > 0)
               ) {
-            spreadMaxH = Math.max(page_.position.height, pages[i - 1].position.height);
+            spreadMaxH = Math.max(page_.position.height,
+                          pages[i - 1].position.height);
             spreadW = page_.position.width + pages[i - 1].position.width;
           } else {
             spreadMaxH = page_.position.height;
@@ -848,7 +894,8 @@ class PDFPageView {
           page_.position.spread.width = spreadW;
           page_.position.spread.height = spreadMaxH;
 
-          if (pagesLen === 1 || this.viewer.spreadMode === SpreadMode.ODD && i === 1 ||
+          if (pagesLen === 1 || this.viewer.spreadMode ===
+                              SpreadMode.ODD && i === 1 ||
               this.viewer.spreadMode === SpreadMode.EVEN && i === 0) {
             page_.position.spread.row = 0;
             page_.position.spread.realTop = page_.position.spread.top = 0;
@@ -860,21 +907,22 @@ class PDFPageView {
             let lastSpreadView = pages[i - lastSpreadIdxDiff];
             page_.position.spread.row = lastSpreadView.position.spread.row + 1;
             page_.position.spread.realTop = page_.position.spread.top =
-            lastSpreadView.position.spread.top + lastSpreadView.position.spread.height;
+            lastSpreadView.position.spread.top +
+                                      lastSpreadView.position.spread.height;
             if (i > 0 && lastSpreadIdxDiff === 2) {
               pages[i - 1].position.spread = page_.position.spread;
             }
           }
           page_.position.spread.realLeft = page_.position.spread.left =
           containerW > page_.position.spread.width ?
-                                      (containerW - page_.position.spread.width) / 2 : 0;
+                      (containerW - page_.position.spread.width) / 2 : 0;
           this.setDivStyle(page_, 'spread');
         }
       }
     }
     this.viewer._resetCurrentPageView();
   }
-  
+
   reset(keepZoomLayer = false, keepAnnotations = false) {
     this.cancelRendering(keepAnnotations);
     this.renderingState = RenderingStates.INITIAL;
@@ -1122,7 +1170,8 @@ class PDFPageView {
     }
 
     let textLayer = null;
-    if (this.textLayerMode !== TextLayerMode.DISABLE && this.textLayerFactory) {
+    if (this.textLayerMode !==
+                        TextLayerMode.DISABLE && this.textLayerFactory) {
       let textLayerDiv = document.createElement('div');
       textLayerDiv.className = 'textLayer';
       textLayerDiv.style.width = canvasWrapper.style.width;

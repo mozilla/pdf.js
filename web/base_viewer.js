@@ -671,7 +671,7 @@ class BaseViewer {
       this._setScale(this._currentScaleValue, true);
     }
 
-    this._scrollIntoView({ pageView: 
+    this._scrollIntoView({ pageView:
           this._pages[this._currentPageNumber - 1], });
   }
 
@@ -1147,7 +1147,7 @@ class BaseViewer {
       this._addPageDivBySpreadMode({
         first: pages[0],
         last: pages[maxI - 1],
-        views: [{ view: pages[0], }, { view: pages[maxI - 1], }, ],
+        views: [{ view: pages[0], }, { view: pages[maxI - 1], },],
       });
     }
     let visible = this._getVisiblePages();
@@ -1240,7 +1240,7 @@ class BaseViewer {
       this._addPageDivBySpreadMode({
         first: pages[0],
         last: pages[maxI - 1],
-        views: [{ view: pages[0], }, { view: pages[maxI - 1], }, ],
+        views: [{ view: pages[0], }, { view: pages[maxI - 1], }],
       });
     }
     let visible = this._getVisiblePages();
@@ -1282,7 +1282,7 @@ class BaseViewer {
           let pagesLen = this.pagesCount;
           if (pageIdx === 0) {
             if (_pages[1].position.spread.row === view.position.spread.row &&
-                _pages[1].position.spread.column === 
+                _pages[1].position.spread.column ===
                                       view.position.spread.column &&
                 _pages[1].isDivAddedToContainer
                 ) {
