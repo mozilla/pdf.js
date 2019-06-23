@@ -679,7 +679,7 @@ let PDFViewerApplication = {
 
     return loadingTask.promise.then((pdfDocument) => {
       this.appConfig.viewerLoadingTxt.innerHTML =
-                'PDF下载完毕，当前正在加载PDF文档... ，请稍后！';
+  'PDF downloaded, currently loading PDF documents..., please wait a moment!';
       this.appConfig.viewerLoading.style.display = 'block';
       this.load(pdfDocument);
     }, (exception) => {
@@ -1555,7 +1555,8 @@ function loadAndEnablePDFBug(enabledTabs) {
 
 function webViewerInitialized() {
   let appConfig = PDFViewerApplication.appConfig;
-  appConfig.viewerLoadingTxt.innerHTML = '网络下载PDF文件中... 请耐心等待！';
+  appConfig.viewerLoadingTxt.innerHTML =
+  'Download PDF files on the Internet... Please wait patiently!';
   appConfig.viewerLoading.style.display = 'block';
 
   let file;

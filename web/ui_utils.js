@@ -583,16 +583,18 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
           if (currRow !== undefined && currRowVisibleCount === 0) {
             break;
           }
-          currRow = p.column;
-          currRowVisibleCount = 0;
+          if (currRow === p.column) {
+            currRowVisibleCount = 0;
+          }
         }
       } else {
         if (currRow !== p.spread.column) {
           if (currRow !== undefined && currRowVisibleCount === 0) {
             break;
           }
-          currRow = p.column;
-          currRowVisibleCount = 0;
+          if (currRow === p.column) {
+            currRowVisibleCount = 0;
+          }
         }
       }
     } else if (viewer._spreadMode === SpreadMode.NONE) {
@@ -600,16 +602,18 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         if (currRow !== undefined && currRowVisibleCount === 0) {
           break;
         }
-        currRow = p.row;
-        currRowVisibleCount = 0;
+        if (currRow === p.row) {
+          currRowVisibleCount = 0;
+        }
       }
     } else {
       if (currRow !== p.spread.row) {
         if (currRow !== undefined && currRowVisibleCount === 0) {
           break;
         }
-        currRow = p.row;
-        currRowVisibleCount = 0;
+        if (currRow === p.row) {
+          currRowVisibleCount = 0;
+        }
       }
     }
     if (viewer._scrollMode === ScrollMode.WRAPPED) {
@@ -693,16 +697,18 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
           if (currRow !== undefined && currRowVisibleCount === 0) {
             break;
           }
-          currRow = p.column;
-          currRowVisibleCount = 0;
+          if (currRow === p.column) {
+            currRowVisibleCount = 0;
+          }
         }
       } else {
         if (currRow !== p.spread.column) {
           if (currRow !== undefined && currRowVisibleCount === 0) {
             break;
           }
-          currRow = p.column;
-          currRowVisibleCount = 0;
+          if (currRow === p.column) {
+            currRowVisibleCount = 0;
+          }
         }
       }
     } else if (viewer._spreadMode === SpreadMode.NONE) {
@@ -710,16 +716,18 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         if (currRow !== undefined && currRowVisibleCount === 0) {
           break;
         }
-        currRow = p.row;
-        currRowVisibleCount = 0;
+        if (currRow === p.row) {
+          currRowVisibleCount = 0;
+        }
       }
     } else {
       if (currRow !== p.spread.row) {
         if (currRow !== undefined && currRowVisibleCount === 0) {
           break;
         }
-        currRow = p.row;
-        currRowVisibleCount = 0;
+        if (currRow === p.row) {
+          currRowVisibleCount = 0;
+        }
       }
     }
     if (viewer._scrollMode === ScrollMode.WRAPPED) {
