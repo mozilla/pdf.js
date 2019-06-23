@@ -32,7 +32,7 @@ import { viewerCompatibilityParams } from './viewer_compatibility';
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IPDFTextLayerFactory} textLayerFactory
- * @property {number} textLayerMode - (optional) Controls 
+ * @property {number} textLayerMode - (optional) Controls
  *   if the text layer used
  *   for selection and searching is created, and if the improved text selection
  *   behaviour is enabled. The constants from {TextLayerMode} should be used.
@@ -193,7 +193,7 @@ class PDFPageView {
               this.position.realTop = this.position.top +
                                         (lineMaxH - this.position.height) / 2;
             } else if (lineMaxH < this.position.height) {
-              for (let i = column0Idx;i < pageIndex_; i++) {
+              for (let i = column0Idx; i < pageIndex_; i++) {
                 if (pages[i].position.height < this.position.height) {
                   pages[i].position.realTop = this.position.top +
                   (this.position.height - pages[i].position.height) / 2;
@@ -524,7 +524,6 @@ class PDFPageView {
 
   adjustLastLineLeft(lastLineLastEleIdx, containerW, type) {
     let pages = this.viewer._pages;
-    let pagesLen = pages.length;
     let lastLineMaxW = 0;
     if (type === 'spread') {
       for (let j = lastLineLastEleIdx; j > -1; j -= 2) {
@@ -576,8 +575,7 @@ class PDFPageView {
   reposition(pageIdx) {
     let pages = this.viewer._pages;
     let pagesLen = pages.length;
-    let pageIndex_ = pageIdx > -1 ? pageIdx : this.id -1;
-    let viewportTotalHeight = 0;
+    let pageIndex_ = pageIdx > - 1 ? pageIdx : this.id - 1;
     let containerW = this.viewer.container.clientWidth;
     let containerH = this.viewer.container.clientHeight;
 
@@ -617,7 +615,7 @@ class PDFPageView {
               if (lineItemCount === 1) {
                 let lastLineMaxH = 0;
                 for (let j = i - 1; j > -1; j--) {
-                  lastLineMaxH = 
+                  lastLineMaxH =
                   Math.max(pages[j].position.height, lastLineMaxH);
                   if (pages[j].position.column === 0) {
                     break;
@@ -673,8 +671,8 @@ class PDFPageView {
           null : pages[pageIndex_ - lastSpreadIdxDiff];
 
         let spreadColumn0Idx = !lastSpreadView ? 0 :
-        pageIndex_ - lastSpreadView.position.spread.column * 2
-                              - lastSpreadIdxDiff;
+        pageIndex_ - lastSpreadView.position.spread.column * 2 -
+                                      lastSpreadIdxDiff;
         spreadColumn0Idx = spreadColumn0Idx % 2 === parity ?
         spreadColumn0Idx : spreadColumn0Idx - 1;
         if (spreadColumn0Idx > -1) {

@@ -1147,7 +1147,7 @@ class BaseViewer {
       this._addPageDivBySpreadMode({
         first: pages[0],
         last: pages[maxI - 1],
-        views: [{ view: pages[0], }, { view: pages[maxI - 1], },],
+        views: [{ view: pages[0], }, { view: pages[maxI - 1], }],
       });
     }
     let visible = this._getVisiblePages();
