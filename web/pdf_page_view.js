@@ -424,7 +424,7 @@ class PDFPageView {
     this.viewport = pdfPage.getViewport({ scale: this.scale * CSS_UNITS,
                                           rotation: totalRotation, });
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 start-------------------------
-    if(!this.viewer._pageViewsReady){
+    //if(!this.viewer._pageViewsReady){
       if(!this.viewer.firstSizeChangedPage || this.id < this.viewer.firstSizeChangedPage.id){
         var newW = Math.floor(this.viewport.width) + 10;
         var newH = Math.floor(this.viewport.height) + 10;
@@ -437,7 +437,7 @@ class PDFPageView {
         this.reposition(this.viewer.firstSizeChangedPage.id - 1);
         this.viewer.firstSizeChangedPage = null;
       }
-    }
+    //}
     //-------------------------tanglinhai 改造page布局成absolute,改善性能 end-------------------------
 
     this.stats = pdfPage.stats;
