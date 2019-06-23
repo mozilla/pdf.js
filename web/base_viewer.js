@@ -15,11 +15,10 @@
 
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getGlobalEventBus,
-  util_getVisibleElements, isPortraitOrientation, isValidRotation,
+  getOffsetTop, getOffsetLeft, isPortraitOrientation, isValidRotation,
   isValidScrollMode, isValidSpreadMode, MAX_AUTO_SCALE, moveToEndOfArray,
-  NullL10n, PresentationModeState, RendererType, SCROLLBAR_PADDING,
-  util_scrollIntoView, scrollIntoView, ScrollMode, SpreadMode, TextLayerMode,
-  UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll, getOffsetTop, getOffsetLeft
+  NullL10n, PresentationModeState, ScrollMode, SpreadMode, TextLayerMode,
+  UNKNOWN_SCALE, util_getVisibleElements, VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
@@ -349,7 +348,9 @@ class BaseViewer {
       let pageView = this._pages[i];
       pageView.update(pageView.scale, rotation);
     }
-    this._pages.length > 0 && this._pages[0].repositionAllPages();
+    if (this._pages.length > 0) {
+      this._pages[0].repositionAllPages();
+    }
     // Prevent errors in case the rotation changes *before* the scale has been
     // set to a non-default value.
     if (this._currentScaleValue) {
@@ -570,7 +571,9 @@ class BaseViewer {
           presetValue: newValue,
         });
       }
-      this._pages.length > 0 && this._pages[0].repositionAllPages();
+      if (this._pages.length > 0) {
+        this._pages[0].repositionAllPages();
+      }
       return;
     }
 
@@ -578,7 +581,9 @@ class BaseViewer {
       this._pages[i].update(newScale);
     }
     this._currentScale = newScale;
-    this._pages.length > 0 && this._pages[0].repositionAllPages();
+    if (this._pages.length > 0) {
+      this._pages[0].repositionAllPages();
+    }
     if (!noScroll) {
       let page = this._currentPageNumber, dest;
       if (this._location &&
@@ -1227,7 +1232,6 @@ class BaseViewer {
     for (let i = 0; i < maxI; i++) {
       pages[i].isDivAddedToContainer = false;
     }
-    // 先加入第一个元素和最后一个元素
     if (maxI > 0) {
       pages[0].repositionAllPages();
       this._addPageDivBySpreadMode({
@@ -1275,8 +1279,8 @@ class BaseViewer {
           let pagesLen = this.pagesCount;
           if (pageIdx === 0) {
             if (_pages[1].position.spread.row === view.position.spread.row &&
-                _pages[1].position.spread.column === view.position.spread.column
-                && _pages[1].isDivAddedToContainer
+                _pages[1].position.spread.column === view.position.spread.column &&
+                _pages[1].isDivAddedToContainer
                 ) {
               spread = _pages[1].div.parentNode;
             }
@@ -1284,8 +1288,8 @@ class BaseViewer {
             if (_pages[pageIdx - 1].position.spread.row ===
                           view.position.spread.row &&
                 _pages[pageIdx - 1].position.spread.column ===
-                          view.position.spread.column
-                && _pages[pageIdx - 1].isDivAddedToContainer
+                          view.position.spread.column &&
+                          _pages[pageIdx - 1].isDivAddedToContainer
                 ) {
               spread = _pages[pageIdx - 1].div.parentNode;
             }
@@ -1314,7 +1318,7 @@ class BaseViewer {
             spread.style.top = view.position.spread.realTop + 'px';
             spread.style.left = view.position.spread.realLeft + 'px';
           }
-          let brotherPages = [_pages[pageIdx-1], _pages[pageIdx + 1]];
+          let brotherPages = [_pages[pageIdx - 1], _pages[pageIdx + 1]];
           let insertPageDom = null;
           for (let j = 0; j < brotherPages.length; j++) {
             if (brotherPages[j] && brotherPages[j].position.spread.row ===

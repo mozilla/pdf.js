@@ -467,8 +467,10 @@ class PDFFindController {
       this._extractTextPromises[i] = extractTextCapability.promise;
       this._extractStartedFlags[i] = false;
       this._extractTextCapabilities[i] = extractTextCapability;
-      if (!this._state.searchInCurrPage || (this._state.searchInCurrPage && this._linkService.page - 1 == i))
+      if (!this._state.searchInCurrPage || (this._state.searchInCurrPage &&
+            this._linkService.page - 1 == i)) {
         promise = this._getTextContent(promise, i, this, extractTextCapability);
+      }
       /* promise = promise.then(() => {
         return this._pdfDocument.getPage(i + 1).then((pdfPage) => {
           return pdfPage.getTextContent({
@@ -518,7 +520,8 @@ class PDFFindController {
 
   _nextMatch() {
     const previous = this._state.findPrevious;
-    const currentPageIndex = this._state.searchInCurrPage && this._state.page ? this._state.page - 1 : this._linkService.page - 1;
+    const currentPageIndex = this._state.searchInCurrPage && this._state.page ?
+              this._state.page - 1 : this._linkService.page - 1;
     const numPages = this._linkService.pagesCount;
 
     this._highlightMatches = true;
@@ -556,7 +559,8 @@ class PDFFindController {
         if (!this._pendingFindMatches[currentPageIndex]) {
           this._pendingFindMatches[currentPageIndex] = true;
           !this._extractStartedFlags[currentPageIndex] && this._getTextContent(
-              Promise.resolve(), currentPageIndex, this, this._extractTextCapabilities[currentPageIndex]);
+              Promise.resolve(), currentPageIndex, this, 
+              this._extractTextCapabilities[currentPageIndex]);
           this._extractTextPromises[currentPageIndex].then((pageIdx) => {
             this._pendingFindMatches[pageIdx] = false;
             this._calculateMatch(pageIdx);

@@ -678,7 +678,8 @@ let PDFViewerApplication = {
     loadingTask.onUnsupportedFeature = this.fallback.bind(this);
 
     return loadingTask.promise.then((pdfDocument) => {
-      this.appConfig.viewerLoadingTxt.innerHTML = 'PDF下载完毕，当前正在加载PDF文档... ，请稍后！';
+      this.appConfig.viewerLoadingTxt.innerHTML = 
+      'PDF下载完毕，当前正在加载PDF文档... ，请稍后！';
       this.appConfig.viewerLoading.style.display = 'block';
       this.load(pdfDocument);
     }, (exception) => {
