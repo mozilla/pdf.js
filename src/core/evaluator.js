@@ -2960,7 +2960,10 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
     this.opMap = getOPMap();
     // TODO(mduan): pass array of knownCommands rather than this.opMap
     // dictionary
-    this.parser = new Parser(new Lexer(stream, this.opMap), false, xref);
+    this.parser = new Parser({
+      lexer: new Lexer(stream, this.opMap),
+      xref,
+    });
     this.stateManager = stateManager;
     this.nonProcessedArgs = [];
     this._numInvalidPathOPS = 0;
