@@ -671,7 +671,8 @@ class BaseViewer {
       this._setScale(this._currentScaleValue, true);
     }
 
-    this._scrollIntoView({ pageView: this._pages[this._currentPageNumber - 1], });
+    this._scrollIntoView({ pageView: 
+          this._pages[this._currentPageNumber - 1], });
   }
 
   /**
@@ -833,6 +834,7 @@ class BaseViewer {
   _updateHelper(visiblePages) {
     throw new Error('Not implemented: _updateHelper');
   }
+
   update(isShouldReset) {
     let visible = this._getVisiblePages();
     if (visible.views.length === 0) {
@@ -903,8 +905,8 @@ class BaseViewer {
     const pageView = this._pages[this._currentPageNumber - 1];
     // NOTE: Compute the `x` and `y` properties of the current view,
     // since `this._updateLocation` depends of them being available.
-    const element = pageView.div;
-    /* const view = {
+    /* const element = pageView.div;
+    const view = {
       id: pageView.id,
       x: element.offsetLeft + element.clientLeft,
       y: element.offsetTop + element.clientTop,
@@ -1145,7 +1147,7 @@ class BaseViewer {
       this._addPageDivBySpreadMode({
         first: pages[0],
         last: pages[maxI - 1],
-        views: [{ view: pages[0] }, { view: pages[maxI - 1] },],
+        views: [{ view: pages[0], }, { view: pages[maxI - 1], }, ],
       });
     }
     let visible = this._getVisiblePages();
@@ -1222,6 +1224,7 @@ class BaseViewer {
     /* true);
     this.update();
   } */
+
   _updateSpreadMode(pageNumber = null) {
     if (!this.pdfDocument) {
       return;
@@ -1237,7 +1240,7 @@ class BaseViewer {
       this._addPageDivBySpreadMode({
         first: pages[0],
         last: pages[maxI - 1],
-        views: [{ view: pages[0] }, { view: pages[maxI - 1] }],
+        views: [{ view: pages[0], }, { view: pages[maxI - 1], }, ],
       });
     }
     let visible = this._getVisiblePages();
@@ -1251,6 +1254,7 @@ class BaseViewer {
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
   }
+
   _addPageDivBySpreadMode(visiblePages = null, resetCss) {
     if (!visiblePages.views.length) {
       return;
@@ -1269,7 +1273,6 @@ class BaseViewer {
         }
       }
     } else {
-      const parity = this._spreadMode - 1;
       for (let i = 0, iMax = visiblePages.views.length; i < iMax; ++i) {
         let view = visiblePages.views[i].view;
         if (!view.isDivAddedToContainer) {
@@ -1279,7 +1282,8 @@ class BaseViewer {
           let pagesLen = this.pagesCount;
           if (pageIdx === 0) {
             if (_pages[1].position.spread.row === view.position.spread.row &&
-                _pages[1].position.spread.column === view.position.spread.column &&
+                _pages[1].position.spread.column === 
+                                      view.position.spread.column &&
                 _pages[1].isDivAddedToContainer
                 ) {
               spread = _pages[1].div.parentNode;

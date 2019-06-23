@@ -184,17 +184,21 @@ function util_scrollIntoView(pageView, spot) {
   let container = viewer.container;
   let offsetY = (viewer.spreadMode === SpreadMode.ODD ||
               viewer.spreadMode === SpreadMode.EVEN ?
-              pageView.position.spread.realTop + (pageView.position.spread.height -
+              pageView.position.spread.realTop +
+              (pageView.position.spread.height -
                 pageView.position.height) / 2 : pageView.position.realTop)
   let offsetX = (viewer.spreadMode === SpreadMode.ODD ||
               viewer.spreadMode === SpreadMode.EVEN ?
               pageView.position.spread.realLeft + (
                   viewer.spreadMode % 2 === pageView.id - 1 && (
                       (
-                        (pageView.id === viewer.pagesCount && viewer.pagesCount > 1) &&
+                        (pageView.id === viewer.pagesCount
+                                      && viewer.pagesCount > 1) &&
                         (
-                          (viewer.spreadMode === SpreadMode.ODD && viewer.pagesCount%2 === 0) ||
-                          (viewer.spreadMode === SpreadMode.EVEN && viewer.pagesCount%2 === 1)
+                          (viewer.spreadMode === SpreadMode.ODD
+                                      && viewer.pagesCount % 2 === 0) ||
+                          (viewer.spreadMode === SpreadMode.EVEN
+                                      && viewer.pagesCount % 2 === 1)
                         )
                       ) ||
                       (pageView.id < viewer.pagesCount && pageView.id > 1)
@@ -226,9 +230,9 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   let offsetX = element.offsetLeft + element.clientLeft;
   while (
     (PDFViewerApplication.pdfViewer.spreadMode !== 0 &&
-                                        parent.getAttribute('class') === 'spread') ||
+                       parent.getAttribute('class') === 'spread') ||
     (parent.clientHeight === parent.scrollHeight &&
-                                        parent.clientWidth === parent.scrollWidth) ||
+                       parent.clientWidth === parent.scrollWidth) ||
     (skipOverflowHiddenElements && getComputedStyle(parent).overflow === 'hidden')) {
     if (parent.dataset._scaleY) {
       offsetY /= parent.dataset._scaleY;
@@ -654,7 +658,7 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         pageRight <= left || pageLeft >= right) {
       continue;
     }
-    currRowVisibleCount ++;
+    currRowVisibleCount++;
     const hiddenHeight = Math.max(0, top - pageTop) +
                          Math.max(0, pageBottom - bottom);
     const hiddenWidth = Math.max(0, left - pageLeft) +
@@ -762,7 +766,7 @@ function util_getVisibleElements(scrollEl, views, sortByVisibility = false,
         pageRight <= left || pageLeft >= right) {
       continue;
     }
-    currRowVisibleCount ++;
+    currRowVisibleCount++;
     const hiddenHeight = Math.max(0, top - pageTop) +
                          Math.max(0, pageBottom - bottom);
     const hiddenWidth = Math.max(0, left - pageLeft) +
@@ -1284,5 +1288,5 @@ export {
   getOffsetTop,
   getOffsetLeft,
   util_scrollIntoView,
-  util_getVisibleElements
+  util_getVisibleElements,
 };
