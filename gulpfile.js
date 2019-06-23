@@ -713,10 +713,6 @@ gulp.task('generic', gulp.series('buildnumber', 'default_preferences', 'locale',
 
     gulp.src('web/compressed.tracemonkey-pldi-09.pdf')
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
-
-
-    gulp.src('web/lib/*.js')
-        .pipe(gulp.dest(GENERIC_DIR + 'web/lib')),
   ]);
 }));
 
