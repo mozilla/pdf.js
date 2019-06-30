@@ -20,7 +20,7 @@ import {
   warn
 } from '../shared/util';
 import {
-  clearPrimitiveCaches, Dict, isCmd, isDict, isName, isRef, isRefsEqual,
+  clearPrimitiveCaches, Cmd, Dict, isCmd, isDict, isName, isRef, isRefsEqual,
   isStream, Ref, RefSet, RefSetCache
 } from './primitives';
 import { Lexer, Parser } from './parser';
@@ -1200,10 +1200,15 @@ var XRef = (function XRefClosure() {
           entry.gen = parser.getObj();
           var type = parser.getObj();
 
-          if (isCmd(type, 'f')) {
-            entry.free = true;
-          } else if (isCmd(type, 'n')) {
-            entry.uncompressed = true;
+          if (type instanceof Cmd) {
+            switch (type.cmd) {
+              case 'f':
+                entry.free = true;
+                break;
+              case 'n':
+                entry.uncompressed = true;
+                break;
+            }
           }
 
           // Validate entry obj
@@ -1685,7 +1690,7 @@ var XRef = (function XRefClosure() {
       if (!Number.isInteger(obj2)) {
         obj2 = parseInt(obj2, 10);
       }
-      if (obj1 !== num || obj2 !== gen || !isCmd(obj3)) {
+      if (obj1 !== num || obj2 !== gen || !(obj3 instanceof Cmd)) {
         throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
       }
       if (obj3.cmd !== 'obj') {
