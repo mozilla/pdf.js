@@ -132,6 +132,10 @@
       "type": "boolean",
       "default": false
     },
+    "disableScripting": {
+      "type": "boolean",
+      "default": false
+    },
     "disablePageMode": {
       "description": "DEPRECATED.",
       "type": "boolean",

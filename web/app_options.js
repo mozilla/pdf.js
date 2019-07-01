@@ -53,6 +53,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  disableScripting: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   /**
    * The `disablePreferences` is, conditionally, defined below.
    */
