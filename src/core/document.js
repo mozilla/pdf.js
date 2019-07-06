@@ -15,8 +15,8 @@
 /* eslint no-var: error */
 
 import {
-  assert, FormatError, info, isArrayBuffer, isBool, isNum, isSpace, isString,
-  OPS, shadow, stringToBytes, stringToPDFString, Util, warn
+  assert, bytesToString, FormatError, info, isArrayBuffer, isBool, isNum,
+  isSpace, isString, OPS, shadow, stringToBytes, stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream, Ref } from './primitives';
@@ -337,20 +337,11 @@ const FINGERPRINT_FIRST_BYTES = 1024;
 const EMPTY_FINGERPRINT = '\x00\x00\x00\x00\x00\x00\x00' +
                           '\x00\x00\x00\x00\x00\x00\x00\x00\x00';
 
-function find(stream, needle, limit, backwards) {
-  const pos = stream.pos;
-  const end = stream.end;
-  if (pos + limit > end) {
-    limit = end - pos;
-  }
+function find(stream, needle, limit, backwards = false) {
+  assert(limit > 0, 'The "limit" must be a positive integer.');
 
-  const strBuf = [];
-  for (let i = 0; i < limit; ++i) {
-    strBuf.push(String.fromCharCode(stream.getByte()));
-  }
-  const str = strBuf.join('');
+  const str = bytesToString(stream.peekBytes(limit));
 
-  stream.pos = pos;
   const index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
   if (index === -1) {
     return false;
