@@ -443,6 +443,10 @@ class BaseViewer {
       // starts to create the correct size canvas. Wait until one page is
       // rendered so we don't tie up too many resources early on.
       onePageRenderedCapability.promise.then(() => {
+        if (this.findController) {
+          this.findController.setDocument(pdfDocument); // Enable searching.
+        }
+
         if (pdfDocument.loadingParams['disableAutoFetch']) {
           // XXX: Printing is semi-broken with auto fetch disabled.
           pagesCapability.resolve();
@@ -471,9 +475,6 @@ class BaseViewer {
 
       this.eventBus.dispatch('pagesinit', { source: this, });
 
-      if (this.findController) {
-        this.findController.setDocument(pdfDocument); // Enable searching.
-      }
       if (this.defaultRenderingQueue) {
         this.update();
       }
