@@ -17,7 +17,8 @@
 'use strict';
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
-  alert('Please build the pdfjs-dist library using\n `gulp dist-install`');
+  alert('Please build the pdfjs-dist library using\n' +
+        '  `npm run gulp dist-install`');
 }
 
 var USE_ONLY_CSS_ZOOM = true;

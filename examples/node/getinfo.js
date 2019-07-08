@@ -4,10 +4,10 @@
 //
 // Basic node example that prints document metadata and text content.
 // Requires single file built version of PDF.js -- please run
-// `gulp singlefile` before running the example.
+// `npm run gulp singlefile` before running the example.
 //
 
-// Run `gulp dist-install` to generate 'pdfjs-dist' npm package files.
+// Run `npm run gulp dist-install` to generate 'pdfjs-dist' npm package files.
 var pdfjsLib = require('pdfjs-dist');
 
 // Loading file from file system into typed array

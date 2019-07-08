@@ -17,7 +17,7 @@
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFPageView) {
   alert('Please build the pdfjs-dist library using\n' +
-        '  `gulp dist-install`');
+        '  `npm run gulp dist-install`');
 }
 
 // The workerSrc property shall be specified.

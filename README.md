@@ -35,31 +35,26 @@ PDF.js is built into version 19+ of Firefox.
 
 + The official extension for Chrome can be installed from the [Chrome Web Store](https://chrome.google.com/webstore/detail/pdf-viewer/oemmndcbldboiebfnladdacbdfmadadm).
 *This extension is maintained by [@Rob--W](https://github.com/Rob--W).*
-+ Build Your Own - Get the code as explained below and issue `gulp chromium`. Then open
++ Build Your Own - Get the code as explained below and issue `npm run gulp chromium`. Then open
 Chrome, go to `Tools > Extension` and load the (unpackaged) extension from the
 directory `build/chromium`.
 
 ## Getting the Code
+Make sure you have Node.js installed via the [official package](https://nodejs.org) or via [nvm](https://github.com/creationix/nvm).
 
 To get a local copy of the current code, clone it using git:
 
     $ git clone https://github.com/mozilla/pdf.js.git
     $ cd pdf.js
 
-Next, install Node.js via the [official package](https://nodejs.org) or via
-[nvm](https://github.com/creationix/nvm). You need to install the gulp package
-globally (see also [gulp's getting started](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md#getting-started)):
-
-    $ npm install -g gulp-cli
-
-If everything worked out, install all dependencies for PDF.js:
+Next, install all dependencies for PDF.js:
 
     $ npm install
 
 Finally, you need to start a local web server as some browsers do not allow opening
 PDF files using a `file://` URL. Run:
 
-    $ gulp server
+    $ npm run gulp server
 
 and then you can open:
 
@@ -76,7 +71,7 @@ It is also possible to view all test PDF files on the right side by opening:
 In order to bundle all `src/` files into two production scripts and build the generic
 viewer, run:
 
-    $ gulp generic
+    $ npm run gulp generic
 
 This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory.
 Both scripts are needed but only `pdf.js` needs to be included since `pdf.worker.js` will
@@ -102,7 +97,7 @@ You can play with the PDF.js API directly from your browser using the live demos
 
 + [Interactive examples](https://mozilla.github.io/pdf.js/examples/index.html#interactive-examples)
 
-More examples can be found in the [examples folder](https://github.com/mozilla/pdf.js/tree/master/examples/). Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
+More examples can be found in the [examples folder](https://github.com/mozilla/pdf.js/tree/master/examples/). Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `npm run gulp dist-install` command.
 
 For an introduction to the PDF.js code, check out the presentation by our
 contributor Julian Viereck:

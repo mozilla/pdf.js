@@ -6,11 +6,11 @@ Example to demonstrate PDF.js library usage with Browserify.
 
 Build project and install the example dependencies:
 
-    $ gulp dist-install
+    $ npm run gulp dist-install
     $ cd examples/browserify
     $ npm install
 
-To build Browserify bundles, run `gulp build`. If you are running
+To build Browserify bundles, run `npm run gulp build`. If you are running
 a web server, you can observe the build results at
 http://localhost:8888/examples/browserify/index.html
 

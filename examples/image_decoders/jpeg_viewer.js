@@ -16,7 +16,8 @@
 'use strict';
 
 if (!pdfjsImageDecoders.JpegImage) {
-  alert('Please build the pdfjs-dist library using `gulp dist-install`');
+  alert('Please build the pdfjs-dist library using\n' +
+        '  `npm run gulp dist-install`');
 }
 
 var JPEG_IMAGE = 'fish.jpg';
