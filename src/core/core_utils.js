@@ -28,43 +28,20 @@ function getLookupTableFactory(initializer) {
   };
 }
 
-const MissingDataException = (function MissingDataExceptionClosure() {
-  function MissingDataException(begin, end) {
+class MissingDataException extends Error {
+  constructor(begin, end) {
+    super(`Missing data [${begin}, ${end})`);
     this.begin = begin;
     this.end = end;
-    this.message = `Missing data [${begin}, ${end})`;
   }
+}
+MissingDataException.prototype.name = 'MissingDataException';
 
-  MissingDataException.prototype = new Error();
-  MissingDataException.prototype.name = 'MissingDataException';
-  MissingDataException.constructor = MissingDataException;
+class XRefEntryException extends Error {}
+XRefEntryException.prototype.name = 'XRefEntryException';
 
-  return MissingDataException;
-})();
-
-const XRefEntryException = (function XRefEntryExceptionClosure() {
-  function XRefEntryException(msg) {
-    this.message = msg;
-  }
-
-  XRefEntryException.prototype = new Error();
-  XRefEntryException.prototype.name = 'XRefEntryException';
-  XRefEntryException.constructor = XRefEntryException;
-
-  return XRefEntryException;
-})();
-
-const XRefParseException = (function XRefParseExceptionClosure() {
-  function XRefParseException(msg) {
-    this.message = msg;
-  }
-
-  XRefParseException.prototype = new Error();
-  XRefParseException.prototype.name = 'XRefParseException';
-  XRefParseException.constructor = XRefParseException;
-
-  return XRefParseException;
-})();
+class XRefParseException extends Error {}
+XRefParseException.prototype.name = 'XRefParseException';
 
 /**
  * Get the value of an inheritable property.

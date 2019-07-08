@@ -17,17 +17,12 @@ import { log2, readInt8, readUint16, readUint32, shadow } from '../shared/util';
 import { ArithmeticDecoder } from './arithmetic_decoder';
 import { CCITTFaxDecoder } from './ccitt';
 
-let Jbig2Error = (function Jbig2ErrorClosure() {
-  function Jbig2Error(msg) {
-    this.message = 'JBIG2 error: ' + msg;
+class Jbig2Error extends Error {
+  constructor(msg) {
+    super('JBIG2 error: ' + msg);
   }
-
-  Jbig2Error.prototype = new Error();
-  Jbig2Error.prototype.name = 'Jbig2Error';
-  Jbig2Error.constructor = Jbig2Error;
-
-  return Jbig2Error;
-})();
+}
+Jbig2Error.prototype.name = 'Jbig2Error';
 
 var Jbig2Image = (function Jbig2ImageClosure() {
   // Utility data structures

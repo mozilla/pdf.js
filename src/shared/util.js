@@ -377,99 +377,46 @@ function shadow(obj, prop, value) {
   return value;
 }
 
-var PasswordException = (function PasswordExceptionClosure() {
-  function PasswordException(msg, code) {
-    this.name = 'PasswordException';
-    this.message = msg;
+class PasswordException extends Error {
+  constructor(msg, code) {
+    super(msg);
     this.code = code;
   }
+}
+PasswordException.prototype.name = 'PasswordException';
 
-  PasswordException.prototype = new Error();
-  PasswordException.constructor = PasswordException;
-
-  return PasswordException;
-})();
-
-var UnknownErrorException = (function UnknownErrorExceptionClosure() {
-  function UnknownErrorException(msg, details) {
-    this.name = 'UnknownErrorException';
-    this.message = msg;
+class UnknownErrorException extends Error {
+  constructor(msg, details) {
+    super(msg);
     this.details = details;
   }
+}
 
-  UnknownErrorException.prototype = new Error();
-  UnknownErrorException.constructor = UnknownErrorException;
+class InvalidPDFException extends Error {}
+InvalidPDFException.prototype.name = 'InvalidPDFException';
 
-  return UnknownErrorException;
-})();
+class MissingPDFException extends Error {}
+MissingPDFException.prototype.name = 'MissingPDFException';
 
-var InvalidPDFException = (function InvalidPDFExceptionClosure() {
-  function InvalidPDFException(msg) {
-    this.name = 'InvalidPDFException';
-    this.message = msg;
-  }
-
-  InvalidPDFException.prototype = new Error();
-  InvalidPDFException.constructor = InvalidPDFException;
-
-  return InvalidPDFException;
-})();
-
-var MissingPDFException = (function MissingPDFExceptionClosure() {
-  function MissingPDFException(msg) {
-    this.name = 'MissingPDFException';
-    this.message = msg;
-  }
-
-  MissingPDFException.prototype = new Error();
-  MissingPDFException.constructor = MissingPDFException;
-
-  return MissingPDFException;
-})();
-
-var UnexpectedResponseException =
-    (function UnexpectedResponseExceptionClosure() {
-  function UnexpectedResponseException(msg, status) {
-    this.name = 'UnexpectedResponseException';
-    this.message = msg;
+class UnexpectedResponseException extends Error {
+  constructor(msg, status) {
+    super(msg);
     this.status = status;
   }
-
-  UnexpectedResponseException.prototype = new Error();
-  UnexpectedResponseException.constructor = UnexpectedResponseException;
-
-  return UnexpectedResponseException;
-})();
+}
+UnexpectedResponseException.prototype.name = 'UnexpectedResponseException';
 
 /**
  * Error caused during parsing PDF data.
  */
-let FormatError = (function FormatErrorClosure() {
-  function FormatError(msg) {
-    this.message = msg;
-  }
-
-  FormatError.prototype = new Error();
-  FormatError.prototype.name = 'FormatError';
-  FormatError.constructor = FormatError;
-
-  return FormatError;
-})();
+class FormatError extends Error {}
+FormatError.prototype.name = 'FormatError';
 
 /**
  * Error used to indicate task cancellation.
  */
-let AbortException = (function AbortExceptionClosure() {
-  function AbortException(msg) {
-    this.name = 'AbortException';
-    this.message = msg;
-  }
-
-  AbortException.prototype = new Error();
-  AbortException.constructor = AbortException;
-
-  return AbortException;
-})();
+class AbortException extends Error {}
+AbortException.prototype.name = 'AbortException';
 
 var NullCharactersRegExp = /\x00/g;
 

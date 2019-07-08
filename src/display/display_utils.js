@@ -307,18 +307,13 @@ class PageViewport {
   }
 }
 
-const RenderingCancelledException = (function RenderingCancelledException() {
-  function RenderingCancelledException(msg, type) {
-    this.message = msg;
+class RenderingCancelledException extends Error {
+  constructor(msg, type) {
+    super(msg);
     this.type = type;
   }
-
-  RenderingCancelledException.prototype = new Error();
-  RenderingCancelledException.prototype.name = 'RenderingCancelledException';
-  RenderingCancelledException.constructor = RenderingCancelledException;
-
-  return RenderingCancelledException;
-})();
+}
+RenderingCancelledException.prototype.name = 'RenderingCancelledException';
 
 const LinkTarget = {
   NONE: 0, // Default value.

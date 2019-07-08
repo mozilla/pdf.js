@@ -18,17 +18,12 @@ import {
 } from '../shared/util';
 import { ArithmeticDecoder } from './arithmetic_decoder';
 
-let JpxError = (function JpxErrorClosure() {
-  function JpxError(msg) {
-    this.message = 'JPX error: ' + msg;
+class JpxError extends Error {
+  constructor(msg) {
+    super('JPX error: ' + msg);
   }
-
-  JpxError.prototype = new Error();
-  JpxError.prototype.name = 'JpxError';
-  JpxError.constructor = JpxError;
-
-  return JpxError;
-})();
+}
+JpxError.prototype.name = 'JpxError';
 
 var JpxImage = (function JpxImageClosure() {
   // Table E.1
