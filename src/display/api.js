@@ -2089,18 +2089,20 @@ class WorkerTransport {
       const page = this.pageCache[data.pageIndex];
       const intentState = page.intentStates[data.intent];
 
+      if (intentState.operatorList) {
+        // Mark operator list as complete.
+        intentState.operatorList.lastChunk = true;
+
+        for (let i = 0; i < intentState.renderTasks.length; i++) {
+          intentState.renderTasks[i].operatorListChanged();
+        }
+        page._tryCleanup();
+      }
+
       if (intentState.displayReadyCapability) {
         intentState.displayReadyCapability.reject(new Error(data.error));
       } else {
         throw new Error(data.error);
-      }
-
-      if (intentState.operatorList) {
-        // Mark operator list as complete.
-        intentState.operatorList.lastChunk = true;
-        for (let i = 0; i < intentState.renderTasks.length; i++) {
-          intentState.renderTasks[i].operatorListChanged();
-        }
       }
     }, this);
 
