@@ -500,7 +500,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         this._layoutTextCtx.canvas.height = 0;
         this._layoutTextCtx = null;
       }
-    });
+    }).catch(() => { /* Avoid "Uncaught promise" messages in the console. */ });
   }
   TextLayerRenderTask.prototype = {
     get promise() {
