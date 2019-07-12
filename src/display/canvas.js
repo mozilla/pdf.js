@@ -1145,9 +1145,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
-      // Prevent drawing too thin lines by enforcing a minimum line width.
-      ctx.lineWidth = Math.max(this.getSinglePixelWidth() * MIN_WIDTH_FACTOR,
-                               this.current.lineWidth);
       // For stroke we want to temporarily change the global alpha to the
       // stroking alpha.
       ctx.globalAlpha = this.current.strokeAlpha;
@@ -1156,10 +1153,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // for patterns, we transform to pattern space, calculate
         // the pattern, call stroke, and restore to user space
         ctx.save();
+        // The current transform will be replaced while building the pattern,
+        // but the line width needs to be adjusted by the current transform, so
+        // we must scale it. To properly fix this we should be using a pattern
+        // transform instead (see #10955).
+        let transform = ctx.mozCurrentTransform;
+        const scale = Util.singularValueDecompose2dScale(transform)[0];
         ctx.strokeStyle = strokeColor.getPattern(ctx, this);
+        ctx.lineWidth = Math.max(this.getSinglePixelWidth() * MIN_WIDTH_FACTOR,
+                                 this.current.lineWidth * scale);
         ctx.stroke();
         ctx.restore();
       } else {
+        // Prevent drawing too thin lines by enforcing a minimum line width.
+        ctx.lineWidth = Math.max(this.getSinglePixelWidth() * MIN_WIDTH_FACTOR,
+                                 this.current.lineWidth);
         ctx.stroke();
       }
       if (consumePath) {
