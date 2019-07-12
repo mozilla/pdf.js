@@ -222,6 +222,7 @@ class PDFPageView {
         source: this,
         pageNumber: this.id,
         cssTransform: true,
+        timestamp: performance.now(),
       });
       return;
     }
@@ -245,6 +246,7 @@ class PDFPageView {
           source: this,
           pageNumber: this.id,
           cssTransform: true,
+          timestamp: performance.now(),
         });
         return;
       }
@@ -456,6 +458,7 @@ class PDFPageView {
         source: this,
         pageNumber: this.id,
         cssTransform: false,
+        timestamp: performance.now(),
       });
 
       if (error) {
