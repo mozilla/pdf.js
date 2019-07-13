@@ -52,11 +52,11 @@ function makeReasonSerializable(reason) {
   return new UnknownErrorException(reason.message, reason.toString());
 }
 
-function resolveOrReject(capability, success, reason) {
-  if (success) {
+function resolveOrReject(capability, data) {
+  if (data.success) {
     capability.resolve();
   } else {
-    capability.reject(reason);
+    capability.reject(wrapReason(data.reason));
   }
 }
 
@@ -341,12 +341,10 @@ MessageHandler.prototype = {
 
     switch (data.stream) {
       case 'start_complete':
-        resolveOrReject(this.streamControllers[data.streamId].startCall,
-                        data.success, wrapReason(data.reason));
+        resolveOrReject(this.streamControllers[data.streamId].startCall, data);
         break;
       case 'pull_complete':
-        resolveOrReject(this.streamControllers[data.streamId].pullCall,
-                        data.success, wrapReason(data.reason));
+        resolveOrReject(this.streamControllers[data.streamId].pullCall, data);
         break;
       case 'pull':
         // Ignore any pull after close is called.
@@ -395,8 +393,7 @@ MessageHandler.prototype = {
         deleteStreamController();
         break;
       case 'cancel_complete':
-        resolveOrReject(this.streamControllers[data.streamId].cancelCall,
-                        data.success, wrapReason(data.reason));
+        resolveOrReject(this.streamControllers[data.streamId].cancelCall, data);
         deleteStreamController();
         break;
       case 'cancel':
