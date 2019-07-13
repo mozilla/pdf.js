@@ -60,10 +60,6 @@ function resolveOrReject(capability, data) {
   }
 }
 
-function finalize(promise) {
-  return Promise.resolve(promise).catch(() => {});
-}
-
 function MessageHandler(sourceName, targetName, comObj) {
   this.sourceName = sourceName;
   this.targetName = targetName;
@@ -326,14 +322,14 @@ MessageHandler.prototype = {
     };
 
     let deleteStreamController = () => {
-      // Delete streamController only when start, pull and
-      // cancel callbacks are resolved, to avoid "TypeError".
+      // Delete the `streamController` only when the start, pull, and cancel
+      // capabilities have settled, to prevent `TypeError`s.
       Promise.all([
         this.streamControllers[data.streamId].startCall,
         this.streamControllers[data.streamId].pullCall,
         this.streamControllers[data.streamId].cancelCall
       ].map(function(capability) {
-        return capability && finalize(capability.promise);
+        return capability && capability.promise.catch(function() { });
       })).then(() => {
         delete this.streamControllers[data.streamId];
       });
