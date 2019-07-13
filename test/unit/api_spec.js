@@ -1236,6 +1236,7 @@ describe('api', function() {
         done();
       }).catch(done.fail);
     });
+
     it('gets operatorList with JPEG image (issue 4888)', function(done) {
       let loadingTask = getDocument(buildGetDocumentParams('cmykjpeg.pdf'));
 
@@ -1254,6 +1255,43 @@ describe('api', function() {
         });
       }).catch(done.fail);
     });
+
+    it('gets operatorList, from corrupt PDF file (issue 8702), ' +
+       'with/without `stopAtErrors` set', function(done) {
+      const loadingTask1 = getDocument(buildGetDocumentParams('issue8702.pdf', {
+        stopAtErrors: false, // The default value.
+      }));
+      const loadingTask2 = getDocument(buildGetDocumentParams('issue8702.pdf', {
+        stopAtErrors: true,
+      }));
+
+      const result1 = loadingTask1.promise.then((pdfDoc) => {
+        return pdfDoc.getPage(1).then((pdfPage) => {
+          return pdfPage.getOperatorList().then((opList) => {
+            expect(opList.fnArray.length).toEqual(722);
+            expect(opList.argsArray.length).toEqual(722);
+            expect(opList.lastChunk).toEqual(true);
+
+            return loadingTask1.destroy();
+          });
+        });
+      });
+
+      const result2 = loadingTask2.promise.then((pdfDoc) => {
+        return pdfDoc.getPage(1).then((pdfPage) => {
+          return pdfPage.getOperatorList().then((opList) => {
+            expect(opList.fnArray.length).toEqual(0);
+            expect(opList.argsArray.length).toEqual(0);
+            expect(opList.lastChunk).toEqual(true);
+
+            return loadingTask2.destroy();
+          });
+        });
+      });
+
+      Promise.all([result1, result2]).then(done, done.fail);
+    });
+
     it('gets document stats after parsing page', function(done) {
       var promise = page.getOperatorList().then(function () {
         return pdfDocument.getStats();

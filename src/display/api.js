@@ -2101,6 +2101,8 @@ class WorkerTransport {
 
       if (intentState.displayReadyCapability) {
         intentState.displayReadyCapability.reject(new Error(data.error));
+      } else if (intentState.opListReadCapability) {
+        intentState.opListReadCapability.reject(new Error(data.error));
       } else {
         throw new Error(data.error);
       }
