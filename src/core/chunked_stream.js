@@ -218,6 +218,12 @@ class ChunkedStream {
   }
 
   getByteRange(begin, end) {
+    if (begin < 0) {
+      begin = 0;
+    }
+    if (end > this.end) {
+      end = this.end;
+    }
     this.ensureRange(begin, end);
     return this.bytes.subarray(begin, end);
   }

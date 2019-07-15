@@ -598,20 +598,16 @@ class PDFDocument {
         idArray[0] !== EMPTY_FINGERPRINT) {
       hash = stringToBytes(idArray[0]);
     } else {
-      if (this.stream.ensureRange) {
-        this.stream.ensureRange(0,
-          Math.min(FINGERPRINT_FIRST_BYTES, this.stream.end));
-      }
-      hash = calculateMD5(this.stream.bytes.subarray(0,
-        FINGERPRINT_FIRST_BYTES), 0, FINGERPRINT_FIRST_BYTES);
+      hash = calculateMD5(this.stream.getByteRange(0, FINGERPRINT_FIRST_BYTES),
+                          0, FINGERPRINT_FIRST_BYTES);
     }
 
-    let fingerprint = '';
+    const fingerprintBuf = [];
     for (let i = 0, ii = hash.length; i < ii; i++) {
       const hex = hash[i].toString(16);
-      fingerprint += (hex.length === 1 ? '0' + hex : hex);
+      fingerprintBuf.push(hex.padStart(2, '0'));
     }
-    return shadow(this, 'fingerprint', fingerprint);
+    return shadow(this, 'fingerprint', fingerprintBuf.join(''));
   }
 
   _getLinearizationPage(pageIndex) {
