@@ -437,13 +437,8 @@ let PDFViewerApplication = {
     this.pdfViewer.currentScaleValue = newScale;
   },
 
-  zoomReset(ignoreDuplicate = false) {
+  zoomReset() {
     if (this.pdfViewer.isInPresentationMode) {
-      return;
-    } else if (ignoreDuplicate &&
-               this.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE) {
-      // Avoid attempting to needlessly reset the zoom level *twice* in a row,
-      // when using the `Ctrl + 0` keyboard shortcut in `MOZCENTRAL` builds.
       return;
     }
     this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
@@ -1965,8 +1960,8 @@ function webViewerZoomIn() {
 function webViewerZoomOut() {
   PDFViewerApplication.zoomOut();
 }
-function webViewerZoomReset(evt) {
-  PDFViewerApplication.zoomReset(evt && evt.ignoreDuplicate);
+function webViewerZoomReset() {
+  PDFViewerApplication.zoomReset();
 }
 function webViewerPageNumberChanged(evt) {
   let pdfViewer = PDFViewerApplication.pdfViewer;
