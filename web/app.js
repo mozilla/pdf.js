@@ -882,7 +882,6 @@ let PDFViewerApplication = {
   },
 
   load(pdfDocument) {
-    dump('Taking this load path at all??\n');
     this.pdfDocument = pdfDocument;
 
     pdfDocument.getDownloadInfo().then(() => {
@@ -1061,18 +1060,13 @@ let PDFViewerApplication = {
                                  pdfViewer.currentPageLabel);
     });
 
-    dump('Waiting for all pages to be there...\n');
     pagesPromise.then(() => {
-      dump('Fetching scripts...\n');
       pdfDocument.getJavaScript().then((javaScript) => {
         if (!javaScript) {
-          dump('No scripts found!!\n');
           return;
         }
 
         let scripting = this.externalServices.scripting;
-        dump('SCRIPTING ENABLED?? ' + AppOptions.get('disableScripting') + ' ' +
-          scripting + '\n');
         if (AppOptions.get('disableScripting') || !scripting) {
           javaScript.some((js) => {
             if (!js) { // Don't warn/fallback for empty JavaScript actions.
@@ -1091,7 +1085,6 @@ let PDFViewerApplication = {
           if (!js || !js.trim()) {
             continue;
           }
-          dump('EVAL IN SANDBOX::: ' + js + '\n');
           scripting.evalInSandbox(js, sandbox);
         }
       });
