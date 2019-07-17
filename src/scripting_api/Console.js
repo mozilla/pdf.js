@@ -13,17 +13,28 @@
  * limitations under the License.
  */
 
-import { App } from './api/App';
-import { Console } from './api/Console';
+class Console {
+  constructor(consoleAPI) {
+    this._consoleAPI = consoleAPI || window.console;
+  }
 
-const Scripting = {
-  getAPI(runtime, console, chromeObj) {
-    chromeObj.app = new App(runtime);
-    chromeObj.console = new Console(console);
-    chromeObj.globals = {};
-  },
-};
+  clear() {
+    this._consoleAPI.clear();
+  }
+
+  hide() {
+    // Disabled on purpose; not suitable in the context of a web application.
+  }
+
+  println(msg) {
+    this._consoleAPI.log('PDF.js Console:: ' + msg);
+  }
+
+  show() {
+    // Disabled on purpose; not suitable in the context of a web application.
+  }
+}
 
 export {
-  Scripting,
+  Console,
 };

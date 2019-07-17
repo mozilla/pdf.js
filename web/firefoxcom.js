@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals ChromeUtils, PdfJsScripting */
 
 import '../extensions/firefox/tools/l10n';
 import { createObjectURL, PDFDataRangeTransport, shadow, URL } from 'pdfjs-lib';
@@ -230,6 +231,15 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
   }
 }
 
+const FirefoxScripting = {
+  createSandbox(proto, api) {
+    return FirefoxCom.requestSync('createSandbox', { proto, api, });
+  },
+  evalInSandbox(script, sandboxID) {
+    return FirefoxCom.requestSync('evalInSandbox', { script, sandboxID, });
+  },
+};
+
 PDFViewerApplication.externalServices = {
   updateFindControlState(data) {
     FirefoxCom.request('updateFindControlState', data);
@@ -314,6 +324,10 @@ PDFViewerApplication.externalServices = {
     let mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
     return new MozL10n(mozL10n);
+  },
+
+  get scripting() {
+    return FirefoxScripting;
   },
 
   get supportsIntegratedFind() {

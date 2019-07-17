@@ -13,20 +13,19 @@
  * limitations under the License.
  */
 
-class App {
-  constructor(runtime) {
-    this._runtime = runtime;
-  }
+import { App } from './scripting_api/App';
+import { Console } from './scripting_api/Console';
 
-  get viewerType() {
-    return 'Reader';
-  }
-
-  get viewerVariation() {
-    return 'Reader';
-  }
-}
+const Scripting = {
+  getAPI(runtime, console) {
+    return {
+      app: new App(runtime),
+      console: new Console(console),
+      global: {},
+    };
+  },
+};
 
 export {
-  App,
+  Scripting,
 };

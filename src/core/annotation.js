@@ -416,6 +416,11 @@ class Annotation {
       return;
     }
 
+    if (this.defaultAppearance) {
+      this.appearance = new Stream(stringToBytes(this.defaultAppearance));
+      return;
+    }
+
     // In case the normal appearance is a stream, then it is used directly.
     let normalAppearanceState = appearanceStates.get('N');
     if (isStream(normalAppearanceState)) {

@@ -296,7 +296,23 @@ function createBundle(defines) {
     .pipe(webpack2Stream(workerFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceJSRootName(workerAMDName, 'pdfjsWorker'));
-  return merge([mainOutput, workerOutput]);
+
+  var scriptingApiAMDName = 'pdfjs-dist/build/pdf.scripting_api';
+  var scriptingApiOutputName = 'pdf.scripting_api.js';
+
+  var scriptingApiFileConfig = createWebpackConfig(defines, {
+    filename: scriptingApiOutputName,
+    library: scriptingApiAMDName,
+    libraryTarget: 'umd',
+    umdNamedDefine: true,
+  });
+
+  var scriptingApiOutput = gulp.src('./src/pdf.scripting_api.js')
+    .pipe(webpack2Stream(scriptingApiFileConfig))
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(scriptingApiAMDName, 'pdfjsScriptingAPI'));
+
+  return merge([mainOutput, workerOutput, scriptingApiOutput]);
 }
 
 function createWebBundle(defines) {
@@ -796,6 +812,8 @@ gulp.task('minified-post', gulp.series('minified-pre', function (done) {
   var pdfFile = fs.readFileSync(MINIFIED_DIR + '/build/pdf.js').toString();
   var pdfWorkerFile =
     fs.readFileSync(MINIFIED_DIR + '/build/pdf.worker.js').toString();
+  var pdfScriptingApiFile =
+    fs.readFileSync(MINIFIED_DIR + '/build/pdf.scripting_api.js').toString();
   var pdfImageDecodersFile = fs.readFileSync(MINIFIED_DIR +
     '/image_decoders/pdf.image_decoders.js').toString();
   var viewerFiles = {
@@ -816,6 +834,8 @@ gulp.task('minified-post', gulp.series('minified-pre', function (done) {
                    Terser.minify(pdfFile).code);
   fs.writeFileSync(MINIFIED_DIR + '/build/pdf.worker.min.js',
                    Terser.minify(pdfWorkerFile, optsForHugeFile).code);
+  fs.writeFileSync(MINIFIED_DIR + '/build/pdf.scripting_api.min.js',
+                   Terser.minify(pdfScriptingApiFile).code);
   fs.writeFileSync(MINIFIED_DIR + 'image_decoders/pdf.image_decoders.min.js',
                    Terser.minify(pdfImageDecodersFile).code);
 
@@ -826,10 +846,13 @@ gulp.task('minified-post', gulp.series('minified-pre', function (done) {
   fs.unlinkSync(MINIFIED_DIR + '/web/debugger.js');
   fs.unlinkSync(MINIFIED_DIR + '/build/pdf.js');
   fs.unlinkSync(MINIFIED_DIR + '/build/pdf.worker.js');
+  fs.unlinkSync(MINIFIED_DIR + '/build/pdf.scripting_api.js');
   fs.renameSync(MINIFIED_DIR + '/build/pdf.min.js',
                 MINIFIED_DIR + '/build/pdf.js');
   fs.renameSync(MINIFIED_DIR + '/build/pdf.worker.min.js',
                 MINIFIED_DIR + '/build/pdf.worker.js');
+  fs.renameSync(MINIFIED_DIR + '/build/pdf.scripting_api.min.js',
+                MINIFIED_DIR + '/build/pdf.scripting_api.js');
   fs.renameSync(MINIFIED_DIR + '/image_decoders/pdf.image_decoders.min.js',
                 MINIFIED_DIR + '/image_decoders/pdf.image_decoders.js');
   done();

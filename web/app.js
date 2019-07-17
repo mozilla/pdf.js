@@ -44,7 +44,6 @@ import { PDFPresentationMode } from './pdf_presentation_mode';
 import { PDFSidebarResizer } from './pdf_sidebar_resizer';
 import { PDFThumbnailViewer } from './pdf_thumbnail_viewer';
 import { PDFViewer } from './pdf_viewer';
-import { Scripting } from './scripting/scripting';
 import { SecondaryToolbar } from './secondary_toolbar';
 import { Toolbar } from './toolbar';
 import { ViewHistory } from './view_history';
@@ -883,6 +882,7 @@ let PDFViewerApplication = {
   },
 
   load(pdfDocument) {
+    dump('Taking this load path at all??\n');
     this.pdfDocument = pdfDocument;
 
     pdfDocument.getDownloadInfo().then(() => {
@@ -1061,15 +1061,18 @@ let PDFViewerApplication = {
                                  pdfViewer.currentPageLabel);
     });
 
+    dump('Waiting for all pages to be there...\n');
     pagesPromise.then(() => {
+      dump('Fetching scripts...\n');
       pdfDocument.getJavaScript().then((javaScript) => {
         if (!javaScript) {
+          dump('No scripts found!!\n');
           return;
         }
 
         let scripting = this.externalServices.scripting;
-        console.log('SCRIPTING ENABLED??', AppOptions.get('disableScripting'),
-          scripting);
+        dump('SCRIPTING ENABLED?? ' + AppOptions.get('disableScripting') + ' ' +
+          scripting + '\n');
         if (AppOptions.get('disableScripting') || !scripting) {
           javaScript.some((js) => {
             if (!js) { // Don't warn/fallback for empty JavaScript actions.
@@ -1082,14 +1085,13 @@ let PDFViewerApplication = {
           return;
         }
 
-        let sandbox = scripting.createSandbox({},
-          Scripting.getAPI.bind(this, console));
+        let sandbox = scripting.createSandbox({});
         for (let i = 0, ii = javaScript.length; i < ii; i++) {
           let js = javaScript[i];
           if (!js || !js.trim()) {
             continue;
           }
-          console.log('EVAL IN SANDBOX::: ', js);
+          dump('EVAL IN SANDBOX::: ' + js + '\n');
           scripting.evalInSandbox(js, sandbox);
         }
       });

@@ -13,28 +13,28 @@
  * limitations under the License.
  */
 
-class Console {
-  constructor(consoleAPI) {
-    this._consoleAPI = consoleAPI;
+class App {
+  constructor(runtime) {
+    this._runtime = runtime;
   }
 
-  clear() {
-    this._consoleAPI.clear();
+  get viewerType() {
+    return 'Reader';
   }
 
-  hide() {
-    // Disabled on purpose; not suitable in the context of a web application.
+  get viewerVariation() {
+    return 'Reader';
   }
 
-  println(msg) {
-    this._consoleAPI.log('PDF.js Console:: ' + msg);
+  get viewerVersion() {
+    return 10.0;
   }
 
-  show() {
-    // Disabled on purpose; not suitable in the context of a web application.
+  alert(msg) {
+    window.alert(msg);
   }
 }
 
 export {
-  Console,
+  App,
 };

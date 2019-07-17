@@ -453,14 +453,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.textContent = this.data.fieldValue;
       element.style.verticalAlign = 'middle';
       element.style.display = 'table-cell';
-
-      let font = null;
-      if (this.data.fontRefName &&
-          this.page.commonObjs.has(this.data.fontRefName)) {
-        font = this.page.commonObjs.get(this.data.fontRefName);
-      }
-      this._setTextStyle(element, font);
     }
+
+    let font = null;
+    if (this.data.fontRefName &&
+        this.page.commonObjs.has(this.data.fontRefName)) {
+      font = this.page.commonObjs.get(this.data.fontRefName);
+    }
+    this._setTextStyle(element, font);
 
     if (this.data.textAlignment !== null) {
       element.style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
