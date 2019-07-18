@@ -177,9 +177,7 @@ class MozL10n {
       return;
     }
     if (type === 'findbarclose') {
-      PDFViewerApplication.eventBus.dispatch('findbarclose', {
-        source: window,
-      });
+      PDFViewerApplication.eventBus.dispatch(type, { source: window, });
       return;
     }
     PDFViewerApplication.eventBus.dispatch('find', {
