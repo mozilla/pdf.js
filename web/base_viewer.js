@@ -157,6 +157,7 @@ class BaseViewer {
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
     this.presentationModeState = PresentationModeState.UNKNOWN;
+    this._onBeforeDraw = this._onAfterDraw = null;
     this._resetView();
 
     if (this.removePageBorders) {
@@ -387,22 +388,30 @@ class BaseViewer {
     const onePageRenderedCapability = createPromiseCapability();
     this.onePageRendered = onePageRenderedCapability.promise;
 
-    let bindOnAfterAndBeforeDraw = (pageView) => {
-      pageView.onBeforeDraw = () => {
-        // Add the page to the buffer at the start of drawing. That way it can
-        // be evicted from the buffer and destroyed even if we pause its
-        // rendering.
-        this._buffer.push(pageView);
-      };
-      pageView.onAfterDraw = () => {
-        if (!onePageRenderedCapability.settled) {
-          onePageRenderedCapability.resolve();
-        }
-      };
-    };
-
-    let firstPagePromise = pdfDocument.getPage(1);
+    const firstPagePromise = pdfDocument.getPage(1);
     this.firstPagePromise = firstPagePromise;
+
+    this._onBeforeDraw = (evt) => {
+      const pageView = this._pages[evt.pageNumber - 1];
+      if (!pageView) {
+        return;
+      }
+      // Add the page to the buffer at the start of drawing. That way it can be
+      // evicted from the buffer and destroyed even if we pause its rendering.
+      this._buffer.push(pageView);
+    };
+    this.eventBus.on('pagerender', this._onBeforeDraw);
+
+    this._onAfterDraw = (evt) => {
+      if (evt.cssTransform || onePageRenderedCapability.settled) {
+        return;
+      }
+      onePageRenderedCapability.resolve();
+
+      this.eventBus.off('pagerendered', this._onAfterDraw);
+      this._onAfterDraw = null;
+    };
+    this.eventBus.on('pagerendered', this._onAfterDraw);
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
@@ -432,7 +441,6 @@ class BaseViewer {
           maxCanvasPixels: this.maxCanvasPixels,
           l10n: this.l10n,
         });
-        bindOnAfterAndBeforeDraw(pageView);
         this._pages.push(pageView);
       }
       if (this._spreadMode !== SpreadMode.NONE) {
@@ -521,6 +529,14 @@ class BaseViewer {
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
 
+    if (this._onBeforeDraw) {
+      this.eventBus.off('pagerender', this._onBeforeDraw);
+      this._onBeforeDraw = null;
+    }
+    if (this._onAfterDraw) {
+      this.eventBus.off('pagerendered', this._onAfterDraw);
+      this._onAfterDraw = null;
+    }
     // Remove the pages from the DOM...
     this.viewer.textContent = '';
     // ... and reset the Scroll mode CSS class(es) afterwards.
