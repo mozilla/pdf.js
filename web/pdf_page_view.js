@@ -96,9 +96,6 @@ class PDFPageView {
     this.resume = null;
     this.error = null;
 
-    this.onBeforeDraw = null;
-    this.onAfterDraw = null;
-
     this.annotationLayer = null;
     this.textLayer = null;
     this.zoomLayer = null;
@@ -451,9 +448,7 @@ class PDFPageView {
 
       this.error = error;
       this.stats = pdfPage.stats;
-      if (this.onAfterDraw) {
-        this.onAfterDraw();
-      }
+
       this.eventBus.dispatch('pagerendered', {
         source: this,
         pageNumber: this.id,
@@ -496,9 +491,10 @@ class PDFPageView {
     }
     div.setAttribute('data-loaded', true);
 
-    if (this.onBeforeDraw) {
-      this.onBeforeDraw();
-    }
+    this.eventBus.dispatch('pagerender', {
+      source: this,
+      pageNumber: this.id,
+    });
     return resultPromise;
   }
 
