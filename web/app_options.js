@@ -105,6 +105,9 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  /**
+   * The `printResolution` is, conditionally, defined below.
+   */
   renderer: {
     /** @type {string} */
     value: 'canvas',
@@ -182,6 +185,11 @@ const defaultOptions = {
     /** @type {boolean} */
     value: false,
     kind: OptionKind.API + OptionKind.PREFERENCE,
+  },
+  docBaseUrl: {
+    /** @type {string} */
+    value: '',
+    kind: OptionKind.API,
   },
   isEvalSupported: {
     /** @type {boolean} */
