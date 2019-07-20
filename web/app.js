@@ -642,16 +642,20 @@ let PDFViewerApplication = {
       this.setTitleUsingUrl(file.originalUrl);
       parameters.url = file.url;
     }
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-      parameters.docBaseUrl = document.URL.split('#')[0];
-    } else if (typeof PDFJSDev !== 'undefined' &&
-               PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
-      parameters.docBaseUrl = this.baseUrl;
-    }
     // Set the necessary API parameters, using the available options.
     const apiParameters = AppOptions.getAll(OptionKind.API);
     for (let key in apiParameters) {
-      parameters[key] = apiParameters[key];
+      let value = apiParameters[key];
+
+      if (key === 'docBaseUrl' && !value) {
+        if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+          value = document.URL.split('#')[0];
+        } else if (typeof PDFJSDev !== 'undefined' &&
+                   PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
+          value = this.baseUrl;
+        }
+      }
+      parameters[key] = value;
     }
 
     if (args) {
