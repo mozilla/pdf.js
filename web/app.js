@@ -352,7 +352,9 @@ let PDFViewerApplication = {
     });
     pdfLinkService.setHistory(this.pdfHistory);
 
-    this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
+    if (!this.supportsIntegratedFind) {
+      this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
+    }
 
     this.pdfDocumentProperties =
       new PDFDocumentProperties(appConfig.documentProperties,
@@ -598,7 +600,9 @@ let PDFViewerApplication = {
     this.pdfOutlineViewer.reset();
     this.pdfAttachmentViewer.reset();
 
-    this.findBar.reset();
+    if (this.findBar) {
+      this.findBar.reset();
+    }
     this.toolbar.reset();
     this.secondaryToolbar.reset();
 
