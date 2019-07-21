@@ -512,11 +512,7 @@ let PDFViewerApplication = {
     }
     this.externalServices.initPassiveLoading({
       onOpenWithTransport(url, length, transport) {
-        PDFViewerApplication.open(url, { range: transport, });
-
-        if (length) {
-          PDFViewerApplication.pdfDocumentProperties.setFileSize(length);
-        }
+        PDFViewerApplication.open(url, { length, range: transport, });
       },
       onOpenWithData(data) {
         PDFViewerApplication.open(data);
@@ -659,11 +655,13 @@ let PDFViewerApplication = {
     }
 
     if (args) {
-      for (let prop in args) {
-        if (prop === 'length') {
-          this.pdfDocumentProperties.setFileSize(args[prop]);
+      for (let key in args) {
+        const value = args[key];
+
+        if (key === 'length') {
+          this.pdfDocumentProperties.setFileSize(value);
         }
-        parameters[prop] = args[prop];
+        parameters[key] = value;
       }
     }
 
