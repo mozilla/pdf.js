@@ -67,7 +67,7 @@ class Parser {
   }
 
   shift() {
-    if (isCmd(this.buf2, 'ID')) {
+    if ((this.buf2 instanceof Cmd) && this.buf2.cmd === 'ID') {
       this.buf1 = this.buf2;
       this.buf2 = null;
     } else {
