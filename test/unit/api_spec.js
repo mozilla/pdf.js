@@ -1331,7 +1331,7 @@ describe('api', function() {
 
         let [statEntry] = stats.times;
         expect(statEntry.name).toEqual('Page Request');
-        expect(statEntry.end - statEntry.start).toBeGreaterThan(0);
+        expect(statEntry.end - statEntry.start).toBeGreaterThanOrEqual(0);
 
         loadingTask.destroy().then(done);
       }, done.fail);
