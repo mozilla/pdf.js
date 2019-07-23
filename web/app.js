@@ -2093,17 +2093,15 @@ function setZoomDisabledTimeout() {
 }
 
 function webViewerWheel(evt) {
-  let pdfViewer = PDFViewerApplication.pdfViewer;
+  const { pdfViewer, supportedMouseWheelZoomModifierKeys, } =
+    PDFViewerApplication;
+
   if (pdfViewer.isInPresentationMode) {
     return;
   }
 
-  if (evt.ctrlKey || evt.metaKey) {
-    let support = PDFViewerApplication.supportedMouseWheelZoomModifierKeys;
-    if ((evt.ctrlKey && !support.ctrlKey) ||
-        (evt.metaKey && !support.metaKey)) {
-      return;
-    }
+  if ((evt.ctrlKey && supportedMouseWheelZoomModifierKeys.ctrlKey) ||
+      (evt.metaKey && supportedMouseWheelZoomModifierKeys.metaKey)) {
     // Only zoom the pages, not the entire viewer.
     evt.preventDefault();
     // NOTE: this check must be placed *after* preventDefault.
