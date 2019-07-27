@@ -146,6 +146,39 @@ class AnnotationFactory {
   }
 }
 
+function getQuadPoints(dict, rect) {
+  if (!dict.has('QuadPoints')) {
+    return null;
+  }
+
+  // The region is described as a number of quadrilaterals.
+  // Each quadrilateral must consist of eight coordinates.
+  const quadPoints = dict.getArray('QuadPoints');
+  if (!Array.isArray(quadPoints) || quadPoints.length % 8 > 0) {
+    return null;
+  }
+
+  const quadPointsLists = [];
+  for (let i = 0, ii = quadPoints.length / 8; i < ii; i++) {
+    // Each series of eight numbers represents the coordinates for one
+    // quadrilateral in the order [x1, y1, x2, y2, x3, y3, x4, y4].
+    // Convert this to an array of objects with x and y coordinates.
+    quadPointsLists.push([]);
+    for (let j = i * 8, jj = (i * 8) + 8; j < jj; j += 2) {
+      const x = quadPoints[j];
+      const y = quadPoints[j + 1];
+
+      // The quadpoints should be ignored if any coordinate in the array
+      // lies outside the region specified by the rectangle.
+      if (x < rect[0] || x > rect[2] || y < rect[1] || y > rect[3]) {
+        return null;
+      }
+      quadPointsLists[i].push({ x, y, });
+    }
+  }
+  return quadPointsLists;
+}
+
 function getTransformMatrix(rect, bbox, matrix) {
   // 12.5.5: Algorithm: Appearance streams
   let bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
@@ -1042,6 +1075,11 @@ class LinkAnnotation extends Annotation {
 
     this.data.annotationType = AnnotationType.LINK;
 
+    const quadPoints = getQuadPoints(params.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
+
     Catalog.parseDestDictionary({
       destDict: params.dict,
       resultObj: this.data,
@@ -1211,6 +1249,11 @@ class HighlightAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.HIGHLIGHT;
+
+    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
   }
 }
 
@@ -1219,6 +1262,11 @@ class UnderlineAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.UNDERLINE;
+
+    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
   }
 }
 
@@ -1227,6 +1275,11 @@ class SquigglyAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.SQUIGGLY;
+
+    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
   }
 }
 
@@ -1235,6 +1288,11 @@ class StrikeOutAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.STRIKEOUT;
+
+    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
   }
 }
 
@@ -1262,4 +1320,5 @@ export {
   AnnotationBorderStyle,
   AnnotationFactory,
   MarkupAnnotation,
+  getQuadPoints,
 };
