@@ -61,6 +61,11 @@ function extractFilenameFromHeader(getResponseHeader) {
   const contentDisposition = getResponseHeader('Content-Disposition');
   if (contentDisposition) {
     let filename = getFilenameFromContentDispositionHeader(contentDisposition);
+    if (filename.includes('%')) {
+      try {
+        filename = decodeURIComponent(filename);
+      } catch (ex) {}
+    }
     if (/\.pdf$/i.test(filename)) {
       return filename;
     }
