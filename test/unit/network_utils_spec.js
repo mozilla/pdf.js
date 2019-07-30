@@ -238,6 +238,20 @@ describe('network_utils', function() {
         }
         throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename="%e4%b8%ad%e6%96%87.pdf"';
+        }
+        throw new Error(`Unexpected headerName: ${headerName}`);
+      })).toEqual('中文.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename="100%.pdf"';
+        }
+        throw new Error(`Unexpected headerName: ${headerName}`);
+      })).toEqual('100%.pdf');
     });
 
     it('gets the filename from the response header (RFC 6266)', function() {
