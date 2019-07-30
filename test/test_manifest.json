@@ -39,6 +39,13 @@
        "lastPage": 1,
        "type": "text"
     },
+    {  "id": "issue11016",
+       "file": "pdfs/issue11016_reduced.pdf",
+       "md5": "b75578bd052d2e6acdcc85b615eab6b1",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "issue1293",
        "file": "pdfs/issue1293r.pdf",
        "md5": "4a098f5051f34fab036f5bbe88f8deef",
