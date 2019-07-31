@@ -337,25 +337,43 @@ class PDFFindController {
     return true;
   }
 
-  _calculatePhraseMatch(query, pageIndex, pageContent, entireWord) {
+  _calculatePhraseMatch(query, pageIndex, pageContent, nextPageContent,
+                        entireWord) {
     const matches = [];
     const queryLen = query.length;
 
     let matchIdx = -queryLen;
-    while (true) {
+    let lastGoodMatch = -1;
+    while (queryLen > 0) { // should always be true
       matchIdx = pageContent.indexOf(query, matchIdx + queryLen);
       if (matchIdx === -1) {
         break;
       }
+      lastGoodMatch = matchIdx;
       if (entireWord && !this._isEntireWord(pageContent, matchIdx, queryLen)) {
         continue;
       }
       matches.push(matchIdx);
     }
+    // find matches partially on this page and partially on next page
+    // last bit of the potential match on the first page
+    let combinedContent = pageContent +
+        nextPageContent.substring(0, query.length);
+    // can't do + query.length since it might be larger than the string
+    // using lastGoodMatch since matchIdx is always -1 here
+    let lastMatchIdx = combinedContent.indexOf(query,
+
+        lastGoodMatch + query.length);
+    if (lastMatchIdx !== -1 && lastMatchIdx < pageContent.length) {
+      // if greater, match starts on second page, not first
+      matches.push(lastMatchIdx);
+    }
+
     this._pageMatches[pageIndex] = matches;
   }
 
-  _calculateWordMatch(query, pageIndex, pageContent, entireWord) {
+  _calculateWordMatch(query, pageIndex, pageContent, nextPageContent,
+                      entireWord) {
     const matchesWithLength = [];
 
     // Divide the query into pieces and search for text in each piece.
@@ -365,11 +383,13 @@ class PDFFindController {
       const subqueryLen = subquery.length;
 
       let matchIdx = -subqueryLen;
+      let lastGoodMatch = -1;
       while (true) {
         matchIdx = pageContent.indexOf(subquery, matchIdx + subqueryLen);
         if (matchIdx === -1) {
           break;
         }
+        lastGoodMatch = matchIdx;
         if (entireWord &&
             !this._isEntireWord(pageContent, matchIdx, subqueryLen)) {
           continue;
@@ -378,6 +398,20 @@ class PDFFindController {
         matchesWithLength.push({
           match: matchIdx,
           matchLength: subqueryLen,
+          skipped: false,
+        });
+      }
+      // find matches partially on this page and partially on next page
+      // last bit of the potential match on the first page
+      let combinedContent = pageContent +
+          nextPageContent.substring(0, subquery.length);
+      let lastMatchIdx = combinedContent.indexOf(subquery,
+          lastGoodMatch + subquery.length);
+      if (lastMatchIdx !== -1 && lastMatchIdx < pageContent.length) {
+        // if greater, match is on second page, not first
+        matchesWithLength.push({
+          match: lastMatchIdx,
+          matchLength: pageContent.length - lastMatchIdx,
           skipped: false,
         });
       }
@@ -395,6 +429,12 @@ class PDFFindController {
 
   _calculateMatch(pageIndex) {
     let pageContent = this._pageContents[pageIndex];
+    let nextPageContent;
+    if (pageIndex + 1 < this._pageContents.length) {
+      nextPageContent = this._pageContents[pageIndex + 1];
+    } else {
+      nextPageContent = '';
+    }
     let query = this._query;
     const { caseSensitive, entireWord, phraseSearch, } = this._state;
 
@@ -405,13 +445,16 @@ class PDFFindController {
 
     if (!caseSensitive) {
       pageContent = pageContent.toLowerCase();
+      nextPageContent = nextPageContent.toLowerCase();
       query = query.toLowerCase();
     }
 
     if (phraseSearch) {
-      this._calculatePhraseMatch(query, pageIndex, pageContent, entireWord);
+      this._calculatePhraseMatch(query, pageIndex, pageContent, nextPageContent,
+        entireWord);
     } else {
-      this._calculateWordMatch(query, pageIndex, pageContent, entireWord);
+      this._calculateWordMatch(query, pageIndex, pageContent, nextPageContent,
+        entireWord);
     }
 
     // When `highlightAll` is set, ensure that the matches on previously
@@ -517,7 +560,17 @@ class PDFFindController {
           continue;
         }
         this._pendingFindMatches[i] = true;
-        this._extractTextPromises[i].then((pageIdx) => {
+
+        // wait on both promises
+        let nextPromise;
+        if (i + 1 <= numPages) {
+          nextPromise = this._extractTextPromises[i + 1];
+        } else {
+          nextPromise = Promise.resolve('');
+        }
+        const bothPromises = [this._extractTextPromises[i], nextPromise];
+        Promise.all(bothPromises).then((pageIndexes) => {
+          const pageIdx = pageIndexes[0];
           delete this._pendingFindMatches[pageIdx];
           this._calculateMatch(pageIdx);
         });

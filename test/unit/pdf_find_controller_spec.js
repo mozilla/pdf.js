@@ -211,4 +211,21 @@ describe('pdf_find_controller', function() {
       },
     }).then(done);
   });
+
+  it('performs a multi-page search', function (done) {
+    testSearch({
+      parameters: {
+        query: 'rep-resentations',
+        caseSensitive: false,
+        entireWord: false,
+        pageSearch: false,
+        findPrevious: false,
+      },
+      matchesPerPage: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      selectedMatch: {
+        pageIndex: 3,
+        matchIndex: 0,
+      },
+    }).then(done);
+  });
 });
