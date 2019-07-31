@@ -338,12 +338,13 @@ class PDFFindController {
   }
 
   _calculatePhraseMatch(query, pageIndex, pageContent, nextPageContent,
-                        entireWord) {
+                        entireWord, hasNextPage) {
     const matches = [];
     const queryLen = query.length;
 
     let matchIdx = -queryLen;
     let lastGoodMatch = -1;
+    let remainderLen = 0;
     while (queryLen > 0) { // should always be true
       matchIdx = pageContent.indexOf(query, matchIdx + queryLen);
       if (matchIdx === -1) {
@@ -358,23 +359,41 @@ class PDFFindController {
     // find matches partially on this page and partially on next page
     // last bit of the potential match on the first page
     let combinedContent = pageContent +
-        nextPageContent.substring(0, query.length);
+        nextPageContent.substring(0, queryLen);
     // can't do + query.length since it might be larger than the string
     // using lastGoodMatch since matchIdx is always -1 here
     let lastMatchIdx = combinedContent.indexOf(query,
-
-        lastGoodMatch + query.length);
+        lastGoodMatch + queryLen);
     if (lastMatchIdx !== -1 && lastMatchIdx < pageContent.length) {
       // if greater, match starts on second page, not first
       matches.push(lastMatchIdx);
+      remainderLen = (lastMatchIdx + queryLen) - pageContent.length;
     }
 
-    this._pageMatches[pageIndex] = matches;
+    // Prepare arrays for storing the matches without overwriting.
+    if (this._pageMatches[pageIndex] === undefined) {
+      this._pageMatchesLength[pageIndex] = [];
+      this._pageMatches[pageIndex] = [];
+    }
+    if (hasNextPage && this._pageMatches[pageIndex + 1] === undefined) {
+      this._pageMatchesLength[pageIndex + 1] = [];
+      this._pageMatches[pageIndex + 1] = [];
+    }
+
+    // set lengths due to remainder
+    const matchLengths = Array(matches.length).fill(queryLen);
+    this._pageMatches[pageIndex].concat(matches);
+    this._pageMatchesLength[pageIndex].concat(matchLengths);
+    if (hasNextPage && remainderLen > 0) {
+      this._pageMatches[pageIndex + 1].unshift(0);
+      this._pageMatchesLength[pageIndex + 1].unshift(remainderLen);
+    }
   }
 
   _calculateWordMatch(query, pageIndex, pageContent, nextPageContent,
-                      entireWord) {
+                      entireWord, hasNextPage) {
     const matchesWithLength = [];
+    let biggestRemainderLen = 0;
 
     // Divide the query into pieces and search for text in each piece.
     const queryArray = query.match(/\S+/g);
@@ -384,7 +403,7 @@ class PDFFindController {
 
       let matchIdx = -subqueryLen;
       let lastGoodMatch = -1;
-      while (true) {
+      while (subqueryLen > 0) {
         matchIdx = pageContent.indexOf(subquery, matchIdx + subqueryLen);
         if (matchIdx === -1) {
           break;
@@ -403,37 +422,60 @@ class PDFFindController {
       }
       // find matches partially on this page and partially on next page
       // last bit of the potential match on the first page
-      let combinedContent = pageContent +
-          nextPageContent.substring(0, subquery.length);
-      let lastMatchIdx = combinedContent.indexOf(subquery,
-          lastGoodMatch + subquery.length);
-      if (lastMatchIdx !== -1 && lastMatchIdx < pageContent.length) {
-        // if greater, match is on second page, not first
-        matchesWithLength.push({
-          match: lastMatchIdx,
-          matchLength: pageContent.length - lastMatchIdx,
-          skipped: false,
-        });
+      if (hasNextPage) {
+        let combinedContent = pageContent +
+            nextPageContent.substring(0, subqueryLen);
+        let lastMatchIdx = combinedContent.indexOf(subquery,
+            lastGoodMatch + subqueryLen);
+        if (lastMatchIdx !== -1 && lastMatchIdx < pageContent.length &&
+            (!entireWord ||
+                this._isEntireWord(combinedContent, lastMatchIdx,
+                    subqueryLen))) {
+          // if greater, match is on second page, not first
+          matchesWithLength.push({
+            match: lastMatchIdx,
+            matchLength: pageContent.length - lastMatchIdx,
+            skipped: false,
+          });
+          const remainderLen = (lastMatchIdx + subqueryLen) -
+              pageContent.length;
+          if (remainderLen > biggestRemainderLen) {
+            biggestRemainderLen = remainderLen;
+          }
+        }
       }
     }
 
-    // Prepare arrays for storing the matches.
-    this._pageMatchesLength[pageIndex] = [];
-    this._pageMatches[pageIndex] = [];
+    // Prepare arrays for storing the matches without overwriting.
+    if (this._pageMatches[pageIndex] === undefined) {
+      this._pageMatchesLength[pageIndex] = [];
+      this._pageMatches[pageIndex] = [];
+    }
+    if (hasNextPage && this._pageMatches[pageIndex + 1] === undefined) {
+      this._pageMatchesLength[pageIndex + 1] = [];
+      this._pageMatches[pageIndex + 1] = [];
+    }
 
     // Sort `matchesWithLength`, remove intersecting terms and put the result
     // into the two arrays.
     this._prepareMatches(matchesWithLength, this._pageMatches[pageIndex],
       this._pageMatchesLength[pageIndex]);
+    if (hasNextPage && biggestRemainderLen > 0) {
+      this._pageMatches[pageIndex + 1].unshift(0);
+      this._pageMatchesLength[pageIndex + 1].unshift(biggestRemainderLen);
+    }
   }
 
   _calculateMatch(pageIndex) {
     let pageContent = this._pageContents[pageIndex];
     let nextPageContent;
+    let hasNextPage;
     if (pageIndex + 1 < this._pageContents.length) {
       nextPageContent = this._pageContents[pageIndex + 1];
+      hasNextPage = true;
     } else {
       nextPageContent = '';
+      hasNextPage = false;
     }
     let query = this._query;
     const { caseSensitive, entireWord, phraseSearch, } = this._state;
@@ -451,10 +493,10 @@ class PDFFindController {
 
     if (phraseSearch) {
       this._calculatePhraseMatch(query, pageIndex, pageContent, nextPageContent,
-        entireWord);
+        entireWord, hasNextPage);
     } else {
       this._calculateWordMatch(query, pageIndex, pageContent, nextPageContent,
-        entireWord);
+        entireWord, hasNextPage);
     }
 
     // When `highlightAll` is set, ensure that the matches on previously
