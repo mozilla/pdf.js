@@ -696,7 +696,7 @@ class Parser {
         return new CCITTFaxStream(stream, maybeLength, params);
       }
       if (name === 'RunLengthDecode' || name === 'RL') {
-        xrefStreamStats[StreamType.RL] = true;
+        xrefStreamStats[StreamType.RLX] = true;
         return new RunLengthStream(stream, maybeLength);
       }
       if (name === 'JBIG2Decode') {
