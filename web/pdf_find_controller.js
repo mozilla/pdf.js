@@ -512,7 +512,7 @@ class PDFFindController {
     // Update the match count.
     const pageMatchesCount = this._pageMatches[pageIndex].length;
     this._matchesCountTotal += pageMatchesCount;
-    this._updateUIResultsCount();
+    this._updateUIResultsCount(); // always called for spec tests
   }
 
   _extractText() {
