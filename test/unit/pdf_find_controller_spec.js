@@ -100,7 +100,9 @@ describe('pdf_find_controller', function() {
 
       eventBus.on('updatefindmatchescount',
           function onUpdateFindMatchesCount(evt) {
-        if (pdfFindController.pageMatches.length !== totalPages) {
+        if (pdfFindController.pageMatches.length !== totalPages + 1) {
+          console.error('not returning for ' +
+              pdfFindController.pageMatches.length);
           return;
         }
         eventBus.off('updatefindmatchescount', onUpdateFindMatchesCount);
