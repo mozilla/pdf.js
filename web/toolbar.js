@@ -91,6 +91,7 @@ class Toolbar {
     this.pageScaleValue = DEFAULT_SCALE_VALUE;
     this.pageScale = DEFAULT_SCALE;
     this._updateUIState(true);
+    this.updateLoadingIndicatorState();
   }
 
   _bindListeners() {
