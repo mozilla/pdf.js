@@ -14,6 +14,7 @@
  */
 /* eslint no-var: error */
 
+import { AbortException } from '../../src/shared/util';
 import { PDFFetchStream } from '../../src/display/fetch_stream';
 
 describe('fetch_stream', function() {
@@ -72,7 +73,7 @@ describe('fetch_stream', function() {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // We shall be able to close full reader without any issue.
-      fullReader.cancel(new Error('Don\'t need full reader'));
+      fullReader.cancel(new AbortException('Don\'t need fullReader.'));
       fullReaderCancelled = true;
     });
 
