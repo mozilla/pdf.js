@@ -567,14 +567,13 @@ class ChunkedStreamManager {
     return Math.floor((end - 1) / this.chunkSize) + 1;
   }
 
-  abort() {
+  abort(reason) {
     this.aborted = true;
     if (this.pdfNetworkStream) {
-      this.pdfNetworkStream.cancelAllRequests('abort');
+      this.pdfNetworkStream.cancelAllRequests(reason);
     }
     for (const requestId in this.promisesByRequest) {
-      this.promisesByRequest[requestId].reject(
-        new Error('Request was aborted'));
+      this.promisesByRequest[requestId].reject(reason);
     }
   }
 }

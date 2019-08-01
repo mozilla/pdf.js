@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability } from '../../src/shared/util';
+import { AbortException, createPromiseCapability } from '../../src/shared/util';
 import { LoopbackPort } from '../../src/display/api';
 import { MessageHandler } from '../../src/shared/message_handler';
 
@@ -124,7 +124,7 @@ describe('message_handler', function () {
         return sleep(10);
       }).then(() => {
         expect(log).toEqual('01p2');
-        return reader.cancel();
+        return reader.cancel(new AbortException('reader cancelled.'));
       }).then(() => {
         expect(log).toEqual('01p2c4');
         done();
