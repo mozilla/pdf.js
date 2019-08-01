@@ -16,10 +16,11 @@
 /* eslint no-var: error */
 
 import {
-  assert, createPromiseCapability, getVerbosityLevel, info, InvalidPDFException,
-  isArrayBuffer, isSameOrigin, MissingPDFException, NativeImageDecoding,
-  PasswordException, setVerbosityLevel, shadow, stringToBytes,
-  UnexpectedResponseException, UnknownErrorException, unreachable, URL, warn
+  AbortException, assert, createPromiseCapability, getVerbosityLevel, info,
+  InvalidPDFException, isArrayBuffer, isSameOrigin, MissingPDFException,
+  NativeImageDecoding, PasswordException, setVerbosityLevel, shadow,
+  stringToBytes, UnexpectedResponseException, UnknownErrorException,
+  unreachable, URL, warn
 } from '../shared/util';
 import {
   deprecated, DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
@@ -1768,7 +1769,8 @@ class WorkerTransport {
     Promise.all(waitOn).then(() => {
       this.fontLoader.clear();
       if (this._networkStream) {
-        this._networkStream.cancelAllRequests();
+        this._networkStream.cancelAllRequests(
+          new AbortException('Worker was terminated.'));
       }
 
       if (this.messageHandler) {
