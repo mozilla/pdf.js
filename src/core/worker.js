@@ -14,10 +14,10 @@
  */
 
 import {
-  arrayByteLength, arraysToBytes, createPromiseCapability, getVerbosityLevel,
-  info, InvalidPDFException, MissingPDFException, PasswordException,
-  setVerbosityLevel, UnexpectedResponseException, UnknownErrorException,
-  UNSUPPORTED_FEATURES, VerbosityLevel, warn
+  AbortException, arrayByteLength, arraysToBytes, createPromiseCapability,
+  getVerbosityLevel, info, InvalidPDFException, MissingPDFException,
+  PasswordException, setVerbosityLevel, UnexpectedResponseException,
+  UnknownErrorException, UNSUPPORTED_FEATURES, VerbosityLevel, warn
 } from '../shared/util';
 import { clearPrimitiveCaches, Ref } from './primitives';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
@@ -274,8 +274,8 @@ var WorkerMessageHandler = {
         cancelXHRs = null;
       });
 
-      cancelXHRs = function () {
-        pdfStream.cancelAllRequests('abort');
+      cancelXHRs = function(reason) {
+        pdfStream.cancelAllRequests(reason);
       };
 
       return pdfManagerCapability.promise;
@@ -349,7 +349,7 @@ var WorkerMessageHandler = {
         if (terminated) {
           // We were in a process of setting up the manager, but it got
           // terminated in the middle.
-          newPdfManager.terminate();
+          newPdfManager.terminate(new AbortException('Worker was terminated.'));
           throw new Error('Worker was terminated');
         }
         pdfManager = newPdfManager;
@@ -579,11 +579,11 @@ var WorkerMessageHandler = {
     handler.on('Terminate', function wphTerminate(data) {
       terminated = true;
       if (pdfManager) {
-        pdfManager.terminate();
+        pdfManager.terminate(new AbortException('Worker was terminated.'));
         pdfManager = null;
       }
       if (cancelXHRs) {
-        cancelXHRs();
+        cancelXHRs(new AbortException('Worker was terminated.'));
       }
       clearPrimitiveCaches();
 
