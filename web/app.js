@@ -1141,8 +1141,10 @@ let PDFViewerApplication = {
 
       if (typeof PDFJSDev !== 'undefined' &&
           PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        let versionId = String(info.PDFFormatVersion).slice(-1) | 0;
-        let generatorId = 0;
+        // Telemetry labels must be C++ variable friendly.
+        const versionId = `v${info.PDFFormatVersion.replace('.', '_')}`;
+        let generatorId = 'other';
+        // Keep these in sync with mozilla central's Histograms.json.
         const KNOWN_GENERATORS = [
           'acrobat distiller', 'acrobat pdfwriter', 'adobe livecycle',
           'adobe pdf library', 'adobe photoshop', 'ghostscript', 'tcpdf',
@@ -1155,7 +1157,7 @@ let PDFViewerApplication = {
             if (!generator.includes(s)) {
               return false;
             }
-            generatorId = i + 1;
+            generatorId = s.replace(/[ .\-]/g, '_');
             return true;
           }.bind(null, info.Producer.toLowerCase()));
         }
