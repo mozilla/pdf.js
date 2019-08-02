@@ -1046,8 +1046,8 @@ var XRef = (function XRefClosure() {
     // prepare the XRef cache
     this.cache = [];
     this.stats = {
-      streamTypes: [],
-      fontTypes: [],
+      streamTypes: Object.create(null),
+      fontTypes: Object.create(null),
     };
   }
 
