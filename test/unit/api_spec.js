@@ -926,7 +926,7 @@ describe('api', function() {
     it('gets document stats', function(done) {
       var promise = doc.getStats();
       promise.then(function (stats) {
-        expect(stats).toEqual({ streamTypes: [], fontTypes: [], });
+        expect(stats).toEqual({ streamTypes: {}, fontTypes: {}, });
         done();
       }).catch(done.fail);
     });
@@ -1293,9 +1293,9 @@ describe('api', function() {
       var promise = page.getOperatorList().then(function () {
         return pdfDocument.getStats();
       });
-      var expectedStreamTypes = [];
+      var expectedStreamTypes = {};
       expectedStreamTypes[StreamType.FLATE] = true;
-      var expectedFontTypes = [];
+      var expectedFontTypes = {};
       expectedFontTypes[FontType.TYPE1] = true;
       expectedFontTypes[FontType.CIDFONTTYPE2] = true;
 
