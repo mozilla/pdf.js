@@ -14,7 +14,8 @@
  */
 
 import {
-  Annotation, AnnotationBorderStyle, AnnotationFactory, MarkupAnnotation
+  Annotation, AnnotationBorderStyle, AnnotationFactory, getQuadPoints,
+  MarkupAnnotation
 } from '../../src/core/annotation';
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
@@ -115,6 +116,69 @@ describe('annotation', function() {
         expect(data.annotationType).toBeUndefined();
         done();
       }, done.fail);
+    });
+  });
+
+  describe('getQuadPoints', function() {
+    let dict, rect;
+
+    beforeEach(function(done) {
+      dict = new Dict();
+      rect = [];
+      done();
+    });
+
+    afterEach(function() {
+      dict = null;
+      rect = null;
+    });
+
+    it('should ignore missing quadpoints', function() {
+      expect(getQuadPoints(dict, rect)).toEqual(null);
+    });
+
+    it('should ignore non-array values', function() {
+      dict.set('QuadPoints', 'foo');
+      expect(getQuadPoints(dict, rect)).toEqual(null);
+    });
+
+    it('should ignore arrays where the length is not a multiple of eight',
+        function() {
+      dict.set('QuadPoints', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      expect(getQuadPoints(dict, rect)).toEqual(null);
+    });
+
+    it('should ignore quadpoints if one coordinate lies outside the rectangle',
+        function() {
+      rect = [10, 10, 20, 20];
+      const inputs = [
+        [11, 11, 12, 12, 9, 13, 14, 14], // Smaller than lower x coordinate.
+        [11, 11, 12, 12, 13, 9, 14, 14], // Smaller than lower y coordinate.
+        [11, 11, 12, 12, 21, 13, 14, 14], // Larger than upper x coordinate.
+        [11, 11, 12, 12, 13, 21, 14, 14], // Larger than upper y coordinate.
+      ];
+      for (const input of inputs) {
+        dict.set('QuadPoints', input);
+        expect(getQuadPoints(dict, rect)).toEqual(null);
+      }
+    });
+
+    it('should process valid quadpoints arrays', function() {
+      rect = [10, 10, 20, 20];
+      dict.set('QuadPoints', [
+        11, 11, 12, 12, 13, 13, 14, 14,
+        15, 15, 16, 16, 17, 17, 18, 18,
+      ]);
+      expect(getQuadPoints(dict, rect)).toEqual([
+        [
+          { x: 11, y: 11, }, { x: 12, y: 12, },
+          { x: 13, y: 13, }, { x: 14, y: 14, },
+        ],
+        [
+          { x: 15, y: 15, }, { x: 16, y: 16, },
+          { x: 17, y: 17, }, { x: 18, y: 18, },
+        ],
+      ]);
     });
   });
 
@@ -1001,6 +1065,49 @@ describe('annotation', function() {
         done();
       }, done.fail);
     });
+
+    it('should not set quadpoints if not defined', function(done) {
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+
+      const annotationRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
+
+      AnnotationFactory.create(xref, annotationRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('Rect', [10, 10, 20, 20]);
+      annotationDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const annotationRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
+
+      AnnotationFactory.create(xref, annotationRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
+        ]);
+        done();
+      }, done.fail);
+    });
   });
 
   describe('WidgetAnnotation', function() {
@@ -1857,6 +1964,186 @@ describe('annotation', function() {
         ]);
         expect(data.inkLists[1]).toEqual([
           { x: 3, y: 3, }, { x: 4, y: 5, }
+        ]);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('HightlightAnnotation', function() {
+    it('should not set quadpoints if not defined', function(done) {
+      const highlightDict = new Dict();
+      highlightDict.set('Type', Name.get('Annot'));
+      highlightDict.set('Subtype', Name.get('Highlight'));
+
+      const highlightRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: highlightRef, data: highlightDict, }
+      ]);
+
+      AnnotationFactory.create(xref, highlightRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const highlightDict = new Dict();
+      highlightDict.set('Type', Name.get('Annot'));
+      highlightDict.set('Subtype', Name.get('Highlight'));
+      highlightDict.set('Rect', [10, 10, 20, 20]);
+      highlightDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const highlightRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: highlightRef, data: highlightDict, }
+      ]);
+
+      AnnotationFactory.create(xref, highlightRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
+        ]);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('UnderlineAnnotation', function() {
+    it('should not set quadpoints if not defined', function(done) {
+      const underlineDict = new Dict();
+      underlineDict.set('Type', Name.get('Annot'));
+      underlineDict.set('Subtype', Name.get('Underline'));
+
+      const underlineRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: underlineRef, data: underlineDict, }
+      ]);
+
+      AnnotationFactory.create(xref, underlineRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.UNDERLINE);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const underlineDict = new Dict();
+      underlineDict.set('Type', Name.get('Annot'));
+      underlineDict.set('Subtype', Name.get('Underline'));
+      underlineDict.set('Rect', [10, 10, 20, 20]);
+      underlineDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const underlineRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: underlineRef, data: underlineDict, }
+      ]);
+
+      AnnotationFactory.create(xref, underlineRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.UNDERLINE);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
+        ]);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('SquigglyAnnotation', function() {
+    it('should not set quadpoints if not defined', function(done) {
+      const squigglyDict = new Dict();
+      squigglyDict.set('Type', Name.get('Annot'));
+      squigglyDict.set('Subtype', Name.get('Squiggly'));
+
+      const squigglyRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: squigglyRef, data: squigglyDict, }
+      ]);
+
+      AnnotationFactory.create(xref, squigglyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.SQUIGGLY);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const squigglyDict = new Dict();
+      squigglyDict.set('Type', Name.get('Annot'));
+      squigglyDict.set('Subtype', Name.get('Squiggly'));
+      squigglyDict.set('Rect', [10, 10, 20, 20]);
+      squigglyDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const squigglyRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: squigglyRef, data: squigglyDict, }
+      ]);
+
+      AnnotationFactory.create(xref, squigglyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.SQUIGGLY);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
+        ]);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('StrikeOutAnnotation', function() {
+    it('should not set quadpoints if not defined', function(done) {
+      const strikeOutDict = new Dict();
+      strikeOutDict.set('Type', Name.get('Annot'));
+      strikeOutDict.set('Subtype', Name.get('StrikeOut'));
+
+      const strikeOutRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: strikeOutRef, data: strikeOutDict, }
+      ]);
+
+      AnnotationFactory.create(xref, strikeOutRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.STRIKEOUT);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const strikeOutDict = new Dict();
+      strikeOutDict.set('Type', Name.get('Annot'));
+      strikeOutDict.set('Subtype', Name.get('StrikeOut'));
+      strikeOutDict.set('Rect', [10, 10, 20, 20]);
+      strikeOutDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const strikeOutRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: strikeOutRef, data: strikeOutDict, }
+      ]);
+
+      AnnotationFactory.create(xref, strikeOutRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.STRIKEOUT);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
         ]);
         done();
       }, done.fail);
