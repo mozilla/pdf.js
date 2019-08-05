@@ -2888,6 +2888,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue11045",
+       "file": "pdfs/issue11045.pdf",
+       "md5": "101d4cb649cc006e0f2b14923e8d97d6",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue4890",
        "file": "pdfs/issue4890.pdf",
        "md5": "1666feb4cd26318c2bdbea6a175dce87",
