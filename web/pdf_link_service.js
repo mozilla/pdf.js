@@ -344,12 +344,14 @@ class PDFLinkService {
     if (!pageRef) {
       return;
     }
-    let refStr = pageRef.num + ' ' + pageRef.gen + ' R';
+    const refStr = pageRef.gen === 0 ? `${pageRef.num}R` :
+                                       `${pageRef.num}R${pageRef.gen}`;
     this._pagesRefCache[refStr] = pageNum;
   }
 
   _cachedPageNumber(pageRef) {
-    let refStr = pageRef.num + ' ' + pageRef.gen + ' R';
+    const refStr = pageRef.gen === 0 ? `${pageRef.num}R` :
+                                       `${pageRef.num}R${pageRef.gen}`;
     return (this._pagesRefCache && this._pagesRefCache[refStr]) || null;
   }
 
