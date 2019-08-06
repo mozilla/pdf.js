@@ -1742,6 +1742,7 @@ function webViewerPageRendered(evt) {
       PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     PDFViewerApplication.externalServices.reportTelemetry({
       type: 'pageInfo',
+      timestamp: evt.timestamp,
     });
     // It is a good time to report stream and font types.
     PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
