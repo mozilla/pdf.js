@@ -263,8 +263,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           groupOptions.isolated = (group.get('I') || false);
           groupOptions.knockout = (group.get('K') || false);
           if (group.has('CS')) {
-            colorSpace = ColorSpace.parse(group.get('CS'), this.xref, resources,
-                                          this.pdfFunctionFactory);
+            colorSpace = group.get('CS');
+            if (colorSpace) {
+              colorSpace = ColorSpace.parse(colorSpace, this.xref, resources,
+                                            this.pdfFunctionFactory);
+            } else {
+              warn('buildFormXObject - invalid/non-existent Group /CS entry: ' +
+                   group.getRaw('CS'));
+            }
           }
         }
 
