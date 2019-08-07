@@ -15,8 +15,9 @@
 /* eslint no-var: error */
 
 import {
-  assert, bytesToString, FormatError, info, isArrayBuffer, isBool, isNum,
-  isSpace, isString, OPS, shadow, stringToBytes, stringToPDFString, Util, warn
+  assert, bytesToString, FormatError, info, isArrayBuffer, isArrayEqual, isBool,
+  isNum, isSpace, isString, OPS, shadow, stringToBytes, stringToPDFString, Util,
+  warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream, Ref } from './primitives';
@@ -127,8 +128,8 @@ class Page {
     // "The crop, bleed, trim, and art boxes should not ordinarily
     // extend beyond the boundaries of the media box. If they do, they are
     // effectively reduced to their intersection with the media box."
-    const mediaBox = this.mediaBox, cropBox = this.cropBox;
-    if (mediaBox === cropBox) {
+    const { cropBox, mediaBox, } = this;
+    if (cropBox === mediaBox || isArrayEqual(cropBox, mediaBox)) {
       return shadow(this, 'view', mediaBox);
     }
 
