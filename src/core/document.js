@@ -95,24 +95,28 @@ class Page {
                   this._getInheritableProperty('Resources') || Dict.empty);
   }
 
-  get mediaBox() {
-    const mediaBox = this._getInheritableProperty('MediaBox',
-                                                  /* getArray = */ true);
-    // Reset invalid media box to letter size.
-    if (!Array.isArray(mediaBox) || mediaBox.length !== 4) {
-      return shadow(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
+  _getBoundingBox(name) {
+    const box = this._getInheritableProperty(name, /* getArray = */ true);
+
+    if (Array.isArray(box) && box.length === 4) {
+      if ((box[2] - box[0]) !== 0 && (box[3] - box[1]) !== 0) {
+        return box;
+      }
+      warn(`Empty /${name} entry.`);
     }
-    return shadow(this, 'mediaBox', mediaBox);
+    return null;
+  }
+
+  get mediaBox() {
+    // Reset invalid media box to letter size.
+    return shadow(this, 'mediaBox',
+                  this._getBoundingBox('MediaBox') || LETTER_SIZE_MEDIABOX);
   }
 
   get cropBox() {
-    const cropBox = this._getInheritableProperty('CropBox',
-                                                 /* getArray = */ true);
     // Reset invalid crop box to media box.
-    if (!Array.isArray(cropBox) || cropBox.length !== 4) {
-      return shadow(this, 'cropBox', this.mediaBox);
-    }
-    return shadow(this, 'cropBox', cropBox);
+    return shadow(this, 'cropBox',
+                  this._getBoundingBox('CropBox') || this.mediaBox);
   }
 
   get userUnit() {
@@ -129,12 +133,18 @@ class Page {
     // extend beyond the boundaries of the media box. If they do, they are
     // effectively reduced to their intersection with the media box."
     const { cropBox, mediaBox, } = this;
+    let view;
     if (cropBox === mediaBox || isArrayEqual(cropBox, mediaBox)) {
-      return shadow(this, 'view', mediaBox);
+      view = mediaBox;
+    } else {
+      const box = Util.intersect(cropBox, mediaBox, /* skipEmpty = */ true);
+      if (box) {
+        view = box;
+      } else {
+        warn('Empty /CropBox and /MediaBox intersection.');
+      }
     }
-
-    const intersection = Util.intersect(cropBox, mediaBox);
-    return shadow(this, 'view', intersection || mediaBox);
+    return shadow(this, 'view', view || mediaBox);
   }
 
   get rotate() {
