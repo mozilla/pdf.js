@@ -3480,6 +3480,13 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue11052",
+       "file": "pdfs/issue11052.pdf",
+       "md5": "67c20e5bec51183c9283baa0cd49593f",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "bug1108753",
        "file": "pdfs/bug1108753.pdf",
        "md5": "a7aaf92d55b4602afb0ca3d75198b56b",
