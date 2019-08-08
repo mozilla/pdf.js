@@ -1,6 +1,7 @@
 *.pdf
 *.error
 
+!boundingBox_invalid.pdf
 !tracemonkey.pdf
 !TrueType_without_cmap.pdf
 !franz.pdf
