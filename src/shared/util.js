@@ -748,7 +748,7 @@ var Util = (function UtilClosure() {
   // Returns a rectangle [x1, y1, x2, y2] corresponding to the
   // intersection of rect1 and rect2. If no intersection, returns 'false'
   // The rectangle coordinates of rect1, rect2 should be [x1, y1, x2, y2]
-  Util.intersect = function Util_intersect(rect1, rect2) {
+  Util.intersect = function Util_intersect(rect1, rect2, skipEmpty = false) {
     function compare(a, b) {
       return a - b;
     }
@@ -768,7 +768,7 @@ var Util = (function UtilClosure() {
       result[0] = orderedX[1];
       result[2] = orderedX[2];
     } else {
-      return false;
+      return null;
     }
 
     // Y: first and second points belong to different rectangles?
@@ -778,9 +778,13 @@ var Util = (function UtilClosure() {
       result[1] = orderedY[1];
       result[3] = orderedY[2];
     } else {
-      return false;
+      return null;
     }
 
+    if (skipEmpty &&
+        ((result[2] - result[0]) === 0 || (result[3] - result[1]) === 0)) {
+      return null;
+    }
     return result;
   };
 
