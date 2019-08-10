@@ -1654,10 +1654,6 @@ function webViewerInitialized() {
     }
   }, true);
 
-  appConfig.sidebar.toggleButton.addEventListener('click', function() {
-    PDFViewerApplication.pdfSidebar.toggle();
-  });
-
   try {
     webViewerOpenFileViaURL(file);
   } catch (reason) {
