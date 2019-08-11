@@ -137,8 +137,8 @@ class Page {
     if (cropBox === mediaBox || isArrayEqual(cropBox, mediaBox)) {
       view = mediaBox;
     } else {
-      const box = Util.intersect(cropBox, mediaBox, /* skipEmpty = */ true);
-      if (box) {
+      const box = Util.intersect(cropBox, mediaBox);
+      if (box && ((box[2] - box[0]) !== 0 && (box[3] - box[1]) !== 0)) {
         view = box;
       } else {
         warn('Empty /CropBox and /MediaBox intersection.');
