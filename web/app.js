@@ -236,11 +236,6 @@ let PDFViewerApplication = {
     if ('verbosity' in hashParams) {
       AppOptions.set('verbosity', hashParams['verbosity'] | 0);
     }
-    if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) &&
-        hashParams['disablebcmaps'] === 'true') {
-      AppOptions.set('cMapUrl', '../external/cmaps/');
-      AppOptions.set('cMapPacked', false);
-    }
     if ('textlayer' in hashParams) {
       switch (hashParams['textlayer']) {
         case 'off':
@@ -1653,10 +1648,6 @@ function webViewerInitialized() {
       PDFViewerApplication.eventBus.dispatch('resize', { source: this, });
     }
   }, true);
-
-  appConfig.sidebar.toggleButton.addEventListener('click', function() {
-    PDFViewerApplication.pdfSidebar.toggle();
-  });
 
   try {
     webViewerOpenFileViaURL(file);
