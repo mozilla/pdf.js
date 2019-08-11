@@ -1630,8 +1630,41 @@ function reverseIfRtl(chars) {
   return s;
 }
 
+function normalizeUnicode(str, normalizedUnicodesMap) {
+  if (str.length === 1) {
+    if (normalizedUnicodesMap[str] !== undefined) {
+      return normalizedUnicodesMap[str];
+    }
+    return str;
+  }
+
+  const unicodeBuf = [];
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const unicode = str[i];
+    const normalized = normalizedUnicodesMap[unicode];
+    if (normalized === undefined) {
+      // If a toUnicode entry contains two same unified Unicode
+      if (unicodeBuf.includes(unicode) === false) {
+        unicodeBuf.push(unicode);
+      }
+      continue;
+    }
+    // If a not unified and *simple* Unicode
+    if (normalized.length === 1) {
+      // If a toUnicode entry contains two same not unified Unicode
+      if (str.includes(normalized) === true ||
+        unicodeBuf.includes(normalized) === true) {
+        continue;
+      }
+    }
+    unicodeBuf.push(normalized);
+  }
+  return unicodeBuf.join('') || str;
+}
+
 exports.mapSpecialUnicodeValues = mapSpecialUnicodeValues;
 exports.reverseIfRtl = reverseIfRtl;
 exports.getUnicodeRangeFor = getUnicodeRangeFor;
 exports.getNormalizedUnicodes = getNormalizedUnicodes;
 exports.getUnicodeForGlyph = getUnicodeForGlyph;
+exports.normalizeUnicode = normalizeUnicode;

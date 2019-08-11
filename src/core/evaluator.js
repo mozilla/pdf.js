@@ -31,7 +31,7 @@ import {
   WinAnsiEncoding, ZapfDingbatsEncoding
 } from './encodings';
 import {
-  getNormalizedUnicodes, getUnicodeForGlyph, reverseIfRtl
+  getNormalizedUnicodes, getUnicodeForGlyph, normalizeUnicode, reverseIfRtl
 } from './unicode';
 import {
   getSerifFonts, getStdFontMap, getSymbolsFonts
@@ -1415,9 +1415,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           var glyphUnicode = glyph.unicode;
           var NormalizedUnicodes = getNormalizedUnicodes();
-          if (NormalizedUnicodes[glyphUnicode] !== undefined) {
-            glyphUnicode = NormalizedUnicodes[glyphUnicode];
-          }
+          glyphUnicode = normalizeUnicode(glyphUnicode, NormalizedUnicodes);
           glyphUnicode = reverseIfRtl(glyphUnicode);
 
           var charSpacing = textState.charSpacing;

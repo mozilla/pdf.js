@@ -4232,5 +4232,12 @@
       "rounds": 1,
       "link": false,
       "type": "eq"
+    },
+    { "id": "issue11066",
+      "file": "pdfs/issue11066.pdf",
+      "md5": "ee5b3dc2e80da466f1268f95b6e002a6",
+      "rounds": 1,
+      "link": false,
+      "type": "text"
     }
 ]
