@@ -1630,8 +1630,31 @@ function reverseIfRtl(chars) {
   return s;
 }
 
+function keepUnifiedIdeographs(str, normalizedUnicodesMap) {
+  // a character id map to a unicode. replace it if it is not unified
+  if (str.length === 1) {
+    if (normalizedUnicodesMap[str]) {
+      return normalizedUnicodesMap[str]
+    } else {
+      return str
+    }
+    // a character id map to multiple unicode. remove not unified unicodes
+  } else {
+    var outStr = ''
+    for (var i = 0; i < str.length; i++) {
+      var char = str[i]
+      // if a char is not exist in the map, then it is a normal unicode
+      if (!normalizedUnicodesMap[char]) {
+        outStr = outStr + char
+      }
+    }
+    return outStr
+  }
+}
+
 exports.mapSpecialUnicodeValues = mapSpecialUnicodeValues;
 exports.reverseIfRtl = reverseIfRtl;
 exports.getUnicodeRangeFor = getUnicodeRangeFor;
 exports.getNormalizedUnicodes = getNormalizedUnicodes;
 exports.getUnicodeForGlyph = getUnicodeForGlyph;
+exports.keepUnifiedIdeographs = keepUnifiedIdeographs;
