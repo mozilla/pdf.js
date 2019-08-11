@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 import './compatibility';
 import { ReadableStream } from './streams_polyfill';
@@ -319,14 +320,14 @@ function getVerbosityLevel() {
 // end users.
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
-    console.log('Info: ' + msg);
+    console.log(`Info: ${msg}`);
   }
 }
 
 // Non-fatal warnings.
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
-    console.log('Warning: ' + msg);
+    console.log(`Warning: ${msg}`);
   }
 }
 
@@ -342,8 +343,9 @@ function assert(cond, msg) {
 
 // Checks if URLs have the same origin. For non-HTTP based URLs, returns false.
 function isSameOrigin(baseUrl, otherUrl) {
+  let base;
   try {
-    var base = new URL(baseUrl);
+    base = new URL(baseUrl);
     if (!base.origin || base.origin === 'null') {
       return false; // non-HTTP url
     }
@@ -351,7 +353,7 @@ function isSameOrigin(baseUrl, otherUrl) {
     return false;
   }
 
-  var other = new URL(otherUrl, base);
+  const other = new URL(otherUrl, base);
   return base.origin === other.origin;
 }
 
@@ -384,7 +386,7 @@ function createValidAbsoluteUrl(url, baseUrl) {
     return null;
   }
   try {
-    var absoluteUrl = baseUrl ? new URL(url, baseUrl) : new URL(url);
+    const absoluteUrl = baseUrl ? new URL(url, baseUrl) : new URL(url);
     if (_isValidProtocol(absoluteUrl)) {
       return absoluteUrl;
     }
@@ -400,7 +402,7 @@ function shadow(obj, prop, value) {
   return value;
 }
 
-var PasswordException = (function PasswordExceptionClosure() {
+const PasswordException = (function PasswordExceptionClosure() {
   function PasswordException(msg, code) {
     this.name = 'PasswordException';
     this.message = msg;
@@ -413,7 +415,7 @@ var PasswordException = (function PasswordExceptionClosure() {
   return PasswordException;
 })();
 
-var UnknownErrorException = (function UnknownErrorExceptionClosure() {
+const UnknownErrorException = (function UnknownErrorExceptionClosure() {
   function UnknownErrorException(msg, details) {
     this.name = 'UnknownErrorException';
     this.message = msg;
@@ -426,7 +428,7 @@ var UnknownErrorException = (function UnknownErrorExceptionClosure() {
   return UnknownErrorException;
 })();
 
-var InvalidPDFException = (function InvalidPDFExceptionClosure() {
+const InvalidPDFException = (function InvalidPDFExceptionClosure() {
   function InvalidPDFException(msg) {
     this.name = 'InvalidPDFException';
     this.message = msg;
@@ -438,7 +440,7 @@ var InvalidPDFException = (function InvalidPDFExceptionClosure() {
   return InvalidPDFException;
 })();
 
-var MissingPDFException = (function MissingPDFExceptionClosure() {
+const MissingPDFException = (function MissingPDFExceptionClosure() {
   function MissingPDFException(msg) {
     this.name = 'MissingPDFException';
     this.message = msg;
@@ -450,7 +452,7 @@ var MissingPDFException = (function MissingPDFExceptionClosure() {
   return MissingPDFException;
 })();
 
-var UnexpectedResponseException =
+const UnexpectedResponseException =
     (function UnexpectedResponseExceptionClosure() {
   function UnexpectedResponseException(msg, status) {
     this.name = 'UnexpectedResponseException';
@@ -467,7 +469,7 @@ var UnexpectedResponseException =
 /**
  * Error caused during parsing PDF data.
  */
-let FormatError = (function FormatErrorClosure() {
+const FormatError = (function FormatErrorClosure() {
   function FormatError(msg) {
     this.message = msg;
   }
@@ -482,7 +484,7 @@ let FormatError = (function FormatErrorClosure() {
 /**
  * Error used to indicate task cancellation.
  */
-let AbortException = (function AbortExceptionClosure() {
+const AbortException = (function AbortExceptionClosure() {
   function AbortException(msg) {
     this.name = 'AbortException';
     this.message = msg;
@@ -494,7 +496,7 @@ let AbortException = (function AbortExceptionClosure() {
   return AbortException;
 })();
 
-var NullCharactersRegExp = /\x00/g;
+const NullCharactersRegExp = /\x00/g;
 
 function removeNullCharacters(str) {
   if (typeof str !== 'string') {
@@ -507,15 +509,15 @@ function removeNullCharacters(str) {
 function bytesToString(bytes) {
   assert(bytes !== null && typeof bytes === 'object' &&
          bytes.length !== undefined, 'Invalid argument for bytesToString');
-  var length = bytes.length;
-  var MAX_ARGUMENT_COUNT = 8192;
+  const length = bytes.length;
+  const MAX_ARGUMENT_COUNT = 8192;
   if (length < MAX_ARGUMENT_COUNT) {
     return String.fromCharCode.apply(null, bytes);
   }
-  var strBuf = [];
-  for (var i = 0; i < length; i += MAX_ARGUMENT_COUNT) {
-    var chunkEnd = Math.min(i + MAX_ARGUMENT_COUNT, length);
-    var chunk = bytes.subarray(i, chunkEnd);
+  const strBuf = [];
+  for (let i = 0; i < length; i += MAX_ARGUMENT_COUNT) {
+    const chunkEnd = Math.min(i + MAX_ARGUMENT_COUNT, length);
+    const chunk = bytes.subarray(i, chunkEnd);
     strBuf.push(String.fromCharCode.apply(null, chunk));
   }
   return strBuf.join('');
@@ -523,9 +525,9 @@ function bytesToString(bytes) {
 
 function stringToBytes(str) {
   assert(typeof str === 'string', 'Invalid argument for stringToBytes');
-  var length = str.length;
-  var bytes = new Uint8Array(length);
-  for (var i = 0; i < length; ++i) {
+  const length = str.length;
+  const bytes = new Uint8Array(length);
+  for (let i = 0; i < length; ++i) {
     bytes[i] = str.charCodeAt(i) & 0xFF;
   }
   return bytes;
@@ -550,22 +552,19 @@ function arrayByteLength(arr) {
  * @returns {Uint8Array}
  */
 function arraysToBytes(arr) {
+  const length = arr.length;
   // Shortcut: if first and only item is Uint8Array, return it.
-  if (arr.length === 1 && (arr[0] instanceof Uint8Array)) {
+  if (length === 1 && (arr[0] instanceof Uint8Array)) {
     return arr[0];
   }
-  var resultLength = 0;
-  var i, ii = arr.length;
-  var item, itemLength;
-  for (i = 0; i < ii; i++) {
-    item = arr[i];
-    itemLength = arrayByteLength(item);
-    resultLength += itemLength;
+  let resultLength = 0;
+  for (let i = 0; i < length; i++) {
+    resultLength += arrayByteLength(arr[i]);
   }
-  var pos = 0;
-  var data = new Uint8Array(resultLength);
-  for (i = 0; i < ii; i++) {
-    item = arr[i];
+  let pos = 0;
+  const data = new Uint8Array(resultLength);
+  for (let i = 0; i < length; i++) {
+    let item = arr[i];
     if (!(item instanceof Uint8Array)) {
       if (typeof item === 'string') {
         item = stringToBytes(item);
@@ -573,7 +572,7 @@ function arraysToBytes(arr) {
         item = new Uint8Array(item);
       }
     }
-    itemLength = item.byteLength;
+    const itemLength = item.byteLength;
     data.set(item, pos);
     pos += itemLength;
   }
@@ -611,9 +610,9 @@ function readUint32(data, offset) {
 // Lazy test the endianness of the platform
 // NOTE: This will be 'true' for simulated TypedArrays
 function isLittleEndian() {
-  var buffer8 = new Uint8Array(4);
+  const buffer8 = new Uint8Array(4);
   buffer8[0] = 1;
-  var view32 = new Uint32Array(buffer8.buffer, 0, 1);
+  const view32 = new Uint32Array(buffer8.buffer, 0, 1);
   return (view32[0] === 1);
 }
 
@@ -792,16 +791,16 @@ const PDFStringTranslateTable = [
 ];
 
 function stringToPDFString(str) {
-  var i, n = str.length, strBuf = [];
+  const length = str.length, strBuf = [];
   if (str[0] === '\xFE' && str[1] === '\xFF') {
     // UTF16BE BOM
-    for (i = 2; i < n; i += 2) {
+    for (let i = 2; i < length; i += 2) {
       strBuf.push(String.fromCharCode(
         (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1)));
     }
   } else {
-    for (i = 0; i < n; ++i) {
-      var code = PDFStringTranslateTable[str.charCodeAt(i)];
+    for (let i = 0; i < length; ++i) {
+      const code = PDFStringTranslateTable[str.charCodeAt(i)];
       strBuf.push(code ? String.fromCharCode(code) : str.charAt(i));
     }
   }
@@ -817,7 +816,7 @@ function utf8StringToString(str) {
 }
 
 function isEmptyObj(obj) {
-  for (var key in obj) {
+  for (let key in obj) {
     return false;
   }
   return true;
@@ -891,9 +890,9 @@ function createPromiseCapability() {
   return capability;
 }
 
-var createObjectURL = (function createObjectURLClosure() {
+const createObjectURL = (function createObjectURLClosure() {
   // Blob/createObjectURL is not available, falling back to data schema.
-  var digits =
+  const digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
   return function createObjectURL(data, contentType, forceDataSchema = false) {
@@ -902,14 +901,14 @@ var createObjectURL = (function createObjectURLClosure() {
       return URL.createObjectURL(blob);
     }
 
-    var buffer = 'data:' + contentType + ';base64,';
-    for (var i = 0, ii = data.length; i < ii; i += 3) {
-      var b1 = data[i] & 0xFF;
-      var b2 = data[i + 1] & 0xFF;
-      var b3 = data[i + 2] & 0xFF;
-      var d1 = b1 >> 2, d2 = ((b1 & 3) << 4) | (b2 >> 4);
-      var d3 = i + 1 < ii ? ((b2 & 0xF) << 2) | (b3 >> 6) : 64;
-      var d4 = i + 2 < ii ? (b3 & 0x3F) : 64;
+    let buffer = `data:${contentType};base64,`;
+    for (let i = 0, ii = data.length; i < ii; i += 3) {
+      const b1 = data[i] & 0xFF;
+      const b2 = data[i + 1] & 0xFF;
+      const b3 = data[i + 2] & 0xFF;
+      const d1 = b1 >> 2, d2 = ((b1 & 3) << 4) | (b2 >> 4);
+      const d3 = i + 1 < ii ? ((b2 & 0xF) << 2) | (b3 >> 6) : 64;
+      const d4 = i + 2 < ii ? (b3 & 0x3F) : 64;
       buffer += digits[d1] + digits[d2] + digits[d3] + digits[d4];
     }
     return buffer;
