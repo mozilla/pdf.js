@@ -19,8 +19,7 @@ import {
   PredictorStream, RunLengthStream
 } from './stream';
 import {
-  assert, bytesToString, FormatError, info, isNum, isSpace, isString,
-  StreamType, warn
+  assert, bytesToString, FormatError, info, isNum, isSpace, StreamType, warn
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
@@ -158,7 +157,7 @@ class Parser {
       return num;
     }
 
-    if (isString(buf1)) { // string
+    if (typeof buf1 === 'string') {
       let str = buf1;
       if (cipherTransform) {
         str = cipherTransform.decryptString(str);
