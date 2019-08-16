@@ -19,8 +19,7 @@ import {
   PredictorStream, RunLengthStream
 } from './stream';
 import {
-  assert, bytesToString, FormatError, info, isNum, isSpace, isString,
-  StreamType, warn
+  assert, bytesToString, FormatError, info, isNum, isSpace, StreamType, warn
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
@@ -90,7 +89,7 @@ class Parser {
     }
   }
 
-  getObj(cipherTransform) {
+  getObj(cipherTransform = null) {
     const buf1 = this.buf1;
     this.shift();
 
@@ -148,22 +147,20 @@ class Parser {
     }
 
     if (Number.isInteger(buf1)) { // indirect reference or integer
-      const num = buf1;
       if (Number.isInteger(this.buf1) && isCmd(this.buf2, 'R')) {
-        const ref = Ref.get(num, this.buf1);
+        const ref = Ref.get(buf1, this.buf1);
         this.shift();
         this.shift();
         return ref;
       }
-      return num;
+      return buf1;
     }
 
-    if (isString(buf1)) { // string
-      let str = buf1;
+    if (typeof buf1 === 'string') {
       if (cipherTransform) {
-        str = cipherTransform.decryptString(str);
+        return cipherTransform.decryptString(buf1);
       }
-      return str;
+      return buf1;
     }
 
     // simple object
