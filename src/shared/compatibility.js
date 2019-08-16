@@ -227,10 +227,10 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
 // Provides support for String.codePointAt in legacy browsers.
 // Support: IE11.
 (function checkStringCodePointAt() {
-  if (String.codePointAt) {
+  if (String.prototype.codePointAt) {
     return;
   }
-  String.codePointAt = require('core-js/fn/string/code-point-at');
+  require('core-js/fn/string/code-point-at');
 })();
 
 // Provides support for String.fromCodePoint in legacy browsers.
