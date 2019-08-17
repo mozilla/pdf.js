@@ -1043,8 +1043,7 @@ var XRef = (function XRefClosure() {
     this.pdfManager = pdfManager;
     this.entries = [];
     this.xrefstms = Object.create(null);
-    // prepare the XRef cache
-    this.cache = [];
+    this._cacheMap = new Map(); // Prepare the XRef cache.
     this.stats = {
       streamTypes: Object.create(null),
       fontTypes: Object.create(null),
@@ -1636,9 +1635,10 @@ var XRef = (function XRefClosure() {
       if (!(ref instanceof Ref)) {
         throw new Error('ref object is not a reference');
       }
-      var num = ref.num;
-      if (num in this.cache) {
-        var cacheEntry = this.cache[num];
+      const num = ref.num;
+
+      if (this._cacheMap.has(num)) {
+        const cacheEntry = this._cacheMap.get(num);
         // In documents with Object Streams, it's possible that cached `Dict`s
         // have not been assigned an `objId` yet (see e.g. issue3115r.pdf).
         if (cacheEntry instanceof Dict && !cacheEntry.objId) {
@@ -1646,12 +1646,11 @@ var XRef = (function XRefClosure() {
         }
         return cacheEntry;
       }
+      let xrefEntry = this.getEntry(num);
 
-      var xrefEntry = this.getEntry(num);
-
-      // the referenced entry can be free
-      if (xrefEntry === null) {
-        return (this.cache[num] = null);
+      if (xrefEntry === null) { // The referenced entry can be free.
+        this._cacheMap.set(num, xrefEntry);
+        return xrefEntry;
       }
 
       if (xrefEntry.uncompressed) {
@@ -1709,7 +1708,7 @@ var XRef = (function XRefClosure() {
         xrefEntry = parser.getObj();
       }
       if (!isStream(xrefEntry)) {
-        this.cache[num] = xrefEntry;
+        this._cacheMap.set(num, xrefEntry);
       }
       return xrefEntry;
     },
@@ -1757,7 +1756,7 @@ var XRef = (function XRefClosure() {
         num = nums[i];
         var entry = this.entries[num];
         if (entry && entry.offset === tableOffset && entry.gen === i) {
-          this.cache[num] = entries[i];
+          this._cacheMap.set(num, entries[i]);
         }
       }
       xrefEntry = entries[xrefEntry.gen];
