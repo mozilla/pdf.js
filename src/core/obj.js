@@ -1626,14 +1626,14 @@ var XRef = (function XRefClosure() {
     },
 
     fetchIfRef: function XRef_fetchIfRef(obj, suppressEncryption) {
-      if (!isRef(obj)) {
-        return obj;
+      if (obj instanceof Ref) {
+        return this.fetch(obj, suppressEncryption);
       }
-      return this.fetch(obj, suppressEncryption);
+      return obj;
     },
 
     fetch: function XRef_fetch(ref, suppressEncryption) {
-      if (!isRef(ref)) {
+      if (!(ref instanceof Ref)) {
         throw new Error('ref object is not a reference');
       }
       var num = ref.num;
@@ -1768,10 +1768,10 @@ var XRef = (function XRefClosure() {
     },
 
     async fetchIfRefAsync(obj, suppressEncryption) {
-      if (!isRef(obj)) {
-        return obj;
+      if (obj instanceof Ref) {
+        return this.fetchAsync(obj, suppressEncryption);
       }
-      return this.fetchAsync(obj, suppressEncryption);
+      return obj;
     },
 
     async fetchAsync(ref, suppressEncryption) {
