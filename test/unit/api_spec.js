@@ -1281,11 +1281,6 @@ describe('api', function() {
 
     it('gets operatorList, from corrupt PDF file (issue 8702), ' +
        'with/without `stopAtErrors` set', function(done) {
-      if (isNodeJS()) {
-        pending(
-          'Fails with "Unhandled promise rejection: ..." errors in Node.js.');
-      }
-
       const loadingTask1 = getDocument(buildGetDocumentParams('issue8702.pdf', {
         stopAtErrors: false, // The default value.
       }));
