@@ -501,7 +501,9 @@ var WorkerMessageHandler = {
                        { featureId: UNSUPPORTED_FEATURES.unknown, });
 
           sink.error(reason);
-          throw reason;
+
+          // TODO: Should `reason` be re-thrown here (currently that casues
+          //       "Uncaught exception: ..." messages in the console)?
         });
       });
     }, this);
@@ -538,7 +540,9 @@ var WorkerMessageHandler = {
             return; // ignoring errors from the terminated thread
           }
           sink.error(reason);
-          throw reason;
+
+          // TODO: Should `reason` be re-thrown here (currently that casues
+          //       "Uncaught exception: ..." messages in the console)?
         });
       });
     });
