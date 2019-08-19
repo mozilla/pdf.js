@@ -90,8 +90,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       fontAscent = (1 + style.descent) * fontAscent;
     }
 
-    var left;
-    var top;
+    let left, top;
     if (angle === 0) {
       left = tx[4];
       top = tx[5] - fontAscent;
@@ -103,8 +102,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
     styleBuf[3] = top;
     styleBuf[5] = fontHeight;
     styleBuf[7] = style.fontFamily;
-    textDivProperties.style = styleBuf.join('');
-    textDiv.setAttribute('style', textDivProperties.style);
+    const styleStr = styleBuf.join('');
+
+    if (task._enhanceTextSelection) {
+      textDivProperties.style = styleStr;
+    }
+    textDiv.setAttribute('style', styleStr);
 
     textDiv.textContent = geom.str;
     // `fontName` is only used by the FontInspector, and we only use `dataset`
