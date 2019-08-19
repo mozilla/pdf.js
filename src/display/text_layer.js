@@ -628,49 +628,48 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
 
       for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
-        var div = this._textDivs[i];
-        var divProperties = this._textDivProperties.get(div);
+        const div = this._textDivs[i];
+        const divProps = this._textDivProperties.get(div);
 
-        if (divProperties.isWhitespace) {
+        if (divProps.isWhitespace) {
           continue;
         }
         if (expandDivs) {
-          var transform = '', padding = '';
+          let transform = '', padding = '';
 
-          if (divProperties.scale !== 1) {
-            transform = 'scaleX(' + divProperties.scale + ')';
+          if (divProps.scale !== 1) {
+            transform = `scaleX(${divProps.scale})`;
           }
-          if (divProperties.angle !== 0) {
-            transform = 'rotate(' + divProperties.angle + 'deg) ' + transform;
+          if (divProps.angle !== 0) {
+            transform = `rotate(${divProps.angle}deg) ${transform}`;
           }
-          if (divProperties.paddingLeft !== 0) {
-            padding += ' padding-left: ' +
-              (divProperties.paddingLeft / divProperties.scale) + 'px;';
-            transform += ' translateX(' +
-              (-divProperties.paddingLeft / divProperties.scale) + 'px)';
+          if (divProps.paddingLeft !== 0) {
+            padding +=
+              ` padding-left: ${divProps.paddingLeft / divProps.scale}px;`;
+            transform +=
+              ` translateX(${-divProps.paddingLeft / divProps.scale}px)`;
           }
-          if (divProperties.paddingTop !== 0) {
-            padding += ' padding-top: ' + divProperties.paddingTop + 'px;';
-            transform += ' translateY(' + (-divProperties.paddingTop) + 'px)';
+          if (divProps.paddingTop !== 0) {
+            padding += ` padding-top: ${divProps.paddingTop}px;`;
+            transform += ` translateY(${-divProps.paddingTop}px)`;
           }
-          if (divProperties.paddingRight !== 0) {
-            padding += ' padding-right: ' +
-              (divProperties.paddingRight / divProperties.scale) + 'px;';
+          if (divProps.paddingRight !== 0) {
+            padding +=
+              ` padding-right: ${divProps.paddingRight / divProps.scale}px;`;
           }
-          if (divProperties.paddingBottom !== 0) {
-            padding += ' padding-bottom: ' +
-              divProperties.paddingBottom + 'px;';
+          if (divProps.paddingBottom !== 0) {
+            padding += ` padding-bottom: ${divProps.paddingBottom}px;`;
           }
 
           if (padding !== '') {
-            div.setAttribute('style', divProperties.style + padding);
+            div.setAttribute('style', divProps.style + padding);
           }
           if (transform !== '') {
             div.style.transform = transform;
           }
         } else {
           div.style.padding = 0;
-          div.style.transform = divProperties.originalTransform || '';
+          div.style.transform = divProps.originalTransform || '';
         }
       }
     },
