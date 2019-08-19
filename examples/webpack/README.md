@@ -17,3 +17,11 @@ http://localhost:8888/examples/webpack/index.html.
 Refer to the `main.js` and `webpack.config.js` files for the source code.
 Note that PDF.js packaging requires packaging of the main application and
 the worker code, and the `workerSrc` path shall be set to the latter file.
+
+## Worker loading
+
+If you are getting the `Setting up fake worker` warning, make sure you are importing `pdfjs-dist/webpack` which is the zero-configuration method for Webpack users:
+
+    import pdfjsLib from 'pdfjs-dist/webpack';
+
+For a full working example refer to [this repository](https://github.com/yurydelendik/pdfjs-react).
