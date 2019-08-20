@@ -300,6 +300,7 @@ class LinkAnnotationElement extends AnnotationElement {
       target: (data.newWindow ?
                LinkTarget.BLANK : linkService.externalLinkTarget),
       rel: linkService.externalLinkRel,
+      enabled: linkService.externalLinkEnabled,
     });
 
     if (!data.url) {

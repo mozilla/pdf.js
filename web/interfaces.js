@@ -43,6 +43,16 @@ class IPDFLinkService {
   set rotation(value) {}
 
   /**
+   * @returns {boolean}
+   */
+  get externalLinkEnabled() {}
+
+  /**
+   * @param {boolean} value
+   */
+  set externalLinkEnabled(value) {}
+
+  /**
    * @param dest - The PDF destination object.
    */
   navigateTo(dest) {}

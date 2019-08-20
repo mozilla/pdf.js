@@ -344,6 +344,8 @@ const LinkTargetStringMap = [
  *   The default value is `LinkTarget.NONE`.
  * @property {string} rel - (optional) The link relationship.
  *   The default value is `DEFAULT_LINK_REL`.
+ * @property {boolean} enabled - (optional) Whether the link should be enabled.
+ *   The default value is true.
  */
 
 /**
@@ -351,8 +353,17 @@ const LinkTargetStringMap = [
  * @param {HTMLLinkElement} link - The link element.
  * @param {ExternalLinkParameters} params
  */
-function addLinkAttributes(link, { url, target, rel, } = {}) {
-  link.href = link.title = (url ? removeNullCharacters(url) : '');
+function addLinkAttributes(link, { url, target, rel, enabled = true, } = {}) {
+  const urlNullRemoved = (url ? removeNullCharacters(url) : '');
+  if (enabled) {
+    link.href = link.title = urlNullRemoved;
+  } else {
+    link.href = '';
+    link.title = `Disabled: ${urlNullRemoved}`;
+    link.onclick = () => {
+      return false;
+    };
+  }
 
   if (url) {
     const LinkTargetValues = Object.values(LinkTarget);
