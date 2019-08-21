@@ -38,6 +38,7 @@ import { PDFDataTransportStream } from './transport_stream';
 import { WebGLContext } from './webgl';
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
+const RENDERING_CANCELLED_TIMEOUT = 100; // ms
 
 let isWorkerDisabled = false;
 let fallbackWorkerSrc;
@@ -1003,20 +1004,26 @@ class PDFPageProxy {
     const stats = this._stats;
     stats.time('Overall');
 
+    const renderingIntent = (intent === 'print' ? 'print' : 'display');
     // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
     this.pendingCleanup = false;
-
-    const renderingIntent = (intent === 'print' ? 'print' : 'display');
-    const canvasFactoryInstance = canvasFactory || new DOMCanvasFactory();
-    const webGLContext = new WebGLContext({
-      enable: enableWebGL,
-    });
 
     if (!this.intentStates[renderingIntent]) {
       this.intentStates[renderingIntent] = Object.create(null);
     }
     const intentState = this.intentStates[renderingIntent];
+
+    // Ensure that a pending `streamReader` cancel timeout is always aborted.
+    if (intentState.streamReaderCancelTimeout) {
+      clearTimeout(intentState.streamReaderCancelTimeout);
+      intentState.streamReaderCancelTimeout = null;
+    }
+
+    const canvasFactoryInstance = canvasFactory || new DOMCanvasFactory();
+    const webGLContext = new WebGLContext({
+      enable: enableWebGL,
+    });
 
     // If there's no displayReadyCapability yet, then the operatorList
     // was never requested before. Make the request and create the promise.
@@ -1270,6 +1277,10 @@ class PDFPageProxy {
    */
   _startRenderPage(transparency, intent) {
     const intentState = this.intentStates[intent];
+    if (!intentState) {
+      return; // Rendering was cancelled.
+    }
+    this._stats.timeEnd('Page Request');
     // TODO Refactor RenderPageRequest to separate rendering
     // and operator list logic
     if (intentState.displayReadyCapability) {
@@ -1365,19 +1376,41 @@ class PDFPageProxy {
     if (!intentState.streamReader) {
       return;
     }
-    if (!force && intentState.renderTasks.length !== 0) {
-      // Ensure that an Error occuring in *only* one `InternalRenderTask`, e.g.
+    if (!force) {
+      // Ensure that an Error occurring in *only* one `InternalRenderTask`, e.g.
       // multiple render() calls on the same canvas, won't break all rendering.
-      return;
-    }
-    if (reason instanceof RenderingCancelledException) {
-      // Aborting parsing on the worker-thread when rendering is cancelled will
-      // break subsequent rendering operations. TODO: Remove this restriction.
-      return;
+      if (intentState.renderTasks.length !== 0) {
+        return;
+      }
+      // Don't immediately abort parsing on the worker-thread when rendering is
+      // cancelled, since that will unnecessarily delay re-rendering when (for
+      // partially parsed pages) e.g. zooming/rotation occurs in the viewer.
+      if (reason instanceof RenderingCancelledException) {
+        intentState.streamReaderCancelTimeout = setTimeout(() => {
+          this._abortOperatorList({ intentState, reason, force: true, });
+          intentState.streamReaderCancelTimeout = null;
+        }, RENDERING_CANCELLED_TIMEOUT);
+        return;
+      }
     }
     intentState.streamReader.cancel(
       new AbortException(reason && reason.message));
     intentState.streamReader = null;
+
+    if (this._transport.destroyed) {
+      return; // Ignore any pending requests if the worker was terminated.
+    }
+    // Remove the current `intentState`, since a cancelled `getOperatorList`
+    // call on the worker-thread cannot be re-started...
+    Object.keys(this.intentStates).some((intent) => {
+      if (this.intentStates[intent] === intentState) {
+        delete this.intentStates[intent];
+        return true;
+      }
+      return false;
+    });
+    // ... and force clean-up to ensure that any old state is always removed.
+    this.cleanup();
   }
 
   /**
@@ -2036,7 +2069,6 @@ class WorkerTransport {
       }
 
       const page = this.pageCache[data.pageIndex];
-      page._stats.timeEnd('Page Request');
       page._startRenderPage(data.transparency, data.intent);
     });
 
