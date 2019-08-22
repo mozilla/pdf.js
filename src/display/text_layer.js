@@ -537,14 +537,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       if (textDivProperties.isWhitespace) {
         return;
       }
-
-      let fontSize = textDiv.style.fontSize;
-      let fontFamily = textDiv.style.fontFamily;
+      const { fontSize, fontFamily, } = textDiv.style;
 
       // Only build font string and set to context if different from last.
       if (fontSize !== this._layoutTextLastFontSize ||
           fontFamily !== this._layoutTextLastFontFamily) {
-        this._layoutTextCtx.font = fontSize + ' ' + fontFamily;
+        this._layoutTextCtx.font = `${fontSize} ${fontFamily}`;
         this._layoutTextLastFontSize = fontSize;
         this._layoutTextLastFontFamily = fontFamily;
       }
