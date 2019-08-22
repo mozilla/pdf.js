@@ -644,20 +644,24 @@ var renderTextLayer = (function renderTextLayerClosure() {
             transform = `rotate(${divProps.angle}deg) ${transform}`;
           }
           if (divProps.paddingLeft !== 0) {
-            padding +=
-              ` padding-left: ${divProps.paddingLeft / divProps.scale}px;`;
+            if (divProps.paddingLeft > 0) {
+              padding +=
+                ` padding-left: ${divProps.paddingLeft / divProps.scale}px;`;
+            }
             transform +=
               ` translateX(${-divProps.paddingLeft / divProps.scale}px)`;
           }
           if (divProps.paddingTop !== 0) {
-            padding += ` padding-top: ${divProps.paddingTop}px;`;
+            if (divProps.paddingTop > 0) {
+              padding += ` padding-top: ${divProps.paddingTop}px;`;
+            }
             transform += ` translateY(${-divProps.paddingTop}px)`;
           }
-          if (divProps.paddingRight !== 0) {
+          if (divProps.paddingRight > 0) {
             padding +=
               ` padding-right: ${divProps.paddingRight / divProps.scale}px;`;
           }
-          if (divProps.paddingBottom !== 0) {
+          if (divProps.paddingBottom > 0) {
             padding += ` padding-bottom: ${divProps.paddingBottom}px;`;
           }
 
