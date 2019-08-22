@@ -560,7 +560,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
         transform = `rotate(${textDivProperties.angle}deg) ${transform}`;
       }
       if (transform.length > 0) {
-        textDivProperties.originalTransform = transform;
+        if (this._enhanceTextSelection) {
+          textDivProperties.originalTransform = transform;
+        }
         textDiv.style.transform = transform;
       }
       this._textDivProperties.set(textDiv, textDivProperties);
@@ -668,8 +670,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
             div.style.transform = transform;
           }
         } else {
-          div.style.padding = 0;
-          div.style.transform = divProps.originalTransform || '';
+          div.style.padding = null;
+          div.style.transform = divProps.originalTransform;
         }
       }
     },
