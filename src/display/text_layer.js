@@ -626,6 +626,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         expand(this);
         this._bounds = null;
       }
+      const transformBuf = [];
 
       for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
         const div = this._textDivs[i];
@@ -635,27 +636,28 @@ var renderTextLayer = (function renderTextLayerClosure() {
           continue;
         }
         if (expandDivs) {
-          let transform = '', padding = '';
+          transformBuf.length = 0;
+          let padding = '';
 
-          if (divProps.scale !== 1) {
-            transform = `scaleX(${divProps.scale})`;
-          }
           if (divProps.angle !== 0) {
-            transform = `rotate(${divProps.angle}deg) ${transform}`;
+            transformBuf.push(`rotate(${divProps.angle}deg)`);
+          }
+          if (divProps.scale !== 1) {
+            transformBuf.push(`scaleX(${divProps.scale})`);
           }
           if (divProps.paddingLeft !== 0) {
             if (divProps.paddingLeft > 0) {
               padding +=
                 ` padding-left: ${divProps.paddingLeft / divProps.scale}px;`;
             }
-            transform +=
-              ` translateX(${-divProps.paddingLeft / divProps.scale}px)`;
+            transformBuf.push(
+              `translateX(${-divProps.paddingLeft / divProps.scale}px)`);
           }
           if (divProps.paddingTop !== 0) {
             if (divProps.paddingTop > 0) {
               padding += ` padding-top: ${divProps.paddingTop}px;`;
             }
-            transform += ` translateY(${-divProps.paddingTop}px)`;
+            transformBuf.push(`translateY(${-divProps.paddingTop}px)`);
           }
           if (divProps.paddingRight > 0) {
             padding +=
@@ -668,8 +670,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
           if (padding !== '') {
             div.setAttribute('style', divProps.style + padding);
           }
-          if (transform !== '') {
-            div.style.transform = transform;
+          if (transformBuf.length) {
+            div.style.transform = transformBuf.join(' ');
           }
         } else {
           div.style.padding = null;
