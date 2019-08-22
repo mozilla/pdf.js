@@ -35,10 +35,11 @@ class PDFLinkService {
    * @param {PDFLinkServiceOptions} options
    */
   constructor({ eventBus, externalLinkTarget = null,
-                externalLinkRel = null, } = {}) {
+                externalLinkRel = null, externalLinkEnabled = true, } = {}) {
     this.eventBus = eventBus || getGlobalEventBus();
     this.externalLinkTarget = externalLinkTarget;
     this.externalLinkRel = externalLinkRel;
+    this.externalLinkEnabled = externalLinkEnabled;
 
     this.baseUrl = null;
     this.pdfDocument = null;
@@ -423,6 +424,7 @@ class SimpleLinkService {
   constructor() {
     this.externalLinkTarget = null;
     this.externalLinkRel = null;
+    this.externalLinkEnabled = true;
   }
 
   /**
