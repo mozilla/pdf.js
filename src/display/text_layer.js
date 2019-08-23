@@ -57,7 +57,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
     // Initialize all used properties to keep the caches monomorphic.
     var textDiv = document.createElement('span');
     var textDivProperties = {
-      style: null,
       angle: 0,
       canvasWidth: 0,
       isWhitespace: false,
@@ -102,12 +101,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     styleBuf[3] = top;
     styleBuf[5] = fontHeight;
     styleBuf[7] = style.fontFamily;
-    const styleStr = styleBuf.join('');
-
-    if (task._enhanceTextSelection) {
-      textDivProperties.style = styleStr;
-    }
-    textDiv.setAttribute('style', styleStr);
+    textDiv.setAttribute('style', styleBuf.join(''));
 
     textDiv.textContent = geom.str;
     // `fontName` is only used by the FontInspector, and we only use `dataset`
@@ -626,7 +620,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
         expand(this);
         this._bounds = null;
       }
-      const transformBuf = [];
+      const NO_PADDING = '0 0 0 0';
+      const transformBuf = [], paddingBuf = [];
 
       for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
         const div = this._textDivs[i];
@@ -637,7 +632,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         }
         if (expandDivs) {
           transformBuf.length = 0;
-          let padding = '';
+          paddingBuf.length = 0;
 
           if (divProps.angle !== 0) {
             transformBuf.push(`rotate(${divProps.angle}deg)`);
@@ -645,26 +640,33 @@ var renderTextLayer = (function renderTextLayerClosure() {
           if (divProps.scale !== 1) {
             transformBuf.push(`scaleX(${divProps.scale})`);
           }
-          if (divProps.paddingLeft > 0) {
-            padding +=
-              ` padding-left: ${divProps.paddingLeft / divProps.scale}px;`;
-            transformBuf.push(
-              `translateX(${-divProps.paddingLeft / divProps.scale}px)`);
-          }
           if (divProps.paddingTop > 0) {
-            padding += ` padding-top: ${divProps.paddingTop}px;`;
+            paddingBuf.push(`${divProps.paddingTop}px`);
             transformBuf.push(`translateY(${-divProps.paddingTop}px)`);
+          } else {
+            paddingBuf.push(0);
           }
           if (divProps.paddingRight > 0) {
-            padding +=
-              ` padding-right: ${divProps.paddingRight / divProps.scale}px;`;
+            paddingBuf.push(`${divProps.paddingRight / divProps.scale}px`);
+          } else {
+            paddingBuf.push(0);
           }
           if (divProps.paddingBottom > 0) {
-            padding += ` padding-bottom: ${divProps.paddingBottom}px;`;
+            paddingBuf.push(`${divProps.paddingBottom}px`);
+          } else {
+            paddingBuf.push(0);
+          }
+          if (divProps.paddingLeft > 0) {
+            paddingBuf.push(`${divProps.paddingLeft / divProps.scale}px`);
+            transformBuf.push(
+              `translateX(${-divProps.paddingLeft / divProps.scale}px)`);
+          } else {
+            paddingBuf.push(0);
           }
 
-          if (padding !== '') {
-            div.setAttribute('style', divProps.style + padding);
+          const padding = paddingBuf.join(' ');
+          if (padding !== NO_PADDING) {
+            div.style.padding = padding;
           }
           if (transformBuf.length) {
             div.style.transform = transformBuf.join(' ');
