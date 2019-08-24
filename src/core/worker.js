@@ -466,10 +466,10 @@ var WorkerMessageHandler = {
       });
     });
 
-    handler.on('RenderPageRequest', function wphSetupRenderPage(data) {
+    handler.on('GetOperatorList', function wphSetupRenderPage(data, sink) {
       var pageIndex = data.pageIndex;
       pdfManager.getPage(pageIndex).then(function(page) {
-        var task = new WorkerTask('RenderPageRequest: page ' + pageIndex);
+        var task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
         startWorkerTask(task);
 
         // NOTE: Keep this condition in sync with the `info` helper function.
@@ -478,55 +478,32 @@ var WorkerMessageHandler = {
         // Pre compile the pdf page and fetch the fonts/images.
         page.getOperatorList({
           handler,
+          sink,
           task,
           intent: data.intent,
           renderInteractiveForms: data.renderInteractiveForms,
-        }).then(function(operatorList) {
+        }).then(function(operatorListInfo) {
           finishWorkerTask(task);
 
           if (start) {
             info(`page=${pageIndex + 1} - getOperatorList: time=` +
-                 `${Date.now() - start}ms, len=${operatorList.totalLength}`);
+                 `${Date.now() - start}ms, len=${operatorListInfo.length}`);
           }
-        }, function(e) {
+          sink.close();
+        }, function(reason) {
           finishWorkerTask(task);
           if (task.terminated) {
             return; // ignoring errors from the terminated thread
           }
-
           // For compatibility with older behavior, generating unknown
           // unsupported feature notification on errors.
           handler.send('UnsupportedFeature',
                        { featureId: UNSUPPORTED_FEATURES.unknown, });
 
-          var minimumStackMessage =
-            'worker.js: while trying to getPage() and getOperatorList()';
+          sink.error(reason);
 
-          var wrappedException;
-
-          // Turn the error into an obj that can be serialized
-          if (typeof e === 'string') {
-            wrappedException = {
-              message: e,
-              stack: minimumStackMessage,
-            };
-          } else if (typeof e === 'object') {
-            wrappedException = {
-              message: e.message || e.toString(),
-              stack: e.stack || minimumStackMessage,
-            };
-          } else {
-            wrappedException = {
-              message: 'Unknown exception type: ' + (typeof e),
-              stack: minimumStackMessage,
-            };
-          }
-
-          handler.send('PageError', {
-            pageIndex,
-            error: wrappedException,
-            intent: data.intent,
-          });
+          // TODO: Should `reason` be re-thrown here (currently that casues
+          //       "Uncaught exception: ..." messages in the console)?
         });
       });
     }, this);
@@ -563,7 +540,9 @@ var WorkerMessageHandler = {
             return; // ignoring errors from the terminated thread
           }
           sink.error(reason);
-          throw reason;
+
+          // TODO: Should `reason` be re-thrown here (currently that casues
+          //       "Uncaught exception: ..." messages in the console)?
         });
       });
     });
