@@ -692,18 +692,15 @@ describe('api', function() {
       }).catch(done.fail);
     });
     it('gets attachments', function(done) {
-      if (isNodeJS()) { // The PDF file used is a linked test-case.
-        pending('TODO: Use a non-linked test-case.');
-      }
-      var loadingTask = getDocument(buildGetDocumentParams('bug766138.pdf'));
+      var loadingTask = getDocument(buildGetDocumentParams('attachment.pdf'));
       var promise = loadingTask.promise.then(function (pdfDoc) {
         return pdfDoc.getAttachments();
       });
       promise.then(function (data) {
-        var attachment = data['Press Quality.joboptions'];
-        expect(attachment.filename).toEqual('Press Quality.joboptions');
-        expect(attachment.content instanceof Uint8Array).toBeTruthy();
-        expect(attachment.content.length).toEqual(30098);
+        var attachment = data['foo.txt'];
+        expect(attachment.filename).toEqual('foo.txt');
+        expect(attachment.content).toEqual(
+          new Uint8Array([98, 97, 114, 32, 98, 97, 122, 32, 10]));
 
         loadingTask.destroy().then(done);
       }).catch(done.fail);
