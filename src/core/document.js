@@ -195,7 +195,7 @@ class Page {
     });
   }
 
-  getOperatorList({ handler, task, intent, renderInteractiveForms, }) {
+  getOperatorList({ handler, sink, task, intent, renderInteractiveForms, }) {
     const contentStreamPromise = this.pdfManager.ensure(this,
                                                         'getContentStream');
     const resourcesPromise = this.loadResources([
@@ -220,7 +220,7 @@ class Page {
 
     const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
     const pageListPromise = dataPromises.then(([contentStream]) => {
-      const opList = new OperatorList(intent, handler, this.pageIndex);
+      const opList = new OperatorList(intent, sink, this.pageIndex);
 
       handler.send('StartRenderPage', {
         transparency: partialEvaluator.hasBlendModes(this.resources),
@@ -244,7 +244,7 @@ class Page {
         function([pageOpList, annotations]) {
       if (annotations.length === 0) {
         pageOpList.flush(true);
-        return pageOpList;
+        return { length: pageOpList.totalLength, };
       }
 
       // Collect the operator list promises for the annotations. Each promise
@@ -264,7 +264,7 @@ class Page {
         }
         pageOpList.addOp(OPS.endAnnotations, []);
         pageOpList.flush(true);
-        return pageOpList;
+        return { length: pageOpList.totalLength, };
       });
     });
   }

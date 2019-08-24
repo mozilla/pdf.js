@@ -541,11 +541,11 @@ var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 1000;
   var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
-  function OperatorList(intent, messageHandler, pageIndex) {
-    this.messageHandler = messageHandler;
+  function OperatorList(intent, streamSink, pageIndex) {
+    this._streamSink = streamSink;
     this.fnArray = [];
     this.argsArray = [];
-    if (messageHandler && intent !== 'oplist') {
+    if (streamSink && intent !== 'oplist') {
       this.optimizer = new QueueOptimizer(this);
     } else {
       this.optimizer = new NullOptimizer(this);
@@ -555,11 +555,16 @@ var OperatorList = (function OperatorListClosure() {
     this.pageIndex = pageIndex;
     this.intent = intent;
     this.weight = 0;
+    this._resolved = streamSink ? null : Promise.resolve();
   }
 
   OperatorList.prototype = {
     get length() {
       return this.argsArray.length;
+    },
+
+    get ready() {
+      return this._resolved || this._streamSink.ready;
     },
 
     /**
@@ -573,7 +578,7 @@ var OperatorList = (function OperatorListClosure() {
     addOp(fn, args) {
       this.optimizer.push(fn, args);
       this.weight++;
-      if (this.messageHandler) {
+      if (this._streamSink) {
         if (this.weight >= CHUNK_SIZE) {
           this.flush();
         } else if (this.weight >= CHUNK_SIZE_ABOUT &&
@@ -642,7 +647,7 @@ var OperatorList = (function OperatorListClosure() {
       const length = this.length;
       this._totalLength += length;
 
-      this.messageHandler.send('RenderPageChunk', {
+      this._streamSink.enqueue({
         operatorList: {
           fnArray: this.fnArray,
           argsArray: this.argsArray,
@@ -651,7 +656,7 @@ var OperatorList = (function OperatorListClosure() {
         },
         pageIndex: this.pageIndex,
         intent: this.intent,
-      }, this._transfers);
+      }, 1, this._transfers);
 
       this.dependencies = Object.create(null);
       this.fnArray.length = 0;
