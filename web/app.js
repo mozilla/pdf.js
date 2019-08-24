@@ -1310,7 +1310,7 @@ let PDFViewerApplication = {
     }
   },
 
-  afterPrint: function pdfViewSetupAfterPrint() {
+  afterPrint() {
     if (this.printService) {
       this.printService.destroy();
       this.printService = null;
