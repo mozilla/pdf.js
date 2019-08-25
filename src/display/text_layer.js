@@ -541,12 +541,14 @@ var renderTextLayer = (function renderTextLayerClosure() {
         this._layoutTextLastFontFamily = fontFamily;
       }
 
-      let width = this._layoutTextCtx.measureText(textDiv.textContent).width;
-
       let transform = '';
-      if (textDivProperties.canvasWidth !== 0 && width > 0) {
-        textDivProperties.scale = textDivProperties.canvasWidth / width;
-        transform = `scaleX(${textDivProperties.scale})`;
+      if (textDivProperties.canvasWidth !== 0) {
+        // Only measure the width for multi-char text divs, see `appendText`.
+        const { width, } = this._layoutTextCtx.measureText(textDiv.textContent);
+        if (width > 0) {
+          textDivProperties.scale = textDivProperties.canvasWidth / width;
+          transform = `scaleX(${textDivProperties.scale})`;
+        }
       }
       if (textDivProperties.angle !== 0) {
         transform = `rotate(${textDivProperties.angle}deg) ${transform}`;
