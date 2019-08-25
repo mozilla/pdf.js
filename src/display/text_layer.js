@@ -636,11 +636,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
           transformBuf.length = 0;
           paddingBuf.length = 0;
 
-          if (divProps.angle !== 0) {
-            transformBuf.push(`rotate(${divProps.angle}deg)`);
-          }
-          if (divProps.scale !== 1) {
-            transformBuf.push(`scaleX(${divProps.scale})`);
+          if (divProps.originalTransform) {
+            transformBuf.push(divProps.originalTransform);
           }
           if (divProps.paddingTop > 0) {
             paddingBuf.push(`${divProps.paddingTop}px`);
