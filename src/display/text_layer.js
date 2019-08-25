@@ -541,12 +541,14 @@ var renderTextLayer = (function renderTextLayerClosure() {
         this._layoutTextLastFontFamily = fontFamily;
       }
 
-      let width = this._layoutTextCtx.measureText(textDiv.textContent).width;
-
       let transform = '';
-      if (textDivProperties.canvasWidth !== 0 && width > 0) {
-        textDivProperties.scale = textDivProperties.canvasWidth / width;
-        transform = `scaleX(${textDivProperties.scale})`;
+      if (textDivProperties.canvasWidth !== 0) {
+        // Only measure the width for multi-char text divs, see `appendText`.
+        const { width, } = this._layoutTextCtx.measureText(textDiv.textContent);
+        if (width > 0) {
+          textDivProperties.scale = textDivProperties.canvasWidth / width;
+          transform = `scaleX(${textDivProperties.scale})`;
+        }
       }
       if (textDivProperties.angle !== 0) {
         transform = `rotate(${textDivProperties.angle}deg) ${transform}`;
@@ -634,11 +636,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
           transformBuf.length = 0;
           paddingBuf.length = 0;
 
-          if (divProps.angle !== 0) {
-            transformBuf.push(`rotate(${divProps.angle}deg)`);
-          }
-          if (divProps.scale !== 1) {
-            transformBuf.push(`scaleX(${divProps.scale})`);
+          if (divProps.originalTransform) {
+            transformBuf.push(divProps.originalTransform);
           }
           if (divProps.paddingTop > 0) {
             paddingBuf.push(`${divProps.paddingTop}px`);
