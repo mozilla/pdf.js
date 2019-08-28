@@ -48,11 +48,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
     return !NonWhitespaceRegexp.test(str);
   }
 
-  // Text layers may contain many thousands of divs, and using `styleBuf` avoids
-  // creating many intermediate strings when building their 'style' properties.
-  var styleBuf = ['left: ', 0, 'px; top: ', 0, 'px; font-size: ', 0,
-                  'px; font-family: ', '', ';'];
-
   function appendText(task, geom, styles) {
     // Initialize all used properties to keep the caches monomorphic.
     var textDiv = document.createElement('span');
@@ -97,11 +92,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       left = tx[4] + (fontAscent * Math.sin(angle));
       top = tx[5] - (fontAscent * Math.cos(angle));
     }
-    styleBuf[1] = left;
-    styleBuf[3] = top;
-    styleBuf[5] = fontHeight;
-    styleBuf[7] = style.fontFamily;
-    textDiv.setAttribute('style', styleBuf.join(''));
+    // Setting the style properties individually, rather than all at once,
+    // should be OK since the `textDiv` isn't appended to the document yet.
+    textDiv.style.left = `${left}px`;
+    textDiv.style.top = `${top}px`;
+    textDiv.style.fontSize = `${fontHeight}px`;
+    textDiv.style.fontFamily = style.fontFamily;
 
     textDiv.textContent = geom.str;
     // `fontName` is only used by the FontInspector, and we only use `dataset`
@@ -525,26 +521,25 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
 
     _layoutText(textDiv) {
-      let textLayerFrag = this._container;
-
-      let textDivProperties = this._textDivProperties.get(textDiv);
+      const textDivProperties = this._textDivProperties.get(textDiv);
       if (textDivProperties.isWhitespace) {
         return;
-      }
-      const { fontSize, fontFamily, } = textDiv.style;
-
-      // Only build font string and set to context if different from last.
-      if (fontSize !== this._layoutTextLastFontSize ||
-          fontFamily !== this._layoutTextLastFontFamily) {
-        this._layoutTextCtx.font = `${fontSize} ${fontFamily}`;
-        this._layoutTextLastFontSize = fontSize;
-        this._layoutTextLastFontFamily = fontFamily;
       }
 
       let transform = '';
       if (textDivProperties.canvasWidth !== 0) {
+        const { fontSize, fontFamily, } = textDiv.style;
+
+        // Only build font string and set to context if different from last.
+        if (fontSize !== this._layoutTextLastFontSize ||
+            fontFamily !== this._layoutTextLastFontFamily) {
+          this._layoutTextCtx.font = `${fontSize} ${fontFamily}`;
+          this._layoutTextLastFontSize = fontSize;
+          this._layoutTextLastFontFamily = fontFamily;
+        }
         // Only measure the width for multi-char text divs, see `appendText`.
         const { width, } = this._layoutTextCtx.measureText(textDiv.textContent);
+
         if (width > 0) {
           textDivProperties.scale = textDivProperties.canvasWidth / width;
           transform = `scaleX(${textDivProperties.scale})`;
@@ -560,7 +555,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         textDiv.style.transform = transform;
       }
       this._textDivProperties.set(textDiv, textDivProperties);
-      textLayerFrag.appendChild(textDiv);
+      this._container.appendChild(textDiv);
     },
 
     _render: function TextLayer_render(timeout) {
