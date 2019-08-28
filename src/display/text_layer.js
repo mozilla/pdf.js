@@ -525,26 +525,25 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
 
     _layoutText(textDiv) {
-      let textLayerFrag = this._container;
-
-      let textDivProperties = this._textDivProperties.get(textDiv);
+      const textDivProperties = this._textDivProperties.get(textDiv);
       if (textDivProperties.isWhitespace) {
         return;
-      }
-      const { fontSize, fontFamily, } = textDiv.style;
-
-      // Only build font string and set to context if different from last.
-      if (fontSize !== this._layoutTextLastFontSize ||
-          fontFamily !== this._layoutTextLastFontFamily) {
-        this._layoutTextCtx.font = `${fontSize} ${fontFamily}`;
-        this._layoutTextLastFontSize = fontSize;
-        this._layoutTextLastFontFamily = fontFamily;
       }
 
       let transform = '';
       if (textDivProperties.canvasWidth !== 0) {
+        const { fontSize, fontFamily, } = textDiv.style;
+
+        // Only build font string and set to context if different from last.
+        if (fontSize !== this._layoutTextLastFontSize ||
+            fontFamily !== this._layoutTextLastFontFamily) {
+          this._layoutTextCtx.font = `${fontSize} ${fontFamily}`;
+          this._layoutTextLastFontSize = fontSize;
+          this._layoutTextLastFontFamily = fontFamily;
+        }
         // Only measure the width for multi-char text divs, see `appendText`.
         const { width, } = this._layoutTextCtx.measureText(textDiv.textContent);
+
         if (width > 0) {
           textDivProperties.scale = textDivProperties.canvasWidth / width;
           transform = `scaleX(${textDivProperties.scale})`;
@@ -560,7 +559,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         textDiv.style.transform = transform;
       }
       this._textDivProperties.set(textDiv, textDivProperties);
-      textLayerFrag.appendChild(textDiv);
+      this._container.appendChild(textDiv);
     },
 
     _render: function TextLayer_render(timeout) {
