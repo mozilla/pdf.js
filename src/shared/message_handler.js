@@ -143,13 +143,12 @@ MessageHandler.prototype = {
    * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers
    */
   send(actionName, data, transfers) {
-    var message = {
+    this.postMessage({
       sourceName: this.sourceName,
       targetName: this.targetName,
       action: actionName,
       data,
-    };
-    this.postMessage(message, transfers);
+    }, transfers);
   },
   /**
    * Sends a message to the comObj to invoke the action with the supplied data.
@@ -161,19 +160,18 @@ MessageHandler.prototype = {
    */
   sendWithPromise(actionName, data, transfers) {
     var callbackId = this.callbackId++;
-    var message = {
-      sourceName: this.sourceName,
-      targetName: this.targetName,
-      action: actionName,
-      data,
-      callbackId,
-    };
     var capability = createPromiseCapability();
     this.callbacksCapabilities[callbackId] = capability;
     try {
-      this.postMessage(message, transfers);
-    } catch (e) {
-      capability.reject(e);
+      this.postMessage({
+        sourceName: this.sourceName,
+        targetName: this.targetName,
+        action: actionName,
+        callbackId,
+        data,
+      }, transfers);
+    } catch (ex) {
+      capability.reject(ex);
     }
     return capability.promise;
   },
@@ -191,6 +189,7 @@ MessageHandler.prototype = {
     let streamId = this.streamId++;
     let sourceName = this.sourceName;
     let targetName = this.targetName;
+    const comObj = this.comObj;
 
     return new ReadableStream({
       start: (controller) => {
@@ -207,7 +206,7 @@ MessageHandler.prototype = {
           streamId,
           data,
           desiredSize: controller.desiredSize,
-        });
+        }, transfers);
         // Return Promise for Async process, to signal success/failure.
         return startCapability.promise;
       },
@@ -215,7 +214,7 @@ MessageHandler.prototype = {
       pull: (controller) => {
         let pullCapability = createPromiseCapability();
         this.streamControllers[streamId].pullCall = pullCapability;
-        this.postMessage({
+        comObj.postMessage({
           sourceName,
           targetName,
           stream: 'pull',
@@ -231,12 +230,12 @@ MessageHandler.prototype = {
         let cancelCapability = createPromiseCapability();
         this.streamControllers[streamId].cancelCall = cancelCapability;
         this.streamControllers[streamId].isClosed = true;
-        this.postMessage({
+        comObj.postMessage({
           sourceName,
           targetName,
           stream: 'cancel',
-          reason,
           streamId,
+          reason,
         });
         // Return Promise to signal success or failure.
         return cancelCapability.promise;
@@ -252,12 +251,7 @@ MessageHandler.prototype = {
     let sourceName = this.sourceName;
     let targetName = data.sourceName;
     let capability = createPromiseCapability();
-
-    let sendStreamRequest = ({ stream, chunk, transfers,
-                               success, reason, }) => {
-      this.postMessage({ sourceName, targetName, stream, streamId,
-                         chunk, success, reason, }, transfers);
-    };
+    const comObj = this.comObj;
 
     let streamSink = {
       enqueue(chunk, size = 1, transfers) {
@@ -273,7 +267,13 @@ MessageHandler.prototype = {
           this.sinkCapability = createPromiseCapability();
           this.ready = this.sinkCapability.promise;
         }
-        sendStreamRequest({ stream: 'enqueue', chunk, transfers, });
+        self.postMessage({
+          sourceName,
+          targetName,
+          stream: 'enqueue',
+          streamId,
+          chunk,
+        }, transfers);
       },
 
       close() {
@@ -281,7 +281,12 @@ MessageHandler.prototype = {
           return;
         }
         this.isCancelled = true;
-        sendStreamRequest({ stream: 'close', });
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          stream: 'close',
+          streamId,
+        });
         delete self.streamSinks[streamId];
       },
 
@@ -290,7 +295,13 @@ MessageHandler.prototype = {
           return;
         }
         this.isCancelled = true;
-        sendStreamRequest({ stream: 'error', reason, });
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          stream: 'error',
+          streamId,
+          reason,
+        });
       },
 
       sinkCapability: capability,
@@ -305,9 +316,21 @@ MessageHandler.prototype = {
     streamSink.ready = streamSink.sinkCapability.promise;
     this.streamSinks[streamId] = streamSink;
     resolveCall(action[0], [data.data, streamSink], action[1]).then(() => {
-      sendStreamRequest({ stream: 'start_complete', success: true, });
+      comObj.postMessage({
+        sourceName,
+        targetName,
+        stream: 'start_complete',
+        streamId,
+        success: true,
+      });
     }, (reason) => {
-      sendStreamRequest({ stream: 'start_complete', success: false, reason, });
+      comObj.postMessage({
+        sourceName,
+        targetName,
+        stream: 'start_complete',
+        streamId,
+        reason,
+      });
     });
   },
 
@@ -315,11 +338,7 @@ MessageHandler.prototype = {
     let sourceName = this.sourceName;
     let targetName = data.sourceName;
     let streamId = data.streamId;
-
-    let sendStreamResponse = ({ stream, success, reason, }) => {
-      this.comObj.postMessage({ sourceName, targetName, stream,
-                                success, streamId, reason, });
-    };
+    const comObj = this.comObj;
 
     let deleteStreamController = () => {
       // Delete the `streamController` only when the start, pull, and cancel
@@ -345,7 +364,13 @@ MessageHandler.prototype = {
       case 'pull':
         // Ignore any pull after close is called.
         if (!this.streamSinks[data.streamId]) {
-          sendStreamResponse({ stream: 'pull_complete', success: true, });
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: 'pull_complete',
+            streamId,
+            success: true,
+          });
           break;
         }
         // Pull increases the desiredSize property of sink,
@@ -358,10 +383,21 @@ MessageHandler.prototype = {
         // Reset desiredSize property of sink on every pull.
         this.streamSinks[data.streamId].desiredSize = data.desiredSize;
         resolveCall(this.streamSinks[data.streamId].onPull).then(() => {
-          sendStreamResponse({ stream: 'pull_complete', success: true, });
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: 'pull_complete',
+            streamId,
+            success: true,
+          });
         }, (reason) => {
-          sendStreamResponse({ stream: 'pull_complete',
-                               success: false, reason, });
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: 'pull_complete',
+            streamId,
+            reason,
+          });
         });
         break;
       case 'enqueue':
@@ -398,10 +434,21 @@ MessageHandler.prototype = {
         }
         resolveCall(this.streamSinks[data.streamId].onCancel,
                     [wrapReason(data.reason)]).then(() => {
-          sendStreamResponse({ stream: 'cancel_complete', success: true, });
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: 'cancel_complete',
+            streamId,
+            success: true,
+          });
         }, (reason) => {
-          sendStreamResponse({ stream: 'cancel_complete',
-                               success: false, reason, });
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: 'cancel_complete',
+            streamId,
+            reason,
+          });
         });
         this.streamSinks[data.streamId].sinkCapability.
           reject(wrapReason(data.reason));
