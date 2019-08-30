@@ -1248,17 +1248,17 @@ class PDFPageProxy {
    */
   _tryCleanup(resetStats = false) {
     if (!this.pendingCleanup ||
-        Object.keys(this.intentStates).some(function(intent) {
+        Object.keys(this.intentStates).some((intent) => {
           const intentState = this.intentStates[intent];
           return (intentState.renderTasks.length !== 0 ||
                   !intentState.operatorList.lastChunk);
-        }, this)) {
+        })) {
       return;
     }
 
-    Object.keys(this.intentStates).forEach(function(intent) {
+    Object.keys(this.intentStates).forEach((intent) => {
       delete this.intentStates[intent];
-    }, this);
+    });
     this.objs.clear();
     this.annotationsPromise = null;
     if (resetStats && this._stats instanceof StatTimer) {
@@ -1443,18 +1443,18 @@ class LoopbackPort {
     }
 
     if (!this._defer) {
-      this._listeners.forEach(function(listener) {
+      this._listeners.forEach((listener) => {
         listener.call(this, { data: obj, });
-      }, this);
+      });
       return;
     }
 
     const cloned = new WeakMap();
     const e = { data: cloneValue(obj), };
     this._deferred.then(() => {
-      this._listeners.forEach(function(listener) {
+      this._listeners.forEach((listener) => {
         listener.call(this, e);
-      }, this);
+      });
     });
   }
 
