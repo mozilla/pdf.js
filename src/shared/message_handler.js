@@ -18,6 +18,18 @@ import {
   ReadableStream, UnexpectedResponseException, UnknownErrorException
 } from './util';
 
+const StreamKind = {
+  UNKNOWN: 0,
+  CANCEL: 1,
+  CANCEL_COMPLETE: 2,
+  CLOSE: 3,
+  ENQUEUE: 4,
+  ERROR: 5,
+  PULL: 6,
+  PULL_COMPLETE: 7,
+  START_COMPLETE: 8,
+};
+
 async function resolveCall(fn, args, thisArg = null) {
   if (!fn) {
     return undefined;
@@ -217,7 +229,7 @@ MessageHandler.prototype = {
         comObj.postMessage({
           sourceName,
           targetName,
-          stream: 'pull',
+          stream: StreamKind.PULL,
           streamId,
           desiredSize: controller.desiredSize,
         });
@@ -233,7 +245,7 @@ MessageHandler.prototype = {
         comObj.postMessage({
           sourceName,
           targetName,
-          stream: 'cancel',
+          stream: StreamKind.CANCEL,
           streamId,
           reason,
         });
@@ -270,7 +282,7 @@ MessageHandler.prototype = {
         self.postMessage({
           sourceName,
           targetName,
-          stream: 'enqueue',
+          stream: StreamKind.ENQUEUE,
           streamId,
           chunk,
         }, transfers);
@@ -284,7 +296,7 @@ MessageHandler.prototype = {
         comObj.postMessage({
           sourceName,
           targetName,
-          stream: 'close',
+          stream: StreamKind.CLOSE,
           streamId,
         });
         delete self.streamSinks[streamId];
@@ -298,7 +310,7 @@ MessageHandler.prototype = {
         comObj.postMessage({
           sourceName,
           targetName,
-          stream: 'error',
+          stream: StreamKind.ERROR,
           streamId,
           reason,
         });
@@ -319,7 +331,7 @@ MessageHandler.prototype = {
       comObj.postMessage({
         sourceName,
         targetName,
-        stream: 'start_complete',
+        stream: StreamKind.START_COMPLETE,
         streamId,
         success: true,
       });
@@ -327,7 +339,7 @@ MessageHandler.prototype = {
       comObj.postMessage({
         sourceName,
         targetName,
-        stream: 'start_complete',
+        stream: StreamKind.START_COMPLETE,
         streamId,
         reason,
       });
@@ -355,19 +367,19 @@ MessageHandler.prototype = {
     };
 
     switch (data.stream) {
-      case 'start_complete':
+      case StreamKind.START_COMPLETE:
         resolveOrReject(this.streamControllers[data.streamId].startCall, data);
         break;
-      case 'pull_complete':
+      case StreamKind.PULL_COMPLETE:
         resolveOrReject(this.streamControllers[data.streamId].pullCall, data);
         break;
-      case 'pull':
+      case StreamKind.PULL:
         // Ignore any pull after close is called.
         if (!this.streamSinks[data.streamId]) {
           comObj.postMessage({
             sourceName,
             targetName,
-            stream: 'pull_complete',
+            stream: StreamKind.PULL_COMPLETE,
             streamId,
             success: true,
           });
@@ -386,7 +398,7 @@ MessageHandler.prototype = {
           comObj.postMessage({
             sourceName,
             targetName,
-            stream: 'pull_complete',
+            stream: StreamKind.PULL_COMPLETE,
             streamId,
             success: true,
           });
@@ -394,20 +406,20 @@ MessageHandler.prototype = {
           comObj.postMessage({
             sourceName,
             targetName,
-            stream: 'pull_complete',
+            stream: StreamKind.PULL_COMPLETE,
             streamId,
             reason,
           });
         });
         break;
-      case 'enqueue':
+      case StreamKind.ENQUEUE:
         assert(this.streamControllers[data.streamId],
                'enqueue should have stream controller');
         if (!this.streamControllers[data.streamId].isClosed) {
           this.streamControllers[data.streamId].controller.enqueue(data.chunk);
         }
         break;
-      case 'close':
+      case StreamKind.CLOSE:
         assert(this.streamControllers[data.streamId],
                'close should have stream controller');
         if (this.streamControllers[data.streamId].isClosed) {
@@ -417,18 +429,18 @@ MessageHandler.prototype = {
         this.streamControllers[data.streamId].controller.close();
         deleteStreamController();
         break;
-      case 'error':
+      case StreamKind.ERROR:
         assert(this.streamControllers[data.streamId],
                'error should have stream controller');
         this.streamControllers[data.streamId].controller.
           error(wrapReason(data.reason));
         deleteStreamController();
         break;
-      case 'cancel_complete':
+      case StreamKind.CANCEL_COMPLETE:
         resolveOrReject(this.streamControllers[data.streamId].cancelCall, data);
         deleteStreamController();
         break;
-      case 'cancel':
+      case StreamKind.CANCEL:
         if (!this.streamSinks[data.streamId]) {
           break;
         }
@@ -437,7 +449,7 @@ MessageHandler.prototype = {
           comObj.postMessage({
             sourceName,
             targetName,
-            stream: 'cancel_complete',
+            stream: StreamKind.CANCEL_COMPLETE,
             streamId,
             success: true,
           });
@@ -445,7 +457,7 @@ MessageHandler.prototype = {
           comObj.postMessage({
             sourceName,
             targetName,
-            stream: 'cancel_complete',
+            stream: StreamKind.CANCEL_COMPLETE,
             streamId,
             reason,
           });
