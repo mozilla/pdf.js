@@ -48,20 +48,11 @@ function wrapReason(reason) {
       return new MissingPDFException(reason.message);
     case 'UnexpectedResponseException':
       return new UnexpectedResponseException(reason.message, reason.status);
-    default:
+    case 'UnknownErrorException':
       return new UnknownErrorException(reason.message, reason.details);
+    default:
+      return new UnknownErrorException(reason.message, reason.toString());
   }
-}
-
-function makeReasonSerializable(reason) {
-  if (!(reason instanceof Error) ||
-      reason instanceof AbortException ||
-      reason instanceof MissingPDFException ||
-      reason instanceof UnexpectedResponseException ||
-      reason instanceof UnknownErrorException) {
-    return reason;
-  }
-  return new UnknownErrorException(reason.message, reason.toString());
 }
 
 function resolveOrReject(capability, data) {
@@ -125,7 +116,7 @@ function MessageHandler(sourceName, targetName, comObj) {
             targetName,
             isReply: true,
             callbackId: data.callbackId,
-            error: makeReasonSerializable(reason),
+            error: wrapReason(reason),
           });
         });
       } else if (data.streamId) {
