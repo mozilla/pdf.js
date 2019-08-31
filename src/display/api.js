@@ -1875,7 +1875,7 @@ class WorkerTransport {
   setupMessageHandler() {
     const { messageHandler, loadingTask, } = this;
 
-    messageHandler.on('GetReader', function(data, sink) {
+    messageHandler.on('GetReader', (data, sink) => {
       assert(this._networkStream);
       this._fullReader = this._networkStream.getFullReader();
       this._fullReader.onProgress = (evt) => {
@@ -1902,9 +1902,9 @@ class WorkerTransport {
       sink.onCancel = (reason) => {
         this._fullReader.cancel(reason);
       };
-    }, this);
+    });
 
-    messageHandler.on('ReaderHeadersReady', function(data) {
+    messageHandler.on('ReaderHeadersReady', (data) => {
       const headersCapability = createPromiseCapability();
       const fullReader = this._fullReader;
       fullReader.headersReady.then(() => {
@@ -1932,9 +1932,9 @@ class WorkerTransport {
       }, headersCapability.reject);
 
       return headersCapability.promise;
-    }, this);
+    });
 
-    messageHandler.on('GetRangeReader', function(data, sink) {
+    messageHandler.on('GetRangeReader', (data, sink) => {
       assert(this._networkStream);
       const rangeReader =
         this._networkStream.getRangeReader(data.begin, data.end);
@@ -1970,14 +1970,14 @@ class WorkerTransport {
       sink.onCancel = (reason) => {
         rangeReader.cancel(reason);
       };
-    }, this);
+    });
 
-    messageHandler.on('GetDoc', function({ pdfInfo, }) {
+    messageHandler.on('GetDoc', ({ pdfInfo, }) => {
       this._numPages = pdfInfo.numPages;
       loadingTask._capability.resolve(new PDFDocumentProxy(pdfInfo, this));
-    }, this);
+    });
 
-    messageHandler.on('PasswordRequest', function(exception) {
+    messageHandler.on('PasswordRequest', (exception) => {
       this._passwordCapability = createPromiseCapability();
 
       if (loadingTask.onPassword) {
@@ -1996,34 +1996,34 @@ class WorkerTransport {
           new PasswordException(exception.message, exception.code));
       }
       return this._passwordCapability.promise;
-    }, this);
+    });
 
     messageHandler.on('PasswordException', function(exception) {
       loadingTask._capability.reject(
         new PasswordException(exception.message, exception.code));
-    }, this);
+    });
 
     messageHandler.on('InvalidPDF', function(exception) {
       loadingTask._capability.reject(
         new InvalidPDFException(exception.message));
-    }, this);
+    });
 
     messageHandler.on('MissingPDF', function(exception) {
       loadingTask._capability.reject(
         new MissingPDFException(exception.message));
-    }, this);
+    });
 
     messageHandler.on('UnexpectedResponse', function(exception) {
       loadingTask._capability.reject(
         new UnexpectedResponseException(exception.message, exception.status));
-    }, this);
+    });
 
     messageHandler.on('UnknownError', function(exception) {
       loadingTask._capability.reject(
         new UnknownErrorException(exception.message, exception.details));
-    }, this);
+    });
 
-    messageHandler.on('DataLoaded', function(data) {
+    messageHandler.on('DataLoaded', (data) => {
       // For consistency: Ensure that progress is always reported when the
       // entire PDF file has been loaded, regardless of how it was fetched.
       if (loadingTask.onProgress) {
@@ -2033,9 +2033,9 @@ class WorkerTransport {
         });
       }
       this.downloadInfoCapability.resolve(data);
-    }, this);
+    });
 
-    messageHandler.on('StartRenderPage', function(data) {
+    messageHandler.on('StartRenderPage', (data) => {
       if (this.destroyed) {
         return; // Ignore any pending requests if the worker was terminated.
       }
@@ -2043,9 +2043,9 @@ class WorkerTransport {
       const page = this.pageCache[data.pageIndex];
       page._stats.timeEnd('Page Request');
       page._startRenderPage(data.transparency, data.intent);
-    }, this);
+    });
 
-    messageHandler.on('commonobj', function(data) {
+    messageHandler.on('commonobj', (data) => {
       if (this.destroyed) {
         return; // Ignore any pending requests if the worker was terminated.
       }
@@ -2100,9 +2100,9 @@ class WorkerTransport {
         default:
           throw new Error(`Got unknown common object type ${type}`);
       }
-    }, this);
+    });
 
-    messageHandler.on('obj', function(data) {
+    messageHandler.on('obj', (data) => {
       if (this.destroyed) {
         // Ignore any pending requests if the worker was terminated.
         return undefined;
@@ -2149,9 +2149,9 @@ class WorkerTransport {
           throw new Error(`Got unknown object type ${type}`);
       }
       return undefined;
-    }, this);
+    });
 
-    messageHandler.on('DocProgress', function(data) {
+    messageHandler.on('DocProgress', (data) => {
       if (this.destroyed) {
         return; // Ignore any pending requests if the worker was terminated.
       }
@@ -2162,11 +2162,12 @@ class WorkerTransport {
           total: data.total,
         });
       }
-    }, this);
+    });
 
-    messageHandler.on('UnsupportedFeature', this._onUnsupportedFeature, this);
+    messageHandler.on('UnsupportedFeature',
+                      this._onUnsupportedFeature.bind(this));
 
-    messageHandler.on('JpegDecode', function(data) {
+    messageHandler.on('JpegDecode', (data) => {
       if (this.destroyed) {
         return Promise.reject(new Error('Worker was destroyed'));
       }
@@ -2227,16 +2228,14 @@ class WorkerTransport {
         };
         img.src = imageUrl;
       });
-    }, this);
+    });
 
-    messageHandler.on('FetchBuiltInCMap', function(data) {
+    messageHandler.on('FetchBuiltInCMap', (data) => {
       if (this.destroyed) {
         return Promise.reject(new Error('Worker was destroyed'));
       }
-      return this.CMapReaderFactory.fetch({
-        name: data.name,
-      });
-    }, this);
+      return this.CMapReaderFactory.fetch(data);
+    });
   }
 
   _onUnsupportedFeature({ featureId, }) {
