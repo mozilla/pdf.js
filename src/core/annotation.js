@@ -47,18 +47,18 @@ class AnnotationFactory {
    * @private
    */
   static _create(xref, ref, pdfManager, idFactory) {
-    let dict = xref.fetchIfRef(ref);
+    const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
     }
-    let id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
+    const id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
     // Determine the annotation's subtype.
     let subtype = dict.get('Subtype');
     subtype = isName(subtype) ? subtype.name : null;
 
     // Return the right annotation object based on the subtype and field type.
-    let parameters = {
+    const parameters = {
       xref,
       dict,
       subtype,
@@ -181,20 +181,16 @@ function getQuadPoints(dict, rect) {
 
 function getTransformMatrix(rect, bbox, matrix) {
   // 12.5.5: Algorithm: Appearance streams
-  let bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
-  let minX = bounds[0];
-  let minY = bounds[1];
-  let maxX = bounds[2];
-  let maxY = bounds[3];
-
+  const [minX, minY, maxX, maxY] =
+    Util.getAxialAlignedBoundingBox(bbox, matrix);
   if (minX === maxX || minY === maxY) {
     // From real-life file, bbox was [0, 0, 0, 0]. In this case,
     // just apply the transform for rect
     return [1, 0, 0, 1, rect[0], rect[1]];
   }
 
-  let xRatio = (rect[2] - rect[0]) / (maxX - minX);
-  let yRatio = (rect[3] - rect[1]) / (maxY - minY);
+  const xRatio = (rect[2] - rect[0]) / (maxX - minX);
+  const yRatio = (rect[3] - rect[1]) / (maxY - minY);
   return [
     xRatio,
     0,
@@ -355,7 +351,7 @@ class Annotation {
    *                        4 (CMYK) elements
    */
   setColor(color) {
-    let rgbColor = new Uint8ClampedArray(3);
+    const rgbColor = new Uint8ClampedArray(3);
     if (!Array.isArray(color)) {
       this.color = rgbColor;
       return;
@@ -405,8 +401,8 @@ class Annotation {
       return;
     }
     if (borderStyle.has('BS')) {
-      let dict = borderStyle.get('BS');
-      let dictType = dict.get('Type');
+      const dict = borderStyle.get('BS');
+      const dictType = dict.get('Type');
 
       if (!dictType || isName(dictType, 'Border')) {
         this.borderStyle.setWidth(dict.get('W'), this.rectangle);
@@ -414,7 +410,7 @@ class Annotation {
         this.borderStyle.setDashArray(dict.getArray('D'));
       }
     } else if (borderStyle.has('Border')) {
-      let array = borderStyle.getArray('Border');
+      const array = borderStyle.getArray('Border');
       if (Array.isArray(array) && array.length >= 3) {
         this.borderStyle.setHorizontalCornerRadius(array[0]);
         this.borderStyle.setVerticalCornerRadius(array[1]);
@@ -444,13 +440,13 @@ class Annotation {
   setAppearance(dict) {
     this.appearance = null;
 
-    let appearanceStates = dict.get('AP');
+    const appearanceStates = dict.get('AP');
     if (!isDict(appearanceStates)) {
       return;
     }
 
     // In case the normal appearance is a stream, then it is used directly.
-    let normalAppearanceState = appearanceStates.get('N');
+    const normalAppearanceState = appearanceStates.get('N');
     if (isStream(normalAppearanceState)) {
       this.appearance = normalAppearanceState;
       return;
@@ -461,7 +457,7 @@ class Annotation {
 
     // In case the normal appearance is a dictionary, the `AS` entry provides
     // the key of the stream in this dictionary.
-    let as = dict.get('AS');
+    const as = dict.get('AS');
     if (!isName(as) || !normalAppearanceState.has(as.name)) {
       return;
     }
@@ -473,8 +469,8 @@ class Annotation {
       if (!resources) {
         return undefined;
       }
-      let objectLoader = new ObjectLoader(resources, keys, resources.xref);
 
+      const objectLoader = new ObjectLoader(resources, keys, resources.xref);
       return objectLoader.load().then(function() {
         return resources;
       });
@@ -486,24 +482,22 @@ class Annotation {
       return Promise.resolve(new OperatorList());
     }
 
-    let data = this.data;
-    let appearanceDict = this.appearance.dict;
-    let resourcesPromise = this.loadResources([
+    const data = this.data;
+    const appearanceDict = this.appearance.dict;
+    const resourcesPromise = this.loadResources([
       'ExtGState',
       'ColorSpace',
       'Pattern',
       'Shading',
       'XObject',
       'Font',
-      // ProcSet
-      // Properties
     ]);
-    let bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
-    let matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
-    let transform = getTransformMatrix(data.rect, bbox, matrix);
+    const bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
+    const matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
+    const transform = getTransformMatrix(data.rect, bbox, matrix);
 
     return resourcesPromise.then((resources) => {
-      let opList = new OperatorList();
+      const opList = new OperatorList();
       opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
       return evaluator.getOperatorList({
         stream: this.appearance,
@@ -624,9 +618,8 @@ class AnnotationBorderStyle {
       // shall be numbers that are nonnegative and not all equal to zero.
       let isValid = true;
       let allZeros = true;
-      for (let i = 0, len = dashArray.length; i < len; i++) {
-        let element = dashArray[i];
-        let validNumber = (+element >= 0);
+      for (const element of dashArray) {
+        const validNumber = (+element >= 0);
         if (!validNumber) {
           isValid = false;
           break;
@@ -750,8 +743,8 @@ class WidgetAnnotation extends Annotation {
   constructor(params) {
     super(params);
 
-    let dict = params.dict;
-    let data = this.data;
+    const dict = params.dict;
+    const data = this.data;
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
@@ -759,7 +752,7 @@ class WidgetAnnotation extends Annotation {
                                                getArray: true, });
     data.alternativeText = stringToPDFString(dict.get('TU') || '');
     data.defaultAppearance = getInheritableProperty({ dict, key: 'DA', }) || '';
-    let fieldType = getInheritableProperty({ dict, key: 'FT', });
+    const fieldType = getInheritableProperty({ dict, key: 'FT', });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
     this.fieldResources = getInheritableProperty({ dict, key: 'DR', }) ||
                           Dict.empty;
@@ -804,7 +797,7 @@ class WidgetAnnotation extends Annotation {
 
     // Form the fully qualified field name by appending the partial name to
     // the parent's fully qualified name, separated by a period.
-    let fieldName = [];
+    const fieldName = [];
     if (dict.has('T')) {
       fieldName.unshift(stringToPDFString(dict.get('T')));
     }
@@ -887,7 +880,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return super.getOperatorList(evaluator, task, renderForms);
     }
 
-    let operatorList = new OperatorList();
+    const operatorList = new OperatorList();
 
     // Even if there is an appearance stream, ignore it. This is the
     // behaviour used by Adobe Reader.
@@ -895,7 +888,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return Promise.resolve(operatorList);
     }
 
-    let stream = new Stream(stringToBytes(this.data.defaultAppearance));
+    const stream = new Stream(stringToBytes(this.data.defaultAppearance));
     return evaluator.getOperatorList({
       stream,
       task,
@@ -958,27 +951,26 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     // The parent field's `V` entry holds a `Name` object with the appearance
     // state of whichever child field is currently in the "on" state.
-    let fieldParent = params.dict.get('Parent');
+    const fieldParent = params.dict.get('Parent');
     if (isDict(fieldParent) && fieldParent.has('V')) {
-      let fieldParentValue = fieldParent.get('V');
+      const fieldParentValue = fieldParent.get('V');
       if (isName(fieldParentValue)) {
         this.data.fieldValue = fieldParentValue.name;
       }
     }
 
     // The button's value corresponds to its appearance state.
-    let appearanceStates = params.dict.get('AP');
+    const appearanceStates = params.dict.get('AP');
     if (!isDict(appearanceStates)) {
       return;
     }
-    let normalAppearanceState = appearanceStates.get('N');
+    const normalAppearanceState = appearanceStates.get('N');
     if (!isDict(normalAppearanceState)) {
       return;
     }
-    let keys = normalAppearanceState.getKeys();
-    for (let i = 0, ii = keys.length; i < ii; i++) {
-      if (keys[i] !== 'Off') {
-        this.data.buttonValue = keys[i];
+    for (const key of normalAppearanceState.getKeys()) {
+      if (key !== 'Off') {
+        this.data.buttonValue = key;
         break;
       }
     }
@@ -1013,9 +1005,9 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // inherit the options from a parent annotation (issue 8094).
     this.data.options = [];
 
-    let options = getInheritableProperty({ dict: params.dict, key: 'Opt', });
+    const options = getInheritableProperty({ dict: params.dict, key: 'Opt', });
     if (Array.isArray(options)) {
-      let xref = params.xref;
+      const xref = params.xref;
       for (let i = 0, ii = options.length; i < ii; i++) {
         let option = xref.fetchIfRef(options[i]);
         let isOptionArray = Array.isArray(option);
@@ -1094,16 +1086,15 @@ class PopupAnnotation extends Annotation {
 
     this.data.annotationType = AnnotationType.POPUP;
 
-    let dict = parameters.dict;
-    let parentItem = dict.get('Parent');
+    let parentItem = parameters.dict.get('Parent');
     if (!parentItem) {
       warn('Popup annotation has a missing or invalid parent annotation.');
       return;
     }
 
-    let parentSubtype = parentItem.get('Subtype');
+    const parentSubtype = parentItem.get('Subtype');
     this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
-    const rawParent = dict.getRaw('Parent');
+    const rawParent = parameters.dict.getRaw('Parent');
     this.data.parentId = isRef(rawParent) ? rawParent.toString() : null;
 
     const rt = parentItem.get('RT');
@@ -1132,7 +1123,7 @@ class PopupAnnotation extends Annotation {
     // that is most likely a bug. Fallback to inherit the flags from the parent
     // annotation (this is consistent with the behaviour in Adobe Reader).
     if (!this.viewable) {
-      let parentFlags = parentItem.get('F');
+      const parentFlags = parentItem.get('F');
       if (this._isViewable(parentFlags)) {
         this.setFlags(parentFlags);
       }
@@ -1157,8 +1148,8 @@ class LineAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.LINE;
 
-    let dict = parameters.dict;
-    this.data.lineCoordinates = Util.normalizeRect(dict.getArray('L'));
+    this.data.lineCoordinates =
+      Util.normalizeRect(parameters.dict.getArray('L'));
   }
 }
 
@@ -1187,9 +1178,7 @@ class PolylineAnnotation extends MarkupAnnotation {
     // The vertices array is an array of numbers representing the alternating
     // horizontal and vertical coordinates, respectively, of each vertex.
     // Convert this to an array of objects with x and y coordinates.
-    let dict = parameters.dict;
-    let rawVertices = dict.getArray('Vertices');
-
+    const rawVertices = parameters.dict.getArray('Vertices');
     this.data.vertices = [];
     for (let i = 0, ii = rawVertices.length; i < ii; i += 2) {
       this.data.vertices.push({
@@ -1223,10 +1212,8 @@ class InkAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.INK;
 
-    let dict = parameters.dict;
     const xref = parameters.xref;
-
-    let originalInkLists = dict.getArray('InkList');
+    const originalInkLists = parameters.dict.getArray('InkList');
     this.data.inkLists = [];
     for (let i = 0, ii = originalInkLists.length; i < ii; ++i) {
       // The raw ink lists array contains arrays of numbers representing
@@ -1308,7 +1295,7 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
-    let file = new FileSpec(parameters.dict.get('FS'), parameters.xref);
+    const file = new FileSpec(parameters.dict.get('FS'), parameters.xref);
 
     this.data.annotationType = AnnotationType.FILEATTACHMENT;
     this.data.file = file.serializable;
