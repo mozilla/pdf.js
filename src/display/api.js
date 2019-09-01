@@ -395,8 +395,8 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   }
   return worker.messageHandler.sendWithPromise('GetDocRequest', {
     docId,
-    apiVersion: (typeof PDFJSDev !== 'undefined' ?
-                 PDFJSDev.eval('BUNDLE_VERSION') : null),
+    apiVersion: typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('TESTING') ?
+                PDFJSDev.eval('BUNDLE_VERSION') : null,
     source: { // Only send the required properties, and *not* the entire object.
       data: source.data,
       url: source.url,
