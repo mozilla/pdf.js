@@ -30,11 +30,11 @@ const StreamKind = {
   START_COMPLETE: 8,
 };
 
-async function resolveCall(fn, args, thisArg = null) {
+async function resolveCall(fn, args) {
   if (!fn) {
     return undefined;
   }
-  return fn.apply(thisArg, args);
+  return fn.apply(null, args);
 }
 
 function wrapReason(reason) {
@@ -100,8 +100,8 @@ function MessageHandler(sourceName, targetName, comObj) {
       if (data.callbackId) {
         let sourceName = this.sourceName;
         let targetName = data.sourceName;
-        Promise.resolve().then(function () {
-          return action[0].call(action[1], data.data);
+        Promise.resolve().then(function() {
+          return action(data.data);
         }).then((result) => {
           comObj.postMessage({
             sourceName,
@@ -122,7 +122,7 @@ function MessageHandler(sourceName, targetName, comObj) {
       } else if (data.streamId) {
         this._createStreamSink(data);
       } else {
-        action[0].call(action[1], data.data);
+        action(data.data);
       }
     } else {
       throw new Error(`Unknown action from worker: ${data.action}`);
@@ -132,12 +132,12 @@ function MessageHandler(sourceName, targetName, comObj) {
 }
 
 MessageHandler.prototype = {
-  on(actionName, handler, scope) {
+  on(actionName, handler) {
     var ah = this.actionHandler;
     if (ah[actionName]) {
       throw new Error(`There is already an actionName called "${actionName}"`);
     }
-    ah[actionName] = [handler, scope];
+    ah[actionName] = handler;
   },
   /**
    * Sends a message to the comObj to invoke the action with the supplied data.
@@ -318,7 +318,7 @@ MessageHandler.prototype = {
     streamSink.sinkCapability.resolve();
     streamSink.ready = streamSink.sinkCapability.promise;
     this.streamSinks[streamId] = streamSink;
-    resolveCall(action[0], [data.data, streamSink], action[1]).then(() => {
+    resolveCall(action, [data.data, streamSink]).then(() => {
       comObj.postMessage({
         sourceName,
         targetName,
