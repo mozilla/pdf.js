@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { AbortException, createPromiseCapability } from '../../src/shared/util';
+import {
+  AbortException, createPromiseCapability, UnknownErrorException
+} from '../../src/shared/util';
 import { LoopbackPort } from '../../src/display/api';
 import { MessageHandler } from '../../src/shared/message_handler';
 
@@ -149,7 +151,7 @@ describe('message_handler', function () {
           return sink.ready;
         }).then(() => {
           log += 'e';
-          sink.error('error');
+          sink.error(new Error('should not read when errored'));
         });
       });
       let messageHandler1 = new MessageHandler('main', 'worker', port);
@@ -171,7 +173,8 @@ describe('message_handler', function () {
         return reader.read();
       }).catch((reason) => {
         expect(log).toEqual('01pe');
-        expect(reason).toEqual('error');
+        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason.message).toEqual('should not read when errored');
         done();
       });
     });
