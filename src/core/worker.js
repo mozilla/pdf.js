@@ -109,13 +109,11 @@ var WorkerMessageHandler = {
     var WorkerTasks = [];
     const verbosity = getVerbosityLevel();
 
-    let apiVersion = docParams.apiVersion;
-    let workerVersion =
-      typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
-    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING')) &&
-        apiVersion === null) {
-      warn('Ignoring apiVersion/workerVersion check in TESTING builds.');
-    } else if (apiVersion !== workerVersion) {
+    const apiVersion = docParams.apiVersion;
+    const workerVersion =
+      typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('TESTING') ?
+      PDFJSDev.eval('BUNDLE_VERSION') : null;
+    if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` +
                       `the Worker version "${workerVersion}".`);
     }
