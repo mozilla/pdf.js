@@ -223,6 +223,7 @@ MessageHandler.prototype = {
       },
 
       cancel: (reason) => {
+        assert(reason instanceof Error, 'cancel must have a valid reason');
         let cancelCapability = createPromiseCapability();
         this.streamControllers[streamId].cancelCall = cancelCapability;
         this.streamControllers[streamId].isClosed = true;
@@ -287,6 +288,7 @@ MessageHandler.prototype = {
       },
 
       error(reason) {
+        assert(reason instanceof Error, 'error must have a valid reason');
         if (this.isCancelled) {
           return;
         }
