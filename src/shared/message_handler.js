@@ -30,13 +30,6 @@ const StreamKind = {
   START_COMPLETE: 8,
 };
 
-async function resolveCall(fn, args) {
-  if (!fn) {
-    return undefined;
-  }
-  return fn.apply(null, args);
-}
-
 function wrapReason(reason) {
   if (typeof reason !== 'object') {
     return reason;
@@ -100,9 +93,9 @@ function MessageHandler(sourceName, targetName, comObj) {
       if (data.callbackId) {
         let sourceName = this.sourceName;
         let targetName = data.sourceName;
-        Promise.resolve().then(function() {
-          return action(data.data);
-        }).then((result) => {
+        new Promise(function(resolve) {
+          resolve(action(data.data));
+        }).then(function(result) {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -110,7 +103,7 @@ function MessageHandler(sourceName, targetName, comObj) {
             callbackId: data.callbackId,
             data: result,
           });
-        }, (reason) => {
+        }, function(reason) {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -318,7 +311,9 @@ MessageHandler.prototype = {
     streamSink.sinkCapability.resolve();
     streamSink.ready = streamSink.sinkCapability.promise;
     this.streamSinks[streamId] = streamSink;
-    resolveCall(action, [data.data, streamSink]).then(() => {
+    new Promise(function(resolve) {
+      resolve(action(data.data, streamSink));
+    }).then(function() {
       comObj.postMessage({
         sourceName,
         targetName,
@@ -326,7 +321,7 @@ MessageHandler.prototype = {
         streamId,
         success: true,
       });
-    }, (reason) => {
+    }, function(reason) {
       comObj.postMessage({
         sourceName,
         targetName,
@@ -385,7 +380,10 @@ MessageHandler.prototype = {
         }
         // Reset desiredSize property of sink on every pull.
         this.streamSinks[data.streamId].desiredSize = data.desiredSize;
-        resolveCall(this.streamSinks[data.streamId].onPull).then(() => {
+        const { onPull, } = this.streamSinks[data.streamId];
+        new Promise(function(resolve) {
+          resolve(onPull && onPull());
+        }).then(function() {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -393,7 +391,7 @@ MessageHandler.prototype = {
             streamId,
             success: true,
           });
-        }, (reason) => {
+        }, function(reason) {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -435,8 +433,10 @@ MessageHandler.prototype = {
         if (!this.streamSinks[data.streamId]) {
           break;
         }
-        resolveCall(this.streamSinks[data.streamId].onCancel,
-                    [wrapReason(data.reason)]).then(() => {
+        const { onCancel, } = this.streamSinks[data.streamId];
+        new Promise(function(resolve) {
+          resolve(onCancel && onCancel(wrapReason(data.reason)));
+        }).then(function() {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -444,7 +444,7 @@ MessageHandler.prototype = {
             streamId,
             success: true,
           });
-        }, (reason) => {
+        }, function(reason) {
           comObj.postMessage({
             sourceName,
             targetName,
