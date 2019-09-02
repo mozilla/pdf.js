@@ -142,11 +142,13 @@ describe('message_handler', function () {
         sink.onCancel = function (reason) {
           log += 'c';
         };
+        log += '0';
         sink.ready.then(() => {
+          log += '1';
           sink.enqueue([1, 2, 3, 4], 4);
           return sink.ready;
         }).then(() => {
-          log += 'error';
+          log += 'e';
           sink.error('error');
         });
       });
@@ -161,14 +163,14 @@ describe('message_handler', function () {
       let reader = readable.getReader();
 
       sleep(10).then(() => {
-        expect(log).toEqual('');
+        expect(log).toEqual('01');
         return reader.read();
       }).then((result) => {
         expect(result.value).toEqual([1, 2, 3, 4]);
         expect(result.done).toEqual(false);
         return reader.read();
-      }).then(() => {
-      }, (reason) => {
+      }).catch((reason) => {
+        expect(log).toEqual('01pe');
         expect(reason).toEqual('error');
         done();
       });
