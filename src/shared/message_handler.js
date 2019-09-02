@@ -231,7 +231,7 @@ MessageHandler.prototype = {
           targetName,
           stream: StreamKind.CANCEL,
           streamId,
-          reason,
+          reason: wrapReason(reason),
         });
         // Return Promise to signal success or failure.
         return cancelCapability.promise;
@@ -296,7 +296,7 @@ MessageHandler.prototype = {
           targetName,
           stream: StreamKind.ERROR,
           streamId,
-          reason,
+          reason: wrapReason(reason),
         });
       },
 
@@ -327,7 +327,7 @@ MessageHandler.prototype = {
         targetName,
         stream: StreamKind.START_COMPLETE,
         streamId,
-        reason,
+        reason: wrapReason(reason),
       });
     });
   },
@@ -397,7 +397,7 @@ MessageHandler.prototype = {
             targetName,
             stream: StreamKind.PULL_COMPLETE,
             streamId,
-            reason,
+            reason: wrapReason(reason),
           });
         });
         break;
@@ -450,7 +450,7 @@ MessageHandler.prototype = {
             targetName,
             stream: StreamKind.CANCEL_COMPLETE,
             streamId,
-            reason,
+            reason: wrapReason(reason),
           });
         });
         this.streamSinks[data.streamId].sinkCapability.
