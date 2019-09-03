@@ -223,6 +223,7 @@ MessageHandler.prototype = {
       },
 
       cancel: (reason) => {
+        assert(reason instanceof Error, 'cancel must have a valid reason');
         let cancelCapability = createPromiseCapability();
         this.streamControllers[streamId].cancelCall = cancelCapability;
         this.streamControllers[streamId].isClosed = true;
@@ -231,7 +232,7 @@ MessageHandler.prototype = {
           targetName,
           stream: StreamKind.CANCEL,
           streamId,
-          reason,
+          reason: wrapReason(reason),
         });
         // Return Promise to signal success or failure.
         return cancelCapability.promise;
@@ -287,6 +288,7 @@ MessageHandler.prototype = {
       },
 
       error(reason) {
+        assert(reason instanceof Error, 'error must have a valid reason');
         if (this.isCancelled) {
           return;
         }
@@ -296,7 +298,7 @@ MessageHandler.prototype = {
           targetName,
           stream: StreamKind.ERROR,
           streamId,
-          reason,
+          reason: wrapReason(reason),
         });
       },
 
@@ -327,7 +329,7 @@ MessageHandler.prototype = {
         targetName,
         stream: StreamKind.START_COMPLETE,
         streamId,
-        reason,
+        reason: wrapReason(reason),
       });
     });
   },
@@ -397,7 +399,7 @@ MessageHandler.prototype = {
             targetName,
             stream: StreamKind.PULL_COMPLETE,
             streamId,
-            reason,
+            reason: wrapReason(reason),
           });
         });
         break;
@@ -450,7 +452,7 @@ MessageHandler.prototype = {
             targetName,
             stream: StreamKind.CANCEL_COMPLETE,
             streamId,
-            reason,
+            reason: wrapReason(reason),
           });
         });
         this.streamSinks[data.streamId].sinkCapability.
