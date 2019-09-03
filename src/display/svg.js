@@ -320,6 +320,9 @@ class SVGExtraState {
     this.clipGroup = null;
 
     this.maskId = '';
+
+    this.parentGroup = null;
+    this.currentGroup = null;
   }
 
   clone() {
@@ -433,6 +436,9 @@ SVGGraphics = class SVGGraphics {
     this.cssStyle = null;
     this.forceDataSchema = !!forceDataSchema;
 
+    this.parentGroup = null;
+    this.currentGroup = null;
+
     // In `src/shared/util.js` the operator names are mapped to IDs.
     // The list below represents the reverse of that, i.e., it maps IDs
     // to operator names.
@@ -445,6 +451,8 @@ SVGGraphics = class SVGGraphics {
   save() {
     this.transformStack.push(this.transformMatrix);
     const old = this.current;
+    old.parentGroup = this.parentGroup;
+    old.currentGroup = this.currentGroup;
     this.extraStack.push(old);
     this.current = old.clone();
   }
@@ -454,10 +462,16 @@ SVGGraphics = class SVGGraphics {
     this.current = this.extraStack.pop();
     this.pendingClip = null;
     this.tgrp = null;
+    this.parentGroup = this.current.parentGroup;
+    this.currentGroup = this.current.currentGroup;
   }
 
   group(items) {
     this.save();
+    const newGroup = this.svgFactory.createElement('svg:g');
+    this.currentGroup.appendChild(newGroup);
+    this.parentGroup = this.currentGroup;
+    this.currentGroup = newGroup;
     this.executeOpTree(items);
     this.restore();
   }
@@ -843,6 +857,7 @@ SVGGraphics = class SVGGraphics {
     current.txtgrp.appendChild(current.txtElement);
 
     this._ensureTransformGroup().appendChild(current.txtElement);
+    this.parentGroup.appendChild(current.txtElement);
   }
 
   setLeadingMoveText(x, y) {
@@ -1170,6 +1185,7 @@ SVGGraphics = class SVGGraphics {
     } else {
       current.path = this.svgFactory.createElement('svg:path');
       this._ensureTransformGroup().appendChild(current.path);
+      this.parentGroup.appendChild(current.path);
     }
 
     current.path.setAttributeNS(null, 'd', d);
@@ -1263,6 +1279,13 @@ SVGGraphics = class SVGGraphics {
     // This operation is ignored since we haven't found a use case for it yet.
   }
 
+  setCompositeMode(compositeMode) {
+    if (compositeMode !== 'source-over') {
+      const style = `mix-blend-mode: ${compositeMode};`;
+      this.currentGroup.setAttributeNS(null, 'style', style);
+    }
+  }
+
   setGState(states) {
     for (const [key, value] of states) {
       switch (key) {
@@ -1296,6 +1319,9 @@ SVGGraphics = class SVGGraphics {
         case 'ca':
           this.setFillAlpha(value);
           break;
+        case 'BM':
+          this.setCompositeMode(value);
+          break;
         default:
           warn(`Unimplemented graphic state operator ${key}`);
           break;
@@ -1309,6 +1335,7 @@ SVGGraphics = class SVGGraphics {
       current.element.setAttributeNS(null, 'fill', current.fillColor);
       current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
       this.endPath();
+      this.parentGroup.appendChild(current.element);
     }
   }
 
@@ -1318,6 +1345,7 @@ SVGGraphics = class SVGGraphics {
       this._setStrokeAttributes(current.element);
       current.element.setAttributeNS(null, 'fill', 'none');
       this.endPath();
+      this.parentGroup.appendChild(current.element);
     }
   }
 
@@ -1390,6 +1418,7 @@ SVGGraphics = class SVGGraphics {
     rect.setAttributeNS(null, 'fill', this.current.fillColor);
 
     this._ensureTransformGroup().appendChild(rect);
+    this.parentGroup.appendChild(rect);
   }
 
   paintJpegXObject(objId, w, h) {
@@ -1404,6 +1433,7 @@ SVGGraphics = class SVGGraphics {
                          `scale(${pf(1 / w)} ${pf(-1 / h)})`);
 
     this._ensureTransformGroup().appendChild(imgEl);
+    this.parentGroup.appendChild(imgEl);
   }
 
   paintImageXObject(objId) {
@@ -1440,6 +1470,7 @@ SVGGraphics = class SVGGraphics {
       mask.appendChild(imgEl);
     } else {
       this._ensureTransformGroup().appendChild(imgEl);
+      this.parentGroup.appendChild(imgEl);
     }
   }
 
@@ -1463,6 +1494,7 @@ SVGGraphics = class SVGGraphics {
 
     this.defs.appendChild(mask);
     this._ensureTransformGroup().appendChild(rect);
+    this.parentGroup.appendChild(rect);
 
     this.paintInlineImageXObject(imgData, mask);
   }
@@ -1511,6 +1543,7 @@ SVGGraphics = class SVGGraphics {
     // root group, so we expose it as the entry point of the SVG image for
     // the other code in this class.
     this.svg = rootGroup;
+    this.currentGroup = this.svg;
 
     return svg;
   }
