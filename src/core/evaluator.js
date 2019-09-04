@@ -78,8 +78,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (this.builtInCMapCache.has(name)) {
         return this.builtInCMapCache.get(name);
       }
-      const data = await this.handler.sendWithPromise('FetchBuiltInCMap',
-                                                      { name, });
+      const readableStream = this.handler.sendWithStream('FetchBuiltInCMap', {
+        name,
+      });
+      const reader = readableStream.getReader();
+
+      const data = await new Promise(function(resolve, reject) {
+        function pump() {
+          reader.read().then(function({ value, done, }) {
+            if (done) {
+              return;
+            }
+            resolve(value);
+            pump();
+          }, reject);
+        }
+        pump();
+      });
+
       if (data.compressionType !== CMapCompressionType.NONE) {
         // Given the size of uncompressed CMaps, only cache compressed ones.
         this.builtInCMapCache.set(name, data);
