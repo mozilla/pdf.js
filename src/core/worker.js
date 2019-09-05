@@ -73,19 +73,7 @@ var WorkerMessageHandler = {
       // making sure postMessage transfers are working
       var supportTransfers = data[0] === 255;
       handler.postMessageTransfers = supportTransfers;
-      // check if the response property is supported by xhr
-      var xhr = new XMLHttpRequest();
-      var responseExists = 'response' in xhr;
-      // check if the property is actually implemented
-      try {
-        xhr.responseType; // eslint-disable-line no-unused-expressions
-      } catch (e) {
-        responseExists = false;
-      }
-      if (!responseExists) {
-        handler.send('test', false);
-        return;
-      }
+
       handler.send('test', {
         supportTypedArray: true,
         supportTransfers,
