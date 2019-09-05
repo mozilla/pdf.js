@@ -1665,7 +1665,7 @@ const PDFWorker = (function PDFWorkerClosure() {
               terminateEarly();
               return; // worker was destroyed
             }
-            if (data && data.supportTypedArray) {
+            if (data) { // supportTypedArray
               this._messageHandler = messageHandler;
               this._port = worker;
               this._webWorker = worker;
