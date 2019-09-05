@@ -146,8 +146,6 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   2^16 = 65536.
  * @property {PDFWorker}  worker - (optional) The worker that will be used for
  *   the loading and parsing of the PDF data.
- * @property {boolean} postMessageTransfers - (optional) Enables transfer usage
- *   in postMessage for ArrayBuffers. The default value is `true`.
  * @property {number} verbosity - (optional) Controls the logging level; the
  *   constants from {VerbosityLevel} should be used.
  * @property {string} docBaseUrl - (optional) The base URL of the document,
@@ -319,7 +317,6 @@ function getDocument(src) {
 
   if (!worker) {
     const workerParams = {
-      postMessageTransfers: params.postMessageTransfers,
       verbosity: params.verbosity,
       port: GlobalWorkerOptions.workerPort,
     };
@@ -1476,8 +1473,6 @@ class LoopbackPort {
  * @typedef {Object} PDFWorkerParameters
  * @property {string} name - (optional) The name of the worker.
  * @property {Object} port - (optional) The `workerPort`.
- * @property {boolean} postMessageTransfers - (optional) Enables transfer usage
- *   in postMessage for ArrayBuffers. The default value is `true`.
  * @property {number} verbosity - (optional) Controls the logging level; the
  *   constants from {VerbosityLevel} should be used.
  */
@@ -1568,7 +1563,7 @@ const PDFWorker = (function PDFWorkerClosure() {
    * @param {PDFWorkerParameters} params - The worker initialization parameters.
    */
   class PDFWorker {
-    constructor({ name = null, port = null, postMessageTransfers = true,
+    constructor({ name = null, port = null,
                   verbosity = getVerbosityLevel(), } = {}) {
       if (port && pdfWorkerPorts.has(port)) {
         throw new Error('Cannot use more than one PDFWorker per port');
@@ -1576,7 +1571,7 @@ const PDFWorker = (function PDFWorkerClosure() {
 
       this.name = name;
       this.destroyed = false;
-      this.postMessageTransfers = postMessageTransfers !== false;
+      this.postMessageTransfers = true;
       this.verbosity = verbosity;
 
       this._readyCapability = createPromiseCapability();
@@ -1705,7 +1700,7 @@ const PDFWorker = (function PDFWorkerClosure() {
             try {
               messageHandler.send('test', testObj, [testObj.buffer]);
             } catch (ex) {
-              info('Cannot use postMessage transfers');
+              warn('Cannot use postMessage transfers.');
               testObj[0] = 0;
               messageHandler.send('test', testObj);
             }
