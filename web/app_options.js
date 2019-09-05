@@ -206,11 +206,6 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API,
   },
-  postMessageTransfers: {
-    /** @type {boolean} */
-    value: true,
-    kind: OptionKind.API,
-  },
   verbosity: {
     /** @type {number} */
     value: 1,
