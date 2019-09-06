@@ -2225,11 +2225,26 @@ class WorkerTransport {
       });
     });
 
-    messageHandler.on('FetchBuiltInCMap', (data) => {
+    messageHandler.on('FetchBuiltInCMap', (data, sink) => {
       if (this.destroyed) {
-        return Promise.reject(new Error('Worker was destroyed'));
+        sink.error(new Error('Worker was destroyed'));
+        return;
       }
-      return this.CMapReaderFactory.fetch(data);
+      let fetched = false;
+
+      sink.onPull = () => {
+        if (fetched) {
+          sink.close();
+          return;
+        }
+        fetched = true;
+
+        this.CMapReaderFactory.fetch(data).then(function(builtInCMap) {
+          sink.enqueue(builtInCMap, 1, [builtInCMap.cMapData.buffer]);
+        }).catch(function(reason) {
+          sink.error(reason);
+        });
+      };
     });
   }
 
