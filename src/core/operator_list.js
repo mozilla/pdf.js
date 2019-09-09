@@ -648,14 +648,10 @@ var OperatorList = (function OperatorListClosure() {
       this._totalLength += length;
 
       this._streamSink.enqueue({
-        operatorList: {
-          fnArray: this.fnArray,
-          argsArray: this.argsArray,
-          lastChunk,
-          length,
-        },
-        pageIndex: this.pageIndex,
-        intent: this.intent,
+        fnArray: this.fnArray,
+        argsArray: this.argsArray,
+        lastChunk,
+        length,
       }, 1, this._transfers);
 
       this.dependencies = Object.create(null);
