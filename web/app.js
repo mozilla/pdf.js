@@ -939,8 +939,13 @@ let PDFViewerApplication = {
       }).catch(() => { /* Unable to read from storage; ignoring errors. */ });
 
       Promise.all([
-        storePromise, pageLayoutPromise, pageModePromise, openActionDestPromise,
-      ]).then(async ([values = {}, pageLayout, pageMode, openActionDest]) => {
+        animationStarted,
+        storePromise,
+        pageLayoutPromise,
+        pageModePromise,
+        openActionDestPromise,
+      ]).then(async ([timeStamp, values = {}, pageLayout, pageMode,
+                      openActionDest]) => {
         const viewOnLoad = AppOptions.get('viewOnLoad');
 
         this._initializePdfHistory({
@@ -1088,7 +1093,7 @@ let PDFViewerApplication = {
       });
     });
 
-    Promise.all([onePageRendered, animationStarted]).then(() => {
+    onePageRendered.then(() => {
       pdfDocument.getOutline().then((outline) => {
         this.pdfOutlineViewer.render({ outline, });
       });
