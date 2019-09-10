@@ -1324,7 +1324,7 @@ class PDFPageProxy {
         if (this._transport.destroyed) {
           return; // Ignore any pending requests if the worker was terminated.
         }
-        this._renderPageChunk(value.operatorList, intentState);
+        this._renderPageChunk(value, intentState);
         pump();
       }, (reason) => {
         intentState.streamReader = null;
