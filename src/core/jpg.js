@@ -403,16 +403,19 @@ var JpegImage = (function JpegImageClosure() {
       // find marker
       bitsCount = 0;
       fileMarker = findNextFileMarker(data, offset);
-      // Some bad images seem to pad Scan blocks with e.g. zero bytes, skip past
-      // those to attempt to find a valid marker (fixes issue4090.pdf).
-      if (fileMarker && fileMarker.invalid) {
+      if (!fileMarker) {
+        // Reached the end of the image data without finding an EOI marker.
+        break;
+      } else if (fileMarker.invalid) {
+        // Some bad images seem to pad Scan blocks with e.g. zero bytes, skip
+        // past those to attempt to find a valid marker (fixes issue4090.pdf).
         warn('decodeScan - unexpected MCU data, current marker is: ' +
              fileMarker.invalid);
         offset = fileMarker.offset;
       }
       var marker = fileMarker && fileMarker.marker;
       if (!marker || marker <= 0xFF00) {
-        throw new JpegError('marker was not found');
+        throw new JpegError('decodeScan - a valid marker was not found.');
       }
 
       if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
@@ -943,7 +946,13 @@ var JpegImage = (function JpegImageClosure() {
               offset = nextFileMarker.offset;
               break;
             }
-            throw new JpegError('unknown marker ' + fileMarker.toString(16));
+            if (offset > (data.length - 2)) {
+              warn('JpegImage.parse - reached the end of the image data ' +
+                   'without finding an EOI marker (0xFFD9).');
+              break markerLoop;
+            }
+            throw new JpegError('JpegImage.parse - unknown marker: ' +
+                                fileMarker.toString(16));
         }
         fileMarker = readUint16();
       }
@@ -973,6 +982,7 @@ var JpegImage = (function JpegImageClosure() {
         });
       }
       this.numComponents = this.components.length;
+      return undefined;
     },
 
     _getLinearizedBlockData(width, height, isSourcePDF = false) {

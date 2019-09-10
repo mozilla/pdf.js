@@ -37,6 +37,7 @@ describe('network_utils', function() {
           if (headerName === 'Content-Length') {
             return 8;
           }
+          throw new Error(`Unexpected headerName: ${headerName}`);
         },
         rangeChunkSize: 64,
       })).toEqual({
@@ -51,6 +52,7 @@ describe('network_utils', function() {
           if (headerName === 'Content-Length') {
             return 8;
           }
+          throw new Error(`Unexpected headerName: ${headerName}`);
         },
         rangeChunkSize: 64,
       })).toEqual({
@@ -69,6 +71,7 @@ describe('network_utils', function() {
           } else if (headerName === 'Content-Length') {
             return 8;
           }
+          throw new Error(`Unexpected headerName: ${headerName}`);
         },
         rangeChunkSize: 64,
       })).toEqual({
@@ -89,6 +92,7 @@ describe('network_utils', function() {
           } else if (headerName === 'Content-Length') {
             return 8;
           }
+          throw new Error(`Unexpected headerName: ${headerName}`);
         },
         rangeChunkSize: 64,
       })).toEqual({
@@ -109,6 +113,7 @@ describe('network_utils', function() {
           } else if (headerName === 'Content-Length') {
             return 'eight';
           }
+          throw new Error(`Unexpected headerName: ${headerName}`);
         },
         rangeChunkSize: 64,
       })).toEqual({
@@ -129,6 +134,7 @@ describe('network_utils', function() {
           } else if (headerName === 'Content-Length') {
             return 8;
           }
+          throw new Error(`Unexpected headerName: ${headerName}`);
         },
         rangeChunkSize: 64,
       })).toEqual({
@@ -149,6 +155,7 @@ describe('network_utils', function() {
           } else if (headerName === 'Content-Length') {
             return 8192;
           }
+          throw new Error(`Unexpected headerName: ${headerName}`);
         },
         rangeChunkSize: 64,
       })).toEqual({
@@ -164,18 +171,21 @@ describe('network_utils', function() {
         if (headerName === 'Content-Disposition') {
           return null;
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toBeNull();
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return undefined;
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toBeNull();
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return '';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toBeNull();
     });
 
@@ -184,43 +194,64 @@ describe('network_utils', function() {
         if (headerName === 'Content-Disposition') {
           return 'inline';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toBeNull();
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toBeNull();
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename="filename.pdf"';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename="filename.pdf and spaces.pdf"';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf and spaces.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename="tl;dr.pdf"';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('tl;dr.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename=filename.pdf';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename=filename.pdf someotherparam';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename="%e4%b8%ad%e6%96%87.pdf"';
+        }
+        throw new Error(`Unexpected headerName: ${headerName}`);
+      })).toEqual('中文.pdf');
+
+      expect(extractFilenameFromHeader((headerName) => {
+        if (headerName === 'Content-Disposition') {
+          return 'attachment; filename="100%.pdf"';
+        }
+        throw new Error(`Unexpected headerName: ${headerName}`);
+      })).toEqual('100%.pdf');
     });
 
     it('gets the filename from the response header (RFC 6266)', function() {
@@ -228,30 +259,35 @@ describe('network_utils', function() {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename*=filename.pdf';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename*=\'\'filename.pdf';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename*=utf-8\'\'filename.pdf';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename=no.pdf; filename*=utf-8\'\'filename.pdf';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
 
       expect(extractFilenameFromHeader((headerName) => {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename*=utf-8\'\'filename.pdf; filename=no.pdf';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
     });
 
@@ -261,6 +297,7 @@ describe('network_utils', function() {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename*0=filename; filename*1=.pdf';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('filename.pdf');
     });
 
@@ -269,6 +306,7 @@ describe('network_utils', function() {
         if (headerName === 'Content-Disposition') {
           return 'attachment; filename="filename.png"';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toBeNull();
     });
 
@@ -277,6 +315,7 @@ describe('network_utils', function() {
         if (headerName === 'Content-Disposition') {
           return 'form-data; name="fieldName"; filename="file.PdF"';
         }
+        throw new Error(`Unexpected headerName: ${headerName}`);
       })).toEqual('file.PdF');
     });
   });

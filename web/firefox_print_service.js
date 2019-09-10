@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { AppOptions } from './app_options';
 import { CSS_UNITS } from './ui_utils';
 import { PDFPrintServiceFactory } from './app';
 import { shadow } from 'pdfjs-lib';
@@ -22,7 +23,7 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
   let canvas = document.createElement('canvas');
 
   // The size of the canvas in pixels for printing.
-  const PRINT_RESOLUTION = 150;
+  const PRINT_RESOLUTION = AppOptions.get('printResolution') || 150;
   const PRINT_UNITS = PRINT_RESOLUTION / 72.0;
   canvas.width = Math.floor(size.width * PRINT_UNITS);
   canvas.height = Math.floor(size.height * PRINT_UNITS);
@@ -76,18 +77,21 @@ function FirefoxPrintService(pdfDocument, pagesOverview, printContainer) {
 
 FirefoxPrintService.prototype = {
   layout() {
-    let pdfDocument = this.pdfDocument;
-    let printContainer = this.printContainer;
-    let body = document.querySelector('body');
+    const { pdfDocument, pagesOverview, printContainer, } = this;
+
+    const body = document.querySelector('body');
     body.setAttribute('data-pdfjsprinting', true);
 
-    for (let i = 0, ii = this.pagesOverview.length; i < ii; ++i) {
-      composePage(pdfDocument, i + 1, this.pagesOverview[i], printContainer);
+    for (let i = 0, ii = pagesOverview.length; i < ii; ++i) {
+      composePage(pdfDocument, i + 1, pagesOverview[i], printContainer);
     }
   },
 
   destroy() {
     this.printContainer.textContent = '';
+
+    const body = document.querySelector('body');
+    body.removeAttribute('data-pdfjsprinting');
   },
 };
 

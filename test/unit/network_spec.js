@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { AbortException } from '../../src/shared/util';
 import { PDFNetworkStream } from '../../src/display/network';
 
 describe('network', function() {
@@ -39,7 +40,7 @@ describe('network', function() {
     var read = function () {
       return fullReader.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         count++;
         len += result.value.byteLength;
@@ -79,7 +80,7 @@ describe('network', function() {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // we shall be able to close the full reader without issues
-      fullReader.cancel('Don\'t need full reader');
+      fullReader.cancel(new AbortException('Don\'t need fullReader.'));
       fullReaderCancelled = true;
     });
 
@@ -94,7 +95,7 @@ describe('network', function() {
     var read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         lenResult.value += result.value.byteLength;
         return read(reader, lenResult);

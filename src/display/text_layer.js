@@ -48,16 +48,10 @@ var renderTextLayer = (function renderTextLayerClosure() {
     return !NonWhitespaceRegexp.test(str);
   }
 
-  // Text layers may contain many thousands of divs, and using `styleBuf` avoids
-  // creating many intermediate strings when building their 'style' properties.
-  var styleBuf = ['left: ', 0, 'px; top: ', 0, 'px; font-size: ', 0,
-                  'px; font-family: ', '', ';'];
-
   function appendText(task, geom, styles) {
     // Initialize all used properties to keep the caches monomorphic.
     var textDiv = document.createElement('span');
     var textDivProperties = {
-      style: null,
       angle: 0,
       canvasWidth: 0,
       isWhitespace: false,
@@ -90,8 +84,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       fontAscent = (1 + style.descent) * fontAscent;
     }
 
-    var left;
-    var top;
+    let left, top;
     if (angle === 0) {
       left = tx[4];
       top = tx[5] - fontAscent;
@@ -99,12 +92,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       left = tx[4] + (fontAscent * Math.sin(angle));
       top = tx[5] - (fontAscent * Math.cos(angle));
     }
-    styleBuf[1] = left;
-    styleBuf[3] = top;
-    styleBuf[5] = fontHeight;
-    styleBuf[7] = style.fontFamily;
-    textDivProperties.style = styleBuf.join('');
-    textDiv.setAttribute('style', textDivProperties.style);
+    // Setting the style properties individually, rather than all at once,
+    // should be OK since the `textDiv` isn't appended to the document yet.
+    textDiv.style.left = `${left}px`;
+    textDiv.style.top = `${top}px`;
+    textDiv.style.fontSize = `${fontHeight}px`;
+    textDiv.style.fontFamily = style.fontFamily;
 
     textDiv.textContent = geom.str;
     // `fontName` is only used by the FontInspector, and we only use `dataset`
@@ -500,7 +493,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         this._layoutTextCtx.canvas.height = 0;
         this._layoutTextCtx = null;
       }
-    });
+    }).catch(() => { /* Avoid "Uncaught promise" messages in the console. */ });
   }
   TextLayerRenderTask.prototype = {
     get promise() {
@@ -528,40 +521,41 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
 
     _layoutText(textDiv) {
-      let textLayerFrag = this._container;
-
-      let textDivProperties = this._textDivProperties.get(textDiv);
+      const textDivProperties = this._textDivProperties.get(textDiv);
       if (textDivProperties.isWhitespace) {
         return;
       }
 
-      let fontSize = textDiv.style.fontSize;
-      let fontFamily = textDiv.style.fontFamily;
-
-      // Only build font string and set to context if different from last.
-      if (fontSize !== this._layoutTextLastFontSize ||
-          fontFamily !== this._layoutTextLastFontFamily) {
-        this._layoutTextCtx.font = fontSize + ' ' + fontFamily;
-        this._layoutTextLastFontSize = fontSize;
-        this._layoutTextLastFontFamily = fontFamily;
-      }
-
-      let width = this._layoutTextCtx.measureText(textDiv.textContent).width;
-
       let transform = '';
-      if (textDivProperties.canvasWidth !== 0 && width > 0) {
-        textDivProperties.scale = textDivProperties.canvasWidth / width;
-        transform = `scaleX(${textDivProperties.scale})`;
+      if (textDivProperties.canvasWidth !== 0) {
+        const { fontSize, fontFamily, } = textDiv.style;
+
+        // Only build font string and set to context if different from last.
+        if (fontSize !== this._layoutTextLastFontSize ||
+            fontFamily !== this._layoutTextLastFontFamily) {
+          this._layoutTextCtx.font = `${fontSize} ${fontFamily}`;
+          this._layoutTextLastFontSize = fontSize;
+          this._layoutTextLastFontFamily = fontFamily;
+        }
+        // Only measure the width for multi-char text divs, see `appendText`.
+        const { width, } = this._layoutTextCtx.measureText(textDiv.textContent);
+
+        if (width > 0) {
+          textDivProperties.scale = textDivProperties.canvasWidth / width;
+          transform = `scaleX(${textDivProperties.scale})`;
+        }
       }
       if (textDivProperties.angle !== 0) {
         transform = `rotate(${textDivProperties.angle}deg) ${transform}`;
       }
       if (transform.length > 0) {
-        textDivProperties.originalTransform = transform;
+        if (this._enhanceTextSelection) {
+          textDivProperties.originalTransform = transform;
+        }
         textDiv.style.transform = transform;
       }
       this._textDivProperties.set(textDiv, textDivProperties);
-      textLayerFrag.appendChild(textDiv);
+      this._container.appendChild(textDiv);
     },
 
     _render: function TextLayer_render(timeout) {
@@ -623,51 +617,57 @@ var renderTextLayer = (function renderTextLayerClosure() {
         expand(this);
         this._bounds = null;
       }
+      const NO_PADDING = '0 0 0 0';
+      const transformBuf = [], paddingBuf = [];
 
       for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
-        var div = this._textDivs[i];
-        var divProperties = this._textDivProperties.get(div);
+        const div = this._textDivs[i];
+        const divProps = this._textDivProperties.get(div);
 
-        if (divProperties.isWhitespace) {
+        if (divProps.isWhitespace) {
           continue;
         }
         if (expandDivs) {
-          var transform = '', padding = '';
+          transformBuf.length = 0;
+          paddingBuf.length = 0;
 
-          if (divProperties.scale !== 1) {
-            transform = 'scaleX(' + divProperties.scale + ')';
+          if (divProps.originalTransform) {
+            transformBuf.push(divProps.originalTransform);
           }
-          if (divProperties.angle !== 0) {
-            transform = 'rotate(' + divProperties.angle + 'deg) ' + transform;
+          if (divProps.paddingTop > 0) {
+            paddingBuf.push(`${divProps.paddingTop}px`);
+            transformBuf.push(`translateY(${-divProps.paddingTop}px)`);
+          } else {
+            paddingBuf.push(0);
           }
-          if (divProperties.paddingLeft !== 0) {
-            padding += ' padding-left: ' +
-              (divProperties.paddingLeft / divProperties.scale) + 'px;';
-            transform += ' translateX(' +
-              (-divProperties.paddingLeft / divProperties.scale) + 'px)';
+          if (divProps.paddingRight > 0) {
+            paddingBuf.push(`${divProps.paddingRight / divProps.scale}px`);
+          } else {
+            paddingBuf.push(0);
           }
-          if (divProperties.paddingTop !== 0) {
-            padding += ' padding-top: ' + divProperties.paddingTop + 'px;';
-            transform += ' translateY(' + (-divProperties.paddingTop) + 'px)';
+          if (divProps.paddingBottom > 0) {
+            paddingBuf.push(`${divProps.paddingBottom}px`);
+          } else {
+            paddingBuf.push(0);
           }
-          if (divProperties.paddingRight !== 0) {
-            padding += ' padding-right: ' +
-              (divProperties.paddingRight / divProperties.scale) + 'px;';
-          }
-          if (divProperties.paddingBottom !== 0) {
-            padding += ' padding-bottom: ' +
-              divProperties.paddingBottom + 'px;';
+          if (divProps.paddingLeft > 0) {
+            paddingBuf.push(`${divProps.paddingLeft / divProps.scale}px`);
+            transformBuf.push(
+              `translateX(${-divProps.paddingLeft / divProps.scale}px)`);
+          } else {
+            paddingBuf.push(0);
           }
 
-          if (padding !== '') {
-            div.setAttribute('style', divProperties.style + padding);
+          const padding = paddingBuf.join(' ');
+          if (padding !== NO_PADDING) {
+            div.style.padding = padding;
           }
-          if (transform !== '') {
-            div.style.transform = transform;
+          if (transformBuf.length) {
+            div.style.transform = transformBuf.join(' ');
           }
         } else {
-          div.style.padding = 0;
-          div.style.transform = divProperties.originalTransform || '';
+          div.style.padding = null;
+          div.style.transform = divProps.originalTransform;
         }
       }
     },

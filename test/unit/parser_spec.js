@@ -26,9 +26,12 @@ describe('parser', function() {
         const string = 'q 1 0 0 1 0 0 cm BI /W 10 /H 10 /BPC 1 ' +
                        '/F /A85 ID abc123~> EI Q';
         const input = new StringStream(string);
-        const lexer = new Lexer(input);
-        const parser = new Parser(lexer, /* allowStreams = */ true,
-                                  /* xref = */ null);
+        const parser = new Parser({
+          lexer: new Lexer(input),
+          xref: null,
+          allowStreams: true,
+        });
+
         parser.inlineStreamSkipEI(input);
         expect(input.pos).toEqual(string.indexOf('Q'));
         expect(input.peekByte()).toEqual(0x51); // 'Q'
@@ -39,9 +42,12 @@ describe('parser', function() {
         const string = 'q 1 0 0 1 0 0 cm BI /W 10 /H 10 /BPC 1 ' +
                        '/F /A85 ID abc123~> Q';
         const input = new StringStream(string);
-        const lexer = new Lexer(input);
-        const parser = new Parser(lexer, /* allowStreams = */ true,
-                                  /* xref = */ null);
+        const parser = new Parser({
+          lexer: new Lexer(input),
+          xref: null,
+          allowStreams: true,
+        });
+
         parser.inlineStreamSkipEI(input);
         expect(input.pos).toEqual(string.length);
         expect(input.peekByte()).toEqual(-1);
@@ -99,7 +105,17 @@ describe('parser', function() {
         for (const number of numbers) {
           const input = new StringStream(number);
           const lexer = new Lexer(input);
-          expect(lexer.getNumber()).toEqual(parseFloat(number));
+
+          const result = lexer.getNumber(), expected = parseFloat(number);
+
+          if (result !== expected && Math.abs(result - expected) < 1e-15) {
+            console.error(`Fuzzy matching "${result}" with "${expected}" to ` +
+                          'work-around rounding bugs in Chromium browsers.');
+
+            expect(true).toEqual(true);
+            continue;
+          }
+          expect(result).toEqual(expected);
         }
       });
 

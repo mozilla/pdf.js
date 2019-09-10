@@ -17,17 +17,30 @@ import { FormatError, info, Util } from '../shared/util';
 
 var ShadingIRs = {};
 
+function applyBoundingBox(ctx, bbox) {
+  if (!bbox || typeof Path2D === 'undefined') {
+    return;
+  }
+  const width = bbox[2] - bbox[0];
+  const height = bbox[3] - bbox[1];
+  const region = new Path2D();
+  region.rect(bbox[0], bbox[1], width, height);
+  ctx.clip(region);
+}
+
 ShadingIRs.RadialAxial = {
   fromIR: function RadialAxial_fromIR(raw) {
     var type = raw[1];
-    var colorStops = raw[2];
-    var p0 = raw[3];
-    var p1 = raw[4];
-    var r0 = raw[5];
-    var r1 = raw[6];
+    var bbox = raw[2];
+    var colorStops = raw[3];
+    var p0 = raw[4];
+    var p1 = raw[5];
+    var r0 = raw[6];
+    var r1 = raw[7];
     return {
       type: 'Pattern',
       getPattern: function RadialAxial_getPattern(ctx) {
+        applyBoundingBox(ctx, bbox);
         var grad;
         if (type === 'axial') {
           grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
@@ -233,11 +246,12 @@ ShadingIRs.Mesh = {
     var figures = raw[4];
     var bounds = raw[5];
     var matrix = raw[6];
-    // var bbox = raw[7];
+    var bbox = raw[7];
     var background = raw[8];
     return {
       type: 'Pattern',
       getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
+        applyBoundingBox(ctx, bbox);
         var scale;
         if (shadingFill) {
           scale = Util.singularValueDecompose2dScale(ctx.mozCurrentTransform);

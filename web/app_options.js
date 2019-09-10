@@ -105,6 +105,9 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  /**
+   * The `printResolution` is, conditionally, defined below.
+   */
   renderer: {
     /** @type {string} */
     value: 'canvas',
@@ -183,6 +186,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API + OptionKind.PREFERENCE,
   },
+  docBaseUrl: {
+    /** @type {string} */
+    value: '',
+    kind: OptionKind.API,
+  },
   isEvalSupported: {
     /** @type {boolean} */
     value: true,
@@ -196,11 +204,6 @@ const defaultOptions = {
   pdfBug: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.API,
-  },
-  postMessageTransfers: {
-    /** @type {boolean} */
-    value: true,
     kind: OptionKind.API,
   },
   verbosity: {
@@ -231,6 +234,11 @@ if (typeof PDFJSDev === 'undefined' ||
   defaultOptions.locale = {
     /** @type {string} */
     value: (typeof navigator !== 'undefined' ? navigator.language : 'en-US'),
+    kind: OptionKind.VIEWER,
+  };
+  defaultOptions.printResolution = {
+    /** @type {number} */
+    value: 150,
     kind: OptionKind.VIEWER,
   };
 }

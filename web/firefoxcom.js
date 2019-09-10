@@ -16,6 +16,7 @@
 import '../extensions/firefox/tools/l10n';
 import { createObjectURL, PDFDataRangeTransport, shadow, URL } from 'pdfjs-lib';
 import { BasePreferences } from './preferences';
+import { DEFAULT_SCALE_VALUE } from './ui_utils';
 import { PDFViewerApplication } from './app';
 
 if (typeof PDFJSDev === 'undefined' ||
@@ -176,9 +177,7 @@ class MozL10n {
       return;
     }
     if (type === 'findbarclose') {
-      PDFViewerApplication.eventBus.dispatch('findbarclose', {
-        source: window,
-      });
+      PDFViewerApplication.eventBus.dispatch(type, { source: window, });
       return;
     }
     PDFViewerApplication.eventBus.dispatch('find', {
@@ -208,10 +207,13 @@ class MozL10n {
     if (!PDFViewerApplication.initialized) {
       return;
     }
-    PDFViewerApplication.eventBus.dispatch(type, {
-      source: window,
-      ignoreDuplicate: (type === 'zoomreset' ? true : undefined),
-    });
+    // Avoid attempting to needlessly reset the zoom level *twice* in a row,
+    // when using the `Ctrl + 0` keyboard shortcut.
+    if (type === 'zoomreset' && // eslint-disable-next-line max-len
+        PDFViewerApplication.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE) {
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch(type, { source: window, });
   };
 
   for (const event of events) {
