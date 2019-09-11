@@ -294,20 +294,18 @@ class LinkAnnotationElement extends AnnotationElement {
     const { data, linkService, } = this;
     const link = document.createElement('a');
 
-    addLinkAttributes(link, {
-      url: data.url,
-      target: (data.newWindow ?
-               LinkTarget.BLANK : linkService.externalLinkTarget),
-      rel: linkService.externalLinkRel,
-      enabled: linkService.externalLinkEnabled,
-    });
-
-    if (!data.url) {
-      if (data.action) {
-        this._bindNamedAction(link, data.action);
-      } else {
-        this._bindLink(link, data.dest);
-      }
+    if (data.url) {
+      addLinkAttributes(link, {
+        url: data.url,
+        target: (data.newWindow ?
+                 LinkTarget.BLANK : linkService.externalLinkTarget),
+        rel: linkService.externalLinkRel,
+        enabled: linkService.externalLinkEnabled,
+      });
+    } else if (data.action) {
+      this._bindNamedAction(link, data.action);
+    } else {
+      this._bindLink(link, data.dest);
     }
 
     this.container.appendChild(link);

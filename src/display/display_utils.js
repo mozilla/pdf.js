@@ -354,7 +354,10 @@ const LinkTargetStringMap = [
  * @param {ExternalLinkParameters} params
  */
 function addLinkAttributes(link, { url, target, rel, enabled = true, } = {}) {
-  const urlNullRemoved = (url ? removeNullCharacters(url) : '');
+  assert(url && typeof url === 'string',
+         'addLinkAttributes: A valid "url" parameter must provided.');
+
+  const urlNullRemoved = removeNullCharacters(url);
   if (enabled) {
     link.href = link.title = urlNullRemoved;
   } else {
@@ -365,14 +368,12 @@ function addLinkAttributes(link, { url, target, rel, enabled = true, } = {}) {
     };
   }
 
-  if (url) {
-    const LinkTargetValues = Object.values(LinkTarget);
-    const targetIndex =
-      LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
-    link.target = LinkTargetStringMap[targetIndex];
+  const LinkTargetValues = Object.values(LinkTarget);
+  const targetIndex =
+    LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
+  link.target = LinkTargetStringMap[targetIndex];
 
-    link.rel = (typeof rel === 'string' ? rel : DEFAULT_LINK_REL);
-  }
+  link.rel = (typeof rel === 'string' ? rel : DEFAULT_LINK_REL);
 }
 
 // Gets the file name from a given URL.
