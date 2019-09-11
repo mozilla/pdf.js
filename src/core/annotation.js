@@ -478,8 +478,6 @@ class Annotation {
   }
 
   getOperatorList(evaluator, task, renderForms) {
-    // return Promise.resolve(new OperatorList());
-
     if (!this.appearance) {
       return Promise.resolve(new OperatorList());
     }
