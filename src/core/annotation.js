@@ -482,6 +482,10 @@ class Annotation {
       return Promise.resolve(new OperatorList());
     }
 
+    if (this.data.subtype === 'Widget' || this.data.subtype === 'Link') {
+      return Promise.resolve(new OperatorList());
+    }
+
     let data = this.data;
     let appearanceDict = this.appearance.dict;
     let resourcesPromise = this.loadResources([
