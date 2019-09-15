@@ -11,7 +11,7 @@
     "autoprefixer": "^9.6.1",
     "babel-loader": "^8.0.6",
     "canvas": "^2.6.0",
-    "core-js": "^2.6.9",
+    "core-js": "^3.2.1",
     "escodegen": "^1.12.0",
     "eslint": "^6.4.0",
     "eslint-config-prettier": "^6.3.0",
