@@ -14,7 +14,7 @@
  */
 
 import {
-  apiCompatibilityParams, createObjectURL, createValidAbsoluteUrl, URL
+  apiCompatibilityParams, createObjectURL, createValidAbsoluteUrl
 } from 'pdfjs-lib';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
