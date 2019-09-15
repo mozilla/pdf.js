@@ -184,8 +184,11 @@ function createWebpackConfig(defines, output) {
       rules: [
         {
           loader: 'babel-loader',
-          // babel is too slow
-          exclude: /src[\\\/]core[\\\/](glyphlist|unicode)/,
+          // `core-js` (see https://github.com/zloirock/core-js/issues/514) and
+          // `src/core/{glyphlist,unicode}.js` (Babel is too slow for those)
+          // should be excluded from processing.
+          // eslint-disable-next-line max-len
+          exclude: /(node_modules[\\\/]core-js|src[\\\/]core[\\\/](glyphlist|unicode))/,
           options: {
             presets: skipBabel ? undefined : ['@babel/preset-env'],
             plugins: [
@@ -552,7 +555,7 @@ gulp.task('default_preferences-pre', function() {
     .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + 'lib/'));
   return merge([
     buildLib,
-    gulp.src('external/{streams,url}/*.js', { base: '.', })
+    gulp.src('external/streams/*.js', { base: '.', })
       .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR)),
   ]);
 });
@@ -1049,8 +1052,6 @@ gulp.task('lib', gulp.series('buildnumber', 'default_preferences', function() {
     buildLib,
     gulp.src('external/streams/streams-lib.js', { base: '.', })
       .pipe(gulp.dest('build/')),
-    gulp.src('external/url/url-lib.js', { base: '.', })
-      .pipe(gulp.dest('build/')),
   ]);
 }));
 
@@ -1369,8 +1370,6 @@ gulp.task('dist-pre', gulp.series('generic', 'components', 'image_decoders',
 
   return merge([
     gulp.src('external/streams/streams-lib.js', { base: '.', })
-      .pipe(gulp.dest('build/dist/')),
-    gulp.src('external/url/url-lib.js', { base: '.', })
       .pipe(gulp.dest('build/dist/')),
     packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
     bowerJsonSrc.pipe(gulp.dest(DIST_DIR)),

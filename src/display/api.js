@@ -20,7 +20,7 @@ import {
   InvalidPDFException, isArrayBuffer, isSameOrigin, MissingPDFException,
   NativeImageDecoding, PasswordException, setVerbosityLevel, shadow,
   stringToBytes, UnexpectedResponseException, UnknownErrorException,
-  unreachable, URL, warn
+  unreachable, warn
 } from '../shared/util';
 import {
   deprecated, DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,

@@ -16,7 +16,7 @@
 
 import {
   assert, CMapCompressionType, isString, removeNullCharacters, stringToBytes,
-  unreachable, URL, Util, warn
+  unreachable, Util, warn
 } from '../shared/util';
 
 const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
