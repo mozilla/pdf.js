@@ -202,6 +202,65 @@ class TextLayerBuilder {
     return result;
   }
 
+  _convertHighlightMatches(highlightMatches) {
+    // Early exit if there is nothing to convert.
+    if (!highlightMatches) {
+      return [];
+    }
+    const { findController, textContentItemsStr, } = this;
+
+    const end = textContentItemsStr.length - 1;
+    const result = [];
+
+    let i = 0, iIndex = 0;
+    const matches = Object.keys(highlightMatches).map(function (item) {
+      return parseInt(item);
+    });
+
+    for (let m = 0, mm = matches.length; m < mm; m++) {
+      // Calculate the start position.
+      let matchIdx = matches[m];
+
+      let queryLen = highlightMatches[matchIdx].length;
+
+      // Loop over the divIdxs.
+      while (i !== end &&
+             matchIdx >= (iIndex + textContentItemsStr[i].length)) {
+        iIndex += textContentItemsStr[i].length;
+        i++;
+      }
+
+      if (i === textContentItemsStr.length) {
+        console.error('Could not find a matching mapping');
+      }
+
+      let match = {
+        begin: {
+          divIdx: i,
+          offset: matchIdx - iIndex,
+        },
+      };
+
+      matchIdx += queryLen;
+
+      // Somewhat the same array as above, but use > instead of >= to get
+      // the end position right.
+      while (i !== end &&
+             matchIdx > (iIndex + textContentItemsStr[i].length)) {
+        iIndex += textContentItemsStr[i].length;
+        i++;
+      }
+
+      match.end = {
+        divIdx: i,
+        offset: matchIdx - iIndex,
+      };
+      result.push(match);
+    }
+
+    return result;
+  }
+
   _renderMatches(matches) {
     // Early exit if there is nothing to render.
     if (matches.length === 0) {
@@ -318,12 +377,18 @@ class TextLayerBuilder {
     if (!findController || !findController.highlightMatches) {
       return;
     }
-    // Convert the matches on the `findController` into the match format
-    // used for the textLayer.
-    const pageMatches = findController.pageMatches[pageIdx] || null;
-    const pageMatchesLength = findController.pageMatchesLength[pageIdx] || null;
 
-    this.matches = this._convertMatches(pageMatches, pageMatchesLength);
+    if (findController.state.highlights) {
+      const pageMatches = findController.pageHighlightMatches[pageIdx] || null;
+      this.matches = this._convertHighlightMatches(pageMatches);
+    } else {
+      // Convert the matches on the `findController` into the match format
+      // used for the textLayer.
+      const pageMatches = findController.pageMatches[pageIdx] || null;
+      const pageMatchesLength = findController.pageMatchesLength[pageIdx] || null;
+      this.matches = this._convertMatches(pageMatches, pageMatchesLength);
+    }
+
     this._renderMatches(this.matches);
   }
 
