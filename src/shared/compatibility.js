@@ -208,6 +208,20 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   globalScope.Promise = require('core-js/es/promise/index');
 })();
 
+// Support: IE
+(function checkURL() {
+  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('IMAGE_DECODERS')) {
+    // The current image decoders don't use the `URL` constructor, so it
+    // doesn't need to be polyfilled for the IMAGE_DECODERS build target.
+    return;
+  }
+  if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('GENERIC')) {
+    // The `URL` constructor is assumed to be available in the extension builds.
+    return;
+  }
+  globalScope.URL = require('core-js/web/url');
+})();
+
 // Support: IE<11, Safari<8, Chrome<36
 (function checkWeakMap() {
   if (globalScope.WeakMap) {
