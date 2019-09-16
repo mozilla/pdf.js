@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability } from '../../src/shared/util';
+import {
+  AbortException, createPromiseCapability, UnknownErrorException
+} from '../../src/shared/util';
 import { LoopbackPort } from '../../src/display/api';
 import { MessageHandler } from '../../src/shared/message_handler';
 
@@ -124,7 +126,7 @@ describe('message_handler', function () {
         return sleep(10);
       }).then(() => {
         expect(log).toEqual('01p2');
-        return reader.cancel();
+        return reader.cancel(new AbortException('reader cancelled.'));
       }).then(() => {
         expect(log).toEqual('01p2c4');
         done();
@@ -142,12 +144,14 @@ describe('message_handler', function () {
         sink.onCancel = function (reason) {
           log += 'c';
         };
+        log += '0';
         sink.ready.then(() => {
+          log += '1';
           sink.enqueue([1, 2, 3, 4], 4);
           return sink.ready;
         }).then(() => {
-          log += 'error';
-          sink.error('error');
+          log += 'e';
+          sink.error(new Error('should not read when errored'));
         });
       });
       let messageHandler1 = new MessageHandler('main', 'worker', port);
@@ -161,15 +165,16 @@ describe('message_handler', function () {
       let reader = readable.getReader();
 
       sleep(10).then(() => {
-        expect(log).toEqual('');
+        expect(log).toEqual('01');
         return reader.read();
       }).then((result) => {
         expect(result.value).toEqual([1, 2, 3, 4]);
         expect(result.done).toEqual(false);
         return reader.read();
-      }).then(() => {
-      }, (reason) => {
-        expect(reason).toEqual('error');
+      }).catch((reason) => {
+        expect(log).toEqual('01pe');
+        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason.message).toEqual('should not read when errored');
         done();
       });
     });

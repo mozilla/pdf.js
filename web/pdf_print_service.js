@@ -74,7 +74,7 @@ PDFPrintService.prototype = {
   layout() {
     this.throwIfInactive();
 
-    let body = document.querySelector('body');
+    const body = document.querySelector('body');
     body.setAttribute('data-pdfjsprinting', true);
 
     let hasEqualPageSizes = this.pagesOverview.every(function(size) {
@@ -114,6 +114,10 @@ PDFPrintService.prototype = {
       return;
     }
     this.printContainer.textContent = '';
+
+    const body = document.querySelector('body');
+    body.removeAttribute('data-pdfjsprinting');
+
     if (this.pageStyleSheet) {
       this.pageStyleSheet.remove();
       this.pageStyleSheet = null;

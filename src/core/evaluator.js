@@ -21,7 +21,7 @@ import {
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
 import {
-  Dict, isCmd, isDict, isEOF, isName, isRef, isStream, Name
+  Cmd, Dict, EOF, isDict, isName, isRef, isStream, Name
 } from './primitives';
 import {
   ErrorFont, Font, FontFlags, getFontType, IdentityToUnicodeMap, ToUnicodeMap
@@ -78,8 +78,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (this.builtInCMapCache.has(name)) {
         return this.builtInCMapCache.get(name);
       }
-      const data = await this.handler.sendWithPromise('FetchBuiltInCMap',
-                                                      { name, });
+      const readableStream = this.handler.sendWithStream('FetchBuiltInCMap', {
+        name,
+      });
+      const reader = readableStream.getReader();
+
+      const data = await new Promise(function(resolve, reject) {
+        function pump() {
+          reader.read().then(function({ value, done, }) {
+            if (done) {
+              return;
+            }
+            resolve(value);
+            pump();
+          }, reject);
+        }
+        pump();
+      });
+
       if (data.compressionType !== CMapCompressionType.NONE) {
         // Given the size of uncompressed CMaps, only cache compressed ones.
         this.builtInCMapCache.set(name, data);
@@ -263,8 +279,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           groupOptions.isolated = (group.get('I') || false);
           groupOptions.knockout = (group.get('K') || false);
           if (group.has('CS')) {
-            colorSpace = ColorSpace.parse(group.get('CS'), this.xref, resources,
-                                          this.pdfFunctionFactory);
+            colorSpace = group.get('CS');
+            if (colorSpace) {
+              colorSpace = ColorSpace.parse(colorSpace, this.xref, resources,
+                                            this.pdfFunctionFactory);
+            } else {
+              warn('buildFormXObject - invalid/non-existent Group /CS entry: ' +
+                   group.getRaw('CS'));
+            }
           }
         }
 
@@ -535,6 +557,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         operatorList.addDependencies(tilingOpList.dependencies);
         operatorList.addOp(fn, tilingPatternIR);
       }, (reason) => {
+        if (reason instanceof AbortException) {
+          return;
+        }
         if (this.options.ignoreErrors) {
           // Error(s) in the TilingPattern -- sending unsupported feature
           // notification and allow rendering to continue.
@@ -912,8 +937,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return new Promise(function promiseBody(resolve, reject) {
-        var next = function (promise) {
-          promise.then(function () {
+        let next = function(promise) {
+          Promise.all([promise, operatorList.ready]).then(function () {
             try {
               promiseBody(resolve, reject);
             } catch (ex) {
@@ -994,6 +1019,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 }
                 resolveXObject();
               }).catch(function(reason) {
+                if (reason instanceof AbortException) {
+                  return;
+                }
                 if (self.options.ignoreErrors) {
                   // Error(s) in the XObject -- sending unsupported feature
                   // notification and allow rendering to continue.
@@ -1224,6 +1252,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         closePendingRestoreOPS();
         resolve();
       }).catch((reason) => {
+        if (reason instanceof AbortException) {
+          return;
+        }
         if (this.options.ignoreErrors) {
           // Error(s) in the OperatorList -- sending unsupported feature
           // notification and allow rendering to continue.
@@ -2960,7 +2991,10 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
     this.opMap = getOPMap();
     // TODO(mduan): pass array of knownCommands rather than this.opMap
     // dictionary
-    this.parser = new Parser(new Lexer(stream, this.opMap), false, xref);
+    this.parser = new Parser({
+      lexer: new Lexer(stream, this.opMap),
+      xref,
+    });
     this.stateManager = stateManager;
     this.nonProcessedArgs = [];
     this._numInvalidPathOPS = 0;
@@ -2996,7 +3030,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
       var args = operation.args;
       while (true) {
         var obj = this.parser.getObj();
-        if (isCmd(obj)) {
+        if (obj instanceof Cmd) {
           var cmd = obj.cmd;
           // Check that the command is valid
           var opSpec = this.opMap[cmd];
@@ -3058,7 +3092,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
           operation.args = args;
           return true;
         }
-        if (isEOF(obj)) {
+        if (obj === EOF) {
           return false; // no more commands
         }
         // argument

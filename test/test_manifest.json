@@ -39,6 +39,20 @@
        "lastPage": 1,
        "type": "text"
     },
+    {  "id": "boundingBox_invalid",
+       "file": "pdfs/boundingBox_invalid.pdf",
+       "md5": "f6dfc471bf43abac00cdcf05d81cb070",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue11016",
+       "file": "pdfs/issue11016_reduced.pdf",
+       "md5": "b75578bd052d2e6acdcc85b615eab6b1",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "issue1293",
        "file": "pdfs/issue1293r.pdf",
        "md5": "4a098f5051f34fab036f5bbe88f8deef",
@@ -653,6 +667,12 @@
        "rounds": 1,
        "type": "eq",
        "about": "Type1 font with |Ref|s in the Differences array of the Encoding dictionary."
+    },
+    {  "id": "issue8092",
+       "file": "pdfs/issue8092.pdf",
+       "md5": "e4f3376b35fd132580246c3db1fbd738",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "franz_2",
        "file": "pdfs/franz_2.pdf",
@@ -2875,6 +2895,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue11045",
+       "file": "pdfs/issue11045.pdf",
+       "md5": "101d4cb649cc006e0f2b14923e8d97d6",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue4890",
        "file": "pdfs/issue4890.pdf",
        "md5": "1666feb4cd26318c2bdbea6a175dce87",
@@ -3460,6 +3487,13 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue11052",
+       "file": "pdfs/issue11052.pdf",
+       "md5": "67c20e5bec51183c9283baa0cd49593f",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "bug1108753",
        "file": "pdfs/bug1108753.pdf",
        "md5": "a7aaf92d55b4602afb0ca3d75198b56b",
@@ -3482,6 +3516,12 @@
       "rounds": 1,
       "type": "eq",
       "about": "A CIDFontType0 font with a CFF font that isn't actually CID."
+    },
+    {  "id": "scorecard_reduced",
+       "file": "pdfs/scorecard_reduced.pdf",
+       "md5": "aa8ed0827092c963eea64adb718a3806",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "bug921409",
       "file": "pdfs/bug921409.pdf",

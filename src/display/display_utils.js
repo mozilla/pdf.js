@@ -344,6 +344,8 @@ const LinkTargetStringMap = [
  *   The default value is `LinkTarget.NONE`.
  * @property {string} rel - (optional) The link relationship.
  *   The default value is `DEFAULT_LINK_REL`.
+ * @property {boolean} enabled - (optional) Whether the link should be enabled.
+ *   The default value is true.
  */
 
 /**
@@ -351,17 +353,27 @@ const LinkTargetStringMap = [
  * @param {HTMLLinkElement} link - The link element.
  * @param {ExternalLinkParameters} params
  */
-function addLinkAttributes(link, { url, target, rel, } = {}) {
-  link.href = link.title = (url ? removeNullCharacters(url) : '');
+function addLinkAttributes(link, { url, target, rel, enabled = true, } = {}) {
+  assert(url && typeof url === 'string',
+         'addLinkAttributes: A valid "url" parameter must provided.');
 
-  if (url) {
-    const LinkTargetValues = Object.values(LinkTarget);
-    const targetIndex =
-      LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
-    link.target = LinkTargetStringMap[targetIndex];
-
-    link.rel = (typeof rel === 'string' ? rel : DEFAULT_LINK_REL);
+  const urlNullRemoved = removeNullCharacters(url);
+  if (enabled) {
+    link.href = link.title = urlNullRemoved;
+  } else {
+    link.href = '';
+    link.title = `Disabled: ${urlNullRemoved}`;
+    link.onclick = () => {
+      return false;
+    };
   }
+
+  const LinkTargetValues = Object.values(LinkTarget);
+  const targetIndex =
+    LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
+  link.target = LinkTargetStringMap[targetIndex];
+
+  link.rel = (typeof rel === 'string' ? rel : DEFAULT_LINK_REL);
 }
 
 // Gets the file name from a given URL.

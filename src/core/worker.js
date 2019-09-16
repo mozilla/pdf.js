@@ -14,7 +14,7 @@
  */
 
 import {
-  arrayByteLength, arraysToBytes, assert, createPromiseCapability,
+  AbortException, arrayByteLength, arraysToBytes, createPromiseCapability,
   getVerbosityLevel, info, InvalidPDFException, MissingPDFException,
   PasswordException, setVerbosityLevel, UnexpectedResponseException,
   UnknownErrorException, UNSUPPORTED_FEATURES, VerbosityLevel, warn
@@ -23,6 +23,7 @@ import { clearPrimitiveCaches, Ref } from './primitives';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
 import isNodeJS from '../shared/is_node';
 import { MessageHandler } from '../shared/message_handler';
+import { PDFWorkerStream } from './worker_stream';
 import { XRefParseException } from './core_utils';
 
 var WorkerTask = (function WorkerTaskClosure() {
@@ -55,122 +56,6 @@ var WorkerTask = (function WorkerTaskClosure() {
   return WorkerTask;
 })();
 
-/** @implements {IPDFStream} */
-var PDFWorkerStream = (function PDFWorkerStreamClosure() {
-  function PDFWorkerStream(msgHandler) {
-    this._msgHandler = msgHandler;
-    this._contentLength = null;
-    this._fullRequestReader = null;
-    this._rangeRequestReaders = [];
-  }
-  PDFWorkerStream.prototype = {
-    getFullReader() {
-      assert(!this._fullRequestReader);
-      this._fullRequestReader = new PDFWorkerStreamReader(this._msgHandler);
-      return this._fullRequestReader;
-    },
-
-    getRangeReader(begin, end) {
-      let reader = new PDFWorkerStreamRangeReader(begin, end, this._msgHandler);
-      this._rangeRequestReaders.push(reader);
-      return reader;
-    },
-
-    cancelAllRequests(reason) {
-      if (this._fullRequestReader) {
-        this._fullRequestReader.cancel(reason);
-      }
-      let readers = this._rangeRequestReaders.slice(0);
-      readers.forEach(function (reader) {
-        reader.cancel(reason);
-      });
-    },
-  };
-
-  /** @implements {IPDFStreamReader} */
-  function PDFWorkerStreamReader(msgHandler) {
-    this._msgHandler = msgHandler;
-
-    this._contentLength = null;
-    this._isRangeSupported = false;
-    this._isStreamingSupported = false;
-
-    let readableStream = this._msgHandler.sendWithStream('GetReader');
-
-    this._reader = readableStream.getReader();
-
-    this._headersReady = this._msgHandler.sendWithPromise('ReaderHeadersReady').
-        then((data) => {
-      this._isStreamingSupported = data.isStreamingSupported;
-      this._isRangeSupported = data.isRangeSupported;
-      this._contentLength = data.contentLength;
-    });
-  }
-  PDFWorkerStreamReader.prototype = {
-    get headersReady() {
-      return this._headersReady;
-    },
-
-    get contentLength() {
-      return this._contentLength;
-    },
-
-    get isStreamingSupported() {
-      return this._isStreamingSupported;
-    },
-
-    get isRangeSupported() {
-      return this._isRangeSupported;
-    },
-
-    read() {
-      return this._reader.read().then(function({ value, done, }) {
-        if (done) {
-          return { value: undefined, done: true, };
-        }
-        // `value` is wrapped into Uint8Array, we need to
-        // unwrap it to ArrayBuffer for further processing.
-        return { value: value.buffer, done: false, };
-      });
-    },
-
-    cancel(reason) {
-      this._reader.cancel(reason);
-    },
-  };
-
-  /** @implements {IPDFStreamRangeReader} */
-  function PDFWorkerStreamRangeReader(begin, end, msgHandler) {
-    this._msgHandler = msgHandler;
-    this.onProgress = null;
-
-    let readableStream = this._msgHandler.sendWithStream('GetRangeReader',
-                                                         { begin, end, });
-
-    this._reader = readableStream.getReader();
-  }
-  PDFWorkerStreamRangeReader.prototype = {
-    get isStreamingSupported() {
-      return false;
-    },
-
-    read() {
-      return this._reader.read().then(function({ value, done, }) {
-        if (done) {
-          return { value: undefined, done: true, };
-        }
-        return { value: value.buffer, done: false, };
-      });
-    },
-
-    cancel(reason) {
-      this._reader.cancel(reason);
-    },
-  };
-
-  return PDFWorkerStream;
-})();
-
 var WorkerMessageHandler = {
   setup(handler, port) {
     var testMessageProcessed = false;
@@ -182,29 +67,14 @@ var WorkerMessageHandler = {
 
       // check if Uint8Array can be sent to worker
       if (!(data instanceof Uint8Array)) {
-        handler.send('test', false);
+        handler.send('test', null);
         return;
       }
       // making sure postMessage transfers are working
-      var supportTransfers = data[0] === 255;
+      const supportTransfers = data[0] === 255;
       handler.postMessageTransfers = supportTransfers;
-      // check if the response property is supported by xhr
-      var xhr = new XMLHttpRequest();
-      var responseExists = 'response' in xhr;
-      // check if the property is actually implemented
-      try {
-        xhr.responseType; // eslint-disable-line no-unused-expressions
-      } catch (e) {
-        responseExists = false;
-      }
-      if (!responseExists) {
-        handler.send('test', false);
-        return;
-      }
-      handler.send('test', {
-        supportTypedArray: true,
-        supportTransfers,
-      });
+
+      handler.send('test', { supportTransfers, });
     });
 
     handler.on('configure', function wphConfigure(data) {
@@ -224,13 +94,11 @@ var WorkerMessageHandler = {
     var WorkerTasks = [];
     const verbosity = getVerbosityLevel();
 
-    let apiVersion = docParams.apiVersion;
-    let workerVersion =
-      typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
-    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('TESTING')) &&
-        apiVersion === null) {
-      warn('Ignoring apiVersion/workerVersion check in TESTING builds.');
-    } else if (apiVersion !== workerVersion) {
+    const apiVersion = docParams.apiVersion;
+    const workerVersion =
+      typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('TESTING') ?
+      PDFJSDev.eval('BUNDLE_VERSION') : null;
+    if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` +
                       `the Worker version "${workerVersion}".`);
     }
@@ -389,8 +257,8 @@ var WorkerMessageHandler = {
         cancelXHRs = null;
       });
 
-      cancelXHRs = function () {
-        pdfStream.cancelAllRequests('abort');
+      cancelXHRs = function(reason) {
+        pdfStream.cancelAllRequests(reason);
       };
 
       return pdfManagerCapability.promise;
@@ -464,7 +332,7 @@ var WorkerMessageHandler = {
         if (terminated) {
           // We were in a process of setting up the manager, but it got
           // terminated in the middle.
-          newPdfManager.terminate();
+          newPdfManager.terminate(new AbortException('Worker was terminated.'));
           throw new Error('Worker was terminated');
         }
         pdfManager = newPdfManager;
@@ -581,10 +449,10 @@ var WorkerMessageHandler = {
       });
     });
 
-    handler.on('RenderPageRequest', function wphSetupRenderPage(data) {
+    handler.on('GetOperatorList', function wphSetupRenderPage(data, sink) {
       let pageIndex = data.pageIndex;
       pdfManager.getPage(pageIndex).then(function(page) {
-        let task = new WorkerTask('RenderPageRequest: page ' + pageIndex);
+        let task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
         startWorkerTask(task);
 
         let annotationTask = new WorkerTask(
@@ -597,58 +465,35 @@ var WorkerMessageHandler = {
         // Pre compile the pdf page and fetch the fonts/images.
         page.getOperatorList({
           handler,
+          sink,
           task,
           annotationTask,
           intent: data.intent,
           renderInteractiveForms: data.renderInteractiveForms,
-        }).then(function(operatorList) {
+        }).then(function(operatorListInfo) {
           finishWorkerTask(task);
           finishWorkerTask(annotationTask);
 
           if (start) {
             info(`page=${pageIndex + 1} - getOperatorList: time=` +
-                 `${Date.now() - start}ms, len=${operatorList.totalLength}`);
+                 `${Date.now() - start}ms, len=${operatorListInfo.length}`);
           }
-        }, function(e) {
+          sink.close();
+        }, function(reason) {
           finishWorkerTask(task);
           finishWorkerTask(annotationTask);
           if (task.terminated && annotationTask.terminated) {
             return; // ignoring errors from the terminated thread
           }
-
           // For compatibility with older behavior, generating unknown
           // unsupported feature notification on errors.
           handler.send('UnsupportedFeature',
                        { featureId: UNSUPPORTED_FEATURES.unknown, });
 
-          var minimumStackMessage =
-            'worker.js: while trying to getPage() and getOperatorList()';
+          sink.error(reason);
 
-          var wrappedException;
-
-          // Turn the error into an obj that can be serialized
-          if (typeof e === 'string') {
-            wrappedException = {
-              message: e,
-              stack: minimumStackMessage,
-            };
-          } else if (typeof e === 'object') {
-            wrappedException = {
-              message: e.message || e.toString(),
-              stack: e.stack || minimumStackMessage,
-            };
-          } else {
-            wrappedException = {
-              message: 'Unknown exception type: ' + (typeof e),
-              stack: minimumStackMessage,
-            };
-          }
-
-          handler.send('PageError', {
-            pageIndex,
-            error: wrappedException,
-            intent: data.intent,
-          });
+          // TODO: Should `reason` be re-thrown here (currently that casues
+          //       "Uncaught exception: ..." messages in the console)?
         });
       });
     }, this);
@@ -685,7 +530,9 @@ var WorkerMessageHandler = {
             return; // ignoring errors from the terminated thread
           }
           sink.error(reason);
-          throw reason;
+
+          // TODO: Should `reason` be re-thrown here (currently that casues
+          //       "Uncaught exception: ..." messages in the console)?
         });
       });
     });
@@ -701,11 +548,11 @@ var WorkerMessageHandler = {
     handler.on('Terminate', function wphTerminate(data) {
       terminated = true;
       if (pdfManager) {
-        pdfManager.terminate();
+        pdfManager.terminate(new AbortException('Worker was terminated.'));
         pdfManager = null;
       }
       if (cancelXHRs) {
-        cancelXHRs();
+        cancelXHRs(new AbortException('Worker was terminated.'));
       }
       clearPrimitiveCaches();
 

@@ -1,6 +1,7 @@
 *.pdf
 *.error
 
+!boundingBox_invalid.pdf
 !tracemonkey.pdf
 !TrueType_without_cmap.pdf
 !franz.pdf
@@ -14,6 +15,7 @@
 !issue3214.pdf
 !issue4665.pdf
 !issue4684.pdf
+!issue8092.pdf
 !issue5256.pdf
 !issue5801.pdf
 !issue5946.pdf
@@ -78,6 +80,8 @@
 !issue10529.pdf
 !issue10542_reduced.pdf
 !issue10665_reduced.pdf
+!issue11016_reduced.pdf
+!issue11045.pdf
 !bad-PageLabels.pdf
 !decodeACSuccessive.pdf
 !filled-background.pdf
@@ -139,6 +143,7 @@
 !issue6413.pdf
 !issue4630.pdf
 !issue4909.pdf
+!scorecard_reduced.pdf
 !issue5084.pdf
 !issue8960_reduced.pdf
 !issue5202.pdf
@@ -245,6 +250,7 @@
 !bug1175962.pdf
 !bug1020226.pdf
 !issue9534_reduced.pdf
+!attachment.pdf
 !basicapi.pdf
 !issue2884_reduced.pdf
 !mixedfonts.pdf

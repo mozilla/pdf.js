@@ -20,7 +20,7 @@ import {
   warn
 } from '../shared/util';
 import {
-  clearPrimitiveCaches, Dict, isCmd, isDict, isName, isRef, isRefsEqual,
+  clearPrimitiveCaches, Cmd, Dict, isCmd, isDict, isName, isRef, isRefsEqual,
   isStream, Ref, RefSet, RefSetCache
 } from './primitives';
 import { Lexer, Parser } from './parser';
@@ -144,6 +144,7 @@ class Catalog {
       const title = outlineDict.get('Title');
       const flags = outlineDict.get('F') || 0;
       const color = outlineDict.getArray('C');
+      const count = outlineDict.get('Count');
       let rgbColor = blackColor;
 
       // We only need to parse the color when it's valid, and non-default.
@@ -159,7 +160,7 @@ class Catalog {
         newWindow: data.newWindow,
         title: stringToPDFString(title),
         color: rgbColor,
-        count: outlineDict.get('Count'),
+        count: Number.isInteger(count) ? count : undefined,
         bold: !!(flags & 2),
         italic: !!(flags & 1),
         items: [],
@@ -1042,11 +1043,10 @@ var XRef = (function XRefClosure() {
     this.pdfManager = pdfManager;
     this.entries = [];
     this.xrefstms = Object.create(null);
-    // prepare the XRef cache
-    this.cache = [];
+    this._cacheMap = new Map(); // Prepare the XRef cache.
     this.stats = {
-      streamTypes: [],
-      fontTypes: [],
+      streamTypes: Object.create(null),
+      fontTypes: Object.create(null),
     };
   }
 
@@ -1199,10 +1199,15 @@ var XRef = (function XRefClosure() {
           entry.gen = parser.getObj();
           var type = parser.getObj();
 
-          if (isCmd(type, 'f')) {
-            entry.free = true;
-          } else if (isCmd(type, 'n')) {
-            entry.uncompressed = true;
+          if (type instanceof Cmd) {
+            switch (type.cmd) {
+              case 'f':
+                entry.free = true;
+                break;
+              case 'n':
+                entry.uncompressed = true;
+                break;
+            }
           }
 
           // Validate entry obj
@@ -1476,8 +1481,12 @@ var XRef = (function XRefClosure() {
       let trailerDict;
       for (i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
-        var parser = new Parser(new Lexer(stream), /* allowStreams = */ true,
-                                /* xref = */ this, /* recoveryMode = */ true);
+        const parser = new Parser({
+          lexer: new Lexer(stream),
+          xref: this,
+          allowStreams: true,
+          recoveryMode: true,
+        });
         var obj = parser.getObj();
         if (!isCmd(obj, 'trailer')) {
           continue;
@@ -1535,7 +1544,11 @@ var XRef = (function XRefClosure() {
 
           stream.pos = startXRef + stream.start;
 
-          var parser = new Parser(new Lexer(stream), true, this);
+          const parser = new Parser({
+            lexer: new Lexer(stream),
+            xref: this,
+            allowStreams: true,
+          });
           var obj = parser.getObj();
           var dict;
 
@@ -1612,19 +1625,20 @@ var XRef = (function XRefClosure() {
     },
 
     fetchIfRef: function XRef_fetchIfRef(obj, suppressEncryption) {
-      if (!isRef(obj)) {
-        return obj;
+      if (obj instanceof Ref) {
+        return this.fetch(obj, suppressEncryption);
       }
-      return this.fetch(obj, suppressEncryption);
+      return obj;
     },
 
     fetch: function XRef_fetch(ref, suppressEncryption) {
-      if (!isRef(ref)) {
+      if (!(ref instanceof Ref)) {
         throw new Error('ref object is not a reference');
       }
-      var num = ref.num;
-      if (num in this.cache) {
-        var cacheEntry = this.cache[num];
+      const num = ref.num;
+
+      if (this._cacheMap.has(num)) {
+        const cacheEntry = this._cacheMap.get(num);
         // In documents with Object Streams, it's possible that cached `Dict`s
         // have not been assigned an `objId` yet (see e.g. issue3115r.pdf).
         if (cacheEntry instanceof Dict && !cacheEntry.objId) {
@@ -1632,12 +1646,11 @@ var XRef = (function XRefClosure() {
         }
         return cacheEntry;
       }
+      let xrefEntry = this.getEntry(num);
 
-      var xrefEntry = this.getEntry(num);
-
-      // the referenced entry can be free
-      if (xrefEntry === null) {
-        return (this.cache[num] = null);
+      if (xrefEntry === null) { // The referenced entry can be free.
+        this._cacheMap.set(num, xrefEntry);
+        return xrefEntry;
       }
 
       if (xrefEntry.uncompressed) {
@@ -1661,7 +1674,11 @@ var XRef = (function XRefClosure() {
       }
       var stream = this.stream.makeSubStream(xrefEntry.offset +
                                              this.stream.start);
-      var parser = new Parser(new Lexer(stream), true, this);
+      const parser = new Parser({
+        lexer: new Lexer(stream),
+        xref: this,
+        allowStreams: true,
+      });
       var obj1 = parser.getObj();
       var obj2 = parser.getObj();
       var obj3 = parser.getObj();
@@ -1672,7 +1689,7 @@ var XRef = (function XRefClosure() {
       if (!Number.isInteger(obj2)) {
         obj2 = parseInt(obj2, 10);
       }
-      if (obj1 !== num || obj2 !== gen || !isCmd(obj3)) {
+      if (obj1 !== num || obj2 !== gen || !(obj3 instanceof Cmd)) {
         throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
       }
       if (obj3.cmd !== 'obj') {
@@ -1691,7 +1708,7 @@ var XRef = (function XRefClosure() {
         xrefEntry = parser.getObj();
       }
       if (!isStream(xrefEntry)) {
-        this.cache[num] = xrefEntry;
+        this._cacheMap.set(num, xrefEntry);
       }
       return xrefEntry;
     },
@@ -1708,8 +1725,11 @@ var XRef = (function XRefClosure() {
         throw new FormatError(
           'invalid first and n parameters for ObjStm stream');
       }
-      var parser = new Parser(new Lexer(stream), false, this);
-      parser.allowStreams = true;
+      const parser = new Parser({
+        lexer: new Lexer(stream),
+        xref: this,
+        allowStreams: true,
+      });
       var i, entries = [], num, nums = [];
       // read the object numbers to populate cache
       for (i = 0; i < n; ++i) {
@@ -1736,7 +1756,7 @@ var XRef = (function XRefClosure() {
         num = nums[i];
         var entry = this.entries[num];
         if (entry && entry.offset === tableOffset && entry.gen === i) {
-          this.cache[num] = entries[i];
+          this._cacheMap.set(num, entries[i]);
         }
       }
       xrefEntry = entries[xrefEntry.gen];
@@ -1747,10 +1767,10 @@ var XRef = (function XRefClosure() {
     },
 
     async fetchIfRefAsync(obj, suppressEncryption) {
-      if (!isRef(obj)) {
-        return obj;
+      if (obj instanceof Ref) {
+        return this.fetchAsync(obj, suppressEncryption);
       }
-      return this.fetchAsync(obj, suppressEncryption);
+      return obj;
     },
 
     async fetchAsync(ref, suppressEncryption) {

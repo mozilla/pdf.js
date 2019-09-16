@@ -14,7 +14,8 @@
  */
 
 import {
-  Annotation, AnnotationBorderStyle, AnnotationFactory, MarkupAnnotation
+  Annotation, AnnotationBorderStyle, AnnotationFactory, getQuadPoints,
+  MarkupAnnotation
 } from '../../src/core/annotation';
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
@@ -115,6 +116,69 @@ describe('annotation', function() {
         expect(data.annotationType).toBeUndefined();
         done();
       }, done.fail);
+    });
+  });
+
+  describe('getQuadPoints', function() {
+    let dict, rect;
+
+    beforeEach(function(done) {
+      dict = new Dict();
+      rect = [];
+      done();
+    });
+
+    afterEach(function() {
+      dict = null;
+      rect = null;
+    });
+
+    it('should ignore missing quadpoints', function() {
+      expect(getQuadPoints(dict, rect)).toEqual(null);
+    });
+
+    it('should ignore non-array values', function() {
+      dict.set('QuadPoints', 'foo');
+      expect(getQuadPoints(dict, rect)).toEqual(null);
+    });
+
+    it('should ignore arrays where the length is not a multiple of eight',
+        function() {
+      dict.set('QuadPoints', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      expect(getQuadPoints(dict, rect)).toEqual(null);
+    });
+
+    it('should ignore quadpoints if one coordinate lies outside the rectangle',
+        function() {
+      rect = [10, 10, 20, 20];
+      const inputs = [
+        [11, 11, 12, 12, 9, 13, 14, 14], // Smaller than lower x coordinate.
+        [11, 11, 12, 12, 13, 9, 14, 14], // Smaller than lower y coordinate.
+        [11, 11, 12, 12, 21, 13, 14, 14], // Larger than upper x coordinate.
+        [11, 11, 12, 12, 13, 21, 14, 14], // Larger than upper y coordinate.
+      ];
+      for (const input of inputs) {
+        dict.set('QuadPoints', input);
+        expect(getQuadPoints(dict, rect)).toEqual(null);
+      }
+    });
+
+    it('should process valid quadpoints arrays', function() {
+      rect = [10, 10, 20, 20];
+      dict.set('QuadPoints', [
+        11, 11, 12, 12, 13, 13, 14, 14,
+        15, 15, 16, 16, 17, 17, 18, 18,
+      ]);
+      expect(getQuadPoints(dict, rect)).toEqual([
+        [
+          { x: 11, y: 11, }, { x: 12, y: 12, },
+          { x: 13, y: 13, }, { x: 14, y: 14, },
+        ],
+        [
+          { x: 15, y: 15, }, { x: 16, y: 16, },
+          { x: 17, y: 17, }, { x: 18, y: 18, },
+        ],
+      ]);
     });
   });
 
@@ -442,6 +506,220 @@ describe('annotation', function() {
 
       expect(markupAnnotation.creationDate).toEqual(null);
     });
+
+    it('should not parse IRT/RT when not defined', function (done) {
+      dict.set('Type', Name.get('Annot'));
+      dict.set('Subtype', Name.get('Text'));
+
+      const xref = new XRefMock([
+        { ref, data: dict, },
+      ]);
+
+      AnnotationFactory.create(xref, ref, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.inReplyTo).toBeUndefined();
+        expect(data.replyType).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should parse IRT and set default RT when not defined.',
+        function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+
+      const replyRef = new Ref(820, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.inReplyTo).toEqual(annotationRef.toString());
+        expect(data.replyType).toEqual('R');
+        done();
+      }, done.fail);
+    });
+
+    it('should parse IRT/RT for a group type', function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('T', 'ParentTitle');
+      annotationDict.set('Contents', 'ParentText');
+      annotationDict.set('CreationDate', 'D:20180423');
+      annotationDict.set('M', 'D:20190423');
+      annotationDict.set('C', [0, 0, 1]);
+
+      const popupRef = new Ref(820, 0);
+      const popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('Parent', annotationRef);
+      annotationDict.set('Popup', popupRef);
+
+      const replyRef = new Ref(821, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('Group'));
+      replyDict.set('T', 'ReplyTitle');
+      replyDict.set('Contents', 'ReplyText');
+      replyDict.set('CreationDate', 'D:20180523');
+      replyDict.set('M', 'D:20190523');
+      replyDict.set('C', [0.4]);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: popupRef, data: popupDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      popupDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.inReplyTo).toEqual(annotationRef.toString());
+        expect(data.replyType).toEqual('Group');
+        expect(data.title).toEqual('ParentTitle');
+        expect(data.contents).toEqual('ParentText');
+        expect(data.creationDate).toEqual('D:20180423');
+        expect(data.modificationDate).toEqual('D:20190423');
+        expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
+        expect(data.hasPopup).toEqual(true);
+        done();
+      }, done.fail);
+    });
+
+    it('should parse IRT/RT for a reply type', function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('T', 'ParentTitle');
+      annotationDict.set('Contents', 'ParentText');
+      annotationDict.set('CreationDate', 'D:20180423');
+      annotationDict.set('M', 'D:20190423');
+      annotationDict.set('C', [0, 0, 1]);
+
+      const popupRef = new Ref(820, 0);
+      const popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('Parent', annotationRef);
+      annotationDict.set('Popup', popupRef);
+
+      const replyRef = new Ref(821, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('R'));
+      replyDict.set('T', 'ReplyTitle');
+      replyDict.set('Contents', 'ReplyText');
+      replyDict.set('CreationDate', 'D:20180523');
+      replyDict.set('M', 'D:20190523');
+      replyDict.set('C', [0.4]);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: popupRef, data: popupDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      popupDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.inReplyTo).toEqual(annotationRef.toString());
+        expect(data.replyType).toEqual('R');
+        expect(data.title).toEqual('ReplyTitle');
+        expect(data.contents).toEqual('ReplyText');
+        expect(data.creationDate).toEqual('D:20180523');
+        expect(data.modificationDate).toEqual('D:20190523');
+        expect(data.color).toEqual(new Uint8ClampedArray([102, 102, 102]));
+        expect(data.hasPopup).toEqual(false);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('TextAnnotation', function() {
+    it('should not parse state model and state when not defined',
+        function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('Contents', 'TestText');
+
+      const replyRef = new Ref(820, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('R'));
+      replyDict.set('Contents', 'ReplyText');
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.stateModel).toBeNull();
+        expect(data.state).toBeNull();
+        done();
+      }, done.fail);
+    });
+
+    it('should correctly parse state model and state when defined',
+        function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+
+      const replyRef = new Ref(820, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('R'));
+      replyDict.set('StateModel', 'Review');
+      replyDict.set('State', 'Rejected');
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, replyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.stateModel).toEqual('Review');
+        expect(data.state).toEqual('Rejected');
+        done();
+      }, done.fail);
+    });
   });
 
   describe('LinkAnnotation', function() {
@@ -508,8 +786,10 @@ describe('annotation', function() {
         '/URI (http://www.example.com/\\303\\274\\303\\266\\303\\244)\n' +
         '>>\n'
       );
-      const lexer = new Lexer(actionStream);
-      const parser = new Parser(lexer);
+      const parser = new Parser({
+        lexer: new Lexer(actionStream),
+        xref: null,
+      });
       const actionDict = parser.getObj();
 
       const annotationDict = new Dict();
@@ -881,6 +1161,49 @@ describe('annotation', function() {
         expect(data.url).toBeUndefined();
         expect(data.unsafeUrl).toBeUndefined();
         expect(data.dest).toEqual('page.157');
+        done();
+      }, done.fail);
+    });
+
+    it('should not set quadpoints if not defined', function(done) {
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+
+      const annotationRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
+
+      AnnotationFactory.create(xref, annotationRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('Rect', [10, 10, 20, 20]);
+      annotationDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const annotationRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
+
+      AnnotationFactory.create(xref, annotationRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
+        ]);
         done();
       }, done.fail);
     });
@@ -1511,8 +1834,11 @@ describe('annotation', function() {
         'Test attachment' +
         'endstream\n'
       );
-      const lexer = new Lexer(fileStream);
-      const parser = new Parser(lexer, /* allowStreams = */ true);
+      const parser = new Parser({
+        lexer: new Lexer(fileStream),
+        xref: null,
+        allowStreams: true,
+      });
 
       const fileStreamRef = Ref.get(18, 0);
       const fileStreamDict = parser.getObj();
@@ -1634,6 +1960,58 @@ describe('annotation', function() {
         done();
       }, done.fail);
     });
+
+    it('should correctly inherit Contents from group-master annotation ' +
+       'if parent has ReplyType == Group', function (done) {
+      const annotationRef = new Ref(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Text'));
+      annotationDict.set('T', 'Correct Title');
+      annotationDict.set('Contents', 'Correct Text');
+      annotationDict.set('M', 'D:20190423');
+      annotationDict.set('C', [0, 0, 1]);
+
+      const replyRef = new Ref(820, 0);
+      const replyDict = new Dict();
+      replyDict.set('Type', Name.get('Annot'));
+      replyDict.set('Subtype', Name.get('Text'));
+      replyDict.set('IRT', annotationRef);
+      replyDict.set('RT', Name.get('Group'));
+      replyDict.set('T', 'Reply Title');
+      replyDict.set('Contents', 'Reply Text');
+      replyDict.set('M', 'D:20190523');
+      replyDict.set('C', [0.4]);
+
+      const popupRef = new Ref(821, 0);
+      const popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('T', 'Wrong Title');
+      popupDict.set('Contents', 'Wrong Text');
+      popupDict.set('Parent', replyRef);
+      popupDict.set('M', 'D:20190623');
+      popupDict.set('C', [0.8]);
+      replyDict.set('Popup', popupRef);
+
+      const xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, },
+        { ref: replyRef, data: replyDict, },
+        { ref: popupRef, data: popupDict, }
+      ]);
+      annotationDict.assignXref(xref);
+      popupDict.assignXref(xref);
+      replyDict.assignXref(xref);
+
+      AnnotationFactory.create(xref, popupRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.title).toEqual('Correct Title');
+        expect(data.contents).toEqual('Correct Text');
+        expect(data.modificationDate).toEqual('D:20190423');
+        expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
+        done();
+      }, done.fail);
+    });
   });
 
   describe('InkAnnotation', function() {
@@ -1685,6 +2063,186 @@ describe('annotation', function() {
         ]);
         expect(data.inkLists[1]).toEqual([
           { x: 3, y: 3, }, { x: 4, y: 5, }
+        ]);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('HightlightAnnotation', function() {
+    it('should not set quadpoints if not defined', function(done) {
+      const highlightDict = new Dict();
+      highlightDict.set('Type', Name.get('Annot'));
+      highlightDict.set('Subtype', Name.get('Highlight'));
+
+      const highlightRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: highlightRef, data: highlightDict, }
+      ]);
+
+      AnnotationFactory.create(xref, highlightRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const highlightDict = new Dict();
+      highlightDict.set('Type', Name.get('Annot'));
+      highlightDict.set('Subtype', Name.get('Highlight'));
+      highlightDict.set('Rect', [10, 10, 20, 20]);
+      highlightDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const highlightRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: highlightRef, data: highlightDict, }
+      ]);
+
+      AnnotationFactory.create(xref, highlightRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
+        ]);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('UnderlineAnnotation', function() {
+    it('should not set quadpoints if not defined', function(done) {
+      const underlineDict = new Dict();
+      underlineDict.set('Type', Name.get('Annot'));
+      underlineDict.set('Subtype', Name.get('Underline'));
+
+      const underlineRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: underlineRef, data: underlineDict, }
+      ]);
+
+      AnnotationFactory.create(xref, underlineRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.UNDERLINE);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const underlineDict = new Dict();
+      underlineDict.set('Type', Name.get('Annot'));
+      underlineDict.set('Subtype', Name.get('Underline'));
+      underlineDict.set('Rect', [10, 10, 20, 20]);
+      underlineDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const underlineRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: underlineRef, data: underlineDict, }
+      ]);
+
+      AnnotationFactory.create(xref, underlineRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.UNDERLINE);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
+        ]);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('SquigglyAnnotation', function() {
+    it('should not set quadpoints if not defined', function(done) {
+      const squigglyDict = new Dict();
+      squigglyDict.set('Type', Name.get('Annot'));
+      squigglyDict.set('Subtype', Name.get('Squiggly'));
+
+      const squigglyRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: squigglyRef, data: squigglyDict, }
+      ]);
+
+      AnnotationFactory.create(xref, squigglyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.SQUIGGLY);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const squigglyDict = new Dict();
+      squigglyDict.set('Type', Name.get('Annot'));
+      squigglyDict.set('Subtype', Name.get('Squiggly'));
+      squigglyDict.set('Rect', [10, 10, 20, 20]);
+      squigglyDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const squigglyRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: squigglyRef, data: squigglyDict, }
+      ]);
+
+      AnnotationFactory.create(xref, squigglyRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.SQUIGGLY);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
+        ]);
+        done();
+      }, done.fail);
+    });
+  });
+
+  describe('StrikeOutAnnotation', function() {
+    it('should not set quadpoints if not defined', function(done) {
+      const strikeOutDict = new Dict();
+      strikeOutDict.set('Type', Name.get('Annot'));
+      strikeOutDict.set('Subtype', Name.get('StrikeOut'));
+
+      const strikeOutRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: strikeOutRef, data: strikeOutDict, }
+      ]);
+
+      AnnotationFactory.create(xref, strikeOutRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.STRIKEOUT);
+        expect(data.quadPoints).toBeUndefined();
+        done();
+      }, done.fail);
+    });
+
+    it('should set quadpoints if defined', function(done) {
+      const strikeOutDict = new Dict();
+      strikeOutDict.set('Type', Name.get('Annot'));
+      strikeOutDict.set('Subtype', Name.get('StrikeOut'));
+      strikeOutDict.set('Rect', [10, 10, 20, 20]);
+      strikeOutDict.set('QuadPoints', [11, 11, 12, 12, 13, 13, 14, 14]);
+
+      const strikeOutRef = Ref.get(121, 0);
+      const xref = new XRefMock([
+        { ref: strikeOutRef, data: strikeOutDict, }
+      ]);
+
+      AnnotationFactory.create(xref, strikeOutRef, pdfManagerMock,
+          idFactoryMock).then(({ data, }) => {
+        expect(data.annotationType).toEqual(AnnotationType.STRIKEOUT);
+        expect(data.quadPoints).toEqual([
+          [
+            { x: 11, y: 11, }, { x: 12, y: 12, },
+            { x: 13, y: 13, }, { x: 14, y: 14, },
+          ],
         ]);
         done();
       }, done.fail);

@@ -390,6 +390,10 @@ class PDFSidebar {
       }
     });
 
+    this.toggleButton.addEventListener('click', () => {
+      this.toggle();
+    });
+
     // Buttons for switching views.
     this.thumbnailButton.addEventListener('click', () => {
       this.switchView(SidebarView.THUMBS);

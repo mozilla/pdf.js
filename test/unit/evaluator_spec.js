@@ -320,13 +320,12 @@ describe('evaluator', function() {
   });
 
   describe('operator list', function () {
-    function MessageHandlerMock() { }
-    MessageHandlerMock.prototype = {
-      send() { },
-    };
+    class StreamSinkMock {
+      enqueue() { }
+    }
 
     it('should get correct total length after flushing', function () {
-      var operatorList = new OperatorList(null, new MessageHandlerMock());
+      var operatorList = new OperatorList(null, new StreamSinkMock());
       operatorList.addOp(OPS.save, null);
       operatorList.addOp(OPS.restore, null);
 
