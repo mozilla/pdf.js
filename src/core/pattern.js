@@ -143,12 +143,12 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     // 10 samples seems good enough for now, but probably won't work
     // if there are sharp color changes. Ideally, we would implement
     // the spec faithfully and add lossless optimizations.
-    var diff = t1 - t0;
-    var step = diff / 10;
+    const NUMBER_OF_SAMPLES = 10;
+    const step = (t1 - t0) / NUMBER_OF_SAMPLES;
 
     var colorStops = this.colorStops = [];
 
-    // Protect against bad domains so we don't end up in an infinite loop below.
+    // Protect against bad domains.
     if (t0 >= t1 || step <= 0) {
       // Acrobat doesn't seem to handle these cases so we'll ignore for
       // now.
@@ -158,12 +158,12 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
 
     var color = new Float32Array(cs.numComps), ratio = new Float32Array(1);
     var rgbColor;
-    for (var i = t0; i <= t1; i += step) {
-      ratio[0] = i;
+    for (let i = 0; i <= NUMBER_OF_SAMPLES; i++) {
+      ratio[0] = t0 + i * step;
       fn(ratio, 0, color, 0);
       rgbColor = cs.getRgb(color, 0);
       var cssColor = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
-      colorStops.push([(i - t0) / diff, cssColor]);
+      colorStops.push([i / NUMBER_OF_SAMPLES, cssColor]);
     }
 
     var background = 'transparent';

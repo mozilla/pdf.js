@@ -1865,6 +1865,12 @@
       "link": true,
       "type": "load"
     },
+    {  "id": "issue7339",
+       "file": "pdfs/issue7339_reduced.pdf",
+       "md5": "7092ab6a1acc31db9d1caaa0447334a0",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug1142033",
        "file": "pdfs/bug1142033.pdf",
        "md5": "1d9afd397e89a0f52c056f449ec93daa",
