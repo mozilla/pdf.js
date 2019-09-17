@@ -48,14 +48,6 @@ function wrapReason(reason) {
   }
 }
 
-function resolveOrReject(capability, data) {
-  if (data.success) {
-    capability.resolve();
-  } else {
-    capability.reject(wrapReason(data.reason));
-  }
-}
-
 function MessageHandler(sourceName, targetName, comObj) {
   this.sourceName = sourceName;
   this.targetName = targetName;
@@ -80,8 +72,8 @@ function MessageHandler(sourceName, targetName, comObj) {
       if (data.callbackId in callbacksCapabilities) {
         let callback = callbacksCapabilities[callbackId];
         delete callbacksCapabilities[callbackId];
-        if ('error' in data) {
-          callback.reject(wrapReason(data.error));
+        if ('reason' in data) {
+          callback.reject(wrapReason(data.reason));
         } else {
           callback.resolve(data.data);
         }
@@ -109,7 +101,7 @@ function MessageHandler(sourceName, targetName, comObj) {
             targetName,
             isReply: true,
             callbackId: data.callbackId,
-            error: wrapReason(reason),
+            reason: wrapReason(reason),
           });
         });
       } else if (data.streamId) {
@@ -358,10 +350,20 @@ MessageHandler.prototype = {
 
     switch (data.stream) {
       case StreamKind.START_COMPLETE:
-        resolveOrReject(this.streamControllers[streamId].startCall, data);
+        if (data.success) {
+          this.streamControllers[streamId].startCall.resolve();
+        } else {
+          this.streamControllers[streamId].startCall.reject(
+            wrapReason(data.reason));
+        }
         break;
       case StreamKind.PULL_COMPLETE:
-        resolveOrReject(this.streamControllers[streamId].pullCall, data);
+        if (data.success) {
+          this.streamControllers[streamId].pullCall.resolve();
+        } else {
+          this.streamControllers[streamId].pullCall.reject(
+            wrapReason(data.reason));
+        }
         break;
       case StreamKind.PULL:
         // Ignore any pull after close is called.
@@ -431,7 +433,12 @@ MessageHandler.prototype = {
         deleteStreamController();
         break;
       case StreamKind.CANCEL_COMPLETE:
-        resolveOrReject(this.streamControllers[streamId].cancelCall, data);
+        if (data.success) {
+          this.streamControllers[streamId].cancelCall.resolve();
+        } else {
+          this.streamControllers[streamId].cancelCall.reject(
+            wrapReason(data.reason));
+        }
         deleteStreamController();
         break;
       case StreamKind.CANCEL:
