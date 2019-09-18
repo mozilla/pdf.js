@@ -3200,7 +3200,7 @@ var Type1Font = (function Type1FontClosure() {
     var eexecBlock = getEexecBlock(file, eexecBlockLength);
     var eexecBlockParser = new Type1Parser(eexecBlock.stream, true,
                                            SEAC_ANALYSIS_ENABLED);
-    var data = eexecBlockParser.extractFontProgram();
+    var data = eexecBlockParser.extractFontProgram(properties);
     for (var info in data.properties) {
       properties[info] = data.properties[info];
     }
