@@ -90,7 +90,7 @@ describe('Type1Parser', function() {
       '/.notdef 1 RD x ND\n' +
       'end');
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
-    var program = parser.extractFontProgram();
+    var program = parser.extractFontProgram({});
     expect(program.charstrings.length).toEqual(1);
     expect(program.properties.privateData.ExpansionFactor).toEqual(99);
   });
