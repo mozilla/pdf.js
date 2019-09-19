@@ -107,7 +107,6 @@ exports.removeNullCharacters = pdfjsSharedUtil.removeNullCharacters;
 exports.shadow = pdfjsSharedUtil.shadow;
 exports.Util = pdfjsSharedUtil.Util;
 exports.ReadableStream = pdfjsSharedUtil.ReadableStream;
-exports.URL = pdfjsSharedUtil.URL;
 exports.RenderingCancelledException =
   pdfjsDisplayDisplayUtils.RenderingCancelledException;
 exports.getFilenameFromUrl = pdfjsDisplayDisplayUtils.getFilenameFromUrl;
