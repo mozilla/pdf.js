@@ -292,7 +292,6 @@ window.addEventListener('keydown', function(event) {
     } else {
       event.stopPropagation();
     }
-    return;
   }
 }, true);
 if (hasAttachEvent) {

@@ -87,6 +87,7 @@
     "no-octal-escape": "error",
     "no-octal": "error",
     "no-redeclare": "error",
+    "no-return-await": "error",
     "no-self-assign": "error",
     "no-self-compare": "error",
     "no-throw-literal": "error",
@@ -95,6 +96,7 @@
     "no-useless-call": "error",
     "no-useless-catch": "error",
     "no-useless-concat": "error",
+    "no-useless-return": "error",
     "prefer-promise-reject-errors": "error",
     "wrap-iife": ["error", "any"],
     "yoda": ["error", "never", {
