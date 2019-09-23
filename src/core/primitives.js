@@ -92,7 +92,7 @@ var Dict = (function DictClosure() {
           key2 in this._map || typeof key3 === 'undefined') {
         return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
       }
-      value = this._map[key3] || null;
+      value = this._map[key3];
       return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
     },
 
@@ -114,7 +114,7 @@ var Dict = (function DictClosure() {
         }
         return Promise.resolve(value);
       }
-      value = this._map[key3] || null;
+      value = this._map[key3];
       if (xref) {
         return xref.fetchIfRefAsync(value, suppressEncryption);
       }
