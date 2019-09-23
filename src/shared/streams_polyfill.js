@@ -50,6 +50,6 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
     exports.ReadableStream = DummyReadableStream;
   } else {
     exports.ReadableStream =
-      require('../../external/streams/streams-lib').ReadableStream;
+      require('web-streams-polyfill/dist/ponyfill').ReadableStream;
   }
 }
