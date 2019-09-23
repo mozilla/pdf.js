@@ -67,9 +67,7 @@ describe('primitives', function() {
       expect(dict.get()).toBeUndefined();
       expect(dict.get('Prev')).toBeUndefined();
       expect(dict.get('Decode', 'D')).toBeUndefined();
-
-      // Note that the getter with three arguments breaks the pattern here.
-      expect(dict.get('FontFile', 'FontFile2', 'FontFile3')).toBeNull();
+      expect(dict.get('FontFile', 'FontFile2', 'FontFile3')).toBeUndefined();
     };
 
     var emptyDict, dictWithSizeKey, dictWithManyKeys;
@@ -145,7 +143,7 @@ describe('primitives', function() {
 
       Promise.all(keyPromises).then(function (values) {
         expect(values[0]).toBeUndefined();
-        expect(values[1]).toBeNull();
+        expect(values[1]).toBeUndefined();
         done();
       }).catch(function (reason) {
         done.fail(reason);
