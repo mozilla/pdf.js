@@ -7,7 +7,6 @@ external/webL10n/
 external/cmapscompress/
 external/builder/fixtures/
 external/builder/fixtures_esprima/
-external/streams/
 src/shared/cffStandardStrings.js
 src/shared/fonts_utils.js
 test/tmp/
