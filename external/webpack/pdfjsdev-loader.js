@@ -19,7 +19,7 @@
 var preprocessor2 = require('../builder/preprocessor2.js');
 var path = require('path');
 
-module.exports = function (source) {
+module.exports = function(source) {
   // Options must be specified, ignoring request if not.
   if (!this.query || typeof this.query !== 'object') {
     return source;
@@ -40,4 +40,5 @@ module.exports = function (source) {
   // escodegen does not embed source -- setting map's sourcesContent.
   map.sourcesContent = [source];
   callback(null, sourceAndMap.code, map);
+  return undefined;
 };

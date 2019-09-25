@@ -14,7 +14,7 @@
  */
 
 import {
-  apiCompatibilityParams, createObjectURL, createValidAbsoluteUrl, URL
+  apiCompatibilityParams, createObjectURL, createValidAbsoluteUrl
 } from 'pdfjs-lib';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
@@ -58,8 +58,8 @@ class DownloadManager {
 
   downloadData(data, filename, contentType) {
     if (navigator.msSaveBlob) { // IE10 and above
-      return navigator.msSaveBlob(new Blob([data], { type: contentType, }),
-                                  filename);
+      navigator.msSaveBlob(new Blob([data], { type: contentType, }), filename);
+      return;
     }
     let blobUrl = createObjectURL(data, contentType,
                                   this.disableCreateObjectURL);

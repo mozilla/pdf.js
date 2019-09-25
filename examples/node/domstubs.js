@@ -101,6 +101,10 @@ DOMElement.prototype = {
     }
   },
 
+  hasChildNodes: function DOMElement_hasChildNodes() {
+    return this.childNodes.length !== 0;
+  },
+
   cloneNode: function DOMElement_cloneNode() {
     var newNode = new DOMElement(this.nodeName);
     newNode.childNodes = this.childNodes;

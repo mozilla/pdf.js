@@ -19,7 +19,6 @@ import { AppOptions } from './app_options';
 import { BasePreferences } from './preferences';
 import { DownloadManager } from './download_manager';
 import { GenericL10n } from './genericl10n';
-import { URL } from 'pdfjs-lib';
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
   throw new Error('Module "pdfjs-web/chromecom" shall not be used outside ' +

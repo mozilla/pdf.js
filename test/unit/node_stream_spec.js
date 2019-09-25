@@ -14,7 +14,7 @@
  */
 /* globals __non_webpack_require__ */
 
-import { assert } from '../../src/shared/util';
+import { AbortException, assert } from '../../src/shared/util';
 import isNodeJS from '../../src/shared/is_node';
 import { PDFNodeStream } from '../../src/display/node_stream';
 
@@ -109,7 +109,7 @@ describe('node_stream', function() {
     let read1 = function () {
       return fullReader1.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         len1 += result.value.byteLength;
         return read1();
@@ -118,7 +118,7 @@ describe('node_stream', function() {
     let read2 = function () {
       return fullReader2.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         len2 += result.value.byteLength;
         return read2();
@@ -167,14 +167,14 @@ describe('node_stream', function() {
       isStreamingSupported1 = fullReader1.isStreamingSupported;
       isRangeSupported1 = fullReader1.isRangeSupported;
       // we shall be able to close the full reader without issues
-      fullReader1.cancel('Don\'t need full reader');
+      fullReader1.cancel(new AbortException('Don\'t need fullReader1.'));
       fullReaderCancelled1 = true;
     });
 
     let promise2 = fullReader2.headersReady.then(function () {
       isStreamingSupported2 = fullReader2.isStreamingSupported;
       isRangeSupported2 = fullReader2.isRangeSupported;
-      fullReader2.cancel('Don\'t need full reader');
+      fullReader2.cancel(new AbortException('Don\'t need fullReader2.'));
       fullReaderCancelled2 = true;
     });
 
@@ -195,7 +195,7 @@ describe('node_stream', function() {
     let read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         lenResult.value += result.value.byteLength;
         return read(reader, lenResult);

@@ -96,6 +96,8 @@ var CFFStandardStrings = [
   'Black', 'Bold', 'Book', 'Light', 'Medium', 'Regular', 'Roman', 'Semibold'
 ];
 
+const NUM_STANDARD_CFF_STRINGS = 391;
+
 var CFFParser = (function CFFParserClosure() {
   var CharstringValidationData = [
     null,
@@ -931,13 +933,24 @@ var CFFStrings = (function CFFStringsClosure() {
   }
   CFFStrings.prototype = {
     get: function CFFStrings_get(index) {
-      if (index >= 0 && index <= 390) {
+      if (index >= 0 && index <= (NUM_STANDARD_CFF_STRINGS - 1)) {
         return CFFStandardStrings[index];
       }
-      if (index - 391 <= this.strings.length) {
-        return this.strings[index - 391];
+      if (index - NUM_STANDARD_CFF_STRINGS <= this.strings.length) {
+        return this.strings[index - NUM_STANDARD_CFF_STRINGS];
       }
       return CFFStandardStrings[0];
+    },
+    getSID: function CFFStrings_getSID(str) {
+      let index = CFFStandardStrings.indexOf(str);
+      if (index !== -1) {
+        return index;
+      }
+      index = this.strings.indexOf(str);
+      if (index !== -1) {
+        return index + NUM_STANDARD_CFF_STRINGS;
+      }
+      return -1;
     },
     add: function CFFStrings_add(value) {
       this.strings.push(value);
@@ -1312,7 +1325,8 @@ var CFFCompiler = (function CFFCompilerClosure() {
           output.add(encoding);
         }
       }
-      var charset = this.compileCharset(cff.charset);
+      var charset = this.compileCharset(cff.charset, cff.charStrings.count,
+                                        cff.strings, cff.isCIDFont);
       topDictTracker.setEntryLocation('charset', [output.length], output);
       output.add(charset);
 
@@ -1580,11 +1594,46 @@ var CFFCompiler = (function CFFCompilerClosure() {
       }
       return this.compileIndex(charStringsIndex);
     },
-    compileCharset: function CFFCompiler_compileCharset(charset) {
-      let length = 1 + (this.cff.charStrings.count - 1) * 2;
-      // The contents of the charset doesn't matter, it's just there to make
-      // freetype happy.
-      let out = new Uint8Array(length);
+    compileCharset: function CFFCompiler_compileCharset(charset, numGlyphs,
+                                                        strings, isCIDFont) {
+      // Freetype requires the number of charset strings be correct and MacOS
+      // requires a valid mapping for printing.
+      let out;
+      let numGlyphsLessNotDef = numGlyphs - 1;
+      if (isCIDFont) {
+        // In a CID font, the charset is a mapping of CIDs not SIDs so just
+        // create an identity mapping.
+        out = new Uint8Array([
+          2, // format
+          0, // first CID upper byte
+          0, // first CID lower byte
+          (numGlyphsLessNotDef >> 8) & 0xFF,
+          numGlyphsLessNotDef & 0xFF,
+        ]);
+      } else {
+        let length = 1 + numGlyphsLessNotDef * 2;
+        out = new Uint8Array(length);
+        out[0] = 0; // format 0
+        let charsetIndex = 0;
+        let numCharsets = charset.charset.length;
+        let warned = false;
+        for (let i = 1; i < out.length; i += 2) {
+          let sid = 0;
+          if (charsetIndex < numCharsets) {
+            let name = charset.charset[charsetIndex++];
+            sid = strings.getSID(name);
+            if (sid === -1) {
+              sid = 0;
+              if (!warned) {
+                warned = true;
+                warn(`Couldn't find ${name} in CFF strings`);
+              }
+            }
+          }
+          out[i] = (sid >> 8) & 0xFF;
+          out[i + 1] = sid & 0xFF;
+        }
+      }
       return this.compileTypedArray(out);
     },
     compileEncoding: function CFFCompiler_compileEncoding(encoding) {

@@ -296,10 +296,11 @@ function getTestManifest() {
         testFilter.splice(i, 1);
         return true;
       }
+      return false;
     });
     if (testFilter.length) {
       console.error('Unrecognized test IDs: ' + testFilter.join(' '));
-      return;
+      return undefined;
     }
   }
   return manifest;

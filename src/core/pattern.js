@@ -15,11 +15,11 @@
 /* eslint-disable no-multi-spaces */
 
 import {
-  assert, FormatError, info, MissingDataException, unreachable,
-  UNSUPPORTED_FEATURES, Util, warn
+  assert, FormatError, info, unreachable, UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { ColorSpace } from './colorspace';
 import { isStream } from './primitives';
+import { MissingDataException } from './core_utils';
 
 var ShadingType = {
   FUNCTION_BASED: 1,
@@ -96,6 +96,12 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     var cs = dict.get('ColorSpace', 'CS');
     cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
     this.cs = cs;
+    const bbox = dict.getArray('BBox');
+    if (Array.isArray(bbox) && bbox.length === 4) {
+      this.bbox = Util.normalizeRect(bbox);
+    } else {
+      this.bbox = null;
+    }
 
     var t0 = 0.0, t1 = 1.0;
     if (dict.has('Domain')) {
@@ -137,12 +143,12 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     // 10 samples seems good enough for now, but probably won't work
     // if there are sharp color changes. Ideally, we would implement
     // the spec faithfully and add lossless optimizations.
-    var diff = t1 - t0;
-    var step = diff / 10;
+    const NUMBER_OF_SAMPLES = 10;
+    const step = (t1 - t0) / NUMBER_OF_SAMPLES;
 
     var colorStops = this.colorStops = [];
 
-    // Protect against bad domains so we don't end up in an infinite loop below.
+    // Protect against bad domains.
     if (t0 >= t1 || step <= 0) {
       // Acrobat doesn't seem to handle these cases so we'll ignore for
       // now.
@@ -152,12 +158,12 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
 
     var color = new Float32Array(cs.numComps), ratio = new Float32Array(1);
     var rgbColor;
-    for (var i = t0; i <= t1; i += step) {
-      ratio[0] = i;
+    for (let i = 0; i <= NUMBER_OF_SAMPLES; i++) {
+      ratio[0] = t0 + i * step;
       fn(ratio, 0, color, 0);
       rgbColor = cs.getRgb(color, 0);
       var cssColor = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
-      colorStops.push([(i - t0) / diff, cssColor]);
+      colorStops.push([i / NUMBER_OF_SAMPLES, cssColor]);
     }
 
     var background = 'transparent';
@@ -213,7 +219,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
         }
       }
 
-      return ['RadialAxial', type, this.colorStops, p0, p1, r0, r1];
+      return ['RadialAxial', type, this.bbox, this.colorStops, p0, p1, r0, r1];
     },
   };
 
@@ -719,7 +725,12 @@ Shadings.Mesh = (function MeshClosure() {
     this.matrix = matrix;
     this.shadingType = dict.get('ShadingType');
     this.type = 'Pattern';
-    this.bbox = dict.getArray('BBox');
+    const bbox = dict.getArray('BBox');
+    if (Array.isArray(bbox) && bbox.length === 4) {
+      this.bbox = Util.normalizeRect(bbox);
+    } else {
+      this.bbox = null;
+    }
     var cs = dict.get('ColorSpace', 'CS');
     cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
     this.cs = cs;

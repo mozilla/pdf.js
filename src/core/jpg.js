@@ -403,16 +403,19 @@ var JpegImage = (function JpegImageClosure() {
       // find marker
       bitsCount = 0;
       fileMarker = findNextFileMarker(data, offset);
-      // Some bad images seem to pad Scan blocks with e.g. zero bytes, skip past
-      // those to attempt to find a valid marker (fixes issue4090.pdf).
-      if (fileMarker && fileMarker.invalid) {
+      if (!fileMarker) {
+        // Reached the end of the image data without finding an EOI marker.
+        break;
+      } else if (fileMarker.invalid) {
+        // Some bad images seem to pad Scan blocks with e.g. zero bytes, skip
+        // past those to attempt to find a valid marker (fixes issue4090.pdf).
         warn('decodeScan - unexpected MCU data, current marker is: ' +
              fileMarker.invalid);
         offset = fileMarker.offset;
       }
       var marker = fileMarker && fileMarker.marker;
       if (!marker || marker <= 0xFF00) {
-        throw new JpegError('marker was not found');
+        throw new JpegError('decodeScan - a valid marker was not found.');
       }
 
       if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
@@ -729,13 +732,6 @@ var JpegImage = (function JpegImageClosure() {
       if (fileMarker !== 0xFFD8) { // SOI (Start of Image)
         throw new JpegError('SOI not found');
       }
-      //Set of dummy jpeg markers
-      let dummyMarkersSet = new Set(['0','1','2','100','101','102','203','277','301','304','404','506','521','705','708','814','1104','90a','b11'
-      ,'3106','1241','5107','6171','1322','3281','4291','a1b1','c109','2333','52f0','1562','72d1','a16','2434','e125','f117'
-      ,'1819','1a26','2728','292a','3536','3738','393a','4344','4546','4748','494a','5354','5556','5758','595a','6364','6566','6768','696a','7374'
-      ,'7576','7778','797a','8283','8485','8687','8889','8a92','9394','9596','9798','999a','a2a3','a4a5','a6a7','a8a9','aab2','b3b4','b5b6','b7b8'
-      ,'b9ba','c2c3','c4c5','c6c7','c8c9','cad2','d3d4','d5d6','d7d8','d9da','e2e3','e4e5','e6e7','e8e9','eaf2','f3f4','f5f6','f7f8','f9fa']);
-
 
       fileMarker = readUint16();
       markerLoop: while (fileMarker !== 0xFFD9) { // EOI (End of image)
@@ -950,7 +946,13 @@ var JpegImage = (function JpegImageClosure() {
               offset = nextFileMarker.offset;
               break;
             }
-            throw new JpegError('unknown marker ' + fileMarker.toString(16));
+            if (offset > (data.length - 2)) {
+              warn('JpegImage.parse - reached the end of the image data ' +
+                   'without finding an EOI marker (0xFFD9).');
+              break markerLoop;
+            }
+            throw new JpegError('JpegImage.parse - unknown marker: ' +
+                                fileMarker.toString(16));
         }
         fileMarker = readUint16();
       }
@@ -980,6 +982,7 @@ var JpegImage = (function JpegImageClosure() {
         });
       }
       this.numComponents = this.components.length;
+      return undefined;
     },
 
     _getLinearizedBlockData(width, height, isSourcePDF = false) {
