@@ -14,7 +14,7 @@
  */
 /* eslint no-var: error */
 
-import { assert, warn } from '../shared/util';
+import { assert, BaseException, warn } from '../shared/util';
 
 function getLookupTableFactory(initializer) {
   let lookup;
@@ -28,43 +28,17 @@ function getLookupTableFactory(initializer) {
   };
 }
 
-const MissingDataException = (function MissingDataExceptionClosure() {
-  function MissingDataException(begin, end) {
+class MissingDataException extends BaseException {
+  constructor(begin, end) {
+    super(`Missing data [${begin}, ${end})`);
     this.begin = begin;
     this.end = end;
-    this.message = `Missing data [${begin}, ${end})`;
   }
+}
 
-  MissingDataException.prototype = new Error();
-  MissingDataException.prototype.name = 'MissingDataException';
-  MissingDataException.constructor = MissingDataException;
+class XRefEntryException extends BaseException { }
 
-  return MissingDataException;
-})();
-
-const XRefEntryException = (function XRefEntryExceptionClosure() {
-  function XRefEntryException(msg) {
-    this.message = msg;
-  }
-
-  XRefEntryException.prototype = new Error();
-  XRefEntryException.prototype.name = 'XRefEntryException';
-  XRefEntryException.constructor = XRefEntryException;
-
-  return XRefEntryException;
-})();
-
-const XRefParseException = (function XRefParseExceptionClosure() {
-  function XRefParseException(msg) {
-    this.message = msg;
-  }
-
-  XRefParseException.prototype = new Error();
-  XRefParseException.prototype.name = 'XRefParseException';
-  XRefParseException.constructor = XRefParseException;
-
-  return XRefParseException;
-})();
+class XRefParseException extends BaseException { }
 
 /**
  * Get the value of an inheritable property.
