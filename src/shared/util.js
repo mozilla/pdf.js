@@ -401,99 +401,54 @@ function shadow(obj, prop, value) {
   return value;
 }
 
-const PasswordException = (function PasswordExceptionClosure() {
-  function PasswordException(msg, code) {
-    this.name = 'PasswordException';
-    this.message = msg;
+const BaseException = (function BaseExceptionClosure() {
+  function BaseException(message) {
+    if (this.constructor === BaseException) {
+      unreachable('Cannot initialize BaseException.');
+    }
+    this.message = message;
+    this.name = this.constructor.name;
+  }
+  BaseException.prototype = new Error();
+  BaseException.constructor = BaseException;
+
+  return BaseException;
+})();
+
+class PasswordException extends BaseException {
+  constructor(msg, code) {
+    super(msg);
     this.code = code;
   }
+}
 
-  PasswordException.prototype = new Error();
-  PasswordException.constructor = PasswordException;
-
-  return PasswordException;
-})();
-
-const UnknownErrorException = (function UnknownErrorExceptionClosure() {
-  function UnknownErrorException(msg, details) {
-    this.name = 'UnknownErrorException';
-    this.message = msg;
+class UnknownErrorException extends BaseException {
+  constructor(msg, details) {
+    super(msg);
     this.details = details;
   }
+}
 
-  UnknownErrorException.prototype = new Error();
-  UnknownErrorException.constructor = UnknownErrorException;
+class InvalidPDFException extends BaseException { }
 
-  return UnknownErrorException;
-})();
+class MissingPDFException extends BaseException { }
 
-const InvalidPDFException = (function InvalidPDFExceptionClosure() {
-  function InvalidPDFException(msg) {
-    this.name = 'InvalidPDFException';
-    this.message = msg;
-  }
-
-  InvalidPDFException.prototype = new Error();
-  InvalidPDFException.constructor = InvalidPDFException;
-
-  return InvalidPDFException;
-})();
-
-const MissingPDFException = (function MissingPDFExceptionClosure() {
-  function MissingPDFException(msg) {
-    this.name = 'MissingPDFException';
-    this.message = msg;
-  }
-
-  MissingPDFException.prototype = new Error();
-  MissingPDFException.constructor = MissingPDFException;
-
-  return MissingPDFException;
-})();
-
-const UnexpectedResponseException =
-    (function UnexpectedResponseExceptionClosure() {
-  function UnexpectedResponseException(msg, status) {
-    this.name = 'UnexpectedResponseException';
-    this.message = msg;
+class UnexpectedResponseException extends BaseException {
+  constructor(msg, status) {
+    super(msg);
     this.status = status;
   }
-
-  UnexpectedResponseException.prototype = new Error();
-  UnexpectedResponseException.constructor = UnexpectedResponseException;
-
-  return UnexpectedResponseException;
-})();
+}
 
 /**
  * Error caused during parsing PDF data.
  */
-const FormatError = (function FormatErrorClosure() {
-  function FormatError(msg) {
-    this.message = msg;
-  }
-
-  FormatError.prototype = new Error();
-  FormatError.prototype.name = 'FormatError';
-  FormatError.constructor = FormatError;
-
-  return FormatError;
-})();
+class FormatError extends BaseException { }
 
 /**
  * Error used to indicate task cancellation.
  */
-const AbortException = (function AbortExceptionClosure() {
-  function AbortException(msg) {
-    this.name = 'AbortException';
-    this.message = msg;
-  }
-
-  AbortException.prototype = new Error();
-  AbortException.constructor = AbortException;
-
-  return AbortException;
-})();
+class AbortException extends BaseException { }
 
 const NullCharactersRegExp = /\x00/g;
 
@@ -915,6 +870,7 @@ const createObjectURL = (function createObjectURLClosure() {
 })();
 
 export {
+  BaseException,
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   OPS,
