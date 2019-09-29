@@ -1977,7 +1977,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
      * @returns {ToUnicodeMap}
      * @private
      */
-    _buildSimpleFontToUnicode(properties) {
+    _buildSimpleFontToUnicode(properties, forceGlyphs = false) {
       assert(!properties.composite, 'Must be a simple font.');
 
       let toUnicode = [], charcode, glyphName;
@@ -2017,14 +2017,31 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 code = parseInt(glyphName.substring(1), 16);
               }
               break;
-            case 'C': // Cddd glyph
-            case 'c': // cddd glyph
-              if (glyphName.length >= 3) {
-                code = +glyphName.substring(1);
+            case 'C': // Cdd{d} glyph
+            case 'c': // cdd{d} glyph
+              if (glyphName.length >= 3 && glyphName.length <= 4) {
+                const codeStr = glyphName.substring(1);
+
+                if (forceGlyphs) {
+                  code = parseInt(codeStr, 16);
+                  break;
+                }
+                // Normally the Cdd{d}/cdd{d} glyphName format will contain
+                // regular, i.e. base 10, charCodes (see issue4550.pdf)...
+                code = +codeStr;
+
+                // ... however some PDF generators violate that assumption by
+                // containing glyph, i.e. base 16, codes instead.
+                // In that case we need to re-parse the *entire* encoding to
+                // prevent broken text-selection (fixes issue9655_reduced.pdf).
+                if (Number.isNaN(code) &&
+                    Number.isInteger(parseInt(codeStr, 16))) {
+                  return this._buildSimpleFontToUnicode(properties,
+                                                        /* forceGlyphs */ true);
+                }
               }
               break;
-            default:
-              // 'uniXXXX'/'uXXXX{XX}' glyphs
+            default: // 'uniXXXX'/'uXXXX{XX}' glyphs
               let unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
               if (unicode !== -1) {
                 code = unicode;
