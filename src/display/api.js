@@ -1463,8 +1463,14 @@ class LoopbackPort {
         while (!(desc = Object.getOwnPropertyDescriptor(p, i))) {
           p = Object.getPrototypeOf(p);
         }
-        if (typeof desc.value === 'undefined' ||
-            typeof desc.value === 'function') {
+        if (typeof desc.value === 'undefined') {
+          continue;
+        }
+        if (typeof desc.value === 'function') {
+          if (value.hasOwnProperty && value.hasOwnProperty(i)) {
+            throw new Error(
+              `LoopbackPort.postMessage - cannot clone: ${value[i]}`);
+          }
           continue;
         }
         result[i] = cloneValue(desc.value);
