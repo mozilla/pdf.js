@@ -14,44 +14,22 @@
  */
 /* eslint-disable no-multi-spaces */
 
-import { assert, warn } from '../shared/util';
+import { assert, BaseException, warn } from '../shared/util';
 
-let JpegError = (function JpegErrorClosure() {
-  function JpegError(msg) {
-    this.message = 'JPEG error: ' + msg;
+class JpegError extends BaseException {
+  constructor(msg) {
+    super(`JPEG error: ${msg}`);
   }
+}
 
-  JpegError.prototype = new Error();
-  JpegError.prototype.name = 'JpegError';
-  JpegError.constructor = JpegError;
-
-  return JpegError;
-})();
-
-let DNLMarkerError = (function DNLMarkerErrorClosure() {
-  function DNLMarkerError(message, scanLines) {
-    this.message = message;
+class DNLMarkerError extends BaseException {
+  constructor(message, scanLines) {
+    super(message);
     this.scanLines = scanLines;
   }
+}
 
-  DNLMarkerError.prototype = new Error();
-  DNLMarkerError.prototype.name = 'DNLMarkerError';
-  DNLMarkerError.constructor = DNLMarkerError;
-
-  return DNLMarkerError;
-})();
-
-let EOIMarkerError = (function EOIMarkerErrorClosure() {
-  function EOIMarkerError(message) {
-    this.message = message;
-  }
-
-  EOIMarkerError.prototype = new Error();
-  EOIMarkerError.prototype.name = 'EOIMarkerError';
-  EOIMarkerError.constructor = EOIMarkerError;
-
-  return EOIMarkerError;
-})();
+class EOIMarkerError extends BaseException { }
 
 /**
  * This code was forked from https://github.com/notmasteryet/jpgjs.
