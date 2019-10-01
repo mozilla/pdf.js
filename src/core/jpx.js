@@ -14,21 +14,15 @@
  */
 
 import {
-  info, log2, readUint16, readUint32, warn
+  BaseException, info, log2, readUint16, readUint32, warn
 } from '../shared/util';
 import { ArithmeticDecoder } from './arithmetic_decoder';
 
-let JpxError = (function JpxErrorClosure() {
-  function JpxError(msg) {
-    this.message = 'JPX error: ' + msg;
+class JpxError extends BaseException {
+  constructor(msg) {
+    super(`JPX error: ${msg}`);
   }
-
-  JpxError.prototype = new Error();
-  JpxError.prototype.name = 'JpxError';
-  JpxError.constructor = JpxError;
-
-  return JpxError;
-})();
+}
 
 var JpxImage = (function JpxImageClosure() {
   // Table E.1
