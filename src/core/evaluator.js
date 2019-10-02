@@ -711,21 +711,35 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var fontRef, xref = this.xref;
       if (font) { // Loading by ref.
         if (!isRef(font)) {
-          throw new Error('The "font" object should be a reference.');
+          throw new FormatError('The "font" object should be a reference.');
         }
         fontRef = font;
       } else { // Loading by name.
         var fontRes = resources.get('Font');
         if (fontRes) {
           fontRef = fontRes.getRaw(fontName);
-        } else {
-          warn('fontRes not available');
-          return errorFont();
         }
       }
       if (!fontRef) {
-        warn('fontRef not available');
-        return errorFont();
+        const partialMsg =
+          `Font "${fontName || (font && font.toString())}" is not available`;
+
+        if (!this.options.ignoreErrors && !this.parsingType3Font) {
+          warn(`${partialMsg}.`);
+          return errorFont();
+        }
+        // Font not found -- sending unsupported feature notification.
+        this.handler.send('UnsupportedFeature',
+                          { featureId: UNSUPPORTED_FEATURES.font, });
+        warn(`${partialMsg} -- attempting to fallback to a default font.`);
+
+        // Falling back to a default font to avoid completely broken rendering,
+        // but note that there're no guarantees that things will look "correct".
+        fontRef = new Dict();
+        fontRef.set('BaseFont', Name.get('PDFJS-FallbackFont'));
+        fontRef.set('Type', Name.get('FallbackType'));
+        fontRef.set('Subtype', Name.get('FallbackType'));
+        fontRef.set('Encoding', Name.get('WinAnsiEncoding'));
       }
 
       if (this.fontCache.has(fontRef)) {
