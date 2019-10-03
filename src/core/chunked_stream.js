@@ -15,9 +15,9 @@
 /* eslint no-var: error */
 
 import {
-  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj,
-  MissingDataException
+  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj
 } from '../shared/util';
+import { MissingDataException } from './core_utils';
 
 class ChunkedStream {
   constructor(length, chunkSize, manager) {
@@ -98,6 +98,10 @@ class ChunkedStream {
   }
 
   ensureByte(pos) {
+    if (pos < this.progressiveDataLength) {
+      return;
+    }
+
     const chunk = Math.floor(pos / this.chunkSize);
     if (chunk === this.lastSuccessfulEnsureByteChunk) {
       return;
@@ -155,7 +159,9 @@ class ChunkedStream {
     if (pos >= this.end) {
       return -1;
     }
-    this.ensureByte(pos);
+    if (pos >= this.progressiveDataLength) {
+      this.ensureByte(pos);
+    }
     return this.bytes[this.pos++];
   }
 
@@ -183,7 +189,9 @@ class ChunkedStream {
     const strEnd = this.end;
 
     if (!length) {
-      this.ensureRange(pos, strEnd);
+      if (strEnd > this.progressiveDataLength) {
+        this.ensureRange(pos, strEnd);
+      }
       const subarray = bytes.subarray(pos, strEnd);
       // `this.bytes` is always a `Uint8Array` here.
       return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
@@ -193,7 +201,9 @@ class ChunkedStream {
     if (end > strEnd) {
       end = strEnd;
     }
-    this.ensureRange(pos, end);
+    if (end > this.progressiveDataLength) {
+      this.ensureRange(pos, end);
+    }
 
     this.pos = end;
     const subarray = bytes.subarray(pos, end);
@@ -214,7 +224,15 @@ class ChunkedStream {
   }
 
   getByteRange(begin, end) {
-    this.ensureRange(begin, end);
+    if (begin < 0) {
+      begin = 0;
+    }
+    if (end > this.end) {
+      end = this.end;
+    }
+    if (end > this.progressiveDataLength) {
+      this.ensureRange(begin, end);
+    }
     return this.bytes.subarray(begin, end);
   }
 
@@ -234,7 +252,24 @@ class ChunkedStream {
   }
 
   makeSubStream(start, length, dict) {
-    this.ensureRange(start, start + length);
+    if (length) {
+      if (start + length > this.progressiveDataLength) {
+        this.ensureRange(start, start + length);
+      }
+    } else {
+      // When the `length` is undefined you do *not*, under any circumstances,
+      // want to fallback on calling `this.ensureRange(start, this.end)` since
+      // that would force the *entire* PDF file to be loaded, thus completely
+      // breaking the whole purpose of using streaming and/or range requests.
+      //
+      // However, not doing any checking here could very easily lead to wasted
+      // time/resources during e.g. parsing, since `MissingDataException`s will
+      // require data to be re-parsed, which we attempt to minimize by at least
+      // checking that the *beginning* of the data is available here.
+      if (start >= this.progressiveDataLength) {
+        this.ensureByte(start);
+      }
+    }
 
     function ChunkedStreamSubstream() {}
     ChunkedStreamSubstream.prototype = Object.create(this);
@@ -532,14 +567,13 @@ class ChunkedStreamManager {
     return Math.floor((end - 1) / this.chunkSize) + 1;
   }
 
-  abort() {
+  abort(reason) {
     this.aborted = true;
     if (this.pdfNetworkStream) {
-      this.pdfNetworkStream.cancelAllRequests('abort');
+      this.pdfNetworkStream.cancelAllRequests(reason);
     }
     for (const requestId in this.promisesByRequest) {
-      this.promisesByRequest[requestId].reject(
-        new Error('Request was aborted'));
+      this.promisesByRequest[requestId].reject(reason);
     }
   }
 }

@@ -16,12 +16,13 @@
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, getInheritableProperty, OPS, stringToBytes, stringToPDFString,
-  Util, warn
+  AnnotationReplyType, AnnotationType, assert, isString, OPS, stringToBytes,
+  stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
 import { ColorSpace } from './colorspace';
+import { getInheritableProperty } from './core_utils';
 import { OperatorList } from './operator_list';
 import { Stream } from './stream';
 
@@ -46,21 +47,20 @@ class AnnotationFactory {
    * @private
    */
   static _create(xref, ref, pdfManager, idFactory) {
-    let dict = xref.fetchIfRef(ref);
+    const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
-      return;
+      return undefined;
     }
-    let id = isRef(ref) ? ref.toString() : 'annot_' + idFactory.createObjId();
+    const id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
     // Determine the annotation's subtype.
     let subtype = dict.get('Subtype');
     subtype = isName(subtype) ? subtype.name : null;
 
     // Return the right annotation object based on the subtype and field type.
-    let parameters = {
+    const parameters = {
       xref,
       dict,
-      ref: isRef(ref) ? ref : null,
       subtype,
       id,
       pdfManager,
@@ -92,6 +92,9 @@ class AnnotationFactory {
       case 'Popup':
         return new PopupAnnotation(parameters);
 
+      case 'FreeText':
+        return new FreeTextAnnotation(parameters);
+
       case 'Line':
         return new LineAnnotation(parameters);
 
@@ -106,6 +109,9 @@ class AnnotationFactory {
 
       case 'Polygon':
         return new PolygonAnnotation(parameters);
+
+      case 'Caret':
+        return new CaretAnnotation(parameters);
 
       case 'Ink':
         return new InkAnnotation(parameters);
@@ -140,22 +146,51 @@ class AnnotationFactory {
   }
 }
 
+function getQuadPoints(dict, rect) {
+  if (!dict.has('QuadPoints')) {
+    return null;
+  }
+
+  // The region is described as a number of quadrilaterals.
+  // Each quadrilateral must consist of eight coordinates.
+  const quadPoints = dict.getArray('QuadPoints');
+  if (!Array.isArray(quadPoints) || quadPoints.length % 8 > 0) {
+    return null;
+  }
+
+  const quadPointsLists = [];
+  for (let i = 0, ii = quadPoints.length / 8; i < ii; i++) {
+    // Each series of eight numbers represents the coordinates for one
+    // quadrilateral in the order [x1, y1, x2, y2, x3, y3, x4, y4].
+    // Convert this to an array of objects with x and y coordinates.
+    quadPointsLists.push([]);
+    for (let j = i * 8, jj = (i * 8) + 8; j < jj; j += 2) {
+      const x = quadPoints[j];
+      const y = quadPoints[j + 1];
+
+      // The quadpoints should be ignored if any coordinate in the array
+      // lies outside the region specified by the rectangle.
+      if (x < rect[0] || x > rect[2] || y < rect[1] || y > rect[3]) {
+        return null;
+      }
+      quadPointsLists[i].push({ x, y, });
+    }
+  }
+  return quadPointsLists;
+}
+
 function getTransformMatrix(rect, bbox, matrix) {
   // 12.5.5: Algorithm: Appearance streams
-  let bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
-  let minX = bounds[0];
-  let minY = bounds[1];
-  let maxX = bounds[2];
-  let maxY = bounds[3];
-
+  const [minX, minY, maxX, maxY] =
+    Util.getAxialAlignedBoundingBox(bbox, matrix);
   if (minX === maxX || minY === maxY) {
     // From real-life file, bbox was [0, 0, 0, 0]. In this case,
     // just apply the transform for rect
     return [1, 0, 0, 1, rect[0], rect[1]];
   }
 
-  let xRatio = (rect[2] - rect[0]) / (maxX - minX);
-  let yRatio = (rect[3] - rect[1]) / (maxY - minY);
+  const xRatio = (rect[2] - rect[0]) / (maxX - minX);
+  const yRatio = (rect[3] - rect[1]) / (maxY - minY);
   return [
     xRatio,
     0,
@@ -168,8 +203,10 @@ function getTransformMatrix(rect, bbox, matrix) {
 
 class Annotation {
   constructor(params) {
-    let dict = params.dict;
+    const dict = params.dict;
 
+    this.setContents(dict.get('Contents'));
+    this.setModificationDate(dict.get('M'));
     this.setFlags(dict.get('F'));
     this.setRectangle(dict.getArray('Rect'));
     this.setColor(dict.getArray('C'));
@@ -181,8 +218,10 @@ class Annotation {
       annotationFlags: this.flags,
       borderStyle: this.borderStyle,
       color: this.color,
+      contents: this.contents,
       hasAppearance: !!this.appearance,
       id: params.id,
+      modificationDate: this.modificationDate,
       rect: this.rectangle,
       subtype: params.subtype,
     };
@@ -231,6 +270,32 @@ class Annotation {
       return false;
     }
     return this._isPrintable(this.flags);
+  }
+
+  /**
+   * Set the contents.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {string} contents - Text to display for the annotation or, if the
+   *                            type of annotation does not display text, a
+   *                            description of the annotation's contents
+   */
+  setContents(contents) {
+    this.contents = stringToPDFString(contents || '');
+  }
+
+  /**
+   * Set the modification date.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {string} modificationDate - PDF date string that indicates when the
+   *                                    annotation was last modified
+   */
+  setModificationDate(modificationDate) {
+    this.modificationDate = isString(modificationDate) ?
+                            modificationDate : null;
   }
 
   /**
@@ -286,7 +351,7 @@ class Annotation {
    *                        4 (CMYK) elements
    */
   setColor(color) {
-    let rgbColor = new Uint8ClampedArray(3);
+    const rgbColor = new Uint8ClampedArray(3);
     if (!Array.isArray(color)) {
       this.color = rgbColor;
       return;
@@ -326,25 +391,30 @@ class Annotation {
    * @param {Dict} borderStyle - The border style dictionary
    */
   setBorderStyle(borderStyle) {
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(this.rectangle, 'setRectangle must have been called previously.');
+    }
+
     this.borderStyle = new AnnotationBorderStyle();
     if (!isDict(borderStyle)) {
       return;
     }
     if (borderStyle.has('BS')) {
-      let dict = borderStyle.get('BS');
-      let dictType = dict.get('Type');
+      const dict = borderStyle.get('BS');
+      const dictType = dict.get('Type');
 
       if (!dictType || isName(dictType, 'Border')) {
-        this.borderStyle.setWidth(dict.get('W'));
+        this.borderStyle.setWidth(dict.get('W'), this.rectangle);
         this.borderStyle.setStyle(dict.get('S'));
         this.borderStyle.setDashArray(dict.getArray('D'));
       }
     } else if (borderStyle.has('Border')) {
-      let array = borderStyle.getArray('Border');
+      const array = borderStyle.getArray('Border');
       if (Array.isArray(array) && array.length >= 3) {
         this.borderStyle.setHorizontalCornerRadius(array[0]);
         this.borderStyle.setVerticalCornerRadius(array[1]);
-        this.borderStyle.setWidth(array[2]);
+        this.borderStyle.setWidth(array[2], this.rectangle);
 
         if (array.length === 4) { // Dash array available
           this.borderStyle.setDashArray(array[3]);
@@ -370,13 +440,13 @@ class Annotation {
   setAppearance(dict) {
     this.appearance = null;
 
-    let appearanceStates = dict.get('AP');
+    const appearanceStates = dict.get('AP');
     if (!isDict(appearanceStates)) {
       return;
     }
 
     // In case the normal appearance is a stream, then it is used directly.
-    let normalAppearanceState = appearanceStates.get('N');
+    const normalAppearanceState = appearanceStates.get('N');
     if (isStream(normalAppearanceState)) {
       this.appearance = normalAppearanceState;
       return;
@@ -387,38 +457,20 @@ class Annotation {
 
     // In case the normal appearance is a dictionary, the `AS` entry provides
     // the key of the stream in this dictionary.
-    let as = dict.get('AS');
+    const as = dict.get('AS');
     if (!isName(as) || !normalAppearanceState.has(as.name)) {
       return;
     }
     this.appearance = normalAppearanceState.get(as.name);
   }
 
-  /**
-   * Prepare the annotation for working with a popup in the display layer.
-   *
-   * @private
-   * @memberof Annotation
-   * @param {Dict} dict - The annotation's data dictionary
-   */
-  _preparePopup(dict) {
-    if (!dict.has('C')) {
-      // Fall back to the default background color.
-      this.data.color = null;
-    }
-
-    this.data.hasPopup = dict.has('Popup');
-    this.data.title = stringToPDFString(dict.get('T') || '');
-    this.data.contents = stringToPDFString(dict.get('Contents') || '');
-  }
-
   loadResources(keys) {
     return this.appearance.dict.getAsync('Resources').then((resources) => {
       if (!resources) {
-        return;
+        return undefined;
       }
-      let objectLoader = new ObjectLoader(resources, keys, resources.xref);
 
+      const objectLoader = new ObjectLoader(resources, keys, resources.xref);
       return objectLoader.load().then(function() {
         return resources;
       });
@@ -430,24 +482,22 @@ class Annotation {
       return Promise.resolve(new OperatorList());
     }
 
-    let data = this.data;
-    let appearanceDict = this.appearance.dict;
-    let resourcesPromise = this.loadResources([
+    const data = this.data;
+    const appearanceDict = this.appearance.dict;
+    const resourcesPromise = this.loadResources([
       'ExtGState',
       'ColorSpace',
       'Pattern',
       'Shading',
       'XObject',
       'Font',
-      // ProcSet
-      // Properties
     ]);
-    let bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
-    let matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
-    let transform = getTransformMatrix(data.rect, bbox, matrix);
+    const bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
+    const matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
+    const transform = getTransformMatrix(data.rect, bbox, matrix);
 
     return resourcesPromise.then((resources) => {
-      let opList = new OperatorList();
+      const opList = new OperatorList();
       opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
       return evaluator.getOperatorList({
         stream: this.appearance,
@@ -480,9 +530,16 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {integer} width - The width
+   * @param {integer} width - The width.
+   * @param {Array} rect - The annotation `Rect` entry.
    */
-  setWidth(width) {
+  setWidth(width, rect = [0, 0, 0, 0]) {
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(Array.isArray(rect) && rect.length === 4,
+             'A valid `rect` parameter must be provided.');
+    }
+
     // Some corrupt PDF generators may provide the width as a `Name`,
     // rather than as a number (fixes issue 10385).
     if (isName(width)) {
@@ -490,6 +547,19 @@ class AnnotationBorderStyle {
       return;
     }
     if (Number.isInteger(width)) {
+      if (width > 0) {
+        const maxWidth = (rect[2] - rect[0]) / 2;
+        const maxHeight = (rect[3] - rect[1]) / 2;
+
+        // Ignore large `width`s, since they lead to the Annotation overflowing
+        // the size set by the `Rect` entry thus causing the `annotationLayer`
+        // to render it over the surrounding document (fixes bug1552113.pdf).
+        if ((maxWidth > 0 && maxHeight > 0) &&
+            (width > maxWidth || width > maxHeight)) {
+          warn(`AnnotationBorderStyle.setWidth - ignoring width: ${width}`);
+          width = 1;
+        }
+      }
       this.width = width;
     }
   }
@@ -548,9 +618,8 @@ class AnnotationBorderStyle {
       // shall be numbers that are nonnegative and not all equal to zero.
       let isValid = true;
       let allZeros = true;
-      for (let i = 0, len = dashArray.length; i < len; i++) {
-        let element = dashArray[i];
-        let validNumber = (+element >= 0);
+      for (const element of dashArray) {
+        const validNumber = (+element >= 0);
         if (!validNumber) {
           isValid = false;
           break;
@@ -595,12 +664,87 @@ class AnnotationBorderStyle {
   }
 }
 
+class MarkupAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    const dict = parameters.dict;
+
+    if (dict.has('IRT')) {
+      const rawIRT = dict.getRaw('IRT');
+      this.data.inReplyTo = isRef(rawIRT) ? rawIRT.toString() : null;
+
+      const rt = dict.get('RT');
+      this.data.replyType = isName(rt) ? rt.name : AnnotationReplyType.REPLY;
+    }
+
+    if (this.data.replyType === AnnotationReplyType.GROUP) {
+      // Subordinate annotations in a group should inherit
+      // the group attributes from the primary annotation.
+      const parent = dict.get('IRT');
+
+      this.data.title = stringToPDFString(parent.get('T') || '');
+
+      this.setContents(parent.get('Contents'));
+      this.data.contents = this.contents;
+
+      if (!parent.has('CreationDate')) {
+        this.data.creationDate = null;
+      } else {
+        this.setCreationDate(parent.get('CreationDate'));
+        this.data.creationDate = this.creationDate;
+      }
+
+      if (!parent.has('M')) {
+        this.data.modificationDate = null;
+      } else {
+        this.setModificationDate(parent.get('M'));
+        this.data.modificationDate = this.modificationDate;
+      }
+
+      this.data.hasPopup = parent.has('Popup');
+
+      if (!parent.has('C')) {
+        // Fall back to the default background color.
+        this.data.color = null;
+      } else {
+        this.setColor(parent.getArray('C'));
+        this.data.color = this.color;
+      }
+    } else {
+      this.data.title = stringToPDFString(dict.get('T') || '');
+
+      this.setCreationDate(dict.get('CreationDate'));
+      this.data.creationDate = this.creationDate;
+
+      this.data.hasPopup = dict.has('Popup');
+
+      if (!dict.has('C')) {
+        // Fall back to the default background color.
+        this.data.color = null;
+      }
+    }
+  }
+
+  /**
+   * Set the creation date.
+   *
+   * @public
+   * @memberof MarkupAnnotation
+   * @param {string} creationDate - PDF date string that indicates when the
+   *                                annotation was originally created
+   */
+  setCreationDate(creationDate) {
+    this.creationDate = isString(creationDate) ? creationDate : null;
+  }
+}
+
 class WidgetAnnotation extends Annotation {
   constructor(params) {
     super(params);
 
-    let dict = params.dict;
-    let data = this.data;
+    const dict = params.dict;
+    const data = this.data;
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
@@ -608,7 +752,7 @@ class WidgetAnnotation extends Annotation {
                                                getArray: true, });
     data.alternativeText = stringToPDFString(dict.get('TU') || '');
     data.defaultAppearance = getInheritableProperty({ dict, key: 'DA', }) || '';
-    let fieldType = getInheritableProperty({ dict, key: 'FT', });
+    const fieldType = getInheritableProperty({ dict, key: 'FT', });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
     this.fieldResources = getInheritableProperty({ dict, key: 'DR', }) ||
                           Dict.empty;
@@ -653,7 +797,7 @@ class WidgetAnnotation extends Annotation {
 
     // Form the fully qualified field name by appending the partial name to
     // the parent's fully qualified name, separated by a period.
-    let fieldName = [];
+    const fieldName = [];
     if (dict.has('T')) {
       fieldName.unshift(stringToPDFString(dict.get('T')));
     }
@@ -736,7 +880,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return super.getOperatorList(evaluator, task, renderForms);
     }
 
-    let operatorList = new OperatorList();
+    const operatorList = new OperatorList();
 
     // Even if there is an appearance stream, ignore it. This is the
     // behaviour used by Adobe Reader.
@@ -744,7 +888,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return Promise.resolve(operatorList);
     }
 
-    let stream = new Stream(stringToBytes(this.data.defaultAppearance));
+    const stream = new Stream(stringToBytes(this.data.defaultAppearance));
     return evaluator.getOperatorList({
       stream,
       task,
@@ -807,27 +951,26 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     // The parent field's `V` entry holds a `Name` object with the appearance
     // state of whichever child field is currently in the "on" state.
-    let fieldParent = params.dict.get('Parent');
+    const fieldParent = params.dict.get('Parent');
     if (isDict(fieldParent) && fieldParent.has('V')) {
-      let fieldParentValue = fieldParent.get('V');
+      const fieldParentValue = fieldParent.get('V');
       if (isName(fieldParentValue)) {
         this.data.fieldValue = fieldParentValue.name;
       }
     }
 
     // The button's value corresponds to its appearance state.
-    let appearanceStates = params.dict.get('AP');
+    const appearanceStates = params.dict.get('AP');
     if (!isDict(appearanceStates)) {
       return;
     }
-    let normalAppearanceState = appearanceStates.get('N');
+    const normalAppearanceState = appearanceStates.get('N');
     if (!isDict(normalAppearanceState)) {
       return;
     }
-    let keys = normalAppearanceState.getKeys();
-    for (let i = 0, ii = keys.length; i < ii; i++) {
-      if (keys[i] !== 'Off') {
-        this.data.buttonValue = keys[i];
+    for (const key of normalAppearanceState.getKeys()) {
+      if (key !== 'Off') {
+        this.data.buttonValue = key;
         break;
       }
     }
@@ -862,9 +1005,9 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // inherit the options from a parent annotation (issue 8094).
     this.data.options = [];
 
-    let options = getInheritableProperty({ dict: params.dict, key: 'Opt', });
+    const options = getInheritableProperty({ dict: params.dict, key: 'Opt', });
     if (Array.isArray(options)) {
-      let xref = params.xref;
+      const xref = params.xref;
       for (let i = 0, ii = options.length; i < ii; i++) {
         let option = xref.fetchIfRef(options[i]);
         let isOptionArray = Array.isArray(option);
@@ -890,12 +1033,13 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
   }
 }
 
-class TextAnnotation extends Annotation {
+class TextAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     const DEFAULT_ICON_SIZE = 22; // px
 
     super(parameters);
 
+    const dict = parameters.dict;
     this.data.annotationType = AnnotationType.TEXT;
 
     if (this.data.hasAppearance) {
@@ -903,10 +1047,17 @@ class TextAnnotation extends Annotation {
     } else {
       this.data.rect[1] = this.data.rect[3] - DEFAULT_ICON_SIZE;
       this.data.rect[2] = this.data.rect[0] + DEFAULT_ICON_SIZE;
-      this.data.name = parameters.dict.has('Name') ?
-                       parameters.dict.get('Name').name : 'Note';
+      this.data.name = dict.has('Name') ?
+                       dict.get('Name').name : 'Note';
     }
-    this._preparePopup(parameters.dict);
+
+    if (dict.has('State')) {
+      this.data.state = dict.get('State') || null;
+      this.data.stateModel = dict.get('StateModel') || null;
+    } else {
+      this.data.state = null;
+      this.data.stateModel = null;
+    }
   }
 }
 
@@ -915,6 +1066,11 @@ class LinkAnnotation extends Annotation {
     super(params);
 
     this.data.annotationType = AnnotationType.LINK;
+
+    const quadPoints = getQuadPoints(params.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
 
     Catalog.parseDestDictionary({
       destDict: params.dict,
@@ -930,18 +1086,30 @@ class PopupAnnotation extends Annotation {
 
     this.data.annotationType = AnnotationType.POPUP;
 
-    let dict = parameters.dict;
-    let parentItem = dict.get('Parent');
+    let parentItem = parameters.dict.get('Parent');
     if (!parentItem) {
       warn('Popup annotation has a missing or invalid parent annotation.');
       return;
     }
 
-    let parentSubtype = parentItem.get('Subtype');
+    const parentSubtype = parentItem.get('Subtype');
     this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
-    this.data.parentId = dict.getRaw('Parent').toString();
-    this.data.title = stringToPDFString(parentItem.get('T') || '');
-    this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
+    const rawParent = parameters.dict.getRaw('Parent');
+    this.data.parentId = isRef(rawParent) ? rawParent.toString() : null;
+
+    const rt = parentItem.get('RT');
+    if (isName(rt, AnnotationReplyType.GROUP)) {
+      // Subordinate annotations in a group should inherit
+      // the group attributes from the primary annotation.
+      parentItem = parentItem.get('IRT');
+    }
+
+    if (!parentItem.has('M')) {
+      this.data.modificationDate = null;
+    } else {
+      this.setModificationDate(parentItem.get('M'));
+      this.data.modificationDate = this.modificationDate;
+    }
 
     if (!parentItem.has('C')) {
       // Fall back to the default background color.
@@ -955,45 +1123,53 @@ class PopupAnnotation extends Annotation {
     // that is most likely a bug. Fallback to inherit the flags from the parent
     // annotation (this is consistent with the behaviour in Adobe Reader).
     if (!this.viewable) {
-      let parentFlags = parentItem.get('F');
+      const parentFlags = parentItem.get('F');
       if (this._isViewable(parentFlags)) {
         this.setFlags(parentFlags);
       }
     }
+
+    this.data.title = stringToPDFString(parentItem.get('T') || '');
+    this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
   }
 }
 
-class LineAnnotation extends Annotation {
+class FreeTextAnnotation extends MarkupAnnotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.FREETEXT;
+  }
+}
+
+class LineAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
     this.data.annotationType = AnnotationType.LINE;
 
-    let dict = parameters.dict;
-    this.data.lineCoordinates = Util.normalizeRect(dict.getArray('L'));
-    this._preparePopup(dict);
+    this.data.lineCoordinates =
+      Util.normalizeRect(parameters.dict.getArray('L'));
   }
 }
 
-class SquareAnnotation extends Annotation {
+class SquareAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
     this.data.annotationType = AnnotationType.SQUARE;
-    this._preparePopup(parameters.dict);
   }
 }
 
-class CircleAnnotation extends Annotation {
+class CircleAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
     this.data.annotationType = AnnotationType.CIRCLE;
-    this._preparePopup(parameters.dict);
   }
 }
 
-class PolylineAnnotation extends Annotation {
+class PolylineAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
@@ -1002,9 +1178,7 @@ class PolylineAnnotation extends Annotation {
     // The vertices array is an array of numbers representing the alternating
     // horizontal and vertical coordinates, respectively, of each vertex.
     // Convert this to an array of objects with x and y coordinates.
-    let dict = parameters.dict;
-    let rawVertices = dict.getArray('Vertices');
-
+    const rawVertices = parameters.dict.getArray('Vertices');
     this.data.vertices = [];
     for (let i = 0, ii = rawVertices.length; i < ii; i += 2) {
       this.data.vertices.push({
@@ -1012,8 +1186,6 @@ class PolylineAnnotation extends Annotation {
         y: rawVertices[i + 1],
       });
     }
-
-    this._preparePopup(dict);
   }
 }
 
@@ -1026,16 +1198,22 @@ class PolygonAnnotation extends PolylineAnnotation {
   }
 }
 
-class InkAnnotation extends Annotation {
+class CaretAnnotation extends MarkupAnnotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.CARET;
+  }
+}
+
+class InkAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
     this.data.annotationType = AnnotationType.INK;
 
-    let dict = parameters.dict;
     const xref = parameters.xref;
-
-    let originalInkLists = dict.getArray('InkList');
+    const originalInkLists = parameters.dict.getArray('InkList');
     this.data.inkLists = [];
     for (let i = 0, ii = originalInkLists.length; i < ii; ++i) {
       // The raw ink lists array contains arrays of numbers representing
@@ -1050,64 +1228,77 @@ class InkAnnotation extends Annotation {
         });
       }
     }
-    this._preparePopup(dict);
   }
 }
 
-class HighlightAnnotation extends Annotation {
+class HighlightAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
     this.data.annotationType = AnnotationType.HIGHLIGHT;
-    this._preparePopup(parameters.dict);
+
+    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
   }
 }
 
-class UnderlineAnnotation extends Annotation {
+class UnderlineAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
     this.data.annotationType = AnnotationType.UNDERLINE;
-    this._preparePopup(parameters.dict);
+
+    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
   }
 }
 
-class SquigglyAnnotation extends Annotation {
+class SquigglyAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
     this.data.annotationType = AnnotationType.SQUIGGLY;
-    this._preparePopup(parameters.dict);
+
+    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
   }
 }
 
-class StrikeOutAnnotation extends Annotation {
+class StrikeOutAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
     this.data.annotationType = AnnotationType.STRIKEOUT;
-    this._preparePopup(parameters.dict);
+
+    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    if (quadPoints) {
+      this.data.quadPoints = quadPoints;
+    }
   }
 }
 
-class StampAnnotation extends Annotation {
+class StampAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
     this.data.annotationType = AnnotationType.STAMP;
-    this._preparePopup(parameters.dict);
   }
 }
 
-class FileAttachmentAnnotation extends Annotation {
+class FileAttachmentAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
-    let file = new FileSpec(parameters.dict.get('FS'), parameters.xref);
+    const file = new FileSpec(parameters.dict.get('FS'), parameters.xref);
 
     this.data.annotationType = AnnotationType.FILEATTACHMENT;
     this.data.file = file.serializable;
-    this._preparePopup(parameters.dict);
   }
 }
 
@@ -1115,4 +1306,6 @@ export {
   Annotation,
   AnnotationBorderStyle,
   AnnotationFactory,
+  MarkupAnnotation,
+  getQuadPoints,
 };

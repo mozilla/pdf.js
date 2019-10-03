@@ -14,7 +14,7 @@
  */
 /* no-babel-preset */
 
-var getLookupTableFactory = require('../shared/util').getLookupTableFactory;
+var getLookupTableFactory = require('./core_utils').getLookupTableFactory;
 
 var getGlyphsUnicode = getLookupTableFactory(function (t) {
   t['A'] = 0x0041;
@@ -1826,6 +1826,7 @@ var getGlyphsUnicode = getLookupTableFactory(function (t) {
   t['feicoptic'] = 0x03E5;
   t['female'] = 0x2640;
   t['ff'] = 0xFB00;
+  t['f_f'] = 0xFB00; // Fixes issue 11016.
   t['ffi'] = 0xFB03;
   t['ffl'] = 0xFB04;
   t['fi'] = 0xFB01;

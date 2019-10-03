@@ -19,7 +19,9 @@
  * license.
  */
 
-import { FormatError, isSpace, stringToBytes } from '../shared/util';
+import {
+  FormatError, isSpace, stringToBytes, unreachable
+} from '../shared/util';
 import { isDict } from './primitives';
 
 var Stream = (function StreamClosure() {
@@ -92,6 +94,17 @@ var Stream = (function StreamClosure() {
       this.pos -= bytes.length;
       return bytes;
     },
+
+    getByteRange(begin, end) {
+      if (begin < 0) {
+        begin = 0;
+      }
+      if (end > this.end) {
+        end = this.end;
+      }
+      return this.bytes.subarray(begin, end);
+    },
+
     skip: function Stream_skip(n) {
       if (!n) {
         n = 1;
@@ -236,6 +249,11 @@ var DecodeStream = (function DecodeStreamClosure() {
       }
       return new Stream(this.buffer, start, length, dict);
     },
+
+    getByteRange(begin, end) {
+      unreachable('Should not call DecodeStream.getByteRange');
+    },
+
     skip: function DecodeStream_skip(n) {
       if (!n) {
         n = 1;

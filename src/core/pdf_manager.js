@@ -14,9 +14,10 @@
  */
 
 import {
-  createValidAbsoluteUrl, MissingDataException, shadow, unreachable, warn
+  createValidAbsoluteUrl, shadow, unreachable, warn
 } from '../shared/util';
 import { ChunkedStreamManager } from './chunked_stream';
+import { MissingDataException } from './core_utils';
 import { PDFDocument } from './document';
 import { Stream } from './stream';
 
@@ -96,7 +97,7 @@ class BasePdfManager {
     this._password = password;
   }
 
-  terminate() {
+  terminate(reason) {
     unreachable('Abstract method `terminate` called');
   }
 }
@@ -133,7 +134,7 @@ class LocalPdfManager extends BasePdfManager {
     return this._loadedStreamPromise;
   }
 
-  terminate() {}
+  terminate(reason) {}
 }
 
 class NetworkPdfManager extends BasePdfManager {
@@ -187,8 +188,8 @@ class NetworkPdfManager extends BasePdfManager {
     return this.streamManager.onLoadedStream();
   }
 
-  terminate() {
-    this.streamManager.abort();
+  terminate(reason) {
+    this.streamManager.abort(reason);
   }
 }
 

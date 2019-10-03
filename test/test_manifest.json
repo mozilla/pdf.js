@@ -39,6 +39,27 @@
        "lastPage": 1,
        "type": "text"
     },
+    {  "id": "boundingBox_invalid",
+       "file": "pdfs/boundingBox_invalid.pdf",
+       "md5": "f6dfc471bf43abac00cdcf05d81cb070",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue11016",
+       "file": "pdfs/issue11016_reduced.pdf",
+       "md5": "b75578bd052d2e6acdcc85b615eab6b1",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
+    {  "id": "issue11150",
+       "file": "pdfs/issue11150_reduced.pdf",
+       "md5": "8b86381089a9ec28723791245a9adfa6",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue1293",
        "file": "pdfs/issue1293r.pdf",
        "md5": "4a098f5051f34fab036f5bbe88f8deef",
@@ -654,6 +675,12 @@
        "type": "eq",
        "about": "Type1 font with |Ref|s in the Differences array of the Encoding dictionary."
     },
+    {  "id": "issue8092",
+       "file": "pdfs/issue8092.pdf",
+       "md5": "e4f3376b35fd132580246c3db1fbd738",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "franz_2",
        "file": "pdfs/franz_2.pdf",
        "md5": "9d301ed8816e879891115b5cc3c39559",
@@ -679,6 +706,15 @@
        "type": "eq",
        "annotations": true,
        "about": "Annotation with (unsupported) file:// URL."
+    },
+    {  "id": "bug1552113",
+       "file": "pdfs/bug1552113.pdf",
+       "md5": "dafb7ba1328e8deaab2e3619c94bf974",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true,
+       "about": "Annotation with (ridiculously) large border width."
     },
     {  "id": "issue4934",
        "file": "pdfs/issue4934.pdf",
@@ -848,6 +884,13 @@
        "firstPage": 2,
        "type": "eq"
     },
+    {  "id": "issue10542",
+       "file": "pdfs/issue10542_reduced.pdf",
+       "md5": "92406cb903be6c7a63221ba61fcb8eaf",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue6289",
        "file": "pdfs/issue6289.pdf",
        "md5": "0869f3d147c734ec484ffd492104095d",
@@ -1008,6 +1051,27 @@
        "rounds": 1,
        "link": false,
        "type": "eq"
+    },
+    {  "id": "bug1245391",
+       "file": "pdfs/bug1245391_reduced.pdf",
+       "md5": "6c946045ee0f2f663f269717c0f1614a",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "bug1245391-text",
+       "file": "pdfs/bug1245391_reduced.pdf",
+       "md5": "6c946045ee0f2f663f269717c0f1614a",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
+    {  "id": "bug1513120-text",
+       "file": "pdfs/bug1513120_reduced.pdf",
+       "md5": "e88ad8b5bb385296f475ca51ce0d216d",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
     },
     {  "id": "bug1250079",
        "file": "pdfs/bug1250079.pdf",
@@ -1230,6 +1294,16 @@
        "link": false,
        "rounds": 1,
        "type": "text"
+    },
+    {  "id": "issue10717",
+       "file": "pdfs/issue10717.pdf",
+       "md5": "6d2ed03db798cc6beb3c7bdf103f5c1a",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 1,
+       "lastPage": 2,
+       "type": "eq",
+       "about": "Type3 fonts with image resources; both pages need to be tested, otherwise the bug won't manifest."
     },
     {  "id": "close-path-bug",
        "file": "pdfs/close-path-bug.pdf",
@@ -1457,6 +1531,14 @@
        "rounds": 1,
        "link": false,
        "type": "text"
+    },
+    {  "id": "issue10614",
+       "file": "pdfs/issue10614.pdf",
+       "md5": "c41da60ce9af100cb78e1c2a6ba18232",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
     },
     {  "id": "issue6071",
        "file": "pdfs/issue6071.pdf",
@@ -1789,6 +1871,12 @@
       "lastPage": 3,
       "link": true,
       "type": "load"
+    },
+    {  "id": "issue7339",
+       "file": "pdfs/issue7339_reduced.pdf",
+       "md5": "7092ab6a1acc31db9d1caaa0447334a0",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "bug1142033",
        "file": "pdfs/bug1142033.pdf",
@@ -2535,6 +2623,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue10665",
+       "file": "pdfs/issue10665_reduced.pdf",
+       "md5": "4c8938c808153f6b3840e8a5eb68b804",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue1466",
       "file": "pdfs/issue1466.pdf",
       "md5": "8a8877432e5bb10cfd50d60488d947bb",
@@ -2689,6 +2784,12 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue9534_reduced",
+       "file": "pdfs/issue9534_reduced.pdf",
+       "md5": "f9a47805555de5bc0f9f5f5188df6bad",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue1233",
       "file": "pdfs/issue1233.pdf",
       "md5": "2d3565b0a286e29955796c37c66326c1",
@@ -2805,6 +2906,13 @@
        "file": "pdfs/issue10084_reduced.pdf",
        "md5": "ae37cf36f2e319688c608e4086836824",
        "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue11045",
+       "file": "pdfs/issue11045.pdf",
+       "md5": "101d4cb649cc006e0f2b14923e8d97d6",
+       "rounds": 1,
+       "link": false,
        "type": "eq"
     },
     {  "id": "issue4890",
@@ -2967,6 +3075,22 @@
        "link": false,
        "type": "eq"
     },
+    {
+       "id": "tiling-pattern-box",
+       "file": "pdfs/tiling-pattern-box.pdf",
+       "md5": "09100872824fc14012bd8f9bf4dbc632",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {
+       "id": "tiling-pattern-large-steps",
+       "file": "pdfs/tiling-pattern-large-steps.pdf",
+       "md5": "569aac1303c97004aab6a720d9b259b4",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue6151",
        "file": "pdfs/issue6151.pdf",
        "md5": "926f8c6b25e6f0978759f7947d70e079",
@@ -3050,6 +3174,12 @@
       "firstPage": 4,
       "lastPage": 4,
       "type": "load"
+    },
+    {  "id": "issue10519",
+       "file": "pdfs/issue10519_reduced.pdf",
+       "md5": "8a2dae43c0ef47b0734bedaaa24f8c09",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue3061",
       "file": "pdfs/issue3061.pdf",
@@ -3370,6 +3500,13 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue11052",
+       "file": "pdfs/issue11052.pdf",
+       "md5": "67c20e5bec51183c9283baa0cd49593f",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "bug1108753",
        "file": "pdfs/bug1108753.pdf",
        "md5": "a7aaf92d55b4602afb0ca3d75198b56b",
@@ -3392,6 +3529,12 @@
       "rounds": 1,
       "type": "eq",
       "about": "A CIDFontType0 font with a CFF font that isn't actually CID."
+    },
+    {  "id": "scorecard_reduced",
+       "file": "pdfs/scorecard_reduced.pdf",
+       "md5": "aa8ed0827092c963eea64adb718a3806",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "bug921409",
       "file": "pdfs/bug921409.pdf",
@@ -3945,6 +4088,13 @@
     {  "id": "annotation-highlight",
        "file": "pdfs/annotation-highlight.pdf",
        "md5": "e13e198e3a69c32dc9ebdc704d3105e1",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
+    {  "id": "annotation-freetext",
+       "file": "pdfs/annotation-freetext.pdf",
+       "md5": "6ca19ce632ead3aed08f22e588510e2f",
        "rounds": 1,
        "type": "eq",
        "annotations": true

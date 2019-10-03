@@ -14,8 +14,9 @@
  */
 
 import '../extensions/firefox/tools/l10n';
-import { createObjectURL, PDFDataRangeTransport, shadow, URL } from 'pdfjs-lib';
+import { createObjectURL, PDFDataRangeTransport, shadow } from 'pdfjs-lib';
 import { BasePreferences } from './preferences';
+import { DEFAULT_SCALE_VALUE } from './ui_utils';
 import { PDFViewerApplication } from './app';
 
 if (typeof PDFJSDev === 'undefined' ||
@@ -171,14 +172,12 @@ class MozL10n {
     'findentirewordchange',
     'findbarclose',
   ];
-  let handleEvent = function({ type, detail, }) {
+  const handleEvent = function({ type, detail, }) {
     if (!PDFViewerApplication.initialized) {
       return;
     }
     if (type === 'findbarclose') {
-      PDFViewerApplication.eventBus.dispatch('findbarclose', {
-        source: window,
-      });
+      PDFViewerApplication.eventBus.dispatch(type, { source: window, });
       return;
     }
     PDFViewerApplication.eventBus.dispatch('find', {
@@ -193,7 +192,31 @@ class MozL10n {
     });
   };
 
-  for (let event of events) {
+  for (const event of events) {
+    window.addEventListener(event, handleEvent);
+  }
+})();
+
+(function listenZoomEvents() {
+  const events = [
+    'zoomin',
+    'zoomout',
+    'zoomreset',
+  ];
+  const handleEvent = function({ type, detail, }) {
+    if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    // Avoid attempting to needlessly reset the zoom level *twice* in a row,
+    // when using the `Ctrl + 0` keyboard shortcut.
+    if (type === 'zoomreset' && // eslint-disable-next-line max-len
+        PDFViewerApplication.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE) {
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch(type, { source: window, });
+  };
+
+  for (const event of events) {
     window.addEventListener(event, handleEvent);
   }
 })();
@@ -235,7 +258,7 @@ PDFViewerApplication.externalServices = {
       switch (args.pdfjsLoadAction) {
         case 'supportsRangedLoading':
           pdfDataRangeTransport =
-            new FirefoxComDataRangeTransport(args.length, args.data);
+            new FirefoxComDataRangeTransport(args.length, args.data, args.done);
 
           callbacks.onOpenWithTransport(args.pdfUrl, args.length,
                                         pdfDataRangeTransport);
@@ -248,6 +271,15 @@ PDFViewerApplication.externalServices = {
           break;
         case 'progressiveRead':
           pdfDataRangeTransport.onDataProgressiveRead(args.chunk);
+
+          // Don't forget to report loading progress as well, since otherwise
+          // the loadingBar won't update when `disableRange=true` is set.
+          pdfDataRangeTransport.onDataProgress(args.loaded, args.total);
+          break;
+        case 'progressiveDone':
+          if (pdfDataRangeTransport) {
+            pdfDataRangeTransport.onDataProgressiveDone();
+          }
           break;
         case 'progress':
           callbacks.onProgress(args.loaded, args.total);

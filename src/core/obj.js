@@ -14,16 +14,19 @@
  */
 
 import {
-  bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
-  info, InvalidPDFException, isBool, isNum, isString, MissingDataException,
-  PermissionFlag, shadow, stringToPDFString, stringToUTF8String,
-  toRomanNumerals, unreachable, warn, XRefEntryException, XRefParseException
+  assert, bytesToString, createPromiseCapability, createValidAbsoluteUrl,
+  FormatError, info, InvalidPDFException, isBool, isNum, isString,
+  PermissionFlag, shadow, stringToPDFString, stringToUTF8String, unreachable,
+  warn
 } from '../shared/util';
 import {
-  Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
-  RefSetCache
+  clearPrimitiveCaches, Cmd, Dict, isCmd, isDict, isName, isRef, isRefsEqual,
+  isStream, Ref, RefSet, RefSetCache
 } from './primitives';
 import { Lexer, Parser } from './parser';
+import {
+  MissingDataException, toRomanNumerals, XRefEntryException, XRefParseException
+} from './core_utils';
 import { ChunkedStream } from './chunked_stream';
 import { CipherTransformFactory } from './crypto';
 import { ColorSpace } from './colorspace';
@@ -141,6 +144,7 @@ class Catalog {
       const title = outlineDict.get('Title');
       const flags = outlineDict.get('F') || 0;
       const color = outlineDict.getArray('C');
+      const count = outlineDict.get('Count');
       let rgbColor = blackColor;
 
       // We only need to parse the color when it's valid, and non-default.
@@ -156,7 +160,7 @@ class Catalog {
         newWindow: data.newWindow,
         title: stringToPDFString(title),
         color: rgbColor,
-        count: outlineDict.get('Count'),
+        count: Number.isInteger(count) ? count : undefined,
         bold: !!(flags & 2),
         italic: !!(flags & 1),
         items: [],
@@ -263,6 +267,7 @@ class Catalog {
     } else if (this.catDict.has('Dests')) { // Simple destination dictionary.
       return this.catDict.get('Dests');
     }
+    return undefined;
   }
 
   get pageLabels() {
@@ -374,6 +379,27 @@ class Catalog {
     return pageLabels;
   }
 
+  get pageLayout() {
+    const obj = this.catDict.get('PageLayout');
+    // Purposely use a non-standard default value, rather than 'SinglePage', to
+    // allow differentiating between `undefined` and /SinglePage since that does
+    // affect the Scroll mode (continuous/non-continuous) used in Adobe Reader.
+    let pageLayout = '';
+
+    if (isName(obj)) {
+      switch (obj.name) {
+        case 'SinglePage':
+        case 'OneColumn':
+        case 'TwoColumnLeft':
+        case 'TwoColumnRight':
+        case 'TwoPageLeft':
+        case 'TwoPageRight':
+          pageLayout = obj.name;
+      }
+    }
+    return shadow(this, 'pageLayout', pageLayout);
+  }
+
   get pageMode() {
     const obj = this.catDict.get('PageMode');
     let pageMode = 'UseNone'; // Default value.
@@ -390,6 +416,136 @@ class Catalog {
       }
     }
     return shadow(this, 'pageMode', pageMode);
+  }
+
+  get viewerPreferences() {
+    const ViewerPreferencesValidators = {
+      HideToolbar: isBool,
+      HideMenubar: isBool,
+      HideWindowUI: isBool,
+      FitWindow: isBool,
+      CenterWindow: isBool,
+      DisplayDocTitle: isBool,
+      NonFullScreenPageMode: isName,
+      Direction: isName,
+      ViewArea: isName,
+      ViewClip: isName,
+      PrintArea: isName,
+      PrintClip: isName,
+      PrintScaling: isName,
+      Duplex: isName,
+      PickTrayByPDFSize: isBool,
+      PrintPageRange: Array.isArray,
+      NumCopies: Number.isInteger,
+    };
+
+    const obj = this.catDict.get('ViewerPreferences');
+    const prefs = Object.create(null);
+
+    if (isDict(obj)) {
+      for (const key in ViewerPreferencesValidators) {
+        if (!obj.has(key)) {
+          continue;
+        }
+        const value = obj.get(key);
+        // Make sure the (standard) value conforms to the specification.
+        if (!ViewerPreferencesValidators[key](value)) {
+          info(`Bad value in ViewerPreferences for "${key}".`);
+          continue;
+        }
+        let prefValue;
+
+        switch (key) {
+          case 'NonFullScreenPageMode':
+            switch (value.name) {
+              case 'UseNone':
+              case 'UseOutlines':
+              case 'UseThumbs':
+              case 'UseOC':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'UseNone';
+            }
+            break;
+          case 'Direction':
+            switch (value.name) {
+              case 'L2R':
+              case 'R2L':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'L2R';
+            }
+            break;
+          case 'ViewArea':
+          case 'ViewClip':
+          case 'PrintArea':
+          case 'PrintClip':
+            switch (value.name) {
+              case 'MediaBox':
+              case 'CropBox':
+              case 'BleedBox':
+              case 'TrimBox':
+              case 'ArtBox':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'CropBox';
+            }
+            break;
+          case 'PrintScaling':
+            switch (value.name) {
+              case 'None':
+              case 'AppDefault':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'AppDefault';
+            }
+            break;
+          case 'Duplex':
+            switch (value.name) {
+              case 'Simplex':
+              case 'DuplexFlipShortEdge':
+              case 'DuplexFlipLongEdge':
+                prefValue = value.name;
+                break;
+              default:
+                prefValue = 'None';
+            }
+            break;
+          case 'PrintPageRange':
+            const length = value.length;
+            if (length % 2 !== 0) { // The number of elements must be even.
+              break;
+            }
+            const isValid = value.every((page, i, arr) => {
+              return (Number.isInteger(page) && page > 0) &&
+                     (i === 0 || page >= arr[i - 1]) && page <= this.numPages;
+            });
+            if (isValid) {
+              prefValue = value;
+            }
+            break;
+          case 'NumCopies':
+            if (value > 0) {
+              prefValue = value;
+            }
+            break;
+          default:
+            assert(typeof value === 'boolean');
+            prefValue = value;
+        }
+
+        if (prefValue !== undefined) {
+          prefs[key] = prefValue;
+        } else {
+          info(`Bad value in ViewerPreferences for "${key}".`);
+        }
+      }
+    }
+    return shadow(this, 'viewerPreferences', prefs);
   }
 
   get openActionDestination() {
@@ -507,6 +663,7 @@ class Catalog {
   }
 
   cleanup() {
+    clearPrimitiveCaches();
     this.pageKidsCountCache.clear();
 
     const promises = [];
@@ -886,11 +1043,10 @@ var XRef = (function XRefClosure() {
     this.pdfManager = pdfManager;
     this.entries = [];
     this.xrefstms = Object.create(null);
-    // prepare the XRef cache
-    this.cache = [];
+    this._cacheMap = new Map(); // Prepare the XRef cache.
     this.stats = {
-      streamTypes: [],
-      fontTypes: [],
+      streamTypes: Object.create(null),
+      fontTypes: Object.create(null),
     };
   }
 
@@ -1043,10 +1199,15 @@ var XRef = (function XRefClosure() {
           entry.gen = parser.getObj();
           var type = parser.getObj();
 
-          if (isCmd(type, 'f')) {
-            entry.free = true;
-          } else if (isCmd(type, 'n')) {
-            entry.uncompressed = true;
+          if (type instanceof Cmd) {
+            switch (type.cmd) {
+              case 'f':
+                entry.free = true;
+                break;
+              case 'n':
+                entry.uncompressed = true;
+                break;
+            }
           }
 
           // Validate entry obj
@@ -1320,8 +1481,12 @@ var XRef = (function XRefClosure() {
       let trailerDict;
       for (i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
-        var parser = new Parser(new Lexer(stream), /* allowStreams = */ true,
-                                /* xref = */ this, /* recoveryMode = */ true);
+        const parser = new Parser({
+          lexer: new Lexer(stream),
+          xref: this,
+          allowStreams: true,
+          recoveryMode: true,
+        });
         var obj = parser.getObj();
         if (!isCmd(obj, 'trailer')) {
           continue;
@@ -1379,7 +1544,11 @@ var XRef = (function XRefClosure() {
 
           stream.pos = startXRef + stream.start;
 
-          var parser = new Parser(new Lexer(stream), true, this);
+          const parser = new Parser({
+            lexer: new Lexer(stream),
+            xref: this,
+            allowStreams: true,
+          });
           var obj = parser.getObj();
           var dict;
 
@@ -1442,7 +1611,7 @@ var XRef = (function XRefClosure() {
       }
 
       if (recoveryMode) {
-        return;
+        return undefined;
       }
       throw new XRefParseException();
     },
@@ -1456,19 +1625,20 @@ var XRef = (function XRefClosure() {
     },
 
     fetchIfRef: function XRef_fetchIfRef(obj, suppressEncryption) {
-      if (!isRef(obj)) {
-        return obj;
+      if (obj instanceof Ref) {
+        return this.fetch(obj, suppressEncryption);
       }
-      return this.fetch(obj, suppressEncryption);
+      return obj;
     },
 
     fetch: function XRef_fetch(ref, suppressEncryption) {
-      if (!isRef(ref)) {
+      if (!(ref instanceof Ref)) {
         throw new Error('ref object is not a reference');
       }
-      var num = ref.num;
-      if (num in this.cache) {
-        var cacheEntry = this.cache[num];
+      const num = ref.num;
+
+      if (this._cacheMap.has(num)) {
+        const cacheEntry = this._cacheMap.get(num);
         // In documents with Object Streams, it's possible that cached `Dict`s
         // have not been assigned an `objId` yet (see e.g. issue3115r.pdf).
         if (cacheEntry instanceof Dict && !cacheEntry.objId) {
@@ -1476,12 +1646,11 @@ var XRef = (function XRefClosure() {
         }
         return cacheEntry;
       }
+      let xrefEntry = this.getEntry(num);
 
-      var xrefEntry = this.getEntry(num);
-
-      // the referenced entry can be free
-      if (xrefEntry === null) {
-        return (this.cache[num] = null);
+      if (xrefEntry === null) { // The referenced entry can be free.
+        this._cacheMap.set(num, xrefEntry);
+        return xrefEntry;
       }
 
       if (xrefEntry.uncompressed) {
@@ -1505,7 +1674,11 @@ var XRef = (function XRefClosure() {
       }
       var stream = this.stream.makeSubStream(xrefEntry.offset +
                                              this.stream.start);
-      var parser = new Parser(new Lexer(stream), true, this);
+      const parser = new Parser({
+        lexer: new Lexer(stream),
+        xref: this,
+        allowStreams: true,
+      });
       var obj1 = parser.getObj();
       var obj2 = parser.getObj();
       var obj3 = parser.getObj();
@@ -1516,7 +1689,7 @@ var XRef = (function XRefClosure() {
       if (!Number.isInteger(obj2)) {
         obj2 = parseInt(obj2, 10);
       }
-      if (obj1 !== num || obj2 !== gen || !isCmd(obj3)) {
+      if (obj1 !== num || obj2 !== gen || !(obj3 instanceof Cmd)) {
         throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
       }
       if (obj3.cmd !== 'obj') {
@@ -1535,14 +1708,14 @@ var XRef = (function XRefClosure() {
         xrefEntry = parser.getObj();
       }
       if (!isStream(xrefEntry)) {
-        this.cache[num] = xrefEntry;
+        this._cacheMap.set(num, xrefEntry);
       }
       return xrefEntry;
     },
 
     fetchCompressed(ref, xrefEntry, suppressEncryption = false) {
       var tableOffset = xrefEntry.offset;
-      var stream = this.fetch(new Ref(tableOffset, 0));
+      var stream = this.fetch(Ref.get(tableOffset, 0));
       if (!isStream(stream)) {
         throw new FormatError('bad ObjStm stream');
       }
@@ -1552,8 +1725,11 @@ var XRef = (function XRefClosure() {
         throw new FormatError(
           'invalid first and n parameters for ObjStm stream');
       }
-      var parser = new Parser(new Lexer(stream), false, this);
-      parser.allowStreams = true;
+      const parser = new Parser({
+        lexer: new Lexer(stream),
+        xref: this,
+        allowStreams: true,
+      });
       var i, entries = [], num, nums = [];
       // read the object numbers to populate cache
       for (i = 0; i < n; ++i) {
@@ -1580,7 +1756,7 @@ var XRef = (function XRefClosure() {
         num = nums[i];
         var entry = this.entries[num];
         if (entry && entry.offset === tableOffset && entry.gen === i) {
-          this.cache[num] = entries[i];
+          this._cacheMap.set(num, entries[i]);
         }
       }
       xrefEntry = entries[xrefEntry.gen];
@@ -1591,10 +1767,10 @@ var XRef = (function XRefClosure() {
     },
 
     async fetchIfRefAsync(obj, suppressEncryption) {
-      if (!isRef(obj)) {
-        return obj;
+      if (obj instanceof Ref) {
+        return this.fetchAsync(obj, suppressEncryption);
       }
-      return this.fetchAsync(obj, suppressEncryption);
+      return obj;
     },
 
     async fetchAsync(ref, suppressEncryption) {

@@ -18,20 +18,23 @@ function getDefaultPreferences() {
   if (!defaultPreferences) {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
       defaultPreferences = Promise.resolve(
-        PDFJSDev.json('$ROOT/web/default_preferences.json'));
+        PDFJSDev.json('$ROOT/build/default_preferences.json'));
     } else {
-      defaultPreferences = new Promise(function (resolve) {
-        let xhr = new XMLHttpRequest();
-        xhr.open('GET', 'default_preferences.json');
-        xhr.onload = xhr.onerror = function loaded() {
+      defaultPreferences = new Promise(function(resolve, reject) {
+        if (typeof SystemJS === 'object') {
+          SystemJS.import('./app_options').then(resolve, reject);
+        } else if (typeof require === 'function') {
           try {
-            resolve(JSON.parse(xhr.responseText));
-          } catch (e) {
-            console.error(`Unable to load default preferences: ${e}`);
-            resolve({});
+            resolve(require('./app_options.js'));
+          } catch (ex) {
+            reject(ex);
           }
-        };
-        xhr.send();
+        } else {
+          reject(new Error(
+            'SystemJS or CommonJS must be used to load AppOptions.'));
+        }
+      }).then(function({ AppOptions, OptionKind, }) {
+        return AppOptions.getAll(OptionKind.PREFERENCE);
       });
     }
   }

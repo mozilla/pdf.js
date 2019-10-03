@@ -67,9 +67,7 @@ describe('primitives', function() {
       expect(dict.get()).toBeUndefined();
       expect(dict.get('Prev')).toBeUndefined();
       expect(dict.get('Decode', 'D')).toBeUndefined();
-
-      // Note that the getter with three arguments breaks the pattern here.
-      expect(dict.get('FontFile', 'FontFile2', 'FontFile3')).toBeNull();
+      expect(dict.get('FontFile', 'FontFile2', 'FontFile3')).toBeUndefined();
     };
 
     var emptyDict, dictWithSizeKey, dictWithManyKeys;
@@ -145,7 +143,7 @@ describe('primitives', function() {
 
       Promise.all(keyPromises).then(function (values) {
         expect(values[0]).toBeUndefined();
-        expect(values[1]).toBeNull();
+        expect(values[1]).toBeUndefined();
         done();
       }).catch(function (reason) {
         done.fail(reason);
@@ -185,7 +183,7 @@ describe('primitives', function() {
 
     it('should handle keys pointing to indirect objects, both sync and async',
         function (done) {
-      var fontRef = new Ref(1, 0);
+      var fontRef = Ref.get(1, 0);
       var xref = new XRefMock([
         { ref: fontRef, data: testFontFile, }
       ]);
@@ -206,7 +204,7 @@ describe('primitives', function() {
     });
 
     it('should handle arrays containing indirect objects', function () {
-      var minCoordRef = new Ref(1, 0), maxCoordRef = new Ref(2, 0);
+      var minCoordRef = Ref.get(1, 0), maxCoordRef = Ref.get(2, 0);
       var minCoord = 0, maxCoord = 1;
       var xref = new XRefMock([
         { ref: minCoordRef, data: minCoord, },
@@ -254,7 +252,7 @@ describe('primitives', function() {
     it('should retain the stored values', function() {
       var storedNum = 4;
       var storedGen = 2;
-      var ref = new Ref(storedNum, storedGen);
+      var ref = Ref.get(storedNum, storedGen);
       expect(ref.num).toEqual(storedNum);
       expect(ref.gen).toEqual(storedGen);
     });
@@ -262,18 +260,18 @@ describe('primitives', function() {
 
   describe('RefSet', function() {
     it('should have a stored value', function() {
-      var ref = new Ref(4, 2);
+      var ref = Ref.get(4, 2);
       var refset = new RefSet();
       refset.put(ref);
       expect(refset.has(ref)).toBeTruthy();
     });
     it('should not have an unknown value', function() {
-      var ref = new Ref(4, 2);
+      var ref = Ref.get(4, 2);
       var refset = new RefSet();
       expect(refset.has(ref)).toBeFalsy();
 
       refset.put(ref);
-      var anotherRef = new Ref(2, 4);
+      var anotherRef = Ref.get(2, 4);
       expect(refset.has(anotherRef)).toBeFalsy();
     });
   });
@@ -341,21 +339,21 @@ describe('primitives', function() {
     });
 
     it('handles refs', function () {
-      var ref = new Ref(1, 0);
+      var ref = Ref.get(1, 0);
       expect(isRef(ref)).toEqual(true);
     });
   });
 
   describe('isRefsEqual', function () {
-    it('should handle different Refs pointing to the same object', function () {
-      var ref1 = new Ref(1, 0);
-      var ref2 = new Ref(1, 0);
+    it('should handle Refs pointing to the same object', function () {
+      var ref1 = Ref.get(1, 0);
+      var ref2 = Ref.get(1, 0);
       expect(isRefsEqual(ref1, ref2)).toEqual(true);
     });
 
     it('should handle Refs pointing to different objects', function () {
-      var ref1 = new Ref(1, 0);
-      var ref2 = new Ref(2, 0);
+      var ref1 = Ref.get(1, 0);
+      var ref2 = Ref.get(2, 0);
       expect(isRefsEqual(ref1, ref2)).toEqual(false);
     });
   });

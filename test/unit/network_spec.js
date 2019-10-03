@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
+import { AbortException } from '../../src/shared/util';
 import { PDFNetworkStream } from '../../src/display/network';
 
 describe('network', function() {
   var pdf1 = new URL('../pdfs/tracemonkey.pdf', window.location).href;
   var pdf1Length = 1016315;
-  var pdf2 = new URL('../pdfs/pdf.pdf', window.location).href;
-  var pdf2Length = 32472771;
 
   it('read without stream and range', function(done) {
     var stream = new PDFNetworkStream({
@@ -41,7 +40,7 @@ describe('network', function() {
     var read = function () {
       return fullReader.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         count++;
         len += result.value.byteLength;
@@ -56,58 +55,6 @@ describe('network', function() {
       expect(count).toEqual(1);
       expect(isStreamingSupported).toEqual(false);
       expect(isRangeSupported).toEqual(false);
-      done();
-    }).catch(function (reason) {
-      done.fail(reason);
-    });
-  });
-
-  it('read with streaming', function(done) {
-    var userAgent = window.navigator.userAgent;
-    // The test is valid for FF only: the XHR has support of the
-    // 'moz-chunked-array' response type.
-    // TODO enable for other browsers, e.g. when fetch/streams API is supported.
-    var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
-    if (!m || m[1] < 9) {
-      expect(true).toEqual(true);
-      done();
-      return;
-    }
-
-    var stream = new PDFNetworkStream({
-      url: pdf2,
-      rangeChunkSize: 65536,
-      disableStream: false,
-      disableRange: false,
-    });
-
-    var fullReader = stream.getFullReader();
-
-    var isStreamingSupported, isRangeSupported;
-    var promise = fullReader.headersReady.then(function () {
-      isStreamingSupported = fullReader.isStreamingSupported;
-      isRangeSupported = fullReader.isRangeSupported;
-    });
-
-    var len = 0, count = 0;
-    var read = function () {
-      return fullReader.read().then(function (result) {
-        if (result.done) {
-          return;
-        }
-        count++;
-        len += result.value.byteLength;
-        return read();
-      });
-    };
-
-    var readPromise = Promise.all([read(), promise]);
-
-    readPromise.then(function () {
-      expect(len).toEqual(pdf2Length);
-      expect(count).toBeGreaterThan(1);
-      expect(isStreamingSupported).toEqual(true);
-      expect(isRangeSupported).toEqual(true);
       done();
     }).catch(function (reason) {
       done.fail(reason);
@@ -133,7 +80,7 @@ describe('network', function() {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // we shall be able to close the full reader without issues
-      fullReader.cancel('Don\'t need full reader');
+      fullReader.cancel(new AbortException('Don\'t need fullReader.'));
       fullReaderCancelled = true;
     });
 
@@ -148,7 +95,7 @@ describe('network', function() {
     var read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
-          return;
+          return undefined;
         }
         lenResult.value += result.value.byteLength;
         return read(reader, lenResult);

@@ -17,17 +17,30 @@ import { FormatError, info, Util } from '../shared/util';
 
 var ShadingIRs = {};
 
+function applyBoundingBox(ctx, bbox) {
+  if (!bbox || typeof Path2D === 'undefined') {
+    return;
+  }
+  const width = bbox[2] - bbox[0];
+  const height = bbox[3] - bbox[1];
+  const region = new Path2D();
+  region.rect(bbox[0], bbox[1], width, height);
+  ctx.clip(region);
+}
+
 ShadingIRs.RadialAxial = {
   fromIR: function RadialAxial_fromIR(raw) {
     var type = raw[1];
-    var colorStops = raw[2];
-    var p0 = raw[3];
-    var p1 = raw[4];
-    var r0 = raw[5];
-    var r1 = raw[6];
+    var bbox = raw[2];
+    var colorStops = raw[3];
+    var p0 = raw[4];
+    var p1 = raw[5];
+    var r0 = raw[6];
+    var r1 = raw[7];
     return {
       type: 'Pattern',
       getPattern: function RadialAxial_getPattern(ctx) {
+        applyBoundingBox(ctx, bbox);
         var grad;
         if (type === 'axial') {
           grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
@@ -233,11 +246,12 @@ ShadingIRs.Mesh = {
     var figures = raw[4];
     var bounds = raw[5];
     var matrix = raw[6];
-    // var bbox = raw[7];
+    var bbox = raw[7];
     var background = raw[8];
     return {
       type: 'Pattern',
       getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
+        applyBoundingBox(ctx, bbox);
         var scale;
         if (shadingFill) {
           scale = Util.singularValueDecompose2dScale(ctx.mozCurrentTransform);
@@ -330,14 +344,27 @@ var TilingPattern = (function TilingPatternClosure() {
 
       info('TilingType: ' + tilingType);
 
+      // A tiling pattern as defined by PDF spec 8.7.2 is a cell whose size is
+      // described by bbox, and may repeat regularly by shifting the cell by
+      // xstep and ystep.
+      // Because the HTML5 canvas API does not support pattern repetition with
+      // gaps in between, we use the xstep/ystep instead of the bbox's size.
+      //
+      // This has the following consequences (similarly for ystep):
+      //
+      // - If xstep is the same as bbox, then there is no observable difference.
+      //
+      // - If xstep is larger than bbox, then the pattern canvas is partially
+      //   empty: the area bounded by bbox is painted, the outside area is void.
+      //
+      // - If xstep is smaller than bbox, then the pixels between xstep and the
+      //   bbox boundary will be missing. This is INCORRECT behavior.
+      //   "Figures on adjacent tiles should not overlap" (PDF spec 8.7.3.1),
+      //   but overlapping cells without common pixels are still valid.
+      //   TODO: Fix the implementation, to allow this scenario to be painted
+      //   correctly.
+
       var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
-
-      var topLeft = [x0, y0];
-      // we want the canvas to be as large as the step size
-      var botRight = [x0 + xstep, y0 + ystep];
-
-      var width = botRight[0] - topLeft[0];
-      var height = botRight[1] - topLeft[1];
 
       // Obtain scale from matrix and current transformation matrix.
       var matrixScale = Util.singularValueDecompose2dScale(this.matrix);
@@ -346,50 +373,55 @@ var TilingPattern = (function TilingPatternClosure() {
       var combinedScale = [matrixScale[0] * curMatrixScale[0],
         matrixScale[1] * curMatrixScale[1]];
 
-      // MAX_PATTERN_SIZE is used to avoid OOM situation.
       // Use width and height values that are as close as possible to the end
       // result when the pattern is used. Too low value makes the pattern look
       // blurry. Too large value makes it look too crispy.
-      width = Math.min(Math.ceil(Math.abs(width * combinedScale[0])),
-        MAX_PATTERN_SIZE);
-
-      height = Math.min(Math.ceil(Math.abs(height * combinedScale[1])),
-        MAX_PATTERN_SIZE);
+      var dimx = this.getSizeAndScale(xstep, this.ctx.canvas.width,
+        combinedScale[0]);
+      var dimy = this.getSizeAndScale(ystep, this.ctx.canvas.height,
+        combinedScale[1]);
 
       var tmpCanvas = owner.cachedCanvases.getCanvas('pattern',
-        width, height, true);
+        dimx.size, dimy.size, true);
       var tmpCtx = tmpCanvas.context;
       var graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
       graphics.groupLevel = owner.groupLevel;
 
       this.setFillAndStrokeStyleToContext(graphics, paintType, color);
 
-      this.setScale(width, height, xstep, ystep);
-      this.transformToScale(graphics);
+      graphics.transform(dimx.scale, 0, 0, dimy.scale, 0, 0);
 
       // transform coordinates to pattern space
-      var tmpTranslate = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
-      graphics.transform.apply(graphics, tmpTranslate);
+      graphics.transform(1, 0, 0, 1, -x0, -y0);
 
       this.clipBbox(graphics, bbox, x0, y0, x1, y1);
 
       graphics.executeOperatorList(operatorList);
+
+      this.ctx.transform(1, 0, 0, 1, x0, y0);
+
+      // Rescale canvas so that the ctx.createPattern call generates a pattern
+      // with the desired size.
+      this.ctx.scale(1 / dimx.scale, 1 / dimy.scale);
       return tmpCanvas.canvas;
     },
 
-    setScale: function TilingPattern_setScale(width, height, xstep, ystep) {
-      this.scale = [width / xstep, height / ystep];
-    },
-
-    transformToScale: function TilingPattern_transformToScale(graphics) {
-      var scale = this.scale;
-      var tmpScale = [scale[0], 0, 0, scale[1], 0, 0];
-      graphics.transform.apply(graphics, tmpScale);
-    },
-
-    scaleToContext: function TilingPattern_scaleToContext() {
-      var scale = this.scale;
-      this.ctx.scale(1 / scale[0], 1 / scale[1]);
+    getSizeAndScale:
+        function TilingPattern_getSizeAndScale(step, realOutputSize, scale) {
+      // xstep / ystep may be negative -- normalize.
+      step = Math.abs(step);
+      // MAX_PATTERN_SIZE is used to avoid OOM situation.
+      // Use the destination canvas's size if it is bigger than the hard-coded
+      // limit of MAX_PATTERN_SIZE to avoid clipping patterns that cover the
+      // whole canvas.
+      var maxSize = Math.max(MAX_PATTERN_SIZE, realOutputSize);
+      var size = Math.ceil(step * scale);
+      if (size >= maxSize) {
+        size = maxSize;
+      } else {
+        scale = size / step;
+      }
+      return { scale, size, };
     },
 
     clipBbox: function clipBbox(graphics, bbox, x0, y0, x1, y1) {
@@ -427,12 +459,12 @@ var TilingPattern = (function TilingPatternClosure() {
       },
 
     getPattern: function TilingPattern_getPattern(ctx, owner) {
-      var temporaryPatternCanvas = this.createPatternCanvas(owner);
-
       ctx = this.ctx;
+      // PDF spec 8.7.2 NOTE 1: pattern's matrix is relative to initial matrix.
       ctx.setTransform.apply(ctx, this.baseTransform);
       ctx.transform.apply(ctx, this.matrix);
-      this.scaleToContext();
+
+      var temporaryPatternCanvas = this.createPatternCanvas(owner);
 
       return ctx.createPattern(temporaryPatternCanvas, 'repeat');
     },

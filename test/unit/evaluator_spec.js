@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
+import { createIdFactory, XRefMock } from './test_utils';
 import { Dict, Name } from '../../src/core/primitives';
 import { FormatError, OPS } from '../../src/shared/util';
 import { Stream, StringStream } from '../../src/core/stream';
 import { OperatorList } from '../../src/core/operator_list';
 import { PartialEvaluator } from '../../src/core/evaluator';
 import { WorkerTask } from '../../src/core/worker';
-import { XRefMock } from './test_utils';
 
 describe('evaluator', function() {
   function HandlerMock() {
@@ -36,8 +36,6 @@ describe('evaluator', function() {
       return this[name];
     },
   };
-
-  function PdfManagerMock() { }
 
   function runOperatorListCheck(evaluator, stream, resources, callback) {
     var result = new OperatorList();
@@ -58,10 +56,10 @@ describe('evaluator', function() {
 
   beforeAll(function(done) {
     partialEvaluator = new PartialEvaluator({
-      pdfManager: new PdfManagerMock(),
       xref: new XRefMock(),
       handler: new HandlerMock(),
       pageIndex: 0,
+      idFactory: createIdFactory(/* pageIndex = */ 0),
     });
     done();
   });
@@ -257,7 +255,7 @@ describe('evaluator', function() {
         done();
       });
     });
-    it('should skip paintXObject if name is missing', function(done) {
+    it('should error on paintXObject if name is missing', function(done) {
       var stream = new StringStream('/ Do');
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
           function(result) {
@@ -322,13 +320,12 @@ describe('evaluator', function() {
   });
 
   describe('operator list', function () {
-    function MessageHandlerMock() { }
-    MessageHandlerMock.prototype = {
-      send() { },
-    };
+    class StreamSinkMock {
+      enqueue() { }
+    }
 
     it('should get correct total length after flushing', function () {
-      var operatorList = new OperatorList(null, new MessageHandlerMock());
+      var operatorList = new OperatorList(null, new StreamSinkMock());
       operatorList.addOp(OPS.save, null);
       operatorList.addOp(OPS.restore, null);
 
