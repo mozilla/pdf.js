@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { NullL10n } from './ui_utils';
+import { clamp, NullL10n } from './ui_utils';
 
 const SIDEBAR_WIDTH_VAR = '--sidebar-width';
 const SIDEBAR_MIN_WIDTH = 200; // pixels
@@ -84,19 +84,14 @@ class PDFSidebarResizer {
     }
     // Prevent the sidebar from becoming too narrow, or from occupying more
     // than half of the available viewer width.
-    const maxWidth = Math.floor(this.outerContainerWidth / 2);
-    if (width > maxWidth) {
-      width = maxWidth;
-    }
-    if (width < SIDEBAR_MIN_WIDTH) {
-      width = SIDEBAR_MIN_WIDTH;
-    }
+    const newWidth = clamp(width, SIDEBAR_MIN_WIDTH,
+                           Math.floor(this.outerContainerWidth / 2));
     // Only update the UI when the sidebar width did in fact change.
-    if (width === this._width) {
+    if (newWidth === this._width) {
       return false;
     }
-    this._width = width;
-    this.doc.style.setProperty(SIDEBAR_WIDTH_VAR, `${width}px`);
+    this._width = newWidth;
+    this.doc.style.setProperty(SIDEBAR_WIDTH_VAR, `${newWidth}px`);
     return true;
   }
 
