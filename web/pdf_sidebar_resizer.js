@@ -151,30 +151,33 @@ class PDFSidebarResizer {
     this.eventBus.on('resize', (evt) => {
       // When the *entire* viewer is resized, such that it becomes narrower,
       // ensure that the sidebar doesn't end up being too wide.
-      if (evt && evt.source === window) {
-        // Always reset the cached width when the viewer is resized.
-        this._outerContainerWidth = null;
-
-        if (this._width) {
-          // NOTE: If the sidebar is closed, we don't need to worry about
-          //       visual glitches nor ensure that rendering is triggered.
-          if (this.sidebarOpen) {
-            this.outerContainer.classList.add(SIDEBAR_RESIZING_CLASS);
-            let updated = this._updateWidth(this._width);
-
-            Promise.resolve().then(() => {
-              this.outerContainer.classList.remove(SIDEBAR_RESIZING_CLASS);
-              // Trigger rendering if the sidebar width changed, to avoid
-              // depending on the order in which 'resize' events are handled.
-              if (updated) {
-                this.eventBus.dispatch('resize', { source: this, });
-              }
-            });
-          } else {
-            this._updateWidth(this._width);
-          }
-        }
+      if (!evt || evt.source !== window) {
+        return;
       }
+      // Always reset the cached width when the viewer is resized.
+      this._outerContainerWidth = null;
+
+      if (!this._width) {
+        // The sidebar hasn't been resized, hence no need to adjust its width.
+        return;
+      }
+      // NOTE: If the sidebar is closed, we don't need to worry about
+      //       visual glitches nor ensure that rendering is triggered.
+      if (!this.sidebarOpen) {
+        this._updateWidth(this._width);
+        return;
+      }
+      this.outerContainer.classList.add(SIDEBAR_RESIZING_CLASS);
+      let updated = this._updateWidth(this._width);
+
+      Promise.resolve().then(() => {
+        this.outerContainer.classList.remove(SIDEBAR_RESIZING_CLASS);
+        // Trigger rendering if the sidebar width changed, to avoid
+        // depending on the order in which 'resize' events are handled.
+        if (updated) {
+          this.eventBus.dispatch('resize', { source: this, });
+        }
+      });
     });
   }
 }
