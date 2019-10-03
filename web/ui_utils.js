@@ -898,6 +898,7 @@ export {
   NullL10n,
   EventBus,
   getGlobalEventBus,
+  clamp,
   ProgressBar,
   getPDFFileNameFromURL,
   noContextMenuHandler,
