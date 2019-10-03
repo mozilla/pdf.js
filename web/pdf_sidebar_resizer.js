@@ -47,8 +47,10 @@ class PDFSidebarResizer {
     this.eventBus = eventBus;
     this.l10n = l10n;
 
-    if (typeof CSS === 'undefined' || typeof CSS.supports !== 'function' ||
-        !CSS.supports(SIDEBAR_WIDTH_VAR, `calc(-1 * ${SIDEBAR_MIN_WIDTH}px)`)) {
+    if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) &&
+        (typeof CSS === 'undefined' || typeof CSS.supports !== 'function' ||
+         !CSS.supports(SIDEBAR_WIDTH_VAR,
+                       `calc(-1 * ${SIDEBAR_MIN_WIDTH}px)`))) {
       console.warn('PDFSidebarResizer: ' +
                    'The browser does not support resizing of the sidebar.');
       return;
