@@ -1134,16 +1134,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               args = ColorSpace.singletons.gray.getRgb(args, 0);
               fn = OPS.setStrokeRGBColor;
               break;
-            case OPS.setFillCMYKColor:
-              stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
-              args = ColorSpace.singletons.cmyk.getRgb(args, 0);
-              fn = OPS.setFillRGBColor;
-              break;
-            case OPS.setStrokeCMYKColor:
-              stateManager.state.strokeColorSpace = ColorSpace.singletons.cmyk;
-              args = ColorSpace.singletons.cmyk.getRgb(args, 0);
-              fn = OPS.setStrokeRGBColor;
-              break;
+            // case OPS.setFillCMYKColor:
+            //   stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
+            //   args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            //   fn = OPS.setFillRGBColor;
+            //   break;
+            // case OPS.setStrokeCMYKColor:
+            //   stateManager.state.strokeColorSpace = ColorSpace.singletons.cmyk;
+            //   args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            //   fn = OPS.setStrokeRGBColor;
+            //   break;
             case OPS.setFillRGBColor:
               stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
               args = ColorSpace.singletons.rgb.getRgb(args, 0);

@@ -20,6 +20,8 @@ import {
   TextRenderingMode, Util, warn
 } from '../shared/util';
 import { DOMSVGFactory } from './display_utils';
+
+import { ColorSpace } from '../core/colorspace'
 import isNodeJS from '../shared/is_node';
 
 let SVGGraphics = function() {
@@ -586,6 +588,14 @@ SVGGraphics = class SVGGraphics {
           break;
         case OPS.setStrokeRGBColor:
           this.setStrokeRGBColor(args[0], args[1], args[2]);
+          break;
+        case OPS.setFillCMYKColor:
+          let convertedArgs = ColorSpace.singletons.cmyk.getRgb(args, 0);
+          this.setFillRGBColor(convertedArgs[0], convertedArgs[1], convertedArgs[2]);
+          break;
+        case OPS.setStrokeCMYKColor:
+          let convertedArgs = ColorSpace.singletons.cmyk.getRgb(args, 0);
+          this.setStrokeRGBColor(convertedArgs[0], convertedArgs[1], convertedArgs[2]);
           break;
         case OPS.setStrokeColorN:
           this.setStrokeColorN(args);
