@@ -22,7 +22,7 @@ import {
   AnnotationType, stringToBytes, stringToUTF8String
 } from '../../src/shared/util';
 import { createIdFactory, XRefMock } from './test_utils';
-import { Dict, Name, Ref } from '../../src/core/primitives';
+import { Dict, Name, Ref } from '../../src/shared/primitives';
 import { Lexer, Parser } from '../../src/core/parser';
 import { StringStream } from '../../src/core/stream';
 

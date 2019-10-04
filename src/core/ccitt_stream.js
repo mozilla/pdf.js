@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { Dict, isDict } from './primitives';
+import { Dict, isDict } from '../shared/primitives';
 import { CCITTFaxDecoder } from './ccitt';
 import { DecodeStream } from './stream';
 

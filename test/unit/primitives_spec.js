@@ -15,7 +15,7 @@
 
 import {
   Cmd, Dict, isCmd, isDict, isName, isRef, isRefsEqual, Name, Ref, RefSet
-} from '../../src/core/primitives';
+} from '../../src/shared/primitives';
 import { XRefMock } from './test_utils';
 
 describe('primitives', function() {

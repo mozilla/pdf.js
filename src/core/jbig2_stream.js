@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { isDict, isStream } from './primitives';
+import { isDict, isStream } from '../shared/primitives';
 import { DecodeStream } from './stream';
 import { Jbig2Image } from './jbig2';
 import { shadow } from '../shared/util';

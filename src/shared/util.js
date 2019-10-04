@@ -15,6 +15,7 @@
 /* eslint no-var: error */
 
 import './compatibility';
+import { ColorSpace } from './colorspace';
 import { ReadableStream } from './streams_polyfill';
 
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
@@ -887,6 +888,7 @@ export {
   FontType,
   ImageKind,
   CMapCompressionType,
+  ColorSpace,
   AbortException,
   InvalidPDFException,
   MissingPDFException,

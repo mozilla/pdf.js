@@ -20,7 +20,7 @@ import {
   warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
-import { Dict, isDict, isName, isStream, Ref } from './primitives';
+import { Dict, isDict, isName, isStream, Ref } from '../shared/primitives';
 import {
   getInheritableProperty, MissingDataException, XRefEntryException,
   XRefParseException

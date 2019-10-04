@@ -16,7 +16,7 @@
 import {
   FormatError, info, isBool, isEvalSupported, shadow, unreachable
 } from '../shared/util';
-import { isDict, isStream } from './primitives';
+import { isDict, isStream } from '../shared/primitives';
 import { PostScriptLexer, PostScriptParser } from './ps_parser';
 
 let IsEvalSupportedCached = {

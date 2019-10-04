@@ -23,7 +23,7 @@ import {
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
-} from './primitives';
+} from '../shared/primitives';
 import { CCITTFaxStream } from './ccitt_stream';
 import { Jbig2Stream } from './jbig2_stream';
 import { JpegStream } from './jpeg_stream';

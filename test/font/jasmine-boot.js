@@ -43,7 +43,7 @@
 function initializePDFJS(callback) {
   Promise.all([SystemJS.import('pdfjs/core/fonts'),
                SystemJS.import('pdfjs/core/stream'),
-               SystemJS.import('pdfjs/core/primitives'),
+               SystemJS.import('pdfjs/shared/primitives'),
                SystemJS.import('pdfjs/core/cmap')])
          .then(function (modules) {
     var fonts = modules[0], stream = modules[1],

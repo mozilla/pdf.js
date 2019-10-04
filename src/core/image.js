@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 
-import { assert, FormatError, ImageKind, info, warn } from '../shared/util';
-import { isName, isStream, Name } from './primitives';
-import { ColorSpace } from './colorspace';
+import {
+  assert, ColorSpace, FormatError,
+  ImageKind, info, warn
+} from '../shared/util';
+import { isName, isStream, Name } from '../shared/primitives';
 import { DecodeStream } from './stream';
 import { JpegStream } from './jpeg_stream';
 import { JpxImage } from './jpx';

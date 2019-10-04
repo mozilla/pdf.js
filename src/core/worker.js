@@ -19,7 +19,7 @@ import {
   PasswordException, setVerbosityLevel, UnexpectedResponseException,
   UnknownErrorException, UNSUPPORTED_FEATURES, VerbosityLevel, warn
 } from '../shared/util';
-import { clearPrimitiveCaches, Ref } from './primitives';
+import { clearPrimitiveCaches, Ref } from '../shared/primitives';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
 import isNodeJS from '../shared/is_node';
 import { MessageHandler } from '../shared/message_handler';

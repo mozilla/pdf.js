@@ -17,7 +17,7 @@ import {
   bytesToString, FormatError, PasswordException, PasswordResponses,
   stringToBytes, unreachable, utf8StringToString, warn
 } from '../shared/util';
-import { isDict, isName, Name } from './primitives';
+import { isDict, isName, Name } from '../shared/primitives';
 import { DecryptStream } from './stream';
 
 var ARCFourCipher = (function ARCFourCipherClosure() {
