@@ -590,12 +590,12 @@ SVGGraphics = class SVGGraphics {
           this.setStrokeRGBColor(args[0], args[1], args[2]);
           break;
         case OPS.setFillCMYKColor:
-          let convertedArgs = ColorSpace.singletons.cmyk.getRgb(args, 0);
-          this.setFillRGBColor(convertedArgs[0], convertedArgs[1], convertedArgs[2]);
+          let convertedCMYKFillArgsToRgb = ColorSpace.singletons.cmyk.getRgb(args, 0);
+          this.setFillRGBColor(convertedCMYKFillArgsToRgb[0], convertedCMYKFillArgsToRgb[1], convertedCMYKFillArgsToRgb[2]);
           break;
         case OPS.setStrokeCMYKColor:
-          let convertedArgs = ColorSpace.singletons.cmyk.getRgb(args, 0);
-          this.setStrokeRGBColor(convertedArgs[0], convertedArgs[1], convertedArgs[2]);
+          let convertedCMYKStrokeArgsToRgb = ColorSpace.singletons.cmyk.getRgb(args, 0);
+          this.setStrokeRGBColor(convertedCMYKStrokeArgsToRgb[0], convertedCMYKStrokeArgsToRgb[1], convertedCMYKStrokeArgsToRgb[2]);
           break;
         case OPS.setStrokeColorN:
           this.setStrokeColorN(args);
