@@ -20,8 +20,6 @@ import {
   TextRenderingMode, Util, warn
 } from '../shared/util';
 import { DOMSVGFactory } from './display_utils';
-
-import { ColorSpace } from '../core/colorspace'
 import isNodeJS from '../shared/is_node';
 
 let SVGGraphics = function() {
@@ -590,12 +588,14 @@ SVGGraphics = class SVGGraphics {
           this.setStrokeRGBColor(args[0], args[1], args[2]);
           break;
         case OPS.setFillCMYKColor:
-          let convertedCMYKFillArgsToRgb = ColorSpace.singletons.cmyk.getRgb(args, 0);
-          this.setFillRGBColor(convertedCMYKFillArgsToRgb[0], convertedCMYKFillArgsToRgb[1], convertedCMYKFillArgsToRgb[2]);
+          // CMYK information stored in args 0, 1, 2, 3.
+          // Preconverted rgb in core for performance in 4, 5, 6
+          this.setFillRGBColor(args[4], args[5], args[6]);
           break;
         case OPS.setStrokeCMYKColor:
-          let convertedCMYKStrokeArgsToRgb = ColorSpace.singletons.cmyk.getRgb(args, 0);
-          this.setStrokeRGBColor(convertedCMYKStrokeArgsToRgb[0], convertedCMYKStrokeArgsToRgb[1], convertedCMYKStrokeArgsToRgb[2]);
+          // CMYK information stored in args 0, 1, 2, 3.
+          // Preconverted rgb in core for performance in 4, 5, 6
+          this.setStrokeRGBColor(args[4], args[5], args[6]);
           break;
         case OPS.setStrokeColorN:
           this.setStrokeColorN(args);

@@ -17,9 +17,6 @@ import {
   FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, info, isLittleEndian, isNum,
   OPS, shadow, TextRenderingMode, unreachable, Util, warn
 } from '../shared/util';
-import {
-  ColorSpace
-} from '../core/colorspace'
 
 import { getShadingPatternFromIR, TilingPattern } from './pattern_helper';
 
@@ -1702,13 +1699,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.fillColor = color;
       this.current.patternFill = false;
     },
-    setStrokeCMYKColor: function CanvasGraphics_setStrokeCMYKColor(c, m, y, k) {
-      let convertedCMYKStrokeArgsToRgb = ColorSpace.singletons.cmyk.getRgb([c, m, y, k], 0);
-      this.setStrokeRGBColor(convertedCMYKStrokeArgsToRgb[0], convertedCMYKStrokeArgsToRgb[1], convertedCMYKStrokeArgsToRgb[2])
+    setStrokeCMYKColor: function CanvasGraphics_setStrokeCMYKColor(c,
+                                                    m, y, k, r, g, b) {
+      this.setStrokeRGBColor(r, g, b);
     },
-    setFillCMYKColor: function CanvasGraphics_setFillCMYKColor(c, m, y, k) {
-      let convertedCMYKFillArgsToRgb = ColorSpace.singletons.cmyk.getRgb([c, m, y, k], 0);
-      this.setFillRGBColor(convertedCMYKFillArgsToRgb[0], convertedCMYKFillArgsToRgb[1], convertedCMYKFillArgsToRgb[2]);
+    setFillCMYKColor: function CanvasGraphics_setFillCMYKColor(c,
+                                                  m, y, k, r, g, b) {
+      this.setFillRGBColor(r, g, b);
     },
 
     shadingFill: function CanvasGraphics_shadingFill(patternIR) {
