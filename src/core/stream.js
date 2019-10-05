@@ -22,7 +22,7 @@
 import {
   FormatError, isSpace, stringToBytes, unreachable
 } from '../shared/util';
-import { isDict } from '../shared/primitives';
+import { isDict } from './primitives';
 
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {

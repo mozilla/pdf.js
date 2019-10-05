@@ -15,10 +15,10 @@
 /* eslint-disable no-multi-spaces */
 
 import {
-  assert, ColorSpace, FormatError, info, unreachable,
-  UNSUPPORTED_FEATURES, Util, warn
+  assert, FormatError, info, unreachable, UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
-import { isStream } from '../shared/primitives';
+import { ColorSpace } from './colorspace';
+import { isStream } from './primitives';
 import { MissingDataException } from './core_utils';
 
 var ShadingType = {

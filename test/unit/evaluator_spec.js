@@ -14,7 +14,7 @@
  */
 
 import { createIdFactory, XRefMock } from './test_utils';
-import { Dict, Name } from '../../src/shared/primitives';
+import { Dict, Name } from '../../src/core/primitives';
 import { FormatError, OPS } from '../../src/shared/util';
 import { Stream, StringStream } from '../../src/core/stream';
 import { OperatorList } from '../../src/core/operator_list';

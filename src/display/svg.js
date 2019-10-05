@@ -16,12 +16,12 @@
 /* eslint no-var: error */
 
 import {
-  ColorSpace, createObjectURL, FONT_IDENTITY_MATRIX,
-  IDENTITY_MATRIX, ImageKind, isNum, OPS,
+  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNum, OPS,
   TextRenderingMode, Util, warn
 } from '../shared/util';
 import { DOMSVGFactory } from './display_utils';
 
+import { ColorSpace } from '../core/colorspace'
 import isNodeJS from '../shared/is_node';
 
 let SVGGraphics = function() {
@@ -590,20 +590,12 @@ SVGGraphics = class SVGGraphics {
           this.setStrokeRGBColor(args[0], args[1], args[2]);
           break;
         case OPS.setFillCMYKColor:
-          let convFillArgs = ColorSpace.singletons.cmyk.getRgb(args, 0);
-          this.setFillRGBColor(
-            convFillArgs[0],
-            convFillArgs[1],
-            convFillArgs[2]
-          );
+          let convertedCMYKFillArgsToRgb = ColorSpace.singletons.cmyk.getRgb(args, 0);
+          this.setFillRGBColor(convertedCMYKFillArgsToRgb[0], convertedCMYKFillArgsToRgb[1], convertedCMYKFillArgsToRgb[2]);
           break;
         case OPS.setStrokeCMYKColor:
-          let convStrokeArgs = ColorSpace.singletons.cmyk.getRgb(args, 0);
-          this.setStrokeRGBColor(
-            convStrokeArgs[0],
-            convStrokeArgs[1],
-            convStrokeArgs[2]
-          );
+          let convertedCMYKStrokeArgsToRgb = ColorSpace.singletons.cmyk.getRgb(args, 0);
+          this.setStrokeRGBColor(convertedCMYKStrokeArgsToRgb[0], convertedCMYKStrokeArgsToRgb[1], convertedCMYKStrokeArgsToRgb[2]);
           break;
         case OPS.setStrokeColorN:
           this.setStrokeColorN(args);

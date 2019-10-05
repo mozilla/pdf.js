@@ -14,7 +14,7 @@
  */
 /* uses XRef */
 
-import { assert } from './util';
+import { assert } from '../shared/util';
 
 var EOF = {};
 

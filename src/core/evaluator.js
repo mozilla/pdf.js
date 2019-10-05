@@ -14,16 +14,15 @@
  */
 
 import {
-  AbortException, assert, CMapCompressionType, ColorSpace,
-  createPromiseCapability, FONT_IDENTITY_MATRIX,
-  FormatError, IDENTITY_MATRIX, info, isArrayEqual, isNum,
-  isString, NativeImageDecoding, OPS, stringToPDFString,
-  TextRenderingMode, UNSUPPORTED_FEATURES, Util, warn
+  AbortException, assert, CMapCompressionType, createPromiseCapability,
+  FONT_IDENTITY_MATRIX, FormatError, IDENTITY_MATRIX, info, isArrayEqual, isNum,
+  isString, NativeImageDecoding, OPS, stringToPDFString, TextRenderingMode,
+  UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
 import {
   Cmd, Dict, EOF, isDict, isName, isRef, isStream, Name
-} from '../shared/primitives';
+} from './primitives';
 import {
   ErrorFont, Font, FontFlags, getFontType, IdentityToUnicodeMap, ToUnicodeMap
 } from './fonts';
@@ -40,6 +39,7 @@ import {
 import { getTilingPatternIR, Pattern } from './pattern';
 import { Lexer, Parser } from './parser';
 import { bidi } from './bidi';
+import { ColorSpace } from './colorspace';
 import { DecodeStream } from './stream';
 import { getGlyphsUnicode } from './glyphlist';
 import { getLookupTableFactory } from './core_utils';
@@ -1134,6 +1134,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               args = ColorSpace.singletons.gray.getRgb(args, 0);
               fn = OPS.setStrokeRGBColor;
               break;
+            // case OPS.setFillCMYKColor:
+            //   stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
+            //   args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            //   fn = OPS.setFillRGBColor;
+            //   break;
+            // case OPS.setStrokeCMYKColor:
+            //   stateManager.state.strokeColorSpace = ColorSpace.singletons.cmyk;
+            //   args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            //   fn = OPS.setStrokeRGBColor;
+            //   break;
             case OPS.setFillRGBColor:
               stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
               args = ColorSpace.singletons.rgb.getRgb(args, 0);

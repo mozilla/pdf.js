@@ -14,7 +14,7 @@
  */
 /* eslint no-var: error */
 
-import { ColorSpace } from '../shared/util';
+import { ColorSpace } from './colorspace';
 import { JpegStream } from './jpeg_stream';
 import { Stream } from './stream';
 

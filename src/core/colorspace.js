@@ -15,7 +15,7 @@
 
 import {
   assert, FormatError, info, isString, shadow, unreachable, warn
-} from './util';
+} from '../shared/util';
 import { isDict, isName, isStream } from './primitives';
 
 /**

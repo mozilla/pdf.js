@@ -14,7 +14,7 @@
  */
 
 import { PredictorStream, Stream } from '../../src/core/stream';
-import { Dict } from '../../src/shared/primitives';
+import { Dict } from '../../src/core/primitives';
 
 describe('stream', function() {
   beforeEach(function() {

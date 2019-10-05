@@ -15,7 +15,7 @@
 /* eslint no-var: error */
 
 import { FormatError, isSpace, shadow } from '../shared/util';
-import { EOF } from '../shared/primitives';
+import { EOF } from './primitives';
 
 class PostScriptParser {
   constructor(lexer) {

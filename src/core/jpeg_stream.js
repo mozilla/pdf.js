@@ -15,7 +15,7 @@
 
 import { createObjectURL, shadow } from '../shared/util';
 import { DecodeStream } from './stream';
-import { isDict } from '../shared/primitives';
+import { isDict } from './primitives';
 import { JpegImage } from './jpg';
 
 /**

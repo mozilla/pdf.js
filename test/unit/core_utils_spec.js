@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { Dict, Ref } from '../../src/shared/primitives';
+import { Dict, Ref } from '../../src/core/primitives';
 import {
   getInheritableProperty, toRomanNumerals
 } from '../../src/core/core_utils';

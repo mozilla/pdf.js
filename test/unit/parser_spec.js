@@ -16,7 +16,7 @@
 
 import { Lexer, Linearization, Parser } from '../../src/core/parser';
 import { FormatError } from '../../src/shared/util';
-import { Name } from '../../src/shared/primitives';
+import { Name } from '../../src/core/primitives';
 import { StringStream } from '../../src/core/stream';
 
 describe('parser', function() {
