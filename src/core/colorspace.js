@@ -719,6 +719,12 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
       y * (0.03296041114873217 * y + 115.60384449646641 * k +
            -193.58209356861505) +
       k * (-22.33816807309886 * k - 180.12613974708367);
+
+      // Append the CMYK to rgb Uint8ClampedArray at [0-100]
+      dest[destOffset + 3] = src[srcOffset] * 100;
+      dest[destOffset + 4] = src[srcOffset] * 100;
+      dest[destOffset + 5] = src[srcOffset] * 100;
+      dest[destOffset + 6] = src[srcOffset] * 100;
   }
 
   class DeviceCmykCS extends ColorSpace {

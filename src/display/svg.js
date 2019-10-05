@@ -588,14 +588,10 @@ SVGGraphics = class SVGGraphics {
           this.setStrokeRGBColor(args[0], args[1], args[2]);
           break;
         case OPS.setFillCMYKColor:
-          // CMYK information stored in args 0, 1, 2, 3.
-          // Preconverted rgb in core for performance in 4, 5, 6
-          this.setFillRGBColor(args[4], args[5], args[6]);
+          this.setFillRGBColor(args[0], args[1], args[2]);
           break;
         case OPS.setStrokeCMYKColor:
-          // CMYK information stored in args 0, 1, 2, 3.
-          // Preconverted rgb in core for performance in 4, 5, 6
-          this.setStrokeRGBColor(args[4], args[5], args[6]);
+          this.setStrokeRGBColor(args[0], args[1], args[2]);
           break;
         case OPS.setStrokeColorN:
           this.setStrokeColorN(args);

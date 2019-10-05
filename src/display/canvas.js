@@ -1699,12 +1699,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.fillColor = color;
       this.current.patternFill = false;
     },
-    setStrokeCMYKColor: function CanvasGraphics_setStrokeCMYKColor(c,
-                                                    m, y, k, r, g, b) {
+    setStrokeCMYKColor: function CanvasGraphics_setStrokeCMYKColor(r, g, b,
+                                                            c, m, y, k) {
       this.setStrokeRGBColor(r, g, b);
     },
-    setFillCMYKColor: function CanvasGraphics_setFillCMYKColor(c,
-                                                  m, y, k, r, g, b) {
+    setFillCMYKColor: function CanvasGraphics_setFillCMYKColor(r, g, b,
+                                                            c, m, y, k) {
       this.setFillRGBColor(r, g, b);
     },
 
