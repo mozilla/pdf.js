@@ -31,7 +31,13 @@ const StreamKind = {
 };
 
 function wrapReason(reason) {
-  if (typeof reason !== 'object') {
+  if (typeof PDFJSDev === 'undefined' ||
+      PDFJSDev.test('!PRODUCTION || TESTING')) {
+    assert(reason instanceof Error ||
+           (typeof reason === 'object' && reason !== null),
+           'wrapReason: Expected "reason" to be a (possibly cloned) Error.');
+  }
+  if (typeof reason !== 'object' || reason === null) {
     return reason;
   }
   switch (reason.name) {
