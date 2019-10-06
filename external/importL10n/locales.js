@@ -110,6 +110,21 @@ async function downloadL10n(root, callback) {
     }
     await downloadLanguageFiles(root, langCode);
   }
+
+  var removeCodes = [];
+  for (var entry of fs.readdirSync(root)) {
+    var dirPath = path.join(root, entry), stat = fs.lstatSync(dirPath);
+
+    if (stat.isDirectory() && entry !== 'en-US' &&
+        (!langCodes.includes(entry) || EXCLUDE_LANG_CODES.includes(entry))) {
+      removeCodes.push(entry);
+    }
+  }
+  if (removeCodes.length) {
+    console.log('\nConsider removing the following unmaintained locales:\n' +
+                removeCodes.join(', ') + '\n');
+  }
+
   if (callback) {
     callback();
   }
