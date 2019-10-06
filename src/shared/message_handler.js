@@ -334,20 +334,6 @@ MessageHandler.prototype = {
     const streamId = data.streamId;
     const comObj = this.comObj;
 
-    let deleteStreamController = () => {
-      // Delete the `streamController` only when the start, pull, and cancel
-      // capabilities have settled, to prevent `TypeError`s.
-      Promise.all([
-        this.streamControllers[streamId].startCall,
-        this.streamControllers[streamId].pullCall,
-        this.streamControllers[streamId].cancelCall
-      ].map(function(capability) {
-        return capability && capability.promise.catch(function() { });
-      })).then(() => {
-        delete this.streamControllers[streamId];
-      });
-    };
-
     switch (data.stream) {
       case StreamKind.START_COMPLETE:
         if (data.success) {
@@ -423,14 +409,14 @@ MessageHandler.prototype = {
         }
         this.streamControllers[streamId].isClosed = true;
         this.streamControllers[streamId].controller.close();
-        deleteStreamController();
+        this._deleteStreamController(streamId);
         break;
       case StreamKind.ERROR:
         assert(this.streamControllers[streamId],
                'error should have stream controller');
         this.streamControllers[streamId].controller.error(
           wrapReason(data.reason));
-        deleteStreamController();
+        this._deleteStreamController(streamId);
         break;
       case StreamKind.CANCEL_COMPLETE:
         if (data.success) {
@@ -439,7 +425,7 @@ MessageHandler.prototype = {
           this.streamControllers[streamId].cancelCall.reject(
             wrapReason(data.reason));
         }
-        deleteStreamController();
+        this._deleteStreamController(streamId);
         break;
       case StreamKind.CANCEL:
         if (!this.streamSinks[streamId]) {
@@ -473,6 +459,19 @@ MessageHandler.prototype = {
       default:
         throw new Error('Unexpected stream case');
     }
+  },
+
+  async _deleteStreamController(streamId) {
+    // Delete the `streamController` only when the start, pull, and cancel
+    // capabilities have settled, to prevent `TypeError`s.
+    await Promise.all([
+      this.streamControllers[streamId].startCall,
+      this.streamControllers[streamId].pullCall,
+      this.streamControllers[streamId].cancelCall
+    ].map(function(capability) {
+      return capability && capability.promise.catch(function() { });
+    }));
+    delete this.streamControllers[streamId];
   },
 
   /**
