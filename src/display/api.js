@@ -127,32 +127,31 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * Document initialization / loading parameters object.
  *
  * @typedef {Object} DocumentInitParameters
- * @property {string}     url   - The URL of the PDF.
- * @property {TypedArray|Array|string} data - Binary PDF data. Use typed arrays
- *   (Uint8Array) to improve the memory usage. If PDF data is BASE64-encoded,
- *   use atob() to convert it to a binary string first.
- * @property {Object}     httpHeaders - Basic authentication headers.
- * @property {boolean}    withCredentials - Indicates whether or not cross-site
- *   Access-Control requests should be made using credentials such as cookies
- *   or authorization headers. The default is false.
- * @property {string}     password - For decrypting password-protected PDFs.
- * @property {TypedArray} initialData - A typed array with the first portion or
- *   all of the pdf data. Used by the extension since some data is already
+ * @property {string}     [url] - The URL of the PDF.
+ * @property {TypedArray|Array|string} [data] - Binary PDF data. Use typed
+ *    arrays (Uint8Array) to improve the memory usage. If PDF data is
+ *    BASE64-encoded, use atob() to convert it to a binary string first.
+ * @property {Object}     [httpHeaders] - Basic authentication headers.
+ * @property {boolean}    [withCredentials] - Indicates whether or not
+ *   cross-site Access-Control requests should be made using credentials such
+ *   as cookies or authorization headers. The default is false.
+ * @property {string}     [password] - For decrypting password-protected PDFs.
+ * @property {TypedArray} [initialData] - A typed array with the first portion
+ *   or all of the pdf data. Used by the extension since some data is already
  *   loaded before the switch to range requests.
- * @property {number}     length - The PDF file length. It's used for progress
- *   reports and range requests operations.
- * @property {PDFDataRangeTransport} range
- * @property {number}     rangeChunkSize - Optional parameter to specify
- *   maximum number of bytes fetched per range request. The default value is
- *   2^16 = 65536.
- * @property {PDFWorker}  worker - (optional) The worker that will be used for
+ * @property {number}     [length] - The PDF file length. It's used for
+ *   progress reports and range requests operations.
+ * @property {PDFDataRangeTransport} [range]
+ * @property {number}     [rangeChunkSize] - Specify maximum number of bytes
+ *   fetched per range request. The default value is 2^16 = 65536.
+ * @property {PDFWorker}  [worker] - The worker that will be used for
  *   the loading and parsing of the PDF data.
- * @property {number} verbosity - (optional) Controls the logging level; the
+ * @property {number} [verbosity] - Controls the logging level; the
  *   constants from {VerbosityLevel} should be used.
- * @property {string} docBaseUrl - (optional) The base URL of the document,
+ * @property {string} [docBaseUrl] - The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
- * @property {string} nativeImageDecoderSupport - (optional) Strategy for
+ * @property {string} [nativeImageDecoderSupport] - Strategy for
  *   decoding certain (simple) JPEG images in the browser. This is useful for
  *   environments without DOM image and canvas support, such as e.g. Node.js.
  *   Valid values are 'decode', 'display' or 'none'; where 'decode' is intended
@@ -160,45 +159,45 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   with limited image support through stubs (useful for SVG conversion),
  *   and 'none' where JPEG images will be decoded entirely by PDF.js.
  *   The default value is 'decode'.
- * @property {string} cMapUrl - (optional) The URL where the predefined
+ * @property {string} [cMapUrl] - The URL where the predefined
  *   Adobe CMaps are located. Include trailing slash.
- * @property {boolean} cMapPacked - (optional) Specifies if the Adobe CMaps are
+ * @property {boolean} [cMapPacked] - Specifies if the Adobe CMaps are
  *   binary packed.
- * @property {Object} CMapReaderFactory - (optional) The factory that will be
+ * @property {Object} [CMapReaderFactory] - The factory that will be
  *   used when reading built-in CMap files. Providing a custom factory is useful
  *   for environments without `XMLHttpRequest` support, such as e.g. Node.js.
  *   The default value is {DOMCMapReaderFactory}.
- * @property {boolean} stopAtErrors - (optional) Reject certain promises, e.g.
+ * @property {boolean} [stopAtErrors] - Reject certain promises, e.g.
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
  *   whatever possible of the data. The default value is `false`.
- * @property {number} maxImageSize - (optional) The maximum allowed image size
+ * @property {number} [maxImageSize] - The maximum allowed image size
  *   in total pixels, i.e. width * height. Images above this value will not be
  *   rendered. Use -1 for no limit, which is also the default value.
- * @property {boolean} isEvalSupported - (optional) Determines if we can eval
+ * @property {boolean} [isEvalSupported] - Determines if we can eval
  *   strings as JS. Primarily used to improve performance of font rendering,
  *   and when parsing PDF functions. The default value is `true`.
- * @property {boolean} disableFontFace - (optional) By default fonts are
+ * @property {boolean} [disableFontFace] - By default fonts are
  *   converted to OpenType fonts and loaded via font face rules. If disabled,
  *   fonts will be rendered using a built-in font renderer that constructs the
  *   glyphs with primitive path commands. The default value is `false`.
- * @property {boolean} disableRange - (optional) Disable range request loading
+ * @property {boolean} [disableRange] - Disable range request loading
  *   of PDF files. When enabled, and if the server supports partial content
  *   requests, then the PDF will be fetched in chunks.
  *   The default value is `false`.
- * @property {boolean} disableStream - (optional) Disable streaming of PDF file
+ * @property {boolean} [disableStream] - Disable streaming of PDF file
  *   data. By default PDF.js attempts to load PDFs in chunks.
  *   The default value is `false`.
- * @property {boolean} disableAutoFetch - (optional) Disable pre-fetching of PDF
+ * @property {boolean} [disableAutoFetch] - Disable pre-fetching of PDF
  *   file data. When range requests are enabled PDF.js will automatically keep
  *   fetching more data even if it isn't needed to display the current page.
  *   The default value is `false`.
  *   NOTE: It is also necessary to disable streaming, see above,
  *         in order for disabling of pre-fetching to work correctly.
- * @property {boolean} disableCreateObjectURL - (optional) Disable the use of
+ * @property {boolean} [disableCreateObjectURL] - Disable the use of
  *   `URL.createObjectURL`, for compatibility with older browsers.
  *   The default value is `false`.
- * @property {boolean} pdfBug - (optional) Enables special hooks for debugging
+ * @property {boolean} [pdfBug] - Enables special hooks for debugging
  *   PDF.js (see `web/debugger.js`). The default value is `false`.
  */
 
@@ -807,9 +806,9 @@ class PDFDocumentProxy {
  *
  * @typedef {Object} GetViewportParameters
  * @property {number} scale - The desired scale of the viewport.
- * @property {number} rotation - (optional) The desired rotation, in degrees, of
+ * @property {number} [rotation] - The desired rotation, in degrees, of
  *   the viewport. If omitted it defaults to the page rotation.
- * @property {boolean} dontFlip - (optional) If true, the y-axis will not be
+ * @property {boolean} [dontFlip] - If true, the y-axis will not be
  *   flipped. The default value is `false`.
  */
 
@@ -870,21 +869,21 @@ class PDFDocumentProxy {
  * @property {Object} canvasContext - A 2D context of a DOM Canvas object.
  * @property {PageViewport} viewport - Rendering viewport obtained by
  *                          calling the `PDFPageProxy.getViewport` method.
- * @property {string} intent - Rendering intent, can be 'display' or 'print'
+ * @property {string} [intent] - Rendering intent, can be 'display' or 'print'
  *                    (default value is 'display').
- * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
- *   rendering for some operations. The default value is `false`.
- * @property {boolean} renderInteractiveForms - (optional) Whether or not
+ * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering
+ *                     for some operations. The default value is `false`.
+ * @property {boolean} [renderInteractiveForms] - Whether or not
  *                     interactive form elements are rendered in the display
  *                     layer. If so, we do not render them on canvas as well.
- * @property {Array}  transform - (optional) Additional transform, applied
+ * @property {Array}  [transform] - Additional transform, applied
  *                    just before viewport transform.
- * @property {Object} imageLayer - (optional) An object that has beginLayout,
+ * @property {Object} [imageLayer] - An object that has beginLayout,
  *                    endLayout and appendImage functions.
- * @property {Object} canvasFactory - (optional) The factory that will be used
+ * @property {Object} [canvasFactory] - The factory that will be used
  *                    when creating canvases. The default value is
  *                    {DOMCanvasFactory}.
- * @property {Object} background - (optional) Background to use for the canvas.
+ * @property {Object} [background] - Background to use for the canvas.
  *                    Can use any valid canvas.fillStyle: A DOMString parsed as
  *                    CSS <color> value, a CanvasGradient object (a linear or
  *                    radial gradient) or a CanvasPattern object (a repetitive
@@ -1237,7 +1236,7 @@ class PDFPageProxy {
 
   /**
    * Cleans up resources allocated by the page.
-   * @param {boolean} resetStats - (optional) Reset page stats, if enabled.
+   * @param {boolean} [resetStats] - Reset page stats, if enabled.
    *   The default value is `false`.
    */
   cleanup(resetStats = false) {
@@ -1510,9 +1509,9 @@ class LoopbackPort {
 
 /**
  * @typedef {Object} PDFWorkerParameters
- * @property {string} name - (optional) The name of the worker.
- * @property {Object} port - (optional) The `workerPort`.
- * @property {number} verbosity - (optional) Controls the logging level; the
+ * @property {string} [name] - The name of the worker.
+ * @property {Object} [port] - The `workerPort`.
+ * @property {number} [verbosity] - Controls the logging level; the
  *   constants from {VerbosityLevel} should be used.
  */
 
