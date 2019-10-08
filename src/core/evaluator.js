@@ -724,44 +724,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
       let fallbackFont = false;
-      let fallbackFontProperties = false;
       if (!fontRef) {
-        // warn('fontRef not available');
-        // return errorFont();
-
-        // fallback to some default font
-        let widthsWithNulls = [null, null, null, null, null, null, null,
-        null, null, null, null, null, null, null, null, null, null, null,
-        null, null, null, null, null, null, null, null, null, null, null,
-        null, null, null, 278, 278, 355, 556, 556, 889, 667, 191, 333,
-        333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556,
-        556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667,
-        722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778,
-        667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278,
-        278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222,
-        222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500,
-        722, 500, 500, 500, 334, 260, 334, 584];
-        let widthsWithoutNulls = [];
-        for (let i = 0; i < widthsWithNulls.length; i++) {
-          if (widthsWithNulls[i] !== null) {
-            widthsWithoutNulls[i] = widthsWithNulls[i];
-          }
-        }
-        fallbackFontProperties = {
-          fallbackFont: true,
-          firstChar: 0,
-          name: 'BCDEEE+Arimo',
-          type: 'TrueType',
-          widths: widthsWithoutNulls,
-          defaultEncoding: [],
-          toUnicode: new ToUnicodeMap([]),
-          differences: [],
-        };
-        fallbackFont = new Font(fallbackFontProperties.name, null,
-                                fallbackFontProperties);
+        warn('fontRef not available');
+        // Fallback to some default font. It will fallback to Helvetica.
+        this.handler.send('UnsupportedFeature',
+                          { featureId: UNSUPPORTED_FEATURES.font, });
+        fallbackFont = new Dict(xref);
+        fallbackFont._map.Subtype = new Name('Type1');
+        fallbackFont._map.BaseFont = new Name('PDFJS-FallbackFont');
       }
 
-      if (!fallbackFont && this.fontCache.has(fontRef)) {
+      if (fontRef && this.fontCache.has(fontRef)) {
         return this.fontCache.get(fontRef);
       }
 
@@ -769,24 +742,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (fallbackFont) {
         font = fallbackFont;
       }
-      if (!isDict(font) && !fallbackFont) {
+      if (!isDict(font)) {
         return errorFont();
       }
 
       // We are holding `font.translated` references just for `fontRef`s that
       // are not actually `Ref`s, but rather `Dict`s. See explanation below.
-      if (!fallbackFont && font.translated) {
+      if (font.translated) {
         return font.translated;
       }
 
       var fontCapability = createPromiseCapability();
 
-      let preEvaluatedFont;
-      if (!fallbackFont) {
-        preEvaluatedFont = this.preEvaluateFont(font);
-      } else {
-        preEvaluatedFont = { descriptor: null, hash: null, };
-      }
+      var preEvaluatedFont = this.preEvaluateFont(font);
       const { descriptor, hash, } = preEvaluatedFont;
 
       var fontRefIsRef = isRef(fontRef), fontID;
@@ -855,11 +823,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // TODO move promises into translate font
       var translatedPromise;
       try {
-        if (fallbackFont) {
-          translatedPromise = this.translateFont(font, fallbackFontProperties);
-        } else {
-          translatedPromise = this.translateFont(preEvaluatedFont);
-        }
+        translatedPromise = this.translateFont(preEvaluatedFont);
       } catch (e) {
         translatedPromise = Promise.reject(e);
       }
@@ -1908,12 +1872,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                         properties) {
       let xref = this.xref, cidToGidBytes;
       // 9.10.2
-      let toUnicode;
-      if (properties.fallbackFont) {
-        toUnicode = false;
-      } else {
-        toUnicode = (dict.get('ToUnicode') || baseDict.get('ToUnicode'));
-      }
+      var toUnicode = (dict.get('ToUnicode') || baseDict.get('ToUnicode'));
       var toUnicodePromise = toUnicode ?
         this.readToUnicode(toUnicode) : Promise.resolve(undefined);
 
@@ -1940,15 +1899,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // glyph mapping in the font.
       // TODO: Loading the built in encoding in the font would allow the
       // differences to be merged in here not require us to hold on to it.
-      let differences;
-      if (properties.fallbackFont && properties.differences) {
-        differences = properties.differences;
-      } else {
-        differences = [];
-      }
+      var differences = [];
       var baseEncodingName = null;
       var encoding;
-      if (!properties.fallbackFont && dict.has('Encoding')) {
+      if (dict.has('Encoding')) {
         encoding = dict.get('Encoding');
         if (isDict(encoding)) {
           baseEncodingName = encoding.get('BaseEncoding');
@@ -2016,9 +1970,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       properties.hasEncoding = !!baseEncodingName || differences.length > 0;
       properties.dict = dict;
       return toUnicodePromise.then((toUnicode) => {
-        if (properties.fallbackFont) {
-          return properties.toUnicode;
-        }
         properties.toUnicode = toUnicode;
         return this.buildToUnicode(properties);
       }).then((toUnicode) => {
@@ -2335,22 +2286,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       } else {
         var firstChar = properties.firstChar;
-        if (properties.fallbackFont) {
-          widths = properties.widths;
-        } else {
-          widths = dict.get('Widths');
-        }
-
+        widths = dict.get('Widths');
         if (widths) {
           j = firstChar;
           for (i = 0, ii = widths.length; i < ii; i++) {
             glyphsWidths[j++] = xref.fetchIfRef(widths[i]);
           }
-          if (properties.fallbackFont) {
-            defaultWidth = 0;
-          } else {
-            defaultWidth = (parseFloat(descriptor.get('MissingWidth')) || 0);
-          }
+          defaultWidth = (parseFloat(descriptor.get('MissingWidth')) || 0);
         } else {
           // Trying get the BaseFont metrics (see comment above).
           var baseFontName = dict.get('BaseFont');
@@ -2545,8 +2487,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       };
     },
 
-    translateFont: function PartialEvaluator_translateFont(preEvaluatedFont,
-                                    fallbackFontProperties = false) {
+    translateFont: function PartialEvaluator_translateFont(preEvaluatedFont) {
       var baseDict = preEvaluatedFont.baseDict;
       var dict = preEvaluatedFont.dict;
       var composite = preEvaluatedFont.composite;
@@ -2555,13 +2496,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var maxCharIndex = (composite ? 0xFFFF : 0xFF);
       var properties;
 
-      if (fallbackFontProperties) {
-        baseDict = {};
-        dict = {};
-        descriptor = {};
-      }
-
-      if (!descriptor && !fallbackFontProperties) {
+      if (!descriptor) {
         if (type === 'Type3') {
           // FontDescriptor is only required for Type3 fonts when the document
           // is a tagged pdf. Create a barbebones one to get by.
@@ -2612,20 +2547,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // to ignore this rule when a variant of a standard font is used.
       // TODO Fill the width array depending on which of the base font this is
       // a variant.
-      let firstChar, lastChar, fontName, baseFont;
-      if (fallbackFontProperties) {
-        firstChar = fallbackFontProperties.firstChar;
-        lastChar = fallbackFontProperties.lastChar || maxCharIndex;
+      var firstChar = (dict.get('FirstChar') || 0);
+      var lastChar = (dict.get('LastChar') || maxCharIndex);
 
-        fontName = new Name(preEvaluatedFont.name);
-        baseFont = new Name(preEvaluatedFont.name);
-      } else {
-        firstChar = (dict.get('FirstChar') || 0);
-        lastChar = (dict.get('LastChar') || maxCharIndex);
-
-        fontName = descriptor.get('FontName');
-        baseFont = dict.get('BaseFont');
-      }
+      var fontName = descriptor.get('FontName');
+      var baseFont = dict.get('BaseFont');
       // Some bad PDFs have a string as the font name.
       if (isString(fontName)) {
         fontName = Name.get(fontName);
@@ -2654,10 +2580,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         throw new FormatError('invalid font name');
       }
 
-      if (!fallbackFontProperties) {
-        var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
-      }
-      if (fontFile && !fallbackFontProperties) {
+      var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
+      if (fontFile) {
         if (fontFile.dict) {
           var subtype = fontFile.dict.get('Subtype');
           if (subtype) {
@@ -2669,34 +2593,30 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
-      if (!fallbackFontProperties) {
-        properties = {
-          type,
-          name: fontName.name,
-          subtype,
-          file: fontFile,
-          length1,
-          length2,
-          length3,
-          loadedName: baseDict.loadedName,
-          composite,
-          wideChars: composite,
-          fixedPitch: false,
-          fontMatrix: (dict.getArray('FontMatrix') || FONT_IDENTITY_MATRIX),
-          firstChar: firstChar || 0,
-          lastChar: (lastChar || maxCharIndex),
-          bbox: descriptor.getArray('FontBBox'),
-          ascent: descriptor.get('Ascent'),
-          descent: descriptor.get('Descent'),
-          xHeight: descriptor.get('XHeight'),
-          capHeight: descriptor.get('CapHeight'),
-          flags: descriptor.get('Flags'),
-          italicAngle: descriptor.get('ItalicAngle'),
-          isType3Font: false,
-        };
-      } else {
-        properties = fallbackFontProperties;
-      }
+      properties = {
+        type,
+        name: fontName.name,
+        subtype,
+        file: fontFile,
+        length1,
+        length2,
+        length3,
+        loadedName: baseDict.loadedName,
+        composite,
+        wideChars: composite,
+        fixedPitch: false,
+        fontMatrix: (dict.getArray('FontMatrix') || FONT_IDENTITY_MATRIX),
+        firstChar: firstChar || 0,
+        lastChar: (lastChar || maxCharIndex),
+        bbox: descriptor.getArray('FontBBox'),
+        ascent: descriptor.get('Ascent'),
+        descent: descriptor.get('Descent'),
+        xHeight: descriptor.get('XHeight'),
+        capHeight: descriptor.get('CapHeight'),
+        flags: descriptor.get('Flags'),
+        italicAngle: descriptor.get('ItalicAngle'),
+        isType3Font: false,
+      };
 
       var cMapPromise;
       if (composite) {
@@ -2723,9 +2643,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         if (type === 'Type3') {
           properties.isType3Font = true;
-        }
-        if (fallbackFontProperties) {
-          return new Font(fontName.name, null, properties);
         }
         return new Font(fontName.name, fontFile, properties);
       });
