@@ -23,9 +23,8 @@ import {
   unreachable, warn
 } from '../shared/util';
 import {
-  deprecated, DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer,
-  loadScript, PageViewport, releaseImageResources, RenderingCancelledException,
-  StatTimer
+  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
+  PageViewport, releaseImageResources, RenderingCancelledException, StatTimer
 } from './display_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
@@ -467,6 +466,7 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
     }
 
     /**
+     * Promise for document loading task completion.
      * @return {Promise}
      */
     get promise() {
@@ -494,16 +494,11 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
 
     /**
      * Registers callbacks to indicate the document loading completion.
-     *
-     * @param {function} onFulfilled The callback for the loading completion.
-     * @param {function} onRejected The callback for the loading failure.
-     * @return {Promise} A promise that is resolved after the onFulfilled or
-     *                   onRejected callback.
+     * @ignore
      */
     then(onFulfilled, onRejected) {
-      deprecated('PDFDocumentLoadingTask.then method, ' +
-                 'use the `promise` getter instead.');
-      return this.promise.then.apply(this.promise, arguments);
+      throw new Error('Removed API method: ' +
+        'PDFDocumentLoadingTask.then, use the `promise` getter instead.');
     }
   }
   return PDFDocumentLoadingTask;
@@ -964,10 +959,8 @@ class PDFPageProxy {
   getViewport({ scale, rotation = this.rotate, dontFlip = false, } = {}) {
     if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) &&
         (arguments.length > 1 || typeof arguments[0] === 'number')) {
-      deprecated('getViewport is called with obsolete arguments.');
-      scale = arguments[0];
-      rotation = typeof arguments[1] === 'number' ? arguments[1] : this.rotate;
-      dontFlip = typeof arguments[2] === 'boolean' ? arguments[2] : false;
+      throw new Error(
+        'PDFPageProxy.getViewport is called with obsolete arguments.');
     }
     return new PageViewport({
       viewBox: this.view,
@@ -2545,15 +2538,11 @@ class RenderTask {
 
   /**
    * Registers callbacks to indicate the rendering task completion.
-   *
-   * @param {function} onFulfilled The callback for the rendering completion.
-   * @param {function} onRejected The callback for the rendering failure.
-   * @return {Promise} A promise that is resolved after the onFulfilled or
-   *                   onRejected callback.
+   * @ignore
    */
   then(onFulfilled, onRejected) {
-    deprecated('RenderTask.then method, use the `promise` getter instead.');
-    return this.promise.then.apply(this.promise, arguments);
+    throw new Error('Removed API method: ' +
+      'RenderTask.then, use the `promise` getter instead.');
   }
 }
 
