@@ -19,27 +19,41 @@ var fs = require('fs');
 var https = require('https');
 var path = require('path');
 
-// Defines all languages that have a translation at mozilla-central.
+// Fetches all languages that have an *active* translation in mozilla-central.
 // This is used in gulpfile.js for the `importl10n` command.
-var langCodes = [
-  'ach', 'af', 'ak', 'an', 'ar', 'ast', 'az', 'be', 'bg', 'bn-BD', 'bn-IN',
-  'br', 'brx', 'bs', 'ca', 'cak', 'cs', 'csb', 'cy', 'da', 'de', 'el', 'en-CA',
-  'en-GB', 'eo', 'es-AR', 'es-CL', 'es-ES', 'es-MX', 'et', 'eu', 'fa', 'ff',
-  'fi', 'fr', 'fy-NL', 'ga-IE', 'gd', 'gl', 'gn', 'gu-IN', 'he', 'hi-IN', 'hr',
-  'hsb', 'hto', 'hu', 'hy-AM', 'ia', 'id', 'is', 'it', 'ja', 'ka', 'kab', 'kk',
-  'km', 'kn', 'ko', 'kok', 'ks', 'ku', 'lg', 'lij', 'lo', 'lt', 'ltg', 'lv',
-  'meh', 'mk', 'mn', 'mr', 'ms', 'my', 'nb-NO', 'ne-NP', 'nl', 'nn-NO', 'nso',
-  'oc', 'pa-IN', 'pl', 'pt-BR', 'pt-PT', 'rm', 'ro', 'ru', 'rw', 'sah', 'sat',
-  'si', 'sk', 'sl', 'son', 'sq', 'sr', 'sv-SE', 'sw', 'ta', 'ta-LK', 'te', 'th',
-  'tl', 'tn', 'tr', 'tsz', 'uk', 'ur', 'uz', 'vi', 'wo', 'xh', 'zam', 'zh-CN',
-  'zh-TW', 'zu'
-];
+
+var EXCLUDE_LANG_CODES = ['ca-valencia', 'ja-JP-mac'];
 
 function normalizeText(s) {
   return s.replace(/\r\n?/g, '\n').replace(/\uFEFF/g, '');
 }
 
-function downloadLanguageFiles(root, langCode, callback) {
+function downloadLanguageCodes() {
+  console.log('Downloading language codes...\n');
+
+  var ALL_LOCALES = 'https://hg.mozilla.org/mozilla-central/raw-file/tip/browser/locales/all-locales';
+
+  return new Promise(function(resolve) {
+    https.get(ALL_LOCALES, function(response) {
+      if (response.statusCode === 200) {
+        var content = '';
+        response.setEncoding('utf8');
+        response.on('data', function(chunk) {
+          content += chunk;
+        });
+        response.on('end', function() {
+          content = content.trim(); // Remove any leading/trailing white-space.
+          var langCodes = normalizeText(content).split('\n');
+          resolve(langCodes);
+        });
+      } else {
+        resolve([]);
+      }
+    });
+  });
+}
+
+function downloadLanguageFiles(root, langCode) {
   console.log('Downloading ' + langCode + '...');
 
   // Constants for constructing the URLs. Translations are taken from the
@@ -56,48 +70,64 @@ function downloadLanguageFiles(root, langCode, callback) {
     fs.mkdirSync(outputDir);
   }
 
-  // Download the necessary files for this language.
-  files.forEach(function(fileName) {
-    var outputPath = path.join(outputDir, fileName);
-    var url = MOZ_CENTRAL_ROOT + langCode + MOZ_CENTRAL_PDFJS_DIR + fileName;
+  return new Promise(function(resolve) {
+    // Download the necessary files for this language.
+    files.forEach(function(fileName) {
+      var outputPath = path.join(outputDir, fileName);
+      var url = MOZ_CENTRAL_ROOT + langCode + MOZ_CENTRAL_PDFJS_DIR + fileName;
 
-    https.get(url, function(response) {
-      // Not all files exist for each language. Files without translations have
-      // been removed (https://bugzilla.mozilla.org/show_bug.cgi?id=1443175).
-      if (response.statusCode === 200) {
-        var content = '';
-        response.setEncoding('utf8');
-        response.on('data', function(chunk) {
-          content += chunk;
-        });
-        response.on('end', function() {
-          fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
-          downloadsLeft--;
-          if (downloadsLeft === 0) {
-            callback();
+      https.get(url, function(response) {
+        // Not all files exist for each language. Files without translations
+        // have been removed (https://bugzilla.mozilla.org/show_bug.cgi?id=1443175).
+        if (response.statusCode === 200) {
+          var content = '';
+          response.setEncoding('utf8');
+          response.on('data', function(chunk) {
+            content += chunk;
+          });
+          response.on('end', function() {
+            fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
+            if (--downloadsLeft === 0) {
+              resolve();
+            }
+          });
+        } else {
+          if (--downloadsLeft === 0) {
+            resolve();
           }
-        });
-      } else {
-        downloadsLeft--;
-        if (downloadsLeft === 0) {
-          callback();
         }
-      }
+      });
     });
   });
 }
 
-function downloadL10n(root, callback) {
-  var i = 0;
-  (function next() {
-    if (i >= langCodes.length) {
-      if (callback) {
-        callback();
-      }
-      return;
+async function downloadL10n(root, callback) {
+  var langCodes = await downloadLanguageCodes();
+
+  for (var langCode of langCodes) {
+    if (!langCode || EXCLUDE_LANG_CODES.includes(langCode)) {
+      continue;
     }
-    downloadLanguageFiles(root, langCodes[i++], next);
-  })();
+    await downloadLanguageFiles(root, langCode);
+  }
+
+  var removeCodes = [];
+  for (var entry of fs.readdirSync(root)) {
+    var dirPath = path.join(root, entry), stat = fs.lstatSync(dirPath);
+
+    if (stat.isDirectory() && entry !== 'en-US' &&
+        (!langCodes.includes(entry) || EXCLUDE_LANG_CODES.includes(entry))) {
+      removeCodes.push(entry);
+    }
+  }
+  if (removeCodes.length) {
+    console.log('\nConsider removing the following unmaintained locales:\n' +
+                removeCodes.join(', ') + '\n');
+  }
+
+  if (callback) {
+    callback();
+  }
 }
 
 exports.downloadL10n = downloadL10n;
