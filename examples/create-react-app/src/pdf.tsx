@@ -56,7 +56,7 @@ PdfComponent.propTypes = {
 };
 
 PdfComponent.defaultProps = {
-  url: 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf'
+  url: `${process.env.PUBLIC_URL}/helloworld.pdf`
 };
 
 export default PdfComponent;
