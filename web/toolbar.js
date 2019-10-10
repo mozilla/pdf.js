@@ -22,6 +22,16 @@ const PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 const SCALE_SELECT_CONTAINER_PADDING = 8;
 const SCALE_SELECT_PADDING = 22;
 
+const ZOOM_LEVEL_MAP = {
+  'zoomAutomaticButton': 'auto',
+  'zoomPageFitButton': 'page-fit',
+  'zoomPageWidthButton': 'page-width',
+  'zoom50Button': '0.5',
+  'zoom75Button': '0.75',
+  'zoom100Button': '1',
+  'zoom150Button': '1.5',
+};
+
 /**
  * @typedef {Object} ToolbarOptions
  * @property {HTMLDivElement} container - Container for the secondary toolbar.
@@ -215,6 +225,21 @@ class Toolbar {
         option.selected = true;
         predefinedValueFound = true;
       }
+
+      const zoomButtons = document.getElementsByClassName('zoomLevel');
+      for (let i = 0; i < zoomButtons.length; i++) {
+        zoomButtons[i].classList.remove('toggled');
+      }
+
+      const getKeyByValue = (object, value) => {
+        return Object.keys(object).find(key => object[key] === value);
+      };
+
+      const zoomLevelButton = getKeyByValue(ZOOM_LEVEL_MAP, pageScaleValue);
+      if (zoomLevelButton) {
+        document.getElementById(zoomLevelButton).classList.add('toggled');
+      }
+
       if (!predefinedValueFound) {
         items.customScaleOption.textContent = msg;
         items.customScaleOption.selected = true;

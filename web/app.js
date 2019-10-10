@@ -1487,18 +1487,18 @@ let PDFViewerApplication = {
 
 let validateFileURL;
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-  const HOSTED_VIEWER_ORIGINS = ['null',
-    'http://mozilla.github.io', 'https://mozilla.github.io'];
+  // const HOSTED_VIEWER_ORIGINS = ['null',
+  //   'http://mozilla.github.io', 'https://mozilla.github.io'];
   validateFileURL = function validateFileURL(file) {
     if (file === undefined) {
       return;
     }
     try {
       let viewerOrigin = new URL(window.location.href).origin || 'null';
-      if (HOSTED_VIEWER_ORIGINS.includes(viewerOrigin)) {
-        // Hosted or local viewer, allow for any file locations
-        return;
-      }
+      // if (HOSTED_VIEWER_ORIGINS.includes(viewerOrigin)) {
+      //   // Hosted or local viewer, allow for any file locations
+      //   return;
+      // }
       let { origin, protocol, } = new URL(file, window.location.href);
       // Removing of the following line will not guarantee that the viewer will
       // start accepting URLs from foreign origin -- CORS headers on the remote
@@ -1507,7 +1507,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       // any blob:-URL. The browser's same-origin policy will block requests to
       // blob:-URLs from other origins, so this is safe.
       if (origin !== viewerOrigin && protocol !== 'blob:') {
-        throw new Error('file origin does not match viewer\'s');
+        // throw new Error('file origin does not match viewer\'s');
       }
     } catch (ex) {
       let message = ex && ex.message;
@@ -1559,18 +1559,22 @@ function loadAndEnablePDFBug(enabledTabs) {
   });
 }
 
+function getDocumentFromHtml() {
+  return document.getElementById('defaultUrl') && document.getElementById('defaultUrl').value;
+}
+
 function webViewerInitialized() {
   let appConfig = PDFViewerApplication.appConfig;
   let file;
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     let queryString = document.location.search.substring(1);
     let params = parseQueryString(queryString);
-    file = 'file' in params ? params.file : AppOptions.get('defaultUrl');
+    file = 'file' in params ? params.file : (getDocumentFromHtml() || document.AppOptions.get('defaultUrl'));
     validateFileURL(file);
   } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     file = window.location.href.split('#')[0];
   } else if (PDFJSDev.test('CHROME')) {
-    file = AppOptions.get('defaultUrl');
+    file = getDocumentFromHtml() || AppOptions.get('defaultUrl');
   }
 
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
@@ -1938,7 +1942,12 @@ function webViewerOpenFile() {
   }
 }
 function webViewerPrint() {
-  window.print();
+  printJS && printJS({
+    printable: getDocumentFromHtml(),
+    type: 'pdf',
+    showModal: true,
+    modalMessage: 'Retrieving document from external server...'
+  });
 }
 function webViewerDownload() {
   PDFViewerApplication.download();

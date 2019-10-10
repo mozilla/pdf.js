@@ -103,6 +103,13 @@ function getViewerConfiguration() {
       spreadOddButton: document.getElementById('spreadOdd'),
       spreadEvenButton: document.getElementById('spreadEven'),
       documentPropertiesButton: document.getElementById('documentProperties'),
+      zoomAutomaticButton: document.getElementById('zoomAutomaticButton'),
+      zoomPageFitButton: document.getElementById('zoomPageFitButton'),
+      zoomPageWidthButton: document.getElementById('zoomPageWidthButton'),
+      zoom50Button: document.getElementById('zoom50Button'),
+      zoom75Button: document.getElementById('zoom75Button'),
+      zoom100Button: document.getElementById('zoom100Button'),
+      zoom150Button: document.getElementById('zoom150Button'),
     },
     fullscreen: {
       contextFirstPage: document.getElementById('contextFirstPage'),
