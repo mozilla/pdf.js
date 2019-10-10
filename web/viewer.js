@@ -12,242 +12,221 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals chrome */
 
-import { AppOptions } from "./app_options.js";
-import { PDFViewerApplication } from "./app.js";
+'use strict';
 
-/* eslint-disable-next-line no-unused-vars */
-const pdfjsVersion =
-  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : void 0;
-/* eslint-disable-next-line no-unused-vars */
-const pdfjsBuild =
-  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
-
-window.PDFViewerApplication = PDFViewerApplication;
-window.PDFViewerApplicationOptions = AppOptions;
-
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
   var defaultUrl; // eslint-disable-line no-var
 
   (function rewriteUrlClosure() {
     // Run this code outside DOMContentLoaded to make sure that the URL
     // is rewritten as soon as possible.
-    const queryString = document.location.search.slice(1);
-    const m = /(^|&)file=([^&]*)/.exec(queryString);
-    defaultUrl = m ? decodeURIComponent(m[2]) : "";
+    let queryString = document.location.search.slice(1);
+    let m = /(^|&)file=([^&]*)/.exec(queryString);
+    defaultUrl = m ? decodeURIComponent(m[2]) : '';
 
     // Example: chrome-extension://.../http://example.com/file.pdf
-    const humanReadableUrl = "/" + defaultUrl + location.hash;
-    history.replaceState(history.state, "", humanReadableUrl);
+    let humanReadableUrl = '/' + defaultUrl + location.hash;
+    history.replaceState(history.state, '', humanReadableUrl);
     if (top === window) {
-      // eslint-disable-next-line no-undef
-      chrome.runtime.sendMessage("showPageAction");
+      chrome.runtime.sendMessage('showPageAction');
     }
   })();
 }
 
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-  require("./firefoxcom.js");
-  require("./firefox_print_service.js");
+let pdfjsWebApp, pdfjsWebAppOptions;
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
+  pdfjsWebApp = require('./app.js');
+  pdfjsWebAppOptions = require('./app_options.js');
 }
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
-  require("./genericcom.js");
+
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+  require('./firefoxcom.js');
+  require('./firefox_print_service.js');
 }
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-  require("./chromecom.js");
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
+  require('./genericcom.js');
 }
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME || GENERIC")) {
-  require("./pdf_print_service.js");
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+  require('./chromecom.js');
+}
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME || GENERIC')) {
+  require('./pdf_print_service.js');
 }
 
 function getViewerConfiguration() {
-  let errorWrapper = null;
-  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-    errorWrapper = {
-      container: document.getElementById("errorWrapper"),
-      errorMessage: document.getElementById("errorMessage"),
-      closeButton: document.getElementById("errorClose"),
-      errorMoreInfo: document.getElementById("errorMoreInfo"),
-      moreInfoButton: document.getElementById("errorShowMore"),
-      lessInfoButton: document.getElementById("errorShowLess"),
-    };
-  }
-
   return {
     appContainer: document.body,
-    mainContainer: document.getElementById("viewerContainer"),
-    viewerContainer: document.getElementById("viewer"),
-    eventBus: null,
+    mainContainer: document.getElementById('viewerContainer'),
+    viewerContainer: document.getElementById('viewer'),
+    eventBus: null, // Using global event bus with (optional) DOM events.
     toolbar: {
-      container: document.getElementById("toolbarViewer"),
-      numPages: document.getElementById("numPages"),
-      pageNumber: document.getElementById("pageNumber"),
-      scaleSelectContainer: document.getElementById("scaleSelectContainer"),
-      scaleSelect: document.getElementById("scaleSelect"),
-      customScaleOption: document.getElementById("customScaleOption"),
-      previous: document.getElementById("previous"),
-      next: document.getElementById("next"),
-      zoomIn: document.getElementById("zoomIn"),
-      zoomOut: document.getElementById("zoomOut"),
-      viewFind: document.getElementById("viewFind"),
-      openFile: document.getElementById("openFile"),
-      print: document.getElementById("print"),
-      presentationModeButton: document.getElementById("presentationMode"),
-      download: document.getElementById("download"),
-      viewBookmark: document.getElementById("viewBookmark"),
+      container: document.getElementById('toolbarViewer'),
+      numPages: document.getElementById('numPages'),
+      pageNumber: document.getElementById('pageNumber'),
+      scaleSelectContainer: document.getElementById('scaleSelectContainer'),
+      scaleSelect: document.getElementById('scaleSelect'),
+      customScaleOption: document.getElementById('customScaleOption'),
+      previous: document.getElementById('previous'),
+      next: document.getElementById('next'),
+      zoomIn: document.getElementById('zoomIn'),
+      zoomOut: document.getElementById('zoomOut'),
+      viewFind: document.getElementById('viewFind'),
+      openFile: document.getElementById('openFile'),
+      print: document.getElementById('print'),
+      presentationModeButton: document.getElementById('presentationMode'),
+      download: document.getElementById('download'),
+      viewBookmark: document.getElementById('viewBookmark'),
     },
     secondaryToolbar: {
-      toolbar: document.getElementById("secondaryToolbar"),
-      toggleButton: document.getElementById("secondaryToolbarToggle"),
-      toolbarButtonContainer: document.getElementById(
-        "secondaryToolbarButtonContainer"
-      ),
-      presentationModeButton: document.getElementById(
-        "secondaryPresentationMode"
-      ),
-      openFileButton: document.getElementById("secondaryOpenFile"),
-      printButton: document.getElementById("secondaryPrint"),
-      downloadButton: document.getElementById("secondaryDownload"),
-      viewBookmarkButton: document.getElementById("secondaryViewBookmark"),
-      firstPageButton: document.getElementById("firstPage"),
-      lastPageButton: document.getElementById("lastPage"),
-      pageRotateCwButton: document.getElementById("pageRotateCw"),
-      pageRotateCcwButton: document.getElementById("pageRotateCcw"),
-      cursorSelectToolButton: document.getElementById("cursorSelectTool"),
-      cursorHandToolButton: document.getElementById("cursorHandTool"),
-      scrollVerticalButton: document.getElementById("scrollVertical"),
-      scrollHorizontalButton: document.getElementById("scrollHorizontal"),
-      scrollWrappedButton: document.getElementById("scrollWrapped"),
-      spreadNoneButton: document.getElementById("spreadNone"),
-      spreadOddButton: document.getElementById("spreadOdd"),
-      spreadEvenButton: document.getElementById("spreadEven"),
-      documentPropertiesButton: document.getElementById("documentProperties"),
+      toolbar: document.getElementById('secondaryToolbar'),
+      toggleButton: document.getElementById('secondaryToolbarToggle'),
+      toolbarButtonContainer:
+        document.getElementById('secondaryToolbarButtonContainer'),
+      presentationModeButton:
+        document.getElementById('secondaryPresentationMode'),
+      openFileButton: document.getElementById('secondaryOpenFile'),
+      printButton: document.getElementById('secondaryPrint'),
+      downloadButton: document.getElementById('secondaryDownload'),
+      viewBookmarkButton: document.getElementById('secondaryViewBookmark'),
+      firstPageButton: document.getElementById('firstPage'),
+      lastPageButton: document.getElementById('lastPage'),
+      pageRotateCwButton: document.getElementById('pageRotateCw'),
+      pageRotateCcwButton: document.getElementById('pageRotateCcw'),
+      cursorSelectToolButton: document.getElementById('cursorSelectTool'),
+      cursorHandToolButton: document.getElementById('cursorHandTool'),
+      scrollVerticalButton: document.getElementById('scrollVertical'),
+      scrollHorizontalButton: document.getElementById('scrollHorizontal'),
+      scrollWrappedButton: document.getElementById('scrollWrapped'),
+      spreadNoneButton: document.getElementById('spreadNone'),
+      spreadOddButton: document.getElementById('spreadOdd'),
+      spreadEvenButton: document.getElementById('spreadEven'),
+      documentPropertiesButton: document.getElementById('documentProperties'),
+      zoomAutomaticButton: document.getElementById('zoomAutomaticButton'),
+      zoomPageFitButton: document.getElementById('zoomPageFitButton'),
+      zoomPageWidthButton: document.getElementById('zoomPageWidthButton'),
+      zoom50Button: document.getElementById('zoom50Button'),
+      zoom75Button: document.getElementById('zoom75Button'),
+      zoom100Button: document.getElementById('zoom100Button'),
+      zoom150Button: document.getElementById('zoom150Button'),
+    },
+    fullscreen: {
+      contextFirstPage: document.getElementById('contextFirstPage'),
+      contextLastPage: document.getElementById('contextLastPage'),
+      contextPageRotateCw: document.getElementById('contextPageRotateCw'),
+      contextPageRotateCcw: document.getElementById('contextPageRotateCcw'),
     },
     sidebar: {
       // Divs (and sidebar button)
-      outerContainer: document.getElementById("outerContainer"),
-      viewerContainer: document.getElementById("viewerContainer"),
-      toggleButton: document.getElementById("sidebarToggle"),
+      outerContainer: document.getElementById('outerContainer'),
+      viewerContainer: document.getElementById('viewerContainer'),
+      toggleButton: document.getElementById('sidebarToggle'),
       // Buttons
-      thumbnailButton: document.getElementById("viewThumbnail"),
-      outlineButton: document.getElementById("viewOutline"),
-      attachmentsButton: document.getElementById("viewAttachments"),
-      layersButton: document.getElementById("viewLayers"),
+      thumbnailButton: document.getElementById('viewThumbnail'),
+      outlineButton: document.getElementById('viewOutline'),
+      attachmentsButton: document.getElementById('viewAttachments'),
       // Views
-      thumbnailView: document.getElementById("thumbnailView"),
-      outlineView: document.getElementById("outlineView"),
-      attachmentsView: document.getElementById("attachmentsView"),
-      layersView: document.getElementById("layersView"),
-      // View-specific options
-      outlineOptionsContainer: document.getElementById(
-        "outlineOptionsContainer"
-      ),
-      currentOutlineItemButton: document.getElementById("currentOutlineItem"),
+      thumbnailView: document.getElementById('thumbnailView'),
+      outlineView: document.getElementById('outlineView'),
+      attachmentsView: document.getElementById('attachmentsView'),
     },
     sidebarResizer: {
-      outerContainer: document.getElementById("outerContainer"),
-      resizer: document.getElementById("sidebarResizer"),
+      outerContainer: document.getElementById('outerContainer'),
+      resizer: document.getElementById('sidebarResizer'),
     },
     findBar: {
-      bar: document.getElementById("findbar"),
-      toggleButton: document.getElementById("viewFind"),
-      findField: document.getElementById("findInput"),
-      highlightAllCheckbox: document.getElementById("findHighlightAll"),
-      caseSensitiveCheckbox: document.getElementById("findMatchCase"),
-      entireWordCheckbox: document.getElementById("findEntireWord"),
-      findMsg: document.getElementById("findMsg"),
-      findResultsCount: document.getElementById("findResultsCount"),
-      findPreviousButton: document.getElementById("findPrevious"),
-      findNextButton: document.getElementById("findNext"),
+      bar: document.getElementById('findbar'),
+      toggleButton: document.getElementById('viewFind'),
+      findField: document.getElementById('findInput'),
+      highlightAllCheckbox: document.getElementById('findHighlightAll'),
+      caseSensitiveCheckbox: document.getElementById('findMatchCase'),
+      entireWordCheckbox: document.getElementById('findEntireWord'),
+      findMsg: document.getElementById('findMsg'),
+      findResultsCount: document.getElementById('findResultsCount'),
+      findPreviousButton: document.getElementById('findPrevious'),
+      findNextButton: document.getElementById('findNext'),
     },
     passwordOverlay: {
-      overlayName: "passwordOverlay",
-      container: document.getElementById("passwordOverlay"),
-      label: document.getElementById("passwordText"),
-      input: document.getElementById("password"),
-      submitButton: document.getElementById("passwordSubmit"),
-      cancelButton: document.getElementById("passwordCancel"),
+      overlayName: 'passwordOverlay',
+      container: document.getElementById('passwordOverlay'),
+      label: document.getElementById('passwordText'),
+      input: document.getElementById('password'),
+      submitButton: document.getElementById('passwordSubmit'),
+      cancelButton: document.getElementById('passwordCancel'),
     },
     documentProperties: {
-      overlayName: "documentPropertiesOverlay",
-      container: document.getElementById("documentPropertiesOverlay"),
-      closeButton: document.getElementById("documentPropertiesClose"),
+      overlayName: 'documentPropertiesOverlay',
+      container: document.getElementById('documentPropertiesOverlay'),
+      closeButton: document.getElementById('documentPropertiesClose'),
       fields: {
-        fileName: document.getElementById("fileNameField"),
-        fileSize: document.getElementById("fileSizeField"),
-        title: document.getElementById("titleField"),
-        author: document.getElementById("authorField"),
-        subject: document.getElementById("subjectField"),
-        keywords: document.getElementById("keywordsField"),
-        creationDate: document.getElementById("creationDateField"),
-        modificationDate: document.getElementById("modificationDateField"),
-        creator: document.getElementById("creatorField"),
-        producer: document.getElementById("producerField"),
-        version: document.getElementById("versionField"),
-        pageCount: document.getElementById("pageCountField"),
-        pageSize: document.getElementById("pageSizeField"),
-        linearized: document.getElementById("linearizedField"),
+        'fileName': document.getElementById('fileNameField'),
+        'fileSize': document.getElementById('fileSizeField'),
+        'title': document.getElementById('titleField'),
+        'author': document.getElementById('authorField'),
+        'subject': document.getElementById('subjectField'),
+        'keywords': document.getElementById('keywordsField'),
+        'creationDate': document.getElementById('creationDateField'),
+        'modificationDate': document.getElementById('modificationDateField'),
+        'creator': document.getElementById('creatorField'),
+        'producer': document.getElementById('producerField'),
+        'version': document.getElementById('versionField'),
+        'pageCount': document.getElementById('pageCountField'),
+        'pageSize': document.getElementById('pageSizeField'),
+        'linearized': document.getElementById('linearizedField'),
       },
     },
-    errorWrapper,
-    printContainer: document.getElementById("printContainer"),
-    openFileInputName: "fileInput",
-    debuggerScriptPath: "./debugger.js",
+    errorWrapper: {
+      container: document.getElementById('errorWrapper'),
+      errorMessage: document.getElementById('errorMessage'),
+      closeButton: document.getElementById('errorClose'),
+      errorMoreInfo: document.getElementById('errorMoreInfo'),
+      moreInfoButton: document.getElementById('errorShowMore'),
+      lessInfoButton: document.getElementById('errorShowLess'),
+    },
+    printContainer: document.getElementById('printContainer'),
+    openFileInputName: 'fileInput',
+    debuggerScriptPath: './debugger.js',
   };
 }
 
 function webViewerLoad() {
-  const config = getViewerConfiguration();
-  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+  let config = getViewerConfiguration();
+  if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     Promise.all([
-      import("pdfjs-web/genericcom.js"),
-      import("pdfjs-web/pdf_print_service.js"),
-    ]).then(function ([genericCom, pdfPrintService]) {
-      PDFViewerApplication.run(config);
+      SystemJS.import('pdfjs-web/app'),
+      SystemJS.import('pdfjs-web/app_options'),
+      SystemJS.import('pdfjs-web/genericcom'),
+      SystemJS.import('pdfjs-web/pdf_print_service'),
+    ]).then(function([app, appOptions, ...otherModules]) {
+      window.PDFViewerApplication = app.PDFViewerApplication;
+      window.PDFViewerApplicationOptions = appOptions.AppOptions;
+      app.PDFViewerApplication.run(config);
     });
   } else {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-      AppOptions.set("defaultUrl", defaultUrl);
+    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+      pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
     }
 
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
+    window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
+    window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
+
+    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
       // Give custom implementations of the default viewer a simpler way to
       // set various `AppOptions`, by dispatching an event once all viewer
       // files are loaded but *before* the viewer initialization has run.
-      const event = document.createEvent("CustomEvent");
-      event.initCustomEvent("webviewerloaded", true, true, {
-        source: window,
-      });
-      try {
-        // Attempt to dispatch the event at the embedding `document`,
-        // in order to support cases where the viewer is embedded in
-        // a *dynamically* created <iframe> element.
-        parent.document.dispatchEvent(event);
-      } catch (ex) {
-        // The viewer could be in e.g. a cross-origin <iframe> element,
-        // fallback to dispatching the event at the current `document`.
-        console.error(`webviewerloaded: ${ex}`);
-        document.dispatchEvent(event);
-      }
+      const event = document.createEvent('CustomEvent');
+      event.initCustomEvent('webviewerloaded', true, true, {});
+      document.dispatchEvent(event);
     }
 
-    PDFViewerApplication.run(config);
+    pdfjsWebApp.PDFViewerApplication.run(config);
   }
 }
 
-// Block the "load" event until all pages are loaded, to ensure that printing
-// works in Firefox; see https://bugzilla.mozilla.org/show_bug.cgi?id=1618553
-if (document.blockUnblockOnload) {
-  document.blockUnblockOnload(true);
-}
-
-if (
-  document.readyState === "interactive" ||
-  document.readyState === "complete"
-) {
+if (document.readyState === 'interactive' ||
+    document.readyState === 'complete') {
   webViewerLoad();
 } else {
-  document.addEventListener("DOMContentLoaded", webViewerLoad, true);
+  document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 }
-
-export { PDFViewerApplication, AppOptions as PDFViewerApplicationOptions };
