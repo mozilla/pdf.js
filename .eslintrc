@@ -60,7 +60,10 @@
     "valid-typeof": ["error", { "requireStringLiterals": true, }],
 
     // Best Practices
-    "accessor-pairs": ["error", { "setWithoutGet": true, }],
+    "accessor-pairs": ["error", {
+      "setWithoutGet": true,
+      "enforceForClassMembers": true,
+    }],
     "consistent-return": "error",
     "curly": ["error", "all"],
     "eqeqeq": ["error", "always"],
