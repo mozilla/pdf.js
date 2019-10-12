@@ -26,7 +26,7 @@ function getViewerURL(pdf_url) {
 /**
  * @param {Object} details First argument of the webRequest.onHeadersReceived
  *                         event. The property "url" is read.
- * @return {boolean} True if the PDF file should be downloaded.
+ * @returns {boolean} True if the PDF file should be downloaded.
  */
 function isPdfDownloadable(details) {
   if (details.url.includes('pdfjs.action=download')) {
@@ -50,7 +50,7 @@ function isPdfDownloadable(details) {
 /**
  * Get the header from the list of headers for a given name.
  * @param {Array} headers responseHeaders of webRequest.onHeadersReceived
- * @return {undefined|{name: string, value: string}} The header, if found.
+ * @returns {undefined|{name: string, value: string}} The header, if found.
  */
 function getHeaderFromHeaders(headers, headerName) {
   for (var i = 0; i < headers.length; ++i) {
@@ -67,7 +67,7 @@ function getHeaderFromHeaders(headers, headerName) {
  * @param {Object} details First argument of the webRequest.onHeadersReceived
  *                         event. The properties "responseHeaders" and "url"
  *                         are read.
- * @return {boolean} True if the resource is a PDF file.
+ * @returns {boolean} True if the resource is a PDF file.
  */
 function isPdfFile(details) {
   var header = getHeaderFromHeaders(details.responseHeaders, 'content-type');
@@ -95,9 +95,9 @@ function isPdfFile(details) {
  * @param {Object} details First argument of the webRequest.onHeadersReceived
  *                         event. The property "responseHeaders" is read and
  *                         modified if needed.
- * @return {Object|undefined} The return value for the onHeadersReceived event.
- *                            Object with key "responseHeaders" if the headers
- *                            have been modified, undefined otherwise.
+ * @returns {Object|undefined} The return value for the onHeadersReceived event.
+ *                             Object with key "responseHeaders" if the headers
+ *                             have been modified, undefined otherwise.
  */
 function getHeadersWithContentDispositionAttachment(details) {
   var headers = details.responseHeaders;
