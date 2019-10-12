@@ -764,7 +764,7 @@ let PDFViewerApplication = {
 
   /**
    * Show the error box.
-   * @param {String} message A message that is human readable.
+   * @param {string} message A message that is human readable.
    * @param {Object} moreInfo (optional) Further information about the error
    *                            that is more technical.  Should have a 'message'
    *                            and optionally a 'stack' property.
