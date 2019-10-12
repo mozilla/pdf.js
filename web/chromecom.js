@@ -30,8 +30,8 @@ let ChromeCom = {
    * Creates an event that the extension is listening for and will
    * asynchronously respond by calling the callback.
    *
-   * @param {String} action The action to trigger.
-   * @param {String} data Optional data to send.
+   * @param {string} action The action to trigger.
+   * @param {string} data Optional data to send.
    * @param {Function} callback Optional response callback that will be called
    * with one data argument. When the request cannot be handled, the callback
    * is immediately invoked with no arguments.
@@ -56,7 +56,7 @@ let ChromeCom = {
   /**
    * Resolves a PDF file path and attempts to detects length.
    *
-   * @param {String} file - Absolute URL of PDF file.
+   * @param {string} file - Absolute URL of PDF file.
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    * @param {Function} callback - A callback with resolved URL and file length.
    */
