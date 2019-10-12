@@ -87,9 +87,9 @@ let NullL10n = {
 
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
- * @return {Object} The object with horizontal (sx) and vertical (sy)
-                    scales. The scaled property is set to false if scaling is
-                    not required, true otherwise.
+ * @returns {Object} The object with horizontal (sx) and vertical (sy)
+ *                   scales. The scaled property is set to false if scaling is
+ *                   not required, true otherwise.
  */
 function getOutputScale(ctx) {
   let devicePixelRatio = window.devicePixelRatio || 1;
@@ -296,7 +296,7 @@ function roundToDivide(x, div) {
  * Gets the size of the specified page, converted from PDF units to inches.
  * @param {Object} An Object containing the properties: {Array} `view`,
  *   {number} `userUnit`, and {number} `rotate`.
- * @return {Object} An Object containing the properties: {number} `width`
+ * @returns {Object} An Object containing the properties: {number} `width`
  *   and {number} `height`, given in inches.
  */
 function getPageSizeInches({ view, userUnit, rotate, }) {

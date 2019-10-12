@@ -209,7 +209,7 @@ class BaseViewer {
   }
 
   /**
-   * @return {boolean} Whether the pageNumber is valid (within bounds).
+   * @returns {boolean} Whether the pageNumber is valid (within bounds).
    * @private
    */
   _setCurrentPageNumber(val, resetCurrentPageView = false) {

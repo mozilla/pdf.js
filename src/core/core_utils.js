@@ -98,7 +98,7 @@ const ROMAN_NUMBER_MAP = [
  * @param {number} number - The number that should be converted.
  * @param {boolean} lowerCase - Indicates if the result should be converted
  *   to lower case letters. The default value is `false`.
- * @return {string} The resulting Roman number.
+ * @returns {string} The resulting Roman number.
  */
 function toRomanNumerals(number, lowerCase = false) {
   assert(Number.isInteger(number) && number > 0,

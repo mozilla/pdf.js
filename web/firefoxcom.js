@@ -34,7 +34,7 @@ let FirefoxCom = (function FirefoxComClosure() {
      * be able to synchronously reply.
      * @param {string} action - The action to trigger.
      * @param {string} [data] - The data to send.
-     * @return {*} The response.
+     * @returns {*} The response.
      */
     requestSync(action, data) {
       let request = document.createTextNode('');

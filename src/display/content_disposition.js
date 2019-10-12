@@ -25,7 +25,7 @@
  * Extract file name from the Content-Disposition HTTP response header.
  *
  * @param {string} contentDisposition
- * @return {string} Filename, if found in the Content-Disposition header.
+ * @returns {string} Filename, if found in the Content-Disposition header.
  */
 function getFilenameFromContentDispositionHeader(contentDisposition) {
   let needsEncodingFixup = true;
