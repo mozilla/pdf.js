@@ -272,7 +272,7 @@ class PDFHistory {
   }
 
   /**
-   * @returns {boolean} Indicating if the user is currently moving through the
+   * @type {boolean} Indicating if the user is currently moving through the
    *   browser history, useful e.g. for skipping the next 'hashchange' event.
    */
   get popStateInProgress() {

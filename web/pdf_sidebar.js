@@ -109,7 +109,7 @@ class PDFSidebar {
   }
 
   /**
-   * @returns {number} One of the values in {SidebarView}.
+   * @type {number} One of the values in {SidebarView}.
    */
   get visibleView() {
     return (this.isOpen ? this.active : SidebarView.NONE);

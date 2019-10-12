@@ -253,7 +253,7 @@ class Annotation {
   }
 
   /**
-   * @return {boolean}
+   * @type {boolean}
    */
   get viewable() {
     if (this.flags === 0) {
@@ -263,7 +263,7 @@ class Annotation {
   }
 
   /**
-   * @return {boolean}
+   * @type {boolean}
    */
   get printable() {
     if (this.flags === 0) {

@@ -467,7 +467,7 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
 
     /**
      * Promise for document loading task completion.
-     * @return {Promise}
+     * @type {Promise}
      */
     get promise() {
       return this._capability.promise;
@@ -591,14 +591,14 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {number} Total number of pages the PDF contains.
+   * @type {number} Total number of pages the PDF contains.
    */
   get numPages() {
     return this._pdfInfo.numPages;
   }
 
   /**
-   * @return {string} A (not guaranteed to be) unique ID to identify a PDF.
+   * @type {string} A (not guaranteed to be) unique ID to identify a PDF.
    */
   get fingerprint() {
     return this._pdfInfo.fingerprint;
@@ -780,16 +780,16 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Object} A subset of the current {DocumentInitParameters},
-   *   which are either needed in the viewer and/or whose default values
-   *   may be affected by the `apiCompatibilityParams`.
+   * @type {Object} A subset of the current {DocumentInitParameters}, which are
+   *   either needed in the viewer and/or whose default values may be affected
+   *   by the `apiCompatibilityParams`.
    */
   get loadingParams() {
     return this._transport.loadingParams;
   }
 
   /**
-   * @return {PDFDocumentLoadingTask} The loadingTask for the current document.
+   * @type {PDFDocumentLoadingTask} The loadingTask for the current document.
    */
   get loadingTask() {
     return this._transport.loadingTask;
@@ -915,37 +915,37 @@ class PDFPageProxy {
   }
 
   /**
-   * @return {number} Page number of the page. First page is 1.
+   * @type {number} Page number of the page. First page is 1.
    */
   get pageNumber() {
     return this.pageIndex + 1;
   }
 
   /**
-   * @return {number} The number of degrees the page is rotated clockwise.
+   * @type {number} The number of degrees the page is rotated clockwise.
    */
   get rotate() {
     return this._pageInfo.rotate;
   }
 
   /**
-   * @return {Object} The reference that points to this page. It has 'num' and
-   * 'gen' properties.
+   * @type {Object} The reference that points to this page. It has `num` and
+   *   `gen` properties.
    */
   get ref() {
     return this._pageInfo.ref;
   }
 
   /**
-   * @return {number} The default size of units in 1/72nds of an inch.
+   * @type {number} The default size of units in 1/72nds of an inch.
    */
   get userUnit() {
     return this._pageInfo.userUnit;
   }
 
   /**
-   * @return {Array} An array of the visible portion of the PDF page in the
-   * user space units - [x1, y1, x2, y2].
+   * @type {Array} An array of the visible portion of the PDF page in user
+   *   space units [x1, y1, x2, y2].
    */
   get view() {
     return this._pageInfo.view;
@@ -1406,7 +1406,7 @@ class PDFPageProxy {
   }
 
   /**
-   * @return {Object} Returns page stats, if enabled.
+   * @type {Object} Returns page stats, if enabled.
    */
   get stats() {
     return (this._stats instanceof StatTimer ? this._stats : null);
@@ -2521,7 +2521,7 @@ class RenderTask {
 
   /**
    * Promise for rendering task completion.
-   * @return {Promise}
+   * @type {Promise}
    */
   get promise() {
     return this._internalRenderTask.capability.promise;

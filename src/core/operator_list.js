@@ -568,8 +568,8 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     /**
-     * @returns {number} The total length of the entire operator list,
-     *                   since `this.length === 0` after flushing.
+     * @type {number} The total length of the entire operator list, since
+     *                `this.length === 0` after flushing.
      */
     get totalLength() {
       return (this._totalLength + this.length);
