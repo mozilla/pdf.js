@@ -95,7 +95,7 @@ const ROMAN_NUMBER_MAP = [
 
 /**
  * Converts positive integers to (upper case) Roman numerals.
- * @param {integer} number - The number that should be converted.
+ * @param {number} number - The number that should be converted.
  * @param {boolean} lowerCase - Indicates if the result should be converted
  *   to lower case letters. The default value is `false`.
  * @return {string} The resulting Roman number.

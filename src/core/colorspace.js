@@ -22,11 +22,11 @@ import { isDict, isName, isStream } from './primitives';
  * Resizes an RGB image with 3 components.
  * @param {TypedArray} src - The source buffer.
  * @param {TypedArray} dest - The destination buffer.
- * @param {Number} w1 - Original width.
- * @param {Number} h1 - Original height.
- * @param {Number} w2 - New width.
- * @param {Number} h2 - New height.
- * @param {Number} alpha01 - Size reserved for the alpha channel.
+ * @param {number} w1 - Original width.
+ * @param {number} h1 - Original height.
+ * @param {number} w2 - New width.
+ * @param {number} h2 - New height.
+ * @param {number} alpha01 - Size reserved for the alpha channel.
  */
 function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
   const COMPONENTS = 3;
@@ -390,7 +390,7 @@ class ColorSpace {
    * This does not handle Lab, Indexed, or Pattern decode maps since they are
    * slightly different.
    * @param {Array} decode - Decode map (usually from an image).
-   * @param {Number} numComps - Number of components the color space has.
+   * @param {number} numComps - Number of components the color space has.
    */
   static isDefaultDecode(decode, numComps) {
     if (!Array.isArray(decode)) {

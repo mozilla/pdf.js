@@ -530,7 +530,7 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {integer} width - The width.
+   * @param {number} width - The width.
    * @param {Array} rect - The annotation `Rect` entry.
    */
   setWidth(width, rect = [0, 0, 0, 0]) {
@@ -642,7 +642,7 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {integer} radius - The horizontal corner radius
+   * @param {number} radius - The horizontal corner radius.
    */
   setHorizontalCornerRadius(radius) {
     if (Number.isInteger(radius)) {
@@ -655,7 +655,7 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {integer} radius - The vertical corner radius
+   * @param {number} radius - The vertical corner radius.
    */
   setVerticalCornerRadius(radius) {
     if (Number.isInteger(radius)) {
