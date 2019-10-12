@@ -64,7 +64,7 @@ class IPDFStreamReader {
   /**
    * Gets a promise that is resolved when the headers and other metadata of
    * the PDF data stream are available.
-   * @returns {Promise}
+   * @type {Promise}
    */
   get headersReady() {
     return Promise.resolve();
@@ -73,8 +73,8 @@ class IPDFStreamReader {
   /**
    * Gets the Content-Disposition filename. It is defined after the headersReady
    * promise is resolved.
-   * @returns {string|null} The filename, or `null` if the Content-Disposition
-   *                        header is missing/invalid.
+   * @type {string|null} The filename, or `null` if the Content-Disposition
+   *                     header is missing/invalid.
    */
   get filename() {
     return null;
@@ -83,7 +83,7 @@ class IPDFStreamReader {
   /**
    * Gets PDF binary data length. It is defined after the headersReady promise
    * is resolved.
-   * @returns {number} The data length (or 0 if unknown).
+   * @type {number} The data length (or 0 if unknown).
    */
   get contentLength() {
     return 0;
@@ -93,7 +93,7 @@ class IPDFStreamReader {
    * Gets ability of the stream to handle range requests. It is defined after
    * the headersReady promise is resolved. Rejected when the reader is cancelled
    * or an error occurs.
-   * @returns {boolean}
+   * @type {boolean}
    */
   get isRangeSupported() {
     return false;
@@ -102,7 +102,7 @@ class IPDFStreamReader {
   /**
    * Gets ability of the stream to progressively load binary data. It is defined
    * after the headersReady promise is resolved.
-   * @returns {boolean}
+   * @type {boolean}
    */
   get isStreamingSupported() {
     return false;
@@ -143,7 +143,7 @@ class IPDFStreamRangeReader {
 
   /**
    * Gets ability of the stream to progressively load binary data.
-   * @returns {boolean}
+   * @type {boolean}
    */
   get isStreamingSupported() {
     return false;

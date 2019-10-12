@@ -178,14 +178,14 @@ class BaseViewer {
   }
 
   /**
-   * @returns {boolean} true if all {PDFPageView} objects are initialized.
+   * @type {boolean} - True if all {PDFPageView} objects are initialized.
    */
   get pageViewsReady() {
     return this._pageViewsReady;
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get currentPageNumber() {
     return this._currentPageNumber;
@@ -238,8 +238,8 @@ class BaseViewer {
   }
 
   /**
-   * @returns {string|null} Returns the current page label,
-   *                        or `null` if no page labels exist.
+   * @type {string|null} Returns the current page label, or `null` if no page
+   *   labels exist.
    */
   get currentPageLabel() {
     return this._pageLabels && this._pageLabels[this._currentPageNumber - 1];
@@ -267,7 +267,7 @@ class BaseViewer {
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get currentScale() {
     return this._currentScale !== UNKNOWN_SCALE ? this._currentScale :
@@ -288,7 +288,7 @@ class BaseViewer {
   }
 
   /**
-   * @returns {string}
+   * @type {string}
    */
   get currentScaleValue() {
     return this._currentScaleValue;
@@ -305,7 +305,7 @@ class BaseViewer {
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get pagesRotation() {
     return this._pagesRotation;
@@ -1029,8 +1029,8 @@ class BaseViewer {
   }
 
   /**
-   * @returns {boolean} Whether all pages of the PDF document have identical
-   *                    widths and heights.
+   * @type {boolean} Whether all pages of the PDF document have identical
+   *   widths and heights.
    */
   get hasEqualPageSizes() {
     let firstPageView = this._pages[0];
@@ -1074,7 +1074,7 @@ class BaseViewer {
   }
 
   /**
-   * @return {number} One of the values in {ScrollMode}.
+   * @type {number} One of the values in {ScrollMode}.
    */
   get scrollMode() {
     return this._scrollMode;
@@ -1120,7 +1120,7 @@ class BaseViewer {
   }
 
   /**
-   * @return {number} One of the values in {SpreadMode}.
+   * @type {number} One of the values in {SpreadMode}.
    */
   get spreadMode() {
     return this._spreadMode;

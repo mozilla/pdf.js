@@ -64,14 +64,14 @@ class PDFLinkService {
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get pagesCount() {
     return this.pdfDocument ? this.pdfDocument.numPages : 0;
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get page() {
     return this.pdfViewer.currentPageNumber;
@@ -85,7 +85,7 @@ class PDFLinkService {
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get rotation() {
     return this.pdfViewer.pagesRotation;
@@ -428,14 +428,14 @@ class SimpleLinkService {
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get pagesCount() {
     return 0;
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get page() {
     return 0;
@@ -447,7 +447,7 @@ class SimpleLinkService {
   set page(value) {}
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get rotation() {
     return 0;

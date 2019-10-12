@@ -55,7 +55,7 @@ class PDFCursorTools {
   }
 
   /**
-   * @returns {number} One of the values in {CursorTool}.
+   * @type {number} One of the values in {CursorTool}.
    */
   get activeTool() {
     return this.active;

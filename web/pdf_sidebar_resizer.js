@@ -65,7 +65,7 @@ class PDFSidebarResizer {
   }
 
   /**
-   * returns {number}
+   * @type {number}
    */
   get outerContainerWidth() {
     if (!this._outerContainerWidth) {

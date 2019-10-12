@@ -132,7 +132,7 @@ class SecondaryToolbar {
   }
 
   /**
-   * @return {boolean}
+   * @type {boolean}
    */
   get isOpen() {
     return this.opened;
