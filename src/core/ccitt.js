@@ -458,7 +458,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
 
   /**
    * @param {CCITTFaxDecoderSource} source - The data which should be decoded.
-   * @param {Object} options - (optional) Decoding options.
+   * @param {Object} [options] - Decoding options.
    */
   function CCITTFaxDecoder(source, options = {}) {
     if (!source || typeof source.next !== 'function') {

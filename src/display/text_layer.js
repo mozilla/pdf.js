@@ -20,24 +20,23 @@ import globalScope from '../shared/global_scope';
  * Text layer render parameters.
  *
  * @typedef {Object} TextLayerRenderParameters
- * @property {TextContent} textContent - (optional) Text content to render
- *   (the object is returned by the page's getTextContent() method).
- * @property {ReadableStream} textContentStream - (optional) Text content
- *   stream to render (the stream is returned by the page's
- *   streamTextContent() method).
+ * @property {TextContent} [textContent] - Text content to render (the object
+ *   is returned by the page's `getTextContent` method).
+ * @property {ReadableStream} [textContentStream] - Text content stream to
+ *   render (the stream is returned by the page's `streamTextContent` method).
  * @property {HTMLElement} container - HTML element that will contain text runs.
  * @property {PageViewport} viewport - The target viewport to properly
  *   layout the text runs.
- * @property {Array} textDivs - (optional) HTML elements that are correspond
- *   the text items of the textContent input. This is output and shall be
+ * @property {Array} [textDivs] - HTML elements that are correspond to the
+ *   text items of the textContent input. This is output and shall be
  *   initially be set to empty array.
- * @property {Array} textContentItemsStr - (optional) Strings that correspond
- *   the `str` property of the text items of textContent input. This is output
+ * @property {Array} [textContentItemsStr] - Strings that correspond to the
+ *   `str` property of the text items of textContent input. This is output
  *   and shall be initially be set to empty array.
- * @property {number} timeout - (optional) Delay in milliseconds before
- *   rendering of the text  runs occurs.
- * @property {boolean} enhanceTextSelection - (optional) Whether to turn on the
- *   text selection enhancement.
+ * @property {number} [timeout] - Delay in milliseconds before rendering of the
+ *   text runs occurs.
+ * @property {boolean} [enhanceTextSelection] - Whether to turn on the text
+ *   selection enhancement.
  */
 var renderTextLayer = (function renderTextLayerClosure() {
   var MAX_TEXT_DIVS_TO_RENDER = 100000;

@@ -30,9 +30,9 @@ const THUMBNAIL_WIDTH = 98; // px
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
- * @property {boolean} disableCanvasToImageConversion - (optional) Don't convert
- *   the canvas thumbnails to images. This prevents `toDataURL` calls,
- *   but increases the overall memory usage. The default value is `false`.
+ * @property {boolean} [disableCanvasToImageConversion] - Don't convert the
+ *   canvas thumbnails to images. This prevents `toDataURL` calls, but
+ *   increases the overall memory usage. The default value is `false`.
  * @property {IL10n} l10n - Localization service.
  */
 

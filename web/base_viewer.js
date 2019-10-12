@@ -33,36 +33,35 @@ const DEFAULT_CACHE_SIZE = 10;
 /**
  * @typedef {Object} PDFViewerOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
- * @property {HTMLDivElement} viewer - (optional) The viewer element.
+ * @property {HTMLDivElement} [viewer] - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
- * @property {DownloadManager} downloadManager - (optional) The download
- *   manager component.
- * @property {PDFFindController} findController - (optional) The find
- *   controller component.
- * @property {PDFRenderingQueue} renderingQueue - (optional) The rendering
- *   queue object.
- * @property {boolean} removePageBorders - (optional) Removes the border shadow
- *   around the pages. The default value is `false`.
- * @property {number} textLayerMode - (optional) Controls if the text layer used
- *   for selection and searching is created, and if the improved text selection
+ * @property {DownloadManager} [downloadManager] - The download manager
+ *   component.
+ * @property {PDFFindController} [findController] - The find controller
+ *   component.
+ * @property {PDFRenderingQueue} [renderingQueue] - The rendering queue object.
+ * @property {boolean} [removePageBorders] - Removes the border shadow around
+ *   the pages. The default value is `false`.
+ * @property {number} [textLayerMode] - Controls if the text layer used for
+ *   selection and searching is created, and if the improved text selection
  *   behaviour is enabled. The constants from {TextLayerMode} should be used.
  *   The default value is `TextLayerMode.ENABLE`.
- * @property {string} imageResourcesPath - (optional) Path for image resources,
+ * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   mainly for annotation icons. Include trailing slash.
- * @property {boolean} renderInteractiveForms - (optional) Enables rendering of
+ * @property {boolean} [renderInteractiveForms] - Enables rendering of
  *   interactive form elements. The default is `false`.
- * @property {boolean} enablePrintAutoRotate - (optional) Enables automatic
- *   rotation of pages whose orientation differ from the first page upon
- *   printing. The default is `false`.
+ * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
+ *   pages whose orientation differ from the first page upon printing. The
+ *   default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
- * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
- *   rendering for some operations. The default value is `false`.
- * @property {boolean} useOnlyCssZoom - (optional) Enables CSS only zooming.
- *   The default value is `false`.
- * @property {number} maxCanvasPixels - (optional) The maximum supported canvas
- *   size in total pixels, i.e. width * height. Use -1 for no limit.
- *   The default value is 4096 * 4096 (16 mega-pixels).
+ * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering for
+ *   some operations. The default value is `false`.
+ * @property {boolean} [useOnlyCssZoom] - Enables CSS only zooming. The default
+ *   value is `false`.
+ * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
+ *   total pixels, i.e. width * height. Use -1 for no limit. The default value
+ *   is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
  */
 
@@ -666,10 +665,10 @@ class BaseViewer {
   /**
    * @typedef ScrollPageIntoViewParameters
    * @property {number} pageNumber - The page number.
-   * @property {Array} destArray - (optional) The original PDF destination
-   *   array, in the format: <page-ref> </XYZ|/FitXXX> <args..>
-   * @property {boolean} allowNegativeOffset - (optional) Allow negative page
-   *   offsets. The default value is `false`.
+   * @property {Array} [destArray] - The original PDF destination array, in the
+   *   format: <page-ref> </XYZ|/FitXXX> <args..>
+   * @property {boolean} [allowNegativeOffset] - Allow negative page offsets.
+   *   The default value is `false`.
    */
 
   /**
@@ -1009,8 +1008,8 @@ class BaseViewer {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
-   * @param {string} imageResourcesPath - (optional) Path for image resources,
-   *   mainly for annotation icons. Include trailing slash.
+   * @param {string} [imageResourcesPath] - Path for image resources, mainly
+   *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}

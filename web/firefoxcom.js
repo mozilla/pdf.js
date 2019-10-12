@@ -32,8 +32,8 @@ let FirefoxCom = (function FirefoxComClosure() {
      * synchronously respond to.
      * NOTE: It is reccomended to use request() instead since one day we may not
      * be able to synchronously reply.
-     * @param {string} action The action to trigger.
-     * @param {string} data Optional data to send.
+     * @param {string} action - The action to trigger.
+     * @param {string} [data] - The data to send.
      * @return {*} The response.
      */
     requestSync(action, data) {
@@ -52,10 +52,10 @@ let FirefoxCom = (function FirefoxComClosure() {
     /**
      * Creates an event that the extension is listening for and will
      * asynchronously respond by calling the callback.
-     * @param {string} action The action to trigger.
-     * @param {string} data Optional data to send.
-     * @param {Function} callback Optional response callback that will be called
-     * with one data argument.
+     * @param {string} action - The action to trigger.
+     * @param {string} [data] - The data to send.
+     * @param {Function} [callback] - Response callback that will be called
+     *   with one data argument.
      */
     request(action, data, callback) {
       let request = document.createTextNode('');

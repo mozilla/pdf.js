@@ -863,8 +863,8 @@ class Catalog {
    * @property {Dict} destDict - The dictionary containing the destination.
    * @property {Object} resultObj - The object where the parsed destination
    *   properties will be placed.
-   * @property {string} docBaseUrl - (optional) The document base URL that is
-   *   used when attempting to recover valid absolute URLs from relative ones.
+   * @property {string} [docBaseUrl] - The document base URL that is used when
+   *   attempting to recover valid absolute URLs from relative ones.
    */
 
   /**

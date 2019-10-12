@@ -160,22 +160,22 @@ class DOMSVGFactory {
  * @property {Array} viewBox - The xMin, yMin, xMax and yMax coordinates.
  * @property {number} scale - The scale of the viewport.
  * @property {number} rotation - The rotation, in degrees, of the viewport.
- * @property {number} offsetX - (optional) The horizontal, i.e. x-axis, offset.
- *   The default value is `0`.
- * @property {number} offsetY - (optional) The vertical, i.e. y-axis, offset.
- *   The default value is `0`.
- * @property {boolean} dontFlip - (optional) If true, the y-axis will not be
- *   flipped. The default value is `false`.
+ * @property {number} [offsetX] - The horizontal, i.e. x-axis, offset. The
+ *   default value is `0`.
+ * @property {number} [offsetY] - The vertical, i.e. y-axis, offset. The
+ *   default value is `0`.
+ * @property {boolean} [dontFlip] - If true, the y-axis will not be flipped.
+ *   The default value is `false`.
  */
 
 /**
  * @typedef {Object} PageViewportCloneParameters
- * @property {number} scale - (optional) The scale, overriding the one in the
- *   cloned viewport. The default value is `this.scale`.
- * @property {number} rotation - (optional) The rotation, in degrees, overriding
- *   the one in the cloned viewport. The default value is `this.rotation`.
- * @property {boolean} dontFlip - (optional) If true, the x-axis will not be
- *   flipped. The default value is `false`.
+ * @property {number} [scale] - The scale, overriding the one in the cloned
+ *   viewport. The default value is `this.scale`.
+ * @property {number} [rotation] - The rotation, in degrees, overriding the one
+ *   in the cloned viewport. The default value is `this.rotation`.
+ * @property {boolean} [dontFlip] - If true, the x-axis will not be flipped.
+ *   The default value is `false`.
  */
 
 /**
@@ -251,7 +251,7 @@ class PageViewport {
 
   /**
    * Clones viewport, with optional additional properties.
-   * @param {PageViewportCloneParameters} - (optional)
+   * @param {PageViewportCloneParameters} [params]
    * @return {PageViewport} Cloned viewport.
    */
   clone({ scale = this.scale, rotation = this.rotation,
@@ -334,12 +334,12 @@ const LinkTargetStringMap = [
  * @typedef ExternalLinkParameters
  * @typedef {Object} ExternalLinkParameters
  * @property {string} url - An absolute URL.
- * @property {LinkTarget} target - (optional) The link target.
- *   The default value is `LinkTarget.NONE`.
- * @property {string} rel - (optional) The link relationship.
- *   The default value is `DEFAULT_LINK_REL`.
- * @property {boolean} enabled - (optional) Whether the link should be enabled.
- *   The default value is true.
+ * @property {LinkTarget} [target] - The link target. The default value is
+ *   `LinkTarget.NONE`.
+ * @property {string} [rel] - The link relationship. The default value is
+ *   `DEFAULT_LINK_REL`.
+ * @property {boolean} [enabled] - Whether the link should be enabled. The
+ *   default value is true.
  */
 
 /**
