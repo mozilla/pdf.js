@@ -199,7 +199,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           for (let i = 0, ii = graphicStatesKeys.length; i < ii; i++) {
             const key = graphicStatesKeys[i];
 
-            var graphicState = graphicStates.get(key);
+            let graphicState = graphicStates.getRaw(key);
+            if (graphicState instanceof Ref) {
+              if (processed[graphicState.toString()]) {
+                continue; // The ExtGState has already been processed.
+              }
+              graphicState = xref.fetch(graphicState);
+            }
+            if (!(graphicState instanceof Dict)) {
+              continue;
+            }
+            if (graphicState.objId) {
+              processed[graphicState.objId] = true;
+            }
             var bm = graphicState.get('BM');
             if ((bm instanceof Name) && bm.name !== 'Normal') {
               return true;
