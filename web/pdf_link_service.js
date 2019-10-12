@@ -18,11 +18,11 @@ import { getGlobalEventBus, parseQueryString } from './ui_utils';
 /**
  * @typedef {Object} PDFLinkServiceOptions
  * @property {EventBus} eventBus - The application event bus.
- * @property {number} externalLinkTarget - (optional) Specifies the `target`
- *   attribute for external links. Must use one of the values from {LinkTarget}.
+ * @property {number} [externalLinkTarget] - Specifies the `target` attribute
+ *   for external links. Must use one of the values from {LinkTarget}.
  *   Defaults to using no target.
- * @property {string} externalLinkRel - (optional) Specifies the `rel` attribute
- *   for external links. Defaults to stripping the referrer.
+ * @property {string} [externalLinkRel] - Specifies the `rel` attribute for
+ *   external links. Defaults to stripping the referrer.
  */
 
 /**
