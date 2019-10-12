@@ -820,7 +820,7 @@ function isSpace(ch) {
  * Creates a promise capability object.
  * @alias createPromiseCapability
  *
- * @return {PromiseCapability}
+ * @returns {PromiseCapability}
  */
 function createPromiseCapability() {
   const capability = Object.create(null);

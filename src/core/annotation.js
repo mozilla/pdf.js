@@ -36,7 +36,8 @@ class AnnotationFactory {
    * @param {Object} ref
    * @param {PDFManager} pdfManager
    * @param {Object} idFactory
-   * @return {Promise} A promise that is resolved with an {Annotation} instance.
+   * @returns {Promise} A promise that is resolved with an {Annotation}
+   *   instance.
    */
   static create(xref, ref, pdfManager, idFactory) {
     return pdfManager.ensure(this, '_create',
@@ -318,7 +319,7 @@ class Annotation {
    * @memberof Annotation
    * @param {number} flag - Hexadecimal representation for an annotation
    *                        characteristic
-   * @return {boolean}
+   * @returns {boolean}
    * @see {@link shared/util.js}
    */
   hasFlag(flag) {
@@ -780,7 +781,7 @@ class WidgetAnnotation extends Annotation {
    * @private
    * @memberof WidgetAnnotation
    * @param {Dict} dict - Complete widget annotation dictionary
-   * @return {string}
+   * @returns {string}
    */
   _constructFieldName(dict) {
     // Both the `Parent` and `T` fields are optional. While at least one of
@@ -826,7 +827,7 @@ class WidgetAnnotation extends Annotation {
    * @memberof WidgetAnnotation
    * @param {number} flag - Hexadecimal representation for an annotation
    *                        field characteristic
-   * @return {boolean}
+   * @returns {boolean}
    * @see {@link shared/util.js}
    */
   hasFieldFlag(flag) {

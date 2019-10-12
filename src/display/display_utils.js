@@ -252,7 +252,7 @@ class PageViewport {
   /**
    * Clones viewport, with optional additional properties.
    * @param {PageViewportCloneParameters} [params]
-   * @return {PageViewport} Cloned viewport.
+   * @returns {PageViewport} Cloned viewport.
    */
   clone({ scale = this.scale, rotation = this.rotation,
           dontFlip = false, } = {}) {
@@ -271,7 +271,7 @@ class PageViewport {
    * converting PDF location into canvas pixel coordinates.
    * @param {number} x - The x-coordinate.
    * @param {number} y - The y-coordinate.
-   * @return {Object} Object containing `x` and `y` properties of the
+   * @returns {Object} Object containing `x` and `y` properties of the
    *   point in the viewport coordinate space.
    * @see {@link convertToPdfPoint}
    * @see {@link convertToViewportRectangle}
@@ -283,8 +283,8 @@ class PageViewport {
   /**
    * Converts PDF rectangle to the viewport coordinates.
    * @param {Array} rect - The xMin, yMin, xMax and yMax coordinates.
-   * @return {Array} Array containing corresponding coordinates of the rectangle
-   *   in the viewport coordinate space.
+   * @returns {Array} Array containing corresponding coordinates of the
+   *   rectangle in the viewport coordinate space.
    * @see {@link convertToViewportPoint}
    */
   convertToViewportRectangle(rect) {
@@ -298,7 +298,7 @@ class PageViewport {
    * for converting canvas pixel location into PDF one.
    * @param {number} x - The x-coordinate.
    * @param {number} y - The y-coordinate.
-   * @return {Object} Object containing `x` and `y` properties of the
+   * @returns {Object} Object containing `x` and `y` properties of the
    *   point in the PDF coordinate space.
    * @see {@link convertToViewportPoint}
    */
@@ -514,7 +514,7 @@ class PDFDateString {
   * parts of the date string).
   *
   * @param {string} input
-  * @return {Date|null}
+  * @returns {Date|null}
   */
   static toDateObject(input) {
     if (!input || !isString(input)) {

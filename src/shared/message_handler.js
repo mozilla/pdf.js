@@ -177,7 +177,7 @@ MessageHandler.prototype = {
    * @param {Object} queueingStrategy - Strategy to signal backpressure based on
    *                 internal queue.
    * @param {Array} [transfers] - List of transfers/ArrayBuffers.
-   * @return {ReadableStream} ReadableStream to read data in chunks.
+   * @returns {ReadableStream} ReadableStream to read data in chunks.
    */
   sendWithStream(actionName, data, queueingStrategy, transfers) {
     let streamId = this.streamId++;

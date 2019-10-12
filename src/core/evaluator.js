@@ -2095,7 +2095,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     /**
      * Builds a char code to unicode map based on section 9.10 of the spec.
      * @param {Object} properties Font properties object.
-     * @return {Promise} A Promise that is resolved with a
+     * @returns {Promise} A Promise that is resolved with a
      *   {ToUnicodeMap|IdentityToUnicodeMap} object.
      */
     buildToUnicode(properties) {

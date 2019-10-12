@@ -732,7 +732,7 @@ var Font = (function FontClosure() {
    * private use area. This is done to avoid issues with various problematic
    * unicode areas where either a glyph won't be drawn or is deformed by a
    * shaper.
-   * @return {Object} Two properties:
+   * @returns {Object} Two properties:
    * 'toFontChar' - maps original char codes(the value that will be read
    * from commands such as show text) to the char codes that will be used in the
    * font that we build
