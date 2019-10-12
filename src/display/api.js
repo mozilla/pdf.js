@@ -15,6 +15,10 @@
 /* globals requirejs, __non_webpack_require__ */
 /* eslint no-var: error */
 
+/**
+ * @module pdfjsLib
+ */
+
 import {
   AbortException, assert, createPromiseCapability, getVerbosityLevel, info,
   InvalidPDFException, isArrayBuffer, isSameOrigin, MissingPDFException,
