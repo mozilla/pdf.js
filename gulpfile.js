@@ -959,7 +959,6 @@ gulp.task('jsdoc', function (done) {
   var JSDOC_FILES = [
     'src/doc_helper.js',
     'src/display/api.js',
-    'src/shared/util.js',
   ];
 
   rimraf(JSDOC_BUILD_DIR, function () {
