@@ -132,7 +132,7 @@ MessageHandler.prototype = {
   },
   /**
    * Sends a message to the comObj to invoke the action with the supplied data.
-   * @param {String} actionName - Action to call.
+   * @param {string} actionName - Action to call.
    * @param {JSON} data - JSON data to send.
    * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers
    */
@@ -147,7 +147,7 @@ MessageHandler.prototype = {
   /**
    * Sends a message to the comObj to invoke the action with the supplied data.
    * Expects that the other side will callback with the response.
-   * @param {String} actionName - Action to call.
+   * @param {string} actionName - Action to call.
    * @param {JSON} data - JSON data to send.
    * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers.
    * @returns {Promise} Promise to be resolved with response data.
@@ -172,7 +172,7 @@ MessageHandler.prototype = {
   /**
    * Sends a message to the comObj to invoke the action with the supplied data.
    * Expect that the other side will callback to signal 'start_complete'.
-   * @param {String} actionName - Action to call.
+   * @param {string} actionName - Action to call.
    * @param {JSON} data - JSON data to send.
    * @param {Object} queueingStrategy - strategy to signal backpressure based on
    *                 internal queue.

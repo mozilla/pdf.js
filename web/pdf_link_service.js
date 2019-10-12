@@ -189,7 +189,7 @@ class PDFLinkService {
   /**
    * Prefix the full url on anchor links to make sure that links are resolved
    * relative to the current URL instead of the one defined in <base href>.
-   * @param {String} anchor The anchor hash, including the #.
+   * @param {string} anchor The anchor hash, including the #.
    * @returns {string} The hyperlink to the PDF object.
    */
   getAnchorUrl(anchor) {
