@@ -773,7 +773,7 @@
        "md5": "06cdb0f13cfeff41d6bfb24b7bbe1268",
        "rounds": 1,
        "link": false,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "issue10004",
        "file": "pdfs/issue10004.pdf",
@@ -1085,7 +1085,7 @@
        "md5": "a1dd21a70ae7097d96273e85a80b26ef",
        "rounds": 1,
        "link": false,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "bug1308536",
        "file": "pdfs/bug1308536.pdf",
@@ -1383,8 +1383,8 @@
        "md5": "b422981ae781166e75c0fb4c3634ed96",
        "link": true,
        "rounds": 1,
-       "lastPage": 1,
-       "type": "load"
+       "lastPage": 2,
+       "type": "eq"
     },
     {  "id": "issue10326",
        "file": "pdfs/issue10326.pdf",
@@ -1392,7 +1392,7 @@
        "link": true,
        "rounds": 1,
        "lastPage": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "issue7544",
        "file": "pdfs/issue7544.pdf",
@@ -2998,7 +2998,7 @@
       "file": "pdfs/helloworld-bad.pdf",
       "md5": "bf5ab1cf7fe3a502c3754f55e6ceeabd",
       "rounds": 1,
-      "type": "load"
+      "type": "eq"
     },
     {  "id": "issue8047",
        "file": "pdfs/issue8047.pdf",
@@ -4037,11 +4037,13 @@
        "rounds": 1,
        "type": "eq"
     },
-    {  "id": "issue5909",
-       "file": "pdfs/issue5909.pdf",
-       "md5": "51a724136c0c10008bd061a78ea4b8fc",
+    {  "id": "issue5909_original",
+       "file": "pdfs/issue5909_original.pdf",
+       "md5": "65c169b6f540b27ac0ff2738a80d1e14",
+       "link": true,
        "rounds": 1,
-       "type": "load"
+       "lastPage": 2,
+       "type": "eq"
     },
     {  "id": "issue6069",
        "file": "pdfs/issue6069.pdf",
