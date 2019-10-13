@@ -1193,7 +1193,8 @@ class PDFPageProxy {
   }
 
   /**
-   * Destroys page object.
+   * Destroys the page object.
+   * @private
    */
   _destroy() {
     this.destroyed = true;
@@ -1236,9 +1237,8 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only. Attempts to clean up if rendering is in a state
-   * where that's possible.
-   * @ignore
+   * Attempts to clean up if rendering is in a state where that's possible.
+   * @private
    */
   _tryCleanup(resetStats = false) {
     if (!this.pendingCleanup ||
@@ -1262,8 +1262,7 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only.
-   * @ignore
+   * @private
    */
   _startRenderPage(transparency, intent) {
     const intentState = this.intentStates[intent];
@@ -1279,8 +1278,7 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only.
-   * @ignore
+   * @private
    */
   _renderPageChunk(operatorListChunk, intentState) {
     // Add the new chunk to the current operator list.
@@ -1302,8 +1300,7 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only.
-   * @ignore
+   * @private
    */
   _pumpOperatorList(args) {
     assert(args.intent,
@@ -1356,8 +1353,7 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only.
-   * @ignore
+   * @private
    */
   _abortOperatorList({ intentState, reason, force = false, }) {
     assert(reason instanceof Error,
