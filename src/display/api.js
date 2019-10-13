@@ -416,15 +416,14 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   });
 }
 
-/**
- * PDF document loading operation.
- * @class
- * @alias PDFDocumentLoadingTask
- */
 const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
   let nextDocumentId = 0;
 
-  /** @constructs PDFDocumentLoadingTask */
+  /**
+   * The loading task controls the operations required to load a PDF document
+   * (such as network requests) and provides a way to listen for completion,
+   * after which individual pages can be rendered.
+   */
   class PDFDocumentLoadingTask {
     constructor() {
       this._capability = createPromiseCapability();
@@ -1507,12 +1506,6 @@ class LoopbackPort {
  *   constants from {VerbosityLevel} should be used.
  */
 
-/**
- * PDF.js web worker abstraction, it controls instantiation of PDF documents and
- * WorkerTransport for them. If creation of a web worker is not possible,
- * a "fake" worker will be used instead.
- * @class
- */
 const PDFWorker = (function PDFWorkerClosure() {
   const pdfWorkerPorts = new WeakMap();
   let nextFakeWorkerId = 0;
@@ -1590,9 +1583,15 @@ const PDFWorker = (function PDFWorkerClosure() {
   }
 
   /**
-   * @param {PDFWorkerParameters} params - The worker initialization parameters.
+   * PDF.js web worker abstraction, which controls the instantiation of PDF
+   * documents. Message handlers are used to pass information from the main
+   * thread to the worker thread and vice versa. If the creation of a web
+   * worker is not possible, a "fake" worker will be used instead.
    */
   class PDFWorker {
+    /**
+     * @param {PDFWorkerParameters} params - Worker initialization parameters.
+     */
     constructor({ name = null, port = null,
                   verbosity = getVerbosityLevel(), } = {}) {
       if (port && pdfWorkerPorts.has(port)) {
