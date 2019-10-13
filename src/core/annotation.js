@@ -36,7 +36,8 @@ class AnnotationFactory {
    * @param {Object} ref
    * @param {PDFManager} pdfManager
    * @param {Object} idFactory
-   * @return {Promise} A promise that is resolved with an {Annotation} instance.
+   * @returns {Promise} A promise that is resolved with an {Annotation}
+   *   instance.
    */
   static create(xref, ref, pdfManager, idFactory) {
     return pdfManager.ensure(this, '_create',
@@ -253,7 +254,7 @@ class Annotation {
   }
 
   /**
-   * @return {boolean}
+   * @type {boolean}
    */
   get viewable() {
     if (this.flags === 0) {
@@ -263,7 +264,7 @@ class Annotation {
   }
 
   /**
-   * @return {boolean}
+   * @type {boolean}
    */
   get printable() {
     if (this.flags === 0) {
@@ -318,7 +319,7 @@ class Annotation {
    * @memberof Annotation
    * @param {number} flag - Hexadecimal representation for an annotation
    *                        characteristic
-   * @return {boolean}
+   * @returns {boolean}
    * @see {@link shared/util.js}
    */
   hasFlag(flag) {
@@ -530,7 +531,7 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {integer} width - The width.
+   * @param {number} width - The width.
    * @param {Array} rect - The annotation `Rect` entry.
    */
   setWidth(width, rect = [0, 0, 0, 0]) {
@@ -642,7 +643,7 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {integer} radius - The horizontal corner radius
+   * @param {number} radius - The horizontal corner radius.
    */
   setHorizontalCornerRadius(radius) {
     if (Number.isInteger(radius)) {
@@ -655,7 +656,7 @@ class AnnotationBorderStyle {
    *
    * @public
    * @memberof AnnotationBorderStyle
-   * @param {integer} radius - The vertical corner radius
+   * @param {number} radius - The vertical corner radius.
    */
   setVerticalCornerRadius(radius) {
     if (Number.isInteger(radius)) {
@@ -780,7 +781,7 @@ class WidgetAnnotation extends Annotation {
    * @private
    * @memberof WidgetAnnotation
    * @param {Dict} dict - Complete widget annotation dictionary
-   * @return {string}
+   * @returns {string}
    */
   _constructFieldName(dict) {
     // Both the `Parent` and `T` fields are optional. While at least one of
@@ -826,7 +827,7 @@ class WidgetAnnotation extends Annotation {
    * @memberof WidgetAnnotation
    * @param {number} flag - Hexadecimal representation for an annotation
    *                        field characteristic
-   * @return {boolean}
+   * @returns {boolean}
    * @see {@link shared/util.js}
    */
   hasFieldFlag(flag) {

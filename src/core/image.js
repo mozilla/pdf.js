@@ -49,11 +49,11 @@ var PDFImage = (function PDFImageClosure() {
   /**
    * Resizes an image mask with 1 component.
    * @param {TypedArray} src - The source buffer.
-   * @param {Number} bpc - Number of bits per component.
-   * @param {Number} w1 - Original width.
-   * @param {Number} h1 - Original height.
-   * @param {Number} w2 - New width.
-   * @param {Number} h2 - New height.
+   * @param {number} bpc - Number of bits per component.
+   * @param {number} w1 - Original width.
+   * @param {number} h1 - Original height.
+   * @param {number} w2 - New width.
+   * @param {number} h2 - New height.
    * @returns {TypedArray} The resized image mask buffer.
    */
   function resizeImageMask(src, bpc, w1, h1, w2, h2) {

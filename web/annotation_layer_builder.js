@@ -21,8 +21,8 @@ import { SimpleLinkService } from './pdf_link_service';
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
- * @property {string} imageResourcesPath - (optional) Path for image resources,
- *   mainly for annotation icons. Include trailing slash.
+ * @property {string} [imageResourcesPath] - Path for image resources, mainly
+ *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
@@ -109,8 +109,8 @@ class DefaultAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
-   * @param {string} imageResourcesPath - (optional) Path for image resources,
-   *   mainly for annotation icons. Include trailing slash.
+   * @param {string} [imageResourcesPath] - Path for image resources, mainly
+   *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}

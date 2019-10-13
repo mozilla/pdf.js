@@ -27,13 +27,13 @@ class OverlayManager {
   /**
    * @param {string} name - The name of the overlay that is registered.
    * @param {HTMLDivElement} element - The overlay's DOM element.
-   * @param {function} callerCloseMethod - (optional) The method that, if
-   *                   present, calls `OverlayManager.close` from the object
-   *                   registering the overlay. Access to this method is
-   *                   necessary in order to run cleanup code when e.g.
-   *                   the overlay is force closed. The default is `null`.
-   * @param {boolean} canForceClose - (optional) Indicates if opening the
-   *                  overlay closes an active overlay. The default is `false`.
+   * @param {function} [callerCloseMethod] - The method that, if present, calls
+   *                   `OverlayManager.close` from the object registering the
+   *                   overlay. Access to this method is necessary in order to
+   *                   run cleanup code when e.g. the overlay is force closed.
+   *                   The default is `null`.
+   * @param {boolean} [canForceClose] - Indicates if opening the overlay closes
+   *                  an active overlay. The default is `false`.
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    registered.
    */

@@ -223,7 +223,7 @@ class PDFFindController {
   }
 
   /**
-   * @return {string} The (current) normalized search query.
+   * @type {string} The (current) normalized search query.
    */
   get _query() {
     if (this._state.query !== this._rawQuery) {
