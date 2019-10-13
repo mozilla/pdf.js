@@ -32,23 +32,23 @@ import { viewerCompatibilityParams } from './viewer_compatibility';
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IPDFTextLayerFactory} textLayerFactory
- * @property {number} textLayerMode - (optional) Controls if the text layer used
- *   for selection and searching is created, and if the improved text selection
+ * @property {number} [textLayerMode] - Controls if the text layer used for
+ *   selection and searching is created, and if the improved text selection
  *   behaviour is enabled. The constants from {TextLayerMode} should be used.
  *   The default value is `TextLayerMode.ENABLE`.
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
- * @property {string} imageResourcesPath - (optional) Path for image resources,
- *   mainly for annotation icons. Include trailing slash.
+ * @property {string} [imageResourcesPath] - Path for image resources, mainly
+ *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms - Turns on rendering of
  *   interactive form elements. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
- * @property {boolean} enableWebGL - (optional) Enables WebGL accelerated
- *   rendering for some operations. The default value is `false`.
- * @property {boolean} useOnlyCssZoom - (optional) Enables CSS only zooming.
- *   The default value is `false`.
- * @property {number} maxCanvasPixels - (optional) The maximum supported canvas
- *   size in total pixels, i.e. width * height. Use -1 for no limit.
- *   The default value is 4096 * 4096 (16 mega-pixels).
+ * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering for
+ *   some operations. The default value is `false`.
+ * @property {boolean} [useOnlyCssZoom] - Enables CSS only zooming. The default
+ *   value is `false`.
+ * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
+ *   total pixels, i.e. width * height. Use -1 for no limit. The default value
+ *   is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
  */
 

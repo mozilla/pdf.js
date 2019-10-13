@@ -34,8 +34,8 @@ const SidebarView = {
  * @property {PDFThumbnailViewer} pdfThumbnailViewer - The thumbnail viewer.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IL10n} l10n - The localization service.
- * @property {boolean} disableNotification - (optional) Disable the notification
- *   for documents containing outline/attachments. The default value is `false`.
+ * @property {boolean} [disableNotification] - Disable the notification for
+ *   documents containing outline/attachments. The default value is `false`.
  */
 
 /**
@@ -109,7 +109,7 @@ class PDFSidebar {
   }
 
   /**
-   * @returns {number} One of the values in {SidebarView}.
+   * @type {number} One of the values in {SidebarView}.
    */
   get visibleView() {
     return (this.isOpen ? this.active : SidebarView.NONE);
@@ -153,8 +153,8 @@ class PDFSidebar {
   /**
    * @param {number} view - The sidebar view that should be switched to,
    *                        must be one of the values in {SidebarView}.
-   * @param {boolean} forceOpen - (optional) Ensure that the sidebar is open.
-   *                              The default value is `false`.
+   * @param {boolean} [forceOpen] - Ensure that the sidebar is open.
+   *                                The default value is `false`.
    */
   switchView(view, forceOpen = false) {
     this._switchView(view, forceOpen);

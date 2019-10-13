@@ -609,9 +609,9 @@ let PDFViewerApplication = {
   /**
    * Opens PDF document specified by URL or array with additional arguments.
    * @param {string|TypedArray|ArrayBuffer} file - PDF location or binary data.
-   * @param {Object} args - (optional) Additional arguments for the getDocument
-   *                        call, e.g. HTTP headers ('httpHeaders') or
-   *                        alternative data transport ('range').
+   * @param {Object} [args] - Additional arguments for the getDocument call,
+   *                          e.g. HTTP headers ('httpHeaders') or alternative
+   *                          data transport ('range').
    * @returns {Promise} - Returns the promise, which is resolved when document
    *                      is opened.
    */
@@ -764,10 +764,10 @@ let PDFViewerApplication = {
 
   /**
    * Show the error box.
-   * @param {String} message A message that is human readable.
-   * @param {Object} moreInfo (optional) Further information about the error
-   *                            that is more technical.  Should have a 'message'
-   *                            and optionally a 'stack' property.
+   * @param {string} message - A message that is human readable.
+   * @param {Object} [moreInfo] - Further information about the error that is
+   *                              more technical.  Should have a 'message' and
+   *                              optionally a 'stack' property.
    */
   error(message, moreInfo) {
     let moreInfoText = [this.l10n.get('error_version_info',

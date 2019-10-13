@@ -79,8 +79,8 @@ class TextLayerBuilder {
   /**
    * Renders the text layer.
    *
-   * @param {number} timeout - (optional) wait for a specified amount of
-   *                           milliseconds before rendering
+   * @param {number} [timeout] - Wait for a specified amount of milliseconds
+   *                             before rendering.
    */
   render(timeout = 0) {
     if (!(this.textContent || this.textContentStream) || this.renderingDone) {

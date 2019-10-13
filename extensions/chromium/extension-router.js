@@ -36,7 +36,7 @@ limitations under the License.
 
   /**
    * @param {string} url The URL prefixed with chrome-extension://.../
-   * @return {string|undefined} The percent-encoded URL of the (PDF) file.
+   * @returns {string|undefined} The percent-encoded URL of the (PDF) file.
    */
   function parseExtensionURL(url) {
     url = url.substring(CRX_BASE_URL.length);

@@ -15,6 +15,10 @@
 /* globals requirejs, __non_webpack_require__ */
 /* eslint no-var: error */
 
+/**
+ * @module pdfjsLib
+ */
+
 import {
   AbortException, assert, createPromiseCapability, getVerbosityLevel, info,
   InvalidPDFException, isArrayBuffer, isSameOrigin, MissingPDFException,
@@ -105,7 +109,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
  * @typedef {function} IPDFStreamFactory
  * @param {DocumentInitParameters} params The document initialization
  * parameters. The "url" key is always present.
- * @return {IPDFStream}
+ * @returns {IPDFStream}
  */
 
 /** @type IPDFStreamFactory */
@@ -217,8 +221,7 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @param {string|TypedArray|DocumentInitParameters|PDFDataRangeTransport} src
  * Can be a url to where a PDF is located, a typed array (Uint8Array)
  * already populated with data or parameter object.
- *
- * @return {PDFDocumentLoadingTask}
+ * @returns {PDFDocumentLoadingTask}
  */
 function getDocument(src) {
   const task = new PDFDocumentLoadingTask();
@@ -417,15 +420,14 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   });
 }
 
-/**
- * PDF document loading operation.
- * @class
- * @alias PDFDocumentLoadingTask
- */
 const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
   let nextDocumentId = 0;
 
-  /** @constructs PDFDocumentLoadingTask */
+  /**
+   * The loading task controls the operations required to load a PDF document
+   * (such as network requests) and provides a way to listen for completion,
+   * after which individual pages can be rendered.
+   */
   class PDFDocumentLoadingTask {
     constructor() {
       this._capability = createPromiseCapability();
@@ -467,7 +469,7 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
 
     /**
      * Promise for document loading task completion.
-     * @return {Promise}
+     * @type {Promise}
      */
     get promise() {
       return this._capability.promise;
@@ -475,8 +477,8 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
 
     /**
      * Aborts all network requests and destroys worker.
-     * @return {Promise} A promise that is resolved after destruction activity
-     *                   is completed.
+     * @returns {Promise} A promise that is resolved after destruction activity
+     *                    is completed.
      */
     destroy() {
       this.destroyed = true;
@@ -591,14 +593,14 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {number} Total number of pages the PDF contains.
+   * @type {number} Total number of pages the PDF contains.
    */
   get numPages() {
     return this._pdfInfo.numPages;
   }
 
   /**
-   * @return {string} A (not guaranteed to be) unique ID to identify a PDF.
+   * @type {string} A (not guaranteed to be) unique ID to identify a PDF.
    */
   get fingerprint() {
     return this._pdfInfo.fingerprint;
@@ -606,7 +608,7 @@ class PDFDocumentProxy {
 
   /**
    * @param {number} pageNumber - The page number to get. The first page is 1.
-   * @return {Promise} A promise that is resolved with a {@link PDFPageProxy}
+   * @returns {Promise} A promise that is resolved with a {@link PDFPageProxy}
    *   object.
    */
   getPage(pageNumber) {
@@ -616,7 +618,7 @@ class PDFDocumentProxy {
   /**
    * @param {{num: number, gen: number}} ref - The page reference. Must have
    *   the `num` and `gen` properties.
-   * @return {Promise} A promise that is resolved with the page index that is
+   * @returns {Promise} A promise that is resolved with the page index that is
    *   associated with the reference.
    */
   getPageIndex(ref) {
@@ -624,7 +626,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with a lookup table for
+   * @returns {Promise} A promise that is resolved with a lookup table for
    *   mapping named destinations to reference numbers.
    *
    * This can be slow for large documents. Use `getDestination` instead.
@@ -635,7 +637,7 @@ class PDFDocumentProxy {
 
   /**
    * @param {string} id - The named destination to get.
-   * @return {Promise} A promise that is resolved with all information
+   * @returns {Promise} A promise that is resolved with all information
    *   of the given named destination.
    */
   getDestination(id) {
@@ -643,7 +645,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with an {Array} containing
+   * @returns {Promise} A promise that is resolved with an {Array} containing
    *   the page labels that correspond to the page indexes, or `null` when
    *   no page labels are present in the PDF file.
    */
@@ -652,7 +654,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with a {string} containing
+   * @returns {Promise} A promise that is resolved with a {string} containing
    *   the page layout name.
    */
   getPageLayout() {
@@ -660,7 +662,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with a {string} containing
+   * @returns {Promise} A promise that is resolved with a {string} containing
    *   the page mode name.
    */
   getPageMode() {
@@ -668,7 +670,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with an {Object} containing
+   * @returns {Promise} A promise that is resolved with an {Object} containing
    *   the viewer preferences.
    */
   getViewerPreferences() {
@@ -676,15 +678,15 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with an {Array} containing the
-   *   destination, or `null` when no open action is present in the PDF file.
+   * @returns {Promise} A promise that is resolved with an {Array} containing
+   *   the destination, or `null` when no open action is present in the PDF.
    */
   getOpenActionDestination() {
     return this._transport.getOpenActionDestination();
   }
 
   /**
-   * @return {Promise} A promise that is resolved with a lookup table for
+   * @returns {Promise} A promise that is resolved with a lookup table for
    *   mapping named attachments to their content.
    */
   getAttachments() {
@@ -692,7 +694,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with an {Array} of all the
+   * @returns {Promise} A promise that is resolved with an {Array} of all the
    *   JavaScript strings in the name tree, or `null` if no JavaScript exists.
    */
   getJavaScript() {
@@ -700,7 +702,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with an {Array} that is a
+   * @returns {Promise} A promise that is resolved with an {Array} that is a
    * tree outline (if it has one) of the PDF. The tree is in the format of:
    * [
    *   {
@@ -721,7 +723,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with an {Array} that contains
+   * @returns {Promise} A promise that is resolved with an {Array} that contains
    *   the permission flags for the PDF document, or `null` when
    *   no permissions are present in the PDF file.
    */
@@ -730,7 +732,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with an {Object} that has
+   * @returns {Promise} A promise that is resolved with an {Object} that has
    *   `info` and `metadata` properties. `info` is an {Object} filled with
    *   anything available in the information dictionary and similarly
    *   `metadata` is a {Metadata} object with information from the metadata
@@ -741,15 +743,15 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise that is resolved with a {TypedArray} that has
-   * the raw data from the PDF.
+   * @returns {Promise} A promise that is resolved with a {TypedArray} that has
+   *   the raw data from the PDF.
    */
   getData() {
     return this._transport.getData();
   }
 
   /**
-   * @return {Promise} A promise that is resolved when the document's data
+   * @returns {Promise} A promise that is resolved when the document's data
    *   is loaded. It is resolved with an {Object} that contains the `length`
    *   property that indicates size of the PDF data in bytes.
    */
@@ -758,7 +760,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Promise} A promise this is resolved with current statistics about
+   * @returns {Promise} A promise this is resolved with current statistics about
    *   document structures (see {@link PDFDocumentStats}).
    */
   getStats() {
@@ -780,16 +782,16 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @return {Object} A subset of the current {DocumentInitParameters},
-   *   which are either needed in the viewer and/or whose default values
-   *   may be affected by the `apiCompatibilityParams`.
+   * @type {Object} A subset of the current {DocumentInitParameters}, which are
+   *   either needed in the viewer and/or whose default values may be affected
+   *   by the `apiCompatibilityParams`.
    */
   get loadingParams() {
     return this._transport.loadingParams;
   }
 
   /**
-   * @return {PDFDocumentLoadingTask} The loadingTask for the current document.
+   * @type {PDFDocumentLoadingTask} The loadingTask for the current document.
    */
   get loadingTask() {
     return this._transport.loadingTask;
@@ -915,37 +917,37 @@ class PDFPageProxy {
   }
 
   /**
-   * @return {number} Page number of the page. First page is 1.
+   * @type {number} Page number of the page. First page is 1.
    */
   get pageNumber() {
     return this.pageIndex + 1;
   }
 
   /**
-   * @return {number} The number of degrees the page is rotated clockwise.
+   * @type {number} The number of degrees the page is rotated clockwise.
    */
   get rotate() {
     return this._pageInfo.rotate;
   }
 
   /**
-   * @return {Object} The reference that points to this page. It has 'num' and
-   * 'gen' properties.
+   * @type {Object} The reference that points to this page. It has `num` and
+   *   `gen` properties.
    */
   get ref() {
     return this._pageInfo.ref;
   }
 
   /**
-   * @return {number} The default size of units in 1/72nds of an inch.
+   * @type {number} The default size of units in 1/72nds of an inch.
    */
   get userUnit() {
     return this._pageInfo.userUnit;
   }
 
   /**
-   * @return {Array} An array of the visible portion of the PDF page in the
-   * user space units - [x1, y1, x2, y2].
+   * @type {Array} An array of the visible portion of the PDF page in user
+   *   space units [x1, y1, x2, y2].
    */
   get view() {
     return this._pageInfo.view;
@@ -953,7 +955,7 @@ class PDFPageProxy {
 
   /**
    * @param {GetViewportParameters} params - Viewport parameters.
-   * @return {PageViewport} Contains 'width' and 'height' properties
+   * @returns {PageViewport} Contains 'width' and 'height' properties
    *   along with transforms required for rendering.
    */
   getViewport({ scale, rotation = this.rotate, dontFlip = false, } = {}) {
@@ -972,8 +974,8 @@ class PDFPageProxy {
 
   /**
    * @param {GetAnnotationsParameters} params - Annotation parameters.
-   * @return {Promise} A promise that is resolved with an {Array} of the
-   * annotation objects.
+   * @returns {Promise} A promise that is resolved with an {Array} of the
+   *   annotation objects.
    */
   getAnnotations({ intent = null, } = {}) {
     if (!this.annotationsPromise || this.annotationsIntent !== intent) {
@@ -987,8 +989,8 @@ class PDFPageProxy {
   /**
    * Begins the process of rendering a page to the desired context.
    * @param {RenderParameters} params Page render parameters.
-   * @return {RenderTask} An object that contains the promise, which
-   *                      is resolved when the page finishes rendering.
+   * @returns {RenderTask} An object that contains the promise, which
+   *                       is resolved when the page finishes rendering.
    */
   render({ canvasContext, viewport, intent = 'display', enableWebGL = false,
            renderInteractiveForms = false, transform = null, imageLayer = null,
@@ -1101,7 +1103,7 @@ class PDFPageProxy {
   }
 
   /**
-   * @return {Promise} A promise resolved with an {@link PDFOperatorList}
+   * @returns {Promise} A promise resolved with an {@link PDFOperatorList}
    *   object that represents page's operator list.
    */
   getOperatorList() {
@@ -1146,7 +1148,7 @@ class PDFPageProxy {
 
   /**
    * @param {getTextContentParameters} params - getTextContent parameters.
-   * @return {ReadableStream} ReadableStream to read textContent chunks.
+   * @returns {ReadableStream} ReadableStream to read textContent chunks.
    */
   streamTextContent({ normalizeWhitespace = false,
                       disableCombineTextItems = false, } = {}) {
@@ -1166,8 +1168,8 @@ class PDFPageProxy {
 
   /**
    * @param {getTextContentParameters} params - getTextContent parameters.
-   * @return {Promise} That is resolved a {@link TextContent}
-   * object that represent the page text content.
+   * @returns {Promise} That is resolved a {@link TextContent}
+   *   object that represent the page text content.
    */
   getTextContent(params = {}) {
     const readableStream = this.streamTextContent(params);
@@ -1195,7 +1197,8 @@ class PDFPageProxy {
   }
 
   /**
-   * Destroys page object.
+   * Destroys the page object.
+   * @private
    */
   _destroy() {
     this.destroyed = true;
@@ -1238,9 +1241,8 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only. Attempts to clean up if rendering is in a state
-   * where that's possible.
-   * @ignore
+   * Attempts to clean up if rendering is in a state where that's possible.
+   * @private
    */
   _tryCleanup(resetStats = false) {
     if (!this.pendingCleanup ||
@@ -1264,8 +1266,7 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only.
-   * @ignore
+   * @private
    */
   _startRenderPage(transparency, intent) {
     const intentState = this.intentStates[intent];
@@ -1281,8 +1282,7 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only.
-   * @ignore
+   * @private
    */
   _renderPageChunk(operatorListChunk, intentState) {
     // Add the new chunk to the current operator list.
@@ -1304,8 +1304,7 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only.
-   * @ignore
+   * @private
    */
   _pumpOperatorList(args) {
     assert(args.intent,
@@ -1358,8 +1357,7 @@ class PDFPageProxy {
   }
 
   /**
-   * For internal use only.
-   * @ignore
+   * @private
    */
   _abortOperatorList({ intentState, reason, force = false, }) {
     assert(reason instanceof Error,
@@ -1406,7 +1404,7 @@ class PDFPageProxy {
   }
 
   /**
-   * @return {Object} Returns page stats, if enabled.
+   * @type {Object} Returns page stats, if enabled.
    */
   get stats() {
     return (this._stats instanceof StatTimer ? this._stats : null);
@@ -1508,12 +1506,6 @@ class LoopbackPort {
  *   constants from {VerbosityLevel} should be used.
  */
 
-/**
- * PDF.js web worker abstraction, it controls instantiation of PDF documents and
- * WorkerTransport for them. If creation of a web worker is not possible,
- * a "fake" worker will be used instead.
- * @class
- */
 const PDFWorker = (function PDFWorkerClosure() {
   const pdfWorkerPorts = new WeakMap();
   let nextFakeWorkerId = 0;
@@ -1591,9 +1583,15 @@ const PDFWorker = (function PDFWorkerClosure() {
   }
 
   /**
-   * @param {PDFWorkerParameters} params - The worker initialization parameters.
+   * PDF.js web worker abstraction, which controls the instantiation of PDF
+   * documents. Message handlers are used to pass information from the main
+   * thread to the worker thread and vice versa. If the creation of a web
+   * worker is not possible, a "fake" worker will be used instead.
    */
   class PDFWorker {
+    /**
+     * @param {PDFWorkerParameters} params - Worker initialization parameters.
+     */
     constructor({ name = null, port = null,
                   verbosity = getVerbosityLevel(), } = {}) {
       if (port && pdfWorkerPorts.has(port)) {
@@ -2521,7 +2519,7 @@ class RenderTask {
 
   /**
    * Promise for rendering task completion.
-   * @return {Promise}
+   * @type {Promise}
    */
   get promise() {
     return this._internalRenderTask.capability.promise;
