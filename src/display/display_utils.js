@@ -435,7 +435,6 @@ class StatTimer {
 function isFetchSupported() {
   return (typeof fetch !== 'undefined' &&
           typeof Response !== 'undefined' && 'body' in Response.prototype &&
-          // eslint-disable-next-line no-restricted-globals
           typeof ReadableStream !== 'undefined');
 }
 

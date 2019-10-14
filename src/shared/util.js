@@ -15,7 +15,6 @@
 /* eslint no-var: error */
 
 import './compatibility';
-import { ReadableStream } from './streams_polyfill';
 
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
@@ -930,7 +929,6 @@ export {
   readUint16,
   readUint32,
   removeNullCharacters,
-  ReadableStream,
   setVerbosityLevel,
   shadow,
   string32,

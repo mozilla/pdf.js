@@ -249,6 +249,36 @@ const isIE = /Trident/.test(userAgent);
   globalThis.URL = require('core-js/web/url');
 })();
 
+// Support: IE, Node.js
+(function checkReadableStream() {
+  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('IMAGE_DECODERS')) {
+    // The current image decoders are synchronous, hence `ReadableStream`
+    // shouldn't need to be polyfilled for the IMAGE_DECODERS build target.
+    return;
+  }
+  let isReadableStreamSupported = false;
+
+  if (typeof ReadableStream !== 'undefined') {
+    // MS Edge may say it has ReadableStream but they are not up to spec yet.
+    try {
+      // eslint-disable-next-line no-new
+      new ReadableStream({
+        start(controller) {
+          controller.close();
+        },
+      });
+      isReadableStreamSupported = true;
+    } catch (e) {
+      // The ReadableStream constructor cannot be used.
+    }
+  }
+  if (isReadableStreamSupported) {
+    return;
+  }
+  globalThis.ReadableStream =
+    require('web-streams-polyfill/dist/ponyfill').ReadableStream;
+})();
+
 // Support: IE<11, Safari<8, Chrome<36
 (function checkWeakMap() {
   if (globalThis.WeakMap) {

@@ -16,7 +16,7 @@
 
 import {
   AbortException, assert, createPromiseCapability, MissingPDFException,
-  ReadableStream, UnexpectedResponseException, UnknownErrorException
+  UnexpectedResponseException, UnknownErrorException
 } from './util';
 
 const CallbackKind = {
