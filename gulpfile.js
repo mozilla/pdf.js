@@ -51,7 +51,9 @@ var EXTENSION_SRC_DIR = "extensions/";
 var BASELINE_DIR = BUILD_DIR + "baseline/";
 var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + "mozcentral.baseline/";
 var GENERIC_DIR = BUILD_DIR + "generic/";
+var GENERIC_ES5_DIR = BUILD_DIR + "generic-es5/";
 var COMPONENTS_DIR = BUILD_DIR + "components/";
+var COMPONENTS_ES5_DIR = BUILD_DIR + "components-es5/";
 var IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders";
 var DEFAULT_PREFERENCES_DIR = BUILD_DIR + "default_preferences/";
 var MINIFIED_DIR = BUILD_DIR + "minified/";
@@ -90,6 +92,7 @@ var CSS_VARIABLES_CONFIG = {
 
 var DEFINES = {
   PRODUCTION: true,
+  SKIP_BABEL: true,
   TESTING: false,
   // The main build targets:
   GENERIC: false,
@@ -98,7 +101,6 @@ var DEFINES = {
   MINIFIED: false,
   COMPONENTS: false,
   LIB: false,
-  SKIP_BABEL: false,
   IMAGE_DECODERS: false,
 };
 
@@ -180,8 +182,7 @@ function createWebpackConfig(defines, output) {
     !bundleDefines.MOZCENTRAL &&
     !bundleDefines.CHROME &&
     !bundleDefines.TESTING;
-  var skipBabel =
-    bundleDefines.SKIP_BABEL || process.env["SKIP_BABEL"] === "true";
+  var skipBabel = bundleDefines.SKIP_BABEL;
 
   // Required to expose e.g., the `window` object.
   output.globalObject = "this";
@@ -737,8 +738,43 @@ function preprocessHTML(source, defines) {
   return createStringSource(source.substr(i + 1), out);
 }
 
-// Builds the generic production viewer that should be compatible with most
-// modern HTML5 browsers.
+function buildGeneric(defines, dir) {
+  rimraf.sync(dir);
+
+  return merge([
+    createBundle(defines).pipe(gulp.dest(dir + "build")),
+    createWebBundle(defines).pipe(gulp.dest(dir + "web")),
+    gulp.src(COMMON_WEB_FILES, { base: "web/" }).pipe(gulp.dest(dir + "web")),
+    gulp.src("LICENSE").pipe(gulp.dest(dir)),
+    gulp
+      .src(["web/locale/*/viewer.properties", "web/locale/locale.properties"], {
+        base: "web/",
+      })
+      .pipe(gulp.dest(dir + "web")),
+    gulp
+      .src(["external/bcmaps/*.bcmap", "external/bcmaps/LICENSE"], {
+        base: "external/bcmaps",
+      })
+      .pipe(gulp.dest(dir + "web/cmaps")),
+    preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
+    preprocessCSS("web/viewer.css", "generic", defines, true)
+      .pipe(
+        postcss([
+          cssvariables(CSS_VARIABLES_CONFIG),
+          calc(),
+          autoprefixer(AUTOPREFIXER_CONFIG),
+        ])
+      )
+      .pipe(gulp.dest(dir + "web")),
+
+    gulp
+      .src("web/compressed.tracemonkey-pldi-09.pdf")
+      .pipe(gulp.dest(dir + "web")),
+  ]);
+}
+
+// Builds the generic production viewer that is only compatible with up-to-date
+// HTML5 browsers, which implement modern ECMAScript features.
 gulp.task(
   "generic",
   gulp.series("buildnumber", "default_preferences", "locale", function() {
@@ -746,45 +782,47 @@ gulp.task(
     console.log("### Creating generic viewer");
     var defines = builder.merge(DEFINES, { GENERIC: true });
 
-    rimraf.sync(GENERIC_DIR);
-
-    return merge([
-      createBundle(defines).pipe(gulp.dest(GENERIC_DIR + "build")),
-      createWebBundle(defines).pipe(gulp.dest(GENERIC_DIR + "web")),
-      gulp
-        .src(COMMON_WEB_FILES, { base: "web/" })
-        .pipe(gulp.dest(GENERIC_DIR + "web")),
-      gulp.src("LICENSE").pipe(gulp.dest(GENERIC_DIR)),
-      gulp
-        .src(
-          ["web/locale/*/viewer.properties", "web/locale/locale.properties"],
-          { base: "web/" }
-        )
-        .pipe(gulp.dest(GENERIC_DIR + "web")),
-      gulp
-        .src(["external/bcmaps/*.bcmap", "external/bcmaps/LICENSE"], {
-          base: "external/bcmaps",
-        })
-        .pipe(gulp.dest(GENERIC_DIR + "web/cmaps")),
-      preprocessHTML("web/viewer.html", defines).pipe(
-        gulp.dest(GENERIC_DIR + "web")
-      ),
-      preprocessCSS("web/viewer.css", "generic", defines, true)
-        .pipe(
-          postcss([
-            cssvariables(CSS_VARIABLES_CONFIG),
-            calc(),
-            autoprefixer(AUTOPREFIXER_CONFIG),
-          ])
-        )
-        .pipe(gulp.dest(GENERIC_DIR + "web")),
-
-      gulp
-        .src("web/compressed.tracemonkey-pldi-09.pdf")
-        .pipe(gulp.dest(GENERIC_DIR + "web")),
-    ]);
+    return buildGeneric(defines, GENERIC_DIR);
   })
 );
+
+// Builds the generic production viewer that should be compatible with most
+// older HTML5 browsers.
+gulp.task(
+  "generic-es5",
+  gulp.series("buildnumber", "default_preferences", "locale", function() {
+    console.log();
+    console.log("### Creating generic (ES5) viewer");
+    var defines = builder.merge(DEFINES, { GENERIC: true, SKIP_BABEL: false });
+
+    return buildGeneric(defines, GENERIC_ES5_DIR);
+  })
+);
+
+function buildComponents(defines, dir) {
+  rimraf.sync(dir);
+
+  var COMPONENTS_IMAGES = [
+    "web/images/annotation-*.svg",
+    "web/images/loading-icon.gif",
+    "web/images/shadow.png",
+    "web/images/texture.png",
+  ];
+
+  return merge([
+    createComponentsBundle(defines).pipe(gulp.dest(dir)),
+    gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
+    preprocessCSS("web/pdf_viewer.css", "components", defines, true)
+      .pipe(
+        postcss([
+          cssvariables(CSS_VARIABLES_CONFIG),
+          calc(),
+          autoprefixer(AUTOPREFIXER_CONFIG),
+        ])
+      )
+      .pipe(gulp.dest(dir)),
+  ]);
+}
 
 gulp.task(
   "components",
@@ -793,28 +831,22 @@ gulp.task(
     console.log("### Creating generic components");
     var defines = builder.merge(DEFINES, { COMPONENTS: true, GENERIC: true });
 
-    rimraf.sync(COMPONENTS_DIR);
+    return buildComponents(defines, COMPONENTS_DIR);
+  })
+);
 
-    var COMPONENTS_IMAGES = [
-      "web/images/annotation-*.svg",
-      "web/images/loading-icon.gif",
-      "web/images/shadow.png",
-      "web/images/texture.png",
-    ];
+gulp.task(
+  "components-es5",
+  gulp.series("buildnumber", function() {
+    console.log();
+    console.log("### Creating generic (ES5) components");
+    var defines = builder.merge(DEFINES, {
+      COMPONENTS: true,
+      GENERIC: true,
+      SKIP_BABEL: false,
+    });
 
-    return merge([
-      createComponentsBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
-      gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(COMPONENTS_DIR + "images")),
-      preprocessCSS("web/pdf_viewer.css", "components", defines, true)
-        .pipe(
-          postcss([
-            cssvariables(CSS_VARIABLES_CONFIG),
-            calc(),
-            autoprefixer(AUTOPREFIXER_CONFIG),
-          ])
-        )
-        .pipe(gulp.dest(COMPONENTS_DIR)),
-    ]);
+    return buildComponents(defines, COMPONENTS_ES5_DIR);
   })
 );
 
@@ -981,10 +1013,7 @@ gulp.task(
   gulp.series("buildnumber", "default_preferences", function() {
     console.log();
     console.log("### Building mozilla-central extension");
-    var defines = builder.merge(DEFINES, {
-      MOZCENTRAL: true,
-      SKIP_BABEL: true,
-    });
+    var defines = builder.merge(DEFINES, { MOZCENTRAL: true });
 
     var MOZCENTRAL_DIR = BUILD_DIR + "mozcentral/",
       MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + "browser/extensions/pdfjs/",
@@ -1045,7 +1074,7 @@ gulp.task(
   gulp.series("buildnumber", "default_preferences", "locale", function() {
     console.log();
     console.log("### Building Chromium extension");
-    var defines = builder.merge(DEFINES, { CHROME: true });
+    var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: false });
 
     var CHROME_BUILD_DIR = BUILD_DIR + "/chromium/",
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + "/content/";
@@ -1144,7 +1173,7 @@ gulp.task(
     }
     function preprocess(content) {
       var skipBabel =
-        process.env["SKIP_BABEL"] === "true" ||
+        bundleDefines.SKIP_BABEL ||
         /\/\*\s*no-babel-preset\s*\*\//.test(content);
       content = preprocessor2.preprocessPDFJSCode(ctx, content);
       content = babel.transform(content, {
@@ -1173,16 +1202,17 @@ gulp.task(
     }
     var babel = require("@babel/core");
     var versionInfo = getVersionJSON();
+    var bundleDefines = builder.merge(DEFINES, {
+      GENERIC: true,
+      LIB: true,
+      BUNDLE_VERSION: versionInfo.version,
+      BUNDLE_BUILD: versionInfo.commit,
+      TESTING: process.env["TESTING"] === "true",
+    });
     var ctx = {
       rootPath: __dirname,
       saveComments: false,
-      defines: builder.merge(DEFINES, {
-        GENERIC: true,
-        LIB: true,
-        BUNDLE_VERSION: versionInfo.version,
-        BUNDLE_BUILD: versionInfo.commit,
-        TESTING: process.env["TESTING"] === "true",
-      }),
+      defines: bundleDefines,
       map: {
         "pdfjs-lib": "../pdf",
       },
@@ -1211,9 +1241,19 @@ gulp.task(
   })
 );
 
+function compressPublish(targetName, dir) {
+  return gulp
+    .src(dir + "**")
+    .pipe(zip(targetName))
+    .pipe(gulp.dest(BUILD_DIR))
+    .on("end", function() {
+      console.log("Built distribution file: " + targetName);
+    });
+}
+
 gulp.task(
   "publish",
-  gulp.series("generic", function(done) {
+  gulp.series("generic", "generic-es5", function(done) {
     var version = JSON.parse(
       fs.readFileSync(BUILD_DIR + "version.json").toString()
     ).version;
@@ -1221,19 +1261,13 @@ gulp.task(
     config.stableVersion = config.betaVersion;
     config.betaVersion = version;
 
-    createStringSource(CONFIG_FILE, JSON.stringify(config, null, 2))
-      .pipe(gulp.dest("."))
-      .on("end", function() {
-        var targetName = "pdfjs-" + version + "-dist.zip";
-        gulp
-          .src(BUILD_DIR + "generic/**")
-          .pipe(zip(targetName))
-          .pipe(gulp.dest(BUILD_DIR))
-          .on("end", function() {
-            console.log("Built distribution file: " + targetName);
-            done();
-          });
-      });
+    return merge([
+      createStringSource(CONFIG_FILE, JSON.stringify(config, null, 2)).pipe(
+        gulp.dest(".")
+      ),
+      compressPublish("pdfjs-" + version + "-dist.zip", GENERIC_DIR),
+      compressPublish("pdfjs-" + version + "-es5-dist.zip", GENERIC_ES5_DIR),
+    ]);
   })
 );
 
@@ -1446,6 +1480,9 @@ gulp.task("gh-pages-prepare", function() {
     vfs
       .src(GENERIC_DIR + "**/*", { base: GENERIC_DIR, stripBOM: false })
       .pipe(gulp.dest(GH_PAGES_DIR)),
+    vfs
+      .src(GENERIC_ES5_DIR + "**/*", { base: GENERIC_ES5_DIR, stripBOM: false })
+      .pipe(gulp.dest(GH_PAGES_DIR + "es5/")),
     gulp
       .src("test/features/**/*", { base: "test/" })
       .pipe(gulp.dest(GH_PAGES_DIR)),
@@ -1524,6 +1561,7 @@ gulp.task(
   "web",
   gulp.series(
     "generic",
+    "generic-es5",
     "jsdoc",
     "gh-pages-prepare",
     "wintersmith",
@@ -1535,7 +1573,9 @@ gulp.task(
   "dist-pre",
   gulp.series(
     "generic",
+    "generic-es5",
     "components",
+    "components-es5",
     "image_decoders",
     "lib",
     "minified",
@@ -1618,6 +1658,15 @@ gulp.task(
           ])
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
+          .src([
+            GENERIC_ES5_DIR + "build/pdf.js",
+            GENERIC_ES5_DIR + "build/pdf.js.map",
+            GENERIC_ES5_DIR + "build/pdf.worker.js",
+            GENERIC_ES5_DIR + "build/pdf.worker.js.map",
+            SRC_DIR + "pdf.worker.entry.js",
+          ])
+          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+        gulp
           .src(MINIFIED_DIR + "build/pdf.js")
           .pipe(rename("pdf.min.js"))
           .pipe(gulp.dest(DIST_DIR + "build/")),
@@ -1632,6 +1681,9 @@ gulp.task(
         gulp
           .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
           .pipe(gulp.dest(DIST_DIR + "web/")),
+        gulp
+          .src(COMPONENTS_ES5_DIR + "**/*", { base: COMPONENTS_ES5_DIR })
+          .pipe(gulp.dest(DIST_DIR + "es5/web/")),
         gulp
           .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
           .pipe(gulp.dest(DIST_DIR + "image_decoders")),

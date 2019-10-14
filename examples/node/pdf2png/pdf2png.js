@@ -48,7 +48,7 @@ NodeCanvasFactory.prototype = {
   },
 };
 
-var pdfjsLib = require("pdfjs-dist");
+var pdfjsLib = require("pdfjs-dist/es5/build/pdf.js");
 
 // Relative path of the PDF file.
 var pdfURL = "../../../web/compressed.tracemonkey-pldi-09.pdf";
