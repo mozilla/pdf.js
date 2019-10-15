@@ -1817,10 +1817,9 @@ var Font = (function FontClosure() {
         }
         // The first glyph is duplicated.
         var numGlyphsOut = dupFirstEntry ? numGlyphs + 1 : numGlyphs;
-        var locaData = loca.data;
         var locaDataSize = itemSize * (1 + numGlyphsOut);
         // Resize loca table to account for duplicated glyph.
-        locaData = new Uint8Array(locaDataSize);
+        var locaData = new Uint8Array(locaDataSize);
         locaData.set(loca.data.subarray(0, locaDataSize));
         loca.data = locaData;
         // removing the invalid glyphs
