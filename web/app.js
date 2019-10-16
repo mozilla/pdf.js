@@ -2283,7 +2283,8 @@ function webViewerKeyDown(evt) {
   let curElementTagName = curElement && curElement.tagName.toUpperCase();
   if (curElementTagName === 'INPUT' ||
       curElementTagName === 'TEXTAREA' ||
-      curElementTagName === 'SELECT') {
+      curElementTagName === 'SELECT' ||
+      (curElement && curElement.isContentEditable)) {
     // Make sure that the secondary toolbar is closed when Escape is pressed.
     if (evt.keyCode !== 27) { // 'Esc'
       return;
