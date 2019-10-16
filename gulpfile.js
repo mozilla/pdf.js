@@ -74,7 +74,7 @@ var config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
 
 // Default Autoprefixer config used for generic, components, minified-pre
 var AUTOPREFIXER_CONFIG = {
-  browsers: [
+  overrideBrowserslist: [
     'last 2 versions',
     'Chrome >= 49', // Last supported on Windows XP
     'Firefox >= 52', // Last supported on Windows XP
@@ -717,7 +717,9 @@ gulp.task('generic', gulp.series('buildnumber', 'default_preferences', 'locale',
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'generic', defines, true)
-        .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
+        .pipe(postcss([
+          autoprefixer(AUTOPREFIXER_CONFIG)
+        ]))
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
 
     gulp.src('web/compressed.tracemonkey-pldi-09.pdf')
@@ -743,7 +745,9 @@ gulp.task('components', gulp.series('buildnumber', function () {
     createComponentsBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(COMPONENTS_DIR + 'images')),
     preprocessCSS('web/pdf_viewer.css', 'components', defines, true)
-        .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
+        .pipe(postcss([
+          autoprefixer(AUTOPREFIXER_CONFIG)
+        ]))
         .pipe(gulp.dest(COMPONENTS_DIR)),
   ]);
 }));
@@ -783,7 +787,9 @@ gulp.task('minified-pre', gulp.series('buildnumber', 'default_preferences',
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(MINIFIED_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'minified', defines, true)
-        .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
+        .pipe(postcss([
+          autoprefixer(AUTOPREFIXER_CONFIG)
+        ]))
         .pipe(gulp.dest(MINIFIED_DIR + 'web')),
 
     gulp.src('web/compressed.tracemonkey-pldi-09.pdf')
@@ -885,7 +891,7 @@ gulp.task('mozcentral-pre', gulp.series('buildnumber', 'default_preferences',
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'mozcentral', defines, true)
         .pipe(postcss([
-            autoprefixer({ browsers: ['last 1 firefox versions'], })
+          autoprefixer({ overrideBrowserslist: ['last 1 firefox versions'], })
         ]))
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
 
@@ -935,7 +941,9 @@ gulp.task('chromium-pre', gulp.series('buildnumber', 'default_preferences',
     preprocessHTML('web/viewer.html', defines)
         .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + 'web')),
     preprocessCSS('web/viewer.css', 'chrome', defines, true)
-        .pipe(postcss([autoprefixer({ browsers: ['chrome >= 49'], })]))
+        .pipe(postcss([
+          autoprefixer({ overrideBrowserslist: ['chrome >= 49'], })
+        ]))
         .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + 'web')),
 
     gulp.src('LICENSE').pipe(gulp.dest(CHROME_BUILD_DIR)),
