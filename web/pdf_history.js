@@ -33,15 +33,15 @@ const UPDATE_VIEWAREA_TIMEOUT = 1000; // milliseconds
 /**
  * @typedef {Object} InitializeParameters
  * @property {string} fingerprint - The PDF document's unique fingerprint.
- * @property {boolean} resetHistory - (optional) Reset the browsing history.
- * @property {boolean} updateUrl - (optional) Attempt to update the document
- *   URL, with the current hash, when pushing/replacing browser history entries.
+ * @property {boolean} [resetHistory] - Reset the browsing history.
+ * @property {boolean} [updateUrl] - Attempt to update the document URL, with
+ *   the current hash, when pushing/replacing browser history entries.
  */
 
 /**
  * @typedef {Object} PushParameters
- * @property {string} namedDest - (optional) The named destination. If absent,
- *   a stringified version of `explicitDest` is used.
+ * @property {string} [namedDest] - The named destination. If absent, a
+ *   stringified version of `explicitDest` is used.
  * @property {Array} explicitDest - The explicit destination array.
  * @property {number} pageNumber - The page to which the destination points.
  */
@@ -272,7 +272,7 @@ class PDFHistory {
   }
 
   /**
-   * @returns {boolean} Indicating if the user is currently moving through the
+   * @type {boolean} Indicating if the user is currently moving through the
    *   browser history, useful e.g. for skipping the next 'hashchange' event.
    */
   get popStateInProgress() {

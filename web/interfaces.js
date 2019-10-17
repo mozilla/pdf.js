@@ -18,12 +18,12 @@
  */
 class IPDFLinkService {
   /**
-   * @returns {number}
+   * @type {number}
    */
   get pagesCount() {}
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get page() {}
 
@@ -33,7 +33,7 @@ class IPDFLinkService {
   set page(value) {}
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get rotation() {}
 
@@ -43,7 +43,7 @@ class IPDFLinkService {
   set rotation(value) {}
 
   /**
-   * @returns {boolean}
+   * @type {boolean}
    */
   get externalLinkEnabled() {}
 
@@ -117,12 +117,12 @@ class IPDFHistory {
  */
 class IRenderableView {
   /**
-   * @returns {string} - Unique ID for rendering queue.
+   * @type {string} - Unique ID for rendering queue.
    */
   get renderingId() {}
 
   /**
-   * @returns {RenderingStates}
+   * @type {RenderingStates}
    */
   get renderingState() {}
 
@@ -156,8 +156,8 @@ class IPDFAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
-   * @param {string} imageResourcesPath - (optional) Path for image resources,
-   *   mainly for annotation icons. Include trailing slash.
+   * @param {string} [imageResourcesPath] - Path for image resources, mainly
+   *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}

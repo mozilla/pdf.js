@@ -93,7 +93,7 @@ GrabToPan.prototype = {
    * Override this method to change the default behaviour.
    *
    * @param node {Element} The target of the event
-   * @return {boolean} Whether to not react to the click event.
+   * @returns {boolean} Whether to not react to the click event.
    */
   ignoreTarget: function GrabToPan_ignoreTarget(node) {
     // Use matchesSelector to check whether the clicked element
@@ -205,8 +205,8 @@ var isSafari6plus = /Apple/.test(navigator.vendor) &&
 /**
  * Whether the left mouse is not pressed.
  * @param event {MouseEvent}
- * @return {boolean} True if the left mouse button is not pressed.
- *                   False if unsure or if the left mouse button is pressed.
+ * @returns {boolean} True if the left mouse button is not pressed,
+ *                    False if unsure or if the left mouse button is pressed.
  */
 function isLeftMouseReleased(event) {
   if ('buttons' in event && isNotIEorIsIE10plus) {

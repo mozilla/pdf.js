@@ -12,13 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error */
 
 const globalScope = require('./global_scope');
 
-// Skip compatibility checks for the extensions and if we already ran
-// this module.
-if ((typeof PDFJSDev === 'undefined' ||
-     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) &&
+// Skip compatibility checks for modern builds and if we already ran the module.
+if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('SKIP_BABEL')) &&
     !globalScope._pdfjsCompatibilityChecked) {
 
 globalScope._pdfjsCompatibilityChecked = true;

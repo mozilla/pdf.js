@@ -732,7 +732,7 @@ var Font = (function FontClosure() {
    * private use area. This is done to avoid issues with various problematic
    * unicode areas where either a glyph won't be drawn or is deformed by a
    * shaper.
-   * @return {Object} Two properties:
+   * @returns {Object} Two properties:
    * 'toFontChar' - maps original char codes(the value that will be read
    * from commands such as show text) to the char codes that will be used in the
    * font that we build
@@ -1817,10 +1817,9 @@ var Font = (function FontClosure() {
         }
         // The first glyph is duplicated.
         var numGlyphsOut = dupFirstEntry ? numGlyphs + 1 : numGlyphs;
-        var locaData = loca.data;
         var locaDataSize = itemSize * (1 + numGlyphsOut);
         // Resize loca table to account for duplicated glyph.
-        locaData = new Uint8Array(locaDataSize);
+        var locaData = new Uint8Array(locaDataSize);
         locaData.set(loca.data.subarray(0, locaDataSize));
         loca.data = locaData;
         // removing the invalid glyphs

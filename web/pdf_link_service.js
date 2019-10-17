@@ -18,11 +18,11 @@ import { getGlobalEventBus, parseQueryString } from './ui_utils';
 /**
  * @typedef {Object} PDFLinkServiceOptions
  * @property {EventBus} eventBus - The application event bus.
- * @property {number} externalLinkTarget - (optional) Specifies the `target`
- *   attribute for external links. Must use one of the values from {LinkTarget}.
+ * @property {number} [externalLinkTarget] - Specifies the `target` attribute
+ *   for external links. Must use one of the values from {LinkTarget}.
  *   Defaults to using no target.
- * @property {string} externalLinkRel - (optional) Specifies the `rel` attribute
- *   for external links. Defaults to stripping the referrer.
+ * @property {string} [externalLinkRel] - Specifies the `rel` attribute for
+ *   external links. Defaults to stripping the referrer.
  */
 
 /**
@@ -64,14 +64,14 @@ class PDFLinkService {
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get pagesCount() {
     return this.pdfDocument ? this.pdfDocument.numPages : 0;
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get page() {
     return this.pdfViewer.currentPageNumber;
@@ -85,7 +85,7 @@ class PDFLinkService {
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get rotation() {
     return this.pdfViewer.pagesRotation;
@@ -189,7 +189,7 @@ class PDFLinkService {
   /**
    * Prefix the full url on anchor links to make sure that links are resolved
    * relative to the current URL instead of the one defined in <base href>.
-   * @param {String} anchor The anchor hash, including the #.
+   * @param {string} anchor The anchor hash, including the #.
    * @returns {string} The hyperlink to the PDF object.
    */
   getAnchorUrl(anchor) {
@@ -428,14 +428,14 @@ class SimpleLinkService {
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get pagesCount() {
     return 0;
   }
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get page() {
     return 0;
@@ -447,7 +447,7 @@ class SimpleLinkService {
   set page(value) {}
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get rotation() {
     return 0;
