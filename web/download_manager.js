@@ -16,6 +16,9 @@
 import {
   apiCompatibilityParams, createObjectURL, createValidAbsoluteUrl
 } from 'pdfjs-lib';
+import {
+  getDocumentFromHtml, getDownloadUrlFromHtml
+} from './ui_utils';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
   throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
@@ -81,8 +84,12 @@ class DownloadManager {
       return;
     }
 
-    let blobUrl = URL.createObjectURL(blob);
-    download(blobUrl, filename);
+    if (getDownloadUrlFromHtml() !== getDocumentFromHtml()) {
+      download(getDownloadUrlFromHtml(), filename);
+    } else {
+      let blobUrl = URL.createObjectURL(blob);
+      download(blobUrl, filename);
+    }
   }
 }
 

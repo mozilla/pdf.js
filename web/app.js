@@ -19,7 +19,7 @@ import {
   getPDFFileNameFromURL, isValidRotation, isValidScrollMode, isValidSpreadMode,
   MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
   parseQueryString, PresentationModeState, ProgressBar, RendererType,
-  ScrollMode, SpreadMode, TextLayerMode
+  ScrollMode, SpreadMode, TextLayerMode, getDocumentFromHtml
 } from './ui_utils';
 import { AppOptions, OptionKind } from './app_options';
 import {
@@ -1557,10 +1557,6 @@ function loadAndEnablePDFBug(enabledTabs) {
       createObjectURL,
     }, appConfig.mainContainer);
   });
-}
-
-function getDocumentFromHtml() {
-  return document.getElementById('defaultUrl') && document.getElementById('defaultUrl').value;
 }
 
 function webViewerInitialized() {
