@@ -1415,7 +1415,7 @@ var XRef = (function XRefClosure() {
           position += skipUntil(buffer, position, startxrefBytes);
         } else if ((m = objRegExp.exec(token))) {
           const num = m[1] | 0, gen = m[2] | 0;
-          if (typeof this.entries[num] === 'undefined') {
+          if (!this.entries[num] || this.entries[num].gen === gen) {
             this.entries[num] = {
               offset: position - stream.start,
               gen,
