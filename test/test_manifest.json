@@ -1233,7 +1233,6 @@
        "md5": "6ca059d32b74ac2688ae06f727fee755",
        "link": true,
        "rounds": 1,
-       "skipPages": [ 16 ],
        "type": "load"
     },
     {  "id": "mixedfonts",
@@ -1511,7 +1510,6 @@
        "rounds": 1,
        "link": true,
        "lastPage": 5,
-       "skipPages": [1],
        "type": "eq"
     },
     {  "id": "issue919",
