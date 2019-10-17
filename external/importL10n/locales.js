@@ -62,7 +62,7 @@ function downloadLanguageFiles(root, langCode) {
   var MOZ_CENTRAL_PDFJS_DIR = '/raw-file/default/browser/pdfviewer/';
 
   // Defines which files to download for each language.
-  var files = ['chrome.properties', 'viewer.properties'];
+  var files = ['viewer.properties'];
   var downloadsLeft = files.length;
 
   var outputDir = path.join(root, langCode);
