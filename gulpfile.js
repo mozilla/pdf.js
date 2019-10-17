@@ -571,7 +571,6 @@ gulp.task('default_preferences', gulp.series('default_preferences-pre',
 
 gulp.task('locale', function () {
   var VIEWER_LOCALE_OUTPUT = 'web/locale/';
-  var METADATA_OUTPUT = 'extensions/firefox/';
   var EXTENSION_LOCALE_OUTPUT = 'extensions/firefox/locale/';
 
   console.log();
@@ -584,8 +583,6 @@ gulp.task('locale', function () {
 
   var subfolders = fs.readdirSync(L10N_DIR);
   subfolders.sort();
-  var metadataContent = '';
-  var chromeManifestContent = '';
   var viewerOutput = '';
   var locales = [];
   for (var i = 0; i < subfolders.length; i++) {
@@ -604,25 +601,13 @@ gulp.task('locale', function () {
 
     locales.push(locale);
 
-    chromeManifestContent += 'locale  pdf.js  ' + locale + '  locale/' +
-                             locale + '/\n';
-
     if (checkFile(path + '/viewer.properties')) {
       viewerOutput += '[' + locale + ']\n' +
                       '@import url(' + locale + '/viewer.properties)\n\n';
     }
-
-    if (checkFile(path + '/metadata.inc')) {
-      var metadata = fs.readFileSync(path + '/metadata.inc').toString();
-      metadataContent += metadata;
-    }
   }
 
   return merge([
-    createStringSource('metadata.inc', metadataContent)
-      .pipe(gulp.dest(METADATA_OUTPUT)),
-    createStringSource('chrome.manifest.inc', chromeManifestContent)
-      .pipe(gulp.dest(METADATA_OUTPUT)),
     gulp.src(L10N_DIR + '/{' + locales.join(',') + '}' +
              '/{viewer,chrome}.properties', { base: L10N_DIR, })
       .pipe(gulp.dest(EXTENSION_LOCALE_OUTPUT)),
