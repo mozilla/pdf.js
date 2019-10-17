@@ -1233,7 +1233,6 @@
        "md5": "6ca059d32b74ac2688ae06f727fee755",
        "link": true,
        "rounds": 1,
-       "skipPages": [ 16 ],
        "type": "load"
     },
     {  "id": "mixedfonts",
@@ -1511,7 +1510,6 @@
        "rounds": 1,
        "link": true,
        "lastPage": 5,
-       "skipPages": [1],
        "type": "eq"
     },
     {  "id": "issue919",
@@ -2693,7 +2691,7 @@
       "file": "pdfs/issue1658.pdf",
       "md5": "b71a0f641e83ad427b8bcfc180899a05",
       "rounds": 1,
-      "skipPages": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      "firstPage": 10,
       "lastPage": 10,
       "link": true,
       "type": "eq"
@@ -2876,8 +2874,8 @@
        "md5": "b5b6c6405d7b48418bccf97277957664",
        "rounds": 1,
        "link": true,
+       "firstPage": 2,
        "lastPage": 2,
-       "skipPages": [1],
        "type": "eq"
     },
     {  "id": "issue1317",
