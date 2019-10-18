@@ -1203,10 +1203,10 @@ var Font = (function FontClosure() {
       this.remeasure = Object.keys(this.widths).length > 0;
       if (isStandardFont && type === 'CIDFontType2' &&
           this.cidEncoding.startsWith('Identity-')) {
-        var GlyphMapForStandardFonts = getGlyphMapForStandardFonts();
+        const GlyphMapForStandardFonts = getGlyphMapForStandardFonts();
         // Standard fonts might be embedded as CID font without glyph mapping.
         // Building one based on GlyphMapForStandardFonts.
-        var map = [];
+        const map = [];
         for (charCode in GlyphMapForStandardFonts) {
           map[+charCode] = GlyphMapForStandardFonts[charCode];
         }
@@ -1247,7 +1247,8 @@ var Font = (function FontClosure() {
                                           getGlyphsUnicode(),
                                           this.differences);
       } else {
-        var glyphsUnicodeMap = getGlyphsUnicode();
+        const glyphsUnicodeMap = getGlyphsUnicode();
+        const map = [];
         this.toUnicode.forEach((charCode, unicodeCharCode) => {
           if (!this.composite) {
             var glyphName = (this.differences[charCode] ||
@@ -1257,8 +1258,20 @@ var Font = (function FontClosure() {
               unicodeCharCode = unicode;
             }
           }
-          this.toFontChar[charCode] = unicodeCharCode;
+          map[+charCode] = unicodeCharCode;
         });
+
+        // Attempt to improve the glyph mapping for (some) composite fonts that
+        // appear to lack meaningful ToUnicode data.
+        if (this.composite && this.toUnicode instanceof IdentityToUnicodeMap) {
+          if (/Verdana/i.test(name)) { // Fixes issue11242_reduced.pdf
+            const GlyphMapForStandardFonts = getGlyphMapForStandardFonts();
+            for (charCode in GlyphMapForStandardFonts) {
+              map[+charCode] = GlyphMapForStandardFonts[charCode];
+            }
+          }
+        }
+        this.toFontChar = map;
       }
       this.loadedName = fontName.split('-')[0];
       this.fontType = getFontType(type, subtype);
