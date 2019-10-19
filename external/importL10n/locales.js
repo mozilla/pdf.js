@@ -22,6 +22,8 @@ var path = require('path');
 // Fetches all languages that have an *active* translation in mozilla-central.
 // This is used in gulpfile.js for the `importl10n` command.
 
+var DEFAULT_LOCALE = 'en-US';
+
 var EXCLUDE_LANG_CODES = ['ca-valencia', 'ja-JP-mac'];
 
 function normalizeText(s) {
@@ -105,7 +107,8 @@ async function downloadL10n(root, callback) {
   var langCodes = await downloadLanguageCodes();
 
   for (var langCode of langCodes) {
-    if (!langCode || EXCLUDE_LANG_CODES.includes(langCode)) {
+    if (!langCode || langCode === DEFAULT_LOCALE ||
+        EXCLUDE_LANG_CODES.includes(langCode)) {
       continue;
     }
     await downloadLanguageFiles(root, langCode);
@@ -115,7 +118,7 @@ async function downloadL10n(root, callback) {
   for (var entry of fs.readdirSync(root)) {
     var dirPath = path.join(root, entry), stat = fs.lstatSync(dirPath);
 
-    if (stat.isDirectory() && entry !== 'en-US' &&
+    if (stat.isDirectory() && entry !== DEFAULT_LOCALE &&
         (!langCodes.includes(entry) || EXCLUDE_LANG_CODES.includes(entry))) {
       removeCodes.push(entry);
     }
