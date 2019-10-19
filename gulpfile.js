@@ -837,7 +837,7 @@ function preprocessDefaultPreferences(content) {
 }
 
 gulp.task('mozcentral-pre', gulp.series('buildnumber', 'default_preferences',
-                                        'locale', function() {
+                                        function() {
   console.log();
   console.log('### Building mozilla-central extension');
   var defines = builder.merge(DEFINES, { MOZCENTRAL: true, SKIP_BABEL: true, });
@@ -872,7 +872,7 @@ gulp.task('mozcentral-pre', gulp.series('buildnumber', 'default_preferences',
         ]))
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'web')),
 
-    gulp.src('web/locale/en-US/*.properties')
+    gulp.src('l10n/en-US/*.properties')
         .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + 'README.mozilla')
         .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
