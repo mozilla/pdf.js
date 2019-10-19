@@ -2001,6 +2001,32 @@ class WorkerTransport {
       loadingTask._capability.resolve(new PDFDocumentProxy(pdfInfo, this));
     });
 
+    messageHandler.on('DocException', function(ex) {
+      let reason;
+      switch (ex.name) {
+        case 'PasswordException':
+          reason = new PasswordException(ex.message, ex.code);
+          break;
+        case 'InvalidPDFException':
+          reason = new InvalidPDFException(ex.message);
+          break;
+        case 'MissingPDFException':
+          reason = new MissingPDFException(ex.message);
+          break;
+        case 'UnexpectedResponseException':
+          reason = new UnexpectedResponseException(ex.message, ex.status);
+          break;
+        case 'UnknownErrorException':
+          reason = new UnknownErrorException(ex.message, ex.details);
+          break;
+      }
+      if (typeof PDFJSDev === 'undefined' ||
+          PDFJSDev.test('!PRODUCTION || TESTING')) {
+        assert(reason instanceof Error, 'DocException: expected an Error.');
+      }
+      loadingTask._capability.reject(reason);
+    });
+
     messageHandler.on('PasswordRequest', (exception) => {
       this._passwordCapability = createPromiseCapability();
 
@@ -2020,31 +2046,6 @@ class WorkerTransport {
           new PasswordException(exception.message, exception.code));
       }
       return this._passwordCapability.promise;
-    });
-
-    messageHandler.on('PasswordException', function(exception) {
-      loadingTask._capability.reject(
-        new PasswordException(exception.message, exception.code));
-    });
-
-    messageHandler.on('InvalidPDF', function(exception) {
-      loadingTask._capability.reject(
-        new InvalidPDFException(exception.message));
-    });
-
-    messageHandler.on('MissingPDF', function(exception) {
-      loadingTask._capability.reject(
-        new MissingPDFException(exception.message));
-    });
-
-    messageHandler.on('UnexpectedResponse', function(exception) {
-      loadingTask._capability.reject(
-        new UnexpectedResponseException(exception.message, exception.status));
-    });
-
-    messageHandler.on('UnknownError', function(exception) {
-      loadingTask._capability.reject(
-        new UnknownErrorException(exception.message, exception.details));
     });
 
     messageHandler.on('DataLoaded', (data) => {
