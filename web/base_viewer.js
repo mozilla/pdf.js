@@ -454,7 +454,10 @@ class BaseViewer {
           this.findController.setDocument(pdfDocument); // Enable searching.
         }
 
-        if (pdfDocument.loadingParams['disableAutoFetch']) {
+        // In addition to 'disableAutoFetch' being set, also attempt to reduce
+        // resource usage when loading *very* long/large documents.
+        if (pdfDocument.loadingParams['disableAutoFetch'] ||
+            pagesCount > 7500) {
           // XXX: Printing is semi-broken with auto fetch disabled.
           pagesCapability.resolve();
           return;
