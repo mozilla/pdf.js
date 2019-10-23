@@ -805,6 +805,10 @@ class PDFDocumentProxy {
  * @property {number} scale - The desired scale of the viewport.
  * @property {number} [rotation] - The desired rotation, in degrees, of
  *   the viewport. If omitted it defaults to the page rotation.
+ * @property {number} [offsetX] - The horizontal, i.e. x-axis, offset.
+ *   The default value is `0`.
+ * @property {number} [offsetY] - The vertical, i.e. y-axis, offset.
+ *   The default value is `0`.
  * @property {boolean} [dontFlip] - If true, the y-axis will not be
  *   flipped. The default value is `false`.
  */
@@ -958,7 +962,8 @@ class PDFPageProxy {
    * @returns {PageViewport} Contains 'width' and 'height' properties
    *   along with transforms required for rendering.
    */
-  getViewport({ scale, rotation = this.rotate, dontFlip = false, } = {}) {
+  getViewport({ scale, rotation = this.rotate,
+                offsetX = 0, offsetY = 0, dontFlip = false, } = {}) {
     if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) &&
         (arguments.length > 1 || typeof arguments[0] === 'number')) {
       throw new Error(
@@ -968,6 +973,8 @@ class PDFPageProxy {
       viewBox: this.view,
       scale,
       rotation,
+      offsetX,
+      offsetY,
       dontFlip,
     });
   }
