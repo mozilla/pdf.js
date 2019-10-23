@@ -380,16 +380,12 @@ function getFilenameFromUrl(url) {
 }
 
 class StatTimer {
-  constructor(enable = true) {
-    this.enabled = !!enable;
+  constructor() {
     this.started = Object.create(null);
     this.times = [];
   }
 
   time(name) {
-    if (!this.enabled) {
-      return;
-    }
     if (name in this.started) {
       warn('Timer is already running for ' + name);
     }
@@ -397,9 +393,6 @@ class StatTimer {
   }
 
   timeEnd(name) {
-    if (!this.enabled) {
-      return;
-    }
     if (!(name in this.started)) {
       warn('Timer has not been started for ' + name);
     }
