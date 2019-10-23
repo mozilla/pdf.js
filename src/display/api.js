@@ -27,8 +27,8 @@ import {
   unreachable, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, DummyStatTimer, loadScript,
-  PageViewport, releaseImageResources, RenderingCancelledException, StatTimer
+  DOMCanvasFactory, DOMCMapReaderFactory, loadScript, PageViewport,
+  releaseImageResources, RenderingCancelledException, StatTimer
 } from './display_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
@@ -905,7 +905,7 @@ class PDFPageProxy {
     this.pageIndex = pageIndex;
     this._pageInfo = pageInfo;
     this._transport = transport;
-    this._stats = (pdfBug ? new StatTimer() : DummyStatTimer);
+    this._stats = (pdfBug ? new StatTimer() : null);
     this._pdfBug = pdfBug;
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
@@ -995,8 +995,9 @@ class PDFPageProxy {
   render({ canvasContext, viewport, intent = 'display', enableWebGL = false,
            renderInteractiveForms = false, transform = null, imageLayer = null,
            canvasFactory = null, background = null, }) {
-    const stats = this._stats;
-    stats.time('Overall');
+    if (this._stats) {
+      this._stats.time('Overall');
+    }
 
     const renderingIntent = (intent === 'print' ? 'print' : 'display');
     // If there was a pending destroy, cancel it so no cleanup happens during
@@ -1029,7 +1030,9 @@ class PDFPageProxy {
         lastChunk: false,
       };
 
-      stats.time('Page Request');
+      if (this._stats) {
+        this._stats.time('Page Request');
+      }
       this._pumpOperatorList({
         pageIndex: this.pageNumber - 1,
         intent: renderingIntent,
@@ -1060,8 +1063,10 @@ class PDFPageProxy {
       } else {
         internalRenderTask.capability.resolve();
       }
-      stats.timeEnd('Rendering');
-      stats.timeEnd('Overall');
+      if (this._stats) {
+        this._stats.timeEnd('Rendering');
+        this._stats.timeEnd('Overall');
+      }
     };
 
     const internalRenderTask = new InternalRenderTask({
@@ -1094,7 +1099,9 @@ class PDFPageProxy {
         complete();
         return;
       }
-      stats.time('Rendering');
+      if (this._stats) {
+        this._stats.time('Rendering');
+      }
       internalRenderTask.initializeGraphics(transparency);
       internalRenderTask.operatorListChanged();
     }).catch(complete);
@@ -1137,7 +1144,9 @@ class PDFPageProxy {
         lastChunk: false,
       };
 
-      this._stats.time('Page Request');
+      if (this._stats) {
+        this._stats.time('Page Request');
+      }
       this._pumpOperatorList({
         pageIndex: this.pageIndex,
         intent: renderingIntent,
@@ -1259,7 +1268,7 @@ class PDFPageProxy {
     });
     this.objs.clear();
     this.annotationsPromise = null;
-    if (resetStats && this._stats instanceof StatTimer) {
+    if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
     this.pendingCleanup = false;
@@ -1273,7 +1282,9 @@ class PDFPageProxy {
     if (!intentState) {
       return; // Rendering was cancelled.
     }
-    this._stats.timeEnd('Page Request');
+    if (this._stats) {
+      this._stats.timeEnd('Page Request');
+    }
     // TODO Refactor RenderPageRequest to separate rendering
     // and operator list logic
     if (intentState.displayReadyCapability) {
@@ -1404,10 +1415,10 @@ class PDFPageProxy {
   }
 
   /**
-   * @type {Object} Returns page stats, if enabled.
+   * @type {Object} Returns page stats, if enabled; returns `null` otherwise.
    */
   get stats() {
-    return (this._stats instanceof StatTimer ? this._stats : null);
+    return this._stats;
   }
 }
 
