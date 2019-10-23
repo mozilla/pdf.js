@@ -1101,8 +1101,7 @@ describe('api', function() {
       expect(viewport.height).toEqual(892.92);
     });
     it('gets viewport respecting "dontFlip" argument', function () {
-      const scale = 1;
-      const rotation = 135;
+      const scale = 1, rotation = 0;
       let viewport = page.getViewport({ scale, rotation, });
       let dontFlipViewport = page.getViewport({ scale, rotation,
                                                 dontFlip: true, });
