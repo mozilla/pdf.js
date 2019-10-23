@@ -387,14 +387,14 @@ class StatTimer {
 
   time(name) {
     if (name in this.started) {
-      warn('Timer is already running for ' + name);
+      warn(`Timer is already running for ${name}`);
     }
     this.started[name] = Date.now();
   }
 
   timeEnd(name) {
     if (!(name in this.started)) {
-      warn('Timer has not been started for ' + name);
+      warn(`Timer has not been started for ${name}`);
     }
     this.times.push({
       'name': name,
@@ -407,7 +407,7 @@ class StatTimer {
 
   toString() {
     // Find the longest name for padding purposes.
-    let out = '', longest = 0;
+    let outBuf = [], longest = 0;
     for (const time of this.times) {
       const name = time.name;
       if (name.length > longest) {
@@ -416,9 +416,9 @@ class StatTimer {
     }
     for (const time of this.times) {
       const duration = time.end - time.start;
-      out += `${time.name.padEnd(longest)} ${duration}ms\n`;
+      outBuf.push(`${time.name.padEnd(longest)} ${duration}ms\n`);
     }
-    return out;
+    return outBuf.join('');
   }
 }
 
