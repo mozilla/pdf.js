@@ -174,6 +174,10 @@ class DOMSVGFactory {
  *   viewport. The default value is `this.scale`.
  * @property {number} [rotation] - The rotation, in degrees, overriding the one
  *   in the cloned viewport. The default value is `this.rotation`.
+ * @property {number} [offsetX] - The horizontal, i.e. x-axis, offset.
+ *   The default value is `this.offsetX`.
+ * @property {number} [offsetY] - The vertical, i.e. y-axis, offset.
+ *   The default value is `this.offsetY`.
  * @property {boolean} [dontFlip] - If true, the x-axis will not be flipped.
  *   The default value is `false`.
  */
@@ -254,14 +258,14 @@ class PageViewport {
    * @param {PageViewportCloneParameters} [params]
    * @returns {PageViewport} Cloned viewport.
    */
-  clone({ scale = this.scale, rotation = this.rotation,
-          dontFlip = false, } = {}) {
+  clone({ scale = this.scale, rotation = this.rotation, offsetX = this.offsetX,
+          offsetY = this.offsetY, dontFlip = false, } = {}) {
     return new PageViewport({
       viewBox: this.viewBox.slice(),
       scale,
       rotation,
-      offsetX: this.offsetX,
-      offsetY: this.offsetY,
+      offsetX,
+      offsetY,
       dontFlip,
     });
   }
