@@ -16,7 +16,7 @@
 
 import {
   assert, BaseException, CMapCompressionType, isString, removeNullCharacters,
-  stringToBytes, unreachable, Util, warn
+  stringToBytes, Util, warn
 } from '../shared/util';
 
 const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
@@ -380,28 +380,21 @@ function getFilenameFromUrl(url) {
 }
 
 class StatTimer {
-  constructor(enable = true) {
-    this.enabled = !!enable;
+  constructor() {
     this.started = Object.create(null);
     this.times = [];
   }
 
   time(name) {
-    if (!this.enabled) {
-      return;
-    }
     if (name in this.started) {
-      warn('Timer is already running for ' + name);
+      warn(`Timer is already running for ${name}`);
     }
     this.started[name] = Date.now();
   }
 
   timeEnd(name) {
-    if (!this.enabled) {
-      return;
-    }
     if (!(name in this.started)) {
-      warn('Timer has not been started for ' + name);
+      warn(`Timer has not been started for ${name}`);
     }
     this.times.push({
       'name': name,
@@ -414,7 +407,7 @@ class StatTimer {
 
   toString() {
     // Find the longest name for padding purposes.
-    let out = '', longest = 0;
+    let outBuf = [], longest = 0;
     for (const time of this.times) {
       const name = time.name;
       if (name.length > longest) {
@@ -423,31 +416,9 @@ class StatTimer {
     }
     for (const time of this.times) {
       const duration = time.end - time.start;
-      out += `${time.name.padEnd(longest)} ${duration}ms\n`;
+      outBuf.push(`${time.name.padEnd(longest)} ${duration}ms\n`);
     }
-    return out;
-  }
-}
-
-/**
- * Helps avoid having to initialize {StatTimer} instances, e.g. one for every
- * page, in cases where the collected stats are not actually being used.
- * This (dummy) class can thus, since all its methods are `static`, be directly
- * shared between multiple call-sites without the need to be initialized first.
- *
- * NOTE: This must implement the same interface as {StatTimer}.
- */
-class DummyStatTimer {
-  constructor() {
-    unreachable('Cannot initialize DummyStatTimer.');
-  }
-
-  static time(name) {}
-
-  static timeEnd(name) {}
-
-  static toString() {
-    return '';
+    return outBuf.join('');
   }
 }
 
@@ -593,7 +564,6 @@ export {
   DOMCMapReaderFactory,
   DOMSVGFactory,
   StatTimer,
-  DummyStatTimer,
   isFetchSupported,
   isValidFetchUrl,
   loadScript,
