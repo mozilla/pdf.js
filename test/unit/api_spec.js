@@ -1100,9 +1100,13 @@ describe('api', function() {
       expect(viewport.width).toEqual(1262.835);
       expect(viewport.height).toEqual(892.92);
     });
+    it('gets viewport with "offsetX/offsetY" arguments', function () {
+      const viewport = page.getViewport({ scale: 1, rotation: 0,
+                                          offsetX: 100, offsetY: -100, });
+      expect(viewport.transform).toEqual([1, 0, 0, -1, 100, 741.89]);
+    });
     it('gets viewport respecting "dontFlip" argument', function () {
-      const scale = 1;
-      const rotation = 135;
+      const scale = 1, rotation = 0;
       let viewport = page.getViewport({ scale, rotation, });
       let dontFlipViewport = page.getViewport({ scale, rotation,
                                                 dontFlip: true, });
