@@ -18,6 +18,12 @@ import {
   ReadableStream, UnexpectedResponseException, UnknownErrorException
 } from './util';
 
+const CallbackKind = {
+  UNKNOWN: 0,
+  DATA: 1,
+  ERROR: 2,
+};
+
 const StreamKind = {
   UNKNOWN: 0,
   CANCEL: 1,
@@ -73,15 +79,18 @@ function MessageHandler(sourceName, targetName, comObj) {
     }
     if (data.stream) {
       this._processStreamMessage(data);
-    } else if (data.isReply) {
+    } else if (data.callback) {
       let callbackId = data.callbackId;
       if (data.callbackId in callbacksCapabilities) {
         let callback = callbacksCapabilities[callbackId];
         delete callbacksCapabilities[callbackId];
-        if ('reason' in data) {
+
+        if (data.callback === CallbackKind.DATA) {
+          callback.resolve(data.data);
+        } else if (data.callback === CallbackKind.ERROR) {
           callback.reject(wrapReason(data.reason));
         } else {
-          callback.resolve(data.data);
+          throw new Error('Unexpected callback case');
         }
       } else {
         throw new Error(`Cannot resolve callback ${callbackId}`);
@@ -97,7 +106,7 @@ function MessageHandler(sourceName, targetName, comObj) {
           comObj.postMessage({
             sourceName,
             targetName,
-            isReply: true,
+            callback: CallbackKind.DATA,
             callbackId: data.callbackId,
             data: result,
           });
@@ -105,7 +114,7 @@ function MessageHandler(sourceName, targetName, comObj) {
           comObj.postMessage({
             sourceName,
             targetName,
-            isReply: true,
+            callback: CallbackKind.ERROR,
             callbackId: data.callbackId,
             reason: wrapReason(reason),
           });
