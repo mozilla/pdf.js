@@ -125,8 +125,23 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   // Convert PDF blend mode names to HTML5 blend mode names.
-  function normalizeBlendMode(value) {
+  function normalizeBlendMode(value, parsingArray = false) {
+    if (Array.isArray(value)) {
+      // Use the first *supported* BM value in the Array (fixes issue11279.pdf).
+      for (let i = 0, ii = value.length; i < ii; i++) {
+        const maybeBM = normalizeBlendMode(value[i], /* parsingArray = */ true);
+        if (maybeBM) {
+          return maybeBM;
+        }
+      }
+      warn(`Unsupported blend mode Array: ${value}`);
+      return 'source-over';
+    }
+
     if (!isName(value)) {
+      if (parsingArray) {
+        return null;
+      }
       return 'source-over';
     }
     switch (value.name) {
@@ -164,7 +179,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       case 'Luminosity':
         return 'luminosity';
     }
-    warn('Unsupported blend mode: ' + value.name);
+    if (parsingArray) {
+      return null;
+    }
+    warn(`Unsupported blend mode: ${value.name}`);
     return 'source-over';
   }
 
