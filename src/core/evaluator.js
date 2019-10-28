@@ -230,9 +230,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             if (graphicState.objId) {
               processed[graphicState.objId] = true;
             }
-            var bm = graphicState.get('BM');
-            if ((bm instanceof Name) && bm.name !== 'Normal') {
-              return true;
+
+            const bm = graphicState.get('BM');
+            if (bm instanceof Name) {
+              if (bm.name !== 'Normal') {
+                return true;
+              }
+              continue;
+            }
+            if (bm !== undefined && Array.isArray(bm)) {
+              for (let j = 0, jj = bm.length; j < jj; j++) {
+                if ((bm[j] instanceof Name) && bm[j].name !== 'Normal') {
+                  return true;
+                }
+              }
             }
           }
         }
