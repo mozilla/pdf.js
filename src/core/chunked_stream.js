@@ -285,6 +285,12 @@ class ChunkedStream {
       }
       return missingChunks;
     };
+    ChunkedStreamSubstream.prototype.allChunksLoaded = function() {
+      if (this.numChunksLoaded === this.numChunks) {
+        return true;
+      }
+      return this.getMissingChunks().length === 0;
+    };
 
     const subStream = new ChunkedStreamSubstream();
     subStream.pos = subStream.start = start;

@@ -27,7 +27,6 @@ import { Lexer, Parser } from './parser';
 import {
   MissingDataException, toRomanNumerals, XRefEntryException, XRefParseException
 } from './core_utils';
-import { ChunkedStream } from './chunked_stream';
 import { CipherTransformFactory } from './crypto';
 import { ColorSpace } from './colorspace';
 
@@ -2072,14 +2071,14 @@ let ObjectLoader = (function() {
   }
 
   ObjectLoader.prototype = {
-    load() {
-      this.capability = createPromiseCapability();
-      // Don't walk the graph if all the data is already loaded.
-      if (!(this.xref.stream instanceof ChunkedStream) ||
-          this.xref.stream.getMissingChunks().length === 0) {
-        this.capability.resolve();
-        return this.capability.promise;
+    async load() {
+      // Don't walk the graph if all the data is already loaded; note that only
+      // `ChunkedStream` instances have a `allChunksLoaded` method.
+      if (!this.xref.stream.allChunksLoaded ||
+          this.xref.stream.allChunksLoaded()) {
+        return undefined;
       }
+      this.capability = createPromiseCapability();
 
       let { keys, dict, } = this;
       this.refSet = new RefSet();
@@ -2126,7 +2125,7 @@ let ObjectLoader = (function() {
           let foundMissingData = false;
           for (let i = 0, ii = baseStreams.length; i < ii; i++) {
             let stream = baseStreams[i];
-            if (stream.getMissingChunks && stream.getMissingChunks().length) {
+            if (stream.allChunksLoaded && !stream.allChunksLoaded()) {
               foundMissingData = true;
               pendingRequests.push({ begin: stream.start, end: stream.end, });
             }
