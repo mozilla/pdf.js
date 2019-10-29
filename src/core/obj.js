@@ -2038,13 +2038,13 @@ var FileSpec = (function FileSpecClosure() {
  */
 let ObjectLoader = (function() {
   function mayHaveChildren(value) {
-    return isRef(value) || isDict(value) || Array.isArray(value) ||
-           isStream(value);
+    return (value instanceof Ref) || (value instanceof Dict) ||
+           Array.isArray(value) || isStream(value);
   }
 
   function addChildren(node, nodesToVisit) {
-    if (isDict(node) || isStream(node)) {
-      let dict = isDict(node) ? node : node.dict;
+    if ((node instanceof Dict) || isStream(node)) {
+      let dict = (node instanceof Dict) ? node : node.dict;
       let dictKeys = dict.getKeys();
       for (let i = 0, ii = dictKeys.length; i < ii; i++) {
         let rawValue = dict.getRaw(dictKeys[i]);
@@ -2104,7 +2104,7 @@ let ObjectLoader = (function() {
         let currentNode = nodesToVisit.pop();
 
         // Only references or chunked streams can cause missing data exceptions.
-        if (isRef(currentNode)) {
+        if (currentNode instanceof Ref) {
           // Skip nodes that have already been visited.
           if (this.refSet.has(currentNode)) {
             continue;
@@ -2144,7 +2144,7 @@ let ObjectLoader = (function() {
             let node = nodesToRevisit[i];
             // Remove any reference nodes from the current `RefSet` so they
             // aren't skipped when we revist them.
-            if (isRef(node)) {
+            if (node instanceof Ref) {
               this.refSet.remove(node);
             }
           }
