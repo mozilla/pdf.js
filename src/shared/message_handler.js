@@ -69,8 +69,8 @@ function MessageHandler(sourceName, targetName, comObj) {
   this.postMessageTransfers = true;
   this.streamSinks = Object.create(null);
   this.streamControllers = Object.create(null);
-  let callbacksCapabilities = this.callbacksCapabilities = Object.create(null);
-  let ah = this.actionHandler = Object.create(null);
+  this.callbackCapabilities = Object.create(null);
+  const ah = this.actionHandler = Object.create(null);
 
   this._onComObjOnMessage = (event) => {
     let data = event.data;
@@ -80,23 +80,24 @@ function MessageHandler(sourceName, targetName, comObj) {
     if (data.stream) {
       this._processStreamMessage(data);
     } else if (data.callback) {
-      let callbackId = data.callbackId;
-      if (data.callbackId in callbacksCapabilities) {
-        let callback = callbacksCapabilities[callbackId];
-        delete callbacksCapabilities[callbackId];
+      const callbackId = data.callbackId;
+      const capability = this.callbackCapabilities[callbackId];
+
+      if (capability) {
+        delete this.callbackCapabilities[callbackId];
 
         if (data.callback === CallbackKind.DATA) {
-          callback.resolve(data.data);
+          capability.resolve(data.data);
         } else if (data.callback === CallbackKind.ERROR) {
-          callback.reject(wrapReason(data.reason));
+          capability.reject(wrapReason(data.reason));
         } else {
           throw new Error('Unexpected callback case');
         }
       } else {
         throw new Error(`Cannot resolve callback ${callbackId}`);
       }
-    } else if (data.action in ah) {
-      let action = ah[data.action];
+    } else if (ah[data.action]) {
+      const action = ah[data.action];
       if (data.callbackId) {
         let sourceName = this.sourceName;
         let targetName = data.sourceName;
@@ -133,7 +134,12 @@ function MessageHandler(sourceName, targetName, comObj) {
 
 MessageHandler.prototype = {
   on(actionName, handler) {
-    var ah = this.actionHandler;
+    if (typeof PDFJSDev === 'undefined' ||
+        PDFJSDev.test('!PRODUCTION || TESTING')) {
+      assert(typeof handler === 'function',
+             'MessageHandler.on: Expected "handler" to be a function.');
+    }
+    const ah = this.actionHandler;
     if (ah[actionName]) {
       throw new Error(`There is already an actionName called "${actionName}"`);
     }
@@ -164,7 +170,7 @@ MessageHandler.prototype = {
   sendWithPromise(actionName, data, transfers) {
     var callbackId = this.callbackId++;
     var capability = createPromiseCapability();
-    this.callbacksCapabilities[callbackId] = capability;
+    this.callbackCapabilities[callbackId] = capability;
     try {
       this.postMessage({
         sourceName: this.sourceName,
