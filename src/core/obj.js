@@ -27,7 +27,6 @@ import { Lexer, Parser } from './parser';
 import {
   MissingDataException, toRomanNumerals, XRefEntryException, XRefParseException
 } from './core_utils';
-import { ChunkedStream } from './chunked_stream';
 import { CipherTransformFactory } from './crypto';
 import { ColorSpace } from './colorspace';
 
@@ -2039,13 +2038,13 @@ var FileSpec = (function FileSpecClosure() {
  */
 let ObjectLoader = (function() {
   function mayHaveChildren(value) {
-    return isRef(value) || isDict(value) || Array.isArray(value) ||
-           isStream(value);
+    return (value instanceof Ref) || (value instanceof Dict) ||
+           Array.isArray(value) || isStream(value);
   }
 
   function addChildren(node, nodesToVisit) {
-    if (isDict(node) || isStream(node)) {
-      let dict = isDict(node) ? node : node.dict;
+    if ((node instanceof Dict) || isStream(node)) {
+      let dict = (node instanceof Dict) ? node : node.dict;
       let dictKeys = dict.getKeys();
       for (let i = 0, ii = dictKeys.length; i < ii; i++) {
         let rawValue = dict.getRaw(dictKeys[i]);
@@ -2072,14 +2071,14 @@ let ObjectLoader = (function() {
   }
 
   ObjectLoader.prototype = {
-    load() {
-      this.capability = createPromiseCapability();
-      // Don't walk the graph if all the data is already loaded.
-      if (!(this.xref.stream instanceof ChunkedStream) ||
-          this.xref.stream.getMissingChunks().length === 0) {
-        this.capability.resolve();
-        return this.capability.promise;
+    async load() {
+      // Don't walk the graph if all the data is already loaded; note that only
+      // `ChunkedStream` instances have a `allChunksLoaded` method.
+      if (!this.xref.stream.allChunksLoaded ||
+          this.xref.stream.allChunksLoaded()) {
+        return undefined;
       }
+      this.capability = createPromiseCapability();
 
       let { keys, dict, } = this;
       this.refSet = new RefSet();
@@ -2105,7 +2104,7 @@ let ObjectLoader = (function() {
         let currentNode = nodesToVisit.pop();
 
         // Only references or chunked streams can cause missing data exceptions.
-        if (isRef(currentNode)) {
+        if (currentNode instanceof Ref) {
           // Skip nodes that have already been visited.
           if (this.refSet.has(currentNode)) {
             continue;
@@ -2126,7 +2125,7 @@ let ObjectLoader = (function() {
           let foundMissingData = false;
           for (let i = 0, ii = baseStreams.length; i < ii; i++) {
             let stream = baseStreams[i];
-            if (stream.getMissingChunks && stream.getMissingChunks().length) {
+            if (stream.allChunksLoaded && !stream.allChunksLoaded()) {
               foundMissingData = true;
               pendingRequests.push({ begin: stream.start, end: stream.end, });
             }
@@ -2145,7 +2144,7 @@ let ObjectLoader = (function() {
             let node = nodesToRevisit[i];
             // Remove any reference nodes from the current `RefSet` so they
             // aren't skipped when we revist them.
-            if (isRef(node)) {
+            if (node instanceof Ref) {
               this.refSet.remove(node);
             }
           }
