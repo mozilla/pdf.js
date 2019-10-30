@@ -70,64 +70,67 @@ function MessageHandler(sourceName, targetName, comObj) {
   this.streamSinks = Object.create(null);
   this.streamControllers = Object.create(null);
   this.callbackCapabilities = Object.create(null);
-  const ah = this.actionHandler = Object.create(null);
+  this.actionHandler = Object.create(null);
 
   this._onComObjOnMessage = (event) => {
-    let data = event.data;
+    const data = event.data;
     if (data.targetName !== this.sourceName) {
       return;
     }
     if (data.stream) {
       this._processStreamMessage(data);
-    } else if (data.callback) {
+      return;
+    }
+    if (data.callback) {
       const callbackId = data.callbackId;
       const capability = this.callbackCapabilities[callbackId];
-
-      if (capability) {
-        delete this.callbackCapabilities[callbackId];
-
-        if (data.callback === CallbackKind.DATA) {
-          capability.resolve(data.data);
-        } else if (data.callback === CallbackKind.ERROR) {
-          capability.reject(wrapReason(data.reason));
-        } else {
-          throw new Error('Unexpected callback case');
-        }
-      } else {
+      if (!capability) {
         throw new Error(`Cannot resolve callback ${callbackId}`);
       }
-    } else if (ah[data.action]) {
-      const action = ah[data.action];
-      if (data.callbackId) {
-        let sourceName = this.sourceName;
-        let targetName = data.sourceName;
-        new Promise(function(resolve) {
-          resolve(action(data.data));
-        }).then(function(result) {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            callback: CallbackKind.DATA,
-            callbackId: data.callbackId,
-            data: result,
-          });
-        }, function(reason) {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            callback: CallbackKind.ERROR,
-            callbackId: data.callbackId,
-            reason: wrapReason(reason),
-          });
-        });
-      } else if (data.streamId) {
-        this._createStreamSink(data);
+      delete this.callbackCapabilities[callbackId];
+
+      if (data.callback === CallbackKind.DATA) {
+        capability.resolve(data.data);
+      } else if (data.callback === CallbackKind.ERROR) {
+        capability.reject(wrapReason(data.reason));
       } else {
-        action(data.data);
+        throw new Error('Unexpected callback case');
       }
-    } else {
+      return;
+    }
+    const action = this.actionHandler[data.action];
+    if (!action) {
       throw new Error(`Unknown action from worker: ${data.action}`);
     }
+    if (data.callbackId) {
+      const sourceName = this.sourceName;
+      const targetName = data.sourceName;
+      new Promise(function(resolve) {
+        resolve(action(data.data));
+      }).then(function(result) {
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          callback: CallbackKind.DATA,
+          callbackId: data.callbackId,
+          data: result,
+        });
+      }, function(reason) {
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          callback: CallbackKind.ERROR,
+          callbackId: data.callbackId,
+          reason: wrapReason(reason),
+        });
+      });
+      return;
+    }
+    if (data.streamId) {
+      this._createStreamSink(data);
+      return;
+    }
+    action(data.data);
   };
   comObj.addEventListener('message', this._onComObjOnMessage);
 }
