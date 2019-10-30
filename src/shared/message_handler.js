@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
 import {
   AbortException, assert, createPromiseCapability, MissingPDFException,
@@ -171,8 +172,8 @@ MessageHandler.prototype = {
    * @returns {Promise} Promise to be resolved with response data.
    */
   sendWithPromise(actionName, data, transfers) {
-    var callbackId = this.callbackId++;
-    var capability = createPromiseCapability();
+    const callbackId = this.callbackId++;
+    const capability = createPromiseCapability();
     this.callbackCapabilities[callbackId] = capability;
     try {
       this.postMessage({
@@ -198,14 +199,14 @@ MessageHandler.prototype = {
    * @returns {ReadableStream} ReadableStream to read data in chunks.
    */
   sendWithStream(actionName, data, queueingStrategy, transfers) {
-    let streamId = this.streamId++;
-    let sourceName = this.sourceName;
-    let targetName = this.targetName;
+    const streamId = this.streamId++;
+    const sourceName = this.sourceName;
+    const targetName = this.targetName;
     const comObj = this.comObj;
 
     return new ReadableStream({
       start: (controller) => {
-        let startCapability = createPromiseCapability();
+        const startCapability = createPromiseCapability();
         this.streamControllers[streamId] = {
           controller,
           startCall: startCapability,
@@ -226,7 +227,7 @@ MessageHandler.prototype = {
       },
 
       pull: (controller) => {
-        let pullCapability = createPromiseCapability();
+        const pullCapability = createPromiseCapability();
         this.streamControllers[streamId].pullCall = pullCapability;
         comObj.postMessage({
           sourceName,
@@ -242,7 +243,7 @@ MessageHandler.prototype = {
 
       cancel: (reason) => {
         assert(reason instanceof Error, 'cancel must have a valid reason');
-        let cancelCapability = createPromiseCapability();
+        const cancelCapability = createPromiseCapability();
         this.streamControllers[streamId].cancelCall = cancelCapability;
         this.streamControllers[streamId].isClosed = true;
         comObj.postMessage({
@@ -259,21 +260,19 @@ MessageHandler.prototype = {
   },
 
   _createStreamSink(data) {
-    let self = this;
-    let action = this.actionHandler[data.action];
-    let streamId = data.streamId;
-    let desiredSize = data.desiredSize;
-    let sourceName = this.sourceName;
-    let targetName = data.sourceName;
-    let capability = createPromiseCapability();
+    const self = this;
+    const action = this.actionHandler[data.action];
+    const streamId = data.streamId;
+    const sourceName = this.sourceName;
+    const targetName = data.sourceName;
     const comObj = this.comObj;
 
-    let streamSink = {
+    const streamSink = {
       enqueue(chunk, size = 1, transfers) {
         if (this.isCancelled) {
           return;
         }
-        let lastDesiredSize = this.desiredSize;
+        const lastDesiredSize = this.desiredSize;
         this.desiredSize -= size;
         // Enqueue decreases the desiredSize property of sink,
         // so when it changes from positive to negative,
@@ -320,11 +319,11 @@ MessageHandler.prototype = {
         });
       },
 
-      sinkCapability: capability,
+      sinkCapability: createPromiseCapability(),
       onPull: null,
       onCancel: null,
       isCancelled: false,
-      desiredSize,
+      desiredSize: data.desiredSize,
       ready: null,
     };
 
@@ -353,9 +352,9 @@ MessageHandler.prototype = {
   },
 
   _processStreamMessage(data) {
-    let sourceName = this.sourceName;
-    let targetName = data.sourceName;
     const streamId = data.streamId;
+    const sourceName = this.sourceName;
+    const targetName = data.sourceName;
     const comObj = this.comObj;
 
     switch (data.stream) {
