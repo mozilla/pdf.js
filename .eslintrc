@@ -198,6 +198,7 @@
     "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],
+    "prefer-const": "off",
     "rest-spread-spacing": ["error", "never"],
     "sort-imports": ["error", {
       "ignoreCase": true,
