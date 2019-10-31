@@ -1569,16 +1569,9 @@ const PDFWorker = (function PDFWorkerClosure() {
         SystemJS.import('pdfjs/core/worker').then((worker) => {
           fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
         }).catch(fakeWorkerFilesLoadedCapability.reject);
-      } else if (typeof require === 'function') {
-        try {
-          const worker = require('../core/worker.js');
-          fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
-        } catch (ex) {
-          fakeWorkerFilesLoadedCapability.reject(ex);
-        }
       } else {
-        fakeWorkerFilesLoadedCapability.reject(new Error(
-          'SystemJS or CommonJS must be used to load fake worker.'));
+        fakeWorkerFilesLoadedCapability.reject(
+          new Error('SystemJS must be used to load fake worker.'));
       }
     } else {
       const loader = fakeWorkerFilesLoader || function() {
