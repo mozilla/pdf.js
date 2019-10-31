@@ -23,15 +23,8 @@ function getDefaultPreferences() {
       defaultPreferences = new Promise(function(resolve, reject) {
         if (typeof SystemJS === 'object') {
           SystemJS.import('./app_options').then(resolve, reject);
-        } else if (typeof require === 'function') {
-          try {
-            resolve(require('./app_options.js'));
-          } catch (ex) {
-            reject(ex);
-          }
         } else {
-          reject(new Error(
-            'SystemJS or CommonJS must be used to load AppOptions.'));
+          reject(new Error('SystemJS must be used to load AppOptions.'));
         }
       }).then(function({ AppOptions, OptionKind, }) {
         return AppOptions.getAll(OptionKind.PREFERENCE);
