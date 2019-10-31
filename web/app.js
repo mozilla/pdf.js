@@ -1532,16 +1532,8 @@ function loadFakeWorker() {
           window.pdfjsWorker = worker;
           resolve();
         }).catch(reject);
-      } else if (typeof require === 'function') {
-        try {
-          window.pdfjsWorker = require('../src/core/worker.js');
-          resolve();
-        } catch (ex) {
-          reject(ex);
-        }
       } else {
-        reject(new Error(
-          'SystemJS or CommonJS must be used to load fake worker.'));
+        reject(new Error('SystemJS must be used to load fake worker.'));
       }
     });
   }
