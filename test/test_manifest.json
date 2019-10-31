@@ -2977,6 +2977,14 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue11287",
+       "file": "pdfs/issue11287.pdf",
+       "md5": "d7d6a7c124fad7b00f79112b71ee09d6",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue4890",
        "file": "pdfs/issue4890.pdf",
        "md5": "1666feb4cd26318c2bdbea6a175dce87",

@@ -289,11 +289,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return false;
     },
 
-    buildFormXObject: function PartialEvaluator_buildFormXObject(resources,
-                                                                 xobj, smask,
-                                                                 operatorList,
-                                                                 task,
-                                                                 initialState) {
+    async buildFormXObject(resources, xobj, smask, operatorList, task,
+                           initialState) {
       var dict = xobj.dict;
       var matrix = dict.getArray('Matrix');
       var bbox = dict.getArray('BBox');
@@ -318,14 +315,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           groupOptions.isolated = (group.get('I') || false);
           groupOptions.knockout = (group.get('K') || false);
           if (group.has('CS')) {
-            colorSpace = group.get('CS');
-            if (colorSpace) {
-              colorSpace = ColorSpace.parse(colorSpace, this.xref, resources,
-                                            this.pdfFunctionFactory);
-            } else {
-              warn('buildFormXObject - invalid/non-existent Group /CS entry: ' +
-                   group.getRaw('CS'));
-            }
+            colorSpace = await this.parseColorSpace({
+              cs: group.get('CS'),
+              resources,
+            });
           }
         }
 
@@ -934,6 +927,26 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
     },
 
+    parseColorSpace({ cs, resources, }) {
+      return new Promise((resolve) => {
+        resolve(ColorSpace.parse(cs, this.xref, resources,
+                                 this.pdfFunctionFactory));
+      }).catch((reason) => {
+        if (reason instanceof AbortException) {
+          return null;
+        }
+        if (this.options.ignoreErrors) {
+          // Error(s) in the ColorSpace -- sending unsupported feature
+          // notification and allow rendering to continue.
+          this.handler.send('UnsupportedFeature',
+                            { featureId: UNSUPPORTED_FEATURES.unknown, });
+          warn(`parseColorSpace - ignoring ColorSpace: "${reason}".`);
+          return null;
+        }
+        throw reason;
+      });
+    },
+
     async handleColorN(operatorList, fn, args, cs, patterns, resources, task) {
       // compile tiling patterns
       var patternName = args[args.length - 1];
@@ -1158,15 +1171,25 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
 
             case OPS.setFillColorSpace:
-              stateManager.state.fillColorSpace =
-                ColorSpace.parse(args[0], xref, resources,
-                                 self.pdfFunctionFactory);
-              continue;
+              next(self.parseColorSpace({
+                cs: args[0],
+                resources,
+              }).then(function(colorSpace) {
+                if (colorSpace) {
+                  stateManager.state.fillColorSpace = colorSpace;
+                }
+              }));
+              return;
             case OPS.setStrokeColorSpace:
-              stateManager.state.strokeColorSpace =
-                ColorSpace.parse(args[0], xref, resources,
-                                 self.pdfFunctionFactory);
-              continue;
+              next(self.parseColorSpace({
+                cs: args[0],
+                resources,
+              }).then(function(colorSpace) {
+                if (colorSpace) {
+                  stateManager.state.strokeColorSpace = colorSpace;
+                }
+              }));
+              return;
             case OPS.setFillColor:
               cs = stateManager.state.fillColorSpace;
               args = cs.getRgb(args, 0);
