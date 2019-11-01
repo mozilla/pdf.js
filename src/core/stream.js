@@ -86,7 +86,9 @@ var Stream = (function StreamClosure() {
     },
     peekByte: function Stream_peekByte() {
       var peekedByte = this.getByte();
-      this.pos--;
+      if (peekedByte !== -1) {
+        this.pos--;
+      }
       return peekedByte;
     },
     peekBytes(length, forceClamped = false) {
@@ -234,7 +236,9 @@ var DecodeStream = (function DecodeStreamClosure() {
     },
     peekByte: function DecodeStream_peekByte() {
       var peekedByte = this.getByte();
-      this.pos--;
+      if (peekedByte !== -1) {
+        this.pos--;
+      }
       return peekedByte;
     },
     peekBytes(length, forceClamped = false) {
