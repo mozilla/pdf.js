@@ -291,6 +291,11 @@ class TextLayerBuilder {
     if (prevEnd) {
       appendTextToDiv(prevEnd.divIdx, prevEnd.offset, infinity.offset);
     }
+
+    this.eventBus.dispatch('findmatchesrendered', {
+      source: this,
+      pageNumber: this.pageNumber,
+    });
   }
 
   _updateMatches() {
