@@ -213,7 +213,9 @@ class ChunkedStream {
 
   peekByte() {
     const peekedByte = this.getByte();
-    this.pos--;
+    if (peekedByte !== -1) {
+      this.pos--;
+    }
     return peekedByte;
   }
 
