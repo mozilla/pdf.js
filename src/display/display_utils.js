@@ -326,14 +326,6 @@ const LinkTarget = {
   TOP: 4,
 };
 
-const LinkTargetStringMap = [
-  '',
-  '_self',
-  '_blank',
-  '_parent',
-  '_top',
-];
-
 /**
  * @typedef ExternalLinkParameters
  * @typedef {Object} ExternalLinkParameters
@@ -366,10 +358,24 @@ function addLinkAttributes(link, { url, target, rel, enabled = true, } = {}) {
     };
   }
 
-  const LinkTargetValues = Object.values(LinkTarget);
-  const targetIndex =
-    LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
-  link.target = LinkTargetStringMap[targetIndex];
+  let targetStr = ''; // LinkTarget.NONE
+  switch (target) {
+    case LinkTarget.NONE:
+      break;
+    case LinkTarget.SELF:
+      targetStr = '_self';
+      break;
+    case LinkTarget.BLANK:
+      targetStr = '_blank';
+      break;
+    case LinkTarget.PARENT:
+      targetStr = '_parent';
+      break;
+    case LinkTarget.TOP:
+      targetStr = '_top';
+      break;
+  }
+  link.target = targetStr;
 
   link.rel = (typeof rel === 'string' ? rel : DEFAULT_LINK_REL);
 }
