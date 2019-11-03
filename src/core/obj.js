@@ -2067,7 +2067,6 @@ let ObjectLoader = (function() {
     this.keys = keys;
     this.xref = xref;
     this.refSet = null;
-    this.capability = null;
   }
 
   ObjectLoader.prototype = {
@@ -2078,7 +2077,6 @@ let ObjectLoader = (function() {
           this.xref.stream.allChunksLoaded()) {
         return undefined;
       }
-      this.capability = createPromiseCapability();
 
       let { keys, dict, } = this;
       this.refSet = new RefSet();
@@ -2091,12 +2089,10 @@ let ObjectLoader = (function() {
           nodesToVisit.push(rawValue);
         }
       }
-
-      this._walk(nodesToVisit);
-      return this.capability.promise;
+      return this._walk(nodesToVisit);
     },
 
-    _walk(nodesToVisit) {
+    async _walk(nodesToVisit) {
       let nodesToRevisit = [];
       let pendingRequests = [];
       // DFS walk of the object graph.
@@ -2139,22 +2135,21 @@ let ObjectLoader = (function() {
       }
 
       if (pendingRequests.length) {
-        this.xref.stream.manager.requestRanges(pendingRequests).then(() => {
-          for (let i = 0, ii = nodesToRevisit.length; i < ii; i++) {
-            let node = nodesToRevisit[i];
-            // Remove any reference nodes from the current `RefSet` so they
-            // aren't skipped when we revist them.
-            if (node instanceof Ref) {
-              this.refSet.remove(node);
-            }
+        await this.xref.stream.manager.requestRanges(pendingRequests);
+
+        for (let i = 0, ii = nodesToRevisit.length; i < ii; i++) {
+          let node = nodesToRevisit[i];
+          // Remove any reference nodes from the current `RefSet` so they
+          // aren't skipped when we revist them.
+          if (node instanceof Ref) {
+            this.refSet.remove(node);
           }
-          this._walk(nodesToRevisit);
-        }, this.capability.reject);
-        return;
+        }
+        return this._walk(nodesToRevisit);
       }
       // Everything is loaded.
       this.refSet = null;
-      this.capability.resolve();
+      return undefined;
     },
   };
 
