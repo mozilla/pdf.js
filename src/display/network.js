@@ -409,7 +409,7 @@ class PDFNetworkStreamFullRequestReader {
   cancel(reason) {
     this._done = true;
     this._headersReceivedCapability.reject(reason);
-    this._requests.forEach(function (requestCapability) {
+    this._requests.forEach(function(requestCapability) {
       requestCapability.resolve({ value: undefined, done: true, });
     });
     this._requests = [];
@@ -487,7 +487,7 @@ class PDFNetworkStreamRangeRequestReader {
 
   cancel(reason) {
     this._done = true;
-    this._requests.forEach(function (requestCapability) {
+    this._requests.forEach(function(requestCapability) {
       requestCapability.resolve({ value: undefined, done: true, });
     });
     this._requests = [];
