@@ -1320,6 +1320,7 @@ gulp.task('dist-pre', gulp.series('generic', 'components', 'image_decoders',
       'http': false,
       'https': false,
       'node-ensure': false,
+      'url': false,
       'zlib': false,
     },
     format: 'amd', // to not allow system.js to choose 'cjs'
