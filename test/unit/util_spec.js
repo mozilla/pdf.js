@@ -179,8 +179,13 @@ describe('util', function() {
       expect(stringToPDFString(str)).toEqual('\u201Cstring\u201D');
     });
 
-    it('handles UTF-16BE strings', function() {
+    it('handles UTF-16 big-endian strings', function() {
       let str = '\xFE\xFF\x00\x73\x00\x74\x00\x72\x00\x69\x00\x6E\x00\x67';
+      expect(stringToPDFString(str)).toEqual('string');
+    });
+
+    it('handles UTF-16 little-endian strings', function() {
+      let str = '\xFF\xFE\x73\x00\x74\x00\x72\x00\x69\x00\x6E\x00\x67\x00';
       expect(stringToPDFString(str)).toEqual('string');
     });
 
@@ -192,6 +197,10 @@ describe('util', function() {
       // UTF-16BE
       let str2 = '\xFE\xFF';
       expect(stringToPDFString(str2)).toEqual('');
+
+      // UTF-16LE
+      let str3 = '\xFF\xFE';
+      expect(stringToPDFString(str3)).toEqual('');
     });
   });
 
