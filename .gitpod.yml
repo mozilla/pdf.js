@@ -1,0 +1,13 @@
+image:
+  file: .gitpod.Dockerfile
+tasks:
+  - command: |
+      gp await-port 8888 && gp preview $(gp url 8888)/web/viewer.html && echo '[{"name": "Firefox","path": "/usr/bin/firefox"}]' | jq '.' > test/resources/browser_manifests/browser_manifest.json
+
+  - init: npm install -g gulp-cli && npm install
+    command: gulp server
+ports:
+  - port: 8888
+    onOpen: ignore
+  - port: 6080
+    onOpen: ignore
