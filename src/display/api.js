@@ -1378,7 +1378,8 @@ class PDFPageProxy {
    * @private
    */
   _abortOperatorList({ intentState, reason, force = false, }) {
-    assert(reason instanceof Error,
+    assert(reason instanceof Error ||
+           (typeof reason === 'object' && reason !== null),
            'PDFPageProxy._abortOperatorList: Expected "reason" argument.');
 
     if (!intentState.streamReader) {
