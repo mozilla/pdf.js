@@ -687,7 +687,7 @@ class Catalog {
     while (nodesToVisit.length) {
       const currentNode = nodesToVisit.pop();
 
-      if (isRef(currentNode)) {
+      if (currentNode instanceof Ref) {
         count = pageKidsCountCache.get(currentNode);
         // Skip nodes where the page can't be.
         if (count > 0 && currentPageIndex + count < pageIndex) {
@@ -696,7 +696,8 @@ class Catalog {
         }
         const obj = await xref.fetchAsync(currentNode);
 
-        if (isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'))) {
+        if ((obj instanceof Dict) && (isName(obj.get('Type'), 'Page') ||
+                                      (!obj.has('Type') && !obj.has('Kids')))) {
           if (pageIndex === currentPageIndex) {
             // Cache the Page reference, since it can *greatly* improve
             // performance by reducing redundant lookups in long documents
@@ -714,7 +715,7 @@ class Catalog {
       }
 
       // Must be a child page dictionary.
-      if (!isDict(currentNode)) {
+      if (!(currentNode instanceof Dict)) {
         throw new FormatError(
           'Page dictionary kid reference points to wrong type of object.');
       }
