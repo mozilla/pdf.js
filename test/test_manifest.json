@@ -1971,6 +1971,13 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "issue6179_reduced",
+       "file": "pdfs/issue6179_reduced.pdf",
+       "md5": "457ff3561b83346ae3caf91acd252040",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "bug1130815-eq",
        "file": "pdfs/bug1130815.pdf",
        "md5": "3ff3b550c3af766991b2a1b11d00de85",
