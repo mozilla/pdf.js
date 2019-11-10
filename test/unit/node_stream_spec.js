@@ -19,7 +19,7 @@ import { isNodeJS } from '../../src/shared/is_node';
 import { PDFNodeStream } from '../../src/display/node_stream';
 
 // Make sure that we only running this script is Node.js environments.
-assert(isNodeJS());
+assert(isNodeJS);
 
 let path = __non_webpack_require__('path');
 let url = __non_webpack_require__('url');

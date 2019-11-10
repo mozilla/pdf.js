@@ -36,7 +36,7 @@ describe('custom canvas rendering', function() {
   let page;
 
   beforeAll(function(done) {
-    if (isNodeJS()) {
+    if (isNodeJS) {
       CanvasFactory = new NodeCanvasFactory();
     } else {
       CanvasFactory = new DOMCanvasFactory();
