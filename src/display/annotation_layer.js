@@ -879,7 +879,9 @@ class LineAnnotationElement extends AnnotationElement {
     line.setAttribute('y1', data.rect[3] - data.lineCoordinates[1]);
     line.setAttribute('x2', data.rect[2] - data.lineCoordinates[2]);
     line.setAttribute('y2', data.rect[3] - data.lineCoordinates[3]);
-    line.setAttribute('stroke-width', data.borderStyle.width);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    line.setAttribute('stroke-width', data.borderStyle.width || 1);
     line.setAttribute('stroke', 'transparent');
 
     svg.appendChild(line);
@@ -927,7 +929,9 @@ class SquareAnnotationElement extends AnnotationElement {
     square.setAttribute('y', borderWidth / 2);
     square.setAttribute('width', width - borderWidth);
     square.setAttribute('height', height - borderWidth);
-    square.setAttribute('stroke-width', borderWidth);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    square.setAttribute('stroke-width', borderWidth || 1);
     square.setAttribute('stroke', 'transparent');
     square.setAttribute('fill', 'none');
 
@@ -976,7 +980,9 @@ class CircleAnnotationElement extends AnnotationElement {
     circle.setAttribute('cy', height / 2);
     circle.setAttribute('rx', (width / 2) - (borderWidth / 2));
     circle.setAttribute('ry', (height / 2) - (borderWidth / 2));
-    circle.setAttribute('stroke-width', borderWidth);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    circle.setAttribute('stroke-width', borderWidth || 1);
     circle.setAttribute('stroke', 'transparent');
     circle.setAttribute('fill', 'none');
 
@@ -1033,7 +1039,9 @@ class PolylineAnnotationElement extends AnnotationElement {
 
     const polyline = this.svgFactory.createElement(this.svgElementName);
     polyline.setAttribute('points', points);
-    polyline.setAttribute('stroke-width', data.borderStyle.width);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    polyline.setAttribute('stroke-width', data.borderStyle.width || 1);
     polyline.setAttribute('stroke', 'transparent');
     polyline.setAttribute('fill', 'none');
 
@@ -1127,7 +1135,9 @@ class InkAnnotationElement extends AnnotationElement {
 
       const polyline = this.svgFactory.createElement(this.svgElementName);
       polyline.setAttribute('points', points);
-      polyline.setAttribute('stroke-width', data.borderStyle.width);
+      // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+      // won't be possible to open/close the popup (note e.g. issue 11122).
+      polyline.setAttribute('stroke-width', data.borderStyle.width || 1);
       polyline.setAttribute('stroke', 'transparent');
       polyline.setAttribute('fill', 'none');
 
