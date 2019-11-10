@@ -14,7 +14,7 @@
  */
 
 import { AbortException, createPromiseCapability, Util } from '../shared/util';
-import globalScope from '../shared/global_scope';
+import { globalScope } from '../shared/global_scope';
 
 /**
  * Text layer render parameters.

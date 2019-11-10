@@ -15,7 +15,7 @@
 
 let compatibilityParams = Object.create(null);
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-  const isNodeJS = require('../shared/is_node');
+  const { isNodeJS, } = require('../shared/is_node');
 
   const userAgent =
     (typeof navigator !== 'undefined' && navigator.userAgent) || '';
@@ -35,7 +35,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   // Support: Node.js
   (function checkFontFaceAndImage() {
     // Node.js is missing native support for `@font-face` and `Image`.
-    if (isNodeJS()) {
+    if (isNodeJS) {
       compatibilityParams.disableFontFace = true;
       compatibilityParams.nativeImageDecoderSupport = 'none';
     }

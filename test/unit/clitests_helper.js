@@ -14,12 +14,12 @@
  */
 
 import { setVerbosityLevel, VerbosityLevel } from '../../src/shared/util';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 import { PDFNodeStream } from '../../src/display/node_stream';
 import { setPDFNetworkStreamFactory } from '../../src/display/api';
 
 // Ensure that this script only runs in Node.js environments.
-if (!isNodeJS()) {
+if (!isNodeJS) {
   throw new Error('The `gulp unittestcli` command can only be used in ' +
                   'Node.js environments.');
 }

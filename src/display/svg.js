@@ -20,7 +20,7 @@ import {
   TextRenderingMode, Util, warn
 } from '../shared/util';
 import { DOMSVGFactory } from './display_utils';
-import isNodeJS from '../shared/is_node';
+import { isNodeJS } from '../shared/is_node';
 
 let SVGGraphics = function() {
   throw new Error('Not implemented: SVGGraphics');
@@ -109,7 +109,7 @@ const convertImgDataToPng = (function() {
    *   http://www.libpng.org/pub/png/spec/1.2/PNG-Compression.html
    */
   function deflateSync(literals) {
-    if (!isNodeJS()) {
+    if (!isNodeJS) {
       // zlib is certainly not available outside of Node.js. We can either use
       // the pako library for client-side DEFLATE compression, or use the canvas
       // API of the browser to obtain a more optimal PNG file.

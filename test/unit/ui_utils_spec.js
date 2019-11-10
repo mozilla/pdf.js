@@ -20,7 +20,7 @@ import {
   waitOnEventOrTimeout, WaitOnType
 } from '../../web/ui_utils';
 import { createObjectURL } from '../../src/shared/util';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 
 describe('ui_utils', function() {
   describe('binary search', function() {
@@ -156,7 +156,7 @@ describe('ui_utils', function() {
 
     it('gets PDF filename from query string appended to "blob:" URL',
         function() {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Blob in not supported in Node.js.');
       }
       var typedArray = new Uint8Array([1, 2, 3, 4, 5]);
@@ -283,7 +283,7 @@ describe('ui_utils', function() {
     });
 
     it('should not, by default, re-dispatch to DOM', function(done) {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document in not supported in Node.js.');
       }
       const eventBus = new EventBus();
@@ -307,7 +307,7 @@ describe('ui_utils', function() {
       });
     });
     it('should re-dispatch to DOM', function(done) {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document in not supported in Node.js.');
       }
       const eventBus = new EventBus({ dispatchToDOM: true, });
@@ -333,7 +333,7 @@ describe('ui_utils', function() {
     });
     it('should re-dispatch to DOM, with arguments (without internal listeners)',
         function(done) {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document in not supported in Node.js.');
       }
       const eventBus = new EventBus({ dispatchToDOM: true, });
@@ -447,7 +447,7 @@ describe('ui_utils', function() {
     });
 
     it('should resolve on event, using the DOM', function(done) {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document in not supported in Node.js.');
       }
       let button = document.createElement('button');
@@ -467,7 +467,7 @@ describe('ui_utils', function() {
     });
 
     it('should resolve on timeout, using the DOM', function(done) {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document in not supported in Node.js.');
       }
       let button = document.createElement('button');

@@ -12,10 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals module */
 
-module.exports =
+const globalScope =
   (typeof window !== 'undefined' && window.Math === Math) ? window :
   // eslint-disable-next-line no-undef
   (typeof global !== 'undefined' && global.Math === Math) ? global :
   (typeof self !== 'undefined' && self.Math === Math) ? self : {};
+
+export {
+  globalScope,
+};
