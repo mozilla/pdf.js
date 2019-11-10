@@ -18,7 +18,7 @@ import {
   DOMCanvasFactory, DOMSVGFactory, getFilenameFromUrl, isValidFetchUrl,
   PDFDateString
 } from '../../src/display/display_utils';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 
 describe('display_utils', function() {
   describe('DOMCanvasFactory', function() {
@@ -48,7 +48,7 @@ describe('display_utils', function() {
 
     it('`create` should return a canvas if the dimensions are valid',
         function() {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document is not supported in Node.js.');
       }
 
@@ -84,7 +84,7 @@ describe('display_utils', function() {
 
     it('`reset` should alter the canvas/context if the dimensions are valid',
         function() {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document is not supported in Node.js.');
       }
 
@@ -105,7 +105,7 @@ describe('display_utils', function() {
     });
 
     it('`destroy` should clear the canvas/context', function() {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document is not supported in Node.js.');
       }
 
@@ -145,7 +145,7 @@ describe('display_utils', function() {
 
     it('`create` should return an SVG element if the dimensions are valid',
         function() {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document is not supported in Node.js.');
       }
 
@@ -167,7 +167,7 @@ describe('display_utils', function() {
 
     it('`createElement` should return an SVG element if the type is valid',
         function() {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Document is not supported in Node.js.');
       }
 

@@ -17,7 +17,7 @@
 import { setStubs, unsetStubs } from '../../examples/node/domstubs';
 import { buildGetDocumentParams } from './test_utils';
 import { getDocument } from '../../src/display/api';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 import { NativeImageDecoding } from '../../src/shared/util';
 import { SVGGraphics } from '../../src/display/svg';
 
@@ -30,14 +30,14 @@ function withZlib(isZlibRequired, callback) {
   if (isZlibRequired) {
     // We could try to polyfill zlib in the browser, e.g. using pako.
     // For now, only support zlib functionality on Node.js
-    if (!isNodeJS()) {
+    if (!isNodeJS) {
       throw new Error('zlib test can only be run in Node.js');
     }
 
     return callback();
   }
 
-  if (!isNodeJS()) {
+  if (!isNodeJS) {
     // Assume that require('zlib') is unavailable in non-Node.
     return callback();
   }
@@ -94,14 +94,14 @@ describe('SVGGraphics', function () {
 
         // This points to the XObject image in xobject-image.pdf.
         var xobjectObjId = 'img_p0_1';
-        if (isNodeJS()) {
+        if (isNodeJS) {
           setStubs(global);
         }
         try {
           var imgData = svgGfx.objs.get(xobjectObjId);
           svgGfx.paintInlineImageXObject(imgData, elementContainer);
         } finally {
-          if (isNodeJS()) {
+          if (isNodeJS) {
             unsetStubs(global);
           }
         }
@@ -116,7 +116,7 @@ describe('SVGGraphics', function () {
       // Verifies that the script loader replaces __non_webpack_require__ with
       // require.
       expect(testFunc.toString()).toMatch(/\srequire\(["']zlib["']\)/);
-      if (isNodeJS()) {
+      if (isNodeJS) {
         expect(testFunc).not.toThrow();
       } else {
         // require not defined, require('zlib') not a module, etc.
@@ -125,7 +125,7 @@ describe('SVGGraphics', function () {
     });
 
     it('should produce a reasonably small svg:image', function(done) {
-      if (!isNodeJS()) {
+      if (!isNodeJS) {
         pending('zlib.deflateSync is not supported in non-Node environments.');
       }
       withZlib(true, getSVGImage).then(function(svgImg) {

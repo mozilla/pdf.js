@@ -16,7 +16,7 @@
 import { buildGetDocumentParams, NodeCanvasFactory } from './test_utils';
 import { DOMCanvasFactory } from '../../src/display/display_utils';
 import { getDocument } from '../../src/display/api';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 
 function getTopLeftPixel(canvasContext) {
   let imgData = canvasContext.getImageData(0, 0, 1, 1);
@@ -36,7 +36,7 @@ describe('custom canvas rendering', function() {
   let page;
 
   beforeAll(function(done) {
-    if (isNodeJS()) {
+    if (isNodeJS) {
       CanvasFactory = new NodeCanvasFactory();
     } else {
       CanvasFactory = new DOMCanvasFactory();

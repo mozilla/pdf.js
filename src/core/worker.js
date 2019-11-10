@@ -21,7 +21,7 @@ import {
 } from '../shared/util';
 import { clearPrimitiveCaches, Ref } from './primitives';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
-import isNodeJS from '../shared/is_node';
+import { isNodeJS } from '../shared/is_node';
 import { MessageHandler } from '../shared/message_handler';
 import { PDFWorkerStream } from './worker_stream';
 import { XRefParseException } from './core_utils';
@@ -581,7 +581,7 @@ function isMessagePort(maybePort) {
 }
 
 // Worker thread (and not node.js)?
-if (typeof window === 'undefined' && !isNodeJS() &&
+if (typeof window === 'undefined' && !isNodeJS &&
     typeof self !== 'undefined' && isMessagePort(self)) {
   WorkerMessageHandler.initializeFromPort(self);
 }
