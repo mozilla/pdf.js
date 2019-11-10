@@ -14,7 +14,7 @@
  */
 
 import { assert, CMapCompressionType } from '../../src/shared/util';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 import { isRef } from '../../src/core/primitives';
 import { Page } from '../../src/core/document';
 

@@ -17,7 +17,7 @@
 import { setStubs, unsetStubs } from '../../examples/node/domstubs';
 import { buildGetDocumentParams } from './test_utils';
 import { getDocument } from '../../src/display/api';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 import { NativeImageDecoding } from '../../src/shared/util';
 import { SVGGraphics } from '../../src/display/svg';
 
