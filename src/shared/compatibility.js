@@ -14,7 +14,7 @@
  */
 /* eslint no-var: error */
 
-const globalScope = require('./global_scope');
+const { globalScope, } = require('./global_scope');
 
 // Skip compatibility checks for modern builds and if we already ran the module.
 if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('SKIP_BABEL')) &&
@@ -22,7 +22,7 @@ if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('SKIP_BABEL')) &&
 
 globalScope._pdfjsCompatibilityChecked = true;
 
-const isNodeJS = require('./is_node');
+const { isNodeJS, } = require('./is_node');
 
 const hasDOM = typeof window === 'object' && typeof document === 'object';
 

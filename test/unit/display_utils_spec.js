@@ -18,7 +18,7 @@ import {
   DOMCanvasFactory, DOMSVGFactory, getFilenameFromUrl, isValidFetchUrl,
   PDFDateString
 } from '../../src/display/display_utils';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 
 describe('display_utils', function() {
   describe('DOMCanvasFactory', function() {
