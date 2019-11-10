@@ -14,9 +14,10 @@
  */
 
 import {
-  assert, bytesToString, createValidAbsoluteUrl, FormatError, info,
-  InvalidPDFException, isBool, isNum, isString, PermissionFlag, shadow,
-  stringToPDFString, stringToUTF8String, unreachable, warn
+  assert, bytesToString, createPromiseCapability, createValidAbsoluteUrl,
+  FormatError, info, InvalidPDFException, isBool, isNum, isString,
+  PermissionFlag, shadow, stringToPDFString, stringToUTF8String, unreachable,
+  warn
 } from '../shared/util';
 import {
   clearPrimitiveCaches, Cmd, Dict, isCmd, isDict, isName, isRef, isRefsEqual,
@@ -679,86 +680,99 @@ class Catalog {
     });
   }
 
-  async getPageDict(pageIndex) {
+  getPageDict(pageIndex) {
+    const capability = createPromiseCapability();
     const nodesToVisit = [this.catDict.getRaw('Pages')];
     const xref = this.xref, pageKidsCountCache = this.pageKidsCountCache;
     let count, currentPageIndex = 0;
 
-    while (nodesToVisit.length) {
-      const currentNode = nodesToVisit.pop();
+    function next() {
+      while (nodesToVisit.length) {
+        const currentNode = nodesToVisit.pop();
 
-      if (currentNode instanceof Ref) {
-        count = pageKidsCountCache.get(currentNode);
-        // Skip nodes where the page can't be.
-        if (count > 0 && currentPageIndex + count < pageIndex) {
-          currentPageIndex += count;
-          continue;
-        }
-        const obj = await xref.fetchAsync(currentNode);
+        if (isRef(currentNode)) {
+          count = pageKidsCountCache.get(currentNode);
+          // Skip nodes where the page can't be.
+          if (count > 0 && currentPageIndex + count < pageIndex) {
+            currentPageIndex += count;
+            continue;
+          }
 
-        if ((obj instanceof Dict) && (isName(obj.get('Type'), 'Page') ||
-                                      (!obj.has('Type') && !obj.has('Kids')))) {
-          if (pageIndex === currentPageIndex) {
-            // Cache the Page reference, since it can *greatly* improve
-            // performance by reducing redundant lookups in long documents
-            // where all nodes are found at *one* level of the tree.
-            if (currentNode && !pageKidsCountCache.has(currentNode)) {
-              pageKidsCountCache.put(currentNode, 1);
+          xref.fetchAsync(currentNode).then(function(obj) {
+            if (isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'))) {
+              if (pageIndex === currentPageIndex) {
+                // Cache the Page reference, since it can *greatly* improve
+                // performance by reducing redundant lookups in long documents
+                // where all nodes are found at *one* level of the tree.
+                if (currentNode && !pageKidsCountCache.has(currentNode)) {
+                  pageKidsCountCache.put(currentNode, 1);
+                }
+                capability.resolve([obj, currentNode]);
+              } else {
+                currentPageIndex++;
+                next();
+              }
+              return;
             }
-            return [obj, currentNode];
+            nodesToVisit.push(obj);
+            next();
+          }, capability.reject);
+          return;
+        }
+
+        // Must be a child page dictionary.
+        if (!isDict(currentNode)) {
+          capability.reject(new FormatError(
+            'Page dictionary kid reference points to wrong type of object.'));
+          return;
+        }
+
+        count = currentNode.get('Count');
+        if (Number.isInteger(count) && count >= 0) {
+          // Cache the Kids count, since it can reduce redundant lookups in
+          // documents where all nodes are found at *one* level of the tree.
+          const objId = currentNode.objId;
+          if (objId && !pageKidsCountCache.has(objId)) {
+            pageKidsCountCache.put(objId, count);
           }
-          currentPageIndex++;
-          continue;
-        }
-        nodesToVisit.push(obj);
-        continue;
-      }
-
-      // Must be a child page dictionary.
-      if (!(currentNode instanceof Dict)) {
-        throw new FormatError(
-          'Page dictionary kid reference points to wrong type of object.');
-      }
-
-      count = currentNode.get('Count');
-      if (Number.isInteger(count) && count >= 0) {
-        // Cache the Kids count, since it can reduce redundant lookups in
-        // documents where all nodes are found at *one* level of the tree.
-        const objId = currentNode.objId;
-        if (objId && !pageKidsCountCache.has(objId)) {
-          pageKidsCountCache.put(objId, count);
-        }
-        // Skip nodes where the page can't be.
-        if (currentPageIndex + count <= pageIndex) {
-          currentPageIndex += count;
-          continue;
-        }
-      }
-
-      const kids = currentNode.get('Kids');
-      if (!Array.isArray(kids)) {
-        // Prevent errors in corrupt PDF documents that violate the
-        // specification by *inlining* Page dicts directly in the Kids
-        // array, rather than using indirect objects (fixes issue9540.pdf).
-        if (isName(currentNode.get('Type'), 'Page') ||
-            (!currentNode.has('Type') && currentNode.has('Contents'))) {
-          if (currentPageIndex === pageIndex) {
-            return [currentNode, null];
+          // Skip nodes where the page can't be.
+          if (currentPageIndex + count <= pageIndex) {
+            currentPageIndex += count;
+            continue;
           }
-          currentPageIndex++;
-          continue;
         }
-        throw new FormatError('Page dictionary kids object is not an array.');
-      }
 
-      // Always check all `Kids` nodes, to avoid getting stuck in an empty
-      // node further down in the tree (see issue5644.pdf, issue8088.pdf),
-      // and to ensure that we actually find the correct `Page` dict.
-      for (let last = kids.length - 1; last >= 0; last--) {
-        nodesToVisit.push(kids[last]);
+        const kids = currentNode.get('Kids');
+        if (!Array.isArray(kids)) {
+          // Prevent errors in corrupt PDF documents that violate the
+          // specification by *inlining* Page dicts directly in the Kids
+          // array, rather than using indirect objects (fixes issue9540.pdf).
+          if (isName(currentNode.get('Type'), 'Page') ||
+              (!currentNode.has('Type') && currentNode.has('Contents'))) {
+            if (currentPageIndex === pageIndex) {
+              capability.resolve([currentNode, null]);
+              return;
+            }
+            currentPageIndex++;
+            continue;
+          }
+
+          capability.reject(new FormatError(
+            'Page dictionary kids object is not an array.'));
+          return;
+        }
+
+        // Always check all `Kids` nodes, to avoid getting stuck in an empty
+        // node further down in the tree (see issue5644.pdf, issue8088.pdf),
+        // and to ensure that we actually find the correct `Page` dict.
+        for (let last = kids.length - 1; last >= 0; last--) {
+          nodesToVisit.push(kids[last]);
+        }
       }
+      capability.reject(new Error(`Page index ${pageIndex} not found.`));
     }
-    throw new Error(`Page index ${pageIndex} not found.`);
+    next();
+    return capability.promise;
   }
 
   getPageIndex(pageRef) {
