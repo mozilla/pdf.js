@@ -29,7 +29,7 @@ import {
   getDocument, PDFDataRangeTransport, PDFDocumentProxy, PDFPageProxy, PDFWorker
 } from '../../src/display/api';
 import { GlobalWorkerOptions } from '../../src/display/worker_options';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 import { Metadata } from '../../src/display/metadata';
 
 describe('api', function() {

@@ -33,7 +33,7 @@ import {
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
 import { CanvasGraphics } from './canvas';
-import globalScope from '../shared/global_scope';
+import { globalScope } from '../shared/global_scope';
 import { GlobalWorkerOptions } from './worker_options';
 import { MessageHandler } from '../shared/message_handler';
 import { Metadata } from './metadata';

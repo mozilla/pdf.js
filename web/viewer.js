@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals chrome */
 
 'use strict';
 
@@ -30,6 +29,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
     let humanReadableUrl = '/' + defaultUrl + location.hash;
     history.replaceState(history.state, '', humanReadableUrl);
     if (top === window) {
+      // eslint-disable-next-line no-undef
       chrome.runtime.sendMessage('showPageAction');
     }
   })();

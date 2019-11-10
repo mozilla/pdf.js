@@ -14,7 +14,7 @@
  */
 
 import { setVerbosityLevel, VerbosityLevel } from '../../src/shared/util';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 import { PDFNodeStream } from '../../src/display/node_stream';
 import { setPDFNetworkStreamFactory } from '../../src/display/api';
 

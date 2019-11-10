@@ -20,7 +20,7 @@ import {
   waitOnEventOrTimeout, WaitOnType
 } from '../../web/ui_utils';
 import { createObjectURL } from '../../src/shared/util';
-import isNodeJS from '../../src/shared/is_node';
+import { isNodeJS } from '../../src/shared/is_node';
 
 describe('ui_utils', function() {
   describe('binary search', function() {

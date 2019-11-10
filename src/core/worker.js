@@ -21,7 +21,7 @@ import {
 } from '../shared/util';
 import { clearPrimitiveCaches, Ref } from './primitives';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
-import isNodeJS from '../shared/is_node';
+import { isNodeJS } from '../shared/is_node';
 import { MessageHandler } from '../shared/message_handler';
 import { PDFWorkerStream } from './worker_stream';
 import { XRefParseException } from './core_utils';
