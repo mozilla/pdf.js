@@ -581,7 +581,7 @@ function isMessagePort(maybePort) {
 }
 
 // Worker thread (and not node.js)?
-if (typeof window === 'undefined' && !isNodeJS() &&
+if (typeof window === 'undefined' && !isNodeJS &&
     typeof self !== 'undefined' && isMessagePort(self)) {
   WorkerMessageHandler.initializeFromPort(self);
 }

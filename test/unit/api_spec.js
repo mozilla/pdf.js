@@ -40,7 +40,7 @@ describe('api', function() {
   let CanvasFactory;
 
   beforeAll(function(done) {
-    if (isNodeJS()) {
+    if (isNodeJS) {
       CanvasFactory = new NodeCanvasFactory();
     } else {
       CanvasFactory = new DOMCanvasFactory();
@@ -111,7 +111,7 @@ describe('api', function() {
     });
     it('creates pdf doc from typed array', function(done) {
       let typedArrayPdfPromise;
-      if (isNodeJS()) {
+      if (isNodeJS) {
         typedArrayPdfPromise = NodeFileReaderFactory.fetch({
           path: TEST_PDFS_PATH.node + basicApiFileName,
         });
@@ -296,7 +296,7 @@ describe('api', function() {
 
   describe('PDFWorker', function() {
     it('worker created or destroyed', function (done) {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Worker is not supported in Node.js.');
       }
 
@@ -315,7 +315,7 @@ describe('api', function() {
       }).catch(done.fail);
     });
     it('worker created or destroyed by getDocument', function (done) {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Worker is not supported in Node.js.');
       }
 
@@ -337,7 +337,7 @@ describe('api', function() {
       }).catch(done.fail);
     });
     it('worker created and can be used in getDocument', function (done) {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Worker is not supported in Node.js.');
       }
 
@@ -364,7 +364,7 @@ describe('api', function() {
       }).catch(done.fail);
     });
     it('creates more than one worker', function (done) {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Worker is not supported in Node.js.');
       }
 
@@ -384,7 +384,7 @@ describe('api', function() {
       }).catch(done.fail);
     });
     it('gets current workerSrc', function() {
-      if (isNodeJS()) {
+      if (isNodeJS) {
         pending('Worker is not supported in Node.js.');
       }
 
@@ -955,7 +955,7 @@ describe('api', function() {
     describe('Cross-origin', function() {
       var loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
-        if (isNodeJS()) {
+        if (isNodeJS) {
           pending('Cannot simulate cross-origin requests in Node.js');
         }
         var params = buildGetDocumentParams(filename, options);
@@ -1551,7 +1551,7 @@ describe('api', function() {
 
     beforeAll(function(done) {
       const fileName = 'tracemonkey.pdf';
-      if (isNodeJS()) {
+      if (isNodeJS) {
         dataPromise = NodeFileReaderFactory.fetch({
           path: TEST_PDFS_PATH.node + fileName,
         });

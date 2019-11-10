@@ -87,7 +87,7 @@ function initializePDFJS(callback) {
     const { PDFFetchStream, } = modules[3];
     const { isNodeJS, } = modules[4];
 
-    if (isNodeJS()) {
+    if (isNodeJS) {
       throw new Error('The `gulp unittest` command cannot be used in ' +
                       'Node.js environments.');
     }

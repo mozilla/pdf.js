@@ -32,7 +32,7 @@ describe('cmap', function() {
   beforeAll(function (done) {
     // Allow CMap testing in Node.js, e.g. for Travis.
     var CMapReaderFactory;
-    if (isNodeJS()) {
+    if (isNodeJS) {
       CMapReaderFactory = new NodeCMapReaderFactory({
         baseUrl: cMapUrl.node,
         isCompressed: cMapPacked,
@@ -265,7 +265,7 @@ describe('cmap', function() {
   it('attempts to load a built-in CMap without the necessary API parameters',
       function(done) {
     function tmpFetchBuiltInCMap(name) {
-      var CMapReaderFactory = isNodeJS() ?
+      var CMapReaderFactory = isNodeJS ?
         new NodeCMapReaderFactory({ }) : new DOMCMapReaderFactory({ });
       return CMapReaderFactory.fetch({
         name,
@@ -292,7 +292,7 @@ describe('cmap', function() {
       function(done) {
     function tmpFetchBuiltInCMap(name) {
       let CMapReaderFactory;
-      if (isNodeJS()) {
+      if (isNodeJS) {
         CMapReaderFactory = new NodeCMapReaderFactory({
           baseUrl: cMapUrl.node,
           isCompressed: false,
