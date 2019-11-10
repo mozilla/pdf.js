@@ -28,7 +28,7 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
 
 // Support: Node.js
 (function checkNodeBtoa() {
-  if (globalScope.btoa || !isNodeJS()) {
+  if (globalScope.btoa || !isNodeJS) {
     return;
   }
   globalScope.btoa = function(chars) {
@@ -39,7 +39,7 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
 
 // Support: Node.js
 (function checkNodeAtob() {
-  if (globalScope.atob || !isNodeJS()) {
+  if (globalScope.atob || !isNodeJS) {
     return;
   }
   globalScope.atob = function(input) {
@@ -69,7 +69,7 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
 // one parameter, in legacy browsers.
 // Support: IE
 (function checkDOMTokenListAddRemove() {
-  if (!hasDOM || isNodeJS()) {
+  if (!hasDOM || isNodeJS) {
     return;
   }
   const div = document.createElement('div');
@@ -98,7 +98,7 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
 // "force" parameter, in legacy browsers.
 // Support: IE
 (function checkDOMTokenListToggle() {
-  if (!hasDOM || isNodeJS()) {
+  if (!hasDOM || isNodeJS) {
     return;
   }
   const div = document.createElement('div');
