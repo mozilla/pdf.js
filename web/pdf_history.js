@@ -306,18 +306,10 @@ class PDFHistory {
       }
     }
     if (shouldReplace) {
-      if (newUrl) {
-        window.history.replaceState(newState, '', newUrl);
-      } else {
-        window.history.replaceState(newState, '');
-      }
+      window.history.replaceState(newState, '', newUrl);
     } else {
       this._maxUid = this._uid;
-      if (newUrl) {
-        window.history.pushState(newState, '', newUrl);
-      } else {
-        window.history.pushState(newState, '');
-      }
+      window.history.pushState(newState, '', newUrl);
     }
 
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&

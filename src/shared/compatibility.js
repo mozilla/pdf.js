@@ -25,6 +25,9 @@ globalScope._pdfjsCompatibilityChecked = true;
 const { isNodeJS, } = require('./is_node');
 
 const hasDOM = typeof window === 'object' && typeof document === 'object';
+const userAgent =
+  (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+const isIE = /Trident/.test(userAgent);
 
 // Support: Node.js
 (function checkNodeBtoa() {
@@ -109,6 +112,26 @@ const hasDOM = typeof window === 'object' && typeof document === 'object';
   DOMTokenList.prototype.toggle = function(token) {
     let force = (arguments.length > 1 ? !!arguments[1] : !this.contains(token));
     return (this[force ? 'add' : 'remove'](token), force);
+  };
+})();
+
+// Provides support for window.history.{pushState, replaceState}, with the
+// `url` parameter set to `undefined`, without breaking the document URL.
+// Support: IE
+(function checkWindowHistoryPushStateReplaceState() {
+  if (!hasDOM || !isIE) {
+    return;
+  }
+  const OriginalPushState = window.history.pushState;
+  const OriginalReplaceState = window.history.replaceState;
+
+  window.history.pushState = function(state, title, url) {
+    const args = (url === undefined ? [state, title] : [state, title, url]);
+    OriginalPushState.apply(this, args);
+  };
+  window.history.replaceState = function(state, title, url) {
+    const args = (url === undefined ? [state, title] : [state, title, url]);
+    OriginalReplaceState.apply(this, args);
   };
 })();
 
