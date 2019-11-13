@@ -25,7 +25,6 @@ var gulp = require('gulp');
 var postcss = require('gulp-postcss');
 var rename = require('gulp-rename');
 var replace = require('gulp-replace');
-var transform = require('gulp-transform');
 var mkdirp = require('mkdirp');
 var path = require('path');
 var rimraf = require('rimraf');
@@ -40,6 +39,7 @@ var webpack2 = require('webpack');
 var webpackStream = require('webpack-stream');
 var Vinyl = require('vinyl');
 var vfs = require('vinyl-fs');
+var through = require('through2');
 
 var BUILD_DIR = 'build/';
 var L10N_DIR = 'l10n/';
@@ -100,6 +100,17 @@ var DEFINES = {
   SKIP_BABEL: false,
   IMAGE_DECODERS: false,
 };
+
+function transform(charEncoding, transformFunction) {
+  return through.obj(function(vinylFile, enc, done) {
+    var transformedFile = vinylFile.clone();
+    transformedFile.contents = Buffer.from(
+      transformFunction(transformedFile.contents),
+      charEncoding
+    );
+    done(null, transformedFile);
+  });
+}
 
 function safeSpawnSync(command, parameters, options) {
   // Execute all commands in a shell.
