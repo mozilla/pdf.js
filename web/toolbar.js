@@ -201,10 +201,8 @@ class Toolbar {
     let customScale = Math.round(pageScale * 10000) / 100;
     this.l10n.get('page_scale_percent', { scale: customScale, },
                   '{{scale}}%').then((msg) => {
-      let options = items.scaleSelect.options;
       let predefinedValueFound = false;
-      for (let i = 0, ii = options.length; i < ii; i++) {
-        let option = options[i];
+      for (const option of items.scaleSelect.options) {
         if (option.value !== pageScaleValue) {
           option.selected = false;
           continue;
