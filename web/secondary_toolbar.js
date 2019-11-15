@@ -169,9 +169,7 @@ class SecondaryToolbar {
     this.toggleButton.addEventListener('click', this.toggle.bind(this));
 
     // All items within the secondary toolbar.
-    for (let button in this.buttons) {
-      let { element, eventName, close, eventDetails, } = this.buttons[button];
-
+    for (const { element, eventName, close, eventDetails, } of this.buttons) {
       element.addEventListener('click', (evt) => {
         if (eventName !== null) {
           let details = { source: this, };
