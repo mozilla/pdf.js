@@ -152,14 +152,10 @@ class Toolbar {
     scaleSelect.oncontextmenu = noContextMenuHandler;
 
     this.eventBus.on('localized', () => {
-      this._localized();
+      this._wasLocalized = true;
+      this._adjustScaleWidth();
+      this._updateUIState(true);
     });
-  }
-
-  _localized() {
-    this._wasLocalized = true;
-    this._adjustScaleWidth();
-    this._updateUIState(true);
   }
 
   _updateUIState(resetNumPages = false) {
