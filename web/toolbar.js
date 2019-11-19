@@ -56,12 +56,34 @@ class Toolbar {
     this.toolbar = options.container;
     this.eventBus = eventBus;
     this.l10n = l10n;
-    this.items = options;
+    this.buttons = [
+      { element: options.previous, eventName: 'previouspage', },
+      { element: options.next, eventName: 'nextpage', },
+      { element: options.zoomIn, eventName: 'zoomin', },
+      { element: options.zoomOut, eventName: 'zoomout', },
+      { element: options.openFile, eventName: 'openfile', },
+      { element: options.print, eventName: 'print', },
+      { element: options.presentationModeButton,
+        eventName: 'presentationmode', },
+      { element: options.download, eventName: 'download', },
+      { element: options.viewBookmark, eventName: null, },
+    ];
+    this.items = {
+      numPages: options.numPages,
+      pageNumber: options.pageNumber,
+      scaleSelectContainer: options.scaleSelectContainer,
+      scaleSelect: options.scaleSelect,
+      customScaleOption: options.customScaleOption,
+      previous: options.previous,
+      next: options.next,
+      zoomIn: options.zoomIn,
+      zoomOut: options.zoomOut,
+    };
 
     this._wasLocalized = false;
     this.reset();
 
-    // Bind the event listeners for click and hand tool actions.
+    // Bind the event listeners for click and various other actions.
     this._bindListeners();
   }
 
@@ -95,74 +117,45 @@ class Toolbar {
   }
 
   _bindListeners() {
-    let { eventBus, items, } = this;
-    let self = this;
+    const { pageNumber, scaleSelect, } = this.items;
+    const self = this;
 
-    items.previous.addEventListener('click', function() {
-      eventBus.dispatch('previouspage', { source: self, });
-    });
-
-    items.next.addEventListener('click', function() {
-      eventBus.dispatch('nextpage', { source: self, });
-    });
-
-    items.zoomIn.addEventListener('click', function() {
-      eventBus.dispatch('zoomin', { source: self, });
-    });
-
-    items.zoomOut.addEventListener('click', function() {
-      eventBus.dispatch('zoomout', { source: self, });
-    });
-
-    items.pageNumber.addEventListener('click', function() {
+    // The buttons within the toolbar.
+    for (const { element, eventName, } of this.buttons) {
+      element.addEventListener('click', (evt) => {
+        if (eventName !== null) {
+          this.eventBus.dispatch(eventName, { source: this, });
+        }
+      });
+    }
+    // The non-button elements within the toolbar.
+    pageNumber.addEventListener('click', function() {
       this.select();
     });
-
-    items.pageNumber.addEventListener('change', function() {
-      eventBus.dispatch('pagenumberchanged', {
+    pageNumber.addEventListener('change', function() {
+      self.eventBus.dispatch('pagenumberchanged', {
         source: self,
         value: this.value,
       });
     });
 
-    items.scaleSelect.addEventListener('change', function() {
+    scaleSelect.addEventListener('change', function() {
       if (this.value === 'custom') {
         return;
       }
-      eventBus.dispatch('scalechanged', {
+      self.eventBus.dispatch('scalechanged', {
         source: self,
         value: this.value,
       });
     });
-
-    items.presentationModeButton.addEventListener('click', function() {
-      eventBus.dispatch('presentationmode', { source: self, });
-    });
-
-    items.openFile.addEventListener('click', function() {
-      eventBus.dispatch('openfile', { source: self, });
-    });
-
-    items.print.addEventListener('click', function() {
-      eventBus.dispatch('print', { source: self, });
-    });
-
-    items.download.addEventListener('click', function() {
-      eventBus.dispatch('download', { source: self, });
-    });
-
     // Suppress context menus for some controls.
-    items.scaleSelect.oncontextmenu = noContextMenuHandler;
+    scaleSelect.oncontextmenu = noContextMenuHandler;
 
-    eventBus.on('localized', () => {
-      this._localized();
+    this.eventBus.on('localized', () => {
+      this._wasLocalized = true;
+      this._adjustScaleWidth();
+      this._updateUIState(true);
     });
-  }
-
-  _localized() {
-    this._wasLocalized = true;
-    this._adjustScaleWidth();
-    this._updateUIState(true);
   }
 
   _updateUIState(resetNumPages = false) {
@@ -204,10 +197,8 @@ class Toolbar {
     let customScale = Math.round(pageScale * 10000) / 100;
     this.l10n.get('page_scale_percent', { scale: customScale, },
                   '{{scale}}%').then((msg) => {
-      let options = items.scaleSelect.options;
       let predefinedValueFound = false;
-      for (let i = 0, ii = options.length; i < ii; i++) {
-        let option = options[i];
+      for (const option of items.scaleSelect.options) {
         if (option.value !== pageScaleValue) {
           option.selected = false;
           continue;
