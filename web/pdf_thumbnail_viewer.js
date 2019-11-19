@@ -147,7 +147,7 @@ class PDFThumbnailViewer {
     this._currentPageNumber = 1;
     this._pageLabels = null;
     this._pagesRotation = 0;
-    this._pagesRequests = [];
+    this._pagesRequests = new WeakMap();
 
     // Remove the thumbnails from the DOM.
     this.container.textContent = '';
@@ -231,20 +231,19 @@ class PDFThumbnailViewer {
     if (thumbView.pdfPage) {
       return Promise.resolve(thumbView.pdfPage);
     }
-    let pageNumber = thumbView.id;
-    if (this._pagesRequests[pageNumber]) {
-      return this._pagesRequests[pageNumber];
+    if (this._pagesRequests.has(thumbView)) {
+      return this._pagesRequests.get(thumbView);
     }
-    let promise = this.pdfDocument.getPage(pageNumber).then((pdfPage) => {
+    const promise = this.pdfDocument.getPage(thumbView.id).then((pdfPage) => {
       thumbView.setPdfPage(pdfPage);
-      this._pagesRequests[pageNumber] = null;
+      this._pagesRequests.delete(thumbView);
       return pdfPage;
     }).catch((reason) => {
       console.error('Unable to get page for thumb view', reason);
-      // Page error -- there is nothing can be done.
-      this._pagesRequests[pageNumber] = null;
+      // Page error -- there is nothing that can be done.
+      this._pagesRequests.delete(thumbView);
     });
-    this._pagesRequests[pageNumber] = promise;
+    this._pagesRequests.set(thumbView, promise);
     return promise;
   }
 
