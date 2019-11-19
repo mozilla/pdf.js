@@ -533,7 +533,7 @@ class BaseViewer {
     this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
     this._location = null;
     this._pagesRotation = 0;
-    this._pagesRequests = [];
+    this._pagesRequests = new WeakMap();
     this._pageViewsReady = false;
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
@@ -961,22 +961,21 @@ class BaseViewer {
     if (pageView.pdfPage) {
       return Promise.resolve(pageView.pdfPage);
     }
-    let pageNumber = pageView.id;
-    if (this._pagesRequests[pageNumber]) {
-      return this._pagesRequests[pageNumber];
+    if (this._pagesRequests.has(pageView)) {
+      return this._pagesRequests.get(pageView);
     }
-    let promise = this.pdfDocument.getPage(pageNumber).then((pdfPage) => {
+    const promise = this.pdfDocument.getPage(pageView.id).then((pdfPage) => {
       if (!pageView.pdfPage) {
         pageView.setPdfPage(pdfPage);
       }
-      this._pagesRequests[pageNumber] = null;
+      this._pagesRequests.delete(pageView);
       return pdfPage;
     }).catch((reason) => {
       console.error('Unable to get page for page view', reason);
-      // Page error -- there is nothing can be done.
-      this._pagesRequests[pageNumber] = null;
+      // Page error -- there is nothing that can be done.
+      this._pagesRequests.delete(pageView);
     });
-    this._pagesRequests[pageNumber] = promise;
+    this._pagesRequests.set(pageView, promise);
     return promise;
   }
 
