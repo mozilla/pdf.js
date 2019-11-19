@@ -181,7 +181,14 @@ class BaseViewer {
    * @type {boolean} - True if all {PDFPageView} objects are initialized.
    */
   get pageViewsReady() {
-    return this._pageViewsReady;
+    if (!this._pageViewsReady) {
+      return false;
+    }
+    // Prevent printing errors when 'disableAutoFetch' is set, by ensuring
+    // that *all* pages have in fact been completely loaded.
+    return this._pages.every(function(pageView) {
+      return !!(pageView && pageView.pdfPage);
+    });
   }
 
   /**
