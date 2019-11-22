@@ -305,7 +305,12 @@ FontLoader = class GenericFontLoader extends BaseFontLoader {
     data = spliceString(data, CFF_CHECKSUM_OFFSET, 4, string32(checksum));
 
     const url = `url(data:font/opentype;base64,${btoa(data)});`;
-    const rule = `@font-face {font-family:"${loadTestFontId}";src:${url}}`;
+    const rule = `
+      @font-face {
+        font-family: "${loadTestFontId}";
+        src: local(${loadTestFontId}), url(${url});
+      }
+    `;
     this.insertRule(rule);
 
     let names = [];
@@ -379,7 +384,12 @@ class FontFaceObject {
     const data = bytesToString(new Uint8Array(this.data));
     // Add the @font-face rule to the document.
     const url = `url(data:${this.mimetype};base64,${btoa(data)});`;
-    const rule = `@font-face {font-family:"${this.loadedName}";src:${url}}`;
+    const rule = `
+      @font-face {
+        font-family: "${this.loadedName}";
+        src: local(${this.loadedName}), url(${url});
+      }
+    `;
 
     if (this.fontRegistry) {
       this.fontRegistry.registerFont(this, url);
