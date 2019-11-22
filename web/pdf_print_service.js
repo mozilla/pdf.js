@@ -273,19 +273,14 @@ function renderProgress(index, total, l10n) {
   });
 }
 
-let hasAttachEvent = !!document.attachEvent;
-
 window.addEventListener('keydown', function(event) {
   // Intercept Cmd/Ctrl + P in all browsers.
   // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
   if (event.keyCode === /* P= */ 80 && (event.ctrlKey || event.metaKey) &&
       !event.altKey && (!event.shiftKey || window.chrome || window.opera)) {
     window.print();
-    if (hasAttachEvent) {
-      // Only attachEvent can cancel Ctrl + P dialog in IE <=10
-      // attachEvent is gone in IE11, so the dialog will re-appear in IE11.
-      return;
-    }
+
+    // The (browser) print dialog cannot be prevented from being shown in IE11.
     event.preventDefault();
     if (event.stopImmediatePropagation) {
       event.stopImmediatePropagation();
@@ -294,16 +289,6 @@ window.addEventListener('keydown', function(event) {
     }
   }
 }, true);
-if (hasAttachEvent) {
-  // eslint-disable-next-line consistent-return
-  document.attachEvent('onkeydown', function(event) {
-    event = event || window.event;
-    if (event.keyCode === /* P= */ 80 && event.ctrlKey) {
-      event.keyCode = 0;
-      return false;
-    }
-  });
-}
 
 if ('onbeforeprint' in window) {
   // Do not propagate before/afterprint events when they are not triggered
