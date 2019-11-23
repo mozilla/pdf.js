@@ -106,15 +106,15 @@ class BaseFontLoader {
     unreachable('Abstract method `_queueLoadingCallback`.');
   }
 
-  get isFontLoadingAPISupported() {
+  get isFontLoadingAPISupported() { // eslint-disable-line getter-return
     unreachable('Abstract method `isFontLoadingAPISupported`.');
   }
 
-  get isSyncFontLoadingSupported() {
+  get isSyncFontLoadingSupported() { // eslint-disable-line getter-return
     unreachable('Abstract method `isSyncFontLoadingSupported`.');
   }
 
-  get _loadTestFont() {
+  get _loadTestFont() { // eslint-disable-line getter-return
     unreachable('Abstract method `_loadTestFont`.');
   }
 
