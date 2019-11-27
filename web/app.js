@@ -51,6 +51,7 @@ const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
+const WHEEL_ZOOM_MAX_TICKS = 10;
 
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -2110,6 +2111,17 @@ function webViewerWheel(evt) {
 
     const MOUSE_WHEEL_DELTA_PER_PAGE_SCALE = 3.0;
     let ticks = delta * MOUSE_WHEEL_DELTA_PER_PAGE_SCALE;
+    // Heuristic used to ignore *huge* (absolute) `ticks` values, since they'll
+    // often render mouse wheel zooming essentially useless by limiting it to a
+    // choice of either `MIN_SCALE` or `MAX_SCALE` (workaround for issue 8802).
+    //
+    // TODO: Fix this properly in the `normalizeWheelEventDelta` function.
+    if (ticks < 0 && ticks < -WHEEL_ZOOM_MAX_TICKS) {
+      ticks = -1;
+    } else if (ticks >= 0 && ticks > WHEEL_ZOOM_MAX_TICKS) {
+      ticks = 1;
+    }
+
     if (ticks < 0) {
       PDFViewerApplication.zoomOut(-ticks);
     } else {
