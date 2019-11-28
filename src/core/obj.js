@@ -1748,6 +1748,9 @@ var XRef = (function XRefClosure() {
         if ((parser.buf1 instanceof Cmd) && parser.buf1.cmd === 'endobj') {
           parser.shift();
         }
+        if (isStream(obj)) {
+          continue;
+        }
         const num = nums[i], entry = this.entries[num];
         if (entry && entry.offset === tableOffset && entry.gen === i) {
           this._cacheMap.set(num, obj);
