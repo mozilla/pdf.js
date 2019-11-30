@@ -1707,13 +1707,13 @@ var XRef = (function XRefClosure() {
     },
 
     fetchCompressed(ref, xrefEntry, suppressEncryption = false) {
-      var tableOffset = xrefEntry.offset;
-      var stream = this.fetch(Ref.get(tableOffset, 0));
+      const tableOffset = xrefEntry.offset;
+      const stream = this.fetch(Ref.get(tableOffset, 0));
       if (!isStream(stream)) {
         throw new FormatError('bad ObjStm stream');
       }
-      var first = stream.dict.get('First');
-      var n = stream.dict.get('N');
+      const first = stream.dict.get('First');
+      const n = stream.dict.get('N');
       if (!Number.isInteger(first) || !Number.isInteger(n)) {
         throw new FormatError(
           'invalid first and n parameters for ObjStm stream');
@@ -1723,33 +1723,37 @@ var XRef = (function XRefClosure() {
         xref: this,
         allowStreams: true,
       });
-      var i, entries = [], num, nums = [];
+      const nums = new Array(n);
       // read the object numbers to populate cache
-      for (i = 0; i < n; ++i) {
-        num = parser.getObj();
+      for (let i = 0; i < n; ++i) {
+        const num = parser.getObj();
         if (!Number.isInteger(num)) {
           throw new FormatError(
             `invalid object number in the ObjStm stream: ${num}`);
         }
-        nums.push(num);
-        var offset = parser.getObj();
+        const offset = parser.getObj();
         if (!Number.isInteger(offset)) {
           throw new FormatError(
             `invalid object offset in the ObjStm stream: ${offset}`);
         }
+        nums[i] = num;
       }
+      const entries = new Array(n);
       // read stream objects for cache
-      for (i = 0; i < n; ++i) {
-        entries.push(parser.getObj());
+      for (let i = 0; i < n; ++i) {
+        const obj = parser.getObj();
+        entries[i] = obj;
         // The ObjStm should not contain 'endobj'. If it's present, skip over it
         // to support corrupt PDFs (fixes issue 5241, bug 898610, bug 1037816).
-        if (isCmd(parser.buf1, 'endobj')) {
+        if ((parser.buf1 instanceof Cmd) && parser.buf1.cmd === 'endobj') {
           parser.shift();
         }
-        num = nums[i];
-        var entry = this.entries[num];
+        if (isStream(obj)) {
+          continue;
+        }
+        const num = nums[i], entry = this.entries[num];
         if (entry && entry.offset === tableOffset && entry.gen === i) {
-          this._cacheMap.set(num, entries[i]);
+          this._cacheMap.set(num, obj);
         }
       }
       xrefEntry = entries[xrefEntry.gen];
