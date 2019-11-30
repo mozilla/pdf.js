@@ -1636,8 +1636,11 @@ var XRef = (function XRefClosure() {
       }
       const num = ref.num;
 
-      if (this._cacheMap.has(num)) {
-        const cacheEntry = this._cacheMap.get(num);
+      // The XRef cache is populated with objects which are obtained through
+      // `Parser.getObj`, and indirectly via `Lexer.getObj`. Neither of these
+      // methods should ever return `undefined` (note the `assert` calls below).
+      const cacheEntry = this._cacheMap.get(num);
+      if (cacheEntry !== undefined) {
         // In documents with Object Streams, it's possible that cached `Dict`s
         // have not been assigned an `objId` yet (see e.g. issue3115r.pdf).
         if (cacheEntry instanceof Dict && !cacheEntry.objId) {
@@ -1701,6 +1704,11 @@ var XRef = (function XRefClosure() {
         xrefEntry = parser.getObj();
       }
       if (!isStream(xrefEntry)) {
+        if (typeof PDFJSDev === 'undefined' ||
+            PDFJSDev.test('!PRODUCTION || TESTING')) {
+          assert(xrefEntry !== undefined,
+                 'fetchUncompressed: The "xrefEntry" cannot be undefined.');
+        }
         this._cacheMap.set(num, xrefEntry);
       }
       return xrefEntry;
@@ -1753,6 +1761,11 @@ var XRef = (function XRefClosure() {
         }
         const num = nums[i], entry = this.entries[num];
         if (entry && entry.offset === tableOffset && entry.gen === i) {
+          if (typeof PDFJSDev === 'undefined' ||
+              PDFJSDev.test('!PRODUCTION || TESTING')) {
+            assert(obj !== undefined,
+                   'fetchCompressed: The "obj" cannot be undefined.');
+          }
           this._cacheMap.set(num, obj);
         }
       }
