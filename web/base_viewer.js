@@ -421,9 +421,9 @@ class BaseViewer {
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
-    firstPagePromise.then((pdfPage) => {
+    firstPagePromise.then((firstPdfPage) => {
       let scale = this.currentScale;
-      let viewport = pdfPage.getViewport({ scale: scale * CSS_UNITS, });
+      const viewport = firstPdfPage.getViewport({ scale: scale * CSS_UNITS, });
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let textLayerFactory = null;
         if (this.textLayerMode !== TextLayerMode.DISABLE) {
@@ -449,6 +449,14 @@ class BaseViewer {
         });
         this._pages.push(pageView);
       }
+      // Set the first `pdfPage` immediately, since it's already loaded,
+      // rather than having to repeat the `PDFDocumentProxy.getPage` call in
+      // the `this._ensurePdfPageLoaded` method before rendering can start.
+      const firstPageView = this._pages[0];
+      if (firstPageView) {
+        firstPageView.setPdfPage(firstPdfPage);
+        this.linkService.cachePageRef(1, firstPdfPage.ref);
+      }
       if (this._spreadMode !== SpreadMode.NONE) {
         this._updateSpreadMode();
       }
@@ -469,8 +477,13 @@ class BaseViewer {
           pagesCapability.resolve();
           return;
         }
-        let getPagesLeft = pagesCount;
-        for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+        let getPagesLeft = pagesCount - 1; // The first page was already loaded.
+
+        if (getPagesLeft <= 0) {
+          pagesCapability.resolve();
+          return;
+        }
+        for (let pageNum = 2; pageNum <= pagesCount; ++pageNum) {
           pdfDocument.getPage(pageNum).then((pdfPage) => {
             let pageView = this._pages[pageNum - 1];
             if (!pageView.pdfPage) {

@@ -164,9 +164,9 @@ class PDFThumbnailViewer {
       return;
     }
 
-    pdfDocument.getPage(1).then((firstPage) => {
+    pdfDocument.getPage(1).then((firstPdfPage) => {
       let pagesCount = pdfDocument.numPages;
-      let viewport = firstPage.getViewport({ scale: 1, });
+      const viewport = firstPdfPage.getViewport({ scale: 1, });
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let thumbnail = new PDFThumbnailView({
           container: this.container,
@@ -178,6 +178,13 @@ class PDFThumbnailViewer {
           l10n: this.l10n,
         });
         this._thumbnails.push(thumbnail);
+      }
+      // Set the first `pdfPage` immediately, since it's already loaded,
+      // rather than having to repeat the `PDFDocumentProxy.getPage` call in
+      // the `this._ensurePdfPageLoaded` method before rendering can start.
+      const firstThumbnailView = this._thumbnails[0];
+      if (firstThumbnailView) {
+        firstThumbnailView.setPdfPage(firstPdfPage);
       }
 
       // Ensure that the current thumbnail is always highlighted on load.
@@ -235,7 +242,9 @@ class PDFThumbnailViewer {
       return this._pagesRequests.get(thumbView);
     }
     const promise = this.pdfDocument.getPage(thumbView.id).then((pdfPage) => {
-      thumbView.setPdfPage(pdfPage);
+      if (!thumbView.pdfPage) {
+        thumbView.setPdfPage(pdfPage);
+      }
       this._pagesRequests.delete(thumbView);
       return pdfPage;
     }).catch((reason) => {
