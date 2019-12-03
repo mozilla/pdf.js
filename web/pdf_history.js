@@ -527,9 +527,9 @@ class PDFHistory {
     let newHash = getCurrentHash(), hashChanged = this._currentHash !== newHash;
     this._currentHash = newHash;
 
-    if (!state ||
-        (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
-         state.chromecomState && !this._isValidState(state))) {
+    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
+         state && state.chromecomState && !this._isValidState(state)) ||
+        !state) {
       // This case corresponds to the user changing the hash of the document.
       this._uid++;
 
