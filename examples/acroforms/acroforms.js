@@ -18,10 +18,19 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
-var DEFAULT_URL = '../../test/pdfs/f1040.pdf';
+var DEFAULT_URL = '../../test/pdfs/2561_2405.pdf';
 var DEFAULT_SCALE = 1.0;
 
 var container = document.getElementById('pageContainer');
+
+function logFields() {
+  // Get input elements to log actual / updated values
+  let elements = document.getElementsByTagName("input");
+  
+  for (let element of elements) {
+    console.log(element.name + "=" + element.value);
+  }  
+}
 
 // Fetch the PDF document from the URL using promises.
 var loadingTask = pdfjsLib.getDocument(DEFAULT_URL);
@@ -45,6 +54,12 @@ loadingTask.promise.then(function(doc) {
 
         // Associate the actual page with the view and draw it.
         pdfPageView.setPdfPage(pdfPage);
+
+        // Get annotations to log initial values
+        pdfPage.getAnnotations().then(function(items) {
+          console.log(items);
+        });
+
         return pdfPageView.draw();
       });
     }.bind(null, i));
