@@ -50,17 +50,6 @@ function getCurrentHash() {
   return document.location.hash;
 }
 
-function parseCurrentHash(linkService) {
-  let hash = unescape(getCurrentHash()).substring(1);
-  let params = parseQueryString(hash);
-
-  let page = params.page | 0;
-  if (!(Number.isInteger(page) && page > 0 && page <= linkService.pagesCount)) {
-    page = null;
-  }
-  return { hash, page, rotation: linkService.rotation, };
-}
-
 class PDFHistory {
   /**
    * @param {PDFHistoryOptions} options
@@ -125,7 +114,7 @@ class PDFHistory {
     this._position = null;
 
     if (!this._isValidState(state, /* checkReload = */ true) || resetHistory) {
-      let { hash, page, rotation, } = parseCurrentHash(this.linkService);
+      const { hash, page, rotation, } = this._parseCurrentHash();
 
       if (!hash || reInitialized || resetHistory) {
         // Ensure that the browser history is reset on PDF document load.
@@ -461,6 +450,20 @@ class PDFHistory {
   /**
    * @private
    */
+  _parseCurrentHash() {
+    const hash = unescape(getCurrentHash()).substring(1);
+    let page = parseQueryString(hash).page | 0;
+
+    if (!(Number.isInteger(page) &&
+          page > 0 && page <= this.linkService.pagesCount)) {
+      page = null;
+    }
+    return { hash, page, rotation: this.linkService.rotation, };
+  }
+
+  /**
+   * @private
+   */
   _updateViewarea({ location, }) {
     if (this._updateViewareaTimeout) {
       clearTimeout(this._updateViewareaTimeout);
@@ -530,7 +533,7 @@ class PDFHistory {
       // This case corresponds to the user changing the hash of the document.
       this._uid++;
 
-      let { hash, page, rotation, } = parseCurrentHash(this.linkService);
+      const { hash, page, rotation, } = this._parseCurrentHash();
       this._pushOrReplaceState({ hash, page, rotation, },
                                /* forceReplace = */ true);
       return;
