@@ -130,6 +130,10 @@ var PDFViewerApplication = {
 
       this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null, null);
+
+      if (this.pdfHistory) {
+        this.pdfHistory.reset();
+      }
     }
 
     return promise;
