@@ -32,7 +32,6 @@ const SWIPE_ANGLE_THRESHOLD = Math.PI / 6;
 /**
  * @typedef {Object} PDFPresentationModeOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
- * @property {HTMLDivElement} [viewer] - The viewer element.
  * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {EventBus} eventBus - The application event bus.
  * @property {Array} [contextMenuItems] - The menu items that are added to the
@@ -43,10 +42,8 @@ class PDFPresentationMode {
   /**
    * @param {PDFPresentationModeOptions} options
    */
-  constructor({ container, viewer = null, pdfViewer, eventBus,
-                contextMenuItems = null, }) {
+  constructor({ container, pdfViewer, eventBus, contextMenuItems = null, }) {
     this.container = container;
-    this.viewer = viewer || container.firstElementChild;
     this.pdfViewer = pdfViewer;
     this.eventBus = eventBus;
 
@@ -82,7 +79,7 @@ class PDFPresentationMode {
    * @returns {boolean} Indicating if the request was successful.
    */
   request() {
-    if (this.switchInProgress || this.active || !this.viewer.hasChildNodes()) {
+    if (this.switchInProgress || this.active || !this.pdfViewer.pagesCount) {
       return false;
     }
     this._addFullscreenChangeListeners();
