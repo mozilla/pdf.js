@@ -344,6 +344,8 @@ class Parser {
     let startPos = stream.pos, ch, length;
     while ((ch = stream.getByte()) !== -1) {
       if (ch === TILDE) {
+        const tildePos = stream.pos;
+
         ch = stream.peekByte();
         // Handle corrupt PDF documents which contains whitespace "inside" of
         // the EOD marker (fixes issue10614.pdf).
@@ -354,6 +356,14 @@ class Parser {
         if (ch === GT) {
           stream.skip();
           break;
+        }
+        // Handle corrupt PDF documents which contains truncated EOD markers,
+        // where the '>' character is missing (fixes issue11385.pdf).
+        if (stream.pos > tildePos) {
+          const maybeEI = stream.peekBytes(2);
+          if (maybeEI[0] === /* E = */ 0x45 && maybeEI[1] === /* I = */ 0x49) {
+            break;
+          }
         }
       }
     }
