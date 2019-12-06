@@ -1,5 +1,17 @@
 Added a name to inputs generated for Acroform fields.
 
+Pour initialiser le fichier package.json :
+npm init --scope=@secib
+
+à faire également dans répertoire build/dist afin de publier le package @secib/pdfjs-dist. C'est ce dernier qu'il faut installer
+
+gulp dist-install pour compiler et créer le répertoire build/dist
+
+Ensuite pour publier, se placer dans le répertoire build/dist :
+npm publish --access public
+
+Même commande à la racine pour publier les sources (package @secib/pdf)
+
 # PDF.js [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js)
 
 [PDF.js](https://mozilla.github.io/pdf.js/) is a Portable Document Format (PDF) viewer that is built with HTML5.

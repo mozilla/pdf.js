@@ -1,6 +1,6 @@
 {
   "name": "@secib/pdf",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "devDependencies": {
     "@babel/core": "^7.7.4",
     "@babel/plugin-transform-modules-commonjs": "^7.7.4",
@@ -75,5 +75,8 @@
     "example": "examples",
     "test": "test"
   },
-  "author": ""
+  "author": "",
+  "keywords": [
+    "pdfjs"
+  ]
 }
