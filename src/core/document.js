@@ -664,13 +664,13 @@ class PDFDocument {
   }
 
   checkFirstPage() {
-    return this.getPage(0).catch((reason) => {
+    return this.getPage(0).catch(async (reason) => {
       if (reason instanceof XRefEntryException) {
         // Clear out the various caches to ensure that we haven't stored any
         // inconsistent and/or incorrect state, since that could easily break
         // subsequent `this.getPage` calls.
         this._pagePromises.length = 0;
-        this.cleanup();
+        await this.cleanup();
 
         throw new XRefParseException();
       }
