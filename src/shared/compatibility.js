@@ -14,13 +14,18 @@
  */
 /* eslint no-var: error */
 
-const { globalScope, } = require('./global_scope');
-
 // Skip compatibility checks for modern builds and if we already ran the module.
 if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('SKIP_BABEL')) &&
-    !globalScope._pdfjsCompatibilityChecked) {
+    (typeof globalThis === 'undefined' ||
+     !globalThis._pdfjsCompatibilityChecked)) {
 
-globalScope._pdfjsCompatibilityChecked = true;
+// Provides support for globalThis in legacy browsers.
+// Support: IE11/Edge, Opera
+if (typeof globalThis === 'undefined' || globalThis.Math !== Math) {
+  // eslint-disable-next-line no-global-assign
+  globalThis = require('core-js/es/global-this');
+}
+globalThis._pdfjsCompatibilityChecked = true;
 
 const { isNodeJS, } = require('./is_node');
 
@@ -31,10 +36,10 @@ const isIE = /Trident/.test(userAgent);
 
 // Support: Node.js
 (function checkNodeBtoa() {
-  if (globalScope.btoa || !isNodeJS) {
+  if (globalThis.btoa || !isNodeJS) {
     return;
   }
-  globalScope.btoa = function(chars) {
+  globalThis.btoa = function(chars) {
     // eslint-disable-next-line no-undef
     return Buffer.from(chars, 'binary').toString('base64');
   };
@@ -42,10 +47,10 @@ const isIE = /Trident/.test(userAgent);
 
 // Support: Node.js
 (function checkNodeAtob() {
-  if (globalScope.atob || !isNodeJS) {
+  if (globalThis.atob || !isNodeJS) {
     return;
   }
-  globalScope.atob = function(input) {
+  globalThis.atob = function(input) {
     // eslint-disable-next-line no-undef
     return Buffer.from(input, 'base64').toString('binary');
   };
@@ -223,11 +228,11 @@ const isIE = /Trident/.test(userAgent);
     // need to be polyfilled for the IMAGE_DECODERS build target.
     return;
   }
-  if (globalScope.Promise && (globalScope.Promise.prototype &&
-                              globalScope.Promise.prototype.finally)) {
+  if (globalThis.Promise && (globalThis.Promise.prototype &&
+                             globalThis.Promise.prototype.finally)) {
     return;
   }
-  globalScope.Promise = require('core-js/es/promise/index');
+  globalThis.Promise = require('core-js/es/promise/index');
 })();
 
 // Support: IE
@@ -241,23 +246,23 @@ const isIE = /Trident/.test(userAgent);
     // The `URL` constructor is assumed to be available in the extension builds.
     return;
   }
-  globalScope.URL = require('core-js/web/url');
+  globalThis.URL = require('core-js/web/url');
 })();
 
 // Support: IE<11, Safari<8, Chrome<36
 (function checkWeakMap() {
-  if (globalScope.WeakMap) {
+  if (globalThis.WeakMap) {
     return;
   }
-  globalScope.WeakMap = require('core-js/es/weak-map/index');
+  globalThis.WeakMap = require('core-js/es/weak-map/index');
 })();
 
 // Support: IE11
 (function checkWeakSet() {
-  if (globalScope.WeakSet) {
+  if (globalThis.WeakSet) {
     return;
   }
-  globalScope.WeakSet = require('core-js/es/weak-set/index');
+  globalThis.WeakSet = require('core-js/es/weak-set/index');
 })();
 
 // Provides support for String.codePointAt in legacy browsers.
@@ -280,7 +285,7 @@ const isIE = /Trident/.test(userAgent);
 
 // Support: IE
 (function checkSymbol() {
-  if (globalScope.Symbol) {
+  if (globalThis.Symbol) {
     return;
   }
   require('core-js/es/symbol/index');
