@@ -19,6 +19,7 @@
   },
 
   "globals": {
+    "globalThis": false,
     "PDFJSDev": false,
     "exports": false,
     "SystemJS": false,
