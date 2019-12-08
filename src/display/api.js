@@ -33,7 +33,6 @@ import {
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
 import { CanvasGraphics } from './canvas';
-import { globalScope } from '../shared/global_scope';
 import { GlobalWorkerOptions } from './worker_options';
 import { MessageHandler } from '../shared/message_handler';
 import { Metadata } from './metadata';
@@ -1541,12 +1540,12 @@ const PDFWorker = (function PDFWorkerClosure() {
   }
 
   function getMainThreadWorkerMessageHandler() {
+    let mainWorkerMessageHandler;
     try {
-      if (typeof window !== 'undefined') {
-        return (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler);
-      }
-    } catch (ex) { }
-    return null;
+      mainWorkerMessageHandler =
+        globalThis.pdfjsWorker && globalThis.pdfjsWorker.WorkerMessageHandler;
+    } catch (ex) { /* Ignore errors. */ }
+    return mainWorkerMessageHandler || null;
   }
 
   // Loads worker code into main thread.
@@ -2103,11 +2102,11 @@ class WorkerTransport {
           }
 
           let fontRegistry = null;
-          if (params.pdfBug && globalScope.FontInspector &&
-              globalScope.FontInspector.enabled) {
+          if (params.pdfBug && globalThis.FontInspector &&
+              globalThis.FontInspector.enabled) {
             fontRegistry = {
               registerFont(font, url) {
-                globalScope['FontInspector'].fontAdded(font, url);
+                globalThis.FontInspector.fontAdded(font, url);
               },
             };
           }
@@ -2608,9 +2607,9 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
         canvasInRendering.add(this._canvas);
       }
 
-      if (this._pdfBug && globalScope.StepperManager &&
-          globalScope.StepperManager.enabled) {
-        this.stepper = globalScope.StepperManager.create(this.pageNumber - 1);
+      if (this._pdfBug && globalThis.StepperManager &&
+          globalThis.StepperManager.enabled) {
+        this.stepper = globalThis.StepperManager.create(this.pageNumber - 1);
         this.stepper.init(this.operatorList);
         this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
       }
