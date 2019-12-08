@@ -1540,12 +1540,12 @@ const PDFWorker = (function PDFWorkerClosure() {
   }
 
   function getMainThreadWorkerMessageHandler() {
+    let mainWorkerMessageHandler;
     try {
-      if (typeof window !== 'undefined') {
-        return (window.pdfjsWorker && window.pdfjsWorker.WorkerMessageHandler);
-      }
-    } catch (ex) { }
-    return null;
+      mainWorkerMessageHandler =
+        globalThis.pdfjsWorker && globalThis.pdfjsWorker.WorkerMessageHandler;
+    } catch (ex) { /* Ignore errors. */ }
+    return mainWorkerMessageHandler || null;
   }
 
   // Loads worker code into main thread.
