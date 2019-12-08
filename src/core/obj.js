@@ -671,9 +671,8 @@ class Catalog {
     });
 
     return Promise.all(promises).then((translatedFonts) => {
-      for (let i = 0, ii = translatedFonts.length; i < ii; i++) {
-        const font = translatedFonts[i].dict;
-        delete font.translated;
+      for (const { dict, } of translatedFonts) {
+        delete dict.translated;
       }
       this.fontCache.clear();
       this.builtInCMapCache.clear();
