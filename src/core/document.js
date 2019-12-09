@@ -15,9 +15,9 @@
 /* eslint no-var: error */
 
 import {
-  assert, bytesToString, FormatError, info, isArrayBuffer, isArrayEqual, isBool,
-  isNum, isSpace, isString, OPS, shadow, stringToBytes, stringToPDFString, Util,
-  warn
+  assert, bytesToString, FormatError, info, InvalidPDFException, isArrayBuffer,
+  isArrayEqual, isBool, isNum, isSpace, isString, OPS, shadow, stringToBytes,
+  stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream, Ref } from './primitives';
@@ -375,7 +375,8 @@ class PDFDocument {
       throw new Error('PDFDocument: Unknown argument type');
     }
     if (stream.length <= 0) {
-      throw new Error('PDFDocument: Stream must have data');
+      throw new InvalidPDFException(
+        'The PDF file is empty, i.e. its size is zero bytes.');
     }
 
     this.pdfManager = pdfManager;

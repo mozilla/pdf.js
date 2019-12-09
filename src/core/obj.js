@@ -1519,7 +1519,7 @@ var XRef = (function XRefClosure() {
         return trailerDict;
       }
       // nothing helps
-      throw new InvalidPDFException('Invalid PDF structure');
+      throw new InvalidPDFException('Invalid PDF structure.');
     },
 
     readXRef: function XRef_readXRef(recoveryMode) {

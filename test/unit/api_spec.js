@@ -148,8 +148,10 @@ describe('api', function() {
       var loadingTask = getDocument(buildGetDocumentParams('bug1020226.pdf'));
       loadingTask.promise.then(function () {
         done.fail('shall fail loading');
-      }).catch(function (error) {
-        expect(error instanceof InvalidPDFException).toEqual(true);
+      }).catch(function(reason) {
+        expect(reason instanceof InvalidPDFException).toEqual(true);
+        expect(reason.message).toEqual('Invalid PDF structure.');
+
         loadingTask.destroy().then(done);
       });
     });
@@ -291,6 +293,20 @@ describe('api', function() {
       Promise.all([result1, result2]).then(function () {
         done();
       }).catch(done.fail);
+    });
+
+    it('creates pdf doc from empty typed array', function(done) {
+      const loadingTask = getDocument(new Uint8Array(0));
+
+      loadingTask.promise.then(function() {
+        done.fail('shall not open empty file');
+      }, function(reason) {
+        expect(reason instanceof InvalidPDFException);
+        expect(reason.message).toEqual(
+          'The PDF file is empty, i.e. its size is zero bytes.');
+
+        loadingTask.destroy().then(done);
+      });
     });
   });
 
