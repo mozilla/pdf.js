@@ -15,8 +15,8 @@
 /* eslint no-var: error */
 
 import {
-  assert, bytesToString, FormatError, info, InvalidPDFException, isArrayBuffer,
-  isArrayEqual, isBool, isNum, isSpace, isString, OPS, shadow, stringToBytes,
+  assert, FormatError, info, InvalidPDFException, isArrayBuffer, isArrayEqual,
+  isBool, isNum, isSpace, isString, OPS, shadow, stringToBytes,
   stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
@@ -344,21 +344,59 @@ class Page {
   }
 }
 
+const PDF_HEADER_SIGNATURE = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]);
+const STARTXREF_SIGNATURE = new Uint8Array([
+  0x73, 0x74, 0x61, 0x72, 0x74, 0x78, 0x72, 0x65, 0x66]);
+const ENDOBJ_SIGNATURE = new Uint8Array([0x65, 0x6E, 0x64, 0x6F, 0x62, 0x6A]);
+
 const FINGERPRINT_FIRST_BYTES = 1024;
-const EMPTY_FINGERPRINT = '\x00\x00\x00\x00\x00\x00\x00' +
-                          '\x00\x00\x00\x00\x00\x00\x00\x00\x00';
+const EMPTY_FINGERPRINT =
+  '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00';
 
-function find(stream, needle, limit, backwards = false) {
-  assert(limit > 0, 'The "limit" must be a positive integer.');
+function find(stream, signature, limit = 1024, backwards = false) {
+  if (typeof PDFJSDev === 'undefined' ||
+      PDFJSDev.test('!PRODUCTION || TESTING')) {
+    assert(limit > 0, 'The "limit" must be a positive integer.');
+  }
+  const signatureLength = signature.length;
 
-  const str = bytesToString(stream.peekBytes(limit));
+  const scanBytes = stream.peekBytes(limit);
+  const scanLength = scanBytes.length - signatureLength;
 
-  const index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
-  if (index === -1) {
+  if (scanLength <= 0) {
     return false;
   }
-  stream.pos += index;
-  return true;
+  if (backwards) {
+    const signatureEnd = signatureLength - 1;
+
+    let pos = scanBytes.length - 1;
+    while (pos >= signatureEnd) {
+      let j = 0;
+      while (j < signatureLength &&
+             scanBytes[pos - j] === signature[signatureEnd - j]) {
+        j++;
+      }
+      if (j >= signatureLength) { // `signature` found.
+        stream.pos += (pos - signatureEnd);
+        return true;
+      }
+      pos--;
+    }
+  } else { // forwards
+    let pos = 0;
+    while (pos <= scanLength) {
+      let j = 0;
+      while (j < signatureLength && scanBytes[pos + j] === signature[j]) {
+        j++;
+      }
+      if (j >= signatureLength) { // `signature` found.
+        stream.pos += pos;
+        return true;
+      }
+      pos++;
+    }
+  }
+  return false;
 }
 
 /**
@@ -450,13 +488,13 @@ class PDFDocument {
     if (this.linearization) {
       // Find the end of the first object.
       stream.reset();
-      if (find(stream, 'endobj', 1024)) {
+      if (find(stream, ENDOBJ_SIGNATURE)) {
         startXRef = (stream.pos + 6) - stream.start;
       }
     } else {
       // Find `startxref` by checking backwards from the end of the file.
       const step = 1024;
-      const startXRefLength = 'startxref'.length;
+      const startXRefLength = STARTXREF_SIGNATURE.length;
       let found = false, pos = stream.end;
 
       while (!found && pos > 0) {
@@ -465,7 +503,7 @@ class PDFDocument {
           pos = 0;
         }
         stream.pos = pos;
-        found = find(stream, 'startxref', step, true);
+        found = find(stream, STARTXREF_SIGNATURE, step, true);
       }
 
       if (found) {
@@ -494,7 +532,7 @@ class PDFDocument {
     const stream = this.stream;
     stream.reset();
 
-    if (!find(stream, '%PDF-', 1024)) {
+    if (!find(stream, PDF_HEADER_SIGNATURE)) {
       // May not be a PDF file, but don't throw an error and let
       // parsing continue.
       return;
