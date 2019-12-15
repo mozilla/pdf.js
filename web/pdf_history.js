@@ -50,17 +50,6 @@ function getCurrentHash() {
   return document.location.hash;
 }
 
-function parseCurrentHash(linkService) {
-  let hash = unescape(getCurrentHash()).substring(1);
-  let params = parseQueryString(hash);
-
-  let page = params.page | 0;
-  if (!(Number.isInteger(page) && page > 0 && page <= linkService.pagesCount)) {
-    page = null;
-  }
-  return { hash, page, rotation: linkService.rotation, };
-}
-
 class PDFHistory {
   /**
    * @param {PDFHistoryOptions} options
@@ -69,21 +58,25 @@ class PDFHistory {
     this.linkService = linkService;
     this.eventBus = eventBus || getGlobalEventBus();
 
-    this.initialized = false;
-    this.initialBookmark = null;
-    this.initialRotation = null;
+    this._initialized = false;
+    this._fingerprint = '';
+    this.reset();
 
-    this._boundEvents = Object.create(null);
+    this._boundEvents = null;
     this._isViewerInPresentationMode = false;
-    this._isPagesLoaded = false;
-
     // Ensure that we don't miss either a 'presentationmodechanged' or a
-    // 'pagesloaded' event, by registering the listeners immediately.
+    // 'pagesinit' event, by registering the listeners immediately.
     this.eventBus.on('presentationmodechanged', (evt) => {
       this._isViewerInPresentationMode = evt.active || evt.switchInProgress;
     });
-    this.eventBus.on('pagesloaded', (evt) => {
-      this._isPagesLoaded = !!evt.pagesCount;
+    this.eventBus.on('pagesinit', () => {
+      this._isPagesLoaded = false;
+
+      const onPagesLoaded = (evt) => {
+        this.eventBus.off('pagesloaded', onPagesLoaded);
+        this._isPagesLoaded = !!evt.pagesCount;
+      };
+      this.eventBus.on('pagesloaded', onPagesLoaded);
     });
   }
 
@@ -98,18 +91,18 @@ class PDFHistory {
         'PDFHistory.initialize: The "fingerprint" must be a non-empty string.');
       return;
     }
-    let reInitialized = this.initialized && this.fingerprint !== fingerprint;
-    this.fingerprint = fingerprint;
+    // Ensure that any old state is always reset upon initialization.
+    if (this._initialized) {
+      this.reset();
+    }
+    const reInitialized = (this._fingerprint !== '' &&
+                           this._fingerprint !== fingerprint);
+    this._fingerprint = fingerprint;
     this._updateUrl = (updateUrl === true);
 
-    if (!this.initialized) {
-      this._bindEvents();
-    }
-    let state = window.history.state;
-
-    this.initialized = true;
-    this.initialBookmark = null;
-    this.initialRotation = null;
+    this._initialized = true;
+    this._bindEvents();
+    const state = window.history.state;
 
     this._popStateInProgress = false;
     this._blockHashChange = 0;
@@ -121,7 +114,7 @@ class PDFHistory {
     this._position = null;
 
     if (!this._isValidState(state, /* checkReload = */ true) || resetHistory) {
-      let { hash, page, rotation, } = parseCurrentHash(this.linkService);
+      const { hash, page, rotation, } = this._parseCurrentHash();
 
       if (!hash || reInitialized || resetHistory) {
         // Ensure that the browser history is reset on PDF document load.
@@ -145,21 +138,40 @@ class PDFHistory {
     }
 
     if (destination.rotation !== undefined) {
-      this.initialRotation = destination.rotation;
+      this._initialRotation = destination.rotation;
     }
     if (destination.dest) {
-      this.initialBookmark = JSON.stringify(destination.dest);
+      this._initialBookmark = JSON.stringify(destination.dest);
 
       // If the history is updated, e.g. through the user changing the hash,
       // before the initial destination has become visible, then we do *not*
       // want to potentially add `this._position` to the browser history.
       this._destination.page = null;
     } else if (destination.hash) {
-      this.initialBookmark = destination.hash;
+      this._initialBookmark = destination.hash;
     } else if (destination.page) {
       // Fallback case; shouldn't be necessary, but better safe than sorry.
-      this.initialBookmark = `page=${destination.page}`;
+      this._initialBookmark = `page=${destination.page}`;
     }
+  }
+
+  /**
+   * Reset the current `PDFHistory` instance, and consequently prevent any
+   * further updates and/or navigation of the browser history.
+   */
+  reset() {
+    if (this._initialized) {
+      this._pageHide(); // Simulate a 'pagehide' event when resetting.
+
+      this._initialized = false;
+      this._unbindEvents();
+    }
+    if (this._updateViewareaTimeout) {
+      clearTimeout(this._updateViewareaTimeout);
+      this._updateViewareaTimeout = null;
+    }
+    this._initialBookmark = null;
+    this._initialRotation = null;
   }
 
   /**
@@ -167,7 +179,7 @@ class PDFHistory {
    * @param {PushParameters}
    */
   push({ namedDest = null, explicitDest, pageNumber, }) {
-    if (!this.initialized) {
+    if (!this._initialized) {
       return;
     }
     if (namedDest && typeof namedDest !== 'string') {
@@ -237,7 +249,7 @@ class PDFHistory {
    * Push the current position to the browser history.
    */
   pushCurrentPosition() {
-    if (!this.initialized || this._popStateInProgress) {
+    if (!this._initialized || this._popStateInProgress) {
       return;
     }
     this._tryPushCurrentPosition();
@@ -248,7 +260,7 @@ class PDFHistory {
    * NOTE: Avoids navigating away from the document, useful for "named actions".
    */
   back() {
-    if (!this.initialized || this._popStateInProgress) {
+    if (!this._initialized || this._popStateInProgress) {
       return;
     }
     let state = window.history.state;
@@ -262,7 +274,7 @@ class PDFHistory {
    * NOTE: Avoids navigating away from the document, useful for "named actions".
    */
   forward() {
-    if (!this.initialized || this._popStateInProgress) {
+    if (!this._initialized || this._popStateInProgress) {
       return;
     }
     let state = window.history.state;
@@ -276,8 +288,16 @@ class PDFHistory {
    *   browser history, useful e.g. for skipping the next 'hashchange' event.
    */
   get popStateInProgress() {
-    return this.initialized &&
+    return this._initialized &&
            (this._popStateInProgress || this._blockHashChange > 0);
+  }
+
+  get initialBookmark() {
+    return this._initialized ? this._initialBookmark : null;
+  }
+
+  get initialRotation() {
+    return this._initialized ? this._initialRotation : null;
   }
 
   /**
@@ -286,7 +306,7 @@ class PDFHistory {
   _pushOrReplaceState(destination, forceReplace = false) {
     let shouldReplace = forceReplace || !this._destination;
     let newState = {
-      fingerprint: this.fingerprint,
+      fingerprint: this._fingerprint,
       uid: shouldReplace ? this._uid : (this._uid + 1),
       destination,
     };
@@ -378,12 +398,12 @@ class PDFHistory {
     if (!state) {
       return false;
     }
-    if (state.fingerprint !== this.fingerprint) {
+    if (state.fingerprint !== this._fingerprint) {
       if (checkReload) {
         // Potentially accept the history entry, even if the fingerprints don't
         // match, when the viewer was reloaded (see issue 6847).
         if (typeof state.fingerprint !== 'string' ||
-            state.fingerprint.length !== this.fingerprint.length) {
+            state.fingerprint.length !== this._fingerprint.length) {
           return false;
         }
         const [perfEntry] = performance.getEntriesByType('navigation');
@@ -425,6 +445,20 @@ class PDFHistory {
     this._uid = uid;
     // This should always be reset when `this._destination` is updated.
     this._numPositionUpdates = 0;
+  }
+
+  /**
+   * @private
+   */
+  _parseCurrentHash() {
+    const hash = unescape(getCurrentHash()).substring(1);
+    let page = parseQueryString(hash).page | 0;
+
+    if (!(Number.isInteger(page) &&
+          page > 0 && page <= this.linkService.pagesCount)) {
+      page = null;
+    }
+    return { hash, page, rotation: this.linkService.rotation, };
   }
 
   /**
@@ -493,13 +527,13 @@ class PDFHistory {
     let newHash = getCurrentHash(), hashChanged = this._currentHash !== newHash;
     this._currentHash = newHash;
 
-    if (!state ||
-        (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
-         state.chromecomState && !this._isValidState(state))) {
+    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
+         state && state.chromecomState && !this._isValidState(state)) ||
+        !state) {
       // This case corresponds to the user changing the hash of the document.
       this._uid++;
 
-      let { hash, page, rotation, } = parseCurrentHash(this.linkService);
+      const { hash, page, rotation, } = this._parseCurrentHash();
       this._pushOrReplaceState({ hash, page, rotation, },
                                /* forceReplace = */ true);
       return;
@@ -564,25 +598,47 @@ class PDFHistory {
   /**
    * @private
    */
-  _bindEvents() {
-    let { _boundEvents, eventBus, } = this;
+  _pageHide() {
+    // Attempt to push the `this._position` into the browser history when
+    // navigating away from the document. This is *only* done if the history
+    // is empty/temporary, since otherwise an existing browser history entry
+    // will end up being overwritten (given that new entries cannot be pushed
+    // into the browser history when the 'unload' event has already fired).
+    if (!this._destination || this._destination.temporary) {
+      this._tryPushCurrentPosition();
+    }
+  }
 
-    _boundEvents.updateViewarea = this._updateViewarea.bind(this);
-    _boundEvents.popState = this._popState.bind(this);
-    _boundEvents.pageHide = (evt) => {
-      // Attempt to push the `this._position` into the browser history when
-      // navigating away from the document. This is *only* done if the history
-      // is empty/temporary, since otherwise an existing browser history entry
-      // will end up being overwritten (given that new entries cannot be pushed
-      // into the browser history when the 'unload' event has already fired).
-      if (!this._destination || this._destination.temporary) {
-        this._tryPushCurrentPosition();
-      }
+  /**
+   * @private
+   */
+  _bindEvents() {
+    if (this._boundEvents) {
+      return; // The event listeners were already added.
+    }
+    this._boundEvents = {
+      updateViewarea: this._updateViewarea.bind(this),
+      popState: this._popState.bind(this),
+      pageHide: this._pageHide.bind(this),
     };
 
-    eventBus.on('updateviewarea', _boundEvents.updateViewarea);
-    window.addEventListener('popstate', _boundEvents.popState);
-    window.addEventListener('pagehide', _boundEvents.pageHide);
+    this.eventBus.on('updateviewarea', this._boundEvents.updateViewarea);
+    window.addEventListener('popstate', this._boundEvents.popState);
+    window.addEventListener('pagehide', this._boundEvents.pageHide);
+  }
+
+  /**
+   * @private
+   */
+  _unbindEvents() {
+    if (!this._boundEvents) {
+      return; // The event listeners were already removed.
+    }
+    this.eventBus.off('updateviewarea', this._boundEvents.updateViewarea);
+    window.removeEventListener('popstate', this._boundEvents.popState);
+    window.removeEventListener('pagehide', this._boundEvents.pageHide);
+
+    this._boundEvents = null;
   }
 }
 

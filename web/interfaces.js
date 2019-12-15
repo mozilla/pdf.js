@@ -101,6 +101,8 @@ class IPDFHistory {
    */
   initialize({ fingerprint, resetHistory = false, updateUrl = false, }) {}
 
+  reset() {}
+
   /**
    * @param {Object} params
    */
