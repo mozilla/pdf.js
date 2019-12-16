@@ -431,9 +431,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element = document.createElement('input');
         element.type = 'text';
         element.setAttribute('value', this.data.fieldValue);
-        // Add to name to input to find it later
-        element.setAttribute('name', this.data.fieldName);
       }
+      // We set the name field of the input/textarea
+      element.setAttribute('name', this.data.fieldName);
 
       element.disabled = this.data.readOnly;
 
@@ -594,6 +594,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
     const selectElement = document.createElement('select');
     selectElement.disabled = this.data.readOnly;
+    selectElement.setAttribute('name', this.data.fieldName);
 
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
