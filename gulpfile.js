@@ -567,18 +567,21 @@ gulp.task('default_preferences-pre', function() {
     .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + 'lib/'));
 });
 
-gulp.task('default_preferences', gulp.series('default_preferences-pre',
-    function(done) {
+function default_preferences(done) {
   var AppOptionsLib =
     require('./' + DEFAULT_PREFERENCES_DIR + 'lib/web/app_options.js');
   var AppOptions = AppOptionsLib.AppOptions;
   var OptionKind = AppOptionsLib.OptionKind;
-
   createStringSource('default_preferences.json', JSON.stringify(
-      AppOptions.getAll(OptionKind.PREFERENCE), null, 2))
+    AppOptions.getAll(OptionKind.PREFERENCE), null, 2))
     .pipe(gulp.dest(BUILD_DIR))
     .on('end', done);
-}));
+}
+
+gulp.task('generatePreferences', gulp.series('default_preferences-pre',
+default_preferences), function(done) {
+  done();
+});
 
 gulp.task('locale', function () {
   var VIEWER_LOCALE_OUTPUT = 'web/locale/';
@@ -681,7 +684,7 @@ function preprocessHTML(source, defines) {
 
 // Builds the generic production viewer that should be compatible with most
 // modern HTML5 browsers.
-gulp.task('generic', gulp.series('buildnumber', 'default_preferences', 'locale',
+gulp.task('generic', gulp.series('buildnumber', 'generatePreferences', 'locale',
                                  function() {
   console.log();
   console.log('### Creating generic viewer');
@@ -749,7 +752,7 @@ gulp.task('image_decoders', gulp.series('buildnumber', function() {
   return createImageDecodersBundle(defines).pipe(gulp.dest(IMAGE_DECODERS_DIR));
 }));
 
-gulp.task('minified-pre', gulp.series('buildnumber', 'default_preferences',
+gulp.task('minified-pre', gulp.series('buildnumber', 'generatePreferences',
                                       'locale', function() {
   console.log();
   console.log('### Creating minified viewer');
@@ -847,7 +850,7 @@ function preprocessDefaultPreferences(content) {
           content + '\n');
 }
 
-gulp.task('mozcentral-pre', gulp.series('buildnumber', 'default_preferences',
+gulp.task('mozcentral-pre', gulp.series('buildnumber', 'generatePreferences',
                                         function() {
   console.log();
   console.log('### Building mozilla-central extension');
@@ -898,7 +901,7 @@ gulp.task('mozcentral-pre', gulp.series('buildnumber', 'default_preferences',
 
 gulp.task('mozcentral', gulp.series('mozcentral-pre'));
 
-gulp.task('chromium-pre', gulp.series('buildnumber', 'default_preferences',
+gulp.task('chromium-pre', gulp.series('buildnumber', 'generatePreferences',
                                       'locale', function() {
   console.log();
   console.log('### Building Chromium extension');
@@ -966,7 +969,7 @@ gulp.task('jsdoc', function (done) {
   });
 });
 
-gulp.task('lib', gulp.series('buildnumber', 'default_preferences', function() {
+function genLib() {
   // When we create a bundle, webpack is run on the source and it will replace
   // require with __webpack_require__. When we want to use the real require,
   // __non_webpack_require__ has to be used.
@@ -1039,7 +1042,10 @@ gulp.task('lib', gulp.series('buildnumber', 'default_preferences', function() {
     gulp.src('test/unit/*.js', { base: '.', }),
   ]).pipe(transform('utf8', preprocess))
     .pipe(gulp.dest('build/lib/'));
-}));
+}
+
+gulp.task('lib', gulp.series(gulp.series('buildnumber',
+'generatePreferences'), genLib));
 
 gulp.task('publish', gulp.series('generic', function (done) {
   var version = JSON.parse(
@@ -1140,7 +1146,8 @@ gulp.task('baseline', function (done) {
   });
 });
 
-gulp.task('unittestcli', gulp.series('testing-pre', 'lib', function(done) {
+gulp.task('unittestcli', gulp.series('testing-pre', 'lib',
+function(done) {
   var options = ['node_modules/jasmine/bin/jasmine',
                  'JASMINE_CONFIG_PATH=test/unit/clitests.json'];
   var jasmineProcess = startNode(options, { stdio: 'inherit', });
@@ -1153,10 +1160,9 @@ gulp.task('unittestcli', gulp.series('testing-pre', 'lib', function(done) {
   });
 }));
 
-gulp.task('lint', gulp.series('default_preferences', function(done) {
+function genLint(done) {
   console.log();
   console.log('### Linting JS files');
-
   // Ensure that we lint the Firefox specific *.jsm files too.
   var options = ['node_modules/eslint/bin/eslint', '--ext', '.js,.jsm', '.',
                  '--report-unused-disable-directives'];
@@ -1180,7 +1186,17 @@ gulp.task('lint', gulp.series('default_preferences', function(done) {
     console.log('files checked, no errors found');
     done();
   });
-}));
+}
+
+gulp.task('lint', gulp.series(genLint), function(done) {
+  done();
+});
+
+gulp.task('LintAndMakeLib', gulp.series('generatePreferences',
+gulp.parallel('lint', 'lib')),
+function(done) {
+  done();
+});
 
 gulp.task('server', function () {
   console.log();
@@ -1289,7 +1305,7 @@ gulp.task('web', gulp.series('generic', 'jsdoc', 'gh-pages-prepare',
                              'wintersmith', 'gh-pages-git'));
 
 gulp.task('dist-pre', gulp.series('generic', 'components', 'image_decoders',
-                                  'lib', 'minified', function() {
+                                      'lib', 'minified', function() {
   var VERSION = getVersionJSON().version;
 
   console.log();
