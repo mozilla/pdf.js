@@ -425,7 +425,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
       //       from parsing the elements correctly for the reference tests.
       if (this.data.multiLine) {
-        element = document.createElement('textarea');
+        element = document.createElement('textarea'); 
         element.textContent = this.data.fieldValue;
       } else {
         element = document.createElement('input');
