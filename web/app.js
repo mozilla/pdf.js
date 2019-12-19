@@ -1523,21 +1523,16 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   };
 }
 
-function loadFakeWorker() {
+async function loadFakeWorker() {
   if (!GlobalWorkerOptions.workerSrc) {
     GlobalWorkerOptions.workerSrc = AppOptions.get('workerSrc');
   }
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-    return new Promise(function(resolve, reject) {
-      if (typeof SystemJS === 'object') {
-        SystemJS.import('pdfjs/core/worker').then((worker) => {
-          window.pdfjsWorker = worker;
-          resolve();
-        }).catch(reject);
-      } else {
-        reject(new Error('SystemJS must be used to load fake worker.'));
-      }
-    });
+    if (typeof SystemJS !== 'object') {
+      throw new Error('SystemJS must be used to load fake worker.');
+    }
+    window.pdfjsWorker = await SystemJS.import('pdfjs/core/worker');
+    return undefined;
   }
   return loadScript(PDFWorker.getWorkerSrc());
 }
