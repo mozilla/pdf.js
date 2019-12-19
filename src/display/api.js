@@ -1468,9 +1468,8 @@ const PDFWorker = (function PDFWorkerClosure() {
   let isWorkerDisabled = false;
   let fallbackWorkerSrc;
   let nextFakeWorkerId = 0;
-  let fakeWorkerFilesLoadedCapability;
+  let fakeWorkerCapability;
 
-  let fakeWorkerFilesLoader = null;
   if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
     if (isNodeJS && typeof __non_webpack_require__ === 'function') {
       // Workers aren't supported in Node.js, force-disabling them there.
@@ -1481,16 +1480,6 @@ const PDFWorker = (function PDFWorkerClosure() {
       } else {
         fallbackWorkerSrc = './pdf.worker.js';
       }
-      fakeWorkerFilesLoader = function() {
-        return new Promise(function(resolve, reject) {
-          try {
-            const worker = __non_webpack_require__(getWorkerSrc());
-            resolve(worker.WorkerMessageHandler);
-          } catch (ex) {
-            reject(ex);
-          }
-        });
-      };
     } else if (typeof document === 'object' && 'currentScript' in document) {
       const pdfjsFilePath = document.currentScript &&
                             document.currentScript.src;
@@ -1525,39 +1514,36 @@ const PDFWorker = (function PDFWorkerClosure() {
 
   // Loads worker code into main thread.
   function setupFakeWorkerGlobal() {
-    if (fakeWorkerFilesLoadedCapability) {
-      return fakeWorkerFilesLoadedCapability.promise;
+    if (fakeWorkerCapability) {
+      return fakeWorkerCapability.promise;
     }
-    fakeWorkerFilesLoadedCapability = createPromiseCapability();
+    fakeWorkerCapability = createPromiseCapability();
 
-    const mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
-    if (mainWorkerMessageHandler) {
-      // The worker was already loaded using e.g. a `<script>` tag.
-      fakeWorkerFilesLoadedCapability.resolve(mainWorkerMessageHandler);
-      return fakeWorkerFilesLoadedCapability.promise;
-    }
-    // In the developer build load worker_loader.js which in turn loads all the
-    // other files and resolves the promise. In production only the
-    // pdf.worker.js file is needed.
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-      if (typeof SystemJS === 'object') {
-        SystemJS.import('pdfjs/core/worker').then((worker) => {
-          fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
-        }).catch(fakeWorkerFilesLoadedCapability.reject);
-      } else {
-        fakeWorkerFilesLoadedCapability.reject(
-          new Error('SystemJS must be used to load fake worker.'));
+    const loader = async function() {
+      const mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
+
+      if (mainWorkerMessageHandler) {
+        // The worker was already loaded using e.g. a `<script>` tag.
+        return mainWorkerMessageHandler;
       }
-    } else {
-      const loader = fakeWorkerFilesLoader || function() {
-        return loadScript(getWorkerSrc()).then(function() {
-          return window.pdfjsWorker.WorkerMessageHandler;
-        });
-      };
-      loader().then(fakeWorkerFilesLoadedCapability.resolve,
-                    fakeWorkerFilesLoadedCapability.reject);
-    }
-    return fakeWorkerFilesLoadedCapability.promise;
+      if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+        if (typeof SystemJS !== 'object') {
+          throw new Error('SystemJS must be used to load fake worker.');
+        }
+        const worker = await SystemJS.import('pdfjs/core/worker');
+        return worker.WorkerMessageHandler;
+      }
+      if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) &&
+          (isNodeJS && typeof __non_webpack_require__ === 'function')) {
+        const worker = __non_webpack_require__(getWorkerSrc());
+        return worker.WorkerMessageHandler;
+      }
+      await loadScript(getWorkerSrc());
+      return window.pdfjsWorker.WorkerMessageHandler;
+    };
+    loader().then(fakeWorkerCapability.resolve, fakeWorkerCapability.reject);
+
+    return fakeWorkerCapability.promise;
   }
 
   function createCDNWrapper(url) {
