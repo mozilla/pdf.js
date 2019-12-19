@@ -35,7 +35,6 @@
     "jstransformer-markdown-it": "^2.1.0",
     "merge-stream": "^1.0.1",
     "mkdirp": "^0.5.1",
-    "node-ensure": "^0.0.0",
     "prettier": "^1.19.1",
     "rimraf": "^2.7.1",
     "streamqueue": "^1.1.2",
