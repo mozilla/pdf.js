@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals requirejs, __non_webpack_require__ */
+/* globals __non_webpack_require__ */
 /* eslint no-var: error */
 
 /**
@@ -34,6 +34,7 @@ import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
 import { CanvasGraphics } from './canvas';
 import { GlobalWorkerOptions } from './worker_options';
+import { isNodeJS } from '../shared/is_node';
 import { MessageHandler } from '../shared/message_handler';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
@@ -47,28 +48,12 @@ let fallbackWorkerSrc;
 
 let fakeWorkerFilesLoader = null;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
-  let useRequireEnsure = false;
-  // For GENERIC build we need to add support for different fake file loaders
-  // for different frameworks.
-  if (typeof window === 'undefined') {
-    // node.js - disable worker and set require.ensure.
+  if (isNodeJS && typeof __non_webpack_require__ === 'function') {
+    // Workers aren't supported in Node.js, force-disabling them there.
     isWorkerDisabled = true;
-    if (typeof __non_webpack_require__.ensure === 'undefined') {
-      __non_webpack_require__.ensure = __non_webpack_require__('node-ensure');
-    }
-    useRequireEnsure = true;
-  } else if (typeof __non_webpack_require__ !== 'undefined' &&
-             typeof __non_webpack_require__.ensure === 'function') {
-    useRequireEnsure = true;
-  }
-  if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
-    fallbackWorkerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
-  }
-  const dynamicLoaderSupported =
-    typeof requirejs !== 'undefined' && requirejs.load;
-  fakeWorkerFilesLoader = useRequireEnsure ? (function() {
-    return new Promise(function(resolve, reject) {
-      __non_webpack_require__.ensure([], function() {
+
+    fakeWorkerFilesLoader = function() {
+      return new Promise(function(resolve, reject) {
         try {
           let worker;
           if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
@@ -80,22 +65,9 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
         } catch (ex) {
           reject(ex);
         }
-      }, reject, 'pdfjsWorker');
-    });
-  }) : dynamicLoaderSupported ? (function() {
-    return new Promise(function(resolve, reject) {
-      requirejs(['pdfjs-dist/build/pdf.worker'], function(worker) {
-        try {
-          resolve(worker.WorkerMessageHandler);
-        } catch (ex) {
-          reject(ex);
-        }
-      }, reject);
-    });
-  }) : null;
-
-  if (!fallbackWorkerSrc && typeof document === 'object' &&
-      'currentScript' in document) {
+      });
+    };
+  } else if (typeof document === 'object' && 'currentScript' in document) {
     const pdfjsFilePath = document.currentScript && document.currentScript.src;
     if (pdfjsFilePath) {
       fallbackWorkerSrc =
@@ -1557,7 +1529,7 @@ const PDFWorker = (function PDFWorkerClosure() {
 
     const mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
     if (mainWorkerMessageHandler) {
-      // The worker was already loaded using a `<script>` tag.
+      // The worker was already loaded using e.g. a `<script>` tag.
       fakeWorkerFilesLoadedCapability.resolve(mainWorkerMessageHandler);
       return fakeWorkerFilesLoadedCapability.promise;
     }
