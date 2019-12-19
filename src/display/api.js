@@ -43,38 +43,6 @@ import { WebGLContext } from './webgl';
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
 
-let isWorkerDisabled = false;
-let fallbackWorkerSrc;
-
-let fakeWorkerFilesLoader = null;
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
-  if (isNodeJS && typeof __non_webpack_require__ === 'function') {
-    // Workers aren't supported in Node.js, force-disabling them there.
-    isWorkerDisabled = true;
-
-    fakeWorkerFilesLoader = function() {
-      return new Promise(function(resolve, reject) {
-        try {
-          let worker;
-          if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
-            worker = __non_webpack_require__('../pdf.worker.js');
-          } else {
-            worker = __non_webpack_require__('./pdf.worker.js');
-          }
-          resolve(worker.WorkerMessageHandler);
-        } catch (ex) {
-          reject(ex);
-        }
-      });
-    };
-  } else if (typeof document === 'object' && 'currentScript' in document) {
-    const pdfjsFilePath = document.currentScript && document.currentScript.src;
-    if (pdfjsFilePath) {
-      fallbackWorkerSrc =
-        pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
-    }
-  }
-}
 
 /**
  * @typedef {function} IPDFStreamFactory
@@ -1498,8 +1466,41 @@ class LoopbackPort {
 
 const PDFWorker = (function PDFWorkerClosure() {
   const pdfWorkerPorts = new WeakMap();
+  let isWorkerDisabled = false;
+  let fallbackWorkerSrc;
   let nextFakeWorkerId = 0;
   let fakeWorkerFilesLoadedCapability;
+
+  let fakeWorkerFilesLoader = null;
+  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
+    if (isNodeJS && typeof __non_webpack_require__ === 'function') {
+      // Workers aren't supported in Node.js, force-disabling them there.
+      isWorkerDisabled = true;
+
+      fakeWorkerFilesLoader = function() {
+        return new Promise(function(resolve, reject) {
+          try {
+            let worker;
+            if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
+              worker = __non_webpack_require__('../pdf.worker.js');
+            } else {
+              worker = __non_webpack_require__('./pdf.worker.js');
+            }
+            resolve(worker.WorkerMessageHandler);
+          } catch (ex) {
+            reject(ex);
+          }
+        });
+      };
+    } else if (typeof document === 'object' && 'currentScript' in document) {
+      const pdfjsFilePath = document.currentScript &&
+                            document.currentScript.src;
+      if (pdfjsFilePath) {
+        fallbackWorkerSrc =
+          pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
+      }
+    }
+  }
 
   function getWorkerSrc() {
     if (GlobalWorkerOptions.workerSrc) {
