@@ -27,7 +27,7 @@ import {
   unreachable, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, loadScript, PageViewport,
+  deprecated, DOMCanvasFactory, DOMCMapReaderFactory, loadScript, PageViewport,
   releaseImageResources, RenderingCancelledException, StatTimer
 } from './display_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
@@ -42,7 +42,6 @@ import { WebGLContext } from './webgl';
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
-
 
 /**
  * @typedef {function} IPDFStreamFactory
@@ -1477,15 +1476,15 @@ const PDFWorker = (function PDFWorkerClosure() {
       // Workers aren't supported in Node.js, force-disabling them there.
       isWorkerDisabled = true;
 
+      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
+        fallbackWorkerSrc = '../pdf.worker.js';
+      } else {
+        fallbackWorkerSrc = './pdf.worker.js';
+      }
       fakeWorkerFilesLoader = function() {
         return new Promise(function(resolve, reject) {
           try {
-            let worker;
-            if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
-              worker = __non_webpack_require__('../pdf.worker.js');
-            } else {
-              worker = __non_webpack_require__('./pdf.worker.js');
-            }
+            const worker = __non_webpack_require__(getWorkerSrc());
             resolve(worker.WorkerMessageHandler);
           } catch (ex) {
             reject(ex);
@@ -1507,6 +1506,9 @@ const PDFWorker = (function PDFWorkerClosure() {
       return GlobalWorkerOptions.workerSrc;
     }
     if (typeof fallbackWorkerSrc !== 'undefined') {
+      if (!isNodeJS) {
+        deprecated('No "GlobalWorkerOptions.workerSrc" specified.');
+      }
       return fallbackWorkerSrc;
     }
     throw new Error('No "GlobalWorkerOptions.workerSrc" specified.');
