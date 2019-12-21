@@ -1126,7 +1126,11 @@ let PDFViewerApplication = {
       if (metadataTitle) {
         // Ghostscript can produce invalid 'dc:title' Metadata entries:
         //  - The title may be "Untitled" (fixes bug 1031612).
-        if (metadataTitle !== 'Untitled') {
+        //  - The title may contain incorrectly encoded characters, which thus
+        //    looks broken, hence we ignore the Metadata entry when it contains
+        //    characters from the Specials Unicode block (fixes bug 1605526).
+        if (metadataTitle !== 'Untitled' &&
+            !/[\uFFF0-\uFFFF]/g.test(metadataTitle)) {
           pdfTitle = metadataTitle;
         }
       }
