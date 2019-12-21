@@ -14,7 +14,7 @@
  */
 
 var Canvas = require('canvas');
-var assert = require('assert');
+var assert = require('assert').strict;
 var fs = require('fs');
 
 function NodeCanvasFactory() {}
