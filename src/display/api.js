@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals requirejs, __non_webpack_require__ */
 /* eslint no-var: error */
 
 /**
@@ -27,13 +26,14 @@ import {
   unreachable, warn
 } from '../shared/util';
 import {
-  DOMCanvasFactory, DOMCMapReaderFactory, loadScript, PageViewport,
+  deprecated, DOMCanvasFactory, DOMCMapReaderFactory, loadScript, PageViewport,
   releaseImageResources, RenderingCancelledException, StatTimer
 } from './display_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { apiCompatibilityParams } from './api_compatibility';
 import { CanvasGraphics } from './canvas';
 import { GlobalWorkerOptions } from './worker_options';
+import { isNodeJS } from '../shared/is_node';
 import { MessageHandler } from '../shared/message_handler';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
@@ -41,68 +41,6 @@ import { WebGLContext } from './webgl';
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
-
-let isWorkerDisabled = false;
-let fallbackWorkerSrc;
-
-let fakeWorkerFilesLoader = null;
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
-  let useRequireEnsure = false;
-  // For GENERIC build we need to add support for different fake file loaders
-  // for different frameworks.
-  if (typeof window === 'undefined') {
-    // node.js - disable worker and set require.ensure.
-    isWorkerDisabled = true;
-    if (typeof __non_webpack_require__.ensure === 'undefined') {
-      __non_webpack_require__.ensure = __non_webpack_require__('node-ensure');
-    }
-    useRequireEnsure = true;
-  } else if (typeof __non_webpack_require__ !== 'undefined' &&
-             typeof __non_webpack_require__.ensure === 'function') {
-    useRequireEnsure = true;
-  }
-  if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
-    fallbackWorkerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
-  }
-  const dynamicLoaderSupported =
-    typeof requirejs !== 'undefined' && requirejs.load;
-  fakeWorkerFilesLoader = useRequireEnsure ? (function() {
-    return new Promise(function(resolve, reject) {
-      __non_webpack_require__.ensure([], function() {
-        try {
-          let worker;
-          if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
-            worker = __non_webpack_require__('../pdf.worker.js');
-          } else {
-            worker = __non_webpack_require__('./pdf.worker.js');
-          }
-          resolve(worker.WorkerMessageHandler);
-        } catch (ex) {
-          reject(ex);
-        }
-      }, reject, 'pdfjsWorker');
-    });
-  }) : dynamicLoaderSupported ? (function() {
-    return new Promise(function(resolve, reject) {
-      requirejs(['pdfjs-dist/build/pdf.worker'], function(worker) {
-        try {
-          resolve(worker.WorkerMessageHandler);
-        } catch (ex) {
-          reject(ex);
-        }
-      }, reject);
-    });
-  }) : null;
-
-  if (!fallbackWorkerSrc && typeof document === 'object' &&
-      'currentScript' in document) {
-    const pdfjsFilePath = document.currentScript && document.currentScript.src;
-    if (pdfjsFilePath) {
-      fallbackWorkerSrc =
-        pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
-    }
-  }
-}
 
 /**
  * @typedef {function} IPDFStreamFactory
@@ -1526,14 +1464,40 @@ class LoopbackPort {
 
 const PDFWorker = (function PDFWorkerClosure() {
   const pdfWorkerPorts = new WeakMap();
+  let isWorkerDisabled = false;
+  let fallbackWorkerSrc;
   let nextFakeWorkerId = 0;
-  let fakeWorkerFilesLoadedCapability;
+  let fakeWorkerCapability;
+
+  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
+    // eslint-disable-next-line no-undef
+    if (isNodeJS && typeof __non_webpack_require__ === 'function') {
+      // Workers aren't supported in Node.js, force-disabling them there.
+      isWorkerDisabled = true;
+
+      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
+        fallbackWorkerSrc = '../pdf.worker.js';
+      } else {
+        fallbackWorkerSrc = './pdf.worker.js';
+      }
+    } else if (typeof document === 'object' && 'currentScript' in document) {
+      const pdfjsFilePath = document.currentScript &&
+                            document.currentScript.src;
+      if (pdfjsFilePath) {
+        fallbackWorkerSrc =
+          pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
+      }
+    }
+  }
 
   function getWorkerSrc() {
     if (GlobalWorkerOptions.workerSrc) {
       return GlobalWorkerOptions.workerSrc;
     }
     if (typeof fallbackWorkerSrc !== 'undefined') {
+      if (!isNodeJS) {
+        deprecated('No "GlobalWorkerOptions.workerSrc" specified.');
+      }
       return fallbackWorkerSrc;
     }
     throw new Error('No "GlobalWorkerOptions.workerSrc" specified.');
@@ -1550,39 +1514,50 @@ const PDFWorker = (function PDFWorkerClosure() {
 
   // Loads worker code into main thread.
   function setupFakeWorkerGlobal() {
-    if (fakeWorkerFilesLoadedCapability) {
-      return fakeWorkerFilesLoadedCapability.promise;
+    if (fakeWorkerCapability) {
+      return fakeWorkerCapability.promise;
     }
-    fakeWorkerFilesLoadedCapability = createPromiseCapability();
+    fakeWorkerCapability = createPromiseCapability();
 
-    const mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
-    if (mainWorkerMessageHandler) {
-      // The worker was already loaded using a `<script>` tag.
-      fakeWorkerFilesLoadedCapability.resolve(mainWorkerMessageHandler);
-      return fakeWorkerFilesLoadedCapability.promise;
-    }
-    // In the developer build load worker_loader.js which in turn loads all the
-    // other files and resolves the promise. In production only the
-    // pdf.worker.js file is needed.
-    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-      if (typeof SystemJS === 'object') {
-        SystemJS.import('pdfjs/core/worker').then((worker) => {
-          fakeWorkerFilesLoadedCapability.resolve(worker.WorkerMessageHandler);
-        }).catch(fakeWorkerFilesLoadedCapability.reject);
-      } else {
-        fakeWorkerFilesLoadedCapability.reject(
-          new Error('SystemJS must be used to load fake worker.'));
+    const loader = async function() {
+      const mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
+
+      if (mainWorkerMessageHandler) {
+        // The worker was already loaded using e.g. a `<script>` tag.
+        return mainWorkerMessageHandler;
       }
-    } else {
-      const loader = fakeWorkerFilesLoader || function() {
-        return loadScript(getWorkerSrc()).then(function() {
-          return window.pdfjsWorker.WorkerMessageHandler;
-        });
-      };
-      loader().then(fakeWorkerFilesLoadedCapability.resolve,
-                    fakeWorkerFilesLoadedCapability.reject);
-    }
-    return fakeWorkerFilesLoadedCapability.promise;
+      if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+        if (typeof SystemJS !== 'object') {
+          throw new Error('SystemJS must be used to load fake worker.');
+        }
+        const worker = await SystemJS.import('pdfjs/core/worker');
+        return worker.WorkerMessageHandler;
+      }
+      if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) &&
+          // eslint-disable-next-line no-undef
+          (isNodeJS && typeof __non_webpack_require__ === 'function')) {
+        // Since bundlers, such as Webpack, cannot be told to leave `require`
+        // statements alone we are thus forced to jump through hoops in order
+        // to prevent `Critical dependency: ...` warnings in third-party
+        // deployments of the built `pdf.js`/`pdf.worker.js` files; see
+        // https://github.com/webpack/webpack/issues/8826
+        //
+        // The following hack is based on the assumption that code running in
+        // Node.js won't ever be affected by e.g. Content Security Policies that
+        // prevent the use of `eval`. If that ever occurs, we should revert this
+        // to a normal `__non_webpack_require__` statement and simply document
+        // the Webpack warnings instead (telling users to ignore them).
+        //
+        // eslint-disable-next-line no-eval
+        const worker = eval('require')(getWorkerSrc());
+        return worker.WorkerMessageHandler;
+      }
+      await loadScript(getWorkerSrc());
+      return window.pdfjsWorker.WorkerMessageHandler;
+    };
+    loader().then(fakeWorkerCapability.resolve, fakeWorkerCapability.reject);
+
+    return fakeWorkerCapability.promise;
   }
 
   function createCDNWrapper(url) {
