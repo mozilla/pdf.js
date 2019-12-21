@@ -1117,16 +1117,18 @@ let PDFViewerApplication = {
                   (AppOptions.get('enableWebGL') ? ' [WebGL]' : '') + ')');
 
       let pdfTitle;
-      if (metadata && metadata.has('dc:title')) {
-        let title = metadata.get('dc:title');
-        // Ghostscript sometimes return 'Untitled', sets the title to 'Untitled'
-        if (title !== 'Untitled') {
-          pdfTitle = title;
-        }
-      }
 
-      if (!pdfTitle && info && info['Title']) {
-        pdfTitle = info['Title'];
+      const infoTitle = info && info['Title'];
+      if (infoTitle) {
+        pdfTitle = infoTitle;
+      }
+      const metadataTitle = metadata && metadata.get('dc:title');
+      if (metadataTitle) {
+        // Ghostscript can produce invalid 'dc:title' Metadata entries:
+        //  - The title may be "Untitled" (fixes bug 1031612).
+        if (metadataTitle !== 'Untitled') {
+          pdfTitle = metadataTitle;
+        }
       }
 
       if (pdfTitle) {
