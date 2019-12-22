@@ -37,6 +37,13 @@
     // Possible errors
     "for-direction": "error",
     "getter-return": "error",
+    "indent": ["error", 2, {
+      "CallExpression": { "arguments": "first" },
+      "FunctionExpression": { "parameters": "first" },
+      "ObjectExpression": "first",
+      "SwitchCase": 1,
+      "VariableDeclarator": "first"
+    }],
     "no-async-promise-executor": "error",
     "no-cond-assign": ["error", "except-parens"],
     "no-constant-condition": ["error", { "checkLoops": false, }],
