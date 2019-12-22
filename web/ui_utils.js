@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
 const CSS_UNITS = 96.0 / 72.0;
 const DEFAULT_SCALE_VALUE = 'auto';
@@ -69,7 +70,7 @@ function formatL10nValue(text, args) {
  * No-op implementation of the localization service.
  * @implements {IL10n}
  */
-let NullL10n = {
+const NullL10n = {
   async getLanguage() {
     return 'en-us';
   },
@@ -92,13 +93,13 @@ let NullL10n = {
  *                   not required, true otherwise.
  */
 function getOutputScale(ctx) {
-  let devicePixelRatio = window.devicePixelRatio || 1;
-  let backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
-                          ctx.mozBackingStorePixelRatio ||
-                          ctx.msBackingStorePixelRatio ||
-                          ctx.oBackingStorePixelRatio ||
-                          ctx.backingStorePixelRatio || 1;
-  let pixelRatio = devicePixelRatio / backingStoreRatio;
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
+                            ctx.mozBackingStorePixelRatio ||
+                            ctx.msBackingStorePixelRatio ||
+                            ctx.oBackingStorePixelRatio ||
+                            ctx.backingStorePixelRatio || 1;
+  const pixelRatio = devicePixelRatio / backingStoreRatio;
   return {
     sx: pixelRatio,
     sy: pixelRatio,
@@ -157,7 +158,7 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
  * PDF.js friendly one: with scroll debounce and scroll direction.
  */
 function watchScroll(viewAreaElement, callback) {
-  let debounceScroll = function(evt) {
+  const debounceScroll = function(evt) {
     if (rAF) {
       return;
     }
@@ -165,14 +166,14 @@ function watchScroll(viewAreaElement, callback) {
     rAF = window.requestAnimationFrame(function viewAreaElementScrolled() {
       rAF = null;
 
-      let currentX = viewAreaElement.scrollLeft;
-      let lastX = state.lastX;
+      const currentX = viewAreaElement.scrollLeft;
+      const lastX = state.lastX;
       if (currentX !== lastX) {
         state.right = currentX > lastX;
       }
       state.lastX = currentX;
-      let currentY = viewAreaElement.scrollTop;
-      let lastY = state.lastY;
+      const currentY = viewAreaElement.scrollTop;
+      const lastY = state.lastY;
       if (currentY !== lastY) {
         state.down = currentY > lastY;
       }
@@ -181,7 +182,7 @@ function watchScroll(viewAreaElement, callback) {
     });
   };
 
-  let state = {
+  const state = {
     right: true,
     down: true,
     lastX: viewAreaElement.scrollLeft,
@@ -198,12 +199,12 @@ function watchScroll(viewAreaElement, callback) {
  * Helper function to parse query string (e.g. ?param1=value&parm2=...).
  */
 function parseQueryString(query) {
-  let parts = query.split('&');
-  let params = Object.create(null);
+  const parts = query.split('&');
+  const params = Object.create(null);
   for (let i = 0, ii = parts.length; i < ii; ++i) {
-    let param = parts[i].split('=');
-    let key = param[0].toLowerCase();
-    let value = param.length > 1 ? param[1] : null;
+    const param = parts[i].split('=');
+    const key = param[0].toLowerCase();
+    const value = param.length > 1 ? param[1] : null;
     params[decodeURIComponent(key)] = decodeURIComponent(value);
   }
   return params;
@@ -230,8 +231,8 @@ function binarySearchFirstItem(items, condition) {
   }
 
   while (minIndex < maxIndex) {
-    let currentIndex = (minIndex + maxIndex) >> 1;
-    let currentItem = items[currentIndex];
+    const currentIndex = (minIndex + maxIndex) >> 1;
+    const currentItem = items[currentIndex];
     if (condition(currentItem)) {
       maxIndex = currentIndex;
     } else {
@@ -253,21 +254,21 @@ function approximateFraction(x) {
   if (Math.floor(x) === x) {
     return [x, 1];
   }
-  let xinv = 1 / x;
-  let limit = 8;
+  const xinv = 1 / x;
+  const limit = 8;
   if (xinv > limit) {
     return [1, limit];
   } else if (Math.floor(xinv) === xinv) {
     return [1, xinv];
   }
 
-  let x_ = x > 1 ? xinv : x;
+  const x_ = x > 1 ? xinv : x;
   // a/b and c/d are neighbours in Farey sequence.
   let a = 0, b = 1, c = 1, d = 1;
   // Limiting search to order 8.
   while (true) {
     // Generating next term in sequence (order of q).
-    let p = a + c, q = b + d;
+    const p = a + c, q = b + d;
     if (q > limit) {
       break;
     }
@@ -288,7 +289,7 @@ function approximateFraction(x) {
 }
 
 function roundToDivide(x, div) {
-  let r = x % div;
+  const r = x % div;
   return r === 0 ? x : Math.round(x - r + div);
 }
 
@@ -525,7 +526,7 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
 
   if (sortByVisibility) {
     visible.sort(function(a, b) {
-      let pc = a.percent - b.percent;
+      const pc = a.percent - b.percent;
       if (Math.abs(pc) > 0.001) {
         return -pc;
       }
@@ -543,7 +544,8 @@ function noContextMenuHandler(evt) {
 }
 
 function isDataSchema(url) {
-  let i = 0, ii = url.length;
+  let i = 0;
+  const ii = url.length;
   while (i < ii && url[i].trim() === '') {
     i++;
   }
@@ -570,7 +572,7 @@ function getPDFFileNameFromURL(url, defaultFilename = 'document.pdf') {
   //            SCHEME        HOST         1.PATH  2.QUERY   3.REF
   // Pattern to get last matching NAME.pdf
   const reFilename = /[^\/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
-  let splitURI = reURI.exec(url);
+  const splitURI = reURI.exec(url);
   let suggestedFilename = reFilename.exec(splitURI[1]) ||
                           reFilename.exec(splitURI[2]) ||
                           reFilename.exec(splitURI[3]);
@@ -592,7 +594,7 @@ function getPDFFileNameFromURL(url, defaultFilename = 'document.pdf') {
 
 function normalizeWheelEventDelta(evt) {
   let delta = Math.sqrt(evt.deltaX * evt.deltaX + evt.deltaY * evt.deltaY);
-  let angle = Math.atan2(evt.deltaY, evt.deltaX);
+  const angle = Math.atan2(evt.deltaY, evt.deltaX);
   if (-0.25 * Math.PI < angle && angle < 0.75 * Math.PI) {
     // All that is left-up oriented has to change the sign.
     delta = -delta;
@@ -680,14 +682,14 @@ function waitOnEventOrTimeout({ target, name, delay = 0, }) {
     }
 
     const timeoutHandler = handler.bind(null, WaitOnType.TIMEOUT);
-    let timeout = setTimeout(timeoutHandler, delay);
+    const timeout = setTimeout(timeoutHandler, delay);
   });
 }
 
 /**
  * Promise that is resolved when DOM window becomes visible.
  */
-let animationStarted = new Promise(function (resolve) {
+const animationStarted = new Promise(function (resolve) {
   if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) &&
       typeof window === 'undefined') {
     // Prevent "ReferenceError: window is not defined" errors when running the
@@ -719,7 +721,7 @@ class EventBus {
   }
 
   off(eventName, listener) {
-    let eventListeners = this._listeners[eventName];
+    const eventListeners = this._listeners[eventName];
     let i;
     if (!eventListeners || ((i = eventListeners.indexOf(listener)) < 0)) {
       return;
@@ -728,7 +730,7 @@ class EventBus {
   }
 
   dispatch(eventName) {
-    let eventListeners = this._listeners[eventName];
+    const eventListeners = this._listeners[eventName];
     if (!eventListeners || eventListeners.length === 0) {
       if (this._dispatchToDOM) {
         const args = Array.prototype.slice.call(arguments, 1);
@@ -755,7 +757,7 @@ class EventBus {
     const details = Object.create(null);
     if (args && args.length > 0) {
       const obj = args[0];
-      for (let key in obj) {
+      for (const key in obj) {
         const value = obj[key];
         if (key === 'source') {
           if (value === window || value === document) {
@@ -811,7 +813,7 @@ class ProgressBar {
     }
 
     this.div.classList.remove('indeterminate');
-    let progressSize = this.width * this._percent / 100;
+    const progressSize = this.width * this._percent / 100;
     this.div.style.width = progressSize + this.units;
   }
 
@@ -829,8 +831,8 @@ class ProgressBar {
     if (!viewer) {
       return;
     }
-    let container = viewer.parentNode;
-    let scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
+    const container = viewer.parentNode;
+    const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
       this.bar.setAttribute('style', 'width: calc(100% - ' +
                                      scrollbarWidth + 'px);');
