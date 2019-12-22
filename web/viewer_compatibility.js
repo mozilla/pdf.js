@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
-let compatibilityParams = Object.create(null);
+const compatibilityParams = Object.create(null);
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   const userAgent =
     (typeof navigator !== 'undefined' && navigator.userAgent) || '';
