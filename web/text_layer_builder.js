@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
 import { getGlobalEventBus } from './ui_utils';
 import { renderTextLayer } from 'pdfjs-lib';
@@ -64,7 +65,7 @@ class TextLayerBuilder {
     this.renderingDone = true;
 
     if (!this.enhanceTextSelection) {
-      let endOfContent = document.createElement('div');
+      const endOfContent = document.createElement('div');
       endOfContent.className = 'endOfContent';
       this.textLayerDiv.appendChild(endOfContent);
     }
@@ -89,7 +90,7 @@ class TextLayerBuilder {
     this.cancel();
 
     this.textDivs = [];
-    let textLayerFrag = document.createDocumentFragment();
+    const textLayerFrag = document.createDocumentFragment();
     this.textLayerRenderTask = renderTextLayer({
       textContent: this.textContent,
       textContentStream: this.textContentStream,
@@ -171,7 +172,7 @@ class TextLayerBuilder {
         console.error('Could not find a matching mapping');
       }
 
-      let match = {
+      const match = {
         begin: {
           divIdx: i,
           offset: matchIdx - iIndex,
@@ -213,23 +214,24 @@ class TextLayerBuilder {
     const selectedMatchIdx = findController.selected.matchIdx;
     const highlightAll = findController.state.highlightAll;
     let prevEnd = null;
-    let infinity = {
+    const infinity = {
       divIdx: -1,
       offset: undefined,
     };
 
     function beginText(begin, className) {
-      let divIdx = begin.divIdx;
+      const divIdx = begin.divIdx;
       textDivs[divIdx].textContent = '';
       appendTextToDiv(divIdx, 0, begin.offset, className);
     }
 
     function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
-      let div = textDivs[divIdx];
-      let content = textContentItemsStr[divIdx].substring(fromOffset, toOffset);
-      let node = document.createTextNode(content);
+      const div = textDivs[divIdx];
+      const content =
+        textContentItemsStr[divIdx].substring(fromOffset, toOffset);
+      const node = document.createTextNode(content);
       if (className) {
-        let span = document.createElement('span');
+        const span = document.createElement('span');
         span.className = className;
         span.appendChild(node);
         div.appendChild(span);
@@ -248,9 +250,9 @@ class TextLayerBuilder {
     }
 
     for (let i = i0; i < i1; i++) {
-      let match = matches[i];
-      let begin = match.begin;
-      let end = match.end;
+      const match = matches[i];
+      const begin = match.begin;
+      const end = match.end;
       const isSelected = (isSelectedPage && i === selectedMatchIdx);
       const highlightSuffix = (isSelected ? ' selected' : '');
 
@@ -305,10 +307,10 @@ class TextLayerBuilder {
 
     // Clear all current matches.
     for (let i = 0, ii = matches.length; i < ii; i++) {
-      let match = matches[i];
-      let begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
+      const match = matches[i];
+      const begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
       for (let n = begin, end = match.end.divIdx; n <= end; n++) {
-        let div = textDivs[n];
+        const div = textDivs[n];
         div.textContent = textContentItemsStr[n];
         div.className = '';
       }
@@ -335,7 +337,7 @@ class TextLayerBuilder {
    * @private
    */
   _bindMouse() {
-    let div = this.textLayerDiv;
+    const div = this.textLayerDiv;
     let expandDivsTimer = null;
 
     div.addEventListener('mousedown', (evt) => {
@@ -350,7 +352,7 @@ class TextLayerBuilder {
         return;
       }
 
-      let end = div.querySelector('.endOfContent');
+      const end = div.querySelector('.endOfContent');
       if (!end) {
         return;
       }
@@ -366,8 +368,8 @@ class TextLayerBuilder {
             getPropertyValue('-moz-user-select') !== 'none';
         }
         if (adjustTop) {
-          let divBounds = div.getBoundingClientRect();
-          let r = Math.max(0, (evt.pageY - divBounds.top) / divBounds.height);
+          const divBounds = div.getBoundingClientRect();
+          const r = Math.max(0, (evt.pageY - divBounds.top) / divBounds.height);
           end.style.top = (r * 100).toFixed(2) + '%';
         }
       }
@@ -390,7 +392,7 @@ class TextLayerBuilder {
         return;
       }
 
-      let end = div.querySelector('.endOfContent');
+      const end = div.querySelector('.endOfContent');
       if (!end) {
         return;
       }
