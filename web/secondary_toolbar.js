@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
 import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from './ui_utils';
 import { CursorTool } from './pdf_cursor_tools';
@@ -172,8 +173,8 @@ class SecondaryToolbar {
     for (const { element, eventName, close, eventDetails, } of this.buttons) {
       element.addEventListener('click', (evt) => {
         if (eventName !== null) {
-          let details = { source: this, };
-          for (let property in eventDetails) {
+          const details = { source: this, };
+          for (const property in eventDetails) {
             details[property] = eventDetails[property];
           }
           this.eventBus.dispatch(eventName, details);
