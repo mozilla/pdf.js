@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
 let defaultPreferences = null;
 function getDefaultPreferences() {
@@ -60,7 +61,7 @@ class BasePreferences {
       if (!prefs) {
         return;
       }
-      for (let name in prefs) {
+      for (const name in prefs) {
         const defaultValue = this.defaults[name], prefValue = prefs[name];
         // Ignore preferences not present in, or whose types don't match,
         // the default values.
@@ -113,15 +114,15 @@ class BasePreferences {
    */
   async set(name, value) {
     await this._initializedPromise;
-    let defaultValue = this.defaults[name];
+    const defaultValue = this.defaults[name];
 
     if (defaultValue === undefined) {
       throw new Error(`Set preference: "${name}" is undefined.`);
     } else if (value === undefined) {
       throw new Error('Set preference: no value is specified.');
     }
-    let valueType = typeof value;
-    let defaultType = typeof defaultValue;
+    const valueType = typeof value;
+    const defaultType = typeof defaultValue;
 
     if (valueType !== defaultType) {
       if (valueType === 'number' && defaultType === 'string') {
@@ -147,12 +148,12 @@ class BasePreferences {
    */
   async get(name) {
     await this._initializedPromise;
-    let defaultValue = this.defaults[name];
+    const defaultValue = this.defaults[name];
 
     if (defaultValue === undefined) {
       throw new Error(`Get preference: "${name}" is undefined.`);
     } else {
-      let prefValue = this.prefs[name];
+      const prefValue = this.prefs[name];
 
       if (prefValue !== undefined) {
         return prefValue;
