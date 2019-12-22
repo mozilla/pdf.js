@@ -53,6 +53,7 @@
     "yargs": "^11.1.1"
   },
   "scripts": {
+    "lint": "eslint .",
     "test": "env SKIP_BABEL=true gulp npm-test"
   },
   "repository": {
