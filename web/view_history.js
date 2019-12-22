@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
 const DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
 
@@ -30,7 +31,7 @@ class ViewHistory {
     this.cacheSize = cacheSize;
 
     this._initializedPromise = this._readFromStorage().then((databaseStr) => {
-      let database = JSON.parse(databaseStr || '{}');
+      const database = JSON.parse(databaseStr || '{}');
       if (!('files' in database)) {
         database.files = [];
       } else {
@@ -40,7 +41,7 @@ class ViewHistory {
       }
       let index = -1;
       for (let i = 0, length = database.files.length; i < length; i++) {
-        let branch = database.files[i];
+        const branch = database.files[i];
         if (branch.fingerprint === this.fingerprint) {
           index = i;
           break;
@@ -55,7 +56,7 @@ class ViewHistory {
   }
 
   async _writeToStorage() {
-    let databaseStr = JSON.stringify(this.database);
+    const databaseStr = JSON.stringify(this.database);
 
     if (typeof PDFJSDev !== 'undefined' &&
         PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
@@ -81,7 +82,7 @@ class ViewHistory {
 
   async setMultiple(properties) {
     await this._initializedPromise;
-    for (let name in properties) {
+    for (const name in properties) {
       this.file[name] = properties[name];
     }
     return this._writeToStorage();
@@ -89,16 +90,16 @@ class ViewHistory {
 
   async get(name, defaultValue) {
     await this._initializedPromise;
-    let val = this.file[name];
+    const val = this.file[name];
     return val !== undefined ? val : defaultValue;
   }
 
   async getMultiple(properties) {
     await this._initializedPromise;
-    let values = Object.create(null);
+    const values = Object.create(null);
 
-    for (let name in properties) {
-      let val = this.file[name];
+    for (const name in properties) {
+      const val = this.file[name];
       values[name] = val !== undefined ? val : properties[name];
     }
     return values;
