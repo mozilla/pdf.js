@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
 import {
   animationStarted, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, MAX_SCALE,
@@ -194,7 +195,7 @@ class Toolbar {
     items.zoomOut.disabled = (pageScale <= MIN_SCALE);
     items.zoomIn.disabled = (pageScale >= MAX_SCALE);
 
-    let customScale = Math.round(pageScale * 10000) / 100;
+    const customScale = Math.round(pageScale * 10000) / 100;
     this.l10n.get('page_scale_percent', { scale: customScale, },
                   '{{scale}}%').then((msg) => {
       let predefinedValueFound = false;
@@ -214,14 +215,14 @@ class Toolbar {
   }
 
   updateLoadingIndicatorState(loading = false) {
-    let pageNumberInput = this.items.pageNumber;
+    const pageNumberInput = this.items.pageNumber;
 
     pageNumberInput.classList.toggle(PAGE_NUMBER_LOADING_INDICATOR, loading);
   }
 
   _adjustScaleWidth() {
-    let container = this.items.scaleSelectContainer;
-    let select = this.items.scaleSelect;
+    const container = this.items.scaleSelectContainer;
+    const select = this.items.scaleSelect;
 
     animationStarted.then(function() {
       // Adjust the width of the zoom box to fit the content.
@@ -232,7 +233,7 @@ class Toolbar {
       }
       if (container.clientWidth > 0) {
         select.setAttribute('style', 'min-width: inherit;');
-        let width = select.clientWidth + SCALE_SELECT_CONTAINER_PADDING;
+        const width = select.clientWidth + SCALE_SELECT_CONTAINER_PADDING;
         select.setAttribute('style', 'min-width: ' +
                                      (width + SCALE_SELECT_PADDING) + 'px;');
         container.setAttribute('style', 'min-width: ' + width + 'px; ' +
