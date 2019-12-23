@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
 'use strict';
 
@@ -21,12 +22,12 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
   (function rewriteUrlClosure() {
     // Run this code outside DOMContentLoaded to make sure that the URL
     // is rewritten as soon as possible.
-    let queryString = document.location.search.slice(1);
-    let m = /(^|&)file=([^&]*)/.exec(queryString);
+    const queryString = document.location.search.slice(1);
+    const m = /(^|&)file=([^&]*)/.exec(queryString);
     defaultUrl = m ? decodeURIComponent(m[2]) : '';
 
     // Example: chrome-extension://.../http://example.com/file.pdf
-    let humanReadableUrl = '/' + defaultUrl + location.hash;
+    const humanReadableUrl = '/' + defaultUrl + location.hash;
     history.replaceState(history.state, '', humanReadableUrl);
     if (top === window) {
       // eslint-disable-next-line no-undef
@@ -184,7 +185,7 @@ function getViewerConfiguration() {
 }
 
 function webViewerLoad() {
-  let config = getViewerConfiguration();
+  const config = getViewerConfiguration();
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     Promise.all([
       SystemJS.import('pdfjs-web/app'),
