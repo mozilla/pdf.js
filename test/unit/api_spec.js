@@ -1405,7 +1405,7 @@ describe('api', function() {
 
         let [statEntryOne, statEntryTwo, statEntryThree] = stats.times;
         expect(statEntryOne.name).toEqual('Page Request');
-        expect(statEntryOne.end - statEntryOne.start).toBeGreaterThan(0);
+        expect(statEntryOne.end - statEntryOne.start).toBeGreaterThanOrEqual(0);
 
         expect(statEntryTwo.name).toEqual('Rendering');
         expect(statEntryTwo.end - statEntryTwo.start).toBeGreaterThan(0);
