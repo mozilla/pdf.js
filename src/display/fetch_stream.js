@@ -33,6 +33,18 @@ function createFetchOptions(headers, withCredentials, abortController) {
   };
 }
 
+function createHeaders(httpHeaders) {
+  const headers = new Headers();
+  for (const property in httpHeaders) {
+    const value = httpHeaders[property];
+    if (typeof value === 'undefined') {
+      continue;
+    }
+    headers.append(property, value);
+  }
+  return headers;
+}
+
 /** @implements {IPDFStream} */
 class PDFFetchStream {
   constructor(source) {
@@ -97,14 +109,7 @@ class PDFFetchStreamReader {
     this._isStreamingSupported = !source.disableStream;
     this._isRangeSupported = !source.disableRange;
 
-    this._headers = new Headers();
-    for (const property in this._stream.httpHeaders) {
-      const value = this._stream.httpHeaders[property];
-      if (typeof value === 'undefined') {
-        continue;
-      }
-      this._headers.append(property, value);
-    }
+    this._headers = createHeaders(this._stream.httpHeaders);
 
     const url = source.url;
     fetch(url, createFetchOptions(this._headers, this._withCredentials,
@@ -204,14 +209,7 @@ class PDFFetchStreamRangeReader {
       this._abortController = new AbortController();
     }
 
-    this._headers = new Headers();
-    for (const property in this._stream.httpHeaders) {
-      const value = this._stream.httpHeaders[property];
-      if (typeof value === 'undefined') {
-        continue;
-      }
-      this._headers.append(property, value);
-    }
+    this._headers = createHeaders(this._stream.httpHeaders);
     this._headers.append('Range', `bytes=${begin}-${end - 1}`);
 
     const url = source.url;
