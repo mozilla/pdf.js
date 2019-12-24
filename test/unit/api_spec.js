@@ -889,7 +889,7 @@ describe("api", function() {
     // detect whether or not to automatically start printing.
     var viewerPrintRegExp = /\bprint\s*\(/;
     it("gets javascript with printing instructions (Print action)", function(done) {
-      // PDF document with "Print" Named action in OpenAction
+      // PDF document with "Print" Named action in the OpenAction dictionary.
       var loadingTask = getDocument(buildGetDocumentParams("bug1001080.pdf"));
       var promise = loadingTask.promise.then(function(doc) {
         return doc.getJavaScript();
@@ -902,8 +902,25 @@ describe("api", function() {
         })
         .catch(done.fail);
     });
+    it("gets javascript with printing instructions (Print action without type)", function(done) {
+      // PDF document with "Print" Named action in the OpenAction dictionary,
+      // but the OpenAction dictionary is missing the `Type` entry.
+      var loadingTask = getDocument(
+        buildGetDocumentParams("issue11442_reduced.pdf")
+      );
+      var promise = loadingTask.promise.then(function(doc) {
+        return doc.getJavaScript();
+      });
+      promise
+        .then(function(data) {
+          expect(data).toEqual(["print({});"]);
+          expect(data[0]).toMatch(viewerPrintRegExp);
+          loadingTask.destroy().then(done);
+        })
+        .catch(done.fail);
+    });
     it("gets javascript with printing instructions (JS action)", function(done) {
-      // PDF document with "JavaScript" action in OpenAction
+      // PDF document with "JavaScript" action in the OpenAction dictionary.
       var loadingTask = getDocument(buildGetDocumentParams("issue6106.pdf"));
       var promise = loadingTask.promise.then(function(doc) {
         return doc.getJavaScript();
@@ -918,6 +935,7 @@ describe("api", function() {
         })
         .catch(done.fail);
     });
+
     it("gets non-existent outline", function(done) {
       var loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
 
