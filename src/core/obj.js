@@ -625,7 +625,9 @@ class Catalog {
 
     // Append OpenAction actions to the JavaScript array.
     const openActionDict = this.catDict.get('OpenAction');
-    if (isDict(openActionDict, 'Action')) {
+    if (isDict(openActionDict) &&
+        (isName(openActionDict.get('Type'), 'Action') ||
+         !openActionDict.has('Type'))) {
       const actionType = openActionDict.get('S');
       if (isName(actionType, 'Named')) {
         // The named Print action is not a part of the PDF 1.7 specification,
