@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint no-var: error, prefer-const: error */
 
 import {
   getVisibleElements, isValidRotation, NullL10n, scrollIntoView, watchScroll
@@ -85,14 +86,14 @@ class PDFThumbnailViewer {
       // ... and add the highlight to the new thumbnail.
       thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
     }
-    let visibleThumbs = this._getVisibleThumbs();
-    let numVisibleThumbs = visibleThumbs.views.length;
+    const visibleThumbs = this._getVisibleThumbs();
+    const numVisibleThumbs = visibleThumbs.views.length;
 
     // If the thumbnail isn't currently visible, scroll it into view.
     if (numVisibleThumbs > 0) {
-      let first = visibleThumbs.first.id;
+      const first = visibleThumbs.first.id;
       // Account for only one thumbnail being visible.
-      let last = (numVisibleThumbs > 1 ? visibleThumbs.last.id : first);
+      const last = (numVisibleThumbs > 1 ? visibleThumbs.last.id : first);
 
       let shouldScroll = false;
       if (pageNumber <= first || pageNumber >= last) {
@@ -165,10 +166,10 @@ class PDFThumbnailViewer {
     }
 
     pdfDocument.getPage(1).then((firstPdfPage) => {
-      let pagesCount = pdfDocument.numPages;
+      const pagesCount = pdfDocument.numPages;
       const viewport = firstPdfPage.getViewport({ scale: 1, });
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-        let thumbnail = new PDFThumbnailView({
+        const thumbnail = new PDFThumbnailView({
           container: this.container,
           id: pageNum,
           defaultViewport: viewport.clone(),
@@ -224,7 +225,7 @@ class PDFThumbnailViewer {
     }
     // Update all the `PDFThumbnailView` instances.
     for (let i = 0, ii = this._thumbnails.length; i < ii; i++) {
-      let label = this._pageLabels && this._pageLabels[i];
+      const label = this._pageLabels && this._pageLabels[i];
       this._thumbnails[i].setPageLabel(label);
     }
   }
@@ -257,10 +258,10 @@ class PDFThumbnailViewer {
   }
 
   forceRendering() {
-    let visibleThumbs = this._getVisibleThumbs();
-    let thumbView = this.renderingQueue.getHighestPriority(visibleThumbs,
-                                                           this._thumbnails,
-                                                           this.scroll.down);
+    const visibleThumbs = this._getVisibleThumbs();
+    const thumbView = this.renderingQueue.getHighestPriority(visibleThumbs,
+                                                             this._thumbnails,
+                                                             this.scroll.down);
     if (thumbView) {
       this._ensurePdfPageLoaded(thumbView).then(() => {
         this.renderingQueue.renderView(thumbView);
