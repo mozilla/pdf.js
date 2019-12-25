@@ -466,7 +466,7 @@ html[dir='ltr'] .doorHangerRight:before {
 }
 
 #findInput.notFound {
-  background-color: rgb(255, 102, 102);
+  background-color: rgba(255, 102, 102, 1);
 }
 
 #toolbarViewerMiddle {
@@ -1511,7 +1511,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 #viewer.textLayer-visible .canvasWrapper {
-  background-color: rgb(128,255,128);
+  background-color: rgba(128, 255, 128, 1);
 }
 
 #viewer.textLayer-visible .canvasWrapper canvas {
