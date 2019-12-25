@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { GrabToPan } from './grab_to_pan';
+import { GrabToPan } from "./grab_to_pan";
 
 const CursorTool = {
   SELECT: 0, // The default value.
@@ -34,7 +34,7 @@ class PDFCursorTools {
   /**
    * @param {PDFCursorToolsOptions} options
    */
-  constructor({ container, eventBus, cursorToolOnLoad = CursorTool.SELECT, }) {
+  constructor({ container, eventBus, cursorToolOnLoad = CursorTool.SELECT }) {
     this.container = container;
     this.eventBus = eventBus;
 
@@ -82,11 +82,13 @@ class PDFCursorTools {
           this.handTool.deactivate();
           break;
         case CursorTool.ZOOM:
-          /* falls through */
+        /* falls through */
       }
     };
 
-    switch (tool) { // Enable the new cursor tool.
+    switch (
+      tool // Enable the new cursor tool.
+    ) {
       case CursorTool.SELECT:
         disableActiveTool();
         break;
@@ -95,7 +97,7 @@ class PDFCursorTools {
         this.handTool.activate();
         break;
       case CursorTool.ZOOM:
-        /* falls through */
+      /* falls through */
       default:
         console.error(`switchTool: "${tool}" is an unsupported value.`);
         return;
@@ -111,7 +113,7 @@ class PDFCursorTools {
    * @private
    */
   _dispatchEvent() {
-    this.eventBus.dispatch('cursortoolchanged', {
+    this.eventBus.dispatch("cursortoolchanged", {
       source: this,
       tool: this.active,
     });
@@ -121,11 +123,11 @@ class PDFCursorTools {
    * @private
    */
   _addEventListeners() {
-    this.eventBus.on('switchcursortool', (evt) => {
+    this.eventBus.on("switchcursortool", evt => {
       this.switchTool(evt.tool);
     });
 
-    this.eventBus.on('presentationmodechanged', (evt) => {
+    this.eventBus.on("presentationmodechanged", evt => {
       if (evt.switchInProgress) {
         return;
       }
@@ -146,7 +148,4 @@ class PDFCursorTools {
   }
 }
 
-export {
-  CursorTool,
-  PDFCursorTools,
-};
+export { CursorTool, PDFCursorTools };

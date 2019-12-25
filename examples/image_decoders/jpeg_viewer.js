@@ -13,39 +13,40 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
 if (!pdfjsImageDecoders.JpegImage) {
-  alert('Please build the pdfjs-dist library using `gulp dist-install`');
+  alert("Please build the pdfjs-dist library using `gulp dist-install`");
 }
 
-var JPEG_IMAGE = 'fish.jpg';
+var JPEG_IMAGE = "fish.jpg";
 
-var jpegCanvas = document.getElementById('jpegCanvas');
-var jpegCtx = jpegCanvas.getContext('2d');
+var jpegCanvas = document.getElementById("jpegCanvas");
+var jpegCtx = jpegCanvas.getContext("2d");
 
 // Load the image data, and convert it to a Uint8Array.
 //
 var nonBinaryRequest = false;
 var request = new XMLHttpRequest();
-request.open('GET', JPEG_IMAGE, false);
+request.open("GET", JPEG_IMAGE, false);
 try {
-  request.responseType = 'arraybuffer';
-  nonBinaryRequest = request.responseType !== 'arraybuffer';
+  request.responseType = "arraybuffer";
+  nonBinaryRequest = request.responseType !== "arraybuffer";
 } catch (e) {
   nonBinaryRequest = true;
 }
 if (nonBinaryRequest && request.overrideMimeType) {
-  request.overrideMimeType('text/plain; charset=x-user-defined');
+  request.overrideMimeType("text/plain; charset=x-user-defined");
 }
 request.send(null);
 
 var typedArrayImage;
 if (nonBinaryRequest) {
-  var str = request.responseText, length = str.length;
+  var str = request.responseText,
+    length = str.length;
   var bytes = new Uint8Array(length);
   for (var i = 0; i < length; ++i) {
-    bytes[i] = str.charCodeAt(i) & 0xFF;
+    bytes[i] = str.charCodeAt(i) & 0xff;
   }
   typedArrayImage = bytes;
 } else {
@@ -57,7 +58,8 @@ if (nonBinaryRequest) {
 var jpegImage = new pdfjsImageDecoders.JpegImage();
 jpegImage.parse(typedArrayImage);
 
-var width = jpegImage.width, height = jpegImage.height;
+var width = jpegImage.width,
+  height = jpegImage.height;
 var jpegData = jpegImage.getData({
   width: width,
   height: height,
@@ -68,7 +70,7 @@ var jpegData = jpegImage.getData({
 //
 var imageData = jpegCtx.createImageData(width, height);
 var imageBytes = imageData.data;
-for (var j = 0, k = 0, jj = width * height * 4; j < jj;) {
+for (var j = 0, k = 0, jj = width * height * 4; j < jj; ) {
   imageBytes[j++] = jpegData[k++];
   imageBytes[j++] = jpegData[k++];
   imageBytes[j++] = jpegData[k++];

@@ -1,25 +1,30 @@
-'use strict';
+"use strict";
 
-var fs = require('fs');
+var fs = require("fs");
 
 try {
-  var ttest = require('ttest');
+  var ttest = require("ttest");
 } catch (e) {
   console.log('\nttest is not installed -- to intall, run "npm install ttest"');
-  console.log('Continuing without significance test...\n');
+  console.log("Continuing without significance test...\n");
 }
 
-var VALID_GROUP_BYS = ['browser', 'pdf', 'page', 'round', 'stat'];
+var VALID_GROUP_BYS = ["browser", "pdf", "page", "round", "stat"];
 
 function parseOptions() {
-  var yargs = require('yargs')
-    .usage('Compare the results of two stats files.\n' +
-           'Usage:\n  $0 <BASELINE> <CURRENT> [options]')
+  var yargs = require("yargs")
+    .usage(
+      "Compare the results of two stats files.\n" +
+        "Usage:\n  $0 <BASELINE> <CURRENT> [options]"
+    )
     .demand(2)
-    .string(['groupBy'])
-    .describe('groupBy', 'How statistics should grouped. Valid options: ' +
-              VALID_GROUP_BYS.join(' '))
-    .default('groupBy', 'browser,stat');
+    .string(["groupBy"])
+    .describe(
+      "groupBy",
+      "How statistics should grouped. Valid options: " +
+        VALID_GROUP_BYS.join(" ")
+    )
+    .default("groupBy", "browser,stat");
   var result = yargs.argv;
   result.baseline = result._[0];
   result.current = result._[1];
@@ -37,11 +42,11 @@ function group(stats, groupBy) {
     for (var j = 0; j < groupBy.length; j++) {
       keyArr.push(stat[groupBy[j]]);
     }
-    var key = keyArr.join(',');
+    var key = keyArr.join(",");
     if (vals[key] === undefined) {
       vals[key] = [];
     }
-    vals[key].push(stat['time']);
+    vals[key].push(stat["time"]);
   }
   return vals;
 }
@@ -53,30 +58,30 @@ function group(stats, groupBy) {
 function flatten(stats) {
   var rows = [];
   stats.forEach(function(stat) {
-    stat['stats'].forEach(function(s) {
+    stat["stats"].forEach(function(s) {
       rows.push({
-        browser: stat['browser'],
-        page: stat['page'],
-        pdf: stat['pdf'],
-        round: stat['round'],
-        stat: s['name'],
-        time: s['end'] - s['start'],
+        browser: stat["browser"],
+        page: stat["page"],
+        pdf: stat["pdf"],
+        round: stat["round"],
+        stat: s["name"],
+        time: s["end"] - s["start"],
       });
     });
   });
   // Use only overall results if not grouped by 'stat'
-  if (!options.groupBy.includes('stat')) {
+  if (!options.groupBy.includes("stat")) {
     rows = rows.filter(function(s) {
-      return s.stat === 'Overall';
+      return s.stat === "Overall";
     });
   }
   return rows;
 }
 
 function pad(s, length, dir /* default: 'right' */) {
-  s = '' + s;
-  var spaces = new Array(Math.max(0, length - s.length + 1)).join(' ');
-  return dir === 'left' ? spaces + s : s + spaces;
+  s = "" + s;
+  var spaces = new Array(Math.max(0, length - s.length + 1)).join(" ");
+  return dir === "left" ? spaces + s : s + spaces;
 }
 
 function mean(array) {
@@ -88,8 +93,8 @@ function mean(array) {
 
 /* Comparator for row key sorting. */
 function compareRow(a, b) {
-  a = a.split(',');
-  b = b.split(',');
+  a = a.split(",");
+  b = b.split(",");
   for (var i = 0; i < Math.min(a.length, b.length); i++) {
     var intA = parseInt(a[i], 10);
     var intB = parseInt(b[i], 10);
@@ -125,11 +130,13 @@ function stat(baseline, current) {
   keys.sort(compareRow);
 
   var labels = options.groupBy.slice(0);
-  labels.push('Count', 'Baseline(ms)', 'Current(ms)', '+/-', '% ');
+  labels.push("Count", "Baseline(ms)", "Current(ms)", "+/-", "% ");
   if (ttest) {
-    labels.push('Result(P<.05)');
+    labels.push("Result(P<.05)");
   }
-  var i, row, rows = [];
+  var i,
+    row,
+    rows = [];
   // collect rows and measure column widths
   var width = labels.map(function(s) {
     return s.length;
@@ -139,19 +146,23 @@ function stat(baseline, current) {
     var key = keys[k];
     var baselineMean = mean(baselineGroup[key]);
     var currentMean = mean(currentGroup[key]);
-    row = key.split(',');
-    row.push('' + baselineGroup[key].length,
-             '' + Math.round(baselineMean),
-             '' + Math.round(currentMean),
-             '' + Math.round(currentMean - baselineMean),
-             (100 * (currentMean - baselineMean) / baselineMean).toFixed(2));
+    row = key.split(",");
+    row.push(
+      "" + baselineGroup[key].length,
+      "" + Math.round(baselineMean),
+      "" + Math.round(currentMean),
+      "" + Math.round(currentMean - baselineMean),
+      ((100 * (currentMean - baselineMean)) / baselineMean).toFixed(2)
+    );
     if (ttest) {
-      var p = (baselineGroup[key].length < 2) ? 1 :
-               ttest(baselineGroup[key], currentGroup[key]).pValue();
+      var p =
+        baselineGroup[key].length < 2
+          ? 1
+          : ttest(baselineGroup[key], currentGroup[key]).pValue();
       if (p < 0.05) {
-        row.push(currentMean < baselineMean ? 'faster' : 'slower');
+        row.push(currentMean < baselineMean ? "faster" : "slower");
       } else {
-        row.push('');
+        row.push("");
       }
     }
     for (i = 0; i < row.length; i++) {
@@ -162,19 +173,19 @@ function stat(baseline, current) {
 
   // add horizontal line
   var hline = width.map(function(w) {
-    return new Array(w + 1).join('-');
+    return new Array(w + 1).join("-");
   });
   rows.splice(1, 0, hline);
 
   // print output
-  console.log('-- Grouped By ' + options.groupBy.join(', ') + ' --');
+  console.log("-- Grouped By " + options.groupBy.join(", ") + " --");
   var groupCount = options.groupBy.length;
   for (var r = 0; r < rows.length; r++) {
     row = rows[r];
     for (i = 0; i < row.length; i++) {
-      row[i] = pad(row[i], width[i], (i < groupCount) ? 'right' : 'left');
+      row[i] = pad(row[i], width[i], i < groupCount ? "right" : "left");
     }
-    console.log(row.join(' | '));
+    console.log(row.join(" | "));
   }
 }
 

@@ -14,11 +14,11 @@
  */
 
 let compatibilityParams = Object.create(null);
-if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-  const { isNodeJS, } = require('../shared/is_node');
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+  const { isNodeJS } = require("../shared/is_node");
 
   const userAgent =
-    (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    (typeof navigator !== "undefined" && navigator.userAgent) || "";
   const isIE = /Trident/.test(userAgent);
   const isIOSChrome = /CriOS/.test(userAgent);
 
@@ -37,7 +37,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     // Node.js is missing native support for `@font-face` and `Image`.
     if (isNodeJS) {
       compatibilityParams.disableFontFace = true;
-      compatibilityParams.nativeImageDecoderSupport = 'none';
+      compatibilityParams.nativeImageDecoderSupport = "none";
     }
   })();
 }
