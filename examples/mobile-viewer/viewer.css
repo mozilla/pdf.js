@@ -26,12 +26,12 @@ html {
 }
 
 header {
-  background-color: #f4f4f4;
+  background-color: rgba(244, 244, 244, 1);
 }
 
 header h1 {
-  border-bottom: 1px solid #d8d8d8;
-  color: #858585;
+  border-bottom: 1px solid rgba(216, 216, 216, 1);
+  color: rgba(133, 133, 133, 1);
   font-size: 23px;
   font-style: italic;
   font-weight: normal;
@@ -230,7 +230,7 @@ canvas {
 }
 
 #errorWrapper {
-  background: none repeat scroll 0 0 #FF5555;
+  background: none repeat scroll 0 0 rgba(255, 85, 85, 1);
   color: rgba(255, 255, 255, 1);
   left: 0;
   position: absolute;
@@ -250,7 +250,7 @@ canvas {
 }
 
 #errorMoreInfo {
-  background-color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 1);
   color: rgba(0, 0, 0, 1);
   padding: 0.3rem;
   margin: 0.3rem;

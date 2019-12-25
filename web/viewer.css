@@ -34,7 +34,7 @@ html {
 body {
   height: 100%;
   width: 100%;
-  background-color: #404040;
+  background-color: rgba(64, 64, 64, 1);
   background-image: url(images/texture.png);
 }
 
@@ -217,7 +217,7 @@ html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentatio
 #toolbarSidebar {
   width: 100%;
   height: 32px;
-  background-color: #424242; /* fallback */
+  background-color: rgba(66, 66, 66, 1); /* fallback */
   background-image: url(images/texture.png),
                     linear-gradient(rgba(77, 77, 77, 0.99), rgba(64, 64, 64, 0.95));
 }
@@ -252,7 +252,7 @@ html[dir='rtl'] #sidebarResizer {
 #toolbarContainer, .findbar, .secondaryToolbar {
   position: relative;
   height: 32px;
-  background-color: #474747; /* fallback */
+  background-color: rgba(71, 71, 71, 1); /* fallback */
   background-image: url(images/texture.png),
                     linear-gradient(rgba(82, 82, 82, 0.99), rgba(69, 69, 69, 0.95));
 }
@@ -456,7 +456,7 @@ html[dir='ltr'] .doorHangerRight:before {
 
 #findMsg {
   font-style: italic;
-  color: #A6B7D0;
+  color: rgba(166, 183, 208, 1);
 }
 #findMsg:empty {
   display: none;
@@ -901,7 +901,7 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
   top: 1px;
   /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
   content: '';
-  background-color: #70DB55;
+  background-color: rgba(112, 219, 85, 1);
   height: 9px;
   width: 9px;
   border-radius: 50%;
@@ -1314,7 +1314,7 @@ html[dir='rtl'] .outlineItemToggler::before {
 }
 
 #errorWrapper {
-  background: none repeat scroll 0 0 #FF5555;
+  background: none repeat scroll 0 0 rgba(255, 85, 85, 1);
   color: rgba(255, 255, 255, 1);
   left: 0;
   position: absolute;
@@ -1336,7 +1336,7 @@ html[dir='rtl'] .outlineItemToggler::before {
 }
 
 #errorMoreInfo {
-  background-color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 1);
   color: rgba(0, 0, 0, 1);
   padding: 3px;
   margin: 3px;
@@ -1375,7 +1375,7 @@ html[dir='rtl'] .outlineItemToggler::before {
   color: rgba(217, 217, 217, 1);
   font-size: 12px;
   line-height: 14px;
-  background-color: #474747; /* fallback */
+  background-color: rgba(71, 71, 71, 1); /* fallback */
   background-image: url(images/texture.png),
                     linear-gradient(rgba(82, 82, 82,0.99), rgba(69, 69, 69, 0.95));
   border: 1px solid rgba(0, 0, 0, 0.5);
@@ -1460,7 +1460,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
 #PDFBug {
   background: none repeat scroll 0 0 rgba(255, 255, 255, 1);
-  border: 1px solid #666666;
+  border: 1px solid rgba(102, 102, 102, 1);
   position: fixed;
   top: 32px;
   right: 0;
@@ -1470,9 +1470,9 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   width: 300px;
 }
 #PDFBug .controls {
-    background:#EEEEEE;
-    border-bottom: 1px solid #666666;
-    padding: 3px;
+  background: rgba(238, 238, 238, 1);
+  border-bottom: 1px solid rgba(102, 102, 102, 1);
+  padding: 3px;
 }
 #PDFBug .panels {
   bottom: 0;
