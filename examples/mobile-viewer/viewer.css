@@ -81,7 +81,7 @@ footer {
   border-width: 0;
   background-position: center center;
   background-repeat: no-repeat;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 
 .toolbarButton.pageUp {
@@ -110,7 +110,7 @@ footer {
   left: 36%;
   text-align: center;
   border: 0;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   font-size: 1.2rem;
   color: #FFF;
   background-image: url(images/div_line_left.png), url(images/div_line_right.png);
@@ -230,7 +230,7 @@ canvas {
 
 #errorWrapper {
   background: none repeat scroll 0 0 #FF5555;
-  color: white;
+  color: rgba(255, 255, 255, 1);
   left: 0;
   position: absolute;
   right: 0;
@@ -250,7 +250,7 @@ canvas {
 
 #errorMoreInfo {
   background-color: #FFFFFF;
-  color: black;
+  color: rgba(0, 0, 0, 1);
   padding: 0.3rem;
   margin: 0.3rem;
   width: 98%;
