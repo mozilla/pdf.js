@@ -63,12 +63,14 @@ var ARCFourCipher = (function ARCFourCipherClosure() {
 })();
 
 var calculateMD5 = (function calculateMD5Closure() {
+  // prettier-ignore
   var r = new Uint8Array([
     7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
     5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
     4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
     6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21]);
 
+  // prettier-ignore
   var k = new Int32Array([
     -680876936, -389564586, 606105819, -1044525330, -176418897, 1200080426,
     -1473231341, -45705983, 1770035416, -1958414417, -42063, -1990404162,
@@ -136,6 +138,7 @@ var calculateMD5 = (function calculateMD5Closure() {
       h2 = (h2 + c) | 0;
       h3 = (h3 + d) | 0;
     }
+    // prettier-ignore
     return new Uint8Array([
       h0 & 0xFF, (h0 >> 8) & 0xFF, (h0 >> 16) & 0xFF, (h0 >>> 24) & 0xFF,
       h1 & 0xFF, (h1 >> 8) & 0xFF, (h1 >> 16) & 0xFF, (h1 >>> 24) & 0xFF,
@@ -263,6 +266,7 @@ var calculateSHA256 = (function calculateSHA256Closure() {
     return rotr(x, 17) ^ rotr(x, 19) ^ x >>> 10;
   }
 
+  // prettier-ignore
   var k = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
            0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
            0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -341,6 +345,7 @@ var calculateSHA256 = (function calculateSHA256Closure() {
       h6 = (h6 + g) | 0;
       h7 = (h7 + h) | 0;
     }
+    // prettier-ignore
     return new Uint8Array([
       (h0 >> 24) & 0xFF, (h0 >> 16) & 0xFF, (h0 >> 8) & 0xFF, (h0) & 0xFF,
       (h1 >> 24) & 0xFF, (h1 >> 16) & 0xFF, (h1 >> 8) & 0xFF, (h1) & 0xFF,
@@ -421,6 +426,7 @@ var calculateSHA512 = (function calculateSHA512Closure() {
     result.xor(tmp);
   }
 
+  // prettier-ignore
   var k = [
     new Word64(0x428a2f98, 0xd728ae22), new Word64(0x71374491, 0x23ef65cd),
     new Word64(0xb5c0fbcf, 0xec4d3b2f), new Word64(0xe9b5dba5, 0x8189dbbc),
@@ -635,6 +641,7 @@ class AESBaseCipher {
       unreachable('Cannot initialize AESBaseCipher.');
     }
 
+    // prettier-ignore
     this._s = new Uint8Array([
       0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
       0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0,
@@ -660,6 +667,7 @@ class AESBaseCipher {
       0xb0, 0x54, 0xbb, 0x16,
     ]);
 
+    // prettier-ignore
     this._inv_s = new Uint8Array([
       0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e,
       0x81, 0xf3, 0xd7, 0xfb, 0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87,
@@ -685,6 +693,7 @@ class AESBaseCipher {
       0x55, 0x21, 0x0c, 0x7d,
     ]);
 
+    // prettier-ignore
     this._mix = new Uint32Array([
       0x00000000, 0x0e090d0b, 0x1c121a16, 0x121b171d, 0x3824342c, 0x362d3927,
       0x24362e3a, 0x2a3f2331, 0x70486858, 0x7e416553, 0x6c5a724e, 0x62537f45,
@@ -1040,6 +1049,7 @@ class AES128Cipher extends AESBaseCipher {
     this._cyclesOfRepetition = 10;
     this._keySize = 160; // bits
 
+    // prettier-ignore
     this._rcon = new Uint8Array([
       0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c,
       0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a,
@@ -1373,6 +1383,7 @@ var CipherTransform = (function CipherTransformClosure() {
 })();
 
 var CipherTransformFactory = (function CipherTransformFactoryClosure() {
+  // prettier-ignore
   var defaultPasswordBytes = new Uint8Array([
     0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
     0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,

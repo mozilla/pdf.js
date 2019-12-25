@@ -87,6 +87,7 @@ function getInheritableProperty({ dict, key, getArray = false,
   return values;
 }
 
+// prettier-ignore
 const ROMAN_NUMBER_MAP = [
   '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
   '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
