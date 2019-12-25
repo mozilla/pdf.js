@@ -178,6 +178,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     // provide texture coordinates for the rectangle.
     var texCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    // prettier-ignore
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
       0.0, 0.0,
       1.0, 0.0,
@@ -223,6 +224,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     // it (2 triangles)
     var buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    // prettier-ignore
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
       0, 0,
       width, 0,

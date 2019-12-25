@@ -41,6 +41,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
   const twoDimVertR3 = 7;
   const twoDimVertL3 = 8;
 
+  // prettier-ignore
   const twoDimTable = [
     [-1, -1], [-1, -1],                   // 000000x
     [7, twoDimVertL3],                    // 0000010
@@ -109,6 +110,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
     [1, twoDimVert0], [1, twoDimVert0]
   ];
 
+  // prettier-ignore
   const whiteTable1 = [
     [-1, -1],                               // 00000
     [12, ccittEOL],                         // 00001
@@ -131,6 +133,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
     [12, 2560]                              // 11111
   ];
 
+  // prettier-ignore
   const whiteTable2 = [
     [-1, -1], [-1, -1], [-1, -1], [-1, -1],     // 0000000xx
     [8, 29], [8, 29],                           // 00000010x
@@ -295,6 +298,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
     [4, 7], [4, 7], [4, 7], [4, 7]
   ];
 
+  // prettier-ignore
   const blackTable1 = [
     [-1, -1], [-1, -1],                             // 000000000000x
     [12, ccittEOL], [12, ccittEOL],                 // 000000000001x
@@ -356,6 +360,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
     [10, 64], [10, 64], [10, 64], [10, 64]
   ];
 
+  // prettier-ignore
   const blackTable2 = [
     [8, 13], [8, 13], [8, 13], [8, 13],     // 00000100xxxx
     [8, 13], [8, 13], [8, 13], [8, 13],
@@ -435,6 +440,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
     [7, 12], [7, 12], [7, 12], [7, 12]
   ];
 
+  // prettier-ignore
   const blackTable3 = [
     [-1, -1], [-1, -1], [-1, -1], [-1, -1], // 0000xx
     [6, 9],                                 // 000100

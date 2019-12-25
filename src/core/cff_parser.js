@@ -28,6 +28,7 @@ var MAX_SUBR_NESTING = 10;
  * The CFF class takes a Type1 file and wrap it into a
  * 'Compact Font Format' which itself embed Type2 charstrings.
  */
+// prettier-ignore
 var CFFStandardStrings = [
   '.notdef', 'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
   'ampersand', 'quoteright', 'parenleft', 'parenright', 'asterisk', 'plus',
@@ -339,8 +340,9 @@ var CFFParser = (function CFFParserClosure() {
       function parseFloatOperand() {
         var str = '';
         var eof = 15;
-        var lookup = ['0', '1', '2', '3', '4', '5', '6', '7', '8',
-            '9', '.', 'E', 'E-', null, '-'];
+        // prettier-ignore
+        const lookup = ['0', '1', '2', '3', '4', '5', '6', '7', '8',
+                        '9', '.', 'E', 'E-', null, '-'];
         var length = dict.length;
         while (pos < length) {
           var b = dict[pos++];
@@ -1087,6 +1089,7 @@ var CFFTopDict = (function CFFTopDictClosure() {
     [[12, 4], 'UnderlineThickness', 'num', 50],
     [[12, 5], 'PaintType', 'num', 0],
     [[12, 6], 'CharstringType', 'num', 2],
+    // prettier-ignore
     [[12, 7], 'FontMatrix', ['num', 'num', 'num', 'num', 'num', 'num'],
                             [0.001, 0, 0, 0.001, 0, 0]],
     [13, 'UniqueID', 'num', null],

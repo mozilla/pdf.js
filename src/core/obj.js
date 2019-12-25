@@ -1377,8 +1377,9 @@ var XRef = (function XRefClosure() {
       const CHECK_CONTENT_LENGTH = 25;
 
       var trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
+      // prettier-ignore
       var startxrefBytes = new Uint8Array([115, 116, 97, 114, 116, 120, 114,
-                                          101, 102]);
+                                           101, 102]);
       const objBytes = new Uint8Array([111, 98, 106]);
       var xrefBytes = new Uint8Array([47, 88, 82, 101, 102]);
 

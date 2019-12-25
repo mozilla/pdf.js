@@ -14,6 +14,7 @@
  */
 /* eslint no-var: error */
 
+// prettier-ignore
 const ISOAdobeCharset = [
   '.notdef', 'space', 'exclam', 'quotedbl', 'numbersign', 'dollar',
   'percent', 'ampersand', 'quoteright', 'parenleft', 'parenright',
@@ -51,6 +52,7 @@ const ISOAdobeCharset = [
   'ugrave', 'yacute', 'ydieresis', 'zcaron'
 ];
 
+// prettier-ignore
 const ExpertCharset = [
   '.notdef', 'space', 'exclamsmall', 'Hungarumlautsmall', 'dollaroldstyle',
   'dollarsuperior', 'ampersandsmall', 'Acutesmall', 'parenleftsuperior',
@@ -91,6 +93,7 @@ const ExpertCharset = [
   'Ydieresissmall'
 ];
 
+// prettier-ignore
 const ExpertSubsetCharset = [
   '.notdef', 'space', 'dollaroldstyle', 'dollarsuperior',
   'parenleftsuperior', 'parenrightsuperior', 'twodotenleader',

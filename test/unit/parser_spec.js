@@ -214,6 +214,7 @@ describe('parser', function() {
   describe('Linearization', function() {
     it('should not find a linearization dictionary', function() {
       // Not an actual linearization dictionary.
+      // prettier-ignore
       const stream1 = new StringStream(
         '3 0 obj\n' +
         '<<\n' +
@@ -225,6 +226,7 @@ describe('parser', function() {
       expect(Linearization.create(stream1)).toEqual(null);
 
       // Linearization dictionary with invalid version number.
+      // prettier-ignore
       const stream2 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
@@ -236,6 +238,7 @@ describe('parser', function() {
     });
 
     it('should accept a valid linearization dictionary', function() {
+      // prettier-ignore
       const stream = new StringStream(
         '131 0 obj\n' +
         '<<\n' +
@@ -264,6 +267,7 @@ describe('parser', function() {
     it('should reject a linearization dictionary with invalid ' +
        'integer parameters', function() {
       // The /L parameter should be equal to the stream length.
+      // prettier-ignore
       const stream1 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
@@ -283,6 +287,7 @@ describe('parser', function() {
                            'dictionary does not equal the stream length.'));
 
       // The /E parameter should not be zero.
+      // prettier-ignore
       const stream2 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
@@ -302,6 +307,7 @@ describe('parser', function() {
                            'dictionary is invalid.'));
 
       // The /O parameter should be an integer.
+      // prettier-ignore
       const stream3 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
@@ -324,6 +330,7 @@ describe('parser', function() {
     it('should reject a linearization dictionary with invalid hint parameters',
        function() {
       // The /H parameter should be an array.
+      // prettier-ignore
       const stream1 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
@@ -343,6 +350,7 @@ describe('parser', function() {
                            'is invalid.'));
 
       // The hint array should contain two, or four, elements.
+      // prettier-ignore
       const stream2 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +
@@ -362,6 +370,7 @@ describe('parser', function() {
                            'is invalid.'));
 
       // The hint array should not contain zero.
+      // prettier-ignore
       const stream3 = new StringStream(
         '1 0 obj\n' +
         '<<\n' +

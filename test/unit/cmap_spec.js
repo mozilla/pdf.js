@@ -57,6 +57,7 @@ describe('cmap', function() {
   });
 
   it('parses beginbfchar', function(done) {
+    // prettier-ignore
     var str = '2 beginbfchar\n' +
               '<03> <00>\n' +
               '<04> <01>\n' +
@@ -73,6 +74,7 @@ describe('cmap', function() {
     });
   });
   it('parses beginbfrange with range', function(done) {
+    // prettier-ignore
     var str = '1 beginbfrange\n' +
               '<06> <0B> 0\n' +
               'endbfrange\n';
@@ -89,6 +91,7 @@ describe('cmap', function() {
     });
   });
   it('parses beginbfrange with array', function(done) {
+    // prettier-ignore
     var str = '1 beginbfrange\n' +
               '<0D> <12> [ 0 1 2 3 4 5 ]\n' +
               'endbfrange\n';
@@ -105,6 +108,7 @@ describe('cmap', function() {
     });
   });
   it('parses begincidchar', function(done) {
+    // prettier-ignore
     var str = '1 begincidchar\n' +
               '<14> 0\n' +
               'endcidchar\n';
@@ -119,6 +123,7 @@ describe('cmap', function() {
     });
   });
   it('parses begincidrange', function(done) {
+    // prettier-ignore
     var str = '1 begincidrange\n' +
               '<0016> <001B>   0\n' +
               'endcidrange\n';
@@ -135,6 +140,7 @@ describe('cmap', function() {
     });
   });
   it('decodes codespace ranges', function(done) {
+    // prettier-ignore
     var str = '1 begincodespacerange\n' +
               '<01> <02>\n' +
               '<00000003> <00000004>\n' +
@@ -155,6 +161,7 @@ describe('cmap', function() {
     });
   });
   it('decodes 4 byte codespace ranges', function(done) {
+    // prettier-ignore
     var str = '1 begincodespacerange\n' +
               '<8EA1A1A1> <8EA1FEFE>\n' +
               'endcodespacerange\n';

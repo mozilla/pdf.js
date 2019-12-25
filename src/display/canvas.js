@@ -198,6 +198,7 @@ function compileType3Glyph(imgData) {
   var width = imgData.width, height = imgData.height;
   var i, j, j0, width1 = width + 1;
   var points = new Uint8Array(width1 * (height + 1));
+  // prettier-ignore
   var POINT_TYPES =
       new Uint8Array([0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0]);
 

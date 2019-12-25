@@ -565,6 +565,7 @@ class Parser {
       this.shift(); // 'stream'
     } else {
       // Bad stream length, scanning for endstream command.
+      // prettier-ignore
       const ENDSTREAM_SIGNATURE = new Uint8Array([
         0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6D]);
       let actualLength = this._findStreamLength(startPos,
@@ -724,6 +725,7 @@ class Parser {
 
 // A '1' in this array means the character is white space. A '1' or
 // '2' means the character ends a name or command.
+// prettier-ignore
 const specialChars = [
   1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, // 0x
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 1x

@@ -334,6 +334,7 @@ describe('crypto', function() {
       alg = new PDF17();
       password = new Uint8Array([117, 115, 101, 114]);
       userValidation = new Uint8Array([117, 169, 4, 32, 159, 101, 22, 220]);
+      // prettier-ignore
       userPassword = new Uint8Array([131, 242, 143, 160, 87, 2, 138, 134, 79,
                                      253, 189, 173, 224, 73, 144, 241, 190, 81,
                                      197, 15, 249, 105, 145, 151, 15, 194, 65,
@@ -347,10 +348,12 @@ describe('crypto', function() {
       alg = new PDF17();
       password = new Uint8Array([111, 119, 110, 101, 114]);
       ownerValidation = new Uint8Array([243, 118, 71, 153, 128, 17, 101, 62]);
+      // prettier-ignore
       ownerPassword = new Uint8Array([60, 98, 137, 35, 51, 101, 200, 152, 210,
                                       178, 226, 228, 134, 205, 163, 24, 204,
                                       126, 177, 36, 106, 50, 36, 125, 210, 172,
                                       171, 120, 222, 108, 139, 115]);
+      // prettier-ignore
       uBytes = new Uint8Array([131, 242, 143, 160, 87, 2, 138, 134, 79, 253,
                                189, 173, 224, 73, 144, 241, 190, 81, 197, 15,
                                249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
@@ -366,11 +369,13 @@ describe('crypto', function() {
       alg = new PDF17();
       password = new Uint8Array([117, 115, 101, 114]);
       userKeySalt = new Uint8Array([168, 94, 215, 192, 100, 38, 188, 40]);
+      // prettier-ignore
       userEncryption = new Uint8Array([35, 150, 195, 169, 245, 51, 51, 255,
                                        158, 158, 33, 242, 231, 75, 125, 190,
                                        25, 126, 172, 114, 195, 244, 137, 245,
                                        234, 165, 42, 74, 60, 38, 17, 17]);
       result = alg.getUserKey(password, userKeySalt, userEncryption);
+      // prettier-ignore
       expected = new Uint8Array([63, 114, 136, 209, 87, 61, 12, 30, 249, 1,
                                  186, 144, 254, 248, 163, 153, 151, 51, 133,
                                  10, 80, 152, 206, 15, 72, 187, 231, 33, 224,
@@ -384,16 +389,19 @@ describe('crypto', function() {
       alg = new PDF17();
       password = new Uint8Array([111, 119, 110, 101, 114]);
       ownerKeySalt = new Uint8Array([200, 245, 242, 12, 218, 123, 24, 120]);
+      // prettier-ignore
       ownerEncryption = new Uint8Array([213, 202, 14, 189, 110, 76, 70, 191, 6,
                                         195, 10, 190, 157, 100, 144, 85, 8, 62,
                                         123, 178, 156, 229, 50, 40, 229, 216,
                                         54, 222, 34, 38, 106, 223]);
+      // prettier-ignore
       uBytes = new Uint8Array([131, 242, 143, 160, 87, 2, 138, 134, 79, 253,
                                189, 173, 224, 73, 144, 241, 190, 81, 197, 15,
                                249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
                                221, 117, 169, 4, 32, 159, 101, 22, 220, 168,
                                94, 215, 192, 100, 38, 188, 40]);
       result = alg.getOwnerKey(password, ownerKeySalt, uBytes, ownerEncryption);
+      // prettier-ignore
       expected = new Uint8Array([63, 114, 136, 209, 87, 61, 12, 30, 249, 1,
                                  186, 144, 254, 248, 163, 153, 151, 51, 133,
                                  10, 80, 152, 206, 15, 72, 187, 231, 33, 224,
@@ -408,6 +416,7 @@ describe('crypto', function() {
       alg = new PDF20();
       password = new Uint8Array([117, 115, 101, 114]);
       userValidation = new Uint8Array([83, 245, 146, 101, 198, 247, 34, 198]);
+      // prettier-ignore
       userPassword = new Uint8Array([94, 230, 205, 75, 166, 99, 250, 76, 219,
                                      128, 17, 85, 57, 17, 33, 164, 150, 46,
                                      103, 176, 160, 156, 187, 233, 166, 223,
@@ -421,10 +430,12 @@ describe('crypto', function() {
       alg = new PDF20();
       password = new Uint8Array([111, 119, 110, 101, 114]);
       ownerValidation = new Uint8Array([142, 232, 169, 208, 202, 214, 5, 185]);
+      // prettier-ignore
       ownerPassword = new Uint8Array([88, 232, 62, 54, 245, 26, 245, 209, 137,
                                       123, 221, 72, 199, 49, 37, 217, 31, 74,
                                       115, 167, 127, 158, 176, 77, 45, 163, 87,
                                       47, 39, 90, 217, 141]);
+      // prettier-ignore
       uBytes = new Uint8Array([94, 230, 205, 75, 166, 99, 250, 76, 219, 128,
                                17, 85, 57, 17, 33, 164, 150, 46, 103, 176, 160,
                                156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
@@ -440,11 +451,13 @@ describe('crypto', function() {
       alg = new PDF20();
       password = new Uint8Array([117, 115, 101, 114]);
       userKeySalt = new Uint8Array([191, 11, 16, 94, 237, 216, 20, 175]);
+      // prettier-ignore
       userEncryption = new Uint8Array([121, 208, 2, 181, 230, 89, 156, 60, 253,
                                        143, 212, 28, 84, 180, 196, 177, 173,
                                        128, 221, 107, 46, 20, 94, 186, 135, 51,
                                        95, 24, 20, 223, 254, 36]);
       result = alg.getUserKey(password, userKeySalt, userEncryption);
+      // prettier-ignore
       expected = new Uint8Array([42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248,
                                  133, 18, 189, 61, 34, 107, 79, 29, 56, 59,
                                  181, 213, 118, 113, 34, 65, 210, 87, 174, 22,
@@ -458,16 +471,19 @@ describe('crypto', function() {
       alg = new PDF20();
       password = new Uint8Array([111, 119, 110, 101, 114]);
       ownerKeySalt = new Uint8Array([29, 208, 185, 46, 11, 76, 135, 149]);
+      // prettier-ignore
       ownerEncryption = new Uint8Array([209, 73, 224, 77, 103, 155, 201, 181,
                                         190, 68, 223, 20, 62, 90, 56, 210, 5,
                                         240, 178, 128, 238, 124, 68, 254, 253,
                                         244, 62, 108, 208, 135, 10, 251]);
+      // prettier-ignore
       uBytes = new Uint8Array([94, 230, 205, 75, 166, 99, 250, 76, 219, 128,
                                17, 85, 57, 17, 33, 164, 150, 46, 103, 176, 160,
                                156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
                                184, 83, 245, 146, 101, 198, 247, 34, 198, 191,
                                11, 16, 94, 237, 216, 20, 175]);
       result = alg.getOwnerKey(password, ownerKeySalt, uBytes, ownerEncryption);
+      // prettier-ignore
       expected = new Uint8Array([42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248,
                                  133, 18, 189, 61, 34, 107, 79, 29, 56, 59,
                                  181, 213, 118, 113, 34, 65, 210, 87, 174, 22,

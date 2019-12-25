@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+// prettier-ignore
 const ExpertEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
@@ -56,6 +57,7 @@ const ExpertEncoding = [
   'Ucircumflexsmall', 'Udieresissmall', 'Yacutesmall', 'Thornsmall',
   'Ydieresissmall'];
 
+// prettier-ignore
 const MacExpertEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
@@ -98,6 +100,7 @@ const MacExpertEncoding = [
   'Macronsmall', 'bsuperior', 'nsuperior', 'msuperior', 'commasuperior',
   'periodsuperior', 'Dotaccentsmall', 'Ringsmall', '', '', '', ''];
 
+// prettier-ignore
 const MacRomanEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
@@ -134,6 +137,7 @@ const MacRomanEncoding = [
   'tilde', 'macron', 'breve', 'dotaccent', 'ring', 'cedilla', 'hungarumlaut',
   'ogonek', 'caron'];
 
+// prettier-ignore
 const StandardEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
@@ -162,6 +166,7 @@ const StandardEncoding = [
   '', '', '', 'dotlessi', '', '', 'lslash', 'oslash', 'oe', 'germandbls', '',
   '', '', ''];
 
+// prettier-ignore
 const WinAnsiEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
@@ -198,6 +203,7 @@ const WinAnsiEncoding = [
   'ugrave', 'uacute', 'ucircumflex', 'udieresis', 'yacute', 'thorn',
   'ydieresis'];
 
+// prettier-ignore
 const SymbolSetEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
@@ -236,6 +242,7 @@ const SymbolSetEncoding = [
   'bracketrightex', 'bracketrightbt', 'bracerighttp', 'bracerightmid',
   'bracerightbt', ''];
 
+// prettier-ignore
 const ZapfDingbatsEncoding = [
   '', '', '', '', '', '', '', '', '', '', '', '', '', '',
   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',

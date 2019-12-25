@@ -62,6 +62,7 @@ describe('colorspace', function () {
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
       let testDest = new Uint8ClampedArray(4 * 4 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         27, 27, 27,
         27, 27, 27,
@@ -103,6 +104,7 @@ describe('colorspace', function () {
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
       let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         27, 27, 27,
         27, 27, 27,
@@ -138,6 +140,7 @@ describe('colorspace', function () {
       });
       let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
+      // prettier-ignore
       let testSrc = new Uint8Array([
         27, 125, 250,
         131, 139, 140,
@@ -145,6 +148,7 @@ describe('colorspace', function () {
         21, 147, 255
       ]);
       let testDest = new Uint8ClampedArray(4 * 4 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         27, 125, 250,
         27, 125, 250,
@@ -184,6 +188,7 @@ describe('colorspace', function () {
       });
       let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
+      // prettier-ignore
       let testSrc = new Uint8Array([
         27, 125, 250,
         131, 139, 140,
@@ -191,6 +196,7 @@ describe('colorspace', function () {
         21, 147, 255
       ]);
       let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         27, 125, 250,
         27, 125, 250,
@@ -226,6 +232,7 @@ describe('colorspace', function () {
       });
       let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
+      // prettier-ignore
       let testSrc = new Uint8Array([
         27, 125, 250, 128,
         131, 139, 140, 45,
@@ -233,6 +240,7 @@ describe('colorspace', function () {
         21, 147, 255, 69
       ]);
       let testDest = new Uint8ClampedArray(4 * 4 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         135, 81, 18,
         135, 81, 18,
@@ -272,6 +280,7 @@ describe('colorspace', function () {
       });
       let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
+      // prettier-ignore
       let testSrc = new Uint8Array([
         27, 125, 250, 128,
         131, 139, 140, 45,
@@ -279,6 +288,7 @@ describe('colorspace', function () {
         21, 147, 255, 69
       ]);
       let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         135, 81, 18,
         135, 81, 18,
@@ -324,6 +334,7 @@ describe('colorspace', function () {
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
       let testDest = new Uint8ClampedArray(4 * 4 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         25, 25, 25,
         25, 25, 25,
@@ -375,6 +386,7 @@ describe('colorspace', function () {
       });
       let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
+      // prettier-ignore
       let testSrc = new Uint8Array([
         27, 125, 250,
         131, 139, 140,
@@ -382,6 +394,7 @@ describe('colorspace', function () {
         21, 147, 255
       ]);
       let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         0, 238, 255,
         0, 238, 255,
@@ -425,6 +438,7 @@ describe('colorspace', function () {
       });
       let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
 
+      // prettier-ignore
       let testSrc = new Uint8Array([
         27, 25, 50,
         31, 19, 40,
@@ -432,6 +446,7 @@ describe('colorspace', function () {
         21, 47, 55
       ]);
       let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         0, 49, 101,
         0, 49, 101,
@@ -456,6 +471,7 @@ describe('colorspace', function () {
 
   describe('IndexedCS', function () {
     it('should handle the case when cs is an array', function () {
+      // prettier-ignore
       let lookup = new Uint8Array([
         23, 155, 35,
         147, 69, 93,
@@ -480,6 +496,7 @@ describe('colorspace', function () {
 
       let testSrc = new Uint8Array([2, 2, 0, 1]);
       let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         255, 109, 70,
         255, 109, 70,
@@ -536,6 +553,7 @@ describe('colorspace', function () {
 
       let testSrc = new Uint8Array([27, 25, 50, 31]);
       let testDest = new Uint8ClampedArray(3 * 3 * 3);
+      // prettier-ignore
       let expectedDest = new Uint8ClampedArray([
         226, 242, 241,
         226, 242, 241,

@@ -17,6 +17,7 @@ import { warn } from '../shared/util';
 
 // Character types for symbols from 0000 to 00FF.
 // Source: ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
+// prettier-ignore
 var baseTypes = [
   'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'S', 'B', 'S',
   'WS', 'B', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN',
@@ -46,6 +47,7 @@ var baseTypes = [
 // http://unicode.org/charts/PDF/U0600.pdf), so we replace it with an
 // empty string and issue a warning if we encounter this character. The
 // empty string is required to properly index the items after it.
+// prettier-ignore
 var arabicTypes = [
   'AN', 'AN', 'AN', 'AN', 'AN', 'AN', 'ON', 'ON', 'AL', 'ET', 'ET', 'AL',
   'CS', 'AL', 'ON', 'ON', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM',
