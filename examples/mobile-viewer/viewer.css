@@ -44,7 +44,7 @@ header h1 {
 
 body {
   background: url(images/document_bg.png);
-  color: #fff;
+  color: rgba(255, 255, 255, 1);
   font-family: sans-serif;
   font-size: 10px;
   height: 100%;
@@ -112,7 +112,7 @@ footer {
   border: 0;
   background-color: rgba(0, 0, 0, 0);
   font-size: 1.2rem;
-  color: #FFF;
+  color: rgba(255, 255, 255, 1);
   background-image: url(images/div_line_left.png), url(images/div_line_right.png);
   background-repeat: no-repeat;
   background-position: left, right;
@@ -188,8 +188,8 @@ canvas {
 #loadingBar {
   position: relative;
   height: .6rem;
-  background-color: #333;
-  border-bottom: 1px solid #333;
+  background-color: rgba(51, 51, 51, 1);
+  border-bottom: 1px solid rgba(51, 51, 51, 1);
   margin-top: 5rem;
 }
 
@@ -198,7 +198,7 @@ canvas {
   left: 0;
   width: 0;
   height: 100%;
-  background-color: #ddd;
+  background-color: rgba(221, 221, 221, 1);
   overflow: hidden;
   transition: width 200ms;
 }
@@ -210,7 +210,7 @@ canvas {
 }
 
 #loadingBar .progress.indeterminate {
-  background-color: #999;
+  background-color: rgba(153, 153, 153, 1);
   transition: none;
 }
 
@@ -220,11 +220,12 @@ canvas {
   left: 0;
   height: 100%;
   width: 5rem;
-
-  background-image: linear-gradient(to right, #999 0%, #fff 50%, #999 100%);
+  background-image: linear-gradient(to right,
+                                    rgba(153, 153, 153, 1) 0%,
+                                    rgba(255, 255, 255, 1) 50%,
+                                    rgba(153, 153, 153, 1) 100%);
   background-size: 100% 100%;
   background-repeat: no-repeat;
-
   animation: progressIndeterminate 2s linear infinite;
 }
 
