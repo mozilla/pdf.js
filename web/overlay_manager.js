@@ -119,8 +119,7 @@ class OverlayManager {
    * @private
    */
   _keyDown(evt) {
-    if (this._active && evt.keyCode === 27) {
-      // Esc key.
+    if (this._active && evt.keyCode === /* Esc = */ 27) {
       this._closeThroughCaller();
       evt.preventDefault();
     }

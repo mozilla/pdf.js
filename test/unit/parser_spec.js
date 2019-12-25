@@ -40,7 +40,7 @@ describe("parser", function() {
 
       it("should skip to the end of stream if the EI marker is not found", function() {
         const string =
-          "q 1 0 0 1 0 0 cm BI /W 10 /H 10 /BPC 1 " + "/F /A85 ID abc123~> Q";
+          "q 1 0 0 1 0 0 cm BI /W 10 /H 10 /BPC 1 /F /A85 ID abc123~> Q";
         const input = new StringStream(string);
         const parser = new Parser({
           lexer: new Lexer(input),
@@ -320,7 +320,7 @@ describe("parser", function() {
           return Linearization.create(stream2);
         }).toThrow(
           new Error(
-            'The "E" parameter in the linearization ' + "dictionary is invalid."
+            'The "E" parameter in the linearization dictionary is invalid.'
           )
         );
 
@@ -343,7 +343,7 @@ describe("parser", function() {
           return Linearization.create(stream3);
         }).toThrow(
           new Error(
-            'The "O" parameter in the linearization ' + "dictionary is invalid."
+            'The "O" parameter in the linearization dictionary is invalid.'
           )
         );
       }
@@ -368,7 +368,7 @@ describe("parser", function() {
       expect(function() {
         return Linearization.create(stream1);
       }).toThrow(
-        new Error("Hint array in the linearization dictionary " + "is invalid.")
+        new Error("Hint array in the linearization dictionary is invalid.")
       );
 
       // The hint array should contain two, or four, elements.
@@ -389,7 +389,7 @@ describe("parser", function() {
       expect(function() {
         return Linearization.create(stream2);
       }).toThrow(
-        new Error("Hint array in the linearization dictionary " + "is invalid.")
+        new Error("Hint array in the linearization dictionary is invalid.")
       );
 
       // The hint array should not contain zero.
@@ -410,7 +410,7 @@ describe("parser", function() {
       expect(function() {
         return Linearization.create(stream3);
       }).toThrow(
-        new Error("Hint (2) in the linearization dictionary " + "is invalid.")
+        new Error("Hint (2) in the linearization dictionary is invalid.")
       );
     });
   });

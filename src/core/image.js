@@ -142,7 +142,7 @@ var PDFImage = (function PDFImageClosure() {
     }
     if (width < 1 || height < 1) {
       throw new FormatError(
-        `Invalid image width: ${width} or ` + `height: ${height}`
+        `Invalid image width: ${width} or height: ${height}`
       );
     }
     this.width = width;
@@ -617,11 +617,11 @@ var PDFImage = (function PDFImageClosure() {
       var drawWidth = this.drawWidth;
       var drawHeight = this.drawHeight;
       var imgData = {
-        // other fields are filled in below
         width: drawWidth,
         height: drawHeight,
         kind: 0,
         data: null,
+        // Other fields are filled in below.
       };
 
       var numComps = this.numComps;

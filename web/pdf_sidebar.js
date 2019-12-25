@@ -389,8 +389,8 @@ class PDFSidebar {
       removeNotification(view);
       return;
     }
+    // Remove all sidebar notifications on reset.
     for (view in SidebarView) {
-      // Remove all sidebar notifications on reset.
       removeNotification(SidebarView[view]);
     }
 

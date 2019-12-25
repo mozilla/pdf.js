@@ -404,7 +404,7 @@ var JpxImage = (function JpxImageClosure() {
               break;
             case 0xff53: // Coding style component (COC)
               throw new Error(
-                "Codestream code 0xFF53 (COC) is " + "not implemented"
+                "Codestream code 0xFF53 (COC) is not implemented"
               );
             default:
               throw new Error("Unknown codestream code: " + code.toString(16));

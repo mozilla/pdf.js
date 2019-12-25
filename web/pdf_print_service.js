@@ -300,7 +300,8 @@ window.addEventListener(
     ) {
       window.print();
 
-      // The (browser) print dialog cannot be prevented from being shown in IE11.
+      // The (browser) print dialog cannot be prevented from being shown in
+      // IE11.
       event.preventDefault();
       if (event.stopImmediatePropagation) {
         event.stopImmediatePropagation();

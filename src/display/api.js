@@ -381,8 +381,8 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
         typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
           ? PDFJSDev.eval("BUNDLE_VERSION")
           : null,
+      // Only send the required properties, and *not* the entire object.
       source: {
-        // Only send the required properties, and *not* the entire object.
         data: source.data,
         url: source.url,
         password: source.password,
@@ -1087,8 +1087,8 @@ class PDFPageProxy {
 
     const internalRenderTask = new InternalRenderTask({
       callback: complete,
+      // Only include the required properties, and *not* the entire object.
       params: {
-        // Include the required properties, and *not* the entire object.
         canvasContext,
         viewport,
         transform,
@@ -1641,8 +1641,8 @@ const PDFWorker = (function PDFWorkerClosure() {
       if (
         typeof PDFJSDev !== "undefined" &&
         PDFJSDev.test("GENERIC") &&
-        // eslint-disable-next-line no-undef
         isNodeJS &&
+        // eslint-disable-next-line no-undef
         typeof __non_webpack_require__ === "function"
       ) {
         // Since bundlers, such as Webpack, cannot be told to leave `require`

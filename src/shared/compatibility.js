@@ -248,7 +248,8 @@ if (
       return;
     }
     if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
-      // The `URL` constructor is assumed to be available in the extension builds.
+      // The `URL` constructor is assumed to be available in the extension
+      // builds.
       return;
     }
     globalThis.URL = require("core-js/web/url");

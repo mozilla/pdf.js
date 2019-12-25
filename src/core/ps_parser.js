@@ -190,8 +190,7 @@ class PostScriptLexer {
         if (ch === 0x0a || ch === 0x0d) {
           comment = false;
         }
-      } else if (ch === 0x25) {
-        // '%'
+      } else if (ch === /* '%' = */ 0x25) {
         comment = true;
       } else if (!isSpace(ch)) {
         break;
@@ -199,19 +198,19 @@ class PostScriptLexer {
       ch = this.nextChar();
     }
     switch (ch | 0) {
-      case 0x30:
-      case 0x31:
-      case 0x32:
-      case 0x33:
-      case 0x34: // '0'-'4'
-      case 0x35:
-      case 0x36:
-      case 0x37:
-      case 0x38:
-      case 0x39: // '5'-'9'
-      case 0x2b:
-      case 0x2d:
-      case 0x2e: // '+', '-', '.'
+      case 0x30: // '0'
+      case 0x31: // '1'
+      case 0x32: // '2'
+      case 0x33: // '3'
+      case 0x34: // '4'
+      case 0x35: // '5'
+      case 0x36: // '6'
+      case 0x37: // '7'
+      case 0x38: // '8'
+      case 0x39: // '9'
+      case 0x2b: // '+'
+      case 0x2d: // '-'
+      case 0x2e: // '.'
         return new PostScriptToken(
           PostScriptTokenTypes.NUMBER,
           this.getNumber()
@@ -229,8 +228,9 @@ class PostScriptLexer {
     strBuf[0] = String.fromCharCode(ch);
 
     while (
-      (ch = this.nextChar()) >= 0 && // and 'A'-'Z', 'a'-'z'
-      ((ch >= 0x41 && ch <= 0x5a) || (ch >= 0x61 && ch <= 0x7a))
+      (ch = this.nextChar()) >= 0 &&
+      ((ch >= /* 'A' = */ 0x41 && ch <= /* 'Z' = */ 0x5a) ||
+        (ch >= /* 'a' = */ 0x61 && ch <= /* 'z' = */ 0x7a))
     ) {
       strBuf.push(String.fromCharCode(ch));
     }
@@ -253,11 +253,10 @@ class PostScriptLexer {
 
     while ((ch = this.nextChar()) >= 0) {
       if (
-        (ch >= 0x30 && ch <= 0x39) || // '0'-'9'
-        ch === 0x2d ||
-        ch === 0x2e
+        (ch >= /* '0' = */ 0x30 && ch <= /* '9' = */ 0x39) ||
+        ch === /* '-' = */ 0x2d ||
+        ch === /* '.' = */ 0x2e
       ) {
-        // '-', '.'
         strBuf.push(String.fromCharCode(ch));
       } else {
         break;

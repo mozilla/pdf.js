@@ -22,7 +22,7 @@ import { GenericL10n } from "./genericl10n";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   throw new Error(
-    'Module "pdfjs-web/chromecom" shall not be used outside ' + "CHROME build."
+    'Module "pdfjs-web/chromecom" shall not be used outside CHROME build.'
   );
 }
 
@@ -178,11 +178,9 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     // Use Chrome's definition of UI language instead of PDF.js's #lang=...,
     // because the shown string should match the UI at chrome://extensions.
     // These strings are from chrome/app/resources/generated_resources_*.xtb.
-    /* eslint-disable no-unexpected-multiline */
     let i18nFileAccessLabel = PDFJSDev.json(
       "$ROOT/web/chrome-i18n-allow-access-to-file-urls.json"
     )[chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()];
-    /* eslint-enable no-unexpected-multiline */
 
     if (i18nFileAccessLabel) {
       document.getElementById(

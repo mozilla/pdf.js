@@ -95,8 +95,8 @@ class PDFAttachmentViewer {
       } else if (PDFJSDev.test("CHROME")) {
         // In the Chrome extension, the URL is rewritten using the history API
         // in viewer.js, so an absolute URL must be generated.
-        // eslint-disable-next-line no-undef
         viewerUrl =
+          // eslint-disable-next-line no-undef
           chrome.runtime.getURL("/content/web/viewer.html") +
           "?file=" +
           encodeURIComponent(blobUrl + "#" + filename);

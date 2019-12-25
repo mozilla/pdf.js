@@ -591,8 +591,7 @@ class PDFDocument {
           ch = stream.getByte();
         } while (isSpace(ch));
         let str = "";
-        while (ch >= 0x20 && ch <= 0x39) {
-          // < '9'
+        while (ch >= /* Space = */ 0x20 && ch <= /* '9' = */ 0x39) {
           str += String.fromCharCode(ch);
           ch = stream.getByte();
         }
@@ -622,8 +621,7 @@ class PDFDocument {
     const MAX_PDF_VERSION_LENGTH = 12;
     let version = "",
       ch;
-    while ((ch = stream.getByte()) > 0x20) {
-      // Space
+    while ((ch = stream.getByte()) > /* Space = */ 0x20) {
       if (version.length >= MAX_PDF_VERSION_LENGTH) {
         break;
       }
