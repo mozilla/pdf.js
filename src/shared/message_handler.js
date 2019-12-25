@@ -15,9 +15,13 @@
 /* eslint no-var: error, prefer-const: error */
 
 import {
-  AbortException, assert, createPromiseCapability, MissingPDFException,
-  UnexpectedResponseException, UnknownErrorException
-} from './util';
+  AbortException,
+  assert,
+  createPromiseCapability,
+  MissingPDFException,
+  UnexpectedResponseException,
+  UnknownErrorException,
+} from "./util";
 
 const CallbackKind = {
   UNKNOWN: 0,
@@ -38,23 +42,27 @@ const StreamKind = {
 };
 
 function wrapReason(reason) {
-  if (typeof PDFJSDev === 'undefined' ||
-      PDFJSDev.test('!PRODUCTION || TESTING')) {
-    assert(reason instanceof Error ||
-           (typeof reason === 'object' && reason !== null),
-           'wrapReason: Expected "reason" to be a (possibly cloned) Error.');
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      reason instanceof Error ||
+        (typeof reason === "object" && reason !== null),
+      'wrapReason: Expected "reason" to be a (possibly cloned) Error.'
+    );
   }
-  if (typeof reason !== 'object' || reason === null) {
+  if (typeof reason !== "object" || reason === null) {
     return reason;
   }
   switch (reason.name) {
-    case 'AbortException':
+    case "AbortException":
       return new AbortException(reason.message);
-    case 'MissingPDFException':
+    case "MissingPDFException":
       return new MissingPDFException(reason.message);
-    case 'UnexpectedResponseException':
+    case "UnexpectedResponseException":
       return new UnexpectedResponseException(reason.message, reason.status);
-    case 'UnknownErrorException':
+    case "UnknownErrorException":
       return new UnknownErrorException(reason.message, reason.details);
     default:
       return new UnknownErrorException(reason.message, reason.toString());
@@ -74,7 +82,7 @@ class MessageHandler {
     this.callbackCapabilities = Object.create(null);
     this.actionHandler = Object.create(null);
 
-    this._onComObjOnMessage = (event) => {
+    this._onComObjOnMessage = event => {
       const data = event.data;
       if (data.targetName !== this.sourceName) {
         return;
@@ -96,7 +104,7 @@ class MessageHandler {
         } else if (data.callback === CallbackKind.ERROR) {
           capability.reject(wrapReason(data.reason));
         } else {
-          throw new Error('Unexpected callback case');
+          throw new Error("Unexpected callback case");
         }
         return;
       }
@@ -109,23 +117,26 @@ class MessageHandler {
         const targetName = data.sourceName;
         new Promise(function(resolve) {
           resolve(action(data.data));
-        }).then(function(result) {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            callback: CallbackKind.DATA,
-            callbackId: data.callbackId,
-            data: result,
-          });
-        }, function(reason) {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            callback: CallbackKind.ERROR,
-            callbackId: data.callbackId,
-            reason: wrapReason(reason),
-          });
-        });
+        }).then(
+          function(result) {
+            comObj.postMessage({
+              sourceName,
+              targetName,
+              callback: CallbackKind.DATA,
+              callbackId: data.callbackId,
+              data: result,
+            });
+          },
+          function(reason) {
+            comObj.postMessage({
+              sourceName,
+              targetName,
+              callback: CallbackKind.ERROR,
+              callbackId: data.callbackId,
+              reason: wrapReason(reason),
+            });
+          }
+        );
         return;
       }
       if (data.streamId) {
@@ -134,14 +145,18 @@ class MessageHandler {
       }
       action(data.data);
     };
-    comObj.addEventListener('message', this._onComObjOnMessage);
+    comObj.addEventListener("message", this._onComObjOnMessage);
   }
 
   on(actionName, handler) {
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('!PRODUCTION || TESTING')) {
-      assert(typeof handler === 'function',
-             'MessageHandler.on: Expected "handler" to be a function.');
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        typeof handler === "function",
+        'MessageHandler.on: Expected "handler" to be a function.'
+      );
     }
     const ah = this.actionHandler;
     if (ah[actionName]) {
@@ -157,12 +172,15 @@ class MessageHandler {
    * @param {Array} [transfers] - List of transfers/ArrayBuffers.
    */
   send(actionName, data, transfers) {
-    this._postMessage({
-      sourceName: this.sourceName,
-      targetName: this.targetName,
-      action: actionName,
-      data,
-    }, transfers);
+    this._postMessage(
+      {
+        sourceName: this.sourceName,
+        targetName: this.targetName,
+        action: actionName,
+        data,
+      },
+      transfers
+    );
   }
 
   /**
@@ -178,13 +196,16 @@ class MessageHandler {
     const capability = createPromiseCapability();
     this.callbackCapabilities[callbackId] = capability;
     try {
-      this._postMessage({
-        sourceName: this.sourceName,
-        targetName: this.targetName,
-        action: actionName,
-        callbackId,
-        data,
-      }, transfers);
+      this._postMessage(
+        {
+          sourceName: this.sourceName,
+          targetName: this.targetName,
+          action: actionName,
+          callbackId,
+          data,
+        },
+        transfers
+      );
     } catch (ex) {
       capability.reject(ex);
     }
@@ -207,59 +228,65 @@ class MessageHandler {
     const targetName = this.targetName;
     const comObj = this.comObj;
 
-    return new ReadableStream({
-      start: (controller) => {
-        const startCapability = createPromiseCapability();
-        this.streamControllers[streamId] = {
-          controller,
-          startCall: startCapability,
-          pullCall: null,
-          cancelCall: null,
-          isClosed: false,
-        };
-        this._postMessage({
-          sourceName,
-          targetName,
-          action: actionName,
-          streamId,
-          data,
-          desiredSize: controller.desiredSize,
-        }, transfers);
-        // Return Promise for Async process, to signal success/failure.
-        return startCapability.promise;
-      },
+    return new ReadableStream(
+      {
+        start: controller => {
+          const startCapability = createPromiseCapability();
+          this.streamControllers[streamId] = {
+            controller,
+            startCall: startCapability,
+            pullCall: null,
+            cancelCall: null,
+            isClosed: false,
+          };
+          this._postMessage(
+            {
+              sourceName,
+              targetName,
+              action: actionName,
+              streamId,
+              data,
+              desiredSize: controller.desiredSize,
+            },
+            transfers
+          );
+          // Return Promise for Async process, to signal success/failure.
+          return startCapability.promise;
+        },
 
-      pull: (controller) => {
-        const pullCapability = createPromiseCapability();
-        this.streamControllers[streamId].pullCall = pullCapability;
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          stream: StreamKind.PULL,
-          streamId,
-          desiredSize: controller.desiredSize,
-        });
-        // Returning Promise will not call "pull"
-        // again until current pull is resolved.
-        return pullCapability.promise;
-      },
+        pull: controller => {
+          const pullCapability = createPromiseCapability();
+          this.streamControllers[streamId].pullCall = pullCapability;
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: StreamKind.PULL,
+            streamId,
+            desiredSize: controller.desiredSize,
+          });
+          // Returning Promise will not call "pull"
+          // again until current pull is resolved.
+          return pullCapability.promise;
+        },
 
-      cancel: (reason) => {
-        assert(reason instanceof Error, 'cancel must have a valid reason');
-        const cancelCapability = createPromiseCapability();
-        this.streamControllers[streamId].cancelCall = cancelCapability;
-        this.streamControllers[streamId].isClosed = true;
-        comObj.postMessage({
-          sourceName,
-          targetName,
-          stream: StreamKind.CANCEL,
-          streamId,
-          reason: wrapReason(reason),
-        });
-        // Return Promise to signal success or failure.
-        return cancelCapability.promise;
+        cancel: reason => {
+          assert(reason instanceof Error, "cancel must have a valid reason");
+          const cancelCapability = createPromiseCapability();
+          this.streamControllers[streamId].cancelCall = cancelCapability;
+          this.streamControllers[streamId].isClosed = true;
+          comObj.postMessage({
+            sourceName,
+            targetName,
+            stream: StreamKind.CANCEL,
+            streamId,
+            reason: wrapReason(reason),
+          });
+          // Return Promise to signal success or failure.
+          return cancelCapability.promise;
+        },
       },
-    }, queueingStrategy);
+      queueingStrategy
+    );
   }
 
   /**
@@ -287,13 +314,16 @@ class MessageHandler {
           this.sinkCapability = createPromiseCapability();
           this.ready = this.sinkCapability.promise;
         }
-        self._postMessage({
-          sourceName,
-          targetName,
-          stream: StreamKind.ENQUEUE,
-          streamId,
-          chunk,
-        }, transfers);
+        self._postMessage(
+          {
+            sourceName,
+            targetName,
+            stream: StreamKind.ENQUEUE,
+            streamId,
+            chunk,
+          },
+          transfers
+        );
       },
 
       close() {
@@ -311,7 +341,7 @@ class MessageHandler {
       },
 
       error(reason) {
-        assert(reason instanceof Error, 'error must have a valid reason');
+        assert(reason instanceof Error, "error must have a valid reason");
         if (this.isCancelled) {
           return;
         }
@@ -338,23 +368,26 @@ class MessageHandler {
     this.streamSinks[streamId] = streamSink;
     new Promise(function(resolve) {
       resolve(action(data.data, streamSink));
-    }).then(function() {
-      comObj.postMessage({
-        sourceName,
-        targetName,
-        stream: StreamKind.START_COMPLETE,
-        streamId,
-        success: true,
-      });
-    }, function(reason) {
-      comObj.postMessage({
-        sourceName,
-        targetName,
-        stream: StreamKind.START_COMPLETE,
-        streamId,
-        reason: wrapReason(reason),
-      });
-    });
+    }).then(
+      function() {
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          stream: StreamKind.START_COMPLETE,
+          streamId,
+          success: true,
+        });
+      },
+      function(reason) {
+        comObj.postMessage({
+          sourceName,
+          targetName,
+          stream: StreamKind.START_COMPLETE,
+          streamId,
+          reason: wrapReason(reason),
+        });
+      }
+    );
   }
 
   /**
@@ -372,7 +405,8 @@ class MessageHandler {
           this.streamControllers[streamId].startCall.resolve();
         } else {
           this.streamControllers[streamId].startCall.reject(
-            wrapReason(data.reason));
+            wrapReason(data.reason)
+          );
         }
         break;
       case StreamKind.PULL_COMPLETE:
@@ -380,7 +414,8 @@ class MessageHandler {
           this.streamControllers[streamId].pullCall.resolve();
         } else {
           this.streamControllers[streamId].pullCall.reject(
-            wrapReason(data.reason));
+            wrapReason(data.reason)
+          );
         }
         break;
       case StreamKind.PULL:
@@ -398,44 +433,53 @@ class MessageHandler {
         // Pull increases the desiredSize property of sink,
         // so when it changes from negative to positive,
         // set ready property as resolved promise.
-        if (this.streamSinks[streamId].desiredSize <= 0 &&
-            data.desiredSize > 0) {
+        if (
+          this.streamSinks[streamId].desiredSize <= 0 &&
+          data.desiredSize > 0
+        ) {
           this.streamSinks[streamId].sinkCapability.resolve();
         }
         // Reset desiredSize property of sink on every pull.
         this.streamSinks[streamId].desiredSize = data.desiredSize;
-        const { onPull, } = this.streamSinks[data.streamId];
+        const { onPull } = this.streamSinks[data.streamId];
         new Promise(function(resolve) {
           resolve(onPull && onPull());
-        }).then(function() {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            stream: StreamKind.PULL_COMPLETE,
-            streamId,
-            success: true,
-          });
-        }, function(reason) {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            stream: StreamKind.PULL_COMPLETE,
-            streamId,
-            reason: wrapReason(reason),
-          });
-        });
+        }).then(
+          function() {
+            comObj.postMessage({
+              sourceName,
+              targetName,
+              stream: StreamKind.PULL_COMPLETE,
+              streamId,
+              success: true,
+            });
+          },
+          function(reason) {
+            comObj.postMessage({
+              sourceName,
+              targetName,
+              stream: StreamKind.PULL_COMPLETE,
+              streamId,
+              reason: wrapReason(reason),
+            });
+          }
+        );
         break;
       case StreamKind.ENQUEUE:
-        assert(this.streamControllers[streamId],
-               'enqueue should have stream controller');
+        assert(
+          this.streamControllers[streamId],
+          "enqueue should have stream controller"
+        );
         if (this.streamControllers[streamId].isClosed) {
           break;
         }
         this.streamControllers[streamId].controller.enqueue(data.chunk);
         break;
       case StreamKind.CLOSE:
-        assert(this.streamControllers[streamId],
-               'close should have stream controller');
+        assert(
+          this.streamControllers[streamId],
+          "close should have stream controller"
+        );
         if (this.streamControllers[streamId].isClosed) {
           break;
         }
@@ -444,10 +488,13 @@ class MessageHandler {
         this._deleteStreamController(streamId);
         break;
       case StreamKind.ERROR:
-        assert(this.streamControllers[streamId],
-               'error should have stream controller');
+        assert(
+          this.streamControllers[streamId],
+          "error should have stream controller"
+        );
         this.streamControllers[streamId].controller.error(
-          wrapReason(data.reason));
+          wrapReason(data.reason)
+        );
         this._deleteStreamController(streamId);
         break;
       case StreamKind.CANCEL_COMPLETE:
@@ -455,7 +502,8 @@ class MessageHandler {
           this.streamControllers[streamId].cancelCall.resolve();
         } else {
           this.streamControllers[streamId].cancelCall.reject(
-            wrapReason(data.reason));
+            wrapReason(data.reason)
+          );
         }
         this._deleteStreamController(streamId);
         break;
@@ -463,33 +511,37 @@ class MessageHandler {
         if (!this.streamSinks[streamId]) {
           break;
         }
-        const { onCancel, } = this.streamSinks[data.streamId];
+        const { onCancel } = this.streamSinks[data.streamId];
         new Promise(function(resolve) {
           resolve(onCancel && onCancel(wrapReason(data.reason)));
-        }).then(function() {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            stream: StreamKind.CANCEL_COMPLETE,
-            streamId,
-            success: true,
-          });
-        }, function(reason) {
-          comObj.postMessage({
-            sourceName,
-            targetName,
-            stream: StreamKind.CANCEL_COMPLETE,
-            streamId,
-            reason: wrapReason(reason),
-          });
-        });
+        }).then(
+          function() {
+            comObj.postMessage({
+              sourceName,
+              targetName,
+              stream: StreamKind.CANCEL_COMPLETE,
+              streamId,
+              success: true,
+            });
+          },
+          function(reason) {
+            comObj.postMessage({
+              sourceName,
+              targetName,
+              stream: StreamKind.CANCEL_COMPLETE,
+              streamId,
+              reason: wrapReason(reason),
+            });
+          }
+        );
         this.streamSinks[streamId].sinkCapability.reject(
-          wrapReason(data.reason));
+          wrapReason(data.reason)
+        );
         this.streamSinks[streamId].isCancelled = true;
         delete this.streamSinks[streamId];
         break;
       default:
-        throw new Error('Unexpected stream case');
+        throw new Error("Unexpected stream case");
     }
   }
 
@@ -499,13 +551,15 @@ class MessageHandler {
   async _deleteStreamController(streamId) {
     // Delete the `streamController` only when the start, pull, and cancel
     // capabilities have settled, to prevent `TypeError`s.
-    await Promise.all([
-      this.streamControllers[streamId].startCall,
-      this.streamControllers[streamId].pullCall,
-      this.streamControllers[streamId].cancelCall
-    ].map(function(capability) {
-      return capability && capability.promise.catch(function() { });
-    }));
+    await Promise.all(
+      [
+        this.streamControllers[streamId].startCall,
+        this.streamControllers[streamId].pullCall,
+        this.streamControllers[streamId].cancelCall,
+      ].map(function(capability) {
+        return capability && capability.promise.catch(function() {});
+      })
+    );
     delete this.streamControllers[streamId];
   }
 
@@ -524,10 +578,8 @@ class MessageHandler {
   }
 
   destroy() {
-    this.comObj.removeEventListener('message', this._onComObjOnMessage);
+    this.comObj.removeEventListener("message", this._onComObjOnMessage);
   }
 }
 
-export {
-  MessageHandler,
-};
+export { MessageHandler };

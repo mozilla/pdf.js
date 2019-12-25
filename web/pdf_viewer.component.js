@@ -15,25 +15,30 @@
 /* eslint-disable no-unused-vars */
 
 import {
-  AnnotationLayerBuilder, DefaultAnnotationLayerFactory
-} from './annotation_layer_builder.js';
+  AnnotationLayerBuilder,
+  DefaultAnnotationLayerFactory,
+} from "./annotation_layer_builder.js";
 import {
-  DefaultTextLayerFactory, TextLayerBuilder
-} from './text_layer_builder.js';
+  DefaultTextLayerFactory,
+  TextLayerBuilder,
+} from "./text_layer_builder.js";
 import {
-  EventBus, getGlobalEventBus, NullL10n, ProgressBar
-} from './ui_utils.js';
-import { PDFLinkService, SimpleLinkService } from './pdf_link_service.js';
-import { DownloadManager } from './download_manager.js';
-import { GenericL10n } from './genericl10n.js';
-import { PDFFindController } from './pdf_find_controller.js';
-import { PDFHistory } from './pdf_history.js';
-import { PDFPageView } from './pdf_page_view.js';
-import { PDFSinglePageViewer } from './pdf_single_page_viewer';
-import { PDFViewer } from './pdf_viewer.js';
+  EventBus,
+  getGlobalEventBus,
+  NullL10n,
+  ProgressBar,
+} from "./ui_utils.js";
+import { PDFLinkService, SimpleLinkService } from "./pdf_link_service.js";
+import { DownloadManager } from "./download_manager.js";
+import { GenericL10n } from "./genericl10n.js";
+import { PDFFindController } from "./pdf_find_controller.js";
+import { PDFHistory } from "./pdf_history.js";
+import { PDFPageView } from "./pdf_page_view.js";
+import { PDFSinglePageViewer } from "./pdf_single_page_viewer";
+import { PDFViewer } from "./pdf_viewer.js";
 
-const pdfjsVersion = PDFJSDev.eval('BUNDLE_VERSION');
-const pdfjsBuild = PDFJSDev.eval('BUNDLE_BUILD');
+const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
+const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 
 // For backwards compatibility, ensure that events are re-dispatched to the DOM.
 getGlobalEventBus(/* dispatchToDOM = */ true);

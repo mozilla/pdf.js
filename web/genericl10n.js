@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import '../external/webL10n/l10n';
+import "../external/webL10n/l10n";
 
 let webL10n = document.webL10n;
 
@@ -48,6 +48,4 @@ class GenericL10n {
   }
 }
 
-export {
-  GenericL10n,
-};
+export { GenericL10n };

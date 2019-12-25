@@ -99,14 +99,14 @@ class IPDFHistory {
   /**
    * @param {Object} params
    */
-  initialize({ fingerprint, resetHistory = false, updateUrl = false, }) {}
+  initialize({ fingerprint, resetHistory = false, updateUrl = false }) {}
 
   reset() {}
 
   /**
    * @param {Object} params
    */
-  push({ namedDest = null, explicitDest, pageNumber, }) {}
+  push({ namedDest = null, explicitDest, pageNumber }) {}
 
   pushCurrentPosition() {}
 
@@ -148,8 +148,12 @@ class IPDFTextLayerFactory {
    * @param {boolean} enhanceTextSelection
    * @returns {TextLayerBuilder}
    */
-  createTextLayerBuilder(textLayerDiv, pageIndex, viewport,
-                         enhanceTextSelection = false) {}
+  createTextLayerBuilder(
+    textLayerDiv,
+    pageIndex,
+    viewport,
+    enhanceTextSelection = false
+  ) {}
 }
 
 /**
@@ -165,9 +169,13 @@ class IPDFAnnotationLayerFactory {
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = '',
-                               renderInteractiveForms = false,
-                               l10n = undefined) {}
+  createAnnotationLayerBuilder(
+    pageDiv,
+    pdfPage,
+    imageResourcesPath = "",
+    renderInteractiveForms = false,
+    l10n = undefined
+  ) {}
 }
 
 /**
@@ -193,14 +201,14 @@ class IL10n {
    * @param {string} fallback
    * @returns {Promise<string>}
    */
-  async get(key, args, fallback) { }
+  async get(key, args, fallback) {}
 
   /**
    * Translates HTML element.
    * @param {HTMLElement} element
    * @returns {Promise<void>}
    */
-  async translate(element) { }
+  async translate(element) {}
 }
 
 export {

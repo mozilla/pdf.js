@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { DecodeStream } from './stream';
-import { JpxImage } from './jpx';
-import { shadow } from '../shared/util';
+import { DecodeStream } from "./stream";
+import { JpxImage } from "./jpx";
+import { shadow } from "../shared/util";
 
 /**
  * For JPEG 2000's we use a library to decode these images and
@@ -33,10 +33,10 @@ let JpxStream = (function JpxStreamClosure() {
 
   JpxStream.prototype = Object.create(DecodeStream.prototype);
 
-  Object.defineProperty(JpxStream.prototype, 'bytes', {
+  Object.defineProperty(JpxStream.prototype, "bytes", {
     get: function JpxStream_bytes() {
       // If `this.maybeLength` is null, we'll get the entire stream.
-      return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
+      return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
     },
     configurable: true,
   });
@@ -91,6 +91,4 @@ let JpxStream = (function JpxStreamClosure() {
   return JpxStream;
 })();
 
-export {
-  JpxStream,
-};
+export { JpxStream };

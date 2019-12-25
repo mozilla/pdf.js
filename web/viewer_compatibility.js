@@ -15,17 +15,18 @@
 /* eslint no-var: error, prefer-const: error */
 
 const compatibilityParams = Object.create(null);
-if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const userAgent =
-    (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    (typeof navigator !== "undefined" && navigator.userAgent) || "";
   const platform =
-    (typeof navigator !== 'undefined' && navigator.platform) || '';
+    (typeof navigator !== "undefined" && navigator.platform) || "";
   const maxTouchPoints =
-    (typeof navigator !== 'undefined' && navigator.maxTouchPoints) || 1;
+    (typeof navigator !== "undefined" && navigator.maxTouchPoints) || 1;
 
   const isAndroid = /Android/.test(userAgent);
-  const isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent) ||
-                (platform === 'MacIntel' && maxTouchPoints > 1);
+  const isIOS =
+    /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent) ||
+    (platform === "MacIntel" && maxTouchPoints > 1);
 
   // Limit canvas size to 5 mega-pixels on mobile.
   // Support: Android, iOS

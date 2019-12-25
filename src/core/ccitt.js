@@ -25,10 +25,9 @@
  *   or -1 when EOF is reached.
  */
 
-import { info } from '../shared/util';
+import { info } from "../shared/util";
 
 let CCITTFaxDecoder = (function CCITTFaxDecoder() {
-
   const ccittEOL = -2;
   const ccittEOF = -1;
   const twoDimPass = 0;
@@ -467,23 +466,23 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
    * @param {Object} [options] - Decoding options.
    */
   function CCITTFaxDecoder(source, options = {}) {
-    if (!source || typeof source.next !== 'function') {
+    if (!source || typeof source.next !== "function") {
       throw new Error('CCITTFaxDecoder - invalid "source" parameter.');
     }
     this.source = source;
     this.eof = false;
 
-    this.encoding = options['K'] || 0;
-    this.eoline = options['EndOfLine'] || false;
-    this.byteAlign = options['EncodedByteAlign'] || false;
-    this.columns = options['Columns'] || 1728;
-    this.rows = options['Rows'] || 0;
-    let eoblock = options['EndOfBlock'];
+    this.encoding = options["K"] || 0;
+    this.eoline = options["EndOfLine"] || false;
+    this.byteAlign = options["EncodedByteAlign"] || false;
+    this.columns = options["Columns"] || 1728;
+    this.rows = options["Rows"] || 0;
+    let eoblock = options["EndOfBlock"];
     if (eoblock === null || eoblock === undefined) {
       eoblock = true;
     }
     this.eoblock = eoblock;
-    this.black = options['BlackIs1'] || false;
+    this.black = options["BlackIs1"] || false;
 
     this.codingLine = new Uint32Array(this.columns + 1);
     this.refLine = new Uint32Array(this.columns + 2);
@@ -556,27 +555,33 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                 code1 = code2 = 0;
                 if (blackPixels) {
                   do {
-                    code1 += (code3 = this._getBlackCode());
+                    code1 += code3 = this._getBlackCode();
                   } while (code3 >= 64);
                   do {
-                    code2 += (code3 = this._getWhiteCode());
+                    code2 += code3 = this._getWhiteCode();
                   } while (code3 >= 64);
                 } else {
                   do {
-                    code1 += (code3 = this._getWhiteCode());
+                    code1 += code3 = this._getWhiteCode();
                   } while (code3 >= 64);
                   do {
-                    code2 += (code3 = this._getBlackCode());
+                    code2 += code3 = this._getBlackCode();
                   } while (code3 >= 64);
                 }
-                this._addPixels(codingLine[this.codingPos] +
-                               code1, blackPixels);
+                this._addPixels(
+                  codingLine[this.codingPos] + code1,
+                  blackPixels
+                );
                 if (codingLine[this.codingPos] < columns) {
-                  this._addPixels(codingLine[this.codingPos] + code2,
-                                 blackPixels ^ 1);
+                  this._addPixels(
+                    codingLine[this.codingPos] + code2,
+                    blackPixels ^ 1
+                  );
                 }
-                while (refLine[refPos] <= codingLine[this.codingPos] &&
-                       refLine[refPos] < columns) {
+                while (
+                  refLine[refPos] <= codingLine[this.codingPos] &&
+                  refLine[refPos] < columns
+                ) {
                   refPos += 2;
                 }
                 break;
@@ -585,8 +590,10 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                 blackPixels ^= 1;
                 if (codingLine[this.codingPos] < columns) {
                   ++refPos;
-                  while (refLine[refPos] <= codingLine[this.codingPos] &&
-                         refLine[refPos] < columns) {
+                  while (
+                    refLine[refPos] <= codingLine[this.codingPos] &&
+                    refLine[refPos] < columns
+                  ) {
                     refPos += 2;
                   }
                 }
@@ -596,8 +603,10 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                 blackPixels ^= 1;
                 if (codingLine[this.codingPos] < columns) {
                   ++refPos;
-                  while (refLine[refPos] <= codingLine[this.codingPos] &&
-                         refLine[refPos] < columns) {
+                  while (
+                    refLine[refPos] <= codingLine[this.codingPos] &&
+                    refLine[refPos] < columns
+                  ) {
                     refPos += 2;
                   }
                 }
@@ -607,8 +616,10 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                 blackPixels ^= 1;
                 if (codingLine[this.codingPos] < columns) {
                   ++refPos;
-                  while (refLine[refPos] <= codingLine[this.codingPos] &&
-                         refLine[refPos] < columns) {
+                  while (
+                    refLine[refPos] <= codingLine[this.codingPos] &&
+                    refLine[refPos] < columns
+                  ) {
                     refPos += 2;
                   }
                 }
@@ -618,8 +629,10 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                 blackPixels ^= 1;
                 if (codingLine[this.codingPos] < columns) {
                   ++refPos;
-                  while (refLine[refPos] <= codingLine[this.codingPos] &&
-                         refLine[refPos] < columns) {
+                  while (
+                    refLine[refPos] <= codingLine[this.codingPos] &&
+                    refLine[refPos] < columns
+                  ) {
                     refPos += 2;
                   }
                 }
@@ -633,8 +646,10 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                   } else {
                     ++refPos;
                   }
-                  while (refLine[refPos] <= codingLine[this.codingPos] &&
-                         refLine[refPos] < columns) {
+                  while (
+                    refLine[refPos] <= codingLine[this.codingPos] &&
+                    refLine[refPos] < columns
+                  ) {
                     refPos += 2;
                   }
                 }
@@ -648,8 +663,10 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                   } else {
                     ++refPos;
                   }
-                  while (refLine[refPos] <= codingLine[this.codingPos] &&
-                         refLine[refPos] < columns) {
+                  while (
+                    refLine[refPos] <= codingLine[this.codingPos] &&
+                    refLine[refPos] < columns
+                  ) {
                     refPos += 2;
                   }
                 }
@@ -663,8 +680,10 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                   } else {
                     ++refPos;
                   }
-                  while (refLine[refPos] <= codingLine[this.codingPos] &&
-                         refLine[refPos] < columns) {
+                  while (
+                    refLine[refPos] <= codingLine[this.codingPos] &&
+                    refLine[refPos] < columns
+                  ) {
                     refPos += 2;
                   }
                 }
@@ -674,7 +693,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
                 this.eof = true;
                 break;
               default:
-                info('bad 2d code');
+                info("bad 2d code");
                 this._addPixels(columns, 0);
                 this.err = true;
             }
@@ -687,11 +706,11 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
             code1 = 0;
             if (blackPixels) {
               do {
-                code1 += (code3 = this._getBlackCode());
+                code1 += code3 = this._getBlackCode();
               } while (code3 >= 64);
             } else {
               do {
-                code1 += (code3 = this._getWhiteCode());
+                code1 += code3 = this._getWhiteCode();
               } while (code3 >= 64);
             }
             this._addPixels(codingLine[this.codingPos] + code1, blackPixels);
@@ -745,7 +764,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
               for (i = 0; i < 4; ++i) {
                 code1 = this._lookBits(12);
                 if (code1 !== 1) {
-                  info('bad rtc code: ' + code1);
+                  info("bad rtc code: " + code1);
                 }
                 this._eatBits(12);
                 if (this.encoding > 0) {
@@ -763,7 +782,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
               this.eof = true;
               return -1;
             }
-            if ((code1 >> 1) === 1) {
+            if (code1 >> 1 === 1) {
               break;
             }
             this._eatBits(1);
@@ -776,21 +795,21 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
         }
 
         if (codingLine[0] > 0) {
-          this.outputBits = codingLine[this.codingPos = 0];
+          this.outputBits = codingLine[(this.codingPos = 0)];
         } else {
-          this.outputBits = codingLine[this.codingPos = 1];
+          this.outputBits = codingLine[(this.codingPos = 1)];
         }
         this.row++;
       }
 
       let c;
       if (this.outputBits >= 8) {
-        c = (this.codingPos & 1) ? 0 : 0xFF;
+        c = this.codingPos & 1 ? 0 : 0xff;
         this.outputBits -= 8;
         if (this.outputBits === 0 && codingLine[this.codingPos] < columns) {
           this.codingPos++;
-          this.outputBits = (codingLine[this.codingPos] -
-                             codingLine[this.codingPos - 1]);
+          this.outputBits =
+            codingLine[this.codingPos] - codingLine[this.codingPos - 1];
         }
       } else {
         bits = 8;
@@ -799,21 +818,21 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           if (this.outputBits > bits) {
             c <<= bits;
             if (!(this.codingPos & 1)) {
-              c |= 0xFF >> (8 - bits);
+              c |= 0xff >> (8 - bits);
             }
             this.outputBits -= bits;
             bits = 0;
           } else {
             c <<= this.outputBits;
             if (!(this.codingPos & 1)) {
-              c |= 0xFF >> (8 - this.outputBits);
+              c |= 0xff >> (8 - this.outputBits);
             }
             bits -= this.outputBits;
             this.outputBits = 0;
             if (codingLine[this.codingPos] < columns) {
               this.codingPos++;
-              this.outputBits = (codingLine[this.codingPos] -
-                                 codingLine[this.codingPos - 1]);
+              this.outputBits =
+                codingLine[this.codingPos] - codingLine[this.codingPos - 1];
             } else if (bits > 0) {
               c <<= bits;
               bits = 0;
@@ -822,7 +841,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
         } while (bits);
       }
       if (this.black) {
-        c ^= 0xFF;
+        c ^= 0xff;
       }
       return c;
     },
@@ -836,7 +855,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
 
       if (a1 > codingLine[codingPos]) {
         if (a1 > this.columns) {
-          info('row is wrong length');
+          info("row is wrong length");
           this.err = true;
           a1 = this.columns;
         }
@@ -858,7 +877,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
 
       if (a1 > codingLine[codingPos]) {
         if (a1 > this.columns) {
-          info('row is wrong length');
+          info("row is wrong length");
           this.err = true;
           a1 = this.columns;
         }
@@ -869,7 +888,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
         codingLine[codingPos] = a1;
       } else if (a1 < codingLine[codingPos]) {
         if (a1 < 0) {
-          info('invalid code');
+          info("invalid code");
           this.err = true;
           a1 = 0;
         }
@@ -931,7 +950,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           return result[1];
         }
       }
-      info('Bad two dim code');
+      info("Bad two dim code");
       return ccittEOF;
     },
 
@@ -947,7 +966,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           return 1;
         }
 
-        if ((code >> 5) === 0) {
+        if (code >> 5 === 0) {
           p = whiteTable1[code];
         } else {
           p = whiteTable2[code >> 3];
@@ -968,7 +987,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           return result[1];
         }
       }
-      info('bad white code');
+      info("bad white code");
       this._eatBits(1);
       return 1;
     },
@@ -983,9 +1002,9 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
         if (code === ccittEOF) {
           return 1;
         }
-        if ((code >> 7) === 0) {
+        if (code >> 7 === 0) {
           p = blackTable1[code];
-        } else if ((code >> 9) === 0 && (code >> 7) !== 0) {
+        } else if (code >> 9 === 0 && code >> 7 !== 0) {
           p = blackTable2[(code >> 1) - 64];
         } else {
           p = blackTable3[code >> 7];
@@ -1011,7 +1030,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           return result[1];
         }
       }
-      info('bad black code');
+      info("bad black code");
       this._eatBits(1);
       return 1;
     },
@@ -1026,13 +1045,12 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           if (this.inputBits === 0) {
             return ccittEOF;
           }
-          return ((this.inputBuf << (n - this.inputBits)) &
-                  (0xFFFF >> (16 - n)));
+          return (this.inputBuf << (n - this.inputBits)) & (0xffff >> (16 - n));
         }
         this.inputBuf = (this.inputBuf << 8) | c;
         this.inputBits += 8;
       }
-      return (this.inputBuf >> (this.inputBits - n)) & (0xFFFF >> (16 - n));
+      return (this.inputBuf >> (this.inputBits - n)) & (0xffff >> (16 - n));
     },
 
     /**
@@ -1048,6 +1066,4 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
   return CCITTFaxDecoder;
 })();
 
-export {
-  CCITTFaxDecoder,
-};
+export { CCITTFaxDecoder };

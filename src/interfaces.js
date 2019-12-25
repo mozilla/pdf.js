@@ -166,8 +166,4 @@ class IPDFStreamRangeReader {
   cancel(reason) {}
 }
 
-export {
-  IPDFStream,
-  IPDFStreamReader,
-  IPDFStreamRangeReader,
-};
+export { IPDFStream, IPDFStreamReader, IPDFStreamRangeReader };

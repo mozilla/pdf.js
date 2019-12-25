@@ -125,8 +125,10 @@ class PDFRenderingQueue {
       }
     } else {
       let previousPageIndex = visible.first.id - 2;
-      if (views[previousPageIndex] &&
-          !this.isViewFinished(views[previousPageIndex])) {
+      if (
+        views[previousPageIndex] &&
+        !this.isViewFinished(views[previousPageIndex])
+      ) {
         return views[previousPageIndex];
       }
     }
@@ -171,7 +173,4 @@ class PDFRenderingQueue {
   }
 }
 
-export {
-  RenderingStates,
-  PDFRenderingQueue,
-};
+export { RenderingStates, PDFRenderingQueue };

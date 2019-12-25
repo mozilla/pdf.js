@@ -15,20 +15,26 @@
 /* eslint no-var: error */
 
 import {
-  assert, BaseException, CMapCompressionType, isString, removeNullCharacters,
-  stringToBytes, Util, warn
-} from '../shared/util';
+  assert,
+  BaseException,
+  CMapCompressionType,
+  isString,
+  removeNullCharacters,
+  stringToBytes,
+  Util,
+  warn,
+} from "../shared/util";
 
-const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
-const SVG_NS = 'http://www.w3.org/2000/svg';
+const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 class DOMCanvasFactory {
   create(width, height) {
     if (width <= 0 || height <= 0) {
-      throw new Error('Invalid canvas size');
+      throw new Error("Invalid canvas size");
     }
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
     canvas.width = width;
     canvas.height = height;
     return {
@@ -39,10 +45,10 @@ class DOMCanvasFactory {
 
   reset(canvasAndContext, width, height) {
     if (!canvasAndContext.canvas) {
-      throw new Error('Canvas is not specified');
+      throw new Error("Canvas is not specified");
     }
     if (width <= 0 || height <= 0) {
-      throw new Error('Invalid canvas size');
+      throw new Error("Invalid canvas size");
     }
     canvasAndContext.canvas.width = width;
     canvasAndContext.canvas.height = height;
@@ -50,7 +56,7 @@ class DOMCanvasFactory {
 
   destroy(canvasAndContext) {
     if (!canvasAndContext.canvas) {
-      throw new Error('Canvas is not specified');
+      throw new Error("Canvas is not specified");
     }
     // Zeroing the width and height cause Firefox to release graphics
     // resources immediately, which can greatly reduce memory consumption.
@@ -62,50 +68,58 @@ class DOMCanvasFactory {
 }
 
 class DOMCMapReaderFactory {
-  constructor({ baseUrl = null, isCompressed = false, }) {
+  constructor({ baseUrl = null, isCompressed = false }) {
     this.baseUrl = baseUrl;
     this.isCompressed = isCompressed;
   }
 
-  async fetch({ name, }) {
+  async fetch({ name }) {
     if (!this.baseUrl) {
       throw new Error(
         'The CMap "baseUrl" parameter must be specified, ensure that ' +
-        'the "cMapUrl" and "cMapPacked" API parameters are provided.');
+          'the "cMapUrl" and "cMapPacked" API parameters are provided.'
+      );
     }
     if (!name) {
-      throw new Error('CMap name must be specified.');
+      throw new Error("CMap name must be specified.");
     }
-    const url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
-    const compressionType = (this.isCompressed ? CMapCompressionType.BINARY :
-                                                 CMapCompressionType.NONE);
+    const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
+    const compressionType = this.isCompressed
+      ? CMapCompressionType.BINARY
+      : CMapCompressionType.NONE;
 
-    if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) ||
-        (isFetchSupported() && isValidFetchUrl(url, document.baseURI))) {
-      return fetch(url).then(async (response) => {
-        if (!response.ok) {
-          throw new Error(response.statusText);
-        }
-        let cMapData;
-        if (this.isCompressed) {
-          cMapData = new Uint8Array(await response.arrayBuffer());
-        } else {
-          cMapData = stringToBytes(await response.text());
-        }
-        return { cMapData, compressionType, };
-      }).catch((reason) => {
-        throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` +
-                        `CMap at: ${url}`);
-      });
+    if (
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      (isFetchSupported() && isValidFetchUrl(url, document.baseURI))
+    ) {
+      return fetch(url)
+        .then(async response => {
+          if (!response.ok) {
+            throw new Error(response.statusText);
+          }
+          let cMapData;
+          if (this.isCompressed) {
+            cMapData = new Uint8Array(await response.arrayBuffer());
+          } else {
+            cMapData = stringToBytes(await response.text());
+          }
+          return { cMapData, compressionType };
+        })
+        .catch(reason => {
+          throw new Error(
+            `Unable to load ${this.isCompressed ? "binary " : ""}` +
+              `CMap at: ${url}`
+          );
+        });
     }
 
     // The Fetch API is not supported.
     return new Promise((resolve, reject) => {
       const request = new XMLHttpRequest();
-      request.open('GET', url, true);
+      request.open("GET", url, true);
 
       if (this.isCompressed) {
-        request.responseType = 'arraybuffer';
+        request.responseType = "arraybuffer";
       }
       request.onreadystatechange = () => {
         if (request.readyState !== XMLHttpRequest.DONE) {
@@ -119,7 +133,7 @@ class DOMCMapReaderFactory {
             cMapData = stringToBytes(request.responseText);
           }
           if (cMapData) {
-            resolve({ cMapData, compressionType, });
+            resolve({ cMapData, compressionType });
             return;
           }
         }
@@ -127,29 +141,31 @@ class DOMCMapReaderFactory {
       };
 
       request.send(null);
-    }).catch((reason) => {
-      throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` +
-                      `CMap at: ${url}`);
+    }).catch(reason => {
+      throw new Error(
+        `Unable to load ${this.isCompressed ? "binary " : ""}` +
+          `CMap at: ${url}`
+      );
     });
   }
 }
 
 class DOMSVGFactory {
   create(width, height) {
-    assert(width > 0 && height > 0, 'Invalid SVG dimensions');
+    assert(width > 0 && height > 0, "Invalid SVG dimensions");
 
-    const svg = document.createElementNS(SVG_NS, 'svg:svg');
-    svg.setAttribute('version', '1.1');
-    svg.setAttribute('width', width + 'px');
-    svg.setAttribute('height', height + 'px');
-    svg.setAttribute('preserveAspectRatio', 'none');
-    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    const svg = document.createElementNS(SVG_NS, "svg:svg");
+    svg.setAttribute("version", "1.1");
+    svg.setAttribute("width", width + "px");
+    svg.setAttribute("height", height + "px");
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
 
     return svg;
   }
 
   createElement(type) {
-    assert(typeof type === 'string', 'Invalid SVG element type');
+    assert(typeof type === "string", "Invalid SVG element type");
 
     return document.createElementNS(SVG_NS, type);
   }
@@ -189,8 +205,14 @@ class PageViewport {
   /**
    * @param {PageViewportParameters}
    */
-  constructor({ viewBox, scale, rotation, offsetX = 0, offsetY = 0,
-                dontFlip = false, }) {
+  constructor({
+    viewBox,
+    scale,
+    rotation,
+    offsetX = 0,
+    offsetY = 0,
+    dontFlip = false,
+  }) {
     this.viewBox = viewBox;
     this.scale = scale;
     this.rotation = rotation;
@@ -206,22 +228,35 @@ class PageViewport {
     rotation = rotation < 0 ? rotation + 360 : rotation;
     switch (rotation) {
       case 180:
-        rotateA = -1; rotateB = 0; rotateC = 0; rotateD = 1;
+        rotateA = -1;
+        rotateB = 0;
+        rotateC = 0;
+        rotateD = 1;
         break;
       case 90:
-        rotateA = 0; rotateB = 1; rotateC = 1; rotateD = 0;
+        rotateA = 0;
+        rotateB = 1;
+        rotateC = 1;
+        rotateD = 0;
         break;
       case 270:
-        rotateA = 0; rotateB = -1; rotateC = -1; rotateD = 0;
+        rotateA = 0;
+        rotateB = -1;
+        rotateC = -1;
+        rotateD = 0;
         break;
       // case 0:
       default:
-        rotateA = 1; rotateB = 0; rotateC = 0; rotateD = -1;
+        rotateA = 1;
+        rotateB = 0;
+        rotateC = 0;
+        rotateD = -1;
         break;
     }
 
     if (dontFlip) {
-      rotateC = -rotateC; rotateD = -rotateD;
+      rotateC = -rotateC;
+      rotateD = -rotateD;
     }
 
     let offsetCanvasX, offsetCanvasY;
@@ -246,7 +281,7 @@ class PageViewport {
       rotateC * scale,
       rotateD * scale,
       offsetCanvasX - rotateA * scale * centerX - rotateC * scale * centerY,
-      offsetCanvasY - rotateB * scale * centerX - rotateD * scale * centerY
+      offsetCanvasY - rotateB * scale * centerX - rotateD * scale * centerY,
     ];
 
     this.width = width;
@@ -258,8 +293,13 @@ class PageViewport {
    * @param {PageViewportCloneParameters} [params]
    * @returns {PageViewport} Cloned viewport.
    */
-  clone({ scale = this.scale, rotation = this.rotation, offsetX = this.offsetX,
-          offsetY = this.offsetY, dontFlip = false, } = {}) {
+  clone({
+    scale = this.scale,
+    rotation = this.rotation,
+    offsetX = this.offsetX,
+    offsetY = this.offsetY,
+    dontFlip = false,
+  } = {}) {
     return new PageViewport({
       viewBox: this.viewBox.slice(),
       scale,
@@ -343,50 +383,54 @@ const LinkTarget = {
  * @param {HTMLLinkElement} link - The link element.
  * @param {ExternalLinkParameters} params
  */
-function addLinkAttributes(link, { url, target, rel, enabled = true, } = {}) {
-  assert(url && typeof url === 'string',
-         'addLinkAttributes: A valid "url" parameter must provided.');
+function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
+  assert(
+    url && typeof url === "string",
+    'addLinkAttributes: A valid "url" parameter must provided.'
+  );
 
   const urlNullRemoved = removeNullCharacters(url);
   if (enabled) {
     link.href = link.title = urlNullRemoved;
   } else {
-    link.href = '';
+    link.href = "";
     link.title = `Disabled: ${urlNullRemoved}`;
     link.onclick = () => {
       return false;
     };
   }
 
-  let targetStr = ''; // LinkTarget.NONE
+  let targetStr = ""; // LinkTarget.NONE
   switch (target) {
     case LinkTarget.NONE:
       break;
     case LinkTarget.SELF:
-      targetStr = '_self';
+      targetStr = "_self";
       break;
     case LinkTarget.BLANK:
-      targetStr = '_blank';
+      targetStr = "_blank";
       break;
     case LinkTarget.PARENT:
-      targetStr = '_parent';
+      targetStr = "_parent";
       break;
     case LinkTarget.TOP:
-      targetStr = '_top';
+      targetStr = "_top";
       break;
   }
   link.target = targetStr;
 
-  link.rel = (typeof rel === 'string' ? rel : DEFAULT_LINK_REL);
+  link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
 }
 
 // Gets the file name from a given URL.
 function getFilenameFromUrl(url) {
-  const anchor = url.indexOf('#');
-  const query = url.indexOf('?');
-  const end = Math.min(anchor > 0 ? anchor : url.length,
-                       query > 0 ? query : url.length);
-  return url.substring(url.lastIndexOf('/', end) + 1, end);
+  const anchor = url.indexOf("#");
+  const query = url.indexOf("?");
+  const end = Math.min(
+    anchor > 0 ? anchor : url.length,
+    query > 0 ? query : url.length
+  );
+  return url.substring(url.lastIndexOf("/", end) + 1, end);
 }
 
 class StatTimer {
@@ -407,9 +451,9 @@ class StatTimer {
       warn(`Timer has not been started for ${name}`);
     }
     this.times.push({
-      'name': name,
-      'start': this.started[name],
-      'end': Date.now(),
+      name,
+      start: this.started[name],
+      end: Date.now(),
     });
     // Remove timer from started so it can be called again.
     delete this.started[name];
@@ -417,7 +461,8 @@ class StatTimer {
 
   toString() {
     // Find the longest name for padding purposes.
-    let outBuf = [], longest = 0;
+    let outBuf = [],
+      longest = 0;
     for (const time of this.times) {
       const name = time.name;
       if (name.length > longest) {
@@ -428,21 +473,24 @@ class StatTimer {
       const duration = time.end - time.start;
       outBuf.push(`${time.name.padEnd(longest)} ${duration}ms\n`);
     }
-    return outBuf.join('');
+    return outBuf.join("");
   }
 }
 
 function isFetchSupported() {
-  return (typeof fetch !== 'undefined' &&
-          typeof Response !== 'undefined' && 'body' in Response.prototype &&
-          typeof ReadableStream !== 'undefined');
+  return (
+    typeof fetch !== "undefined" &&
+    typeof Response !== "undefined" &&
+    "body" in Response.prototype &&
+    typeof ReadableStream !== "undefined"
+  );
 }
 
 function isValidFetchUrl(url, baseUrl) {
   try {
-    const { protocol, } = baseUrl ? new URL(url, baseUrl) : new URL(url);
+    const { protocol } = baseUrl ? new URL(url, baseUrl) : new URL(url);
     // The Fetch API only supports the http/https protocols, and not file/ftp.
-    return (protocol === 'http:' || protocol === 'https:');
+    return protocol === "http:" || protocol === "https:";
   } catch (ex) {
     return false; // `new URL()` will throw on incorrect data.
   }
@@ -450,7 +498,7 @@ function isValidFetchUrl(url, baseUrl) {
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = src;
 
     script.onload = resolve;
@@ -463,39 +511,42 @@ function loadScript(src) {
 
 // Deprecated API function -- display regardless of the `verbosity` setting.
 function deprecated(details) {
-  console.log('Deprecated API usage: ' + details);
+  console.log("Deprecated API usage: " + details);
 }
 
 function releaseImageResources(img) {
-  assert(img instanceof Image, 'Invalid `img` parameter.');
+  assert(img instanceof Image, "Invalid `img` parameter.");
 
   const url = img.src;
-  if (typeof url === 'string' && url.startsWith('blob:') &&
-      URL.revokeObjectURL) {
+  if (
+    typeof url === "string" &&
+    url.startsWith("blob:") &&
+    URL.revokeObjectURL
+  ) {
     URL.revokeObjectURL(url);
   }
-  img.removeAttribute('src');
+  img.removeAttribute("src");
 }
 
 let pdfDateStringRegex;
 
 class PDFDateString {
- /**
-  * Convert a PDF date string to a JavaScript `Date` object.
-  *
-  * The PDF date string format is described in section 7.9.4 of the official
-  * PDF 32000-1:2008 specification. However, in the PDF 1.7 reference (sixth
-  * edition) Adobe describes the same format including a trailing apostrophe.
-  * This syntax in incorrect, but Adobe Acrobat creates PDF files that contain
-  * them. We ignore all apostrophes as they are not necessary for date parsing.
-  *
-  * Moreover, Adobe Acrobat doesn't handle changing the date to universal time
-  * and doesn't use the user's time zone (effectively ignoring the HH' and mm'
-  * parts of the date string).
-  *
-  * @param {string} input
-  * @returns {Date|null}
-  */
+  /**
+   * Convert a PDF date string to a JavaScript `Date` object.
+   *
+   * The PDF date string format is described in section 7.9.4 of the official
+   * PDF 32000-1:2008 specification. However, in the PDF 1.7 reference (sixth
+   * edition) Adobe describes the same format including a trailing apostrophe.
+   * This syntax in incorrect, but Adobe Acrobat creates PDF files that contain
+   * them. We ignore all apostrophes as they are not necessary for date parsing.
+   *
+   * Moreover, Adobe Acrobat doesn't handle changing the date to universal time
+   * and doesn't use the user's time zone (effectively ignoring the HH' and mm'
+   * parts of the date string).
+   *
+   * @param {string} input
+   * @returns {Date|null}
+   */
   static toDateObject(input) {
     if (!input || !isString(input)) {
       return null;
@@ -504,18 +555,18 @@ class PDFDateString {
     // Lazily initialize the regular expression.
     if (!pdfDateStringRegex) {
       pdfDateStringRegex = new RegExp(
-        '^D:' + // Prefix (required)
-        '(\\d{4})' + // Year (required)
-        '(\\d{2})?' + // Month (optional)
-        '(\\d{2})?' + // Day (optional)
-        '(\\d{2})?' + // Hour (optional)
-        '(\\d{2})?' + // Minute (optional)
-        '(\\d{2})?' + // Second (optional)
-        '([Z|+|-])?' + // Universal time relation (optional)
-        '(\\d{2})?' + // Offset hour (optional)
-        '\'?' + // Splitting apostrophe (optional)
-        '(\\d{2})?' + // Offset minute (optional)
-        '\'?' // Trailing apostrophe (optional)
+        "^D:" + // Prefix (required)
+        "(\\d{4})" + // Year (required)
+        "(\\d{2})?" + // Month (optional)
+        "(\\d{2})?" + // Day (optional)
+        "(\\d{2})?" + // Hour (optional)
+        "(\\d{2})?" + // Minute (optional)
+        "(\\d{2})?" + // Second (optional)
+        "([Z|+|-])?" + // Universal time relation (optional)
+        "(\\d{2})?" + // Offset hour (optional)
+        "'?" + // Splitting apostrophe (optional)
+        "(\\d{2})?" + // Offset minute (optional)
+          "'?" // Trailing apostrophe (optional)
       );
     }
 
@@ -531,29 +582,29 @@ class PDFDateString {
     // instead of 1 and 12, so we have to correct for that.
     const year = parseInt(matches[1], 10);
     let month = parseInt(matches[2], 10);
-    month = (month >= 1 && month <= 12) ? month - 1 : 0;
+    month = month >= 1 && month <= 12 ? month - 1 : 0;
     let day = parseInt(matches[3], 10);
-    day = (day >= 1 && day <= 31) ? day : 1;
+    day = day >= 1 && day <= 31 ? day : 1;
     let hour = parseInt(matches[4], 10);
-    hour = (hour >= 0 && hour <= 23) ? hour : 0;
+    hour = hour >= 0 && hour <= 23 ? hour : 0;
     let minute = parseInt(matches[5], 10);
-    minute = (minute >= 0 && minute <= 59) ? minute : 0;
+    minute = minute >= 0 && minute <= 59 ? minute : 0;
     let second = parseInt(matches[6], 10);
-    second = (second >= 0 && second <= 59) ? second : 0;
-    const universalTimeRelation = matches[7] || 'Z';
+    second = second >= 0 && second <= 59 ? second : 0;
+    const universalTimeRelation = matches[7] || "Z";
     let offsetHour = parseInt(matches[8], 10);
-    offsetHour = (offsetHour >= 0 && offsetHour <= 23) ? offsetHour : 0;
+    offsetHour = offsetHour >= 0 && offsetHour <= 23 ? offsetHour : 0;
     let offsetMinute = parseInt(matches[9], 10) || 0;
-    offsetMinute = (offsetMinute >= 0 && offsetMinute <= 59) ? offsetMinute : 0;
+    offsetMinute = offsetMinute >= 0 && offsetMinute <= 59 ? offsetMinute : 0;
 
     // Universal time relation 'Z' means that the local time is equal to the
     // universal time, whereas the relations '+'/'-' indicate that the local
     // time is later respectively earlier than the universal time. Every date
     // is normalized to universal time.
-    if (universalTimeRelation === '-') {
+    if (universalTimeRelation === "-") {
       hour += offsetHour;
       minute += offsetMinute;
-    } else if (universalTimeRelation === '+') {
+    } else if (universalTimeRelation === "+") {
       hour -= offsetHour;
       minute -= offsetMinute;
     }

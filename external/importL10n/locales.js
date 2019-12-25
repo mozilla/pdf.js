@@ -13,39 +13,40 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
-var fs = require('fs');
-var https = require('https');
-var path = require('path');
+var fs = require("fs");
+var https = require("https");
+var path = require("path");
 
 // Fetches all languages that have an *active* translation in mozilla-central.
 // This is used in gulpfile.js for the `importl10n` command.
 
-var DEFAULT_LOCALE = 'en-US';
+var DEFAULT_LOCALE = "en-US";
 
-var EXCLUDE_LANG_CODES = ['ca-valencia', 'ja-JP-mac'];
+var EXCLUDE_LANG_CODES = ["ca-valencia", "ja-JP-mac"];
 
 function normalizeText(s) {
-  return s.replace(/\r\n?/g, '\n').replace(/\uFEFF/g, '');
+  return s.replace(/\r\n?/g, "\n").replace(/\uFEFF/g, "");
 }
 
 function downloadLanguageCodes() {
-  console.log('Downloading language codes...\n');
+  console.log("Downloading language codes...\n");
 
-  var ALL_LOCALES = 'https://hg.mozilla.org/mozilla-central/raw-file/tip/browser/locales/all-locales';
+  var ALL_LOCALES =
+    "https://hg.mozilla.org/mozilla-central/raw-file/tip/browser/locales/all-locales";
 
   return new Promise(function(resolve) {
     https.get(ALL_LOCALES, function(response) {
       if (response.statusCode === 200) {
-        var content = '';
-        response.setEncoding('utf8');
-        response.on('data', function(chunk) {
+        var content = "";
+        response.setEncoding("utf8");
+        response.on("data", function(chunk) {
           content += chunk;
         });
-        response.on('end', function() {
+        response.on("end", function() {
           content = content.trim(); // Remove any leading/trailing white-space.
-          var langCodes = normalizeText(content).split('\n');
+          var langCodes = normalizeText(content).split("\n");
           // Remove all locales that we don't want to download below.
           for (var langCode of [DEFAULT_LOCALE, ...EXCLUDE_LANG_CODES]) {
             var i = langCodes.indexOf(langCode);
@@ -63,15 +64,15 @@ function downloadLanguageCodes() {
 }
 
 function downloadLanguageFiles(root, langCode) {
-  console.log('Downloading ' + langCode + '...');
+  console.log("Downloading " + langCode + "...");
 
   // Constants for constructing the URLs. Translations are taken from the
   // Nightly channel as those are the most recent ones.
-  var MOZ_CENTRAL_ROOT = 'https://hg.mozilla.org/l10n-central/';
-  var MOZ_CENTRAL_PDFJS_DIR = '/raw-file/default/browser/pdfviewer/';
+  var MOZ_CENTRAL_ROOT = "https://hg.mozilla.org/l10n-central/";
+  var MOZ_CENTRAL_PDFJS_DIR = "/raw-file/default/browser/pdfviewer/";
 
   // Defines which files to download for each language.
-  var files = ['viewer.properties'];
+  var files = ["viewer.properties"];
   var downloadsLeft = files.length;
 
   var outputDir = path.join(root, langCode);
@@ -89,13 +90,13 @@ function downloadLanguageFiles(root, langCode) {
         // Not all files exist for each language. Files without translations
         // have been removed (https://bugzilla.mozilla.org/show_bug.cgi?id=1443175).
         if (response.statusCode === 200) {
-          var content = '';
-          response.setEncoding('utf8');
-          response.on('data', function(chunk) {
+          var content = "";
+          response.setEncoding("utf8");
+          response.on("data", function(chunk) {
             content += chunk;
           });
-          response.on('end', function() {
-            fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
+          response.on("end", function() {
+            fs.writeFileSync(outputPath, normalizeText(content), "utf8");
             if (--downloadsLeft === 0) {
               resolve();
             }
@@ -122,16 +123,23 @@ async function downloadL10n(root, callback) {
 
   var removeCodes = [];
   for (var entry of fs.readdirSync(root)) {
-    var dirPath = path.join(root, entry), stat = fs.lstatSync(dirPath);
+    var dirPath = path.join(root, entry),
+      stat = fs.lstatSync(dirPath);
 
-    if (stat.isDirectory() && entry !== DEFAULT_LOCALE &&
-        !langCodes.includes(entry)) {
+    if (
+      stat.isDirectory() &&
+      entry !== DEFAULT_LOCALE &&
+      !langCodes.includes(entry)
+    ) {
       removeCodes.push(entry);
     }
   }
   if (removeCodes.length) {
-    console.log('\nConsider removing the following unmaintained locales:\n' +
-                removeCodes.join(', ') + '\n');
+    console.log(
+      "\nConsider removing the following unmaintained locales:\n" +
+        removeCodes.join(", ") +
+        "\n"
+    );
   }
 
   if (callback) {

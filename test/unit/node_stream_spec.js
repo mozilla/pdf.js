@@ -14,68 +14,75 @@
  */
 /* globals __non_webpack_require__ */
 
-import { AbortException, assert } from '../../src/shared/util';
-import { isNodeJS } from '../../src/shared/is_node';
-import { PDFNodeStream } from '../../src/display/node_stream';
+import { AbortException, assert } from "../../src/shared/util";
+import { isNodeJS } from "../../src/shared/is_node";
+import { PDFNodeStream } from "../../src/display/node_stream";
 
 // Make sure that we only running this script is Node.js environments.
 assert(isNodeJS);
 
-let path = __non_webpack_require__('path');
-let url = __non_webpack_require__('url');
-let http = __non_webpack_require__('http');
-let fs = __non_webpack_require__('fs');
+let path = __non_webpack_require__("path");
+let url = __non_webpack_require__("url");
+let http = __non_webpack_require__("http");
+let fs = __non_webpack_require__("fs");
 
-describe('node_stream', function() {
+describe("node_stream", function() {
   let server = null;
   let port = null;
-  let pdf = url.parse(encodeURI('file://' + path.join(process.cwd(),
-                      './test/pdfs/tracemonkey.pdf'))).href;
+  let pdf = url.parse(
+    encodeURI(
+      "file://" + path.join(process.cwd(), "./test/pdfs/tracemonkey.pdf")
+    )
+  ).href;
   let pdfLength = 1016315;
 
-  beforeAll((done) => {
+  beforeAll(done => {
     // Create http server to serve pdf data for tests.
-    server = http.createServer((request, response) => {
-      let filePath = process.cwd() + '/test/pdfs' + request.url;
-      fs.lstat(filePath, (error, stat) => {
-        if (error) {
-          response.writeHead(404);
-          response.end(`File ${request.url} not found!`);
-          return;
-        }
-        if (!request.headers['range']) {
-          let contentLength = stat.size;
-          let stream = fs.createReadStream(filePath);
-          response.writeHead(200, {
-            'Content-Type': 'application/pdf',
-            'Content-Length': contentLength,
-            'Accept-Ranges': 'bytes',
-          });
-          stream.pipe(response);
-        } else {
-          let [start, end] =
-            request.headers['range'].split('=')[1].split('-').map((x) => {
-              return Number(x);
+    server = http
+      .createServer((request, response) => {
+        let filePath = process.cwd() + "/test/pdfs" + request.url;
+        fs.lstat(filePath, (error, stat) => {
+          if (error) {
+            response.writeHead(404);
+            response.end(`File ${request.url} not found!`);
+            return;
+          }
+          if (!request.headers["range"]) {
+            let contentLength = stat.size;
+            let stream = fs.createReadStream(filePath);
+            response.writeHead(200, {
+              "Content-Type": "application/pdf",
+              "Content-Length": contentLength,
+              "Accept-Ranges": "bytes",
             });
-          let stream = fs.createReadStream(filePath, { start, end, });
-          response.writeHead(206, {
-            'Content-Type': 'application/pdf',
-          });
-          stream.pipe(response);
-        }
-      });
-    }).listen(0); /* Listen on a random free port */
+            stream.pipe(response);
+          } else {
+            let [start, end] = request.headers["range"]
+              .split("=")[1]
+              .split("-")
+              .map(x => {
+                return Number(x);
+              });
+            let stream = fs.createReadStream(filePath, { start, end });
+            response.writeHead(206, {
+              "Content-Type": "application/pdf",
+            });
+            stream.pipe(response);
+          }
+        });
+      })
+      .listen(0); /* Listen on a random free port */
     port = server.address().port;
     done();
   });
 
-  afterAll((done) => {
+  afterAll(done => {
     // Close the server from accepting new connections after all test finishes.
     server.close();
     done();
   });
 
-  it('read both http(s) and filesystem pdf files', function(done) {
+  it("read both http(s) and filesystem pdf files", function(done) {
     let stream1 = new PDFNodeStream({
       url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
       rangeChunkSize: 65536,
@@ -105,9 +112,10 @@ describe('node_stream', function() {
       isRangeSupported2 = fullReader2.isRangeSupported;
     });
 
-    let len1 = 0, len2 = 0;
-    let read1 = function () {
-      return fullReader1.read().then(function (result) {
+    let len1 = 0,
+      len2 = 0;
+    let read1 = function() {
+      return fullReader1.read().then(function(result) {
         if (result.done) {
           return undefined;
         }
@@ -115,8 +123,8 @@ describe('node_stream', function() {
         return read1();
       });
     };
-    let read2 = function () {
-      return fullReader2.read().then(function (result) {
+    let read2 = function() {
+      return fullReader2.read().then(function(result) {
         if (result.done) {
           return undefined;
         }
@@ -126,21 +134,22 @@ describe('node_stream', function() {
     };
 
     let readPromise = Promise.all([read1(), read2(), promise1, promise2]);
-    readPromise.then((result) => {
-      expect(isStreamingSupported1).toEqual(false);
-      expect(isRangeSupported1).toEqual(false);
-      expect(isStreamingSupported2).toEqual(false);
-      expect(isRangeSupported2).toEqual(false);
-      expect(len1).toEqual(pdfLength);
-      expect(len1).toEqual(len2);
-      done();
-    }).catch((reason) => {
-      done.fail(reason);
-    });
+    readPromise
+      .then(result => {
+        expect(isStreamingSupported1).toEqual(false);
+        expect(isRangeSupported1).toEqual(false);
+        expect(isStreamingSupported2).toEqual(false);
+        expect(isRangeSupported2).toEqual(false);
+        expect(len1).toEqual(pdfLength);
+        expect(len1).toEqual(len2);
+        done();
+      })
+      .catch(reason => {
+        done.fail(reason);
+      });
   });
 
-  it('read custom ranges for both http(s) and filesystem urls',
-      function(done) {
+  it("read custom ranges for both http(s) and filesystem urls", function(done) {
     let rangeSize = 32768;
     let stream1 = new PDFNodeStream({
       url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
@@ -163,37 +172,43 @@ describe('node_stream', function() {
     let isStreamingSupported1, isRangeSupported1, fullReaderCancelled1;
     let isStreamingSupported2, isRangeSupported2, fullReaderCancelled2;
 
-    let promise1 = fullReader1.headersReady.then(function () {
+    let promise1 = fullReader1.headersReady.then(function() {
       isStreamingSupported1 = fullReader1.isStreamingSupported;
       isRangeSupported1 = fullReader1.isRangeSupported;
       // we shall be able to close the full reader without issues
-      fullReader1.cancel(new AbortException('Don\'t need fullReader1.'));
+      fullReader1.cancel(new AbortException("Don't need fullReader1."));
       fullReaderCancelled1 = true;
     });
 
-    let promise2 = fullReader2.headersReady.then(function () {
+    let promise2 = fullReader2.headersReady.then(function() {
       isStreamingSupported2 = fullReader2.isStreamingSupported;
       isRangeSupported2 = fullReader2.isRangeSupported;
-      fullReader2.cancel(new AbortException('Don\'t need fullReader2.'));
+      fullReader2.cancel(new AbortException("Don't need fullReader2."));
       fullReaderCancelled2 = true;
     });
 
     // Skipping fullReader results, requesting something from the PDF end.
-    let tailSize = (pdfLength % rangeSize) || rangeSize;
+    let tailSize = pdfLength % rangeSize || rangeSize;
 
-    let range11Reader = stream1.getRangeReader(pdfLength - tailSize - rangeSize,
-                                             pdfLength - tailSize);
+    let range11Reader = stream1.getRangeReader(
+      pdfLength - tailSize - rangeSize,
+      pdfLength - tailSize
+    );
     let range12Reader = stream1.getRangeReader(pdfLength - tailSize, pdfLength);
 
-    let range21Reader = stream2.getRangeReader(pdfLength - tailSize - rangeSize,
-                                             pdfLength - tailSize);
+    let range21Reader = stream2.getRangeReader(
+      pdfLength - tailSize - rangeSize,
+      pdfLength - tailSize
+    );
     let range22Reader = stream2.getRangeReader(pdfLength - tailSize, pdfLength);
 
-    let result11 = { value: 0, }, result12 = { value: 0, };
-    let result21 = { value: 0, }, result22 = { value: 0, };
+    let result11 = { value: 0 },
+      result12 = { value: 0 };
+    let result21 = { value: 0 },
+      result22 = { value: 0 };
 
-    let read = function (reader, lenResult) {
-      return reader.read().then(function (result) {
+    let read = function(reader, lenResult) {
+      return reader.read().then(function(result) {
         if (result.done) {
           return undefined;
         }
@@ -202,26 +217,31 @@ describe('node_stream', function() {
       });
     };
 
-    let readPromises = Promise.all([read(range11Reader, result11),
-                                    read(range12Reader, result12),
-                                    read(range21Reader, result21),
-                                    read(range22Reader, result22),
-                                    promise1, promise2]);
+    let readPromises = Promise.all([
+      read(range11Reader, result11),
+      read(range12Reader, result12),
+      read(range21Reader, result21),
+      read(range22Reader, result22),
+      promise1,
+      promise2,
+    ]);
 
-    readPromises.then(function () {
-      expect(result11.value).toEqual(rangeSize);
-      expect(result12.value).toEqual(tailSize);
-      expect(result21.value).toEqual(rangeSize);
-      expect(result22.value).toEqual(tailSize);
-      expect(isStreamingSupported1).toEqual(false);
-      expect(isRangeSupported1).toEqual(true);
-      expect(fullReaderCancelled1).toEqual(true);
-      expect(isStreamingSupported2).toEqual(false);
-      expect(isRangeSupported2).toEqual(true);
-      expect(fullReaderCancelled2).toEqual(true);
-      done();
-    }).catch(function (reason) {
-      done.fail(reason);
-    });
+    readPromises
+      .then(function() {
+        expect(result11.value).toEqual(rangeSize);
+        expect(result12.value).toEqual(tailSize);
+        expect(result21.value).toEqual(rangeSize);
+        expect(result22.value).toEqual(tailSize);
+        expect(isStreamingSupported1).toEqual(false);
+        expect(isRangeSupported1).toEqual(true);
+        expect(fullReaderCancelled1).toEqual(true);
+        expect(isStreamingSupported2).toEqual(false);
+        expect(isRangeSupported2).toEqual(true);
+        expect(fullReaderCancelled2).toEqual(true);
+        done();
+      })
+      .catch(function(reason) {
+        done.fail(reason);
+      });
   });
 });

@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
+"use strict";
 
-var pdfjs = require('./build/pdf.js');
-var PdfjsWorker = require('worker-loader!./build/pdf.worker.js');
+var pdfjs = require("./build/pdf.js");
+var PdfjsWorker = require("worker-loader!./build/pdf.worker.js");
 
-if (typeof window !== 'undefined' && 'Worker' in window) {
+if (typeof window !== "undefined" && "Worker" in window) {
   pdfjs.GlobalWorkerOptions.workerPort = new PdfjsWorker();
 }
 
