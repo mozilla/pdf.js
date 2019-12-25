@@ -86,9 +86,8 @@ class PDFCursorTools {
       }
     };
 
-    switch (
-      tool // Enable the new cursor tool.
-    ) {
+    // Enable the new cursor tool.
+    switch (tool) {
       case CursorTool.SELECT:
         disableActiveTool();
         break;

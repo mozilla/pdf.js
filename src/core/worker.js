@@ -527,8 +527,9 @@ var WorkerMessageHandler = {
 
                 sink.error(reason);
 
-                // TODO: Should `reason` be re-thrown here (currently that casues
-                //       "Uncaught exception: ..." messages in the console)?
+                // TODO: Should `reason` be re-thrown here (currently that
+                //       casues "Uncaught exception: ..." messages in the
+                //       console)?
               }
             );
         });

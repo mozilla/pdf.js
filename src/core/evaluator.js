@@ -524,8 +524,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           ])
           .then(
             function() {
-              // Only add the dependency once we know that the native JPEG decoding
-              // succeeded, to ensure that rendering will always complete.
+              // Only add the dependency once we know that the native JPEG
+              // decoding succeeded, to ensure that rendering will always
+              // complete.
               operatorList.addDependency(objId);
               args = [objId, w, h];
 
@@ -755,7 +756,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               return translated;
             })
             .catch(reason => {
-              // Error in the font data -- sending unsupported feature notification.
+              // Error in the font data -- sending unsupported feature
+              // notification.
               this.handler.send("UnsupportedFeature", {
                 featureId: UNSUPPORTED_FEATURES.font,
               });
@@ -2160,9 +2162,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     return;
                   }
 
-                  // Use a new `StateManager` to prevent incorrect positioning of
-                  // textItems *after* the Form XObject, since errors in the data
-                  // can otherwise prevent `restore` operators from executing.
+                  // Use a new `StateManager` to prevent incorrect positioning
+                  // of textItems *after* the Form XObject, since errors in the
+                  // data can otherwise prevent `restore` operators from
+                  // executing.
                   // NOTE: Only an issue when `options.ignoreErrors === true`.
                   let currentState = stateManager.state.clone();
                   let xObjStateManager = new StateManager(currentState);

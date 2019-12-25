@@ -52,8 +52,7 @@ function mapSpecialUnicodeValues(code) {
     return 0;
   } else if (code >= 0xf600 && code <= 0xf8ff) {
     return getSpecialPUASymbols()[code] || code;
-  } else if (code === 0x00ad) {
-    // softhyphen
+  } else if (code === /* softhyphen = */ 0x00ad) {
     return 0x002d; // hyphen
   }
   return code;

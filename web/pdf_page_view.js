@@ -215,8 +215,8 @@ class PDFPageView {
 
   update(scale, rotation) {
     this.scale = scale || this.scale;
+    // The rotation may be zero.
     if (typeof rotation !== "undefined") {
-      // The rotation may be zero.
       this.rotation = rotation;
     }
 

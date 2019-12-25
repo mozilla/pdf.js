@@ -217,7 +217,7 @@ class MozL10n {
     // Avoid attempting to needlessly reset the zoom level *twice* in a row,
     // when using the `Ctrl + 0` keyboard shortcut.
     if (
-      type === "zoomreset" && // eslint-disable-next-line max-len
+      type === "zoomreset" &&
       PDFViewerApplication.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE
     ) {
       return;

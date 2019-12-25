@@ -1098,19 +1098,19 @@ var AsciiHexStream = (function AsciiHexStreamClosure() {
     for (var i = 0, ii = bytes.length; i < ii; i++) {
       var ch = bytes[i],
         digit;
-      if (ch >= 0x30 && ch <= 0x39) {
-        // '0'-'9'
+      if (ch >= /* '0' = */ 0x30 && ch <= /* '9' = */ 0x39) {
         digit = ch & 0x0f;
-      } else if ((ch >= 0x41 && ch <= 0x46) || (ch >= 0x61 && ch <= 0x66)) {
-        // 'A'-'Z', 'a'-'z'
+      } else if (
+        (ch >= /* 'A' = */ 0x41 && ch <= /* 'Z' = */ 0x46) ||
+        (ch >= /* 'a' = */ 0x61 && ch <= /* 'z' = */ 0x66)
+      ) {
         digit = (ch & 0x0f) + 9;
-      } else if (ch === 0x3e) {
-        // '>'
+      } else if (ch === /* '>' = */ 0x3e) {
         this.eof = true;
         break;
       } else {
-        // probably whitespace
-        continue; // ignoring
+        // Probably whitespace, ignoring.
+        continue;
       }
       if (firstDigit < 0) {
         firstDigit = digit;

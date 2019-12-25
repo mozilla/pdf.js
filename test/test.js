@@ -889,8 +889,8 @@ function main() {
   } else if (!options.browser && !options.browserManifestFile) {
     startServer();
   } else if (options.unitTest) {
+    // Allows linked PDF files in unit-tests as well.
     ensurePDFsDownloaded(function() {
-      // Allows linked PDF files in unit-tests.
       startUnitTest("/test/unit/unit_test.html", "unit");
     });
   } else if (options.fontTest) {

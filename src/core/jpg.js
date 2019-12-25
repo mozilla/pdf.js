@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-multi-spaces */
 
 import { assert, BaseException, warn } from "../shared/util";
 
@@ -149,7 +148,6 @@ var JpegImage = (function JpegImageClosure() {
         var nextByte = data[offset++];
         if (nextByte) {
           if (nextByte === 0xdc && parseDNLMarker) {
-            // DNL == 0xFFDC
             offset += 2; // Skip data length.
             const scanLines = (data[offset++] << 8) | data[offset++];
             if (scanLines > 0 && scanLines !== frame.scanLines) {
@@ -159,7 +157,6 @@ var JpegImage = (function JpegImageClosure() {
               );
             }
           } else if (nextByte === 0xd9) {
-            // EOI == 0xFFD9
             throw new EOIMarkerError(
               "Found EOI marker (0xFFD9) while parsing scan data"
             );
@@ -746,14 +743,12 @@ var JpegImage = (function JpegImageClosure() {
       var huffmanTablesAC = [],
         huffmanTablesDC = [];
       var fileMarker = readUint16();
-      if (fileMarker !== 0xffd8) {
-        // SOI (Start of Image)
+      if (fileMarker !== /* SOI (Start of Image) = */ 0xffd8) {
         throw new JpegError("SOI not found");
       }
 
       fileMarker = readUint16();
-      markerLoop: while (fileMarker !== 0xffd9) {
-        // EOI (End of image)
+      markerLoop: while (fileMarker !== /* EOI (End of Image) = */ 0xffd9) {
         var i, j, l;
         switch (fileMarker) {
           case 0xffe0: // APP0 (Application Specific)
@@ -776,6 +771,7 @@ var JpegImage = (function JpegImageClosure() {
             var appData = readDataBlock();
 
             if (fileMarker === 0xffe0) {
+              // 'JFIF\x00'
               if (
                 appData[0] === 0x4a &&
                 appData[1] === 0x46 &&
@@ -783,7 +779,6 @@ var JpegImage = (function JpegImageClosure() {
                 appData[3] === 0x46 &&
                 appData[4] === 0
               ) {
-                // 'JFIF\x00'
                 jfif = {
                   version: { major: appData[5], minor: appData[6] },
                   densityUnits: appData[7],
@@ -800,6 +795,7 @@ var JpegImage = (function JpegImageClosure() {
             }
             // TODO APP1 - Exif
             if (fileMarker === 0xffee) {
+              // 'Adobe'
               if (
                 appData[0] === 0x41 &&
                 appData[1] === 0x64 &&
@@ -807,7 +803,6 @@ var JpegImage = (function JpegImageClosure() {
                 appData[3] === 0x62 &&
                 appData[4] === 0x65
               ) {
-                // 'Adobe'
                 adobe = {
                   version: (appData[5] << 8) | appData[6],
                   flags0: (appData[7] << 8) | appData[8],

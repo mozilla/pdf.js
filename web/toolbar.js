@@ -250,11 +250,11 @@ class Toolbar {
         const width = select.clientWidth + SCALE_SELECT_CONTAINER_PADDING;
         select.setAttribute(
           "style",
-          "min-width: " + (width + SCALE_SELECT_PADDING) + "px;"
+          `min-width: ${width + SCALE_SELECT_PADDING}px;`
         );
         container.setAttribute(
           "style",
-          "min-width: " + width + "px; " + "max-width: " + width + "px;"
+          `min-width: ${width}px; max-width: ${width}px;`
         );
       }
     });

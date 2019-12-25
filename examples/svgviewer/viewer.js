@@ -16,9 +16,7 @@
 "use strict";
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
-  alert(
-    "Please build the pdfjs-dist library using\n" + "  `gulp dist-install`"
-  );
+  alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
 
 // The workerSrc property shall be specified.

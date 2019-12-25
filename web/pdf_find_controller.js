@@ -202,13 +202,13 @@ class PDFFindController {
     this._pageMatches = [];
     this._pageMatchesLength = [];
     this._state = null;
+    // Currently selected match.
     this._selected = {
-      // Currently selected match.
       pageIdx: -1,
       matchIdx: -1,
     };
+    // Where the find algorithm currently is in the document.
     this._offset = {
-      // Where the find algorithm currently is in the document.
       pageIdx: null,
       matchIdx: null,
       wrapped: false,

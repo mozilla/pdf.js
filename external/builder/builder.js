@@ -120,7 +120,7 @@ function preprocess(inFilename, outFilename, defines) {
   var line;
   var state = STATE_NONE;
   var stack = [];
-  var control = /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/; // eslint-disable-next-line max-len
+  var control = /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/;
   var lineNumber = 0;
   var loc = function() {
     return fs.realpathSync(inFilename) + ":" + lineNumber;

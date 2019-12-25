@@ -125,8 +125,8 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     function deflateSync(literals) {
       if (!isNodeJS) {
         // zlib is certainly not available outside of Node.js. We can either use
-        // the pako library for client-side DEFLATE compression, or use the canvas
-        // API of the browser to obtain a more optimal PNG file.
+        // the pako library for client-side DEFLATE compression, or use the
+        // canvas API of the browser to obtain a more optimal PNG file.
         return deflateSyncUncompressed(literals);
       }
       try {

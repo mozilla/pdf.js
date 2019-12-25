@@ -208,7 +208,6 @@ function createWebpackConfig(defines, output) {
           // `web-streams-polyfill` (already using a transpiled file), and
           // `src/core/{glyphlist,unicode}.js` (Babel is too slow for those)
           // should be excluded from processing.
-          // eslint-disable-next-line max-len
           exclude: /(node_modules[\\\/]core-js|node_modules[\\\/]web-streams-polyfill|src[\\\/]core[\\\/](glyphlist|unicode))/,
           options: {
             presets: skipBabel ? undefined : ["@babel/preset-env"],
@@ -425,7 +424,7 @@ function createTestSource(testsName, bot) {
         "Browser manifest file test/" + PDF_BROWSERS + " does not exist."
       );
       console.log(
-        "Copy and adjust the example in " + "test/resources/browser_manifests."
+        "Copy and adjust the example in test/resources/browser_manifests."
       );
       this.emit("error", new Error("Missing manifest file"));
       return null;
@@ -476,7 +475,7 @@ function makeRef(done, bot) {
       "Browser manifest file test/" + PDF_BROWSERS + " does not exist."
     );
     console.log(
-      "Copy and adjust the example in " + "test/resources/browser_manifests."
+      "Copy and adjust the example in test/resources/browser_manifests."
     );
     done(new Error("Missing manifest file"));
     return;
@@ -669,7 +668,7 @@ gulp.task("locale", function() {
       gulp.dest(VIEWER_LOCALE_OUTPUT)
     ),
     gulp
-      .src(L10N_DIR + "/{" + locales.join(",") + "}" + "/viewer.properties", {
+      .src(L10N_DIR + "/{" + locales.join(",") + "}/viewer.properties", {
         base: L10N_DIR,
       })
       .pipe(gulp.dest(VIEWER_LOCALE_OUTPUT)),
@@ -1142,7 +1141,6 @@ gulp.task(
           babelPluginReplaceNonWebPackRequire,
         ],
       }).code;
-      // eslint-disable-next-line max-len
       var removeCjsSrc = /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
       content = content.replace(
         removeCjsSrc,
@@ -1679,7 +1677,7 @@ gulp.task(
     console.log();
     console.log("Done. Push with");
     console.log(
-      "  cd " + DIST_DIR + "; " + "git push --tags " + DIST_REPO_URL + " master"
+      "  cd " + DIST_DIR + "; git push --tags " + DIST_REPO_URL + " master"
     );
     console.log();
     done();

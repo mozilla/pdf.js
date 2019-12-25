@@ -31,8 +31,8 @@ let JpegStream = (function JpegStreamClosure() {
     // Note: this seems to mainly affect inline images.
     let ch;
     while ((ch = stream.getByte()) !== -1) {
+      // Find the first byte of the SOI marker (0xFFD8).
       if (ch === 0xff) {
-        // Find the first byte of the SOI marker (0xFFD8).
         stream.skip(-1); // Reset the stream position to the SOI.
         break;
       }
