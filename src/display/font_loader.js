@@ -113,18 +113,18 @@ class BaseFontLoader {
     unreachable("Abstract method `_queueLoadingCallback`.");
   }
 
+  // eslint-disable-next-line getter-return
   get isFontLoadingAPISupported() {
-    // eslint-disable-line getter-return
     unreachable("Abstract method `isFontLoadingAPISupported`.");
   }
 
+  // eslint-disable-next-line getter-return
   get isSyncFontLoadingSupported() {
-    // eslint-disable-line getter-return
     unreachable("Abstract method `isSyncFontLoadingSupported`.");
   }
 
+  // eslint-disable-next-line getter-return
   get _loadTestFont() {
-    // eslint-disable-line getter-return
     unreachable("Abstract method `_loadTestFont`.");
   }
 
@@ -225,8 +225,8 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
 
     get _loadTestFont() {
       const getLoadTestFont = function() {
-        // This is a CFF font with 1 glyph for '.' that fills its entire width and
-        // height.
+        // This is a CFF font with 1 glyph for '.' that fills its entire width
+        // and height.
         return atob(
           "T1RUTwALAIAAAwAwQ0ZGIDHtZg4AAAOYAAAAgUZGVE1lkzZwAAAEHAAAABxHREVGABQA" +
             "FQAABDgAAAAeT1MvMlYNYwkAAAEgAAAAYGNtYXABDQLUAAACNAAAAUJoZWFk/xVFDQAA" +

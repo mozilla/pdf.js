@@ -385,8 +385,8 @@ var Type1Parser = (function Type1ParserClosure() {
     return (
       (code >= 48 && code <= 57) || // '0'-'9'
       (code >= 65 && code <= 70) || // 'A'-'F'
-      (code >= 97 && code <= 102)
-    ); // 'a'-'f'
+      (code >= 97 && code <= 102) // 'a'-'f'
+    );
   }
 
   function decrypt(data, key, discardNumber) {
@@ -521,8 +521,7 @@ var Type1Parser = (function Type1ParserClosure() {
           if (ch === 0x0a || ch === 0x0d) {
             comment = false;
           }
-        } else if (ch === 0x25) {
-          // '%'
+        } else if (ch === /* '%' = */ 0x25) {
           comment = true;
         } else if (!isSpace(ch)) {
           break;

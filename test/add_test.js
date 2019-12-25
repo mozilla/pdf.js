@@ -9,7 +9,7 @@ const gitIgnore = "test/pdfs/.gitignore";
 if (process.argv.length < 3) {
   console.log("\nUsage: node add_test.js FILE\n");
   console.log(
-    "  Add a PDF as a reference test. FILE must be located in " + `${pdfFolder}`
+    `  Add a PDF as a reference test. FILE must be located in ${pdfFolder}`
   );
   process.exit(1);
 }

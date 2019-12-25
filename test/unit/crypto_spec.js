@@ -89,7 +89,7 @@ describe("crypto", function() {
     it("should pass RFC 1321 test #6", function() {
       var input, result, expected;
       input = stringToBytes(
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv" + "wxyz0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
       );
       result = calculateMD5(input, 0, input.length);
       expected = hex2binary("d174ab98d277d9f5a5611c2c9f419d9f");
@@ -209,12 +209,12 @@ describe("crypto", function() {
       var key, input, result, expected, cipher;
       key = hex2binary("0123456789abcdef");
       input = hex2binary(
-        "123456789abcdef0123456789abcdef0123456789abcdef0123" + "45678"
+        "123456789abcdef0123456789abcdef0123456789abcdef012345678"
       );
       cipher = new ARCFourCipher(key);
       result = cipher.encryptBlock(input);
       expected = hex2binary(
-        "66a0949f8af7d6891f7f832ba833c00c892ebe30143ce287" + "40011ecf"
+        "66a0949f8af7d6891f7f832ba833c00c892ebe30143ce28740011ecf"
       );
       expect(result).toEqual(expected);
     });
@@ -226,18 +226,18 @@ describe("crypto", function() {
       input = stringToBytes("abc");
       result = calculateSHA256(input, 0, input.length);
       expected = hex2binary(
-        "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9C" + "B410FF61F20015AD"
+        "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD"
       );
       expect(result).toEqual(expected);
     });
     it("should properly hash a multiblock input", function() {
       var input, result, expected;
       input = stringToBytes(
-        "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmno" + "mnopnopq"
+        "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
       );
       result = calculateSHA256(input, 0, input.length);
       expected = hex2binary(
-        "248D6A61D20638B8E5C026930C3E6039A33CE45964FF2167" + "F6ECEDD419DB06C1"
+        "248D6A61D20638B8E5C026930C3E6039A33CE45964FF2167F6ECEDD419DB06C1"
       );
       expect(result).toEqual(expected);
     });

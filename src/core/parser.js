@@ -813,12 +813,13 @@ const specialChars = [
 ];
 
 function toHexDigit(ch) {
-  if (ch >= 0x30 && ch <= 0x39) {
-    // '0'-'9'
+  if (ch >= /* '0' = */ 0x30 && ch /* '9' = */ <= 0x39) {
     return ch & 0x0f;
   }
-  if ((ch >= 0x41 && ch <= 0x46) || (ch >= 0x61 && ch <= 0x66)) {
-    // 'A'-'F', 'a'-'f'
+  if (
+    (ch >= /* 'A' = */ 0x41 && ch <= /* 'F' = */ 0x46) ||
+    (ch >= /* 'a' = */ 0x61 && ch <= /* 'f' = */ 0x66)
+  ) {
     return (ch & 0x0f) + 9;
   }
   return -1;
@@ -862,35 +863,29 @@ class Lexer {
     let divideBy = 0; // Different from 0 if it's a floating point value.
     let sign = 0;
 
-    if (ch === 0x2d) {
-      // '-'
+    if (ch === /* '-' = */ 0x2d) {
       sign = -1;
       ch = this.nextChar();
 
-      if (ch === 0x2d) {
-        // '-'
+      if (ch === /* '-' = */ 0x2d) {
         // Ignore double negative (this is consistent with Adobe Reader).
         ch = this.nextChar();
       }
-    } else if (ch === 0x2b) {
-      // '+'
+    } else if (ch === /* '+' = */ 0x2b) {
       sign = 1;
       ch = this.nextChar();
     }
-    if (ch === 0x0a || ch === 0x0d) {
-      // LF, CR
+    if (ch === /* LF = */ 0x0a || ch === /* CR = */ 0x0d) {
       // Ignore line-breaks (this is consistent with Adobe Reader).
       do {
         ch = this.nextChar();
       } while (ch === 0x0a || ch === 0x0d);
     }
-    if (ch === 0x2e) {
-      // '.'
+    if (ch === /* '.' = */ 0x2e) {
       divideBy = 10;
       ch = this.nextChar();
     }
-    if (ch < 0x30 || ch > 0x39) {
-      // '0' - '9'
+    if (ch < /* '0' = */ 0x30 || ch > /* '9' = */ 0x39) {
       if (
         divideBy === 10 &&
         sign === 0 &&
@@ -911,8 +906,7 @@ class Lexer {
     let powerValueSign = 1;
 
     while ((ch = this.nextChar()) >= 0) {
-      if (0x30 <= ch && ch <= 0x39) {
-        // '0' - '9'
+      if (ch >= /* '0' = */ 0x30 && ch <= /* '9' = */ 0x39) {
         const currentDigit = ch - 0x30; // '0'
         if (eNotation) {
           // We are after an 'e' or 'E'.
@@ -924,30 +918,25 @@ class Lexer {
           }
           baseValue = baseValue * 10 + currentDigit;
         }
-      } else if (ch === 0x2e) {
-        // '.'
+      } else if (ch === /* '.' = */ 0x2e) {
         if (divideBy === 0) {
           divideBy = 1;
         } else {
           // A number can have only one dot.
           break;
         }
-      } else if (ch === 0x2d) {
-        // '-'
+      } else if (ch === /* '-' = */ 0x2d) {
         // Ignore minus signs in the middle of numbers to match
         // Adobe's behavior.
         warn("Badly formatted number: minus sign in the middle");
-      } else if (ch === 0x45 || ch === 0x65) {
-        // 'E', 'e'
+      } else if (ch === /* 'E' = */ 0x45 || ch === /* 'e' = */ 0x65) {
         // 'E' can be either a scientific notation or the beginning of a new
         // operator.
         ch = this.peekChar();
-        if (ch === 0x2b || ch === 0x2d) {
-          // '+', '-'
+        if (ch === /* '+' = */ 0x2b || ch === /* '-' = */ 0x2d) {
           powerValueSign = ch === 0x2d ? -1 : 1;
           this.nextChar(); // Consume the sign character.
-        } else if (ch < 0x30 || ch > 0x39) {
-          // '0' - '9'
+        } else if (ch < /* '0' = */ 0x30 || ch > /* '9' = */ 0x39) {
           // The 'E' must be the beginning of a new operator.
           break;
         }
@@ -1020,23 +1009,21 @@ class Lexer {
             case 0x29: // ')'
               strBuf.push(String.fromCharCode(ch));
               break;
-            case 0x30:
-            case 0x31:
-            case 0x32:
-            case 0x33: // '0'-'3'
-            case 0x34:
-            case 0x35:
-            case 0x36:
-            case 0x37: // '4'-'7'
+            case 0x30: // '0'
+            case 0x31: // '1'
+            case 0x32: // '2'
+            case 0x33: // '3'
+            case 0x34: // '4'
+            case 0x35: // '5'
+            case 0x36: // '6'
+            case 0x37: // '7'
               let x = ch & 0x0f;
               ch = this.nextChar();
               charBuffered = true;
-              if (ch >= 0x30 && ch <= 0x37) {
-                // '0'-'7'
+              if (ch >= /* '0' = */ 0x30 && ch <= /* '7' = */ 0x37) {
                 x = (x << 3) + (ch & 0x0f);
                 ch = this.nextChar();
-                if (ch >= 0x30 && ch <= 0x37) {
-                  // '0'-'7'
+                if (ch >= /* '0' = */ 0x30 && ch /* '7' = */ <= 0x37) {
                   charBuffered = false;
                   x = (x << 3) + (ch & 0x0f);
                 }
@@ -1044,8 +1031,7 @@ class Lexer {
               strBuf.push(String.fromCharCode(x));
               break;
             case 0x0d: // CR
-              if (this.peekChar() === 0x0a) {
-                // LF
+              if (this.peekChar() === /* LF = */ 0x0a) {
                 this.nextChar();
               }
               break;
@@ -1076,8 +1062,7 @@ class Lexer {
     strBuf.length = 0;
 
     while ((ch = this.nextChar()) >= 0 && !specialChars[ch]) {
-      if (ch === 0x23) {
-        // '#'
+      if (ch === /* '#' = */ 0x23) {
         ch = this.nextChar();
         if (specialChars[ch]) {
           warn(
@@ -1129,8 +1114,7 @@ class Lexer {
       if (ch < 0) {
         warn("Unterminated hex string");
         break;
-      } else if (ch === 0x3e) {
-        // '>'
+      } else if (ch === /* '>' = */ 0x3e) {
         this.nextChar();
         break;
       } else if (specialChars[ch] === 1) {
@@ -1169,12 +1153,10 @@ class Lexer {
         return EOF;
       }
       if (comment) {
-        if (ch === 0x0a || ch === 0x0d) {
-          // LF, CR
+        if (ch === /* LF = */ 0x0a || ch === /* CR = */ 0x0d) {
           comment = false;
         }
-      } else if (ch === 0x25) {
-        // '%'
+      } else if (ch === /* '%' = */ 0x25) {
         comment = true;
       } else if (specialChars[ch] !== 1) {
         break;
@@ -1184,19 +1166,19 @@ class Lexer {
 
     // Start reading a token.
     switch (ch | 0) {
-      case 0x30:
-      case 0x31:
-      case 0x32:
-      case 0x33:
-      case 0x34: // '0'-'4'
-      case 0x35:
-      case 0x36:
-      case 0x37:
-      case 0x38:
-      case 0x39: // '5'-'9'
-      case 0x2b:
-      case 0x2d:
-      case 0x2e: // '+', '-', '.'
+      case 0x30: // '0'
+      case 0x31: // '1'
+      case 0x32: // '2'
+      case 0x33: // '3'
+      case 0x34: // '4'
+      case 0x35: // '5'
+      case 0x36: // '6'
+      case 0x37: // '7'
+      case 0x38: // '8'
+      case 0x39: // '9'
+      case 0x2b: // '+'
+      case 0x2d: // '-'
+      case 0x2e: // '.'
         return this.getNumber();
       case 0x28: // '('
         return this.getString();
@@ -1280,16 +1262,13 @@ class Lexer {
   skipToNextLine() {
     let ch = this.currentChar;
     while (ch >= 0) {
-      if (ch === 0x0d) {
-        // CR
+      if (ch === /* CR = */ 0x0d) {
         ch = this.nextChar();
-        if (ch === 0x0a) {
-          // LF
+        if (ch === /* LF = */ 0x0a) {
           this.nextChar();
         }
         break;
-      } else if (ch === 0x0a) {
-        // LF
+      } else if (ch === /* LF = */ 0x0a) {
         this.nextChar();
         break;
       }
@@ -1323,7 +1302,7 @@ class Linearization {
           const hint = hints[index];
           if (!(Number.isInteger(hint) && hint > 0)) {
             throw new Error(
-              `Hint (${index}) in the linearization dictionary ` + "is invalid."
+              `Hint (${index}) in the linearization dictionary is invalid.`
             );
           }
         }

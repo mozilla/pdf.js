@@ -352,8 +352,8 @@ class PDFHistory {
     let newUrl;
     if (this._updateUrl && destination && destination.hash) {
       const baseUrl = document.location.href.split("#")[0];
+      // Prevent errors in Firefox.
       if (!baseUrl.startsWith("file://")) {
-        // Prevent errors in Firefox.
         newUrl = `${baseUrl}#${destination.hash}`;
       }
     }

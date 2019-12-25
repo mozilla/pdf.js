@@ -124,8 +124,8 @@ describe("core_utils", function() {
       const dict = new Dict();
       let currentDict = dict;
       let parentDict = null;
+      // Exceed the loop limit of 100.
       for (let i = 0; i < 150; i++) {
-        // Exceeds the loop limit of 100.
         parentDict = new Dict();
         currentDict.set("Parent", parentDict);
         currentDict = parentDict;

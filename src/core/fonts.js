@@ -929,9 +929,8 @@ var Font = (function FontClosure() {
       return true;
     }
     // ... obviously some fonts violate that part of the specification,
-    // please refer to the comment in |Type1Font| below.
+    // please refer to the comment in |Type1Font| below (pfb file header).
     if (header[0] === 0x80 && header[1] === 0x01) {
-      // pfb file header.
       return true;
     }
     return false;
@@ -1085,7 +1084,6 @@ var Font = (function FontClosure() {
     var ranges = [];
     var length = codes.length;
     for (var n = 0; n < length; ) {
-      // eslint-disable-line space-in-parens
       var start = codes[n].fontCharCode;
       var codeIndices = [codes[n].glyphId];
       ++n;

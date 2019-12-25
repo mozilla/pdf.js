@@ -1103,7 +1103,8 @@ let PDFViewerApplication = {
                 `${values.scrollLeft},${values.scrollTop}`;
 
               rotation = parseInt(values.rotation, 10);
-              // Always let user preferences take precedence over the view history.
+              // Always let user preferences take precedence over the view
+              // history.
               if (sidebarView === SidebarView.UNKNOWN) {
                 sidebarView = values.sidebarView | 0;
               }
@@ -1135,11 +1136,13 @@ let PDFViewerApplication = {
               pdfViewer.focus();
             }
 
-            // For documents with different page sizes, once all pages are resolved,
-            // ensure that the correct location becomes visible on load.
+            // For documents with different page sizes, once all pages are
+            // resolved, ensure that the correct location becomes visible on
+            // load.
             // (To reduce the risk, in very large and/or slow loading documents,
-            //  that the location changes *after* the user has started interacting
-            //  with the viewer, wait for either `pagesPromise` or a timeout.)
+            //  that the location changes *after* the user has started
+            //  interacting with the viewer, wait for either `pagesPromise` or
+            //  a timeout.)
             await Promise.race([
               pagesPromise,
               new Promise(resolve => {
@@ -1283,8 +1286,9 @@ let PDFViewerApplication = {
           // Ghostscript can produce invalid 'dc:title' Metadata entries:
           //  - The title may be "Untitled" (fixes bug 1031612).
           //  - The title may contain incorrectly encoded characters, which thus
-          //    looks broken, hence we ignore the Metadata entry when it contains
-          //    characters from the Specials Unicode block (fixes bug 1605526).
+          //    looks broken, hence we ignore the Metadata entry when it
+          //    contains characters from the Specials Unicode block
+          //    (fixes bug 1605526).
           if (
             metadataTitle !== "Untitled" &&
             !/[\uFFF0-\uFFFF]/g.test(metadataTitle)
@@ -1481,7 +1485,7 @@ let PDFViewerApplication = {
         .get(
           "printing_not_supported",
           null,
-          "Warning: Printing is not fully supported by " + "this browser."
+          "Warning: Printing is not fully supported by this browser."
         )
         .then(printMessage => {
           this.error(printMessage);
@@ -2555,14 +2559,13 @@ function webViewerKeyDown(evt) {
     (curElement && curElement.isContentEditable)
   ) {
     // Make sure that the secondary toolbar is closed when Escape is pressed.
-    if (evt.keyCode !== 27) {
-      // 'Esc'
+    if (evt.keyCode !== /* Esc = */ 27) {
       return;
     }
   }
 
+  // No control key pressed at all.
   if (cmd === 0) {
-    // no control key pressed at all.
     let turnPage = 0,
       turnOnlyIfPageFit = false;
     switch (evt.keyCode) {
@@ -2680,8 +2683,8 @@ function webViewerKeyDown(evt) {
     }
   }
 
+  // shift-key
   if (cmd === 4) {
-    // shift-key
     switch (evt.keyCode) {
       case 13: // enter key
       case 32: // spacebar
