@@ -1,12 +1,12 @@
-'use strict';
+"use strict";
 
 // eslint-disable-next-line no-unused-vars
 var TestReporter = function(browser, appPath) {
   function send(action, json, cb) {
     var r = new XMLHttpRequest();
     // (The POST URI is ignored atm.)
-    r.open('POST', action, true);
-    r.setRequestHeader('Content-Type', 'application/json');
+    r.open("POST", action, true);
+    r.setRequestHeader("Content-Type", "application/json");
     r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
       if (r.readyState === 4) {
         // Retry until successful
@@ -19,12 +19,12 @@ var TestReporter = function(browser, appPath) {
         }
       }
     };
-    json['browser'] = browser;
+    json["browser"] = browser;
     r.send(JSON.stringify(json));
   }
 
   function sendInfo(message) {
-    send('/info', { message, });
+    send("/info", { message });
   }
 
   function sendResult(status, description, error) {
@@ -32,14 +32,14 @@ var TestReporter = function(browser, appPath) {
       status,
       description,
     };
-    if (typeof error !== 'undefined') {
-      message['error'] = error;
+    if (typeof error !== "undefined") {
+      message["error"] = error;
     }
-    send('/submit_task_results', message);
+    send("/submit_task_results", message);
   }
 
   function sendQuitRequest() {
-    send('/tellMeToQuit?path=' + escape(appPath), {});
+    send("/tellMeToQuit?path=" + escape(appPath), {});
   }
 
   this.now = function() {
@@ -48,27 +48,27 @@ var TestReporter = function(browser, appPath) {
 
   this.jasmineStarted = function(suiteInfo) {
     this.runnerStartTime = this.now();
-    sendInfo('Started tests for ' + browser + '.');
+    sendInfo("Started tests for " + browser + ".");
   };
 
-  this.suiteStarted = function(result) { };
+  this.suiteStarted = function(result) {};
 
-  this.specStarted = function(result) { };
+  this.specStarted = function(result) {};
 
   this.specDone = function(result) {
     if (result.failedExpectations.length === 0) {
-      sendResult('TEST-PASSED', result.description);
+      sendResult("TEST-PASSED", result.description);
     } else {
-      var failedMessages = '';
+      var failedMessages = "";
       var items = result.failedExpectations;
       for (var i = 0, ii = items.length; i < ii; i++) {
-        failedMessages += items[i].message + ' ';
+        failedMessages += items[i].message + " ";
       }
-      sendResult('TEST-UNEXPECTED-FAIL', result.description, failedMessages);
+      sendResult("TEST-UNEXPECTED-FAIL", result.description, failedMessages);
     }
   };
 
-  this.suiteDone = function(result) { };
+  this.suiteDone = function(result) {};
 
   this.jasmineDone = function() {
     // Give the test.py some time process any queued up requests

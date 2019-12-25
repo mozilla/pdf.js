@@ -14,45 +14,47 @@
  */
 /* eslint-disable no-unused-vars */
 
-'use strict';
+"use strict";
 
 var pdfjsVersion =
-  typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : void 0;
+  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : void 0;
 var pdfjsBuild =
-  typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_BUILD') : void 0;
+  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
-var pdfjsSharedUtil = require('./shared/util.js');
-var pdfjsDisplayAPI = require('./display/api.js');
-var pdfjsDisplayTextLayer = require('./display/text_layer.js');
-var pdfjsDisplayAnnotationLayer = require('./display/annotation_layer.js');
-var pdfjsDisplayDisplayUtils = require('./display/display_utils.js');
-var pdfjsDisplaySVG = require('./display/svg.js');
-let pdfjsDisplayWorkerOptions = require('./display/worker_options.js');
-let pdfjsDisplayAPICompatibility = require('./display/api_compatibility.js');
+var pdfjsSharedUtil = require("./shared/util.js");
+var pdfjsDisplayAPI = require("./display/api.js");
+var pdfjsDisplayTextLayer = require("./display/text_layer.js");
+var pdfjsDisplayAnnotationLayer = require("./display/annotation_layer.js");
+var pdfjsDisplayDisplayUtils = require("./display/display_utils.js");
+var pdfjsDisplaySVG = require("./display/svg.js");
+let pdfjsDisplayWorkerOptions = require("./display/worker_options.js");
+let pdfjsDisplayAPICompatibility = require("./display/api_compatibility.js");
 
-if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-  const { isNodeJS, } = require('./shared/is_node.js');
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+  const { isNodeJS } = require("./shared/is_node.js");
   if (isNodeJS) {
-    let PDFNodeStream = require('./display/node_stream.js').PDFNodeStream;
-    pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
+    let PDFNodeStream = require("./display/node_stream.js").PDFNodeStream;
+    pdfjsDisplayAPI.setPDFNetworkStreamFactory(params => {
       return new PDFNodeStream(params);
     });
   } else {
-    let PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
+    let PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
     let PDFFetchStream;
     if (pdfjsDisplayDisplayUtils.isFetchSupported()) {
-      PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
+      PDFFetchStream = require("./display/fetch_stream.js").PDFFetchStream;
     }
-    pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
-      if (PDFFetchStream &&
-          pdfjsDisplayDisplayUtils.isValidFetchUrl(params.url)) {
+    pdfjsDisplayAPI.setPDFNetworkStreamFactory(params => {
+      if (
+        PDFFetchStream &&
+        pdfjsDisplayDisplayUtils.isValidFetchUrl(params.url)
+      ) {
         return new PDFFetchStream(params);
       }
       return new PDFNetworkStream(params);
     });
   }
-} else if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
-  let PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
+} else if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
+  let PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
   let PDFFetchStream;
   let isChromeWithFetchCredentials = function() {
     // fetch does not include credentials until Chrome 61.0.3138.0 and later.
@@ -67,13 +69,17 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       return true;
     }
   };
-  if (pdfjsDisplayDisplayUtils.isFetchSupported() &&
-      isChromeWithFetchCredentials()) {
-    PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
+  if (
+    pdfjsDisplayDisplayUtils.isFetchSupported() &&
+    isChromeWithFetchCredentials()
+  ) {
+    PDFFetchStream = require("./display/fetch_stream.js").PDFFetchStream;
   }
-  pdfjsDisplayAPI.setPDFNetworkStreamFactory((params) => {
-    if (PDFFetchStream &&
-        pdfjsDisplayDisplayUtils.isValidFetchUrl(params.url)) {
+  pdfjsDisplayAPI.setPDFNetworkStreamFactory(params => {
+    if (
+      PDFFetchStream &&
+      pdfjsDisplayDisplayUtils.isValidFetchUrl(params.url)
+    ) {
       return new PDFFetchStream(params);
     }
     return new PDFNetworkStream(params);

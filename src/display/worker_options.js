@@ -19,8 +19,10 @@ const GlobalWorkerOptions = Object.create(null);
  * Defines global port for worker process. Overrides the `workerSrc` option.
  * @var {Object}
  */
-GlobalWorkerOptions.workerPort = (GlobalWorkerOptions.workerPort === undefined ?
-                                  null : GlobalWorkerOptions.workerPort);
+GlobalWorkerOptions.workerPort =
+  GlobalWorkerOptions.workerPort === undefined
+    ? null
+    : GlobalWorkerOptions.workerPort;
 
 /**
  * Path and filename of the worker file. Required when workers are enabled in
@@ -31,9 +33,9 @@ GlobalWorkerOptions.workerPort = (GlobalWorkerOptions.workerPort === undefined ?
  *       to prevent issues caused by third-party frameworks and libraries.
  * @var {string}
  */
-GlobalWorkerOptions.workerSrc = (GlobalWorkerOptions.workerSrc === undefined ?
-                                 '' : GlobalWorkerOptions.workerSrc);
+GlobalWorkerOptions.workerSrc =
+  GlobalWorkerOptions.workerSrc === undefined
+    ? ""
+    : GlobalWorkerOptions.workerSrc;
 
-export {
-  GlobalWorkerOptions,
-};
+export { GlobalWorkerOptions };
