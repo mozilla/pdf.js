@@ -120,6 +120,7 @@ describe('CFFParser', function() {
 
   it('ignores reserved commands in parseDict, and refuses to add privateDict ' +
      'keys with invalid values (bug 1308536)', function () {
+    // prettier-ignore
     var bytes = new Uint8Array([
       64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6
     ]);
@@ -137,6 +138,7 @@ describe('CFFParser', function() {
   });
 
   it('parses a CharString having cntrmask', function() {
+    // prettier-ignore
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
@@ -167,6 +169,7 @@ describe('CFFParser', function() {
                                /* seacAnalysisEnabled = */ true);
     parser.parse(); // cff
 
+    // prettier-ignore
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
@@ -192,6 +195,7 @@ describe('CFFParser', function() {
                                /* seacAnalysisEnabled = */ false);
     parser.parse(); // cff
 
+    // prettier-ignore
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
@@ -208,6 +212,7 @@ describe('CFFParser', function() {
   });
 
   it('parses a CharString endchar no args', function() {
+    // prettier-ignore
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
@@ -230,6 +235,7 @@ describe('CFFParser', function() {
 
   it('parses charset format 0', function() {
     // The first three bytes make the offset large enough to skip predefined.
+    // prettier-ignore
     var bytes = new Uint8Array([0x00, 0x00, 0x00,
                                 0x00, // format
                                 0x00, 0x02 // sid/cid
@@ -245,6 +251,7 @@ describe('CFFParser', function() {
 
   it('parses charset format 1', function() {
     // The first three bytes make the offset large enough to skip predefined.
+    // prettier-ignore
     var bytes = new Uint8Array([0x00, 0x00, 0x00,
                                 0x01, // format
                                 0x00, 0x08, // sid/cid start
@@ -262,6 +269,7 @@ describe('CFFParser', function() {
   it('parses charset format 2', function() {
     // format 2 is the same as format 1 but the left is card16
     // The first three bytes make the offset large enough to skip predefined.
+    // prettier-ignore
     var bytes = new Uint8Array([0x00, 0x00, 0x00,
                                 0x02, // format
                                 0x00, 0x08, // sid/cid start
@@ -278,6 +286,7 @@ describe('CFFParser', function() {
 
   it('parses encoding format 0', function() {
     // The first two bytes make the offset large enough to skip predefined.
+    // prettier-ignore
     var bytes = new Uint8Array([0x00, 0x00,
                                 0x00, // format
                                 0x01, // count
@@ -290,6 +299,7 @@ describe('CFFParser', function() {
 
   it('parses encoding format 1', function() {
     // The first two bytes make the offset large enough to skip predefined.
+    // prettier-ignore
     var bytes = new Uint8Array([0x00, 0x00,
                                 0x01, // format
                                 0x01, // num ranges
@@ -303,6 +313,7 @@ describe('CFFParser', function() {
   });
 
   it('parses fdselect format 0', function() {
+    // prettier-ignore
     var bytes = new Uint8Array([0x00, // format
                                 0x00, // gid: 0 fd: 0
                                 0x01 // gid: 1 fd: 1
@@ -315,6 +326,7 @@ describe('CFFParser', function() {
   });
 
   it('parses fdselect format 3', function() {
+    // prettier-ignore
     var bytes = new Uint8Array([0x03, // format
                                 0x00, 0x02, // range count
                                 0x00, 0x00, // first gid
@@ -331,6 +343,7 @@ describe('CFFParser', function() {
   });
 
   it('parses invalid fdselect format 3 (bug 1146106)', function() {
+    // prettier-ignore
     var bytes = new Uint8Array([0x03, // format
                                 0x00, 0x02, // range count
                                 0x00, 0x01, // first gid (invalid)

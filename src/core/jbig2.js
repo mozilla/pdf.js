@@ -73,6 +73,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
 
     var sign = readBits(1);
+    // prettier-ignore
     var value = readBits(1) ?
                   (readBits(1) ?
                     (readBits(1) ?

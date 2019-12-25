@@ -45,6 +45,7 @@ class EOIMarkerError extends BaseException { }
  */
 
 var JpegImage = (function JpegImageClosure() {
+  // prettier-ignore
   var dctZigZag = new Uint8Array([
      0,
      1,  8,
@@ -1015,6 +1016,7 @@ var JpegImage = (function JpegImageClosure() {
       // inverting JPEG (CMYK) images if and only if the image data does *not*
       // come from a PDF file and no `decodeTransform` was passed by the user.
       if (!isSourcePDF && numComponents === 4 && !transform) {
+        // prettier-ignore
         transform = new Int32Array([
           -256, 255, -256, 255, -256, 255, -256, 255]);
       }

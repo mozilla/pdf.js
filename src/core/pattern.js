@@ -514,6 +514,7 @@ Shadings.Mesh = (function MeshClosure() {
       }
       var tmp1, tmp2, tmp3, tmp4;
       switch (f) {
+        // prettier-ignore
         case 0:
           ps[12] = pi + 3; ps[13] = pi + 4;  ps[14] = pi + 5;  ps[15] = pi + 6;
           ps[ 8] = pi + 2; /* values for 5, 6, 9, 10 are    */ ps[11] = pi + 7;
@@ -522,6 +523,7 @@ Shadings.Mesh = (function MeshClosure() {
           cs[2] = ci + 1; cs[3] = ci + 2;
           cs[0] = ci;     cs[1] = ci + 3;
           break;
+        // prettier-ignore
         case 1:
           tmp1 = ps[12]; tmp2 = ps[13]; tmp3 = ps[14]; tmp4 = ps[15];
           ps[12] = tmp4; ps[13] = pi + 0;  ps[14] = pi + 1;  ps[15] = pi + 2;
@@ -532,6 +534,7 @@ Shadings.Mesh = (function MeshClosure() {
           cs[2] = tmp2;   cs[3] = ci;
           cs[0] = tmp1;   cs[1] = ci + 1;
           break;
+        // prettier-ignore
         case 2:
           tmp1 = ps[15];
           tmp2 = ps[11];
@@ -543,6 +546,7 @@ Shadings.Mesh = (function MeshClosure() {
           cs[2] = cs[1]; cs[3] = ci;
           cs[0] = tmp1;  cs[1] = ci + 1;
           break;
+        // prettier-ignore
         case 3:
           ps[12] = ps[0];  ps[13] = pi + 0;   ps[14] = pi + 1; ps[15] = pi + 2;
           ps[ 8] = ps[1];  /* values for 5, 6, 9, 10 are    */ ps[11] = pi + 3;
@@ -626,6 +630,7 @@ Shadings.Mesh = (function MeshClosure() {
       }
       var tmp1, tmp2, tmp3, tmp4;
       switch (f) {
+        // prettier-ignore
         case 0:
           ps[12] = pi + 3; ps[13] = pi + 4;  ps[14] = pi + 5;  ps[15] = pi + 6;
           ps[ 8] = pi + 2; ps[ 9] = pi + 13; ps[10] = pi + 14; ps[11] = pi + 7;
@@ -634,6 +639,7 @@ Shadings.Mesh = (function MeshClosure() {
           cs[2] = ci + 1; cs[3] = ci + 2;
           cs[0] = ci;     cs[1] = ci + 3;
           break;
+        // prettier-ignore
         case 1:
           tmp1 = ps[12]; tmp2 = ps[13]; tmp3 = ps[14]; tmp4 = ps[15];
           ps[12] = tmp4;   ps[13] = pi + 0;  ps[14] = pi + 1;  ps[15] = pi + 2;
@@ -644,6 +650,7 @@ Shadings.Mesh = (function MeshClosure() {
           cs[2] = tmp2;   cs[3] = ci;
           cs[0] = tmp1;   cs[1] = ci + 1;
           break;
+        // prettier-ignore
         case 2:
           tmp1 = ps[15];
           tmp2 = ps[11];
@@ -655,6 +662,7 @@ Shadings.Mesh = (function MeshClosure() {
           cs[2] = cs[1]; cs[3] = ci;
           cs[0] = tmp1;  cs[1] = ci + 1;
           break;
+        // prettier-ignore
         case 3:
           ps[12] = ps[0];  ps[13] = pi + 0;  ps[14] = pi + 1;  ps[15] = pi + 2;
           ps[ 8] = ps[1];  ps[ 9] = pi + 9;  ps[10] = pi + 10; ps[11] = pi + 3;
