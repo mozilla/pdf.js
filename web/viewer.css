@@ -326,7 +326,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   min-width: 16px;
   padding: 0px 6px 0px 6px;
   margin: 4px 2px 4px 2px;
-  color: hsl(0,0%,85%);
+  color: rgba(217, 217, 217, 1);
   font-size: 12px;
   line-height: 14px;
   text-align: left;
@@ -360,7 +360,7 @@ html[dir='rtl'] .findbar {
   width: 200px;
 }
 #findInput::-webkit-input-placeholder {
-  color: hsl(0, 0%, 75%);
+  color: rgba(191, 191, 191, 1);
 }
 #findInput::placeholder {
   font-style: italic;
@@ -451,8 +451,8 @@ html[dir='ltr'] .doorHangerRight:before {
 }
 
 #findResultsCount {
-  background-color: hsl(0, 0%, 85%);
-  color: hsl(0, 0%, 32%);
+  background-color: rgba(217, 217, 217, 1);
+  color: rgba(82, 82, 82, 1);
   text-align: center;
   padding: 3px 4px;
 }
@@ -719,7 +719,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 .dropdownToolbarButton > select {
   min-width: 140px;
   font-size: 12px;
-  color: hsl(0,0%,95%);
+  color: rgba(242, 242, 242, 1);
   margin: 0;
   padding: 3px 2px 2px;
   border: none;
@@ -727,7 +727,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton > select > option {
-  background: hsl(0,0%,24%);
+  background: rgba(61, 61, 61, 1);
 }
 
 #customScaleOption {
@@ -1036,7 +1036,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
   border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
   box-shadow: 0 1px 0 hsla(0,0%,0%,.05) inset,
               0 1px 0 hsla(0,0%,100%,.05);
-  color: hsl(0,0%,95%);
+  color: rgba(242, 242, 242, 1);
   font-size: 12px;
   line-height: 14px;
   outline-style: none;
@@ -1085,7 +1085,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
   margin: 4px 2px 4px 0;
   border: 1px solid transparent;
   border-radius: 2px;
-  color: hsl(0,0%,85%);
+  color: rgba(217, 217, 217, 1);
   font-size: 12px;
   line-height: 14px;
   text-align: left;
@@ -1373,7 +1373,7 @@ html[dir='rtl'] .outlineItemToggler::before {
   display: inline-block;
   padding: 15px;
   border-spacing: 4px;
-  color: hsl(0,0%,85%);
+  color: rgba(217, 217, 217, 1);
   font-size: 12px;
   line-height: 14px;
   background-color: #474747; /* fallback */
