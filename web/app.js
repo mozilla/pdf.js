@@ -16,6 +16,7 @@
 
 import {
   animationStarted,
+  AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
   getGlobalEventBus,
   getPDFFileNameFromURL,
@@ -1229,10 +1230,8 @@ let PDFViewerApplication = {
         });
 
         // Hack to support auto printing.
-        let regex = /\bprint\s*\(/;
-        for (let i = 0, ii = javaScript.length; i < ii; i++) {
-          let js = javaScript[i];
-          if (js && regex.test(js)) {
+        for (const js of javaScript) {
+          if (js && AutoPrintRegExp.test(js)) {
             setTimeout(function() {
               window.print();
             });
