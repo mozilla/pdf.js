@@ -1182,8 +1182,7 @@ const PDFViewerApplication = {
       if (!labels || AppOptions.get("disablePageLabels")) {
         return;
       }
-      let i = 0,
-        numLabels = labels.length;
+      const numLabels = labels.length;
       if (numLabels !== this.pagesCount) {
         console.error(
           "The number of Page Labels does not match " +
@@ -1191,6 +1190,7 @@ const PDFViewerApplication = {
         );
         return;
       }
+      let i = 0;
       // Ignore page labels that correspond to standard page numbering.
       while (i < numLabels && labels[i] === (i + 1).toString()) {
         i++;
@@ -2004,10 +2004,9 @@ function webViewerTextLayerRendered(evt) {
   }
 }
 
-function webViewerPageMode(evt) {
+function webViewerPageMode({ mode }) {
   // Handle the 'pagemode' hash parameter, see also `PDFLinkService_setHash`.
-  let mode = evt.mode,
-    view;
+  let view;
   switch (mode) {
     case "thumbs":
       view = SidebarView.THUMBS;
