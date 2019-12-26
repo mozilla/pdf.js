@@ -20,17 +20,22 @@
  */
 
 import {
-  FormatError, isSpace, stringToBytes, unreachable
-} from '../shared/util';
-import { isDict } from './primitives';
+  FormatError,
+  isSpace,
+  stringToBytes,
+  unreachable,
+} from "../shared/util";
+import { isDict } from "./primitives";
 
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
-    this.bytes = (arrayBuffer instanceof Uint8Array ?
-                  arrayBuffer : new Uint8Array(arrayBuffer));
+    this.bytes =
+      arrayBuffer instanceof Uint8Array
+        ? arrayBuffer
+        : new Uint8Array(arrayBuffer);
     this.start = start || 0;
     this.pos = this.start;
-    this.end = (start + length) || this.bytes.length;
+    this.end = start + length || this.bytes.length;
     this.dict = dict;
   }
 
@@ -73,7 +78,7 @@ var Stream = (function StreamClosure() {
       if (!length) {
         let subarray = bytes.subarray(pos, strEnd);
         // `this.bytes` is always a `Uint8Array` here.
-        return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
+        return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
       }
       var end = pos + length;
       if (end > strEnd) {
@@ -82,7 +87,7 @@ var Stream = (function StreamClosure() {
       this.pos = end;
       let subarray = bytes.subarray(pos, end);
       // `this.bytes` is always a `Uint8Array` here.
-      return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
+      return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
     },
     peekByte: function Stream_peekByte() {
       var peekedByte = this.getByte();
@@ -208,7 +213,8 @@ var DecodeStream = (function DecodeStreamClosure() {
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
     getBytes(length, forceClamped = false) {
-      var end, pos = this.pos;
+      var end,
+        pos = this.pos;
 
       if (length) {
         this.ensureBuffer(pos + length);
@@ -231,8 +237,9 @@ var DecodeStream = (function DecodeStreamClosure() {
       this.pos = end;
       let subarray = this.buffer.subarray(pos, end);
       // `this.buffer` is either a `Uint8Array` or `Uint8ClampedArray` here.
-      return (forceClamped && !(subarray instanceof Uint8ClampedArray) ?
-              new Uint8ClampedArray(subarray) : subarray);
+      return forceClamped && !(subarray instanceof Uint8ClampedArray)
+        ? new Uint8ClampedArray(subarray)
+        : subarray;
     },
     peekByte: function DecodeStream_peekByte() {
       var peekedByte = this.getByte();
@@ -255,7 +262,7 @@ var DecodeStream = (function DecodeStreamClosure() {
     },
 
     getByteRange(begin, end) {
-      unreachable('Should not call DecodeStream.getByteRange');
+      unreachable("Should not call DecodeStream.getByteRange");
     },
 
     skip: function DecodeStream_skip(n) {
@@ -296,9 +303,7 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
 
   StreamsSequenceStream.prototype = Object.create(DecodeStream.prototype);
 
-  StreamsSequenceStream.prototype.readBlock =
-      function streamSequenceStreamReadBlock() {
-
+  StreamsSequenceStream.prototype.readBlock = function streamSequenceStreamReadBlock() {
     var streams = this.streams;
     if (streams.length === 0) {
       this.eof = true;
@@ -313,9 +318,7 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
     this.bufferLength = newLength;
   };
 
-  StreamsSequenceStream.prototype.getBaseStreams =
-    function StreamsSequenceStream_getBaseStreams() {
-
+  StreamsSequenceStream.prototype.getBaseStreams = function StreamsSequenceStream_getBaseStreams() {
     var baseStreams = [];
     for (var i = 0, ii = this.streams.length; i < ii; i++) {
       var stream = this.streams[i];
@@ -330,10 +333,12 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
 })();
 
 var FlateStream = (function FlateStreamClosure() {
+  // prettier-ignore
   var codeLenCodeMap = new Int32Array([
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
   ]);
 
+  // prettier-ignore
   var lengthDecode = new Int32Array([
     0x00003, 0x00004, 0x00005, 0x00006, 0x00007, 0x00008, 0x00009, 0x0000a,
     0x1000b, 0x1000d, 0x1000f, 0x10011, 0x20013, 0x20017, 0x2001b, 0x2001f,
@@ -341,6 +346,7 @@ var FlateStream = (function FlateStreamClosure() {
     0x50083, 0x500a3, 0x500c3, 0x500e3, 0x00102, 0x00102, 0x00102
   ]);
 
+  // prettier-ignore
   var distDecode = new Int32Array([
     0x00001, 0x00002, 0x00003, 0x00004, 0x10005, 0x10007, 0x20009, 0x2000d,
     0x30011, 0x30019, 0x40021, 0x40031, 0x50041, 0x50061, 0x60081, 0x600c1,
@@ -348,6 +354,7 @@ var FlateStream = (function FlateStreamClosure() {
     0xb1001, 0xb1801, 0xc2001, 0xc3001, 0xd4001, 0xd6001
   ]);
 
+  // prettier-ignore
   var fixedLitCodeTab = [new Int32Array([
     0x70100, 0x80050, 0x80010, 0x80118, 0x70110, 0x80070, 0x80030, 0x900c0,
     0x70108, 0x80060, 0x80020, 0x900a0, 0x80000, 0x80080, 0x80040, 0x900e0,
@@ -415,6 +422,7 @@ var FlateStream = (function FlateStreamClosure() {
     0x7010f, 0x8006f, 0x8002f, 0x900bf, 0x8000f, 0x8008f, 0x8004f, 0x900ff
   ]), 9];
 
+  // prettier-ignore
   var fixedDistCodeTab = [new Int32Array([
     0x50000, 0x50010, 0x50008, 0x50018, 0x50004, 0x50014, 0x5000c, 0x5001c,
     0x50002, 0x50012, 0x5000a, 0x5001a, 0x50006, 0x50016, 0x5000e, 0x00000,
@@ -429,19 +437,18 @@ var FlateStream = (function FlateStreamClosure() {
     var cmf = str.getByte();
     var flg = str.getByte();
     if (cmf === -1 || flg === -1) {
-      throw new FormatError(
-        `Invalid header in flate stream: ${cmf}, ${flg}`);
+      throw new FormatError(`Invalid header in flate stream: ${cmf}, ${flg}`);
     }
     if ((cmf & 0x0f) !== 0x08) {
       throw new FormatError(
-        `Unknown compression method in flate stream: ${cmf}, ${flg}`);
+        `Unknown compression method in flate stream: ${cmf}, ${flg}`
+      );
     }
-    if ((((cmf << 8) + flg) % 31) !== 0) {
+    if (((cmf << 8) + flg) % 31 !== 0) {
       throw new FormatError(`Bad FCHECK in flate stream: ${cmf}, ${flg}`);
     }
     if (flg & 0x20) {
-      throw new FormatError(
-        `FDICT bit set in flate stream: ${cmf}, ${flg}`);
+      throw new FormatError(`FDICT bit set in flate stream: ${cmf}, ${flg}`);
     }
 
     this.codeSize = 0;
@@ -460,7 +467,7 @@ var FlateStream = (function FlateStreamClosure() {
     var b;
     while (codeSize < bits) {
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad encoding in flate stream');
+        throw new FormatError("Bad encoding in flate stream");
       }
       codeBuf |= b << codeSize;
       codeSize += 8;
@@ -486,22 +493,23 @@ var FlateStream = (function FlateStreamClosure() {
         // codeSize < codeLen check below guards against incomplete codeVal.
         break;
       }
-      codeBuf |= (b << codeSize);
+      codeBuf |= b << codeSize;
       codeSize += 8;
     }
     var code = codes[codeBuf & ((1 << maxLen) - 1)];
     var codeLen = code >> 16;
     var codeVal = code & 0xffff;
     if (codeLen < 1 || codeSize < codeLen) {
-      throw new FormatError('Bad encoding in flate stream');
+      throw new FormatError("Bad encoding in flate stream");
     }
-    this.codeBuf = (codeBuf >> codeLen);
-    this.codeSize = (codeSize - codeLen);
+    this.codeBuf = codeBuf >> codeLen;
+    this.codeSize = codeSize - codeLen;
     return codeVal;
   };
 
-  FlateStream.prototype.generateHuffmanTable =
-      function flateStreamGenerateHuffmanTable(lengths) {
+  FlateStream.prototype.generateHuffmanTable = function flateStreamGenerateHuffmanTable(
+    lengths
+  ) {
     var n = lengths.length;
 
     // find max code length
@@ -516,9 +524,11 @@ var FlateStream = (function FlateStreamClosure() {
     // build the table
     var size = 1 << maxLen;
     var codes = new Int32Array(size);
-    for (var len = 1, code = 0, skip = 2;
-         len <= maxLen;
-         ++len, code <<= 1, skip <<= 1) {
+    for (
+      var len = 1, code = 0, skip = 2;
+      len <= maxLen;
+      ++len, code <<= 1, skip <<= 1
+    ) {
       for (var val = 0; val < n; ++val) {
         if (lengths[val] === len) {
           // bit-reverse the code
@@ -551,36 +561,36 @@ var FlateStream = (function FlateStreamClosure() {
     }
     hdr >>= 1;
 
-    if (hdr === 0) { // uncompressed block
+    if (hdr === 0) {
+      // uncompressed block
       var b;
 
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad block header in flate stream');
+        throw new FormatError("Bad block header in flate stream");
       }
       var blockLen = b;
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad block header in flate stream');
+        throw new FormatError("Bad block header in flate stream");
       }
-      blockLen |= (b << 8);
+      blockLen |= b << 8;
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad block header in flate stream');
+        throw new FormatError("Bad block header in flate stream");
       }
       var check = b;
       if ((b = str.getByte()) === -1) {
-        throw new FormatError('Bad block header in flate stream');
+        throw new FormatError("Bad block header in flate stream");
       }
-      check |= (b << 8);
-      if (check !== (~blockLen & 0xffff) &&
-          (blockLen !== 0 || check !== 0)) {
+      check |= b << 8;
+      if (check !== (~blockLen & 0xffff) && (blockLen !== 0 || check !== 0)) {
         // Ignoring error for bad "empty" block (see issue 1277)
-        throw new FormatError(
-          'Bad uncompressed block length in flate stream');
+        throw new FormatError("Bad uncompressed block length in flate stream");
       }
 
       this.codeBuf = 0;
       this.codeSize = 0;
 
-      const bufferLength = this.bufferLength, end = bufferLength + blockLen;
+      const bufferLength = this.bufferLength,
+        end = bufferLength + blockLen;
       buffer = this.ensureBuffer(end);
       this.bufferLength = end;
 
@@ -600,10 +610,12 @@ var FlateStream = (function FlateStreamClosure() {
 
     var litCodeTable;
     var distCodeTable;
-    if (hdr === 1) { // compressed block, fixed codes
+    if (hdr === 1) {
+      // compressed block, fixed codes
       litCodeTable = fixedLitCodeTab;
       distCodeTable = fixedDistCodeTab;
-    } else if (hdr === 2) { // compressed block, dynamic codes
+    } else if (hdr === 2) {
+      // compressed block, dynamic codes
       var numLitCodes = this.getBits(5) + 257;
       var numDistCodes = this.getBits(5) + 1;
       var numCodeLenCodes = this.getBits(4) + 4;
@@ -626,11 +638,17 @@ var FlateStream = (function FlateStreamClosure() {
       while (i < codes) {
         var code = this.getCode(codeLenCodeTab);
         if (code === 16) {
-          bitsLength = 2; bitsOffset = 3; what = len;
+          bitsLength = 2;
+          bitsOffset = 3;
+          what = len;
         } else if (code === 17) {
-          bitsLength = 3; bitsOffset = 3; what = (len = 0);
+          bitsLength = 3;
+          bitsOffset = 3;
+          what = len = 0;
         } else if (code === 18) {
-          bitsLength = 7; bitsOffset = 11; what = (len = 0);
+          bitsLength = 7;
+          bitsOffset = 11;
+          what = len = 0;
         } else {
           codeLengths[i++] = len = code;
           continue;
@@ -642,12 +660,14 @@ var FlateStream = (function FlateStreamClosure() {
         }
       }
 
-      litCodeTable =
-        this.generateHuffmanTable(codeLengths.subarray(0, numLitCodes));
-      distCodeTable =
-        this.generateHuffmanTable(codeLengths.subarray(numLitCodes, codes));
+      litCodeTable = this.generateHuffmanTable(
+        codeLengths.subarray(0, numLitCodes)
+      );
+      distCodeTable = this.generateHuffmanTable(
+        codeLengths.subarray(numLitCodes, codes)
+      );
     } else {
-      throw new FormatError('Unknown block type in flate stream');
+      throw new FormatError("Unknown block type in flate stream");
     }
 
     buffer = this.buffer;
@@ -699,7 +719,7 @@ var PredictorStream = (function PredictorStreamClosure() {
     if (!isDict(params)) {
       return str; // no prediction
     }
-    var predictor = this.predictor = params.get('Predictor') || 1;
+    var predictor = (this.predictor = params.get("Predictor") || 1);
 
     if (predictor <= 1) {
       return str; // no prediction
@@ -717,9 +737,9 @@ var PredictorStream = (function PredictorStreamClosure() {
     this.str = str;
     this.dict = str.dict;
 
-    var colors = this.colors = params.get('Colors') || 1;
-    var bits = this.bits = params.get('BitsPerComponent') || 8;
-    var columns = this.columns = params.get('Columns') || 1;
+    var colors = (this.colors = params.get("Colors") || 1);
+    var bits = (this.bits = params.get("BitsPerComponent") || 8);
+    var columns = (this.columns = params.get("Columns") || 1);
 
     this.pixBytes = (colors * bits + 7) >> 3;
     this.rowBytes = (columns * colors * bits + 7) >> 3;
@@ -730,8 +750,7 @@ var PredictorStream = (function PredictorStreamClosure() {
 
   PredictorStream.prototype = Object.create(DecodeStream.prototype);
 
-  PredictorStream.prototype.readBlockTiff =
-      function predictorStreamReadBlockTiff() {
+  PredictorStream.prototype.readBlockTiff = function predictorStreamReadBlockTiff() {
     var rowBytes = this.rowBytes;
 
     var bufferLength = this.bufferLength;
@@ -746,8 +765,10 @@ var PredictorStream = (function PredictorStreamClosure() {
       return;
     }
 
-    var inbuf = 0, outbuf = 0;
-    var inbits = 0, outbits = 0;
+    var inbuf = 0,
+      outbuf = 0;
+    var inbits = 0,
+      outbits = 0;
     var pos = bufferLength;
     var i;
 
@@ -776,46 +797,46 @@ var PredictorStream = (function PredictorStreamClosure() {
         buffer[pos++] = rawBytes[i];
       }
       for (; i < rowBytes; i += 2) {
-        var sum = ((rawBytes[i] & 0xFF) << 8) +
-                  (rawBytes[i + 1] & 0xFF) +
-                  ((buffer[pos - bytesPerPixel] & 0xFF) << 8) +
-                  (buffer[pos - bytesPerPixel + 1] & 0xFF);
-        buffer[pos++] = ((sum >> 8) & 0xFF);
-        buffer[pos++] = (sum & 0xFF);
+        var sum =
+          ((rawBytes[i] & 0xff) << 8) +
+          (rawBytes[i + 1] & 0xff) +
+          ((buffer[pos - bytesPerPixel] & 0xff) << 8) +
+          (buffer[pos - bytesPerPixel + 1] & 0xff);
+        buffer[pos++] = (sum >> 8) & 0xff;
+        buffer[pos++] = sum & 0xff;
       }
     } else {
       var compArray = new Uint8Array(colors + 1);
       var bitMask = (1 << bits) - 1;
-      var j = 0, k = bufferLength;
+      var j = 0,
+        k = bufferLength;
       var columns = this.columns;
       for (i = 0; i < columns; ++i) {
         for (var kk = 0; kk < colors; ++kk) {
           if (inbits < bits) {
-            inbuf = (inbuf << 8) | (rawBytes[j++] & 0xFF);
+            inbuf = (inbuf << 8) | (rawBytes[j++] & 0xff);
             inbits += 8;
           }
-          compArray[kk] = (compArray[kk] +
-                           (inbuf >> (inbits - bits))) & bitMask;
+          compArray[kk] =
+            (compArray[kk] + (inbuf >> (inbits - bits))) & bitMask;
           inbits -= bits;
           outbuf = (outbuf << bits) | compArray[kk];
           outbits += bits;
           if (outbits >= 8) {
-            buffer[k++] = (outbuf >> (outbits - 8)) & 0xFF;
+            buffer[k++] = (outbuf >> (outbits - 8)) & 0xff;
             outbits -= 8;
           }
         }
       }
       if (outbits > 0) {
-        buffer[k++] = (outbuf << (8 - outbits)) +
-                      (inbuf & ((1 << (8 - outbits)) - 1));
+        buffer[k++] =
+          (outbuf << (8 - outbits)) + (inbuf & ((1 << (8 - outbits)) - 1));
       }
     }
     this.bufferLength += rowBytes;
   };
 
-  PredictorStream.prototype.readBlockPng =
-      function predictorStreamReadBlockPng() {
-
+  PredictorStream.prototype.readBlockPng = function predictorStreamReadBlockPng() {
     var rowBytes = this.rowBytes;
     var pixBytes = this.pixBytes;
 
@@ -834,7 +855,10 @@ var PredictorStream = (function PredictorStreamClosure() {
       prevRow = new Uint8Array(rowBytes);
     }
 
-    var i, j = bufferLength, up, c;
+    var i,
+      j = bufferLength,
+      up,
+      c;
     switch (predictor) {
       case 0:
         for (i = 0; i < rowBytes; ++i) {
@@ -846,13 +870,13 @@ var PredictorStream = (function PredictorStreamClosure() {
           buffer[j++] = rawBytes[i];
         }
         for (; i < rowBytes; ++i) {
-          buffer[j] = (buffer[j - pixBytes] + rawBytes[i]) & 0xFF;
+          buffer[j] = (buffer[j - pixBytes] + rawBytes[i]) & 0xff;
           j++;
         }
         break;
       case 2:
         for (i = 0; i < rowBytes; ++i) {
-          buffer[j++] = (prevRow[i] + rawBytes[i]) & 0xFF;
+          buffer[j++] = (prevRow[i] + rawBytes[i]) & 0xff;
         }
         break;
       case 3:
@@ -860,8 +884,8 @@ var PredictorStream = (function PredictorStreamClosure() {
           buffer[j++] = (prevRow[i] >> 1) + rawBytes[i];
         }
         for (; i < rowBytes; ++i) {
-          buffer[j] = (((prevRow[i] + buffer[j - pixBytes]) >> 1) +
-                           rawBytes[i]) & 0xFF;
+          buffer[j] =
+            (((prevRow[i] + buffer[j - pixBytes]) >> 1) + rawBytes[i]) & 0xff;
           j++;
         }
         break;
@@ -945,7 +969,8 @@ var DecryptStream = (function DecryptStreamClosure() {
     chunk = decrypt(chunk, !hasMoreData);
 
     var bufferLength = this.bufferLength;
-    var i, n = chunk.length;
+    var i,
+      n = chunk.length;
     var buffer = this.ensureBuffer(bufferLength + n);
     for (i = 0; i < n; i++) {
       buffer[bufferLength++] = chunk[i];
@@ -973,8 +998,8 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
   Ascii85Stream.prototype = Object.create(DecodeStream.prototype);
 
   Ascii85Stream.prototype.readBlock = function Ascii85Stream_readBlock() {
-    var TILDA_CHAR = 0x7E; // '~'
-    var Z_LOWER_CHAR = 0x7A; // 'z'
+    var TILDA_CHAR = 0x7e; // '~'
+    var Z_LOWER_CHAR = 0x7a; // 'z'
     var EOF = -1;
 
     var str = this.str;
@@ -989,7 +1014,8 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
       return;
     }
 
-    var bufferLength = this.bufferLength, buffer;
+    var bufferLength = this.bufferLength,
+      buffer;
     var i;
 
     // special code for z
@@ -1030,7 +1056,7 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
       }
 
       for (i = 3; i >= 0; --i) {
-        buffer[bufferLength + i] = t & 0xFF;
+        buffer[bufferLength + i] = t & 0xff;
         t >>= 8;
       }
     }
@@ -1070,17 +1096,21 @@ var AsciiHexStream = (function AsciiHexStreamClosure() {
 
     var firstDigit = this.firstDigit;
     for (var i = 0, ii = bytes.length; i < ii; i++) {
-      var ch = bytes[i], digit;
-      if (ch >= 0x30 && ch <= 0x39) { // '0'-'9'
-        digit = ch & 0x0F;
-      } else if ((ch >= 0x41 && ch <= 0x46) || (ch >= 0x61 && ch <= 0x66)) {
-        // 'A'-'Z', 'a'-'z'
-        digit = (ch & 0x0F) + 9;
-      } else if (ch === 0x3E) { // '>'
+      var ch = bytes[i],
+        digit;
+      if (ch >= /* '0' = */ 0x30 && ch <= /* '9' = */ 0x39) {
+        digit = ch & 0x0f;
+      } else if (
+        (ch >= /* 'A' = */ 0x41 && ch <= /* 'Z' = */ 0x46) ||
+        (ch >= /* 'a' = */ 0x61 && ch <= /* 'z' = */ 0x66)
+      ) {
+        digit = (ch & 0x0f) + 9;
+      } else if (ch === /* '>' = */ 0x3e) {
         this.eof = true;
         break;
-      } else { // probably whitespace
-        continue; // ignoring
+      } else {
+        // Probably whitespace, ignoring.
+        continue;
       }
       if (firstDigit < 0) {
         firstDigit = digit;
@@ -1091,7 +1121,7 @@ var AsciiHexStream = (function AsciiHexStreamClosure() {
     }
     if (firstDigit >= 0 && this.eof) {
       // incomplete byte
-      buffer[bufferLength++] = (firstDigit << 4);
+      buffer[bufferLength++] = firstDigit << 4;
       firstDigit = -1;
     }
     this.firstDigit = firstDigit;
@@ -1189,7 +1219,7 @@ var LZWStream = (function LZWStreamClosure() {
       cachedData = (cachedData << 8) | c;
       bitsCached += 8;
     }
-    this.bitsCached = (bitsCached -= n);
+    this.bitsCached = bitsCached -= n;
     this.cachedData = cachedData;
     this.lastCode = null;
     return (cachedData >>> bitsCached) & ((1 << n) - 1);
@@ -1197,7 +1227,8 @@ var LZWStream = (function LZWStreamClosure() {
 
   LZWStream.prototype.readBlock = function LZWStream_readBlock() {
     var blockSize = 512;
-    var estimatedDecodedSize = blockSize * 2, decodedSizeDelta = blockSize;
+    var estimatedDecodedSize = blockSize * 2,
+      decodedSizeDelta = blockSize;
     var i, j, q;
 
     var lzwState = this.lzwState;
@@ -1251,9 +1282,13 @@ var LZWStream = (function LZWStreamClosure() {
         dictionaryLengths[nextCode] = dictionaryLengths[prevCode] + 1;
         dictionaryValues[nextCode] = currentSequence[0];
         nextCode++;
-        codeLength = (nextCode + earlyChange) & (nextCode + earlyChange - 1) ?
-          codeLength : Math.min(Math.log(nextCode + earlyChange) /
-          0.6931471805599453 + 1, 12) | 0;
+        codeLength =
+          (nextCode + earlyChange) & (nextCode + earlyChange - 1)
+            ? codeLength
+            : Math.min(
+                Math.log(nextCode + earlyChange) / 0.6931471805599453 + 1,
+                12
+              ) | 0;
       }
       prevCode = code;
 

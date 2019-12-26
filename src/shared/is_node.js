@@ -18,10 +18,9 @@
 // http://docs.nwjs.io/en/latest/For%20Users/Advanced/JavaScript%20Contexts%20in%20NW.js/#access-nodejs-and-nwjs-api-in-browser-context
 // https://electronjs.org/docs/api/process#processversionselectron
 const isNodeJS =
-  typeof process === 'object' &&
-  process + '' === '[object process]' &&
-  !process.versions['nw'] && !process.versions['electron'];
+  typeof process === "object" &&
+  process + "" === "[object process]" &&
+  !process.versions["nw"] &&
+  !process.versions["electron"];
 
-export {
-  isNodeJS,
-};
+export { isNodeJS };

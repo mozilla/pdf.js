@@ -14,13 +14,18 @@
  */
 /* eslint no-var: error */
 
-import { ColorSpace } from './colorspace';
-import { JpegStream } from './jpeg_stream';
-import { Stream } from './stream';
+import { ColorSpace } from "./colorspace";
+import { JpegStream } from "./jpeg_stream";
+import { Stream } from "./stream";
 
 class NativeImageDecoder {
-  constructor({ xref, resources, handler, forceDataSchema = false,
-                pdfFunctionFactory, }) {
+  constructor({
+    xref,
+    resources,
+    handler,
+    forceDataSchema = false,
+    pdfFunctionFactory,
+  }) {
     this.xref = xref;
     this.resources = resources;
     this.handler = handler;
@@ -29,23 +34,36 @@ class NativeImageDecoder {
   }
 
   canDecode(image) {
-    return image instanceof JpegStream &&
-           NativeImageDecoder.isDecodable(image, this.xref, this.resources,
-                                          this.pdfFunctionFactory);
+    return (
+      image instanceof JpegStream &&
+      NativeImageDecoder.isDecodable(
+        image,
+        this.xref,
+        this.resources,
+        this.pdfFunctionFactory
+      )
+    );
   }
 
   decode(image) {
     // For natively supported JPEGs send them to the main thread for decoding.
     const dict = image.dict;
-    let colorSpace = dict.get('ColorSpace', 'CS');
-    colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources,
-                                  this.pdfFunctionFactory);
+    let colorSpace = dict.get("ColorSpace", "CS");
+    colorSpace = ColorSpace.parse(
+      colorSpace,
+      this.xref,
+      this.resources,
+      this.pdfFunctionFactory
+    );
 
-    return this.handler.sendWithPromise('JpegDecode', [
-      image.getIR(this.forceDataSchema), colorSpace.numComps
-    ]).then(function({ data, width, height, }) {
-      return new Stream(data, 0, data.length, dict);
-    });
+    return this.handler
+      .sendWithPromise("JpegDecode", [
+        image.getIR(this.forceDataSchema),
+        colorSpace.numComps,
+      ])
+      .then(function({ data, width, height }) {
+        return new Stream(data, 0, data.length, dict);
+      });
   }
 
   /**
@@ -54,14 +72,20 @@ class NativeImageDecoder {
    */
   static isSupported(image, xref, res, pdfFunctionFactory) {
     const dict = image.dict;
-    if (dict.has('DecodeParms') || dict.has('DP')) {
+    if (dict.has("DecodeParms") || dict.has("DP")) {
       return false;
     }
-    const cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
-                                pdfFunctionFactory);
+    const cs = ColorSpace.parse(
+      dict.get("ColorSpace", "CS"),
+      xref,
+      res,
+      pdfFunctionFactory
+    );
     // isDefaultDecode() of DeviceGray and DeviceRGB needs no `bpc` argument.
-    return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
-           cs.isDefaultDecode(dict.getArray('Decode', 'D'));
+    return (
+      (cs.name === "DeviceGray" || cs.name === "DeviceRGB") &&
+      cs.isDefaultDecode(dict.getArray("Decode", "D"))
+    );
   }
 
   /**
@@ -69,17 +93,21 @@ class NativeImageDecoder {
    */
   static isDecodable(image, xref, res, pdfFunctionFactory) {
     const dict = image.dict;
-    if (dict.has('DecodeParms') || dict.has('DP')) {
+    if (dict.has("DecodeParms") || dict.has("DP")) {
       return false;
     }
-    const cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
-                                pdfFunctionFactory);
-    const bpc = dict.get('BitsPerComponent', 'BPC') || 1;
-    return (cs.numComps === 1 || cs.numComps === 3) &&
-           cs.isDefaultDecode(dict.getArray('Decode', 'D'), bpc);
+    const cs = ColorSpace.parse(
+      dict.get("ColorSpace", "CS"),
+      xref,
+      res,
+      pdfFunctionFactory
+    );
+    const bpc = dict.get("BitsPerComponent", "BPC") || 1;
+    return (
+      (cs.numComps === 1 || cs.numComps === 3) &&
+      cs.isDefaultDecode(dict.getArray("Decode", "D"), bpc)
+    );
   }
 }
 
-export {
-  NativeImageDecoder,
-};
+export { NativeImageDecoder };

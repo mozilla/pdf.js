@@ -14,8 +14,8 @@
  */
 /* eslint no-var: error */
 
-import { FormatError, isSpace, shadow } from '../shared/util';
-import { EOF } from './primitives';
+import { FormatError, isSpace, shadow } from "../shared/util";
+import { EOF } from "./primitives";
 
 class PostScriptParser {
   constructor(lexer) {
@@ -43,7 +43,8 @@ class PostScriptParser {
       return true;
     }
     throw new FormatError(
-      `Unexpected symbol: found ${this.token.type} expected ${type}.`);
+      `Unexpected symbol: found ${this.token.type} expected ${type}.`
+    );
   }
 
   parse() {
@@ -79,7 +80,7 @@ class PostScriptParser {
       // The true block is right after the 'if' so it just falls through on true
       // else it jumps and skips the true block.
       this.operators[conditionLocation] = this.operators.length;
-      this.operators[conditionLocation + 1] = 'jz';
+      this.operators[conditionLocation + 1] = "jz";
     } else if (this.accept(PostScriptTokenTypes.LBRACE)) {
       const jumpLocation = this.operators.length;
       this.operators.push(null, null);
@@ -89,12 +90,12 @@ class PostScriptParser {
       this.expect(PostScriptTokenTypes.IFELSE);
       // The jump is added at the end of the true block to skip the false block.
       this.operators[jumpLocation] = this.operators.length;
-      this.operators[jumpLocation + 1] = 'j';
+      this.operators[jumpLocation + 1] = "j";
 
       this.operators[conditionLocation] = endOfTrue;
-      this.operators[conditionLocation + 1] = 'jz';
+      this.operators[conditionLocation + 1] = "jz";
     } else {
-      throw new FormatError('PS Function: error parsing conditional.');
+      throw new FormatError("PS Function: error parsing conditional.");
     }
   }
 }
@@ -122,28 +123,42 @@ const PostScriptToken = (function PostScriptTokenClosure() {
       if (opValue) {
         return opValue;
       }
-      return opCache[op] = new PostScriptToken(PostScriptTokenTypes.OPERATOR,
-                                               op);
+      return (opCache[op] = new PostScriptToken(
+        PostScriptTokenTypes.OPERATOR,
+        op
+      ));
     }
 
     static get LBRACE() {
-      return shadow(this, 'LBRACE',
-                    new PostScriptToken(PostScriptTokenTypes.LBRACE, '{'));
+      return shadow(
+        this,
+        "LBRACE",
+        new PostScriptToken(PostScriptTokenTypes.LBRACE, "{")
+      );
     }
 
     static get RBRACE() {
-      return shadow(this, 'RBRACE',
-                    new PostScriptToken(PostScriptTokenTypes.RBRACE, '}'));
+      return shadow(
+        this,
+        "RBRACE",
+        new PostScriptToken(PostScriptTokenTypes.RBRACE, "}")
+      );
     }
 
     static get IF() {
-      return shadow(this, 'IF',
-                    new PostScriptToken(PostScriptTokenTypes.IF, 'IF'));
+      return shadow(
+        this,
+        "IF",
+        new PostScriptToken(PostScriptTokenTypes.IF, "IF")
+      );
     }
 
     static get IFELSE() {
-      return shadow(this, 'IFELSE',
-                    new PostScriptToken(PostScriptTokenTypes.IFELSE, 'IFELSE'));
+      return shadow(
+        this,
+        "IFELSE",
+        new PostScriptToken(PostScriptTokenTypes.IFELSE, "IFELSE")
+      );
     }
   }
   return PostScriptToken;
@@ -172,10 +187,10 @@ class PostScriptLexer {
       }
 
       if (comment) {
-        if (ch === 0x0A || ch === 0x0D) {
+        if (ch === 0x0a || ch === 0x0d) {
           comment = false;
         }
-      } else if (ch === 0x25) { // '%'
+      } else if (ch === /* '%' = */ 0x25) {
         comment = true;
       } else if (!isSpace(ch)) {
         break;
@@ -183,15 +198,27 @@ class PostScriptLexer {
       ch = this.nextChar();
     }
     switch (ch | 0) {
-      case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: // '0'-'4'
-      case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: // '5'-'9'
-      case 0x2B: case 0x2D: case 0x2E: // '+', '-', '.'
-        return new PostScriptToken(PostScriptTokenTypes.NUMBER,
-                                   this.getNumber());
-      case 0x7B: // '{'
+      case 0x30: // '0'
+      case 0x31: // '1'
+      case 0x32: // '2'
+      case 0x33: // '3'
+      case 0x34: // '4'
+      case 0x35: // '5'
+      case 0x36: // '6'
+      case 0x37: // '7'
+      case 0x38: // '8'
+      case 0x39: // '9'
+      case 0x2b: // '+'
+      case 0x2d: // '-'
+      case 0x2e: // '.'
+        return new PostScriptToken(
+          PostScriptTokenTypes.NUMBER,
+          this.getNumber()
+        );
+      case 0x7b: // '{'
         this.nextChar();
         return PostScriptToken.LBRACE;
-      case 0x7D: // '}'
+      case 0x7d: // '}'
         this.nextChar();
         return PostScriptToken.RBRACE;
     }
@@ -200,15 +227,18 @@ class PostScriptLexer {
     strBuf.length = 0;
     strBuf[0] = String.fromCharCode(ch);
 
-    while ((ch = this.nextChar()) >= 0 && // and 'A'-'Z', 'a'-'z'
-           ((ch >= 0x41 && ch <= 0x5A) || (ch >= 0x61 && ch <= 0x7A))) {
+    while (
+      (ch = this.nextChar()) >= 0 &&
+      ((ch >= /* 'A' = */ 0x41 && ch <= /* 'Z' = */ 0x5a) ||
+        (ch >= /* 'a' = */ 0x61 && ch <= /* 'z' = */ 0x7a))
+    ) {
       strBuf.push(String.fromCharCode(ch));
     }
-    const str = strBuf.join('');
+    const str = strBuf.join("");
     switch (str.toLowerCase()) {
-      case 'if':
+      case "if":
         return PostScriptToken.IF;
-      case 'ifelse':
+      case "ifelse":
         return PostScriptToken.IFELSE;
       default:
         return PostScriptToken.getOperator(str);
@@ -222,14 +252,17 @@ class PostScriptLexer {
     strBuf[0] = String.fromCharCode(ch);
 
     while ((ch = this.nextChar()) >= 0) {
-      if ((ch >= 0x30 && ch <= 0x39) || // '0'-'9'
-          ch === 0x2D || ch === 0x2E) { // '-', '.'
+      if (
+        (ch >= /* '0' = */ 0x30 && ch <= /* '9' = */ 0x39) ||
+        ch === /* '-' = */ 0x2d ||
+        ch === /* '.' = */ 0x2e
+      ) {
         strBuf.push(String.fromCharCode(ch));
       } else {
         break;
       }
     }
-    const value = parseFloat(strBuf.join(''));
+    const value = parseFloat(strBuf.join(""));
     if (isNaN(value)) {
       throw new FormatError(`Invalid floating point number: ${value}`);
     }
@@ -237,7 +270,4 @@ class PostScriptLexer {
   }
 }
 
-export {
-  PostScriptLexer,
-  PostScriptParser,
-};
+export { PostScriptLexer, PostScriptParser };

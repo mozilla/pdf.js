@@ -14,10 +14,10 @@
  */
 /* eslint-disable no-unused-vars */
 
-import { getVerbosityLevel, setVerbosityLevel } from './shared/util';
-import { Jbig2mage } from './core/jbig2';
-import { JpegImage } from './core/jpg';
-import { JpxImage } from './core/jpx';
+import { getVerbosityLevel, setVerbosityLevel } from "./shared/util";
+import { Jbig2mage } from "./core/jbig2";
+import { JpegImage } from "./core/jpg";
+import { JpxImage } from "./core/jpx";
 
 // To ensure that the standalone PDF.js image decoders have the same
 // browser/environment compatibility as the regular PDF.js library,
@@ -33,13 +33,7 @@ import { JpxImage } from './core/jpx';
 //  - Promise
 //  - URL
 
-const pdfjsVersion = PDFJSDev.eval('BUNDLE_VERSION');
-const pdfjsBuild = PDFJSDev.eval('BUNDLE_BUILD');
+const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
+const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 
-export {
-  Jbig2mage,
-  JpegImage,
-  JpxImage,
-  getVerbosityLevel,
-  setVerbosityLevel,
-};
+export { Jbig2mage, JpegImage, JpxImage, getVerbosityLevel, setVerbosityLevel };
