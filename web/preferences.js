@@ -17,17 +17,18 @@
 let defaultPreferences = null;
 function getDefaultPreferences() {
   if (!defaultPreferences) {
-    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("PRODUCTION")) {
       defaultPreferences = Promise.resolve(
-        PDFJSDev.json('$ROOT/build/default_preferences.json'));
+        PDFJSDev.json("$ROOT/build/default_preferences.json")
+      );
     } else {
       defaultPreferences = new Promise(function(resolve, reject) {
-        if (typeof SystemJS === 'object') {
-          SystemJS.import('./app_options').then(resolve, reject);
+        if (typeof SystemJS === "object") {
+          SystemJS.import("./app_options").then(resolve, reject);
         } else {
-          reject(new Error('SystemJS must be used to load AppOptions.'));
+          reject(new Error("SystemJS must be used to load AppOptions."));
         }
-      }).then(function({ AppOptions, OptionKind, }) {
+      }).then(function({ AppOptions, OptionKind }) {
         return AppOptions.getAll(OptionKind.PREFERENCE);
       });
     }
@@ -43,35 +44,40 @@ function getDefaultPreferences() {
 class BasePreferences {
   constructor() {
     if (this.constructor === BasePreferences) {
-      throw new Error('Cannot initialize BasePreferences.');
+      throw new Error("Cannot initialize BasePreferences.");
     }
     this.prefs = null;
 
-    this._initializedPromise = getDefaultPreferences().then((defaults) => {
-      Object.defineProperty(this, 'defaults', {
-        value: Object.freeze(defaults),
-        writable: false,
-        enumerable: true,
-        configurable: false,
-      });
+    this._initializedPromise = getDefaultPreferences()
+      .then(defaults => {
+        Object.defineProperty(this, "defaults", {
+          value: Object.freeze(defaults),
+          writable: false,
+          enumerable: true,
+          configurable: false,
+        });
 
-      this.prefs = Object.assign(Object.create(null), defaults);
-      return this._readFromStorage(defaults);
-    }).then((prefs) => {
-      if (!prefs) {
-        return;
-      }
-      for (const name in prefs) {
-        const defaultValue = this.defaults[name], prefValue = prefs[name];
-        // Ignore preferences not present in, or whose types don't match,
-        // the default values.
-        if (defaultValue === undefined ||
-            typeof prefValue !== typeof defaultValue) {
-          continue;
+        this.prefs = Object.assign(Object.create(null), defaults);
+        return this._readFromStorage(defaults);
+      })
+      .then(prefs => {
+        if (!prefs) {
+          return;
         }
-        this.prefs[name] = prefValue;
-      }
-    });
+        for (const name in prefs) {
+          const defaultValue = this.defaults[name],
+            prefValue = prefs[name];
+          // Ignore preferences not present in, or whose types don't match,
+          // the default values.
+          if (
+            defaultValue === undefined ||
+            typeof prefValue !== typeof defaultValue
+          ) {
+            continue;
+          }
+          this.prefs[name] = prefValue;
+        }
+      });
   }
 
   /**
@@ -81,7 +87,7 @@ class BasePreferences {
    *                    have been written.
    */
   async _writeToStorage(prefObj) {
-    throw new Error('Not implemented: _writeToStorage');
+    throw new Error("Not implemented: _writeToStorage");
   }
 
   /**
@@ -91,7 +97,7 @@ class BasePreferences {
    *                    the preferences that have been read.
    */
   async _readFromStorage(prefObj) {
-    throw new Error('Not implemented: _readFromStorage');
+    throw new Error("Not implemented: _readFromStorage");
   }
 
   /**
@@ -119,20 +125,22 @@ class BasePreferences {
     if (defaultValue === undefined) {
       throw new Error(`Set preference: "${name}" is undefined.`);
     } else if (value === undefined) {
-      throw new Error('Set preference: no value is specified.');
+      throw new Error("Set preference: no value is specified.");
     }
     const valueType = typeof value;
     const defaultType = typeof defaultValue;
 
     if (valueType !== defaultType) {
-      if (valueType === 'number' && defaultType === 'string') {
+      if (valueType === "number" && defaultType === "string") {
         value = value.toString();
       } else {
-        throw new Error(`Set preference: "${value}" is a ${valueType}, ` +
-                        `expected a ${defaultType}.`);
+        throw new Error(
+          `Set preference: "${value}" is a ${valueType}, ` +
+            `expected a ${defaultType}.`
+        );
       }
     } else {
-      if (valueType === 'number' && !Number.isInteger(value)) {
+      if (valueType === "number" && !Number.isInteger(value)) {
         throw new Error(`Set preference: "${value}" must be an integer.`);
       }
     }
@@ -173,6 +181,4 @@ class BasePreferences {
   }
 }
 
-export {
-  BasePreferences,
-};
+export { BasePreferences };

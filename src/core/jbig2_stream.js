@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { isDict, isStream } from './primitives';
-import { DecodeStream } from './stream';
-import { Jbig2Image } from './jbig2';
-import { shadow } from '../shared/util';
+import { isDict, isStream } from "./primitives";
+import { DecodeStream } from "./stream";
+import { Jbig2Image } from "./jbig2";
+import { shadow } from "../shared/util";
 
 /**
  * For JBIG2's we use a library to decode these images and
@@ -34,10 +34,10 @@ let Jbig2Stream = (function Jbig2StreamClosure() {
 
   Jbig2Stream.prototype = Object.create(DecodeStream.prototype);
 
-  Object.defineProperty(Jbig2Stream.prototype, 'bytes', {
+  Object.defineProperty(Jbig2Stream.prototype, "bytes", {
     get() {
       // If `this.maybeLength` is null, we'll get the entire stream.
-      return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
+      return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
     },
     configurable: true,
   });
@@ -55,19 +55,19 @@ let Jbig2Stream = (function Jbig2StreamClosure() {
 
     let chunks = [];
     if (isDict(this.params)) {
-      let globalsStream = this.params.get('JBIG2Globals');
+      let globalsStream = this.params.get("JBIG2Globals");
       if (isStream(globalsStream)) {
         let globals = globalsStream.getBytes();
-        chunks.push({ data: globals, start: 0, end: globals.length, });
+        chunks.push({ data: globals, start: 0, end: globals.length });
       }
     }
-    chunks.push({ data: this.bytes, start: 0, end: this.bytes.length, });
+    chunks.push({ data: this.bytes, start: 0, end: this.bytes.length });
     let data = jbig2Image.parseChunks(chunks);
     let dataLength = data.length;
 
     // JBIG2 had black as 1 and white as 0, inverting the colors
     for (let i = 0; i < dataLength; i++) {
-      data[i] ^= 0xFF;
+      data[i] ^= 0xff;
     }
     this.buffer = data;
     this.bufferLength = dataLength;
@@ -77,6 +77,4 @@ let Jbig2Stream = (function Jbig2StreamClosure() {
   return Jbig2Stream;
 })();
 
-export {
-  Jbig2Stream,
-};
+export { Jbig2Stream };

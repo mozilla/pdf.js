@@ -14,7 +14,7 @@
  */
 /* uses XRef */
 
-import { assert } from '../shared/util';
+import { assert } from "../shared/util";
 
 var EOF = {};
 
@@ -29,7 +29,7 @@ var Name = (function NameClosure() {
 
   Name.get = function Name_get(name) {
     var nameValue = nameCache[name];
-    return (nameValue ? nameValue : (nameCache[name] = new Name(name)));
+    return nameValue ? nameValue : (nameCache[name] = new Name(name));
   };
 
   Name._clearCache = function() {
@@ -50,7 +50,7 @@ var Cmd = (function CmdClosure() {
 
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
-    return (cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd)));
+    return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
   };
 
   Cmd._clearCache = function() {
@@ -193,9 +193,9 @@ var Ref = (function RefClosure() {
   };
 
   Ref.get = function(num, gen) {
-    const key = (gen === 0 ? `${num}R` : `${num}R${gen}`);
+    const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
     const refValue = refCache[key];
-    return (refValue ? refValue : (refCache[key] = new Ref(num, gen)));
+    return refValue ? refValue : (refCache[key] = new Ref(num, gen));
   };
 
   Ref._clearCache = function() {
@@ -266,7 +266,7 @@ var RefSetCache = (function RefSetCacheClosure() {
 })();
 
 function isEOF(v) {
-  return (v === EOF);
+  return v === EOF;
 }
 
 function isName(v, name) {
@@ -278,8 +278,9 @@ function isCmd(v, cmd) {
 }
 
 function isDict(v, type) {
-  return v instanceof Dict &&
-         (type === undefined || isName(v.get('Type'), type));
+  return (
+    v instanceof Dict && (type === undefined || isName(v.get("Type"), type))
+  );
 }
 
 function isRef(v) {
@@ -287,16 +288,20 @@ function isRef(v) {
 }
 
 function isRefsEqual(v1, v2) {
-  if (typeof PDFJSDev === 'undefined' ||
-      PDFJSDev.test('!PRODUCTION || TESTING')) {
-    assert(v1 instanceof Ref && v2 instanceof Ref,
-           'isRefsEqual: Both parameters should be `Ref`s.');
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      v1 instanceof Ref && v2 instanceof Ref,
+      "isRefsEqual: Both parameters should be `Ref`s."
+    );
   }
   return v1.num === v2.num && v1.gen === v2.gen;
 }
 
 function isStream(v) {
-  return typeof v === 'object' && v !== null && v.getBytes !== undefined;
+  return typeof v === "object" && v !== null && v.getBytes !== undefined;
 }
 
 function clearPrimitiveCaches() {

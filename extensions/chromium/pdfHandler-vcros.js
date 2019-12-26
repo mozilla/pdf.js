@@ -17,7 +17,7 @@ limitations under the License.
 /* import-globals-from pdfHandler.js */
 
 (function() {
-  'use strict';
+  "use strict";
 
   if (!chrome.fileBrowserHandler) {
     // Not on Chromium OS, bail out
@@ -33,7 +33,7 @@ limitations under the License.
    * @param {Object} details Object of type FileHandlerExecuteEventDetails
    */
   function onExecuteFileBrowserHandler(id, details) {
-    if (id !== 'open-as-pdf') {
+    if (id !== "open-as-pdf") {
       return;
     }
     var fileEntries = details.entries;
@@ -49,7 +49,7 @@ limitations under the License.
       chrome.windows.getLastFocused(function(chromeWindow) {
         var windowId = chromeWindow && chromeWindow.id;
         if (windowId) {
-          chrome.windows.update(windowId, { focused: true, });
+          chrome.windows.update(windowId, { focused: true });
         }
         openViewer(windowId, fileEntries);
       });
@@ -69,26 +69,34 @@ limitations under the License.
     var fileEntry = fileEntries.shift();
     var url = fileEntry.toURL();
     // Use drive: alias to get shorter (more human-readable) URLs.
-    url = url.replace(/^filesystem:chrome-extension:\/\/[a-p]{32}\/external\//,
-                      'drive:');
+    url = url.replace(
+      /^filesystem:chrome-extension:\/\/[a-p]{32}\/external\//,
+      "drive:"
+    );
     url = getViewerURL(url);
 
     if (windowId) {
-      chrome.tabs.create({
-        windowId: windowId,
-        active: true,
-        url: url,
-      }, function() {
-        openViewer(windowId, fileEntries);
-      });
+      chrome.tabs.create(
+        {
+          windowId: windowId,
+          active: true,
+          url: url,
+        },
+        function() {
+          openViewer(windowId, fileEntries);
+        }
+      );
     } else {
-      chrome.windows.create({
-        type: 'normal',
-        focused: true,
-        url: url,
-      }, function(chromeWindow) {
-        openViewer(chromeWindow.id, fileEntries);
-      });
+      chrome.windows.create(
+        {
+          type: "normal",
+          focused: true,
+          url: url,
+        },
+        function(chromeWindow) {
+          openViewer(chromeWindow.id, fileEntries);
+        }
+      );
     }
   }
 })();

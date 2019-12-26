@@ -30,9 +30,9 @@ class ViewHistory {
     this.fingerprint = fingerprint;
     this.cacheSize = cacheSize;
 
-    this._initializedPromise = this._readFromStorage().then((databaseStr) => {
-      const database = JSON.parse(databaseStr || '{}');
-      if (!('files' in database)) {
+    this._initializedPromise = this._readFromStorage().then(databaseStr => {
+      const database = JSON.parse(databaseStr || "{}");
+      if (!("files" in database)) {
         database.files = [];
       } else {
         while (database.files.length >= this.cacheSize) {
@@ -48,7 +48,7 @@ class ViewHistory {
         }
       }
       if (index === -1) {
-        index = database.files.push({ fingerprint: this.fingerprint, }) - 1;
+        index = database.files.push({ fingerprint: this.fingerprint }) - 1;
       }
       this.file = database.files[index];
       this.database = database;
@@ -58,20 +58,24 @@ class ViewHistory {
   async _writeToStorage() {
     const databaseStr = JSON.stringify(this.database);
 
-    if (typeof PDFJSDev !== 'undefined' &&
-        PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-      sessionStorage.setItem('pdfjs.history', databaseStr);
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("FIREFOX || MOZCENTRAL")
+    ) {
+      sessionStorage.setItem("pdfjs.history", databaseStr);
       return;
     }
-    localStorage.setItem('pdfjs.history', databaseStr);
+    localStorage.setItem("pdfjs.history", databaseStr);
   }
 
   async _readFromStorage() {
-    if (typeof PDFJSDev !== 'undefined' &&
-        PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-      return sessionStorage.getItem('pdfjs.history');
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("FIREFOX || MOZCENTRAL")
+    ) {
+      return sessionStorage.getItem("pdfjs.history");
     }
-    return localStorage.getItem('pdfjs.history');
+    return localStorage.getItem("pdfjs.history");
   }
 
   async set(name, val) {
@@ -106,6 +110,4 @@ class ViewHistory {
   }
 }
 
-export {
-  ViewHistory,
-};
+export { ViewHistory };

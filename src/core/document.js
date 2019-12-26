@@ -15,35 +15,60 @@
 /* eslint no-var: error */
 
 import {
-  assert, FormatError, info, InvalidPDFException, isArrayBuffer, isArrayEqual,
-  isBool, isNum, isSpace, isString, OPS, shadow, stringToBytes,
-  stringToPDFString, Util, warn
-} from '../shared/util';
-import { Catalog, ObjectLoader, XRef } from './obj';
-import { Dict, isDict, isName, isStream, Ref } from './primitives';
+  assert,
+  FormatError,
+  info,
+  InvalidPDFException,
+  isArrayBuffer,
+  isArrayEqual,
+  isBool,
+  isNum,
+  isSpace,
+  isString,
+  OPS,
+  shadow,
+  stringToBytes,
+  stringToPDFString,
+  Util,
+  warn,
+} from "../shared/util";
+import { Catalog, ObjectLoader, XRef } from "./obj";
+import { Dict, isDict, isName, isStream, Ref } from "./primitives";
 import {
-  getInheritableProperty, MissingDataException, XRefEntryException,
-  XRefParseException
-} from './core_utils';
-import { NullStream, Stream, StreamsSequenceStream } from './stream';
-import { AnnotationFactory } from './annotation';
-import { calculateMD5 } from './crypto';
-import { Linearization } from './parser';
-import { OperatorList } from './operator_list';
-import { PartialEvaluator } from './evaluator';
-import { PDFFunctionFactory } from './function';
+  getInheritableProperty,
+  MissingDataException,
+  XRefEntryException,
+  XRefParseException,
+} from "./core_utils";
+import { NullStream, Stream, StreamsSequenceStream } from "./stream";
+import { AnnotationFactory } from "./annotation";
+import { calculateMD5 } from "./crypto";
+import { Linearization } from "./parser";
+import { OperatorList } from "./operator_list";
+import { PartialEvaluator } from "./evaluator";
+import { PDFFunctionFactory } from "./function";
 
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
 function isAnnotationRenderable(annotation, intent) {
-  return (intent === 'display' && annotation.viewable) ||
-         (intent === 'print' && annotation.printable);
+  return (
+    (intent === "display" && annotation.viewable) ||
+    (intent === "print" && annotation.printable)
+  );
 }
 
 class Page {
-  constructor({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
-                builtInCMapCache, pdfFunctionFactory, }) {
+  constructor({
+    pdfManager,
+    xref,
+    pageIndex,
+    pageDict,
+    ref,
+    fontCache,
+    builtInCMapCache,
+    pdfFunctionFactory,
+  }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
@@ -72,8 +97,12 @@ class Page {
    * @private
    */
   _getInheritableProperty(key, getArray = false) {
-    const value = getInheritableProperty({ dict: this.pageDict, key, getArray,
-                                           stopWhenFound: false, });
+    const value = getInheritableProperty({
+      dict: this.pageDict,
+      key,
+      getArray,
+      stopWhenFound: false,
+    });
     if (!Array.isArray(value)) {
       return value;
     }
@@ -84,22 +113,25 @@ class Page {
   }
 
   get content() {
-    return this.pageDict.get('Contents');
+    return this.pageDict.get("Contents");
   }
 
   get resources() {
     // For robustness: The spec states that a \Resources entry has to be
     // present, but can be empty. Some documents still omit it; in this case
     // we return an empty dictionary.
-    return shadow(this, 'resources',
-                  this._getInheritableProperty('Resources') || Dict.empty);
+    return shadow(
+      this,
+      "resources",
+      this._getInheritableProperty("Resources") || Dict.empty
+    );
   }
 
   _getBoundingBox(name) {
     const box = this._getInheritableProperty(name, /* getArray = */ true);
 
     if (Array.isArray(box) && box.length === 4) {
-      if ((box[2] - box[0]) !== 0 && (box[3] - box[1]) !== 0) {
+      if (box[2] - box[0] !== 0 && box[3] - box[1] !== 0) {
         return box;
       }
       warn(`Empty /${name} entry.`);
@@ -109,22 +141,28 @@ class Page {
 
   get mediaBox() {
     // Reset invalid media box to letter size.
-    return shadow(this, 'mediaBox',
-                  this._getBoundingBox('MediaBox') || LETTER_SIZE_MEDIABOX);
+    return shadow(
+      this,
+      "mediaBox",
+      this._getBoundingBox("MediaBox") || LETTER_SIZE_MEDIABOX
+    );
   }
 
   get cropBox() {
     // Reset invalid crop box to media box.
-    return shadow(this, 'cropBox',
-                  this._getBoundingBox('CropBox') || this.mediaBox);
+    return shadow(
+      this,
+      "cropBox",
+      this._getBoundingBox("CropBox") || this.mediaBox
+    );
   }
 
   get userUnit() {
-    let obj = this.pageDict.get('UserUnit');
+    let obj = this.pageDict.get("UserUnit");
     if (!isNum(obj) || obj <= 0) {
       obj = DEFAULT_USER_UNIT;
     }
-    return shadow(this, 'userUnit', obj);
+    return shadow(this, "userUnit", obj);
   }
 
   get view() {
@@ -132,23 +170,23 @@ class Page {
     // "The crop, bleed, trim, and art boxes should not ordinarily
     // extend beyond the boundaries of the media box. If they do, they are
     // effectively reduced to their intersection with the media box."
-    const { cropBox, mediaBox, } = this;
+    const { cropBox, mediaBox } = this;
     let view;
     if (cropBox === mediaBox || isArrayEqual(cropBox, mediaBox)) {
       view = mediaBox;
     } else {
       const box = Util.intersect(cropBox, mediaBox);
-      if (box && ((box[2] - box[0]) !== 0 && (box[3] - box[1]) !== 0)) {
+      if (box && box[2] - box[0] !== 0 && box[3] - box[1] !== 0) {
         view = box;
       } else {
-        warn('Empty /CropBox and /MediaBox intersection.');
+        warn("Empty /CropBox and /MediaBox intersection.");
       }
     }
-    return shadow(this, 'view', view || mediaBox);
+    return shadow(this, "view", view || mediaBox);
   }
 
   get rotate() {
-    let rotate = this._getInheritableProperty('Rotate') || 0;
+    let rotate = this._getInheritableProperty("Rotate") || 0;
 
     // Normalize rotation so it's a multiple of 90 and between 0 and 270.
     if (rotate % 90 !== 0) {
@@ -160,7 +198,7 @@ class Page {
       // rotation. The following is the other implementation of modulo.
       rotate = ((rotate % 360) + 360) % 360;
     }
-    return shadow(this, 'rotate', rotate);
+    return shadow(this, "rotate", rotate);
   }
 
   getContentStream() {
@@ -187,7 +225,7 @@ class Page {
   loadResources(keys) {
     if (!this.resourcesPromise) {
       // TODO: add async `_getInheritableProperty` and remove this.
-      this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
+      this.resourcesPromise = this.pdfManager.ensure(this, "resources");
     }
     return this.resourcesPromise.then(() => {
       const objectLoader = new ObjectLoader(this.resources, keys, this.xref);
@@ -195,16 +233,18 @@ class Page {
     });
   }
 
-  getOperatorList({ handler, sink, task, intent, renderInteractiveForms, }) {
-    const contentStreamPromise = this.pdfManager.ensure(this,
-                                                        'getContentStream');
+  getOperatorList({ handler, sink, task, intent, renderInteractiveForms }) {
+    const contentStreamPromise = this.pdfManager.ensure(
+      this,
+      "getContentStream"
+    );
     const resourcesPromise = this.loadResources([
-      'ExtGState',
-      'ColorSpace',
-      'Pattern',
-      'Shading',
-      'XObject',
-      'Font',
+      "ExtGState",
+      "ColorSpace",
+      "Pattern",
+      "Shading",
+      "XObject",
+      "Font",
     ]);
 
     const partialEvaluator = new PartialEvaluator({
@@ -222,61 +262,76 @@ class Page {
     const pageListPromise = dataPromises.then(([contentStream]) => {
       const opList = new OperatorList(intent, sink, this.pageIndex);
 
-      handler.send('StartRenderPage', {
+      handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(this.resources),
         pageIndex: this.pageIndex,
         intent,
       });
 
-      return partialEvaluator.getOperatorList({
-        stream: contentStream,
-        task,
-        resources: this.resources,
-        operatorList: opList,
-      }).then(function() {
-        return opList;
-      });
+      return partialEvaluator
+        .getOperatorList({
+          stream: contentStream,
+          task,
+          resources: this.resources,
+          operatorList: opList,
+        })
+        .then(function() {
+          return opList;
+        });
     });
 
     // Fetch the page's annotations and add their operator lists to the
     // page's operator list to render them.
     return Promise.all([pageListPromise, this._parsedAnnotations]).then(
-        function([pageOpList, annotations]) {
-      if (annotations.length === 0) {
-        pageOpList.flush(true);
-        return { length: pageOpList.totalLength, };
-      }
-
-      // Collect the operator list promises for the annotations. Each promise
-      // is resolved with the complete operator list for a single annotation.
-      const opListPromises = [];
-      for (const annotation of annotations) {
-        if (isAnnotationRenderable(annotation, intent)) {
-          opListPromises.push(annotation.getOperatorList(
-            partialEvaluator, task, renderInteractiveForms));
+      function([pageOpList, annotations]) {
+        if (annotations.length === 0) {
+          pageOpList.flush(true);
+          return { length: pageOpList.totalLength };
         }
-      }
 
-      return Promise.all(opListPromises).then(function(opLists) {
-        pageOpList.addOp(OPS.beginAnnotations, []);
-        for (const opList of opLists) {
-          pageOpList.addOpList(opList);
+        // Collect the operator list promises for the annotations. Each promise
+        // is resolved with the complete operator list for a single annotation.
+        const opListPromises = [];
+        for (const annotation of annotations) {
+          if (isAnnotationRenderable(annotation, intent)) {
+            opListPromises.push(
+              annotation.getOperatorList(
+                partialEvaluator,
+                task,
+                renderInteractiveForms
+              )
+            );
+          }
         }
-        pageOpList.addOp(OPS.endAnnotations, []);
-        pageOpList.flush(true);
-        return { length: pageOpList.totalLength, };
-      });
-    });
+
+        return Promise.all(opListPromises).then(function(opLists) {
+          pageOpList.addOp(OPS.beginAnnotations, []);
+          for (const opList of opLists) {
+            pageOpList.addOpList(opList);
+          }
+          pageOpList.addOp(OPS.endAnnotations, []);
+          pageOpList.flush(true);
+          return { length: pageOpList.totalLength };
+        });
+      }
+    );
   }
 
-  extractTextContent({ handler, task, normalizeWhitespace, sink,
-                       combineTextItems, }) {
-    const contentStreamPromise = this.pdfManager.ensure(this,
-                                                        'getContentStream');
+  extractTextContent({
+    handler,
+    task,
+    normalizeWhitespace,
+    sink,
+    combineTextItems,
+  }) {
+    const contentStreamPromise = this.pdfManager.ensure(
+      this,
+      "getContentStream"
+    );
     const resourcesPromise = this.loadResources([
-      'ExtGState',
-      'XObject',
-      'Font',
+      "ExtGState",
+      "XObject",
+      "Font",
     ]);
 
     const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
@@ -316,46 +371,62 @@ class Page {
   }
 
   get annotations() {
-    return shadow(this, 'annotations',
-                  this._getInheritableProperty('Annots') || []);
+    return shadow(
+      this,
+      "annotations",
+      this._getInheritableProperty("Annots") || []
+    );
   }
 
   get _parsedAnnotations() {
-    const parsedAnnotations =
-      this.pdfManager.ensure(this, 'annotations').then(() => {
+    const parsedAnnotations = this.pdfManager
+      .ensure(this, "annotations")
+      .then(() => {
         const annotationRefs = this.annotations;
         const annotationPromises = [];
         for (let i = 0, ii = annotationRefs.length; i < ii; i++) {
-          annotationPromises.push(AnnotationFactory.create(
-            this.xref, annotationRefs[i], this.pdfManager, this.idFactory));
+          annotationPromises.push(
+            AnnotationFactory.create(
+              this.xref,
+              annotationRefs[i],
+              this.pdfManager,
+              this.idFactory
+            )
+          );
         }
 
-        return Promise.all(annotationPromises).then(function(annotations) {
-          return annotations.filter(function isDefined(annotation) {
-            return !!annotation;
-          });
-        }, function(reason) {
-          warn(`_parsedAnnotations: "${reason}".`);
-          return [];
-        });
+        return Promise.all(annotationPromises).then(
+          function(annotations) {
+            return annotations.filter(function isDefined(annotation) {
+              return !!annotation;
+            });
+          },
+          function(reason) {
+            warn(`_parsedAnnotations: "${reason}".`);
+            return [];
+          }
+        );
       });
 
-    return shadow(this, '_parsedAnnotations', parsedAnnotations);
+    return shadow(this, "_parsedAnnotations", parsedAnnotations);
   }
 }
 
-const PDF_HEADER_SIGNATURE = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]);
+const PDF_HEADER_SIGNATURE = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]);
+// prettier-ignore
 const STARTXREF_SIGNATURE = new Uint8Array([
   0x73, 0x74, 0x61, 0x72, 0x74, 0x78, 0x72, 0x65, 0x66]);
-const ENDOBJ_SIGNATURE = new Uint8Array([0x65, 0x6E, 0x64, 0x6F, 0x62, 0x6A]);
+const ENDOBJ_SIGNATURE = new Uint8Array([0x65, 0x6e, 0x64, 0x6f, 0x62, 0x6a]);
 
 const FINGERPRINT_FIRST_BYTES = 1024;
 const EMPTY_FINGERPRINT =
-  '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00';
+  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
 function find(stream, signature, limit = 1024, backwards = false) {
-  if (typeof PDFJSDev === 'undefined' ||
-      PDFJSDev.test('!PRODUCTION || TESTING')) {
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
     assert(limit > 0, 'The "limit" must be a positive integer.');
   }
   const signatureLength = signature.length;
@@ -372,24 +443,29 @@ function find(stream, signature, limit = 1024, backwards = false) {
     let pos = scanBytes.length - 1;
     while (pos >= signatureEnd) {
       let j = 0;
-      while (j < signatureLength &&
-             scanBytes[pos - j] === signature[signatureEnd - j]) {
+      while (
+        j < signatureLength &&
+        scanBytes[pos - j] === signature[signatureEnd - j]
+      ) {
         j++;
       }
-      if (j >= signatureLength) { // `signature` found.
-        stream.pos += (pos - signatureEnd);
+      if (j >= signatureLength) {
+        // `signature` found.
+        stream.pos += pos - signatureEnd;
         return true;
       }
       pos--;
     }
-  } else { // forwards
+  } else {
+    // forwards
     let pos = 0;
     while (pos <= scanLength) {
       let j = 0;
       while (j < signatureLength && scanBytes[pos + j] === signature[j]) {
         j++;
       }
-      if (j >= signatureLength) { // `signature` found.
+      if (j >= signatureLength) {
+        // `signature` found.
         stream.pos += pos;
         return true;
       }
@@ -410,11 +486,12 @@ class PDFDocument {
     } else if (isArrayBuffer(arg)) {
       stream = new Stream(arg);
     } else {
-      throw new Error('PDFDocument: Unknown argument type');
+      throw new Error("PDFDocument: Unknown argument type");
     }
     if (stream.length <= 0) {
       throw new InvalidPDFException(
-        'The PDF file is empty, i.e. its size is zero bytes.');
+        "The PDF file is empty, i.e. its size is zero bytes."
+      );
     }
 
     this.pdfManager = pdfManager;
@@ -431,17 +508,17 @@ class PDFDocument {
   parse(recoveryMode) {
     this.setup(recoveryMode);
 
-    const version = this.catalog.catDict.get('Version');
+    const version = this.catalog.catDict.get("Version");
     if (isName(version)) {
       this.pdfFormatVersion = version.name;
     }
 
     // Check if AcroForms are present in the document.
     try {
-      this.acroForm = this.catalog.catDict.get('AcroForm');
+      this.acroForm = this.catalog.catDict.get("AcroForm");
       if (this.acroForm) {
-        this.xfa = this.acroForm.get('XFA');
-        const fields = this.acroForm.get('Fields');
+        this.xfa = this.acroForm.get("XFA");
+        const fields = this.acroForm.get("Fields");
         if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
           this.acroForm = null; // No fields and no XFA, so it's not a form.
         }
@@ -450,13 +527,13 @@ class PDFDocument {
       if (ex instanceof MissingDataException) {
         throw ex;
       }
-      info('Cannot fetch AcroForm entry; assuming no AcroForms are present');
+      info("Cannot fetch AcroForm entry; assuming no AcroForms are present");
       this.acroForm = null;
     }
 
     // Check if a Collection dictionary is present in the document.
     try {
-      const collection = this.catalog.catDict.get('Collection');
+      const collection = this.catalog.catDict.get("Collection");
       if (isDict(collection) && collection.getKeys().length > 0) {
         this.collection = collection;
       }
@@ -464,7 +541,7 @@ class PDFDocument {
       if (ex instanceof MissingDataException) {
         throw ex;
       }
-      info('Cannot fetch Collection dictionary.');
+      info("Cannot fetch Collection dictionary.");
     }
   }
 
@@ -478,7 +555,7 @@ class PDFDocument {
       }
       info(err);
     }
-    return shadow(this, 'linearization', linearization);
+    return shadow(this, "linearization", linearization);
   }
 
   get startXRef() {
@@ -489,13 +566,14 @@ class PDFDocument {
       // Find the end of the first object.
       stream.reset();
       if (find(stream, ENDOBJ_SIGNATURE)) {
-        startXRef = (stream.pos + 6) - stream.start;
+        startXRef = stream.pos + 6 - stream.start;
       }
     } else {
       // Find `startxref` by checking backwards from the end of the file.
       const step = 1024;
       const startXRefLength = STARTXREF_SIGNATURE.length;
-      let found = false, pos = stream.end;
+      let found = false,
+        pos = stream.end;
 
       while (!found && pos > 0) {
         pos -= step - startXRefLength;
@@ -512,8 +590,8 @@ class PDFDocument {
         do {
           ch = stream.getByte();
         } while (isSpace(ch));
-        let str = '';
-        while (ch >= 0x20 && ch <= 0x39) { // < '9'
+        let str = "";
+        while (ch >= /* Space = */ 0x20 && ch <= /* '9' = */ 0x39) {
           str += String.fromCharCode(ch);
           ch = stream.getByte();
         }
@@ -523,7 +601,7 @@ class PDFDocument {
         }
       }
     }
-    return shadow(this, 'startXRef', startXRef);
+    return shadow(this, "startXRef", startXRef);
   }
 
   // Find the header, get the PDF format version and setup the
@@ -541,8 +619,9 @@ class PDFDocument {
 
     // Read the PDF format version.
     const MAX_PDF_VERSION_LENGTH = 12;
-    let version = '', ch;
-    while ((ch = stream.getByte()) > 0x20) { // Space
+    let version = "",
+      ch;
+    while ((ch = stream.getByte()) > /* Space = */ 0x20) {
       if (version.length >= MAX_PDF_VERSION_LENGTH) {
         break;
       }
@@ -566,7 +645,7 @@ class PDFDocument {
   get numPages() {
     const linearization = this.linearization;
     const num = linearization ? linearization.numPages : this.catalog.numPages;
-    return shadow(this, 'numPages', num);
+    return shadow(this, "numPages", num);
   }
 
   get documentInfo() {
@@ -592,12 +671,12 @@ class PDFDocument {
 
     let infoDict;
     try {
-      infoDict = this.xref.trailer.get('Info');
+      infoDict = this.xref.trailer.get("Info");
     } catch (err) {
       if (err instanceof MissingDataException) {
         throw err;
       }
-      info('The document information dictionary is invalid.');
+      info("The document information dictionary is invalid.");
     }
 
     if (isDict(infoDict)) {
@@ -609,12 +688,12 @@ class PDFDocument {
         if (DocumentInfoValidators[key]) {
           // Make sure the (standard) value conforms to the specification.
           if (DocumentInfoValidators[key](value)) {
-            docInfo[key] = (typeof value !== 'string' ?
-                            value : stringToPDFString(value));
+            docInfo[key] =
+              typeof value !== "string" ? value : stringToPDFString(value);
           } else {
             info(`Bad value in document info for "${key}".`);
           }
-        } else if (typeof key === 'string') {
+        } else if (typeof key === "string") {
           // For custom values, only accept white-listed types to prevent
           // errors that would occur when trying to send non-serializable
           // objects to the main-thread (for example `Dict` or `Stream`).
@@ -628,67 +707,83 @@ class PDFDocument {
             continue;
           }
 
-          if (!docInfo['Custom']) {
-            docInfo['Custom'] = Object.create(null);
+          if (!docInfo["Custom"]) {
+            docInfo["Custom"] = Object.create(null);
           }
-          docInfo['Custom'][key] = customValue;
+          docInfo["Custom"][key] = customValue;
         }
       }
     }
-    return shadow(this, 'documentInfo', docInfo);
+    return shadow(this, "documentInfo", docInfo);
   }
 
   get fingerprint() {
     let hash;
-    const idArray = this.xref.trailer.get('ID');
-    if (Array.isArray(idArray) && idArray[0] && isString(idArray[0]) &&
-        idArray[0] !== EMPTY_FINGERPRINT) {
+    const idArray = this.xref.trailer.get("ID");
+    if (
+      Array.isArray(idArray) &&
+      idArray[0] &&
+      isString(idArray[0]) &&
+      idArray[0] !== EMPTY_FINGERPRINT
+    ) {
       hash = stringToBytes(idArray[0]);
     } else {
-      hash = calculateMD5(this.stream.getByteRange(0, FINGERPRINT_FIRST_BYTES),
-                          0, FINGERPRINT_FIRST_BYTES);
+      hash = calculateMD5(
+        this.stream.getByteRange(0, FINGERPRINT_FIRST_BYTES),
+        0,
+        FINGERPRINT_FIRST_BYTES
+      );
     }
 
     const fingerprintBuf = [];
     for (let i = 0, ii = hash.length; i < ii; i++) {
       const hex = hash[i].toString(16);
-      fingerprintBuf.push(hex.padStart(2, '0'));
+      fingerprintBuf.push(hex.padStart(2, "0"));
     }
-    return shadow(this, 'fingerprint', fingerprintBuf.join(''));
+    return shadow(this, "fingerprint", fingerprintBuf.join(""));
   }
 
   _getLinearizationPage(pageIndex) {
-    const { catalog, linearization, } = this;
+    const { catalog, linearization } = this;
     assert(linearization && linearization.pageFirst === pageIndex);
 
     const ref = Ref.get(linearization.objectNumberFirst, 0);
-    return this.xref.fetchAsync(ref).then((obj) => {
-      // Ensure that the object that was found is actually a Page dictionary.
-      if (isDict(obj, 'Page') ||
-          (isDict(obj) && !obj.has('Type') && obj.has('Contents'))) {
-        if (ref && !catalog.pageKidsCountCache.has(ref)) {
-          catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
+    return this.xref
+      .fetchAsync(ref)
+      .then(obj => {
+        // Ensure that the object that was found is actually a Page dictionary.
+        if (
+          isDict(obj, "Page") ||
+          (isDict(obj) && !obj.has("Type") && obj.has("Contents"))
+        ) {
+          if (ref && !catalog.pageKidsCountCache.has(ref)) {
+            catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
+          }
+          return [obj, ref];
         }
-        return [obj, ref];
-      }
-      throw new FormatError('The Linearization dictionary doesn\'t point ' +
-                            'to a valid Page dictionary.');
-    }).catch((reason) => {
-      info(reason);
-      return catalog.getPageDict(pageIndex);
-    });
+        throw new FormatError(
+          "The Linearization dictionary doesn't point " +
+            "to a valid Page dictionary."
+        );
+      })
+      .catch(reason => {
+        info(reason);
+        return catalog.getPageDict(pageIndex);
+      });
   }
 
   getPage(pageIndex) {
     if (this._pagePromises[pageIndex] !== undefined) {
       return this._pagePromises[pageIndex];
     }
-    const { catalog, linearization, } = this;
+    const { catalog, linearization } = this;
 
-    const promise = (linearization && linearization.pageFirst === pageIndex) ?
-      this._getLinearizationPage(pageIndex) : catalog.getPageDict(pageIndex);
+    const promise =
+      linearization && linearization.pageFirst === pageIndex
+        ? this._getLinearizationPage(pageIndex)
+        : catalog.getPageDict(pageIndex);
 
-    return this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
+    return (this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
       return new Page({
         pdfManager: this.pdfManager,
         xref: this.xref,
@@ -699,11 +794,11 @@ class PDFDocument {
         builtInCMapCache: catalog.builtInCMapCache,
         pdfFunctionFactory: this.pdfFunctionFactory,
       });
-    });
+    }));
   }
 
   checkFirstPage() {
-    return this.getPage(0).catch(async (reason) => {
+    return this.getPage(0).catch(async reason => {
       if (reason instanceof XRefEntryException) {
         // Clear out the various caches to ensure that we haven't stored any
         // inconsistent and/or incorrect state, since that could easily break
@@ -725,7 +820,4 @@ class PDFDocument {
   }
 }
 
-export {
-  Page,
-  PDFDocument,
-};
+export { Page, PDFDocument };
