@@ -25,7 +25,7 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   );
 }
 
-let GenericCom = {};
+const GenericCom = {};
 
 class GenericPreferences extends BasePreferences {
   async _writeToStorage(prefObj) {
@@ -37,7 +37,7 @@ class GenericPreferences extends BasePreferences {
   }
 }
 
-let GenericExternalServices = Object.create(DefaultExternalServices);
+const GenericExternalServices = Object.create(DefaultExternalServices);
 GenericExternalServices.createDownloadManager = function(options) {
   return new DownloadManager(options);
 };
