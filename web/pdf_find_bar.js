@@ -153,8 +153,8 @@ class PDFFindBar {
     if (!this.findResultsCount) {
       return; // No UI control is provided.
     }
-    let matchesCountMsg = "",
-      limit = MATCHES_COUNT_LIMIT;
+    const limit = MATCHES_COUNT_LIMIT;
+    let matchesCountMsg = "";
 
     if (total > 0) {
       if (total > limit) {
