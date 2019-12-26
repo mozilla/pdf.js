@@ -44,6 +44,7 @@ import {
   PDFPageProxy,
   PDFWorker,
 } from "../../src/display/api";
+import { AutoPrintRegExp } from "../../web/ui_utils";
 import { GlobalWorkerOptions } from "../../src/display/worker_options";
 import { isNodeJS } from "../../src/shared/is_node";
 import { Metadata } from "../../src/display/metadata";
@@ -885,9 +886,6 @@ describe("api", function() {
         })
         .catch(done.fail);
     });
-    // Keep this in sync with the pattern in viewer.js. The pattern is used to
-    // detect whether or not to automatically start printing.
-    var viewerPrintRegExp = /\bprint\s*\(/;
     it("gets javascript with printing instructions (Print action)", function(done) {
       // PDF document with "Print" Named action in the OpenAction dictionary.
       var loadingTask = getDocument(buildGetDocumentParams("bug1001080.pdf"));
@@ -897,7 +895,7 @@ describe("api", function() {
       promise
         .then(function(data) {
           expect(data).toEqual(["print({});"]);
-          expect(data[0]).toMatch(viewerPrintRegExp);
+          expect(data[0]).toMatch(AutoPrintRegExp);
           loadingTask.destroy().then(done);
         })
         .catch(done.fail);
@@ -914,7 +912,7 @@ describe("api", function() {
       promise
         .then(function(data) {
           expect(data).toEqual(["print({});"]);
-          expect(data[0]).toMatch(viewerPrintRegExp);
+          expect(data[0]).toMatch(AutoPrintRegExp);
           loadingTask.destroy().then(done);
         })
         .catch(done.fail);
@@ -930,7 +928,7 @@ describe("api", function() {
           expect(data).toEqual([
             "this.print({bUI:true,bSilent:false,bShrinkToFit:true});",
           ]);
-          expect(data[0]).toMatch(viewerPrintRegExp);
+          expect(data[0]).toMatch(AutoPrintRegExp);
           loadingTask.destroy().then(done);
         })
         .catch(done.fail);

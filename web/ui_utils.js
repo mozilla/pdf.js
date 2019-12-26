@@ -56,6 +56,9 @@ const SpreadMode = {
   EVEN: 2,
 };
 
+// Used by `PDFViewerApplication`, and by the API unit-tests.
+const AutoPrintRegExp = /\bprint\s*\(/;
+
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
@@ -936,6 +939,7 @@ function moveToEndOfArray(arr, condition) {
 }
 
 export {
+  AutoPrintRegExp,
   CSS_UNITS,
   DEFAULT_SCALE_VALUE,
   DEFAULT_SCALE,
