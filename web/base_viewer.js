@@ -82,9 +82,9 @@ const DEFAULT_CACHE_SIZE = 10;
  */
 
 function PDFPageViewBuffer(size) {
-  let data = [];
+  const data = [];
   this.push = function(view) {
-    let i = data.indexOf(view);
+    const i = data.indexOf(view);
     if (i >= 0) {
       data.splice(i, 1);
     }
@@ -279,7 +279,7 @@ class BaseViewer {
     }
     let page = val | 0; // Fallback page number.
     if (this._pageLabels) {
-      let i = this._pageLabels.indexOf(val);
+      const i = this._pageLabels.indexOf(val);
       if (i >= 0) {
         page = i + 1;
       }
@@ -353,10 +353,10 @@ class BaseViewer {
     }
     this._pagesRotation = rotation;
 
-    let pageNumber = this._currentPageNumber;
+    const pageNumber = this._currentPageNumber;
 
     for (let i = 0, ii = this._pages.length; i < ii; i++) {
-      let pageView = this._pages[i];
+      const pageView = this._pages[i];
       pageView.update(pageView.scale, rotation);
     }
     // Prevent errors in case the rotation changes *before* the scale has been
@@ -398,9 +398,9 @@ class BaseViewer {
     if (!pdfDocument) {
       return;
     }
-    let pagesCount = pdfDocument.numPages;
+    const pagesCount = pdfDocument.numPages;
 
-    let pagesCapability = createPromiseCapability();
+    const pagesCapability = createPromiseCapability();
     this.pagesPromise = pagesCapability.promise;
 
     pagesCapability.promise.then(() => {
@@ -443,14 +443,14 @@ class BaseViewer {
     // viewport for all pages
     firstPagePromise
       .then(firstPdfPage => {
-        let scale = this.currentScale;
+        const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({ scale: scale * CSS_UNITS });
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           let textLayerFactory = null;
           if (this.textLayerMode !== TextLayerMode.DISABLE) {
             textLayerFactory = this;
           }
-          let pageView = new PDFPageView({
+          const pageView = new PDFPageView({
             container: this._setDocumentViewerElement,
             eventBus: this.eventBus,
             id: pageNum,
@@ -509,7 +509,7 @@ class BaseViewer {
           for (let pageNum = 2; pageNum <= pagesCount; ++pageNum) {
             pdfDocument.getPage(pageNum).then(
               pdfPage => {
-                let pageView = this._pages[pageNum - 1];
+                const pageView = this._pages[pageNum - 1];
                 if (!pageView.pdfPage) {
                   pageView.setPdfPage(pdfPage);
                 }
@@ -561,8 +561,8 @@ class BaseViewer {
     }
     // Update all the `PDFPageView` instances.
     for (let i = 0, ii = this._pages.length; i < ii; i++) {
-      let pageView = this._pages[i];
-      let label = this._pageLabels && this._pageLabels[i];
+      const pageView = this._pages[i];
+      const label = this._pageLabels && this._pageLabels[i];
       pageView.setPageLabel(label);
     }
   }
@@ -665,7 +665,7 @@ class BaseViewer {
     if (scale > 0) {
       this._setScaleUpdatePages(scale, value, noScroll, /* preset = */ false);
     } else {
-      let currentPage = this._pages[this._currentPageNumber - 1];
+      const currentPage = this._pages[this._currentPageNumber - 1];
       if (!currentPage) {
         return;
       }
@@ -676,10 +676,10 @@ class BaseViewer {
       if (!noPadding && this._isScrollModeHorizontal) {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
       }
-      let pageWidthScale =
+      const pageWidthScale =
         ((this.container.clientWidth - hPadding) / currentPage.width) *
         currentPage.scale;
-      let pageHeightScale =
+      const pageHeightScale =
         ((this.container.clientHeight - vPadding) / currentPage.height) *
         currentPage.scale;
       switch (value) {
@@ -698,7 +698,7 @@ class BaseViewer {
         case "auto":
           // For pages in landscape mode, fit the page height to the viewer
           // *unless* the page would thus become too wide to fit horizontally.
-          let horizontalScale = isPortraitOrientation(currentPage)
+          const horizontalScale = isPortraitOrientation(currentPage)
             ? pageWidthScale
             : Math.min(pageHeightScale, pageWidthScale);
           scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
@@ -723,7 +723,7 @@ class BaseViewer {
       this._setScale(this._currentScaleValue, true);
     }
 
-    let pageView = this._pages[this._currentPageNumber - 1];
+    const pageView = this._pages[this._currentPageNumber - 1];
     this._scrollIntoView({ pageDiv: pageView.div });
   }
 
@@ -768,12 +768,12 @@ class BaseViewer {
       height = 0,
       widthScale,
       heightScale;
-    let changeOrientation = pageView.rotation % 180 === 0 ? false : true;
-    let pageWidth =
+    const changeOrientation = pageView.rotation % 180 === 0 ? false : true;
+    const pageWidth =
       (changeOrientation ? pageView.height : pageView.width) /
       pageView.scale /
       CSS_UNITS;
-    let pageHeight =
+    const pageHeight =
       (changeOrientation ? pageView.width : pageView.height) /
       pageView.scale /
       CSS_UNITS;
@@ -817,8 +817,8 @@ class BaseViewer {
         y = destArray[3];
         width = destArray[4] - x;
         height = destArray[5] - y;
-        let hPadding = this.removePageBorders ? 0 : SCROLLBAR_PADDING;
-        let vPadding = this.removePageBorders ? 0 : VERTICAL_PADDING;
+        const hPadding = this.removePageBorders ? 0 : SCROLLBAR_PADDING;
+        const vPadding = this.removePageBorders ? 0 : VERTICAL_PADDING;
 
         widthScale =
           (this.container.clientWidth - hPadding) / width / CSS_UNITS;
@@ -848,7 +848,7 @@ class BaseViewer {
       return;
     }
 
-    let boundingRect = [
+    const boundingRect = [
       pageView.viewport.convertToViewportPoint(x, y),
       pageView.viewport.convertToViewportPoint(x + width, y + height),
     ];
@@ -870,24 +870,24 @@ class BaseViewer {
   }
 
   _updateLocation(firstPage) {
-    let currentScale = this._currentScale;
-    let currentScaleValue = this._currentScaleValue;
-    let normalizedScaleValue =
+    const currentScale = this._currentScale;
+    const currentScaleValue = this._currentScaleValue;
+    const normalizedScaleValue =
       parseFloat(currentScaleValue) === currentScale
         ? Math.round(currentScale * 10000) / 100
         : currentScaleValue;
 
-    let pageNumber = firstPage.id;
+    const pageNumber = firstPage.id;
     let pdfOpenParams = "#page=" + pageNumber;
     pdfOpenParams += "&zoom=" + normalizedScaleValue;
-    let currentPageView = this._pages[pageNumber - 1];
-    let container = this.container;
-    let topLeft = currentPageView.getPagePoint(
+    const currentPageView = this._pages[pageNumber - 1];
+    const container = this.container;
+    const topLeft = currentPageView.getPagePoint(
       container.scrollLeft - firstPage.x,
       container.scrollTop - firstPage.y
     );
-    let intLeft = Math.round(topLeft[0]);
-    let intTop = Math.round(topLeft[1]);
+    const intLeft = Math.round(topLeft[0]);
+    const intTop = Math.round(topLeft[1]);
     pdfOpenParams += "," + intLeft + "," + intTop;
 
     this._location = {
@@ -1066,11 +1066,11 @@ class BaseViewer {
   }
 
   forceRendering(currentlyVisiblePages) {
-    let visiblePages = currentlyVisiblePages || this._getVisiblePages();
-    let scrollAhead = this._isScrollModeHorizontal
+    const visiblePages = currentlyVisiblePages || this._getVisiblePages();
+    const scrollAhead = this._isScrollModeHorizontal
       ? this.scroll.right
       : this.scroll.down;
-    let pageView = this.renderingQueue.getHighestPriority(
+    const pageView = this.renderingQueue.getHighestPriority(
       visiblePages,
       this._pages,
       scrollAhead
@@ -1140,9 +1140,9 @@ class BaseViewer {
    *   widths and heights.
    */
   get hasEqualPageSizes() {
-    let firstPageView = this._pages[0];
+    const firstPageView = this._pages[0];
     for (let i = 1, ii = this._pages.length; i < ii; ++i) {
-      let pageView = this._pages[i];
+      const pageView = this._pages[i];
       if (
         pageView.width !== firstPageView.width ||
         pageView.height !== firstPageView.height
@@ -1158,8 +1158,8 @@ class BaseViewer {
    * @returns {Array} Array of objects with width/height/rotation fields.
    */
   getPagesOverview() {
-    let pagesOverview = this._pages.map(function(pageView) {
-      let viewport = pageView.pdfPage.getViewport({ scale: 1 });
+    const pagesOverview = this._pages.map(function(pageView) {
+      const viewport = pageView.pdfPage.getViewport({ scale: 1 });
       return {
         width: viewport.width,
         height: viewport.height,
@@ -1169,7 +1169,7 @@ class BaseViewer {
     if (!this.enablePrintAutoRotate) {
       return pagesOverview;
     }
-    let isFirstPagePortrait = isPortraitOrientation(pagesOverview[0]);
+    const isFirstPagePortrait = isPortraitOrientation(pagesOverview[0]);
     return pagesOverview.map(function(size) {
       if (isFirstPagePortrait === isPortraitOrientation(size)) {
         return size;

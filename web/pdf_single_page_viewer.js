@@ -43,10 +43,10 @@ class PDFSinglePageViewer extends BaseViewer {
   }
 
   _ensurePageViewVisible() {
-    let pageView = this._pages[this._currentPageNumber - 1];
-    let previousPageView = this._pages[this._previousPageNumber - 1];
+    const pageView = this._pages[this._currentPageNumber - 1];
+    const previousPageView = this._pages[this._previousPageNumber - 1];
 
-    let viewerNodes = this.viewer.childNodes;
+    const viewerNodes = this.viewer.childNodes;
     switch (viewerNodes.length) {
       case 0: // Should *only* occur on initial loading.
         this.viewer.appendChild(pageView.div);

@@ -9,5 +9,6 @@
 
     // ECMAScript 6
     "no-var": "error",
+    "prefer-const": "error",
   },
 }

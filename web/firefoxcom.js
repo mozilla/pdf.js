@@ -29,7 +29,7 @@ if (
   );
 }
 
-let FirefoxCom = (function FirefoxComClosure() {
+const FirefoxCom = (function FirefoxComClosure() {
   return {
     /**
      * Creates an event that the extension is listening for and will
@@ -41,17 +41,17 @@ let FirefoxCom = (function FirefoxComClosure() {
      * @returns {*} The response.
      */
     requestSync(action, data) {
-      let request = document.createTextNode("");
+      const request = document.createTextNode("");
       document.documentElement.appendChild(request);
 
-      let sender = document.createEvent("CustomEvent");
+      const sender = document.createEvent("CustomEvent");
       sender.initCustomEvent("pdf.js.message", true, false, {
         action,
         data,
         sync: true,
       });
       request.dispatchEvent(sender);
-      let response = sender.detail.response;
+      const response = sender.detail.response;
       document.documentElement.removeChild(request);
       return response;
     },
@@ -65,11 +65,11 @@ let FirefoxCom = (function FirefoxComClosure() {
      *   with one data argument.
      */
     request(action, data, callback) {
-      let request = document.createTextNode("");
+      const request = document.createTextNode("");
       if (callback) {
         document.addEventListener("pdf.js.response", function listener(event) {
-          let node = event.target;
-          let response = event.detail.response;
+          const node = event.target;
+          const response = event.detail.response;
 
           document.documentElement.removeChild(node);
 
@@ -79,7 +79,7 @@ let FirefoxCom = (function FirefoxComClosure() {
       }
       document.documentElement.appendChild(request);
 
-      let sender = document.createEvent("CustomEvent");
+      const sender = document.createEvent("CustomEvent");
       sender.initCustomEvent("pdf.js.message", true, false, {
         action,
         data,
@@ -104,7 +104,7 @@ class DownloadManager {
   }
 
   downloadData(data, filename, contentType) {
-    let blobUrl = createObjectURL(data, contentType);
+    const blobUrl = createObjectURL(data, contentType);
 
     FirefoxCom.request("download", {
       blobUrl,
@@ -115,8 +115,8 @@ class DownloadManager {
   }
 
   download(blob, url, filename) {
-    let blobUrl = URL.createObjectURL(blob);
-    let onResponse = err => {
+    const blobUrl = URL.createObjectURL(blob);
+    const onResponse = err => {
       if (err && this.onerror) {
         this.onerror(err);
       }
@@ -145,7 +145,7 @@ class FirefoxPreferences extends BasePreferences {
   async _readFromStorage(prefObj) {
     return new Promise(function(resolve) {
       FirefoxCom.request("getPreferences", prefObj, function(prefStr) {
-        let readPrefs = JSON.parse(prefStr);
+        const readPrefs = JSON.parse(prefStr);
         resolve(readPrefs);
       });
     });
@@ -259,7 +259,7 @@ PDFViewerApplication.externalServices = {
         console.warn("Rejected untrusted message from " + e.origin);
         return;
       }
-      let args = e.data;
+      const args = e.data;
 
       if (typeof args !== "object" || !("pdfjsLoadAction" in args)) {
         return;
@@ -328,28 +328,30 @@ PDFViewerApplication.externalServices = {
   },
 
   createL10n(options) {
-    let mozL10n = document.mozL10n;
+    const mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
     return new MozL10n(mozL10n);
   },
 
   get supportsIntegratedFind() {
-    let support = FirefoxCom.requestSync("supportsIntegratedFind");
+    const support = FirefoxCom.requestSync("supportsIntegratedFind");
     return shadow(this, "supportsIntegratedFind", support);
   },
 
   get supportsDocumentFonts() {
-    let support = FirefoxCom.requestSync("supportsDocumentFonts");
+    const support = FirefoxCom.requestSync("supportsDocumentFonts");
     return shadow(this, "supportsDocumentFonts", support);
   },
 
   get supportsDocumentColors() {
-    let support = FirefoxCom.requestSync("supportsDocumentColors");
+    const support = FirefoxCom.requestSync("supportsDocumentColors");
     return shadow(this, "supportsDocumentColors", support);
   },
 
   get supportedMouseWheelZoomModifierKeys() {
-    let support = FirefoxCom.requestSync("supportedMouseWheelZoomModifierKeys");
+    const support = FirefoxCom.requestSync(
+      "supportedMouseWheelZoomModifierKeys"
+    );
     return shadow(this, "supportedMouseWheelZoomModifierKeys", support);
   },
 };

@@ -135,18 +135,18 @@ class PDFAttachmentViewer {
       return;
     }
 
-    let names = Object.keys(attachments).sort(function(a, b) {
+    const names = Object.keys(attachments).sort(function(a, b) {
       return a.toLowerCase().localeCompare(b.toLowerCase());
     });
     attachmentsCount = names.length;
 
     for (let i = 0; i < attachmentsCount; i++) {
-      let item = attachments[names[i]];
-      let filename = removeNullCharacters(getFilenameFromUrl(item.filename));
+      const item = attachments[names[i]];
+      const filename = removeNullCharacters(getFilenameFromUrl(item.filename));
 
-      let div = document.createElement("div");
+      const div = document.createElement("div");
       div.className = "attachmentsItem";
-      let button = document.createElement("button");
+      const button = document.createElement("button");
       button.textContent = filename;
       if (
         /\.pdf$/i.test(filename) &&
@@ -175,7 +175,7 @@ class PDFAttachmentViewer {
       if (!attachments) {
         attachments = Object.create(null);
       } else {
-        for (let name in attachments) {
+        for (const name in attachments) {
           if (id === name) {
             return; // Ignore the new attachment if it already exists.
           }

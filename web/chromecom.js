@@ -26,7 +26,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   );
 }
 
-let ChromeCom = {
+const ChromeCom = {
   /**
    * Creates an event that the extension is listening for and will
    * asynchronously respond by calling the callback.
@@ -38,7 +38,7 @@ let ChromeCom = {
    *   immediately invoked with no arguments.
    */
   request(action, data, callback) {
-    let message = {
+    const message = {
       action,
       data,
     };
@@ -110,7 +110,7 @@ let ChromeCom = {
 };
 
 function getEmbedderOrigin(callback) {
-  let origin = window === top ? location.origin : location.ancestorOrigins[0];
+  const origin = window === top ? location.origin : location.ancestorOrigins[0];
   if (origin === "null") {
     // file:-URLs, data-URLs, sandboxed frames, etc.
     getParentOrigin(callback);
@@ -171,14 +171,14 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     );
   }
   chromeFileAccessOverlayPromise.then(function() {
-    let iconPath = chrome.runtime.getManifest().icons[48];
+    const iconPath = chrome.runtime.getManifest().icons[48];
     document.getElementById("chrome-pdfjs-logo-bg").style.backgroundImage =
       "url(" + chrome.runtime.getURL(iconPath) + ")";
 
     // Use Chrome's definition of UI language instead of PDF.js's #lang=...,
     // because the shown string should match the UI at chrome://extensions.
     // These strings are from chrome/app/resources/generated_resources_*.xtb.
-    let i18nFileAccessLabel = PDFJSDev.json(
+    const i18nFileAccessLabel = PDFJSDev.json(
       "$ROOT/web/chrome-i18n-allow-access-to-file-urls.json"
     )[chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()];
 
@@ -188,7 +188,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
       ).textContent = i18nFileAccessLabel;
     }
 
-    let link = document.getElementById("chrome-link-to-extensions-page");
+    const link = document.getElementById("chrome-link-to-extensions-page");
     link.href = "chrome://extensions/?id=" + chrome.runtime.id;
     link.onclick = function(e) {
       // Direct navigation to chrome:// URLs is blocked by Chrome, so we
@@ -207,12 +207,12 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     document.getElementById("chrome-url-of-local-file").textContent = fileUrl;
 
     document.getElementById("chrome-file-fallback").onchange = function() {
-      let file = this.files[0];
+      const file = this.files[0];
       if (file) {
-        let originalFilename = decodeURIComponent(fileUrl.split("/").pop());
+        const originalFilename = decodeURIComponent(fileUrl.split("/").pop());
         let originalUrl = fileUrl;
         if (originalFilename !== file.name) {
-          let msg =
+          const msg =
             "The selected file does not match the original file." +
             "\nOriginal: " +
             originalFilename +
@@ -288,7 +288,7 @@ function setReferer(url, callback) {
       // back and forward, the background page will not observe a HTTP request
       // with Referer. To make sure that the Referer is preserved, store it in
       // history.state, which is preserved across reloads/navigations.
-      let state = window.history.state || {};
+      const state = window.history.state || {};
       state.chromecomState = referer;
       window.history.replaceState(state, "");
     }
@@ -309,13 +309,13 @@ function setReferer(url, callback) {
 // chrome.storage.sync is not supported in every Chromium-derivate.
 // Note: The background page takes care of migrating values from
 // chrome.storage.local to chrome.storage.sync when needed.
-let storageArea = chrome.storage.sync || chrome.storage.local;
+const storageArea = chrome.storage.sync || chrome.storage.local;
 
 class ChromePreferences extends BasePreferences {
   async _writeToStorage(prefObj) {
     return new Promise(resolve => {
       if (prefObj === this.defaults) {
-        let keysToRemove = Object.keys(this.defaults);
+        const keysToRemove = Object.keys(this.defaults);
         // If the storage is reset, remove the keys so that the values from
         // managed storage are applied again.
         storageArea.remove(keysToRemove, function() {
@@ -331,7 +331,7 @@ class ChromePreferences extends BasePreferences {
 
   async _readFromStorage(prefObj) {
     return new Promise(resolve => {
-      let getPreferences = defaultPrefs => {
+      const getPreferences = defaultPrefs => {
         if (chrome.runtime.lastError) {
           // Managed storage not supported, e.g. in Opera.
           defaultPrefs = this.defaults;
@@ -349,7 +349,7 @@ class ChromePreferences extends BasePreferences {
         // Deprecated preferences are removed from web/default_preferences.json,
         // but kept in extensions/chromium/preferences_schema.json for backwards
         // compatibility with managed preferences.
-        let defaultManagedPrefs = Object.assign(
+        const defaultManagedPrefs = Object.assign(
           {
             enableHandToolOnLoad: false,
             disableTextLayer: false,
@@ -404,9 +404,9 @@ class ChromePreferences extends BasePreferences {
   }
 }
 
-let ChromeExternalServices = Object.create(DefaultExternalServices);
+const ChromeExternalServices = Object.create(DefaultExternalServices);
 ChromeExternalServices.initPassiveLoading = function(callbacks) {
-  let { overlayManager } = PDFViewerApplication;
+  const { overlayManager } = PDFViewerApplication;
   // defaultUrl is set in viewer.js
   ChromeCom.resolvePDFFile(
     AppOptions.get("defaultUrl"),

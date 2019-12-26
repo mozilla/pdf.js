@@ -71,8 +71,8 @@ class PDFPageView {
    * @param {PDFPageViewOptions} options
    */
   constructor(options) {
-    let container = options.container;
-    let defaultViewport = options.defaultViewport;
+    const container = options.container;
+    const defaultViewport = options.defaultViewport;
 
     this.id = options.id;
     this.renderingId = "page" + this.id;
@@ -110,7 +110,7 @@ class PDFPageView {
     this.textLayer = null;
     this.zoomLayer = null;
 
-    let div = document.createElement("div");
+    const div = document.createElement("div");
     div.className = "page";
     div.style.width = Math.floor(this.viewport.width) + "px";
     div.style.height = Math.floor(this.viewport.height) + "px";
@@ -124,7 +124,7 @@ class PDFPageView {
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
 
-    let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = pdfPage.getViewport({
       scale: this.scale * CSS_UNITS,
       rotation: totalRotation,
@@ -147,7 +147,7 @@ class PDFPageView {
     if (!this.zoomLayer) {
       return;
     }
-    let zoomLayerCanvas = this.zoomLayer.firstChild;
+    const zoomLayerCanvas = this.zoomLayer.firstChild;
     this.paintedViewportMap.delete(zoomLayerCanvas);
     // Zeroing the width and height causes Firefox to release graphics
     // resources immediately, which can greatly reduce memory consumption.
@@ -165,17 +165,17 @@ class PDFPageView {
     this.cancelRendering(keepAnnotations);
     this.renderingState = RenderingStates.INITIAL;
 
-    let div = this.div;
+    const div = this.div;
     div.style.width = Math.floor(this.viewport.width) + "px";
     div.style.height = Math.floor(this.viewport.height) + "px";
 
-    let childNodes = div.childNodes;
-    let currentZoomLayerNode = (keepZoomLayer && this.zoomLayer) || null;
-    let currentAnnotationNode =
+    const childNodes = div.childNodes;
+    const currentZoomLayerNode = (keepZoomLayer && this.zoomLayer) || null;
+    const currentAnnotationNode =
       (keepAnnotations && this.annotationLayer && this.annotationLayer.div) ||
       null;
     for (let i = childNodes.length - 1; i >= 0; i--) {
-      let node = childNodes[i];
+      const node = childNodes[i];
       if (currentZoomLayerNode === node || currentAnnotationNode === node) {
         continue;
       }
@@ -220,7 +220,7 @@ class PDFPageView {
       this.rotation = rotation;
     }
 
-    let totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = this.viewport.clone({
       scale: this.scale * CSS_UNITS,
       rotation: totalRotation,
@@ -240,7 +240,7 @@ class PDFPageView {
 
     let isScalingRestricted = false;
     if (this.canvas && this.maxCanvasPixels > 0) {
-      let outputScale = this.outputScale;
+      const outputScale = this.outputScale;
       if (
         ((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
           ((Math.floor(this.viewport.height) * outputScale.sy) | 0) >
@@ -299,17 +299,17 @@ class PDFPageView {
 
   cssTransform(target, redrawAnnotations = false) {
     // Scale target (canvas or svg), its wrapper and page container.
-    let width = this.viewport.width;
-    let height = this.viewport.height;
-    let div = this.div;
+    const width = this.viewport.width;
+    const height = this.viewport.height;
+    const div = this.div;
     target.style.width = target.parentNode.style.width = div.style.width =
       Math.floor(width) + "px";
     target.style.height = target.parentNode.style.height = div.style.height =
       Math.floor(height) + "px";
     // The canvas may have been originally rotated; rotate relative to that.
-    let relativeRotation =
+    const relativeRotation =
       this.viewport.rotation - this.paintedViewportMap.get(target).rotation;
-    let absRotation = Math.abs(relativeRotation);
+    const absRotation = Math.abs(relativeRotation);
     let scaleX = 1,
       scaleY = 1;
     if (absRotation === 90 || absRotation === 270) {
@@ -317,7 +317,7 @@ class PDFPageView {
       scaleX = height / width;
       scaleY = width / height;
     }
-    let cssTransform =
+    const cssTransform =
       "rotate(" +
       relativeRotation +
       "deg) " +
@@ -333,15 +333,15 @@ class PDFPageView {
       // the text layer are rotated.
       // TODO: This could probably be simplified by drawing the text layer in
       // one orientation and then rotating overall.
-      let textLayerViewport = this.textLayer.viewport;
-      let textRelativeRotation =
+      const textLayerViewport = this.textLayer.viewport;
+      const textRelativeRotation =
         this.viewport.rotation - textLayerViewport.rotation;
-      let textAbsRotation = Math.abs(textRelativeRotation);
+      const textAbsRotation = Math.abs(textRelativeRotation);
       let scale = width / textLayerViewport.width;
       if (textAbsRotation === 90 || textAbsRotation === 270) {
         scale = width / textLayerViewport.height;
       }
-      let textLayerDiv = this.textLayer.textLayerDiv;
+      const textLayerDiv = this.textLayer.textLayerDiv;
       let transX, transY;
       switch (textAbsRotation) {
         case 0:
@@ -411,11 +411,11 @@ class PDFPageView {
 
     this.renderingState = RenderingStates.RUNNING;
 
-    let pdfPage = this.pdfPage;
-    let div = this.div;
+    const pdfPage = this.pdfPage;
+    const div = this.div;
     // Wrap the canvas so that if it has a CSS transform for high DPI the
     // overflow will be hidden in Firefox.
-    let canvasWrapper = document.createElement("div");
+    const canvasWrapper = document.createElement("div");
     canvasWrapper.style.width = div.style.width;
     canvasWrapper.style.height = div.style.height;
     canvasWrapper.classList.add("canvasWrapper");
@@ -429,7 +429,7 @@ class PDFPageView {
 
     let textLayer = null;
     if (this.textLayerMode !== TextLayerMode.DISABLE && this.textLayerFactory) {
-      let textLayerDiv = document.createElement("div");
+      const textLayerDiv = document.createElement("div");
       textLayerDiv.className = "textLayer";
       textLayerDiv.style.width = canvasWrapper.style.width;
       textLayerDiv.style.height = canvasWrapper.style.height;
@@ -500,18 +500,18 @@ class PDFPageView {
       }
     };
 
-    let paintTask =
+    const paintTask =
       this.renderer === RendererType.SVG
         ? this.paintOnSvg(canvasWrapper)
         : this.paintOnCanvas(canvasWrapper);
     paintTask.onRenderContinue = renderContinueCallback;
     this.paintTask = paintTask;
 
-    let resultPromise = paintTask.promise.then(
+    const resultPromise = paintTask.promise.then(
       function() {
         return finishPaintTask(null).then(function() {
           if (textLayer) {
-            let readableStream = pdfPage.streamTextContent({
+            const readableStream = pdfPage.streamTextContent({
               normalizeWhitespace: true,
             });
             textLayer.setTextContentStream(readableStream);
@@ -546,8 +546,8 @@ class PDFPageView {
   }
 
   paintOnCanvas(canvasWrapper) {
-    let renderCapability = createPromiseCapability();
-    let result = {
+    const renderCapability = createPromiseCapability();
+    const result = {
       promise: renderCapability.promise,
       onRenderContinue(cont) {
         cont();
@@ -557,15 +557,15 @@ class PDFPageView {
       },
     };
 
-    let viewport = this.viewport;
-    let canvas = document.createElement("canvas");
+    const viewport = this.viewport;
+    const canvas = document.createElement("canvas");
     canvas.id = this.renderingId;
 
     // Keep the canvas hidden until the first draw callback, or until drawing
     // is complete when `!this.renderingQueue`, to prevent black flickering.
     canvas.setAttribute("hidden", "hidden");
     let isCanvasHidden = true;
-    let showCanvas = function() {
+    const showCanvas = function() {
       if (isCanvasHidden) {
         canvas.removeAttribute("hidden");
         isCanvasHidden = false;
@@ -582,12 +582,12 @@ class PDFPageView {
       canvas.mozOpaque = true;
     }
 
-    let ctx = canvas.getContext("2d", { alpha: false });
-    let outputScale = getOutputScale(ctx);
+    const ctx = canvas.getContext("2d", { alpha: false });
+    const outputScale = getOutputScale(ctx);
     this.outputScale = outputScale;
 
     if (this.useOnlyCssZoom) {
-      let actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
+      const actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
       // Use a scale that makes the canvas have the originally intended size
       // of the page.
       outputScale.sx *= actualSizeViewport.width / viewport.width;
@@ -596,8 +596,8 @@ class PDFPageView {
     }
 
     if (this.maxCanvasPixels > 0) {
-      let pixelsInViewport = viewport.width * viewport.height;
-      let maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
+      const pixelsInViewport = viewport.width * viewport.height;
+      const maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
       if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
         outputScale.sx = maxScale;
         outputScale.sy = maxScale;
@@ -608,8 +608,8 @@ class PDFPageView {
       }
     }
 
-    let sfx = approximateFraction(outputScale.sx);
-    let sfy = approximateFraction(outputScale.sy);
+    const sfx = approximateFraction(outputScale.sx);
+    const sfy = approximateFraction(outputScale.sy);
     canvas.width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
     canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
     canvas.style.width = roundToDivide(viewport.width, sfx[1]) + "px";
@@ -618,17 +618,17 @@ class PDFPageView {
     this.paintedViewportMap.set(canvas, viewport);
 
     // Rendering area
-    let transform = !outputScale.scaled
+    const transform = !outputScale.scaled
       ? null
       : [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
-    let renderContext = {
+    const renderContext = {
       canvasContext: ctx,
       transform,
       viewport: this.viewport,
       enableWebGL: this.enableWebGL,
       renderInteractiveForms: this.renderInteractiveForms,
     };
-    let renderTask = this.pdfPage.render(renderContext);
+    const renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function(cont) {
       showCanvas();
       if (result.onRenderContinue) {
@@ -666,7 +666,7 @@ class PDFPageView {
     }
 
     let cancelled = false;
-    let ensureNotCancelled = () => {
+    const ensureNotCancelled = () => {
       if (cancelled) {
         throw new RenderingCancelledException(
           "Rendering cancelled, page " + this.id,
@@ -675,11 +675,11 @@ class PDFPageView {
       }
     };
 
-    let pdfPage = this.pdfPage;
-    let actualSizeViewport = this.viewport.clone({ scale: CSS_UNITS });
-    let promise = pdfPage.getOperatorList().then(opList => {
+    const pdfPage = this.pdfPage;
+    const actualSizeViewport = this.viewport.clone({ scale: CSS_UNITS });
+    const promise = pdfPage.getOperatorList().then(opList => {
       ensureNotCancelled();
-      let svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
+      const svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
       return svgGfx.getSVG(opList, actualSizeViewport).then(svg => {
         ensureNotCancelled();
         this.svg = svg;

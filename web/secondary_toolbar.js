@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error, prefer-const: error */
 
 import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from "./ui_utils";
 import { CursorTool } from "./pdf_cursor_tools";
