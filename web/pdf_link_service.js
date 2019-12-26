@@ -108,8 +108,8 @@ class PDFLinkService {
   navigateTo(dest) {
     const goToDestination = ({ namedDest, explicitDest }) => {
       // Dest array looks like that: <page-ref> </XYZ|/FitXXX> <args..>
-      let destRef = explicitDest[0],
-        pageNumber;
+      const destRef = explicitDest[0];
+      let pageNumber;
 
       if (destRef instanceof Object) {
         pageNumber = this._cachedPageNumber(destRef);
@@ -405,8 +405,7 @@ function isValidExplicitDestination(dest) {
   if (!Array.isArray(dest)) {
     return false;
   }
-  let destLength = dest.length,
-    allowNull = true;
+  const destLength = dest.length;
   if (destLength < 2) {
     return false;
   }
@@ -425,6 +424,7 @@ function isValidExplicitDestination(dest) {
   if (!(typeof zoom === "object" && typeof zoom.name === "string")) {
     return false;
   }
+  let allowNull = true;
   switch (zoom.name) {
     case "XYZ":
       if (destLength !== 5) {
