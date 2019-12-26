@@ -102,7 +102,7 @@ class PDFDocumentProperties {
    * Open the document properties overlay.
    */
   open() {
-    let freezeFieldData = data => {
+    const freezeFieldData = data => {
       Object.defineProperty(this, "fieldData", {
         value: Object.freeze(data),
         writable: false,
@@ -193,7 +193,7 @@ class PDFDocumentProperties {
           if (fileSize === this.fieldData["fileSize"]) {
             return; // The fileSize has already been correctly set.
           }
-          let data = Object.assign(Object.create(null), this.fieldData);
+          const data = Object.assign(Object.create(null), this.fieldData);
           data["fileSize"] = fileSize;
 
           freezeFieldData(data);
@@ -267,7 +267,7 @@ class PDFDocumentProperties {
    */
   _updateUI(reset = false) {
     if (reset || !this.fieldData) {
-      for (let id in this.fields) {
+      for (const id in this.fields) {
         this.fields[id].textContent = DEFAULT_FIELD_CONTENT;
       }
       return;
@@ -277,8 +277,8 @@ class PDFDocumentProperties {
       // since it will be updated the next time `this.open` is called.
       return;
     }
-    for (let id in this.fields) {
-      let content = this.fieldData[id];
+    for (const id in this.fields) {
+      const content = this.fieldData[id];
       this.fields[id].textContent =
         content || content === 0 ? content : DEFAULT_FIELD_CONTENT;
     }
@@ -288,7 +288,7 @@ class PDFDocumentProperties {
    * @private
    */
   async _parseFileSize(fileSize = 0) {
-    let kb = fileSize / 1024;
+    const kb = fileSize / 1024;
     if (!kb) {
       return undefined;
     } else if (kb < 1024) {

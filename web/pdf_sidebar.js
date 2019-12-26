@@ -307,14 +307,14 @@ class PDFSidebar {
    * @private
    */
   _updateThumbnailViewer() {
-    let { pdfViewer, pdfThumbnailViewer } = this;
+    const { pdfViewer, pdfThumbnailViewer } = this;
 
     // Use the rendered pages to set the corresponding thumbnail images.
-    let pagesCount = pdfViewer.pagesCount;
+    const pagesCount = pdfViewer.pagesCount;
     for (let pageIndex = 0; pageIndex < pagesCount; pageIndex++) {
-      let pageView = pdfViewer.getPageView(pageIndex);
+      const pageView = pdfViewer.getPageView(pageIndex);
       if (pageView && pageView.renderingState === RenderingStates.FINISHED) {
-        let thumbnailView = pdfThumbnailViewer.getThumbnail(pageIndex);
+        const thumbnailView = pdfThumbnailViewer.getThumbnail(pageIndex);
         thumbnailView.setImage(pageView);
       }
     }
@@ -367,7 +367,7 @@ class PDFSidebar {
       return;
     }
 
-    let removeNotification = view => {
+    const removeNotification = view => {
       switch (view) {
         case SidebarView.OUTLINE:
           this.outlineButton.classList.remove(UI_NOTIFICATION_CLASS);
@@ -431,7 +431,7 @@ class PDFSidebar {
 
     // Disable/enable views.
     this.eventBus.on("outlineloaded", evt => {
-      let outlineCount = evt.outlineCount;
+      const outlineCount = evt.outlineCount;
 
       this.outlineButton.disabled = !outlineCount;
 

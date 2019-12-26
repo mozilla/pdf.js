@@ -74,7 +74,7 @@ class PDFCursorTools {
       return; // The requested tool is already active.
     }
 
-    let disableActiveTool = () => {
+    const disableActiveTool = () => {
       switch (this.active) {
         case CursorTool.SELECT:
           break;
