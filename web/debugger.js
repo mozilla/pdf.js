@@ -21,20 +21,22 @@ var FontInspector = (function FontInspectorClosure() {
   var active = false;
   var fontAttribute = "data-font-name";
   function removeSelection() {
-    let divs = document.querySelectorAll(`span[${fontAttribute}]`);
-    for (let div of divs) {
+    const divs = document.querySelectorAll(`span[${fontAttribute}]`);
+    for (const div of divs) {
       div.className = "";
     }
   }
   function resetSelection() {
-    let divs = document.querySelectorAll(`span[${fontAttribute}]`);
-    for (let div of divs) {
+    const divs = document.querySelectorAll(`span[${fontAttribute}]`);
+    for (const div of divs) {
       div.className = "debuggerHideText";
     }
   }
   function selectFont(fontName, show) {
-    let divs = document.querySelectorAll(`span[${fontAttribute}=${fontName}]`);
-    for (let div of divs) {
+    const divs = document.querySelectorAll(
+      `span[${fontAttribute}=${fontName}]`
+    );
+    for (const div of divs) {
       div.className = show ? "debuggerShowText" : "debuggerHideText";
     }
   }

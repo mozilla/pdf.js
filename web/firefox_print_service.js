@@ -20,7 +20,7 @@ import { shadow } from "pdfjs-lib";
 
 // Creates a placeholder with div and canvas with right size for the page.
 function composePage(pdfDocument, pageNumber, size, printContainer) {
-  let canvas = document.createElement("canvas");
+  const canvas = document.createElement("canvas");
 
   // The size of the canvas in pixels for printing.
   const PRINT_RESOLUTION = AppOptions.get("printResolution") || 150;
@@ -32,13 +32,13 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
   canvas.style.width = Math.floor(size.width * CSS_UNITS) + "px";
   canvas.style.height = Math.floor(size.height * CSS_UNITS) + "px";
 
-  let canvasWrapper = document.createElement("div");
+  const canvasWrapper = document.createElement("div");
   canvasWrapper.appendChild(canvas);
   printContainer.appendChild(canvasWrapper);
 
   canvas.mozPrintCallback = function(obj) {
     // Printing/rendering the page.
-    let ctx = obj.context;
+    const ctx = obj.context;
 
     ctx.save();
     ctx.fillStyle = "rgb(255, 255, 255)";
@@ -48,7 +48,7 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
     pdfDocument
       .getPage(pageNumber)
       .then(function(pdfPage) {
-        let renderContext = {
+        const renderContext = {
           canvasContext: ctx,
           transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
           viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
@@ -103,8 +103,8 @@ FirefoxPrintService.prototype = {
 
 PDFPrintServiceFactory.instance = {
   get supportsPrinting() {
-    let canvas = document.createElement("canvas");
-    let value = "mozPrintCallback" in canvas;
+    const canvas = document.createElement("canvas");
+    const value = "mozPrintCallback" in canvas;
 
     return shadow(this, "supportsPrinting", value);
   },

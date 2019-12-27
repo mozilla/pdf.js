@@ -153,8 +153,8 @@ class PDFFindBar {
     if (!this.findResultsCount) {
       return; // No UI control is provided.
     }
-    let matchesCountMsg = "",
-      limit = MATCHES_COUNT_LIMIT;
+    const limit = MATCHES_COUNT_LIMIT;
+    let matchesCountMsg = "";
 
     if (total > 0) {
       if (total > limit) {
@@ -255,8 +255,8 @@ class PDFFindBar {
     // wrapped). Here we detect and fix that.
     this.bar.classList.remove("wrapContainers");
 
-    let findbarHeight = this.bar.clientHeight;
-    let inputContainerHeight = this.bar.firstElementChild.clientHeight;
+    const findbarHeight = this.bar.clientHeight;
+    const inputContainerHeight = this.bar.firstElementChild.clientHeight;
 
     if (findbarHeight > inputContainerHeight) {
       // The findbar is taller than the input container, which means that

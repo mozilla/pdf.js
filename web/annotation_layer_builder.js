@@ -64,7 +64,7 @@ class AnnotationLayerBuilder {
         return;
       }
 
-      let parameters = {
+      const parameters = {
         viewport: viewport.clone({ dontFlip: true }),
         div: this.div,
         annotations,

@@ -136,7 +136,7 @@ class PDFHistory {
 
     // The browser history contains a valid entry, ensure that the history is
     // initialized correctly on PDF document load.
-    let destination = state.destination;
+    const destination = state.destination;
     this._updateInternalState(
       destination,
       state.uid,
@@ -221,7 +221,7 @@ class PDFHistory {
       }
     }
 
-    let hash = namedDest || JSON.stringify(explicitDest);
+    const hash = namedDest || JSON.stringify(explicitDest);
     if (!hash) {
       // The hash *should* never be undefined, but if that were to occur,
       // avoid any possible issues by not updating the browser history.
@@ -288,7 +288,7 @@ class PDFHistory {
     if (!this._initialized || this._popStateInProgress) {
       return;
     }
-    let state = window.history.state;
+    const state = window.history.state;
     if (this._isValidState(state) && state.uid > 0) {
       window.history.back();
     }
@@ -302,7 +302,7 @@ class PDFHistory {
     if (!this._initialized || this._popStateInProgress) {
       return;
     }
-    let state = window.history.state;
+    const state = window.history.state;
     if (this._isValidState(state) && state.uid < this._maxUid) {
       window.history.forward();
     }
@@ -331,8 +331,8 @@ class PDFHistory {
    * @private
    */
   _pushOrReplaceState(destination, forceReplace = false) {
-    let shouldReplace = forceReplace || !this._destination;
-    let newState = {
+    const shouldReplace = forceReplace || !this._destination;
+    const newState = {
       fingerprint: this._fingerprint,
       uid: shouldReplace ? this._uid : this._uid + 1,
       destination,
@@ -575,7 +575,7 @@ class PDFHistory {
    * @private
    */
   _popState({ state }) {
-    let newHash = getCurrentHash(),
+    const newHash = getCurrentHash(),
       hashChanged = this._currentHash !== newHash;
     this._currentHash = newHash;
 
@@ -628,7 +628,7 @@ class PDFHistory {
     }
 
     // Navigate to the new destination.
-    let destination = state.destination;
+    const destination = state.destination;
     this._updateInternalState(
       destination,
       state.uid,
@@ -711,7 +711,7 @@ function isDestHashesEqual(destHash, pushHash) {
   if (destHash === pushHash) {
     return true;
   }
-  let { nameddest } = parseQueryString(destHash);
+  const { nameddest } = parseQueryString(destHash);
   if (nameddest === pushHash) {
     return true;
   }
@@ -730,7 +730,7 @@ function isDestArraysEqual(firstDest, secondDest) {
       if (Object.keys(first).length !== Object.keys(second).length) {
         return false;
       }
-      for (let key in first) {
+      for (const key in first) {
         if (!isEntryEqual(first[key], second[key])) {
           return false;
         }

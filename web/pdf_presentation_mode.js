@@ -116,9 +116,9 @@ class PDFPresentationMode {
 
     evt.preventDefault();
 
-    let delta = normalizeWheelEventDelta(evt);
-    let currentTime = new Date().getTime();
-    let storedTime = this.mouseScrollTimeStamp;
+    const delta = normalizeWheelEventDelta(evt);
+    const currentTime = new Date().getTime();
+    const storedTime = this.mouseScrollTimeStamp;
 
     // If we've already switched page, avoid accidentally switching again.
     if (
@@ -137,9 +137,9 @@ class PDFPresentationMode {
     this.mouseScrollDelta += delta;
 
     if (Math.abs(this.mouseScrollDelta) >= PAGE_SWITCH_THRESHOLD) {
-      let totalDelta = this.mouseScrollDelta;
+      const totalDelta = this.mouseScrollDelta;
       this._resetMouseScrollState();
-      let success =
+      const success =
         totalDelta > 0 ? this._goToPreviousPage() : this._goToNextPage();
       if (success) {
         this.mouseScrollTimeStamp = currentTime;
@@ -160,7 +160,7 @@ class PDFPresentationMode {
    * @private
    */
   _goToPreviousPage() {
-    let page = this.pdfViewer.currentPageNumber;
+    const page = this.pdfViewer.currentPageNumber;
     // If we're at the first page, we don't need to do anything.
     if (page <= 1) {
       return false;
@@ -173,7 +173,7 @@ class PDFPresentationMode {
    * @private
    */
   _goToNextPage() {
-    let page = this.pdfViewer.currentPageNumber;
+    const page = this.pdfViewer.currentPageNumber;
     // If we're at the last page, we don't need to do anything.
     if (page >= this.pdfViewer.pagesCount) {
       return false;
@@ -254,7 +254,7 @@ class PDFPresentationMode {
    * @private
    */
   _exit() {
-    let page = this.pdfViewer.currentPageNumber;
+    const page = this.pdfViewer.currentPageNumber;
     this.container.classList.remove(ACTIVE_SELECTOR);
 
     // Ensure that the correct page is scrolled into view when exiting
@@ -288,7 +288,7 @@ class PDFPresentationMode {
     if (evt.button === 0) {
       // Enable clicking of links in presentation mode. Note: only links
       // pointing to destinations in the current PDF document work.
-      let isInternalLink =
+      const isInternalLink =
         evt.target.href && evt.target.classList.contains("internalLink");
       if (!isInternalLink) {
         // Unless an internal link was clicked, advance one page.
@@ -384,9 +384,9 @@ class PDFPresentationMode {
           return;
         }
         let delta = 0;
-        let dx = this.touchSwipeState.endX - this.touchSwipeState.startX;
-        let dy = this.touchSwipeState.endY - this.touchSwipeState.startY;
-        let absAngle = Math.abs(Math.atan2(dy, dx));
+        const dx = this.touchSwipeState.endX - this.touchSwipeState.startX;
+        const dy = this.touchSwipeState.endY - this.touchSwipeState.startY;
+        const absAngle = Math.abs(Math.atan2(dy, dx));
         if (
           Math.abs(dx) > SWIPE_MIN_DISTANCE_THRESHOLD &&
           (absAngle <= SWIPE_ANGLE_THRESHOLD ||
