@@ -69,7 +69,7 @@ class PDFOutlineViewer {
    * @private
    */
   _bindLink(element, { url, newWindow, dest }) {
-    let { linkService } = this;
+    const { linkService } = this;
 
     if (url) {
       addLinkAttributes(element, {
@@ -114,7 +114,7 @@ class PDFOutlineViewer {
    * @private
    */
   _addToggleButton(div, { count, items }) {
-    let toggler = document.createElement("div");
+    const toggler = document.createElement("div");
     toggler.className = "outlineItemToggler";
     if (count < 0 && Math.abs(count) === items.length) {
       toggler.classList.add("outlineItemsHidden");
@@ -124,7 +124,7 @@ class PDFOutlineViewer {
       toggler.classList.toggle("outlineItemsHidden");
 
       if (evt.shiftKey) {
-        let shouldShowAll = !toggler.classList.contains("outlineItemsHidden");
+        const shouldShowAll = !toggler.classList.contains("outlineItemsHidden");
         this._toggleOutlineItem(div, shouldShowAll);
       }
     };
@@ -173,16 +173,16 @@ class PDFOutlineViewer {
       return;
     }
 
-    let fragment = document.createDocumentFragment();
-    let queue = [{ parent: fragment, items: this.outline }];
+    const fragment = document.createDocumentFragment();
+    const queue = [{ parent: fragment, items: this.outline }];
     let hasAnyNesting = false;
     while (queue.length > 0) {
       const levelData = queue.shift();
       for (const item of levelData.items) {
-        let div = document.createElement("div");
+        const div = document.createElement("div");
         div.className = "outlineItem";
 
-        let element = document.createElement("a");
+        const element = document.createElement("a");
         this._bindLink(element, item);
         this._setStyles(element, item);
         element.textContent = removeNullCharacters(item.title) || DEFAULT_TITLE;
@@ -193,7 +193,7 @@ class PDFOutlineViewer {
           hasAnyNesting = true;
           this._addToggleButton(div, item);
 
-          let itemsDiv = document.createElement("div");
+          const itemsDiv = document.createElement("div");
           itemsDiv.className = "outlineItems";
           div.appendChild(itemsDiv);
           queue.push({ parent: itemsDiv, items: item.items });

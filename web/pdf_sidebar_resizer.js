@@ -123,7 +123,7 @@ class PDFSidebarResizer {
     // ... and ensure that rendering will always be triggered.
     this.eventBus.dispatch("resize", { source: this });
 
-    let _boundEvents = this._boundEvents;
+    const _boundEvents = this._boundEvents;
     window.removeEventListener("mousemove", _boundEvents.mouseMove);
     window.removeEventListener("mouseup", _boundEvents.mouseUp);
   }
@@ -135,7 +135,7 @@ class PDFSidebarResizer {
     if (!this.enabled) {
       return;
     }
-    let _boundEvents = this._boundEvents;
+    const _boundEvents = this._boundEvents;
     _boundEvents.mouseMove = this._mouseMove.bind(this);
     _boundEvents.mouseUp = this._mouseUp.bind(this);
 
@@ -175,7 +175,7 @@ class PDFSidebarResizer {
         return;
       }
       this.outerContainer.classList.add(SIDEBAR_RESIZING_CLASS);
-      let updated = this._updateWidth(this._width);
+      const updated = this._updateWidth(this._width);
 
       Promise.resolve().then(() => {
         this.outerContainer.classList.remove(SIDEBAR_RESIZING_CLASS);

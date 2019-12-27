@@ -106,10 +106,10 @@ class PDFLinkService {
    * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
   navigateTo(dest) {
-    let goToDestination = ({ namedDest, explicitDest }) => {
+    const goToDestination = ({ namedDest, explicitDest }) => {
       // Dest array looks like that: <page-ref> </XYZ|/FitXXX> <args..>
-      let destRef = explicitDest[0],
-        pageNumber;
+      const destRef = explicitDest[0];
+      let pageNumber;
 
       if (destRef instanceof Object) {
         pageNumber = this._cachedPageNumber(destRef);
@@ -196,7 +196,7 @@ class PDFLinkService {
       return this.getAnchorUrl("#" + escape(dest));
     }
     if (Array.isArray(dest)) {
-      let str = JSON.stringify(dest);
+      const str = JSON.stringify(dest);
       return this.getAnchorUrl("#" + escape(str));
     }
     return this.getAnchorUrl("");
@@ -218,7 +218,7 @@ class PDFLinkService {
   setHash(hash) {
     let pageNumber, dest;
     if (hash.includes("=")) {
-      let params = parseQueryString(hash);
+      const params = parseQueryString(hash);
       if ("search" in params) {
         this.eventBus.dispatch("findfromurlhash", {
           source: this,
@@ -236,9 +236,9 @@ class PDFLinkService {
       }
       if ("zoom" in params) {
         // Build the destination array.
-        let zoomArgs = params.zoom.split(","); // scale,left,top
-        let zoomArg = zoomArgs[0];
-        let zoomArgNumber = parseFloat(zoomArg);
+        const zoomArgs = params.zoom.split(","); // scale,left,top
+        const zoomArg = zoomArgs[0];
+        const zoomArgNumber = parseFloat(zoomArg);
 
         if (!zoomArg.includes("Fit")) {
           // If the zoomArg is a number, it has to get divided by 100. If it's
@@ -405,12 +405,11 @@ function isValidExplicitDestination(dest) {
   if (!Array.isArray(dest)) {
     return false;
   }
-  let destLength = dest.length,
-    allowNull = true;
+  const destLength = dest.length;
   if (destLength < 2) {
     return false;
   }
-  let page = dest[0];
+  const page = dest[0];
   if (
     !(
       typeof page === "object" &&
@@ -421,10 +420,11 @@ function isValidExplicitDestination(dest) {
   ) {
     return false;
   }
-  let zoom = dest[1];
+  const zoom = dest[1];
   if (!(typeof zoom === "object" && typeof zoom.name === "string")) {
     return false;
   }
+  let allowNull = true;
   switch (zoom.name) {
     case "XYZ":
       if (destLength !== 5) {
@@ -452,7 +452,7 @@ function isValidExplicitDestination(dest) {
       return false;
   }
   for (let i = 2; i < destLength; i++) {
-    let param = dest[i];
+    const param = dest[i];
     if (!(typeof param === "number" || (allowNull && param === null))) {
       return false;
     }

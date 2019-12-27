@@ -30,7 +30,7 @@ const DISABLE_CREATE_OBJECT_URL =
   apiCompatibilityParams.disableCreateObjectURL || false;
 
 function download(blobUrl, filename) {
-  let a = document.createElement("a");
+  const a = document.createElement("a");
   if (!a.click) {
     throw new Error('DownloadManager: "a.click()" is not supported.');
   }
@@ -66,7 +66,7 @@ class DownloadManager {
       navigator.msSaveBlob(new Blob([data], { type: contentType }), filename);
       return;
     }
-    let blobUrl = createObjectURL(
+    const blobUrl = createObjectURL(
       data,
       contentType,
       this.disableCreateObjectURL
@@ -89,7 +89,7 @@ class DownloadManager {
       return;
     }
 
-    let blobUrl = URL.createObjectURL(blob);
+    const blobUrl = URL.createObjectURL(blob);
     download(blobUrl, filename);
   }
 }
