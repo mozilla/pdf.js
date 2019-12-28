@@ -719,7 +719,6 @@ class PDFDocumentProxy {
    * @property {Array<OutlineNode>} items
    */
 
-
   /**
    * @returns {Promise< Array<OutlineNode> >} A promise that is resolved with
    * an {Array} that is a tree outline (if it has one) of the PDF. The tree is
