@@ -1110,15 +1110,15 @@ gulp.task("dts", function(done) {
   var JSDOC_FILES = [
     "src/display/api.js",
     "src/shared/util.js",
-    "src/core/annotation.js"
+    "src/core/annotation.js",
   ];
 
-  rimraf(DTS_BUILD_DIR, function () {
-    mkdirp(DTS_BUILD_DIR, function () {
+  rimraf(DTS_BUILD_DIR, function() {
+    mkdirp(DTS_BUILD_DIR, function() {
       var command =
         '"node_modules/.bin/jsdoc" -t node_modules/tsd-jsdoc/dist -d ' +
         DTS_BUILD_DIR +
-        ' ' +
+        " " +
         JSDOC_FILES.join(" ");
       exec(command, done);
     });
