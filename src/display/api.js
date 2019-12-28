@@ -420,6 +420,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     });
 }
 
+/** @lends <global> */
 const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
   let nextDocumentId = 0;
 
