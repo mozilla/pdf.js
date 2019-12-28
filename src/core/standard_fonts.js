@@ -58,7 +58,6 @@ const getStdFontMap = getLookupTableFactory(function(t) {
   t["Helvetica-BoldOblique"] = "Helvetica-BoldOblique";
   t["Helvetica-Italic"] = "Helvetica-Oblique";
   t["Helvetica-Oblique"] = "Helvetica-Oblique";
-  t["SegoeUISymbol"] = "Helvetica";
   t["Symbol-Bold"] = "Symbol";
   t["Symbol-BoldItalic"] = "Symbol";
   t["Symbol-Italic"] = "Symbol";
@@ -118,6 +117,7 @@ const getNonStdFontMap = getLookupTableFactory(function(t) {
   t["MS-PMincho-BoldItalic"] = "MS PMincho-BoldItalic";
   t["MS-PMincho-Italic"] = "MS PMincho-Italic";
   t["NuptialScript"] = "Times-Italic";
+  t["SegoeUISymbol"] = "Helvetica";
   t["Wingdings"] = "ZapfDingbats";
 });
 
