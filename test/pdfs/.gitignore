@@ -22,6 +22,7 @@
 !issue5972.pdf
 !issue5874.pdf
 !issue5808.pdf
+!issue6179_reduced.pdf
 !issue6204.pdf
 !issue6342.pdf
 !issue6652.pdf
@@ -73,6 +74,7 @@
 !issue9291.pdf
 !issue9418.pdf
 !issue9458.pdf
+!issue9655_reduced.pdf
 !issue9915_reduced.pdf
 !issue9940.pdf
 !issue10388_reduced.pdf
@@ -82,6 +84,9 @@
 !issue10665_reduced.pdf
 !issue11016_reduced.pdf
 !issue11045.pdf
+!issue11150_reduced.pdf
+!issue11242_reduced.pdf
+!issue11279.pdf
 !bad-PageLabels.pdf
 !decodeACSuccessive.pdf
 !filled-background.pdf
@@ -160,6 +165,7 @@
 !issue4402_reduced.pdf
 !issue845r.pdf
 !issue3405r.pdf
+!issue7339_reduced.pdf
 !issue3438.pdf
 !issue2074.pdf
 !scan-bad.pdf
@@ -308,7 +314,6 @@
 !issue5567.pdf
 !issue5701.pdf
 !issue5896.pdf
-!issue5909.pdf
 !issue6010_1.pdf
 !issue6010_2.pdf
 !issue6068.pdf
@@ -345,6 +350,7 @@
 !operator-in-TJ-array.pdf
 !issue7878.pdf
 !font_ascent_descent.pdf
+!issue11442_reduced.pdf
 !issue8097_reduced.pdf
 !transparent.pdf
 !xobject-image.pdf

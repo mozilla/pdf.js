@@ -103,14 +103,14 @@ class PDFRenderingQueue {
      * 2. if last scrolled down, the page after the visible pages, or
      *    if last scrolled up, the page before the visible pages
      */
-    let visibleViews = visible.views;
+    const visibleViews = visible.views;
 
-    let numVisible = visibleViews.length;
+    const numVisible = visibleViews.length;
     if (numVisible === 0) {
       return null;
     }
     for (let i = 0; i < numVisible; ++i) {
-      let view = visibleViews[i].view;
+      const view = visibleViews[i].view;
       if (!this.isViewFinished(view)) {
         return view;
       }
@@ -118,15 +118,17 @@ class PDFRenderingQueue {
 
     // All the visible views have rendered; try to render next/previous pages.
     if (scrolledDown) {
-      let nextPageIndex = visible.last.id;
+      const nextPageIndex = visible.last.id;
       // IDs start at 1, so no need to add 1.
       if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex])) {
         return views[nextPageIndex];
       }
     } else {
-      let previousPageIndex = visible.first.id - 2;
-      if (views[previousPageIndex] &&
-          !this.isViewFinished(views[previousPageIndex])) {
+      const previousPageIndex = visible.first.id - 2;
+      if (
+        views[previousPageIndex] &&
+        !this.isViewFinished(views[previousPageIndex])
+      ) {
         return views[previousPageIndex];
       }
     }
@@ -171,7 +173,4 @@ class PDFRenderingQueue {
   }
 }
 
-export {
-  RenderingStates,
-  PDFRenderingQueue,
-};
+export { RenderingStates, PDFRenderingQueue };

@@ -13,27 +13,26 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFSinglePageViewer) {
-  alert('Please build the pdfjs-dist library using\n' +
-        '  `gulp dist-install`');
+  alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
 
 // The workerSrc property shall be specified.
 //
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+  "../../node_modules/pdfjs-dist/build/pdf.worker.js";
 
 // Some PDFs need external cmaps.
 //
-var CMAP_URL = '../../node_modules/pdfjs-dist/cmaps/';
+var CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
 var CMAP_PACKED = true;
 
-var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
-var SEARCH_FOR = ''; // try 'Mozilla';
+var DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
+var SEARCH_FOR = ""; // try 'Mozilla';
 
-var container = document.getElementById('viewerContainer');
+var container = document.getElementById("viewerContainer");
 
 // (Optionally) enable hyperlinks within PDF files.
 var pdfLinkService = new pdfjsViewer.PDFLinkService();
@@ -50,12 +49,13 @@ var pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
 });
 pdfLinkService.setViewer(pdfSinglePageViewer);
 
-document.addEventListener('pagesinit', function () {
+document.addEventListener("pagesinit", function() {
   // We can use pdfSinglePageViewer now, e.g. let's change default scale.
-  pdfSinglePageViewer.currentScaleValue = 'page-width';
+  pdfSinglePageViewer.currentScaleValue = "page-width";
 
-  if (SEARCH_FOR) { // We can try search for things
-    pdfFindController.executeCommand('find', { query: SEARCH_FOR, });
+  // We can try searching for things.
+  if (SEARCH_FOR) {
+    pdfFindController.executeCommand("find", { query: SEARCH_FOR });
   }
 });
 

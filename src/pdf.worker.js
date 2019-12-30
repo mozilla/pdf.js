@@ -14,11 +14,11 @@
  */
 /* eslint-disable no-unused-vars */
 
-'use strict';
+"use strict";
 
-const pdfjsVersion = PDFJSDev.eval('BUNDLE_VERSION');
-const pdfjsBuild = PDFJSDev.eval('BUNDLE_BUILD');
+const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
+const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 
-const pdfjsCoreWorker = require('./core/worker.js');
+const pdfjsCoreWorker = require("./core/worker.js");
 
 exports.WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;

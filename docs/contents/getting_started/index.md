@@ -21,7 +21,7 @@ Before downloading PDF.js please take a moment to understand the different layer
   <tbody>
     <tr>
       <td>Core</td>
-      <td>The core layer is where a binary PDF is parsed and interpreted. This layer is the foundation for all subsequent layers. It is not documented here because using it directly is considered an advanced usage and the API is likely to change. For an example of using the core layer see the [PDF Object Browser](https://github.com/brendandahl/pdf.js.utils/tree/master/browser)
+      <td>The core layer is where a binary PDF is parsed and interpreted. This layer is the foundation for all subsequent layers. It is not documented here because using it directly is considered an advanced usage and the API is likely to change. For an example of using the core layer see the <a href="https://github.com/brendandahl/pdf.js.utils/tree/master/browser">PDF Object Browser</a>.
       </td>
     </tr>
     <tr>
@@ -30,7 +30,7 @@ Before downloading PDF.js please take a moment to understand the different layer
     </tr>
     <tr>
       <td>Viewer</td>
-      <td>The viewer is built on the display layer and is the UI for PDF viewer in Firefox and the other browser extensions within the project. It can be a good starting point for building your own viewer. *However, we do ask if you plan to embed the viewer in your own site, that it not just be an unmodified version. Please re-skin it or build upon it.*</td>
+      <td>The viewer is built on the display layer and is the UI for PDF viewer in Firefox and the other browser extensions within the project. It can be a good starting point for building your own viewer. <em>However, we do ask if you plan to embed the viewer in your own site, that it not just be an unmodified version. Please re-skin it or build upon it.</em></td>
     </tr>
   </tbody>
 </table>
