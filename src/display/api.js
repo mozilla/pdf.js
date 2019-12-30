@@ -922,8 +922,8 @@ class PDFDocumentProxy {
  * PDF page operator list.
  *
  * @typedef {Object} PDFOperatorList
- * @property {Array<Function>} fnArray - Array containing the operator
- *                                       functions.
+ * @property {Array<number>} fnArray - Array containing the operator
+ *                                     functions.
  * @property {Array<any>} argsArray - Array containing the arguments of the
  *                                    functions.
  */
