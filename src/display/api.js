@@ -65,7 +65,8 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * @typedef {function} IPDFStreamFactory
  * @param {DocumentInitParameters} params - The document initialization
  *   parameters. The "url" key is always present.
- * @returns {IPDFStream}
+ * @returns {Promise} A promise, which is resolved with an instance of
+ *   {IPDFStream}.
  * @ignore
  */
 
@@ -80,7 +81,7 @@ let createPDFNetworkStream;
  * data transport.
  * @param {IPDFStreamFactory} pdfNetworkStreamFactory - The factory function
  *   that takes document initialization parameters (including a "url") and
- *   returns an instance of {IPDFStream}.
+ *   returns a promise which is resolved with an instance of {IPDFStream}-
  * @ignore
  */
 function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
@@ -313,34 +314,44 @@ function getDocument(src) {
       if (task.destroyed) {
         throw new Error("Loading aborted");
       }
-      return _fetchDocument(worker, params, rangeTransport, docId).then(
-        function (workerId) {
-          if (task.destroyed) {
-            throw new Error("Loading aborted");
-          }
 
-          let networkStream;
-          if (rangeTransport) {
-            networkStream = new PDFDataTransportStream(
-              {
-                length: params.length,
-                initialData: params.initialData,
-                progressiveDone: params.progressiveDone,
-                disableRange: params.disableRange,
-                disableStream: params.disableStream,
-              },
-              rangeTransport
-            );
-          } else if (!params.data) {
-            networkStream = createPDFNetworkStream({
-              url: params.url,
+      const workerIdPromise = _fetchDocument(
+        worker,
+        params,
+        rangeTransport,
+        docId
+      );
+      const networkStreamPromise = new Promise(function (resolve) {
+        let networkStream;
+        if (rangeTransport) {
+          networkStream = new PDFDataTransportStream(
+            {
               length: params.length,
-              httpHeaders: params.httpHeaders,
-              withCredentials: params.withCredentials,
-              rangeChunkSize: params.rangeChunkSize,
+              initialData: params.initialData,
+              progressiveDone: params.progressiveDone,
               disableRange: params.disableRange,
               disableStream: params.disableStream,
-            });
+            },
+            rangeTransport
+          );
+        } else if (!params.data) {
+          networkStream = createPDFNetworkStream({
+            url: params.url,
+            length: params.length,
+            httpHeaders: params.httpHeaders,
+            withCredentials: params.withCredentials,
+            rangeChunkSize: params.rangeChunkSize,
+            disableRange: params.disableRange,
+            disableStream: params.disableStream,
+          });
+        }
+        resolve(networkStream);
+      });
+
+      return Promise.all([workerIdPromise, networkStreamPromise]).then(
+        function ([workerId, networkStream]) {
+          if (task.destroyed) {
+            throw new Error("Loading aborted");
           }
 
           const messageHandler = new MessageHandler(
