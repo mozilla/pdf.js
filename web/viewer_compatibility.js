@@ -36,4 +36,4 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   })();
 }
 
-exports.viewerCompatibilityParams = Object.freeze(compatibilityParams);
+export const viewerCompatibilityParams = Object.freeze(compatibilityParams);
