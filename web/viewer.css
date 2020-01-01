@@ -34,7 +34,7 @@ html {
 body {
   height: 100%;
   width: 100%;
-  background-color: #404040;
+  background-color: rgba(64, 64, 64, 1);
   background-image: url(images/texture.png);
 }
 
@@ -59,13 +59,13 @@ select {
 }
 
 #viewerContainer.pdfPresentationMode:-ms-fullscreen::-ms-backdrop {
-  background-color: #000;
+  background-color: rgba(0, 0, 0, 1);
 }
 
 #viewerContainer.pdfPresentationMode:fullscreen {
   top: 0px;
-  border-top: 2px solid transparent;
-  background-color: #000;
+  border-top: 2px solid rgba(0, 0, 0, 0);
+  background-color: rgba(0, 0, 0, 1);
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -101,8 +101,7 @@ select {
   width: var(--sidebar-width);
   visibility: hidden;
   z-index: 100;
-  border-top: 1px solid #333;
-
+  border-top: 1px solid rgba(51, 51, 51, 1);
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
@@ -155,15 +154,15 @@ html[dir='rtl'] #outerContainer.sidebarOpen #sidebarContainer {
   -webkit-overflow-scrolling: touch;
   position: absolute;
   width: 100%;
-  background-color: hsla(0,0%,0%,.1);
+  background-color: rgba(0, 0, 0, 0.1);
 }
 html[dir='ltr'] #sidebarContent {
   left: 0;
-  box-shadow: inset -1px 0 0 hsla(0,0%,0%,.25);
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
 }
 html[dir='rtl'] #sidebarContent {
   right: 0;
-  box-shadow: inset 1px 0 0 hsla(0,0%,0%,.25);
+  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25);
 }
 
 #viewerContainer {
@@ -181,10 +180,10 @@ html[dir='rtl'] #sidebarContent {
   transition-timing-function: ease;
 }
 html[dir='ltr'] #viewerContainer {
-  box-shadow: inset 1px 0 0 hsla(0,0%,100%,.05);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.05);
 }
 html[dir='rtl'] #viewerContainer {
-  box-shadow: inset -1px 0 0 hsla(0,0%,100%,.05);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05);
 }
 
 #outerContainer.sidebarResizing #viewerContainer {
@@ -218,21 +217,21 @@ html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentatio
 #toolbarSidebar {
   width: 100%;
   height: 32px;
-  background-color: #424242; /* fallback */
+  background-color: rgba(66, 66, 66, 1); /* fallback */
   background-image: url(images/texture.png),
-                    linear-gradient(hsla(0,0%,30%,.99), hsla(0,0%,25%,.95));
+                    linear-gradient(rgba(77, 77, 77, 0.99), rgba(64, 64, 64, 0.95));
 }
 html[dir='ltr'] #toolbarSidebar {
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25),
-              inset 0 -1px 0 hsla(0,0%,100%,.05),
-              0 1px 0 hsla(0,0%,0%,.15),
-              0 0 1px hsla(0,0%,0%,.1);
+              inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+              0 1px 0 rgba(0, 0, 0, 0.15),
+              0 0 1px rgba(0, 0, 0, 0.1);
 }
 html[dir='rtl'] #toolbarSidebar {
   box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25),
-              inset 0 1px 0 hsla(0,0%,100%,.05),
-              0 1px 0 hsla(0,0%,0%,.15),
-              0 0 1px hsla(0,0%,0%,.1);
+              inset 0 1px 0 rgba(255, 255, 255, 0.05),
+              0 1px 0 rgba(0, 0, 0, 0.15),
+              0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 #sidebarResizer {
@@ -253,21 +252,21 @@ html[dir='rtl'] #sidebarResizer {
 #toolbarContainer, .findbar, .secondaryToolbar {
   position: relative;
   height: 32px;
-  background-color: #474747; /* fallback */
+  background-color: rgba(71, 71, 71, 1); /* fallback */
   background-image: url(images/texture.png),
-                    linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
+                    linear-gradient(rgba(82, 82, 82, 0.99), rgba(69, 69, 69, 0.95));
 }
 html[dir='ltr'] #toolbarContainer, .findbar, .secondaryToolbar {
-  box-shadow: inset 0 1px 1px hsla(0,0%,0%,.15),
-              inset 0 -1px 0 hsla(0,0%,100%,.05),
-              0 1px 0 hsla(0,0%,0%,.15),
-              0 1px 1px hsla(0,0%,0%,.1);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15),
+              inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+              0 1px 0 rgba(0, 0, 0, 0.15),
+              0 1px 1px rgba(0, 0, 0, 0.1);
 }
 html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
-  box-shadow: inset 0 1px 1px hsla(0,0%,0%,.15),
-              inset 0 -1px 0 hsla(0,0%,100%,.05),
-              0 1px 0 hsla(0,0%,0%,.15),
-              0 1px 1px hsla(0,0%,0%,.1);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15),
+              inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+              0 1px 0 rgba(0, 0, 0, 0.15),
+              0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
 #toolbarViewer {
@@ -278,8 +277,8 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   position: relative;
   width: 100%;
   height: 4px;
-  background-color: #333;
-  border-bottom: 1px solid #333;
+  background-color: rgba(51, 51, 51, 1);
+  border-bottom: 1px solid rgba(51, 51, 51, 1);
 }
 
 #loadingBar .progress {
@@ -288,7 +287,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   left: 0;
   width: 0%;
   height: 100%;
-  background-color: #ddd;
+  background-color: rgba(221, 221, 221, 1);
   overflow: hidden;
   transition: width 200ms;
 }
@@ -299,7 +298,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 }
 
 #loadingBar .progress.indeterminate {
-  background-color: #999;
+  background-color: rgba(153, 153, 153, 1);
   transition: none;
 }
 
@@ -309,12 +308,10 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   left: 0;
   height: 100%;
   width: calc(100% + 150px);
-
   background: repeating-linear-gradient(135deg,
-                                        #bbb 0, #999 5px,
-                                        #999 45px, #ddd 55px,
-                                        #ddd 95px, #bbb 100px);
-
+                                        rgba(187, 187, 187, 1) 0, rgba(153, 153, 153, 1) 5px,
+                                        rgba(153, 153, 153, 1) 45px, rgba(221, 221, 221, 1) 55px,
+                                        rgba(221, 221, 221, 1) 95px, rgba(187, 187, 187, 1) 100px);
   animation: progressIndeterminate 950ms linear infinite;
 }
 
@@ -326,7 +323,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   min-width: 16px;
   padding: 0px 6px 0px 6px;
   margin: 4px 2px 4px 2px;
-  color: hsl(0,0%,85%);
+  color: rgba(217, 217, 217, 1);
   font-size: 12px;
   line-height: 14px;
   text-align: left;
@@ -360,7 +357,7 @@ html[dir='rtl'] .findbar {
   width: 200px;
 }
 #findInput::-webkit-input-placeholder {
-  color: hsl(0, 0%, 75%);
+  color: rgba(191, 191, 191, 1);
 }
 #findInput::placeholder {
   font-style: italic;
@@ -401,14 +398,14 @@ html[dir='rtl'] .secondaryToolbar {
 
 .doorHanger,
 .doorHangerRight {
-  border: 1px solid hsla(0,0%,0%,.5);
+  border: 1px solid rgba(0, 0, 0, 0.5);
   border-radius: 2px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 .doorHanger:after, .doorHanger:before,
 .doorHangerRight:after, .doorHangerRight:before {
   bottom: 100%;
-  border: solid transparent;
+  border: solid rgba(0, 0, 0, 0);
   content: " ";
   height: 0;
   width: 0;
@@ -417,12 +414,12 @@ html[dir='rtl'] .secondaryToolbar {
 }
 .doorHanger:after,
 .doorHangerRight:after {
-  border-bottom-color: hsla(0,0%,32%,.99);
+  border-bottom-color: rgba(82, 82, 82, 0.99);
   border-width: 8px;
 }
 .doorHanger:before,
 .doorHangerRight:before {
-  border-bottom-color: hsla(0,0%,0%,.5);
+  border-bottom-color: rgba(0, 0, 0, 0.5);
   border-width: 9px;
 }
 
@@ -451,22 +448,22 @@ html[dir='ltr'] .doorHangerRight:before {
 }
 
 #findResultsCount {
-  background-color: hsl(0, 0%, 85%);
-  color: hsl(0, 0%, 32%);
+  background-color: rgba(217, 217, 217, 1);
+  color: rgba(82, 82, 82, 1);
   text-align: center;
   padding: 3px 4px;
 }
 
 #findMsg {
   font-style: italic;
-  color: #A6B7D0;
+  color: rgba(166, 183, 208, 1);
 }
 #findMsg:empty {
   display: none;
 }
 
 #findInput.notFound {
-  background-color: rgb(255, 102, 102);
+  background-color: rgba(255, 102, 102, 1);
 }
 
 #toolbarViewerMiddle {
@@ -545,14 +542,14 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .splitToolbarButton:focus > .toolbarButton,
 .splitToolbarButton.toggled > .toolbarButton,
 .toolbarButton.textButton {
-  background-color: hsla(0,0%,0%,.12);
-  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-color: rgba(0, 0, 0, 0.12);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   background-clip: padding-box;
-  border: 1px solid hsla(0,0%,0%,.35);
-  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
-  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
-              0 0 1px hsla(0,0%,100%,.15) inset,
-              0 1px 0 hsla(0,0%,100%,.05);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-color: rgba(0, 0, 0, 0.32) rgba(0, 0, 0, 0.38) rgba(0, 0, 0, 0.42);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
+              0 0 1px rgba(255, 255, 255, 0.15) inset,
+              0 1px 0 rgba(255, 255, 255, 0.05);
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: ease;
@@ -565,10 +562,10 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .overlayButton:focus,
 .toolbarButton.textButton:hover,
 .toolbarButton.textButton:focus {
-  background-color: hsla(0,0%,0%,.2);
-  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
-              0 0 1px hsla(0,0%,100%,.15) inset,
-              0 0 1px hsla(0,0%,0%,.05);
+  background-color: rgba(0,0,0,0.2);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
+              0 0 1px rgba(255, 255, 255, 0.15) inset,
+              0 0 1px rgba(0, 0, 0, 0.05);
   z-index: 199;
 }
 .splitToolbarButton > .toolbarButton {
@@ -581,7 +578,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton:last-child {
   margin-right: -1px;
   border-top-left-radius: 2px;
   border-bottom-left-radius: 2px;
-  border-right-color: transparent;
+  border-right-color: rgba(0, 0, 0, 0);
 }
 html[dir='ltr'] .splitToolbarButton > .toolbarButton:last-child,
 html[dir='rtl'] .splitToolbarButton > .toolbarButton:first-child {
@@ -590,14 +587,14 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton:first-child {
   margin-left: -1px;
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
-  border-left-color: transparent;
+  border-left-color: rgba(0, 0, 0, 0);
 }
 .splitToolbarButtonSeparator {
   padding: 8px 0;
   width: 1px;
-  background-color: hsla(0,0%,0%,.5);
+  background-color: rgba(0, 0, 0, 0.5);
   z-index: 99;
-  box-shadow: 0 0 0 1px hsla(0,0%,100%,.08);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
   display: inline-block;
   margin: 5px 0;
 }
@@ -611,7 +608,7 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
 .splitToolbarButton.toggled > .splitToolbarButtonSeparator {
   padding: 12px 0;
   margin: 1px 0;
-  box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
   transition-property: padding;
   transition-duration: 10ms;
   transition-timing-function: ease;
@@ -623,9 +620,9 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
 .overlayButton {
   min-width: 16px;
   padding: 2px 6px 0;
-  border: 1px solid transparent;
+  border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 2px;
-  color: hsla(0,0%,100%,.8);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 12px;
   line-height: 14px;
   user-select: none;
@@ -653,26 +650,26 @@ html[dir='rtl'] .dropdownToolbarButton {
 .overlayButton,
 .secondaryToolbarButton:hover,
 .secondaryToolbarButton:focus {
-  background-color: hsla(0,0%,0%,.12);
-  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-color: rgba(0, 0, 0, 0.12);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   background-clip: padding-box;
-  border: 1px solid hsla(0,0%,0%,.35);
-  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
-  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
-              0 0 1px hsla(0,0%,100%,.15) inset,
-              0 1px 0 hsla(0,0%,100%,.05);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-color: rgba(0, 0, 0, 0.32) rgba(0, 0, 0, 0.38) rgba(0, 0, 0, 0.42);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
+              0 0 1px rgba(255, 255, 255, 0.15) inset,
+              0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .toolbarButton:hover:active,
 .overlayButton:hover:active,
 .dropdownToolbarButton:hover:active,
 .secondaryToolbarButton:hover:active {
-  background-color: hsla(0,0%,0%,.2);
-  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
-  border-color: hsla(0,0%,0%,.35) hsla(0,0%,0%,.4) hsla(0,0%,0%,.45);
-  box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
-              0 0 1px hsla(0,0%,0%,.2) inset,
-              0 1px 0 hsla(0,0%,100%,.05);
+  background-color: rgba(0, 0, 0, 0.2);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  border-color: rgba(0, 0, 0, 0.35) rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.45);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset,
+              0 0 1px rgba(0, 0, 0, 0.2) inset,
+              0 1px 0 rgba(255, 255, 255, 0.05);
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
@@ -681,12 +678,12 @@ html[dir='rtl'] .dropdownToolbarButton {
 .toolbarButton.toggled,
 .splitToolbarButton.toggled > .toolbarButton.toggled,
 .secondaryToolbarButton.toggled {
-  background-color: hsla(0,0%,0%,.3);
-  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
-  border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.45) hsla(0,0%,0%,.5);
-  box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
-              0 0 1px hsla(0,0%,0%,.2) inset,
-              0 1px 0 hsla(0,0%,100%,.05);
+  background-color: rgba(0, 0, 0, 0.3);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  border-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.45) rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset,
+              0 0 1px rgba(0, 0, 0, 0.2) inset,
+              0 1px 0 rgba(255, 255, 255, 0.05);
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
@@ -695,11 +692,11 @@ html[dir='rtl'] .dropdownToolbarButton {
 .toolbarButton.toggled:hover:active,
 .splitToolbarButton.toggled > .toolbarButton.toggled:hover:active,
 .secondaryToolbarButton.toggled:hover:active {
-  background-color: hsla(0,0%,0%,.4);
-  border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.5) hsla(0,0%,0%,.55);
-  box-shadow: 0 1px 1px hsla(0,0%,0%,.2) inset,
-              0 0 1px hsla(0,0%,0%,.3) inset,
-              0 1px 0 hsla(0,0%,100%,.05);
+  background-color: rgba(0, 0, 0, 0.4);
+  border-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0.55);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) inset,
+              0 0 1px rgba(0, 0, 0, 0.3) inset,
+              0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .dropdownToolbarButton {
@@ -719,7 +716,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 .dropdownToolbarButton > select {
   min-width: 140px;
   font-size: 12px;
-  color: hsl(0,0%,95%);
+  color: rgba(242, 242, 242, 1);
   margin: 0;
   padding: 3px 2px 2px;
   border: none;
@@ -727,7 +724,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton > select > option {
-  background: hsl(0,0%,24%);
+  background: rgba(61, 61, 61, 1);
 }
 
 #customScaleOption {
@@ -735,7 +732,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 #pageWidthOption {
-  border-bottom: 1px rgba(255, 255, 255, .5) solid;
+  border-bottom: 1px rgba(255, 255, 255, 0.5) solid;
 }
 
 html[dir='ltr'] .splitToolbarButton:first-child,
@@ -904,7 +901,7 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
   top: 1px;
   /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
   content: '';
-  background-color: #70DB55;
+  background-color: rgba(112, 219, 85, 1);
   height: 9px;
   width: 9px;
   border-radius: 50%;
@@ -1005,8 +1002,8 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   padding: 8px 0;
   margin: 8px 4px;
   width: 1px;
-  background-color: hsla(0,0%,0%,.5);
-  box-shadow: 0 0 0 1px hsla(0,0%,100%,.08);
+  background-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 html[dir='ltr'] .verticalToolbarSeparator {
   margin-left: 2px;
@@ -1020,23 +1017,23 @@ html[dir='rtl'] .verticalToolbarSeparator {
   margin: 0 0 4px 0;
   height: 1px;
   width: 100%;
-  background-color: hsla(0,0%,0%,.5);
-  box-shadow: 0 0 0 1px hsla(0,0%,100%,.08);
+  background-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .toolbarField {
   padding: 3px 6px;
   margin: 4px 0 4px 0;
   border-radius: 2px;
-  background-color: hsla(0,0%,100%,.09);
-  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-color: rgba(255, 255, 255, 0.09);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   background-clip: padding-box;
   border-width: 1px;
   border-style: solid;
-  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
-  box-shadow: 0 1px 0 hsla(0,0%,0%,.05) inset,
-              0 1px 0 hsla(0,0%,100%,.05);
-  color: hsl(0,0%,95%);
+  border-color: rgba(0, 0, 0, 0.32) rgba(0, 0, 0, 0.38) rgba(0, 0, 0, 0.42);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05) inset,
+              0 1px 0 rgba(255, 255, 255, 0.05);
+  color: rgba(242, 242, 242, 1);
   font-size: 12px;
   line-height: 14px;
   outline-style: none;
@@ -1070,22 +1067,22 @@ html[dir='rtl'] .verticalToolbarSeparator {
 }
 
 .toolbarField:hover {
-  background-color: hsla(0,0%,100%,.11);
-  border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.43) hsla(0,0%,0%,.45);
+  background-color: rgba(255, 255, 255, 0.11);
+  border-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.43) rgba(0, 0, 0, 0.45);
 }
 
 .toolbarField:focus {
-  background-color: hsla(0,0%,100%,.15);
-  border-color: hsla(204,100%,65%,.8) hsla(204,100%,65%,.85) hsla(204,100%,65%,.9);
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(77, 184, 255, 0.8) rgba(77, 184, 255, 0.85) rgba(77, 184, 255, 0.9);
 }
 
 .toolbarLabel {
   min-width: 16px;
   padding: 3px 6px 3px 2px;
   margin: 4px 2px 4px 0;
-  border: 1px solid transparent;
+  border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 2px;
-  color: hsl(0,0%,85%);
+  color: rgba(217, 217, 217, 1);
   font-size: 12px;
   line-height: 14px;
   text-align: left;
@@ -1132,11 +1129,11 @@ html[dir='rtl'] .thumbnail {
 }
 
 .thumbnailImage {
-  border: 1px solid transparent;
+  border: 1px solid rgba(0, 0, 0, 0);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
   opacity: 0.8;
   z-index: 99;
-  background-color: white;
+  background-color: rgba(255, 255, 255, 1);
   background-clip: content-box;
 }
 
@@ -1152,28 +1149,28 @@ a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
 
 a:focus > .thumbnail > .thumbnailSelectionRing,
 .thumbnail:hover > .thumbnailSelectionRing {
-  background-color: hsla(0,0%,100%,.15);
-  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-color: rgba(255, 255, 255, 0.15);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   background-clip: padding-box;
-  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
-              0 0 1px hsla(0,0%,100%,.2) inset,
-              0 0 1px hsla(0,0%,0%,.2);
-  color: hsla(0,0%,100%,.9);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
+              0 0 1px rgba(255, 255, 255, 0.2) inset,
+              0 0 1px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .thumbnail.selected > .thumbnailSelectionRing > .thumbnailImage {
-  box-shadow: 0 0 0 1px hsla(0,0%,0%,.5);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
   opacity: 1;
 }
 
 .thumbnail.selected > .thumbnailSelectionRing {
-  background-color: hsla(0,0%,100%,.3);
-  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-color: rgba(255, 255, 255, 0.3);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   background-clip: padding-box;
-  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
-              0 0 1px hsla(0,0%,100%,.1) inset,
-              0 0 1px hsla(0,0%,0%,.2);
-  color: hsla(0,0%,100%,1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
+              0 0 1px rgba(255, 255, 255, 0.1) inset,
+              0 0 1px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255,1);
 }
 
 #outlineView,
@@ -1214,7 +1211,7 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   height: auto;
   margin-bottom: 1px;
   border-radius: 2px;
-  color: hsla(0,0%,100%,.8);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 13px;
   line-height: 15px;
   user-select: none;
@@ -1248,7 +1245,7 @@ html[dir='rtl'] .attachmentsItem > button {
   position: relative;
   height: 0;
   width: 0;
-  color: hsla(0,0%,100%,.5);
+  color: rgba(255, 255, 255, 0.5);
 }
 .outlineItemToggler::before {
   content: url(images/treeitem-expanded.png);
@@ -1282,29 +1279,29 @@ html[dir='rtl'] .outlineItemToggler::before {
 .outlineItemToggler:hover ~ .outlineItems,
 .outlineItem > a:hover,
 .attachmentsItem > button:hover {
-  background-color: hsla(0,0%,100%,.02);
-  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-color: rgba(255, 255, 255, 0.02);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   background-clip: padding-box;
-  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
-              0 0 1px hsla(0,0%,100%,.2) inset,
-              0 0 1px hsla(0,0%,0%,.2);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
+              0 0 1px rgba(255, 255, 255, 0.2) inset,
+              0 0 1px rgba(0, 0, 0, 0.2);
   border-radius: 2px;
-  color: hsla(0,0%,100%,.9);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .outlineItem.selected {
-  background-color: hsla(0,0%,100%,.08);
-  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-color: rgba(255, 255, 255, 0.08);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   background-clip: padding-box;
-  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
-              0 0 1px hsla(0,0%,100%,.1) inset,
-              0 0 1px hsla(0,0%,0%,.2);
-  color: hsla(0,0%,100%,1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
+              0 0 1px rgba(255, 255, 255, 0.1) inset,
+              0 0 1px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 1);
 }
 
 .noResults {
   font-size: 12px;
-  color: hsla(0,0%,100%,.8);
+  color: rgba(255, 255, 255, 0.8);
   font-style: italic;
   cursor: default;
 }
@@ -1312,11 +1309,13 @@ html[dir='rtl'] .outlineItemToggler::before {
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
    so we can override the opaque grey background when the window is inactive;
    see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
-::selection { background: rgba(0,0,255,0.3); }
+::selection {
+  background: rgba(0, 0, 255, 0.3);
+}
 
 #errorWrapper {
-  background: none repeat scroll 0 0 #FF5555;
-  color: white;
+  background: none repeat scroll 0 0 rgba(255, 85, 85, 1);
+  color: rgba(255, 255, 255, 1);
   left: 0;
   position: absolute;
   right: 0;
@@ -1337,8 +1336,8 @@ html[dir='rtl'] .outlineItemToggler::before {
 }
 
 #errorMoreInfo {
-  background-color: #FFFFFF;
-  color: black;
+  background-color: rgba(255, 255, 255, 1);
+  color: rgba(0, 0, 0, 1);
   padding: 3px;
   margin: 3px;
   width: 98%;
@@ -1355,7 +1354,7 @@ html[dir='rtl'] .outlineItemToggler::before {
   position: absolute;
   width: 100%;
   height: 100%;
-  background-color: hsla(0,0%,0%,.2);
+  background-color: rgba(0, 0, 0, 0.2);
   z-index: 40000;
 }
 #overlayContainer > * {
@@ -1373,13 +1372,13 @@ html[dir='rtl'] .outlineItemToggler::before {
   display: inline-block;
   padding: 15px;
   border-spacing: 4px;
-  color: hsl(0,0%,85%);
+  color: rgba(217, 217, 217, 1);
   font-size: 12px;
   line-height: 14px;
-  background-color: #474747; /* fallback */
+  background-color: rgba(71, 71, 71, 1); /* fallback */
   background-image: url(images/texture.png),
-                    linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
-  border: 1px solid hsla(0,0%,0%,.5);
+                    linear-gradient(rgba(82, 82, 82,0.99), rgba(69, 69, 69, 0.95));
+  border: 1px solid rgba(0, 0, 0, 0.5);
   border-radius: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
@@ -1401,8 +1400,8 @@ html[dir='rtl'] .outlineItemToggler::before {
   margin: 4px 0 4px 0;
   height: 1px;
   width: 100%;
-  background-color: hsla(0,0%,0%,.5);
-  box-shadow: 0 0 0 1px hsla(0,0%,100%,.08);
+  background-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .dialog .buttonRow {
@@ -1411,7 +1410,7 @@ html[dir='rtl'] .outlineItemToggler::before {
 }
 
 .dialog :link {
-  color: white;
+  color: rgba(255, 255, 255, 1);
 }
 
 #passwordOverlay > .dialog {
@@ -1450,8 +1449,8 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 .fileInput {
-  background: white;
-  color: black;
+  background: rgba(255, 255, 255, 1);
+  color: rgba(0, 0, 0, 1);
   margin-top: 5px;
   visibility: hidden;
   position: fixed;
@@ -1460,8 +1459,8 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 #PDFBug {
-  background: none repeat scroll 0 0 white;
-  border: 1px solid #666666;
+  background: none repeat scroll 0 0 rgba(255, 255, 255, 1);
+  border: 1px solid rgba(102, 102, 102, 1);
   position: fixed;
   top: 32px;
   right: 0;
@@ -1471,9 +1470,9 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   width: 300px;
 }
 #PDFBug .controls {
-    background:#EEEEEE;
-    border-bottom: 1px solid #666666;
-    padding: 3px;
+  background: rgba(238, 238, 238, 1);
+  border-bottom: 1px solid rgba(102, 102, 102, 1);
+  padding: 3px;
 }
 #PDFBug .panels {
   bottom: 0;
@@ -1488,11 +1487,11 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   font-weight: bold;
 }
 .debuggerShowText {
-  background: none repeat scroll 0 0 yellow;
-  color: blue;
+  background: none repeat scroll 0 0 rgba(255, 255, 0, 1);
+  color: rgba(0, 0, 255, 1);
 }
 .debuggerHideText:hover {
-  background: none repeat scroll 0 0 yellow;
+  background: none repeat scroll 0 0 rgba(255, 255, 0, 1);
 }
 #PDFBug .stats {
   font-family: courier;
@@ -1511,7 +1510,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 #viewer.textLayer-visible .canvasWrapper {
-  background-color: rgb(128,255,128);
+  background-color: rgba(128, 255, 128, 1);
 }
 
 #viewer.textLayer-visible .canvasWrapper canvas {
@@ -1520,19 +1519,19 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
 #viewer.textLayer-visible .textLayer > span {
   background-color: rgba(255, 255, 0, 0.1);
-  color: black;
+  color: rgba(0, 0, 0, 1);
   border: solid 1px rgba(255, 0, 0, 0.5);
   box-sizing: border-box;
 }
 
 #viewer.textLayer-hover .textLayer > span:hover {
-  background-color: white;
-  color: black;
+  background-color: rgba(255, 255, 255, 1);
+  color: rgba(0, 0, 0, 1);
 }
 
 #viewer.textLayer-shadow .textLayer > span {
-  background-color: rgba(255,255,255, .6);
-  color: black;
+  background-color: rgba(255, 255, 255, 0.6);
+  color: rgba(0, 0, 0, 1);
 }
 
 .grab-to-pan-grab {
@@ -1546,9 +1545,8 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 .grab-to-pan-grabbing {
   cursor: url("images/grabbing.cur"), move !important;
   cursor: grabbing !important;
-
   position: fixed;
-  background: transparent;
+  background: rgba(0, 0, 0, 0);
   display: block;
   top: 0;
   left: 0;
@@ -1769,7 +1767,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 @media print {
   /* General rules for printing. */
   body {
-    background: transparent none;
+    background: rgba(0, 0, 0, 0) none;
   }
 
   /* Rules for browsers that don't support mozPrintCallback. */
@@ -1792,7 +1790,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     border: none;
     box-shadow: none;
     background-clip: content-box;
-    background-color: white;
+    background-color: rgba(255, 255, 255, 1);
   }
 
   .page[data-loaded] {
@@ -1848,7 +1846,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
 @media all and (max-width: 840px) {
   #sidebarContent {
-    background-color: hsla(0,0%,0%,.7);
+    background-color: rgba(0, 0, 0, 0.7);
   }
 
   html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer {
