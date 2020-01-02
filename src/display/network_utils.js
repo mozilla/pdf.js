@@ -17,8 +17,8 @@ import {
   assert,
   MissingPDFException,
   UnexpectedResponseException,
-} from "../shared/util";
-import { getFilenameFromContentDispositionHeader } from "./content_disposition";
+} from "../shared/util.js";
+import { getFilenameFromContentDispositionHeader } from "./content_disposition.js";
 
 function validateRangeRequestCapabilities({
   getResponseHeader,

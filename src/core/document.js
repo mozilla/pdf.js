@@ -31,22 +31,22 @@ import {
   stringToPDFString,
   Util,
   warn,
-} from "../shared/util";
-import { Catalog, ObjectLoader, XRef } from "./obj";
-import { Dict, isDict, isName, isStream, Ref } from "./primitives";
+} from "../shared/util.js";
+import { Catalog, ObjectLoader, XRef } from "./obj.js";
+import { Dict, isDict, isName, isStream, Ref } from "./primitives.js";
 import {
   getInheritableProperty,
   MissingDataException,
   XRefEntryException,
   XRefParseException,
-} from "./core_utils";
-import { NullStream, Stream, StreamsSequenceStream } from "./stream";
-import { AnnotationFactory } from "./annotation";
-import { calculateMD5 } from "./crypto";
-import { Linearization } from "./parser";
-import { OperatorList } from "./operator_list";
-import { PartialEvaluator } from "./evaluator";
-import { PDFFunctionFactory } from "./function";
+} from "./core_utils.js";
+import { NullStream, Stream, StreamsSequenceStream } from "./stream.js";
+import { AnnotationFactory } from "./annotation.js";
+import { calculateMD5 } from "./crypto.js";
+import { Linearization } from "./parser.js";
+import { OperatorList } from "./operator_list.js";
+import { PartialEvaluator } from "./evaluator.js";
+import { PDFFunctionFactory } from "./function.js";
 
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];

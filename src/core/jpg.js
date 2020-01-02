@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, BaseException, warn } from "../shared/util";
+import { assert, BaseException, warn } from "../shared/util.js";
 
 class JpegError extends BaseException {
   constructor(msg) {

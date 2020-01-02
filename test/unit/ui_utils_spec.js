@@ -25,9 +25,9 @@ import {
   moveToEndOfArray,
   waitOnEventOrTimeout,
   WaitOnType,
-} from "../../web/ui_utils";
-import { createObjectURL } from "../../src/shared/util";
-import { isNodeJS } from "../../src/shared/is_node";
+} from "../../web/ui_utils.js";
+import { createObjectURL } from "../../src/shared/util.js";
+import { isNodeJS } from "../../src/shared/is_node.js";
 
 describe("ui_utils", function() {
   describe("binary search", function() {

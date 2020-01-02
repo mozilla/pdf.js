@@ -14,9 +14,9 @@
  */
 /* eslint no-var: error */
 
-import { ColorSpace } from "./colorspace";
-import { JpegStream } from "./jpeg_stream";
-import { Stream } from "./stream";
+import { ColorSpace } from "./colorspace.js";
+import { JpegStream } from "./jpeg_stream.js";
+import { Stream } from "./stream.js";
 
 class NativeImageDecoder {
   constructor({

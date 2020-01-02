@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { warn } from "../shared/util";
+import { warn } from "../shared/util.js";
 
 // Character types for symbols from 0000 to 00FF.
 // Source: ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt

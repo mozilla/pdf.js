@@ -20,8 +20,8 @@ import {
   readUint16,
   readUint32,
   warn,
-} from "../shared/util";
-import { ArithmeticDecoder } from "./arithmetic_decoder";
+} from "../shared/util.js";
+import { ArithmeticDecoder } from "./arithmetic_decoder.js";
 
 class JpxError extends BaseException {
   constructor(msg) {

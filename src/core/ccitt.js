@@ -25,7 +25,7 @@
  *   or -1 when EOF is reached.
  */
 
-import { info } from "../shared/util";
+import { info } from "../shared/util.js";
 
 let CCITTFaxDecoder = (function CCITTFaxDecoder() {
   const ccittEOL = -2;

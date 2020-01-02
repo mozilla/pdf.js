@@ -19,7 +19,7 @@ import {
   NodeCanvasFactory,
   NodeFileReaderFactory,
   TEST_PDFS_PATH,
-} from "./test_utils";
+} from "./test_utils.js";
 import {
   createPromiseCapability,
   FontType,
@@ -31,23 +31,23 @@ import {
   PasswordResponses,
   PermissionFlag,
   StreamType,
-} from "../../src/shared/util";
+} from "../../src/shared/util.js";
 import {
   DOMCanvasFactory,
   RenderingCancelledException,
   StatTimer,
-} from "../../src/display/display_utils";
+} from "../../src/display/display_utils.js";
 import {
   getDocument,
   PDFDataRangeTransport,
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
-} from "../../src/display/api";
-import { AutoPrintRegExp } from "../../web/ui_utils";
-import { GlobalWorkerOptions } from "../../src/display/worker_options";
-import { isNodeJS } from "../../src/shared/is_node";
-import { Metadata } from "../../src/display/metadata";
+} from "../../src/display/api.js";
+import { AutoPrintRegExp } from "../../web/ui_utils.js";
+import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
+import { isNodeJS } from "../../src/shared/is_node.js";
+import { Metadata } from "../../src/display/metadata.js";
 
 describe("api", function() {
   let basicApiFileName = "basicapi.pdf";

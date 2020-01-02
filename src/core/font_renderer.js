@@ -19,11 +19,11 @@ import {
   FormatError,
   unreachable,
   warn,
-} from "../shared/util";
-import { CFFParser } from "./cff_parser";
-import { getGlyphsUnicode } from "./glyphlist";
-import { StandardEncoding } from "./encodings";
-import { Stream } from "./stream";
+} from "../shared/util.js";
+import { CFFParser } from "./cff_parser.js";
+import { getGlyphsUnicode } from "./glyphlist.js";
+import { StandardEncoding } from "./encodings.js";
+import { Stream } from "./stream.js";
 
 var FontRendererFactory = (function FontRendererFactoryClosure() {
   function getLong(data, offset) {
