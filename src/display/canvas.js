@@ -26,8 +26,8 @@ import {
   unreachable,
   Util,
   warn,
-} from "../shared/util";
-import { getShadingPatternFromIR, TilingPattern } from "./pattern_helper";
+} from "../shared/util.js";
+import { getShadingPatternFromIR, TilingPattern } from "./pattern_helper.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.

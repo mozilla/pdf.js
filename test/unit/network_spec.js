@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { AbortException } from "../../src/shared/util";
-import { PDFNetworkStream } from "../../src/display/network";
+import { AbortException } from "../../src/shared/util.js";
+import { PDFNetworkStream } from "../../src/display/network.js";
 
 describe("network", function() {
   var pdf1 = new URL("../pdfs/tracemonkey.pdf", window.location).href;

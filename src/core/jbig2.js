@@ -20,9 +20,9 @@ import {
   readUint16,
   readUint32,
   shadow,
-} from "../shared/util";
-import { ArithmeticDecoder } from "./arithmetic_decoder";
-import { CCITTFaxDecoder } from "./ccitt";
+} from "../shared/util.js";
+import { ArithmeticDecoder } from "./arithmetic_decoder.js";
+import { CCITTFaxDecoder } from "./ccitt.js";
 
 class Jbig2Error extends BaseException {
   constructor(msg) {

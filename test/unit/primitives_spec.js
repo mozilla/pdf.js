@@ -24,8 +24,8 @@ import {
   Name,
   Ref,
   RefSet,
-} from "../../src/core/primitives";
-import { XRefMock } from "./test_utils";
+} from "../../src/core/primitives.js";
+import { XRefMock } from "./test_utils.js";
 
 describe("primitives", function() {
   describe("Name", function() {

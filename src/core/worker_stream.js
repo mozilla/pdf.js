@@ -14,7 +14,7 @@
  */
 /* eslint no-var: error */
 
-import { assert } from "../shared/util";
+import { assert } from "../shared/util.js";
 
 /** @implements {IPDFStream} */
 class PDFWorkerStream {

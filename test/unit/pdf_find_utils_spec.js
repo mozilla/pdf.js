@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { CharacterType, getCharacterType } from "../../web/pdf_find_utils";
+import { CharacterType, getCharacterType } from "../../web/pdf_find_utils.js";
 
 describe("pdf_find_utils", function() {
   describe("getCharacterType", function() {

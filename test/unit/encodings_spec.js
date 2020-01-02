@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { getEncoding } from "../../src/core/encodings";
+import { getEncoding } from "../../src/core/encodings.js";
 
 describe("encodings", function() {
   describe("getEncoding", function() {

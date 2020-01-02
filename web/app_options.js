@@ -14,7 +14,7 @@
  */
 
 import { apiCompatibilityParams } from "pdfjs-lib";
-import { viewerCompatibilityParams } from "./viewer_compatibility";
+import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 const OptionKind = {
   VIEWER: 0x02,

@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { isDict, isStream } from "./primitives";
-import { DecodeStream } from "./stream";
-import { Jbig2Image } from "./jbig2";
-import { shadow } from "../shared/util";
+import { isDict, isStream } from "./primitives.js";
+import { DecodeStream } from "./stream.js";
+import { Jbig2Image } from "./jbig2.js";
+import { shadow } from "../shared/util.js";
 
 /**
  * For JBIG2's we use a library to decode these images and

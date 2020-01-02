@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-import { buildGetDocumentParams } from "./test_utils";
-import { EventBus } from "../../web/ui_utils";
-import { getDocument } from "../../src/display/api";
-import { PDFFindController } from "../../web/pdf_find_controller";
-import { SimpleLinkService } from "../../web/pdf_link_service";
+import { buildGetDocumentParams } from "./test_utils.js";
+import { EventBus } from "../../web/ui_utils.js";
+import { getDocument } from "../../src/display/api.js";
+import { PDFFindController } from "../../web/pdf_find_controller.js";
+import { SimpleLinkService } from "../../web/pdf_link_service.js";
 
 class MockLinkService extends SimpleLinkService {
   constructor() {

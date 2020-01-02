@@ -14,7 +14,7 @@
  */
 /* eslint no-var: error */
 
-import { assert, BaseException, warn } from "../shared/util";
+import { assert, BaseException, warn } from "../shared/util.js";
 
 function getLookupTableFactory(initializer) {
   let lookup;

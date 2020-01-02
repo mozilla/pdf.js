@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { AppOptions } from "./app_options";
-import { CSS_UNITS } from "./ui_utils";
-import { PDFPrintServiceFactory } from "./app";
+import { AppOptions } from "./app_options.js";
+import { CSS_UNITS } from "./ui_utils.js";
+import { PDFPrintServiceFactory } from "./app.js";
 import { shadow } from "pdfjs-lib";
 
 // Creates a placeholder with div and canvas with right size for the page.

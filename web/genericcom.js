@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { DefaultExternalServices, PDFViewerApplication } from "./app";
-import { BasePreferences } from "./preferences";
-import { DownloadManager } from "./download_manager";
-import { GenericL10n } from "./genericl10n";
+import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
+import { BasePreferences } from "./preferences.js";
+import { DownloadManager } from "./download_manager.js";
+import { GenericL10n } from "./genericl10n.js";
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   throw new Error(

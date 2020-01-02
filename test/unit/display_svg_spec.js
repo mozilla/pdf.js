@@ -14,12 +14,12 @@
  */
 /* globals __non_webpack_require__ */
 
-import { setStubs, unsetStubs } from "../../examples/node/domstubs";
-import { buildGetDocumentParams } from "./test_utils";
-import { getDocument } from "../../src/display/api";
-import { isNodeJS } from "../../src/shared/is_node";
-import { NativeImageDecoding } from "../../src/shared/util";
-import { SVGGraphics } from "../../src/display/svg";
+import { setStubs, unsetStubs } from "../../examples/node/domstubs.js";
+import { buildGetDocumentParams } from "./test_utils.js";
+import { getDocument } from "../../src/display/api.js";
+import { isNodeJS } from "../../src/shared/is_node.js";
+import { NativeImageDecoding } from "../../src/shared/util.js";
+import { SVGGraphics } from "../../src/display/svg.js";
 
 const XLINK_NS = "http://www.w3.org/1999/xlink";
 
