@@ -25,9 +25,9 @@ import {
   TextRenderingMode,
   Util,
   warn,
-} from "../shared/util";
-import { DOMSVGFactory } from "./display_utils";
-import { isNodeJS } from "../shared/is_node";
+} from "../shared/util.js";
+import { DOMSVGFactory } from "./display_utils.js";
+import { isNodeJS } from "../shared/is_node.js";
 
 let SVGGraphics = function() {
   throw new Error("Not implemented: SVGGraphics");

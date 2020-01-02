@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { DecodeStream } from "./stream";
-import { JpxImage } from "./jpx";
-import { shadow } from "../shared/util";
+import { DecodeStream } from "./stream.js";
+import { JpxImage } from "./jpx.js";
+import { shadow } from "../shared/util.js";
 
 /**
  * For JPEG 2000's we use a library to decode these images and

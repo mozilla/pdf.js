@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { assert } from "../shared/util";
-import { SimpleXMLParser } from "./xml_parser";
+import { assert } from "../shared/util.js";
+import { SimpleXMLParser } from "./xml_parser.js";
 
 class Metadata {
   constructor(data) {

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus } from "./ui_utils";
+import { getGlobalEventBus } from "./ui_utils.js";
 import { renderTextLayer } from "pdfjs-lib";
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms

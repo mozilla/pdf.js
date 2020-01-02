@@ -18,7 +18,7 @@
  */
 /* eslint no-var: error */
 
-import { isArrayBuffer, isString } from "../shared/util";
+import { isArrayBuffer, isString } from "../shared/util.js";
 
 const SEED = 0xc3d2e1f0;
 // Workaround for missing math precision in JS.

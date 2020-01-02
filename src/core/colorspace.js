@@ -21,8 +21,8 @@ import {
   shadow,
   unreachable,
   warn,
-} from "../shared/util";
-import { isDict, isName, isStream } from "./primitives";
+} from "../shared/util.js";
+import { isDict, isName, isStream } from "./primitives.js";
 
 /**
  * Resizes an RGB image with 3 components.

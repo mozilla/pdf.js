@@ -18,13 +18,13 @@ import {
   AbortException,
   assert,
   createPromiseCapability,
-} from "../shared/util";
+} from "../shared/util.js";
 import {
   createResponseStatusError,
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
   validateResponseStatus,
-} from "./network_utils";
+} from "./network_utils.js";
 
 function createFetchOptions(headers, withCredentials, abortController) {
   return {

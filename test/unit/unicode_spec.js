@@ -16,14 +16,14 @@
 import {
   getDingbatsGlyphsUnicode,
   getGlyphsUnicode,
-} from "../../src/core/glyphlist";
+} from "../../src/core/glyphlist.js";
 import {
   getNormalizedUnicodes,
   getUnicodeForGlyph,
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
   reverseIfRtl,
-} from "../../src/core/unicode";
+} from "../../src/core/unicode.js";
 
 describe("unicode", function() {
   describe("mapSpecialUnicodeValues", function() {

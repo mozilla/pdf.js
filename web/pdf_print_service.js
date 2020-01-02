@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { CSS_UNITS, NullL10n } from "./ui_utils";
-import { PDFPrintServiceFactory, PDFViewerApplication } from "./app";
-import { AppOptions } from "./app_options";
+import { CSS_UNITS, NullL10n } from "./ui_utils.js";
+import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
+import { AppOptions } from "./app_options.js";
 
 let activeService = null;
 let overlayManager = null;

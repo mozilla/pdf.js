@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createIdFactory } from "./test_utils";
+import { createIdFactory } from "./test_utils.js";
 
 describe("document", function() {
   describe("Page", function() {

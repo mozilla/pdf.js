@@ -14,8 +14,8 @@
  */
 
 import { AnnotationLayer } from "pdfjs-lib";
-import { NullL10n } from "./ui_utils";
-import { SimpleLinkService } from "./pdf_link_service";
+import { NullL10n } from "./ui_utils.js";
+import { SimpleLinkService } from "./pdf_link_service.js";
 
 /**
  * @typedef {Object} AnnotationLayerBuilderOptions

@@ -23,14 +23,14 @@ import {
   RendererType,
   roundToDivide,
   TextLayerMode,
-} from "./ui_utils";
+} from "./ui_utils.js";
 import {
   createPromiseCapability,
   RenderingCancelledException,
   SVGGraphics,
 } from "pdfjs-lib";
-import { RenderingStates } from "./pdf_rendering_queue";
-import { viewerCompatibilityParams } from "./viewer_compatibility";
+import { RenderingStates } from "./pdf_rendering_queue.js";
+import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions

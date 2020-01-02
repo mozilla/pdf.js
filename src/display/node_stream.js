@@ -24,11 +24,11 @@ import {
   assert,
   createPromiseCapability,
   MissingPDFException,
-} from "../shared/util";
+} from "../shared/util.js";
 import {
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
-} from "./network_utils";
+} from "./network_utils.js";
 
 const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
 

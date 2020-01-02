@@ -23,7 +23,7 @@ import {
   stringToBytes,
   Util,
   warn,
-} from "../shared/util";
+} from "../shared/util.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 const SVG_NS = "http://www.w3.org/2000/svg";

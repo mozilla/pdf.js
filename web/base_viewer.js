@@ -36,13 +36,13 @@ import {
   UNKNOWN_SCALE,
   VERTICAL_PADDING,
   watchScroll,
-} from "./ui_utils";
-import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue";
-import { AnnotationLayerBuilder } from "./annotation_layer_builder";
+} from "./ui_utils.js";
+import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
+import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { createPromiseCapability } from "pdfjs-lib";
-import { PDFPageView } from "./pdf_page_view";
-import { SimpleLinkService } from "./pdf_link_service";
-import { TextLayerBuilder } from "./text_layer_builder";
+import { PDFPageView } from "./pdf_page_view.js";
+import { SimpleLinkService } from "./pdf_link_service.js";
+import { TextLayerBuilder } from "./text_layer_builder.js";
 
 const DEFAULT_CACHE_SIZE = 10;
 

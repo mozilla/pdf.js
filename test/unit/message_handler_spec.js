@@ -17,9 +17,9 @@ import {
   AbortException,
   createPromiseCapability,
   UnknownErrorException,
-} from "../../src/shared/util";
-import { LoopbackPort } from "../../src/display/api";
-import { MessageHandler } from "../../src/shared/message_handler";
+} from "../../src/shared/util.js";
+import { LoopbackPort } from "../../src/display/api.js";
+import { MessageHandler } from "../../src/shared/message_handler.js";
 
 describe("message_handler", function() {
   // Sleep function to wait for sometime, similar to setTimeout but faster.

@@ -29,7 +29,7 @@ import {
   string32,
   stringToBytes,
   stringToPDFString,
-} from "../../src/shared/util";
+} from "../../src/shared/util.js";
 
 describe("util", function() {
   describe("bytesToString", function() {

@@ -23,7 +23,7 @@ function getDefaultPreferences() {
     } else {
       defaultPreferences = new Promise(function(resolve, reject) {
         if (typeof SystemJS === "object") {
-          SystemJS.import("./app_options").then(resolve, reject);
+          SystemJS.import("./app_options.js").then(resolve, reject);
         } else {
           reject(new Error("SystemJS must be used to load AppOptions."));
         }

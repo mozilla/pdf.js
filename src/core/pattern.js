@@ -21,10 +21,10 @@ import {
   UNSUPPORTED_FEATURES,
   Util,
   warn,
-} from "../shared/util";
-import { ColorSpace } from "./colorspace";
-import { isStream } from "./primitives";
-import { MissingDataException } from "./core_utils";
+} from "../shared/util.js";
+import { ColorSpace } from "./colorspace.js";
+import { isStream } from "./primitives.js";
+import { MissingDataException } from "./core_utils.js";
 
 var ShadingType = {
   FUNCTION_BASED: 1,

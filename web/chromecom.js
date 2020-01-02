@@ -14,11 +14,11 @@
  */
 /* globals chrome */
 
-import { DefaultExternalServices, PDFViewerApplication } from "./app";
-import { AppOptions } from "./app_options";
-import { BasePreferences } from "./preferences";
-import { DownloadManager } from "./download_manager";
-import { GenericL10n } from "./genericl10n";
+import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
+import { AppOptions } from "./app_options.js";
+import { BasePreferences } from "./preferences.js";
+import { DownloadManager } from "./download_manager.js";
+import { GenericL10n } from "./genericl10n.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   throw new Error(

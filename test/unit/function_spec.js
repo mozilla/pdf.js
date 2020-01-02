@@ -16,9 +16,9 @@
 import {
   PostScriptCompiler,
   PostScriptEvaluator,
-} from "../../src/core/function";
-import { PostScriptLexer, PostScriptParser } from "../../src/core/ps_parser";
-import { StringStream } from "../../src/core/stream";
+} from "../../src/core/function.js";
+import { PostScriptLexer, PostScriptParser } from "../../src/core/ps_parser.js";
+import { StringStream } from "../../src/core/stream.js";
 
 describe("function", function() {
   beforeEach(function() {

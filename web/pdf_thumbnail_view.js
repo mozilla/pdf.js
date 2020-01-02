@@ -17,8 +17,8 @@ import {
   createPromiseCapability,
   RenderingCancelledException,
 } from "pdfjs-lib";
-import { getOutputScale, NullL10n } from "./ui_utils";
-import { RenderingStates } from "./pdf_rendering_queue";
+import { getOutputScale, NullL10n } from "./ui_utils.js";
+import { RenderingStates } from "./pdf_rendering_queue.js";
 
 const MAX_NUM_SCALING_STEPS = 3;
 const THUMBNAIL_CANVAS_BORDER_WIDTH = 1; // px

@@ -32,8 +32,8 @@ import {
   UNSUPPORTED_FEATURES,
   Util,
   warn,
-} from "../shared/util";
-import { CMapFactory, IdentityCMap } from "./cmap";
+} from "../shared/util.js";
+import { CMapFactory, IdentityCMap } from "./cmap.js";
 import {
   Cmd,
   Dict,
@@ -44,7 +44,7 @@ import {
   isStream,
   Name,
   Ref,
-} from "./primitives";
+} from "./primitives.js";
 import {
   ErrorFont,
   Font,
@@ -52,7 +52,7 @@ import {
   getFontType,
   IdentityToUnicodeMap,
   ToUnicodeMap,
-} from "./fonts";
+} from "./fonts.js";
 import {
   getEncoding,
   MacRomanEncoding,
@@ -60,31 +60,31 @@ import {
   SymbolSetEncoding,
   WinAnsiEncoding,
   ZapfDingbatsEncoding,
-} from "./encodings";
+} from "./encodings.js";
 import {
   getNormalizedUnicodes,
   getUnicodeForGlyph,
   reverseIfRtl,
-} from "./unicode";
+} from "./unicode.js";
 import {
   getSerifFonts,
   getStdFontMap,
   getSymbolsFonts,
-} from "./standard_fonts";
-import { getTilingPatternIR, Pattern } from "./pattern";
-import { Lexer, Parser } from "./parser";
-import { bidi } from "./bidi";
-import { ColorSpace } from "./colorspace";
-import { DecodeStream } from "./stream";
-import { getGlyphsUnicode } from "./glyphlist";
-import { getLookupTableFactory } from "./core_utils";
-import { getMetrics } from "./metrics";
-import { isPDFFunction } from "./function";
-import { JpegStream } from "./jpeg_stream";
-import { MurmurHash3_64 } from "./murmurhash3";
-import { NativeImageDecoder } from "./image_utils";
-import { OperatorList } from "./operator_list";
-import { PDFImage } from "./image";
+} from "./standard_fonts.js";
+import { getTilingPatternIR, Pattern } from "./pattern.js";
+import { Lexer, Parser } from "./parser.js";
+import { bidi } from "./bidi.js";
+import { ColorSpace } from "./colorspace.js";
+import { DecodeStream } from "./stream.js";
+import { getGlyphsUnicode } from "./glyphlist.js";
+import { getLookupTableFactory } from "./core_utils.js";
+import { getMetrics } from "./metrics.js";
+import { isPDFFunction } from "./function.js";
+import { JpegStream } from "./jpeg_stream.js";
+import { MurmurHash3_64 } from "./murmurhash3.js";
+import { NativeImageDecoder } from "./image_utils.js";
+import { OperatorList } from "./operator_list.js";
+import { PDFImage } from "./image.js";
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
   const DefaultPartialEvaluatorOptions = {

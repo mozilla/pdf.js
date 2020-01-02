@@ -14,12 +14,16 @@
  */
 /* eslint no-var: error */
 
-import { assert, createPromiseCapability, stringToBytes } from "../shared/util";
+import {
+  assert,
+  createPromiseCapability,
+  stringToBytes,
+} from "../shared/util.js";
 import {
   createResponseStatusError,
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
-} from "./network_utils";
+} from "./network_utils.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
   throw new Error(

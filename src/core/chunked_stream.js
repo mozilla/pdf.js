@@ -19,8 +19,8 @@ import {
   arraysToBytes,
   createPromiseCapability,
   isEmptyObj,
-} from "../shared/util";
-import { MissingDataException } from "./core_utils";
+} from "../shared/util.js";
+import { MissingDataException } from "./core_utils.js";
 
 class ChunkedStream {
   constructor(length, chunkSize, manager) {

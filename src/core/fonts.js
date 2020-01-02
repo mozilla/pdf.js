@@ -27,7 +27,7 @@ import {
   string32,
   unreachable,
   warn,
-} from "../shared/util";
+} from "../shared/util.js";
 import {
   CFF,
   CFFCharset,
@@ -39,32 +39,32 @@ import {
   CFFStandardStrings,
   CFFStrings,
   CFFTopDict,
-} from "./cff_parser";
-import { getDingbatsGlyphsUnicode, getGlyphsUnicode } from "./glyphlist";
+} from "./cff_parser.js";
+import { getDingbatsGlyphsUnicode, getGlyphsUnicode } from "./glyphlist.js";
 import {
   getEncoding,
   MacRomanEncoding,
   StandardEncoding,
   SymbolSetEncoding,
   ZapfDingbatsEncoding,
-} from "./encodings";
+} from "./encodings.js";
 import {
   getGlyphMapForStandardFonts,
   getNonStdFontMap,
   getStdFontMap,
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
-} from "./standard_fonts";
+} from "./standard_fonts.js";
 import {
   getUnicodeForGlyph,
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
-} from "./unicode";
-import { FontRendererFactory } from "./font_renderer";
-import { IdentityCMap } from "./cmap";
-import { MissingDataException } from "./core_utils";
-import { Stream } from "./stream";
-import { Type1Parser } from "./type1_parser";
+} from "./unicode.js";
+import { FontRendererFactory } from "./font_renderer.js";
+import { IdentityCMap } from "./cmap.js";
+import { MissingDataException } from "./core_utils.js";
+import { Stream } from "./stream.js";
+import { Type1Parser } from "./type1_parser.js";
 
 // Unicode Private Use Areas:
 const PRIVATE_USE_AREAS = [

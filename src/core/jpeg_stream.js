@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { createObjectURL, shadow } from "../shared/util";
-import { DecodeStream } from "./stream";
-import { isDict } from "./primitives";
-import { JpegImage } from "./jpg";
+import { createObjectURL, shadow } from "../shared/util.js";
+import { DecodeStream } from "./stream.js";
+import { isDict } from "./primitives.js";
+import { JpegImage } from "./jpg.js";
 
 /**
  * Depending on the type of JPEG a JpegStream is handled in different ways. For

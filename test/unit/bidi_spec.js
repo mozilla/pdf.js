@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { bidi } from "../../src/core/bidi";
+import { bidi } from "../../src/core/bidi.js";
 
 describe("bidi", function() {
   it("should mark text as RTL if more than 30% of text is RTL", function() {

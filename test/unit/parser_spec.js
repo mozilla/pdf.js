@@ -14,10 +14,10 @@
  */
 /* eslint no-var: error */
 
-import { Lexer, Linearization, Parser } from "../../src/core/parser";
-import { FormatError } from "../../src/shared/util";
-import { Name } from "../../src/core/primitives";
-import { StringStream } from "../../src/core/stream";
+import { Lexer, Linearization, Parser } from "../../src/core/parser.js";
+import { FormatError } from "../../src/shared/util.js";
+import { Name } from "../../src/core/primitives.js";
+import { StringStream } from "../../src/core/stream.js";
 
 describe("parser", function() {
   describe("Parser", function() {

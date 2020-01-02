@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { isSpace, warn } from "../shared/util";
-import { getEncoding } from "./encodings";
-import { Stream } from "./stream";
+import { isSpace, warn } from "../shared/util.js";
+import { getEncoding } from "./encodings.js";
+import { Stream } from "./stream.js";
 
 // Hinting is currently disabled due to unknown problems on windows
 // in tracemonkey and various other pdfs with type1 fonts.

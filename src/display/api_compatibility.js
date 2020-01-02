@@ -15,7 +15,7 @@
 
 let compatibilityParams = Object.create(null);
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  const { isNodeJS } = require("../shared/is_node");
+  const { isNodeJS } = require("../shared/is_node.js");
 
   const userAgent =
     (typeof navigator !== "undefined" && navigator.userAgent) || "";

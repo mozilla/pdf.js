@@ -20,7 +20,7 @@ import {
   getFilenameFromUrl,
   LinkTarget,
   PDFDateString,
-} from "./display_utils";
+} from "./display_utils.js";
 import {
   AnnotationBorderStyleType,
   AnnotationType,
@@ -28,7 +28,7 @@ import {
   unreachable,
   Util,
   warn,
-} from "../shared/util";
+} from "../shared/util.js";
 
 /**
  * @typedef {Object} AnnotationElementParameters

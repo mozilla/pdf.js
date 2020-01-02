@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-import { AbortException, createPromiseCapability, Util } from "../shared/util";
+import {
+  AbortException,
+  createPromiseCapability,
+  Util,
+} from "../shared/util.js";
 
 /**
  * Text layer render parameters.

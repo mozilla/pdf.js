@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts";
-import { StringStream } from "../../src/core/stream";
-import { Type1Parser } from "../../src/core/type1_parser";
+import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts.js";
+import { StringStream } from "../../src/core/stream.js";
+import { Type1Parser } from "../../src/core/type1_parser.js";
 
 describe("Type1Parser", function() {
   it("splits tokens", function() {

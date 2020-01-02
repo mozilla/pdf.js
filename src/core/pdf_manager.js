@@ -18,11 +18,11 @@ import {
   shadow,
   unreachable,
   warn,
-} from "../shared/util";
-import { ChunkedStreamManager } from "./chunked_stream";
-import { MissingDataException } from "./core_utils";
-import { PDFDocument } from "./document";
-import { Stream } from "./stream";
+} from "../shared/util.js";
+import { ChunkedStreamManager } from "./chunked_stream.js";
+import { MissingDataException } from "./core_utils.js";
+import { PDFDocument } from "./document.js";
+import { Stream } from "./stream.js";
 
 class BasePdfManager {
   constructor() {

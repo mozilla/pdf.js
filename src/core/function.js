@@ -20,9 +20,9 @@ import {
   isEvalSupported,
   shadow,
   unreachable,
-} from "../shared/util";
-import { isDict, isStream } from "./primitives";
-import { PostScriptLexer, PostScriptParser } from "./ps_parser";
+} from "../shared/util.js";
+import { isDict, isStream } from "./primitives.js";
+import { PostScriptLexer, PostScriptParser } from "./ps_parser.js";
 
 let IsEvalSupportedCached = {
   get value() {

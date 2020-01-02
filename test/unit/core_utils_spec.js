@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-import { Dict, Ref } from "../../src/core/primitives";
+import { Dict, Ref } from "../../src/core/primitives.js";
 import {
   getInheritableProperty,
   toRomanNumerals,
-} from "../../src/core/core_utils";
-import { XRefMock } from "./test_utils";
+} from "../../src/core/core_utils.js";
+import { XRefMock } from "./test_utils.js";
 
 describe("core_utils", function() {
   describe("getInheritableProperty", function() {

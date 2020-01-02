@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { BaseViewer } from "./base_viewer";
+import { BaseViewer } from "./base_viewer.js";
 import { shadow } from "pdfjs-lib";
 
 class PDFViewer extends BaseViewer {

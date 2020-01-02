@@ -19,11 +19,11 @@ import {
   isString,
   unreachable,
   warn,
-} from "../shared/util";
-import { isCmd, isEOF, isName, isStream } from "./primitives";
-import { Lexer } from "./parser";
-import { MissingDataException } from "./core_utils";
-import { Stream } from "./stream";
+} from "../shared/util.js";
+import { isCmd, isEOF, isName, isStream } from "./primitives.js";
+import { Lexer } from "./parser.js";
+import { MissingDataException } from "./core_utils.js";
+import { Stream } from "./stream.js";
 
 var BUILT_IN_CMAPS = [
   // << Start unicode maps.

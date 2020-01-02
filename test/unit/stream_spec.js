@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { PredictorStream, Stream } from "../../src/core/stream";
-import { Dict } from "../../src/core/primitives";
+import { PredictorStream, Stream } from "../../src/core/stream.js";
+import { Dict } from "../../src/core/primitives.js";
 
 describe("stream", function() {
   beforeEach(function() {

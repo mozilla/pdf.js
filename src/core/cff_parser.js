@@ -20,13 +20,13 @@ import {
   stringToBytes,
   Util,
   warn,
-} from "../shared/util";
+} from "../shared/util.js";
 import {
   ExpertCharset,
   ExpertSubsetCharset,
   ISOAdobeCharset,
-} from "./charsets";
-import { ExpertEncoding, StandardEncoding } from "./encodings";
+} from "./charsets.js";
+import { ExpertEncoding, StandardEncoding } from "./encodings.js";
 
 // Maximum subroutine call depth of type 2 chartrings. Matches OTS.
 var MAX_SUBR_NESTING = 10;

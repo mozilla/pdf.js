@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus, NullL10n } from "./ui_utils";
-import { FindState } from "./pdf_find_controller";
+import { getGlobalEventBus, NullL10n } from "./ui_utils.js";
+import { FindState } from "./pdf_find_controller.js";
 
 const MATCHES_COUNT_LIMIT = 1000;
 

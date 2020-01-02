@@ -18,11 +18,11 @@ import {
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
   validateResponseStatus,
-} from "../../src/display/network_utils";
+} from "../../src/display/network_utils.js";
 import {
   MissingPDFException,
   UnexpectedResponseException,
-} from "../../src/shared/util";
+} from "../../src/shared/util.js";
 
 describe("network_utils", function() {
   describe("validateRangeRequestCapabilities", function() {
