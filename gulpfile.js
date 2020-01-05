@@ -1548,12 +1548,6 @@ gulp.task(
         homepage: DIST_HOMEPAGE,
         bugs: DIST_BUGS_URL,
         license: DIST_LICENSE,
-        dependencies: {
-          "worker-loader": "^2.0.0", // used in external/dist/webpack.json
-        },
-        peerDependencies: {
-          webpack: "^3.0.0 || ^4.0.0-alpha.0 || ^4.0.0", // from 'worker-loader'
-        },
         browser: {
           fs: false,
           http: false,
