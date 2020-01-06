@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError, info, Util } from "../shared/util";
+import { FormatError, info, Util } from "../shared/util.js";
 
 var ShadingIRs = {};
 

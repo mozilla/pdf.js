@@ -30,7 +30,7 @@ import {
   stringToUTF8String,
   unreachable,
   warn,
-} from "../shared/util";
+} from "../shared/util.js";
 import {
   clearPrimitiveCaches,
   Cmd,
@@ -44,16 +44,16 @@ import {
   Ref,
   RefSet,
   RefSetCache,
-} from "./primitives";
-import { Lexer, Parser } from "./parser";
+} from "./primitives.js";
+import { Lexer, Parser } from "./parser.js";
 import {
   MissingDataException,
   toRomanNumerals,
   XRefEntryException,
   XRefParseException,
-} from "./core_utils";
-import { CipherTransformFactory } from "./crypto";
-import { ColorSpace } from "./colorspace";
+} from "./core_utils.js";
+import { CipherTransformFactory } from "./crypto.js";
+import { ColorSpace } from "./colorspace.js";
 
 function fetchDestination(dest) {
   return isDict(dest) ? dest.get("D") : dest;

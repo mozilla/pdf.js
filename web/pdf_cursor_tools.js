@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { GrabToPan } from "./grab_to_pan";
+import { GrabToPan } from "./grab_to_pan.js";
 
 const CursorTool = {
   SELECT: 0, // The default value.

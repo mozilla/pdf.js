@@ -14,7 +14,7 @@
  */
 /* eslint-disable no-unsanitized/method */
 
-import { assert, ImageKind, OPS } from "../shared/util";
+import { assert, ImageKind, OPS } from "../shared/util.js";
 
 var QueueOptimizer = (function QueueOptimizerClosure() {
   function addState(parentState, pattern, checkFn, iterateFn, processFn) {

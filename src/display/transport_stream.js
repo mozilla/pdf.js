@@ -14,7 +14,7 @@
  */
 /* eslint no-var: error */
 
-import { assert, createPromiseCapability } from "../shared/util";
+import { assert, createPromiseCapability } from "../shared/util.js";
 
 /** @implements {IPDFStream} */
 class PDFDataTransportStream {

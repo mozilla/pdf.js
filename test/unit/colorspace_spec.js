@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-import { Dict, Name, Ref } from "../../src/core/primitives";
-import { Stream, StringStream } from "../../src/core/stream";
-import { ColorSpace } from "../../src/core/colorspace";
-import { PDFFunctionFactory } from "../../src/core/function";
-import { XRefMock } from "./test_utils";
+import { Dict, Name, Ref } from "../../src/core/primitives.js";
+import { Stream, StringStream } from "../../src/core/stream.js";
+import { ColorSpace } from "../../src/core/colorspace.js";
+import { PDFFunctionFactory } from "../../src/core/function.js";
+import { XRefMock } from "./test_utils.js";
 
 describe("colorspace", function() {
   describe("ColorSpace", function() {

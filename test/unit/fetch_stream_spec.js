@@ -14,8 +14,8 @@
  */
 /* eslint no-var: error */
 
-import { AbortException } from "../../src/shared/util";
-import { PDFFetchStream } from "../../src/display/fetch_stream";
+import { AbortException } from "../../src/shared/util.js";
+import { PDFFetchStream } from "../../src/display/fetch_stream.js";
 
 describe("fetch_stream", function() {
   const pdfUrl = new URL("../pdfs/tracemonkey.pdf", window.location).href;

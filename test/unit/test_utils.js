@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { assert, CMapCompressionType } from "../../src/shared/util";
-import { isNodeJS } from "../../src/shared/is_node";
-import { isRef } from "../../src/core/primitives";
-import { Page } from "../../src/core/document";
+import { assert, CMapCompressionType } from "../../src/shared/util.js";
+import { isNodeJS } from "../../src/shared/is_node.js";
+import { isRef } from "../../src/core/primitives.js";
+import { Page } from "../../src/core/document.js";
 
 class DOMFileReaderFactory {
   static async fetch(params) {

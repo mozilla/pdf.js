@@ -14,7 +14,7 @@
  */
 /* eslint-disable no-multi-str */
 
-import { shadow } from "../shared/util";
+import { shadow } from "../shared/util.js";
 
 class WebGLContext {
   constructor({ enable = false }) {

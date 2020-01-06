@@ -22,9 +22,9 @@ import {
   unreachable,
   utf8StringToString,
   warn,
-} from "../shared/util";
-import { isDict, isName, Name } from "./primitives";
-import { DecryptStream } from "./stream";
+} from "../shared/util.js";
+import { isDict, isName, Name } from "./primitives.js";
+import { DecryptStream } from "./stream.js";
 
 var ARCFourCipher = (function ARCFourCipherClosure() {
   function ARCFourCipher(key) {

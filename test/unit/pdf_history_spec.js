@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { isDestArraysEqual, isDestHashesEqual } from "../../web/pdf_history";
+import { isDestArraysEqual, isDestHashesEqual } from "../../web/pdf_history.js";
 
 describe("pdf_history", function() {
   describe("isDestHashesEqual", function() {

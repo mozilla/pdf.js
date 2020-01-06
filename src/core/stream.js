@@ -24,8 +24,8 @@ import {
   isSpace,
   stringToBytes,
   unreachable,
-} from "../shared/util";
-import { isDict } from "./primitives";
+} from "../shared/util.js";
+import { isDict } from "./primitives.js";
 
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
