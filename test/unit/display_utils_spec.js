@@ -20,8 +20,8 @@ import {
   getFilenameFromUrl,
   isValidFetchUrl,
   PDFDateString,
-} from "../../src/display/display_utils";
-import { isNodeJS } from "../../src/shared/is_node";
+} from "../../src/display/display_utils.js";
+import { isNodeJS } from "../../src/shared/is_node.js";
 
 describe("display_utils", function() {
   describe("DOMCanvasFactory", function() {

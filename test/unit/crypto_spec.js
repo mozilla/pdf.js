@@ -24,13 +24,13 @@ import {
   CipherTransformFactory,
   PDF17,
   PDF20,
-} from "../../src/core/crypto";
-import { Dict, Name } from "../../src/core/primitives";
+} from "../../src/core/crypto.js";
+import { Dict, Name } from "../../src/core/primitives.js";
 import {
   PasswordException,
   PasswordResponses,
   stringToBytes,
-} from "../../src/shared/util";
+} from "../../src/shared/util.js";
 
 describe("crypto", function() {
   function hex2binary(s) {

@@ -21,7 +21,7 @@ import {
   MIN_SCALE,
   noContextMenuHandler,
   NullL10n,
-} from "./ui_utils";
+} from "./ui_utils.js";
 
 const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
 const SCALE_SELECT_CONTAINER_PADDING = 8;

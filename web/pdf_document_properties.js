@@ -19,7 +19,7 @@ import {
   getPDFFileNameFromURL,
   isPortraitOrientation,
   NullL10n,
-} from "./ui_utils";
+} from "./ui_utils.js";
 
 const DEFAULT_FIELD_CONTENT = "-";
 

@@ -19,9 +19,9 @@ import {
   CFFFDSelect,
   CFFParser,
   CFFStrings,
-} from "../../src/core/cff_parser";
-import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts";
-import { Stream } from "../../src/core/stream";
+} from "../../src/core/cff_parser.js";
+import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts.js";
+import { Stream } from "../../src/core/stream.js";
 
 describe("CFFParser", function() {
   function createWithNullProto(obj) {

@@ -34,8 +34,8 @@ import {
   ScrollMode,
   SpreadMode,
   TextLayerMode,
-} from "./ui_utils";
-import { AppOptions, OptionKind } from "./app_options";
+} from "./ui_utils.js";
+import { AppOptions, OptionKind } from "./app_options.js";
 import {
   build,
   createObjectURL,
@@ -53,25 +53,25 @@ import {
   UNSUPPORTED_FEATURES,
   version,
 } from "pdfjs-lib";
-import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools";
-import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue";
-import { PDFSidebar, SidebarView } from "./pdf_sidebar";
-import { OverlayManager } from "./overlay_manager";
-import { PasswordPrompt } from "./password_prompt";
-import { PDFAttachmentViewer } from "./pdf_attachment_viewer";
-import { PDFDocumentProperties } from "./pdf_document_properties";
-import { PDFFindBar } from "./pdf_find_bar";
-import { PDFFindController } from "./pdf_find_controller";
-import { PDFHistory } from "./pdf_history";
-import { PDFLinkService } from "./pdf_link_service";
-import { PDFOutlineViewer } from "./pdf_outline_viewer";
-import { PDFPresentationMode } from "./pdf_presentation_mode";
-import { PDFSidebarResizer } from "./pdf_sidebar_resizer";
-import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer";
-import { PDFViewer } from "./pdf_viewer";
-import { SecondaryToolbar } from "./secondary_toolbar";
-import { Toolbar } from "./toolbar";
-import { ViewHistory } from "./view_history";
+import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools.js";
+import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
+import { PDFSidebar, SidebarView } from "./pdf_sidebar.js";
+import { OverlayManager } from "./overlay_manager.js";
+import { PasswordPrompt } from "./password_prompt.js";
+import { PDFAttachmentViewer } from "./pdf_attachment_viewer.js";
+import { PDFDocumentProperties } from "./pdf_document_properties.js";
+import { PDFFindBar } from "./pdf_find_bar.js";
+import { PDFFindController } from "./pdf_find_controller.js";
+import { PDFHistory } from "./pdf_history.js";
+import { PDFLinkService } from "./pdf_link_service.js";
+import { PDFOutlineViewer } from "./pdf_outline_viewer.js";
+import { PDFPresentationMode } from "./pdf_presentation_mode.js";
+import { PDFSidebarResizer } from "./pdf_sidebar_resizer.js";
+import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer.js";
+import { PDFViewer } from "./pdf_viewer.js";
+import { SecondaryToolbar } from "./secondary_toolbar.js";
+import { Toolbar } from "./toolbar.js";
+import { ViewHistory } from "./view_history.js";
 
 const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
@@ -1769,7 +1769,7 @@ async function loadFakeWorker() {
     if (typeof SystemJS !== "object") {
       throw new Error("SystemJS must be used to load fake worker.");
     }
-    window.pdfjsWorker = await SystemJS.import("pdfjs/core/worker");
+    window.pdfjsWorker = await SystemJS.import("pdfjs/core/worker.js");
     return undefined;
   }
   return loadScript(PDFWorker.getWorkerSrc());

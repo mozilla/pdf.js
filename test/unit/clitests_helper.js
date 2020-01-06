@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { setVerbosityLevel, VerbosityLevel } from "../../src/shared/util";
-import { isNodeJS } from "../../src/shared/is_node";
-import { PDFNodeStream } from "../../src/display/node_stream";
-import { setPDFNetworkStreamFactory } from "../../src/display/api";
+import { setVerbosityLevel, VerbosityLevel } from "../../src/shared/util.js";
+import { isNodeJS } from "../../src/shared/is_node.js";
+import { PDFNodeStream } from "../../src/display/node_stream.js";
+import { setPDFNetworkStreamFactory } from "../../src/display/api.js";
 
 // Ensure that this script only runs in Node.js environments.
 if (!isNodeJS) {

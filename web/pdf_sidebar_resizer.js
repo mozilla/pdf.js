@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { clamp, NullL10n } from "./ui_utils";
+import { clamp, NullL10n } from "./ui_utils.js";
 
 const SIDEBAR_WIDTH_VAR = "--sidebar-width";
 const SIDEBAR_MIN_WIDTH = 200; // pixels

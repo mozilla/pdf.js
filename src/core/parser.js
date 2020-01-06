@@ -22,7 +22,7 @@ import {
   NullStream,
   PredictorStream,
   RunLengthStream,
-} from "./stream";
+} from "./stream.js";
 import {
   assert,
   bytesToString,
@@ -32,7 +32,7 @@ import {
   isSpace,
   StreamType,
   warn,
-} from "../shared/util";
+} from "../shared/util.js";
 import {
   Cmd,
   Dict,
@@ -43,12 +43,12 @@ import {
   isName,
   Name,
   Ref,
-} from "./primitives";
-import { CCITTFaxStream } from "./ccitt_stream";
-import { Jbig2Stream } from "./jbig2_stream";
-import { JpegStream } from "./jpeg_stream";
-import { JpxStream } from "./jpx_stream";
-import { MissingDataException } from "./core_utils";
+} from "./primitives.js";
+import { CCITTFaxStream } from "./ccitt_stream.js";
+import { Jbig2Stream } from "./jbig2_stream.js";
+import { JpegStream } from "./jpeg_stream.js";
+import { JpxStream } from "./jpx_stream.js";
+import { MissingDataException } from "./core_utils.js";
 
 const MAX_LENGTH_TO_CACHE = 1000;
 const MAX_ADLER32_LENGTH = 5552;

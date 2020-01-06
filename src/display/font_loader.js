@@ -22,7 +22,7 @@ import {
   unreachable,
   UNSUPPORTED_FEATURES,
   warn,
-} from "../shared/util";
+} from "../shared/util.js";
 
 class BaseFontLoader {
   constructor({ docId, onUnsupportedFeature }) {

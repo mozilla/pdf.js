@@ -21,7 +21,7 @@ import {
   MissingPDFException,
   UnexpectedResponseException,
   UnknownErrorException,
-} from "./util";
+} from "./util.js";
 
 const CallbackKind = {
   UNKNOWN: 0,

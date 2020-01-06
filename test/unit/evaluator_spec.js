@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-import { createIdFactory, XRefMock } from "./test_utils";
-import { Dict, Name } from "../../src/core/primitives";
-import { FormatError, OPS } from "../../src/shared/util";
-import { Stream, StringStream } from "../../src/core/stream";
-import { OperatorList } from "../../src/core/operator_list";
-import { PartialEvaluator } from "../../src/core/evaluator";
-import { WorkerTask } from "../../src/core/worker";
+import { createIdFactory, XRefMock } from "./test_utils.js";
+import { Dict, Name } from "../../src/core/primitives.js";
+import { FormatError, OPS } from "../../src/shared/util.js";
+import { Stream, StringStream } from "../../src/core/stream.js";
+import { OperatorList } from "../../src/core/operator_list.js";
+import { PartialEvaluator } from "../../src/core/evaluator.js";
+import { WorkerTask } from "../../src/core/worker.js";
 
 describe("evaluator", function() {
   function HandlerMock() {

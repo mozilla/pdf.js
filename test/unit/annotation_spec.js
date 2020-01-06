@@ -19,7 +19,7 @@ import {
   AnnotationFactory,
   getQuadPoints,
   MarkupAnnotation,
-} from "../../src/core/annotation";
+} from "../../src/core/annotation.js";
 import {
   AnnotationBorderStyleType,
   AnnotationFieldFlag,
@@ -27,11 +27,11 @@ import {
   AnnotationType,
   stringToBytes,
   stringToUTF8String,
-} from "../../src/shared/util";
-import { createIdFactory, XRefMock } from "./test_utils";
-import { Dict, Name, Ref } from "../../src/core/primitives";
-import { Lexer, Parser } from "../../src/core/parser";
-import { StringStream } from "../../src/core/stream";
+} from "../../src/shared/util.js";
+import { createIdFactory, XRefMock } from "./test_utils.js";
+import { Dict, Name, Ref } from "../../src/core/primitives.js";
+import { Lexer, Parser } from "../../src/core/parser.js";
+import { StringStream } from "../../src/core/stream.js";
 
 describe("annotation", function() {
   class PDFManagerMock {

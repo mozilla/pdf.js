@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { NullL10n } from "./ui_utils";
+import { NullL10n } from "./ui_utils.js";
 import { PasswordResponses } from "pdfjs-lib";
 
 /**

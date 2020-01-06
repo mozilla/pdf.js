@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-import { assert, FormatError, ImageKind, info, warn } from "../shared/util";
-import { isName, isStream, Name } from "./primitives";
-import { ColorSpace } from "./colorspace";
-import { DecodeStream } from "./stream";
-import { JpegStream } from "./jpeg_stream";
-import { JpxImage } from "./jpx";
+import { assert, FormatError, ImageKind, info, warn } from "../shared/util.js";
+import { isName, isStream, Name } from "./primitives.js";
+import { ColorSpace } from "./colorspace.js";
+import { DecodeStream } from "./stream.js";
+import { JpegStream } from "./jpeg_stream.js";
+import { JpxImage } from "./jpx.js";
 
 var PDFImage = (function PDFImageClosure() {
   /**

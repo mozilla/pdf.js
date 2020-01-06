@@ -15,9 +15,9 @@
 
 import "../extensions/firefox/tools/l10n";
 import { createObjectURL, PDFDataRangeTransport, shadow } from "pdfjs-lib";
-import { BasePreferences } from "./preferences";
-import { DEFAULT_SCALE_VALUE } from "./ui_utils";
-import { PDFViewerApplication } from "./app";
+import { BasePreferences } from "./preferences.js";
+import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
+import { PDFViewerApplication } from "./app.js";
 
 if (
   typeof PDFJSDev === "undefined" ||

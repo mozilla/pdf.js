@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus, scrollIntoView } from "./ui_utils";
+import { getGlobalEventBus, scrollIntoView } from "./ui_utils.js";
 import { createPromiseCapability } from "pdfjs-lib";
-import { getCharacterType } from "./pdf_find_utils";
+import { getCharacterType } from "./pdf_find_utils.js";
 
 const FindState = {
   FOUND: 0,
