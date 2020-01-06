@@ -1365,16 +1365,16 @@ const PDFViewerApplication = {
             "fpdf",
           ];
           if (info.Producer) {
-            KNOWN_GENERATORS.some(
-              function(generator, s, i) {
-                if (!generator.includes(s)) {
-                  return false;
-                }
-                generatorId = s.replace(/[ .\-]/g, "_");
-                return true;
-              }.bind(null, info.Producer.toLowerCase())
-            );
+            const producer = info.Producer.toLowerCase();
+            KNOWN_GENERATORS.some(function(generator) {
+              if (!producer.includes(generator)) {
+                return false;
+              }
+              generatorId = generator.replace(/[ .\-]/g, "_");
+              return true;
+            });
           }
+
           const formType = !info.IsAcroFormPresent
             ? null
             : info.IsXFAPresent
