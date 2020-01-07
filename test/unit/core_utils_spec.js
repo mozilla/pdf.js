@@ -16,6 +16,8 @@
 import { Dict, Ref } from "../../src/core/primitives.js";
 import {
   getInheritableProperty,
+  isSpace,
+  log2,
   toRomanNumerals,
 } from "../../src/core/core_utils.js";
 import { XRefMock } from "./test_utils.js";
@@ -178,6 +180,35 @@ describe("core_utils", function() {
       expect(toRomanNumerals(500, /* lowercase = */ true)).toEqual("d");
       expect(toRomanNumerals(1000, /* lowercase = */ true)).toEqual("m");
       expect(toRomanNumerals(2019, /* lowercase = */ true)).toEqual("mmxix");
+    });
+  });
+
+  describe("log2", function() {
+    it("handles values smaller than/equal to zero", function() {
+      expect(log2(0)).toEqual(0);
+      expect(log2(-1)).toEqual(0);
+    });
+
+    it("handles values larger than zero", function() {
+      expect(log2(1)).toEqual(0);
+      expect(log2(2)).toEqual(1);
+      expect(log2(3)).toEqual(2);
+      expect(log2(3.14)).toEqual(2);
+    });
+  });
+
+  describe("isSpace", function() {
+    it("handles space characters", function() {
+      expect(isSpace(0x20)).toEqual(true);
+      expect(isSpace(0x09)).toEqual(true);
+      expect(isSpace(0x0d)).toEqual(true);
+      expect(isSpace(0x0a)).toEqual(true);
+    });
+
+    it("handles non-space characters", function() {
+      expect(isSpace(0x0b)).toEqual(false);
+      expect(isSpace(null)).toEqual(false);
+      expect(isSpace(undefined)).toEqual(false);
     });
   });
 });

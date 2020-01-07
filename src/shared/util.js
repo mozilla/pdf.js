@@ -547,34 +547,6 @@ function string32(value) {
   );
 }
 
-// Calculate the base 2 logarithm of the number `x`. This differs from the
-// native function in the sense that it returns the ceiling value and that it
-// returns 0 instead of `Infinity`/`NaN` for `x` values smaller than/equal to 0.
-function log2(x) {
-  if (x <= 0) {
-    return 0;
-  }
-  return Math.ceil(Math.log2(x));
-}
-
-function readInt8(data, start) {
-  return (data[start] << 24) >> 24;
-}
-
-function readUint16(data, offset) {
-  return (data[offset] << 8) | data[offset + 1];
-}
-
-function readUint32(data, offset) {
-  return (
-    ((data[offset] << 24) |
-      (data[offset + 1] << 16) |
-      (data[offset + 2] << 8) |
-      data[offset + 3]) >>>
-    0
-  );
-}
-
 // Lazy test the endianness of the platform
 // NOTE: This will be 'true' for simulated TypedArrays
 function isLittleEndian() {
@@ -835,11 +807,6 @@ function isArrayEqual(arr1, arr2) {
   });
 }
 
-// Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
-function isSpace(ch) {
-  return ch === 0x20 || ch === 0x09 || ch === 0x0d || ch === 0x0a;
-}
-
 /**
  * Promise Capability object.
  *
@@ -949,15 +916,10 @@ export {
   isEmptyObj,
   isNum,
   isString,
-  isSpace,
   isSameOrigin,
   createValidAbsoluteUrl,
   isLittleEndian,
   isEvalSupported,
-  log2,
-  readInt8,
-  readUint16,
-  readUint32,
   removeNullCharacters,
   setVerbosityLevel,
   shadow,

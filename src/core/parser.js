@@ -29,7 +29,6 @@ import {
   FormatError,
   info,
   isNum,
-  isSpace,
   StreamType,
   warn,
 } from "../shared/util.js";
@@ -44,11 +43,11 @@ import {
   Name,
   Ref,
 } from "./primitives.js";
+import { isSpace, MissingDataException } from "./core_utils.js";
 import { CCITTFaxStream } from "./ccitt_stream.js";
 import { Jbig2Stream } from "./jbig2_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxStream } from "./jpx_stream.js";
-import { MissingDataException } from "./core_utils.js";
 
 const MAX_LENGTH_TO_CACHE = 1000;
 const MAX_ADLER32_LENGTH = 5552;

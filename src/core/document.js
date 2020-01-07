@@ -23,7 +23,6 @@ import {
   isArrayEqual,
   isBool,
   isNum,
-  isSpace,
   isString,
   OPS,
   shadow,
@@ -43,6 +42,7 @@ import {
 } from "./primitives.js";
 import {
   getInheritableProperty,
+  isSpace,
   MissingDataException,
   XRefEntryException,
   XRefParseException,

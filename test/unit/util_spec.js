@@ -22,9 +22,7 @@ import {
   isEmptyObj,
   isNum,
   isSameOrigin,
-  isSpace,
   isString,
-  log2,
   removeNullCharacters,
   string32,
   stringToBytes,
@@ -118,21 +116,6 @@ describe("util", function() {
     });
   });
 
-  describe("isSpace", function() {
-    it("handles space characters", function() {
-      expect(isSpace(0x20)).toEqual(true);
-      expect(isSpace(0x09)).toEqual(true);
-      expect(isSpace(0x0d)).toEqual(true);
-      expect(isSpace(0x0a)).toEqual(true);
-    });
-
-    it("handles non-space characters", function() {
-      expect(isSpace(0x0b)).toEqual(false);
-      expect(isSpace(null)).toEqual(false);
-      expect(isSpace(undefined)).toEqual(false);
-    });
-  });
-
   describe("isString", function() {
     it("handles string values", function() {
       expect(isString("foo")).toEqual(true);
@@ -144,20 +127,6 @@ describe("util", function() {
       expect(isString(1)).toEqual(false);
       expect(isString(null)).toEqual(false);
       expect(isString(undefined)).toEqual(false);
-    });
-  });
-
-  describe("log2", function() {
-    it("handles values smaller than/equal to zero", function() {
-      expect(log2(0)).toEqual(0);
-      expect(log2(-1)).toEqual(0);
-    });
-
-    it("handles values larger than zero", function() {
-      expect(log2(1)).toEqual(0);
-      expect(log2(2)).toEqual(1);
-      expect(log2(3)).toEqual(2);
-      expect(log2(3.14)).toEqual(2);
     });
   });
 

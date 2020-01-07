@@ -13,14 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  BaseException,
-  log2,
-  readInt8,
-  readUint16,
-  readUint32,
-  shadow,
-} from "../shared/util.js";
+import { BaseException, shadow } from "../shared/util.js";
+import { log2, readInt8, readUint16, readUint32 } from "./core_utils.js";
 import { ArithmeticDecoder } from "./arithmetic_decoder.js";
 import { CCITTFaxDecoder } from "./ccitt.js";
 
