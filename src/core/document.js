@@ -23,7 +23,6 @@ import {
   isArrayEqual,
   isBool,
   isNum,
-  isSpace,
   isString,
   OPS,
   shadow,
@@ -36,6 +35,7 @@ import { Catalog, ObjectLoader, XRef } from "./obj.js";
 import { Dict, isDict, isName, isStream, Ref } from "./primitives.js";
 import {
   getInheritableProperty,
+  isSpace,
   MissingDataException,
   XRefEntryException,
   XRefParseException,
