@@ -14,6 +14,7 @@
  */
 
 import { assert, BaseException, warn } from "../shared/util.js";
+import { readUint16 } from "./core_utils.js";
 
 class JpegError extends BaseException {
   constructor(msg) {
@@ -148,8 +149,10 @@ var JpegImage = (function JpegImageClosure() {
         var nextByte = data[offset++];
         if (nextByte) {
           if (nextByte === 0xdc && parseDNLMarker) {
-            offset += 2; // Skip data length.
-            const scanLines = (data[offset++] << 8) | data[offset++];
+            offset += 2; // Skip marker length.
+
+            const scanLines = readUint16(data, offset);
+            offset += 2;
             if (scanLines > 0 && scanLines !== frame.scanLines) {
               throw new DNLMarkerError(
                 "Found DNL marker (0xFFDC) while parsing scan data",
@@ -706,17 +709,13 @@ var JpegImage = (function JpegImageClosure() {
   }
 
   function findNextFileMarker(data, currentPos, startPos = currentPos) {
-    function peekUint16(pos) {
-      return (data[pos] << 8) | data[pos + 1];
-    }
-
     const maxPos = data.length - 1;
     var newPos = startPos < currentPos ? startPos : currentPos;
 
     if (currentPos >= maxPos) {
       return null; // Don't attempt to read non-existent data and just return.
     }
-    var currentMarker = peekUint16(currentPos);
+    var currentMarker = readUint16(data, currentPos);
     if (currentMarker >= 0xffc0 && currentMarker <= 0xfffe) {
       return {
         invalid: null,
@@ -724,12 +723,12 @@ var JpegImage = (function JpegImageClosure() {
         offset: currentPos,
       };
     }
-    var newMarker = peekUint16(newPos);
+    var newMarker = readUint16(data, newPos);
     while (!(newMarker >= 0xffc0 && newMarker <= 0xfffe)) {
       if (++newPos >= maxPos) {
         return null; // Don't attempt to read non-existent data and just return.
       }
-      newMarker = peekUint16(newPos);
+      newMarker = readUint16(data, newPos);
     }
     return {
       invalid: currentMarker.toString(16),
@@ -740,15 +739,10 @@ var JpegImage = (function JpegImageClosure() {
 
   JpegImage.prototype = {
     parse(data, { dnlScanLines = null } = {}) {
-      function readUint16() {
-        var value = (data[offset] << 8) | data[offset + 1];
-        offset += 2;
-        return value;
-      }
-
       function readDataBlock() {
-        var length = readUint16();
-        var endOffset = offset + length - 2;
+        const length = readUint16(data, offset);
+        offset += 2;
+        let endOffset = offset + length - 2;
 
         var fileMarker = findNextFileMarker(data, endOffset, offset);
         if (fileMarker && fileMarker.invalid) {
@@ -796,12 +790,15 @@ var JpegImage = (function JpegImageClosure() {
       var quantizationTables = [];
       var huffmanTablesAC = [],
         huffmanTablesDC = [];
-      var fileMarker = readUint16();
+
+      let fileMarker = readUint16(data, offset);
+      offset += 2;
       if (fileMarker !== /* SOI (Start of Image) = */ 0xffd8) {
         throw new JpegError("SOI not found");
       }
+      fileMarker = readUint16(data, offset);
+      offset += 2;
 
-      fileMarker = readUint16();
       markerLoop: while (fileMarker !== /* EOI (End of Image) = */ 0xffd9) {
         var i, j, l;
         switch (fileMarker) {
@@ -868,7 +865,8 @@ var JpegImage = (function JpegImageClosure() {
             break;
 
           case 0xffdb: // DQT (Define Quantization Tables)
-            var quantizationTablesLength = readUint16();
+            const quantizationTablesLength = readUint16(data, offset);
+            offset += 2;
             var quantizationTablesEnd = quantizationTablesLength + offset - 2;
             var z;
             while (offset < quantizationTablesEnd) {
@@ -884,7 +882,8 @@ var JpegImage = (function JpegImageClosure() {
                 // 16 bit values
                 for (j = 0; j < 64; j++) {
                   z = dctZigZag[j];
-                  tableData[z] = readUint16();
+                  tableData[z] = readUint16(data, offset);
+                  offset += 2;
                 }
               } else {
                 throw new JpegError("DQT - invalid table spec");
@@ -899,14 +898,17 @@ var JpegImage = (function JpegImageClosure() {
             if (frame) {
               throw new JpegError("Only single frame JPEGs supported");
             }
-            readUint16(); // skip data length
+            offset += 2; // Skip marker length.
+
             frame = {};
             frame.extended = fileMarker === 0xffc1;
             frame.progressive = fileMarker === 0xffc2;
             frame.precision = data[offset++];
-            const sofScanLines = readUint16();
+            const sofScanLines = readUint16(data, offset);
+            offset += 2;
             frame.scanLines = dnlScanLines || sofScanLines;
-            frame.samplesPerLine = readUint16();
+            frame.samplesPerLine = readUint16(data, offset);
+            offset += 2;
             frame.components = [];
             frame.componentIds = {};
             var componentsCount = data[offset++],
@@ -939,7 +941,8 @@ var JpegImage = (function JpegImageClosure() {
             break;
 
           case 0xffc4: // DHT (Define Huffman Tables)
-            var huffmanLength = readUint16();
+            const huffmanLength = readUint16(data, offset);
+            offset += 2;
             for (i = 2; i < huffmanLength; ) {
               var huffmanTableSpec = data[offset++];
               var codeLengths = new Uint8Array(16);
@@ -960,8 +963,10 @@ var JpegImage = (function JpegImageClosure() {
             break;
 
           case 0xffdd: // DRI (Define Restart Interval)
-            readUint16(); // skip data length
-            resetInterval = readUint16();
+            offset += 2; // Skip marker length.
+
+            resetInterval = readUint16(data, offset);
+            offset += 2;
             break;
 
           case 0xffda: // SOS (Start of Scan)
@@ -971,7 +976,8 @@ var JpegImage = (function JpegImageClosure() {
             // parse DNL markers during re-parsing of the JPEG scan data.
             const parseDNLMarker = ++numSOSMarkers === 1 && !dnlScanLines;
 
-            readUint16(); // scanLength
+            offset += 2; // Skip marker length.
+
             var selectorsCount = data[offset++];
             var components = [],
               component;
@@ -1055,7 +1061,8 @@ var JpegImage = (function JpegImageClosure() {
               "JpegImage.parse - unknown marker: " + fileMarker.toString(16)
             );
         }
-        fileMarker = readUint16();
+        fileMarker = readUint16(data, offset);
+        offset += 2;
       }
 
       this.width = frame.samplesPerLine;
