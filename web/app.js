@@ -1375,11 +1375,10 @@ const PDFViewerApplication = {
             });
           }
 
-          const formType = !info.IsAcroFormPresent
-            ? null
-            : info.IsXFAPresent
-            ? "xfa"
-            : "acroform";
+          let formType = null;
+          if (info.IsAcroFormPresent) {
+            formType = info.IsXFAPresent ? "xfa" : "acroform";
+          }
           this.externalServices.reportTelemetry({
             type: "documentInfo",
             version: versionId,
@@ -2066,13 +2065,14 @@ function webViewerNamedAction(evt) {
   }
 }
 
-function webViewerPresentationModeChanged(evt) {
-  const { active, switchInProgress } = evt;
-  PDFViewerApplication.pdfViewer.presentationModeState = switchInProgress
-    ? PresentationModeState.CHANGING
-    : active
-    ? PresentationModeState.FULLSCREEN
-    : PresentationModeState.NORMAL;
+function webViewerPresentationModeChanged({ active, switchInProgress }) {
+  let state = PresentationModeState.NORMAL;
+  if (switchInProgress) {
+    state = PresentationModeState.CHANGING;
+  } else if (active) {
+    state = PresentationModeState.FULLSCREEN;
+  }
+  PDFViewerApplication.pdfViewer.presentationModeState = state;
 }
 
 function webViewerSidebarViewChanged(evt) {

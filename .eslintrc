@@ -136,6 +136,7 @@
     "new-cap": ["error", { "newIsCap": true, "capIsNew": false, }],
     "no-array-constructor": "error",
     "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0, "maxBOF": 1, }],
+    "no-nested-ternary": "off",
     "no-new-object": "error",
     "spaced-comment": ["error", "always", {
       "block": {
