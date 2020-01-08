@@ -577,7 +577,7 @@ const PDFViewerApplication = {
   initPassiveLoading() {
     if (
       typeof PDFJSDev === "undefined" ||
-      !PDFJSDev.test("FIREFOX || MOZCENTRAL || CHROME")
+      !PDFJSDev.test("MOZCENTRAL || CHROME")
     ) {
       throw new Error("Not implemented: initPassiveLoading");
     }
@@ -732,7 +732,7 @@ const PDFViewerApplication = {
           value = document.URL.split("#")[0];
         } else if (
           typeof PDFJSDev !== "undefined" &&
-          PDFJSDev.test("FIREFOX || MOZCENTRAL || CHROME")
+          PDFJSDev.test("MOZCENTRAL || CHROME")
         ) {
           value = this.baseUrl;
         }
@@ -926,10 +926,7 @@ const PDFViewerApplication = {
       }
     }
 
-    if (
-      typeof PDFJSDev === "undefined" ||
-      !PDFJSDev.test("FIREFOX || MOZCENTRAL")
-    ) {
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       const errorWrapperConfig = this.appConfig.errorWrapper;
       const errorWrapper = errorWrapperConfig.container;
       errorWrapper.removeAttribute("hidden");
@@ -1044,7 +1041,7 @@ const PDFViewerApplication = {
     let baseDocumentUrl;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       baseDocumentUrl = null;
-    } else if (PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
+    } else if (PDFJSDev.test("MOZCENTRAL")) {
       baseDocumentUrl = this.baseUrl;
     } else if (PDFJSDev.test("CHROME")) {
       baseDocumentUrl = location.href.split("#")[0];
@@ -1808,7 +1805,7 @@ function webViewerInitialized() {
     const params = parseQueryString(queryString);
     file = "file" in params ? params.file : AppOptions.get("defaultUrl");
     validateFileURL(file);
-  } else if (PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
+  } else if (PDFJSDev.test("MOZCENTRAL")) {
     file = window.location.href.split("#")[0];
   } else if (PDFJSDev.test("CHROME")) {
     file = AppOptions.get("defaultUrl");
@@ -1942,7 +1939,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       PDFViewerApplication.open(file);
     }
   };
-} else if (PDFJSDev.test("FIREFOX || MOZCENTRAL || CHROME")) {
+} else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
   webViewerOpenFileViaURL = function webViewerOpenFileViaURL(file) {
     PDFViewerApplication.setTitleUsingUrl(file);
     PDFViewerApplication.initPassiveLoading();
@@ -2520,10 +2517,7 @@ function webViewerKeyDown(evt) {
     }
   }
 
-  if (
-    typeof PDFJSDev === "undefined" ||
-    !PDFJSDev.test("FIREFOX || MOZCENTRAL")
-  ) {
+  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
     // CTRL or META without shift
     if (cmd === 1 || cmd === 8) {
       switch (evt.keyCode) {
