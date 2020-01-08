@@ -53,7 +53,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       return new PDFNetworkStream(params);
     });
   }
-} else if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
+} else if (PDFJSDev.test("CHROME")) {
   let PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
   let PDFFetchStream;
   let isChromeWithFetchCredentials = function() {

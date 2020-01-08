@@ -730,10 +730,7 @@ const PDFViewerApplication = {
       if (key === "docBaseUrl" && !value) {
         if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
           value = document.URL.split("#")[0];
-        } else if (
-          typeof PDFJSDev !== "undefined" &&
-          PDFJSDev.test("MOZCENTRAL || CHROME")
-        ) {
+        } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
           value = this.baseUrl;
         }
       }
