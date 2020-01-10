@@ -232,7 +232,7 @@ class Toolbar {
       }
 
       const getKeyByValue = (object, value) => {
-        return Object.keys(object).find(key => object[key] === value);
+        return Object.keys(object).filter(key => object[key] === value)[0];
       };
 
       const zoomLevelButton = getKeyByValue(ZOOM_LEVEL_MAP, pageScaleValue);
