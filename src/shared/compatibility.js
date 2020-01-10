@@ -230,11 +230,7 @@ if (
       // need to be polyfilled for the IMAGE_DECODERS build target.
       return;
     }
-    if (
-      globalThis.Promise &&
-      globalThis.Promise.prototype &&
-      globalThis.Promise.prototype.finally
-    ) {
+    if (globalThis.Promise && globalThis.Promise.allSettled) {
       return;
     }
     globalThis.Promise = require("core-js/es/promise/index.js");
