@@ -125,11 +125,9 @@ class PDFThumbnailView {
 
     const anchor = document.createElement("a");
     anchor.href = linkService.getAnchorUrl("#page=" + id);
-    this.l10n
-      .get("thumb_page_title", { page: id }, "Page {{page}}")
-      .then(msg => {
-        anchor.title = msg;
-      });
+    this._thumbPageTitle.then(msg => {
+      anchor.title = msg;
+    });
     anchor.onclick = function() {
       linkService.page = id;
       return false;
@@ -262,15 +260,9 @@ class PDFThumbnailView {
 
     if (this.disableCanvasToImageConversion) {
       this.canvas.className = className;
-      this.l10n
-        .get(
-          "thumb_page_canvas",
-          { page: this.pageId },
-          "Thumbnail of Page {{page}}"
-        )
-        .then(msg => {
-          this.canvas.setAttribute("aria-label", msg);
-        });
+      this._thumbPageCanvas.then(msg => {
+        this.canvas.setAttribute("aria-label", msg);
+      });
 
       this.div.setAttribute("data-loaded", true);
       this.ring.appendChild(this.canvas);
@@ -278,15 +270,9 @@ class PDFThumbnailView {
     }
     const image = document.createElement("img");
     image.className = className;
-    this.l10n
-      .get(
-        "thumb_page_canvas",
-        { page: this.pageId },
-        "Thumbnail of Page {{page}}"
-      )
-      .then(msg => {
-        image.setAttribute("aria-label", msg);
-      });
+    this._thumbPageCanvas.then(msg => {
+      image.setAttribute("aria-label", msg);
+    });
 
     image.style.width = this.canvasWidth + "px";
     image.style.height = this.canvasHeight + "px";
@@ -452,8 +438,20 @@ class PDFThumbnailView {
     this._convertCanvasToImage();
   }
 
-  get pageId() {
-    return this.pageLabel !== null ? this.pageLabel : this.id;
+  get _thumbPageTitle() {
+    return this.l10n.get(
+      "thumb_page_title",
+      { page: this.pageLabel !== null ? this.pageLabel : this.id },
+      "Page {{page}}"
+    );
+  }
+
+  get _thumbPageCanvas() {
+    return this.l10n.get(
+      "thumb_page_canvas",
+      { page: this.pageLabel !== null ? this.pageLabel : this.id },
+      "Thumbnail of Page {{page}}"
+    );
   }
 
   /**
@@ -462,29 +460,21 @@ class PDFThumbnailView {
   setPageLabel(label) {
     this.pageLabel = typeof label === "string" ? label : null;
 
-    this.l10n
-      .get("thumb_page_title", { page: this.pageId }, "Page {{page}}")
-      .then(msg => {
-        this.anchor.title = msg;
-      });
+    this._thumbPageTitle.then(msg => {
+      this.anchor.title = msg;
+    });
 
     if (this.renderingState !== RenderingStates.FINISHED) {
       return;
     }
 
-    this.l10n
-      .get(
-        "thumb_page_canvas",
-        { page: this.pageId },
-        "Thumbnail of Page {{page}}"
-      )
-      .then(ariaLabel => {
-        if (this.image) {
-          this.image.setAttribute("aria-label", ariaLabel);
-        } else if (this.disableCanvasToImageConversion && this.canvas) {
-          this.canvas.setAttribute("aria-label", ariaLabel);
-        }
-      });
+    this._thumbPageCanvas.then(msg => {
+      if (this.image) {
+        this.image.setAttribute("aria-label", msg);
+      } else if (this.disableCanvasToImageConversion && this.canvas) {
+        this.canvas.setAttribute("aria-label", msg);
+      }
+    });
   }
 
   static cleanup() {
