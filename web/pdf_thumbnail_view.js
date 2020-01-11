@@ -258,11 +258,9 @@ class PDFThumbnailView {
     if (this.renderingState !== RenderingStates.FINISHED) {
       return;
     }
-    const id = this.renderingId;
     const className = "thumbnailImage";
 
     if (this.disableCanvasToImageConversion) {
-      this.canvas.id = id;
       this.canvas.className = className;
       this.l10n
         .get(
@@ -279,7 +277,6 @@ class PDFThumbnailView {
       return;
     }
     const image = document.createElement("img");
-    image.id = id;
     image.className = className;
     this.l10n
       .get(
