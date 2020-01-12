@@ -109,11 +109,12 @@ limitations under the License.
         }
         // Migration code for https://github.com/mozilla/pdf.js/pull/9479.
         if (typeof items.disableTextLayer === "boolean") {
-          var textLayerMode = items.disableTextLayer
-            ? 0
-            : items.enhanceTextSelection
-            ? 2
-            : 1;
+          var textLayerMode = 1;
+          if (items.disableTextLayer) {
+            textLayerMode = 0;
+          } else if (items.enhanceTextSelection) {
+            textLayerMode = 2;
+          }
           if (textLayerMode !== 1) {
             // Overwrite if computed textLayerMode is not the default value (1).
             storageSync.set(
