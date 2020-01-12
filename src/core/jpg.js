@@ -557,8 +557,14 @@ var JpegImage = (function JpegImageClosure() {
       // check for all-zero AC coefficients
       if ((p1 | p2 | p3 | p4 | p5 | p6 | p7) === 0) {
         t = (dctSqrt2 * p0 + 8192) >> 14;
-        // convert to 8 bit
-        t = t < -2040 ? 0 : t >= 2024 ? 255 : (t + 2056) >> 4;
+        // Convert to 8-bit.
+        if (t < -2040) {
+          t = 0;
+        } else if (t >= 2024) {
+          t = 255;
+        } else {
+          t = (t + 2056) >> 4;
+        }
         blockData[blockBufferOffset + col] = t;
         blockData[blockBufferOffset + col + 8] = t;
         blockData[blockBufferOffset + col + 16] = t;
@@ -615,15 +621,63 @@ var JpegImage = (function JpegImageClosure() {
       p3 = v3 + v4;
       p4 = v3 - v4;
 
-      // convert to 8-bit integers
-      p0 = p0 < 16 ? 0 : p0 >= 4080 ? 255 : p0 >> 4;
-      p1 = p1 < 16 ? 0 : p1 >= 4080 ? 255 : p1 >> 4;
-      p2 = p2 < 16 ? 0 : p2 >= 4080 ? 255 : p2 >> 4;
-      p3 = p3 < 16 ? 0 : p3 >= 4080 ? 255 : p3 >> 4;
-      p4 = p4 < 16 ? 0 : p4 >= 4080 ? 255 : p4 >> 4;
-      p5 = p5 < 16 ? 0 : p5 >= 4080 ? 255 : p5 >> 4;
-      p6 = p6 < 16 ? 0 : p6 >= 4080 ? 255 : p6 >> 4;
-      p7 = p7 < 16 ? 0 : p7 >= 4080 ? 255 : p7 >> 4;
+      // Convert to 8-bit integers.
+      if (p0 < 16) {
+        p0 = 0;
+      } else if (p0 >= 4080) {
+        p0 = 255;
+      } else {
+        p0 >>= 4;
+      }
+      if (p1 < 16) {
+        p1 = 0;
+      } else if (p1 >= 4080) {
+        p1 = 255;
+      } else {
+        p1 >>= 4;
+      }
+      if (p2 < 16) {
+        p2 = 0;
+      } else if (p2 >= 4080) {
+        p2 = 255;
+      } else {
+        p2 >>= 4;
+      }
+      if (p3 < 16) {
+        p3 = 0;
+      } else if (p3 >= 4080) {
+        p3 = 255;
+      } else {
+        p3 >>= 4;
+      }
+      if (p4 < 16) {
+        p4 = 0;
+      } else if (p4 >= 4080) {
+        p4 = 255;
+      } else {
+        p4 >>= 4;
+      }
+      if (p5 < 16) {
+        p5 = 0;
+      } else if (p5 >= 4080) {
+        p5 = 255;
+      } else {
+        p5 >>= 4;
+      }
+      if (p6 < 16) {
+        p6 = 0;
+      } else if (p6 >= 4080) {
+        p6 = 255;
+      } else {
+        p6 >>= 4;
+      }
+      if (p7 < 16) {
+        p7 = 0;
+      } else if (p7 >= 4080) {
+        p7 = 255;
+      } else {
+        p7 >>= 4;
+      }
 
       // store block data
       blockData[blockBufferOffset + col] = p0;

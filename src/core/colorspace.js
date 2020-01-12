@@ -1331,8 +1331,16 @@ const LabCS = (function LabCSClosure() {
     }
 
     // Adjust limits of 'as' and 'bs'
-    as = as > cs.amax ? cs.amax : as < cs.amin ? cs.amin : as;
-    bs = bs > cs.bmax ? cs.bmax : bs < cs.bmin ? cs.bmin : bs;
+    if (as > cs.amax) {
+      as = cs.amax;
+    } else if (as < cs.amin) {
+      as = cs.amin;
+    }
+    if (bs > cs.bmax) {
+      bs = cs.bmax;
+    } else if (bs < cs.bmin) {
+      bs = cs.bmin;
+    }
 
     // Computes intermediate variables X,Y,Z as per spec
     let M = (Ls + 16) / 116;
