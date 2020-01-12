@@ -1441,7 +1441,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var name = fontObj.loadedName || "sans-serif";
-      var bold = fontObj.black ? "900" : fontObj.bold ? "bold" : "normal";
+
+      let bold = "normal";
+      if (fontObj.black) {
+        bold = "900";
+      } else if (fontObj.bold) {
+        bold = "bold";
+      }
       var italic = fontObj.italic ? "italic" : "normal";
       var typeface = `"${name}", ${fontObj.fallbackName}`;
 
@@ -1449,12 +1455,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // Keeping the font at minimal size and using the fontSizeScale to change
       // the current transformation matrix before the fillText/strokeText.
       // See https://bugzilla.mozilla.org/show_bug.cgi?id=726227
-      var browserFontSize =
-        size < MIN_FONT_SIZE
-          ? MIN_FONT_SIZE
-          : size > MAX_FONT_SIZE
-          ? MAX_FONT_SIZE
-          : size;
+      let browserFontSize = size;
+      if (size < MIN_FONT_SIZE) {
+        browserFontSize = MIN_FONT_SIZE;
+      } else if (size > MAX_FONT_SIZE) {
+        browserFontSize = MAX_FONT_SIZE;
+      }
       this.current.fontSizeScale = size / browserFontSize;
 
       this.ctx.font = `${italic} ${bold} ${browserFontSize}px ${typeface}`;

@@ -510,7 +510,13 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       return;
     }
 
-    style.fontWeight = font.black ? "900" : font.bold ? "bold" : "normal";
+    let bold = "normal";
+    if (font.black) {
+      bold = "900";
+    } else if (font.bold) {
+      bold = "bold";
+    }
+    style.fontWeight = bold;
     style.fontStyle = font.italic ? "italic" : "normal";
 
     // Use a reasonable default font if the font doesn't specify a fallback.

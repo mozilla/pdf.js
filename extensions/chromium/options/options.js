@@ -113,12 +113,12 @@ Promise.all([
 
     // Automatically update the UI when the preferences were changed elsewhere.
     chrome.storage.onChanged.addListener(function(changes, areaName) {
-      var prefs =
-        areaName === storageAreaName
-          ? userPrefs
-          : areaName === "managed"
-          ? managedPrefs
-          : null;
+      var prefs = null;
+      if (areaName === storageAreaName) {
+        prefs = userPrefs;
+      } else if (areaName === "managed") {
+        prefs = managedPrefs;
+      }
       if (prefs) {
         renderedPrefNames.forEach(function(prefName) {
           var prefChanges = changes[prefName];

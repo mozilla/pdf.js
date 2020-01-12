@@ -79,6 +79,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     var sign = readBits(1);
     // prettier-ignore
+    /* eslint-disable no-nested-ternary */
     var value = readBits(1) ?
                   (readBits(1) ?
                     (readBits(1) ?
@@ -90,7 +91,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                     readBits(6) + 20) :
                   readBits(4) + 4) :
                 readBits(2);
-    return sign === 0 ? value : value > 0 ? -value : null;
+    /* eslint-enable no-nested-ternary */
+    if (sign === 0) {
+      return value;
+    } else if (value > 0) {
+      return -value;
+    }
+    return null;
   }
 
   // A.3 The IAID decoding procedure
@@ -1176,17 +1183,24 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
 
     segmentHeader.retainBits = retainBits;
-    var referredToSegmentNumberSize =
-      segmentHeader.number <= 256 ? 1 : segmentHeader.number <= 65536 ? 2 : 4;
+
+    let referredToSegmentNumberSize = 4;
+    if (segmentHeader.number <= 256) {
+      referredToSegmentNumberSize = 1;
+    } else if (segmentHeader.number <= 65536) {
+      referredToSegmentNumberSize = 2;
+    }
     var referredTo = [];
     var i, ii;
     for (i = 0; i < referredToCount; i++) {
-      var number =
-        referredToSegmentNumberSize === 1
-          ? data[position]
-          : referredToSegmentNumberSize === 2
-          ? readUint16(data, position)
-          : readUint32(data, position);
+      let number;
+      if (referredToSegmentNumberSize === 1) {
+        number = data[position];
+      } else if (referredToSegmentNumberSize === 2) {
+        number = readUint16(data, position);
+      } else {
+        number = readUint32(data, position);
+      }
       referredTo.push(number);
       position += referredToSegmentNumberSize;
     }
