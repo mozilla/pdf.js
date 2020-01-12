@@ -942,13 +942,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         ? fontObj.fontMatrix
         : FONT_IDENTITY_MATRIX;
 
-      const bold = fontObj.black
-        ? fontObj.bold
-          ? "bolder"
-          : "bold"
-        : fontObj.bold
-        ? "bold"
-        : "normal";
+      const bold = fontObj.black ? "900" : fontObj.bold ? "bold" : "normal";
       const italic = fontObj.italic ? "italic" : "normal";
 
       if (size < 0) {
