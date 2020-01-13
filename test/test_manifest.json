@@ -2935,6 +2935,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1877",
+       "file": "pdfs/issue1877.pdf",
+       "md5": "feac01f414f2e6792e4d3174944622f5",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue7308",
        "file": "pdfs/issue7308.pdf",
        "md5": "ba2e23d3af93ac2c634d77ccbe2e79d5",

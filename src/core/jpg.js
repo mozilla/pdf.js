@@ -1031,17 +1031,14 @@ var JpegImage = (function JpegImageClosure() {
             break;
 
           default:
-            if (
-              data[offset - 3] === 0xff &&
-              data[offset - 2] >= 0xc0 &&
-              data[offset - 2] <= 0xfe
-            ) {
-              // could be incorrect encoding -- last 0xFF byte of the previous
-              // block was eaten by the encoder
-              offset -= 3;
-              break;
-            }
-            const nextFileMarker = findNextFileMarker(data, offset - 2);
+            // Could be incorrect encoding -- the last 0xFF byte of the previous
+            // block could have been eaten by the encoder, hence we fallback to
+            // `startPos = offset - 3` when looking for the next valid marker.
+            const nextFileMarker = findNextFileMarker(
+              data,
+              /* currentPos = */ offset - 2,
+              /* startPos = */ offset - 3
+            );
             if (nextFileMarker && nextFileMarker.invalid) {
               warn(
                 "JpegImage.parse - unexpected data, current marker is: " +
@@ -1050,7 +1047,7 @@ var JpegImage = (function JpegImageClosure() {
               offset = nextFileMarker.offset;
               break;
             }
-            if (offset > data.length - 2) {
+            if (offset >= data.length - 1) {
               warn(
                 "JpegImage.parse - reached the end of the image data " +
                   "without finding an EOI marker (0xFFD9)."
