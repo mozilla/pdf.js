@@ -472,7 +472,7 @@ function checkEq(task, results, browser, masterMode) {
   }
 }
 
-function checkFBF(task, results, browser) {
+function checkFBF(task, results, browser, masterMode) {
   var numFBFFailures = 0;
   var round0 = results[0],
     round1 = results[1];
@@ -487,6 +487,20 @@ function checkFBF(task, results, browser) {
       continue;
     }
     if (r0Page.snapshot !== r1Page.snapshot) {
+      // The FBF tests fail intermittently in Google Chrome when run on the
+      // bots, ignoring `makeref` failures for now; see https://github.com/mozilla/pdf.js/pull/11491
+      if (masterMode && /chrom(e|ium)/i.test(browser)) {
+        console.log(
+          "TEST-SKIPPED | forward-back-forward test " +
+            task.id +
+            " | in " +
+            browser +
+            " | page" +
+            (page + 1)
+        );
+        continue;
+      }
+
       console.log(
         "TEST-UNEXPECTED-FAIL | forward-back-forward test " +
           task.id +
@@ -566,7 +580,7 @@ function checkRefTestResults(browser, id, results) {
       checkEq(task, results, browser, session.masterMode);
       break;
     case "fbf":
-      checkFBF(task, results, browser);
+      checkFBF(task, results, browser, session.masterMode);
       break;
     case "load":
       checkLoad(task, results, browser);
