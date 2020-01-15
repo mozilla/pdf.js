@@ -343,11 +343,6 @@ class FirefoxExternalServices extends DefaultExternalServices {
     return shadow(this, "supportsDocumentFonts", support);
   }
 
-  static get supportsDocumentColors() {
-    const support = FirefoxCom.requestSync("supportsDocumentColors");
-    return shadow(this, "supportsDocumentColors", support);
-  }
-
   static get supportedMouseWheelZoomModifierKeys() {
     const support = FirefoxCom.requestSync(
       "supportedMouseWheelZoomModifierKeys"
