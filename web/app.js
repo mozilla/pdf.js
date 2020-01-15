@@ -84,29 +84,52 @@ const ViewOnLoad = {
   INITIAL: 1,
 };
 
-const DefaultExternalServices = {
-  updateFindControlState(data) {},
-  updateFindMatchesCount(data) {},
-  initPassiveLoading(callbacks) {},
-  fallback(data, callback) {},
-  reportTelemetry(data) {},
-  createDownloadManager(options) {
+class DefaultExternalServices {
+  constructor() {
+    throw new Error("Cannot initialize DefaultExternalServices.");
+  }
+
+  static updateFindControlState(data) {}
+
+  static updateFindMatchesCount(data) {}
+
+  static initPassiveLoading(callbacks) {}
+
+  static fallback(data, callback) {}
+
+  static reportTelemetry(data) {}
+
+  static createDownloadManager(options) {
     throw new Error("Not implemented: createDownloadManager");
-  },
-  createPreferences() {
+  }
+
+  static createPreferences() {
     throw new Error("Not implemented: createPreferences");
-  },
-  createL10n(options) {
+  }
+
+  static createL10n(options) {
     throw new Error("Not implemented: createL10n");
-  },
-  supportsIntegratedFind: false,
-  supportsDocumentFonts: true,
-  supportsDocumentColors: true,
-  supportedMouseWheelZoomModifierKeys: {
-    ctrlKey: true,
-    metaKey: true,
-  },
-};
+  }
+
+  static get supportsIntegratedFind() {
+    return shadow(this, "supportsIntegratedFind", false);
+  }
+
+  static get supportsDocumentFonts() {
+    return shadow(this, "supportsDocumentFonts", true);
+  }
+
+  static get supportsDocumentColors() {
+    return shadow(this, "supportsDocumentColors", true);
+  }
+
+  static get supportedMouseWheelZoomModifierKeys() {
+    return shadow(this, "supportedMouseWheelZoomModifierKeys", {
+      ctrlKey: true,
+      metaKey: true,
+    });
+  }
+}
 
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
