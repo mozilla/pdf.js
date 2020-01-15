@@ -119,10 +119,6 @@ class DefaultExternalServices {
     return shadow(this, "supportsDocumentFonts", true);
   }
 
-  static get supportsDocumentColors() {
-    return shadow(this, "supportsDocumentColors", true);
-  }
-
   static get supportedMouseWheelZoomModifierKeys() {
     return shadow(this, "supportedMouseWheelZoomModifierKeys", {
       ctrlKey: true,
@@ -568,10 +564,6 @@ const PDFViewerApplication = {
 
   get supportsDocumentFonts() {
     return this.externalServices.supportsDocumentFonts;
-  },
-
-  get supportsDocumentColors() {
-    return this.externalServices.supportsDocumentColors;
   },
 
   get loadingBar() {
@@ -1609,7 +1601,6 @@ const PDFViewerApplication = {
     eventBus.on("beforeprint", _boundEvents.beforePrint);
     eventBus.on("afterprint", _boundEvents.afterPrint);
     eventBus.on("pagerendered", webViewerPageRendered);
-    eventBus.on("textlayerrendered", webViewerTextLayerRendered);
     eventBus.on("updateviewarea", webViewerUpdateViewarea);
     eventBus.on("pagechanging", webViewerPageChanging);
     eventBus.on("scalechanging", webViewerScaleChanging);
@@ -1684,7 +1675,6 @@ const PDFViewerApplication = {
     eventBus.off("beforeprint", _boundEvents.beforePrint);
     eventBus.off("afterprint", _boundEvents.afterPrint);
     eventBus.off("pagerendered", webViewerPageRendered);
-    eventBus.off("textlayerrendered", webViewerTextLayerRendered);
     eventBus.off("updateviewarea", webViewerUpdateViewarea);
     eventBus.off("pagechanging", webViewerPageChanging);
     eventBus.off("scalechanging", webViewerScaleChanging);
@@ -2022,28 +2012,6 @@ function webViewerPageRendered(evt) {
         stats,
       });
     });
-  }
-}
-
-function webViewerTextLayerRendered(evt) {
-  if (
-    typeof PDFJSDev !== "undefined" &&
-    PDFJSDev.test("FIREFOX || MOZCENTRAL") &&
-    evt.numTextDivs > 0 &&
-    !PDFViewerApplication.supportsDocumentColors
-  ) {
-    PDFViewerApplication.l10n
-      .get(
-        "document_colors_not_allowed",
-        null,
-        "PDF documents are not allowed to use their own colors: " +
-          "'Allow pages to choose their own colors' " +
-          "is deactivated in the browser."
-      )
-      .then(msg => {
-        console.error(msg);
-      });
-    PDFViewerApplication.fallback();
   }
 }
 
