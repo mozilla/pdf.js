@@ -31,6 +31,7 @@
 
   "rules": {
     // Plugins
+    "import/extensions": ["error", "always", { "ignorePackages": true, }],
     "import/no-unresolved": "error",
     "mozilla/avoid-removeChild": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",
