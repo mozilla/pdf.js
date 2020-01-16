@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import "../extensions/firefox/tools/l10n";
+import "../extensions/firefox/tools/l10n.js";
 import { createObjectURL, PDFDataRangeTransport, shadow } from "pdfjs-lib";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";

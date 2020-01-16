@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import "../external/webL10n/l10n";
+import "../external/webL10n/l10n.js";
 
 const webL10n = document.webL10n;
 
