@@ -248,6 +248,23 @@ class TextLayerBuilder {
       if (className) {
         const span = document.createElement("span");
         span.className = className;
+
+        if( findController.state.backgroundColorOption ) {
+          // make lowerCase so we have Case Insensitive matching
+          var key, keys = Object.keys(findController.state.backgroundColorOptions);
+          var n = keys.length;
+          var backgroundColor={};
+          while (n--) {
+            key = keys[n];
+            backgroundColor[key.toLowerCase()] = findController.state.backgroundColorOptions[key];
+          }
+
+          // Add the background color if its defined for this word
+          if( content in backgroundColor ) {
+            span.style.background = backgroundColor[ content ];
+          }
+        }
+
         span.appendChild(node);
         div.appendChild(span);
         return;
