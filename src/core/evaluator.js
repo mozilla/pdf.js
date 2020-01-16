@@ -935,11 +935,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         // Falling back to a default font to avoid completely broken rendering,
         // but note that there're no guarantees that things will look "correct".
-        fontRef = new Dict();
-        fontRef.set("BaseFont", Name.get("PDFJS-FallbackFont"));
-        fontRef.set("Type", Name.get("FallbackType"));
-        fontRef.set("Subtype", Name.get("FallbackType"));
-        fontRef.set("Encoding", Name.get("WinAnsiEncoding"));
+        fontRef = PartialEvaluator.getFallbackFontDict();
       }
 
       if (this.fontCache.has(fontRef)) {
@@ -3130,6 +3126,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         buildPath(accent.fontChar);
       }
     }
+  };
+
+  // TODO: Change this to a `static` getter, using shadowing, once
+  //       `PartialEvaluator` is converted to a proper class.
+  PartialEvaluator.getFallbackFontDict = function() {
+    if (this._fallbackFontDict) {
+      return this._fallbackFontDict;
+    }
+    const dict = new Dict();
+    dict.set("BaseFont", Name.get("PDFJS-FallbackFont"));
+    dict.set("Type", Name.get("FallbackType"));
+    dict.set("Subtype", Name.get("FallbackType"));
+    dict.set("Encoding", Name.get("WinAnsiEncoding"));
+
+    return (this._fallbackFontDict = dict);
   };
 
   return PartialEvaluator;
