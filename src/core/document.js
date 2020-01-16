@@ -33,7 +33,14 @@ import {
   warn,
 } from "../shared/util.js";
 import { Catalog, ObjectLoader, XRef } from "./obj.js";
-import { Dict, isDict, isName, isStream, Ref } from "./primitives.js";
+import {
+  clearPrimitiveCaches,
+  Dict,
+  isDict,
+  isName,
+  isStream,
+  Ref,
+} from "./primitives.js";
 import {
   getInheritableProperty,
   MissingDataException,
@@ -815,8 +822,8 @@ class PDFDocument {
     return this.catalog.fontFallback(id, handler);
   }
 
-  cleanup() {
-    return this.catalog.cleanup();
+  async cleanup() {
+    return this.catalog ? this.catalog.cleanup() : clearPrimitiveCaches();
   }
 }
 

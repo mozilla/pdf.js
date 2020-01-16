@@ -593,16 +593,22 @@ var WorkerMessageHandler = {
 
     handler.on("Terminate", function wphTerminate(data) {
       terminated = true;
+
+      const waitOn = [];
       if (pdfManager) {
         pdfManager.terminate(new AbortException("Worker was terminated."));
+
+        const cleanupPromise = pdfManager.cleanup();
+        waitOn.push(cleanupPromise);
+
         pdfManager = null;
+      } else {
+        clearPrimitiveCaches();
       }
       if (cancelXHRs) {
         cancelXHRs(new AbortException("Worker was terminated."));
       }
-      clearPrimitiveCaches();
 
-      var waitOn = [];
       WorkerTasks.forEach(function(task) {
         waitOn.push(task.finished);
         task.terminate();
