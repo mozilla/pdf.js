@@ -249,7 +249,7 @@ class TextLayerBuilder {
         const span = document.createElement("span");
         span.className = className;
 
-        if( findController.state.backgroundColorOption ) {
+        if( findController.state.backgroundColorOptions ) {
           // make lowerCase so we have Case Insensitive matching
           var key, keys = Object.keys(findController.state.backgroundColorOptions);
           var n = keys.length;
