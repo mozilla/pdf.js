@@ -721,6 +721,7 @@ html[dir='rtl'] .dropdownToolbarButton {
   padding: 3px 2px 2px;
   border: none;
   background: rgba(0,0,0,0); /* Opera does not support 'transparent' <select> background */
+  -webkit-appearance: none; /* remove gloss in Safari */
 }
 
 .dropdownToolbarButton > select > option {
