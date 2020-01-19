@@ -37,16 +37,19 @@ class GenericPreferences extends BasePreferences {
   }
 }
 
-const GenericExternalServices = Object.create(DefaultExternalServices);
-GenericExternalServices.createDownloadManager = function(options) {
-  return new DownloadManager(options);
-};
-GenericExternalServices.createPreferences = function() {
-  return new GenericPreferences();
-};
-GenericExternalServices.createL10n = function({ locale = "en-US" }) {
-  return new GenericL10n(locale);
-};
+class GenericExternalServices extends DefaultExternalServices {
+  static createDownloadManager(options) {
+    return new DownloadManager(options);
+  }
+
+  static createPreferences() {
+    return new GenericPreferences();
+  }
+
+  static createL10n({ locale = "en-US" }) {
+    return new GenericL10n(locale);
+  }
+}
 PDFViewerApplication.externalServices = GenericExternalServices;
 
 export { GenericCom };
