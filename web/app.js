@@ -850,8 +850,8 @@ const PDFViewerApplication = {
 
   fallback(featureId) {
     if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("FIREFOX || MOZCENTRAL")
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("MOZCENTRAL || GENERIC")
     ) {
       // Only trigger the fallback once so we don't spam the user with messages
       // for one PDF.
@@ -1325,8 +1325,8 @@ const PDFViewerApplication = {
         }
 
         if (
-          typeof PDFJSDev !== "undefined" &&
-          PDFJSDev.test("FIREFOX || MOZCENTRAL")
+          typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("MOZCENTRAL || GENERIC")
         ) {
           // Telemetry labels must be C++ variable friendly.
           let versionId = "other";
@@ -1556,8 +1556,8 @@ const PDFViewerApplication = {
     printService.layout();
 
     if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("FIREFOX || MOZCENTRAL")
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("MOZCENTRAL || GENERIC")
     ) {
       this.externalServices.reportTelemetry({
         type: "print",
@@ -1870,8 +1870,8 @@ function webViewerInitialized() {
   }
 
   if (
-    typeof PDFJSDev !== "undefined" &&
-    PDFJSDev.test("FIREFOX || MOZCENTRAL") &&
+    (typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("MOZCENTRAL || GENERIC")) &&
     !PDFViewerApplication.supportsDocumentFonts
   ) {
     AppOptions.set("disableFontFace", true);
@@ -1998,8 +1998,8 @@ function webViewerPageRendered(evt) {
   }
 
   if (
-    typeof PDFJSDev !== "undefined" &&
-    PDFJSDev.test("FIREFOX || MOZCENTRAL")
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("MOZCENTRAL || GENERIC")
   ) {
     PDFViewerApplication.externalServices.reportTelemetry({
       type: "pageInfo",
