@@ -25,7 +25,6 @@ import {
   isArrayEqual,
   isNum,
   isString,
-  NativeImageDecoding,
   OPS,
   stringToPDFString,
   TextRenderingMode,
@@ -80,9 +79,7 @@ import { DecodeStream } from "./stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { isPDFFunction } from "./function.js";
-import { JpegStream } from "./jpeg_stream.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
-import { NativeImageDecoder } from "./image_utils.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
 
@@ -91,7 +88,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     forceDataSchema: false,
     maxImageSize: -1,
     disableFontFace: false,
-    nativeImageDecoderSupport: NativeImageDecoding.DECODE,
     ignoreErrors: false,
     isEvalSupported: true,
     fontExtraProperties: false,
@@ -450,7 +446,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList,
       cacheKey,
       imageCache,
-      forceDisableNativeImageDecoder = false,
     }) {
       var dict = image.dict;
       const imageRef = dict.objId;
@@ -510,13 +505,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var SMALL_IMAGE_DIMENSIONS = 200;
       // Inlining small images into the queue as RGB data
-      if (
-        isInline &&
-        !softMask &&
-        !mask &&
-        !(image instanceof JpegStream) &&
-        w + h < SMALL_IMAGE_DIMENSIONS
-      ) {
+      if (isInline && !softMask && !mask && w + h < SMALL_IMAGE_DIMENSIONS) {
         const imageObj = new PDFImage({
           xref: this.xref,
           res: resources,
@@ -531,20 +520,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return undefined;
       }
 
-      let nativeImageDecoderSupport = forceDisableNativeImageDecoder
-        ? NativeImageDecoding.NONE
-        : this.options.nativeImageDecoderSupport;
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
       let objId = `img_${this.idFactory.createObjId()}`,
         cacheGlobally = false;
 
       if (this.parsingType3Font) {
-        assert(
-          nativeImageDecoderSupport === NativeImageDecoding.NONE,
-          "Type3 image resources should be completely decoded in the worker."
-        );
-
         objId = `${this.idFactory.getDocId()}_type3res_${objId}`;
       } else if (imageRef) {
         cacheGlobally = this.globalImageCache.shouldCache(
@@ -553,89 +534,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         );
 
         if (cacheGlobally) {
-          // Ensure that the image is *completely* decoded on the worker-thread,
-          // in order to simplify the caching/rendering code on the main-thread.
-          nativeImageDecoderSupport = NativeImageDecoding.NONE;
-
           objId = `${this.idFactory.getDocId()}_${objId}`;
         }
-      }
-
-      if (
-        nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
-        !softMask &&
-        !mask &&
-        image instanceof JpegStream &&
-        image.maybeValidDimensions &&
-        NativeImageDecoder.isSupported(
-          image,
-          this.xref,
-          resources,
-          this.pdfFunctionFactory
-        )
-      ) {
-        // These JPEGs don't need any more processing so we can just send it.
-        return this.handler
-          .sendWithPromise("obj", [
-            objId,
-            this.pageIndex,
-            "JpegStream",
-            image.getIR(this.options.forceDataSchema),
-          ])
-          .then(
-            () => {
-              // Only add the dependency once we know that the native JPEG
-              // decoding succeeded, to ensure that rendering will always
-              // complete.
-              operatorList.addDependency(objId);
-              args = [objId, w, h];
-
-              operatorList.addOp(OPS.paintJpegXObject, args);
-              if (cacheKey) {
-                imageCache[cacheKey] = {
-                  fn: OPS.paintJpegXObject,
-                  args,
-                };
-
-                if (imageRef) {
-                  this.globalImageCache.addPageIndex(imageRef, this.pageIndex);
-                }
-              }
-            },
-            reason => {
-              warn(
-                "Native JPEG decoding failed -- trying to recover: " +
-                  (reason && reason.message)
-              );
-              // Try to decode the JPEG image with the built-in decoder instead.
-              return this.buildPaintImageXObject({
-                resources,
-                image,
-                isInline,
-                operatorList,
-                cacheKey,
-                imageCache,
-                forceDisableNativeImageDecoder: true,
-              });
-            }
-          );
-      }
-
-      // Creates native image decoder only if a JPEG image or mask is present.
-      var nativeImageDecoder = null;
-      if (
-        nativeImageDecoderSupport === NativeImageDecoding.DECODE &&
-        (image instanceof JpegStream ||
-          mask instanceof JpegStream ||
-          softMask instanceof JpegStream)
-      ) {
-        nativeImageDecoder = new NativeImageDecoder({
-          xref: this.xref,
-          resources,
-          handler: this.handler,
-          forceDataSchema: this.options.forceDataSchema,
-          pdfFunctionFactory: this.pdfFunctionFactory,
-        });
       }
 
       // Ensure that the dependency is added before the image is decoded.
@@ -643,12 +543,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       args = [objId, w, h];
 
       const imgPromise = PDFImage.buildImage({
-        handler: this.handler,
         xref: this.xref,
         res: resources,
         image,
         isInline,
-        nativeDecoder: nativeImageDecoder,
         pdfFunctionFactory: this.pdfFunctionFactory,
       })
         .then(imageObj => {
@@ -3393,7 +3291,6 @@ class TranslatedFont {
     // the rendering code on the main-thread (see issue10717.pdf).
     var type3Options = Object.create(evaluator.options);
     type3Options.ignoreErrors = false;
-    type3Options.nativeImageDecoderSupport = NativeImageDecoding.NONE;
     var type3Evaluator = evaluator.clone(type3Options);
     type3Evaluator.parsingType3Font = true;
 

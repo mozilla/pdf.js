@@ -664,9 +664,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
           case OPS.paintSolidColorImageMask:
             this.paintSolidColorImageMask();
             break;
-          case OPS.paintJpegXObject:
-            this.paintJpegXObject(args[0], args[1], args[2]);
-            break;
           case OPS.paintImageXObject:
             this.paintImageXObject(args[0]);
             break;
@@ -1557,23 +1554,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       rect.setAttributeNS(null, "fill", this.current.fillColor);
 
       this._ensureTransformGroup().appendChild(rect);
-    }
-
-    paintJpegXObject(objId, w, h) {
-      const imgObj = this.objs.get(objId);
-      const imgEl = this.svgFactory.createElement("svg:image");
-      imgEl.setAttributeNS(XLINK_NS, "xlink:href", imgObj.src);
-      imgEl.setAttributeNS(null, "width", pf(w));
-      imgEl.setAttributeNS(null, "height", pf(h));
-      imgEl.setAttributeNS(null, "x", "0");
-      imgEl.setAttributeNS(null, "y", pf(-h));
-      imgEl.setAttributeNS(
-        null,
-        "transform",
-        `scale(${pf(1 / w)} ${pf(-1 / h)})`
-      );
-
-      this._ensureTransformGroup().appendChild(imgEl);
     }
 
     paintImageXObject(objId) {

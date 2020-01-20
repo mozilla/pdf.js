@@ -387,7 +387,6 @@ var Driver = (function DriverClosure() {
           const loadingTask = pdfjsLib.getDocument({
             url: absoluteUrl,
             password: task.password,
-            nativeImageDecoderSupport: task.nativeImageDecoderSupport,
             cMapUrl: CMAP_URL,
             cMapPacked: CMAP_PACKED,
             disableRange: task.disableRange,
