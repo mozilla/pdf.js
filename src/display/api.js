@@ -28,7 +28,6 @@ import {
   isArrayBuffer,
   isSameOrigin,
   MissingPDFException,
-  NativeImageDecoding,
   PasswordException,
   setVerbosityLevel,
   shadow,
@@ -116,14 +115,6 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @property {string} [docBaseUrl] - The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
- * @property {string} [nativeImageDecoderSupport] - Strategy for
- *   decoding certain (simple) JPEG images in the browser. This is useful for
- *   environments without DOM image and canvas support, such as e.g. Node.js.
- *   Valid values are 'decode', 'display' or 'none'; where 'decode' is intended
- *   for browsers with full image/canvas support, 'display' for environments
- *   with limited image support through stubs (useful for SVG conversion),
- *   and 'none' where JPEG images will be decoded entirely by PDF.js.
- *   The default value is 'decode'.
  * @property {string} [cMapUrl] - The URL where the predefined
  *   Adobe CMaps are located. Include trailing slash.
  * @property {boolean} [cMapPacked] - Specifies if the Adobe CMaps are
@@ -260,15 +251,6 @@ function getDocument(src) {
   params.fontExtraProperties = params.fontExtraProperties === true;
   params.pdfBug = params.pdfBug === true;
 
-  const NativeImageDecoderValues = Object.values(NativeImageDecoding);
-  if (
-    params.nativeImageDecoderSupport === undefined ||
-    !NativeImageDecoderValues.includes(params.nativeImageDecoderSupport)
-  ) {
-    params.nativeImageDecoderSupport =
-      apiCompatibilityParams.nativeImageDecoderSupport ||
-      NativeImageDecoding.DECODE;
-  }
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
   }
@@ -417,7 +399,6 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       disableCreateObjectURL: source.disableCreateObjectURL,
       postMessageTransfers: worker.postMessageTransfers,
       docBaseUrl: source.docBaseUrl,
-      nativeImageDecoderSupport: source.nativeImageDecoderSupport,
       ignoreErrors: source.ignoreErrors,
       isEvalSupported: source.isEvalSupported,
       fontExtraProperties: source.fontExtraProperties,
@@ -2309,26 +2290,6 @@ class WorkerTransport {
       }
 
       switch (type) {
-        case "JpegStream":
-          return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = function () {
-              resolve(img);
-            };
-            img.onerror = function () {
-              // Note that when the browser image loading/decoding fails,
-              // we'll fallback to the built-in PDF.js JPEG decoder; see
-              // `PartialEvaluator.buildPaintImageXObject` in the
-              // `src/core/evaluator.js` file.
-              reject(new Error("Error during JPEG image loading"));
-
-              // Always remember to release the image data if errors occurred.
-              releaseImageResources(img);
-            };
-            img.src = imageData;
-          }).then(img => {
-            pageProxy.objs.resolve(id, img);
-          });
         case "Image":
           pageProxy.objs.resolve(id, imageData);
 
@@ -2365,69 +2326,6 @@ class WorkerTransport {
       "UnsupportedFeature",
       this._onUnsupportedFeature.bind(this)
     );
-
-    messageHandler.on("JpegDecode", ([imageUrl, components]) => {
-      if (this.destroyed) {
-        return Promise.reject(new Error("Worker was destroyed"));
-      }
-
-      if (typeof document === "undefined") {
-        // Make sure that this code is not executing in node.js, as
-        // it's using DOM image, and there is no library to support that.
-        return Promise.reject(new Error('"document" is not defined.'));
-      }
-
-      if (components !== 3 && components !== 1) {
-        return Promise.reject(
-          new Error("Only 3 components or 1 component can be returned")
-        );
-      }
-
-      return new Promise(function (resolve, reject) {
-        const img = new Image();
-        img.onload = function () {
-          const { width, height } = img;
-          const size = width * height;
-          const rgbaLength = size * 4;
-          const buf = new Uint8ClampedArray(size * components);
-          let tmpCanvas = document.createElement("canvas");
-          tmpCanvas.width = width;
-          tmpCanvas.height = height;
-          let tmpCtx = tmpCanvas.getContext("2d");
-          tmpCtx.drawImage(img, 0, 0);
-          const data = tmpCtx.getImageData(0, 0, width, height).data;
-
-          if (components === 3) {
-            for (let i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
-              buf[j] = data[i];
-              buf[j + 1] = data[i + 1];
-              buf[j + 2] = data[i + 2];
-            }
-          } else if (components === 1) {
-            for (let i = 0, j = 0; i < rgbaLength; i += 4, j++) {
-              buf[j] = data[i];
-            }
-          }
-          resolve({ data: buf, width, height });
-
-          // Immediately release the image data once decoding has finished.
-          releaseImageResources(img);
-          // Zeroing the width and height cause Firefox to release graphics
-          // resources immediately, which can greatly reduce memory consumption.
-          tmpCanvas.width = 0;
-          tmpCanvas.height = 0;
-          tmpCanvas = null;
-          tmpCtx = null;
-        };
-        img.onerror = function () {
-          reject(new Error("JpegDecode failed to load image"));
-
-          // Always remember to release the image data if errors occurred.
-          releaseImageResources(img);
-        };
-        img.src = imageUrl;
-      });
-    });
 
     messageHandler.on("FetchBuiltInCMap", (data, sink) => {
       if (this.destroyed) {
@@ -2610,7 +2508,6 @@ class WorkerTransport {
       disableAutoFetch: params.disableAutoFetch,
       disableCreateObjectURL: params.disableCreateObjectURL,
       disableFontFace: params.disableFontFace,
-      nativeImageDecoderSupport: params.nativeImageDecoderSupport,
     });
   }
 }
