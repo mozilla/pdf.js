@@ -22,23 +22,6 @@ import { JpxImage } from "./jpx.js";
 
 var PDFImage = (function PDFImageClosure() {
   /**
-   * Decodes the image using native decoder if possible. Resolves the promise
-   * when the image data is ready.
-   */
-  function handleImageData(image, nativeDecoder) {
-    if (nativeDecoder && nativeDecoder.canDecode(image)) {
-      return nativeDecoder.decode(image).catch(reason => {
-        warn(
-          "Native image decoding failed -- trying to recover: " +
-            (reason && reason.message)
-        );
-        return image;
-      });
-    }
-    return Promise.resolve(image);
-  }
-
-  /**
    * Decode and clamp a value. The formula is different from the spec because we
    * don't decode to float range [0,1], we decode it in the [0,max] range.
    */
@@ -266,51 +249,38 @@ var PDFImage = (function PDFImageClosure() {
    * with a PDFImage when the image is ready to be used.
    */
   PDFImage.buildImage = function ({
-    handler,
     xref,
     res,
     image,
     isInline = false,
-    nativeDecoder = null,
     pdfFunctionFactory,
   }) {
-    var imagePromise = handleImageData(image, nativeDecoder);
-    var smaskPromise;
-    var maskPromise;
+    const imageData = image;
+    let smaskData = null;
+    let maskData = null;
 
-    var smask = image.dict.get("SMask");
-    var mask = image.dict.get("Mask");
+    const smask = image.dict.get("SMask");
+    const mask = image.dict.get("Mask");
 
     if (smask) {
-      smaskPromise = handleImageData(smask, nativeDecoder);
-      maskPromise = Promise.resolve(null);
-    } else {
-      smaskPromise = Promise.resolve(null);
-      if (mask) {
-        if (isStream(mask)) {
-          maskPromise = handleImageData(mask, nativeDecoder);
-        } else if (Array.isArray(mask)) {
-          maskPromise = Promise.resolve(mask);
-        } else {
-          warn("Unsupported mask format.");
-          maskPromise = Promise.resolve(null);
-        }
+      smaskData = smask;
+    } else if (mask) {
+      if (isStream(mask) || Array.isArray(mask)) {
+        maskData = mask;
       } else {
-        maskPromise = Promise.resolve(null);
+        warn("Unsupported mask format.");
       }
     }
-    return Promise.all([imagePromise, smaskPromise, maskPromise]).then(
-      function ([imageData, smaskData, maskData]) {
-        return new PDFImage({
-          xref,
-          res,
-          image: imageData,
-          isInline,
-          smask: smaskData,
-          mask: maskData,
-          pdfFunctionFactory,
-        });
-      }
+    return Promise.resolve(
+      new PDFImage({
+        xref,
+        res,
+        image: imageData,
+        isInline,
+        smask: smaskData,
+        mask: maskData,
+        pdfFunctionFactory,
+      })
     );
   };
 

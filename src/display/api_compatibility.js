@@ -33,11 +33,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   })();
 
   // Support: Node.js
-  (function checkFontFaceAndImage() {
-    // Node.js is missing native support for `@font-face` and `Image`.
+  (function checkFontFace() {
+    // Node.js is missing native support for `@font-face`.
     if (isNodeJS) {
       compatibilityParams.disableFontFace = true;
-      compatibilityParams.nativeImageDecoderSupport = "none";
     }
   })();
 }
