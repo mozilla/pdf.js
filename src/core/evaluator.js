@@ -2939,6 +2939,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var type = preEvaluatedFont.type;
       var maxCharIndex = composite ? 0xffff : 0xff;
       var properties;
+      const firstChar = dict.get("FirstChar") || 0;
+      const lastChar = dict.get("LastChar") || maxCharIndex;
 
       if (!descriptor) {
         if (type === "Type3") {
@@ -2975,15 +2977,25 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             widths: metrics.widths,
             defaultWidth: metrics.defaultWidth,
             flags,
-            firstChar: 0,
-            lastChar: maxCharIndex,
+            firstChar,
+            lastChar,
           };
+          const widths = dict.get("Widths");
           return this.extractDataStructures(dict, dict, properties).then(
             properties => {
-              properties.widths = this.buildCharCodeToWidth(
-                metrics.widths,
-                properties
-              );
+              if (widths) {
+                const glyphWidths = [];
+                let j = firstChar;
+                for (let i = 0, ii = widths.length; i < ii; i++) {
+                  glyphWidths[j++] = this.xref.fetchIfRef(widths[i]);
+                }
+                properties.widths = glyphWidths;
+              } else {
+                properties.widths = this.buildCharCodeToWidth(
+                  metrics.widths,
+                  properties
+                );
+              }
               return new Font(baseFontName, null, properties);
             }
           );
@@ -2995,8 +3007,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // to ignore this rule when a variant of a standard font is used.
       // TODO Fill the width array depending on which of the base font this is
       // a variant.
-      var firstChar = dict.get("FirstChar") || 0;
-      var lastChar = dict.get("LastChar") || maxCharIndex;
 
       var fontName = descriptor.get("FontName");
       var baseFont = dict.get("BaseFont");

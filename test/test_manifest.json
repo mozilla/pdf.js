@@ -1419,6 +1419,12 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue11403",
+       "file": "pdfs/issue11403_reduced.pdf",
+       "md5": "08287b64f442cb7c329b97c4774aa1cd",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue11139",
        "file": "pdfs/issue11139.pdf",
        "md5": "006dd4f4bb1878bc14a12072d81a4524",
