@@ -530,11 +530,13 @@ var Font = (function FontClosure() {
     this.type = type;
     this.subtype = subtype;
 
-    this.fallbackName = this.isMonospace
-      ? "monospace"
-      : this.isSerifFont
-      ? "serif"
-      : "sans-serif";
+    let fallbackName = "sans-serif";
+    if (this.isMonospace) {
+      fallbackName = "monospace";
+    } else if (this.isSerifFont) {
+      fallbackName = "serif";
+    }
+    this.fallbackName = fallbackName;
 
     this.differences = properties.differences;
     this.widths = properties.widths;
@@ -679,7 +681,11 @@ var Font = (function FontClosure() {
 
   function safeString16(value) {
     // clamp value to the 16-bit int range
-    value = value > 0x7fff ? 0x7fff : value < -0x8000 ? -0x8000 : value;
+    if (value > 0x7fff) {
+      value = 0x7fff;
+    } else if (value < -0x8000) {
+      value = -0x8000;
+    }
     return String.fromCharCode((value >> 8) & 0xff, value & 0xff);
   }
 
@@ -1853,9 +1859,19 @@ var Font = (function FontClosure() {
             // reserved flags must be zero, cleaning up
             glyf[j - 1] = flag & 0x3f;
           }
-          var xyLength =
-            (flag & 2 ? 1 : flag & 16 ? 0 : 2) +
-            (flag & 4 ? 1 : flag & 32 ? 0 : 2);
+          let xLength = 2;
+          if (flag & 2) {
+            xLength = 1;
+          } else if (flag & 16) {
+            xLength = 0;
+          }
+          let yLength = 2;
+          if (flag & 4) {
+            yLength = 1;
+          } else if (flag & 32) {
+            yLength = 0;
+          }
+          const xyLength = xLength + yLength;
           coordinatesLength += xyLength;
           if (flag & 8) {
             var repeat = glyf[j++];
@@ -2398,14 +2414,14 @@ var Font = (function FontClosure() {
           }
           // Adjusting stack not extactly, but just enough to get function id
           if (!inFDEF && !inELSE) {
-            var stackDelta =
-              op <= 0x8e
-                ? TTOpsStackDeltas[op]
-                : op >= 0xc0 && op <= 0xdf
-                ? -1
-                : op >= 0xe0
-                ? -2
-                : 0;
+            let stackDelta = 0;
+            if (op <= 0x8e) {
+              stackDelta = TTOpsStackDeltas[op];
+            } else if (op >= 0xc0 && op <= 0xdf) {
+              stackDelta = -1;
+            } else if (op >= 0xe0) {
+              stackDelta = -2;
+            }
             if (op >= 0x71 && op <= 0x75) {
               n = stack.pop();
               if (!isNaN(n)) {
