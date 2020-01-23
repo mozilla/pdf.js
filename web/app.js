@@ -239,6 +239,7 @@ const PDFViewerApplication = {
   },
 
   /**
+   * Potentially parse special debugging flags in the hash section of the URL.
    * @private
    */
   async _parseHashParameters() {
@@ -249,11 +250,12 @@ const PDFViewerApplication = {
     ) {
       return undefined;
     }
-    const waitOn = [];
-
-    // Special debugging flags in the hash section of the URL.
     const hash = document.location.hash.substring(1);
-    const hashParams = parseQueryString(hash);
+    if (!hash) {
+      return undefined;
+    }
+    const hashParams = parseQueryString(hash),
+      waitOn = [];
 
     if (
       "disableworker" in hashParams &&
@@ -284,9 +286,6 @@ const PDFViewerApplication = {
     }
     if ("webgl" in hashParams) {
       AppOptions.set("enableWebGL", hashParams["webgl"] === "true");
-    }
-    if ("useonlycsszoom" in hashParams) {
-      AppOptions.set("useOnlyCssZoom", hashParams["useonlycsszoom"] === "true");
     }
     if ("verbosity" in hashParams) {
       AppOptions.set("verbosity", hashParams["verbosity"] | 0);
