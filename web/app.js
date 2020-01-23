@@ -287,9 +287,6 @@ const PDFViewerApplication = {
     if ("webgl" in hashParams) {
       AppOptions.set("enableWebGL", hashParams["webgl"] === "true");
     }
-    if ("useonlycsszoom" in hashParams) {
-      AppOptions.set("useOnlyCssZoom", hashParams["useonlycsszoom"] === "true");
-    }
     if ("verbosity" in hashParams) {
       AppOptions.set("verbosity", hashParams["verbosity"] | 0);
     }
