@@ -88,7 +88,6 @@ var DEFINES = {
   TESTING: false,
   // The main build targets:
   GENERIC: false,
-  FIREFOX: false,
   MOZCENTRAL: false,
   CHROME: false,
   MINIFIED: false,
@@ -173,7 +172,6 @@ function createWebpackConfig(defines, output) {
     .readFileSync("./src/license_header_libre.js")
     .toString();
   var enableSourceMaps =
-    !bundleDefines.FIREFOX &&
     !bundleDefines.MOZCENTRAL &&
     !bundleDefines.CHROME &&
     !bundleDefines.TESTING;
