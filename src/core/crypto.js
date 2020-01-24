@@ -996,8 +996,8 @@ class AESBaseCipher {
     const sourceLength = data.length;
     let buffer = this.buffer,
       bufferLength = this.bufferPosition;
-    let result = [],
-      iv = this.iv;
+    const result = [];
+    let iv = this.iv;
 
     for (let i = 0; i < sourceLength; ++i) {
       buffer[bufferLength] = data[i];
@@ -1050,8 +1050,8 @@ class AESBaseCipher {
 
   decryptBlock(data, finalize, iv = null) {
     const sourceLength = data.length;
-    let buffer = this.buffer,
-      bufferLength = this.bufferPosition;
+    const buffer = this.buffer;
+    let bufferLength = this.bufferPosition;
     // If an IV is not supplied, wait for IV values. They are at the start
     // of the stream.
     if (iv) {

@@ -116,13 +116,13 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     return value;
   }
   function rfc2231getparam(contentDisposition) {
-    let matches = [],
-      match;
+    const matches = [];
+    let match;
     // Iterate over all filename*n= and filename*n*= with n being an integer
     // of at least zero. Any non-zero number must not start with '0'.
     const iter = toParamRegExp("filename\\*((?!0\\d)\\d+)(\\*?)", "ig");
     while ((match = iter.exec(contentDisposition)) !== null) {
-      let [, n, quot, part] = match;
+      let [, n, quot, part] = match; // eslint-disable-line prefer-const
       n = parseInt(n, 10);
       if (n in matches) {
         // Ignore anything after the invalid second filename*0.
@@ -139,7 +139,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
         // Numbers must be consecutive. Truncate when there is a hole.
         break;
       }
-      let [quot, part] = matches[n];
+      let [quot, part] = matches[n]; // eslint-disable-line prefer-const
       part = rfc2616unquote(part);
       if (quot) {
         part = unescape(part);

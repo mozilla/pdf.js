@@ -2284,8 +2284,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       baseDict,
       properties
     ) {
-      let xref = this.xref,
-        cidToGidBytes;
+      const xref = this.xref;
+      let cidToGidBytes;
       // 9.10.2
       var toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
       var toUnicodePromise = toUnicode
@@ -2413,15 +2413,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     _buildSimpleFontToUnicode(properties, forceGlyphs = false) {
       assert(!properties.composite, "Must be a simple font.");
 
-      let toUnicode = [],
-        charcode,
-        glyphName;
+      const toUnicode = [];
       const encoding = properties.defaultEncoding.slice();
       const baseEncodingName = properties.baseEncodingName;
       // Merge in the differences array.
       const differences = properties.differences;
-      for (charcode in differences) {
-        glyphName = differences[charcode];
+      for (const charcode in differences) {
+        const glyphName = differences[charcode];
         if (glyphName === ".notdef") {
           // Skip .notdef to prevent rendering errors, e.g. boxes appearing
           // where there should be spaces (fixes issue5256.pdf).
@@ -2430,9 +2428,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         encoding[charcode] = glyphName;
       }
       const glyphsUnicodeMap = getGlyphsUnicode();
-      for (charcode in encoding) {
+      for (const charcode in encoding) {
         // a) Map the character code to a character name.
-        glyphName = encoding[charcode];
+        let glyphName = encoding[charcode];
         // b) Look up the character name in the Adobe Glyph List (see the
         //    Bibliography) to obtain the corresponding Unicode value.
         if (glyphName === "") {

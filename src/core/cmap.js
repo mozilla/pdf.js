@@ -240,8 +240,8 @@ class CMap {
   }
 
   mapBfRangeToArray(low, high, array) {
-    let i = 0,
-      ii = array.length;
+    const ii = array.length;
+    let i = 0;
     while (low <= high && i < ii) {
       this._map[low] = array[i++];
       ++low;
