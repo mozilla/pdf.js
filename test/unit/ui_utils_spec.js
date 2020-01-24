@@ -449,7 +449,7 @@ describe("ui_utils", function() {
     });
 
     it("should reject invalid parameters", function(done) {
-      let invalidTarget = waitOnEventOrTimeout({
+      const invalidTarget = waitOnEventOrTimeout({
         target: "window",
         name: "DOMContentLoaded",
       }).then(
@@ -461,7 +461,7 @@ describe("ui_utils", function() {
         }
       );
 
-      let invalidName = waitOnEventOrTimeout({
+      const invalidName = waitOnEventOrTimeout({
         target: eventBus,
         name: "",
       }).then(
@@ -473,7 +473,7 @@ describe("ui_utils", function() {
         }
       );
 
-      let invalidDelay = waitOnEventOrTimeout({
+      const invalidDelay = waitOnEventOrTimeout({
         target: eventBus,
         name: "pagerendered",
         delay: -1000,
@@ -496,9 +496,9 @@ describe("ui_utils", function() {
       if (isNodeJS) {
         pending("Document in not supported in Node.js.");
       }
-      let button = document.createElement("button");
+      const button = document.createElement("button");
 
-      let buttonClicked = waitOnEventOrTimeout({
+      const buttonClicked = waitOnEventOrTimeout({
         target: button,
         name: "click",
         delay: 10000,
@@ -516,9 +516,9 @@ describe("ui_utils", function() {
       if (isNodeJS) {
         pending("Document in not supported in Node.js.");
       }
-      let button = document.createElement("button");
+      const button = document.createElement("button");
 
-      let buttonClicked = waitOnEventOrTimeout({
+      const buttonClicked = waitOnEventOrTimeout({
         target: button,
         name: "click",
         delay: 10,
@@ -532,7 +532,7 @@ describe("ui_utils", function() {
     });
 
     it("should resolve on event, using the EventBus", function(done) {
-      let pageRendered = waitOnEventOrTimeout({
+      const pageRendered = waitOnEventOrTimeout({
         target: eventBus,
         name: "pagerendered",
         delay: 10000,
@@ -547,7 +547,7 @@ describe("ui_utils", function() {
     });
 
     it("should resolve on timeout, using the EventBus", function(done) {
-      let pageRendered = waitOnEventOrTimeout({
+      const pageRendered = waitOnEventOrTimeout({
         target: eventBus,
         name: "pagerendered",
         delay: 10,

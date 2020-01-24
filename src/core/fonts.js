@@ -294,11 +294,11 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
     charCodeOf(value) {
       // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
       // are both very sparse and very large (see issue8372.pdf).
-      let map = this._map;
+      const map = this._map;
       if (map.length <= 0x10000) {
         return map.indexOf(value);
       }
-      for (let charCode in map) {
+      for (const charCode in map) {
         if (map[charCode] === value) {
           return charCode | 0;
         }
@@ -697,7 +697,7 @@ var Font = (function FontClosure() {
   }
 
   function isTrueTypeCollectionFile(file) {
-    let header = file.peekBytes(4);
+    const header = file.peekBytes(4);
     return bytesToString(header) === "ttcf";
   }
 
@@ -1311,7 +1311,7 @@ var Font = (function FontClosure() {
             map[+charCode] = SupplementalGlyphMapForArialBlack[charCode];
           }
         } else if (/Calibri/i.test(name)) {
-          let SupplementalGlyphMapForCalibri = getSupplementalGlyphMapForCalibri();
+          const SupplementalGlyphMapForCalibri = getSupplementalGlyphMapForCalibri();
           for (charCode in SupplementalGlyphMapForCalibri) {
             map[+charCode] = SupplementalGlyphMapForCalibri[charCode];
           }
@@ -1397,7 +1397,7 @@ var Font = (function FontClosure() {
       ];
 
       function readTables(file, numTables) {
-        let tables = Object.create(null);
+        const tables = Object.create(null);
         tables["OS/2"] = null;
         tables["cmap"] = null;
         tables["head"] = null;
@@ -1408,7 +1408,7 @@ var Font = (function FontClosure() {
         tables["post"] = null;
 
         for (let i = 0; i < numTables; i++) {
-          let table = readTableEntry(font);
+          const table = readTableEntry(font);
           if (!VALID_TABLES.includes(table.tag)) {
             continue; // skipping table if it's not a required or optional table
           }
@@ -1460,18 +1460,18 @@ var Font = (function FontClosure() {
       }
 
       function readTrueTypeCollectionHeader(ttc) {
-        let ttcTag = bytesToString(ttc.getBytes(4));
+        const ttcTag = bytesToString(ttc.getBytes(4));
         assert(ttcTag === "ttcf", "Must be a TrueType Collection font.");
 
-        let majorVersion = ttc.getUint16();
-        let minorVersion = ttc.getUint16();
-        let numFonts = ttc.getInt32() >>> 0;
-        let offsetTable = [];
+        const majorVersion = ttc.getUint16();
+        const minorVersion = ttc.getUint16();
+        const numFonts = ttc.getInt32() >>> 0;
+        const offsetTable = [];
         for (let i = 0; i < numFonts; i++) {
           offsetTable.push(ttc.getInt32() >>> 0);
         }
 
-        let header = {
+        const header = {
           ttcTag,
           majorVersion,
           minorVersion,
@@ -1493,23 +1493,23 @@ var Font = (function FontClosure() {
       }
 
       function readTrueTypeCollectionData(ttc, fontName) {
-        let { numFonts, offsetTable } = readTrueTypeCollectionHeader(ttc);
+        const { numFonts, offsetTable } = readTrueTypeCollectionHeader(ttc);
 
         for (let i = 0; i < numFonts; i++) {
           ttc.pos = (ttc.start || 0) + offsetTable[i];
-          let potentialHeader = readOpenTypeHeader(ttc);
-          let potentialTables = readTables(ttc, potentialHeader.numTables);
+          const potentialHeader = readOpenTypeHeader(ttc);
+          const potentialTables = readTables(ttc, potentialHeader.numTables);
 
           if (!potentialTables["name"]) {
             throw new FormatError(
               'TrueType Collection font must contain a "name" table.'
             );
           }
-          let nameTable = readNameTable(potentialTables["name"]);
+          const nameTable = readNameTable(potentialTables["name"]);
 
           for (let j = 0, jj = nameTable.length; j < jj; j++) {
             for (let k = 0, kk = nameTable[j].length; k < kk; k++) {
-              let nameEntry = nameTable[j][k];
+              const nameEntry = nameTable[j][k];
               if (nameEntry && nameEntry.replace(/\s/g, "") === fontName) {
                 return {
                   header: potentialHeader,
@@ -2327,7 +2327,7 @@ var Font = (function FontClosure() {
               } else {
                 ttContext.functionsUsed[funcId] = true;
                 if (funcId in ttContext.functionsStackDeltas) {
-                  let newStackLength =
+                  const newStackLength =
                     stack.length + ttContext.functionsStackDeltas[funcId];
                   if (newStackLength < 0) {
                     warn("TT: CALL invalid functions stack delta.");
@@ -2525,7 +2525,7 @@ var Font = (function FontClosure() {
 
       let header, tables;
       if (isTrueTypeCollectionFile(font)) {
-        let ttcData = readTrueTypeCollectionData(font, this.name);
+        const ttcData = readTrueTypeCollectionData(font, this.name);
         header = ttcData.header;
         tables = ttcData.tables;
       } else {
@@ -3709,8 +3709,8 @@ var Type1Font = (function Type1FontClosure() {
       var charsetArray = [".notdef"];
       var i, ii;
       for (i = 0; i < count; i++) {
-        let glyphName = charstrings[i].glyphName;
-        let index = CFFStandardStrings.indexOf(glyphName);
+        const glyphName = charstrings[i].glyphName;
+        const index = CFFStandardStrings.indexOf(glyphName);
         if (index === -1) {
           strings.add(glyphName);
         }

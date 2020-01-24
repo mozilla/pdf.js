@@ -496,7 +496,7 @@ class ChunkedStreamManager {
   }
 
   onReceiveData(args) {
-    let chunk = args.chunk;
+    const chunk = args.chunk;
     const isProgressive = args.begin === undefined;
     const begin = isProgressive ? this.progressiveDataLength : args.begin;
     const end = begin + chunk.byteLength;
