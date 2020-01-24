@@ -207,8 +207,8 @@ class Parser {
       CR = 0xd;
     const n = 10,
       NUL = 0x0;
-    let startPos = stream.pos,
-      state = 0,
+    const startPos = stream.pos;
+    let state = 0,
       ch,
       maybeEIPos;
     while ((ch = stream.getByte()) !== -1) {
@@ -282,11 +282,10 @@ class Parser {
    * @returns {number} The inline stream length.
    */
   findDCTDecodeInlineStreamEnd(stream) {
-    let startPos = stream.pos,
-      foundEOI = false,
+    const startPos = stream.pos;
+    let foundEOI = false,
       b,
-      markerLength,
-      length;
+      markerLength;
     while ((b = stream.getByte()) !== -1) {
       if (b !== 0xff) {
         // Not a valid marker.
@@ -367,7 +366,7 @@ class Parser {
         break;
       }
     }
-    length = stream.pos - startPos;
+    const length = stream.pos - startPos;
     if (b === -1) {
       warn(
         "Inline DCTDecode image stream: " +
@@ -387,9 +386,8 @@ class Parser {
   findASCII85DecodeInlineStreamEnd(stream) {
     const TILDE = 0x7e,
       GT = 0x3e;
-    let startPos = stream.pos,
-      ch,
-      length;
+    const startPos = stream.pos;
+    let ch;
     while ((ch = stream.getByte()) !== -1) {
       if (ch === TILDE) {
         const tildePos = stream.pos;
@@ -415,7 +413,7 @@ class Parser {
         }
       }
     }
-    length = stream.pos - startPos;
+    const length = stream.pos - startPos;
     if (ch === -1) {
       warn(
         "Inline ASCII85Decode image stream: " +
@@ -434,15 +432,14 @@ class Parser {
    */
   findASCIIHexDecodeInlineStreamEnd(stream) {
     const GT = 0x3e;
-    let startPos = stream.pos,
-      ch,
-      length;
+    const startPos = stream.pos;
+    let ch;
     while ((ch = stream.getByte()) !== -1) {
       if (ch === GT) {
         break;
       }
     }
-    length = stream.pos - startPos;
+    const length = stream.pos - startPos;
     if (ch === -1) {
       warn(
         "Inline ASCIIHexDecode image stream: " +

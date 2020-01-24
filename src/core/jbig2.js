@@ -987,21 +987,15 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       decodingContext
     );
     // Divide collective bitmap into patterns.
-    let patterns = [],
-      i = 0,
-      patternBitmap,
-      xMin,
-      xMax,
-      y;
-    while (i <= maxPatternIndex) {
-      patternBitmap = [];
-      xMin = patternWidth * i;
-      xMax = xMin + patternWidth;
-      for (y = 0; y < patternHeight; y++) {
+    const patterns = [];
+    for (let i = 0; i <= maxPatternIndex; i++) {
+      const patternBitmap = [];
+      const xMin = patternWidth * i;
+      const xMax = xMin + patternWidth;
+      for (let y = 0; y < patternHeight; y++) {
         patternBitmap.push(collectiveBitmap[y].subarray(xMin, xMax));
       }
       patterns.push(patternBitmap);
-      i++;
     }
     return patterns;
   }
@@ -1075,9 +1069,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       }
     }
     // Annex C. Gray-scale Image Decoding Procedure.
-    let grayScaleBitPlanes = [],
-      mmrInput,
-      bitmap;
+    const grayScaleBitPlanes = [];
+    let mmrInput, bitmap;
     if (mmr) {
       // MMR bit planes are in one continuous stream. Only EOFB codes indicate
       // the end of each bitmap, so EOFBs must be decoded.
@@ -1523,8 +1516,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   }
 
   function parseJbig2(data) {
-    let position = 0,
-      end = data.length;
+    const end = data.length;
+    let position = 0;
 
     if (
       data[position] !== 0x97 ||
@@ -1899,11 +1892,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
     // Create Huffman tree.
     this.rootNode = new HuffmanTreeNode(null);
-    let i,
-      ii = lines.length,
-      line;
-    for (i = 0; i < ii; i++) {
-      line = lines[i];
+    for (let i = 0, ii = lines.length; i < ii; i++) {
+      const line = lines[i];
       if (line.prefixLength > 0) {
         this.rootNode.buildTree(line, line.prefixLength - 1);
       }
@@ -1916,15 +1906,14 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     },
     assignPrefixCodes(lines) {
       // Annex B.3 Assigning the prefix codes.
-      let linesLength = lines.length,
-        prefixLengthMax = 0,
-        i;
-      for (i = 0; i < linesLength; i++) {
+      const linesLength = lines.length;
+      let prefixLengthMax = 0;
+      for (let i = 0; i < linesLength; i++) {
         prefixLengthMax = Math.max(prefixLengthMax, lines[i].prefixLength);
       }
 
       const histogram = new Uint32Array(prefixLengthMax + 1);
-      for (i = 0; i < linesLength; i++) {
+      for (let i = 0; i < linesLength; i++) {
         histogram[lines[i].prefixLength]++;
       }
       let currentLength = 1,
@@ -2253,9 +2242,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         throw new Jbig2Error(`standard table B.${number} does not exist`);
     }
 
-    let length = lines.length,
-      i;
-    for (i = 0; i < length; i++) {
+    for (let i = 0, ii = lines.length; i < ii; i++) {
       lines[i] = new HuffmanLine(lines[i]);
     }
     table = new HuffmanTable(lines, true);
@@ -2310,12 +2297,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function getCustomHuffmanTable(index, referredTo, customTables) {
     // Returns a Tables segment that has been earlier decoded.
     // See 7.4.2.1.6 (symbol dictionary) or 7.4.3.1.6 (text region).
-    let currentIndex = 0,
-      i,
-      ii = referredTo.length,
-      table;
-    for (i = 0; i < ii; i++) {
-      table = customTables[referredTo[i]];
+    let currentIndex = 0;
+    for (let i = 0, ii = referredTo.length; i < ii; i++) {
+      const table = customTables[referredTo[i]];
       if (table) {
         if (index === currentIndex) {
           return table;
@@ -2336,11 +2320,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     // 7.4.3.1.7 Symbol ID Huffman table decoding
 
     // Read code lengths for RUNCODEs 0...34.
-    let codes = [],
-      i,
-      codeLength;
-    for (i = 0; i <= 34; i++) {
-      codeLength = reader.readBits(4);
+    const codes = [];
+    for (let i = 0; i <= 34; i++) {
+      const codeLength = reader.readBits(4);
       codes.push(new HuffmanLine([i, codeLength, 0, 0]));
     }
     // Assign Huffman codes for RUNCODEs.
@@ -2349,8 +2331,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     // Read a Huffman code using the assignment above.
     // Interpret the RUNCODE codes and the additional bits (if any).
     codes.length = 0;
-    for (i = 0; i < numberOfSymbols; ) {
-      codeLength = runCodesTable.decode(reader);
+    for (let i = 0; i < numberOfSymbols; ) {
+      const codeLength = runCodesTable.decode(reader);
       if (codeLength >= 32) {
         let repeatedLength, numberOfRepeats, j;
         switch (codeLength) {
@@ -2532,14 +2514,11 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   }
 
   function readUncompressedBitmap(reader, width, height) {
-    let bitmap = [],
-      x,
-      y,
-      row;
-    for (y = 0; y < height; y++) {
-      row = new Uint8Array(width);
+    const bitmap = [];
+    for (let y = 0; y < height; y++) {
+      const row = new Uint8Array(width);
       bitmap.push(row);
-      for (x = 0; x < width; x++) {
+      for (let x = 0; x < width; x++) {
         row[x] = reader.readBit();
       }
       reader.byteAlign();
@@ -2558,19 +2537,15 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       EndOfBlock: endOfBlock,
     };
     const decoder = new CCITTFaxDecoder(input, params);
-    let bitmap = [],
-      x,
-      y,
-      row,
-      currentByte,
-      shift,
+    const bitmap = [];
+    let currentByte,
       eof = false;
 
-    for (y = 0; y < height; y++) {
-      row = new Uint8Array(width);
+    for (let y = 0; y < height; y++) {
+      const row = new Uint8Array(width);
       bitmap.push(row);
-      shift = -1;
-      for (x = 0; x < width; x++) {
+      let shift = -1;
+      for (let x = 0; x < width; x++) {
         if (shift < 0) {
           currentByte = decoder.readNextChar();
           if (currentByte === -1) {

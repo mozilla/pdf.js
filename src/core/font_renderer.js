@@ -427,8 +427,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             if (font.isCFFCIDFont) {
               const fdIndex = font.fdSelect.getFDIndex(glyphId);
               if (fdIndex >= 0 && fdIndex < font.fdArray.length) {
-                let fontDict = font.fdArray[fdIndex],
-                  subrs;
+                const fontDict = font.fdArray[fdIndex];
+                let subrs;
                 if (fontDict.privateDict && fontDict.privateDict.subrsIndex) {
                   subrs = fontDict.privateDict.subrsIndex.objects;
                 }
