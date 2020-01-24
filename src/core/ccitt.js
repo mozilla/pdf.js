@@ -27,7 +27,7 @@
 
 import { info } from "../shared/util.js";
 
-let CCITTFaxDecoder = (function CCITTFaxDecoder() {
+const CCITTFaxDecoder = (function CCITTFaxDecoder() {
   const ccittEOL = -2;
   const ccittEOF = -1;
   const twoDimPass = 0;
@@ -515,9 +515,9 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
       if (this.eof) {
         return -1;
       }
-      let refLine = this.refLine;
-      let codingLine = this.codingLine;
-      let columns = this.columns;
+      const refLine = this.refLine;
+      const codingLine = this.codingLine;
+      const columns = this.columns;
 
       let refPos, blackPixels, bits, i;
 
@@ -850,7 +850,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
      * @private
      */
     _addPixels(a1, blackPixels) {
-      let codingLine = this.codingLine;
+      const codingLine = this.codingLine;
       let codingPos = this.codingPos;
 
       if (a1 > codingLine[codingPos]) {
@@ -872,7 +872,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
      * @private
      */
     _addPixelsNeg(a1, blackPixels) {
-      let codingLine = this.codingLine;
+      const codingLine = this.codingLine;
       let codingPos = this.codingPos;
 
       if (a1 > codingLine[codingPos]) {
@@ -911,7 +911,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
      * @private
      */
     _findTableCode(start, end, table, limit) {
-      let limitValue = limit || 0;
+      const limitValue = limit || 0;
       for (let i = start; i <= end; ++i) {
         let code = this._lookBits(i);
         if (code === ccittEOF) {
@@ -921,7 +921,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           code <<= end - i;
         }
         if (!limitValue || code >= limitValue) {
-          let p = table[code - limitValue];
+          const p = table[code - limitValue];
           if (p[0] === i) {
             this._eatBits(i);
             return [true, p[1], true];
@@ -945,7 +945,7 @@ let CCITTFaxDecoder = (function CCITTFaxDecoder() {
           return p[1];
         }
       } else {
-        let result = this._findTableCode(1, 7, twoDimTable);
+        const result = this._findTableCode(1, 7, twoDimTable);
         if (result[0] && result[2]) {
           return result[1];
         }

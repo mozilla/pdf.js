@@ -24,7 +24,7 @@ import {
 import { isDict, isStream } from "./primitives.js";
 import { PostScriptLexer, PostScriptParser } from "./ps_parser.js";
 
-let IsEvalSupportedCached = {
+const IsEvalSupportedCached = {
   get value() {
     return shadow(this, "value", isEvalSupported());
   },
@@ -150,7 +150,7 @@ var PDFFunction = (function PDFFunctionClosure() {
     },
 
     parse({ xref, isEvalSupported, fn }) {
-      let IR = this.getIR({ xref, isEvalSupported, fn });
+      const IR = this.getIR({ xref, isEvalSupported, fn });
       return this.fromIR({ xref, isEvalSupported, IR });
     },
 
@@ -480,7 +480,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var code = IR[3];
 
       if (isEvalSupported && IsEvalSupportedCached.value) {
-        let compiled = new PostScriptCompiler().compile(code, domain, range);
+        const compiled = new PostScriptCompiler().compile(code, domain, range);
         if (compiled) {
           // Compiled function consists of simple expressions such as addition,
           // subtraction, Math.max, and also contains 'var' and 'return'

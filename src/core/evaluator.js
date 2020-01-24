@@ -472,7 +472,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         !(image instanceof JpegStream) &&
         w + h < SMALL_IMAGE_DIMENSIONS
       ) {
-        let imageObj = new PDFImage({
+        const imageObj = new PDFImage({
           xref: this.xref,
           res: resources,
           image,
@@ -652,7 +652,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // we will build a map of integer values in range 0..255 to be fast.
       var transferObj = smask.get("TR");
       if (isPDFFunction(transferObj)) {
-        let transferFn = this.pdfFunctionFactory.create(transferObj);
+        const transferFn = this.pdfFunctionFactory.create(transferObj);
         var transferMap = new Uint8Array(256);
         var tmp = new Float32Array(1);
         for (var i = 0; i < 256; i++) {
@@ -683,11 +683,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       task
     ) {
       // Create an IR of the pattern code.
-      let tilingOpList = new OperatorList();
+      const tilingOpList = new OperatorList();
       // Merge the available resources, to prevent issues when the patternDict
       // is missing some /Resources entries (fixes issue6541.pdf).
-      let resourcesArray = [patternDict.get("Resources"), resources];
-      let patternResources = Dict.merge(this.xref, resourcesArray);
+      const resourcesArray = [patternDict.get("Resources"), resources];
+      const patternResources = Dict.merge(this.xref, resourcesArray);
 
       return this.getOperatorList({
         stream: pattern,
@@ -807,8 +807,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var gStateKeys = gState.getKeys();
       var promise = Promise.resolve();
       for (var i = 0, ii = gStateKeys.length; i < ii; i++) {
-        let key = gStateKeys[i];
-        let value = gState.get(key);
+        const key = gStateKeys[i];
+        const value = gState.get(key);
         switch (key) {
           case "Type":
             break;
@@ -1206,7 +1206,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return new Promise(function promiseBody(resolve, reject) {
-        let next = function(promise) {
+        const next = function(promise) {
           Promise.all([promise, operatorList.ready]).then(function() {
             try {
               promiseBody(resolve, reject);
@@ -1252,7 +1252,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     );
                   }
 
-                  let xobj = xobjs.get(name);
+                  const xobj = xobjs.get(name);
                   if (!xobj) {
                     operatorList.addOp(fn, args);
                     resolveXObject();
@@ -1262,7 +1262,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     throw new FormatError("XObject should be a stream");
                   }
 
-                  let type = xobj.dict.get("Subtype");
+                  const type = xobj.dict.get("Subtype");
                   if (!isName(type)) {
                     throw new FormatError("XObject should have a Name subtype");
                   }
@@ -1887,7 +1887,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       function enqueueChunk() {
-        let length = textContent.items.length;
+        const length = textContent.items.length;
         if (length > 0) {
           sink.enqueue(textContent, length);
           textContent.items = [];
@@ -1898,7 +1898,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var timeSlotManager = new TimeSlotManager();
 
       return new Promise(function promiseBody(resolve, reject) {
-        let next = function(promise) {
+        const next = function(promise) {
           enqueueChunk();
           Promise.all([promise, sink.ready]).then(function() {
             try {
@@ -2142,7 +2142,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     );
                   }
 
-                  let xobj = xobjs.get(name);
+                  const xobj = xobjs.get(name);
                   if (!xobj) {
                     resolveXObject();
                     return;
@@ -2151,7 +2151,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     throw new FormatError("XObject should be a stream");
                   }
 
-                  let type = xobj.dict.get("Subtype");
+                  const type = xobj.dict.get("Subtype");
                   if (!isName(type)) {
                     throw new FormatError("XObject should have a Name subtype");
                   }
@@ -2167,10 +2167,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   // data can otherwise prevent `restore` operators from
                   // executing.
                   // NOTE: Only an issue when `options.ignoreErrors === true`.
-                  let currentState = stateManager.state.clone();
-                  let xObjStateManager = new StateManager(currentState);
+                  const currentState = stateManager.state.clone();
+                  const xObjStateManager = new StateManager(currentState);
 
-                  let matrix = xobj.dict.getArray("Matrix");
+                  const matrix = xobj.dict.getArray("Matrix");
                   if (Array.isArray(matrix) && matrix.length === 6) {
                     xObjStateManager.transform(matrix);
                   }
@@ -2178,7 +2178,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   // Enqueue the `textContent` chunk before parsing the /Form
                   // XObject.
                   enqueueChunk();
-                  let sinkWrapper = {
+                  const sinkWrapper = {
                     enqueueInvoked: false,
 
                     enqueue(chunk, size) {
@@ -2416,10 +2416,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       let toUnicode = [],
         charcode,
         glyphName;
-      let encoding = properties.defaultEncoding.slice();
-      let baseEncodingName = properties.baseEncodingName;
+      const encoding = properties.defaultEncoding.slice();
+      const baseEncodingName = properties.baseEncodingName;
       // Merge in the differences array.
-      let differences = properties.differences;
+      const differences = properties.differences;
       for (charcode in differences) {
         glyphName = differences[charcode];
         if (glyphName === ".notdef") {
@@ -2429,7 +2429,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         encoding[charcode] = glyphName;
       }
-      let glyphsUnicodeMap = getGlyphsUnicode();
+      const glyphsUnicodeMap = getGlyphsUnicode();
       for (charcode in encoding) {
         // a) Map the character code to a character name.
         glyphName = encoding[charcode];
@@ -2482,7 +2482,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
             default:
               // 'uniXXXX'/'uXXXX{XX}' glyphs
-              let unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
+              const unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
               if (unicode !== -1) {
                 code = unicode;
               }
@@ -2492,7 +2492,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             // equals `charcode`, using the glyph defined in the baseEncoding
             // seems to yield a better `toUnicode` mapping (fixes issue 5070).
             if (baseEncodingName && code === +charcode) {
-              let baseEncoding = getEncoding(baseEncodingName);
+              const baseEncoding = getEncoding(baseEncodingName);
               if (baseEncoding && (glyphName = baseEncoding[charcode])) {
                 toUnicode[charcode] = String.fromCharCode(
                   glyphsUnicodeMap[glyphName]
@@ -2562,12 +2562,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // b) Obtain the registry and ordering of the character collection used
         // by the font’s CMap (for example, Adobe and Japan1) from its
         // CIDSystemInfo dictionary.
-        let registry = properties.cidSystemInfo.registry;
-        let ordering = properties.cidSystemInfo.ordering;
+        const registry = properties.cidSystemInfo.registry;
+        const ordering = properties.cidSystemInfo.ordering;
         // c) Construct a second CMap name by concatenating the registry and
         // ordering obtained in step (b) in the format registry–ordering–UCS2
         // (for example, Adobe–Japan1–UCS2).
-        let ucs2CMapName = Name.get(registry + "-" + ordering + "-UCS2");
+        const ucs2CMapName = Name.get(registry + "-" + ordering + "-UCS2");
         // d) Obtain the CMap with the name constructed in step (c) (available
         // from the ASN Web site; see the Bibliography).
         return CMapFactory.create({
@@ -2575,15 +2575,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           fetchBuiltInCMap: this.fetchBuiltInCMap,
           useCMap: null,
         }).then(function(ucs2CMap) {
-          let cMap = properties.cMap;
-          let toUnicode = [];
+          const cMap = properties.cMap;
+          const toUnicode = [];
           cMap.forEach(function(charcode, cid) {
             if (cid > 0xffff) {
               throw new FormatError("Max size of CID is 65,535");
             }
             // e) Map the CID obtained in step (a) according to the CMap
             // obtained in step (d), producing a Unicode value.
-            let ucs2 = ucs2CMap.lookup(cid);
+            const ucs2 = ucs2CMap.lookup(cid);
             if (ucs2) {
               toUnicode[charcode] = String.fromCharCode(
                 (ucs2.charCodeAt(0) << 8) + ucs2.charCodeAt(1)
@@ -3204,7 +3204,7 @@ var TranslatedFont = (function TranslatedFontClosure() {
       var charProcOperatorList = Object.create(null);
 
       for (var i = 0, n = charProcKeys.length; i < n; ++i) {
-        let key = charProcKeys[i];
+        const key = charProcKeys[i];
         loadCharProcsPromise = loadCharProcsPromise.then(function() {
           var glyphStream = charProcs.get(key);
           var operatorList = new OperatorList();
