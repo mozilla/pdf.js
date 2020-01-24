@@ -32,7 +32,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
     <title>PDF.js viewer</title>
 
-<!--#if FIREFOX || MOZCENTRAL-->
+<!--#if MOZCENTRAL-->
 <!--#include viewer-snippet-firefox-extension.html-->
 <!--#endif-->
 <!--#if CHROME-->
@@ -391,7 +391,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             </div>
           </div>
         </div>
-<!--#if !(FIREFOX || MOZCENTRAL)-->
+<!--#if !MOZCENTRAL-->
         <div id="printServiceOverlay" class="container hidden">
           <div class="dialog">
             <div class="row">

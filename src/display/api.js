@@ -1639,7 +1639,6 @@ const PDFWorker = (function PDFWorkerClosure() {
         return worker.WorkerMessageHandler;
       }
       if (
-        typeof PDFJSDev !== "undefined" &&
         PDFJSDev.test("GENERIC") &&
         isNodeJS &&
         // eslint-disable-next-line no-undef
