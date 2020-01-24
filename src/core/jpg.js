@@ -274,8 +274,8 @@ var JpegImage = (function JpegImageClosure() {
       var s;
       var rs;
       while (k <= e) {
-        let offsetZ = offset + dctZigZag[k];
-        let sign = component.blockData[offsetZ] < 0 ? -1 : 1;
+        const offsetZ = offset + dctZigZag[k];
+        const sign = component.blockData[offsetZ] < 0 ? -1 : 1;
         switch (successiveACState) {
           case 0: // initial state
             rs = decodeHuffman(component.huffmanTableAC);
@@ -1035,7 +1035,7 @@ var JpegImage = (function JpegImageClosure() {
               offset -= 3;
               break;
             }
-            let nextFileMarker = findNextFileMarker(data, offset - 2);
+            const nextFileMarker = findNextFileMarker(data, offset - 2);
             if (nextFileMarker && nextFileMarker.invalid) {
               warn(
                 "JpegImage.parse - unexpected data, current marker is: " +

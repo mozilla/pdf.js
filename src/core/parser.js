@@ -693,8 +693,8 @@ class Parser {
 
     let maybeLength = length;
     if (Array.isArray(filter)) {
-      let filterArray = filter;
-      let paramsArray = params;
+      const filterArray = filter;
+      const paramsArray = params;
       for (let i = 0, ii = filterArray.length; i < ii; ++i) {
         filter = this.xref.fetchIfRef(filterArray[i]);
         if (!isName(filter)) {

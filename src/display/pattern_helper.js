@@ -555,7 +555,7 @@ var TilingPattern = (function TilingPatternClosure() {
       paintType,
       color
     ) {
-      let context = graphics.ctx,
+      const context = graphics.ctx,
         current = graphics.current;
       switch (paintType) {
         case PaintType.COLORED:
