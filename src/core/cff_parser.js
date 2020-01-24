@@ -1730,7 +1730,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       // Freetype requires the number of charset strings be correct and MacOS
       // requires a valid mapping for printing.
       let out;
-      let numGlyphsLessNotDef = numGlyphs - 1;
+      const numGlyphsLessNotDef = numGlyphs - 1;
       if (isCIDFont) {
         // In a CID font, the charset is a mapping of CIDs not SIDs so just
         // create an identity mapping.
@@ -1742,16 +1742,16 @@ var CFFCompiler = (function CFFCompilerClosure() {
           numGlyphsLessNotDef & 0xff,
         ]);
       } else {
-        let length = 1 + numGlyphsLessNotDef * 2;
+        const length = 1 + numGlyphsLessNotDef * 2;
         out = new Uint8Array(length);
         out[0] = 0; // format 0
         let charsetIndex = 0;
-        let numCharsets = charset.charset.length;
+        const numCharsets = charset.charset.length;
         let warned = false;
         for (let i = 1; i < out.length; i += 2) {
           let sid = 0;
           if (charsetIndex < numCharsets) {
-            let name = charset.charset[charsetIndex++];
+            const name = charset.charset[charsetIndex++];
             sid = strings.getSID(name);
             if (sid === -1) {
               sid = 0;
@@ -1771,7 +1771,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       return this.compileTypedArray(encoding.raw);
     },
     compileFDSelect: function CFFCompiler_compileFDSelect(fdSelect) {
-      let format = fdSelect.format;
+      const format = fdSelect.format;
       let out, i;
       switch (format) {
         case 0:
@@ -1782,9 +1782,9 @@ var CFFCompiler = (function CFFCompilerClosure() {
           }
           break;
         case 3:
-          let start = 0;
+          const start = 0;
           let lastFD = fdSelect.fdSelect[0];
-          let ranges = [
+          const ranges = [
             format,
             0, // nRanges place holder
             0, // nRanges place holder
@@ -1793,14 +1793,14 @@ var CFFCompiler = (function CFFCompilerClosure() {
             lastFD,
           ];
           for (i = 1; i < fdSelect.fdSelect.length; i++) {
-            let currentFD = fdSelect.fdSelect[i];
+            const currentFD = fdSelect.fdSelect[i];
             if (currentFD !== lastFD) {
               ranges.push((i >> 8) & 0xff, i & 0xff, currentFD);
               lastFD = currentFD;
             }
           }
           // 3 bytes are pushed for every range and there are 3 header bytes.
-          let numRanges = (ranges.length - 3) / 3;
+          const numRanges = (ranges.length - 3) / 3;
           ranges[1] = (numRanges >> 8) & 0xff;
           ranges[2] = numRanges & 0xff;
           // sentinel

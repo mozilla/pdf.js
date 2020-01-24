@@ -110,8 +110,8 @@ function toRomanNumerals(number, lowerCase = false) {
     Number.isInteger(number) && number > 0,
     "The number should be a positive integer."
   );
-  let pos,
-    romanBuf = [];
+  const romanBuf = [];
+  let pos;
   // Thousands
   while (number >= 1000) {
     number -= 1000;

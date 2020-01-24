@@ -825,7 +825,7 @@ class AESBaseCipher {
 
   _decrypt(input, key) {
     let t, u, v;
-    let state = new Uint8Array(16);
+    const state = new Uint8Array(16);
     state.set(input);
 
     // AddRoundKey
@@ -862,10 +862,10 @@ class AESBaseCipher {
       }
       // InvMixColumns
       for (let j = 0; j < 16; j += 4) {
-        let s0 = this._mix[state[j]];
-        let s1 = this._mix[state[j + 1]];
-        let s2 = this._mix[state[j + 2]];
-        let s3 = this._mix[state[j + 3]];
+        const s0 = this._mix[state[j]];
+        const s1 = this._mix[state[j + 1]];
+        const s2 = this._mix[state[j + 2]];
+        const s3 = this._mix[state[j + 3]];
         t =
           s0 ^
           (s1 >>> 8) ^
@@ -912,7 +912,7 @@ class AESBaseCipher {
     const s = this._s;
 
     let t, u, v;
-    let state = new Uint8Array(16);
+    const state = new Uint8Array(16);
     state.set(input);
 
     for (let j = 0; j < 16; ++j) {
@@ -946,10 +946,10 @@ class AESBaseCipher {
       state[15] = t;
       // MixColumns
       for (let j = 0; j < 16; j += 4) {
-        let s0 = state[j + 0];
-        let s1 = state[j + 1];
-        let s2 = state[j + 2];
-        let s3 = state[j + 3];
+        const s0 = state[j + 0];
+        const s1 = state[j + 1];
+        const s2 = state[j + 2];
+        const s3 = state[j + 3];
         t = s0 ^ s1 ^ s2 ^ s3;
         state[j + 0] ^= t ^ this._mixCol[s0 ^ s1];
         state[j + 1] ^= t ^ this._mixCol[s1 ^ s2];
@@ -993,11 +993,11 @@ class AESBaseCipher {
   }
 
   _decryptBlock2(data, finalize) {
-    let sourceLength = data.length;
+    const sourceLength = data.length;
     let buffer = this.buffer,
       bufferLength = this.bufferPosition;
-    let result = [],
-      iv = this.iv;
+    const result = [];
+    let iv = this.iv;
 
     for (let i = 0; i < sourceLength; ++i) {
       buffer[bufferLength] = data[i];
@@ -1006,7 +1006,7 @@ class AESBaseCipher {
         continue;
       }
       // buffer is full, decrypting
-      let plain = this._decrypt(buffer, this._key);
+      const plain = this._decrypt(buffer, this._key);
       // xor-ing the IV vector to get plain text
       for (let j = 0; j < 16; ++j) {
         plain[j] ^= iv[j];
@@ -1027,7 +1027,7 @@ class AESBaseCipher {
     let outputLength = 16 * result.length;
     if (finalize) {
       // undo a padding that is described in RFC 2898
-      let lastBlock = result[result.length - 1];
+      const lastBlock = result[result.length - 1];
       let psLen = lastBlock[15];
       if (psLen <= 16) {
         for (let i = 15, ii = 16 - psLen; i >= ii; --i) {
@@ -1041,7 +1041,7 @@ class AESBaseCipher {
         result[result.length - 1] = lastBlock.subarray(0, 16 - psLen);
       }
     }
-    let output = new Uint8Array(outputLength);
+    const output = new Uint8Array(outputLength);
     for (let i = 0, j = 0, ii = result.length; i < ii; ++i, j += 16) {
       output.set(result[i], j);
     }
@@ -1049,9 +1049,9 @@ class AESBaseCipher {
   }
 
   decryptBlock(data, finalize, iv = null) {
-    let sourceLength = data.length;
-    let buffer = this.buffer,
-      bufferLength = this.bufferPosition;
+    const sourceLength = data.length;
+    const buffer = this.buffer;
+    let bufferLength = this.bufferPosition;
     // If an IV is not supplied, wait for IV values. They are at the start
     // of the stream.
     if (iv) {
@@ -1080,10 +1080,10 @@ class AESBaseCipher {
   }
 
   encrypt(data, iv) {
-    let sourceLength = data.length;
+    const sourceLength = data.length;
     let buffer = this.buffer,
       bufferLength = this.bufferPosition;
-    let result = [];
+    const result = [];
 
     if (!iv) {
       iv = new Uint8Array(16);
@@ -1099,7 +1099,7 @@ class AESBaseCipher {
       }
 
       // buffer is full, encrypting
-      let cipher = this._encrypt(buffer, this._key);
+      const cipher = this._encrypt(buffer, this._key);
       iv = cipher;
       result.push(cipher);
       buffer = new Uint8Array(16);
@@ -1113,8 +1113,8 @@ class AESBaseCipher {
       return new Uint8Array(0);
     }
     // combining plain text blocks into one
-    let outputLength = 16 * result.length;
-    let output = new Uint8Array(outputLength);
+    const outputLength = 16 * result.length;
+    const output = new Uint8Array(outputLength);
     for (let i = 0, j = 0, ii = result.length; i < ii; ++i, j += 16) {
       output.set(result[i], j);
     }
@@ -1163,7 +1163,7 @@ class AES128Cipher extends AESBaseCipher {
     const s = this._s;
     const rcon = this._rcon;
 
-    let result = new Uint8Array(b);
+    const result = new Uint8Array(b);
     result.set(cipherKey);
 
     for (let j = 16, i = 1; j < b; ++i) {
@@ -1208,7 +1208,7 @@ class AES256Cipher extends AESBaseCipher {
     const b = 240;
     const s = this._s;
 
-    let result = new Uint8Array(b);
+    const result = new Uint8Array(b);
     result.set(cipherKey);
 
     let r = 1;

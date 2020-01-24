@@ -47,7 +47,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   tmp = rfc2231getparam(contentDisposition);
   if (tmp) {
     // RFC 2047, section
-    let filename = rfc2047decode(tmp);
+    const filename = rfc2047decode(tmp);
     return fixupEncoding(filename);
   }
 
@@ -84,8 +84,8 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
         return value;
       }
       try {
-        let decoder = new TextDecoder(encoding, { fatal: true });
-        let bytes = Array.from(value, function(ch) {
+        const decoder = new TextDecoder(encoding, { fatal: true });
+        const bytes = Array.from(value, function(ch) {
           return ch.charCodeAt(0) & 0xff;
         });
         value = decoder.decode(new Uint8Array(bytes));
@@ -116,13 +116,13 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     return value;
   }
   function rfc2231getparam(contentDisposition) {
-    let matches = [],
-      match;
+    const matches = [];
+    let match;
     // Iterate over all filename*n= and filename*n*= with n being an integer
     // of at least zero. Any non-zero number must not start with '0'.
-    let iter = toParamRegExp("filename\\*((?!0\\d)\\d+)(\\*?)", "ig");
+    const iter = toParamRegExp("filename\\*((?!0\\d)\\d+)(\\*?)", "ig");
     while ((match = iter.exec(contentDisposition)) !== null) {
-      let [, n, quot, part] = match;
+      let [, n, quot, part] = match; // eslint-disable-line prefer-const
       n = parseInt(n, 10);
       if (n in matches) {
         // Ignore anything after the invalid second filename*0.
@@ -133,13 +133,13 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
       }
       matches[n] = [quot, part];
     }
-    let parts = [];
+    const parts = [];
     for (let n = 0; n < matches.length; ++n) {
       if (!(n in matches)) {
         // Numbers must be consecutive. Truncate when there is a hole.
         break;
       }
-      let [quot, part] = matches[n];
+      let [quot, part] = matches[n]; // eslint-disable-line prefer-const
       part = rfc2616unquote(part);
       if (quot) {
         part = unescape(part);
@@ -153,10 +153,10 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   }
   function rfc2616unquote(value) {
     if (value.startsWith('"')) {
-      let parts = value.slice(1).split('\\"');
+      const parts = value.slice(1).split('\\"');
       // Find the first unescaped " and terminate there.
       for (let i = 0; i < parts.length; ++i) {
-        let quotindex = parts[i].indexOf('"');
+        const quotindex = parts[i].indexOf('"');
         if (quotindex !== -1) {
           parts[i] = parts[i].slice(0, quotindex);
           parts.length = i + 1; // Truncates and stop the iteration.
@@ -169,17 +169,17 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   }
   function rfc5987decode(extvalue) {
     // Decodes "ext-value" from RFC 5987.
-    let encodingend = extvalue.indexOf("'");
+    const encodingend = extvalue.indexOf("'");
     if (encodingend === -1) {
       // Some servers send "filename*=" without encoding 'language' prefix,
       // e.g. in https://github.com/Rob--W/open-in-browser/issues/26
       // Let's accept the value like Firefox (57) (Chrome 62 rejects it).
       return extvalue;
     }
-    let encoding = extvalue.slice(0, encodingend);
-    let langvalue = extvalue.slice(encodingend + 1);
+    const encoding = extvalue.slice(0, encodingend);
+    const langvalue = extvalue.slice(encodingend + 1);
     // Ignore language (RFC 5987 section 3.2.1, and RFC 6266 section 4.1 ).
-    let value = langvalue.replace(/^[^']*'/, "");
+    const value = langvalue.replace(/^[^']*'/, "");
     return textdecode(encoding, value);
   }
   function rfc2047decode(value) {

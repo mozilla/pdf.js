@@ -769,7 +769,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     var backdrop = smask.backdrop || null;
     if (!smask.transferMap && webGLContext.isEnabled) {
-      let composed = webGLContext.composeSMask({
+      const composed = webGLContext.composeSMask({
         layer: layerCtx.canvas,
         mask,
         properties: {
@@ -1274,7 +1274,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // but the line width needs to be adjusted by the current transform, so
         // we must scale it. To properly fix this we should be using a pattern
         // transform instead (see #10955).
-        let transform = ctx.mozCurrentTransform;
+        const transform = ctx.mozCurrentTransform;
         const scale = Util.singularValueDecompose2dScale(transform)[0];
         ctx.strokeStyle = strokeColor.getPattern(ctx, this);
         ctx.lineWidth = Math.max(
@@ -1501,7 +1501,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var isAddToPathSet = !!(
         textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG
       );
-      let patternFill = current.patternFill && font.data;
+      const patternFill = current.patternFill && font.data;
 
       var addToPath;
       if (font.disableFontFace || isAddToPathSet || patternFill) {
@@ -1612,7 +1612,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // TODO: Patterns are not applied correctly to text if a non-embedded
         // font is used. E.g. issue 8111 and ShowText-ShadingPattern.pdf.
         ctx.save();
-        let pattern = current.fillColor.getPattern(ctx, this);
+        const pattern = current.fillColor.getPattern(ctx, this);
         patternTransform = ctx.mozCurrentTransform;
         ctx.restore();
         ctx.fillStyle = pattern;

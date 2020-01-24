@@ -29,7 +29,7 @@ describe("pdf_history", function() {
         false
       );
 
-      let destArrayString = JSON.stringify([
+      const destArrayString = JSON.stringify([
         { num: 3757, gen: 0 },
         { name: "XYZ" },
         92.918,
@@ -51,11 +51,11 @@ describe("pdf_history", function() {
   });
 
   describe("isDestArraysEqual", function() {
-    let firstDest = [{ num: 1, gen: 0 }, { name: "XYZ" }, 0, 375, null];
-    let secondDest = [{ num: 5, gen: 0 }, { name: "XYZ" }, 0, 375, null];
-    let thirdDest = [{ num: 1, gen: 0 }, { name: "XYZ" }, 750, 0, null];
-    let fourthDest = [{ num: 1, gen: 0 }, { name: "XYZ" }, 0, 375, 1.0];
-    let fifthDest = [{ gen: 0, num: 1 }, { name: "XYZ" }, 0, 375, null];
+    const firstDest = [{ num: 1, gen: 0 }, { name: "XYZ" }, 0, 375, null];
+    const secondDest = [{ num: 5, gen: 0 }, { name: "XYZ" }, 0, 375, null];
+    const thirdDest = [{ num: 1, gen: 0 }, { name: "XYZ" }, 750, 0, null];
+    const fourthDest = [{ num: 1, gen: 0 }, { name: "XYZ" }, 0, 375, 1.0];
+    const fifthDest = [{ gen: 0, num: 1 }, { name: "XYZ" }, 0, 375, null];
 
     it("should reject non-equal destination arrays", function() {
       expect(isDestArraysEqual(firstDest, undefined)).toEqual(false);
@@ -70,7 +70,7 @@ describe("pdf_history", function() {
       expect(isDestArraysEqual(firstDest, firstDest)).toEqual(true);
       expect(isDestArraysEqual(firstDest, fifthDest)).toEqual(true);
 
-      let firstDestCopy = firstDest.slice();
+      const firstDestCopy = firstDest.slice();
       expect(firstDest).not.toBe(firstDestCopy);
 
       expect(isDestArraysEqual(firstDest, firstDestCopy)).toEqual(true);

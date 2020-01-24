@@ -425,10 +425,10 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             n = stack.pop();
             subrCode = null;
             if (font.isCFFCIDFont) {
-              let fdIndex = font.fdSelect.getFDIndex(glyphId);
+              const fdIndex = font.fdSelect.getFDIndex(glyphId);
               if (fdIndex >= 0 && fdIndex < font.fdArray.length) {
-                let fontDict = font.fdArray[fdIndex],
-                  subrs;
+                const fontDict = font.fdArray[fdIndex];
+                let subrs;
                 if (fontDict.privateDict && fontDict.privateDict.subrsIndex) {
                   subrs = fontDict.privateDict.subrsIndex.objects;
                 }
@@ -757,9 +757,9 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       if (this.isCFFCIDFont) {
         // Top DICT's FontMatrix can be ignored because CFFCompiler always
         // removes it and copies to FDArray DICTs.
-        let fdIndex = this.fdSelect.getFDIndex(glyphId);
+        const fdIndex = this.fdSelect.getFDIndex(glyphId);
         if (fdIndex >= 0 && fdIndex < this.fdArray.length) {
-          let fontDict = this.fdArray[fdIndex];
+          const fontDict = this.fdArray[fdIndex];
           fontMatrix = fontDict.getByName("FontMatrix") || FONT_IDENTITY_MATRIX;
         } else {
           warn("Invalid fd index for glyph index.");
