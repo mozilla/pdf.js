@@ -1541,7 +1541,7 @@ var JpxImage = (function JpxImageClosure() {
             y0 = y0items[j] + offset;
             y1 = y1items[j];
             y2 = y2items[j];
-            let g = y0 - ((y2 + y1) >> 2);
+            const g = y0 - ((y2 + y1) >> 2);
 
             out[pos++] = (g + y2) >> shift;
             out[pos++] = g >> shift;

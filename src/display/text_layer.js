@@ -594,11 +594,11 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
 
     _render: function TextLayer_render(timeout) {
-      let capability = createPromiseCapability();
+      const capability = createPromiseCapability();
       let styleCache = Object.create(null);
 
       // The temporary canvas is used to measure text length in the DOM.
-      let canvas = document.createElement("canvas");
+      const canvas = document.createElement("canvas");
       if (
         typeof PDFJSDev === "undefined" ||
         PDFJSDev.test("MOZCENTRAL || GENERIC")
@@ -608,12 +608,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       this._layoutTextCtx = canvas.getContext("2d", { alpha: false });
 
       if (this._textContent) {
-        let textItems = this._textContent.items;
-        let textStyles = this._textContent.styles;
+        const textItems = this._textContent.items;
+        const textStyles = this._textContent.styles;
         this._processItems(textItems, textStyles);
         capability.resolve();
       } else if (this._textContentStream) {
-        let pump = () => {
+        const pump = () => {
           this._reader.read().then(({ value, done }) => {
             if (done) {
               capability.resolve();

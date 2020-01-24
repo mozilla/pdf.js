@@ -93,12 +93,12 @@ if (
     const OriginalDOMTokenListRemove = DOMTokenList.prototype.remove;
 
     DOMTokenList.prototype.add = function(...tokens) {
-      for (let token of tokens) {
+      for (const token of tokens) {
         OriginalDOMTokenListAdd.call(this, token);
       }
     };
     DOMTokenList.prototype.remove = function(...tokens) {
-      for (let token of tokens) {
+      for (const token of tokens) {
         OriginalDOMTokenListRemove.call(this, token);
       }
     };
@@ -117,7 +117,8 @@ if (
     }
 
     DOMTokenList.prototype.toggle = function(token) {
-      let force = arguments.length > 1 ? !!arguments[1] : !this.contains(token);
+      const force =
+        arguments.length > 1 ? !!arguments[1] : !this.contains(token);
       return this[force ? "add" : "remove"](token), force;
     };
   })();

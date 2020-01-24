@@ -19,7 +19,7 @@ import { getDocument } from "../../src/display/api.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 
 function getTopLeftPixel(canvasContext) {
-  let imgData = canvasContext.getImageData(0, 0, 1, 1);
+  const imgData = canvasContext.getImageData(0, 0, 1, 1);
   return {
     r: imgData.data[0],
     g: imgData.data[1],
@@ -29,7 +29,9 @@ function getTopLeftPixel(canvasContext) {
 }
 
 describe("custom canvas rendering", function() {
-  let transparentGetDocumentParams = buildGetDocumentParams("transparent.pdf");
+  const transparentGetDocumentParams = buildGetDocumentParams(
+    "transparent.pdf"
+  );
 
   let CanvasFactory;
   let loadingTask;

@@ -76,7 +76,7 @@ var Stream = (function StreamClosure() {
       var strEnd = this.end;
 
       if (!length) {
-        let subarray = bytes.subarray(pos, strEnd);
+        const subarray = bytes.subarray(pos, strEnd);
         // `this.bytes` is always a `Uint8Array` here.
         return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
       }
@@ -85,7 +85,7 @@ var Stream = (function StreamClosure() {
         end = strEnd;
       }
       this.pos = end;
-      let subarray = bytes.subarray(pos, end);
+      const subarray = bytes.subarray(pos, end);
       // `this.bytes` is always a `Uint8Array` here.
       return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
     },
@@ -134,7 +134,7 @@ var Stream = (function StreamClosure() {
 
 var StringStream = (function StringStreamClosure() {
   function StringStream(str) {
-    let bytes = stringToBytes(str);
+    const bytes = stringToBytes(str);
     Stream.call(this, bytes);
   }
 
@@ -235,7 +235,7 @@ var DecodeStream = (function DecodeStreamClosure() {
       }
 
       this.pos = end;
-      let subarray = this.buffer.subarray(pos, end);
+      const subarray = this.buffer.subarray(pos, end);
       // `this.buffer` is either a `Uint8Array` or `Uint8ClampedArray` here.
       return forceClamped && !(subarray instanceof Uint8ClampedArray)
         ? new Uint8ClampedArray(subarray)

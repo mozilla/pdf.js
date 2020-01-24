@@ -22,7 +22,7 @@ import { shadow } from "../shared/util.js";
  * For JBIG2's we use a library to decode these images and
  * the stream behaves like all the other DecodeStreams.
  */
-let Jbig2Stream = (function Jbig2StreamClosure() {
+const Jbig2Stream = (function Jbig2StreamClosure() {
   function Jbig2Stream(stream, maybeLength, dict, params) {
     this.stream = stream;
     this.maybeLength = maybeLength;
@@ -51,19 +51,19 @@ let Jbig2Stream = (function Jbig2StreamClosure() {
     if (this.eof) {
       return;
     }
-    let jbig2Image = new Jbig2Image();
+    const jbig2Image = new Jbig2Image();
 
-    let chunks = [];
+    const chunks = [];
     if (isDict(this.params)) {
-      let globalsStream = this.params.get("JBIG2Globals");
+      const globalsStream = this.params.get("JBIG2Globals");
       if (isStream(globalsStream)) {
-        let globals = globalsStream.getBytes();
+        const globals = globalsStream.getBytes();
         chunks.push({ data: globals, start: 0, end: globals.length });
       }
     }
     chunks.push({ data: this.bytes, start: 0, end: this.bytes.length });
-    let data = jbig2Image.parseChunks(chunks);
-    let dataLength = data.length;
+    const data = jbig2Image.parseChunks(chunks);
+    const dataLength = data.length;
 
     // JBIG2 had black as 1 and white as 0, inverting the colors
     for (let i = 0; i < dataLength; i++) {

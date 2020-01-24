@@ -345,7 +345,7 @@ describe("cmap", function() {
       });
     }
 
-    let cmapPromise = CMapFactory.create({
+    const cmapPromise = CMapFactory.create({
       encoding: Name.get("Adobe-Japan1-1"),
       fetchBuiltInCMap: tmpFetchBuiltInCMap,
       useCMap: null,
@@ -356,7 +356,7 @@ describe("cmap", function() {
       },
       function(reason) {
         expect(reason instanceof Error).toEqual(true);
-        let message = reason.message;
+        const message = reason.message;
         expect(message.startsWith("Unable to load CMap at: ")).toEqual(true);
         expect(message.endsWith("/external/bcmaps/Adobe-Japan1-1")).toEqual(
           true

@@ -1174,20 +1174,22 @@ describe("annotation", function() {
       "should correctly parse a Dest, which violates the specification " +
         "by containing a dictionary",
       function(done) {
-        let destDict = new Dict();
+        const destDict = new Dict();
         destDict.set("Type", Name.get("Action"));
         destDict.set("S", Name.get("GoTo"));
         destDict.set("D", "page.157");
 
-        let annotationDict = new Dict();
+        const annotationDict = new Dict();
         annotationDict.set("Type", Name.get("Annot"));
         annotationDict.set("Subtype", Name.get("Link"));
         // The /Dest must be a Name or an Array, refer to ISO 32000-1:2008
         // section 12.3.3, but there are PDF files where it's a dictionary.
         annotationDict.set("Dest", destDict);
 
-        let annotationRef = Ref.get(798, 0);
-        let xref = new XRefMock([{ ref: annotationRef, data: annotationDict }]);
+        const annotationRef = Ref.get(798, 0);
+        const xref = new XRefMock([
+          { ref: annotationRef, data: annotationDict },
+        ]);
 
         AnnotationFactory.create(
           xref,
@@ -1479,7 +1481,7 @@ describe("annotation", function() {
     });
 
     it("should only accept comb fields when the flags are valid", function(done) {
-      let invalidFieldFlags = [
+      const invalidFieldFlags = [
         AnnotationFieldFlag.MULTILINE,
         AnnotationFieldFlag.PASSWORD,
         AnnotationFieldFlag.FILESELECT,

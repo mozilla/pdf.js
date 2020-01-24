@@ -195,7 +195,7 @@ var PDFImage = (function PDFImageClosure() {
             );
         }
       }
-      let resources = isInline ? res : null;
+      const resources = isInline ? res : null;
       this.colorSpace = ColorSpace.parse(
         colorSpace,
         xref,

@@ -161,7 +161,7 @@
     "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],
-    "prefer-const": "off",
+    "prefer-const": "error",
     "sort-imports": ["error", {
       "ignoreCase": true,
     }],

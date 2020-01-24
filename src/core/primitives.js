@@ -153,14 +153,14 @@ var Dict = (function DictClosure() {
   Dict.empty = new Dict(null);
 
   Dict.merge = function(xref, dictArray) {
-    let mergedDict = new Dict(xref);
+    const mergedDict = new Dict(xref);
 
     for (let i = 0, ii = dictArray.length; i < ii; i++) {
-      let dict = dictArray[i];
+      const dict = dictArray[i];
       if (!isDict(dict)) {
         continue;
       }
-      for (let keyName in dict._map) {
+      for (const keyName in dict._map) {
         if (mergedDict._map[keyName] !== undefined) {
           continue;
         }

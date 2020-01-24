@@ -48,7 +48,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
 
   CCITTFaxStream.prototype.readBlock = function() {
     while (!this.eof) {
-      let c = this.ccittFaxDecoder.readNextChar();
+      const c = this.ccittFaxDecoder.readNextChar();
       if (c === -1) {
         this.eof = true;
         return;

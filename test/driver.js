@@ -119,7 +119,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
    * the overrides file because the browser does not resolve that when the
    * styles are inserted via XHR. Therefore, we load and combine them here.
    */
-  let styles = {
+  const styles = {
     common: {
       file: "../web/annotation_layer_builder.css",
       promise: null,
@@ -137,9 +137,9 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     }
 
     // Load the style files and cache the results.
-    for (let key in styles) {
+    for (const key in styles) {
       styles[key].promise = new Promise(function(resolve, reject) {
-        let xhr = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
         xhr.open("GET", styles[key].file);
         xhr.onload = function() {
           resolve(xhr.responseText);
@@ -379,14 +379,14 @@ var Driver = (function DriverClosure() {
           this._done();
           return;
         }
-        let task = this.manifest[this.currentTask];
+        const task = this.manifest[this.currentTask];
         task.round = 0;
         task.pageNum = task.firstPage || 1;
         task.stats = { times: [] };
 
         this._log('Loading file "' + task.file + '"\n');
 
-        let absoluteUrl = new URL(task.file, window.location).href;
+        const absoluteUrl = new URL(task.file, window.location).href;
         try {
           const loadingTask = pdfjsLib.getDocument({
             url: absoluteUrl,
@@ -419,18 +419,18 @@ var Driver = (function DriverClosure() {
     _cleanup() {
       // Clear out all the stylesheets since a new one is created for each font.
       while (document.styleSheets.length > 0) {
-        let styleSheet = document.styleSheets[0];
+        const styleSheet = document.styleSheets[0];
         while (styleSheet.cssRules.length > 0) {
           styleSheet.deleteRule(0);
         }
         styleSheet.ownerNode.remove();
       }
-      let body = document.body;
+      const body = document.body;
       while (body.lastChild !== this.end) {
         body.removeChild(body.lastChild);
       }
 
-      let destroyedPromises = [];
+      const destroyedPromises = [];
       // Wipe out the link to the pdfdoc so it can be GC'ed.
       for (let i = 0; i < this.manifest.length; i++) {
         if (this.manifest[i].pdfDoc) {

@@ -1828,7 +1828,9 @@ const PDFWorker = (function PDFWorkerClosure() {
           });
 
           const sendTest = () => {
-            let testObj = new Uint8Array([this.postMessageTransfers ? 255 : 0]);
+            const testObj = new Uint8Array([
+              this.postMessageTransfers ? 255 : 0,
+            ]);
             // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
             // typed array. Also, checking if we can use transfers.
             try {
