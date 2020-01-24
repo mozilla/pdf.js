@@ -67,9 +67,8 @@ class XMLParserBase {
   }
 
   _parseContent(s, start) {
-    let pos = start,
-      name,
-      attributes = [];
+    const attributes = [];
+    let pos = start;
 
     function skipWs() {
       while (pos < s.length && isWhitespace(s, pos)) {
@@ -85,7 +84,7 @@ class XMLParserBase {
     ) {
       ++pos;
     }
-    name = s.substring(start, pos);
+    const name = s.substring(start, pos);
     skipWs();
     while (
       pos < s.length &&
@@ -130,9 +129,7 @@ class XMLParserBase {
   }
 
   _parseProcessingInstruction(s, start) {
-    let pos = start,
-      name,
-      value;
+    let pos = start;
 
     function skipWs() {
       while (pos < s.length && isWhitespace(s, pos)) {
@@ -148,13 +145,13 @@ class XMLParserBase {
     ) {
       ++pos;
     }
-    name = s.substring(start, pos);
+    const name = s.substring(start, pos);
     skipWs();
     const attrStart = pos;
     while (pos < s.length && (s[pos] !== "?" || s[pos + 1] !== ">")) {
       ++pos;
     }
-    value = s.substring(attrStart, pos);
+    const value = s.substring(attrStart, pos);
     return {
       name,
       value,
