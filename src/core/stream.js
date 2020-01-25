@@ -19,13 +19,9 @@
  * license.
  */
 
-import {
-  FormatError,
-  isSpace,
-  stringToBytes,
-  unreachable,
-} from "../shared/util.js";
+import { FormatError, stringToBytes, unreachable } from "../shared/util.js";
 import { isDict } from "./primitives.js";
+import { isSpace } from "./core_utils.js";
 
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
