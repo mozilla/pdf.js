@@ -21,8 +21,6 @@ import {
   FormatError,
   info,
   isNum,
-  isSpace,
-  readUint32,
   shadow,
   string32,
   unreachable,
@@ -60,9 +58,9 @@ import {
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
 } from "./unicode.js";
+import { isSpace, MissingDataException, readUint32 } from "./core_utils.js";
 import { FontRendererFactory } from "./font_renderer.js";
 import { IdentityCMap } from "./cmap.js";
-import { MissingDataException } from "./core_utils.js";
 import { Stream } from "./stream.js";
 import { Type1Parser } from "./type1_parser.js";
 

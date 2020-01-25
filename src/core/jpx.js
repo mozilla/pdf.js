@@ -13,14 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  BaseException,
-  info,
-  log2,
-  readUint16,
-  readUint32,
-  warn,
-} from "../shared/util.js";
+import { BaseException, info, warn } from "../shared/util.js";
+import { log2, readUint16, readUint32 } from "./core_utils.js";
 import { ArithmeticDecoder } from "./arithmetic_decoder.js";
 
 class JpxError extends BaseException {
