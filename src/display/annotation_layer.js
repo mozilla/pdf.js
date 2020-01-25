@@ -1417,10 +1417,26 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static render(parameters) {
+    const sortedAnnotations = [],
+      popupAnnotations = [];
+    // Ensure that Popup annotations are handled last, since they're dependant
+    // upon the parent annotation having already been rendered (please refer to
+    // the `PopupAnnotationElement.render` method); fixes issue 11362.
     for (const data of parameters.annotations) {
       if (!data) {
         continue;
       }
+      if (data.annotationType === AnnotationType.POPUP) {
+        popupAnnotations.push(data);
+        continue;
+      }
+      sortedAnnotations.push(data);
+    }
+    if (popupAnnotations.length) {
+      sortedAnnotations.push(...popupAnnotations);
+    }
+
+    for (const data of sortedAnnotations) {
       const element = AnnotationElementFactory.create({
         data,
         layer: parameters.div,
