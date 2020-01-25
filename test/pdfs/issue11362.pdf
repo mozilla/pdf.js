@@ -1,0 +1,211 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj 
+<<
+/Kids [2 0 R]
+/Count 1
+/Type /Pages
+>>
+endobj 
+2 0 obj 
+<<
+/Rotate 0
+/Parent 1 0 R
+/Annots 3 0 R
+/Resources 
+<<
+/Font 
+<<
+/F1 4 0 R
+>>
+>>
+/MediaBox [0 0 300 75]
+/Type /Page
+/Contents 5 0 R
+>>
+endobj 
+6 0 obj 
+<<
+/Pages 1 0 R
+/Type /Catalog
+>>
+endobj 
+4 0 obj 
+<<
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/Type /Font
+>>
+endobj 
+5 0 obj 
+<<
+/Length 42
+>>
+stream
+BT
+10 20 TD
+/F1 20 Tf
+(Issue 11362) Tj
+ET
+
+endstream 
+endobj 
+3 0 obj [7 0 R 8 0 R]
+endobj 
+9 0 obj 
+<<
+/Matrix [1.0 0.0 0.0 1.0 0.0 0.0]
+/Subtype /Form
+/Length 27
+/Resources 
+<<
+/ExtGState 
+<<
+/R1 
+<<
+/AIS false
+/BM /Multiply
+/Type /ExtGState
+>>
+/R0 
+<<
+/ca 0.399994
+/CA 0.399994
+/AIS false
+/Type /ExtGState
+>>
+>>
+/XObject 
+<<
+/MWFOForm 10 0 R
+>>
+/ProcSet [/PDF]
+>>
+/FormType 1
+/BBox [0.0 0.0 108.016 23.7146]
+/Type /XObject
+>>
+stream
+/R0 gs
+/R1 gs
+/MWFOForm Do
+
+endstream 
+endobj 
+10 0 obj 
+<<
+/Group 
+<<
+/S /Transparency
+>>
+/Matrix [1.0 0.0 0.0 1.0 0.0 0.0]
+/Subtype /Form
+/Length 9
+/Resources 
+<<
+/XObject 
+<<
+/Form 11 0 R
+>>
+/ProcSet [/PDF]
+>>
+/FormType 1
+/BBox [0.0 0.0 108.016 23.7146]
+/Type /XObject
+>>
+stream
+/Form Do
+
+endstream 
+endobj 
+11 0 obj 
+<<
+/Matrix [1.0 0.0 0.0 1.0 -4.04172 -14.9428]
+/Subtype /Form
+/Length 141
+/Resources 
+<<
+/ProcSet [/PDF]
+>>
+/FormType 1
+/BBox [4.04172 14.9428 112.058 38.6574]
+/Type /XObject
+>>
+stream
+1 1 0 rg
+1.395 w
+10 15.6403 m
+4.7392 20.901 4.7392 32.6991 10 37.9599 c
+106.0992 37.9599 l
+111.36 32.6991 111.36 20.901 106.0992 15.6403 c
+f
+
+endstream 
+endobj 
+8 0 obj 
+<<
+/IT /HighlightNote
+/CreationDate (D:20200126153134+01'00')
+/Subtype /Highlight
+/Subj (Kommentar till text)
+/T (Issue 11362)
+/P 2 0 R
+/Popup 7 0 R
+/Rect [4.04172 14.9428 112.058 38.6574]
+/QuadPoints [10.0 37.9599 106.099 37.9599 10.0 15.6403 106.099 15.6403]
+/M (D:20200126153215+01'00')
+/Contents (Issue 11362)
+/CA 0.399994
+/AP 
+<<
+/N 9 0 R
+>>
+/Type /Annot
+/RC (<?xml version="1.0"?><body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/" xfa:APIVersion="Acrobat:19.21.0" xfa:spec="2.0.2" ><p dir="ltr"><span dir="ltr" style="font-size:9.9pt;text-align:left;color:#000000;font-weight:normal;font-style:normal">Issue 11535</span></p></body>)
+/F 4
+/C [1.0 1.0 0.0]
+/NM (d8100108-2883-47e9-9e54-11fa96f489bd)
+>>
+endobj 
+7 0 obj 
+<<
+/F 28
+/Subtype /Popup
+/Parent 8 0 R
+/Open false
+/Type /Annot
+/Rect [111.869 -45.4504 316.086 69.0949]
+>>
+endobj 
+12 0 obj 
+<<
+/ModDate (D:20200126153225+01'00')
+/CreationDate (D:20200126153225+01'00')
+>>
+endobj xref
+0 13
+0000000000 65535 f 
+0000000015 00000 n 
+0000000074 00000 n 
+0000000474 00000 n 
+0000000278 00000 n 
+0000000379 00000 n 
+0000000227 00000 n 
+0000002283 00000 n 
+0000001515 00000 n 
+0000000504 00000 n 
+0000000895 00000 n 
+0000001159 00000 n 
+0000002408 00000 n 
+trailer
+
+<<
+/Info 12 0 R
+/Root 6 0 R
+/Size 13
+/ID [<9998c3e1f8fb6a479c7e2f0f9e63f5ab> <9998c3e1f8fb6a479c7e2f0f9e63f5ab>]
+>>
+startxref
+2506
+%%EOF
