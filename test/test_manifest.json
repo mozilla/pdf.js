@@ -4376,5 +4376,13 @@
       "rounds": 1,
       "link": false,
       "type": "eq"
+    },
+    { "id": "issue11526",
+      "file": "pdfs/issue11526.pdf",
+      "md5": "9babc771fc8792f43e4ada46b0daff8c",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "eq"
     }
 ]
