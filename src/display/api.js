@@ -1883,6 +1883,10 @@ const PDFWorker = (function PDFWorkerClosure() {
           const messageHandler = new MessageHandler(id, id + "_worker", port);
           this._messageHandler = messageHandler;
           this._readyCapability.resolve();
+          // Send global setting, e.g. verbosity level.
+          messageHandler.send("configure", {
+            verbosity: this.verbosity,
+          });
         })
         .catch(reason => {
           this._readyCapability.reject(
