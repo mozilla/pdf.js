@@ -17,7 +17,7 @@
 "use strict";
 
 var FontInspector = (function FontInspectorClosure() {
-  var fonts, createObjectURL;
+  var fonts;
   var active = false;
   var fontAttribute = "data-font-name";
   function removeSelection() {
@@ -75,8 +75,6 @@ var FontInspector = (function FontInspectorClosure() {
 
       fonts = document.createElement("div");
       panel.appendChild(fonts);
-
-      createObjectURL = pdfjsLib.createObjectURL;
     },
     cleanup: function cleanup() {
       fonts.textContent = "";
@@ -121,7 +119,9 @@ var FontInspector = (function FontInspectorClosure() {
         url = /url\(['"]?([^\)"']+)/.exec(url);
         download.href = url[1];
       } else if (fontObj.data) {
-        download.href = createObjectURL(fontObj.data, fontObj.mimeType);
+        download.href = URL.createObjectURL(
+          new Blob([fontObj.data], { type: fontObj.mimeType })
+        );
       }
       download.textContent = "Download";
       var logIt = document.createElement("a");
