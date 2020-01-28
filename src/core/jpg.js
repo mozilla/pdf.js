@@ -178,12 +178,13 @@ var JpegImage = (function JpegImageClosure() {
       var node = tree;
       while (true) {
         node = node[readBit()];
-        if (typeof node === "number") {
-          return node;
+        switch (typeof node) {
+          case "number":
+            return node;
+          case "object":
+            continue;
         }
-        if (typeof node !== "object") {
-          throw new JpegError("invalid huffman sequence");
-        }
+        throw new JpegError("invalid huffman sequence");
       }
     }
 
