@@ -38,7 +38,6 @@ import {
 import { AppOptions, OptionKind } from "./app_options.js";
 import {
   build,
-  createObjectURL,
   getDocument,
   getFilenameFromUrl,
   GlobalWorkerOptions,
@@ -1784,13 +1783,7 @@ function loadAndEnablePDFBug(enabledTabs) {
   const appConfig = PDFViewerApplication.appConfig;
   return loadScript(appConfig.debuggerScriptPath).then(function() {
     PDFBug.enable(enabledTabs);
-    PDFBug.init(
-      {
-        OPS,
-        createObjectURL,
-      },
-      appConfig.mainContainer
-    );
+    PDFBug.init({ OPS }, appConfig.mainContainer);
   });
 }
 
