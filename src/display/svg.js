@@ -440,7 +440,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
   // eslint-disable-next-line no-shadow
   SVGGraphics = class SVGGraphics {
-    constructor(commonObjs, objs, forceDataSchema) {
+    constructor(commonObjs, objs, forceDataSchema = false) {
       this.svgFactory = new DOMSVGFactory();
 
       this.current = new SVGExtraState();
