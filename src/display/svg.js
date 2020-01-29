@@ -1118,13 +1118,13 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       switch (args[0]) {
         case "RadialAxial":
           const shadingId = `shading${shadingCount++}`;
-          const colorStops = args[2];
+          const colorStops = args[3];
           let gradient;
 
           switch (args[1]) {
             case "axial":
-              const point0 = args[3];
-              const point1 = args[4];
+              const point0 = args[4];
+              const point1 = args[5];
               gradient = this.svgFactory.createElement("svg:linearGradient");
               gradient.setAttributeNS(null, "id", shadingId);
               gradient.setAttributeNS(null, "gradientUnits", "userSpaceOnUse");
@@ -1134,10 +1134,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
               gradient.setAttributeNS(null, "y2", point1[1]);
               break;
             case "radial":
-              const focalPoint = args[3];
-              const circlePoint = args[4];
-              const focalRadius = args[5];
-              const circleRadius = args[6];
+              const focalPoint = args[4];
+              const circlePoint = args[5];
+              const focalRadius = args[6];
+              const circleRadius = args[7];
               gradient = this.svgFactory.createElement("svg:radialGradient");
               gradient.setAttributeNS(null, "id", shadingId);
               gradient.setAttributeNS(null, "gradientUnits", "userSpaceOnUse");
