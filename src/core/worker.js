@@ -399,7 +399,6 @@ var WorkerMessageHandler = {
       ensureNotTerminated();
 
       var evaluatorOptions = {
-        forceDataSchema: data.disableCreateObjectURL,
         maxImageSize: data.maxImageSize,
         disableFontFace: data.disableFontFace,
         ignoreErrors: data.ignoreErrors,

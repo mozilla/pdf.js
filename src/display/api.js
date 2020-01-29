@@ -154,9 +154,6 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   The default value is `false`.
  *   NOTE: It is also necessary to disable streaming, see above,
  *         in order for disabling of pre-fetching to work correctly.
- * @property {boolean} [disableCreateObjectURL] - Disable the use of
- *   `URL.createObjectURL`, for compatibility with older browsers.
- *   The default value is `false`.
  * @property {boolean} [pdfBug] - Enables special hooks for debugging
  *   PDF.js (see `web/debugger.js`). The default value is `false`.
  */
@@ -268,10 +265,6 @@ function getDocument(src) {
   }
   if (typeof params.disableAutoFetch !== "boolean") {
     params.disableAutoFetch = false;
-  }
-  if (typeof params.disableCreateObjectURL !== "boolean") {
-    params.disableCreateObjectURL =
-      apiCompatibilityParams.disableCreateObjectURL || false;
   }
 
   // Set the main-thread verbosity level.
@@ -395,7 +388,6 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       },
       maxImageSize: source.maxImageSize,
       disableFontFace: source.disableFontFace,
-      disableCreateObjectURL: source.disableCreateObjectURL,
       postMessageTransfers: worker.postMessageTransfers,
       docBaseUrl: source.docBaseUrl,
       ignoreErrors: source.ignoreErrors,
@@ -2505,7 +2497,6 @@ class WorkerTransport {
     const params = this._params;
     return shadow(this, "loadingParams", {
       disableAutoFetch: params.disableAutoFetch,
-      disableCreateObjectURL: params.disableCreateObjectURL,
       disableFontFace: params.disableFontFace,
     });
   }
