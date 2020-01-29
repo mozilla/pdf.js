@@ -43,7 +43,6 @@ import {
   DOMCMapReaderFactory,
   loadScript,
   PageViewport,
-  releaseImageResources,
   RenderingCancelledException,
   StatTimer,
 } from "./display_utils.js";
@@ -2581,14 +2580,6 @@ class PDFObjects {
   }
 
   clear() {
-    for (const objId in this._objs) {
-      const { data } = this._objs[objId];
-
-      if (typeof Image !== "undefined" && data instanceof Image) {
-        // Always release the image data when clearing out the cached objects.
-        releaseImageResources(data);
-      }
-    }
     this._objs = Object.create(null);
   }
 }

@@ -517,20 +517,6 @@ function deprecated(details) {
   console.log("Deprecated API usage: " + details);
 }
 
-function releaseImageResources(img) {
-  assert(img instanceof Image, "Invalid `img` parameter.");
-
-  const url = img.src;
-  if (
-    typeof url === "string" &&
-    url.startsWith("blob:") &&
-    URL.revokeObjectURL
-  ) {
-    URL.revokeObjectURL(url);
-  }
-  img.removeAttribute("src");
-}
-
 let pdfDateStringRegex;
 
 class PDFDateString {
@@ -631,6 +617,5 @@ export {
   isValidFetchUrl,
   loadScript,
   deprecated,
-  releaseImageResources,
   PDFDateString,
 };
