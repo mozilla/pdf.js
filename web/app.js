@@ -2223,7 +2223,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
     const file = evt.fileInput.files[0];
 
-    if (URL.createObjectURL && !AppOptions.get("disableCreateObjectURL")) {
+    if (!AppOptions.get("disableCreateObjectURL")) {
       let url = URL.createObjectURL(file);
       if (file.name) {
         url = { url, originalUrl: file.name };

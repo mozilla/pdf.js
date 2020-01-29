@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { apiCompatibilityParams } from "pdfjs-lib";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 const OptionKind = {
@@ -42,6 +41,12 @@ const defaultOptions = {
     /** @type {string} */
     value: "",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
+  disableCreateObjectURL: {
+    /** @type {boolean} */
+    value: false,
+    compatibility: viewerCompatibilityParams.disableCreateObjectURL,
+    kind: OptionKind.VIEWER,
   },
   disableHistory: {
     /** @type {boolean} */
@@ -173,12 +178,6 @@ const defaultOptions = {
     /** @type {boolean} */
     value: false,
     kind: OptionKind.API + OptionKind.PREFERENCE,
-  },
-  disableCreateObjectURL: {
-    /** @type {boolean} */
-    value: false,
-    compatibility: apiCompatibilityParams.disableCreateObjectURL,
-    kind: OptionKind.API,
   },
   disableFontFace: {
     /** @type {boolean} */
