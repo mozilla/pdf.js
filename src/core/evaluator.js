@@ -2612,31 +2612,48 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           encoding: cmapObj,
           fetchBuiltInCMap: this.fetchBuiltInCMap,
           useCMap: null,
-        }).then(function(cmap) {
-          if (cmap instanceof IdentityCMap) {
-            return new IdentityToUnicodeMap(0, 0xffff);
-          }
-          var map = new Array(cmap.length);
-          // Convert UTF-16BE
-          // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
-          // to iterate over all keys.
-          cmap.forEach(function(charCode, token) {
-            var str = [];
-            for (var k = 0; k < token.length; k += 2) {
-              var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
-              if ((w1 & 0xf800) !== 0xd800) {
-                // w1 < 0xD800 || w1 > 0xDFFF
-                str.push(w1);
-                continue;
-              }
-              k += 2;
-              var w2 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
-              str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
+        }).then(
+          function(cmap) {
+            if (cmap instanceof IdentityCMap) {
+              return new IdentityToUnicodeMap(0, 0xffff);
             }
-            map[charCode] = String.fromCodePoint.apply(String, str);
-          });
-          return new ToUnicodeMap(map);
-        });
+            var map = new Array(cmap.length);
+            // Convert UTF-16BE
+            // NOTE: cmap can be a sparse array, so use forEach instead of
+            // `for(;;)` to iterate over all keys.
+            cmap.forEach(function(charCode, token) {
+              var str = [];
+              for (var k = 0; k < token.length; k += 2) {
+                var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
+                if ((w1 & 0xf800) !== 0xd800) {
+                  // w1 < 0xD800 || w1 > 0xDFFF
+                  str.push(w1);
+                  continue;
+                }
+                k += 2;
+                var w2 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
+                str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
+              }
+              map[charCode] = String.fromCodePoint.apply(String, str);
+            });
+            return new ToUnicodeMap(map);
+          },
+          reason => {
+            if (reason instanceof AbortException) {
+              return null;
+            }
+            if (this.options.ignoreErrors) {
+              // Error in the ToUnicode data -- sending unsupported feature
+              // notification and allow font parsing to continue.
+              this.handler.send("UnsupportedFeature", {
+                featureId: UNSUPPORTED_FEATURES.font,
+              });
+              warn(`readToUnicode - ignoring ToUnicode data: "${reason}".`);
+              return null;
+            }
+            throw reason;
+          }
+        );
       }
       return Promise.resolve(null);
     },
