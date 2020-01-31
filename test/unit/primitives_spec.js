@@ -121,11 +121,13 @@ describe("primitives", function() {
       checkInvalidKeyValues(dictWithSizeKey);
     });
 
-    it("should return correct value for stored Size key with undefined value", function() {
-      var dict = new Dict();
-      dict.set("Size");
+    it("should not accept to set a key with an undefined value", function() {
+      const dict = new Dict();
+      expect(function() {
+        dict.set("Size");
+      }).toThrow(new Error('Dict.set: The "value" cannot be undefined.'));
 
-      expect(dict.has("Size")).toBeTruthy();
+      expect(dict.has("Size")).toBeFalsy();
 
       checkInvalidKeyValues(dict);
     });
