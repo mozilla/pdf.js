@@ -1105,6 +1105,7 @@ var JpegImage = (function JpegImageClosure() {
       var data = new Uint8ClampedArray(dataLength);
       var xScaleBlockOffset = new Uint32Array(width);
       var mask3LSB = 0xfffffff8; // used to clear the 3 LSBs
+      let lastComponentScaleX;
 
       for (i = 0; i < numComponents; i++) {
         component = this.components[i];
@@ -1113,10 +1114,14 @@ var JpegImage = (function JpegImageClosure() {
         offset = i;
         output = component.output;
         blocksPerScanline = (component.blocksPerLine + 1) << 3;
-        // precalculate the xScaleBlockOffset
-        for (x = 0; x < width; x++) {
-          j = 0 | (x * componentScaleX);
-          xScaleBlockOffset[x] = ((j & mask3LSB) << 3) | (j & 7);
+        // Precalculate the `xScaleBlockOffset`. Since it doesn't depend on the
+        // component data, that's only necessary when `componentScaleX` changes.
+        if (componentScaleX !== lastComponentScaleX) {
+          for (x = 0; x < width; x++) {
+            j = 0 | (x * componentScaleX);
+            xScaleBlockOffset[x] = ((j & mask3LSB) << 3) | (j & 7);
+          }
+          lastComponentScaleX = componentScaleX;
         }
         // linearize the blocks of the component
         for (y = 0; y < height; y++) {
