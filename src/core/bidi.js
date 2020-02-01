@@ -104,11 +104,14 @@ function reverseValues(arr, start, end) {
   }
 }
 
-function createBidiText(str, isLTR, vertical) {
-  return {
-    str,
-    dir: vertical ? "ttb" : isLTR ? "ltr" : "rtl",
-  };
+function createBidiText(str, isLTR, vertical = false) {
+  let dir = "ltr";
+  if (vertical) {
+    dir = "ttb";
+  } else if (!isLTR) {
+    dir = "rtl";
+  }
+  return { str, dir };
 }
 
 // These are used in bidi(), which is called frequently. We re-use them on

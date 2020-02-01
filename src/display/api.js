@@ -1639,7 +1639,6 @@ const PDFWorker = (function PDFWorkerClosure() {
         return worker.WorkerMessageHandler;
       }
       if (
-        typeof PDFJSDev !== "undefined" &&
         PDFJSDev.test("GENERIC") &&
         isNodeJS &&
         // eslint-disable-next-line no-undef
@@ -1829,7 +1828,9 @@ const PDFWorker = (function PDFWorkerClosure() {
           });
 
           const sendTest = () => {
-            let testObj = new Uint8Array([this.postMessageTransfers ? 255 : 0]);
+            const testObj = new Uint8Array([
+              this.postMessageTransfers ? 255 : 0,
+            ]);
             // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
             // typed array. Also, checking if we can use transfers.
             try {
@@ -1882,6 +1883,10 @@ const PDFWorker = (function PDFWorkerClosure() {
           const messageHandler = new MessageHandler(id, id + "_worker", port);
           this._messageHandler = messageHandler;
           this._readyCapability.resolve();
+          // Send global setting, e.g. verbosity level.
+          messageHandler.send("configure", {
+            verbosity: this.verbosity,
+          });
         })
         .catch(reason => {
           this._readyCapability.reject(

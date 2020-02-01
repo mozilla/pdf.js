@@ -31,6 +31,7 @@
 
   "rules": {
     // Plugins
+    "import/extensions": ["error", "always", { "ignorePackages": true, }],
     "import/no-unresolved": "error",
     "mozilla/avoid-removeChild": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",
@@ -136,8 +137,9 @@
     "new-cap": ["error", { "newIsCap": true, "capIsNew": false, }],
     "no-array-constructor": "error",
     "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0, "maxBOF": 1, }],
-    "no-nested-ternary": "off",
+    "no-nested-ternary": "error",
     "no-new-object": "error",
+    "no-unneeded-ternary": "error",
     "spaced-comment": ["error", "always", {
       "block": {
         "balanced": true,
@@ -159,7 +161,7 @@
     "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],
-    "prefer-const": "off",
+    "prefer-const": "error",
     "sort-imports": ["error", {
       "ignoreCase": true,
     }],

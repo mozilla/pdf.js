@@ -1595,6 +1595,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue11362",
+       "file": "pdfs/issue11362.pdf",
+       "md5": "bcb08162d4bff1d32ead8b563e866c93",
+       "rounds": 1,
+       "link": false,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue11385",
        "file": "pdfs/issue11385.pdf",
        "md5": "cc04b23b845366857426a5aa6acf227b",
@@ -2926,6 +2934,14 @@
       "lastPage": 3,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "issue1877",
+       "file": "pdfs/issue1877.pdf",
+       "md5": "feac01f414f2e6792e4d3174944622f5",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
     },
     {  "id": "issue7308",
        "file": "pdfs/issue7308.pdf",

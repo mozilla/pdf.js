@@ -13,19 +13,15 @@
  * limitations under the License.
  */
 
-import "../extensions/firefox/tools/l10n";
+import "../extensions/firefox/tools/l10n.js";
 import { createObjectURL, PDFDataRangeTransport, shadow } from "pdfjs-lib";
+import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
-import { PDFViewerApplication } from "./app.js";
 
-if (
-  typeof PDFJSDev === "undefined" ||
-  !PDFJSDev.test("FIREFOX || MOZCENTRAL")
-) {
+if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
-    'Module "pdfjs-web/firefoxcom" shall not be used outside ' +
-      "FIREFOX and MOZCENTRAL builds."
+    'Module "./firefoxcom.js" shall not be used outside MOZCENTRAL builds.'
   );
 }
 
@@ -241,16 +237,16 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
   }
 }
 
-PDFViewerApplication.externalServices = {
-  updateFindControlState(data) {
+class FirefoxExternalServices extends DefaultExternalServices {
+  static updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
-  },
+  }
 
-  updateFindMatchesCount(data) {
+  static updateFindMatchesCount(data) {
     FirefoxCom.request("updateFindMatchesCount", data);
-  },
+  }
 
-  initPassiveLoading(callbacks) {
+  static initPassiveLoading(callbacks) {
     let pdfDataRangeTransport;
 
     window.addEventListener("message", function windowMessage(e) {
@@ -309,52 +305,48 @@ PDFViewerApplication.externalServices = {
       }
     });
     FirefoxCom.requestSync("initPassiveLoading", null);
-  },
+  }
 
-  fallback(data, callback) {
+  static fallback(data, callback) {
     FirefoxCom.request("fallback", data, callback);
-  },
+  }
 
-  reportTelemetry(data) {
+  static reportTelemetry(data) {
     FirefoxCom.request("reportTelemetry", JSON.stringify(data));
-  },
+  }
 
-  createDownloadManager(options) {
+  static createDownloadManager(options) {
     return new DownloadManager(options);
-  },
+  }
 
-  createPreferences() {
+  static createPreferences() {
     return new FirefoxPreferences();
-  },
+  }
 
-  createL10n(options) {
+  static createL10n(options) {
     const mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
     return new MozL10n(mozL10n);
-  },
+  }
 
-  get supportsIntegratedFind() {
+  static get supportsIntegratedFind() {
     const support = FirefoxCom.requestSync("supportsIntegratedFind");
     return shadow(this, "supportsIntegratedFind", support);
-  },
+  }
 
-  get supportsDocumentFonts() {
+  static get supportsDocumentFonts() {
     const support = FirefoxCom.requestSync("supportsDocumentFonts");
     return shadow(this, "supportsDocumentFonts", support);
-  },
+  }
 
-  get supportsDocumentColors() {
-    const support = FirefoxCom.requestSync("supportsDocumentColors");
-    return shadow(this, "supportsDocumentColors", support);
-  },
-
-  get supportedMouseWheelZoomModifierKeys() {
+  static get supportedMouseWheelZoomModifierKeys() {
     const support = FirefoxCom.requestSync(
       "supportedMouseWheelZoomModifierKeys"
     );
     return shadow(this, "supportedMouseWheelZoomModifierKeys", support);
-  },
-};
+  }
+}
+PDFViewerApplication.externalServices = FirefoxExternalServices;
 
 // l10n.js for Firefox extension expects services to be set.
 document.mozL10n.setExternalLocalizerServices({

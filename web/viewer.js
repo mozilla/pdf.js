@@ -41,7 +41,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("PRODUCTION")) {
   pdfjsWebAppOptions = require("./app_options.js");
 }
 
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   require("./firefoxcom.js");
   require("./firefox_print_service.js");
 }

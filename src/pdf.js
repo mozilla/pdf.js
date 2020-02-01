@@ -27,18 +27,18 @@ var pdfjsDisplayTextLayer = require("./display/text_layer.js");
 var pdfjsDisplayAnnotationLayer = require("./display/annotation_layer.js");
 var pdfjsDisplayDisplayUtils = require("./display/display_utils.js");
 var pdfjsDisplaySVG = require("./display/svg.js");
-let pdfjsDisplayWorkerOptions = require("./display/worker_options.js");
-let pdfjsDisplayAPICompatibility = require("./display/api_compatibility.js");
+const pdfjsDisplayWorkerOptions = require("./display/worker_options.js");
+const pdfjsDisplayAPICompatibility = require("./display/api_compatibility.js");
 
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const { isNodeJS } = require("./shared/is_node.js");
   if (isNodeJS) {
-    let PDFNodeStream = require("./display/node_stream.js").PDFNodeStream;
+    const PDFNodeStream = require("./display/node_stream.js").PDFNodeStream;
     pdfjsDisplayAPI.setPDFNetworkStreamFactory(params => {
       return new PDFNodeStream(params);
     });
   } else {
-    let PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
+    const PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
     let PDFFetchStream;
     if (pdfjsDisplayDisplayUtils.isFetchSupported()) {
       PDFFetchStream = require("./display/fetch_stream.js").PDFFetchStream;
@@ -53,10 +53,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       return new PDFNetworkStream(params);
     });
   }
-} else if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-  let PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
+} else if (PDFJSDev.test("CHROME")) {
+  const PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
   let PDFFetchStream;
-  let isChromeWithFetchCredentials = function() {
+  const isChromeWithFetchCredentials = function() {
     // fetch does not include credentials until Chrome 61.0.3138.0 and later.
     // https://chromium.googlesource.com/chromium/src/+/2e231cf052ca5e68e22baf0008ac9e5e29121707
     try {

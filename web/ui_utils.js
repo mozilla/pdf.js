@@ -745,7 +745,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 const animationStarted = new Promise(function(resolve) {
   if (
     typeof PDFJSDev !== "undefined" &&
-    PDFJSDev.test("LIB") &&
+    PDFJSDev.test("LIB && TESTING") &&
     typeof window === "undefined"
   ) {
     // Prevent "ReferenceError: window is not defined" errors when running the

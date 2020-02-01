@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-import { isSpace, warn } from "../shared/util.js";
 import { getEncoding } from "./encodings.js";
+import { isSpace } from "./core_utils.js";
 import { Stream } from "./stream.js";
+import { warn } from "../shared/util.js";
 
 // Hinting is currently disabled due to unknown problems on windows
 // in tracemonkey and various other pdfs with type1 fonts.
@@ -440,14 +441,14 @@ var Type1Parser = (function Type1ParserClosure() {
 
   function isSpecial(c) {
     return (
-      c === 0x2f || // '/'
-      c === 0x5b ||
-      c === 0x5d || // '[', ']'
-      c === 0x7b ||
-      c === 0x7d || // '{', '}'
-      c === 0x28 ||
-      c === 0x29
-    ); // '(', ')'
+      c === /* '/' = */ 0x2f ||
+      c === /* '[' = */ 0x5b ||
+      c === /* ']' = */ 0x5d ||
+      c === /* '{' = */ 0x7b ||
+      c === /* '}' = */ 0x7d ||
+      c === /* '(' = */ 0x28 ||
+      c === /* ')' = */ 0x29
+    );
   }
 
   function Type1Parser(stream, encrypted, seacAnalysisEnabled) {

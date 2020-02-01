@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-let compatibilityParams = Object.create(null);
+const compatibilityParams = Object.create(null);
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const { isNodeJS } = require("../shared/is_node.js");
 

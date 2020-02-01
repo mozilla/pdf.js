@@ -13,14 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  BaseException,
-  log2,
-  readInt8,
-  readUint16,
-  readUint32,
-  shadow,
-} from "../shared/util.js";
+import { BaseException, shadow } from "../shared/util.js";
+import { log2, readInt8, readUint16, readUint32 } from "./core_utils.js";
 import { ArithmeticDecoder } from "./arithmetic_decoder.js";
 import { CCITTFaxDecoder } from "./ccitt.js";
 
@@ -79,6 +73,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     var sign = readBits(1);
     // prettier-ignore
+    /* eslint-disable no-nested-ternary */
     var value = readBits(1) ?
                   (readBits(1) ?
                     (readBits(1) ?
@@ -90,7 +85,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                     readBits(6) + 20) :
                   readBits(4) + 4) :
                 readBits(2);
-    return sign === 0 ? value : value > 0 ? -value : null;
+    /* eslint-enable no-nested-ternary */
+    if (sign === 0) {
+      return value;
+    } else if (value > 0) {
+      return -value;
+    }
+    return null;
   }
 
   // A.3 The IAID decoding procedure
@@ -338,7 +339,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     decodingContext
   ) {
     if (mmr) {
-      let input = new Reader(
+      const input = new Reader(
         decodingContext.data,
         decodingContext.start,
         decodingContext.end
@@ -618,7 +619,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       currentHeight += deltaHeight;
       let currentWidth = 0,
         totalWidth = 0;
-      let firstSymbol = huffman ? symbolWidths.length : 0;
+      const firstSymbol = huffman ? symbolWidths.length : 0;
       while (true) {
         var deltaWidth = huffman
           ? huffmanTables.tableDeltaWidth.decode(huffmanInput)
@@ -696,7 +697,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       }
       if (huffman && !refinement) {
         // 6.5.9 Height class collective bitmap
-        let bitmapSize = huffmanTables.tableBitmapSize.decode(huffmanInput);
+        const bitmapSize = huffmanTables.tableBitmapSize.decode(huffmanInput);
         huffmanInput.byteAlign();
         let collectiveBitmap;
         if (bitmapSize === 0) {
@@ -708,8 +709,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           );
         } else {
           // MMR collective bitmap
-          let originalEnd = huffmanInput.end;
-          let bitmapEnd = huffmanInput.position + bitmapSize;
+          const originalEnd = huffmanInput.end;
+          const bitmapEnd = huffmanInput.position + bitmapSize;
           huffmanInput.end = bitmapEnd;
           collectiveBitmap = decodeMMRBitmap(
             huffmanInput,
@@ -720,7 +721,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           huffmanInput.end = originalEnd;
           huffmanInput.position = bitmapEnd;
         }
-        let numberOfSymbolsDecoded = symbolWidths.length;
+        const numberOfSymbolsDecoded = symbolWidths.length;
         if (firstSymbol === numberOfSymbolsDecoded - 1) {
           // collectiveBitmap is a single symbol.
           newSymbols.push(collectiveBitmap);
@@ -947,7 +948,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     template,
     decodingContext
   ) {
-    let at = [];
+    const at = [];
     if (!mmr) {
       at.push({
         x: -patternWidth,
@@ -968,8 +969,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         });
       }
     }
-    let collectiveWidth = (maxPatternIndex + 1) * patternWidth;
-    let collectiveBitmap = decodeBitmap(
+    const collectiveWidth = (maxPatternIndex + 1) * patternWidth;
+    const collectiveBitmap = decodeBitmap(
       mmr,
       collectiveWidth,
       patternHeight,
@@ -980,21 +981,15 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       decodingContext
     );
     // Divide collective bitmap into patterns.
-    let patterns = [],
-      i = 0,
-      patternBitmap,
-      xMin,
-      xMax,
-      y;
-    while (i <= maxPatternIndex) {
-      patternBitmap = [];
-      xMin = patternWidth * i;
-      xMax = xMin + patternWidth;
-      for (y = 0; y < patternHeight; y++) {
+    const patterns = [];
+    for (let i = 0; i <= maxPatternIndex; i++) {
+      const patternBitmap = [];
+      const xMin = patternWidth * i;
+      const xMax = xMin + patternWidth;
+      for (let y = 0; y < patternHeight; y++) {
         patternBitmap.push(collectiveBitmap[y].subarray(xMin, xMax));
       }
       patterns.push(patternBitmap);
-      i++;
     }
     return patterns;
   }
@@ -1016,7 +1011,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     gridVectorY,
     decodingContext
   ) {
-    let skip = null;
+    const skip = null;
     if (enableSkip) {
       throw new Jbig2Error("skip is not supported");
     }
@@ -1029,7 +1024,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
 
     // Prepare bitmap.
-    let regionBitmap = [];
+    const regionBitmap = [];
     let i, j, row;
     for (i = 0; i < regionHeight; i++) {
       row = new Uint8Array(regionWidth);
@@ -1041,12 +1036,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       regionBitmap.push(row);
     }
 
-    let numberOfPatterns = patterns.length;
-    let pattern0 = patterns[0];
-    let patternWidth = pattern0[0].length,
+    const numberOfPatterns = patterns.length;
+    const pattern0 = patterns[0];
+    const patternWidth = pattern0[0].length,
       patternHeight = pattern0.length;
-    let bitsPerValue = log2(numberOfPatterns);
-    let at = [];
+    const bitsPerValue = log2(numberOfPatterns);
+    const at = [];
     if (!mmr) {
       at.push({
         x: template <= 1 ? 3 : 2,
@@ -1068,9 +1063,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       }
     }
     // Annex C. Gray-scale Image Decoding Procedure.
-    let grayScaleBitPlanes = [],
-      mmrInput,
-      bitmap;
+    const grayScaleBitPlanes = [];
+    let mmrInput, bitmap;
     if (mmr) {
       // MMR bit planes are in one continuous stream. Only EOFB codes indicate
       // the end of each bitmap, so EOFBs must be decoded.
@@ -1176,17 +1170,24 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
 
     segmentHeader.retainBits = retainBits;
-    var referredToSegmentNumberSize =
-      segmentHeader.number <= 256 ? 1 : segmentHeader.number <= 65536 ? 2 : 4;
+
+    let referredToSegmentNumberSize = 4;
+    if (segmentHeader.number <= 256) {
+      referredToSegmentNumberSize = 1;
+    } else if (segmentHeader.number <= 65536) {
+      referredToSegmentNumberSize = 2;
+    }
     var referredTo = [];
     var i, ii;
     for (i = 0; i < referredToCount; i++) {
-      var number =
-        referredToSegmentNumberSize === 1
-          ? data[position]
-          : referredToSegmentNumberSize === 2
-          ? readUint16(data, position)
-          : readUint32(data, position);
+      let number;
+      if (referredToSegmentNumberSize === 1) {
+        number = data[position];
+      } else if (referredToSegmentNumberSize === 2) {
+        number = readUint16(data, position);
+      } else {
+        number = readUint32(data, position);
+      }
       referredTo.push(number);
       position += referredToSegmentNumberSize;
     }
@@ -1389,8 +1390,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         break;
       case 16: // PatternDictionary
         // 7.4.4. Pattern dictionary segment syntax
-        let patternDictionary = {};
-        let patternDictionaryFlags = data[position++];
+        const patternDictionary = {};
+        const patternDictionaryFlags = data[position++];
         patternDictionary.mmr = !!(patternDictionaryFlags & 1);
         patternDictionary.template = (patternDictionaryFlags >> 1) & 3;
         patternDictionary.patternWidth = data[position++];
@@ -1402,10 +1403,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       case 22: // ImmediateHalftoneRegion
       case 23: // ImmediateLosslessHalftoneRegion
         // 7.4.5 Halftone region segment syntax
-        let halftoneRegion = {};
+        const halftoneRegion = {};
         halftoneRegion.info = readRegionSegmentInformation(data, position);
         position += RegionSegmentInformationFieldLength;
-        let halftoneRegionFlags = data[position++];
+        const halftoneRegionFlags = data[position++];
         halftoneRegion.mmr = !!(halftoneRegionFlags & 1);
         halftoneRegion.template = (halftoneRegionFlags >> 1) & 3;
         halftoneRegion.enableSkip = !!(halftoneRegionFlags & 8);
@@ -1509,8 +1510,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   }
 
   function parseJbig2(data) {
-    let position = 0,
-      end = data.length;
+    const end = data.length;
+    let position = 0;
 
     if (
       data[position] !== 0x97 ||
@@ -1525,7 +1526,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       throw new Jbig2Error("parseJbig2 - invalid header.");
     }
 
-    let header = Object.create(null);
+    const header = Object.create(null);
     position += 8;
     const flags = data[position++];
     header.randomAccess = !(flags & 1);
@@ -1534,13 +1535,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       position += 4;
     }
 
-    let segments = readSegments(header, data, position, end);
-    let visitor = new SimpleSegmentVisitor();
+    const segments = readSegments(header, data, position, end);
+    const visitor = new SimpleSegmentVisitor();
     processSegments(segments, visitor);
 
     const { width, height } = visitor.currentPageInfo;
     const bitPacked = visitor.buffer;
-    let imgData = new Uint8ClampedArray(width * height);
+    const imgData = new Uint8ClampedArray(width * height);
     let q = 0,
       k = 0;
     for (let i = 0; i < height; i++) {
@@ -1677,7 +1678,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
       var inputSymbols = [];
       for (var i = 0, ii = referredSegments.length; i < ii; i++) {
-        let referredSymbols = symbols[referredSegments[i]];
+        const referredSymbols = symbols[referredSegments[i]];
         // referredSymbols is undefined when we have a reference to a Tables
         // segment instead of a SymbolDictionary.
         if (referredSymbols) {
@@ -1715,7 +1716,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       var symbols = this.symbols;
       var inputSymbols = [];
       for (var i = 0, ii = referredSegments.length; i < ii; i++) {
-        let referredSymbols = symbols[referredSegments[i]];
+        const referredSymbols = symbols[referredSegments[i]];
         // referredSymbols is undefined when we have a reference to a Tables
         // segment instead of a SymbolDictionary.
         if (referredSymbols) {
@@ -1766,7 +1767,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       if (!patterns) {
         this.patterns = patterns = {};
       }
-      let decodingContext = new DecodingContext(data, start, end);
+      const decodingContext = new DecodingContext(data, start, end);
       patterns[currentSegment] = decodePatternDictionary(
         dictionary.mmr,
         dictionary.patternWidth,
@@ -1778,10 +1779,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     },
     onImmediateHalftoneRegion(region, referredSegments, data, start, end) {
       // HalftoneRegion refers to exactly one PatternDictionary.
-      let patterns = this.patterns[referredSegments[0]];
-      let regionInfo = region.info;
-      let decodingContext = new DecodingContext(data, start, end);
-      let bitmap = decodeHalftoneRegion(
+      const patterns = this.patterns[referredSegments[0]];
+      const regionInfo = region.info;
+      const decodingContext = new DecodingContext(data, start, end);
+      const bitmap = decodeHalftoneRegion(
         region.mmr,
         patterns,
         region.template,
@@ -1850,7 +1851,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
   HuffmanTreeNode.prototype = {
     buildTree(line, shift) {
-      let bit = (line.prefixCode >> shift) & 1;
+      const bit = (line.prefixCode >> shift) & 1;
       if (shift <= 0) {
         // Create a leaf node.
         this.children[bit] = new HuffmanTreeNode(line);
@@ -1868,10 +1869,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         if (this.isOOB) {
           return null;
         }
-        let htOffset = reader.readBits(this.rangeLength);
+        const htOffset = reader.readBits(this.rangeLength);
         return this.rangeLow + (this.isLowerRange ? -htOffset : htOffset);
       }
-      let node = this.children[reader.readBit()];
+      const node = this.children[reader.readBit()];
       if (!node) {
         throw new Jbig2Error("invalid Huffman data");
       }
@@ -1885,11 +1886,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
     // Create Huffman tree.
     this.rootNode = new HuffmanTreeNode(null);
-    let i,
-      ii = lines.length,
-      line;
-    for (i = 0; i < ii; i++) {
-      line = lines[i];
+    for (let i = 0, ii = lines.length; i < ii; i++) {
+      const line = lines[i];
       if (line.prefixLength > 0) {
         this.rootNode.buildTree(line, line.prefixLength - 1);
       }
@@ -1902,15 +1900,14 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     },
     assignPrefixCodes(lines) {
       // Annex B.3 Assigning the prefix codes.
-      let linesLength = lines.length,
-        prefixLengthMax = 0,
-        i;
-      for (i = 0; i < linesLength; i++) {
+      const linesLength = lines.length;
+      let prefixLengthMax = 0;
+      for (let i = 0; i < linesLength; i++) {
         prefixLengthMax = Math.max(prefixLengthMax, lines[i].prefixLength);
       }
 
-      let histogram = new Uint32Array(prefixLengthMax + 1);
-      for (i = 0; i < linesLength; i++) {
+      const histogram = new Uint32Array(prefixLengthMax + 1);
+      for (let i = 0; i < linesLength; i++) {
         histogram[lines[i].prefixLength]++;
       }
       let currentLength = 1,
@@ -1940,14 +1937,14 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function decodeTablesSegment(data, start, end) {
     // Decodes a Tables segment, i.e., a custom Huffman table.
     // Annex B.2 Code table structure.
-    let flags = data[start];
-    let lowestValue = readUint32(data, start + 1) & 0xffffffff;
-    let highestValue = readUint32(data, start + 5) & 0xffffffff;
-    let reader = new Reader(data, start + 9, end);
+    const flags = data[start];
+    const lowestValue = readUint32(data, start + 1) & 0xffffffff;
+    const highestValue = readUint32(data, start + 5) & 0xffffffff;
+    const reader = new Reader(data, start + 9, end);
 
-    let prefixSizeBits = ((flags >> 1) & 7) + 1;
-    let rangeSizeBits = ((flags >> 4) & 7) + 1;
-    let lines = [];
+    const prefixSizeBits = ((flags >> 1) & 7) + 1;
+    const rangeSizeBits = ((flags >> 4) & 7) + 1;
+    const lines = [];
     let prefixLength,
       rangeLength,
       currentRangeLow = lowestValue;
@@ -1981,7 +1978,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return new HuffmanTable(lines, false);
   }
 
-  let standardTablesCache = {};
+  const standardTablesCache = {};
 
   function getStandardTable(number) {
     // Annex B.5 Standard Huffman tables.
@@ -2239,9 +2236,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         throw new Jbig2Error(`standard table B.${number} does not exist`);
     }
 
-    let length = lines.length,
-      i;
-    for (i = 0; i < length; i++) {
+    for (let i = 0, ii = lines.length; i < ii; i++) {
       lines[i] = new HuffmanLine(lines[i]);
     }
     table = new HuffmanTable(lines, true);
@@ -2267,7 +2262,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         this.currentByte = this.data[this.position++];
         this.shift = 7;
       }
-      let bit = (this.currentByte >> this.shift) & 1;
+      const bit = (this.currentByte >> this.shift) & 1;
       this.shift--;
       return bit;
     },
@@ -2296,12 +2291,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function getCustomHuffmanTable(index, referredTo, customTables) {
     // Returns a Tables segment that has been earlier decoded.
     // See 7.4.2.1.6 (symbol dictionary) or 7.4.3.1.6 (text region).
-    let currentIndex = 0,
-      i,
-      ii = referredTo.length,
-      table;
-    for (i = 0; i < ii; i++) {
-      table = customTables[referredTo[i]];
+    let currentIndex = 0;
+    for (let i = 0, ii = referredTo.length; i < ii; i++) {
+      const table = customTables[referredTo[i]];
       if (table) {
         if (index === currentIndex) {
           return table;
@@ -2322,21 +2314,19 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     // 7.4.3.1.7 Symbol ID Huffman table decoding
 
     // Read code lengths for RUNCODEs 0...34.
-    let codes = [],
-      i,
-      codeLength;
-    for (i = 0; i <= 34; i++) {
-      codeLength = reader.readBits(4);
+    const codes = [];
+    for (let i = 0; i <= 34; i++) {
+      const codeLength = reader.readBits(4);
       codes.push(new HuffmanLine([i, codeLength, 0, 0]));
     }
     // Assign Huffman codes for RUNCODEs.
-    let runCodesTable = new HuffmanTable(codes, false);
+    const runCodesTable = new HuffmanTable(codes, false);
 
     // Read a Huffman code using the assignment above.
     // Interpret the RUNCODE codes and the additional bits (if any).
     codes.length = 0;
-    for (i = 0; i < numberOfSymbols; ) {
-      codeLength = runCodesTable.decode(reader);
+    for (let i = 0; i < numberOfSymbols; ) {
+      const codeLength = runCodesTable.decode(reader);
       if (codeLength >= 32) {
         let repeatedLength, numberOfRepeats, j;
         switch (codeLength) {
@@ -2368,7 +2358,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       }
     }
     reader.byteAlign();
-    let symbolIDTable = new HuffmanTable(codes, false);
+    const symbolIDTable = new HuffmanTable(codes, false);
 
     // 7.4.3.1.6 Text region segment Huffman table selection
 
@@ -2518,14 +2508,11 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   }
 
   function readUncompressedBitmap(reader, width, height) {
-    let bitmap = [],
-      x,
-      y,
-      row;
-    for (y = 0; y < height; y++) {
-      row = new Uint8Array(width);
+    const bitmap = [];
+    for (let y = 0; y < height; y++) {
+      const row = new Uint8Array(width);
       bitmap.push(row);
-      for (x = 0; x < width; x++) {
+      for (let x = 0; x < width; x++) {
         row[x] = reader.readBit();
       }
       reader.byteAlign();
@@ -2536,27 +2523,23 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function decodeMMRBitmap(input, width, height, endOfBlock) {
     // MMR is the same compression algorithm as the PDF filter
     // CCITTFaxDecode with /K -1.
-    let params = {
+    const params = {
       K: -1,
       Columns: width,
       Rows: height,
       BlackIs1: true,
       EndOfBlock: endOfBlock,
     };
-    let decoder = new CCITTFaxDecoder(input, params);
-    let bitmap = [],
-      x,
-      y,
-      row,
-      currentByte,
-      shift,
+    const decoder = new CCITTFaxDecoder(input, params);
+    const bitmap = [];
+    let currentByte,
       eof = false;
 
-    for (y = 0; y < height; y++) {
-      row = new Uint8Array(width);
+    for (let y = 0; y < height; y++) {
+      const row = new Uint8Array(width);
       bitmap.push(row);
-      shift = -1;
-      for (x = 0; x < width; x++) {
+      let shift = -1;
+      for (let x = 0; x < width; x++) {
         if (shift < 0) {
           currentByte = decoder.readNextChar();
           if (currentByte === -1) {

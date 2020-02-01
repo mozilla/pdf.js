@@ -404,27 +404,30 @@ class ChromePreferences extends BasePreferences {
   }
 }
 
-const ChromeExternalServices = Object.create(DefaultExternalServices);
-ChromeExternalServices.initPassiveLoading = function(callbacks) {
-  const { overlayManager } = PDFViewerApplication;
-  // defaultUrl is set in viewer.js
-  ChromeCom.resolvePDFFile(
-    AppOptions.get("defaultUrl"),
-    overlayManager,
-    function(url, length, originalUrl) {
-      callbacks.onOpenWithURL(url, length, originalUrl);
-    }
-  );
-};
-ChromeExternalServices.createDownloadManager = function(options) {
-  return new DownloadManager(options);
-};
-ChromeExternalServices.createPreferences = function() {
-  return new ChromePreferences();
-};
-ChromeExternalServices.createL10n = function(options) {
-  return new GenericL10n(navigator.language);
-};
+class ChromeExternalServices extends DefaultExternalServices {
+  static initPassiveLoading(callbacks) {
+    // defaultUrl is set in viewer.js
+    ChromeCom.resolvePDFFile(
+      AppOptions.get("defaultUrl"),
+      PDFViewerApplication.overlayManager,
+      function(url, length, originalUrl) {
+        callbacks.onOpenWithURL(url, length, originalUrl);
+      }
+    );
+  }
+
+  static createDownloadManager(options) {
+    return new DownloadManager(options);
+  }
+
+  static createPreferences() {
+    return new ChromePreferences();
+  }
+
+  static createL10n(options) {
+    return new GenericL10n(navigator.language);
+  }
+}
 PDFViewerApplication.externalServices = ChromeExternalServices;
 
 export { ChromeCom };

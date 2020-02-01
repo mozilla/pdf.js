@@ -39,6 +39,17 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     return (data[offset] << 8) | data[offset + 1];
   }
 
+  function getSubroutineBias(subrs) {
+    const numSubrs = subrs.length;
+    let bias = 32768;
+    if (numSubrs < 1240) {
+      bias = 107;
+    } else if (numSubrs < 33900) {
+      bias = 1131;
+    }
+    return bias;
+  }
+
   function parseCmap(data, start, end) {
     var offset =
       getUshort(data, start + 2) === 1
@@ -414,17 +425,16 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             n = stack.pop();
             subrCode = null;
             if (font.isCFFCIDFont) {
-              let fdIndex = font.fdSelect.getFDIndex(glyphId);
+              const fdIndex = font.fdSelect.getFDIndex(glyphId);
               if (fdIndex >= 0 && fdIndex < font.fdArray.length) {
-                let fontDict = font.fdArray[fdIndex],
-                  subrs;
+                const fontDict = font.fdArray[fdIndex];
+                let subrs;
                 if (fontDict.privateDict && fontDict.privateDict.subrsIndex) {
                   subrs = fontDict.privateDict.subrsIndex.objects;
                 }
                 if (subrs) {
-                  let numSubrs = subrs.length;
                   // Add subroutine bias.
-                  n += numSubrs < 1240 ? 107 : numSubrs < 33900 ? 1131 : 32768;
+                  n += getSubroutineBias(subrs);
                   subrCode = subrs[n];
                 }
               } else {
@@ -747,9 +757,9 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       if (this.isCFFCIDFont) {
         // Top DICT's FontMatrix can be ignored because CFFCompiler always
         // removes it and copies to FDArray DICTs.
-        let fdIndex = this.fdSelect.getFDIndex(glyphId);
+        const fdIndex = this.fdSelect.getFDIndex(glyphId);
         if (fdIndex >= 0 && fdIndex < this.fdArray.length) {
-          let fontDict = this.fdArray[fdIndex];
+          const fontDict = this.fdArray[fdIndex];
           fontMatrix = fontDict.getByName("FontMatrix") || FONT_IDENTITY_MATRIX;
         } else {
           warn("Invalid fd index for glyph index.");
@@ -804,18 +814,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       this.cmap = cmap;
       this.glyphNameMap = glyphNameMap || getGlyphsUnicode();
 
-      this.gsubrsBias =
-        this.gsubrs.length < 1240
-          ? 107
-          : this.gsubrs.length < 33900
-          ? 1131
-          : 32768;
-      this.subrsBias =
-        this.subrs.length < 1240
-          ? 107
-          : this.subrs.length < 33900
-          ? 1131
-          : 32768;
+      this.gsubrsBias = getSubroutineBias(this.gsubrs);
+      this.subrsBias = getSubroutineBias(this.subrs);
 
       this.isCFFCIDFont = cffInfo.isCFFCIDFont;
       this.fdSelect = cffInfo.fdSelect;

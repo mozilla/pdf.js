@@ -25,12 +25,10 @@ GlobalWorkerOptions.workerPort =
     : GlobalWorkerOptions.workerPort;
 
 /**
- * Path and filename of the worker file. Required when workers are enabled in
- * development mode. If unspecified in production builds, the worker will be
- * loaded based on the location of the `pdf.js` file.
+ * A string containing the path and filename of the worker file.
  *
- * NOTE: The `workerSrc` should always be set in custom applications, in order
- *       to prevent issues caused by third-party frameworks and libraries.
+ * NOTE: The `workerSrc` option should always be set, in order to prevent any
+ *       issues when using the PDF.js library.
  * @var {string}
  */
 GlobalWorkerOptions.workerSrc =

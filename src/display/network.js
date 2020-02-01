@@ -25,10 +25,9 @@ import {
   validateRangeRequestCapabilities,
 } from "./network_utils.js";
 
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("FIREFOX || MOZCENTRAL")) {
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
-    'Module "./network" shall not ' +
-      "be used with FIREFOX or MOZCENTRAL build."
+    'Module "./network.js" shall not be used with MOZCENTRAL builds.'
   );
 }
 

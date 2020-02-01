@@ -768,7 +768,7 @@ class BaseViewer {
       height = 0,
       widthScale,
       heightScale;
-    const changeOrientation = pageView.rotation % 180 === 0 ? false : true;
+    const changeOrientation = pageView.rotation % 180 !== 0;
     const pageWidth =
       (changeOrientation ? pageView.height : pageView.width) /
       pageView.scale /

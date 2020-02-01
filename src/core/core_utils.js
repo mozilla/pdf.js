@@ -110,8 +110,8 @@ function toRomanNumerals(number, lowerCase = false) {
     Number.isInteger(number) && number > 0,
     "The number should be a positive integer."
   );
-  let pos,
-    romanBuf = [];
+  const romanBuf = [];
+  let pos;
   // Thousands
   while (number >= 1000) {
     number -= 1000;
@@ -132,6 +132,39 @@ function toRomanNumerals(number, lowerCase = false) {
   return lowerCase ? romanStr.toLowerCase() : romanStr;
 }
 
+// Calculate the base 2 logarithm of the number `x`. This differs from the
+// native function in the sense that it returns the ceiling value and that it
+// returns 0 instead of `Infinity`/`NaN` for `x` values smaller than/equal to 0.
+function log2(x) {
+  if (x <= 0) {
+    return 0;
+  }
+  return Math.ceil(Math.log2(x));
+}
+
+function readInt8(data, offset) {
+  return (data[offset] << 24) >> 24;
+}
+
+function readUint16(data, offset) {
+  return (data[offset] << 8) | data[offset + 1];
+}
+
+function readUint32(data, offset) {
+  return (
+    ((data[offset] << 24) |
+      (data[offset + 1] << 16) |
+      (data[offset + 2] << 8) |
+      data[offset + 3]) >>>
+    0
+  );
+}
+
+// Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
+function isSpace(ch) {
+  return ch === 0x20 || ch === 0x09 || ch === 0x0d || ch === 0x0a;
+}
+
 export {
   getLookupTableFactory,
   MissingDataException,
@@ -139,4 +172,9 @@ export {
   XRefParseException,
   getInheritableProperty,
   toRomanNumerals,
+  log2,
+  readInt8,
+  readUint16,
+  readUint32,
+  isSpace,
 };

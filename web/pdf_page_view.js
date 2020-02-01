@@ -559,7 +559,11 @@ class PDFPageView {
 
     const viewport = this.viewport;
     const canvas = document.createElement("canvas");
-    canvas.id = this.renderingId;
+    this.l10n
+      .get("page_canvas", { page: this.id }, "Page {{page}}")
+      .then(msg => {
+        canvas.setAttribute("aria-label", msg);
+      });
 
     // Keep the canvas hidden until the first draw callback, or until drawing
     // is complete when `!this.renderingQueue`, to prevent black flickering.
@@ -577,7 +581,7 @@ class PDFPageView {
 
     if (
       typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || FIREFOX || GENERIC")
+      PDFJSDev.test("MOZCENTRAL || GENERIC")
     ) {
       canvas.mozOpaque = true;
     }
@@ -654,7 +658,7 @@ class PDFPageView {
   paintOnSvg(wrapper) {
     if (
       typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("FIREFOX || MOZCENTRAL || CHROME")
+      PDFJSDev.test("MOZCENTRAL || CHROME")
     ) {
       // Return a mock object, to prevent errors such as e.g.
       // "TypeError: paintTask.promise is undefined".

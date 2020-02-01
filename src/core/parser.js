@@ -29,7 +29,6 @@ import {
   FormatError,
   info,
   isNum,
-  isSpace,
   StreamType,
   warn,
 } from "../shared/util.js";
@@ -44,11 +43,11 @@ import {
   Name,
   Ref,
 } from "./primitives.js";
+import { isSpace, MissingDataException } from "./core_utils.js";
 import { CCITTFaxStream } from "./ccitt_stream.js";
 import { Jbig2Stream } from "./jbig2_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxStream } from "./jpx_stream.js";
-import { MissingDataException } from "./core_utils.js";
 
 const MAX_LENGTH_TO_CACHE = 1000;
 const MAX_ADLER32_LENGTH = 5552;
@@ -207,8 +206,8 @@ class Parser {
       CR = 0xd;
     const n = 10,
       NUL = 0x0;
-    let startPos = stream.pos,
-      state = 0,
+    const startPos = stream.pos;
+    let state = 0,
       ch,
       maybeEIPos;
     while ((ch = stream.getByte()) !== -1) {
@@ -282,11 +281,10 @@ class Parser {
    * @returns {number} The inline stream length.
    */
   findDCTDecodeInlineStreamEnd(stream) {
-    let startPos = stream.pos,
-      foundEOI = false,
+    const startPos = stream.pos;
+    let foundEOI = false,
       b,
-      markerLength,
-      length;
+      markerLength;
     while ((b = stream.getByte()) !== -1) {
       if (b !== 0xff) {
         // Not a valid marker.
@@ -367,7 +365,7 @@ class Parser {
         break;
       }
     }
-    length = stream.pos - startPos;
+    const length = stream.pos - startPos;
     if (b === -1) {
       warn(
         "Inline DCTDecode image stream: " +
@@ -387,9 +385,8 @@ class Parser {
   findASCII85DecodeInlineStreamEnd(stream) {
     const TILDE = 0x7e,
       GT = 0x3e;
-    let startPos = stream.pos,
-      ch,
-      length;
+    const startPos = stream.pos;
+    let ch;
     while ((ch = stream.getByte()) !== -1) {
       if (ch === TILDE) {
         const tildePos = stream.pos;
@@ -415,7 +412,7 @@ class Parser {
         }
       }
     }
-    length = stream.pos - startPos;
+    const length = stream.pos - startPos;
     if (ch === -1) {
       warn(
         "Inline ASCII85Decode image stream: " +
@@ -434,15 +431,14 @@ class Parser {
    */
   findASCIIHexDecodeInlineStreamEnd(stream) {
     const GT = 0x3e;
-    let startPos = stream.pos,
-      ch,
-      length;
+    const startPos = stream.pos;
+    let ch;
     while ((ch = stream.getByte()) !== -1) {
       if (ch === GT) {
         break;
       }
     }
-    length = stream.pos - startPos;
+    const length = stream.pos - startPos;
     if (ch === -1) {
       warn(
         "Inline ASCIIHexDecode image stream: " +
@@ -693,8 +689,8 @@ class Parser {
 
     let maybeLength = length;
     if (Array.isArray(filter)) {
-      let filterArray = filter;
-      let paramsArray = params;
+      const filterArray = filter;
+      const paramsArray = params;
       for (let i = 0, ii = filterArray.length; i < ii; ++i) {
         filter = this.xref.fetchIfRef(filterArray[i]);
         if (!isName(filter)) {

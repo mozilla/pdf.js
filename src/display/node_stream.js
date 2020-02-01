@@ -14,10 +14,10 @@
  */
 /* globals __non_webpack_require__ */
 
-let fs = __non_webpack_require__("fs");
-let http = __non_webpack_require__("http");
-let https = __non_webpack_require__("https");
-let url = __non_webpack_require__("url");
+const fs = __non_webpack_require__("fs");
+const http = __non_webpack_require__("http");
+const https = __non_webpack_require__("https");
+const url = __non_webpack_require__("url");
 
 import {
   AbortException,
@@ -33,7 +33,7 @@ import {
 const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
 
 function parseUrl(sourceUrl) {
-  let parsedUrl = url.parse(sourceUrl);
+  const parsedUrl = url.parse(sourceUrl);
   if (parsedUrl.protocol === "file:" || parsedUrl.host) {
     return parsedUrl;
   }
@@ -78,7 +78,7 @@ class PDFNodeStream {
     if (end <= this._progressiveDataLength) {
       return null;
     }
-    let rangeReader = this.isFsUrl
+    const rangeReader = this.isFsUrl
       ? new PDFNodeStreamFsRangeReader(this, start, end)
       : new PDFNodeStreamRangeReader(this, start, end);
     this._rangeRequestReaders.push(rangeReader);
@@ -90,7 +90,7 @@ class PDFNodeStream {
       this._fullRequestReader.cancel(reason);
     }
 
-    let readers = this._rangeRequestReaders.slice(0);
+    const readers = this._rangeRequestReaders.slice(0);
     readers.forEach(function(reader) {
       reader.cancel(reason);
     });
@@ -103,7 +103,7 @@ class BaseFullReader {
     this._done = false;
     this._storedError = null;
     this.onProgress = null;
-    let source = stream.source;
+    const source = stream.source;
     this._contentLength = source.length; // optional
     this._loaded = 0;
     this._filename = null;
@@ -151,7 +151,7 @@ class BaseFullReader {
       throw this._storedError;
     }
 
-    let chunk = this._readableStream.read();
+    const chunk = this._readableStream.read();
     if (chunk === null) {
       this._readCapability = createPromiseCapability();
       return this.read();
@@ -164,7 +164,7 @@ class BaseFullReader {
       });
     }
     // Ensure that `read()` method returns ArrayBuffer.
-    let buffer = new Uint8Array(chunk).buffer;
+    const buffer = new Uint8Array(chunk).buffer;
     return { value: buffer, done: false };
   }
 
@@ -222,7 +222,7 @@ class BaseRangeReader {
     this._loaded = 0;
     this._readableStream = null;
     this._readCapability = createPromiseCapability();
-    let source = stream.source;
+    const source = stream.source;
     this._isStreamingSupported = !source.disableStream;
   }
 
@@ -239,7 +239,7 @@ class BaseRangeReader {
       throw this._storedError;
     }
 
-    let chunk = this._readableStream.read();
+    const chunk = this._readableStream.read();
     if (chunk === null) {
       this._readCapability = createPromiseCapability();
       return this.read();
@@ -249,7 +249,7 @@ class BaseRangeReader {
       this.onProgress({ loaded: this._loaded });
     }
     // Ensure that `read()` method returns ArrayBuffer.
-    let buffer = new Uint8Array(chunk).buffer;
+    const buffer = new Uint8Array(chunk).buffer;
     return { value: buffer, done: false };
   }
 
@@ -308,7 +308,7 @@ class PDFNodeStreamFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
 
-    let handleResponse = response => {
+    const handleResponse = response => {
       if (response.statusCode === 404) {
         const error = new MissingPDFException(`Missing PDF "${this._url}".`);
         this._storedError = error;
@@ -323,7 +323,7 @@ class PDFNodeStreamFullReader extends BaseFullReader {
         // here: https://nodejs.org/api/http.html#http_message_headers.
         return this._readableStream.headers[name.toLowerCase()];
       };
-      let {
+      const {
         allowRangeRequests,
         suggestedLength,
       } = validateRangeRequestCapabilities({
@@ -369,8 +369,8 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
     super(stream);
 
     this._httpHeaders = {};
-    for (let property in stream.httpHeaders) {
-      let value = stream.httpHeaders[property];
+    for (const property in stream.httpHeaders) {
+      const value = stream.httpHeaders[property];
       if (typeof value === "undefined") {
         continue;
       }
@@ -378,7 +378,7 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
     }
     this._httpHeaders["Range"] = `bytes=${start}-${end - 1}`;
 
-    let handleResponse = response => {
+    const handleResponse = response => {
       if (response.statusCode === 404) {
         const error = new MissingPDFException(`Missing PDF "${this._url}".`);
         this._storedError = error;

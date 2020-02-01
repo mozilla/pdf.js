@@ -769,7 +769,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     var backdrop = smask.backdrop || null;
     if (!smask.transferMap && webGLContext.isEnabled) {
-      let composed = webGLContext.composeSMask({
+      const composed = webGLContext.composeSMask({
         layer: layerCtx.canvas,
         mask,
         properties: {
@@ -1274,7 +1274,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // but the line width needs to be adjusted by the current transform, so
         // we must scale it. To properly fix this we should be using a pattern
         // transform instead (see #10955).
-        let transform = ctx.mozCurrentTransform;
+        const transform = ctx.mozCurrentTransform;
         const scale = Util.singularValueDecompose2dScale(transform)[0];
         ctx.strokeStyle = strokeColor.getPattern(ctx, this);
         ctx.lineWidth = Math.max(
@@ -1441,7 +1441,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var name = fontObj.loadedName || "sans-serif";
-      var bold = fontObj.black ? "900" : fontObj.bold ? "bold" : "normal";
+
+      let bold = "normal";
+      if (fontObj.black) {
+        bold = "900";
+      } else if (fontObj.bold) {
+        bold = "bold";
+      }
       var italic = fontObj.italic ? "italic" : "normal";
       var typeface = `"${name}", ${fontObj.fallbackName}`;
 
@@ -1449,12 +1455,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // Keeping the font at minimal size and using the fontSizeScale to change
       // the current transformation matrix before the fillText/strokeText.
       // See https://bugzilla.mozilla.org/show_bug.cgi?id=726227
-      var browserFontSize =
-        size < MIN_FONT_SIZE
-          ? MIN_FONT_SIZE
-          : size > MAX_FONT_SIZE
-          ? MAX_FONT_SIZE
-          : size;
+      let browserFontSize = size;
+      if (size < MIN_FONT_SIZE) {
+        browserFontSize = MIN_FONT_SIZE;
+      } else if (size > MAX_FONT_SIZE) {
+        browserFontSize = MAX_FONT_SIZE;
+      }
       this.current.fontSizeScale = size / browserFontSize;
 
       this.ctx.font = `${italic} ${bold} ${browserFontSize}px ${typeface}`;
@@ -1495,7 +1501,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var isAddToPathSet = !!(
         textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG
       );
-      let patternFill = current.patternFill && font.data;
+      const patternFill = current.patternFill && font.data;
 
       var addToPath;
       if (font.disableFontFace || isAddToPathSet || patternFill) {
@@ -1606,7 +1612,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // TODO: Patterns are not applied correctly to text if a non-embedded
         // font is used. E.g. issue 8111 and ShowText-ShadingPattern.pdf.
         ctx.save();
-        let pattern = current.fillColor.getPattern(ctx, this);
+        const pattern = current.fillColor.getPattern(ctx, this);
         patternTransform = ctx.mozCurrentTransform;
         ctx.restore();
         ctx.fillStyle = pattern;

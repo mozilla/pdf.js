@@ -50,13 +50,13 @@ const TEST_PDFS_PATH = {
 };
 
 function buildGetDocumentParams(filename, options) {
-  let params = Object.create(null);
+  const params = Object.create(null);
   if (isNodeJS) {
     params.url = TEST_PDFS_PATH.node + filename;
   } else {
     params.url = new URL(TEST_PDFS_PATH.dom + filename, window.location).href;
   }
-  for (let option in options) {
+  for (const option in options) {
     params[option] = options[option];
   }
   return params;
@@ -137,8 +137,8 @@ class XRefMock {
   constructor(array) {
     this._map = Object.create(null);
 
-    for (let key in array) {
-      let obj = array[key];
+    for (const key in array) {
+      const obj = array[key];
       this._map[obj.ref.toString()] = obj.data;
     }
   }

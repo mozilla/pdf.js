@@ -22,9 +22,7 @@ import {
   isEmptyObj,
   isNum,
   isSameOrigin,
-  isSpace,
   isString,
-  log2,
   removeNullCharacters,
   string32,
   stringToBytes,
@@ -48,14 +46,14 @@ describe("util", function() {
       const length = 10000; // Larger than MAX_ARGUMENT_COUNT = 8192.
 
       // Create an array with `length` 'a' character codes.
-      let bytes = new Uint8Array(length);
+      const bytes = new Uint8Array(length);
       for (let i = 0; i < length; i++) {
         bytes[i] = "a".charCodeAt(0);
       }
 
       // Create a string with `length` 'a' characters. We need an array of size
       // `length + 1` since `join` puts the argument between the array elements.
-      let string = Array(length + 1).join("a");
+      const string = Array(length + 1).join("a");
 
       expect(bytesToString(bytes)).toEqual(string);
     });
@@ -118,21 +116,6 @@ describe("util", function() {
     });
   });
 
-  describe("isSpace", function() {
-    it("handles space characters", function() {
-      expect(isSpace(0x20)).toEqual(true);
-      expect(isSpace(0x09)).toEqual(true);
-      expect(isSpace(0x0d)).toEqual(true);
-      expect(isSpace(0x0a)).toEqual(true);
-    });
-
-    it("handles non-space characters", function() {
-      expect(isSpace(0x0b)).toEqual(false);
-      expect(isSpace(null)).toEqual(false);
-      expect(isSpace(undefined)).toEqual(false);
-    });
-  });
-
   describe("isString", function() {
     it("handles string values", function() {
       expect(isString("foo")).toEqual(true);
@@ -144,20 +127,6 @@ describe("util", function() {
       expect(isString(1)).toEqual(false);
       expect(isString(null)).toEqual(false);
       expect(isString(undefined)).toEqual(false);
-    });
-  });
-
-  describe("log2", function() {
-    it("handles values smaller than/equal to zero", function() {
-      expect(log2(0)).toEqual(0);
-      expect(log2(-1)).toEqual(0);
-    });
-
-    it("handles values larger than zero", function() {
-      expect(log2(1)).toEqual(0);
-      expect(log2(2)).toEqual(1);
-      expect(log2(3)).toEqual(2);
-      expect(log2(3.14)).toEqual(2);
     });
   });
 
@@ -184,55 +153,55 @@ describe("util", function() {
 
   describe("stringToPDFString", function() {
     it("handles ISO Latin 1 strings", function() {
-      let str = "\x8Dstring\x8E";
+      const str = "\x8Dstring\x8E";
       expect(stringToPDFString(str)).toEqual("\u201Cstring\u201D");
     });
 
     it("handles UTF-16 big-endian strings", function() {
-      let str = "\xFE\xFF\x00\x73\x00\x74\x00\x72\x00\x69\x00\x6E\x00\x67";
+      const str = "\xFE\xFF\x00\x73\x00\x74\x00\x72\x00\x69\x00\x6E\x00\x67";
       expect(stringToPDFString(str)).toEqual("string");
     });
 
     it("handles UTF-16 little-endian strings", function() {
-      let str = "\xFF\xFE\x73\x00\x74\x00\x72\x00\x69\x00\x6E\x00\x67\x00";
+      const str = "\xFF\xFE\x73\x00\x74\x00\x72\x00\x69\x00\x6E\x00\x67\x00";
       expect(stringToPDFString(str)).toEqual("string");
     });
 
     it("handles empty strings", function() {
       // ISO Latin 1
-      let str1 = "";
+      const str1 = "";
       expect(stringToPDFString(str1)).toEqual("");
 
       // UTF-16BE
-      let str2 = "\xFE\xFF";
+      const str2 = "\xFE\xFF";
       expect(stringToPDFString(str2)).toEqual("");
 
       // UTF-16LE
-      let str3 = "\xFF\xFE";
+      const str3 = "\xFF\xFE";
       expect(stringToPDFString(str3)).toEqual("");
     });
   });
 
   describe("removeNullCharacters", function() {
     it("should not modify string without null characters", function() {
-      let str = "string without null chars";
+      const str = "string without null chars";
       expect(removeNullCharacters(str)).toEqual("string without null chars");
     });
 
     it("should modify string with null characters", function() {
-      let str = "string\x00With\x00Null\x00Chars";
+      const str = "string\x00With\x00Null\x00Chars";
       expect(removeNullCharacters(str)).toEqual("stringWithNullChars");
     });
   });
 
   describe("ReadableStream", function() {
     it("should return an Object", function() {
-      let readable = new ReadableStream();
+      const readable = new ReadableStream();
       expect(typeof readable).toEqual("object");
     });
 
     it("should have property getReader", function() {
-      let readable = new ReadableStream();
+      const readable = new ReadableStream();
       expect(typeof readable.getReader).toEqual("function");
     });
   });

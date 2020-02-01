@@ -69,7 +69,7 @@ describe("stream", function() {
       );
 
       predictor.reset();
-      let clampedResult = predictor.getBytes(6, /* forceClamped = */ true);
+      const clampedResult = predictor.getBytes(6, /* forceClamped = */ true);
       expect(clampedResult).toEqual(
         new Uint8ClampedArray([100, 3, 101, 2, 102, 1])
       );

@@ -113,22 +113,43 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       maxY = Math.round(y3);
     var xa, car, cag, cab;
     var xb, cbr, cbg, cbb;
-    var k;
     for (var y = minY; y <= maxY; y++) {
       if (y < y2) {
-        k = y < y1 ? 0 : y1 === y2 ? 1 : (y1 - y) / (y1 - y2);
+        let k;
+        if (y < y1) {
+          k = 0;
+        } else if (y1 === y2) {
+          k = 1;
+        } else {
+          k = (y1 - y) / (y1 - y2);
+        }
         xa = x1 - (x1 - x2) * k;
         car = c1r - (c1r - c2r) * k;
         cag = c1g - (c1g - c2g) * k;
         cab = c1b - (c1b - c2b) * k;
       } else {
-        k = y > y3 ? 1 : y2 === y3 ? 0 : (y2 - y) / (y2 - y3);
+        let k;
+        if (y > y3) {
+          k = 1;
+        } else if (y2 === y3) {
+          k = 0;
+        } else {
+          k = (y2 - y) / (y2 - y3);
+        }
         xa = x2 - (x2 - x3) * k;
         car = c2r - (c2r - c3r) * k;
         cag = c2g - (c2g - c3g) * k;
         cab = c2b - (c2b - c3b) * k;
       }
-      k = y < y1 ? 0 : y > y3 ? 1 : (y1 - y) / (y1 - y3);
+
+      let k;
+      if (y < y1) {
+        k = 0;
+      } else if (y > y3) {
+        k = 1;
+      } else {
+        k = (y1 - y) / (y1 - y3);
+      }
       xb = x1 - (x1 - x3) * k;
       cbr = c1r - (c1r - c3r) * k;
       cbg = c1g - (c1g - c3g) * k;
@@ -137,8 +158,12 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       var x2_ = Math.round(Math.max(xa, xb));
       var j = rowSize * y + x1_ * 4;
       for (var x = x1_; x <= x2_; x++) {
-        k = (xa - x) / (xa - xb);
-        k = k < 0 ? 0 : k > 1 ? 1 : k;
+        let k = (xa - x) / (xa - xb);
+        if (k < 0) {
+          k = 0;
+        } else if (k > 1) {
+          k = 1;
+        }
         bytes[j++] = (car - (car - cbr) * k) | 0;
         bytes[j++] = (cag - (cag - cbg) * k) | 0;
         bytes[j++] = (cab - (cab - cbb) * k) | 0;
@@ -530,7 +555,7 @@ var TilingPattern = (function TilingPatternClosure() {
       paintType,
       color
     ) {
-      let context = graphics.ctx,
+      const context = graphics.ctx,
         current = graphics.current;
       switch (paintType) {
         case PaintType.COLORED:
