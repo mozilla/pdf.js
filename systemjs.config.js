@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-restricted-globals */
 
 'use strict';
 
@@ -69,6 +68,8 @@
       'pdfjs-test': new URL('test', baseLocation).href,
       'pdfjs-lib': new URL('src/pdf', baseLocation).href,
       'core-js': new URL('node_modules/core-js', baseLocation).href,
+      'web-streams-polyfill':
+        new URL('node_modules/web-streams-polyfill', baseLocation).href,
     },
     meta: {
       '*': {

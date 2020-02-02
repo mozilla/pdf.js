@@ -17,7 +17,7 @@ import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, isArrayBuffer,
   isBool, isEmptyObj, isNum, isSameOrigin, isSpace, isString, log2,
   ReadableStream, removeNullCharacters, string32, stringToBytes,
-  stringToPDFString, URL
+  stringToPDFString
 } from '../../src/shared/util';
 
 describe('util', function() {

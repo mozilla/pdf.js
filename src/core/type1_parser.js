@@ -520,7 +520,7 @@ var Type1Parser = (function Type1ParserClosure() {
      * Returns an object containing a Subrs array and a CharStrings
      * array extracted from and eexec encrypted block of data
      */
-    extractFontProgram: function Type1Parser_extractFontProgram() {
+    extractFontProgram: function Type1Parser_extractFontProgram(properties) {
       var stream = this.stream;
 
       var subrs = [], charstrings = [];
@@ -646,6 +646,16 @@ var Type1Parser = (function Type1ParserClosure() {
           lsb: charString.lsb,
           seac: charString.seac,
         });
+
+        // Attempt to replace missing widths, from the font dictionary /Widths
+        // entry, with ones from the font data (fixes issue11150_reduced.pdf).
+        if (properties.builtInEncoding) {
+          const index = properties.builtInEncoding.indexOf(glyph);
+          if (index > -1 && properties.widths[index] === undefined &&
+              index >= properties.firstChar && index <= properties.lastChar) {
+            properties.widths[index] = charString.width;
+          }
+        }
       }
 
       return program;

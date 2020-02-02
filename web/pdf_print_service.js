@@ -16,7 +16,6 @@
 import { CSS_UNITS, NullL10n } from './ui_utils';
 import { PDFPrintServiceFactory, PDFViewerApplication } from './app';
 import { AppOptions } from './app_options';
-import { URL } from 'pdfjs-lib';
 
 let activeService = null;
 let overlayManager = null;
@@ -293,7 +292,6 @@ window.addEventListener('keydown', function(event) {
     } else {
       event.stopPropagation();
     }
-    return;
   }
 }, true);
 if (hasAttachEvent) {

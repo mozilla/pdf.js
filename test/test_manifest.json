@@ -53,6 +53,13 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue11150",
+       "file": "pdfs/issue11150_reduced.pdf",
+       "md5": "8b86381089a9ec28723791245a9adfa6",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue1293",
        "file": "pdfs/issue1293r.pdf",
        "md5": "4a098f5051f34fab036f5bbe88f8deef",
@@ -1864,6 +1871,12 @@
       "lastPage": 3,
       "link": true,
       "type": "load"
+    },
+    {  "id": "issue7339",
+       "file": "pdfs/issue7339_reduced.pdf",
+       "md5": "7092ab6a1acc31db9d1caaa0447334a0",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "bug1142033",
        "file": "pdfs/bug1142033.pdf",
