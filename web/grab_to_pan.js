@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 /**
  * Construct a GrabToPan instance for a given HTML element.
@@ -42,7 +41,7 @@ function GrabToPan(options) {
 
   // This overlay will be inserted in the document when the mouse moves during
   // a grab operation, to ensure that the cursor has the desired appearance.
-  var overlay = (this.overlay = document.createElement("div"));
+  const overlay = (this.overlay = document.createElement("div"));
   overlay.className = "grab-to-pan-grabbing";
 }
 GrabToPan.prototype = {
@@ -133,7 +132,7 @@ GrabToPan.prototype = {
     event.preventDefault();
     event.stopPropagation();
 
-    var focusedElement = document.activeElement;
+    const focusedElement = document.activeElement;
     if (focusedElement && !focusedElement.contains(event.target)) {
       focusedElement.blur();
     }
@@ -148,10 +147,10 @@ GrabToPan.prototype = {
       this._endPan();
       return;
     }
-    var xDiff = event.clientX - this.clientXStart;
-    var yDiff = event.clientY - this.clientYStart;
-    var scrollTop = this.scrollTopStart - yDiff;
-    var scrollLeft = this.scrollLeftStart - xDiff;
+    const xDiff = event.clientX - this.clientXStart;
+    const yDiff = event.clientY - this.clientYStart;
+    const scrollTop = this.scrollTopStart - yDiff;
+    const scrollLeft = this.scrollLeftStart - xDiff;
     if (this.element.scrollTo) {
       this.element.scrollTo({
         top: scrollTop,
@@ -180,9 +179,9 @@ GrabToPan.prototype = {
 };
 
 // Get the correct (vendor-prefixed) name of the matches method.
-var matchesSelector;
+let matchesSelector;
 ["webkitM", "mozM", "msM", "oM", "m"].some(function(prefix) {
-  var name = prefix + "atches";
+  let name = prefix + "atches";
   if (name in document.documentElement) {
     matchesSelector = name;
   }
@@ -195,11 +194,11 @@ var matchesSelector;
 
 // Browser sniffing because it's impossible to feature-detect
 // whether event.which for onmousemove is reliable
-var isNotIEorIsIE10plus = !document.documentMode || document.documentMode > 9;
-var chrome = window.chrome;
-var isChrome15OrOpera15plus = chrome && (chrome.webstore || chrome.app);
-//                                       ^ Chrome 15+       ^ Opera 15+
-var isSafari6plus =
+const isNotIEorIsIE10plus = !document.documentMode || document.documentMode > 9;
+const chrome = window.chrome;
+const isChrome15OrOpera15plus = chrome && (chrome.webstore || chrome.app);
+//                                         ^ Chrome 15+       ^ Opera 15+
+const isSafari6plus =
   /Apple/.test(navigator.vendor) &&
   /Version\/([6-9]\d*|[1-5]\d+)/.test(navigator.userAgent);
 
