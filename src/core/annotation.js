@@ -14,6 +14,10 @@
  */
 /* eslint no-var: error */
 
+/*
+ * This file has been altered by PDFTron
+ */
+
 import {
   AnnotationBorderStyleType,
   AnnotationFieldFlag,

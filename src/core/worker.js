@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+ /*
+ * This file has been altered by PDFTron
+ */
+
 import {
   AbortException,
   arrayByteLength,
