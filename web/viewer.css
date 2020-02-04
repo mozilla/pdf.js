@@ -107,11 +107,11 @@ select {
 }
 html[dir='ltr'] #sidebarContainer {
   transition-property: left;
-  left: calc(-1 * var(--sidebar-width));
+  left: calc(0px - var(--sidebar-width));
 }
 html[dir='rtl'] #sidebarContainer {
   transition-property: right;
-  right: calc(-1 * var(--sidebar-width));
+  right: calc(0px - var(--sidebar-width));
 }
 
 .loadingInProgress #sidebarContainer {

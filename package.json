@@ -35,6 +35,7 @@
     "jstransformer-markdown-it": "^2.1.0",
     "merge-stream": "^1.0.1",
     "mkdirp": "^0.5.1",
+    "postcss-calc": "^7.0.1",
     "postcss-css-variables": "^0.14.0",
     "prettier": "^1.19.1",
     "rimraf": "^2.7.1",
