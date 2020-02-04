@@ -19,6 +19,7 @@
 "use strict";
 
 var autoprefixer = require("autoprefixer");
+var calc = require("postcss-calc");
 var cssvariables = require("postcss-css-variables");
 var fancylog = require("fancy-log");
 var fs = require("fs");
@@ -772,6 +773,7 @@ gulp.task(
         .pipe(
           postcss([
             cssvariables(CSS_VARIABLES_CONFIG),
+            calc(),
             autoprefixer(AUTOPREFIXER_CONFIG),
           ])
         )
@@ -807,6 +809,7 @@ gulp.task(
         .pipe(
           postcss([
             cssvariables(CSS_VARIABLES_CONFIG),
+            calc(),
             autoprefixer(AUTOPREFIXER_CONFIG),
           ])
         )
@@ -868,6 +871,7 @@ gulp.task(
         .pipe(
           postcss([
             cssvariables(CSS_VARIABLES_CONFIG),
+            calc(),
             autoprefixer(AUTOPREFIXER_CONFIG),
           ])
         )
