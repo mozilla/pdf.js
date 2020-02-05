@@ -1121,6 +1121,28 @@ describe("api", function() {
         })
         .catch(done.fail);
     });
+    it("gets metadata, with missing PDF header (bug 1606566)", function(done) {
+      const loadingTask = getDocument(buildGetDocumentParams("bug1606566.pdf"));
+
+      loadingTask.promise
+        .then(function(pdfDocument) {
+          return pdfDocument.getMetadata();
+        })
+        .then(function({ info, metadata, contentDispositionFilename }) {
+          // The following are PDF.js specific, non-standard, properties.
+          expect(info["PDFFormatVersion"]).toEqual(null);
+          expect(info["IsLinearized"]).toEqual(false);
+          expect(info["IsAcroFormPresent"]).toEqual(false);
+          expect(info["IsXFAPresent"]).toEqual(false);
+          expect(info["IsCollectionPresent"]).toEqual(false);
+
+          expect(metadata).toEqual(null);
+          expect(contentDispositionFilename).toEqual(null);
+
+          loadingTask.destroy().then(done);
+        })
+        .catch(done.fail);
+    });
 
     it("gets data", function(done) {
       var promise = doc.getData();
