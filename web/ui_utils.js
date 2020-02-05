@@ -890,10 +890,7 @@ class ProgressBar {
     const container = viewer.parentNode;
     const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
-      this.bar.setAttribute(
-        "style",
-        "width: calc(100% - " + scrollbarWidth + "px);"
-      );
+      this.bar.style.width = `calc(100% - ${scrollbarWidth}px)`;
     }
   }
 

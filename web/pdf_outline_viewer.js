@@ -94,16 +94,11 @@ class PDFOutlineViewer {
    * @private
    */
   _setStyles(element, { bold, italic }) {
-    let styleStr = "";
     if (bold) {
-      styleStr += "font-weight: bold;";
+      element.style.fontWeight = "bold";
     }
     if (italic) {
-      styleStr += "font-style: italic;";
-    }
-
-    if (styleStr) {
-      element.setAttribute("style", styleStr);
+      element.style.fontStyle = "italic";
     }
   }
 

@@ -341,12 +341,11 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       names.push(loadTestFontId);
 
       const div = document.createElement("div");
-      div.setAttribute(
-        "style",
-        "visibility: hidden;" +
-          "width: 10px; height: 10px;" +
-          "position: absolute; top: 0px; left: 0px;"
-      );
+      div.style.visibility = "hidden";
+      div.style.width = div.style.height = "10px";
+      div.style.position = "absolute";
+      div.style.top = div.style.left = "0px";
+
       for (i = 0, ii = names.length; i < ii; ++i) {
         const span = document.createElement("span");
         span.textContent = "Hi";

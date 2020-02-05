@@ -1483,6 +1483,9 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   right: 0;
   top: 27px;
 }
+#PDFBug .panels > div {
+  padding: 5px;
+}
 #PDFBug button.active {
   font-weight: bold;
 }
