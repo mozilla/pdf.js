@@ -67,7 +67,6 @@ var FontInspector = (function FontInspectorClosure() {
     manager: null,
     init: function init(pdfjsLib) {
       var panel = this.panel;
-      panel.setAttribute("style", "padding: 5px;");
       var tmp = document.createElement("button");
       tmp.addEventListener("click", resetSelection);
       tmp.textContent = "Refresh";
@@ -178,7 +177,6 @@ var StepperManager = (function StepperManagerClosure() {
     manager: null,
     init: function init(pdfjsLib) {
       var self = this;
-      this.panel.setAttribute("style", "padding: 5px;");
       stepperControls = document.createElement("div");
       stepperChooser = document.createElement("select");
       stepperChooser.addEventListener("change", function(event) {
@@ -468,9 +466,7 @@ var Stats = (function Stats() {
     name: "Stats",
     panel: null,
     manager: null,
-    init(pdfjsLib) {
-      this.panel.setAttribute("style", "padding: 5px;");
-    },
+    init(pdfjsLib) {},
     enabled: false,
     active: false,
     // Stats specific functions.
