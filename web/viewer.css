@@ -700,8 +700,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton {
-  width: 120px;
-  max-width: 120px;
+  width: 140px;
   padding: 0;
   overflow: hidden;
   background: url(images/toolbarButton-menuArrows.png) no-repeat;
@@ -714,7 +713,8 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton > select {
-  min-width: 140px;
+  width: 162px;
+  height: 23px;
   font-size: 12px;
   color: rgba(242, 242, 242, 1);
   margin: 0;
