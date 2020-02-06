@@ -19,6 +19,8 @@
 "use strict";
 
 var autoprefixer = require("autoprefixer");
+var calc = require("postcss-calc");
+var cssvariables = require("postcss-css-variables");
 var fancylog = require("fancy-log");
 var fs = require("fs");
 var gulp = require("gulp");
@@ -81,6 +83,9 @@ var AUTOPREFIXER_CONFIG = {
     "> 0.5%",
     "not dead",
   ],
+};
+var CSS_VARIABLES_CONFIG = {
+  preserve: true,
 };
 
 var DEFINES = {
@@ -765,7 +770,13 @@ gulp.task(
         gulp.dest(GENERIC_DIR + "web")
       ),
       preprocessCSS("web/viewer.css", "generic", defines, true)
-        .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
+        .pipe(
+          postcss([
+            cssvariables(CSS_VARIABLES_CONFIG),
+            calc(),
+            autoprefixer(AUTOPREFIXER_CONFIG),
+          ])
+        )
         .pipe(gulp.dest(GENERIC_DIR + "web")),
 
       gulp
@@ -795,7 +806,13 @@ gulp.task(
       createComponentsBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
       gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(COMPONENTS_DIR + "images")),
       preprocessCSS("web/pdf_viewer.css", "components", defines, true)
-        .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
+        .pipe(
+          postcss([
+            cssvariables(CSS_VARIABLES_CONFIG),
+            calc(),
+            autoprefixer(AUTOPREFIXER_CONFIG),
+          ])
+        )
         .pipe(gulp.dest(COMPONENTS_DIR)),
     ]);
   })
@@ -851,7 +868,13 @@ gulp.task(
         gulp.dest(MINIFIED_DIR + "web")
       ),
       preprocessCSS("web/viewer.css", "minified", defines, true)
-        .pipe(postcss([autoprefixer(AUTOPREFIXER_CONFIG)]))
+        .pipe(
+          postcss([
+            cssvariables(CSS_VARIABLES_CONFIG),
+            calc(),
+            autoprefixer(AUTOPREFIXER_CONFIG),
+          ])
+        )
         .pipe(gulp.dest(MINIFIED_DIR + "web")),
 
       gulp
