@@ -1151,6 +1151,14 @@ describe("api", function() {
         .catch(done.fail);
     });
 
+    it("cleans up document resources", function(done) {
+      const promise = doc.cleanup();
+      promise.then(function() {
+        expect(true).toEqual(true);
+        done();
+      }, done.fail);
+    });
+
     it("checks that fingerprints are unique", function(done) {
       const loadingTask1 = getDocument(
         buildGetDocumentParams("issue4436r.pdf")
@@ -1763,6 +1771,83 @@ describe("api", function() {
           }
         ),
       ]).then(done);
+    });
+
+    it("cleans up document resources after rendering of page", function(done) {
+      const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
+      let canvasAndCtx;
+
+      loadingTask.promise
+        .then(pdfDoc => {
+          return pdfDoc.getPage(1).then(pdfPage => {
+            const viewport = pdfPage.getViewport({ scale: 1 });
+            canvasAndCtx = CanvasFactory.create(
+              viewport.width,
+              viewport.height
+            );
+
+            const renderTask = pdfPage.render({
+              canvasContext: canvasAndCtx.context,
+              canvasFactory: CanvasFactory,
+              viewport,
+            });
+            return renderTask.promise.then(() => {
+              return pdfDoc.cleanup();
+            });
+          });
+        })
+        .then(() => {
+          expect(true).toEqual(true);
+
+          CanvasFactory.destroy(canvasAndCtx);
+          loadingTask.destroy().then(done);
+        }, done.fail);
+    });
+
+    it("cleans up document resources during rendering of page", function(done) {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("tracemonkey.pdf")
+      );
+      let canvasAndCtx;
+
+      loadingTask.promise
+        .then(pdfDoc => {
+          return pdfDoc.getPage(1).then(pdfPage => {
+            const viewport = pdfPage.getViewport({ scale: 1 });
+            canvasAndCtx = CanvasFactory.create(
+              viewport.width,
+              viewport.height
+            );
+
+            const renderTask = pdfPage.render({
+              canvasContext: canvasAndCtx.context,
+              canvasFactory: CanvasFactory,
+              viewport,
+            });
+
+            pdfDoc
+              .cleanup()
+              .then(
+                () => {
+                  throw new Error("shall fail cleanup");
+                },
+                reason => {
+                  expect(reason instanceof Error).toEqual(true);
+                  expect(reason.message).toEqual(
+                    "startCleanup: Page 1 is currently rendering."
+                  );
+                }
+              )
+              .then(() => {
+                return renderTask.promise;
+              })
+              .then(() => {
+                CanvasFactory.destroy(canvasAndCtx);
+                loadingTask.destroy().then(done);
+              });
+          });
+        })
+        .catch(done.fail);
     });
   });
   describe("Multiple `getDocument` instances", function() {
