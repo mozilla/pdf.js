@@ -164,9 +164,14 @@ class PDFRenderingQueue {
         break;
       case RenderingStates.INITIAL:
         this.highestPriorityPage = view.renderingId;
-        view.draw().finally(() => {
-          this.renderHighestPriority();
-        });
+        view
+          .draw()
+          .finally(() => {
+            this.renderHighestPriority();
+          })
+          .catch(reason => {
+            console.error(`renderView: "${reason}"`);
+          });
         break;
     }
     return true;
