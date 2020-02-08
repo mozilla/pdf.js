@@ -24,8 +24,9 @@ import {
 } from "./ui_utils.js";
 
 const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
-const SCALE_SELECT_CONTAINER_PADDING = 8;
-const SCALE_SELECT_PADDING = 22;
+// Keep the two values below up-to-date with the values in `web/viewer.css`:
+const SCALE_SELECT_CONTAINER_WIDTH = 140; // px
+const SCALE_SELECT_WIDTH = 162; // px
 
 /**
  * @typedef {Object} ToolbarOptions
@@ -233,30 +234,54 @@ class Toolbar {
     pageNumberInput.classList.toggle(PAGE_NUMBER_LOADING_INDICATOR, loading);
   }
 
-  _adjustScaleWidth() {
-    const container = this.items.scaleSelectContainer;
-    const select = this.items.scaleSelect;
+  /**
+   * Increase the width of the zoom dropdown DOM element if, and only if, it's
+   * too narrow to fit the *longest* of the localized strings.
+   * @private
+   */
+  async _adjustScaleWidth() {
+    const { items, l10n } = this;
 
-    animationStarted.then(function() {
-      // Adjust the width of the zoom box to fit the content.
-      // Note: If the window is narrow enough that the zoom box is not
-      //       visible, we temporarily show it to be able to adjust its width.
-      if (container.clientWidth === 0) {
-        container.setAttribute("style", "display: inherit;");
+    const predefinedValuesPromise = Promise.all([
+      l10n.get("page_scale_auto", null, "Automatic Zoom"),
+      l10n.get("page_scale_actual", null, "Actual Size"),
+      l10n.get("page_scale_fit", null, "Page Fit"),
+      l10n.get("page_scale_width", null, "Page Width"),
+    ]);
+
+    // The temporary canvas is used to measure text length in the DOM.
+    let canvas = document.createElement("canvas");
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("MOZCENTRAL || GENERIC")
+    ) {
+      canvas.mozOpaque = true;
+    }
+    let ctx = canvas.getContext("2d", { alpha: false });
+
+    await animationStarted;
+    const { fontSize, fontFamily } = getComputedStyle(items.scaleSelect);
+    ctx.font = `${fontSize} ${fontFamily}`;
+
+    let maxWidth = 0;
+    for (const predefinedValue of await predefinedValuesPromise) {
+      const { width } = ctx.measureText(predefinedValue);
+      if (width > maxWidth) {
+        maxWidth = width;
       }
-      if (container.clientWidth > 0) {
-        select.setAttribute("style", "min-width: inherit;");
-        const width = select.clientWidth + SCALE_SELECT_CONTAINER_PADDING;
-        select.setAttribute(
-          "style",
-          `min-width: ${width + SCALE_SELECT_PADDING}px;`
-        );
-        container.setAttribute(
-          "style",
-          `min-width: ${width}px; max-width: ${width}px;`
-        );
-      }
-    });
+    }
+    const overflow = SCALE_SELECT_WIDTH - SCALE_SELECT_CONTAINER_WIDTH;
+    maxWidth += 1.5 * overflow;
+
+    if (maxWidth > SCALE_SELECT_CONTAINER_WIDTH) {
+      items.scaleSelect.style.width = `${maxWidth + overflow}px`;
+      items.scaleSelectContainer.style.width = `${maxWidth}px`;
+    }
+    // Zeroing the width and height cause Firefox to release graphics resources
+    // immediately, which can greatly reduce memory consumption.
+    canvas.width = 0;
+    canvas.height = 0;
+    canvas = ctx = null;
   }
 }
 
