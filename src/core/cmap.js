@@ -996,7 +996,7 @@ var CMapFactory = (function CMapFactoryClosure() {
   }
 
   return {
-    create(params) {
+    async create(params) {
       var encoding = params.encoding;
       var fetchBuiltInCMap = params.fetchBuiltInCMap;
       var useCMap = params.useCMap;
@@ -1015,7 +1015,7 @@ var CMapFactory = (function CMapFactoryClosure() {
           return parsedCMap;
         });
       }
-      return Promise.reject(new Error("Encoding required."));
+      throw new Error("Encoding required.");
     },
   };
 })();
