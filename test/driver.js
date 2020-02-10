@@ -45,6 +45,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
     return textLayerStylePromise;
   }
 
+  // eslint-disable-next-line no-shadow
   function rasterizeTextLayer(
     ctx,
     viewport,
@@ -178,6 +179,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     return imagePromises;
   }
 
+  // eslint-disable-next-line no-shadow
   function rasterizeAnnotationLayer(
     ctx,
     viewport,
@@ -283,6 +285,7 @@ var Driver = (function DriverClosure() {
    * @constructs Driver
    * @param {DriverOptions} options
    */
+  // eslint-disable-next-line no-shadow
   function Driver(options) {
     // Configure the global worker options.
     pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC;

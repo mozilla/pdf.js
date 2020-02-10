@@ -222,6 +222,7 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
 }
 
 var Glyph = (function GlyphClosure() {
+  // eslint-disable-next-line no-shadow
   function Glyph(
     fontChar,
     unicode,
@@ -268,6 +269,7 @@ var Glyph = (function GlyphClosure() {
 })();
 
 var ToUnicodeMap = (function ToUnicodeMapClosure() {
+  // eslint-disable-next-line no-shadow
   function ToUnicodeMap(cmap = []) {
     // The elements of this._map can be integers or strings, depending on how
     // `cmap` was created.
@@ -319,6 +321,7 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
 })();
 
 var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
+  // eslint-disable-next-line no-shadow
   function IdentityToUnicodeMap(firstChar, lastChar) {
     this.firstChar = firstChar;
     this.lastChar = lastChar;
@@ -389,6 +392,7 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
     }
   }
 
+  // eslint-disable-next-line no-shadow
   function OpenTypeFileBuilder(sfnt) {
     this.sfnt = sfnt;
     this.tables = Object.create(null);
@@ -512,6 +516,7 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
  *   type1Font.bind();
  */
 var Font = (function FontClosure() {
+  // eslint-disable-next-line no-shadow
   function Font(name, file, properties) {
     var charCode;
 
@@ -3308,6 +3313,7 @@ var Font = (function FontClosure() {
 })();
 
 var ErrorFont = (function ErrorFontClosure() {
+  // eslint-disable-next-line no-shadow
   function ErrorFont(error) {
     this.error = error;
     this.loadedName = "g_font_error";
@@ -3521,6 +3527,7 @@ var Type1Font = (function Type1FontClosure() {
     };
   }
 
+  // eslint-disable-next-line no-shadow
   function Type1Font(name, file, properties) {
     // Some bad generators embed pfb file as is, we have to strip 6-byte header.
     // Also, length1 and length2 might be off by 6 bytes as well.
@@ -3787,6 +3794,7 @@ var Type1Font = (function Type1FontClosure() {
 })();
 
 var CFFFont = (function CFFFontClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFFont(file, properties) {
     this.properties = properties;
 

@@ -415,6 +415,7 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
    * (such as network requests) and provides a way to listen for completion,
    * after which individual pages can be rendered.
    */
+  // eslint-disable-next-line no-shadow
   class PDFDocumentLoadingTask {
     constructor() {
       this._capability = createPromiseCapability();
@@ -1687,6 +1688,7 @@ const PDFWorker = (function PDFWorkerClosure() {
    * thread to the worker thread and vice versa. If the creation of a web
    * worker is not possible, a "fake" worker will be used instead.
    */
+  // eslint-disable-next-line no-shadow
   class PDFWorker {
     /**
      * @param {PDFWorkerParameters} params - Worker initialization parameters.
@@ -2723,6 +2725,7 @@ class RenderTask {
 const InternalRenderTask = (function InternalRenderTaskClosure() {
   const canvasInRendering = new WeakSet();
 
+  // eslint-disable-next-line no-shadow
   class InternalRenderTask {
     constructor({
       callback,

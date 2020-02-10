@@ -491,6 +491,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     }
   );
 
+  // eslint-disable-next-line no-shadow
   function QueueOptimizer(queue) {
     this.queue = queue;
     this.state = null;
@@ -585,6 +586,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 })();
 
 var NullOptimizer = (function NullOptimizerClosure() {
+  // eslint-disable-next-line no-shadow
   function NullOptimizer(queue) {
     this.queue = queue;
   }
@@ -607,6 +609,7 @@ var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 1000;
   var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
+  // eslint-disable-next-line no-shadow
   function OperatorList(intent, streamSink, pageIndex) {
     this._streamSink = streamSink;
     this.fnArray = [];

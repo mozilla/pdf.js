@@ -26,6 +26,7 @@ import { JpegImage } from "./jpg.js";
  * DecodeStreams.
  */
 const JpegStream = (function JpegStreamClosure() {
+  // eslint-disable-next-line no-shadow
   function JpegStream(stream, maybeLength, dict, params) {
     // Some images may contain 'junk' before the SOI (start-of-image) marker.
     // Note: this seems to mainly affect inline images.

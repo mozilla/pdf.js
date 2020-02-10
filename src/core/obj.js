@@ -1119,6 +1119,7 @@ class Catalog {
 }
 
 var XRef = (function XRefClosure() {
+  // eslint-disable-next-line no-shadow
   function XRef(stream, pdfManager) {
     this.stream = stream;
     this.pdfManager = pdfManager;
@@ -2092,6 +2093,7 @@ class NumberTree extends NameOrNumberTree {
  * collections attributes and related files (/RF)
  */
 var FileSpec = (function FileSpecClosure() {
+  // eslint-disable-next-line no-shadow
   function FileSpec(root, xref) {
     if (!root || !isDict(root)) {
       return;
@@ -2217,6 +2219,7 @@ const ObjectLoader = (function() {
     }
   }
 
+  // eslint-disable-next-line no-shadow
   function ObjectLoader(dict, keys, xref) {
     this.dict = dict;
     this.keys = keys;

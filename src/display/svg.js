@@ -286,6 +286,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       return createObjectURL(data, "image/png", forceDataSchema);
     }
 
+    // eslint-disable-next-line no-shadow
     return function convertImgDataToPng(imgData, forceDataSchema, isMask) {
       const kind =
         imgData.kind === undefined ? ImageKind.GRAYSCALE_1BPP : imgData.kind;
@@ -437,6 +438,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   let maskCount = 0;
   let shadingCount = 0;
 
+  // eslint-disable-next-line no-shadow
   SVGGraphics = class SVGGraphics {
     constructor(commonObjs, objs, forceDataSchema) {
       this.svgFactory = new DOMSVGFactory();

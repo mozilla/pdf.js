@@ -713,6 +713,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
     });
   }
 
+  // eslint-disable-next-line no-shadow
   function BinaryCMapReader() {}
 
   BinaryCMapReader.prototype = {
