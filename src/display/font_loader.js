@@ -16,7 +16,7 @@
 import {
   assert,
   bytesToString,
-  isEvalSupported,
+  IsEvalSupportedCached,
   shadow,
   string32,
   unreachable,
@@ -336,12 +336,6 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
     }
   };
 } // End of PDFJSDev.test('CHROME || GENERIC')
-
-const IsEvalSupportedCached = {
-  get value() {
-    return shadow(this, "value", isEvalSupported());
-  },
-};
 
 class FontFaceObject {
   constructor(
