@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error */
 
 // Skip compatibility checks for modern builds (unless we're running the
 // unit-tests in Node.js/Travis) and if we already ran the module.

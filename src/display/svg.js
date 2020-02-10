@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 /* globals __non_webpack_require__ */
-/* eslint no-var: error */
 
 import {
   createObjectURL,
