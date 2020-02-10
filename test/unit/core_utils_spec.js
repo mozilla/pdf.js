@@ -16,7 +16,7 @@
 import { Dict, Ref } from "../../src/core/primitives.js";
 import {
   getInheritableProperty,
-  isSpace,
+  isWhiteSpace,
   log2,
   toRomanNumerals,
 } from "../../src/core/core_utils.js";
@@ -197,18 +197,18 @@ describe("core_utils", function() {
     });
   });
 
-  describe("isSpace", function() {
+  describe("isWhiteSpace", function() {
     it("handles space characters", function() {
-      expect(isSpace(0x20)).toEqual(true);
-      expect(isSpace(0x09)).toEqual(true);
-      expect(isSpace(0x0d)).toEqual(true);
-      expect(isSpace(0x0a)).toEqual(true);
+      expect(isWhiteSpace(0x20)).toEqual(true);
+      expect(isWhiteSpace(0x09)).toEqual(true);
+      expect(isWhiteSpace(0x0d)).toEqual(true);
+      expect(isWhiteSpace(0x0a)).toEqual(true);
     });
 
     it("handles non-space characters", function() {
-      expect(isSpace(0x0b)).toEqual(false);
-      expect(isSpace(null)).toEqual(false);
-      expect(isSpace(undefined)).toEqual(false);
+      expect(isWhiteSpace(0x0b)).toEqual(false);
+      expect(isWhiteSpace(null)).toEqual(false);
+      expect(isWhiteSpace(undefined)).toEqual(false);
     });
   });
 });

@@ -16,7 +16,7 @@
 
 import { FormatError, shadow } from "../shared/util.js";
 import { EOF } from "./primitives.js";
-import { isSpace } from "./core_utils.js";
+import { isWhiteSpace } from "./core_utils.js";
 
 class PostScriptParser {
   constructor(lexer) {
@@ -193,7 +193,7 @@ class PostScriptLexer {
         }
       } else if (ch === /* '%' = */ 0x25) {
         comment = true;
-      } else if (!isSpace(ch)) {
+      } else if (!isWhiteSpace(ch)) {
         break;
       }
       ch = this.nextChar();

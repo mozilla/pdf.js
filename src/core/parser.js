@@ -43,7 +43,7 @@ import {
   Name,
   Ref,
 } from "./primitives.js";
-import { isSpace, MissingDataException } from "./core_utils.js";
+import { isWhiteSpace, MissingDataException } from "./core_utils.js";
 import { CCITTFaxStream } from "./ccitt_stream.js";
 import { Jbig2Stream } from "./jbig2_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
@@ -270,7 +270,7 @@ class Parser {
 
     // Ensure that we don't accidentally truncate the inline image, when the
     // data is immediately followed by the "EI" marker (fixes issue10388.pdf).
-    if (!isSpace(ch)) {
+    if (!isWhiteSpace(ch)) {
       endOffset--;
     }
     return stream.pos - endOffset - startPos;
@@ -394,7 +394,7 @@ class Parser {
         ch = stream.peekByte();
         // Handle corrupt PDF documents which contains whitespace "inside" of
         // the EOD marker (fixes issue10614.pdf).
-        while (isSpace(ch)) {
+        while (isWhiteSpace(ch)) {
           stream.skip();
           ch = stream.peekByte();
         }
@@ -640,7 +640,7 @@ class Parser {
             // Ensure that the byte immediately following the truncated
             // endstream command is a space, to prevent false positives.
             const lastByte = stream.peekBytes(end + 1)[end];
-            if (!isSpace(lastByte)) {
+            if (!isWhiteSpace(lastByte)) {
               break;
             }
             info(
@@ -886,7 +886,7 @@ class Lexer {
       if (
         divideBy === 10 &&
         sign === 0 &&
-        (isSpace(ch) || ch === /* EOF = */ -1)
+        (isWhiteSpace(ch) || ch === /* EOF = */ -1)
       ) {
         // This is consistent with Adobe Reader (fixes issue9252.pdf).
         warn("Lexer.getNumber - treating a single decimal point as zero.");
