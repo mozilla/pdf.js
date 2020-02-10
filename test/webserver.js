@@ -283,15 +283,15 @@ WebServer.prototype = {
       });
     }
 
-    function serveRequestedFile(filePath) {
-      var stream = fs.createReadStream(filePath, { flags: "rs" });
+    function serveRequestedFile(reqFilePath) {
+      var stream = fs.createReadStream(reqFilePath, { flags: "rs" });
 
       stream.on("error", function(error) {
         res.writeHead(500);
         res.end();
       });
 
-      var ext = path.extname(filePath).toLowerCase();
+      var ext = path.extname(reqFilePath).toLowerCase();
       var contentType = mimeTypes[ext] || defaultMimeType;
 
       if (!disableRangeRequests) {
@@ -309,8 +309,8 @@ WebServer.prototype = {
       stream.pipe(res);
     }
 
-    function serveRequestedFileRange(filePath, start, end) {
-      var stream = fs.createReadStream(filePath, {
+    function serveRequestedFileRange(reqFilePath, start, end) {
+      var stream = fs.createReadStream(reqFilePath, {
         flags: "rs",
         start: start,
         end: end - 1,
@@ -321,7 +321,7 @@ WebServer.prototype = {
         res.end();
       });
 
-      var ext = path.extname(filePath).toLowerCase();
+      var ext = path.extname(reqFilePath).toLowerCase();
       var contentType = mimeTypes[ext] || defaultMimeType;
 
       res.setHeader("Accept-Ranges", "bytes");

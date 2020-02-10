@@ -224,10 +224,10 @@ var JpegImage = (function JpegImageClosure() {
       return n + (-1 << length) + 1;
     }
 
-    function decodeBaseline(component, offset) {
+    function decodeBaseline(component, blockOffset) {
       var t = decodeHuffman(component.huffmanTableDC);
       var diff = t === 0 ? 0 : receiveAndExtend(t);
-      component.blockData[offset] = component.pred += diff;
+      component.blockData[blockOffset] = component.pred += diff;
       var k = 1;
       while (k < 64) {
         var rs = decodeHuffman(component.huffmanTableAC);
@@ -242,23 +242,23 @@ var JpegImage = (function JpegImageClosure() {
         }
         k += r;
         var z = dctZigZag[k];
-        component.blockData[offset + z] = receiveAndExtend(s);
+        component.blockData[blockOffset + z] = receiveAndExtend(s);
         k++;
       }
     }
 
-    function decodeDCFirst(component, offset) {
+    function decodeDCFirst(component, blockOffset) {
       var t = decodeHuffman(component.huffmanTableDC);
       var diff = t === 0 ? 0 : receiveAndExtend(t) << successive;
-      component.blockData[offset] = component.pred += diff;
+      component.blockData[blockOffset] = component.pred += diff;
     }
 
-    function decodeDCSuccessive(component, offset) {
-      component.blockData[offset] |= readBit() << successive;
+    function decodeDCSuccessive(component, blockOffset) {
+      component.blockData[blockOffset] |= readBit() << successive;
     }
 
     var eobrun = 0;
-    function decodeACFirst(component, offset) {
+    function decodeACFirst(component, blockOffset) {
       if (eobrun > 0) {
         eobrun--;
         return;
@@ -279,7 +279,7 @@ var JpegImage = (function JpegImageClosure() {
         }
         k += r;
         var z = dctZigZag[k];
-        component.blockData[offset + z] =
+        component.blockData[blockOffset + z] =
           receiveAndExtend(s) * (1 << successive);
         k++;
       }
@@ -287,14 +287,14 @@ var JpegImage = (function JpegImageClosure() {
 
     var successiveACState = 0,
       successiveACNextValue;
-    function decodeACSuccessive(component, offset) {
+    function decodeACSuccessive(component, blockOffset) {
       var k = spectralStart;
       var e = spectralEnd;
       var r = 0;
       var s;
       var rs;
       while (k <= e) {
-        const offsetZ = offset + dctZigZag[k];
+        const offsetZ = blockOffset + dctZigZag[k];
         const sign = component.blockData[offsetZ] < 0 ? -1 : 1;
         switch (successiveACState) {
           case 0: // initial state
@@ -359,15 +359,15 @@ var JpegImage = (function JpegImageClosure() {
       var mcuCol = mcu % mcusPerLine;
       blockRow = mcuRow * component.v + row;
       var blockCol = mcuCol * component.h + col;
-      var offset = getBlockBufferOffset(component, blockRow, blockCol);
-      decode(component, offset);
+      const blockOffset = getBlockBufferOffset(component, blockRow, blockCol);
+      decode(component, blockOffset);
     }
 
     function decodeBlock(component, decode, mcu) {
       blockRow = (mcu / component.blocksPerLine) | 0;
       var blockCol = mcu % component.blocksPerLine;
-      var offset = getBlockBufferOffset(component, blockRow, blockCol);
-      decode(component, offset);
+      const blockOffset = getBlockBufferOffset(component, blockRow, blockCol);
+      decode(component, blockOffset);
     }
 
     var componentsLength = components.length;

@@ -2338,7 +2338,7 @@ class WorkerTransport {
       this._onUnsupportedFeature.bind(this)
     );
 
-    messageHandler.on("JpegDecode", data => {
+    messageHandler.on("JpegDecode", ([imageUrl, components]) => {
       if (this.destroyed) {
         return Promise.reject(new Error("Worker was destroyed"));
       }
@@ -2349,7 +2349,6 @@ class WorkerTransport {
         return Promise.reject(new Error('"document" is not defined.'));
       }
 
-      const [imageUrl, components] = data;
       if (components !== 3 && components !== 1) {
         return Promise.reject(
           new Error("Only 3 components or 1 component can be returned")

@@ -738,7 +738,7 @@ var JpxImage = (function JpxImageClosure() {
     var l, r, c, p;
     var maxDecompositionLevelsCount = 0;
     for (c = 0; c < componentsCount; c++) {
-      var component = tile.components[c];
+      const component = tile.components[c];
       maxDecompositionLevelsCount = Math.max(
         maxDecompositionLevelsCount,
         component.codingStyleParameters.decompositionLevelsCount
@@ -770,7 +770,7 @@ var JpxImage = (function JpxImageClosure() {
       for (; r <= maxDecompositionLevelsCount; r++) {
         for (; p < maxNumPrecinctsInLevel[r]; p++) {
           for (; c < componentsCount; c++) {
-            var component = tile.components[c];
+            const component = tile.components[c];
             if (r > component.codingStyleParameters.decompositionLevelsCount) {
               continue;
             }

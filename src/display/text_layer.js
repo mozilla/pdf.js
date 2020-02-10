@@ -182,6 +182,17 @@ var renderTextLayer = (function renderTextLayerClosure() {
     capability.resolve();
   }
 
+  function findPositiveMin(ts, offset, count) {
+    let result = 0;
+    for (let i = 0; i < count; i++) {
+      const t = ts[offset++];
+      if (t > 0) {
+        result = result ? Math.min(t, result) : t;
+      }
+    }
+    return result;
+  }
+
   function expand(task) {
     var bounds = task._bounds;
     var viewport = task._viewport;
@@ -208,38 +219,28 @@ var renderTextLayer = (function renderTextLayerClosure() {
       // Finding intersections with expanded box.
       var points = [[0, 0], [0, b.size[1]], [b.size[0], 0], b.size];
       var ts = new Float64Array(64);
-      points.forEach(function(p, i) {
+      points.forEach(function(p, j) {
         var t = Util.applyTransform(p, m);
-        ts[i + 0] = c && (e.left - t[0]) / c;
-        ts[i + 4] = s && (e.top - t[1]) / s;
-        ts[i + 8] = c && (e.right - t[0]) / c;
-        ts[i + 12] = s && (e.bottom - t[1]) / s;
+        ts[j + 0] = c && (e.left - t[0]) / c;
+        ts[j + 4] = s && (e.top - t[1]) / s;
+        ts[j + 8] = c && (e.right - t[0]) / c;
+        ts[j + 12] = s && (e.bottom - t[1]) / s;
 
-        ts[i + 16] = s && (e.left - t[0]) / -s;
-        ts[i + 20] = c && (e.top - t[1]) / c;
-        ts[i + 24] = s && (e.right - t[0]) / -s;
-        ts[i + 28] = c && (e.bottom - t[1]) / c;
+        ts[j + 16] = s && (e.left - t[0]) / -s;
+        ts[j + 20] = c && (e.top - t[1]) / c;
+        ts[j + 24] = s && (e.right - t[0]) / -s;
+        ts[j + 28] = c && (e.bottom - t[1]) / c;
 
-        ts[i + 32] = c && (e.left - t[0]) / -c;
-        ts[i + 36] = s && (e.top - t[1]) / -s;
-        ts[i + 40] = c && (e.right - t[0]) / -c;
-        ts[i + 44] = s && (e.bottom - t[1]) / -s;
+        ts[j + 32] = c && (e.left - t[0]) / -c;
+        ts[j + 36] = s && (e.top - t[1]) / -s;
+        ts[j + 40] = c && (e.right - t[0]) / -c;
+        ts[j + 44] = s && (e.bottom - t[1]) / -s;
 
-        ts[i + 48] = s && (e.left - t[0]) / s;
-        ts[i + 52] = c && (e.top - t[1]) / -c;
-        ts[i + 56] = s && (e.right - t[0]) / s;
-        ts[i + 60] = c && (e.bottom - t[1]) / -c;
+        ts[j + 48] = s && (e.left - t[0]) / s;
+        ts[j + 52] = c && (e.top - t[1]) / -c;
+        ts[j + 56] = s && (e.right - t[0]) / s;
+        ts[j + 60] = c && (e.bottom - t[1]) / -c;
       });
-      var findPositiveMin = function(ts, offset, count) {
-        var result = 0;
-        for (var i = 0; i < count; i++) {
-          var t = ts[offset++];
-          if (t > 0) {
-            result = result ? Math.min(t, result) : t;
-          }
-        }
-        return result;
-      };
       // Not based on math, but to simplify calculations, using cos and sin
       // absolute values to not exceed the box (it can but insignificantly).
       var boxScale = 1 + Math.min(Math.abs(c), Math.abs(s));

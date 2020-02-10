@@ -614,7 +614,7 @@ var Type1Parser = (function Type1ParserClosure() {
             this.readInt(); // num
             this.getToken(); // read in 'array'
             while (this.getToken() === "dup") {
-              var index = this.readInt();
+              const index = this.readInt();
               length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
               data = length > 0 ? stream.getBytes(length) : new Uint8Array(0);

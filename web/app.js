@@ -1741,7 +1741,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     "http://mozilla.github.io",
     "https://mozilla.github.io",
   ];
-  validateFileURL = function validateFileURL(file) {
+  validateFileURL = function(file) {
     if (file === undefined) {
       return;
     }
@@ -1917,7 +1917,7 @@ function webViewerInitialized() {
 
 let webViewerOpenFileViaURL;
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  webViewerOpenFileViaURL = function webViewerOpenFileViaURL(file) {
+  webViewerOpenFileViaURL = function(file) {
     if (file && file.lastIndexOf("file:", 0) === 0) {
       // file:-scheme. Load the contents in the main thread because QtWebKit
       // cannot load file:-URLs in a Web Worker. file:-URLs are usually loaded
@@ -1938,12 +1938,12 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
   };
 } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-  webViewerOpenFileViaURL = function webViewerOpenFileViaURL(file) {
+  webViewerOpenFileViaURL = function(file) {
     PDFViewerApplication.setTitleUsingUrl(file);
     PDFViewerApplication.initPassiveLoading();
   };
 } else {
-  webViewerOpenFileViaURL = function webViewerOpenFileViaURL(file) {
+  webViewerOpenFileViaURL = function(file) {
     if (file) {
       throw new Error("Not implemented: webViewerOpenFileViaURL");
     }
@@ -2149,7 +2149,7 @@ function webViewerHashchange(evt) {
 
 let webViewerFileInputChange;
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  webViewerFileInputChange = function webViewerFileInputChange(evt) {
+  webViewerFileInputChange = function(evt) {
     if (
       PDFViewerApplication.pdfViewer &&
       PDFViewerApplication.pdfViewer.isInPresentationMode
@@ -2168,8 +2168,8 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       PDFViewerApplication.setTitleUsingUrl(file.name);
       // Read the local file into a Uint8Array.
       const fileReader = new FileReader();
-      fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
-        const buffer = evt.target.result;
+      fileReader.onload = function webViewerChangeFileReaderOnload(event) {
+        const buffer = event.target.result;
         PDFViewerApplication.open(new Uint8Array(buffer));
       };
       fileReader.readAsArrayBuffer(file);

@@ -519,15 +519,15 @@ class ChunkedStreamManager {
     }
 
     const loadedRequests = [];
-    for (let chunk = beginChunk; chunk < endChunk; ++chunk) {
+    for (let curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
       // The server might return more chunks than requested.
-      const requestIds = this.requestsByChunk[chunk] || [];
-      delete this.requestsByChunk[chunk];
+      const requestIds = this.requestsByChunk[curChunk] || [];
+      delete this.requestsByChunk[curChunk];
 
       for (const requestId of requestIds) {
         const chunksNeeded = this.chunksNeededByRequest[requestId];
-        if (chunk in chunksNeeded) {
-          delete chunksNeeded[chunk];
+        if (curChunk in chunksNeeded) {
+          delete chunksNeeded[curChunk];
         }
 
         if (!isEmptyObj(chunksNeeded)) {

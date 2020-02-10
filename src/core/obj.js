@@ -897,12 +897,12 @@ class Catalog {
               break;
             }
             kidPromises.push(
-              xref.fetchAsync(kid).then(function(kid) {
-                if (!isDict(kid)) {
+              xref.fetchAsync(kid).then(function(obj) {
+                if (!isDict(obj)) {
                   throw new FormatError("Kid node must be a dictionary.");
                 }
-                if (kid.has("Count")) {
-                  total += kid.get("Count");
+                if (obj.has("Count")) {
+                  total += obj.get("Count");
                 } else {
                   // Page leaf node.
                   total++;

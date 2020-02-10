@@ -55,8 +55,8 @@ function toNumberArray(arr) {
     if (typeof arr[i] !== "number") {
       // Non-number is found -- convert all items to numbers.
       const result = new Array(length);
-      for (let i = 0; i < length; i++) {
-        result[i] = +arr[i];
+      for (let j = 0; j < length; j++) {
+        result[j] = +arr[j];
       }
       return result;
     }
@@ -1092,18 +1092,17 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
   PostScriptCompiler.prototype = {
     compile: function PostScriptCompiler_compile(code, domain, range) {
       var stack = [];
-      var i, ii;
       var instructions = [];
       var inputSize = domain.length >> 1,
         outputSize = range.length >> 1;
       var lastRegister = 0;
       var n, j;
       var num1, num2, ast1, ast2, tmpVar, item;
-      for (i = 0; i < inputSize; i++) {
+      for (let i = 0; i < inputSize; i++) {
         stack.push(new AstArgument(i, domain[i * 2], domain[i * 2 + 1]));
       }
 
-      for (i = 0, ii = code.length; i < ii; i++) {
+      for (let i = 0, ii = code.length; i < ii; i++) {
         item = code[i];
         if (typeof item === "number") {
           stack.push(new AstLiteral(item));

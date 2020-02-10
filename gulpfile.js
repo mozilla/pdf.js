@@ -167,8 +167,6 @@ function createStringSource(filename, content) {
 }
 
 function createWebpackConfig(defines, output) {
-  var path = require("path");
-
   var versionInfo = getVersionJSON();
   var bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
@@ -243,9 +241,9 @@ function createWebpackConfig(defines, output) {
   };
 }
 
-function webpack2Stream(config) {
+function webpack2Stream(webpackConfig) {
   // Replacing webpack1 to webpack2 in the webpack-stream.
-  return webpackStream(config, webpack2);
+  return webpackStream(webpackConfig, webpack2);
 }
 
 function getVersionJSON() {
@@ -378,26 +376,26 @@ function createImageDecodersBundle(defines) {
     .pipe(replaceJSRootName(imageDecodersAMDName, "pdfjsImageDecoders"));
 }
 
-function checkFile(path) {
+function checkFile(filePath) {
   try {
-    var stat = fs.lstatSync(path);
+    var stat = fs.lstatSync(filePath);
     return stat.isFile();
   } catch (e) {
     return false;
   }
 }
 
-function checkDir(path) {
+function checkDir(dirPath) {
   try {
-    var stat = fs.lstatSync(path);
+    var stat = fs.lstatSync(dirPath);
     return stat.isDirectory();
   } catch (e) {
     return false;
   }
 }
 
-function replaceInFile(path, find, replacement) {
-  var content = fs.readFileSync(path).toString();
+function replaceInFile(filePath, find, replacement) {
+  var content = fs.readFileSync(filePath).toString();
   content = content.replace(find, replacement);
   fs.writeFileSync(path, content);
 }
@@ -407,9 +405,9 @@ function getTempFile(prefix, suffix) {
   var bytes = require("crypto")
     .randomBytes(6)
     .toString("hex");
-  var path = BUILD_DIR + "tmp/" + prefix + bytes + suffix;
-  fs.writeFileSync(path, "");
-  return path;
+  var filePath = BUILD_DIR + "tmp/" + prefix + bytes + suffix;
+  fs.writeFileSync(filePath, "");
+  return filePath;
 }
 
 function createTestSource(testsName, bot) {
@@ -527,10 +525,10 @@ gulp.task("buildnumber", function(done) {
 
     var version = config.versionPrefix + buildNumber;
 
-    exec('git log --format="%h" -n 1', function(err, stdout, stderr) {
+    exec('git log --format="%h" -n 1', function(err2, stdout2, stderr2) {
       var buildCommit = "";
-      if (!err) {
-        buildCommit = stdout.replace("\n", "");
+      if (!err2) {
+        buildCommit = stdout2.replace("\n", "");
       }
 
       createStringSource(
@@ -559,9 +557,9 @@ gulp.task("default_preferences-pre", function() {
   function babelPluginReplaceNonWebPackRequire(babel) {
     return {
       visitor: {
-        Identifier(path, state) {
-          if (path.node.name === "__non_webpack_require__") {
-            path.replaceWith(babel.types.identifier("require"));
+        Identifier(curPath, state) {
+          if (curPath.node.name === "__non_webpack_require__") {
+            curPath.replaceWith(babel.types.identifier("require"));
           }
         },
       },
@@ -643,8 +641,8 @@ gulp.task("locale", function() {
   var locales = [];
   for (var i = 0; i < subfolders.length; i++) {
     var locale = subfolders[i];
-    var path = L10N_DIR + locale;
-    if (!checkDir(path)) {
+    var dirPath = L10N_DIR + locale;
+    if (!checkDir(dirPath)) {
       continue;
     }
     if (!/^[a-z][a-z]([a-z])?(-[A-Z][A-Z])?$/.test(locale)) {
@@ -656,7 +654,7 @@ gulp.task("locale", function() {
 
     locales.push(locale);
 
-    if (checkFile(path + "/viewer.properties")) {
+    if (checkFile(dirPath + "/viewer.properties")) {
       viewerOutput +=
         "[" +
         locale +
@@ -1163,9 +1161,9 @@ gulp.task(
     function babelPluginReplaceNonWebPackRequire(babel) {
       return {
         visitor: {
-          Identifier(path, state) {
-            if (path.node.name === "__non_webpack_require__") {
-              path.replaceWith(babel.types.identifier("require"));
+          Identifier(curPath, state) {
+            if (curPath.node.name === "__non_webpack_require__") {
+              curPath.replaceWith(babel.types.identifier("require"));
             }
           },
         },
@@ -1358,9 +1356,9 @@ gulp.task("baseline", function(done) {
     }
 
     exec("git checkout " + baselineCommit, { cwd: workingDirectory }, function(
-      error
+      error2
     ) {
-      if (error) {
+      if (error2) {
         done(new Error("Baseline commit checkout failed."));
         return;
       }

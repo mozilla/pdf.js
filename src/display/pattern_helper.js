@@ -158,7 +158,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       var x2_ = Math.round(Math.max(xa, xb));
       var j = rowSize * y + x1_ * 4;
       for (var x = x1_; x <= x2_; x++) {
-        let k = (xa - x) / (xa - xb);
+        k = (xa - x) / (xa - xb);
         if (k < 0) {
           k = 0;
         } else if (k > 1) {

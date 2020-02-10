@@ -230,10 +230,10 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           for (var i = 0, ii = data.length; i < ii; i++) {
             images[i].src = data[i];
             loadedPromises.push(
-              new Promise(function(resolve, reject) {
-                images[i].onload = resolve;
+              new Promise(function(resolveImages, rejectImages) {
+                images[i].onload = resolveImages;
                 images[i].onerror = function(e) {
-                  reject(new Error("Error loading image " + e));
+                  rejectImages(new Error("Error loading image " + e));
                 };
               })
             );
