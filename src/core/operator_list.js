@@ -16,11 +16,11 @@
 
 import { assert, ImageKind, OPS } from "../shared/util.js";
 
-var QueueOptimizer = (function QueueOptimizerClosure() {
+const QueueOptimizer = (function QueueOptimizerClosure() {
   function addState(parentState, pattern, checkFn, iterateFn, processFn) {
-    var state = parentState;
-    for (var i = 0, ii = pattern.length - 1; i < ii; i++) {
-      var item = pattern[i];
+    let state = parentState;
+    for (let i = 0, ii = pattern.length - 1; i < ii; i++) {
+      const item = pattern[i];
       state = state[item] || (state[item] = []);
     }
     state[pattern[pattern.length - 1]] = {
@@ -40,10 +40,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     // draw lines with the current fill style.
     // 'count' groups of (save, transform, paintImageMaskXObject, restore)+
     // have been found at iFirstSave.
-    var iFirstPIMXO = iFirstSave + 2;
+    const iFirstPIMXO = iFirstSave + 2;
     for (var i = 0; i < count; i++) {
-      var arg = argsArray[iFirstPIMXO + 4 * i];
-      var imageMask = arg.length === 1 && arg[0];
+      const arg = argsArray[iFirstPIMXO + 4 * i];
+      const imageMask = arg.length === 1 && arg[0];
       if (
         imageMask &&
         imageMask.width === 1 &&
@@ -59,7 +59,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     return count - i;
   }
 
-  var InitialState = [];
+  const InitialState = [];
 
   // This replaces (save, transform, paintInlineImageXObject, restore)+
   // sequences with one |paintInlineImageXObjectGroup| operation.
@@ -68,9 +68,9 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     [OPS.save, OPS.transform, OPS.paintInlineImageXObject, OPS.restore],
     null,
     function iterateInlineImageGroup(context, i) {
-      var fnArray = context.fnArray;
-      var iFirstSave = context.iCurr - 3;
-      var pos = (i - iFirstSave) % 4;
+      const fnArray = context.fnArray;
+      const iFirstSave = context.iCurr - 3;
+      const pos = (i - iFirstSave) % 4;
       switch (pos) {
         case 0:
           return fnArray[i] === OPS.save;
@@ -84,19 +84,19 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       throw new Error(`iterateInlineImageGroup - invalid pos: ${pos}`);
     },
     function foundInlineImageGroup(context, i) {
-      var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
-      var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
-      var MAX_WIDTH = 1000;
-      var IMAGE_PADDING = 1;
+      const MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
+      const MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
+      const MAX_WIDTH = 1000;
+      const IMAGE_PADDING = 1;
 
-      var fnArray = context.fnArray,
+      const fnArray = context.fnArray,
         argsArray = context.argsArray;
-      var curr = context.iCurr;
-      var iFirstSave = curr - 3;
-      var iFirstTransform = curr - 2;
-      var iFirstPIIXO = curr - 1;
+      const curr = context.iCurr;
+      const iFirstSave = curr - 3;
+      const iFirstTransform = curr - 2;
+      const iFirstPIIXO = curr - 1;
 
-      var count = Math.min(
+      const count = Math.min(
         Math.floor((i - iFirstSave) / 4),
         MAX_IMAGES_IN_INLINE_IMAGES_BLOCK
       );
@@ -106,15 +106,15 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       // assuming that heights of those image is too small (~1 pixel)
       // packing as much as possible by lines
-      var maxX = 0;
-      var map = [],
+      let maxX = 0;
+      let map = [],
         maxLineHeight = 0;
-      var currentX = IMAGE_PADDING,
+      let currentX = IMAGE_PADDING,
         currentY = IMAGE_PADDING;
-      var q;
+      let q;
       for (q = 0; q < count; q++) {
-        var transform = argsArray[iFirstTransform + (q << 2)];
-        var img = argsArray[iFirstPIIXO + (q << 2)][0];
+        const transform = argsArray[iFirstTransform + (q << 2)];
+        const img = argsArray[iFirstPIIXO + (q << 2)][0];
         if (currentX + img.width > MAX_WIDTH) {
           // starting new line
           maxX = Math.max(maxX, currentX);
@@ -132,18 +132,18 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         currentX += img.width + 2 * IMAGE_PADDING;
         maxLineHeight = Math.max(maxLineHeight, img.height);
       }
-      var imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
-      var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
-      var imgData = new Uint8ClampedArray(imgWidth * imgHeight * 4);
-      var imgRowSize = imgWidth << 2;
+      const imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
+      const imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
+      const imgData = new Uint8ClampedArray(imgWidth * imgHeight * 4);
+      const imgRowSize = imgWidth << 2;
       for (q = 0; q < count; q++) {
-        var data = argsArray[iFirstPIIXO + (q << 2)][0].data;
+        const data = argsArray[iFirstPIIXO + (q << 2)][0].data;
         // Copy image by lines and extends pixels into padding.
-        var rowSize = map[q].w << 2;
-        var dataOffset = 0;
-        var offset = (map[q].x + map[q].y * imgWidth) << 2;
+        const rowSize = map[q].w << 2;
+        let dataOffset = 0;
+        let offset = (map[q].x + map[q].y * imgWidth) << 2;
         imgData.set(data.subarray(0, rowSize), offset - imgRowSize);
-        for (var k = 0, kk = map[q].h; k < kk; k++) {
+        for (let k = 0, kk = map[q].h; k < kk; k++) {
           imgData.set(data.subarray(dataOffset, dataOffset + rowSize), offset);
           dataOffset += rowSize;
           offset += imgRowSize;
@@ -186,9 +186,9 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     [OPS.save, OPS.transform, OPS.paintImageMaskXObject, OPS.restore],
     null,
     function iterateImageMaskGroup(context, i) {
-      var fnArray = context.fnArray;
-      var iFirstSave = context.iCurr - 3;
-      var pos = (i - iFirstSave) % 4;
+      const fnArray = context.fnArray;
+      const iFirstSave = context.iCurr - 3;
+      const pos = (i - iFirstSave) % 4;
       switch (pos) {
         case 0:
           return fnArray[i] === OPS.save;
@@ -202,20 +202,20 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       throw new Error(`iterateImageMaskGroup - invalid pos: ${pos}`);
     },
     function foundImageMaskGroup(context, i) {
-      var MIN_IMAGES_IN_MASKS_BLOCK = 10;
-      var MAX_IMAGES_IN_MASKS_BLOCK = 100;
-      var MAX_SAME_IMAGES_IN_MASKS_BLOCK = 1000;
+      const MIN_IMAGES_IN_MASKS_BLOCK = 10;
+      const MAX_IMAGES_IN_MASKS_BLOCK = 100;
+      const MAX_SAME_IMAGES_IN_MASKS_BLOCK = 1000;
 
-      var fnArray = context.fnArray,
+      const fnArray = context.fnArray,
         argsArray = context.argsArray;
-      var curr = context.iCurr;
-      var iFirstSave = curr - 3;
-      var iFirstTransform = curr - 2;
-      var iFirstPIMXO = curr - 1;
+      const curr = context.iCurr;
+      const iFirstSave = curr - 3;
+      const iFirstTransform = curr - 2;
+      const iFirstPIMXO = curr - 1;
 
       // At this point, i is the index of the first op past the last valid
       // quartet.
-      var count = Math.floor((i - iFirstSave) / 4);
+      let count = Math.floor((i - iFirstSave) / 4);
       count = handlePaintSolidColorImageMask(
         iFirstSave,
         count,
@@ -226,10 +226,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         return i - ((i - iFirstSave) % 4);
       }
 
-      var q;
-      var isSameImage = false;
-      var iTransform, transformArgs;
-      var firstPIMXOArg0 = argsArray[iFirstPIMXO][0];
+      let q;
+      let isSameImage = false;
+      let iTransform, transformArgs;
+      const firstPIMXOArg0 = argsArray[iFirstPIMXO][0];
       if (
         argsArray[iFirstTransform][1] === 0 &&
         argsArray[iFirstTransform][2] === 0
@@ -238,7 +238,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         var firstTransformArg0 = argsArray[iFirstTransform][0];
         var firstTransformArg3 = argsArray[iFirstTransform][3];
         iTransform = iFirstTransform + 4;
-        var iPIMXO = iFirstPIMXO + 4;
+        let iPIMXO = iFirstPIMXO + 4;
         for (q = 1; q < count; q++, iTransform += 4, iPIMXO += 4) {
           transformArgs = argsArray[iTransform];
           if (
@@ -260,7 +260,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       if (isSameImage) {
         count = Math.min(count, MAX_SAME_IMAGES_IN_MASKS_BLOCK);
-        var positions = new Float32Array(count * 2);
+        const positions = new Float32Array(count * 2);
         iTransform = iFirstTransform;
         for (q = 0; q < count; q++, iTransform += 4) {
           transformArgs = argsArray[iTransform];
@@ -278,10 +278,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         ]);
       } else {
         count = Math.min(count, MAX_IMAGES_IN_MASKS_BLOCK);
-        var images = [];
+        const images = [];
         for (q = 0; q < count; q++) {
           transformArgs = argsArray[iFirstTransform + (q << 2)];
-          var maskParams = argsArray[iFirstPIMXO + (q << 2)][0];
+          const maskParams = argsArray[iFirstPIMXO + (q << 2)][0];
           images.push({
             data: maskParams.data,
             width: maskParams.width,
@@ -306,18 +306,18 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     InitialState,
     [OPS.save, OPS.transform, OPS.paintImageXObject, OPS.restore],
     function(context) {
-      var argsArray = context.argsArray;
-      var iFirstTransform = context.iCurr - 2;
+      const argsArray = context.argsArray;
+      const iFirstTransform = context.iCurr - 2;
       return (
         argsArray[iFirstTransform][1] === 0 &&
         argsArray[iFirstTransform][2] === 0
       );
     },
     function iterateImageGroup(context, i) {
-      var fnArray = context.fnArray,
+      const fnArray = context.fnArray,
         argsArray = context.argsArray;
-      var iFirstSave = context.iCurr - 3;
-      var pos = (i - iFirstSave) % 4;
+      const iFirstSave = context.iCurr - 3;
+      const pos = (i - iFirstSave) % 4;
       switch (pos) {
         case 0:
           return fnArray[i] === OPS.save;
@@ -353,22 +353,22 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       throw new Error(`iterateImageGroup - invalid pos: ${pos}`);
     },
     function(context, i) {
-      var MIN_IMAGES_IN_BLOCK = 3;
-      var MAX_IMAGES_IN_BLOCK = 1000;
+      const MIN_IMAGES_IN_BLOCK = 3;
+      const MAX_IMAGES_IN_BLOCK = 1000;
 
-      var fnArray = context.fnArray,
+      const fnArray = context.fnArray,
         argsArray = context.argsArray;
-      var curr = context.iCurr;
-      var iFirstSave = curr - 3;
-      var iFirstTransform = curr - 2;
-      var iFirstPIXO = curr - 1;
-      var firstPIXOArg0 = argsArray[iFirstPIXO][0];
-      var firstTransformArg0 = argsArray[iFirstTransform][0];
-      var firstTransformArg3 = argsArray[iFirstTransform][3];
+      const curr = context.iCurr;
+      const iFirstSave = curr - 3;
+      const iFirstTransform = curr - 2;
+      const iFirstPIXO = curr - 1;
+      const firstPIXOArg0 = argsArray[iFirstPIXO][0];
+      const firstTransformArg0 = argsArray[iFirstTransform][0];
+      const firstTransformArg3 = argsArray[iFirstTransform][3];
 
       // At this point, i is the index of the first op past the last valid
       // quartet.
-      var count = Math.min(
+      const count = Math.min(
         Math.floor((i - iFirstSave) / 4),
         MAX_IMAGES_IN_BLOCK
       );
@@ -377,16 +377,16 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       }
 
       // Extract the (x,y) positions from all of the matching transforms.
-      var positions = new Float32Array(count * 2);
-      var iTransform = iFirstTransform;
-      for (var q = 0; q < count; q++, iTransform += 4) {
-        var transformArgs = argsArray[iTransform];
+      const positions = new Float32Array(count * 2);
+      let iTransform = iFirstTransform;
+      for (let q = 0; q < count; q++, iTransform += 4) {
+        const transformArgs = argsArray[iTransform];
         positions[q << 1] = transformArgs[4];
         positions[(q << 1) + 1] = transformArgs[5];
       }
 
       // Replace queue items.
-      var args = [
+      const args = [
         firstPIXOArg0,
         firstTransformArg0,
         firstTransformArg3,
@@ -407,10 +407,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     [OPS.beginText, OPS.setFont, OPS.setTextMatrix, OPS.showText, OPS.endText],
     null,
     function iterateShowTextGroup(context, i) {
-      var fnArray = context.fnArray,
+      const fnArray = context.fnArray,
         argsArray = context.argsArray;
-      var iFirstSave = context.iCurr - 4;
-      var pos = (i - iFirstSave) % 5;
+      const iFirstSave = context.iCurr - 4;
+      const pos = (i - iFirstSave) % 5;
       switch (pos) {
         case 0:
           return fnArray[i] === OPS.beginText;
@@ -438,23 +438,23 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       throw new Error(`iterateShowTextGroup - invalid pos: ${pos}`);
     },
     function(context, i) {
-      var MIN_CHARS_IN_BLOCK = 3;
-      var MAX_CHARS_IN_BLOCK = 1000;
+      const MIN_CHARS_IN_BLOCK = 3;
+      const MAX_CHARS_IN_BLOCK = 1000;
 
-      var fnArray = context.fnArray,
+      const fnArray = context.fnArray,
         argsArray = context.argsArray;
-      var curr = context.iCurr;
-      var iFirstBeginText = curr - 4;
-      var iFirstSetFont = curr - 3;
-      var iFirstSetTextMatrix = curr - 2;
-      var iFirstShowText = curr - 1;
-      var iFirstEndText = curr;
-      var firstSetFontArg0 = argsArray[iFirstSetFont][0];
-      var firstSetFontArg1 = argsArray[iFirstSetFont][1];
+      const curr = context.iCurr;
+      const iFirstBeginText = curr - 4;
+      const iFirstSetFont = curr - 3;
+      const iFirstSetTextMatrix = curr - 2;
+      const iFirstShowText = curr - 1;
+      const iFirstEndText = curr;
+      const firstSetFontArg0 = argsArray[iFirstSetFont][0];
+      const firstSetFontArg1 = argsArray[iFirstSetFont][1];
 
       // At this point, i is the index of the first op past the last valid
       // quintet.
-      var count = Math.min(
+      let count = Math.min(
         Math.floor((i - iFirstBeginText) / 5),
         MAX_CHARS_IN_BLOCK
       );
@@ -465,7 +465,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       // If the preceding quintet is (<something>, setFont, setTextMatrix,
       // showText, endText), include that as well. (E.g. <something> might be
       // |dependency|.)
-      var iFirst = iFirstBeginText;
+      let iFirst = iFirstBeginText;
       if (
         iFirstBeginText >= 4 &&
         fnArray[iFirstBeginText - 4] === fnArray[iFirstSetFont] &&
@@ -480,8 +480,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       }
 
       // Remove (endText, beginText, setFont) trios.
-      var iEndText = iFirst + 4;
-      for (var q = 1; q < count; q++) {
+      let iEndText = iFirst + 4;
+      for (let q = 1; q < count; q++) {
         fnArray.splice(iEndText, 3);
         argsArray.splice(iEndText, 3);
         iEndText += 2;
@@ -584,7 +584,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   return QueueOptimizer;
 })();
 
-var NullOptimizer = (function NullOptimizerClosure() {
+const NullOptimizer = (function NullOptimizerClosure() {
   function NullOptimizer(queue) {
     this.queue = queue;
   }
@@ -603,9 +603,9 @@ var NullOptimizer = (function NullOptimizerClosure() {
   return NullOptimizer;
 })();
 
-var OperatorList = (function OperatorListClosure() {
-  var CHUNK_SIZE = 1000;
-  var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
+const OperatorList = (function OperatorListClosure() {
+  const CHUNK_SIZE = 1000;
+  const CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
   function OperatorList(intent, streamSink, pageIndex) {
     this._streamSink = streamSink;
@@ -666,14 +666,14 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     addDependencies(dependencies) {
-      for (var key in dependencies) {
+      for (const key in dependencies) {
         this.addDependency(key);
       }
     },
 
     addOpList(opList) {
       Object.assign(this.dependencies, opList.dependencies);
-      for (var i = 0, ii = opList.length; i < ii; i++) {
+      for (let i = 0, ii = opList.length; i < ii; i++) {
         this.addOp(opList.fnArray[i], opList.argsArray[i]);
       }
     },

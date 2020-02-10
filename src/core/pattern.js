@@ -26,7 +26,7 @@ import { ColorSpace } from "./colorspace.js";
 import { isStream } from "./primitives.js";
 import { MissingDataException } from "./core_utils.js";
 
-var ShadingType = {
+const ShadingType = {
   FUNCTION_BASED: 1,
   AXIAL: 2,
   RADIAL: 3,
@@ -36,7 +36,7 @@ var ShadingType = {
   TENSOR_PATCH_MESH: 7,
 };
 
-var Pattern = (function PatternClosure() {
+const Pattern = (function PatternClosure() {
   // Constructor should define this.getPattern
   function Pattern() {
     unreachable("should not call Pattern constructor");
@@ -58,8 +58,8 @@ var Pattern = (function PatternClosure() {
     handler,
     pdfFunctionFactory
   ) {
-    var dict = isStream(shading) ? shading.dict : shading;
-    var type = dict.get("ShadingType");
+    const dict = isStream(shading) ? shading.dict : shading;
+    const type = dict.get("ShadingType");
 
     try {
       switch (type) {
@@ -115,7 +115,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     this.coordsArr = dict.getArray("Coords");
     this.shadingType = dict.get("ShadingType");
     this.type = "Pattern";
-    var cs = dict.get("ColorSpace", "CS");
+    let cs = dict.get("ColorSpace", "CS");
     cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
     this.cs = cs;
     const bbox = dict.getArray("BBox");
@@ -125,18 +125,18 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       this.bbox = null;
     }
 
-    var t0 = 0.0,
+    let t0 = 0.0,
       t1 = 1.0;
     if (dict.has("Domain")) {
-      var domainArr = dict.getArray("Domain");
+      const domainArr = dict.getArray("Domain");
       t0 = domainArr[0];
       t1 = domainArr[1];
     }
 
-    var extendStart = false,
+    let extendStart = false,
       extendEnd = false;
     if (dict.has("Extend")) {
-      var extendArr = dict.getArray("Extend");
+      const extendArr = dict.getArray("Extend");
       extendStart = extendArr[0];
       extendEnd = extendArr[1];
     }
@@ -147,13 +147,13 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     ) {
       // Radial gradient only currently works if either circle is fully within
       // the other circle.
-      var x1 = this.coordsArr[0];
-      var y1 = this.coordsArr[1];
-      var r1 = this.coordsArr[2];
-      var x2 = this.coordsArr[3];
-      var y2 = this.coordsArr[4];
-      var r2 = this.coordsArr[5];
-      var distance = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+      const x1 = this.coordsArr[0];
+      const y1 = this.coordsArr[1];
+      const r1 = this.coordsArr[2];
+      const x2 = this.coordsArr[3];
+      const y2 = this.coordsArr[4];
+      const r2 = this.coordsArr[5];
+      const distance = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
       if (r1 <= r2 + distance && r2 <= r1 + distance) {
         warn("Unsupported radial gradient.");
       }
@@ -162,8 +162,8 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     this.extendStart = extendStart;
     this.extendEnd = extendEnd;
 
-    var fnObj = dict.get("Function");
-    var fn = pdfFunctionFactory.createFromArray(fnObj);
+    const fnObj = dict.get("Function");
+    const fn = pdfFunctionFactory.createFromArray(fnObj);
 
     // 10 samples seems good enough for now, but probably won't work
     // if there are sharp color changes. Ideally, we would implement
@@ -171,7 +171,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     const NUMBER_OF_SAMPLES = 10;
     const step = (t1 - t0) / NUMBER_OF_SAMPLES;
 
-    var colorStops = (this.colorStops = []);
+    const colorStops = (this.colorStops = []);
 
     // Protect against bad domains.
     if (t0 >= t1 || step <= 0) {
@@ -181,18 +181,18 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       return;
     }
 
-    var color = new Float32Array(cs.numComps),
+    const color = new Float32Array(cs.numComps),
       ratio = new Float32Array(1);
-    var rgbColor;
+    let rgbColor;
     for (let i = 0; i <= NUMBER_OF_SAMPLES; i++) {
       ratio[0] = t0 + i * step;
       fn(ratio, 0, color, 0);
       rgbColor = cs.getRgb(color, 0);
-      var cssColor = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
+      const cssColor = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
       colorStops.push([i / NUMBER_OF_SAMPLES, cssColor]);
     }
 
-    var background = "transparent";
+    let background = "transparent";
     if (dict.has("Background")) {
       rgbColor = cs.getRgb(dict.get("Background"), 0);
       background = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
@@ -215,9 +215,9 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
 
   RadialAxial.prototype = {
     getIR: function RadialAxial_getIR() {
-      var coordsArr = this.coordsArr;
-      var shadingType = this.shadingType;
-      var type, p0, p1, r0, r1;
+      const coordsArr = this.coordsArr;
+      const shadingType = this.shadingType;
+      let type, p0, p1, r0, r1;
       if (shadingType === ShadingType.AXIAL) {
         p0 = [coordsArr[0], coordsArr[1]];
         p1 = [coordsArr[2], coordsArr[3]];
@@ -234,12 +234,12 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
         unreachable(`getPattern type unknown: ${shadingType}`);
       }
 
-      var matrix = this.matrix;
+      const matrix = this.matrix;
       if (matrix) {
         p0 = Util.applyTransform(p0, matrix);
         p1 = Util.applyTransform(p1, matrix);
         if (shadingType === ShadingType.RADIAL) {
-          var scale = Util.singularValueDecompose2dScale(matrix);
+          const scale = Util.singularValueDecompose2dScale(matrix);
           r0 *= scale[0];
           r1 *= scale[1];
         }
@@ -261,9 +261,9 @@ Shadings.Mesh = (function MeshClosure() {
     this.buffer = 0;
     this.bufferLength = 0;
 
-    var numComps = context.numComps;
+    const numComps = context.numComps;
     this.tmpCompsBuf = new Float32Array(numComps);
-    var csNumComps = context.colorSpace.numComps;
+    const csNumComps = context.colorSpace.numComps;
     this.tmpCsCompsBuf = context.colorFn
       ? new Float32Array(csNumComps)
       : this.tmpCompsBuf;
@@ -276,7 +276,7 @@ Shadings.Mesh = (function MeshClosure() {
       if (this.bufferLength > 0) {
         return true;
       }
-      var nextByte = this.stream.getByte();
+      const nextByte = this.stream.getByte();
       if (nextByte < 0) {
         return false;
       }
@@ -285,8 +285,8 @@ Shadings.Mesh = (function MeshClosure() {
       return true;
     },
     readBits: function MeshStreamReader_readBits(n) {
-      var buffer = this.buffer;
-      var bufferLength = this.bufferLength;
+      let buffer = this.buffer;
+      let bufferLength = this.bufferLength;
       if (n === 32) {
         if (bufferLength === 0) {
           return (
@@ -302,7 +302,7 @@ Shadings.Mesh = (function MeshClosure() {
           (this.stream.getByte() << 16) |
           (this.stream.getByte() << 8) |
           this.stream.getByte();
-        var nextByte = this.stream.getByte();
+        const nextByte = this.stream.getByte();
         this.buffer = nextByte & ((1 << bufferLength) - 1);
         return (
           ((buffer << (8 - bufferLength)) |
@@ -330,11 +330,11 @@ Shadings.Mesh = (function MeshClosure() {
       return this.readBits(this.context.bitsPerFlag);
     },
     readCoordinate: function MeshStreamReader_readCoordinate() {
-      var bitsPerCoordinate = this.context.bitsPerCoordinate;
-      var xi = this.readBits(bitsPerCoordinate);
-      var yi = this.readBits(bitsPerCoordinate);
-      var decode = this.context.decode;
-      var scale =
+      const bitsPerCoordinate = this.context.bitsPerCoordinate;
+      const xi = this.readBits(bitsPerCoordinate);
+      const yi = this.readBits(bitsPerCoordinate);
+      const decode = this.context.decode;
+      const scale =
         bitsPerCoordinate < 32
           ? 1 / ((1 << bitsPerCoordinate) - 1)
           : 2.3283064365386963e-10; // 2 ^ -32
@@ -344,19 +344,19 @@ Shadings.Mesh = (function MeshClosure() {
       ];
     },
     readComponents: function MeshStreamReader_readComponents() {
-      var numComps = this.context.numComps;
-      var bitsPerComponent = this.context.bitsPerComponent;
-      var scale =
+      const numComps = this.context.numComps;
+      const bitsPerComponent = this.context.bitsPerComponent;
+      const scale =
         bitsPerComponent < 32
           ? 1 / ((1 << bitsPerComponent) - 1)
           : 2.3283064365386963e-10; // 2 ^ -32
-      var decode = this.context.decode;
-      var components = this.tmpCompsBuf;
-      for (var i = 0, j = 4; i < numComps; i++, j += 2) {
-        var ci = this.readBits(bitsPerComponent);
+      const decode = this.context.decode;
+      const components = this.tmpCompsBuf;
+      for (let i = 0, j = 4; i < numComps; i++, j += 2) {
+        const ci = this.readBits(bitsPerComponent);
         components[i] = ci * scale * (decode[j + 1] - decode[j]) + decode[j];
       }
-      var color = this.tmpCsCompsBuf;
+      const color = this.tmpCsCompsBuf;
       if (this.context.colorFn) {
         this.context.colorFn(components, 0, color, 0);
       }
@@ -365,15 +365,15 @@ Shadings.Mesh = (function MeshClosure() {
   };
 
   function decodeType4Shading(mesh, reader) {
-    var coords = mesh.coords;
-    var colors = mesh.colors;
-    var operators = [];
-    var ps = []; // not maintaining cs since that will match ps
-    var verticesLeft = 0; // assuming we have all data to start a new triangle
+    const coords = mesh.coords;
+    const colors = mesh.colors;
+    const operators = [];
+    const ps = []; // not maintaining cs since that will match ps
+    let verticesLeft = 0; // assuming we have all data to start a new triangle
     while (reader.hasData) {
-      var f = reader.readFlag();
-      var coord = reader.readCoordinate();
-      var color = reader.readComponents();
+      const f = reader.readFlag();
+      const coord = reader.readCoordinate();
+      const color = reader.readComponents();
       if (verticesLeft === 0) {
         // ignoring flags if we started a triangle
         if (!(0 <= f && f <= 2)) {
@@ -409,12 +409,12 @@ Shadings.Mesh = (function MeshClosure() {
   }
 
   function decodeType5Shading(mesh, reader, verticesPerRow) {
-    var coords = mesh.coords;
-    var colors = mesh.colors;
-    var ps = []; // not maintaining cs since that will match ps
+    const coords = mesh.coords;
+    const colors = mesh.colors;
+    const ps = []; // not maintaining cs since that will match ps
     while (reader.hasData) {
-      var coord = reader.readCoordinate();
-      var color = reader.readComponents();
+      const coord = reader.readCoordinate();
+      const color = reader.readComponents();
       ps.push(coords.length);
       coords.push(coord);
       colors.push(color);
@@ -427,16 +427,16 @@ Shadings.Mesh = (function MeshClosure() {
     });
   }
 
-  var MIN_SPLIT_PATCH_CHUNKS_AMOUNT = 3;
-  var MAX_SPLIT_PATCH_CHUNKS_AMOUNT = 20;
+  const MIN_SPLIT_PATCH_CHUNKS_AMOUNT = 3;
+  const MAX_SPLIT_PATCH_CHUNKS_AMOUNT = 20;
 
-  var TRIANGLE_DENSITY = 20; // count of triangles per entire mesh bounds
+  const TRIANGLE_DENSITY = 20; // count of triangles per entire mesh bounds
 
-  var getB = (function getBClosure() {
+  const getB = (function getBClosure() {
     function buildB(count) {
-      var lut = [];
-      for (var i = 0; i <= count; i++) {
-        var t = i / count,
+      const lut = [];
+      for (let i = 0; i <= count; i++) {
+        const t = i / count,
           t_ = 1 - t;
         lut.push(
           new Float32Array([
@@ -449,7 +449,7 @@ Shadings.Mesh = (function MeshClosure() {
       }
       return lut;
     }
-    var cache = [];
+    const cache = [];
     return function getB(count) {
       if (!cache[count]) {
         cache[count] = buildB(count);
@@ -459,39 +459,39 @@ Shadings.Mesh = (function MeshClosure() {
   })();
 
   function buildFigureFromPatch(mesh, index) {
-    var figure = mesh.figures[index];
+    const figure = mesh.figures[index];
     assert(figure.type === "patch", "Unexpected patch mesh figure");
 
-    var coords = mesh.coords,
+    const coords = mesh.coords,
       colors = mesh.colors;
-    var pi = figure.coords;
-    var ci = figure.colors;
+    const pi = figure.coords;
+    const ci = figure.colors;
 
-    var figureMinX = Math.min(
+    const figureMinX = Math.min(
       coords[pi[0]][0],
       coords[pi[3]][0],
       coords[pi[12]][0],
       coords[pi[15]][0]
     );
-    var figureMinY = Math.min(
+    const figureMinY = Math.min(
       coords[pi[0]][1],
       coords[pi[3]][1],
       coords[pi[12]][1],
       coords[pi[15]][1]
     );
-    var figureMaxX = Math.max(
+    const figureMaxX = Math.max(
       coords[pi[0]][0],
       coords[pi[3]][0],
       coords[pi[12]][0],
       coords[pi[15]][0]
     );
-    var figureMaxY = Math.max(
+    const figureMaxY = Math.max(
       coords[pi[0]][1],
       coords[pi[3]][1],
       coords[pi[12]][1],
       coords[pi[15]][1]
     );
-    var splitXBy = Math.ceil(
+    let splitXBy = Math.ceil(
       ((figureMaxX - figureMinX) * TRIANGLE_DENSITY) /
         (mesh.bounds[2] - mesh.bounds[0])
     );
@@ -499,7 +499,7 @@ Shadings.Mesh = (function MeshClosure() {
       MIN_SPLIT_PATCH_CHUNKS_AMOUNT,
       Math.min(MAX_SPLIT_PATCH_CHUNKS_AMOUNT, splitXBy)
     );
-    var splitYBy = Math.ceil(
+    let splitYBy = Math.ceil(
       ((figureMaxY - figureMinY) * TRIANGLE_DENSITY) /
         (mesh.bounds[3] - mesh.bounds[1])
     );
@@ -508,19 +508,19 @@ Shadings.Mesh = (function MeshClosure() {
       Math.min(MAX_SPLIT_PATCH_CHUNKS_AMOUNT, splitYBy)
     );
 
-    var verticesPerRow = splitXBy + 1;
-    var figureCoords = new Int32Array((splitYBy + 1) * verticesPerRow);
-    var figureColors = new Int32Array((splitYBy + 1) * verticesPerRow);
-    var k = 0;
-    var cl = new Uint8Array(3),
+    const verticesPerRow = splitXBy + 1;
+    const figureCoords = new Int32Array((splitYBy + 1) * verticesPerRow);
+    const figureColors = new Int32Array((splitYBy + 1) * verticesPerRow);
+    let k = 0;
+    const cl = new Uint8Array(3),
       cr = new Uint8Array(3);
-    var c0 = colors[ci[0]],
+    const c0 = colors[ci[0]],
       c1 = colors[ci[1]],
       c2 = colors[ci[2]],
       c3 = colors[ci[3]];
-    var bRow = getB(splitYBy),
+    const bRow = getB(splitYBy),
       bCol = getB(splitXBy);
-    for (var row = 0; row <= splitYBy; row++) {
+    for (let row = 0; row <= splitYBy; row++) {
       cl[0] = ((c0[0] * (splitYBy - row) + c2[0] * row) / splitYBy) | 0;
       cl[1] = ((c0[1] * (splitYBy - row) + c2[1] * row) / splitYBy) | 0;
       cl[2] = ((c0[2] * (splitYBy - row) + c2[2] * row) / splitYBy) | 0;
@@ -529,19 +529,19 @@ Shadings.Mesh = (function MeshClosure() {
       cr[1] = ((c1[1] * (splitYBy - row) + c3[1] * row) / splitYBy) | 0;
       cr[2] = ((c1[2] * (splitYBy - row) + c3[2] * row) / splitYBy) | 0;
 
-      for (var col = 0; col <= splitXBy; col++, k++) {
+      for (let col = 0; col <= splitXBy; col++, k++) {
         if (
           (row === 0 || row === splitYBy) &&
           (col === 0 || col === splitXBy)
         ) {
           continue;
         }
-        var x = 0,
+        let x = 0,
           y = 0;
-        var q = 0;
-        for (var i = 0; i <= 3; i++) {
-          for (var j = 0; j <= 3; j++, q++) {
-            var m = bRow[row][i] * bCol[col][j];
+        let q = 0;
+        for (let i = 0; i <= 3; i++) {
+          for (let j = 0; j <= 3; j++, q++) {
+            const m = bRow[row][i] * bCol[col][j];
             x += coords[pi[q]][0] * m;
             y += coords[pi[q]][1] * m;
           }
@@ -549,7 +549,7 @@ Shadings.Mesh = (function MeshClosure() {
         figureCoords[k] = coords.length;
         coords.push([x, y]);
         figureColors[k] = colors.length;
-        var newColor = new Uint8Array(3);
+        const newColor = new Uint8Array(3);
         newColor[0] = ((cl[0] * (splitXBy - col) + cr[0] * col) / splitXBy) | 0;
         newColor[1] = ((cl[1] * (splitXBy - col) + cr[1] * col) / splitXBy) | 0;
         newColor[2] = ((cl[2] * (splitXBy - col) + cr[2] * col) / splitXBy) | 0;
@@ -575,21 +575,21 @@ Shadings.Mesh = (function MeshClosure() {
 
   function decodeType6Shading(mesh, reader) {
     // A special case of Type 7. The p11, p12, p21, p22 automatically filled
-    var coords = mesh.coords;
-    var colors = mesh.colors;
-    var ps = new Int32Array(16); // p00, p10, ..., p30, p01, ..., p33
-    var cs = new Int32Array(4); // c00, c30, c03, c33
+    const coords = mesh.coords;
+    const colors = mesh.colors;
+    const ps = new Int32Array(16); // p00, p10, ..., p30, p01, ..., p33
+    const cs = new Int32Array(4); // c00, c30, c03, c33
     while (reader.hasData) {
-      var f = reader.readFlag();
+      const f = reader.readFlag();
       if (!(0 <= f && f <= 3)) {
         throw new FormatError("Unknown type6 flag");
       }
       var i, ii;
-      var pi = coords.length;
+      const pi = coords.length;
       for (i = 0, ii = f !== 0 ? 8 : 12; i < ii; i++) {
         coords.push(reader.readCoordinate());
       }
-      var ci = colors.length;
+      const ci = colors.length;
       for (i = 0, ii = f !== 0 ? 2 : 4; i < ii; i++) {
         colors.push(reader.readComponents());
       }
@@ -707,21 +707,21 @@ Shadings.Mesh = (function MeshClosure() {
   }
 
   function decodeType7Shading(mesh, reader) {
-    var coords = mesh.coords;
-    var colors = mesh.colors;
-    var ps = new Int32Array(16); // p00, p10, ..., p30, p01, ..., p33
-    var cs = new Int32Array(4); // c00, c30, c03, c33
+    const coords = mesh.coords;
+    const colors = mesh.colors;
+    const ps = new Int32Array(16); // p00, p10, ..., p30, p01, ..., p33
+    const cs = new Int32Array(4); // c00, c30, c03, c33
     while (reader.hasData) {
-      var f = reader.readFlag();
+      const f = reader.readFlag();
       if (!(0 <= f && f <= 3)) {
         throw new FormatError("Unknown type7 flag");
       }
       var i, ii;
-      var pi = coords.length;
+      const pi = coords.length;
       for (i = 0, ii = f !== 0 ? 12 : 16; i < ii; i++) {
         coords.push(reader.readCoordinate());
       }
-      var ci = colors.length;
+      const ci = colors.length;
       for (i = 0, ii = f !== 0 ? 2 : 4; i < ii; i++) {
         colors.push(reader.readComponents());
       }
@@ -778,12 +778,12 @@ Shadings.Mesh = (function MeshClosure() {
   }
 
   function updateBounds(mesh) {
-    var minX = mesh.coords[0][0],
+    let minX = mesh.coords[0][0],
       minY = mesh.coords[0][1],
       maxX = minX,
       maxY = minY;
-    for (var i = 1, ii = mesh.coords.length; i < ii; i++) {
-      var x = mesh.coords[i][0],
+    for (let i = 1, ii = mesh.coords.length; i < ii; i++) {
+      const x = mesh.coords[i][0],
         y = mesh.coords[i][1];
       minX = minX > x ? x : minX;
       minY = minY > y ? y : minY;
@@ -794,30 +794,30 @@ Shadings.Mesh = (function MeshClosure() {
   }
 
   function packData(mesh) {
-    var i, ii, j, jj;
+    let i, ii, j, jj;
 
-    var coords = mesh.coords;
-    var coordsPacked = new Float32Array(coords.length * 2);
+    const coords = mesh.coords;
+    const coordsPacked = new Float32Array(coords.length * 2);
     for (i = 0, j = 0, ii = coords.length; i < ii; i++) {
-      var xy = coords[i];
+      const xy = coords[i];
       coordsPacked[j++] = xy[0];
       coordsPacked[j++] = xy[1];
     }
     mesh.coords = coordsPacked;
 
-    var colors = mesh.colors;
-    var colorsPacked = new Uint8Array(colors.length * 3);
+    const colors = mesh.colors;
+    const colorsPacked = new Uint8Array(colors.length * 3);
     for (i = 0, j = 0, ii = colors.length; i < ii; i++) {
-      var c = colors[i];
+      const c = colors[i];
       colorsPacked[j++] = c[0];
       colorsPacked[j++] = c[1];
       colorsPacked[j++] = c[2];
     }
     mesh.colors = colorsPacked;
 
-    var figures = mesh.figures;
+    const figures = mesh.figures;
     for (i = 0, ii = figures.length; i < ii; i++) {
-      var figure = figures[i],
+      const figure = figures[i],
         ps = figure.coords,
         cs = figure.colors;
       for (j = 0, jj = ps.length; j < jj; j++) {
@@ -831,7 +831,7 @@ Shadings.Mesh = (function MeshClosure() {
     if (!isStream(stream)) {
       throw new FormatError("Mesh data is not a stream");
     }
-    var dict = stream.dict;
+    const dict = stream.dict;
     this.matrix = matrix;
     this.shadingType = dict.get("ShadingType");
     this.type = "Pattern";
@@ -841,21 +841,21 @@ Shadings.Mesh = (function MeshClosure() {
     } else {
       this.bbox = null;
     }
-    var cs = dict.get("ColorSpace", "CS");
+    let cs = dict.get("ColorSpace", "CS");
     cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
     this.cs = cs;
     this.background = dict.has("Background")
       ? cs.getRgb(dict.get("Background"), 0)
       : null;
 
-    var fnObj = dict.get("Function");
-    var fn = fnObj ? pdfFunctionFactory.createFromArray(fnObj) : null;
+    const fnObj = dict.get("Function");
+    const fn = fnObj ? pdfFunctionFactory.createFromArray(fnObj) : null;
 
     this.coords = [];
     this.colors = [];
     this.figures = [];
 
-    var decodeContext = {
+    const decodeContext = {
       bitsPerCoordinate: dict.get("BitsPerCoordinate"),
       bitsPerComponent: dict.get("BitsPerComponent"),
       bitsPerFlag: dict.get("BitsPerFlag"),
@@ -864,9 +864,9 @@ Shadings.Mesh = (function MeshClosure() {
       colorSpace: cs,
       numComps: fn ? 1 : cs.numComps,
     };
-    var reader = new MeshStreamReader(stream, decodeContext);
+    const reader = new MeshStreamReader(stream, decodeContext);
 
-    var patchMesh = false;
+    let patchMesh = false;
     switch (this.shadingType) {
       case ShadingType.FREE_FORM_MESH:
         decodeType4Shading(this, reader);
@@ -894,7 +894,7 @@ Shadings.Mesh = (function MeshClosure() {
     if (patchMesh) {
       // dirty bounds calculation for determining, how dense shall be triangles
       updateBounds(this);
-      for (var i = 0, ii = this.figures.length; i < ii; i++) {
+      for (let i = 0, ii = this.figures.length; i < ii; i++) {
         buildFigureFromPatch(this, i);
       }
     }

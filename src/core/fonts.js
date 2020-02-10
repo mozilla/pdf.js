@@ -72,7 +72,7 @@ const PRIVATE_USE_AREAS = [
 
 // PDF Glyph Space Units are one Thousandth of a TextSpace Unit
 // except for Type 3 fonts
-var PDF_GLYPH_SPACE_UNITS = 1000;
+const PDF_GLYPH_SPACE_UNITS = 1000;
 
 // Accented characters have issues on Windows and Linux. When this flag is
 // enabled glyphs that use seac and seac style endchar operators are truncated
@@ -81,9 +81,9 @@ var PDF_GLYPH_SPACE_UNITS = 1000;
 // Linux (freetype) requires that when a seac style endchar is used
 // that the charset must be a predefined one, however we build a
 // custom one. Windows just refuses to draw glyphs with seac operators.
-var SEAC_ANALYSIS_ENABLED = true;
+const SEAC_ANALYSIS_ENABLED = true;
 
-var FontFlags = {
+const FontFlags = {
   FixedPitch: 1,
   Serif: 2,
   Symbolic: 4,
@@ -96,7 +96,7 @@ var FontFlags = {
 };
 
 // prettier-ignore
-var MacStandardGlyphOrdering = [
+const MacStandardGlyphOrdering = [
   ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl",
   "numbersign", "dollar", "percent", "ampersand", "quotesingle", "parenleft",
   "parenright", "asterisk", "plus", "comma", "hyphen", "period", "slash",
@@ -142,9 +142,9 @@ function adjustWidths(properties) {
     return;
   }
   // adjusting width to fontMatrix scale
-  var scale = 0.001 / properties.fontMatrix[0];
-  var glyphsWidths = properties.widths;
-  for (var glyph in glyphsWidths) {
+  const scale = 0.001 / properties.fontMatrix[0];
+  const glyphsWidths = properties.widths;
+  for (const glyph in glyphsWidths) {
     glyphsWidths[glyph] *= scale;
   }
   properties.defaultWidth *= scale;
@@ -163,11 +163,11 @@ function adjustToUnicode(properties, builtInEncoding) {
   if (properties.toUnicode instanceof IdentityToUnicodeMap) {
     return;
   }
-  var toUnicode = [],
+  const toUnicode = [],
     glyphsUnicodeMap = getGlyphsUnicode();
-  for (var charCode in builtInEncoding) {
-    var glyphName = builtInEncoding[charCode];
-    var unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
+  for (const charCode in builtInEncoding) {
+    const glyphName = builtInEncoding[charCode];
+    const unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
     if (unicode !== -1) {
       toUnicode[charCode] = String.fromCharCode(unicode);
     }
@@ -205,9 +205,9 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
     return name;
   }
   // The glyph name is non-standard, trying to recover.
-  var unicode = getUnicodeForGlyph(name, glyphsUnicodeMap);
+  const unicode = getUnicodeForGlyph(name, glyphsUnicodeMap);
   if (unicode !== -1) {
-    for (var key in glyphsUnicodeMap) {
+    for (const key in glyphsUnicodeMap) {
       if (glyphsUnicodeMap[key] === unicode) {
         return key;
       }
@@ -217,7 +217,7 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
   return name;
 }
 
-var Glyph = (function GlyphClosure() {
+const Glyph = (function GlyphClosure() {
   function Glyph(
     fontChar,
     unicode,
@@ -263,7 +263,7 @@ var Glyph = (function GlyphClosure() {
   return Glyph;
 })();
 
-var ToUnicodeMap = (function ToUnicodeMapClosure() {
+const ToUnicodeMap = (function ToUnicodeMapClosure() {
   function ToUnicodeMap(cmap = []) {
     // The elements of this._map can be integers or strings, depending on how
     // `cmap` was created.
@@ -276,7 +276,7 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
     },
 
     forEach(callback) {
-      for (var charCode in this._map) {
+      for (const charCode in this._map) {
         callback(charCode, this._map[charCode].charCodeAt(0));
       }
     },
@@ -305,7 +305,7 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
     },
 
     amend(map) {
-      for (var charCode in map) {
+      for (const charCode in map) {
         this._map[charCode] = map[charCode];
       }
     },
@@ -326,7 +326,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
     },
 
     forEach(callback) {
-      for (var i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
+      for (let i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
         callback(i, i);
       }
     },
@@ -356,7 +356,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
   return IdentityToUnicodeMap;
 })();
 
-var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
+const OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
   function writeInt16(dest, offset, num) {
     dest[offset] = (num >> 8) & 0xff;
     dest[offset + 1] = num & 0xff;
@@ -370,7 +370,7 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
   }
 
   function writeData(dest, offset, data) {
-    var i, ii;
+    let i, ii;
     if (data instanceof Uint8Array) {
       dest.set(data, offset);
     } else if (typeof data === "string") {
@@ -394,13 +394,13 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
     entriesCount,
     entrySize
   ) {
-    var maxPower2 = 1,
+    let maxPower2 = 1,
       log2 = 0;
     while ((maxPower2 ^ entriesCount) > maxPower2) {
       maxPower2 <<= 1;
       log2++;
     }
-    var searchRange = maxPower2 * entrySize;
+    const searchRange = maxPower2 * entrySize;
     return {
       range: searchRange,
       entry: log2,
@@ -408,31 +408,31 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
     };
   };
 
-  var OTF_HEADER_SIZE = 12;
-  var OTF_TABLE_ENTRY_SIZE = 16;
+  const OTF_HEADER_SIZE = 12;
+  const OTF_TABLE_ENTRY_SIZE = 16;
 
   OpenTypeFileBuilder.prototype = {
     toArray: function OpenTypeFileBuilder_toArray() {
-      var sfnt = this.sfnt;
+      let sfnt = this.sfnt;
 
       // Tables needs to be written by ascendant alphabetic order
-      var tables = this.tables;
-      var tablesNames = Object.keys(tables);
+      const tables = this.tables;
+      const tablesNames = Object.keys(tables);
       tablesNames.sort();
-      var numTables = tablesNames.length;
+      const numTables = tablesNames.length;
 
-      var i, j, jj, table, tableName;
+      let i, j, jj, table, tableName;
       // layout the tables data
-      var offset = OTF_HEADER_SIZE + numTables * OTF_TABLE_ENTRY_SIZE;
-      var tableOffsets = [offset];
+      let offset = OTF_HEADER_SIZE + numTables * OTF_TABLE_ENTRY_SIZE;
+      const tableOffsets = [offset];
       for (i = 0; i < numTables; i++) {
         table = tables[tablesNames[i]];
-        var paddedLength = ((table.length + 3) & ~3) >>> 0;
+        const paddedLength = ((table.length + 3) & ~3) >>> 0;
         offset += paddedLength;
         tableOffsets.push(offset);
       }
 
-      var file = new Uint8Array(offset);
+      const file = new Uint8Array(offset);
       // write the table data first (mostly for checksum)
       for (i = 0; i < numTables; i++) {
         table = tables[tablesNames[i]];
@@ -452,7 +452,7 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
       // numTables (2 bytes)
       writeInt16(file, 4, numTables);
 
-      var searchParams = OpenTypeFileBuilder.getSearchParams(numTables, 16);
+      const searchParams = OpenTypeFileBuilder.getSearchParams(numTables, 16);
 
       // searchRange (2 bytes)
       writeInt16(file, 6, searchParams.range);
@@ -471,9 +471,9 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
         file[offset + 3] = tableName.charCodeAt(3) & 0xff;
 
         // checksum
-        var checksum = 0;
+        let checksum = 0;
         for (j = tableOffsets[i], jj = tableOffsets[i + 1]; j < jj; j += 4) {
-          var quad = readUint32(file, j);
+          const quad = readUint32(file, j);
           checksum = (checksum + quad) >>> 0;
         }
         writeInt32(file, offset + 4, checksum);
@@ -507,9 +507,9 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
  *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
  *   type1Font.bind();
  */
-var Font = (function FontClosure() {
+const Font = (function FontClosure() {
   function Font(name, file, properties) {
-    var charCode;
+    let charCode;
 
     this.name = name;
     this.loadedName = properties.loadedName;
@@ -523,8 +523,8 @@ var Font = (function FontClosure() {
     this.isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
     this.isMonospace = !!(properties.flags & FontFlags.FixedPitch);
 
-    var type = properties.type;
-    var subtype = properties.subtype;
+    let type = properties.type;
+    let subtype = properties.subtype;
     this.type = type;
     this.subtype = subtype;
 
@@ -649,7 +649,7 @@ var Font = (function FontClosure() {
   }
 
   Font.getFontID = (function() {
-    var ID = 1;
+    let ID = 1;
     return function Font_getFontID() {
       return String(ID++);
     };
@@ -665,7 +665,7 @@ var Font = (function FontClosure() {
   }
 
   function signedInt16(b0, b1) {
-    var value = (b0 << 8) + b1;
+    const value = (b0 << 8) + b1;
     return value & (1 << 15) ? value - 0x10000 : value;
   }
 
@@ -688,7 +688,7 @@ var Font = (function FontClosure() {
   }
 
   function isTrueTypeFile(file) {
-    var header = file.peekBytes(4);
+    const header = file.peekBytes(4);
     return (
       readUint32(header, 0) === 0x00010000 || bytesToString(header) === "true"
     );
@@ -700,12 +700,12 @@ var Font = (function FontClosure() {
   }
 
   function isOpenTypeFile(file) {
-    var header = file.peekBytes(4);
+    const header = file.peekBytes(4);
     return bytesToString(header) === "OTTO";
   }
 
   function isType1File(file) {
-    var header = file.peekBytes(2);
+    const header = file.peekBytes(2);
     // All Type1 font programs must begin with the comment '%!' (0x25 + 0x21).
     if (header[0] === 0x25 && header[1] === 0x21) {
       return true;
@@ -776,15 +776,15 @@ var Font = (function FontClosure() {
   }
 
   function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
-    var toFontChar = [],
+    let toFontChar = [],
       unicode;
-    for (var i = 0, ii = encoding.length; i < ii; i++) {
+    for (let i = 0, ii = encoding.length; i < ii; i++) {
       unicode = getUnicodeForGlyph(encoding[i], glyphsUnicodeMap);
       if (unicode !== -1) {
         toFontChar[i] = unicode;
       }
     }
-    for (var charCode in differences) {
+    for (const charCode in differences) {
       unicode = getUnicodeForGlyph(differences[charCode], glyphsUnicodeMap);
       if (unicode !== -1) {
         toFontChar[+charCode] = unicode;
@@ -805,14 +805,14 @@ var Font = (function FontClosure() {
    * 'charCodeToGlyphId' - maps the new font char codes to glyph ids
    */
   function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId) {
-    var newMap = Object.create(null);
-    var toFontChar = [];
-    var privateUseAreaIndex = 0;
-    var nextAvailableFontCharCode = PRIVATE_USE_AREAS[privateUseAreaIndex][0];
-    var privateUseOffetEnd = PRIVATE_USE_AREAS[privateUseAreaIndex][1];
-    for (var originalCharCode in charCodeToGlyphId) {
+    const newMap = Object.create(null);
+    const toFontChar = [];
+    let privateUseAreaIndex = 0;
+    let nextAvailableFontCharCode = PRIVATE_USE_AREAS[privateUseAreaIndex][0];
+    let privateUseOffetEnd = PRIVATE_USE_AREAS[privateUseAreaIndex][1];
+    for (let originalCharCode in charCodeToGlyphId) {
       originalCharCode |= 0;
-      var glyphId = charCodeToGlyphId[originalCharCode];
+      let glyphId = charCodeToGlyphId[originalCharCode];
       // For missing glyphs don't create the mappings so the glyph isn't
       // drawn.
       if (!hasGlyph(glyphId)) {
@@ -827,7 +827,7 @@ var Font = (function FontClosure() {
         nextAvailableFontCharCode = PRIVATE_USE_AREAS[privateUseAreaIndex][0];
         privateUseOffetEnd = PRIVATE_USE_AREAS[privateUseAreaIndex][1];
       }
-      var fontCharCode = nextAvailableFontCharCode++;
+      const fontCharCode = nextAvailableFontCharCode++;
       if (glyphId === 0) {
         glyphId = newGlyphZeroId;
       }
@@ -845,8 +845,8 @@ var Font = (function FontClosure() {
   function getRanges(glyphs, numGlyphs) {
     // Array.sort() sorts by characters, not numerically, so convert to an
     // array of characters.
-    var codes = [];
-    for (var charCode in glyphs) {
+    const codes = [];
+    for (const charCode in glyphs) {
       // Remove an invalid glyph ID mappings to make OTS happy.
       if (glyphs[charCode] >= numGlyphs) {
         continue;
@@ -863,13 +863,13 @@ var Font = (function FontClosure() {
     });
 
     // Split the sorted codes into ranges.
-    var ranges = [];
-    var length = codes.length;
-    for (var n = 0; n < length; ) {
-      var start = codes[n].fontCharCode;
-      var codeIndices = [codes[n].glyphId];
+    const ranges = [];
+    const length = codes.length;
+    for (let n = 0; n < length; ) {
+      const start = codes[n].fontCharCode;
+      const codeIndices = [codes[n].glyphId];
       ++n;
-      var end = start;
+      let end = start;
       while (n < length && end + 1 === codes[n].fontCharCode) {
         codeIndices.push(codes[n].glyphId);
         ++end;
@@ -885,39 +885,39 @@ var Font = (function FontClosure() {
   }
 
   function createCmapTable(glyphs, numGlyphs) {
-    var ranges = getRanges(glyphs, numGlyphs);
-    var numTables = ranges[ranges.length - 1][1] > 0xffff ? 2 : 1;
-    var cmap =
+    const ranges = getRanges(glyphs, numGlyphs);
+    const numTables = ranges[ranges.length - 1][1] > 0xffff ? 2 : 1;
+    let cmap =
       "\x00\x00" + // version
       string16(numTables) + // numTables
       "\x00\x03" + // platformID
       "\x00\x01" + // encodingID
       string32(4 + numTables * 8); // start of the table record
 
-    var i, ii, j, jj;
+    let i, ii, j, jj;
     for (i = ranges.length - 1; i >= 0; --i) {
       if (ranges[i][0] <= 0xffff) {
         break;
       }
     }
-    var bmpLength = i + 1;
+    const bmpLength = i + 1;
 
     if (ranges[i][0] < 0xffff && ranges[i][1] === 0xffff) {
       ranges[i][1] = 0xfffe;
     }
-    var trailingRangesCount = ranges[i][1] < 0xffff ? 1 : 0;
-    var segCount = bmpLength + trailingRangesCount;
-    var searchParams = OpenTypeFileBuilder.getSearchParams(segCount, 2);
+    const trailingRangesCount = ranges[i][1] < 0xffff ? 1 : 0;
+    const segCount = bmpLength + trailingRangesCount;
+    const searchParams = OpenTypeFileBuilder.getSearchParams(segCount, 2);
 
     // Fill up the 4 parallel arrays describing the segments.
-    var startCount = "";
-    var endCount = "";
-    var idDeltas = "";
-    var idRangeOffsets = "";
-    var glyphsIds = "";
-    var bias = 0;
+    let startCount = "";
+    let endCount = "";
+    let idDeltas = "";
+    let idRangeOffsets = "";
+    let glyphsIds = "";
+    let bias = 0;
 
-    var range, start, end, codes;
+    let range, start, end, codes;
     for (i = 0, ii = bmpLength; i < ii; i++) {
       range = ranges[i];
       start = range[0];
@@ -925,7 +925,7 @@ var Font = (function FontClosure() {
       startCount += string16(start);
       endCount += string16(end);
       codes = range[2];
-      var contiguous = true;
+      let contiguous = true;
       for (j = 1, jj = codes.length; j < jj; ++j) {
         if (codes[j] !== codes[j - 1] + 1) {
           contiguous = false;
@@ -933,7 +933,7 @@ var Font = (function FontClosure() {
         }
       }
       if (!contiguous) {
-        var offset = (segCount - i) * 2 + bias * 2;
+        const offset = (segCount - i) * 2 + bias * 2;
         bias += end - start + 1;
 
         idDeltas += string16(0);
@@ -943,7 +943,7 @@ var Font = (function FontClosure() {
           glyphsIds += string16(codes[j]);
         }
       } else {
-        var startCode = codes[0];
+        const startCode = codes[0];
 
         idDeltas += string16((startCode - start) & 0xffff);
         idRangeOffsets += string16(0);
@@ -957,7 +957,7 @@ var Font = (function FontClosure() {
       idRangeOffsets += "\x00\x00";
     }
 
-    var format314 =
+    const format314 =
       "\x00\x00" + // language
       string16(2 * segCount) +
       string16(searchParams.range) +
@@ -970,8 +970,8 @@ var Font = (function FontClosure() {
       idRangeOffsets +
       glyphsIds;
 
-    var format31012 = "";
-    var header31012 = "";
+    let format31012 = "";
+    let header31012 = "";
     if (numTables > 1) {
       cmap +=
         "\x00\x03" + // platformID
@@ -982,7 +982,7 @@ var Font = (function FontClosure() {
         range = ranges[i];
         start = range[0];
         codes = range[2];
-        var code = codes[0];
+        let code = codes[0];
         for (j = 1, jj = codes.length; j < jj; ++j) {
           if (codes[j] !== codes[j - 1] + 1) {
             end = range[0] + j - 1;
@@ -1018,22 +1018,22 @@ var Font = (function FontClosure() {
   }
 
   function validateOS2Table(os2) {
-    var stream = new Stream(os2.data);
-    var version = stream.getUint16();
+    const stream = new Stream(os2.data);
+    const version = stream.getUint16();
     // TODO verify all OS/2 tables fields, but currently we validate only those
     // that give us issues
     stream.getBytes(60); // skipping type, misc sizes, panose, unicode ranges
-    var selection = stream.getUint16();
+    const selection = stream.getUint16();
     if (version < 4 && selection & 0x0300) {
       return false;
     }
-    var firstChar = stream.getUint16();
-    var lastChar = stream.getUint16();
+    const firstChar = stream.getUint16();
+    const lastChar = stream.getUint16();
     if (firstChar > lastChar) {
       return false;
     }
     stream.getBytes(6); // skipping sTypoAscender/Descender/LineGap
-    var usWinAscent = stream.getUint16();
+    const usWinAscent = stream.getUint16();
     if (usWinAscent === 0) {
       // makes font unreadable by windows
       return false;
@@ -1053,16 +1053,16 @@ var Font = (function FontClosure() {
       descent: 0,
     };
 
-    var ulUnicodeRange1 = 0;
-    var ulUnicodeRange2 = 0;
-    var ulUnicodeRange3 = 0;
-    var ulUnicodeRange4 = 0;
+    let ulUnicodeRange1 = 0;
+    let ulUnicodeRange2 = 0;
+    let ulUnicodeRange3 = 0;
+    let ulUnicodeRange4 = 0;
 
-    var firstCharIndex = null;
-    var lastCharIndex = 0;
+    let firstCharIndex = null;
+    let lastCharIndex = 0;
 
     if (charstrings) {
-      for (var code in charstrings) {
+      for (let code in charstrings) {
         code |= 0;
         if (firstCharIndex > code || !firstCharIndex) {
           firstCharIndex = code;
@@ -1071,7 +1071,7 @@ var Font = (function FontClosure() {
           lastCharIndex = code;
         }
 
-        var position = getUnicodeRangeFor(code);
+        const position = getUnicodeRangeFor(code);
         if (position < 32) {
           ulUnicodeRange1 |= 1 << position;
         } else if (position < 64) {
@@ -1097,26 +1097,26 @@ var Font = (function FontClosure() {
       lastCharIndex = 255;
     }
 
-    var bbox = properties.bbox || [0, 0, 0, 0];
-    var unitsPerEm =
+    const bbox = properties.bbox || [0, 0, 0, 0];
+    const unitsPerEm =
       override.unitsPerEm ||
       1 / (properties.fontMatrix || FONT_IDENTITY_MATRIX)[0];
 
     // if the font units differ to the PDF glyph space units
     // then scale up the values
-    var scale = properties.ascentScaled
+    const scale = properties.ascentScaled
       ? 1.0
       : unitsPerEm / PDF_GLYPH_SPACE_UNITS;
 
-    var typoAscent =
+    const typoAscent =
       override.ascent || Math.round(scale * (properties.ascent || bbox[3]));
-    var typoDescent =
+    let typoDescent =
       override.descent || Math.round(scale * (properties.descent || bbox[1]));
     if (typoDescent > 0 && properties.descent > 0 && bbox[1] < 0) {
       typoDescent = -typoDescent; // fixing incorrect descent
     }
-    var winAscent = override.yMax || typoAscent;
-    var winDescent = -override.yMin || -typoDescent;
+    const winAscent = override.yMax || typoAscent;
+    const winDescent = -override.yMin || -typoDescent;
 
     return (
       "\x00\x03" + // version
@@ -1162,7 +1162,7 @@ var Font = (function FontClosure() {
   }
 
   function createPostTable(properties) {
-    var angle = Math.floor(properties.italicAngle * Math.pow(2, 16));
+    const angle = Math.floor(properties.italicAngle * Math.pow(2, 16));
     return (
       "\x00\x03\x00\x00" + // Version number
       string32(angle) + // italicAngle
@@ -1181,7 +1181,7 @@ var Font = (function FontClosure() {
       proto = [[], []]; // no strings and unicode strings
     }
 
-    var strings = [
+    const strings = [
       proto[0][0] || "Original licence", // 0.Copyright
       proto[0][1] || name, // 1.Font family
       proto[0][2] || "Unknown", // 2.Font subfamily (font weight)
@@ -1196,36 +1196,36 @@ var Font = (function FontClosure() {
 
     // Mac want 1-byte per character strings while Windows want
     // 2-bytes per character, so duplicate the names table
-    var stringsUnicode = [];
-    var i, ii, j, jj, str;
+    const stringsUnicode = [];
+    let i, ii, j, jj, str;
     for (i = 0, ii = strings.length; i < ii; i++) {
       str = proto[1][i] || strings[i];
 
-      var strBufUnicode = [];
+      const strBufUnicode = [];
       for (j = 0, jj = str.length; j < jj; j++) {
         strBufUnicode.push(string16(str.charCodeAt(j)));
       }
       stringsUnicode.push(strBufUnicode.join(""));
     }
 
-    var names = [strings, stringsUnicode];
-    var platforms = ["\x00\x01", "\x00\x03"];
-    var encodings = ["\x00\x00", "\x00\x01"];
-    var languages = ["\x00\x00", "\x04\x09"];
+    const names = [strings, stringsUnicode];
+    const platforms = ["\x00\x01", "\x00\x03"];
+    const encodings = ["\x00\x00", "\x00\x01"];
+    const languages = ["\x00\x00", "\x04\x09"];
 
-    var namesRecordCount = strings.length * platforms.length;
-    var nameTable =
+    const namesRecordCount = strings.length * platforms.length;
+    let nameTable =
       "\x00\x00" + // format
       string16(namesRecordCount) + // Number of names Record
       string16(namesRecordCount * 12 + 6); // Storage
 
     // Build the name records field
-    var strOffset = 0;
+    let strOffset = 0;
     for (i = 0, ii = platforms.length; i < ii; i++) {
-      var strs = names[i];
+      const strs = names[i];
       for (j = 0, jj = strs.length; j < jj; j++) {
         str = strs[j];
-        var nameRecord =
+        const nameRecord =
           platforms[i] + // platform ID
           encodings[i] + // encoding ID
           languages[i] + // language ID
@@ -1249,14 +1249,14 @@ var Font = (function FontClosure() {
     disableFontFace: false,
 
     get renderer() {
-      var renderer = FontRendererFactory.create(this, SEAC_ANALYSIS_ENABLED);
+      const renderer = FontRendererFactory.create(this, SEAC_ANALYSIS_ENABLED);
       return shadow(this, "renderer", renderer);
     },
 
     exportData: function Font_exportData() {
       // TODO remove enumerating of the properties, e.g. hardcode exact names.
-      var data = {};
-      for (var i in this) {
+      const data = {};
+      for (const i in this) {
         if (this.hasOwnProperty(i)) {
           data[i] = this[i];
         }
@@ -1266,16 +1266,16 @@ var Font = (function FontClosure() {
 
     fallbackToSystemFont: function Font_fallbackToSystemFont() {
       this.missingFile = true;
-      var charCode, unicode;
+      let charCode, unicode;
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
-      var name = this.name;
-      var type = this.type;
-      var subtype = this.subtype;
+      const name = this.name;
+      const type = this.type;
+      const subtype = this.subtype;
       let fontName = name.replace(/[,_]/g, "-").replace(/\s/g, "");
-      var stdFontMap = getStdFontMap(),
+      const stdFontMap = getStdFontMap(),
         nonStdFontMap = getNonStdFontMap();
-      var isStandardFont =
+      const isStandardFont =
         !!stdFontMap[fontName] ||
         !!(nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]);
       fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
@@ -1304,7 +1304,7 @@ var Font = (function FontClosure() {
           map[+charCode] = GlyphMapForStandardFonts[charCode];
         }
         if (/Arial-?Black/i.test(name)) {
-          var SupplementalGlyphMapForArialBlack = getSupplementalGlyphMapForArialBlack();
+          const SupplementalGlyphMapForArialBlack = getSupplementalGlyphMapForArialBlack();
           for (charCode in SupplementalGlyphMapForArialBlack) {
             map[+charCode] = SupplementalGlyphMapForArialBlack[charCode];
           }
@@ -1315,7 +1315,8 @@ var Font = (function FontClosure() {
           }
         }
 
-        var isIdentityUnicode = this.toUnicode instanceof IdentityToUnicodeMap;
+        const isIdentityUnicode =
+          this.toUnicode instanceof IdentityToUnicodeMap;
         if (!isIdentityUnicode) {
           this.toUnicode.forEach(function(charCode, unicodeCharCode) {
             map[+charCode] = unicodeCharCode;
@@ -1349,7 +1350,7 @@ var Font = (function FontClosure() {
         const map = [];
         this.toUnicode.forEach((charCode, unicodeCharCode) => {
           if (!this.composite) {
-            var glyphName =
+            const glyphName =
               this.differences[charCode] || this.defaultEncoding[charCode];
             unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
             if (unicode !== -1) {
@@ -1419,17 +1420,17 @@ var Font = (function FontClosure() {
       }
 
       function readTableEntry(file) {
-        var tag = bytesToString(file.getBytes(4));
+        const tag = bytesToString(file.getBytes(4));
 
-        var checksum = file.getInt32() >>> 0;
-        var offset = file.getInt32() >>> 0;
-        var length = file.getInt32() >>> 0;
+        const checksum = file.getInt32() >>> 0;
+        const offset = file.getInt32() >>> 0;
+        const length = file.getInt32() >>> 0;
 
         // Read the table associated data
-        var previousPosition = file.pos;
+        const previousPosition = file.pos;
         file.pos = file.start ? file.start : 0;
         file.skip(offset);
-        var data = file.getBytes(length);
+        const data = file.getBytes(length);
         file.pos = previousPosition;
 
         if (tag === "head") {
@@ -1536,15 +1537,15 @@ var Font = (function FontClosure() {
             hasShortCmap: false,
           };
         }
-        var segment;
-        var start = (font.start ? font.start : 0) + cmap.offset;
+        let segment;
+        let start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
 
         font.getUint16(); // version
-        var numTables = font.getUint16();
+        const numTables = font.getUint16();
 
-        var potentialTable;
-        var canBreak = false;
+        let potentialTable;
+        let canBreak = false;
         // There's an order of preference in terms of which cmap subtable to
         // use:
         // - non-symbolic fonts the preference is a 3,1 table then a 1,0 table
@@ -1552,10 +1553,10 @@ var Font = (function FontClosure() {
         // The following takes advantage of the fact that the tables are sorted
         // to work.
         for (var i = 0; i < numTables; i++) {
-          var platformId = font.getUint16();
-          var encodingId = font.getUint16();
-          var offset = font.getInt32() >>> 0;
-          var useTable = false;
+          const platformId = font.getUint16();
+          const encodingId = font.getUint16();
+          const offset = font.getInt32() >>> 0;
+          let useTable = false;
 
           // Sometimes there are multiple of the same type of table. Default
           // to choosing the first table and skip the rest.
@@ -1614,18 +1615,18 @@ var Font = (function FontClosure() {
           };
         }
 
-        var format = font.getUint16();
+        const format = font.getUint16();
         font.getUint16(); // length
         font.getUint16(); // language
 
-        var hasShortCmap = false;
-        var mappings = [];
-        var j, glyphId;
+        let hasShortCmap = false;
+        const mappings = [];
+        let j, glyphId;
 
         // TODO(mack): refactor this cmap subtable reading logic out
         if (format === 0) {
           for (j = 0; j < 256; j++) {
-            var index = font.getByte();
+            const index = font.getByte();
             if (!index) {
               continue;
             }
@@ -1638,9 +1639,9 @@ var Font = (function FontClosure() {
         } else if (format === 4) {
           // re-creating the table in format 4 since the encoding
           // might be changed
-          var segCount = font.getUint16() >> 1;
+          const segCount = font.getUint16() >> 1;
           font.getBytes(6); // skipping range fields
-          var segIndex,
+          let segIndex,
             segments = [];
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segments.push({ end: font.getUint16() });
@@ -1654,10 +1655,10 @@ var Font = (function FontClosure() {
             segments[segIndex].delta = font.getUint16();
           }
 
-          var offsetsCount = 0;
+          let offsetsCount = 0;
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segment = segments[segIndex];
-            var rangeOffset = font.getUint16();
+            const rangeOffset = font.getUint16();
             if (!rangeOffset) {
               segment.offsetIndex = -1;
               continue;
@@ -1671,7 +1672,7 @@ var Font = (function FontClosure() {
             );
           }
 
-          var offsets = [];
+          const offsets = [];
           for (j = 0; j < offsetsCount; j++) {
             offsets.push(font.getUint16());
           }
@@ -1679,8 +1680,8 @@ var Font = (function FontClosure() {
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segment = segments[segIndex];
             start = segment.start;
-            var end = segment.end;
-            var delta = segment.delta;
+            const end = segment.end;
+            const delta = segment.delta;
             offsetIndex = segment.offsetIndex;
 
             for (j = start; j <= end; j++) {
@@ -1702,12 +1703,12 @@ var Font = (function FontClosure() {
           // table. (This looks weird, so I can have missed something), this
           // works on Linux but seems to fails on Mac so let's rewrite the
           // cmap table to a 3-1-4 style
-          var firstCode = font.getUint16();
-          var entryCount = font.getUint16();
+          const firstCode = font.getUint16();
+          const entryCount = font.getUint16();
 
           for (j = 0; j < entryCount; j++) {
             glyphId = font.getUint16();
-            var charCode = firstCode + j;
+            const charCode = firstCode + j;
 
             mappings.push({
               charCode,
@@ -1771,7 +1772,7 @@ var Font = (function FontClosure() {
         font.pos += 2; // caret_offset
         font.pos += 8; // reserved
         font.pos += 2; // format
-        var numOfMetrics = font.getUint16();
+        let numOfMetrics = font.getUint16();
 
         if (numOfMetrics > numGlyphs) {
           info(
@@ -1788,15 +1789,15 @@ var Font = (function FontClosure() {
           header.data[35] = numOfMetrics & 0x00ff;
         }
 
-        var numOfSidebearings = numGlyphs - numOfMetrics;
-        var numMissing =
+        const numOfSidebearings = numGlyphs - numOfMetrics;
+        const numMissing =
           numOfSidebearings - ((metrics.length - numOfMetrics * 4) >> 1);
 
         if (numMissing > 0) {
           // For each missing glyph, we set both the width and lsb to 0 (zero).
           // Since we need to add two properties for each glyph, this explains
           // the use of |numMissing * 2| when initializing the typed array.
-          var entries = new Uint8Array(metrics.length + numMissing * 2);
+          const entries = new Uint8Array(metrics.length + numMissing * 2);
           entries.set(metrics.data);
           if (dupFirstEntry) {
             // Set the sidebearing value of the duplicated glyph.
@@ -1815,7 +1816,7 @@ var Font = (function FontClosure() {
         destStart,
         hintsValid
       ) {
-        var glyphProfile = {
+        const glyphProfile = {
           length: 0,
           sizeOfInstructions: 0,
         };
@@ -1823,8 +1824,8 @@ var Font = (function FontClosure() {
           // glyph with data less than 12 is invalid one
           return glyphProfile;
         }
-        var glyf = source.subarray(sourceStart, sourceEnd);
-        var contoursCount = signedInt16(glyf[0], glyf[1]);
+        const glyf = source.subarray(sourceStart, sourceEnd);
+        let contoursCount = signedInt16(glyf[0], glyf[1]);
         if (contoursCount < 0) {
           // OTS doesn't like contour count to be less than -1.
           contoursCount = -1;
@@ -1835,24 +1836,24 @@ var Font = (function FontClosure() {
           return glyphProfile;
         }
 
-        var i,
+        let i,
           j = 10,
           flagsCount = 0;
         for (i = 0; i < contoursCount; i++) {
-          var endPoint = (glyf[j] << 8) | glyf[j + 1];
+          const endPoint = (glyf[j] << 8) | glyf[j + 1];
           flagsCount = endPoint + 1;
           j += 2;
         }
         // skipping instructions
-        var instructionsStart = j;
-        var instructionsLength = (glyf[j] << 8) | glyf[j + 1];
+        const instructionsStart = j;
+        const instructionsLength = (glyf[j] << 8) | glyf[j + 1];
         glyphProfile.sizeOfInstructions = instructionsLength;
         j += 2 + instructionsLength;
-        var instructionsEnd = j;
+        const instructionsEnd = j;
         // validating flags
-        var coordinatesLength = 0;
+        let coordinatesLength = 0;
         for (i = 0; i < flagsCount; i++) {
-          var flag = glyf[j++];
+          const flag = glyf[j++];
           if (flag & 0xc0) {
             // reserved flags must be zero, cleaning up
             glyf[j - 1] = flag & 0x3f;
@@ -1872,7 +1873,7 @@ var Font = (function FontClosure() {
           const xyLength = xLength + yLength;
           coordinatesLength += xyLength;
           if (flag & 8) {
-            var repeat = glyf[j++];
+            const repeat = glyf[j++];
             i += repeat;
             coordinatesLength += repeat * xyLength;
           }
@@ -1881,7 +1882,7 @@ var Font = (function FontClosure() {
         if (coordinatesLength === 0) {
           return glyphProfile;
         }
-        var glyphDataLength = j + coordinatesLength;
+        let glyphDataLength = j + coordinatesLength;
         if (glyphDataLength > glyf.length) {
           // not enough data for coordinates
           return glyphProfile;
@@ -1914,11 +1915,11 @@ var Font = (function FontClosure() {
       }
 
       function sanitizeHead(head, numGlyphs, locaLength) {
-        var data = head.data;
+        const data = head.data;
 
         // Validate version:
         // Should always be 0x00010000
-        var version = int32(data[0], data[1], data[2], data[3]);
+        const version = int32(data[0], data[1], data[2], data[3]);
         if (version >> 16 !== 1) {
           info("Attempting to fix invalid version in head table: " + version);
           data[0] = 0;
@@ -1927,7 +1928,7 @@ var Font = (function FontClosure() {
           data[3] = 0;
         }
 
-        var indexToLocFormat = int16(data[50], data[51]);
+        const indexToLocFormat = int16(data[50], data[51]);
         if (indexToLocFormat < 0 || indexToLocFormat > 1) {
           info(
             "Attempting to fix invalid indexToLocFormat in head table: " +
@@ -1944,7 +1945,7 @@ var Font = (function FontClosure() {
           // size of each offset in the loca table, and thus figure out the
           // appropriate value for indexToLocFormat.
 
-          var numGlyphsPlusOne = numGlyphs + 1;
+          const numGlyphsPlusOne = numGlyphs + 1;
           if (locaLength === numGlyphsPlusOne << 1) {
             // 0x0000 indicates the loca table consists of short offsets
             data[50] = 0;
@@ -1970,7 +1971,7 @@ var Font = (function FontClosure() {
         dupFirstEntry,
         maxSizeOfInstructions
       ) {
-        var itemSize, itemDecode, itemEncode;
+        let itemSize, itemDecode, itemEncode;
         if (isGlyphLocationsLong) {
           itemSize = 4;
           itemDecode = function fontItemDecodeLong(data, offset) {
@@ -1998,23 +1999,23 @@ var Font = (function FontClosure() {
           };
         }
         // The first glyph is duplicated.
-        var numGlyphsOut = dupFirstEntry ? numGlyphs + 1 : numGlyphs;
-        var locaDataSize = itemSize * (1 + numGlyphsOut);
+        const numGlyphsOut = dupFirstEntry ? numGlyphs + 1 : numGlyphs;
+        const locaDataSize = itemSize * (1 + numGlyphsOut);
         // Resize loca table to account for duplicated glyph.
-        var locaData = new Uint8Array(locaDataSize);
+        const locaData = new Uint8Array(locaDataSize);
         locaData.set(loca.data.subarray(0, locaDataSize));
         loca.data = locaData;
         // removing the invalid glyphs
-        var oldGlyfData = glyf.data;
-        var oldGlyfDataLength = oldGlyfData.length;
-        var newGlyfData = new Uint8Array(oldGlyfDataLength);
-        var startOffset = itemDecode(locaData, 0);
-        var writeOffset = 0;
-        var missingGlyphs = Object.create(null);
+        const oldGlyfData = glyf.data;
+        const oldGlyfDataLength = oldGlyfData.length;
+        const newGlyfData = new Uint8Array(oldGlyfDataLength);
+        let startOffset = itemDecode(locaData, 0);
+        let writeOffset = 0;
+        const missingGlyphs = Object.create(null);
         itemEncode(locaData, 0, writeOffset);
-        var i, j;
+        let i, j;
         for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
-          var endOffset = itemDecode(locaData, j);
+          let endOffset = itemDecode(locaData, j);
           // The spec says the offsets should be in ascending order, however
           // some fonts use the offset of 0 to mark a glyph as missing.
           if (endOffset === 0) {
@@ -2033,7 +2034,7 @@ var Font = (function FontClosure() {
             startOffset = endOffset;
           }
 
-          var glyphProfile = sanitizeGlyph(
+          const glyphProfile = sanitizeGlyph(
             oldGlyfData,
             startOffset,
             endOffset,
@@ -2041,7 +2042,7 @@ var Font = (function FontClosure() {
             writeOffset,
             hintsValid
           );
-          var newLength = glyphProfile.length;
+          const newLength = glyphProfile.length;
           if (newLength === 0) {
             missingGlyphs[i] = true;
           }
@@ -2056,7 +2057,7 @@ var Font = (function FontClosure() {
         if (writeOffset === 0) {
           // glyf table cannot be empty -- redoing the glyf and loca tables
           // to have single glyph with one point
-          var simpleGlyph = new Uint8Array([
+          const simpleGlyph = new Uint8Array([
             0,
             1,
             0,
@@ -2082,7 +2083,7 @@ var Font = (function FontClosure() {
           // Browsers will not display a glyph at position 0. Typically glyph 0
           // is notdef, but a number of fonts put a valid glyph there so it must
           // be duplicated and appended.
-          var firstEntryLength = itemDecode(locaData, itemSize);
+          const firstEntryLength = itemDecode(locaData, itemSize);
           if (newGlyfData.length > firstEntryLength + writeOffset) {
             glyf.data = newGlyfData.subarray(0, firstEntryLength + writeOffset);
           } else {
@@ -2105,18 +2106,18 @@ var Font = (function FontClosure() {
       }
 
       function readPostScriptTable(post, properties, maxpNumGlyphs) {
-        var start = (font.start ? font.start : 0) + post.offset;
+        const start = (font.start ? font.start : 0) + post.offset;
         font.pos = start;
 
-        var length = post.length,
+        const length = post.length,
           end = start + length;
-        var version = font.getInt32();
+        const version = font.getInt32();
         // skip rest to the tables
         font.getBytes(28);
 
-        var glyphNames;
-        var valid = true;
-        var i;
+        let glyphNames;
+        let valid = true;
+        let i;
 
         switch (version) {
           case 0x00010000:
@@ -2130,7 +2131,7 @@ var Font = (function FontClosure() {
             }
             var glyphNameIndexes = [];
             for (i = 0; i < numGlyphs; ++i) {
-              var index = font.getUint16();
+              const index = font.getUint16();
               if (index >= 32768) {
                 valid = false;
                 break;
@@ -2143,7 +2144,7 @@ var Font = (function FontClosure() {
             var customNames = [];
             var strBuf = [];
             while (font.pos < end) {
-              var stringLength = font.getByte();
+              const stringLength = font.getByte();
               strBuf.length = stringLength;
               for (i = 0; i < stringLength; ++i) {
                 strBuf[i] = String.fromCharCode(font.getByte());
@@ -2152,7 +2153,7 @@ var Font = (function FontClosure() {
             }
             glyphNames = [];
             for (i = 0; i < numGlyphs; ++i) {
-              var j = glyphNameIndexes[i];
+              const j = glyphNameIndexes[i];
               if (j < 258) {
                 glyphNames.push(MacStandardGlyphOrdering[j]);
                 continue;
@@ -2175,30 +2176,30 @@ var Font = (function FontClosure() {
       }
 
       function readNameTable(nameTable) {
-        var start = (font.start ? font.start : 0) + nameTable.offset;
+        const start = (font.start ? font.start : 0) + nameTable.offset;
         font.pos = start;
 
-        var names = [[], []];
-        var length = nameTable.length,
+        const names = [[], []];
+        const length = nameTable.length,
           end = start + length;
-        var format = font.getUint16();
-        var FORMAT_0_HEADER_LENGTH = 6;
+        const format = font.getUint16();
+        const FORMAT_0_HEADER_LENGTH = 6;
         if (format !== 0 || length < FORMAT_0_HEADER_LENGTH) {
           // unsupported name table format or table "too" small
           return names;
         }
-        var numRecords = font.getUint16();
-        var stringsStart = font.getUint16();
-        var records = [];
-        var NAME_RECORD_LENGTH = 12;
-        var i, ii;
+        const numRecords = font.getUint16();
+        const stringsStart = font.getUint16();
+        const records = [];
+        const NAME_RECORD_LENGTH = 12;
+        let i, ii;
 
         for (
           i = 0;
           i < numRecords && font.pos + NAME_RECORD_LENGTH <= end;
           i++
         ) {
-          var r = {
+          const r = {
             platform: font.getUint16(),
             encoding: font.getUint16(),
             language: font.getUint16(),
@@ -2215,20 +2216,20 @@ var Font = (function FontClosure() {
           }
         }
         for (i = 0, ii = records.length; i < ii; i++) {
-          var record = records[i];
+          const record = records[i];
           if (record.length <= 0) {
             continue; // Nothing to process, ignoring.
           }
-          var pos = start + stringsStart + record.offset;
+          const pos = start + stringsStart + record.offset;
           if (pos + record.length > end) {
             continue; // outside of name table, ignoring
           }
           font.pos = pos;
-          var nameIndex = record.name;
+          const nameIndex = record.name;
           if (record.encoding) {
             // unicode
-            var str = "";
-            for (var j = 0, jj = record.length; j < jj; j += 2) {
+            let str = "";
+            for (let j = 0, jj = record.length; j < jj; j += 2) {
               str += String.fromCharCode(font.getUint16());
             }
             names[1][nameIndex] = str;
@@ -2240,7 +2241,7 @@ var Font = (function FontClosure() {
       }
 
       // prettier-ignore
-      var TTOpsStackDeltas = [
+      const TTOpsStackDeltas = [
         0, 0, 0, 0, 0, 0, 0, 0, -2, -2, -2, -2, 0, 0, -2, -5,
         -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, -1, 0, -1, -1, -1, -1,
         1, -1, -999, 0, 1, 0, -1, -2, 0, -1, -2, -1, -1, 0, -1, -1,
@@ -2253,8 +2254,8 @@ var Font = (function FontClosure() {
       // 0xC0-DF == -1 and 0xE0-FF == -2
 
       function sanitizeTTProgram(table, ttContext) {
-        var data = table.data;
-        var i = 0,
+        let data = table.data;
+        let i = 0,
           j,
           n,
           b,
@@ -2262,15 +2263,15 @@ var Font = (function FontClosure() {
           pc,
           lastEndf = 0,
           lastDeff = 0;
-        var stack = [];
-        var callstack = [];
-        var functionsCalled = [];
-        var tooComplexToFollowFunctions = ttContext.tooComplexToFollowFunctions;
-        var inFDEF = false,
+        const stack = [];
+        const callstack = [];
+        const functionsCalled = [];
+        let tooComplexToFollowFunctions = ttContext.tooComplexToFollowFunctions;
+        let inFDEF = false,
           ifLevel = 0,
           inELSE = 0;
-        for (var ii = data.length; i < ii; ) {
-          var op = data[i++];
+        for (let ii = data.length; i < ii; ) {
+          const op = data[i++];
           // The TrueType instruction set docs can be found at
           // https://developer.apple.com/fonts/TTRefMan/RM05/Chap5.html
           if (op === 0x40) {
@@ -2403,7 +2404,7 @@ var Font = (function FontClosure() {
           } else if (op === 0x1c) {
             // JMPR
             if (!inFDEF && !inELSE) {
-              var offset = stack[stack.length - 1];
+              const offset = stack[stack.length - 1];
               // only jumping forward to prevent infinite loop
               if (offset > 0) {
                 i += offset - 1;
@@ -2437,7 +2438,7 @@ var Font = (function FontClosure() {
           }
         }
         ttContext.tooComplexToFollowFunctions = tooComplexToFollowFunctions;
-        var content = [data];
+        const content = [data];
         if (i > data.length) {
           content.push(new Uint8Array(i - data.length));
         }
@@ -2459,7 +2460,7 @@ var Font = (function FontClosure() {
           ttContext.hintsValid = false;
           return;
         }
-        for (var j = 0, jj = ttContext.functionsUsed.length; j < jj; j++) {
+        for (let j = 0, jj = ttContext.functionsUsed.length; j < jj; j++) {
           if (j > maxFunctionDefs) {
             warn("TT: invalid function id: " + j);
             ttContext.hintsValid = false;
@@ -2476,14 +2477,14 @@ var Font = (function FontClosure() {
       function foldTTTable(table, content) {
         if (content.length > 1) {
           // concatenating the content items
-          var newLength = 0;
-          var j, jj;
+          let newLength = 0;
+          let j, jj;
           for (j = 0, jj = content.length; j < jj; j++) {
             newLength += content[j].length;
           }
           newLength = (newLength + 3) & ~3;
-          var result = new Uint8Array(newLength);
-          var pos = 0;
+          const result = new Uint8Array(newLength);
+          let pos = 0;
           for (j = 0, jj = content.length; j < jj; j++) {
             result.set(content[j], pos);
             pos += content[j].length;
@@ -2494,7 +2495,7 @@ var Font = (function FontClosure() {
       }
 
       function sanitizeTTPrograms(fpgm, prep, cvt, maxFunctionDefs) {
-        var ttContext = {
+        const ttContext = {
           functionsDefined: [],
           functionsUsed: [],
           functionsStackDeltas: [],
@@ -2511,7 +2512,7 @@ var Font = (function FontClosure() {
           checkInvalidFunctions(ttContext, maxFunctionDefs);
         }
         if (cvt && cvt.length & 1) {
-          var cvtData = new Uint8Array(cvt.length + 1);
+          const cvtData = new Uint8Array(cvt.length + 1);
           cvtData.set(cvt.data);
           cvt.data = cvtData;
         }
@@ -2532,7 +2533,7 @@ var Font = (function FontClosure() {
       }
       let cff, cffFile;
 
-      var isTrueType = !tables["CFF "];
+      const isTrueType = !tables["CFF "];
       if (!isTrueType) {
         const isComposite =
           properties.composite &&
@@ -2581,7 +2582,7 @@ var Font = (function FontClosure() {
       }
 
       font.pos = (font.start || 0) + tables["maxp"].offset;
-      var version = font.getInt32();
+      const version = font.getInt32();
       const numGlyphs = font.getUint16();
       // Glyph 0 is duplicated and appended.
       let numGlyphsOut = numGlyphs + 1;
@@ -2591,12 +2592,12 @@ var Font = (function FontClosure() {
         numGlyphsOut = numGlyphs;
         warn("Not enough space in glyfs to duplicate first glyph.");
       }
-      var maxFunctionDefs = 0;
-      var maxSizeOfInstructions = 0;
+      let maxFunctionDefs = 0;
+      let maxSizeOfInstructions = 0;
       if (version >= 0x00010000 && tables["maxp"].length >= 22) {
         // maxZones can be invalid
         font.pos += 8;
-        var maxZones = font.getUint16();
+        const maxZones = font.getUint16();
         if (maxZones > 2) {
           // reset to 2 if font has invalid maxZones
           tables["maxp"].data[14] = 0;
@@ -2611,7 +2612,7 @@ var Font = (function FontClosure() {
       tables["maxp"].data[4] = numGlyphsOut >> 8;
       tables["maxp"].data[5] = numGlyphsOut & 255;
 
-      var hintsValid = sanitizeTTPrograms(
+      const hintsValid = sanitizeTTPrograms(
         tables["fpgm"],
         tables["prep"],
         tables["cvt "],
@@ -2643,13 +2644,13 @@ var Font = (function FontClosure() {
         isTrueType ? tables["loca"].length : 0
       );
 
-      var missingGlyphs = Object.create(null);
+      let missingGlyphs = Object.create(null);
       if (isTrueType) {
-        var isGlyphLocationsLong = int16(
+        const isGlyphLocationsLong = int16(
           tables["head"].data[50],
           tables["head"].data[51]
         );
-        var glyphsInfo = sanitizeGlyphLocations(
+        const glyphsInfo = sanitizeGlyphLocations(
           tables["loca"],
           tables["glyf"],
           numGlyphs,
@@ -2680,7 +2681,7 @@ var Font = (function FontClosure() {
 
       // Extract some more font properties from the OpenType head and
       // hhea tables; yMin and descent value are always negative.
-      var metricsOverride = {
+      const metricsOverride = {
         unitsPerEm: int16(tables["head"].data[18], tables["head"].data[19]),
         yMax: int16(tables["head"].data[42], tables["head"].data[43]),
         yMin: signedInt16(tables["head"].data[38], tables["head"].data[39]),
@@ -2703,7 +2704,7 @@ var Font = (function FontClosure() {
         data: createPostTable(properties),
       };
 
-      var charCodeToGlyphId = [],
+      let charCodeToGlyphId = [],
         charCode;
 
       // Helper function to try to skip mapping of empty glyphs.
@@ -2712,14 +2713,14 @@ var Font = (function FontClosure() {
       }
 
       if (properties.composite) {
-        var cidToGidMap = properties.cidToGidMap || [];
-        var isCidToGidMapEmpty = cidToGidMap.length === 0;
+        const cidToGidMap = properties.cidToGidMap || [];
+        const isCidToGidMapEmpty = cidToGidMap.length === 0;
 
         properties.cMap.forEach(function(charCode, cid) {
           if (cid > 0xffff) {
             throw new FormatError("Max size of CID is 65,535");
           }
-          var glyphId = -1;
+          let glyphId = -1;
           if (isCidToGidMapEmpty) {
             glyphId = cid;
           } else if (cidToGidMap[cid] !== undefined) {
@@ -2733,16 +2734,16 @@ var Font = (function FontClosure() {
       } else {
         // Most of the following logic in this code branch is based on the
         // 9.6.6.4 of the PDF spec.
-        var cmapTable = readCmapTable(
+        const cmapTable = readCmapTable(
           tables["cmap"],
           font,
           this.isSymbolicFont,
           properties.hasEncoding
         );
-        var cmapPlatformId = cmapTable.platformId;
-        var cmapEncodingId = cmapTable.encodingId;
-        var cmapMappings = cmapTable.mappings;
-        var cmapMappingsLength = cmapMappings.length;
+        const cmapPlatformId = cmapTable.platformId;
+        const cmapEncodingId = cmapTable.encodingId;
+        const cmapMappings = cmapTable.mappings;
+        const cmapMappingsLength = cmapMappings.length;
 
         // The spec seems to imply that if the font is symbolic the encoding
         // should be ignored, this doesn't appear to work for 'preistabelle.pdf'
@@ -2762,14 +2763,14 @@ var Font = (function FontClosure() {
           // TODO: Note that this is a hack which should be removed as soon as
           //       we have proper support for more exotic cmap tables.
 
-          var baseEncoding = [];
+          let baseEncoding = [];
           if (
             properties.baseEncodingName === "MacRomanEncoding" ||
             properties.baseEncodingName === "WinAnsiEncoding"
           ) {
             baseEncoding = getEncoding(properties.baseEncodingName);
           }
-          var glyphsUnicodeMap = getGlyphsUnicode();
+          const glyphsUnicodeMap = getGlyphsUnicode();
           for (charCode = 0; charCode < 256; charCode++) {
             var glyphName, standardGlyphName;
             if (this.differences && charCode in this.differences) {
@@ -2796,7 +2797,7 @@ var Font = (function FontClosure() {
               unicodeOrCharCode = MacRomanEncoding.indexOf(standardGlyphName);
             }
 
-            var found = false;
+            let found = false;
             for (let i = 0; i < cmapMappingsLength; ++i) {
               if (cmapMappings[i].charCode !== unicodeOrCharCode) {
                 continue;
@@ -2807,7 +2808,7 @@ var Font = (function FontClosure() {
             }
             if (!found && properties.glyphNames) {
               // Try to map using the post table.
-              var glyphId = properties.glyphNames.indexOf(glyphName);
+              let glyphId = properties.glyphNames.indexOf(glyphName);
               // The post table ought to use the same kind of glyph names as the
               // `differences` array, but check the standard ones as a fallback.
               if (glyphId === -1 && standardGlyphName !== glyphName) {
@@ -2865,7 +2866,11 @@ var Font = (function FontClosure() {
       }
 
       // Converting glyphs and ids into font's cmap table
-      var newMapping = adjustMapping(charCodeToGlyphId, hasGlyph, glyphZeroId);
+      const newMapping = adjustMapping(
+        charCodeToGlyphId,
+        hasGlyph,
+        glyphZeroId
+      );
       this.toFontChar = newMapping.toFontChar;
       tables["cmap"] = {
         tag: "cmap",
@@ -2887,14 +2892,14 @@ var Font = (function FontClosure() {
         try {
           // Trying to repair CFF file
           cffFile = new Stream(tables["CFF "].data);
-          var parser = new CFFParser(
+          const parser = new CFFParser(
             cffFile,
             properties,
             SEAC_ANALYSIS_ENABLED
           );
           cff = parser.parse();
           cff.duplicateFirstGlyph();
-          var compiler = new CFFCompiler(cff);
+          const compiler = new CFFCompiler(cff);
           tables["CFF "].data = compiler.compile();
         } catch (e) {
           warn("Failed to compile font " + properties.loadedName);
@@ -2909,12 +2914,12 @@ var Font = (function FontClosure() {
         };
       } else {
         // ... using existing 'name' table as prototype
-        var namePrototype = readNameTable(tables["name"]);
+        const namePrototype = readNameTable(tables["name"]);
         tables["name"].data = createNameTable(name, namePrototype);
       }
 
-      var builder = new OpenTypeFileBuilder(header.version);
-      for (var tableTag in tables) {
+      const builder = new OpenTypeFileBuilder(header.version);
+      for (const tableTag in tables) {
         builder.addTable(tableTag, tables[tableTag].data);
       }
       return builder.toArray();
@@ -2937,18 +2942,18 @@ var Font = (function FontClosure() {
       if (font instanceof CFFFont) {
         glyphZeroId = font.numGlyphs - 1;
       }
-      var mapping = font.getGlyphMapping(properties);
-      var newMapping = adjustMapping(
+      const mapping = font.getGlyphMapping(properties);
+      const newMapping = adjustMapping(
         mapping,
         font.hasGlyphId.bind(font),
         glyphZeroId
       );
       this.toFontChar = newMapping.toFontChar;
-      var numGlyphs = font.numGlyphs;
+      const numGlyphs = font.numGlyphs;
 
       function getCharCodes(charCodeToGlyphId, glyphId) {
-        var charCodes = null;
-        for (var charCode in charCodeToGlyphId) {
+        let charCodes = null;
+        for (const charCode in charCodeToGlyphId) {
           if (glyphId === charCodeToGlyphId[charCode]) {
             if (!charCodes) {
               charCodes = [];
@@ -2960,7 +2965,7 @@ var Font = (function FontClosure() {
       }
 
       function createCharCode(charCodeToGlyphId, glyphId) {
-        for (var charCode in charCodeToGlyphId) {
+        for (const charCode in charCodeToGlyphId) {
           if (glyphId === charCodeToGlyphId[charCode]) {
             return charCode | 0;
           }
@@ -2971,42 +2976,42 @@ var Font = (function FontClosure() {
         return newMapping.nextAvailableFontCharCode++;
       }
 
-      var seacs = font.seacs;
+      const seacs = font.seacs;
       if (SEAC_ANALYSIS_ENABLED && seacs && seacs.length) {
-        var matrix = properties.fontMatrix || FONT_IDENTITY_MATRIX;
-        var charset = font.getCharset();
-        var seacMap = Object.create(null);
-        for (var glyphId in seacs) {
+        const matrix = properties.fontMatrix || FONT_IDENTITY_MATRIX;
+        const charset = font.getCharset();
+        const seacMap = Object.create(null);
+        for (let glyphId in seacs) {
           glyphId |= 0;
-          var seac = seacs[glyphId];
-          var baseGlyphName = StandardEncoding[seac[2]];
-          var accentGlyphName = StandardEncoding[seac[3]];
-          var baseGlyphId = charset.indexOf(baseGlyphName);
-          var accentGlyphId = charset.indexOf(accentGlyphName);
+          const seac = seacs[glyphId];
+          const baseGlyphName = StandardEncoding[seac[2]];
+          const accentGlyphName = StandardEncoding[seac[3]];
+          const baseGlyphId = charset.indexOf(baseGlyphName);
+          const accentGlyphId = charset.indexOf(accentGlyphName);
           if (baseGlyphId < 0 || accentGlyphId < 0) {
             continue;
           }
-          var accentOffset = {
+          const accentOffset = {
             x: seac[0] * matrix[0] + seac[1] * matrix[2] + matrix[4],
             y: seac[0] * matrix[1] + seac[1] * matrix[3] + matrix[5],
           };
 
-          var charCodes = getCharCodes(mapping, glyphId);
+          const charCodes = getCharCodes(mapping, glyphId);
           if (!charCodes) {
             // There's no point in mapping it if the char code was never mapped
             // to begin with.
             continue;
           }
-          for (var i = 0, ii = charCodes.length; i < ii; i++) {
-            var charCode = charCodes[i];
+          for (let i = 0, ii = charCodes.length; i < ii; i++) {
+            const charCode = charCodes[i];
             // Find a fontCharCode that maps to the base and accent glyphs.
             // If one doesn't exists, create it.
-            var charCodeToGlyphId = newMapping.charCodeToGlyphId;
-            var baseFontCharCode = createCharCode(
+            const charCodeToGlyphId = newMapping.charCodeToGlyphId;
+            const baseFontCharCode = createCharCode(
               charCodeToGlyphId,
               baseGlyphId
             );
-            var accentFontCharCode = createCharCode(
+            const accentFontCharCode = createCharCode(
               charCodeToGlyphId,
               accentGlyphId
             );
@@ -3020,9 +3025,9 @@ var Font = (function FontClosure() {
         properties.seacMap = seacMap;
       }
 
-      var unitsPerEm = 1 / (properties.fontMatrix || FONT_IDENTITY_MATRIX)[0];
+      const unitsPerEm = 1 / (properties.fontMatrix || FONT_IDENTITY_MATRIX)[0];
 
-      var builder = new OpenTypeFileBuilder("\x4F\x54\x54\x4F");
+      const builder = new OpenTypeFileBuilder("\x4F\x54\x54\x4F");
       // PostScript Font Program
       builder.addTable("CFF ", font.data);
       // OS/2 and Windows Specific metrics
@@ -3083,13 +3088,13 @@ var Font = (function FontClosure() {
       builder.addTable(
         "hmtx",
         (function fontFieldsHmtx() {
-          var charstrings = font.charstrings;
-          var cffWidths = font.cff ? font.cff.widths : null;
-          var hmtx = "\x00\x00\x00\x00"; // Fake .notdef
-          for (var i = 1, ii = numGlyphs; i < ii; i++) {
-            var width = 0;
+          const charstrings = font.charstrings;
+          const cffWidths = font.cff ? font.cff.widths : null;
+          let hmtx = "\x00\x00\x00\x00"; // Fake .notdef
+          for (let i = 1, ii = numGlyphs; i < ii; i++) {
+            let width = 0;
             if (charstrings) {
-              var charstring = charstrings[i - 1];
+              const charstring = charstrings[i - 1];
               width = "width" in charstring ? charstring.width : 0;
             } else if (cffWidths) {
               width = Math.ceil(cffWidths[i] || 0);
@@ -3121,19 +3126,19 @@ var Font = (function FontClosure() {
       }
 
       // trying to estimate space character width
-      var possibleSpaceReplacements = ["space", "minus", "one", "i", "I"];
-      var width;
-      for (var i = 0, ii = possibleSpaceReplacements.length; i < ii; i++) {
-        var glyphName = possibleSpaceReplacements[i];
+      const possibleSpaceReplacements = ["space", "minus", "one", "i", "I"];
+      let width;
+      for (let i = 0, ii = possibleSpaceReplacements.length; i < ii; i++) {
+        const glyphName = possibleSpaceReplacements[i];
         // if possible, getting width by glyph name
         if (glyphName in this.widths) {
           width = this.widths[glyphName];
           break;
         }
-        var glyphsUnicodeMap = getGlyphsUnicode();
-        var glyphUnicode = glyphsUnicodeMap[glyphName];
+        const glyphsUnicodeMap = getGlyphsUnicode();
+        const glyphUnicode = glyphsUnicodeMap[glyphName];
         // finding the charcode via unicodeToCID map
-        var charcode = 0;
+        let charcode = 0;
         if (this.composite) {
           if (this.cMap.contains(glyphUnicode)) {
             charcode = this.cMap.lookup(glyphUnicode);
@@ -3161,15 +3166,15 @@ var Font = (function FontClosure() {
     },
 
     charToGlyph: function Font_charToGlyph(charcode, isSpace) {
-      var fontCharCode, width, operatorListId;
+      let fontCharCode, width, operatorListId;
 
-      var widthCode = charcode;
+      let widthCode = charcode;
       if (this.cMap && this.cMap.contains(charcode)) {
         widthCode = this.cMap.lookup(charcode);
       }
       width = this.widths[widthCode];
       width = isNum(width) ? width : this.defaultWidth;
-      var vmetric = this.vmetrics && this.vmetrics[widthCode];
+      const vmetric = this.vmetrics && this.vmetrics[widthCode];
 
       let unicode =
         this.toUnicode.get(charcode) ||
@@ -3179,7 +3184,7 @@ var Font = (function FontClosure() {
         unicode = String.fromCharCode(unicode);
       }
 
-      var isInFont = charcode in this.toFontChar;
+      let isInFont = charcode in this.toFontChar;
       // First try the toFontChar map, if it's not there then try falling
       // back to the char code.
       fontCharCode = this.toFontChar[charcode] || charcode;
@@ -3202,10 +3207,10 @@ var Font = (function FontClosure() {
         operatorListId = fontCharCode;
       }
 
-      var accent = null;
+      let accent = null;
       if (this.seacMap && this.seacMap[charcode]) {
         isInFont = true;
-        var seac = this.seacMap[charcode];
+        const seac = this.seacMap[charcode];
         fontCharCode = seac.baseFontCharCode;
         accent = {
           fontChar: String.fromCodePoint(seac.accentFontCharCode),
@@ -3213,12 +3218,12 @@ var Font = (function FontClosure() {
         };
       }
 
-      var fontChar =
+      const fontChar =
         typeof fontCharCode === "number"
           ? String.fromCodePoint(fontCharCode)
           : "";
 
-      var glyph = this.glyphCache[charcode];
+      let glyph = this.glyphCache[charcode];
       if (
         !glyph ||
         !glyph.matchesForCache(
@@ -3248,8 +3253,8 @@ var Font = (function FontClosure() {
     },
 
     charsToGlyphs: function Font_charsToGlyphs(chars) {
-      var charsCache = this.charsCache;
-      var glyphs, glyph, charcode;
+      let charsCache = this.charsCache;
+      let glyphs, glyph, charcode;
 
       // if we translated this string before, just grab it from the cache
       if (charsCache) {
@@ -3265,21 +3270,21 @@ var Font = (function FontClosure() {
       }
 
       glyphs = [];
-      var charsCacheKey = chars;
-      var i = 0,
+      const charsCacheKey = chars;
+      let i = 0,
         ii;
 
       if (this.cMap) {
         // composite fonts have multi-byte strings convert the string from
         // single-byte to multi-byte
-        var c = Object.create(null);
+        const c = Object.create(null);
         while (i < chars.length) {
           this.cMap.readCharCode(chars, i, c);
           charcode = c.charcode;
-          var length = c.length;
+          const length = c.length;
           i += length;
           // Space is char with code 0x20 and length 1 in multiple-byte codes.
-          var isSpace = length === 1 && chars.charCodeAt(i - 1) === 0x20;
+          const isSpace = length === 1 && chars.charCodeAt(i - 1) === 0x20;
           glyph = this.charToGlyph(charcode, isSpace);
           glyphs.push(glyph);
         }
@@ -3303,7 +3308,7 @@ var Font = (function FontClosure() {
   return Font;
 })();
 
-var ErrorFont = (function ErrorFontClosure() {
+const ErrorFont = (function ErrorFontClosure() {
   function ErrorFont(error) {
     this.error = error;
     this.loadedName = "g_font_error";
@@ -3333,9 +3338,9 @@ var ErrorFont = (function ErrorFontClosure() {
  * @returns {Object} A char code to glyph ID map.
  */
 function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
-  var charCodeToGlyphId = Object.create(null);
-  var glyphId, charCode, baseEncoding;
-  var isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
+  const charCodeToGlyphId = Object.create(null);
+  let glyphId, charCode, baseEncoding;
+  const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
 
   if (properties.baseEncodingName) {
     // If a valid base encoding name was used, the mapping is initialized with
@@ -3369,18 +3374,18 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   }
 
   // Lastly, merge in the differences.
-  var differences = properties.differences,
+  let differences = properties.differences,
     glyphsUnicodeMap;
   if (differences) {
     for (charCode in differences) {
-      var glyphName = differences[charCode];
+      const glyphName = differences[charCode];
       glyphId = glyphNames.indexOf(glyphName);
 
       if (glyphId === -1) {
         if (!glyphsUnicodeMap) {
           glyphsUnicodeMap = getGlyphsUnicode();
         }
-        var standardGlyphName = recoverGlyphName(glyphName, glyphsUnicodeMap);
+        const standardGlyphName = recoverGlyphName(glyphName, glyphsUnicodeMap);
         if (standardGlyphName !== glyphName) {
           glyphId = glyphNames.indexOf(standardGlyphName);
         }
@@ -3398,11 +3403,11 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
 // Type1Font is also a CIDFontType0.
 var Type1Font = (function Type1FontClosure() {
   function findBlock(streamBytes, signature, startIndex) {
-    var streamBytesLength = streamBytes.length;
-    var signatureLength = signature.length;
-    var scanLength = streamBytesLength - signatureLength;
+    const streamBytesLength = streamBytes.length;
+    const signatureLength = signature.length;
+    const scanLength = streamBytesLength - signatureLength;
 
-    var i = startIndex,
+    let i = startIndex,
       j,
       found = false;
     while (i < scanLength) {
@@ -3428,10 +3433,10 @@ var Type1Font = (function Type1FontClosure() {
   }
 
   function getHeaderBlock(stream, suggestedLength) {
-    var EEXEC_SIGNATURE = [0x65, 0x65, 0x78, 0x65, 0x63];
+    const EEXEC_SIGNATURE = [0x65, 0x65, 0x78, 0x65, 0x63];
 
-    var streamStartPos = stream.pos; // Save the initial stream position.
-    var headerBytes, headerBytesLength, block;
+    const streamStartPos = stream.pos; // Save the initial stream position.
+    let headerBytes, headerBytesLength, block;
     try {
       headerBytes = stream.getBytes(suggestedLength);
       headerBytesLength = headerBytes.length;
@@ -3465,10 +3470,10 @@ var Type1Font = (function Type1FontClosure() {
     warn('Invalid "Length1" property in Type1 font -- trying to recover.');
     stream.pos = streamStartPos; // Reset the stream position.
 
-    var SCAN_BLOCK_LENGTH = 2048;
-    var actualLength;
+    const SCAN_BLOCK_LENGTH = 2048;
+    let actualLength;
     while (true) {
-      var scanBytes = stream.peekBytes(SCAN_BLOCK_LENGTH);
+      const scanBytes = stream.peekBytes(SCAN_BLOCK_LENGTH);
       block = findBlock(scanBytes, EEXEC_SIGNATURE, 0);
 
       if (block.length === 0) {
@@ -3510,7 +3515,7 @@ var Type1Font = (function Type1FontClosure() {
     // NOTE: This means that the function can include the fixed-content portion
     // in the returned eexec block. In practice this does *not* seem to matter,
     // since `Type1Parser_extractFontProgram` will skip over any non-commands.
-    var eexecBytes = stream.getBytes();
+    const eexecBytes = stream.getBytes();
     return {
       stream: new Stream(eexecBytes),
       length: eexecBytes.length,
@@ -3521,11 +3526,11 @@ var Type1Font = (function Type1FontClosure() {
     // Some bad generators embed pfb file as is, we have to strip 6-byte header.
     // Also, length1 and length2 might be off by 6 bytes as well.
     // http://www.math.ubc.ca/~cass/piscript/type1.pdf
-    var PFB_HEADER_SIZE = 6;
-    var headerBlockLength = properties.length1;
-    var eexecBlockLength = properties.length2;
-    var pfbHeader = file.peekBytes(PFB_HEADER_SIZE);
-    var pfbHeaderPresent = pfbHeader[0] === 0x80 && pfbHeader[1] === 0x01;
+    const PFB_HEADER_SIZE = 6;
+    let headerBlockLength = properties.length1;
+    let eexecBlockLength = properties.length2;
+    let pfbHeader = file.peekBytes(PFB_HEADER_SIZE);
+    const pfbHeaderPresent = pfbHeader[0] === 0x80 && pfbHeader[1] === 0x01;
     if (pfbHeaderPresent) {
       file.skip(PFB_HEADER_SIZE);
       headerBlockLength =
@@ -3536,8 +3541,8 @@ var Type1Font = (function Type1FontClosure() {
     }
 
     // Get the data block containing glyphs and subrs information
-    var headerBlock = getHeaderBlock(file, headerBlockLength);
-    var headerBlockParser = new Type1Parser(
+    const headerBlock = getHeaderBlock(file, headerBlockLength);
+    const headerBlockParser = new Type1Parser(
       headerBlock.stream,
       false,
       SEAC_ANALYSIS_ENABLED
@@ -3554,20 +3559,20 @@ var Type1Font = (function Type1FontClosure() {
     }
 
     // Decrypt the data blocks and retrieve it's content
-    var eexecBlock = getEexecBlock(file, eexecBlockLength);
-    var eexecBlockParser = new Type1Parser(
+    const eexecBlock = getEexecBlock(file, eexecBlockLength);
+    const eexecBlockParser = new Type1Parser(
       eexecBlock.stream,
       true,
       SEAC_ANALYSIS_ENABLED
     );
-    var data = eexecBlockParser.extractFontProgram(properties);
-    for (var info in data.properties) {
+    const data = eexecBlockParser.extractFontProgram(properties);
+    for (const info in data.properties) {
       properties[info] = data.properties[info];
     }
 
-    var charstrings = data.charstrings;
-    var type2Charstrings = this.getType2Charstrings(charstrings);
-    var subrs = this.getType2Subrs(data.subrs);
+    const charstrings = data.charstrings;
+    const type2Charstrings = this.getType2Charstrings(charstrings);
+    const subrs = this.getType2Subrs(data.subrs);
 
     this.charstrings = charstrings;
     this.data = this.wrap(
@@ -3586,25 +3591,25 @@ var Type1Font = (function Type1FontClosure() {
     },
 
     getCharset: function Type1Font_getCharset() {
-      var charset = [".notdef"];
-      var charstrings = this.charstrings;
-      for (var glyphId = 0; glyphId < charstrings.length; glyphId++) {
+      const charset = [".notdef"];
+      const charstrings = this.charstrings;
+      for (let glyphId = 0; glyphId < charstrings.length; glyphId++) {
         charset.push(charstrings[glyphId].glyphName);
       }
       return charset;
     },
 
     getGlyphMapping: function Type1Font_getGlyphMapping(properties) {
-      var charstrings = this.charstrings;
-      var glyphNames = [".notdef"],
+      const charstrings = this.charstrings;
+      let glyphNames = [".notdef"],
         glyphId;
       for (glyphId = 0; glyphId < charstrings.length; glyphId++) {
         glyphNames.push(charstrings[glyphId].glyphName);
       }
-      var encoding = properties.builtInEncoding;
+      const encoding = properties.builtInEncoding;
       if (encoding) {
         var builtInEncoding = Object.create(null);
-        for (var charCode in encoding) {
+        for (const charCode in encoding) {
           glyphId = glyphNames.indexOf(encoding[charCode]);
           if (glyphId >= 0) {
             builtInEncoding[charCode] = glyphId;
@@ -3623,15 +3628,15 @@ var Type1Font = (function Type1FontClosure() {
         // notdef is always defined.
         return true;
       }
-      var glyph = this.charstrings[id - 1];
+      const glyph = this.charstrings[id - 1];
       return glyph.charstring.length > 0;
     },
 
     getSeacs: function Type1Font_getSeacs(charstrings) {
-      var i, ii;
-      var seacMap = [];
+      let i, ii;
+      const seacMap = [];
       for (i = 0, ii = charstrings.length; i < ii; i++) {
-        var charstring = charstrings[i];
+        const charstring = charstrings[i];
         if (charstring.seac) {
           // Offset by 1 for .notdef
           seacMap[i + 1] = charstring.seac;
@@ -3643,16 +3648,16 @@ var Type1Font = (function Type1FontClosure() {
     getType2Charstrings: function Type1Font_getType2Charstrings(
       type1Charstrings
     ) {
-      var type2Charstrings = [];
-      for (var i = 0, ii = type1Charstrings.length; i < ii; i++) {
+      const type2Charstrings = [];
+      for (let i = 0, ii = type1Charstrings.length; i < ii; i++) {
         type2Charstrings.push(type1Charstrings[i].charstring);
       }
       return type2Charstrings;
     },
 
     getType2Subrs: function Type1Font_getType2Subrs(type1Subrs) {
-      var bias = 0;
-      var count = type1Subrs.length;
+      let bias = 0;
+      const count = type1Subrs.length;
       if (count < 1133) {
         bias = 107;
       } else if (count < 33769) {
@@ -3662,8 +3667,8 @@ var Type1Font = (function Type1FontClosure() {
       }
 
       // Add a bunch of empty subrs to deal with the Type2 bias
-      var type2Subrs = [];
-      var i;
+      const type2Subrs = [];
+      let i;
       for (i = 0; i < bias; i++) {
         type2Subrs.push([0x0b]);
       }
@@ -3682,12 +3687,12 @@ var Type1Font = (function Type1FontClosure() {
       subrs,
       properties
     ) {
-      var cff = new CFF();
+      const cff = new CFF();
       cff.header = new CFFHeader(1, 0, 4, 4);
 
       cff.names = [name];
 
-      var topDict = new CFFTopDict();
+      const topDict = new CFFTopDict();
       // CFF strings IDs 0...390 are predefined names, so refering
       // to entries in our own String INDEX starts at SID 391.
       topDict.setByName("version", 391);
@@ -3703,7 +3708,7 @@ var Type1Font = (function Type1FontClosure() {
       topDict.setByName("Private", null); // placeholder
       cff.topDict = topDict;
 
-      var strings = new CFFStrings();
+      const strings = new CFFStrings();
       strings.add("Version 0.11"); // Version
       strings.add("See original notice"); // Notice
       strings.add(name); // FullName
@@ -3713,9 +3718,9 @@ var Type1Font = (function Type1FontClosure() {
 
       cff.globalSubrIndex = new CFFIndex();
 
-      var count = glyphs.length;
-      var charsetArray = [".notdef"];
-      var i, ii;
+      const count = glyphs.length;
+      const charsetArray = [".notdef"];
+      let i, ii;
       for (i = 0; i < count; i++) {
         const glyphName = charstrings[i].glyphName;
         const index = CFFStandardStrings.indexOf(glyphName);
@@ -3726,16 +3731,16 @@ var Type1Font = (function Type1FontClosure() {
       }
       cff.charset = new CFFCharset(false, 0, charsetArray);
 
-      var charStringsIndex = new CFFIndex();
+      const charStringsIndex = new CFFIndex();
       charStringsIndex.add([0x8b, 0x0e]); // .notdef
       for (i = 0; i < count; i++) {
         charStringsIndex.add(glyphs[i]);
       }
       cff.charStrings = charStringsIndex;
 
-      var privateDict = new CFFPrivateDict();
+      const privateDict = new CFFPrivateDict();
       privateDict.setByName("Subrs", null); // placeholder
-      var fields = [
+      const fields = [
         "BlueValues",
         "OtherBlues",
         "FamilyBlues",
@@ -3752,15 +3757,15 @@ var Type1Font = (function Type1FontClosure() {
         "StdVW",
       ];
       for (i = 0, ii = fields.length; i < ii; i++) {
-        var field = fields[i];
+        const field = fields[i];
         if (!(field in properties.privateData)) {
           continue;
         }
-        var value = properties.privateData[field];
+        const value = properties.privateData[field];
         if (Array.isArray(value)) {
           // All of the private dictionary array data in CFF must be stored as
           // "delta-encoded" numbers.
-          for (var j = value.length - 1; j > 0; j--) {
+          for (let j = value.length - 1; j > 0; j--) {
             value[j] -= value[j - 1]; // ... difference from previous value
           }
         }
@@ -3768,13 +3773,13 @@ var Type1Font = (function Type1FontClosure() {
       }
       cff.topDict.privateDict = privateDict;
 
-      var subrIndex = new CFFIndex();
+      const subrIndex = new CFFIndex();
       for (i = 0, ii = subrs.length; i < ii; i++) {
         subrIndex.add(subrs[i]);
       }
       privateDict.subrsIndex = subrIndex;
 
-      var compiler = new CFFCompiler(cff);
+      const compiler = new CFFCompiler(cff);
       return compiler.compile();
     },
   };
@@ -3786,10 +3791,10 @@ var CFFFont = (function CFFFontClosure() {
   function CFFFont(file, properties) {
     this.properties = properties;
 
-    var parser = new CFFParser(file, properties, SEAC_ANALYSIS_ENABLED);
+    const parser = new CFFParser(file, properties, SEAC_ANALYSIS_ENABLED);
     this.cff = parser.parse();
     this.cff.duplicateFirstGlyph();
-    var compiler = new CFFCompiler(this.cff);
+    const compiler = new CFFCompiler(this.cff);
     this.seacs = this.cff.seacs;
     try {
       this.data = compiler.compile();
@@ -3809,11 +3814,11 @@ var CFFFont = (function CFFFontClosure() {
       return this.cff.charset.charset;
     },
     getGlyphMapping: function CFFFont_getGlyphMapping() {
-      var cff = this.cff;
-      var properties = this.properties;
-      var charsets = cff.charset.charset;
-      var charCodeToGlyphId;
-      var glyphId;
+      const cff = this.cff;
+      const properties = this.properties;
+      const charsets = cff.charset.charset;
+      let charCodeToGlyphId;
+      let glyphId;
 
       if (properties.composite) {
         charCodeToGlyphId = Object.create(null);
@@ -3822,7 +3827,7 @@ var CFFFont = (function CFFFontClosure() {
           // If the font is actually a CID font then we should use the charset
           // to map CIDs to GIDs.
           for (glyphId = 0; glyphId < charsets.length; glyphId++) {
-            var cid = charsets[glyphId];
+            const cid = charsets[glyphId];
             charCode = properties.cMap.charCodeOf(cid);
             charCodeToGlyphId[charCode] = glyphId;
           }
@@ -3837,7 +3842,7 @@ var CFFFont = (function CFFFontClosure() {
         return charCodeToGlyphId;
       }
 
-      var encoding = cff.encoding ? cff.encoding.encoding : null;
+      const encoding = cff.encoding ? cff.encoding.encoding : null;
       charCodeToGlyphId = type1FontGlyphMapping(properties, encoding, charsets);
       return charCodeToGlyphId;
     },
