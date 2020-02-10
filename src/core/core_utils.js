@@ -161,7 +161,7 @@ function readUint32(data, offset) {
 }
 
 // Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
-function isSpace(ch) {
+function isWhiteSpace(ch) {
   return ch === 0x20 || ch === 0x09 || ch === 0x0d || ch === 0x0a;
 }
 
@@ -176,5 +176,5 @@ export {
   readInt8,
   readUint16,
   readUint32,
-  isSpace,
+  isWhiteSpace,
 };
