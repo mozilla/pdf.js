@@ -658,7 +658,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
         expand(this);
         this._bounds = null;
       }
-      const NO_PADDING = "0 0 0 0";
       const transformBuf = [],
         paddingBuf = [];
 
@@ -701,10 +700,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
             paddingBuf.push(0);
           }
 
-          const padding = paddingBuf.join(" ");
-          if (padding !== NO_PADDING) {
-            div.style.padding = padding;
-          }
+          div.style.padding = paddingBuf.join(" ");
           if (transformBuf.length) {
             div.style.transform = transformBuf.join(" ");
           }
