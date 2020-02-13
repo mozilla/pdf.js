@@ -1492,10 +1492,7 @@ class LoopbackPort {
       if ((buffer = value.buffer) && isArrayBuffer(buffer)) {
         // We found object with ArrayBuffer (typed array).
         const transferable = transfers && transfers.includes(buffer);
-        if (value === buffer) {
-          // Special case when we are faking typed arrays in compatibility.js.
-          result = value;
-        } else if (transferable) {
+        if (transferable) {
           result = new value.constructor(
             buffer,
             value.byteOffset,
