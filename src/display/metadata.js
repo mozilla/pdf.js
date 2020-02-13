@@ -27,7 +27,7 @@ class Metadata {
     const parser = new SimpleXMLParser();
     const xmlDocument = parser.parseFromString(data);
 
-    this._metadata = Object.create(null);
+    this._metadataMap = new Map();
 
     if (xmlDocument) {
       this._parse(xmlDocument);
@@ -107,23 +107,26 @@ class Metadata {
           const entry = desc.childNodes[j];
           const name = entry.nodeName.toLowerCase();
 
-          this._metadata[name] = entry.textContent.trim();
+          this._metadataMap.set(name, entry.textContent.trim());
         }
       }
     }
   }
 
   get(name) {
-    const data = this._metadata[name];
-    return typeof data !== "undefined" ? data : null;
+    return this._metadataMap.has(name) ? this._metadataMap.get(name) : null;
   }
 
   getAll() {
-    return this._metadata;
+    const obj = Object.create(null);
+    for (const [key, value] of this._metadataMap) {
+      obj[key] = value;
+    }
+    return obj;
   }
 
   has(name) {
-    return typeof this._metadata[name] !== "undefined";
+    return this._metadataMap.has(name);
   }
 }
 
