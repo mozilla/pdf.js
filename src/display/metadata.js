@@ -27,7 +27,7 @@ class Metadata {
     const parser = new SimpleXMLParser();
     const xmlDocument = parser.parseFromString(data);
 
-    this._metadata = Object.create(null);
+    this._metadataMap = new Map();
 
     if (xmlDocument) {
       this._parse(xmlDocument);
@@ -37,7 +37,7 @@ class Metadata {
   _repair(data) {
     // Start by removing any "junk" before the first tag (see issue 10395).
     return data
-      .replace(/^([^<]+)/, "")
+      .replace(/^[^<]+/, "")
       .replace(/>\\376\\377([^<]+)/g, function(all, codes) {
         const bytes = codes
           .replace(/\\([0-3])([0-7])([0-7])/g, function(code, d1, d2, d3) {
@@ -63,11 +63,11 @@ class Metadata {
         for (let i = 0, ii = bytes.length; i < ii; i += 2) {
           const code = bytes.charCodeAt(i) * 256 + bytes.charCodeAt(i + 1);
           if (
-            code >= 32 &&
-            code < 127 &&
-            code !== 60 &&
-            code !== 62 &&
-            code !== 38
+            code >= /* Space = */ 32 &&
+            code < /* Delete = */ 127 &&
+            code !== /* '<' = */ 60 &&
+            code !== /* '>' = */ 62 &&
+            code !== /* '&' = */ 38
           ) {
             chars += String.fromCharCode(code);
           } else {
@@ -107,23 +107,26 @@ class Metadata {
           const entry = desc.childNodes[j];
           const name = entry.nodeName.toLowerCase();
 
-          this._metadata[name] = entry.textContent.trim();
+          this._metadataMap.set(name, entry.textContent.trim());
         }
       }
     }
   }
 
   get(name) {
-    const data = this._metadata[name];
-    return typeof data !== "undefined" ? data : null;
+    return this._metadataMap.has(name) ? this._metadataMap.get(name) : null;
   }
 
   getAll() {
-    return this._metadata;
+    const obj = Object.create(null);
+    for (const [key, value] of this._metadataMap) {
+      obj[key] = value;
+    }
+    return obj;
   }
 
   has(name) {
-    return typeof this._metadata[name] !== "undefined";
+    return this._metadataMap.has(name);
   }
 }
 
