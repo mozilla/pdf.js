@@ -37,7 +37,7 @@ class Metadata {
   _repair(data) {
     // Start by removing any "junk" before the first tag (see issue 10395).
     return data
-      .replace(/^([^<]+)/, "")
+      .replace(/^[^<]+/, "")
       .replace(/>\\376\\377([^<]+)/g, function(all, codes) {
         const bytes = codes
           .replace(/\\([0-3])([0-7])([0-7])/g, function(code, d1, d2, d3) {
@@ -63,11 +63,11 @@ class Metadata {
         for (let i = 0, ii = bytes.length; i < ii; i += 2) {
           const code = bytes.charCodeAt(i) * 256 + bytes.charCodeAt(i + 1);
           if (
-            code >= 32 &&
-            code < 127 &&
-            code !== 60 &&
-            code !== 62 &&
-            code !== 38
+            code >= /* Space = */ 32 &&
+            code < /* Delete = */ 127 &&
+            code !== /* '<' = */ 60 &&
+            code !== /* '>' = */ 62 &&
+            code !== /* '&' = */ 38
           ) {
             chars += String.fromCharCode(code);
           } else {
