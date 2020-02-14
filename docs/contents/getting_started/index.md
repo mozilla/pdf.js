@@ -38,20 +38,38 @@ Before downloading PDF.js please take a moment to understand the different layer
 ## Download
 
 <div class="row">
-  <div class="col-md-6">
+  <div class="col-md-4">
     <h3>Prebuilt</h3>
     <p>
       Includes the generic build of PDF.js and the viewer.
     </p>
+    <!--
+    <span class="GROUP_CLASS">
+      <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-dist.zip">Stable (vSTABLE_VERSION)</a>
+      <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-dist.zip">Beta (vBETA_VERSION)</a>
+    </span>
+    -->
+  </div>
+  <div class="col-md-4">
+    <h3>Prebuilt (ES5-compatible)</h3>
+    <p>
+      Includes the generic build of PDF.js and the viewer.
+    </p>
+    <!--
+    <span class="GROUP_CLASS">
+      <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-es5-dist.zip">Stable (vSTABLE_VERSION)</a>
+      <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-es5-dist.zip">Beta (vBETA_VERSION)</a>
+    </span>
+    -->
     <span class="GROUP_CLASS">
       <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-dist.zip">Stable (vSTABLE_VERSION)</a>
       <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-dist.zip">Beta (vBETA_VERSION)</a>
     </span>
   </div>
-  <div class="col-md-6">
+  <div class="col-md-4">
     <h3>Source</h3>
     To get a local copy of the current code, clone it using git:
-    <pre><code>$ git clone git://github.com/mozilla/pdf.js.git
+    <pre><code>$ git clone https://github.com/mozilla/pdf.js.git
 $ cd pdf.js
 </code></pre>
   </div>

@@ -23,7 +23,9 @@ Feel free to stop by #pdfjs on irc.mozilla.org for questions or guidance.
 
 ### Online demo
 
-+ https://mozilla.github.io/pdf.js/web/viewer.html
++ Modern browsers: https://mozilla.github.io/pdf.js/web/viewer.html
+
++ Older browsers: https://mozilla.github.io/pdf.js/es5/web/viewer.html
 
 ### Browser Extensions
 

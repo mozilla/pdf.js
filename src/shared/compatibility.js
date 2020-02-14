@@ -14,9 +14,11 @@
  */
 /* eslint no-var: error */
 
-// Skip compatibility checks for modern builds and if we already ran the module.
+// Skip compatibility checks for modern builds (unless we're running the
+// unit-tests in Node.js/Travis) and if we already ran the module.
 if (
-  (typeof PDFJSDev === "undefined" || !PDFJSDev.test("SKIP_BABEL")) &&
+  (typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!SKIP_BABEL || (LIB && TESTING)")) &&
   (typeof globalThis === "undefined" || !globalThis._pdfjsCompatibilityChecked)
 ) {
   // Provides support for globalThis in legacy browsers.
