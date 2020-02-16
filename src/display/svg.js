@@ -145,7 +145,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
           input = literals;
         } else {
           // eslint-disable-next-line no-undef
-          input = new Buffer(literals);
+          input = Buffer.from(literals);
         }
         const output = __non_webpack_require__("zlib").deflateSync(input, {
           level: 9,
