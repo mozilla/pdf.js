@@ -1401,6 +1401,9 @@ gulp.task("lint", function(done) {
     ".",
     "--report-unused-disable-directives",
   ];
+  if (process.argv.includes("--fix")) {
+    options.push("--fix");
+  }
   var esLintProcess = startNode(options, { stdio: "inherit" });
   esLintProcess.on("close", function(code) {
     if (code !== 0) {
