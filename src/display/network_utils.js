@@ -78,7 +78,7 @@ function extractFilenameFromHeader(getResponseHeader) {
 }
 
 function createResponseStatusError(status, url) {
-  if (status === 404 || (status === 0 && /^file:/.test(url))) {
+  if (status === 404 || (status === 0 && url.startsWith("file:"))) {
     return new MissingPDFException('Missing PDF "' + url + '".');
   }
   return new UnexpectedResponseException(
