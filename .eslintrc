@@ -127,6 +127,9 @@
       "args": "none",
     }],
 
+    // Node.js and CommonJS
+    "no-buffer-constructor": "error",
+
     // Stylistic Issues
     "lines-between-class-members": ["error", "always"],
     "max-len": ["error", {
