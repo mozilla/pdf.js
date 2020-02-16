@@ -1389,43 +1389,45 @@ gulp.task(
   })
 );
 
+gulp.task("lint", function(done) {
+  console.log();
+  console.log("### Linting JS files");
+
+  // Ensure that we lint the Firefox specific *.jsm files too.
+  var options = [
+    "node_modules/eslint/bin/eslint",
+    "--ext",
+    ".js,.jsm",
+    ".",
+    "--report-unused-disable-directives",
+  ];
+  var esLintProcess = startNode(options, { stdio: "inherit" });
+  esLintProcess.on("close", function(code) {
+    if (code !== 0) {
+      done(new Error("ESLint failed."));
+      return;
+    }
+    console.log("files checked, no errors found");
+    done();
+  });
+});
+
 gulp.task(
-  "lint",
+  "lint-chromium",
   gulp.series("default_preferences", function(done) {
     console.log();
-    console.log("### Linting JS files");
+    console.log("### Checking supplemental Chromium files");
 
-    // Ensure that we lint the Firefox specific *.jsm files too.
-    var options = [
-      "node_modules/eslint/bin/eslint",
-      "--ext",
-      ".js,.jsm",
-      ".",
-      "--report-unused-disable-directives",
-    ];
-    var esLintProcess = startNode(options, { stdio: "inherit" });
-    esLintProcess.on("close", function(code) {
-      if (code !== 0) {
-        done(new Error("ESLint failed."));
-        return;
-      }
-
-      console.log();
-      console.log("### Checking supplemental files");
-
-      if (
-        !checkChromePreferencesFile(
-          "extensions/chromium/preferences_schema.json",
-          "build/default_preferences.json"
-        )
-      ) {
-        done(new Error("chromium/preferences_schema is not in sync."));
-        return;
-      }
-
-      console.log("files checked, no errors found");
-      done();
-    });
+    if (
+      !checkChromePreferencesFile(
+        "extensions/chromium/preferences_schema.json",
+        "build/default_preferences.json"
+      )
+    ) {
+      done(new Error("chromium/preferences_schema is not in sync."));
+      return;
+    }
+    done();
   })
 );
 
@@ -1838,5 +1840,8 @@ gulp.task("externaltest", function(done) {
 
 gulp.task(
   "npm-test",
-  gulp.series(gulp.parallel("lint", "externaltest"), "unittestcli")
+  gulp.series(
+    gulp.parallel("lint", "externaltest", "unittestcli"),
+    "lint-chromium"
+  )
 );
