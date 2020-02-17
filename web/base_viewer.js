@@ -734,6 +734,8 @@ class BaseViewer {
    *   format: <page-ref> </XYZ|/FitXXX> <args..>
    * @property {boolean} [allowNegativeOffset] - Allow negative page offsets.
    *   The default value is `false`.
+   * @property {boolean} [ignoreDestinationZoom] - Ignore the zoom argument in
+   *   the destination array. The default value is `false`.
    */
 
   /**
@@ -744,6 +746,7 @@ class BaseViewer {
     pageNumber,
     destArray = null,
     allowNegativeOffset = false,
+    ignoreDestinationZoom = false,
   }) {
     if (!this.pdfDocument) {
       return;
@@ -834,10 +837,12 @@ class BaseViewer {
         return;
     }
 
-    if (scale && scale !== this._currentScale) {
-      this.currentScaleValue = scale;
-    } else if (this._currentScale === UNKNOWN_SCALE) {
-      this.currentScaleValue = DEFAULT_SCALE_VALUE;
+    if (!ignoreDestinationZoom) {
+      if (scale && scale !== this._currentScale) {
+        this.currentScaleValue = scale;
+      } else if (this._currentScale === UNKNOWN_SCALE) {
+        this.currentScaleValue = DEFAULT_SCALE_VALUE;
+      }
     }
 
     if (scale === "page-fit" && !destArray[4]) {
