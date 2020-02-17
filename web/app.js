@@ -38,6 +38,7 @@ import {
 import { AppOptions, OptionKind } from "./app_options.js";
 import {
   build,
+  createPromiseCapability,
   getDocument,
   getFilenameFromUrl,
   GlobalWorkerOptions,
@@ -128,7 +129,7 @@ class DefaultExternalServices {
 
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
-  initialized: false,
+  _initializedCapability: createPromiseCapability(),
   fellback: false,
   appConfig: null,
   pdfDocument: null,
@@ -215,7 +216,7 @@ const PDFViewerApplication = {
       this.eventBus.dispatch("localized", { source: this });
     });
 
-    this.initialized = true;
+    this._initializedCapability.resolve();
   },
 
   /**
@@ -474,6 +475,14 @@ const PDFViewerApplication = {
 
   run(config) {
     this.initialize(config).then(webViewerInitialized);
+  },
+
+  get initialized() {
+    return this._initializedCapability.settled;
+  },
+
+  get initializedPromise() {
+    return this._initializedCapability.promise;
   },
 
   zoomIn(ticks) {
