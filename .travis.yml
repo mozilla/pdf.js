@@ -9,3 +9,5 @@ install:
   - npm install -g gulp-cli
   - npm install
   - npm update
+
+after_script: npm run publish-coverage
