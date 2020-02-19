@@ -59,7 +59,11 @@
     "yargs": "^11.1.1"
   },
   "scripts": {
-    "test": "gulp npm-test"
+    "test": "npx cross-env NODE_ENV=test npx nyc -- gulp npm-test",
+    "coverage:unittest": "npx cross-env NODE_ENV=test npx nyc -- gulp unittest",
+    "coverage:unittestcli": "npx cross-env NODE_ENV=test npx nyc -- gulp unittestcli",
+    "coverage:browsertest": "npx cross-env NODE_ENV=test npx nyc -- gulp browsertest",
+    "publish-coverage": "npx nyc report --reporter=text-lcov | npx coveralls"
   },
   "repository": {
     "type": "git",
