@@ -109,7 +109,7 @@ function transform(charEncoding, transformFunction) {
   return through.obj(function(vinylFile, enc, done) {
     var transformedFile = vinylFile.clone();
     transformedFile.contents = Buffer.from(
-      transformFunction(transformedFile.contents),
+      transformFunction(transformedFile.contents, vinylFile.path),
       charEncoding
     );
     done(null, transformedFile);
@@ -226,6 +226,7 @@ function createWebpackConfig(defines, output) {
                 },
               ],
             ],
+            env: { test: { plugins: ["istanbul"] } },
           },
         },
         {
@@ -568,7 +569,7 @@ gulp.task("default_preferences-pre", function() {
       },
     };
   }
-  function preprocess(content) {
+  function preprocess(content, sourceMapFile) {
     content = preprocessor2.preprocessPDFJSCode(ctx, content);
     return babel.transform(content, {
       sourceType: "module",
@@ -577,6 +578,8 @@ gulp.task("default_preferences-pre", function() {
         "@babel/plugin-transform-modules-commonjs",
         babelPluginReplaceNonWebPackRequire,
       ],
+      env: { test: { plugins: ["istanbul"] } },
+      filename: sourceMapFile,
     }).code;
   }
   var babel = require("@babel/core");
@@ -1172,7 +1175,7 @@ gulp.task(
         },
       };
     }
-    function preprocess(content) {
+    function preprocess(content, sourceMapFile) {
       var skipBabel =
         bundleDefines.SKIP_BABEL ||
         /\/\*\s*no-babel-preset\s*\*\//.test(content);
@@ -1191,6 +1194,8 @@ gulp.task(
           ],
           babelPluginReplaceNonWebPackRequire,
         ],
+        env: { test: { plugins: ["istanbul"] } },
+        filename: sourceMapFile,
       }).code;
       var removeCjsSrc = /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
       content = content.replace(
