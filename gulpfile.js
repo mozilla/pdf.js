@@ -42,6 +42,7 @@ var webpackStream = require("webpack-stream");
 var Vinyl = require("vinyl");
 var vfs = require("vinyl-fs");
 var through = require("through2");
+var Jasmine = require("jasmine");
 
 var BUILD_DIR = "build/";
 var L10N_DIR = "l10n/";
@@ -1374,17 +1375,16 @@ gulp.task("baseline", function(done) {
 gulp.task(
   "unittestcli",
   gulp.series("testing-pre", "lib", function(done) {
-    var options = [
-      "node_modules/jasmine/bin/jasmine",
-      "JASMINE_CONFIG_PATH=test/unit/clitests.json",
-    ];
-    var jasmineProcess = startNode(options, { stdio: "inherit" });
-    jasmineProcess.on("close", function(code) {
-      if (code !== 0) {
+    var jasmine = new Jasmine();
+    jasmine.loadConfigFile("test/unit/clitests.json");
+    jasmine.execute();
+    jasmine.onComplete(function(passed) {
+      if (passed) {
+        console.log("All tests passed!");
+        done();
+      } else {
         done(new Error("Unit tests failed."));
-        return;
       }
-      done();
     });
   })
 );
