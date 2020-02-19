@@ -38,6 +38,7 @@
     "no-unsanitized/method": "error",
     "no-unsanitized/property": "error",
     "unicorn/no-array-instanceof": "error",
+    "unicorn/prefer-starts-ends-with": "error",
 
     // Possible errors
     "for-direction": "error",
@@ -126,6 +127,9 @@
       "vars": "local",
       "args": "none",
     }],
+
+    // Node.js and CommonJS
+    "no-buffer-constructor": "error",
 
     // Stylistic Issues
     "lines-between-class-members": ["error", "always"],

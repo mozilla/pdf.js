@@ -758,10 +758,16 @@ class PDFDocumentProxy {
   }
 
   /**
-   * Cleans up resources allocated by the document, e.g. created `@font-face`.
+   * Cleans up resources allocated by the document, on both the main- and
+   * worker-threads.
+   *
+   * NOTE: Do not, under any circumstances, call this method when rendering is
+   *       currently ongoing since that may lead to rendering errors.
+   *
+   * @returns {Promise} A promise that is resolved when clean-up has finished.
    */
   cleanup() {
-    this._transport.startCleanup();
+    return this._transport.startCleanup();
   }
 
   /**
@@ -1269,10 +1275,11 @@ class PDFPageProxy {
    * Cleans up resources allocated by the page.
    * @param {boolean} [resetStats] - Reset page stats, if enabled.
    *   The default value is `false`.
+   * @returns {boolean} Indicating if clean-up was successfully run.
    */
   cleanup(resetStats = false) {
     this.pendingCleanup = true;
-    this._tryCleanup(resetStats);
+    return this._tryCleanup(resetStats);
   }
 
   /**
@@ -1290,7 +1297,7 @@ class PDFPageProxy {
         );
       })
     ) {
-      return;
+      return false;
     }
 
     Object.keys(this.intentStates).forEach(intent => {
@@ -1302,6 +1309,7 @@ class PDFPageProxy {
       this._stats = new StatTimer();
     }
     this.pendingCleanup = false;
+    return true;
   }
 
   /**
@@ -1484,10 +1492,7 @@ class LoopbackPort {
       if ((buffer = value.buffer) && isArrayBuffer(buffer)) {
         // We found object with ArrayBuffer (typed array).
         const transferable = transfers && transfers.includes(buffer);
-        if (value === buffer) {
-          // Special case when we are faking typed arrays in compatibility.js.
-          result = value;
-        } else if (transferable) {
+        if (transferable) {
           result = new value.constructor(
             buffer,
             value.byteOffset,
@@ -2555,11 +2560,17 @@ class WorkerTransport {
   }
 
   startCleanup() {
-    this.messageHandler.sendWithPromise("Cleanup", null).then(() => {
+    return this.messageHandler.sendWithPromise("Cleanup", null).then(() => {
       for (let i = 0, ii = this.pageCache.length; i < ii; i++) {
         const page = this.pageCache[i];
         if (page) {
-          page.cleanup();
+          const cleanupSuccessful = page.cleanup();
+
+          if (!cleanupSuccessful) {
+            throw new Error(
+              `startCleanup: Page ${i + 1} is currently rendering.`
+            );
+          }
         }
       }
       this.commonObjs.clear();

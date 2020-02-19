@@ -1121,6 +1121,28 @@ describe("api", function() {
         })
         .catch(done.fail);
     });
+    it("gets metadata, with missing PDF header (bug 1606566)", function(done) {
+      const loadingTask = getDocument(buildGetDocumentParams("bug1606566.pdf"));
+
+      loadingTask.promise
+        .then(function(pdfDocument) {
+          return pdfDocument.getMetadata();
+        })
+        .then(function({ info, metadata, contentDispositionFilename }) {
+          // The following are PDF.js specific, non-standard, properties.
+          expect(info["PDFFormatVersion"]).toEqual(null);
+          expect(info["IsLinearized"]).toEqual(false);
+          expect(info["IsAcroFormPresent"]).toEqual(false);
+          expect(info["IsXFAPresent"]).toEqual(false);
+          expect(info["IsCollectionPresent"]).toEqual(false);
+
+          expect(metadata).toEqual(null);
+          expect(contentDispositionFilename).toEqual(null);
+
+          loadingTask.destroy().then(done);
+        })
+        .catch(done.fail);
+    });
 
     it("gets data", function(done) {
       var promise = doc.getData();
@@ -1149,6 +1171,14 @@ describe("api", function() {
           done();
         })
         .catch(done.fail);
+    });
+
+    it("cleans up document resources", function(done) {
+      const promise = doc.cleanup();
+      promise.then(function() {
+        expect(true).toEqual(true);
+        done();
+      }, done.fail);
     });
 
     it("checks that fingerprints are unique", function(done) {
@@ -1763,6 +1793,83 @@ describe("api", function() {
           }
         ),
       ]).then(done);
+    });
+
+    it("cleans up document resources after rendering of page", function(done) {
+      const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
+      let canvasAndCtx;
+
+      loadingTask.promise
+        .then(pdfDoc => {
+          return pdfDoc.getPage(1).then(pdfPage => {
+            const viewport = pdfPage.getViewport({ scale: 1 });
+            canvasAndCtx = CanvasFactory.create(
+              viewport.width,
+              viewport.height
+            );
+
+            const renderTask = pdfPage.render({
+              canvasContext: canvasAndCtx.context,
+              canvasFactory: CanvasFactory,
+              viewport,
+            });
+            return renderTask.promise.then(() => {
+              return pdfDoc.cleanup();
+            });
+          });
+        })
+        .then(() => {
+          expect(true).toEqual(true);
+
+          CanvasFactory.destroy(canvasAndCtx);
+          loadingTask.destroy().then(done);
+        }, done.fail);
+    });
+
+    it("cleans up document resources during rendering of page", function(done) {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("tracemonkey.pdf")
+      );
+      let canvasAndCtx;
+
+      loadingTask.promise
+        .then(pdfDoc => {
+          return pdfDoc.getPage(1).then(pdfPage => {
+            const viewport = pdfPage.getViewport({ scale: 1 });
+            canvasAndCtx = CanvasFactory.create(
+              viewport.width,
+              viewport.height
+            );
+
+            const renderTask = pdfPage.render({
+              canvasContext: canvasAndCtx.context,
+              canvasFactory: CanvasFactory,
+              viewport,
+            });
+
+            pdfDoc
+              .cleanup()
+              .then(
+                () => {
+                  throw new Error("shall fail cleanup");
+                },
+                reason => {
+                  expect(reason instanceof Error).toEqual(true);
+                  expect(reason.message).toEqual(
+                    "startCleanup: Page 1 is currently rendering."
+                  );
+                }
+              )
+              .then(() => {
+                return renderTask.promise;
+              })
+              .then(() => {
+                CanvasFactory.destroy(canvasAndCtx);
+                loadingTask.destroy().then(done);
+              });
+          });
+        })
+        .catch(done.fail);
     });
   });
   describe("Multiple `getDocument` instances", function() {

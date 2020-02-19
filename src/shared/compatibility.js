@@ -14,9 +14,11 @@
  */
 /* eslint no-var: error */
 
-// Skip compatibility checks for modern builds and if we already ran the module.
+// Skip compatibility checks for modern builds (unless we're running the
+// unit-tests in Node.js/Travis) and if we already ran the module.
 if (
-  (typeof PDFJSDev === "undefined" || !PDFJSDev.test("SKIP_BABEL")) &&
+  (typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!SKIP_BABEL || (LIB && TESTING)")) &&
   (typeof globalThis === "undefined" || !globalThis._pdfjsCompatibilityChecked)
 ) {
   // Provides support for globalThis in legacy browsers.
@@ -279,6 +281,26 @@ if (
       return;
     }
     globalThis.ReadableStream = require("web-streams-polyfill/dist/ponyfill.js").ReadableStream;
+  })();
+
+  // We want to support Map iteration, but it doesn't seem possible to easily
+  // test for that specifically; hence using a similarly unsupported property.
+  // Support: IE11
+  (function checkMapEntries() {
+    if (globalThis.Map && globalThis.Map.prototype.entries) {
+      return;
+    }
+    globalThis.Map = require("core-js/es/map/index.js");
+  })();
+
+  // We want to support Set iteration, but it doesn't seem possible to easily
+  // test for that specifically; hence using a similarly unsupported property.
+  // Support: IE11
+  (function checkSetEntries() {
+    if (globalThis.Set && globalThis.Set.prototype.entries) {
+      return;
+    }
+    globalThis.Set = require("core-js/es/set/index.js");
   })();
 
   // Support: IE<11, Safari<8, Chrome<36

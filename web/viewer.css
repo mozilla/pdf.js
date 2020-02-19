@@ -17,6 +17,8 @@
 
 :root {
   --sidebar-width: 200px;
+  --sidebar-transition-duration: 200ms;
+  --sidebar-transition-timing-function: ease;
 }
 
 * {
@@ -96,24 +98,20 @@ select {
   position: absolute;
   top: 32px;
   bottom: 0;
-  width: 200px; /* Here, and elsewhere below, keep the constant value for compatibility
-                   with older browsers that lack support for CSS variables. */
   width: var(--sidebar-width);
   visibility: hidden;
   z-index: 100;
   border-top: 1px solid rgba(51, 51, 51, 1);
-  transition-duration: 200ms;
-  transition-timing-function: ease;
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
 }
 html[dir='ltr'] #sidebarContainer {
   transition-property: left;
-  left: -200px;
-  left: calc(-1 * var(--sidebar-width));
+  left: calc(0px - var(--sidebar-width));
 }
 html[dir='rtl'] #sidebarContainer {
   transition-property: right;
-  right: -200px;
-  right: calc(-1 * var(--sidebar-width));
+  right: calc(0px - var(--sidebar-width));
 }
 
 .loadingInProgress #sidebarContainer {
@@ -176,8 +174,8 @@ html[dir='rtl'] #sidebarContent {
   outline: none;
 }
 #viewerContainer:not(.pdfPresentationMode) {
-  transition-duration: 200ms;
-  transition-timing-function: ease;
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
 }
 html[dir='ltr'] #viewerContainer {
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.05);
@@ -193,12 +191,10 @@ html[dir='rtl'] #viewerContainer {
 
 html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
   transition-property: left;
-  left: 200px;
   left: var(--sidebar-width);
 }
 html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
   transition-property: right;
-  right: 200px;
   right: var(--sidebar-width);
 }
 
@@ -700,8 +696,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton {
-  width: 120px;
-  max-width: 120px;
+  width: 140px;
   padding: 0;
   overflow: hidden;
   background: url(images/toolbarButton-menuArrows.png) no-repeat;
@@ -714,7 +709,8 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton > select {
-  min-width: 140px;
+  width: 162px;
+  height: 23px;
   font-size: 12px;
   color: rgba(242, 242, 242, 1);
   margin: 0;
@@ -1482,6 +1478,9 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   position: absolute;
   right: 0;
   top: 27px;
+}
+#PDFBug .panels > div {
+  padding: 5px;
 }
 #PDFBug button.active {
   font-weight: bold;

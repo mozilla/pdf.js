@@ -340,10 +340,8 @@ class SecondaryToolbar {
     if (this.containerHeight === this.previousContainerHeight) {
       return;
     }
-    this.toolbarButtonContainer.setAttribute(
-      "style",
-      "max-height: " + (this.containerHeight - SCROLLBAR_PADDING) + "px;"
-    );
+    this.toolbarButtonContainer.style.maxHeight = `${this.containerHeight -
+      SCROLLBAR_PADDING}px`;
 
     this.previousContainerHeight = this.containerHeight;
   }

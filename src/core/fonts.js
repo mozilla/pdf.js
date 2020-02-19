@@ -1272,7 +1272,7 @@ var Font = (function FontClosure() {
       var name = this.name;
       var type = this.type;
       var subtype = this.subtype;
-      var fontName = name.replace(/[,_]/g, "-");
+      let fontName = name.replace(/[,_]/g, "-").replace(/\s/g, "");
       var stdFontMap = getStdFontMap(),
         nonStdFontMap = getNonStdFontMap();
       var isStandardFont =
@@ -3184,6 +3184,16 @@ var Font = (function FontClosure() {
       // back to the char code.
       fontCharCode = this.toFontChar[charcode] || charcode;
       if (this.missingFile) {
+        const glyphName =
+          this.differences[charcode] || this.defaultEncoding[charcode];
+        if (
+          (glyphName === ".notdef" || glyphName === "") &&
+          this.type === "Type1"
+        ) {
+          // .notdef glyphs should be invisible in non-embedded Type1 fonts, so
+          // replace them with spaces.
+          fontCharCode = 0x20;
+        }
         fontCharCode = mapSpecialUnicodeValues(fontCharCode);
       }
 

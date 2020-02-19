@@ -429,6 +429,8 @@ const FINGERPRINT_FIRST_BYTES = 1024;
 const EMPTY_FINGERPRINT =
   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
+const PDF_HEADER_VERSION_REGEXP = /^[1-9]\.[0-9]$/;
+
 function find(stream, signature, limit = 1024, backwards = false) {
   if (
     typeof PDFJSDev === "undefined" ||
@@ -668,8 +670,17 @@ class PDFDocument {
       Trapped: isName,
     };
 
+    let version = this.pdfFormatVersion;
+    if (
+      typeof version !== "string" ||
+      !PDF_HEADER_VERSION_REGEXP.test(version)
+    ) {
+      warn(`Invalid PDF header version number: ${version}`);
+      version = null;
+    }
+
     const docInfo = {
-      PDFFormatVersion: this.pdfFormatVersion,
+      PDFFormatVersion: version,
       IsLinearized: !!this.linearization,
       IsAcroFormPresent: !!this.acroForm,
       IsXFAPresent: !!this.xfa,

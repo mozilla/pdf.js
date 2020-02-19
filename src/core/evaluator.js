@@ -2612,31 +2612,48 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           encoding: cmapObj,
           fetchBuiltInCMap: this.fetchBuiltInCMap,
           useCMap: null,
-        }).then(function(cmap) {
-          if (cmap instanceof IdentityCMap) {
-            return new IdentityToUnicodeMap(0, 0xffff);
-          }
-          var map = new Array(cmap.length);
-          // Convert UTF-16BE
-          // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
-          // to iterate over all keys.
-          cmap.forEach(function(charCode, token) {
-            var str = [];
-            for (var k = 0; k < token.length; k += 2) {
-              var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
-              if ((w1 & 0xf800) !== 0xd800) {
-                // w1 < 0xD800 || w1 > 0xDFFF
-                str.push(w1);
-                continue;
-              }
-              k += 2;
-              var w2 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
-              str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
+        }).then(
+          function(cmap) {
+            if (cmap instanceof IdentityCMap) {
+              return new IdentityToUnicodeMap(0, 0xffff);
             }
-            map[charCode] = String.fromCodePoint.apply(String, str);
-          });
-          return new ToUnicodeMap(map);
-        });
+            var map = new Array(cmap.length);
+            // Convert UTF-16BE
+            // NOTE: cmap can be a sparse array, so use forEach instead of
+            // `for(;;)` to iterate over all keys.
+            cmap.forEach(function(charCode, token) {
+              var str = [];
+              for (var k = 0; k < token.length; k += 2) {
+                var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
+                if ((w1 & 0xf800) !== 0xd800) {
+                  // w1 < 0xD800 || w1 > 0xDFFF
+                  str.push(w1);
+                  continue;
+                }
+                k += 2;
+                var w2 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
+                str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
+              }
+              map[charCode] = String.fromCodePoint.apply(String, str);
+            });
+            return new ToUnicodeMap(map);
+          },
+          reason => {
+            if (reason instanceof AbortException) {
+              return null;
+            }
+            if (this.options.ignoreErrors) {
+              // Error in the ToUnicode data -- sending unsupported feature
+              // notification and allow font parsing to continue.
+              this.handler.send("UnsupportedFeature", {
+                featureId: UNSUPPORTED_FEATURES.font,
+              });
+              warn(`readToUnicode - ignoring ToUnicode data: "${reason}".`);
+              return null;
+            }
+            throw reason;
+          }
+        );
       }
       return Promise.resolve(null);
     },
@@ -2939,6 +2956,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var type = preEvaluatedFont.type;
       var maxCharIndex = composite ? 0xffff : 0xff;
       var properties;
+      const firstChar = dict.get("FirstChar") || 0;
+      const lastChar = dict.get("LastChar") || maxCharIndex;
 
       if (!descriptor) {
         if (type === "Type3") {
@@ -2975,15 +2994,25 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             widths: metrics.widths,
             defaultWidth: metrics.defaultWidth,
             flags,
-            firstChar: 0,
-            lastChar: maxCharIndex,
+            firstChar,
+            lastChar,
           };
+          const widths = dict.get("Widths");
           return this.extractDataStructures(dict, dict, properties).then(
             properties => {
-              properties.widths = this.buildCharCodeToWidth(
-                metrics.widths,
-                properties
-              );
+              if (widths) {
+                const glyphWidths = [];
+                let j = firstChar;
+                for (let i = 0, ii = widths.length; i < ii; i++) {
+                  glyphWidths[j++] = this.xref.fetchIfRef(widths[i]);
+                }
+                properties.widths = glyphWidths;
+              } else {
+                properties.widths = this.buildCharCodeToWidth(
+                  metrics.widths,
+                  properties
+                );
+              }
               return new Font(baseFontName, null, properties);
             }
           );
@@ -2995,8 +3024,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // to ignore this rule when a variant of a standard font is used.
       // TODO Fill the width array depending on which of the base font this is
       // a variant.
-      var firstChar = dict.get("FirstChar") || 0;
-      var lastChar = dict.get("LastChar") || maxCharIndex;
 
       var fontName = descriptor.get("FontName");
       var baseFont = dict.get("BaseFont");

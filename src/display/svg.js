@@ -145,7 +145,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
           input = literals;
         } else {
           // eslint-disable-next-line no-undef
-          input = new Buffer(literals);
+          input = Buffer.from(literals);
         }
         const output = __non_webpack_require__("zlib").deflateSync(input, {
           level: 9,
@@ -1231,8 +1231,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
             j += 6;
             break;
           case OPS.curveTo2:
-            x = args[j + 2];
-            y = args[j + 3];
             d.push(
               "C",
               pf(x),
@@ -1242,6 +1240,8 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
               pf(args[j + 2]),
               pf(args[j + 3])
             );
+            x = args[j + 2];
+            y = args[j + 3];
             j += 4;
             break;
           case OPS.curveTo3:
