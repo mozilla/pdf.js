@@ -251,9 +251,9 @@ var RefSetCache = (function RefSetCacheClosure() {
       this.dict[ref.toString()] = this.get(aliasRef);
     },
 
-    forEach: function RefSetCache_forEach(fn, thisArg) {
-      for (var i in this.dict) {
-        fn.call(thisArg, this.dict[i]);
+    forEach: function RefSetCache_forEach(callback) {
+      for (const i in this.dict) {
+        callback(this.dict[i]);
       }
     },
 
