@@ -461,12 +461,12 @@ describe("annotation", function() {
     });
 
     it("should parse IRT and set default RT when not defined.", function(done) {
-      const annotationRef = new Ref(819, 0);
+      const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Text"));
 
-      const replyRef = new Ref(820, 0);
+      const replyRef = Ref.get(820, 0);
       const replyDict = new Dict();
       replyDict.set("Type", Name.get("Annot"));
       replyDict.set("Subtype", Name.get("Text"));
@@ -492,7 +492,7 @@ describe("annotation", function() {
     });
 
     it("should parse IRT/RT for a group type", function(done) {
-      const annotationRef = new Ref(819, 0);
+      const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Text"));
@@ -502,14 +502,14 @@ describe("annotation", function() {
       annotationDict.set("M", "D:20190423");
       annotationDict.set("C", [0, 0, 1]);
 
-      const popupRef = new Ref(820, 0);
+      const popupRef = Ref.get(820, 0);
       const popupDict = new Dict();
       popupDict.set("Type", Name.get("Annot"));
       popupDict.set("Subtype", Name.get("Popup"));
       popupDict.set("Parent", annotationRef);
       annotationDict.set("Popup", popupRef);
 
-      const replyRef = new Ref(821, 0);
+      const replyRef = Ref.get(821, 0);
       const replyDict = new Dict();
       replyDict.set("Type", Name.get("Annot"));
       replyDict.set("Subtype", Name.get("Text"));
@@ -549,7 +549,7 @@ describe("annotation", function() {
     });
 
     it("should parse IRT/RT for a reply type", function(done) {
-      const annotationRef = new Ref(819, 0);
+      const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Text"));
@@ -559,14 +559,14 @@ describe("annotation", function() {
       annotationDict.set("M", "D:20190423");
       annotationDict.set("C", [0, 0, 1]);
 
-      const popupRef = new Ref(820, 0);
+      const popupRef = Ref.get(820, 0);
       const popupDict = new Dict();
       popupDict.set("Type", Name.get("Annot"));
       popupDict.set("Subtype", Name.get("Popup"));
       popupDict.set("Parent", annotationRef);
       annotationDict.set("Popup", popupRef);
 
-      const replyRef = new Ref(821, 0);
+      const replyRef = Ref.get(821, 0);
       const replyDict = new Dict();
       replyDict.set("Type", Name.get("Annot"));
       replyDict.set("Subtype", Name.get("Text"));
@@ -608,13 +608,13 @@ describe("annotation", function() {
 
   describe("TextAnnotation", function() {
     it("should not parse state model and state when not defined", function(done) {
-      const annotationRef = new Ref(819, 0);
+      const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Text"));
       annotationDict.set("Contents", "TestText");
 
-      const replyRef = new Ref(820, 0);
+      const replyRef = Ref.get(820, 0);
       const replyDict = new Dict();
       replyDict.set("Type", Name.get("Annot"));
       replyDict.set("Subtype", Name.get("Text"));
@@ -642,12 +642,12 @@ describe("annotation", function() {
     });
 
     it("should correctly parse state model and state when defined", function(done) {
-      const annotationRef = new Ref(819, 0);
+      const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Text"));
 
-      const replyRef = new Ref(820, 0);
+      const replyRef = Ref.get(820, 0);
       const replyDict = new Dict();
       replyDict.set("Type", Name.get("Annot"));
       replyDict.set("Subtype", Name.get("Text"));
@@ -2109,7 +2109,7 @@ describe("annotation", function() {
       "should correctly inherit Contents from group-master annotation " +
         "if parent has ReplyType == Group",
       function(done) {
-        const annotationRef = new Ref(819, 0);
+        const annotationRef = Ref.get(819, 0);
         const annotationDict = new Dict();
         annotationDict.set("Type", Name.get("Annot"));
         annotationDict.set("Subtype", Name.get("Text"));
@@ -2118,7 +2118,7 @@ describe("annotation", function() {
         annotationDict.set("M", "D:20190423");
         annotationDict.set("C", [0, 0, 1]);
 
-        const replyRef = new Ref(820, 0);
+        const replyRef = Ref.get(820, 0);
         const replyDict = new Dict();
         replyDict.set("Type", Name.get("Annot"));
         replyDict.set("Subtype", Name.get("Text"));
@@ -2129,7 +2129,7 @@ describe("annotation", function() {
         replyDict.set("M", "D:20190523");
         replyDict.set("C", [0.4]);
 
-        const popupRef = new Ref(821, 0);
+        const popupRef = Ref.get(821, 0);
         const popupDict = new Dict();
         popupDict.set("Type", Name.get("Annot"));
         popupDict.set("Subtype", Name.get("Popup"));
