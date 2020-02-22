@@ -143,6 +143,20 @@
     "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0, "maxBOF": 1, }],
     "no-nested-ternary": "error",
     "no-new-object": "error",
+    "no-restricted-syntax": ["error",
+      {
+        "selector": "NewExpression[callee.name='Cmd']",
+        "message": "Use `Cmd.get()` rather than `new Cmd()`.",
+      },
+      {
+        "selector": "NewExpression[callee.name='Name']",
+        "message": "Use `Name.get()` rather than `new Name()`.",
+      },
+      {
+        "selector": "NewExpression[callee.name='Ref']",
+        "message": "Use `Ref.get()` rather than `new Ref()`.",
+      },
+    ],
     "no-unneeded-ternary": "error",
     "spaced-comment": ["error", "always", {
       "block": {
