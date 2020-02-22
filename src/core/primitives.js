@@ -29,6 +29,7 @@ var Name = (function NameClosure() {
 
   Name.get = function Name_get(name) {
     var nameValue = nameCache[name];
+    // eslint-disable-next-line no-restricted-syntax
     return nameValue ? nameValue : (nameCache[name] = new Name(name));
   };
 
@@ -50,6 +51,7 @@ var Cmd = (function CmdClosure() {
 
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
+    // eslint-disable-next-line no-restricted-syntax
     return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
   };
 
@@ -195,6 +197,7 @@ var Ref = (function RefClosure() {
   Ref.get = function(num, gen) {
     const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
     const refValue = refCache[key];
+    // eslint-disable-next-line no-restricted-syntax
     return refValue ? refValue : (refCache[key] = new Ref(num, gen));
   };
 
