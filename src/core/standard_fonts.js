@@ -119,6 +119,7 @@ const getNonStdFontMap = getLookupTableFactory(function(t) {
   t["NuptialScript"] = "Times-Italic";
   t["SegoeUISymbol"] = "Helvetica";
   t["Wingdings"] = "ZapfDingbats";
+  t["Wingdings-Regular"] = "ZapfDingbats";
 });
 
 const getSerifFonts = getLookupTableFactory(function(t) {
