@@ -1719,7 +1719,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
 
-        var charWidth = width * widthAdvanceScale + spacing * fontDirection;
+        var charWidth;
+        if (vertical) {
+          charWidth = width * widthAdvanceScale - spacing * fontDirection;
+        } else {
+          charWidth = width * widthAdvanceScale + spacing * fontDirection;
+        }
         x += charWidth;
 
         if (restoreNeeded) {
