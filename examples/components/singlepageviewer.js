@@ -34,22 +34,28 @@ var SEARCH_FOR = ""; // try 'Mozilla';
 
 var container = document.getElementById("viewerContainer");
 
+var eventBus = new pdfjsViewer.EventBus();
+
 // (Optionally) enable hyperlinks within PDF files.
-var pdfLinkService = new pdfjsViewer.PDFLinkService();
+var pdfLinkService = new pdfjsViewer.PDFLinkService({
+  eventBus: eventBus,
+});
 
 // (Optionally) enable find controller.
 var pdfFindController = new pdfjsViewer.PDFFindController({
+  eventBus: eventBus,
   linkService: pdfLinkService,
 });
 
 var pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
   container: container,
+  eventBus: eventBus,
   linkService: pdfLinkService,
   findController: pdfFindController,
 });
 pdfLinkService.setViewer(pdfSinglePageViewer);
 
-document.addEventListener("pagesinit", function() {
+eventBus.on("pagesinit", function() {
   // We can use pdfSinglePageViewer now, e.g. let's change default scale.
   pdfSinglePageViewer.currentScaleValue = "page-width";
 

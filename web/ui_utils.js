@@ -757,9 +757,8 @@ const animationStarted = new Promise(function(resolve) {
 });
 
 /**
- * Simple event bus for an application. Listeners are attached using the
- * `on` and `off` methods. To raise an event, the `dispatch` method shall be
- * used.
+ * Simple event bus for an application. Listeners are attached using the `on`
+ * and `off` methods. To raise an event, the `dispatch` method shall be used.
  */
 class EventBus {
   constructor({ dispatchToDOM = false } = {}) {
@@ -832,6 +831,9 @@ class EventBus {
 
 let globalEventBus = null;
 function getGlobalEventBus(dispatchToDOM = false) {
+  console.error(
+    "getGlobalEventBus is deprecated, use a manually created EventBus instance instead."
+  );
   if (!globalEventBus) {
     globalEventBus = new EventBus({ dispatchToDOM });
   }

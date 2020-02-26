@@ -18,7 +18,7 @@ import {
   animationStarted,
   AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
-  getGlobalEventBus,
+  EventBus,
   getPDFFileNameFromURL,
   isValidRotation,
   isValidScrollMode,
@@ -343,7 +343,7 @@ const PDFViewerApplication = {
 
     const eventBus =
       appConfig.eventBus ||
-      getGlobalEventBus(AppOptions.get("eventBusDispatchToDOM"));
+      new EventBus({ dispatchToDOM: AppOptions.get("eventBusDispatchToDOM") });
     this.eventBus = eventBus;
 
     const pdfRenderingQueue = new PDFRenderingQueue();
