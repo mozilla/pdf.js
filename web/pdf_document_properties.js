@@ -84,10 +84,10 @@ class PDFDocumentProperties {
     );
 
     if (eventBus) {
-      eventBus.on("pagechanging", evt => {
+      eventBus._on("pagechanging", evt => {
         this._currentPageNumber = evt.pageNumber;
       });
-      eventBus.on("rotationchanging", evt => {
+      eventBus._on("rotationchanging", evt => {
         this._pagesRotation = evt.pagesRotation;
       });
     }

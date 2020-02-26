@@ -159,11 +159,11 @@ class SecondaryToolbar {
     this._bindSpreadModeListener(options);
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
-    this.eventBus.on("resize", this._setMaxHeight.bind(this));
+    this.eventBus._on("resize", this._setMaxHeight.bind(this));
 
     // Hide the Scroll/Spread mode buttons, when they're not applicable to the
     // current `BaseViewer` instance (in particular `PDFSinglePageViewer`).
-    this.eventBus.on("baseviewerinit", evt => {
+    this.eventBus._on("baseviewerinit", evt => {
       if (evt.source instanceof PDFSinglePageViewer) {
         this.toolbarButtonContainer.classList.add(
           "hiddenScrollModeButtons",
@@ -233,7 +233,7 @@ class SecondaryToolbar {
   }
 
   _bindCursorToolsListener(buttons) {
-    this.eventBus.on("cursortoolchanged", function({ tool }) {
+    this.eventBus._on("cursortoolchanged", function({ tool }) {
       buttons.cursorSelectToolButton.classList.toggle(
         "toggled",
         tool === CursorTool.SELECT
@@ -267,9 +267,9 @@ class SecondaryToolbar {
       buttons.spreadOddButton.disabled = isScrollModeHorizontal;
       buttons.spreadEvenButton.disabled = isScrollModeHorizontal;
     }
-    this.eventBus.on("scrollmodechanged", scrollModeChanged);
+    this.eventBus._on("scrollmodechanged", scrollModeChanged);
 
-    this.eventBus.on("secondarytoolbarreset", evt => {
+    this.eventBus._on("secondarytoolbarreset", evt => {
       if (evt.source === this) {
         scrollModeChanged({ mode: ScrollMode.VERTICAL });
       }
@@ -291,9 +291,9 @@ class SecondaryToolbar {
         mode === SpreadMode.EVEN
       );
     }
-    this.eventBus.on("spreadmodechanged", spreadModeChanged);
+    this.eventBus._on("spreadmodechanged", spreadModeChanged);
 
-    this.eventBus.on("secondarytoolbarreset", evt => {
+    this.eventBus._on("secondarytoolbarreset", evt => {
       if (evt.source === this) {
         spreadModeChanged({ mode: SpreadMode.NONE });
       }

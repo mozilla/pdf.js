@@ -83,7 +83,7 @@ class PDFFindBar {
       this.dispatchEvent("entirewordchange");
     });
 
-    this.eventBus.on("resize", this._adjustWidth.bind(this));
+    this.eventBus._on("resize", this._adjustWidth.bind(this));
   }
 
   reset() {

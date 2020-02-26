@@ -159,7 +159,7 @@ class Toolbar {
     // Suppress context menus for some controls.
     scaleSelect.oncontextmenu = noContextMenuHandler;
 
-    this.eventBus.on("localized", () => {
+    this.eventBus._on("localized", () => {
       this._wasLocalized = true;
       this._adjustScaleWidth();
       this._updateUIState(true);
