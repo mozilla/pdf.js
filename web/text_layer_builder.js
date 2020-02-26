@@ -123,7 +123,7 @@ class TextLayerBuilder {
           this._updateMatches();
         }
       };
-      this.eventBus.on(
+      this.eventBus._on(
         "updatetextlayermatches",
         this._onUpdateTextLayerMatches
       );
@@ -139,7 +139,7 @@ class TextLayerBuilder {
       this.textLayerRenderTask = null;
     }
     if (this._onUpdateTextLayerMatches) {
-      this.eventBus.off(
+      this.eventBus._off(
         "updatetextlayermatches",
         this._onUpdateTextLayerMatches
       );

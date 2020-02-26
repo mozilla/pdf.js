@@ -43,7 +43,7 @@ class PDFAttachmentViewer {
 
     this.reset();
 
-    this.eventBus.on(
+    this.eventBus._on(
       "fileattachmentannotation",
       this._appendAttachment.bind(this)
     );

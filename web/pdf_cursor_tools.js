@@ -122,11 +122,11 @@ class PDFCursorTools {
    * @private
    */
   _addEventListeners() {
-    this.eventBus.on("switchcursortool", evt => {
+    this.eventBus._on("switchcursortool", evt => {
       this.switchTool(evt.tool);
     });
 
-    this.eventBus.on("presentationmodechanged", evt => {
+    this.eventBus._on("presentationmodechanged", evt => {
       if (evt.switchInProgress) {
         return;
       }
