@@ -40,6 +40,7 @@ var PDFViewerApplication = {
   pdfViewer: null,
   pdfHistory: null,
   pdfLinkService: null,
+  eventBus: null,
 
   /**
    * Opens PDF document specified by URL.
@@ -340,7 +341,12 @@ var PDFViewerApplication = {
   },
 
   initUI: function pdfViewInitUI() {
-    var linkService = new pdfjsViewer.PDFLinkService();
+    var eventBus = new pdfjsViewer.EventBus();
+    this.eventBus = eventBus;
+
+    var linkService = new pdfjsViewer.PDFLinkService({
+      eventBus: eventBus,
+    });
     this.pdfLinkService = linkService;
 
     this.l10n = pdfjsViewer.NullL10n;
@@ -348,6 +354,7 @@ var PDFViewerApplication = {
     var container = document.getElementById("viewerContainer");
     var pdfViewer = new pdfjsViewer.PDFViewer({
       container: container,
+      eventBus: eventBus,
       linkService: linkService,
       l10n: this.l10n,
       useOnlyCssZoom: USE_ONLY_CSS_ZOOM,
@@ -357,6 +364,7 @@ var PDFViewerApplication = {
     linkService.setViewer(pdfViewer);
 
     this.pdfHistory = new pdfjsViewer.PDFHistory({
+      eventBus: eventBus,
       linkService: linkService,
     });
     linkService.setHistory(this.pdfHistory);
@@ -394,15 +402,15 @@ var PDFViewerApplication = {
         }
       });
 
-    document.addEventListener("pagesinit", function() {
+    eventBus.on("pagesinit", function() {
       // We can use pdfViewer now, e.g. let's change default scale.
       pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
     });
 
-    document.addEventListener(
+    eventBus.on(
       "pagechanging",
       function(evt) {
-        var page = evt.detail.pageNumber;
+        var page = evt.pageNumber;
         var numPages = PDFViewerApplication.pagesCount;
 
         document.getElementById("pageNumber").value = page;

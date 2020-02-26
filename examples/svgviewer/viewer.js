@@ -33,18 +33,23 @@ var DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
 
 var container = document.getElementById("viewerContainer");
 
+var eventBus = new pdfjsViewer.EventBus();
+
 // (Optionally) enable hyperlinks within PDF files.
-var pdfLinkService = new pdfjsViewer.PDFLinkService();
+var pdfLinkService = new pdfjsViewer.PDFLinkService({
+  eventBus: eventBus,
+});
 
 var pdfViewer = new pdfjsViewer.PDFViewer({
   container: container,
+  eventBus: eventBus,
   linkService: pdfLinkService,
   renderer: "svg",
   textLayerMode: 0,
 });
 pdfLinkService.setViewer(pdfViewer);
 
-document.addEventListener("pagesinit", function() {
+eventBus.on("pagesinit", function() {
   // We can use pdfViewer now, e.g. let's change default scale.
   pdfViewer.currentScaleValue = "page-width";
 });

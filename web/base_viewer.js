@@ -1088,17 +1088,20 @@ class BaseViewer {
    * @param {HTMLDivElement} textLayerDiv
    * @param {number} pageIndex
    * @param {PageViewport} viewport
+   * @param {boolean} enhanceTextSelection
+   * @param {EventBus} eventBus
    * @returns {TextLayerBuilder}
    */
   createTextLayerBuilder(
     textLayerDiv,
     pageIndex,
     viewport,
-    enhanceTextSelection = false
+    enhanceTextSelection = false,
+    eventBus
   ) {
     return new TextLayerBuilder({
       textLayerDiv,
-      eventBus: this.eventBus,
+      eventBus,
       pageIndex,
       viewport,
       findController: this.isInPresentationMode ? null : this.findController,
