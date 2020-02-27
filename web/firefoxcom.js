@@ -345,6 +345,13 @@ class FirefoxExternalServices extends DefaultExternalServices {
     );
     return shadow(this, "supportedMouseWheelZoomModifierKeys", support);
   }
+
+  static get isInAutomation() {
+    // Returns the value of `Cu.isInAutomation`, which is only `true` when e.g.
+    // various test-suites are running in mozilla-central.
+    const isInAutomation = FirefoxCom.requestSync("isInAutomation");
+    return shadow(this, "isInAutomation", isInAutomation);
+  }
 }
 PDFViewerApplication.externalServices = FirefoxExternalServices;
 

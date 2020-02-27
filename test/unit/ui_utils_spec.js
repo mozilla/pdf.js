@@ -312,7 +312,7 @@ describe("ui_utils", function() {
       expect(count).toEqual(2);
     });
 
-    it("should not, by default, re-dispatch to DOM", function(done) {
+    it("should not re-dispatch to DOM", function(done) {
       if (isNodeJS) {
         pending("Document in not supported in Node.js.");
       }
@@ -328,54 +328,6 @@ describe("ui_utils", function() {
       document.addEventListener("test", domEventListener);
 
       eventBus.dispatch("test");
-
-      Promise.resolve().then(() => {
-        expect(count).toEqual(1);
-
-        document.removeEventListener("test", domEventListener);
-        done();
-      });
-    });
-    it("should re-dispatch to DOM", function(done) {
-      if (isNodeJS) {
-        pending("Document in not supported in Node.js.");
-      }
-      const eventBus = new EventBus({ dispatchToDOM: true });
-      let count = 0;
-      eventBus.on("test", function(evt) {
-        expect(evt).toEqual(undefined);
-        count++;
-      });
-      function domEventListener(evt) {
-        expect(evt.detail).toEqual({});
-        count++;
-      }
-      document.addEventListener("test", domEventListener);
-
-      eventBus.dispatch("test");
-
-      Promise.resolve().then(() => {
-        expect(count).toEqual(2);
-
-        document.removeEventListener("test", domEventListener);
-        done();
-      });
-    });
-    it("should re-dispatch to DOM, with arguments (without internal listeners)", function(done) {
-      if (isNodeJS) {
-        pending("Document in not supported in Node.js.");
-      }
-      const eventBus = new EventBus({ dispatchToDOM: true });
-      let count = 0;
-      function domEventListener(evt) {
-        expect(evt.detail).toEqual({ abc: 123 });
-        count++;
-      }
-      document.addEventListener("test", domEventListener);
-
-      eventBus.dispatch("test", {
-        abc: 123,
-      });
 
       Promise.resolve().then(() => {
         expect(count).toEqual(1);
