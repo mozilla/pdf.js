@@ -731,6 +731,7 @@ class Catalog {
   getPageDict(pageIndex) {
     const capability = createPromiseCapability();
     const nodesToVisit = [this.catDict.getRaw("Pages")];
+    const visitedNodes = new RefSet();
     const xref = this.xref,
       pageKidsCountCache = this.pageKidsCountCache;
     let count,
@@ -747,6 +748,14 @@ class Catalog {
             currentPageIndex += count;
             continue;
           }
+          // Prevent circular references in the /Pages tree.
+          if (visitedNodes.has(currentNode)) {
+            capability.reject(
+              new FormatError("Pages tree contains circular reference.")
+            );
+            return;
+          }
+          visitedNodes.put(currentNode);
 
           xref.fetchAsync(currentNode).then(function(obj) {
             if (isDict(obj, "Page") || (isDict(obj) && !obj.has("Kids"))) {

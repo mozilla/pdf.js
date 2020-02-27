@@ -295,6 +295,13 @@ class PDFThumbnailView {
       console.error("Must be in new state before drawing");
       return Promise.resolve(undefined);
     }
+    const { pdfPage } = this;
+
+    if (!pdfPage) {
+      this.renderingState = RenderingStates.FINISHED;
+      return Promise.reject(new Error("pdfPage is not loaded"));
+    }
+
     this.renderingState = RenderingStates.RUNNING;
 
     const renderCapability = createPromiseCapability();
@@ -339,7 +346,7 @@ class PDFThumbnailView {
       canvasContext: ctx,
       viewport: drawViewport,
     };
-    const renderTask = (this.renderTask = this.pdfPage.render(renderContext));
+    const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;
 
     renderTask.promise.then(
