@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus, scrollIntoView } from "./ui_utils.js";
 import { createPromiseCapability } from "pdfjs-lib";
 import { getCharacterType } from "./pdf_find_utils.js";
+import { scrollIntoView } from "./ui_utils.js";
 
 const FindState = {
   FOUND: 0,
@@ -69,7 +69,7 @@ class PDFFindController {
    */
   constructor({ linkService, eventBus }) {
     this._linkService = linkService;
-    this._eventBus = eventBus || getGlobalEventBus();
+    this._eventBus = eventBus;
 
     this._reset();
     eventBus._on("findbarclose", this._onFindBarClose.bind(this));

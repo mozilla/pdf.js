@@ -17,7 +17,6 @@ import {
   approximateFraction,
   CSS_UNITS,
   DEFAULT_SCALE,
-  getGlobalEventBus,
   getOutputScale,
   NullL10n,
   RendererType,
@@ -92,7 +91,7 @@ class PDFPageView {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels || MAX_CANVAS_PIXELS;
 
-    this.eventBus = options.eventBus || getGlobalEventBus();
+    this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
     this.textLayerFactory = options.textLayerFactory;
     this.annotationLayerFactory = options.annotationLayerFactory;
