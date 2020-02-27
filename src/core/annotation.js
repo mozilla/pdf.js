@@ -926,6 +926,12 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== null;
+
+    Catalog.parseDestDictionary({
+      destDict: params.dict,
+      resultObj: this.data,
+      docBaseUrl: params.pdfManager.docBaseUrl,
+    });
   }
 
   getOperatorList(evaluator, task, renderForms) {
