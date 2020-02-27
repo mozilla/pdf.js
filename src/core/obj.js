@@ -1062,41 +1062,45 @@ class Catalog {
           break;
 
         case "JavaScript":
-          const jsAction = action.get("JS");
-          let js;
-
-          if (isStream(jsAction)) {
-            js = bytesToString(jsAction.getBytes());
-          } else if (isString(jsAction)) {
-            js = jsAction;
-          }
-
-          if (js) {
-            resultObj.extraActions.javascript = { js, };
-            // Attempt to recover valid URLs from `JS` entries with certain
-            // white-listed formats:
-            //  - window.open('http://example.com')
-            //  - app.launchURL('http://example.com', true)
-            const URL_OPEN_METHODS = ["app.launchURL", "window.open"];
-            const regex = new RegExp(
-              "^\\s*(" +
-                URL_OPEN_METHODS.join("|")
-                  .split(".")
-                  .join("\\.") +
-                ")\\((?:'|\")([^'\"]*)(?:'|\")(?:,\\s*(\\w+)\\)|\\))",
-              "i"
-            );
-
-            const jsUrl = regex.exec(stringToPDFString(js));
-            if (jsUrl && jsUrl[2]) {
-              url = jsUrl[2];
-
-              if (jsUrl[3] === "true" && jsUrl[1] === "app.launchURL") {
-                resultObj.newWindow = true;
-              }
-              break;
+          {
+            const jsAction = action.get("JS");
+            let js;
+  
+            if (isStream(jsAction)) {
+              js = bytesToString(jsAction.getBytes());
+            } else if (isString(jsAction)) {
+              js = jsAction;
             }
+  
+            if (js) {
+              resultObj.extraActions.javascript = { js, };
+              // Attempt to recover valid URLs from `JS` entries with certain
+              // white-listed formats:
+              //  - window.open('http://example.com')
+              //  - app.launchURL('http://example.com', true)
+              const URL_OPEN_METHODS = ["app.launchURL", "window.open"];
+              const regex = new RegExp(
+                "^\\s*(" +
+                  URL_OPEN_METHODS.join("|")
+                    .split(".")
+                    .join("\\.") +
+                  ")\\((?:'|\")([^'\"]*)(?:'|\")(?:,\\s*(\\w+)\\)|\\))",
+                "i"
+              ); 
+  
+              const jsUrl = regex.exec(stringToPDFString(js));
+              if (jsUrl && jsUrl[2]) {
+                url = jsUrl[2];
+  
+                if (jsUrl[3] === "true" && jsUrl[1] === "app.launchURL") {
+                  resultObj.newWindow = true;
+                }
+                
+              }
+            }
+            break;
           }
+
         /* falls through */
         default:
           warn(`parseDestDictionary: unsupported action type "${actionName}".`);
