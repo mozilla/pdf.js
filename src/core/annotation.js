@@ -823,6 +823,12 @@ class WidgetAnnotation extends Annotation {
       data.fieldValue = null;
       this.setFlags(AnnotationFlag.HIDDEN);
     }
+
+    Catalog.parseDestDictionary({
+      destDict: params.dict,
+      resultObj: this.data,
+      docBaseUrl: params.pdfManager.docBaseUrl,
+    });
   }
 
   /**
@@ -926,12 +932,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== null;
-
-    Catalog.parseDestDictionary({
-      destDict: params.dict,
-      resultObj: this.data,
-      docBaseUrl: params.pdfManager.docBaseUrl,
-    });
   }
 
   getOperatorList(evaluator, task, renderForms) {
@@ -1094,6 +1094,8 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // Process field flags for the display layer.
     this.data.combo = this.hasFieldFlag(AnnotationFieldFlag.COMBO);
     this.data.multiSelect = this.hasFieldFlag(AnnotationFieldFlag.MULTISELECT);
+
+
   }
 }
 
