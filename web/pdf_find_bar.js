@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus, NullL10n } from "./ui_utils.js";
 import { FindState } from "./pdf_find_controller.js";
+import { NullL10n } from "./ui_utils.js";
 
 const MATCHES_COUNT_LIMIT = 1000;
 
@@ -38,7 +38,7 @@ class PDFFindBar {
     this.findResultsCount = options.findResultsCount || null;
     this.findPreviousButton = options.findPreviousButton || null;
     this.findNextButton = options.findNextButton || null;
-    this.eventBus = eventBus || getGlobalEventBus();
+    this.eventBus = eventBus;
     this.l10n = l10n;
 
     // Add event listeners to the DOM elements.

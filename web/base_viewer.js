@@ -17,7 +17,6 @@ import {
   CSS_UNITS,
   DEFAULT_SCALE,
   DEFAULT_SCALE_VALUE,
-  getGlobalEventBus,
   getVisibleElements,
   isPortraitOrientation,
   isValidRotation,
@@ -145,7 +144,7 @@ class BaseViewer {
 
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
-    this.eventBus = options.eventBus || getGlobalEventBus();
+    this.eventBus = options.eventBus;
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
     this.findController = options.findController || null;
