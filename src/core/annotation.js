@@ -518,7 +518,9 @@ class Annotation {
       return Promise.resolve(new OperatorList());
     }
 
-    if (this.data.subtype === 'Widget' || this.data.subtype === 'Link') {
+    const isButton = this.data.pushButton;
+
+    if (!isButton && (this.data.subtype === 'Widget' || this.data.subtype === 'Link')) {
       return Promise.resolve(new OperatorList());
     }
 
