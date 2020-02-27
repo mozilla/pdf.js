@@ -760,6 +760,9 @@ const animationStarted = new Promise(function(resolve) {
  * NOTE: Only used to support various PDF viewer tests in `mozilla-central`.
  */
 function dispatchDOMEvent(eventName, args = null) {
+  if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("MOZCENTRAL")) {
+    throw new Error("Not implemented: dispatchDOMEvent");
+  }
   const details = Object.create(null);
   if (args && args.length > 0) {
     const obj = args[0];
@@ -784,19 +787,11 @@ function dispatchDOMEvent(eventName, args = null) {
  * and `off` methods. To raise an event, the `dispatch` method shall be used.
  */
 class EventBus {
-  constructor({ dispatchToDOM = false } = {}) {
+  constructor(options) {
     this._listeners = Object.create(null);
-    this._dispatchToDOM = dispatchToDOM === true;
 
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      !PDFJSDev.test("MOZCENTRAL || TESTING") &&
-      dispatchToDOM
-    ) {
-      console.error(
-        "The `eventBusDispatchToDOM` option/preference is deprecated, " +
-          "add event listeners to the EventBus instance rather than the DOM."
-      );
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) {
+      this._isInAutomation = (options && options.isInAutomation) === true;
     }
   }
 
@@ -819,7 +814,10 @@ class EventBus {
   dispatch(eventName) {
     const eventListeners = this._listeners[eventName];
     if (!eventListeners || eventListeners.length === 0) {
-      if (this._dispatchToDOM) {
+      if (
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) &&
+        this._isInAutomation
+      ) {
         const args = Array.prototype.slice.call(arguments, 1);
         dispatchDOMEvent(eventName, args);
       }
@@ -848,7 +846,10 @@ class EventBus {
       });
       externalListeners = null;
     }
-    if (this._dispatchToDOM) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) &&
+      this._isInAutomation
+    ) {
       dispatchDOMEvent(eventName, args);
     }
   }
