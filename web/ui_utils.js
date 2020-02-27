@@ -884,17 +884,6 @@ class EventBus {
   }
 }
 
-let globalEventBus = null;
-function getGlobalEventBus(dispatchToDOM = false) {
-  console.error(
-    "getGlobalEventBus is deprecated, use a manually created EventBus instance instead."
-  );
-  if (!globalEventBus) {
-    globalEventBus = new EventBus({ dispatchToDOM });
-  }
-  return globalEventBus;
-}
-
 function clamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
 }
@@ -1013,7 +1002,6 @@ export {
   SpreadMode,
   NullL10n,
   EventBus,
-  getGlobalEventBus,
   clamp,
   ProgressBar,
   getPDFFileNameFromURL,
