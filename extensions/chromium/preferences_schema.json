@@ -159,6 +159,12 @@
       "type": "boolean",
       "default": false
     },
+    "ignoreDestinationZoom": {
+      "title": "Ignore the zoom argument in destinations",
+      "description": "When enabled it will maintain the currently active zoom level, rather than letting the PDF document modify it, when navigating to internal destinations.",
+      "type": "boolean",
+      "default": false
+    },
     "enablePrintAutoRotate": {
       "title": "Automatically rotate printed pages",
       "description": "When enabled, pages whose orientation differ from the first page are rotated when printed.",

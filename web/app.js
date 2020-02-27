@@ -354,6 +354,7 @@ const PDFViewerApplication = {
       eventBus,
       externalLinkTarget: AppOptions.get("externalLinkTarget"),
       externalLinkRel: AppOptions.get("externalLinkRel"),
+      ignoreDestinationZoom: AppOptions.get("ignoreDestinationZoom"),
     });
     this.pdfLinkService = pdfLinkService;
 

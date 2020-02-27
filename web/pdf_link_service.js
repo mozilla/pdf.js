@@ -23,6 +23,9 @@ import { getGlobalEventBus, parseQueryString } from "./ui_utils.js";
  *   Defaults to using no target.
  * @property {string} [externalLinkRel] - Specifies the `rel` attribute for
  *   external links. Defaults to stripping the referrer.
+ * @property {boolean} [ignoreDestinationZoom] - Ignores the zoom argument,
+ *   thus preserving the current zoom level in the viewer, when navigating
+ *   to internal destinations. The default value is `false`.
  */
 
 /**
@@ -39,11 +42,13 @@ class PDFLinkService {
     externalLinkTarget = null,
     externalLinkRel = null,
     externalLinkEnabled = true,
+    ignoreDestinationZoom = false,
   } = {}) {
     this.eventBus = eventBus || getGlobalEventBus();
     this.externalLinkTarget = externalLinkTarget;
     this.externalLinkRel = externalLinkRel;
     this.externalLinkEnabled = externalLinkEnabled;
+    this._ignoreDestinationZoom = ignoreDestinationZoom;
 
     this.baseUrl = null;
     this.pdfDocument = null;
@@ -158,6 +163,7 @@ class PDFLinkService {
       this.pdfViewer.scrollPageIntoView({
         pageNumber,
         destArray: explicitDest,
+        ignoreDestinationZoom: this._ignoreDestinationZoom,
       });
     };
 
@@ -468,6 +474,7 @@ class SimpleLinkService {
     this.externalLinkTarget = null;
     this.externalLinkRel = null;
     this.externalLinkEnabled = true;
+    this._ignoreDestinationZoom = false;
   }
 
   /**
