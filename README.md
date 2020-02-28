@@ -17,7 +17,7 @@ get involved, visit:
 + [Good Beginner Bugs](https://github.com/mozilla/pdf.js/issues?direction=desc&labels=5-good-beginner-bug&page=1&sort=created&state=open)
 + [Projects](https://github.com/mozilla/pdf.js/projects)
 
-Feel free to stop by #pdfjs on irc.mozilla.org for questions or guidance.
+Feel free to stop by our [Matrix room](https://chat.mozilla.org/#/room/#pdfjs:mozilla.org) for questions or guidance.
 
 ## Getting Started
 
@@ -138,9 +138,9 @@ Check out our FAQs and get answers to common questions:
 
 + https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions
 
-Talk to us on IRC (Internet Relay Chat):
+Talk to us on Matrix:
 
-+ #pdfjs on irc.mozilla.org
++ https://chat.mozilla.org/#/room/#pdfjs:mozilla.org
 
 File an issue:
 
