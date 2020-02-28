@@ -863,28 +863,68 @@ describe("api", function() {
         .catch(done.fail);
     });
 
-    it("gets default open action destination", function(done) {
+    it("gets default open action", function(done) {
       var loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
 
       loadingTask.promise
         .then(function(pdfDocument) {
-          return pdfDocument.getOpenActionDestination();
+          return pdfDocument.getOpenAction();
         })
-        .then(function(dest) {
-          expect(dest).toEqual(null);
+        .then(function(openAction) {
+          expect(openAction).toEqual(null);
 
           loadingTask.destroy().then(done);
         })
         .catch(done.fail);
     });
-    it("gets non-default open action destination", function(done) {
+    it("gets non-default open action (with destination)", function(done) {
       doc
-        .getOpenActionDestination()
-        .then(function(dest) {
-          expect(dest).toEqual([{ num: 15, gen: 0 }, { name: "FitH" }, null]);
+        .getOpenAction()
+        .then(function(openAction) {
+          expect(openAction.dest).toEqual([
+            { num: 15, gen: 0 },
+            { name: "FitH" },
+            null,
+          ]);
+          expect(openAction.action).toBeUndefined();
+
           done();
         })
         .catch(done.fail);
+    });
+    it("gets non-default open action (with Print action)", function(done) {
+      // PDF document with "Print" Named action in the OpenAction dictionary.
+      const loadingTask1 = getDocument(
+        buildGetDocumentParams("bug1001080.pdf")
+      );
+      // PDF document with "Print" Named action in the OpenAction dictionary,
+      // but the OpenAction dictionary is missing the `Type` entry.
+      const loadingTask2 = getDocument(
+        buildGetDocumentParams("issue11442_reduced.pdf")
+      );
+
+      const promise1 = loadingTask1.promise
+        .then(function(pdfDocument) {
+          return pdfDocument.getOpenAction();
+        })
+        .then(function(openAction) {
+          expect(openAction.dest).toBeUndefined();
+          expect(openAction.action).toEqual("Print");
+
+          return loadingTask1.destroy();
+        });
+      const promise2 = loadingTask2.promise
+        .then(function(pdfDocument) {
+          return pdfDocument.getOpenAction();
+        })
+        .then(function(openAction) {
+          expect(openAction.dest).toBeUndefined();
+          expect(openAction.action).toEqual("Print");
+
+          return loadingTask2.destroy();
+        });
+
+      Promise.all([promise1, promise2]).then(done, done.fail);
     });
 
     it("gets non-existent attachments", function(done) {
@@ -920,37 +960,6 @@ describe("api", function() {
         .then(function(data) {
           expect(data).toEqual(null);
           done();
-        })
-        .catch(done.fail);
-    });
-    it("gets javascript with printing instructions (Print action)", function(done) {
-      // PDF document with "Print" Named action in the OpenAction dictionary.
-      var loadingTask = getDocument(buildGetDocumentParams("bug1001080.pdf"));
-      var promise = loadingTask.promise.then(function(doc) {
-        return doc.getJavaScript();
-      });
-      promise
-        .then(function(data) {
-          expect(data).toEqual(["print({});"]);
-          expect(data[0]).toMatch(AutoPrintRegExp);
-          loadingTask.destroy().then(done);
-        })
-        .catch(done.fail);
-    });
-    it("gets javascript with printing instructions (Print action without type)", function(done) {
-      // PDF document with "Print" Named action in the OpenAction dictionary,
-      // but the OpenAction dictionary is missing the `Type` entry.
-      var loadingTask = getDocument(
-        buildGetDocumentParams("issue11442_reduced.pdf")
-      );
-      var promise = loadingTask.promise.then(function(doc) {
-        return doc.getJavaScript();
-      });
-      promise
-        .then(function(data) {
-          expect(data).toEqual(["print({});"]);
-          expect(data[0]).toMatch(AutoPrintRegExp);
-          loadingTask.destroy().then(done);
         })
         .catch(done.fail);
     });

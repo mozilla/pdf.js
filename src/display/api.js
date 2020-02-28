@@ -668,11 +668,18 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise} A promise that is resolved with an {Array} containing
-   *   the destination, or `null` when no open action is present in the PDF.
+   * @returns {Promise} A promise that is resolved with an {Object} containing
+   *   the currently supported actions, or `null` when no OpenAction exists.
    */
+  getOpenAction() {
+    return this._transport.getOpenAction();
+  }
+
   getOpenActionDestination() {
-    return this._transport.getOpenActionDestination();
+    deprecated("getOpenActionDestination, use getOpenAction instead.");
+    return this.getOpenAction().then(function(openAction) {
+      return openAction && openAction.dest ? openAction.dest : null;
+    });
   }
 
   /**
@@ -2518,11 +2525,8 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetViewerPreferences", null);
   }
 
-  getOpenActionDestination() {
-    return this.messageHandler.sendWithPromise(
-      "GetOpenActionDestination",
-      null
-    );
+  getOpenAction() {
+    return this.messageHandler.sendWithPromise("GetOpenAction", null);
   }
 
   getAttachments() {
