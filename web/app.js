@@ -1033,11 +1033,9 @@ const PDFViewerApplication = {
     const pageModePromise = pdfDocument.getPageMode().catch(function() {
       /* Avoid breaking initial rendering; ignoring errors. */
     });
-    const openActionDestPromise = pdfDocument
-      .getOpenActionDestination()
-      .catch(function() {
-        /* Avoid breaking initial rendering; ignoring errors. */
-      });
+    const openActionPromise = pdfDocument.getOpenAction().catch(function() {
+      /* Avoid breaking initial rendering; ignoring errors. */
+    });
 
     this.toolbar.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar.setPagesCount(pdfDocument.numPages);
@@ -1087,7 +1085,7 @@ const PDFViewerApplication = {
         storePromise,
         pageLayoutPromise,
         pageModePromise,
-        openActionDestPromise,
+        openActionPromise,
       ])
         .then(
           async ([
@@ -1095,14 +1093,14 @@ const PDFViewerApplication = {
             values = {},
             pageLayout,
             pageMode,
-            openActionDest,
+            openAction,
           ]) => {
             const viewOnLoad = AppOptions.get("viewOnLoad");
 
             this._initializePdfHistory({
               fingerprint: pdfDocument.fingerprint,
               viewOnLoad,
-              initialDest: openActionDest,
+              initialDest: openAction && openAction.dest,
             });
             const initialBookmark = this.initialBookmark;
 
@@ -1228,14 +1226,20 @@ const PDFViewerApplication = {
       );
     });
 
-    pagesPromise.then(() => {
+    pagesPromise.then(async () => {
       if (!this.supportsPrinting) {
         return;
       }
-      pdfDocument.getJavaScript().then(javaScript => {
-        if (!javaScript) {
-          return;
-        }
+      const [openAction, javaScript] = await Promise.all([
+        openActionPromise,
+        pdfDocument.getJavaScript(),
+      ]);
+      let triggerAutoPrint = false;
+
+      if (openAction && openAction.action === "Print") {
+        triggerAutoPrint = true;
+      }
+      if (javaScript) {
         javaScript.some(js => {
           if (!js) {
             // Don't warn/fallback for empty JavaScript actions.
@@ -1246,16 +1250,22 @@ const PDFViewerApplication = {
           return true;
         });
 
-        // Hack to support auto printing.
-        for (const js of javaScript) {
-          if (js && AutoPrintRegExp.test(js)) {
-            setTimeout(function() {
-              window.print();
-            });
-            return;
+        if (!triggerAutoPrint) {
+          // Hack to support auto printing.
+          for (const js of javaScript) {
+            if (js && AutoPrintRegExp.test(js)) {
+              triggerAutoPrint = true;
+              break;
+            }
           }
         }
-      });
+      }
+
+      if (triggerAutoPrint) {
+        setTimeout(function() {
+          window.print();
+        });
+      }
     });
 
     onePageRendered.then(() => {
