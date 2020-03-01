@@ -1732,7 +1732,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         }
       }
       if (vertical) {
-        current.y -= x * textHScale;
+        current.y -= x;
       } else {
         current.x += x * textHScale;
       }
