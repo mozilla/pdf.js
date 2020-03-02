@@ -146,13 +146,15 @@ class IPDFTextLayerFactory {
    * @param {number} pageIndex
    * @param {PageViewport} viewport
    * @param {boolean} enhanceTextSelection
+   * @param {EventBus} eventBus
    * @returns {TextLayerBuilder}
    */
   createTextLayerBuilder(
     textLayerDiv,
     pageIndex,
     viewport,
-    enhanceTextSelection = false
+    enhanceTextSelection = false,
+    eventBus
   ) {}
 }
 

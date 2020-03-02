@@ -20,7 +20,7 @@ class PDFSinglePageViewer extends BaseViewer {
   constructor(options) {
     super(options);
 
-    this.eventBus.on("pagesinit", evt => {
+    this.eventBus._on("pagesinit", evt => {
       // Since the pages are placed in a `DocumentFragment`, make sure that
       // the current page becomes visible upon loading of the document.
       this._ensurePageViewVisible();

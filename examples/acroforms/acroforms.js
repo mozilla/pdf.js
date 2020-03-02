@@ -23,6 +23,8 @@ var DEFAULT_SCALE = 1.0;
 
 var container = document.getElementById("pageContainer");
 
+var eventBus = new pdfjsViewer.EventBus();
+
 // Fetch the PDF document from the URL using promises.
 var loadingTask = pdfjsLib.getDocument(DEFAULT_URL);
 loadingTask.promise.then(function(doc) {
@@ -39,6 +41,7 @@ loadingTask.promise.then(function(doc) {
             id: pageNum,
             scale: DEFAULT_SCALE,
             defaultViewport: pdfPage.getViewport({ scale: DEFAULT_SCALE }),
+            eventBus: eventBus,
             annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
             renderInteractiveForms: true,
           });

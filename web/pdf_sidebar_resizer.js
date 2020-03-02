@@ -151,11 +151,11 @@ class PDFSidebarResizer {
       window.addEventListener("mouseup", _boundEvents.mouseUp);
     });
 
-    this.eventBus.on("sidebarviewchanged", evt => {
+    this.eventBus._on("sidebarviewchanged", evt => {
       this.sidebarOpen = !!(evt && evt.view);
     });
 
-    this.eventBus.on("resize", evt => {
+    this.eventBus._on("resize", evt => {
       // When the *entire* viewer is resized, such that it becomes narrower,
       // ensure that the sidebar doesn't end up being too wide.
       if (!evt || evt.source !== window) {

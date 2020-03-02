@@ -18,7 +18,7 @@ import {
   animationStarted,
   AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
-  getGlobalEventBus,
+  EventBus,
   getPDFFileNameFromURL,
   isValidRotation,
   isValidScrollMode,
@@ -343,7 +343,7 @@ const PDFViewerApplication = {
 
     const eventBus =
       appConfig.eventBus ||
-      getGlobalEventBus(AppOptions.get("eventBusDispatchToDOM"));
+      new EventBus({ dispatchToDOM: AppOptions.get("eventBusDispatchToDOM") });
     this.eventBus = eventBus;
 
     const pdfRenderingQueue = new PDFRenderingQueue();
@@ -1598,45 +1598,45 @@ const PDFViewerApplication = {
     _boundEvents.beforePrint = this.beforePrint.bind(this);
     _boundEvents.afterPrint = this.afterPrint.bind(this);
 
-    eventBus.on("resize", webViewerResize);
-    eventBus.on("hashchange", webViewerHashchange);
-    eventBus.on("beforeprint", _boundEvents.beforePrint);
-    eventBus.on("afterprint", _boundEvents.afterPrint);
-    eventBus.on("pagerendered", webViewerPageRendered);
-    eventBus.on("updateviewarea", webViewerUpdateViewarea);
-    eventBus.on("pagechanging", webViewerPageChanging);
-    eventBus.on("scalechanging", webViewerScaleChanging);
-    eventBus.on("rotationchanging", webViewerRotationChanging);
-    eventBus.on("sidebarviewchanged", webViewerSidebarViewChanged);
-    eventBus.on("pagemode", webViewerPageMode);
-    eventBus.on("namedaction", webViewerNamedAction);
-    eventBus.on("presentationmodechanged", webViewerPresentationModeChanged);
-    eventBus.on("presentationmode", webViewerPresentationMode);
-    eventBus.on("openfile", webViewerOpenFile);
-    eventBus.on("print", webViewerPrint);
-    eventBus.on("download", webViewerDownload);
-    eventBus.on("firstpage", webViewerFirstPage);
-    eventBus.on("lastpage", webViewerLastPage);
-    eventBus.on("nextpage", webViewerNextPage);
-    eventBus.on("previouspage", webViewerPreviousPage);
-    eventBus.on("zoomin", webViewerZoomIn);
-    eventBus.on("zoomout", webViewerZoomOut);
-    eventBus.on("zoomreset", webViewerZoomReset);
-    eventBus.on("pagenumberchanged", webViewerPageNumberChanged);
-    eventBus.on("scalechanged", webViewerScaleChanged);
-    eventBus.on("rotatecw", webViewerRotateCw);
-    eventBus.on("rotateccw", webViewerRotateCcw);
-    eventBus.on("switchscrollmode", webViewerSwitchScrollMode);
-    eventBus.on("scrollmodechanged", webViewerScrollModeChanged);
-    eventBus.on("switchspreadmode", webViewerSwitchSpreadMode);
-    eventBus.on("spreadmodechanged", webViewerSpreadModeChanged);
-    eventBus.on("documentproperties", webViewerDocumentProperties);
-    eventBus.on("find", webViewerFind);
-    eventBus.on("findfromurlhash", webViewerFindFromUrlHash);
-    eventBus.on("updatefindmatchescount", webViewerUpdateFindMatchesCount);
-    eventBus.on("updatefindcontrolstate", webViewerUpdateFindControlState);
+    eventBus._on("resize", webViewerResize);
+    eventBus._on("hashchange", webViewerHashchange);
+    eventBus._on("beforeprint", _boundEvents.beforePrint);
+    eventBus._on("afterprint", _boundEvents.afterPrint);
+    eventBus._on("pagerendered", webViewerPageRendered);
+    eventBus._on("updateviewarea", webViewerUpdateViewarea);
+    eventBus._on("pagechanging", webViewerPageChanging);
+    eventBus._on("scalechanging", webViewerScaleChanging);
+    eventBus._on("rotationchanging", webViewerRotationChanging);
+    eventBus._on("sidebarviewchanged", webViewerSidebarViewChanged);
+    eventBus._on("pagemode", webViewerPageMode);
+    eventBus._on("namedaction", webViewerNamedAction);
+    eventBus._on("presentationmodechanged", webViewerPresentationModeChanged);
+    eventBus._on("presentationmode", webViewerPresentationMode);
+    eventBus._on("openfile", webViewerOpenFile);
+    eventBus._on("print", webViewerPrint);
+    eventBus._on("download", webViewerDownload);
+    eventBus._on("firstpage", webViewerFirstPage);
+    eventBus._on("lastpage", webViewerLastPage);
+    eventBus._on("nextpage", webViewerNextPage);
+    eventBus._on("previouspage", webViewerPreviousPage);
+    eventBus._on("zoomin", webViewerZoomIn);
+    eventBus._on("zoomout", webViewerZoomOut);
+    eventBus._on("zoomreset", webViewerZoomReset);
+    eventBus._on("pagenumberchanged", webViewerPageNumberChanged);
+    eventBus._on("scalechanged", webViewerScaleChanged);
+    eventBus._on("rotatecw", webViewerRotateCw);
+    eventBus._on("rotateccw", webViewerRotateCcw);
+    eventBus._on("switchscrollmode", webViewerSwitchScrollMode);
+    eventBus._on("scrollmodechanged", webViewerScrollModeChanged);
+    eventBus._on("switchspreadmode", webViewerSwitchSpreadMode);
+    eventBus._on("spreadmodechanged", webViewerSpreadModeChanged);
+    eventBus._on("documentproperties", webViewerDocumentProperties);
+    eventBus._on("find", webViewerFind);
+    eventBus._on("findfromurlhash", webViewerFindFromUrlHash);
+    eventBus._on("updatefindmatchescount", webViewerUpdateFindMatchesCount);
+    eventBus._on("updatefindcontrolstate", webViewerUpdateFindControlState);
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      eventBus.on("fileinputchange", webViewerFileInputChange);
+      eventBus._on("fileinputchange", webViewerFileInputChange);
     }
   },
 
@@ -1672,45 +1672,45 @@ const PDFViewerApplication = {
   unbindEvents() {
     const { eventBus, _boundEvents } = this;
 
-    eventBus.off("resize", webViewerResize);
-    eventBus.off("hashchange", webViewerHashchange);
-    eventBus.off("beforeprint", _boundEvents.beforePrint);
-    eventBus.off("afterprint", _boundEvents.afterPrint);
-    eventBus.off("pagerendered", webViewerPageRendered);
-    eventBus.off("updateviewarea", webViewerUpdateViewarea);
-    eventBus.off("pagechanging", webViewerPageChanging);
-    eventBus.off("scalechanging", webViewerScaleChanging);
-    eventBus.off("rotationchanging", webViewerRotationChanging);
-    eventBus.off("sidebarviewchanged", webViewerSidebarViewChanged);
-    eventBus.off("pagemode", webViewerPageMode);
-    eventBus.off("namedaction", webViewerNamedAction);
-    eventBus.off("presentationmodechanged", webViewerPresentationModeChanged);
-    eventBus.off("presentationmode", webViewerPresentationMode);
-    eventBus.off("openfile", webViewerOpenFile);
-    eventBus.off("print", webViewerPrint);
-    eventBus.off("download", webViewerDownload);
-    eventBus.off("firstpage", webViewerFirstPage);
-    eventBus.off("lastpage", webViewerLastPage);
-    eventBus.off("nextpage", webViewerNextPage);
-    eventBus.off("previouspage", webViewerPreviousPage);
-    eventBus.off("zoomin", webViewerZoomIn);
-    eventBus.off("zoomout", webViewerZoomOut);
-    eventBus.off("zoomreset", webViewerZoomReset);
-    eventBus.off("pagenumberchanged", webViewerPageNumberChanged);
-    eventBus.off("scalechanged", webViewerScaleChanged);
-    eventBus.off("rotatecw", webViewerRotateCw);
-    eventBus.off("rotateccw", webViewerRotateCcw);
-    eventBus.off("switchscrollmode", webViewerSwitchScrollMode);
-    eventBus.off("scrollmodechanged", webViewerScrollModeChanged);
-    eventBus.off("switchspreadmode", webViewerSwitchSpreadMode);
-    eventBus.off("spreadmodechanged", webViewerSpreadModeChanged);
-    eventBus.off("documentproperties", webViewerDocumentProperties);
-    eventBus.off("find", webViewerFind);
-    eventBus.off("findfromurlhash", webViewerFindFromUrlHash);
-    eventBus.off("updatefindmatchescount", webViewerUpdateFindMatchesCount);
-    eventBus.off("updatefindcontrolstate", webViewerUpdateFindControlState);
+    eventBus._off("resize", webViewerResize);
+    eventBus._off("hashchange", webViewerHashchange);
+    eventBus._off("beforeprint", _boundEvents.beforePrint);
+    eventBus._off("afterprint", _boundEvents.afterPrint);
+    eventBus._off("pagerendered", webViewerPageRendered);
+    eventBus._off("updateviewarea", webViewerUpdateViewarea);
+    eventBus._off("pagechanging", webViewerPageChanging);
+    eventBus._off("scalechanging", webViewerScaleChanging);
+    eventBus._off("rotationchanging", webViewerRotationChanging);
+    eventBus._off("sidebarviewchanged", webViewerSidebarViewChanged);
+    eventBus._off("pagemode", webViewerPageMode);
+    eventBus._off("namedaction", webViewerNamedAction);
+    eventBus._off("presentationmodechanged", webViewerPresentationModeChanged);
+    eventBus._off("presentationmode", webViewerPresentationMode);
+    eventBus._off("openfile", webViewerOpenFile);
+    eventBus._off("print", webViewerPrint);
+    eventBus._off("download", webViewerDownload);
+    eventBus._off("firstpage", webViewerFirstPage);
+    eventBus._off("lastpage", webViewerLastPage);
+    eventBus._off("nextpage", webViewerNextPage);
+    eventBus._off("previouspage", webViewerPreviousPage);
+    eventBus._off("zoomin", webViewerZoomIn);
+    eventBus._off("zoomout", webViewerZoomOut);
+    eventBus._off("zoomreset", webViewerZoomReset);
+    eventBus._off("pagenumberchanged", webViewerPageNumberChanged);
+    eventBus._off("scalechanged", webViewerScaleChanged);
+    eventBus._off("rotatecw", webViewerRotateCw);
+    eventBus._off("rotateccw", webViewerRotateCcw);
+    eventBus._off("switchscrollmode", webViewerSwitchScrollMode);
+    eventBus._off("scrollmodechanged", webViewerScrollModeChanged);
+    eventBus._off("switchspreadmode", webViewerSwitchSpreadMode);
+    eventBus._off("spreadmodechanged", webViewerSpreadModeChanged);
+    eventBus._off("documentproperties", webViewerDocumentProperties);
+    eventBus._off("find", webViewerFind);
+    eventBus._off("findfromurlhash", webViewerFindFromUrlHash);
+    eventBus._off("updatefindmatchescount", webViewerUpdateFindMatchesCount);
+    eventBus._off("updatefindcontrolstate", webViewerUpdateFindControlState);
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      eventBus.off("fileinputchange", webViewerFileInputChange);
+      eventBus._off("fileinputchange", webViewerFileInputChange);
     }
 
     _boundEvents.beforePrint = null;
