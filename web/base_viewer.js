@@ -426,7 +426,7 @@ class BaseViewer {
       // evicted from the buffer and destroyed even if we pause its rendering.
       this._buffer.push(pageView);
     };
-    this.eventBus.on("pagerender", this._onBeforeDraw);
+    this.eventBus._on("pagerender", this._onBeforeDraw);
 
     this._onAfterDraw = evt => {
       if (evt.cssTransform || onePageRenderedCapability.settled) {
@@ -434,10 +434,10 @@ class BaseViewer {
       }
       onePageRenderedCapability.resolve();
 
-      this.eventBus.off("pagerendered", this._onAfterDraw);
+      this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
     };
-    this.eventBus.on("pagerendered", this._onAfterDraw);
+    this.eventBus._on("pagerendered", this._onAfterDraw);
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
@@ -582,11 +582,11 @@ class BaseViewer {
     this._spreadMode = SpreadMode.NONE;
 
     if (this._onBeforeDraw) {
-      this.eventBus.off("pagerender", this._onBeforeDraw);
+      this.eventBus._off("pagerender", this._onBeforeDraw);
       this._onBeforeDraw = null;
     }
     if (this._onAfterDraw) {
-      this.eventBus.off("pagerendered", this._onAfterDraw);
+      this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
     }
     // Remove the pages from the DOM...
@@ -1093,17 +1093,20 @@ class BaseViewer {
    * @param {HTMLDivElement} textLayerDiv
    * @param {number} pageIndex
    * @param {PageViewport} viewport
+   * @param {boolean} enhanceTextSelection
+   * @param {EventBus} eventBus
    * @returns {TextLayerBuilder}
    */
   createTextLayerBuilder(
     textLayerDiv,
     pageIndex,
     viewport,
-    enhanceTextSelection = false
+    enhanceTextSelection = false,
+    eventBus
   ) {
     return new TextLayerBuilder({
       textLayerDiv,
-      eventBus: this.eventBus,
+      eventBus,
       pageIndex,
       viewport,
       findController: this.isInPresentationMode ? null : this.findController,

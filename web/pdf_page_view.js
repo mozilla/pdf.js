@@ -448,7 +448,8 @@ class PDFPageView {
         textLayerDiv,
         this.id - 1,
         this.viewport,
-        this.textLayerMode === TextLayerMode.ENABLE_ENHANCE
+        this.textLayerMode === TextLayerMode.ENABLE_ENHANCE,
+        this.eventBus
       );
     }
     this.textLayer = textLayer;

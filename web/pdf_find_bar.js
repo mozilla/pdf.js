@@ -25,7 +25,7 @@ const MATCHES_COUNT_LIMIT = 1000;
  * is done by PDFFindController.
  */
 class PDFFindBar {
-  constructor(options, eventBus = getGlobalEventBus(), l10n = NullL10n) {
+  constructor(options, eventBus, l10n = NullL10n) {
     this.opened = false;
 
     this.bar = options.bar || null;
@@ -38,7 +38,7 @@ class PDFFindBar {
     this.findResultsCount = options.findResultsCount || null;
     this.findPreviousButton = options.findPreviousButton || null;
     this.findNextButton = options.findNextButton || null;
-    this.eventBus = eventBus;
+    this.eventBus = eventBus || getGlobalEventBus();
     this.l10n = l10n;
 
     // Add event listeners to the DOM elements.
@@ -83,7 +83,7 @@ class PDFFindBar {
       this.dispatchEvent("entirewordchange");
     });
 
-    this.eventBus.on("resize", this._adjustWidth.bind(this));
+    this.eventBus._on("resize", this._adjustWidth.bind(this));
   }
 
   reset() {

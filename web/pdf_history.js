@@ -69,17 +69,17 @@ class PDFHistory {
     this._isViewerInPresentationMode = false;
     // Ensure that we don't miss either a 'presentationmodechanged' or a
     // 'pagesinit' event, by registering the listeners immediately.
-    this.eventBus.on("presentationmodechanged", evt => {
+    this.eventBus._on("presentationmodechanged", evt => {
       this._isViewerInPresentationMode = evt.active || evt.switchInProgress;
     });
-    this.eventBus.on("pagesinit", () => {
+    this.eventBus._on("pagesinit", () => {
       this._isPagesLoaded = false;
 
       const onPagesLoaded = evt => {
-        this.eventBus.off("pagesloaded", onPagesLoaded);
+        this.eventBus._off("pagesloaded", onPagesLoaded);
         this._isPagesLoaded = !!evt.pagesCount;
       };
-      this.eventBus.on("pagesloaded", onPagesLoaded);
+      this.eventBus._on("pagesloaded", onPagesLoaded);
     });
   }
 
@@ -684,7 +684,7 @@ class PDFHistory {
       pageHide: this._pageHide.bind(this),
     };
 
-    this.eventBus.on("updateviewarea", this._boundEvents.updateViewarea);
+    this.eventBus._on("updateviewarea", this._boundEvents.updateViewarea);
     window.addEventListener("popstate", this._boundEvents.popState);
     window.addEventListener("pagehide", this._boundEvents.pageHide);
   }
@@ -696,7 +696,7 @@ class PDFHistory {
     if (!this._boundEvents) {
       return; // The event listeners were already removed.
     }
-    this.eventBus.off("updateviewarea", this._boundEvents.updateViewarea);
+    this.eventBus._off("updateviewarea", this._boundEvents.updateViewarea);
     window.removeEventListener("popstate", this._boundEvents.popState);
     window.removeEventListener("pagehide", this._boundEvents.pageHide);
 

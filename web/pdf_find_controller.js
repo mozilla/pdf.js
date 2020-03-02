@@ -67,12 +67,12 @@ class PDFFindController {
   /**
    * @param {PDFFindControllerOptions} options
    */
-  constructor({ linkService, eventBus = getGlobalEventBus() }) {
+  constructor({ linkService, eventBus }) {
     this._linkService = linkService;
-    this._eventBus = eventBus;
+    this._eventBus = eventBus || getGlobalEventBus();
 
     this._reset();
-    eventBus.on("findbarclose", this._onFindBarClose.bind(this));
+    eventBus._on("findbarclose", this._onFindBarClose.bind(this));
   }
 
   get highlightMatches() {

@@ -40,7 +40,7 @@ class PDFOutlineViewer {
 
     this.reset();
 
-    eventBus.on("toggleoutlinetree", this.toggleOutlineTree.bind(this));
+    eventBus._on("toggleoutlinetree", this.toggleOutlineTree.bind(this));
   }
 
   reset() {
