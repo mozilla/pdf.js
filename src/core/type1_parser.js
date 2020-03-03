@@ -679,13 +679,19 @@ var Type1Parser = (function Type1ParserClosure() {
           // here and put an endchar to make the validator happy.
           output = [14];
         }
-        program.charstrings.push({
+        const charStringObject = {
           glyphName: glyph,
           charstring: output,
           width: charString.width,
           lsb: charString.lsb,
           seac: charString.seac,
-        });
+        };
+        if (glyph === ".notdef") {
+          // Make sure .notdef is at index zero (issue #11477).
+          program.charstrings.unshift(charStringObject);
+        } else {
+          program.charstrings.push(charStringObject);
+        }
 
         // Attempt to replace missing widths, from the font dictionary /Widths
         // entry, with ones from the font data (fixes issue11150_reduced.pdf).
