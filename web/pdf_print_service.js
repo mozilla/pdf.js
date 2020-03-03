@@ -74,9 +74,10 @@ function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
 
 PDFPrintService.prototype = {
   layout() {
+    this.viewerContainer = window.PDFViewerConfig.appContainer;
     this.throwIfInactive();
 
-    const body = document.querySelector("body");
+    const body = this.viewerContainer;
     body.setAttribute("data-pdfjsprinting", true);
 
     const hasEqualPageSizes = this.pagesOverview.every(function(size) {
@@ -125,7 +126,7 @@ PDFPrintService.prototype = {
     }
     this.printContainer.textContent = "";
 
-    const body = document.querySelector("body");
+    const body = this.viewerContainer;
     body.removeAttribute("data-pdfjsprinting");
 
     if (this.pageStyleSheet) {
@@ -277,7 +278,9 @@ function abort() {
 }
 
 function renderProgress(index, total, l10n) {
-  const progressContainer = document.getElementById("printServiceOverlay");
+  this.viewerContainer = window.PDFViewerConfig.appContainer;
+
+  const progressContainer = this.viewerContainer.getElementById("printServiceOverlay");
   const progress = Math.round((100 * index) / total);
   const progressBar = progressContainer.querySelector("progress");
   const progressPerc = progressContainer.querySelector(".relative-progress");
@@ -327,6 +330,7 @@ if ("onbeforeprint" in window) {
 
 let overlayPromise;
 function ensureOverlay() {
+  this.viewerContainer = window.PDFViewerConfig.appContainer;
   if (!overlayPromise) {
     overlayManager = PDFViewerApplication.overlayManager;
     if (!overlayManager) {
@@ -335,11 +339,11 @@ function ensureOverlay() {
 
     overlayPromise = overlayManager.register(
       "printServiceOverlay",
-      document.getElementById("printServiceOverlay"),
+      this.viewerContainer.getElementById("printServiceOverlay"),
       abort,
       true
     );
-    document.getElementById("printCancel").onclick = abort;
+    this.viewerContainer.getElementById("printCancel").onclick = abort;
   }
   return overlayPromise;
 }

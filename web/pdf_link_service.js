@@ -228,8 +228,9 @@ class PDFLinkService {
       if ("search" in params) {
         this.eventBus.dispatch("findfromurlhash", {
           source: this,
-          query: params["search"].replace(/"/g, ""),
-          phraseSearch: params["phrase"] === "true",
+          query: params['search'].replace(/"/g, ''),
+          phraseSearch: (params['phrase'] === 'true'),
+          multiplePhraseSearch: (params['multiplephrase'] === 'true'),
         });
       }
       // borrowing syntax from "Parameters for Opening PDF Files"

@@ -367,11 +367,15 @@ class PDFFindController {
     this._pageMatches[pageIndex] = matches;
   }
 
-  _calculateWordMatch(query, pageIndex, pageContent, entireWord) {
+  _calculateMultiplePhraseMatch(query, pageIndex, pageContent, entireWord) {
+    this._calculateWordMatch(query, pageIndex, pageContent, entireWord, "$$");
+  }
+
+  _calculateWordMatch(query, pageIndex, pageContent, entireWord, separator=" ") {
     const matchesWithLength = [];
 
     // Divide the query into pieces and search for text in each piece.
-    const queryArray = query.match(/\S+/g);
+    const queryArray = query.split(separator);
     for (let i = 0, len = queryArray.length; i < len; i++) {
       const subquery = queryArray[i];
       const subqueryLen = subquery.length;
@@ -413,7 +417,7 @@ class PDFFindController {
   _calculateMatch(pageIndex) {
     let pageContent = this._pageContents[pageIndex];
     let query = this._query;
-    const { caseSensitive, entireWord, phraseSearch } = this._state;
+    const { caseSensitive, entireWord, phraseSearch, multiplePhraseSearch, } = this._state;
 
     if (query.length === 0) {
       // Do nothing: the matches should be wiped out already.
@@ -427,6 +431,8 @@ class PDFFindController {
 
     if (phraseSearch) {
       this._calculatePhraseMatch(query, pageIndex, pageContent, entireWord);
+    } else if (multiplePhraseSearch){
+      this._calculateMultiplePhraseMatch(query, pageIndex, pageContent, entireWord);
     } else {
       this._calculateWordMatch(query, pageIndex, pageContent, entireWord);
     }
