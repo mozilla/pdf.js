@@ -699,12 +699,17 @@ html[dir='rtl'] .dropdownToolbarButton {
   width: 140px;
   padding: 0;
   overflow: hidden;
+}
+.dropdownToolbarButton,
+.dropdownToolbarButton:hover:active {
   background: url(images/toolbarButton-menuArrows.png) no-repeat;
 }
-html[dir='ltr'] .dropdownToolbarButton {
+html[dir='ltr'] .dropdownToolbarButton,
+html[dir='ltr'] .dropdownToolbarButton:hover:active {
   background-position: 95%;
 }
-html[dir='rtl'] .dropdownToolbarButton {
+html[dir='rtl'] .dropdownToolbarButton,
+html[dir='rtl'] .dropdownToolbarButton:hover:active {
   background-position: 5%;
 }
 
