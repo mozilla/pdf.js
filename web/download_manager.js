@@ -14,30 +14,35 @@
  */
 
 import {
-  apiCompatibilityParams, createObjectURL, createValidAbsoluteUrl
-} from 'pdfjs-lib';
+  apiCompatibilityParams,
+  createObjectURL,
+  createValidAbsoluteUrl,
+} from "pdfjs-lib";
 import {
-  getDocumentFromHtml, getDownloadUrlFromHtml
-} from './ui_utils';
+  getDocumentFromHtml,
+  getDownloadUrlFromHtml,
+} from "./ui_utils";
 
-if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
-  throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
-                  'outside CHROME and GENERIC builds.');
+if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("CHROME || GENERIC")) {
+  throw new Error(
+    'Module "pdfjs-web/download_manager" shall not be used ' +
+      "outside CHROME and GENERIC builds."
+  );
 }
 
 const DISABLE_CREATE_OBJECT_URL =
   apiCompatibilityParams.disableCreateObjectURL || false;
 
 function download(blobUrl, filename) {
-  let a = document.createElement('a');
+  const a = document.createElement("a");
   if (!a.click) {
     throw new Error('DownloadManager: "a.click()" is not supported.');
   }
   a.href = blobUrl;
-  a.target = '_parent';
+  a.target = "_parent";
   // Use a.download if available. This increases the likelihood that
   // the file is downloaded instead of opened by another PDF plugin.
-  if ('download' in a) {
+  if ("download" in a) {
     a.download = filename;
   }
   // <a> must be in the document for IE and recent Firefox versions,
@@ -48,24 +53,28 @@ function download(blobUrl, filename) {
 }
 
 class DownloadManager {
-  constructor({ disableCreateObjectURL = DISABLE_CREATE_OBJECT_URL, }) {
+  constructor({ disableCreateObjectURL = DISABLE_CREATE_OBJECT_URL }) {
     this.disableCreateObjectURL = disableCreateObjectURL;
   }
 
   downloadUrl(url, filename) {
-    if (!createValidAbsoluteUrl(url, 'http://example.com')) {
+    if (!createValidAbsoluteUrl(url, "http://example.com")) {
       return; // restricted/invalid URL
     }
-    download(url + '#pdfjs.action=download', filename);
+    download(url + "#pdfjs.action=download", filename);
   }
 
   downloadData(data, filename, contentType) {
-    if (navigator.msSaveBlob) { // IE10 and above
-      navigator.msSaveBlob(new Blob([data], { type: contentType, }), filename);
+    if (navigator.msSaveBlob) {
+      // IE10 and above
+      navigator.msSaveBlob(new Blob([data], { type: contentType }), filename);
       return;
     }
-    let blobUrl = createObjectURL(data, contentType,
-                                  this.disableCreateObjectURL);
+    const blobUrl = createObjectURL(
+      data,
+      contentType,
+      this.disableCreateObjectURL
+    );
     download(blobUrl, filename);
   }
 
@@ -93,6 +102,4 @@ class DownloadManager {
   }
 }
 
-export {
-  DownloadManager,
-};
+export { DownloadManager };
