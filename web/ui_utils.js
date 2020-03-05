@@ -716,7 +716,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 
     function handler(type) {
       if (target instanceof EventBus) {
-        target.off(name, eventHandler);
+        target._off(name, eventHandler);
       } else {
         target.removeEventListener(name, eventHandler);
       }
@@ -729,7 +729,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 
     const eventHandler = handler.bind(null, WaitOnType.EVENT);
     if (target instanceof EventBus) {
-      target.on(name, eventHandler);
+      target._on(name, eventHandler);
     } else {
       target.addEventListener(name, eventHandler);
     }
@@ -829,7 +829,7 @@ class EventBus {
     }
     eventListeners.push({
       listener,
-      external: options ? options.external : false,
+      external: (options && options.external) === true,
     });
   }
 
