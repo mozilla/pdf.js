@@ -41,7 +41,8 @@ class NativeImageDecoder {
         this.xref,
         this.resources,
         this.pdfFunctionFactory
-      )
+      ) &&
+      image.maybeValidDimensions
     );
   }
 

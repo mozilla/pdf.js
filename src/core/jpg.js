@@ -148,7 +148,7 @@ var JpegImage = (function JpegImageClosure() {
       if (bitsData === 0xff) {
         var nextByte = data[offset++];
         if (nextByte) {
-          if (nextByte === 0xdc && parseDNLMarker) {
+          if (nextByte === /* DNL = */ 0xdc && parseDNLMarker) {
             offset += 2; // Skip marker length.
 
             const scanLines = readUint16(data, offset);
@@ -159,7 +159,22 @@ var JpegImage = (function JpegImageClosure() {
                 scanLines
               );
             }
-          } else if (nextByte === 0xd9) {
+          } else if (nextByte === /* EOI = */ 0xd9) {
+            if (parseDNLMarker) {
+              // NOTE: only 8-bit JPEG images are supported in this decoder.
+              const maybeScanLines = blockRow * 8;
+              // Heuristic to attempt to handle corrupt JPEG images with too
+              // large `scanLines` parameter, by falling back to the currently
+              // parsed number of scanLines when it's at least one order of
+              // magnitude smaller than expected (fixes issue10880.pdf).
+              if (maybeScanLines > 0 && maybeScanLines < frame.scanLines / 10) {
+                throw new DNLMarkerError(
+                  "Found EOI marker (0xFFD9) while parsing scan data, " +
+                    "possibly caused by incorrect `scanLines` parameter",
+                  maybeScanLines
+                );
+              }
+            }
             throw new EOIMarkerError(
               "Found EOI marker (0xFFD9) while parsing scan data"
             );
@@ -337,17 +352,18 @@ var JpegImage = (function JpegImageClosure() {
       }
     }
 
+    let blockRow = 0;
     function decodeMcu(component, decode, mcu, row, col) {
       var mcuRow = (mcu / mcusPerLine) | 0;
       var mcuCol = mcu % mcusPerLine;
-      var blockRow = mcuRow * component.v + row;
+      blockRow = mcuRow * component.v + row;
       var blockCol = mcuCol * component.h + col;
       var offset = getBlockBufferOffset(component, blockRow, blockCol);
       decode(component, offset);
     }
 
     function decodeBlock(component, decode, mcu) {
-      var blockRow = (mcu / component.blocksPerLine) | 0;
+      blockRow = (mcu / component.blocksPerLine) | 0;
       var blockCol = mcu % component.blocksPerLine;
       var offset = getBlockBufferOffset(component, blockRow, blockCol);
       decode(component, offset);

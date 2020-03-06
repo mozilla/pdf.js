@@ -512,7 +512,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           this.xref,
           resources,
           this.pdfFunctionFactory
-        )
+        ) &&
+        image.maybeValidDimensions
       ) {
         // These JPEGs don't need any more processing so we can just send it.
         return this.handler
