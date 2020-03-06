@@ -716,7 +716,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 
     function handler(type) {
       if (target instanceof EventBus) {
-        target.off(name, eventHandler);
+        target._off(name, eventHandler);
       } else {
         target.removeEventListener(name, eventHandler);
       }
@@ -729,7 +729,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 
     const eventHandler = handler.bind(null, WaitOnType.EVENT);
     if (target instanceof EventBus) {
-      target.on(name, eventHandler);
+      target._on(name, eventHandler);
     } else {
       target.addEventListener(name, eventHandler);
     }
@@ -757,6 +757,29 @@ const animationStarted = new Promise(function(resolve) {
 });
 
 /**
+ * NOTE: Only used to support various PDF viewer tests in `mozilla-central`.
+ */
+function dispatchDOMEvent(eventName, args = null) {
+  const details = Object.create(null);
+  if (args && args.length > 0) {
+    const obj = args[0];
+    for (const key in obj) {
+      const value = obj[key];
+      if (key === "source") {
+        if (value === window || value === document) {
+          return; // No need to re-dispatch (already) global events.
+        }
+        continue; // Ignore the `source` property.
+      }
+      details[key] = value;
+    }
+  }
+  const event = document.createEvent("CustomEvent");
+  event.initCustomEvent(eventName, true, true, details);
+  document.dispatchEvent(event);
+}
+
+/**
  * Simple event bus for an application. Listeners are attached using the `on`
  * and `off` methods. To raise an event, the `dispatch` method shall be used.
  */
@@ -764,6 +787,17 @@ class EventBus {
   constructor({ dispatchToDOM = false } = {}) {
     this._listeners = Object.create(null);
     this._dispatchToDOM = dispatchToDOM === true;
+
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      !PDFJSDev.test("MOZCENTRAL || TESTING") &&
+      dispatchToDOM
+    ) {
+      console.error(
+        "The `eventBusDispatchToDOM` option/preference is deprecated, " +
+          "add event listeners to the EventBus instance rather than the DOM."
+      );
+    }
   }
 
   /**
@@ -787,7 +821,7 @@ class EventBus {
     if (!eventListeners || eventListeners.length === 0) {
       if (this._dispatchToDOM) {
         const args = Array.prototype.slice.call(arguments, 1);
-        this._dispatchDOMEvent(eventName, args);
+        dispatchDOMEvent(eventName, args);
       }
       return;
     }
@@ -815,7 +849,7 @@ class EventBus {
       externalListeners = null;
     }
     if (this._dispatchToDOM) {
-      this._dispatchDOMEvent(eventName, args);
+      dispatchDOMEvent(eventName, args);
     }
   }
 
@@ -829,7 +863,7 @@ class EventBus {
     }
     eventListeners.push({
       listener,
-      external: options ? options.external : false,
+      external: (options && options.external) === true,
     });
   }
 
@@ -847,29 +881,6 @@ class EventBus {
         return;
       }
     }
-  }
-
-  /**
-   * @private
-   */
-  _dispatchDOMEvent(eventName, args = null) {
-    const details = Object.create(null);
-    if (args && args.length > 0) {
-      const obj = args[0];
-      for (const key in obj) {
-        const value = obj[key];
-        if (key === "source") {
-          if (value === window || value === document) {
-            return; // No need to re-dispatch (already) global events.
-          }
-          continue; // Ignore the `source` property.
-        }
-        details[key] = value;
-      }
-    }
-    const event = document.createEvent("CustomEvent");
-    event.initCustomEvent(eventName, true, true, details);
-    document.dispatchEvent(event);
   }
 }
 
