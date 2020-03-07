@@ -453,11 +453,10 @@ class BaseViewer {
 
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({ scale: scale * CSS_UNITS });
+        const textLayerFactory =
+          this.textLayerMode !== TextLayerMode.DISABLE ? this : null;
+
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-          let textLayerFactory = null;
-          if (this.textLayerMode !== TextLayerMode.DISABLE) {
-            textLayerFactory = this;
-          }
           const pageView = new PDFPageView({
             container: this._setDocumentViewerElement,
             eventBus: this.eventBus,
