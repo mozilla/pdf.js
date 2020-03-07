@@ -1842,7 +1842,7 @@ function webViewerInitialized() {
       });
     });
 
-    // Enable draging-and-dropping a new PDF file onto the viewerContainer.
+    // Enable dragging-and-dropping a new PDF file onto the viewerContainer.
     appConfig.mainContainer.addEventListener("dragover", function(evt) {
       evt.preventDefault();
 
