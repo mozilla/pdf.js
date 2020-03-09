@@ -842,6 +842,7 @@ class Lexer {
     // other commands or literals as a prefix. The knowCommands is optional.
     this.knownCommands = knownCommands;
 
+    this._hexStringNumWarn = 0;
     this.beginInlineImagePos = -1;
   }
 
@@ -1099,12 +1100,32 @@ class Lexer {
     return Name.get(strBuf.join(""));
   }
 
+  /**
+   * @private
+   */
+  _hexStringWarn(ch) {
+    const MAX_HEX_STRING_NUM_WARN = 5;
+
+    if (this._hexStringNumWarn++ === MAX_HEX_STRING_NUM_WARN) {
+      warn("getHexString - ignoring additional invalid characters.");
+      return;
+    }
+    if (this._hexStringNumWarn > MAX_HEX_STRING_NUM_WARN) {
+      // Limit the number of warning messages printed for a `this.getHexString`
+      // invocation, since corrupt PDF documents may otherwise spam the console
+      // enough to affect general performance negatively.
+      return;
+    }
+    warn(`getHexString - ignoring invalid character: ${ch}`);
+  }
+
   getHexString() {
     const strBuf = this.strBuf;
     strBuf.length = 0;
     let ch = this.currentChar;
     let isFirstHex = true;
     let firstDigit, secondDigit;
+    this._hexStringNumWarn = 0;
 
     while (true) {
       if (ch < 0) {
@@ -1120,14 +1141,14 @@ class Lexer {
         if (isFirstHex) {
           firstDigit = toHexDigit(ch);
           if (firstDigit === -1) {
-            warn(`Ignoring invalid character "${ch}" in hex string`);
+            this._hexStringWarn(ch);
             ch = this.nextChar();
             continue;
           }
         } else {
           secondDigit = toHexDigit(ch);
           if (secondDigit === -1) {
-            warn(`Ignoring invalid character "${ch}" in hex string`);
+            this._hexStringWarn(ch);
             ch = this.nextChar();
             continue;
           }
