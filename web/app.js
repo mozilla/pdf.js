@@ -1057,9 +1057,7 @@ const PDFViewerApplication = {
 
     const pdfViewer = this.pdfViewer;
     pdfViewer.setDocument(pdfDocument);
-    const firstPagePromise = pdfViewer.firstPagePromise;
-    const pagesPromise = pdfViewer.pagesPromise;
-    const onePageRendered = pdfViewer.onePageRendered;
+    const { firstPagePromise, onePageRendered, pagesPromise } = pdfViewer;
 
     const pdfThumbnailViewer = this.pdfThumbnailViewer;
     pdfThumbnailViewer.setDocument(pdfDocument);
