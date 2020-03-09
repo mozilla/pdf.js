@@ -198,13 +198,13 @@ class BaseViewer {
    * @type {boolean} - True if all {PDFPageView} objects are initialized.
    */
   get pageViewsReady() {
-    if (!this._pageViewsReady) {
+    if (!this._pagesCapability.settled) {
       return false;
     }
     // Prevent printing errors when 'disableAutoFetch' is set, by ensuring
     // that *all* pages have in fact been completely loaded.
     return this._pages.every(function(pageView) {
-      return !!(pageView && pageView.pdfPage);
+      return pageView && pageView.pdfPage;
     });
   }
 
@@ -376,6 +376,21 @@ class BaseViewer {
     }
   }
 
+  get firstPagePromise() {
+    return this.pdfDocument ? this._firstPageCapability.promise : null;
+  }
+
+  get onePageRendered() {
+    return this.pdfDocument ? this._onePageRenderedCapability.promise : null;
+  }
+
+  get pagesPromise() {
+    return this.pdfDocument ? this._pagesCapability.promise : null;
+  }
+
+  /**
+   * @private
+   */
   get _setDocumentViewerElement() {
     // In most viewers, e.g. `PDFViewer`, this should return `this.viewer`.
     throw new Error("Not implemented: _setDocumentViewerElement");
@@ -399,23 +414,14 @@ class BaseViewer {
       return;
     }
     const pagesCount = pdfDocument.numPages;
+    const firstPagePromise = pdfDocument.getPage(1);
 
-    const pagesCapability = createPromiseCapability();
-    this.pagesPromise = pagesCapability.promise;
-
-    pagesCapability.promise.then(() => {
-      this._pageViewsReady = true;
+    this._pagesCapability.promise.then(() => {
       this.eventBus.dispatch("pagesloaded", {
         source: this,
         pagesCount,
       });
     });
-
-    const onePageRenderedCapability = createPromiseCapability();
-    this.onePageRendered = onePageRenderedCapability.promise;
-
-    const firstPagePromise = pdfDocument.getPage(1);
-    this.firstPagePromise = firstPagePromise;
 
     this._onBeforeDraw = evt => {
       const pageView = this._pages[evt.pageNumber - 1];
@@ -429,10 +435,10 @@ class BaseViewer {
     this.eventBus._on("pagerender", this._onBeforeDraw);
 
     this._onAfterDraw = evt => {
-      if (evt.cssTransform || onePageRenderedCapability.settled) {
+      if (evt.cssTransform || this._onePageRenderedCapability.settled) {
         return;
       }
-      onePageRenderedCapability.resolve();
+      this._onePageRenderedCapability.resolve();
 
       this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
@@ -443,13 +449,14 @@ class BaseViewer {
     // viewport for all pages
     firstPagePromise
       .then(firstPdfPage => {
+        this._firstPageCapability.resolve(firstPdfPage);
+
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({ scale: scale * CSS_UNITS });
+        const textLayerFactory =
+          this.textLayerMode !== TextLayerMode.DISABLE ? this : null;
+
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-          let textLayerFactory = null;
-          if (this.textLayerMode !== TextLayerMode.DISABLE) {
-            textLayerFactory = this;
-          }
           const pageView = new PDFPageView({
             container: this._setDocumentViewerElement,
             eventBus: this.eventBus,
@@ -485,7 +492,7 @@ class BaseViewer {
         // Fetch all the pages since the viewport is needed before printing
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
-        onePageRenderedCapability.promise.then(() => {
+        this._onePageRenderedCapability.promise.then(() => {
           if (this.findController) {
             this.findController.setDocument(pdfDocument); // Enable searching.
           }
@@ -497,13 +504,13 @@ class BaseViewer {
             pagesCount > 7500
           ) {
             // XXX: Printing is semi-broken with auto fetch disabled.
-            pagesCapability.resolve();
+            this._pagesCapability.resolve();
             return;
           }
           let getPagesLeft = pagesCount - 1; // The first page was already loaded.
 
           if (getPagesLeft <= 0) {
-            pagesCapability.resolve();
+            this._pagesCapability.resolve();
             return;
           }
           for (let pageNum = 2; pageNum <= pagesCount; ++pageNum) {
@@ -515,7 +522,7 @@ class BaseViewer {
                 }
                 this.linkService.cachePageRef(pageNum, pdfPage.ref);
                 if (--getPagesLeft === 0) {
-                  pagesCapability.resolve();
+                  this._pagesCapability.resolve();
                 }
               },
               reason => {
@@ -524,7 +531,7 @@ class BaseViewer {
                   reason
                 );
                 if (--getPagesLeft === 0) {
-                  pagesCapability.resolve();
+                  this._pagesCapability.resolve();
                 }
               }
             );
@@ -577,7 +584,9 @@ class BaseViewer {
     this._location = null;
     this._pagesRotation = 0;
     this._pagesRequests = new WeakMap();
-    this._pageViewsReady = false;
+    this._firstPageCapability = createPromiseCapability();
+    this._onePageRenderedCapability = createPromiseCapability();
+    this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
 
