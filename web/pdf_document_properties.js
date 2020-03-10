@@ -84,10 +84,10 @@ class PDFDocumentProperties {
     );
 
     if (eventBus) {
-      eventBus._on("pagechanging", evt => {
+      eventBus.on("pagechanging", evt => {
         this._currentPageNumber = evt.pageNumber;
       });
-      eventBus._on("rotationchanging", evt => {
+      eventBus.on("rotationchanging", evt => {
         this._pagesRotation = evt.pagesRotation;
       });
     }
@@ -114,6 +114,7 @@ class PDFDocumentProperties {
     Promise.all([
       this.overlayManager.open(this.overlayName),
       this._dataAvailableCapability.promise,
+      document.getElementById("documentPropertiesClose").focus()
     ]).then(() => {
       const currentPageNumber = this._currentPageNumber;
       const pagesRotation = this._pagesRotation;
