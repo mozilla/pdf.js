@@ -589,6 +589,7 @@ class BaseViewer {
     this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
+    this._reversePageOrderMode = false;
 
     if (this._onBeforeDraw) {
       this.eventBus._off("pagerender", this._onBeforeDraw);
@@ -1304,6 +1305,46 @@ class BaseViewer {
     if (!pageNumber) {
       return;
     }
+    this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
+    this.update();
+  }
+
+  /**
+   * @type {boolean} - True if pages are being shown in reverse order.
+   */
+  get reversePageOrderMode() {
+    return this._reversePageOrderMode;
+  }
+
+  /**
+   * @param {boolean} mode - Display the pages in reverse order if `true`,
+   *   regular order otherwise.
+   */
+  set reversePageOrderMode(mode) {
+    if (this._reversePageOrderMode == mode) {
+      return; // Unchanged reverse page order mode
+    }
+    if (typeof mode !== "boolean") {
+      throw new Error(`Invalid reverse page order mode: ${mode}`);
+    }
+    this._reversePageOrderMode = mode;
+    this._updateReversePageOrderMode(/* pageNumber = */ this._currentPageNumber);
+  }
+
+  _updateReversePageOrderMode(pageNumber) {
+    if (!this.pdfDocument) {
+      return;
+    }
+    const viewer = this.viewer,
+      pages = this._pages;
+    // Temporarily remove all the pages from the DOM.
+    viewer.textContent = "";
+
+    for (let i = 0, iMax = pages.length; i < iMax; i++) {
+      let index = this._reversePageOrderMode ? (iMax - i) - 1 : i;
+      viewer.appendChild(pages[index].div);
+    }
+
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
   }

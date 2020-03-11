@@ -1628,6 +1628,7 @@ const PDFViewerApplication = {
     eventBus._on("scrollmodechanged", webViewerScrollModeChanged);
     eventBus._on("switchspreadmode", webViewerSwitchSpreadMode);
     eventBus._on("spreadmodechanged", webViewerSpreadModeChanged);
+    eventBus._on("reversepageorder", webViewerReversePageOrder);
     eventBus._on("documentproperties", webViewerDocumentProperties);
     eventBus._on("find", webViewerFind);
     eventBus._on("findfromurlhash", webViewerFindFromUrlHash);
@@ -1702,6 +1703,7 @@ const PDFViewerApplication = {
     eventBus._off("scrollmodechanged", webViewerScrollModeChanged);
     eventBus._off("switchspreadmode", webViewerSwitchSpreadMode);
     eventBus._off("spreadmodechanged", webViewerSpreadModeChanged);
+    eventBus._off("reversepageorder", webViewerReversePageOrder);
     eventBus._off("documentproperties", webViewerDocumentProperties);
     eventBus._off("find", webViewerFind);
     eventBus._off("findfromurlhash", webViewerFindFromUrlHash);
@@ -2261,6 +2263,10 @@ function webViewerSwitchScrollMode(evt) {
 }
 function webViewerSwitchSpreadMode(evt) {
   PDFViewerApplication.pdfViewer.spreadMode = evt.mode;
+}
+function webViewerReversePageOrder() {
+  const reversePageOrderMode = PDFViewerApplication.pdfViewer.reversePageOrderMode;
+  PDFViewerApplication.pdfViewer.reversePageOrderMode = !reversePageOrderMode;
 }
 function webViewerDocumentProperties() {
   PDFViewerApplication.pdfDocumentProperties.open();

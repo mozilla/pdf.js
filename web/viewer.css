@@ -997,6 +997,10 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: url(images/secondaryToolbarButton-spreadEven.png);
 }
 
+.secondaryToolbarButton.reversePageOrder::before {
+  content: url(images/secondaryToolbarButton-reversePageOrder.png);
+}
+
 .secondaryToolbarButton.documentProperties::before {
   content: url(images/secondaryToolbarButton-documentProperties.png);
 }
@@ -1753,6 +1757,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
   .secondaryToolbarButton.spreadEven::before {
     content: url(images/secondaryToolbarButton-spreadEven@2x.png);
+  }
+
+  .secondaryToolbarButton.reversePageOrder::before {
+    content: url(images/secondaryToolbarButton-reversePageOrder@2x.png);
   }
 
   .secondaryToolbarButton.documentProperties::before {
