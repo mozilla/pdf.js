@@ -784,6 +784,10 @@ const PDFViewerApplication = {
 
         const message = exception && exception.message;
         let loadingErrorMessage;
+        // #11658 return preserved error types
+        let _errorInstance = function(msg) {
+          return new Error(msg);
+        };
         if (exception instanceof InvalidPDFException) {
           // change error message also for other builds
           loadingErrorMessage = this.l10n.get(
@@ -791,6 +795,10 @@ const PDFViewerApplication = {
             null,
             "Invalid or corrupted PDF file."
           );
+          // Update genaric error type with preserved error type
+          _errorInstance = function(msg) {
+            return new InvalidPDFException(msg);
+          };
         } else if (exception instanceof MissingPDFException) {
           // special message for missing PDF's
           loadingErrorMessage = this.l10n.get(
@@ -798,12 +806,18 @@ const PDFViewerApplication = {
             null,
             "Missing PDF file."
           );
+          _errorInstance = function(msg) {
+            return new MissingPDFException(msg);
+          };
         } else if (exception instanceof UnexpectedResponseException) {
           loadingErrorMessage = this.l10n.get(
             "unexpected_response_error",
             null,
             "Unexpected server response."
           );
+          _errorInstance = function(msg) {
+            return new UnexpectedResponseException(msg);
+          };
         } else {
           loadingErrorMessage = this.l10n.get(
             "loading_error",
@@ -814,7 +828,7 @@ const PDFViewerApplication = {
 
         return loadingErrorMessage.then(msg => {
           this.error(msg, { message });
-          throw new Error(msg);
+          throw _errorInstance(msg);
         });
       }
     );
