@@ -104,6 +104,7 @@ function getViewerConfiguration() {
       spreadNoneButton: document.getElementById("spreadNone"),
       spreadOddButton: document.getElementById("spreadOdd"),
       spreadEvenButton: document.getElementById("spreadEven"),
+      reversePageOrderButton: document.getElementById("reversePageOrder"),
       documentPropertiesButton: document.getElementById("documentProperties"),
     },
     fullscreen: {

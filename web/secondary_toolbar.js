@@ -130,6 +130,11 @@ class SecondaryToolbar {
         close: true,
       },
       {
+        element: options.reversePageOrderButton,
+        eventName: "reversepageorder",
+        close: true,
+      },
+      {
         element: options.documentPropertiesButton,
         eventName: "documentproperties",
         close: true,
