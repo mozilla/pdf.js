@@ -14,7 +14,7 @@
  */
 
 import { getEncoding } from "./encodings.js";
-import { isSpace } from "./core_utils.js";
+import { isWhiteSpace } from "./core_utils.js";
 import { Stream } from "./stream.js";
 import { warn } from "../shared/util.js";
 
@@ -524,7 +524,7 @@ var Type1Parser = (function Type1ParserClosure() {
           }
         } else if (ch === /* '%' = */ 0x25) {
           comment = true;
-        } else if (!isSpace(ch)) {
+        } else if (!isWhiteSpace(ch)) {
           break;
         }
         ch = this.nextChar();
@@ -537,7 +537,7 @@ var Type1Parser = (function Type1ParserClosure() {
       do {
         token += String.fromCharCode(ch);
         ch = this.nextChar();
-      } while (ch >= 0 && !isSpace(ch) && !isSpecial(ch));
+      } while (ch >= 0 && !isWhiteSpace(ch) && !isSpecial(ch));
       return token;
     },
 

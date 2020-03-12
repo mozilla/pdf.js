@@ -21,7 +21,7 @@
 
 import { FormatError, stringToBytes, unreachable } from "../shared/util.js";
 import { isDict } from "./primitives.js";
-import { isSpace } from "./core_utils.js";
+import { isWhiteSpace } from "./core_utils.js";
 
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
@@ -1001,7 +1001,7 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
     var str = this.str;
 
     var c = str.getByte();
-    while (isSpace(c)) {
+    while (isWhiteSpace(c)) {
       c = str.getByte();
     }
 
@@ -1026,7 +1026,7 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
       input[0] = c;
       for (i = 1; i < 5; ++i) {
         c = str.getByte();
-        while (isSpace(c)) {
+        while (isWhiteSpace(c)) {
           c = str.getByte();
         }
 
