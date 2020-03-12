@@ -58,7 +58,11 @@ import {
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
 } from "./unicode.js";
-import { isSpace, MissingDataException, readUint32 } from "./core_utils.js";
+import {
+  isWhiteSpace,
+  MissingDataException,
+  readUint32,
+} from "./core_utils.js";
 import { FontRendererFactory } from "./font_renderer.js";
 import { IdentityCMap } from "./cmap.js";
 import { Stream } from "./stream.js";
@@ -3413,7 +3417,7 @@ var Type1Font = (function Type1FontClosure() {
       if (j >= signatureLength) {
         // `signature` found, skip over whitespace.
         i += j;
-        while (i < streamBytesLength && isSpace(streamBytes[i])) {
+        while (i < streamBytesLength && isWhiteSpace(streamBytes[i])) {
           i++;
         }
         found = true;

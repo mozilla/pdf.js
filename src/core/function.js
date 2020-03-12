@@ -17,18 +17,11 @@ import {
   FormatError,
   info,
   isBool,
-  isEvalSupported,
-  shadow,
+  IsEvalSupportedCached,
   unreachable,
 } from "../shared/util.js";
 import { isDict, isStream } from "./primitives.js";
 import { PostScriptLexer, PostScriptParser } from "./ps_parser.js";
-
-const IsEvalSupportedCached = {
-  get value() {
-    return shadow(this, "value", isEvalSupported());
-  },
-};
 
 class PDFFunctionFactory {
   constructor({ xref, isEvalSupported = true }) {

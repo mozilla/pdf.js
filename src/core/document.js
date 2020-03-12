@@ -42,7 +42,7 @@ import {
 } from "./primitives.js";
 import {
   getInheritableProperty,
-  isSpace,
+  isWhiteSpace,
   MissingDataException,
   XRefEntryException,
   XRefParseException,
@@ -598,7 +598,7 @@ class PDFDocument {
         let ch;
         do {
           ch = stream.getByte();
-        } while (isSpace(ch));
+        } while (isWhiteSpace(ch));
         let str = "";
         while (ch >= /* Space = */ 0x20 && ch <= /* '9' = */ 0x39) {
           str += String.fromCharCode(ch);
