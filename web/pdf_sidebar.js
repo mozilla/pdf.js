@@ -367,8 +367,8 @@ class PDFSidebar {
       return;
     }
 
-    const removeNotification = view => {
-      switch (view) {
+    const removeNotification = sidebarView => {
+      switch (sidebarView) {
         case SidebarView.OUTLINE:
           this.outlineButton.classList.remove(UI_NOTIFICATION_CLASS);
           break;
