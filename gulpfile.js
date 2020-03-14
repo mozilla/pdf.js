@@ -1850,8 +1850,6 @@ gulp.task(
   "npm-test",
   gulp.series(
     gulp.parallel("lint", "externaltest", "unittestcli"),
-    "lint-chromium",
-    "unittest",
-    "browsertest"
+    "lint-chromium"
   )
 );
