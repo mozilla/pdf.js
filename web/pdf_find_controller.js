@@ -67,12 +67,12 @@ class PDFFindController {
   /**
    * @param {PDFFindControllerOptions} options
    */
-  constructor({ linkService, eventBus = getGlobalEventBus() }) {
+  constructor({ linkService, eventBus }) {
     this._linkService = linkService;
-    this._eventBus = eventBus;
+    this._eventBus = eventBus || getGlobalEventBus();
 
     this._reset();
-    eventBus.on("findbarclose", this._onFindBarClose.bind(this));
+    eventBus._on("findbarclose", this._onFindBarClose.bind(this));
   }
 
   get highlightMatches() {
@@ -277,7 +277,7 @@ class PDFFindController {
    * the `matches` and keeps elements with a longer match length.
    */
   _prepareMatches(matchesWithLength, matches, matchesLength) {
-    function isSubTerm(matchesWithLength, currentIndex) {
+    function isSubTerm(currentIndex) {
       const currentElem = matchesWithLength[currentIndex];
       const nextElem = matchesWithLength[currentIndex + 1];
 
@@ -318,7 +318,7 @@ class PDFFindController {
         : a.match - b.match;
     });
     for (let i = 0, len = matchesWithLength.length; i < len; i++) {
-      if (isSubTerm(matchesWithLength, i)) {
+      if (isSubTerm(i)) {
         continue;
       }
       matches.push(matchesWithLength[i].match);

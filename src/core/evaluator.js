@@ -61,6 +61,7 @@ import {
   WinAnsiEncoding,
   ZapfDingbatsEncoding,
 } from "./encodings.js";
+import { getLookupTableFactory, MissingDataException } from "./core_utils.js";
 import {
   getNormalizedUnicodes,
   getUnicodeForGlyph,
@@ -77,7 +78,6 @@ import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
-import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
 import { isPDFFunction } from "./function.js";
 import { JpegStream } from "./jpeg_stream.js";
@@ -266,7 +266,27 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               if (processed[graphicState.toString()]) {
                 continue; // The ExtGState has already been processed.
               }
-              graphicState = xref.fetch(graphicState);
+              try {
+                graphicState = xref.fetch(graphicState);
+              } catch (ex) {
+                if (ex instanceof MissingDataException) {
+                  throw ex;
+                }
+                if (this.options.ignoreErrors) {
+                  if (graphicState instanceof Ref) {
+                    // Avoid parsing a corrupt ExtGState more than once.
+                    processed[graphicState.toString()] = true;
+                  }
+                  // Error(s) in the ExtGState -- sending unsupported feature
+                  // notification and allow parsing/rendering to continue.
+                  this.handler.send("UnsupportedFeature", {
+                    featureId: UNSUPPORTED_FEATURES.unknown,
+                  });
+                  warn(`hasBlendModes - ignoring ExtGState: "${ex}".`);
+                  continue;
+                }
+                throw ex;
+              }
             }
             if (!(graphicState instanceof Dict)) {
               continue;
@@ -308,7 +328,27 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // time for badly generated PDF files (fixes issue6961.pdf).
               continue;
             }
-            xObject = xref.fetch(xObject);
+            try {
+              xObject = xref.fetch(xObject);
+            } catch (ex) {
+              if (ex instanceof MissingDataException) {
+                throw ex;
+              }
+              if (this.options.ignoreErrors) {
+                if (xObject instanceof Ref) {
+                  // Avoid parsing a corrupt XObject more than once.
+                  processed[xObject.toString()] = true;
+                }
+                // Error(s) in the XObject -- sending unsupported feature
+                // notification and allow parsing/rendering to continue.
+                this.handler.send("UnsupportedFeature", {
+                  featureId: UNSUPPORTED_FEATURES.unknown,
+                });
+                warn(`hasBlendModes - ignoring XObject: "${ex}".`);
+                continue;
+              }
+              throw ex;
+            }
           }
           if (!isStream(xObject)) {
             continue;
@@ -512,7 +552,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           this.xref,
           resources,
           this.pdfFunctionFactory
-        )
+        ) &&
+        image.maybeValidDimensions
       ) {
         // These JPEGs don't need any more processing so we can just send it.
         return this.handler
@@ -793,6 +834,26 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
       return glyphs;
+    },
+
+    ensureStateFont(state) {
+      if (state.font) {
+        return;
+      }
+      const reason = new FormatError(
+        "Missing setFont (Tf) operator before text rendering operator."
+      );
+
+      if (this.options.ignoreErrors) {
+        // Missing setFont operator before text rendering operator -- sending
+        // unsupported feature notification and allow rendering to continue.
+        this.handler.send("UnsupportedFeature", {
+          featureId: UNSUPPORTED_FEATURES.font,
+        });
+        warn(`ensureStateFont: "${reason}".`);
+        return;
+      }
+      throw reason;
     },
 
     setGState: function PartialEvaluator_setGState(
@@ -1364,9 +1425,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               );
               return;
             case OPS.showText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
               args[0] = self.handleText(args[0], stateManager.state);
               break;
             case OPS.showSpacedText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
               var arr = args[0];
               var combinedGlyphs = [];
               var arrLength = arr.length;
@@ -1386,11 +1455,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               fn = OPS.showText;
               break;
             case OPS.nextLineShowText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
               operatorList.addOp(OPS.nextLine);
               args[0] = self.handleText(args[0], stateManager.state);
               fn = OPS.showText;
               break;
             case OPS.nextLineSetSpacingShowText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
               operatorList.addOp(OPS.nextLine);
               operatorList.addOp(OPS.setWordSpacing, [args.shift()]);
               operatorList.addOp(OPS.setCharSpacing, [args.shift()]);
@@ -2056,6 +2133,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               textState.textLineMatrix = IDENTITY_MATRIX.slice();
               break;
             case OPS.showSpacedText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
               var items = args[0];
               var offset;
               for (var j = 0, jj = items.length; j < jj; j++) {
@@ -2105,14 +2186,26 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
               break;
             case OPS.showText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
               buildTextContentItem(args[0]);
               break;
             case OPS.nextLineShowText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
               flushTextContentItem();
               textState.carriageReturn();
               buildTextContentItem(args[0]);
               break;
             case OPS.nextLineSetSpacingShowText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
               flushTextContentItem();
               textState.wordSpacing = args[0];
               textState.charSpacing = args[1];
@@ -2373,7 +2466,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           if (!properties.file) {
             if (/Symbol/i.test(properties.name)) {
               encoding = SymbolSetEncoding;
-            } else if (/Dingbats/i.test(properties.name)) {
+            } else if (/Dingbats|Wingdings/i.test(properties.name)) {
               encoding = ZapfDingbatsEncoding;
             }
           }
@@ -2965,7 +3058,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // is a tagged pdf. Create a barbebones one to get by.
           descriptor = new Dict(null);
           descriptor.set("FontName", Name.get(type));
-          descriptor.set("FontBBox", dict.getArray("FontBBox"));
+          descriptor.set("FontBBox", dict.getArray("FontBBox") || [0, 0, 0, 0]);
         } else {
           // Before PDF 1.5 if the font was one of the base 14 fonts, having a
           // FontDescriptor was not required.

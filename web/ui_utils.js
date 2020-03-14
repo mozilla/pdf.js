@@ -716,7 +716,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 
     function handler(type) {
       if (target instanceof EventBus) {
-        target.off(name, eventHandler);
+        target._off(name, eventHandler);
       } else {
         target.removeEventListener(name, eventHandler);
       }
@@ -729,7 +729,7 @@ function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 
     const eventHandler = handler.bind(null, WaitOnType.EVENT);
     if (target instanceof EventBus) {
-      target.on(name, eventHandler);
+      target._on(name, eventHandler);
     } else {
       target.addEventListener(name, eventHandler);
     }
@@ -757,32 +757,63 @@ const animationStarted = new Promise(function(resolve) {
 });
 
 /**
- * Simple event bus for an application. Listeners are attached using the
- * `on` and `off` methods. To raise an event, the `dispatch` method shall be
- * used.
+ * NOTE: Only used to support various PDF viewer tests in `mozilla-central`.
+ */
+function dispatchDOMEvent(eventName, args = null) {
+  const details = Object.create(null);
+  if (args && args.length > 0) {
+    const obj = args[0];
+    for (const key in obj) {
+      const value = obj[key];
+      if (key === "source") {
+        if (value === window || value === document) {
+          return; // No need to re-dispatch (already) global events.
+        }
+        continue; // Ignore the `source` property.
+      }
+      details[key] = value;
+    }
+  }
+  const event = document.createEvent("CustomEvent");
+  event.initCustomEvent(eventName, true, true, details);
+  document.dispatchEvent(event);
+}
+
+/**
+ * Simple event bus for an application. Listeners are attached using the `on`
+ * and `off` methods. To raise an event, the `dispatch` method shall be used.
  */
 class EventBus {
   constructor({ dispatchToDOM = false } = {}) {
     this._listeners = Object.create(null);
     this._dispatchToDOM = dispatchToDOM === true;
+
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      !PDFJSDev.test("MOZCENTRAL || TESTING") &&
+      dispatchToDOM
+    ) {
+      console.error(
+        "The `eventBusDispatchToDOM` option/preference is deprecated, " +
+          "add event listeners to the EventBus instance rather than the DOM."
+      );
+    }
   }
 
+  /**
+   * @param {string} eventName
+   * @param {function} listener
+   */
   on(eventName, listener) {
-    let eventListeners = this._listeners[eventName];
-    if (!eventListeners) {
-      eventListeners = [];
-      this._listeners[eventName] = eventListeners;
-    }
-    eventListeners.push(listener);
+    this._on(eventName, listener, { external: true });
   }
 
+  /**
+   * @param {string} eventName
+   * @param {function} listener
+   */
   off(eventName, listener) {
-    const eventListeners = this._listeners[eventName];
-    let i;
-    if (!eventListeners || (i = eventListeners.indexOf(listener)) < 0) {
-      return;
-    }
-    eventListeners.splice(i, 1);
+    this._off(eventName, listener, { external: true });
   }
 
   dispatch(eventName) {
@@ -790,48 +821,74 @@ class EventBus {
     if (!eventListeners || eventListeners.length === 0) {
       if (this._dispatchToDOM) {
         const args = Array.prototype.slice.call(arguments, 1);
-        this._dispatchDOMEvent(eventName, args);
+        dispatchDOMEvent(eventName, args);
       }
       return;
     }
     // Passing all arguments after the eventName to the listeners.
     const args = Array.prototype.slice.call(arguments, 1);
+    let externalListeners;
     // Making copy of the listeners array in case if it will be modified
     // during dispatch.
-    eventListeners.slice(0).forEach(function(listener) {
+    eventListeners.slice(0).forEach(function({ listener, external }) {
+      if (external) {
+        if (!externalListeners) {
+          externalListeners = [];
+        }
+        externalListeners.push(listener);
+        return;
+      }
       listener.apply(null, args);
     });
+    // Dispatch any "external" listeners *after* the internal ones, to give the
+    // viewer components time to handle events and update their state first.
+    if (externalListeners) {
+      externalListeners.forEach(function(listener) {
+        listener.apply(null, args);
+      });
+      externalListeners = null;
+    }
     if (this._dispatchToDOM) {
-      this._dispatchDOMEvent(eventName, args);
+      dispatchDOMEvent(eventName, args);
     }
   }
 
   /**
-   * @private
+   * @ignore
    */
-  _dispatchDOMEvent(eventName, args = null) {
-    const details = Object.create(null);
-    if (args && args.length > 0) {
-      const obj = args[0];
-      for (const key in obj) {
-        const value = obj[key];
-        if (key === "source") {
-          if (value === window || value === document) {
-            return; // No need to re-dispatch (already) global events.
-          }
-          continue; // Ignore the `source` property.
-        }
-        details[key] = value;
+  _on(eventName, listener, options = null) {
+    let eventListeners = this._listeners[eventName];
+    if (!eventListeners) {
+      this._listeners[eventName] = eventListeners = [];
+    }
+    eventListeners.push({
+      listener,
+      external: (options && options.external) === true,
+    });
+  }
+
+  /**
+   * @ignore
+   */
+  _off(eventName, listener, options = null) {
+    const eventListeners = this._listeners[eventName];
+    if (!eventListeners) {
+      return;
+    }
+    for (let i = 0, ii = eventListeners.length; i < ii; i++) {
+      if (eventListeners[i].listener === listener) {
+        eventListeners.splice(i, 1);
+        return;
       }
     }
-    const event = document.createEvent("CustomEvent");
-    event.initCustomEvent(eventName, true, true, details);
-    document.dispatchEvent(event);
   }
 }
 
 let globalEventBus = null;
 function getGlobalEventBus(dispatchToDOM = false) {
+  console.error(
+    "getGlobalEventBus is deprecated, use a manually created EventBus instance instead."
+  );
   if (!globalEventBus) {
     globalEventBus = new EventBus({ dispatchToDOM });
   }

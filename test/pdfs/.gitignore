@@ -89,6 +89,7 @@
 !issue11279.pdf
 !issue11362.pdf
 !issue11578_reduced.pdf
+!issue11651.pdf
 !bad-PageLabels.pdf
 !decodeACSuccessive.pdf
 !filled-background.pdf
@@ -117,6 +118,7 @@
 !bug1132849.pdf
 !issue6894.pdf
 !issue5804.pdf
+!Pages-tree-refs.pdf
 !ShowText-ShadingPattern.pdf
 !complex_ttf_font.pdf
 !issue3694_reduced.pdf
@@ -298,6 +300,7 @@
 !issue4573.pdf
 !issue4722.pdf
 !issue4800.pdf
+!issue11477_reduced.pdf
 !text_clip_cff_cid.pdf
 !issue4801.pdf
 !issue5334.pdf
@@ -365,3 +368,4 @@
 !issue9972-3.pdf
 !tiling-pattern-box.pdf
 !tiling-pattern-large-steps.pdf
+!issue11555.pdf

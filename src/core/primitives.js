@@ -14,7 +14,7 @@
  */
 /* uses XRef */
 
-import { assert } from "../shared/util.js";
+import { assert, unreachable } from "../shared/util.js";
 
 var EOF = {};
 
@@ -29,6 +29,7 @@ var Name = (function NameClosure() {
 
   Name.get = function Name_get(name) {
     var nameValue = nameCache[name];
+    // eslint-disable-next-line no-restricted-syntax
     return nameValue ? nameValue : (nameCache[name] = new Name(name));
   };
 
@@ -50,6 +51,7 @@ var Cmd = (function CmdClosure() {
 
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
+    // eslint-disable-next-line no-restricted-syntax
     return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
   };
 
@@ -83,9 +85,9 @@ var Dict = (function DictClosure() {
     // automatically dereferences Ref objects
     get(key1, key2, key3) {
       let value = this._map[key1];
-      if (value === undefined && !(key1 in this._map) && key2 !== undefined) {
+      if (value === undefined && key2 !== undefined) {
         value = this._map[key2];
-        if (value === undefined && !(key2 in this._map) && key3 !== undefined) {
+        if (value === undefined && key3 !== undefined) {
           value = this._map[key3];
         }
       }
@@ -98,9 +100,9 @@ var Dict = (function DictClosure() {
     // Same as get(), but returns a promise and uses fetchIfRefAsync().
     async getAsync(key1, key2, key3) {
       let value = this._map[key1];
-      if (value === undefined && !(key1 in this._map) && key2 !== undefined) {
+      if (value === undefined && key2 !== undefined) {
         value = this._map[key2];
-        if (value === undefined && !(key2 in this._map) && key3 !== undefined) {
+        if (value === undefined && key3 !== undefined) {
           value = this._map[key3];
         }
       }
@@ -136,11 +138,18 @@ var Dict = (function DictClosure() {
     },
 
     set: function Dict_set(key, value) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        value === undefined
+      ) {
+        unreachable('Dict.set: The "value" cannot be undefined.');
+      }
       this._map[key] = value;
     },
 
     has: function Dict_has(key) {
-      return key in this._map;
+      return this._map[key] !== undefined;
     },
 
     forEach: function Dict_forEach(callback) {
@@ -195,6 +204,7 @@ var Ref = (function RefClosure() {
   Ref.get = function(num, gen) {
     const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
     const refValue = refCache[key];
+    // eslint-disable-next-line no-restricted-syntax
     return refValue ? refValue : (refCache[key] = new Ref(num, gen));
   };
 
@@ -251,9 +261,9 @@ var RefSetCache = (function RefSetCacheClosure() {
       this.dict[ref.toString()] = this.get(aliasRef);
     },
 
-    forEach: function RefSetCache_forEach(fn, thisArg) {
-      for (var i in this.dict) {
-        fn.call(thisArg, this.dict[i]);
+    forEach: function RefSetCache_forEach(callback) {
+      for (const i in this.dict) {
+        callback(this.dict[i]);
       }
     },
 

@@ -546,6 +546,43 @@ describe("api", function() {
         })
         .catch(done.fail);
     });
+
+    it("gets page, from /Pages tree with circular reference", function(done) {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("Pages-tree-refs.pdf")
+      );
+
+      const page1 = loadingTask.promise.then(function(pdfDoc) {
+        return pdfDoc.getPage(1).then(
+          function(pdfPage) {
+            expect(pdfPage instanceof PDFPageProxy).toEqual(true);
+            expect(pdfPage.ref).toEqual({ num: 6, gen: 0 });
+          },
+          function(reason) {
+            throw new Error("shall not fail for valid page");
+          }
+        );
+      });
+
+      const page2 = loadingTask.promise.then(function(pdfDoc) {
+        return pdfDoc.getPage(2).then(
+          function(pdfPage) {
+            throw new Error("shall fail for invalid page");
+          },
+          function(reason) {
+            expect(reason instanceof Error).toEqual(true);
+            expect(reason.message).toEqual(
+              "Pages tree contains circular reference."
+            );
+          }
+        );
+      });
+
+      Promise.all([page1, page2]).then(function() {
+        loadingTask.destroy().then(done);
+      }, done.fail);
+    });
+
     it("gets page index", function(done) {
       // reference to second page
       var ref = { num: 17, gen: 0 };

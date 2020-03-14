@@ -546,10 +546,6 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
               0 0 1px rgba(255, 255, 255, 0.15) inset,
               0 1px 0 rgba(255, 255, 255, 0.05);
-  transition-property: background-color, border-color, box-shadow;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
-
 }
 .splitToolbarButton > .toolbarButton:hover,
 .splitToolbarButton > .toolbarButton:focus,
@@ -563,6 +559,9 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
               0 0 1px rgba(255, 255, 255, 0.15) inset,
               0 0 1px rgba(0, 0, 0, 0.05);
   z-index: 199;
+}
+.dropdownToolbarButton:hover {
+  background-color: rgba(0, 0, 0, 0.26);
 }
 .splitToolbarButton > .toolbarButton {
   position: relative;
@@ -605,9 +604,6 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   padding: 12px 0;
   margin: 1px 0;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
-  transition-property: padding;
-  transition-duration: 10ms;
-  transition-timing-function: ease;
 }
 
 .toolbarButton,
@@ -624,9 +620,6 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   user-select: none;
   /* Opera does not support user-select, use <... unselectable="on"> instead */
   cursor: default;
-  transition-property: background-color, border-color, box-shadow;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
 }
 
 html[dir='ltr'] .toolbarButton,
@@ -666,9 +659,6 @@ html[dir='rtl'] .dropdownToolbarButton {
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset,
               0 0 1px rgba(0, 0, 0, 0.2) inset,
               0 1px 0 rgba(255, 255, 255, 0.05);
-  transition-property: background-color, border-color, box-shadow;
-  transition-duration: 10ms;
-  transition-timing-function: linear;
 }
 
 .toolbarButton.toggled,
@@ -680,9 +670,6 @@ html[dir='rtl'] .dropdownToolbarButton {
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset,
               0 0 1px rgba(0, 0, 0, 0.2) inset,
               0 1px 0 rgba(255, 255, 255, 0.05);
-  transition-property: background-color, border-color, box-shadow;
-  transition-duration: 10ms;
-  transition-timing-function: linear;
 }
 
 .toolbarButton.toggled:hover:active,
@@ -699,13 +686,18 @@ html[dir='rtl'] .dropdownToolbarButton {
   width: 140px;
   padding: 0;
   overflow: hidden;
-  background: url(images/toolbarButton-menuArrows.png) no-repeat;
 }
-html[dir='ltr'] .dropdownToolbarButton {
-  background-position: 95%;
+.dropdownToolbarButton::after {
+  position: absolute;
+  display: inline-block;
+  top: 4px;
+  content: url(images/toolbarButton-menuArrows.png);
 }
-html[dir='rtl'] .dropdownToolbarButton {
-  background-position: 5%;
+html[dir='ltr'] .dropdownToolbarButton::after {
+  right: 8px;
+}
+html[dir='rtl'] .dropdownToolbarButton::after {
+  left: 8px;
 }
 
 .dropdownToolbarButton > select {
@@ -1033,9 +1025,6 @@ html[dir='rtl'] .verticalToolbarSeparator {
   font-size: 12px;
   line-height: 14px;
   outline-style: none;
-  transition-property: background-color, border-color, box-shadow;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
 }
 
 .toolbarField[type=checkbox] {
@@ -1593,9 +1582,16 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     background-size: 16px 17px;
   }
 
-  .dropdownToolbarButton {
-    background: url(images/toolbarButton-menuArrows@2x.png) no-repeat;
-    background-size: 7px 16px;
+  .dropdownToolbarButton::after {
+    transform: scale(0.5);
+    top: -5px;
+    content: url(images/toolbarButton-menuArrows@2x.png);
+  }
+  html[dir='ltr'] .dropdownToolbarButton::after {
+    right: 4px;
+  }
+  html[dir='rtl'] .dropdownToolbarButton::after {
+    left: 4px;
   }
 
   html[dir='ltr'] .toolbarButton#sidebarToggle::before {

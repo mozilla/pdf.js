@@ -67,6 +67,20 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue11651-eq",
+       "file": "pdfs/issue11651.pdf",
+       "md5": "375233ad8dc4181a06148f8412f35b91",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue11651-text",
+       "file": "pdfs/issue11651.pdf",
+       "md5": "375233ad8dc4181a06148f8412f35b91",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "issue1293",
        "file": "pdfs/issue1293r.pdf",
        "md5": "4a098f5051f34fab036f5bbe88f8deef",
@@ -1453,6 +1467,12 @@
        "file": "pdfs/issue7544.pdf",
        "md5": "87e3a9fc7d6a6c1bd5b53af6926ce48e",
        "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue11477",
+       "file": "pdfs/issue11477_reduced.pdf",
+       "md5": "f4e5735569afce79e52b3fd56d10ae13",
        "rounds": 1,
        "type": "eq"
     },
@@ -3044,6 +3064,15 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue11678",
+       "file": "pdfs/issue11678.pdf",
+       "md5": "e2efadeb91932f4c21e4fc682cce7de9",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 2,
+       "lastPage": 2,
+       "type": "eq"
+    },
     {  "id": "issue4890",
        "file": "pdfs/issue4890.pdf",
        "md5": "1666feb4cd26318c2bdbea6a175dce87",
@@ -3612,6 +3641,15 @@
        "rounds": 1,
        "link": true,
        "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "issue10880",
+       "file": "pdfs/issue10880.pdf",
+       "md5": "244ee5ee3ab88db8d8eb51d4416e2c97",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 7,
+       "lastPage": 7,
        "type": "eq"
     },
     {  "id": "issue9650",
@@ -4376,5 +4414,19 @@
       "rounds": 1,
       "link": false,
       "type": "eq"
-    }
+    },
+    { "id": "issue11526",
+      "file": "pdfs/issue11526.pdf",
+      "md5": "9babc771fc8792f43e4ada46b0daff8c",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue11555",
+      "file": "pdfs/issue11555.pdf",
+      "md5": "f84ce8b7414f6a18e75a6ce69c902501",
+      "rounds": 1,
+      "type": "eq"
+   }
 ]

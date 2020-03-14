@@ -35,6 +35,8 @@ var SCALE = 1.0;
 
 var container = document.getElementById("pageContainer");
 
+var eventBus = new pdfjsViewer.EventBus();
+
 // Loading document.
 var loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
@@ -50,6 +52,7 @@ loadingTask.promise.then(function(pdfDocument) {
       id: PAGE_TO_VIEW,
       scale: SCALE,
       defaultViewport: pdfPage.getViewport({ scale: SCALE }),
+      eventBus: eventBus,
       // We can enable text/annotations layers, if needed
       textLayerFactory: new pdfjsViewer.DefaultTextLayerFactory(),
       annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),

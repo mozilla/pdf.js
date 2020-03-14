@@ -16,7 +16,7 @@
 import {
   assert,
   bytesToString,
-  isEvalSupported,
+  IsEvalSupportedCached,
   shadow,
   string32,
   unreachable,
@@ -71,7 +71,7 @@ class BaseFontLoader {
   async bind(font) {
     // Add the font to the DOM only once; skip if the font is already loaded.
     if (font.attached || font.missingFile) {
-      return undefined;
+      return;
     }
     font.attached = true;
 
@@ -90,7 +90,7 @@ class BaseFontLoader {
           throw ex;
         }
       }
-      return undefined; // The font was, asynchronously, loaded.
+      return; // The font was, asynchronously, loaded.
     }
 
     // !this.isFontLoadingAPISupported
@@ -99,23 +99,23 @@ class BaseFontLoader {
       this.insertRule(rule);
 
       if (this.isSyncFontLoadingSupported) {
-        return undefined; // The font was, synchronously, loaded.
+        return; // The font was, synchronously, loaded.
       }
-      return new Promise(resolve => {
+      await new Promise(resolve => {
         const request = this._queueLoadingCallback(resolve);
         this._prepareFontLoadEvent([rule], [font], request);
       });
+      // The font was, asynchronously, loaded.
     }
-    return undefined;
   }
 
   _queueLoadingCallback(callback) {
     unreachable("Abstract method `_queueLoadingCallback`.");
   }
 
-  // eslint-disable-next-line getter-return
   get isFontLoadingAPISupported() {
-    unreachable("Abstract method `isFontLoadingAPISupported`.");
+    const supported = typeof document !== "undefined" && !!document.fonts;
+    return shadow(this, "isFontLoadingAPISupported", supported);
   }
 
   // eslint-disable-next-line getter-return
@@ -136,14 +136,6 @@ class BaseFontLoader {
 let FontLoader;
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   FontLoader = class MozcentralFontLoader extends BaseFontLoader {
-    get isFontLoadingAPISupported() {
-      return shadow(
-        this,
-        "isFontLoadingAPISupported",
-        typeof document !== "undefined" && !!document.fonts
-      );
-    }
-
     get isSyncFontLoadingSupported() {
       return shadow(this, "isSyncFontLoadingSupported", true);
     }
@@ -159,24 +151,6 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
         nextRequestId: 0,
       };
       this.loadTestFontId = 0;
-    }
-
-    get isFontLoadingAPISupported() {
-      let supported = typeof document !== "undefined" && !!document.fonts;
-
-      if (
-        (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) &&
-        supported &&
-        typeof navigator !== "undefined"
-      ) {
-        // The Firefox Font Loading API does not work with `mozPrintCallback`
-        // prior to version 63; see https://bugzilla.mozilla.org/show_bug.cgi?id=1473742
-        const m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(navigator.userAgent);
-        if (m && m[1] < 63) {
-          supported = false;
-        }
-      }
-      return shadow(this, "isFontLoadingAPISupported", supported);
     }
 
     get isSyncFontLoadingSupported() {
@@ -362,12 +336,6 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
     }
   };
 } // End of PDFJSDev.test('CHROME || GENERIC')
-
-const IsEvalSupportedCached = {
-  get value() {
-    return shadow(this, "value", isEvalSupported());
-  },
-};
 
 class FontFaceObject {
   constructor(

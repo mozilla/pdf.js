@@ -43,7 +43,7 @@ import {
   Name,
   Ref,
 } from "./primitives.js";
-import { isSpace, MissingDataException } from "./core_utils.js";
+import { isWhiteSpace, MissingDataException } from "./core_utils.js";
 import { CCITTFaxStream } from "./ccitt_stream.js";
 import { Jbig2Stream } from "./jbig2_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
@@ -270,7 +270,7 @@ class Parser {
 
     // Ensure that we don't accidentally truncate the inline image, when the
     // data is immediately followed by the "EI" marker (fixes issue10388.pdf).
-    if (!isSpace(ch)) {
+    if (!isWhiteSpace(ch)) {
       endOffset--;
     }
     return stream.pos - endOffset - startPos;
@@ -394,7 +394,7 @@ class Parser {
         ch = stream.peekByte();
         // Handle corrupt PDF documents which contains whitespace "inside" of
         // the EOD marker (fixes issue10614.pdf).
-        while (isSpace(ch)) {
+        while (isWhiteSpace(ch)) {
           stream.skip();
           ch = stream.peekByte();
         }
@@ -640,7 +640,7 @@ class Parser {
             // Ensure that the byte immediately following the truncated
             // endstream command is a space, to prevent false positives.
             const lastByte = stream.peekBytes(end + 1)[end];
-            if (!isSpace(lastByte)) {
+            if (!isWhiteSpace(lastByte)) {
               break;
             }
             info(
@@ -842,6 +842,7 @@ class Lexer {
     // other commands or literals as a prefix. The knowCommands is optional.
     this.knownCommands = knownCommands;
 
+    this._hexStringNumWarn = 0;
     this.beginInlineImagePos = -1;
   }
 
@@ -885,7 +886,7 @@ class Lexer {
       if (
         divideBy === 10 &&
         sign === 0 &&
-        (isSpace(ch) || ch === /* EOF = */ -1)
+        (isWhiteSpace(ch) || ch === /* EOF = */ -1)
       ) {
         // This is consistent with Adobe Reader (fixes issue9252.pdf).
         warn("Lexer.getNumber - treating a single decimal point as zero.");
@@ -1099,12 +1100,32 @@ class Lexer {
     return Name.get(strBuf.join(""));
   }
 
+  /**
+   * @private
+   */
+  _hexStringWarn(ch) {
+    const MAX_HEX_STRING_NUM_WARN = 5;
+
+    if (this._hexStringNumWarn++ === MAX_HEX_STRING_NUM_WARN) {
+      warn("getHexString - ignoring additional invalid characters.");
+      return;
+    }
+    if (this._hexStringNumWarn > MAX_HEX_STRING_NUM_WARN) {
+      // Limit the number of warning messages printed for a `this.getHexString`
+      // invocation, since corrupt PDF documents may otherwise spam the console
+      // enough to affect general performance negatively.
+      return;
+    }
+    warn(`getHexString - ignoring invalid character: ${ch}`);
+  }
+
   getHexString() {
     const strBuf = this.strBuf;
     strBuf.length = 0;
     let ch = this.currentChar;
     let isFirstHex = true;
     let firstDigit, secondDigit;
+    this._hexStringNumWarn = 0;
 
     while (true) {
       if (ch < 0) {
@@ -1120,14 +1141,14 @@ class Lexer {
         if (isFirstHex) {
           firstDigit = toHexDigit(ch);
           if (firstDigit === -1) {
-            warn(`Ignoring invalid character "${ch}" in hex string`);
+            this._hexStringWarn(ch);
             ch = this.nextChar();
             continue;
           }
         } else {
           secondDigit = toHexDigit(ch);
           if (secondDigit === -1) {
-            warn(`Ignoring invalid character "${ch}" in hex string`);
+            this._hexStringWarn(ch);
             ch = this.nextChar();
             continue;
           }

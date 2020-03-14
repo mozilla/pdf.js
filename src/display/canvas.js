@@ -18,7 +18,7 @@ import {
   IDENTITY_MATRIX,
   ImageKind,
   info,
-  isLittleEndian,
+  IsLittleEndianCached,
   isNum,
   OPS,
   shadow,
@@ -45,12 +45,6 @@ var COMPILE_TYPE3_GLYPHS = true;
 var MAX_SIZE_TO_COMPILE = 1000;
 
 var FULL_CHUNK_HEIGHT = 16;
-
-var IsLittleEndianCached = {
-  get value() {
-    return shadow(IsLittleEndianCached, "value", isLittleEndian());
-  },
-};
 
 function addContextCurrentTransform(ctx) {
   // If the context doesn't expose a `mozCurrentTransform`, add a JS based one.
@@ -1719,7 +1713,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
 
-        var charWidth = width * widthAdvanceScale + spacing * fontDirection;
+        var charWidth;
+        if (vertical) {
+          charWidth = width * widthAdvanceScale - spacing * fontDirection;
+        } else {
+          charWidth = width * widthAdvanceScale + spacing * fontDirection;
+        }
         x += charWidth;
 
         if (restoreNeeded) {
@@ -1727,7 +1726,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         }
       }
       if (vertical) {
-        current.y -= x * textHScale;
+        current.y -= x;
       } else {
         current.x += x * textHScale;
       }
