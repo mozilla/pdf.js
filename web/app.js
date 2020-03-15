@@ -1225,9 +1225,6 @@ const PDFViewerApplication = {
     });
 
     pagesPromise.then(async () => {
-      if (!this.supportsPrinting) {
-        return;
-      }
       const [openAction, javaScript] = await Promise.all([
         openActionPromise,
         pdfDocument.getJavaScript(),
@@ -1259,6 +1256,9 @@ const PDFViewerApplication = {
         }
       }
 
+      if (!this.supportsPrinting) {
+        return;
+      }
       if (triggerAutoPrint) {
         setTimeout(function() {
           window.print();
