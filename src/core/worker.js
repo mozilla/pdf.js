@@ -458,8 +458,8 @@ var WorkerMessageHandler = {
       return pdfManager.ensureCatalog("viewerPreferences");
     });
 
-    handler.on("GetOpenActionDestination", function(data) {
-      return pdfManager.ensureCatalog("openActionDestination");
+    handler.on("GetOpenAction", function(data) {
+      return pdfManager.ensureCatalog("openAction");
     });
 
     handler.on("GetAttachments", function wphSetupGetAttachments(data) {
