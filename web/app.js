@@ -1620,7 +1620,6 @@ const PDFViewerApplication = {
     eventBus._on("namedaction", webViewerNamedAction);
     eventBus._on("presentationmodechanged", webViewerPresentationModeChanged);
     eventBus._on("presentationmode", webViewerPresentationMode);
-    eventBus._on("openfile", webViewerOpenFile);
     eventBus._on("print", webViewerPrint);
     eventBus._on("download", webViewerDownload);
     eventBus._on("firstpage", webViewerFirstPage);
@@ -1645,6 +1644,7 @@ const PDFViewerApplication = {
     eventBus._on("updatefindcontrolstate", webViewerUpdateFindControlState);
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._on("fileinputchange", webViewerFileInputChange);
+      eventBus._on("openfile", webViewerOpenFile);
     }
   },
 
@@ -1694,7 +1694,6 @@ const PDFViewerApplication = {
     eventBus._off("namedaction", webViewerNamedAction);
     eventBus._off("presentationmodechanged", webViewerPresentationModeChanged);
     eventBus._off("presentationmode", webViewerPresentationMode);
-    eventBus._off("openfile", webViewerOpenFile);
     eventBus._off("print", webViewerPrint);
     eventBus._off("download", webViewerDownload);
     eventBus._off("firstpage", webViewerFirstPage);
@@ -1719,6 +1718,7 @@ const PDFViewerApplication = {
     eventBus._off("updatefindcontrolstate", webViewerUpdateFindControlState);
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._off("fileinputchange", webViewerFileInputChange);
+      eventBus._off("openfile", webViewerOpenFile);
     }
 
     _boundEvents.beforePrint = null;
@@ -2157,7 +2157,7 @@ function webViewerHashchange(evt) {
   }
 }
 
-let webViewerFileInputChange;
+let webViewerFileInputChange, webViewerOpenFile;
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   webViewerFileInputChange = function(evt) {
     if (
@@ -2195,16 +2195,15 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     appConfig.toolbar.download.setAttribute("hidden", "true");
     appConfig.secondaryToolbar.downloadButton.setAttribute("hidden", "true");
   };
+
+  webViewerOpenFile = function(evt) {
+    const openFileInputName = PDFViewerApplication.appConfig.openFileInputName;
+    document.getElementById(openFileInputName).click();
+  };
 }
 
 function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
-}
-function webViewerOpenFile() {
-  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-    const openFileInputName = PDFViewerApplication.appConfig.openFileInputName;
-    document.getElementById(openFileInputName).click();
-  }
 }
 function webViewerPrint() {
   window.print();
