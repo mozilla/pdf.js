@@ -81,8 +81,13 @@ It is also possible to view all test PDF files on the right side by opening:
 It's highly recommended to follow the [Getting the Code](#getting-the-code)
 section above, which is the officially supported way to obtain the code.
 However, you may also use [Gitpod](https://gitpod.io) (a free online IDE). With
-a single click it will launch a ready to use development environment, with all
-the necessary dependencies pre-installed and the web server running.
+a single click it will launch a workspace and automatically:
+
+- clone the pdf.js repo.
+- install the dependencies.
+- start the webserver via `gulp server`.
+
+So that you can start straight away.
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/mozilla/pdf.js)
 
