@@ -158,6 +158,7 @@
       },
     ],
     "no-unneeded-ternary": "error",
+    "prefer-exponentiation-operator": "error",
     "spaced-comment": ["error", "always", {
       "block": {
         "balanced": true,

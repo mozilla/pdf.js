@@ -948,7 +948,7 @@ class Lexer {
       baseValue /= divideBy;
     }
     if (eNotation) {
-      baseValue *= Math.pow(10, powerValueSign * powerValue);
+      baseValue *= 10 ** (powerValueSign * powerValue);
     }
     return sign * baseValue;
   }
