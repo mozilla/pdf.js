@@ -1434,7 +1434,7 @@ var JpxImage = (function JpxImageClosure() {
         // calculate quantization coefficient (Section E.1.1.1)
         var delta = reversible
           ? 1
-          : Math.pow(2, precision + gainLog2 - epsilon) * (1 + mu / 2048);
+          : 2 ** (precision + gainLog2 - epsilon) * (1 + mu / 2048);
         var mb = guardBits + epsilon - 1;
 
         // In the first resolution level, copyCoefficients will fill the

@@ -889,14 +889,14 @@ const CalGrayCS = (function CalGrayCSClosure() {
     // A represents a gray component of a calibrated gray space.
     // A <---> AG in the spec
     const A = src[srcOffset] * scale;
-    const AG = Math.pow(A, cs.G);
+    const AG = A ** cs.G;
 
     // Computes L as per spec. ( = cs.YW * AG )
     // Except if other than default BlackPoint values are used.
     const L = cs.YW * AG;
     // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html, Ch 4.
     // Convert values to rgb range [0, 255].
-    const val = Math.max(295.8 * Math.pow(L, 0.333333333333333333) - 40.8, 0);
+    const val = Math.max(295.8 * L ** 0.333333333333333333 - 40.8, 0);
     dest[destOffset] = val;
     dest[destOffset + 1] = val;
     dest[destOffset + 2] = val;
@@ -1026,7 +1026,7 @@ const CalRGBCS = (function CalRGBCSClosure() {
   const tempConvertMatrix1 = new Float32Array(3);
   const tempConvertMatrix2 = new Float32Array(3);
 
-  const DECODE_L_CONSTANT = Math.pow((8 + 16) / 116, 3) / 8.0;
+  const DECODE_L_CONSTANT = ((8 + 16) / 116) ** 3 / 8.0;
 
   function matrixProduct(a, b, result) {
     result[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -1055,7 +1055,7 @@ const CalRGBCS = (function CalRGBCSClosure() {
     if (color <= 0.0031308) {
       return adjustToRange(0, 1, 12.92 * color);
     }
-    return adjustToRange(0, 1, (1 + 0.055) * Math.pow(color, 1 / 2.4) - 0.055);
+    return adjustToRange(0, 1, (1 + 0.055) * color ** (1 / 2.4) - 0.055);
   }
 
   function adjustToRange(min, max, value) {
@@ -1067,7 +1067,7 @@ const CalRGBCS = (function CalRGBCSClosure() {
       return -decodeL(-L);
     }
     if (L > 8.0) {
-      return Math.pow((L + 16) / 116, 3);
+      return ((L + 16) / 116) ** 3;
     }
     return L * DECODE_L_CONSTANT;
   }
@@ -1154,9 +1154,9 @@ const CalRGBCS = (function CalRGBCSClosure() {
     // A <---> AGR in the spec
     // B <---> BGG in the spec
     // C <---> CGB in the spec
-    const AGR = Math.pow(A, cs.GR);
-    const BGG = Math.pow(B, cs.GG);
-    const CGB = Math.pow(C, cs.GB);
+    const AGR = A ** cs.GR;
+    const BGG = B ** cs.GG;
+    const CGB = C ** cs.GB;
 
     // Computes intermediate variables L, M, N as per spec.
     // To decode X, Y, Z values map L, M, N directly to them.
