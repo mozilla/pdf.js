@@ -678,7 +678,7 @@ class PDFPageView {
     const ensureNotCancelled = () => {
       if (cancelled) {
         throw new RenderingCancelledException(
-          "Rendering cancelled, page " + this.id,
+          `Rendering cancelled, page ${this.id}`,
           "svg"
         );
       }
