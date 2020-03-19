@@ -1166,7 +1166,7 @@ var Font = (function FontClosure() {
   }
 
   function createPostTable(properties) {
-    var angle = Math.floor(properties.italicAngle * Math.pow(2, 16));
+    var angle = Math.floor(properties.italicAngle * 2 ** 16);
     return (
       "\x00\x03\x00\x00" + // Version number
       string32(angle) + // italicAngle

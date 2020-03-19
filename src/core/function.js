@@ -83,7 +83,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var codeSize = 0;
       var codeBuf = 0;
       // 32 is a valid bps so shifting won't work
-      var sampleMul = 1.0 / (Math.pow(2.0, bps) - 1);
+      var sampleMul = 1.0 / (2.0 ** bps - 1);
 
       var strBytes = stream.getBytes((length * bps + 7) / 8);
       var strIdx = 0;
@@ -227,7 +227,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         samples,
         size,
         outputSize,
-        Math.pow(2, bps) - 1,
+        2 ** bps - 1,
         range,
       ];
     },
@@ -358,7 +358,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         dest,
         destOffset
       ) {
-        var x = n === 1 ? src[srcOffset] : Math.pow(src[srcOffset], n);
+        var x = n === 1 ? src[srcOffset] : src[srcOffset] ** n;
 
         for (var j = 0; j < length; ++j) {
           dest[destOffset + j] = c0[j] + x * diff[j];
@@ -726,7 +726,7 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
           case "exp":
             b = stack.pop();
             a = stack.pop();
-            stack.push(Math.pow(a, b));
+            stack.push(a ** b);
             break;
           case "false":
             stack.push(false);
