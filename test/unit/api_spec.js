@@ -505,7 +505,7 @@ describe("api", function() {
       promise
         .then(function(data) {
           expect(data instanceof PDFPageProxy).toEqual(true);
-          expect(data.pageIndex).toEqual(0);
+          expect(data.pageNumber).toEqual(1);
           done();
         })
         .catch(done.fail);
@@ -1769,7 +1769,9 @@ describe("api", function() {
         })
         .catch(function(error) {
           expect(error instanceof RenderingCancelledException).toEqual(true);
+          expect(error.message).toEqual("Rendering cancelled, page 1");
           expect(error.type).toEqual("canvas");
+
           CanvasFactory.destroy(canvasAndCtx);
           done();
         });
