@@ -608,8 +608,8 @@ class PDFDocumentProxy {
   /**
    * @param {{num: number, gen: number}} ref - The page reference. Must have
    *   the `num` and `gen` properties.
-   * @returns {Promise} A promise that is resolved with the page index that is
-   *   associated with the reference.
+   * @returns {Promise} A promise that is resolved with the page index (starting
+   *   from zero) that is associated with the reference.
    */
   getPageIndex(ref) {
     return this._transport.getPageIndex(ref);
@@ -909,7 +909,7 @@ class PDFDocumentProxy {
  */
 class PDFPageProxy {
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
-    this.pageIndex = pageIndex;
+    this._pageIndex = pageIndex;
     this._pageInfo = pageInfo;
     this._transport = transport;
     this._stats = pdfBug ? new StatTimer() : null;
@@ -927,7 +927,7 @@ class PDFPageProxy {
    * @type {number} Page number of the page. First page is 1.
    */
   get pageNumber() {
-    return this.pageIndex + 1;
+    return this._pageIndex + 1;
   }
 
   /**
@@ -999,7 +999,7 @@ class PDFPageProxy {
   getAnnotations({ intent = null } = {}) {
     if (!this.annotationsPromise || this.annotationsIntent !== intent) {
       this.annotationsPromise = this._transport.getAnnotations(
-        this.pageIndex,
+        this._pageIndex,
         intent
       );
       this.annotationsIntent = intent;
@@ -1063,7 +1063,7 @@ class PDFPageProxy {
         this._stats.time("Page Request");
       }
       this._pumpOperatorList({
-        pageIndex: this.pageNumber - 1,
+        pageIndex: this._pageIndex,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
       });
@@ -1111,7 +1111,7 @@ class PDFPageProxy {
       objs: this.objs,
       commonObjs: this.commonObjs,
       operatorList: intentState.operatorList,
-      pageNumber: this.pageNumber,
+      pageIndex: this._pageIndex,
       canvasFactory: canvasFactoryInstance,
       webGLContext,
       useRequestAnimationFrame: renderingIntent !== "print",
@@ -1180,7 +1180,7 @@ class PDFPageProxy {
         this._stats.time("Page Request");
       }
       this._pumpOperatorList({
-        pageIndex: this.pageIndex,
+        pageIndex: this._pageIndex,
         intent: renderingIntent,
       });
     }
@@ -1200,7 +1200,7 @@ class PDFPageProxy {
     return this._transport.messageHandler.sendWithStream(
       "GetTextContent",
       {
-        pageIndex: this.pageNumber - 1,
+        pageIndex: this._pageIndex,
         normalizeWhitespace: normalizeWhitespace === true,
         combineTextItems: disableCombineTextItems !== true,
       },
@@ -1249,7 +1249,7 @@ class PDFPageProxy {
    */
   _destroy() {
     this.destroyed = true;
-    this._transport.pageCache[this.pageIndex] = null;
+    this._transport.pageCache[this._pageIndex] = null;
 
     const waitOn = [];
     Object.keys(this.intentStates).forEach(intent => {
@@ -2734,7 +2734,7 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       objs,
       commonObjs,
       operatorList,
-      pageNumber,
+      pageIndex,
       canvasFactory,
       webGLContext,
       useRequestAnimationFrame = false,
@@ -2746,7 +2746,7 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       this.commonObjs = commonObjs;
       this.operatorListIdx = null;
       this.operatorList = operatorList;
-      this.pageNumber = pageNumber;
+      this._pageIndex = pageIndex;
       this.canvasFactory = canvasFactory;
       this.webGLContext = webGLContext;
       this._pdfBug = pdfBug;
@@ -2786,7 +2786,7 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
         globalThis.StepperManager &&
         globalThis.StepperManager.enabled
       ) {
-        this.stepper = globalThis.StepperManager.create(this.pageNumber - 1);
+        this.stepper = globalThis.StepperManager.create(this._pageIndex);
         this.stepper.init(this.operatorList);
         this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
       }
@@ -2831,7 +2831,7 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       this.callback(
         error ||
           new RenderingCancelledException(
-            `Rendering cancelled, page ${this.pageNumber}`,
+            `Rendering cancelled, page ${this._pageIndex + 1}`,
             "canvas"
           )
       );
