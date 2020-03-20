@@ -115,13 +115,13 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     }
     return value;
   }
-  function rfc2231getparam(contentDisposition) {
+  function rfc2231getparam(contentDispositionStr) {
     const matches = [];
     let match;
     // Iterate over all filename*n= and filename*n*= with n being an integer
     // of at least zero. Any non-zero number must not start with '0'.
     const iter = toParamRegExp("filename\\*((?!0\\d)\\d+)(\\*?)", "ig");
-    while ((match = iter.exec(contentDisposition)) !== null) {
+    while ((match = iter.exec(contentDispositionStr)) !== null) {
       let [, n, quot, part] = match; // eslint-disable-line prefer-const
       n = parseInt(n, 10);
       if (n in matches) {
@@ -205,11 +205,11 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     //        ... but Firefox permits ? and space.
     return value.replace(
       /=\?([\w-]*)\?([QqBb])\?((?:[^?]|\?(?!=))*)\?=/g,
-      function(_, charset, encoding, text) {
+      function(matches, charset, encoding, text) {
         if (encoding === "q" || encoding === "Q") {
           // RFC 2047 section 4.2.
           text = text.replace(/_/g, " ");
-          text = text.replace(/=([0-9a-fA-F]{2})/g, function(_, hex) {
+          text = text.replace(/=([0-9a-fA-F]{2})/g, function(match, hex) {
             return String.fromCharCode(parseInt(hex, 16));
           });
           return textdecode(charset, text);
