@@ -3176,7 +3176,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         length3,
         loadedName: baseDict.loadedName,
         composite,
-        wideChars: composite,
         fixedPitch: false,
         fontMatrix: dict.getArray("FontMatrix") || FONT_IDENTITY_MATRIX,
         firstChar: firstChar || 0,
