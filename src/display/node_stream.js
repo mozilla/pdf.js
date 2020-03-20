@@ -292,13 +292,13 @@ class BaseRangeReader {
   }
 }
 
-function createRequestOptions(url, headers) {
+function createRequestOptions(parsedUrl, headers) {
   return {
-    protocol: url.protocol,
-    auth: url.auth,
-    host: url.hostname,
-    port: url.port,
-    path: url.path,
+    protocol: parsedUrl.protocol,
+    auth: parsedUrl.auth,
+    host: parsedUrl.hostname,
+    port: parsedUrl.port,
+    path: parsedUrl.path,
     method: "GET",
     headers,
   };
