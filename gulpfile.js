@@ -563,14 +563,6 @@ gulp.task("default_preferences-pre", function () {
   };
   var preprocessor2 = require("./external/builder/preprocessor2.js");
   return merge([
-    gulp.src(
-      [
-        "src/{display,shared}/*.js",
-        "!src/shared/{cffStandardStrings,fonts_utils}.js",
-        "src/pdf.js",
-      ],
-      { base: "src/" }
-    ),
     gulp.src(["web/{app_options,viewer_compatibility}.js"], {
       base: ".",
     }),
