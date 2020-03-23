@@ -13,25 +13,28 @@
  * limitations under the License.
  */
 
-import { BaseViewer } from './base_viewer';
-import { shadow } from 'pdfjs-lib';
+import { BaseViewer } from "./base_viewer.js";
+import { shadow } from "pdfjs-lib";
 
 class PDFViewer extends BaseViewer {
   get _setDocumentViewerElement() {
-    return shadow(this, '_setDocumentViewerElement', this.viewer);
+    return shadow(this, "_setDocumentViewerElement", this.viewer);
   }
 
-  _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
+  _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null }) {
     if (!pageSpot && !this.isInPresentationMode) {
       const left = pageDiv.offsetLeft + pageDiv.clientLeft;
       const right = left + pageDiv.clientWidth;
-      const { scrollLeft, clientWidth, } = this.container;
-      if (this._isScrollModeHorizontal ||
-          left < scrollLeft || right > scrollLeft + clientWidth) {
-        pageSpot = { left: 0, top: 0, };
+      const { scrollLeft, clientWidth } = this.container;
+      if (
+        this._isScrollModeHorizontal ||
+        left < scrollLeft ||
+        right > scrollLeft + clientWidth
+      ) {
+        pageSpot = { left: 0, top: 0 };
       }
     }
-    super._scrollIntoView({ pageDiv, pageSpot, pageNumber, });
+    super._scrollIntoView({ pageDiv, pageSpot, pageNumber });
   }
 
   _getVisiblePages() {
@@ -66,6 +69,4 @@ class PDFViewer extends BaseViewer {
   }
 }
 
-export {
-  PDFViewer,
-};
+export { PDFViewer };

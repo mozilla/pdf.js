@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-import { DecodeStream } from './stream';
-import { JpxImage } from './jpx';
-import { shadow } from '../shared/util';
+import { DecodeStream } from "./stream.js";
+import { JpxImage } from "./jpx.js";
+import { shadow } from "../shared/util.js";
 
 /**
  * For JPEG 2000's we use a library to decode these images and
  * the stream behaves like all the other DecodeStreams.
  */
-let JpxStream = (function JpxStreamClosure() {
+const JpxStream = (function JpxStreamClosure() {
   function JpxStream(stream, maybeLength, dict, params) {
     this.stream = stream;
     this.maybeLength = maybeLength;
@@ -33,10 +33,10 @@ let JpxStream = (function JpxStreamClosure() {
 
   JpxStream.prototype = Object.create(DecodeStream.prototype);
 
-  Object.defineProperty(JpxStream.prototype, 'bytes', {
+  Object.defineProperty(JpxStream.prototype, "bytes", {
     get: function JpxStream_bytes() {
       // If `this.maybeLength` is null, we'll get the entire stream.
-      return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
+      return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
     },
     configurable: true,
   });
@@ -50,33 +50,33 @@ let JpxStream = (function JpxStreamClosure() {
     if (this.eof) {
       return;
     }
-    let jpxImage = new JpxImage();
+    const jpxImage = new JpxImage();
     jpxImage.parse(this.bytes);
 
-    let width = jpxImage.width;
-    let height = jpxImage.height;
-    let componentsCount = jpxImage.componentsCount;
-    let tileCount = jpxImage.tiles.length;
+    const width = jpxImage.width;
+    const height = jpxImage.height;
+    const componentsCount = jpxImage.componentsCount;
+    const tileCount = jpxImage.tiles.length;
     if (tileCount === 1) {
       this.buffer = jpxImage.tiles[0].items;
     } else {
-      let data = new Uint8ClampedArray(width * height * componentsCount);
+      const data = new Uint8ClampedArray(width * height * componentsCount);
 
       for (let k = 0; k < tileCount; k++) {
-        let tileComponents = jpxImage.tiles[k];
-        let tileWidth = tileComponents.width;
-        let tileHeight = tileComponents.height;
-        let tileLeft = tileComponents.left;
-        let tileTop = tileComponents.top;
+        const tileComponents = jpxImage.tiles[k];
+        const tileWidth = tileComponents.width;
+        const tileHeight = tileComponents.height;
+        const tileLeft = tileComponents.left;
+        const tileTop = tileComponents.top;
 
-        let src = tileComponents.items;
+        const src = tileComponents.items;
         let srcPosition = 0;
         let dataPosition = (width * tileTop + tileLeft) * componentsCount;
-        let imgRowSize = width * componentsCount;
-        let tileRowSize = tileWidth * componentsCount;
+        const imgRowSize = width * componentsCount;
+        const tileRowSize = tileWidth * componentsCount;
 
         for (let j = 0; j < tileHeight; j++) {
-          let rowBytes = src.subarray(srcPosition, srcPosition + tileRowSize);
+          const rowBytes = src.subarray(srcPosition, srcPosition + tileRowSize);
           data.set(rowBytes, dataPosition);
           srcPosition += tileRowSize;
           dataPosition += imgRowSize;
@@ -91,6 +91,4 @@ let JpxStream = (function JpxStreamClosure() {
   return JpxStream;
 })();
 
-export {
-  JpxStream,
-};
+export { JpxStream };

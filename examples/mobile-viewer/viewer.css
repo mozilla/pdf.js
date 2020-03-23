@@ -26,12 +26,12 @@ html {
 }
 
 header {
-  background-color: #f4f4f4;
+  background-color: rgba(244, 244, 244, 1);
 }
 
 header h1 {
-  border-bottom: 1px solid #d8d8d8;
-  color: #858585;
+  border-bottom: 1px solid rgba(216, 216, 216, 1);
+  color: rgba(133, 133, 133, 1);
   font-size: 23px;
   font-style: italic;
   font-weight: normal;
@@ -44,7 +44,7 @@ header h1 {
 
 body {
   background: url(images/document_bg.png);
-  color: #fff;
+  color: rgba(255, 255, 255, 1);
   font-family: sans-serif;
   font-size: 10px;
   height: 100%;
@@ -81,7 +81,7 @@ footer {
   border-width: 0;
   background-position: center center;
   background-repeat: no-repeat;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
 }
 
 .toolbarButton.pageUp {
@@ -110,9 +110,9 @@ footer {
   left: 36%;
   text-align: center;
   border: 0;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0);
   font-size: 1.2rem;
-  color: #FFF;
+  color: rgba(255, 255, 255, 1);
   background-image: url(images/div_line_left.png), url(images/div_line_right.png);
   background-repeat: no-repeat;
   background-position: left, right;
@@ -188,8 +188,8 @@ canvas {
 #loadingBar {
   position: relative;
   height: .6rem;
-  background-color: #333;
-  border-bottom: 1px solid #333;
+  background-color: rgba(51, 51, 51, 1);
+  border-bottom: 1px solid rgba(51, 51, 51, 1);
   margin-top: 5rem;
 }
 
@@ -198,7 +198,7 @@ canvas {
   left: 0;
   width: 0;
   height: 100%;
-  background-color: #ddd;
+  background-color: rgba(221, 221, 221, 1);
   overflow: hidden;
   transition: width 200ms;
 }
@@ -210,7 +210,7 @@ canvas {
 }
 
 #loadingBar .progress.indeterminate {
-  background-color: #999;
+  background-color: rgba(153, 153, 153, 1);
   transition: none;
 }
 
@@ -220,17 +220,18 @@ canvas {
   left: 0;
   height: 100%;
   width: 5rem;
-
-  background-image: linear-gradient(to right, #999 0%, #fff 50%, #999 100%);
+  background-image: linear-gradient(to right,
+                                    rgba(153, 153, 153, 1) 0%,
+                                    rgba(255, 255, 255, 1) 50%,
+                                    rgba(153, 153, 153, 1) 100%);
   background-size: 100% 100%;
   background-repeat: no-repeat;
-
   animation: progressIndeterminate 2s linear infinite;
 }
 
 #errorWrapper {
-  background: none repeat scroll 0 0 #FF5555;
-  color: white;
+  background: none repeat scroll 0 0 rgba(255, 85, 85, 1);
+  color: rgba(255, 255, 255, 1);
   left: 0;
   position: absolute;
   right: 0;
@@ -249,8 +250,8 @@ canvas {
 }
 
 #errorMoreInfo {
-  background-color: #FFFFFF;
-  color: black;
+  background-color: rgba(255, 255, 255, 1);
+  color: rgba(0, 0, 0, 1);
   padding: 0.3rem;
   margin: 0.3rem;
   width: 98%;

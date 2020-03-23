@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { createObjectURL, shadow } from '../shared/util';
-import { DecodeStream } from './stream';
-import { isDict } from './primitives';
-import { JpegImage } from './jpg';
+import { createObjectURL, shadow } from "../shared/util.js";
+import { DecodeStream } from "./stream.js";
+import { isDict } from "./primitives.js";
+import { JpegImage } from "./jpg.js";
 
 /**
  * Depending on the type of JPEG a JpegStream is handled in different ways. For
@@ -25,13 +25,14 @@ import { JpegImage } from './jpg';
  * a library to decode these images and the stream behaves like all the other
  * DecodeStreams.
  */
-let JpegStream = (function JpegStreamClosure() {
+const JpegStream = (function JpegStreamClosure() {
   function JpegStream(stream, maybeLength, dict, params) {
     // Some images may contain 'junk' before the SOI (start-of-image) marker.
     // Note: this seems to mainly affect inline images.
     let ch;
     while ((ch = stream.getByte()) !== -1) {
-      if (ch === 0xFF) { // Find the first byte of the SOI marker (0xFFD8).
+      // Find the first byte of the SOI marker (0xFFD8).
+      if (ch === 0xff) {
         stream.skip(-1); // Reset the stream position to the SOI.
         break;
       }
@@ -46,10 +47,10 @@ let JpegStream = (function JpegStreamClosure() {
 
   JpegStream.prototype = Object.create(DecodeStream.prototype);
 
-  Object.defineProperty(JpegStream.prototype, 'bytes', {
+  Object.defineProperty(JpegStream.prototype, "bytes", {
     get: function JpegStream_bytes() {
       // If `this.maybeLength` is null, we'll get the entire stream.
-      return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
+      return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
     },
     configurable: true,
   });
@@ -63,19 +64,19 @@ let JpegStream = (function JpegStreamClosure() {
     if (this.eof) {
       return;
     }
-    let jpegOptions = {
+    const jpegOptions = {
       decodeTransform: undefined,
       colorTransform: undefined,
     };
 
     // Checking if values need to be transformed before conversion.
-    let decodeArr = this.dict.getArray('Decode', 'D');
+    const decodeArr = this.dict.getArray("Decode", "D");
     if (this.forceRGB && Array.isArray(decodeArr)) {
-      let bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
-      let decodeArrLength = decodeArr.length;
-      let transform = new Int32Array(decodeArrLength);
+      const bitsPerComponent = this.dict.get("BitsPerComponent") || 8;
+      const decodeArrLength = decodeArr.length;
+      const transform = new Int32Array(decodeArrLength);
       let transformNeeded = false;
-      let maxValue = (1 << bitsPerComponent) - 1;
+      const maxValue = (1 << bitsPerComponent) - 1;
       for (let i = 0; i < decodeArrLength; i += 2) {
         transform[i] = ((decodeArr[i + 1] - decodeArr[i]) * 256) | 0;
         transform[i + 1] = (decodeArr[i] * maxValue) | 0;
@@ -89,7 +90,7 @@ let JpegStream = (function JpegStreamClosure() {
     }
     // Fetching the 'ColorTransform' entry, if it exists.
     if (isDict(this.params)) {
-      let colorTransform = this.params.get('ColorTransform');
+      const colorTransform = this.params.get("ColorTransform");
       if (Number.isInteger(colorTransform)) {
         jpegOptions.colorTransform = colorTransform;
       }
@@ -97,7 +98,7 @@ let JpegStream = (function JpegStreamClosure() {
     const jpegImage = new JpegImage(jpegOptions);
 
     jpegImage.parse(this.bytes);
-    let data = jpegImage.getData({
+    const data = jpegImage.getData({
       width: this.drawWidth,
       height: this.drawHeight,
       forceRGB: this.forceRGB,
@@ -108,13 +109,140 @@ let JpegStream = (function JpegStreamClosure() {
     this.eof = true;
   };
 
+  Object.defineProperty(JpegStream.prototype, "maybeValidDimensions", {
+    get: function JpegStream_maybeValidDimensions() {
+      const { dict, stream } = this;
+      const dictHeight = dict.get("Height", "H");
+      const startPos = stream.pos;
+
+      let validDimensions = true,
+        foundSOF = false,
+        b;
+      while ((b = stream.getByte()) !== -1) {
+        if (b !== 0xff) {
+          // Not a valid marker.
+          continue;
+        }
+        switch (stream.getByte()) {
+          case 0xc0: // SOF0
+          case 0xc1: // SOF1
+          case 0xc2: // SOF2
+            // These three SOF{n} markers are the only ones that the built-in
+            // PDF.js JPEG decoder currently supports.
+            foundSOF = true;
+
+            stream.pos += 2; // Skip marker length.
+            stream.pos += 1; // Skip precision.
+            const scanLines = stream.getUint16();
+
+            // The "normal" case, where the image data and dictionary agrees.
+            if (scanLines === dictHeight) {
+              break;
+            }
+            // A DNL (Define Number of Lines) marker is expected,
+            // which browsers (usually) cannot decode natively.
+            if (scanLines === 0) {
+              validDimensions = false;
+              break;
+            }
+            // The dimensions of the image, among other properties, should
+            // always be taken from the image data *itself* rather than the
+            // XObject dictionary. However there's cases of corrupt images that
+            // browsers cannot decode natively, for example:
+            //  - JPEG images with DNL markers, where the SOF `scanLines`
+            //    parameter has an unexpected value (see issue 8614).
+            //  - JPEG images with too large SOF `scanLines` parameter, where
+            //    the EOI marker is encountered prematurely (see issue 10880).
+            // In an attempt to handle these kinds of corrupt images, compare
+            // the dimensions in the image data with the dictionary and *always*
+            // let the PDF.js JPEG decoder (rather than the browser) handle the
+            // image if the difference is larger than one order of magnitude
+            // (since that would generally suggest that something is off).
+            if (scanLines > dictHeight * 10) {
+              validDimensions = false;
+              break;
+            }
+            break;
+
+          case 0xc3: // SOF3
+          /* falls through */
+          case 0xc5: // SOF5
+          case 0xc6: // SOF6
+          case 0xc7: // SOF7
+          /* falls through */
+          case 0xc9: // SOF9
+          case 0xca: // SOF10
+          case 0xcb: // SOF11
+          /* falls through */
+          case 0xcd: // SOF13
+          case 0xce: // SOF14
+          case 0xcf: // SOF15
+            foundSOF = true;
+            break;
+
+          case 0xc4: // DHT
+          case 0xcc: // DAC
+          /* falls through */
+          case 0xda: // SOS
+          case 0xdb: // DQT
+          case 0xdc: // DNL
+          case 0xdd: // DRI
+          case 0xde: // DHP
+          case 0xdf: // EXP
+          /* falls through */
+          case 0xe0: // APP0
+          case 0xe1: // APP1
+          case 0xe2: // APP2
+          case 0xe3: // APP3
+          case 0xe4: // APP4
+          case 0xe5: // APP5
+          case 0xe6: // APP6
+          case 0xe7: // APP7
+          case 0xe8: // APP8
+          case 0xe9: // APP9
+          case 0xea: // APP10
+          case 0xeb: // APP11
+          case 0xec: // APP12
+          case 0xed: // APP13
+          case 0xee: // APP14
+          case 0xef: // APP15
+          /* falls through */
+          case 0xfe: // COM
+            const markerLength = stream.getUint16();
+            if (markerLength > 2) {
+              stream.skip(markerLength - 2); // Jump to the next marker.
+            } else {
+              // The marker length is invalid, resetting the stream position.
+              stream.skip(-2);
+            }
+            break;
+
+          case 0xff: // Fill byte.
+            // Avoid skipping a valid marker, resetting the stream position.
+            stream.skip(-1);
+            break;
+
+          case 0xd9: // EOI
+            foundSOF = true;
+            break;
+        }
+        if (foundSOF) {
+          break;
+        }
+      }
+      // Finally, don't forget to reset the stream position.
+      stream.pos = startPos;
+
+      return shadow(this, "maybeValidDimensions", validDimensions);
+    },
+    configurable: true,
+  });
+
   JpegStream.prototype.getIR = function(forceDataSchema = false) {
-    return createObjectURL(this.bytes, 'image/jpeg', forceDataSchema);
+    return createObjectURL(this.bytes, "image/jpeg", forceDataSchema);
   };
 
   return JpegStream;
 })();
 
-export {
-  JpegStream,
-};
+export { JpegStream };

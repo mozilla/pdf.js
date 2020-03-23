@@ -22,7 +22,7 @@
       return text;
     }
     return text.replace(/\{\{\s*(\w+)\s*\}\}/g, function(all, name) {
-      return (name in args ? args[name] : "{{" + name + "}}");
+      return name in args ? args[name] : "{{" + name + "}}";
     });
   }
 
@@ -112,7 +112,7 @@
       // use the short language code for "full" codes like 'ar-sa' (issue 5440)
       var shortCode = gLanguage.split("-")[0];
 
-      return (rtlList.includes(shortCode) ? "rtl" : "ltr");
+      return rtlList.includes(shortCode) ? "rtl" : "ltr";
     },
 
     getReadyState() {

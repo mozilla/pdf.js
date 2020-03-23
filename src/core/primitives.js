@@ -14,7 +14,7 @@
  */
 /* uses XRef */
 
-import { assert } from '../shared/util';
+import { assert, unreachable } from "../shared/util.js";
 
 var EOF = {};
 
@@ -29,7 +29,8 @@ var Name = (function NameClosure() {
 
   Name.get = function Name_get(name) {
     var nameValue = nameCache[name];
-    return (nameValue ? nameValue : (nameCache[name] = new Name(name)));
+    // eslint-disable-next-line no-restricted-syntax
+    return nameValue ? nameValue : (nameCache[name] = new Name(name));
   };
 
   Name._clearCache = function() {
@@ -50,7 +51,8 @@ var Cmd = (function CmdClosure() {
 
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
-    return (cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd)));
+    // eslint-disable-next-line no-restricted-syntax
+    return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
   };
 
   Cmd._clearCache = function() {
@@ -81,59 +83,47 @@ var Dict = (function DictClosure() {
     },
 
     // automatically dereferences Ref objects
-    get: function Dict_get(key1, key2, key3) {
-      var value;
-      var xref = this.xref, suppressEncryption = this.suppressEncryption;
-      if (typeof (value = this._map[key1]) !== 'undefined' ||
-          key1 in this._map || typeof key2 === 'undefined') {
-        return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
+    get(key1, key2, key3) {
+      let value = this._map[key1];
+      if (value === undefined && key2 !== undefined) {
+        value = this._map[key2];
+        if (value === undefined && key3 !== undefined) {
+          value = this._map[key3];
+        }
       }
-      if (typeof (value = this._map[key2]) !== 'undefined' ||
-          key2 in this._map || typeof key3 === 'undefined') {
-        return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
+      if (value instanceof Ref && this.xref) {
+        return this.xref.fetch(value, this.suppressEncryption);
       }
-      value = this._map[key3] || null;
-      return xref ? xref.fetchIfRef(value, suppressEncryption) : value;
+      return value;
     },
 
     // Same as get(), but returns a promise and uses fetchIfRefAsync().
-    getAsync: function Dict_getAsync(key1, key2, key3) {
-      var value;
-      var xref = this.xref, suppressEncryption = this.suppressEncryption;
-      if (typeof (value = this._map[key1]) !== 'undefined' ||
-          key1 in this._map || typeof key2 === 'undefined') {
-        if (xref) {
-          return xref.fetchIfRefAsync(value, suppressEncryption);
+    async getAsync(key1, key2, key3) {
+      let value = this._map[key1];
+      if (value === undefined && key2 !== undefined) {
+        value = this._map[key2];
+        if (value === undefined && key3 !== undefined) {
+          value = this._map[key3];
         }
-        return Promise.resolve(value);
       }
-      if (typeof (value = this._map[key2]) !== 'undefined' ||
-          key2 in this._map || typeof key3 === 'undefined') {
-        if (xref) {
-          return xref.fetchIfRefAsync(value, suppressEncryption);
-        }
-        return Promise.resolve(value);
+      if (value instanceof Ref && this.xref) {
+        return this.xref.fetchAsync(value, this.suppressEncryption);
       }
-      value = this._map[key3] || null;
-      if (xref) {
-        return xref.fetchIfRefAsync(value, suppressEncryption);
-      }
-      return Promise.resolve(value);
+      return value;
     },
 
     // Same as get(), but dereferences all elements if the result is an Array.
-    getArray: function Dict_getArray(key1, key2, key3) {
-      var value = this.get(key1, key2, key3);
-      var xref = this.xref, suppressEncryption = this.suppressEncryption;
-      if (!Array.isArray(value) || !xref) {
+    getArray(key1, key2, key3) {
+      let value = this.get(key1, key2, key3);
+      if (!Array.isArray(value) || !this.xref) {
         return value;
       }
       value = value.slice(); // Ensure that we don't modify the Dict data.
-      for (var i = 0, ii = value.length; i < ii; i++) {
-        if (!isRef(value[i])) {
+      for (let i = 0, ii = value.length; i < ii; i++) {
+        if (!(value[i] instanceof Ref)) {
           continue;
         }
-        value[i] = xref.fetch(value[i], suppressEncryption);
+        value[i] = this.xref.fetch(value[i], this.suppressEncryption);
       }
       return value;
     },
@@ -148,11 +138,18 @@ var Dict = (function DictClosure() {
     },
 
     set: function Dict_set(key, value) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        value === undefined
+      ) {
+        unreachable('Dict.set: The "value" cannot be undefined.');
+      }
       this._map[key] = value;
     },
 
     has: function Dict_has(key) {
-      return key in this._map;
+      return this._map[key] !== undefined;
     },
 
     forEach: function Dict_forEach(callback) {
@@ -165,14 +162,14 @@ var Dict = (function DictClosure() {
   Dict.empty = new Dict(null);
 
   Dict.merge = function(xref, dictArray) {
-    let mergedDict = new Dict(xref);
+    const mergedDict = new Dict(xref);
 
     for (let i = 0, ii = dictArray.length; i < ii; i++) {
-      let dict = dictArray[i];
+      const dict = dictArray[i];
       if (!isDict(dict)) {
         continue;
       }
-      for (let keyName in dict._map) {
+      for (const keyName in dict._map) {
         if (mergedDict._map[keyName] !== undefined) {
           continue;
         }
@@ -205,9 +202,10 @@ var Ref = (function RefClosure() {
   };
 
   Ref.get = function(num, gen) {
-    const key = (gen === 0 ? `${num}R` : `${num}R${gen}`);
+    const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
     const refValue = refCache[key];
-    return (refValue ? refValue : (refCache[key] = new Ref(num, gen)));
+    // eslint-disable-next-line no-restricted-syntax
+    return refValue ? refValue : (refCache[key] = new Ref(num, gen));
   };
 
   Ref._clearCache = function() {
@@ -263,9 +261,9 @@ var RefSetCache = (function RefSetCacheClosure() {
       this.dict[ref.toString()] = this.get(aliasRef);
     },
 
-    forEach: function RefSetCache_forEach(fn, thisArg) {
-      for (var i in this.dict) {
-        fn.call(thisArg, this.dict[i]);
+    forEach: function RefSetCache_forEach(callback) {
+      for (const i in this.dict) {
+        callback(this.dict[i]);
       }
     },
 
@@ -278,7 +276,7 @@ var RefSetCache = (function RefSetCacheClosure() {
 })();
 
 function isEOF(v) {
-  return (v === EOF);
+  return v === EOF;
 }
 
 function isName(v, name) {
@@ -290,8 +288,9 @@ function isCmd(v, cmd) {
 }
 
 function isDict(v, type) {
-  return v instanceof Dict &&
-         (type === undefined || isName(v.get('Type'), type));
+  return (
+    v instanceof Dict && (type === undefined || isName(v.get("Type"), type))
+  );
 }
 
 function isRef(v) {
@@ -299,16 +298,20 @@ function isRef(v) {
 }
 
 function isRefsEqual(v1, v2) {
-  if (typeof PDFJSDev === 'undefined' ||
-      PDFJSDev.test('!PRODUCTION || TESTING')) {
-    assert(v1 instanceof Ref && v2 instanceof Ref,
-           'isRefsEqual: Both parameters should be `Ref`s.');
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      v1 instanceof Ref && v2 instanceof Ref,
+      "isRefsEqual: Both parameters should be `Ref`s."
+    );
   }
   return v1.num === v2.num && v1.gen === v2.gen;
 }
 
 function isStream(v) {
-  return typeof v === 'object' && v !== null && v.getBytes !== undefined;
+  return typeof v === "object" && v !== null && v.getBytes !== undefined;
 }
 
 function clearPrimitiveCaches() {
