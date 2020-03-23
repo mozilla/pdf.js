@@ -549,6 +549,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     if (this.data.fieldValue && this.data.fieldValue !== "Off") {
       element.setAttribute("checked", true);
     }
+    element.name = this.data.fieldName;
 
     this.container.appendChild(element);
     return this.container;
