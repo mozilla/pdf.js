@@ -481,17 +481,6 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
         }
       });
     }
-
-    /**
-     * Registers callbacks to indicate the document loading completion.
-     * @ignore
-     */
-    then(onFulfilled, onRejected) {
-      throw new Error(
-        "Removed API method: " +
-          "PDFDocumentLoadingTask.then, use the `promise` getter instead."
-      );
-    }
   }
   return PDFDocumentLoadingTask;
 })();
@@ -972,15 +961,6 @@ class PDFPageProxy {
     offsetY = 0,
     dontFlip = false,
   } = {}) {
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("GENERIC") &&
-      (arguments.length > 1 || typeof arguments[0] === "number")
-    ) {
-      throw new Error(
-        "PDFPageProxy.getViewport is called with obsolete arguments."
-      );
-    }
     return new PageViewport({
       viewBox: this.view,
       scale,
@@ -2705,17 +2685,6 @@ class RenderTask {
    */
   cancel() {
     this._internalRenderTask.cancel();
-  }
-
-  /**
-   * Registers callbacks to indicate the rendering task completion.
-   * @ignore
-   */
-  then(onFulfilled, onRejected) {
-    throw new Error(
-      "Removed API method: " +
-        "RenderTask.then, use the `promise` getter instead."
-    );
   }
 }
 
