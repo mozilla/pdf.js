@@ -63,20 +63,25 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
 
 /**
  * @typedef {function} IPDFStreamFactory
- * @param {DocumentInitParameters} params The document initialization
- * parameters. The "url" key is always present.
+ * @param {DocumentInitParameters} params - The document initialization
+ *   parameters. The "url" key is always present.
  * @returns {IPDFStream}
+ * @ignore
  */
 
-/** @type IPDFStreamFactory */
+/**
+ * @type IPDFStreamFactory
+ * @private
+ */
 let createPDFNetworkStream;
 
 /**
- * Sets the function that instantiates a IPDFStream as an alternative PDF data
- * transport.
- * @param {IPDFStreamFactory} pdfNetworkStreamFactory - the factory function
- * that takes document initialization parameters (including a "url") and returns
- * an instance of IPDFStream.
+ * Sets the function that instantiates an {IPDFStream} as an alternative PDF
+ * data transport.
+ * @param {IPDFStreamFactory} pdfNetworkStreamFactory - The factory function
+ *   that takes document initialization parameters (including a "url") and
+ *   returns an instance of {IPDFStream}.
+ * @ignore
  */
 function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
   createPDFNetworkStream = pdfNetworkStreamFactory;
