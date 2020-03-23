@@ -8,9 +8,9 @@ exports.extractFilenameFromHeader = extractFilenameFromHeader;
 exports.validateRangeRequestCapabilities = validateRangeRequestCapabilities;
 exports.validateResponseStatus = validateResponseStatus;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-var _content_disposition = require("./content_disposition");
+var _content_disposition = require("./content_disposition.js");
 
 function validateRangeRequestCapabilities({
   getResponseHeader,
@@ -18,12 +18,12 @@ function validateRangeRequestCapabilities({
   rangeChunkSize,
   disableRange
 }) {
-  (0, _util.assert)(rangeChunkSize > 0, 'Range chunk size must be larger than zero');
-  let returnValues = {
+  (0, _util.assert)(rangeChunkSize > 0, "Range chunk size must be larger than zero");
+  const returnValues = {
     allowRangeRequests: false,
     suggestedLength: undefined
   };
-  let length = parseInt(getResponseHeader('Content-Length'), 10);
+  const length = parseInt(getResponseHeader("Content-Length"), 10);
 
   if (!Number.isInteger(length)) {
     return returnValues;
@@ -39,13 +39,13 @@ function validateRangeRequestCapabilities({
     return returnValues;
   }
 
-  if (getResponseHeader('Accept-Ranges') !== 'bytes') {
+  if (getResponseHeader("Accept-Ranges") !== "bytes") {
     return returnValues;
   }
 
-  let contentEncoding = getResponseHeader('Content-Encoding') || 'identity';
+  const contentEncoding = getResponseHeader("Content-Encoding") || "identity";
 
-  if (contentEncoding !== 'identity') {
+  if (contentEncoding !== "identity") {
     return returnValues;
   }
 
@@ -54,10 +54,16 @@ function validateRangeRequestCapabilities({
 }
 
 function extractFilenameFromHeader(getResponseHeader) {
-  const contentDisposition = getResponseHeader('Content-Disposition');
+  const contentDisposition = getResponseHeader("Content-Disposition");
 
   if (contentDisposition) {
     let filename = (0, _content_disposition.getFilenameFromContentDispositionHeader)(contentDisposition);
+
+    if (filename.includes("%")) {
+      try {
+        filename = decodeURIComponent(filename);
+      } catch (ex) {}
+    }
 
     if (/\.pdf$/i.test(filename)) {
       return filename;
@@ -68,11 +74,11 @@ function extractFilenameFromHeader(getResponseHeader) {
 }
 
 function createResponseStatusError(status, url) {
-  if (status === 404 || status === 0 && /^file:/.test(url)) {
+  if (status === 404 || status === 0 && url.startsWith("file:")) {
     return new _util.MissingPDFException('Missing PDF "' + url + '".');
   }
 
-  return new _util.UnexpectedResponseException('Unexpected server response (' + status + ') while retrieving PDF "' + url + '".', status);
+  return new _util.UnexpectedResponseException("Unexpected server response (" + status + ') while retrieving PDF "' + url + '".', status);
 }
 
 function validateResponseStatus(status) {

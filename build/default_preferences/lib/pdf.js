@@ -1,40 +1,42 @@
-'use strict';
+"use strict";
 
 var pdfjsVersion = 0;
 var pdfjsBuild = 0;
 
-var pdfjsSharedUtil = require('./shared/util.js');
+var pdfjsSharedUtil = require("./shared/util.js");
 
-var pdfjsDisplayAPI = require('./display/api.js');
+var pdfjsDisplayAPI = require("./display/api.js");
 
-var pdfjsDisplayTextLayer = require('./display/text_layer.js');
+var pdfjsDisplayTextLayer = require("./display/text_layer.js");
 
-var pdfjsDisplayAnnotationLayer = require('./display/annotation_layer.js');
+var pdfjsDisplayAnnotationLayer = require("./display/annotation_layer.js");
 
-var pdfjsDisplayDisplayUtils = require('./display/display_utils.js');
+var pdfjsDisplayDisplayUtils = require("./display/display_utils.js");
 
-var pdfjsDisplaySVG = require('./display/svg.js');
+var pdfjsDisplaySVG = require("./display/svg.js");
 
-let pdfjsDisplayWorkerOptions = require('./display/worker_options.js');
+const pdfjsDisplayWorkerOptions = require("./display/worker_options.js");
 
-let pdfjsDisplayAPICompatibility = require('./display/api_compatibility.js');
+const pdfjsDisplayAPICompatibility = require("./display/api_compatibility.js");
 
 {
-  const isNodeJS = require('./shared/is_node.js');
+  const {
+    isNodeJS
+  } = require("./shared/is_node.js");
 
-  if (isNodeJS()) {
-    let PDFNodeStream = require('./display/node_stream.js').PDFNodeStream;
+  if (isNodeJS) {
+    const PDFNodeStream = require("./display/node_stream.js").PDFNodeStream;
 
     pdfjsDisplayAPI.setPDFNetworkStreamFactory(params => {
       return new PDFNodeStream(params);
     });
   } else {
-    let PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
+    const PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
 
     let PDFFetchStream;
 
     if (pdfjsDisplayDisplayUtils.isFetchSupported()) {
-      PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
+      PDFFetchStream = require("./display/fetch_stream.js").PDFFetchStream;
     }
 
     pdfjsDisplayAPI.setPDFNetworkStreamFactory(params => {
@@ -71,8 +73,6 @@ exports.createObjectURL = pdfjsSharedUtil.createObjectURL;
 exports.removeNullCharacters = pdfjsSharedUtil.removeNullCharacters;
 exports.shadow = pdfjsSharedUtil.shadow;
 exports.Util = pdfjsSharedUtil.Util;
-exports.ReadableStream = pdfjsSharedUtil.ReadableStream;
-exports.URL = pdfjsSharedUtil.URL;
 exports.RenderingCancelledException = pdfjsDisplayDisplayUtils.RenderingCancelledException;
 exports.getFilenameFromUrl = pdfjsDisplayDisplayUtils.getFilenameFromUrl;
 exports.LinkTarget = pdfjsDisplayDisplayUtils.LinkTarget;

@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,20 +26,20 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.JpegStream = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-var _stream = require("./stream");
+var _stream = require("./stream.js");
 
-var _primitives = require("./primitives");
+var _primitives = require("./primitives.js");
 
-var _jpg = require("./jpg");
+var _jpg = require("./jpg.js");
 
-var JpegStream = function JpegStreamClosure() {
+const JpegStream = function JpegStreamClosure() {
   function JpegStream(stream, maybeLength, dict, params) {
-    var ch;
+    let ch;
 
     while ((ch = stream.getByte()) !== -1) {
-      if (ch === 0xFF) {
+      if (ch === 0xff) {
         stream.skip(-1);
         break;
       }
@@ -54,9 +54,9 @@ var JpegStream = function JpegStreamClosure() {
   }
 
   JpegStream.prototype = Object.create(_stream.DecodeStream.prototype);
-  Object.defineProperty(JpegStream.prototype, 'bytes', {
+  Object.defineProperty(JpegStream.prototype, "bytes", {
     get: function JpegStream_bytes() {
-      return (0, _util.shadow)(this, 'bytes', this.stream.getBytes(this.maybeLength));
+      return (0, _util.shadow)(this, "bytes", this.stream.getBytes(this.maybeLength));
     },
     configurable: true
   });
@@ -68,20 +68,20 @@ var JpegStream = function JpegStreamClosure() {
       return;
     }
 
-    var jpegOptions = {
+    const jpegOptions = {
       decodeTransform: undefined,
       colorTransform: undefined
     };
-    var decodeArr = this.dict.getArray('Decode', 'D');
+    const decodeArr = this.dict.getArray("Decode", "D");
 
     if (this.forceRGB && Array.isArray(decodeArr)) {
-      var bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
-      var decodeArrLength = decodeArr.length;
-      var transform = new Int32Array(decodeArrLength);
-      var transformNeeded = false;
-      var maxValue = (1 << bitsPerComponent) - 1;
+      const bitsPerComponent = this.dict.get("BitsPerComponent") || 8;
+      const decodeArrLength = decodeArr.length;
+      const transform = new Int32Array(decodeArrLength);
+      let transformNeeded = false;
+      const maxValue = (1 << bitsPerComponent) - 1;
 
-      for (var i = 0; i < decodeArrLength; i += 2) {
+      for (let i = 0; i < decodeArrLength; i += 2) {
         transform[i] = (decodeArr[i + 1] - decodeArr[i]) * 256 | 0;
         transform[i + 1] = decodeArr[i] * maxValue | 0;
 
@@ -96,16 +96,16 @@ var JpegStream = function JpegStreamClosure() {
     }
 
     if ((0, _primitives.isDict)(this.params)) {
-      var colorTransform = this.params.get('ColorTransform');
+      const colorTransform = this.params.get("ColorTransform");
 
       if (Number.isInteger(colorTransform)) {
         jpegOptions.colorTransform = colorTransform;
       }
     }
 
-    var jpegImage = new _jpg.JpegImage(jpegOptions);
+    const jpegImage = new _jpg.JpegImage(jpegOptions);
     jpegImage.parse(this.bytes);
-    var data = jpegImage.getData({
+    const data = jpegImage.getData({
       width: this.drawWidth,
       height: this.drawHeight,
       forceRGB: this.forceRGB,
@@ -116,9 +116,118 @@ var JpegStream = function JpegStreamClosure() {
     this.eof = true;
   };
 
-  JpegStream.prototype.getIR = function () {
-    var forceDataSchema = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-    return (0, _util.createObjectURL)(this.bytes, 'image/jpeg', forceDataSchema);
+  Object.defineProperty(JpegStream.prototype, "maybeValidDimensions", {
+    get: function JpegStream_maybeValidDimensions() {
+      const {
+        dict,
+        stream
+      } = this;
+      const dictHeight = dict.get("Height", "H");
+      const startPos = stream.pos;
+      let validDimensions = true,
+          foundSOF = false,
+          b;
+
+      while ((b = stream.getByte()) !== -1) {
+        if (b !== 0xff) {
+          continue;
+        }
+
+        switch (stream.getByte()) {
+          case 0xc0:
+          case 0xc1:
+          case 0xc2:
+            foundSOF = true;
+            stream.pos += 2;
+            stream.pos += 1;
+            const scanLines = stream.getUint16();
+
+            if (scanLines === dictHeight) {
+              break;
+            }
+
+            if (scanLines === 0) {
+              validDimensions = false;
+              break;
+            }
+
+            if (scanLines > dictHeight * 10) {
+              validDimensions = false;
+              break;
+            }
+
+            break;
+
+          case 0xc3:
+          case 0xc5:
+          case 0xc6:
+          case 0xc7:
+          case 0xc9:
+          case 0xca:
+          case 0xcb:
+          case 0xcd:
+          case 0xce:
+          case 0xcf:
+            foundSOF = true;
+            break;
+
+          case 0xc4:
+          case 0xcc:
+          case 0xda:
+          case 0xdb:
+          case 0xdc:
+          case 0xdd:
+          case 0xde:
+          case 0xdf:
+          case 0xe0:
+          case 0xe1:
+          case 0xe2:
+          case 0xe3:
+          case 0xe4:
+          case 0xe5:
+          case 0xe6:
+          case 0xe7:
+          case 0xe8:
+          case 0xe9:
+          case 0xea:
+          case 0xeb:
+          case 0xec:
+          case 0xed:
+          case 0xee:
+          case 0xef:
+          case 0xfe:
+            const markerLength = stream.getUint16();
+
+            if (markerLength > 2) {
+              stream.skip(markerLength - 2);
+            } else {
+              stream.skip(-2);
+            }
+
+            break;
+
+          case 0xff:
+            stream.skip(-1);
+            break;
+
+          case 0xd9:
+            foundSOF = true;
+            break;
+        }
+
+        if (foundSOF) {
+          break;
+        }
+      }
+
+      stream.pos = startPos;
+      return (0, _util.shadow)(this, "maybeValidDimensions", validDimensions);
+    },
+    configurable: true
+  });
+
+  JpegStream.prototype.getIR = function (forceDataSchema = false) {
+    return (0, _util.createObjectURL)(this.bytes, "image/jpeg", forceDataSchema);
   };
 
   return JpegStream;

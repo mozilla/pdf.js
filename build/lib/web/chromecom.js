@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,56 +26,28 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ChromeCom = void 0;
 
-var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
+var _app = require("./app.js");
 
-var _app = require("./app");
+var _app_options = require("./app_options.js");
 
-var _app_options = require("./app_options");
+var _preferences = require("./preferences.js");
 
-var _preferences = require("./preferences");
+var _download_manager = require("./download_manager.js");
 
-var _download_manager = require("./download_manager");
-
-var _genericl10n = require("./genericl10n");
-
-var _pdf = require("../pdf");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
-
-function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+var _genericl10n = require("./genericl10n.js");
 
 {
-  throw new Error('Module "pdfjs-web/chromecom" shall not be used outside ' + 'CHROME build.');
+  throw new Error('Module "pdfjs-web/chromecom" shall not be used outside CHROME build.');
 }
-var ChromeCom = {
-  request: function request(action, data, callback) {
-    var message = {
-      action: action,
-      data: data
+const ChromeCom = {
+  request(action, data, callback) {
+    const message = {
+      action,
+      data
     };
 
     if (!chrome.runtime) {
-      console.error('chrome.runtime is undefined.');
+      console.error("chrome.runtime is undefined.");
 
       if (callback) {
         callback();
@@ -86,8 +58,9 @@ var ChromeCom = {
       chrome.runtime.sendMessage(message);
     }
   },
-  resolvePDFFile: function resolvePDFFile(file, overlayManager, callback) {
-    file = file.replace(/^drive:/i, 'filesystem:' + location.origin + '/external/');
+
+  resolvePDFFile(file, overlayManager, callback) {
+    file = file.replace(/^drive:/i, "filesystem:" + location.origin + "/external/");
 
     if (/^https?:/.test(file)) {
       setReferer(file, function () {
@@ -99,7 +72,7 @@ var ChromeCom = {
     if (/^file?:/.test(file)) {
       getEmbedderOrigin(function (origin) {
         if (origin && !/^file:|^chrome-extension:/.test(origin)) {
-          _app.PDFViewerApplication.error('Blocked ' + origin + ' from loading ' + file + '. Refused to load a local file in a non-local page ' + 'for security reasons.');
+          _app.PDFViewerApplication.error("Blocked " + origin + " from loading " + file + ". Refused to load a local file in a non-local page " + "for security reasons.");
 
           return;
         }
@@ -117,13 +90,14 @@ var ChromeCom = {
 
     callback(file);
   }
+
 };
 exports.ChromeCom = ChromeCom;
 
 function getEmbedderOrigin(callback) {
-  var origin = window === top ? location.origin : location.ancestorOrigins[0];
+  const origin = window === top ? location.origin : location.ancestorOrigins[0];
 
-  if (origin === 'null') {
+  if (origin === "null") {
     getParentOrigin(callback);
   } else {
     callback(origin);
@@ -131,11 +105,11 @@ function getEmbedderOrigin(callback) {
 }
 
 function getParentOrigin(callback) {
-  ChromeCom.request('getParentOrigin', null, callback);
+  ChromeCom.request("getParentOrigin", null, callback);
 }
 
 function isAllowedFileSchemeAccess(callback) {
-  ChromeCom.request('isAllowedFileSchemeAccess', null, callback);
+  ChromeCom.request("isAllowedFileSchemeAccess", null, callback);
 }
 
 function isRuntimeAvailable() {
@@ -154,140 +128,140 @@ function reloadIfRuntimeIsUnavailable() {
   }
 }
 
-var chromeFileAccessOverlayPromise;
+let chromeFileAccessOverlayPromise;
 
 function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
-  var onCloseOverlay = null;
+  let onCloseOverlay = null;
 
   if (top !== window) {
-    window.addEventListener('focus', reloadIfRuntimeIsUnavailable);
+    window.addEventListener("focus", reloadIfRuntimeIsUnavailable);
 
-    onCloseOverlay = function onCloseOverlay() {
-      window.removeEventListener('focus', reloadIfRuntimeIsUnavailable);
+    onCloseOverlay = function () {
+      window.removeEventListener("focus", reloadIfRuntimeIsUnavailable);
       reloadIfRuntimeIsUnavailable();
-      overlayManager.close('chromeFileAccessOverlay');
+      overlayManager.close("chromeFileAccessOverlay");
     };
   }
 
   if (!chromeFileAccessOverlayPromise) {
-    chromeFileAccessOverlayPromise = overlayManager.register('chromeFileAccessOverlay', document.getElementById('chromeFileAccessOverlay'), onCloseOverlay, true);
+    chromeFileAccessOverlayPromise = overlayManager.register("chromeFileAccessOverlay", document.getElementById("chromeFileAccessOverlay"), onCloseOverlay, true);
   }
 
   chromeFileAccessOverlayPromise.then(function () {
-    var iconPath = chrome.runtime.getManifest().icons[48];
-    document.getElementById('chrome-pdfjs-logo-bg').style.backgroundImage = 'url(' + chrome.runtime.getURL(iconPath) + ')';
-    var i18nFileAccessLabel = {
-      "am": "\u1208\u134B\u12ED\u120D \u12E9\u12A0\u122D\u12A4\u120D\u12CE\u127D \u1218\u12F3\u1228\u123B \u134D\u1240\u12F5",
-      "ar": "\u200F\u0627\u0644\u0633\u0645\u0627\u062D \u0628\u0627\u0644\u062F\u062E\u0648\u0644 \u0625\u0644\u0649 \u0639\u0646\u0627\u0648\u064A\u0646 URL \u0644\u0644\u0645\u0644\u0641\u0627\u062A",
-      "bg": "\u0414\u0430 \u0441\u0435 \u0440\u0430\u0437\u0440\u0435\u0448\u0438 \u0434\u043E\u0441\u0442\u044A\u043F \u0434\u043E URL \u0430\u0434\u0440\u0435\u0441\u0438\u0442\u0435 \u043D\u0430 \u0444\u0430\u0439\u043B\u043E\u0432\u0435\u0442\u0435",
-      "bn": "\u09AB\u09BE\u0987\u09B2 URL\u0997\u09C1\u09B2\u09BF\u09A4\u09C7 \u0985\u09CD\u09AF\u09BE\u0995\u09CD\u09B8\u09C7\u09B8 \u09AE\u099E\u09CD\u099C\u09C1\u09B0 \u0995\u09B0\u09C1\u09A8",
-      "ca": "Permet l'acc\xE9s als URL de fitxer",
-      "cs": "Umo\u017Enit p\u0159\xEDstup k adres\xE1m URL soubor\u016F",
-      "da": "Tillad adgang til webadresser p\xE5 filer",
+    const iconPath = chrome.runtime.getManifest().icons[48];
+    document.getElementById("chrome-pdfjs-logo-bg").style.backgroundImage = "url(" + chrome.runtime.getURL(iconPath) + ")";
+    const i18nFileAccessLabel = {
+      "am": "\u1208\u134b\u12ed\u120d \u12e9\u12a0\u122d\u12a4\u120d\u12ce\u127d \u1218\u12f3\u1228\u123b \u134d\u1240\u12f5",
+      "ar": "\u200f\u0627\u0644\u0633\u0645\u0627\u062d \u0628\u0627\u0644\u062f\u062e\u0648\u0644 \u0625\u0644\u0649 \u0639\u0646\u0627\u0648\u064a\u0646 URL \u0644\u0644\u0645\u0644\u0641\u0627\u062a",
+      "bg": "\u0414\u0430 \u0441\u0435 \u0440\u0430\u0437\u0440\u0435\u0448\u0438 \u0434\u043e\u0441\u0442\u044a\u043f \u0434\u043e URL \u0430\u0434\u0440\u0435\u0441\u0438\u0442\u0435 \u043d\u0430 \u0444\u0430\u0439\u043b\u043e\u0432\u0435\u0442\u0435",
+      "bn": "\u09ab\u09be\u0987\u09b2 URL\u0997\u09c1\u09b2\u09bf\u09a4\u09c7 \u0985\u09cd\u09af\u09be\u0995\u09cd\u09b8\u09c7\u09b8 \u09ae\u099e\u09cd\u099c\u09c1\u09b0 \u0995\u09b0\u09c1\u09a8",
+      "ca": "Permet l'acc\u00e9s als URL de fitxer",
+      "cs": "Umo\u017enit p\u0159\u00edstup k adres\u00e1m URL soubor\u016f",
+      "da": "Tillad adgang til webadresser p\u00e5 filer",
       "de": "Zugriff auf Datei-URLs zulassen",
-      "el": "\u039D\u03B1 \u03B5\u03C0\u03B9\u03C4\u03C1\u03AD\u03C0\u03B5\u03C4\u03B1\u03B9 \u03B7 \u03C0\u03C1\u03CC\u03C3\u03B2\u03B1\u03C3\u03B7 \u03C3\u03B5 \u03B4\u03B9\u03B5\u03C5\u03B8\u03CD\u03BD\u03C3\u03B5\u03B9\u03C2 URL \u03B1\u03C1\u03C7\u03B5\u03AF\u03C9\u03BD",
+      "el": "\u039d\u03b1 \u03b5\u03c0\u03b9\u03c4\u03c1\u03ad\u03c0\u03b5\u03c4\u03b1\u03b9 \u03b7 \u03c0\u03c1\u03cc\u03c3\u03b2\u03b1\u03c3\u03b7 \u03c3\u03b5 \u03b4\u03b9\u03b5\u03c5\u03b8\u03cd\u03bd\u03c3\u03b5\u03b9\u03c2 URL \u03b1\u03c1\u03c7\u03b5\u03af\u03c9\u03bd",
       "en-GB": "Allow access to file URLs",
       "es": "Permitir acceso a URL de archivo",
       "es-419": "Permitir el acceso a las URL del archivo",
-      "et": "Luba juurdep\xE4\xE4s failide URL-idele",
-      "fa": "\u200F\u0627\u062C\u0627\u0632\u0647\u0654 \u062F\u0633\u062A\u0631\u0633\u06CC \u0628\u0647 URL \u0647\u0627\u06CC \u0641\u0627\u06CC\u0644",
-      "fi": "Salli tiedostojen URL-osoitteiden k\xE4ytt\xF6",
+      "et": "Luba juurdep\u00e4\u00e4s failide URL-idele",
+      "fa": "\u200f\u0627\u062c\u0627\u0632\u0647\u0654 \u062f\u0633\u062a\u0631\u0633\u06cc \u0628\u0647 URL \u0647\u0627\u06cc \u0641\u0627\u06cc\u0644",
+      "fi": "Salli tiedostojen URL-osoitteiden k\u00e4ytt\u00f6",
       "fil": "Payagan ang access na mag-file ng mga URL",
-      "fr": "Autoriser l'acc\xE8s aux URL de fichier",
-      "gu": "URL \u0AAB\u0ABE\u0A87\u0AB2 \u0A95\u0AB0\u0AB5\u0ABE \u0A8D\u0A95\u0ACD\u0AB8\u0AC7\u0AB8\u0AA8\u0AC0 \u0AAE\u0A82\u0A9C\u0AC2\u0AB0\u0AC0 \u0A86\u0AAA\u0ACB",
-      "hi": "\u092B\u093C\u093E\u0907\u0932 URL \u0924\u0915 \u092A\u0939\u0941\u0902\u091A\u0928\u0947 \u0915\u0940 \u0905\u0928\u0941\u092E\u0924\u093F \u0926\u0947\u0902",
+      "fr": "Autoriser l'acc\u00e8s aux URL de fichier",
+      "gu": "URL \u0aab\u0abe\u0a87\u0ab2 \u0a95\u0ab0\u0ab5\u0abe \u0a8d\u0a95\u0acd\u0ab8\u0ac7\u0ab8\u0aa8\u0ac0 \u0aae\u0a82\u0a9c\u0ac2\u0ab0\u0ac0 \u0a86\u0aaa\u0acb",
+      "hi": "\u092b\u093c\u093e\u0907\u0932 URL \u0924\u0915 \u092a\u0939\u0941\u0902\u091a\u0928\u0947 \u0915\u0940 \u0905\u0928\u0941\u092e\u0924\u093f \u0926\u0947\u0902",
       "hr": "Dozvoli pristup URL-ovima datoteke",
-      "hu": "F\xE1jl URL-ekhez val\xF3 hozz\xE1f\xE9r\xE9s enged\xE9lyez\xE9se",
+      "hu": "F\u00e1jl URL-ekhez val\u00f3 hozz\u00e1f\u00e9r\u00e9s enged\u00e9lyez\u00e9se",
       "id": "Izinkan akses ke URL file",
       "it": "Consenti l'accesso agli URL dei file",
-      "iw": "\u05D0\u05E4\u05E9\u05E8 \u05D2\u05D9\u05E9\u05D4 \u05DC\u05DB\u05EA\u05D5\u05D1\u05D5\u05EA \u05D0\u05EA\u05E8\u05D9\u05DD \u05E9\u05DC \u05E7\u05D1\u05E6\u05D9\u05DD",
-      "ja": "\u30D5\u30A1\u30A4\u30EB\u306E URL \u3078\u306E\u30A2\u30AF\u30BB\u30B9\u3092\u8A31\u53EF\u3059\u308B",
-      "kn": "URL \u0C97\u0CB3\u0CA8\u0CCD\u0CA8\u0CC1 \u0CAB\u0CC8\u0CB2\u0CCD\u200C\u0C97\u0CB3\u0CBF\u0C97\u0CC6 \u0CAA\u0CCD\u0CB0\u0CB5\u0CC7\u0CB6\u0CBF\u0CB8\u0CB2\u0CC1 \u0C85\u0CA8\u0CC1\u0CAE\u0CA4\u0CBF\u0CB8\u0CBF",
-      "ko": "\uD30C\uC77C URL\uC5D0 \uB300\uD55C \uC561\uC138\uC2A4 \uD5C8\uC6A9",
+      "iw": "\u05d0\u05e4\u05e9\u05e8 \u05d2\u05d9\u05e9\u05d4 \u05dc\u05db\u05ea\u05d5\u05d1\u05d5\u05ea \u05d0\u05ea\u05e8\u05d9\u05dd \u05e9\u05dc \u05e7\u05d1\u05e6\u05d9\u05dd",
+      "ja": "\u30d5\u30a1\u30a4\u30eb\u306e URL \u3078\u306e\u30a2\u30af\u30bb\u30b9\u3092\u8a31\u53ef\u3059\u308b",
+      "kn": "URL \u0c97\u0cb3\u0ca8\u0ccd\u0ca8\u0cc1 \u0cab\u0cc8\u0cb2\u0ccd\u200c\u0c97\u0cb3\u0cbf\u0c97\u0cc6 \u0caa\u0ccd\u0cb0\u0cb5\u0cc7\u0cb6\u0cbf\u0cb8\u0cb2\u0cc1 \u0c85\u0ca8\u0cc1\u0cae\u0ca4\u0cbf\u0cb8\u0cbf",
+      "ko": "\ud30c\uc77c URL\uc5d0 \ub300\ud55c \uc561\uc138\uc2a4 \ud5c8\uc6a9",
       "lt": "Leisti pasiekti failo URL",
-      "lv": "At\u013Caut piek\u013Cuvi faila vietr\u0101\u017Eiem URL",
-      "ml": "URL \u0D15\u0D33\u0D4D\u200D\u200C \u0D2B\u0D2F\u0D32\u0D4D\u200D\u200C \u0D1A\u0D46\u0D2F\u0D4D\u0D2F\u0D41\u0D28\u0D4D\u0D28\u0D24\u0D3F\u0D28\u0D4D \u0D06\u0D15\u0D4D\u200D\u0D38\u0D38\u0D4D\u0D38\u0D4D \u0D05\u0D28\u0D41\u0D35\u0D26\u0D3F\u0D15\u0D4D\u0D15\u0D41\u0D15",
-      "mr": "\u092B\u093E\u0907\u0932 URL \u092E\u0927\u094D\u092F\u0947 \u092A\u094D\u0930\u0935\u0947\u0936\u093E\u0938 \u0905\u0928\u0941\u092E\u0924\u0940 \u0926\u094D\u092F\u093E",
+      "lv": "At\u013caut piek\u013cuvi faila vietr\u0101\u017eiem URL",
+      "ml": "URL \u0d15\u0d33\u0d4d\u200d\u200c \u0d2b\u0d2f\u0d32\u0d4d\u200d\u200c \u0d1a\u0d46\u0d2f\u0d4d\u0d2f\u0d41\u0d28\u0d4d\u0d28\u0d24\u0d3f\u0d28\u0d4d \u0d06\u0d15\u0d4d\u200d\u0d38\u0d38\u0d4d\u0d38\u0d4d \u0d05\u0d28\u0d41\u0d35\u0d26\u0d3f\u0d15\u0d4d\u0d15\u0d41\u0d15",
+      "mr": "\u092b\u093e\u0907\u0932 URL \u092e\u0927\u094d\u092f\u0947 \u092a\u094d\u0930\u0935\u0947\u0936\u093e\u0938 \u0905\u0928\u0941\u092e\u0924\u0940 \u0926\u094d\u092f\u093e",
       "ms": "Membenarkan akses ke URL fail",
       "nl": "Toegang tot bestand-URL's toestaan",
       "no": "Tillat tilgang til filnettadresser",
-      "pl": "Zezwalaj na dost\u0119p do adres\xF3w URL plik\xF3w",
+      "pl": "Zezwalaj na dost\u0119p do adres\u00f3w URL plik\u00f3w",
       "pt-BR": "Permitir acesso aos URLs do arquivo",
       "pt-PT": "Permitir acesso a URLs de ficheiro",
       "ro": "Permite accesul la adresele URL de fi\u0219iere",
-      "ru": "\u0420\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044C \u043E\u0442\u043A\u0440\u044B\u0432\u0430\u0442\u044C \u0444\u0430\u0439\u043B\u044B \u043F\u043E \u0441\u0441\u044B\u043B\u043A\u0430\u043C",
-      "sk": "Povoli\u0165 pr\xEDstup k webov\xFDm adres\xE1m s\xFAboru",
+      "ru": "\u0420\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044c \u043e\u0442\u043a\u0440\u044b\u0432\u0430\u0442\u044c \u0444\u0430\u0439\u043b\u044b \u043f\u043e \u0441\u0441\u044b\u043b\u043a\u0430\u043c",
+      "sk": "Povoli\u0165 pr\u00edstup k webov\u00fdm adres\u00e1m s\u00faboru",
       "sl": "Dovoli dostop do URL-jev datoteke",
-      "sr": "\u0414\u043E\u0437\u0432\u043E\u043B\u0438 \u043F\u0440\u0438\u0441\u0442\u0443\u043F URL \u0430\u0434\u0440\u0435\u0441\u0430\u043C\u0430 \u0434\u0430\u0442\u043E\u0442\u0435\u043A\u0430",
-      "sv": "Till\xE5t \xE5tkomst till webbadresser i filen",
+      "sr": "\u0414\u043e\u0437\u0432\u043e\u043b\u0438 \u043f\u0440\u0438\u0441\u0442\u0443\u043f URL \u0430\u0434\u0440\u0435\u0441\u0430\u043c\u0430 \u0434\u0430\u0442\u043e\u0442\u0435\u043a\u0430",
+      "sv": "Till\u00e5t \u00e5tkomst till webbadresser i filen",
       "sw": "Ruhusu kufikia URL za faili",
-      "ta": "\u0B95\u0BCB\u0BAA\u0BCD\u0BAA\u0BC1  URL\u0B95\u0BB3\u0BC1\u0B95\u0BCD\u0B95\u0BC1 \u0B85\u0BA3\u0BC1\u0B95\u0BB2\u0BC8 \u0B85\u0BA9\u0BC1\u0BAE\u0BA4\u0BBF",
-      "te": "\u0C2B\u0C48\u0C32\u0C4D URL\u0C32\u0C15\u0C41 \u0C2A\u0C4D\u0C30\u0C3E\u0C2A\u0C4D\u0C24\u0C3F\u0C28\u0C3F \u0C05\u0C28\u0C41\u0C2E\u0C24\u0C3F\u0C02\u0C1A\u0C41",
-      "th": "\u0E2D\u0E19\u0E38\u0E0D\u0E32\u0E15\u0E43\u0E2B\u0E49\u0E40\u0E02\u0E49\u0E32\u0E16\u0E36\u0E07\u0E44\u0E1F\u0E25\u0E4C URL",
-      "tr": "Dosya URL'lerine eri\u015Fime izin ver",
-      "uk": "\u041D\u0430\u0434\u0430\u0432\u0430\u0442\u0438 \u0434\u043E\u0441\u0442\u0443\u043F \u0434\u043E URL-\u0430\u0434\u0440\u0435\u0441 \u0444\u0430\u0439\u043B\u0443",
-      "vi": "Cho ph\xE9p truy c\u1EADp v\xE0o c\xE1c URL c\u1EE7a t\u1EC7p",
-      "zh-CN": "\u5141\u8BB8\u8BBF\u95EE\u6587\u4EF6\u7F51\u5740",
-      "zh-TW": "\u5141\u8A31\u5B58\u53D6\u6A94\u6848\u7DB2\u5740"
+      "ta": "\u0b95\u0bcb\u0baa\u0bcd\u0baa\u0bc1  URL\u0b95\u0bb3\u0bc1\u0b95\u0bcd\u0b95\u0bc1 \u0b85\u0ba3\u0bc1\u0b95\u0bb2\u0bc8 \u0b85\u0ba9\u0bc1\u0bae\u0ba4\u0bbf",
+      "te": "\u0c2b\u0c48\u0c32\u0c4d URL\u0c32\u0c15\u0c41 \u0c2a\u0c4d\u0c30\u0c3e\u0c2a\u0c4d\u0c24\u0c3f\u0c28\u0c3f \u0c05\u0c28\u0c41\u0c2e\u0c24\u0c3f\u0c02\u0c1a\u0c41",
+      "th": "\u0e2d\u0e19\u0e38\u0e0d\u0e32\u0e15\u0e43\u0e2b\u0e49\u0e40\u0e02\u0e49\u0e32\u0e16\u0e36\u0e07\u0e44\u0e1f\u0e25\u0e4c URL",
+      "tr": "Dosya URL'lerine eri\u015fime izin ver",
+      "uk": "\u041d\u0430\u0434\u0430\u0432\u0430\u0442\u0438 \u0434\u043e\u0441\u0442\u0443\u043f \u0434\u043e URL-\u0430\u0434\u0440\u0435\u0441 \u0444\u0430\u0439\u043b\u0443",
+      "vi": "Cho ph\u00e9p truy c\u1eadp v\u00e0o c\u00e1c URL c\u1ee7a t\u1ec7p",
+      "zh-CN": "\u5141\u8bb8\u8bbf\u95ee\u6587\u4ef6\u7f51\u5740",
+      "zh-TW": "\u5141\u8a31\u5b58\u53d6\u6a94\u6848\u7db2\u5740"
     }[chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()];
 
     if (i18nFileAccessLabel) {
-      document.getElementById('chrome-file-access-label').textContent = i18nFileAccessLabel;
+      document.getElementById("chrome-file-access-label").textContent = i18nFileAccessLabel;
     }
 
-    var link = document.getElementById('chrome-link-to-extensions-page');
-    link.href = 'chrome://extensions/?id=' + chrome.runtime.id;
+    const link = document.getElementById("chrome-link-to-extensions-page");
+    link.href = "chrome://extensions/?id=" + chrome.runtime.id;
 
     link.onclick = function (e) {
       e.preventDefault();
-      ChromeCom.request('openExtensionsPageForFileAccess', {
+      ChromeCom.request("openExtensionsPageForFileAccess", {
         newTab: e.ctrlKey || e.metaKey || e.button === 1 || window !== top
       });
     };
 
-    document.getElementById('chrome-url-of-local-file').textContent = fileUrl;
+    document.getElementById("chrome-url-of-local-file").textContent = fileUrl;
 
-    document.getElementById('chrome-file-fallback').onchange = function () {
-      var file = this.files[0];
+    document.getElementById("chrome-file-fallback").onchange = function () {
+      const file = this.files[0];
 
       if (file) {
-        var originalFilename = decodeURIComponent(fileUrl.split('/').pop());
-        var originalUrl = fileUrl;
+        const originalFilename = decodeURIComponent(fileUrl.split("/").pop());
+        let originalUrl = fileUrl;
 
         if (originalFilename !== file.name) {
-          var msg = 'The selected file does not match the original file.' + '\nOriginal: ' + originalFilename + '\nSelected: ' + file.name + '\nDo you want to open the selected file?';
+          const msg = "The selected file does not match the original file." + "\nOriginal: " + originalFilename + "\nSelected: " + file.name + "\nDo you want to open the selected file?";
 
           if (!confirm(msg)) {
-            this.value = '';
+            this.value = "";
             return;
           }
 
-          originalUrl = 'file:///fakepath/to/' + encodeURIComponent(file.name);
+          originalUrl = "file:///fakepath/to/" + encodeURIComponent(file.name);
         }
 
-        callback(_pdf.URL.createObjectURL(file), file.size, originalUrl);
-        overlayManager.close('chromeFileAccessOverlay');
+        callback(URL.createObjectURL(file), file.size, originalUrl);
+        overlayManager.close("chromeFileAccessOverlay");
       }
     };
 
-    overlayManager.open('chromeFileAccessOverlay');
+    overlayManager.open("chromeFileAccessOverlay");
   });
 }
 
 if (window === top) {
-  addEventListener('unload', function () {
+  addEventListener("unload", function () {
     if (!isRuntimeAvailable()) {
-      localStorage.setItem('unload-' + Date.now() + '-' + document.hidden + '-' + location.href, JSON.stringify(history.state));
+      localStorage.setItem("unload-" + Date.now() + "-" + document.hidden + "-" + location.href, JSON.stringify(history.state));
     }
   });
 }
 
-var port;
+let port;
 
 function setReferer(url, callback) {
   if (!port) {
     port = chrome.runtime.connect({
-      name: 'chromecom-referrer'
+      name: "chromecom-referrer"
     });
   }
 
@@ -300,9 +274,9 @@ function setReferer(url, callback) {
 
   function onMessage(referer) {
     if (referer) {
-      var state = window.history.state || {};
+      const state = window.history.state || {};
       state.chromecomState = referer;
-      window.history.replaceState(state, '');
+      window.history.replaceState(state, "");
     }
 
     onCompleted();
@@ -320,160 +294,99 @@ function setReferer(url, callback) {
   }
 }
 
-var storageArea = chrome.storage.sync || chrome.storage.local;
+const storageArea = chrome.storage.sync || chrome.storage.local;
 
-var ChromePreferences =
-/*#__PURE__*/
-function (_BasePreferences) {
-  _inherits(ChromePreferences, _BasePreferences);
-
-  function ChromePreferences() {
-    _classCallCheck(this, ChromePreferences);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(ChromePreferences).apply(this, arguments));
+class ChromePreferences extends _preferences.BasePreferences {
+  async _writeToStorage(prefObj) {
+    return new Promise(resolve => {
+      if (prefObj === this.defaults) {
+        const keysToRemove = Object.keys(this.defaults);
+        storageArea.remove(keysToRemove, function () {
+          resolve();
+        });
+      } else {
+        storageArea.set(prefObj, function () {
+          resolve();
+        });
+      }
+    });
   }
 
-  _createClass(ChromePreferences, [{
-    key: "_writeToStorage",
-    value: function () {
-      var _writeToStorage2 = _asyncToGenerator(
-      /*#__PURE__*/
-      _regenerator["default"].mark(function _callee(prefObj) {
-        var _this = this;
+  async _readFromStorage(prefObj) {
+    return new Promise(resolve => {
+      const getPreferences = defaultPrefs => {
+        if (chrome.runtime.lastError) {
+          defaultPrefs = this.defaults;
+        }
 
-        return _regenerator["default"].wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                return _context.abrupt("return", new Promise(function (resolve) {
-                  if (prefObj === _this.defaults) {
-                    var keysToRemove = Object.keys(_this.defaults);
-                    storageArea.remove(keysToRemove, function () {
-                      resolve();
-                    });
-                  } else {
-                    storageArea.set(prefObj, function () {
-                      resolve();
-                    });
-                  }
-                }));
+        storageArea.get(defaultPrefs, function (readPrefs) {
+          resolve(readPrefs);
+        });
+      };
 
-              case 1:
-              case "end":
-                return _context.stop();
+      if (chrome.storage.managed) {
+        const defaultManagedPrefs = Object.assign({
+          enableHandToolOnLoad: false,
+          disableTextLayer: false,
+          enhanceTextSelection: false,
+          showPreviousViewOnLoad: true,
+          disablePageMode: false
+        }, this.defaults);
+        chrome.storage.managed.get(defaultManagedPrefs, function (items) {
+          items = items || defaultManagedPrefs;
+
+          if (items.enableHandToolOnLoad && !items.cursorToolOnLoad) {
+            items.cursorToolOnLoad = 1;
+          }
+
+          delete items.enableHandToolOnLoad;
+
+          if (items.textLayerMode !== 1) {
+            if (items.disableTextLayer) {
+              items.textLayerMode = 0;
+            } else if (items.enhanceTextSelection) {
+              items.textLayerMode = 2;
             }
           }
-        }, _callee);
-      }));
 
-      function _writeToStorage(_x) {
-        return _writeToStorage2.apply(this, arguments);
-      }
+          delete items.disableTextLayer;
+          delete items.enhanceTextSelection;
 
-      return _writeToStorage;
-    }()
-  }, {
-    key: "_readFromStorage",
-    value: function () {
-      var _readFromStorage2 = _asyncToGenerator(
-      /*#__PURE__*/
-      _regenerator["default"].mark(function _callee2(prefObj) {
-        var _this2 = this;
-
-        return _regenerator["default"].wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                return _context2.abrupt("return", new Promise(function (resolve) {
-                  var getPreferences = function getPreferences(defaultPrefs) {
-                    if (chrome.runtime.lastError) {
-                      defaultPrefs = _this2.defaults;
-                    }
-
-                    storageArea.get(defaultPrefs, function (readPrefs) {
-                      resolve(readPrefs);
-                    });
-                  };
-
-                  if (chrome.storage.managed) {
-                    var defaultManagedPrefs = Object.assign({
-                      enableHandToolOnLoad: false,
-                      disableTextLayer: false,
-                      enhanceTextSelection: false,
-                      showPreviousViewOnLoad: true,
-                      disablePageMode: false
-                    }, _this2.defaults);
-                    chrome.storage.managed.get(defaultManagedPrefs, function (items) {
-                      items = items || defaultManagedPrefs;
-
-                      if (items.enableHandToolOnLoad && !items.cursorToolOnLoad) {
-                        items.cursorToolOnLoad = 1;
-                      }
-
-                      delete items.enableHandToolOnLoad;
-
-                      if (items.textLayerMode !== 1) {
-                        if (items.disableTextLayer) {
-                          items.textLayerMode = 0;
-                        } else if (items.enhanceTextSelection) {
-                          items.textLayerMode = 2;
-                        }
-                      }
-
-                      delete items.disableTextLayer;
-                      delete items.enhanceTextSelection;
-
-                      if (!items.showPreviousViewOnLoad && !items.viewOnLoad) {
-                        items.viewOnLoad = 1;
-                      }
-
-                      delete items.showPreviousViewOnLoad;
-                      delete items.disablePageMode;
-                      getPreferences(items);
-                    });
-                  } else {
-                    getPreferences(_this2.defaults);
-                  }
-                }));
-
-              case 1:
-              case "end":
-                return _context2.stop();
-            }
+          if (!items.showPreviousViewOnLoad && !items.viewOnLoad) {
+            items.viewOnLoad = 1;
           }
-        }, _callee2);
-      }));
 
-      function _readFromStorage(_x2) {
-        return _readFromStorage2.apply(this, arguments);
+          delete items.showPreviousViewOnLoad;
+          delete items.disablePageMode;
+          getPreferences(items);
+        });
+      } else {
+        getPreferences(this.defaults);
       }
+    });
+  }
 
-      return _readFromStorage;
-    }()
-  }]);
+}
 
-  return ChromePreferences;
-}(_preferences.BasePreferences);
+class ChromeExternalServices extends _app.DefaultExternalServices {
+  static initPassiveLoading(callbacks) {
+    ChromeCom.resolvePDFFile(_app_options.AppOptions.get("defaultUrl"), _app.PDFViewerApplication.overlayManager, function (url, length, originalUrl) {
+      callbacks.onOpenWithURL(url, length, originalUrl);
+    });
+  }
 
-var ChromeExternalServices = Object.create(_app.DefaultExternalServices);
+  static createDownloadManager(options) {
+    return new _download_manager.DownloadManager(options);
+  }
 
-ChromeExternalServices.initPassiveLoading = function (callbacks) {
-  var overlayManager = _app.PDFViewerApplication.overlayManager;
-  ChromeCom.resolvePDFFile(_app_options.AppOptions.get('defaultUrl'), overlayManager, function (url, length, originalUrl) {
-    callbacks.onOpenWithURL(url, length, originalUrl);
-  });
-};
+  static createPreferences() {
+    return new ChromePreferences();
+  }
 
-ChromeExternalServices.createDownloadManager = function (options) {
-  return new _download_manager.DownloadManager(options);
-};
+  static createL10n(options) {
+    return new _genericl10n.GenericL10n(navigator.language);
+  }
 
-ChromeExternalServices.createPreferences = function () {
-  return new ChromePreferences();
-};
-
-ChromeExternalServices.createL10n = function (options) {
-  return new _genericl10n.GenericL10n(navigator.language);
-};
+}
 
 _app.PDFViewerApplication.externalServices = ChromeExternalServices;

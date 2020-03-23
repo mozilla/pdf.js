@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,47 +26,33 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PDFDocument = exports.Page = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-var _obj = require("./obj");
+var _obj = require("./obj.js");
 
-var _primitives = require("./primitives");
+var _primitives = require("./primitives.js");
 
-var _core_utils = require("./core_utils");
+var _core_utils = require("./core_utils.js");
 
-var _stream2 = require("./stream");
+var _stream = require("./stream.js");
 
-var _annotation = require("./annotation");
+var _annotation = require("./annotation.js");
 
-var _crypto = require("./crypto");
+var _crypto = require("./crypto.js");
 
-var _parser = require("./parser");
+var _parser = require("./parser.js");
 
-var _operator_list = require("./operator_list");
+var _operator_list = require("./operator_list.js");
 
-var _evaluator = require("./evaluator");
+var _evaluator = require("./evaluator.js");
 
-var _function = require("./function");
+var _function = require("./function.js");
 
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var DEFAULT_USER_UNIT = 1.0;
-var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
+const DEFAULT_USER_UNIT = 1.0;
+const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
 function isAnnotationRenderable(annotation, intent) {
-  return intent === 'display' && annotation.viewable || intent === 'print' && annotation.printable;
+  return intent === "display" && annotation.viewable || intent === "print" && annotation.printable;
 }
 
 function isAnnotationRemoved(annotationsForRemoval, annotation) {
@@ -74,27 +60,21 @@ function isAnnotationRemoved(annotationsForRemoval, annotation) {
     return;
   }
 
-  var data = annotation.data;
-  return annotationsForRemoval.some(function (itm) {
-    return itm === data.annotationType || itm === data.fieldType || itm === 'STx' && data.annotationType === 20 && data.fieldType === 'Tx' && !data.multiLine || itm === 'MTx' && data.annotationType === 20 && data.fieldType === 'Tx' && data.multiLine || itm === 'ABtn' && data.annotationType === 20 && data.fieldType === 'Btn' && !data.radioButton && !data.checkBox || itm === 'CBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.checkBox || itm === 'RBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.radioButton || itm === 'CCh' && data.annotationType === 20 && data.fieldType === 'Ch' && data.combo || itm === 'LCh' && data.annotationType === 20 && data.fieldType === 'Ch' && !data.combo;
-  });
+  let data = annotation.data;
+  return annotationsForRemoval.some(itm => itm === data.annotationType || itm === data.fieldType || itm === 'STx' && data.annotationType === 20 && data.fieldType === 'Tx' && !data.multiLine || itm === 'MTx' && data.annotationType === 20 && data.fieldType === 'Tx' && data.multiLine || itm === 'ABtn' && data.annotationType === 20 && data.fieldType === 'Btn' && !data.radioButton && !data.checkBox || itm === 'CBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.checkBox || itm === 'RBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.radioButton || itm === 'CCh' && data.annotationType === 20 && data.fieldType === 'Ch' && data.combo || itm === 'LCh' && data.annotationType === 20 && data.fieldType === 'Ch' && !data.combo);
 }
 
-var Page =
-/*#__PURE__*/
-function () {
-  function Page(_ref) {
-    var pdfManager = _ref.pdfManager,
-        xref = _ref.xref,
-        pageIndex = _ref.pageIndex,
-        pageDict = _ref.pageDict,
-        ref = _ref.ref,
-        fontCache = _ref.fontCache,
-        builtInCMapCache = _ref.builtInCMapCache,
-        pdfFunctionFactory = _ref.pdfFunctionFactory;
-
-    _classCallCheck(this, Page);
-
+class Page {
+  constructor({
+    pdfManager,
+    xref,
+    pageIndex,
+    pageDict,
+    ref,
+    fontCache,
+    builtInCMapCache,
+    pdfFunctionFactory
+  }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
@@ -105,111 +85,234 @@ function () {
     this.pdfFunctionFactory = pdfFunctionFactory;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
-    var idCounters = {
+    const idCounters = {
       obj: 0
     };
     this.idFactory = {
-      createObjId: function createObjId() {
-        return "p".concat(pageIndex, "_").concat(++idCounters.obj);
+      createObjId() {
+        return `p${pageIndex}_${++idCounters.obj}`;
       },
-      getDocId: function getDocId() {
-        return "g_".concat(pdfManager.docId);
+
+      getDocId() {
+        return `g_${pdfManager.docId}`;
       }
+
     };
   }
 
-  _createClass(Page, [{
-    key: "_getInheritableProperty",
-    value: function _getInheritableProperty(key) {
-      var getArray = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var value = (0, _core_utils.getInheritableProperty)({
-        dict: this.pageDict,
-        key: key,
-        getArray: getArray,
-        stopWhenFound: false
-      });
+  _getInheritableProperty(key, getArray = false) {
+    const value = (0, _core_utils.getInheritableProperty)({
+      dict: this.pageDict,
+      key,
+      getArray,
+      stopWhenFound: false
+    });
 
-      if (!Array.isArray(value)) {
-        return value;
-      }
-
-      if (value.length === 1 || !(0, _primitives.isDict)(value[0])) {
-        return value[0];
-      }
-
-      return _primitives.Dict.merge(this.xref, value);
+    if (!Array.isArray(value)) {
+      return value;
     }
-  }, {
-    key: "getContentStream",
-    value: function getContentStream() {
-      var content = this.content;
-      var stream;
 
-      if (Array.isArray(content)) {
-        var xref = this.xref;
-        var streams = [];
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
+    if (value.length === 1 || !(0, _primitives.isDict)(value[0])) {
+      return value[0];
+    }
 
-        try {
-          for (var _iterator = content[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var _stream = _step.value;
-            streams.push(xref.fetchIfRef(_stream));
-          }
-        } catch (err) {
-          _didIteratorError = true;
-          _iteratorError = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-              _iterator["return"]();
-            }
-          } finally {
-            if (_didIteratorError) {
-              throw _iteratorError;
-            }
-          }
+    return _primitives.Dict.merge(this.xref, value);
+  }
+
+  get content() {
+    return this.pageDict.get("Contents");
+  }
+
+  get resources() {
+    return (0, _util.shadow)(this, "resources", this._getInheritableProperty("Resources") || _primitives.Dict.empty);
+  }
+
+  _getBoundingBox(name) {
+    const box = this._getInheritableProperty(name, true);
+
+    if (Array.isArray(box) && box.length === 4) {
+      if (box[2] - box[0] !== 0 && box[3] - box[1] !== 0) {
+        return box;
+      }
+
+      (0, _util.warn)(`Empty /${name} entry.`);
+    }
+
+    return null;
+  }
+
+  get mediaBox() {
+    return (0, _util.shadow)(this, "mediaBox", this._getBoundingBox("MediaBox") || LETTER_SIZE_MEDIABOX);
+  }
+
+  get cropBox() {
+    return (0, _util.shadow)(this, "cropBox", this._getBoundingBox("CropBox") || this.mediaBox);
+  }
+
+  get userUnit() {
+    let obj = this.pageDict.get("UserUnit");
+
+    if (!(0, _util.isNum)(obj) || obj <= 0) {
+      obj = DEFAULT_USER_UNIT;
+    }
+
+    return (0, _util.shadow)(this, "userUnit", obj);
+  }
+
+  get view() {
+    const {
+      cropBox,
+      mediaBox
+    } = this;
+    let view;
+
+    if (cropBox === mediaBox || (0, _util.isArrayEqual)(cropBox, mediaBox)) {
+      view = mediaBox;
+    } else {
+      const box = _util.Util.intersect(cropBox, mediaBox);
+
+      if (box && box[2] - box[0] !== 0 && box[3] - box[1] !== 0) {
+        view = box;
+      } else {
+        (0, _util.warn)("Empty /CropBox and /MediaBox intersection.");
+      }
+    }
+
+    return (0, _util.shadow)(this, "view", view || mediaBox);
+  }
+
+  get rotate() {
+    let rotate = this._getInheritableProperty("Rotate") || 0;
+
+    if (rotate % 90 !== 0) {
+      rotate = 0;
+    } else if (rotate >= 360) {
+      rotate = rotate % 360;
+    } else if (rotate < 0) {
+      rotate = (rotate % 360 + 360) % 360;
+    }
+
+    return (0, _util.shadow)(this, "rotate", rotate);
+  }
+
+  getContentStream() {
+    const content = this.content;
+    let stream;
+
+    if (Array.isArray(content)) {
+      const xref = this.xref;
+      const streams = [];
+
+      for (const stream of content) {
+        streams.push(xref.fetchIfRef(stream));
+      }
+
+      stream = new _stream.StreamsSequenceStream(streams);
+    } else if ((0, _primitives.isStream)(content)) {
+      stream = content;
+    } else {
+      stream = new _stream.NullStream();
+    }
+
+    return stream;
+  }
+
+  loadResources(keys) {
+    if (!this.resourcesPromise) {
+      this.resourcesPromise = this.pdfManager.ensure(this, "resources");
+    }
+
+    return this.resourcesPromise.then(() => {
+      const objectLoader = new _obj.ObjectLoader(this.resources, keys, this.xref);
+      return objectLoader.load();
+    });
+  }
+
+  getOperatorList({
+    handler,
+    sink,
+    task,
+    intent,
+    renderInteractiveForms,
+    annotationsNotRendered
+  }) {
+    const contentStreamPromise = this.pdfManager.ensure(this, "getContentStream");
+    const resourcesPromise = this.loadResources(["ExtGState", "ColorSpace", "Pattern", "Shading", "XObject", "Font"]);
+    const partialEvaluator = new _evaluator.PartialEvaluator({
+      xref: this.xref,
+      handler,
+      pageIndex: this.pageIndex,
+      idFactory: this.idFactory,
+      fontCache: this.fontCache,
+      builtInCMapCache: this.builtInCMapCache,
+      options: this.evaluatorOptions,
+      pdfFunctionFactory: this.pdfFunctionFactory
+    });
+    const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+    const pageListPromise = dataPromises.then(([contentStream]) => {
+      const opList = new _operator_list.OperatorList(intent, sink, this.pageIndex);
+      handler.send("StartRenderPage", {
+        transparency: partialEvaluator.hasBlendModes(this.resources),
+        pageIndex: this.pageIndex,
+        intent
+      });
+      return partialEvaluator.getOperatorList({
+        stream: contentStream,
+        task,
+        resources: this.resources,
+        operatorList: opList
+      }).then(function () {
+        return opList;
+      });
+    });
+    return Promise.all([pageListPromise, this._parsedAnnotations]).then(function ([pageOpList, annotations]) {
+      if (annotations.length === 0) {
+        pageOpList.flush(true);
+        return {
+          length: pageOpList.totalLength
+        };
+      }
+
+      const opListPromises = [];
+
+      for (const annotation of annotations) {
+        if (Array.isArray(annotationsNotRendered) && isAnnotationRemoved(annotationsNotRendered, annotation)) {
+          continue;
+        } else if (isAnnotationRenderable(annotation, intent)) {
+          opListPromises.push(annotation.getOperatorList(partialEvaluator, task, renderInteractiveForms));
+        }
+      }
+
+      return Promise.all(opListPromises).then(function (opLists) {
+        pageOpList.addOp(_util.OPS.beginAnnotations, []);
+
+        for (const opList of opLists) {
+          pageOpList.addOpList(opList);
         }
 
-        stream = new _stream2.StreamsSequenceStream(streams);
-      } else if ((0, _primitives.isStream)(content)) {
-        stream = content;
-      } else {
-        stream = new _stream2.NullStream();
-      }
-
-      return stream;
-    }
-  }, {
-    key: "loadResources",
-    value: function loadResources(keys) {
-      var _this = this;
-
-      if (!this.resourcesPromise) {
-        this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
-      }
-
-      return this.resourcesPromise.then(function () {
-        var objectLoader = new _obj.ObjectLoader(_this.resources, keys, _this.xref);
-        return objectLoader.load();
+        pageOpList.addOp(_util.OPS.endAnnotations, []);
+        pageOpList.flush(true);
+        return {
+          length: pageOpList.totalLength
+        };
       });
-    }
-  }, {
-    key: "getOperatorList",
-    value: function getOperatorList(_ref2) {
-      var _this2 = this;
+    });
+  }
 
-      var handler = _ref2.handler,
-          task = _ref2.task,
-          intent = _ref2.intent,
-          renderInteractiveForms = _ref2.renderInteractiveForms,
-          annotationsNotRendered = _ref2.annotationsNotRendered;
-      var contentStreamPromise = this.pdfManager.ensure(this, 'getContentStream');
-      var resourcesPromise = this.loadResources(['ExtGState', 'ColorSpace', 'Pattern', 'Shading', 'XObject', 'Font']);
-      var partialEvaluator = new _evaluator.PartialEvaluator({
+  extractTextContent({
+    handler,
+    task,
+    normalizeWhitespace,
+    sink,
+    combineTextItems
+  }) {
+    const contentStreamPromise = this.pdfManager.ensure(this, "getContentStream");
+    const resourcesPromise = this.loadResources(["ExtGState", "XObject", "Font"]);
+    const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+    return dataPromises.then(([contentStream]) => {
+      const partialEvaluator = new _evaluator.PartialEvaluator({
         xref: this.xref,
-        handler: handler,
+        handler,
         pageIndex: this.pageIndex,
         idFactory: this.idFactory,
         fontCache: this.fontCache,
@@ -217,286 +320,129 @@ function () {
         options: this.evaluatorOptions,
         pdfFunctionFactory: this.pdfFunctionFactory
       });
-      var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
-      var pageListPromise = dataPromises.then(function (_ref3) {
-        var _ref4 = _slicedToArray(_ref3, 1),
-            contentStream = _ref4[0];
-
-        var opList = new _operator_list.OperatorList(intent, handler, _this2.pageIndex);
-        handler.send('StartRenderPage', {
-          transparency: partialEvaluator.hasBlendModes(_this2.resources),
-          pageIndex: _this2.pageIndex,
-          intent: intent
-        });
-        return partialEvaluator.getOperatorList({
-          stream: contentStream,
-          task: task,
-          resources: _this2.resources,
-          operatorList: opList
-        }).then(function () {
-          return opList;
-        });
+      return partialEvaluator.getTextContent({
+        stream: contentStream,
+        task,
+        resources: this.resources,
+        normalizeWhitespace,
+        combineTextItems,
+        sink
       });
-      return Promise.all([pageListPromise, this._parsedAnnotations]).then(function (_ref5) {
-        var _ref6 = _slicedToArray(_ref5, 2),
-            pageOpList = _ref6[0],
-            annotations = _ref6[1];
+    });
+  }
 
-        if (annotations.length === 0) {
-          pageOpList.flush(true);
-          return pageOpList;
+  getAnnotationsData(intent) {
+    return this._parsedAnnotations.then(function (annotations) {
+      const annotationsData = [];
+
+      for (let i = 0, ii = annotations.length; i < ii; i++) {
+        if (!intent || isAnnotationRenderable(annotations[i], intent)) {
+          annotationsData.push(annotations[i].data);
         }
+      }
 
-        var i,
-            ii,
-            opListPromises = [];
+      return annotationsData;
+    });
+  }
 
-        for (i = 0, ii = annotations.length; i < ii; i++) {
-          if (Array.isArray(annotationsNotRendered) && isAnnotationRemoved(annotationsNotRendered, annotations[i])) {
-            continue;
-          } else if (isAnnotationRenderable(annotations[i], intent)) {
-            opListPromises.push(annotations[i].getOperatorList(partialEvaluator, task, renderInteractiveForms));
-          }
-        }
+  get annotations() {
+    return (0, _util.shadow)(this, "annotations", this._getInheritableProperty("Annots") || []);
+  }
 
-        return Promise.all(opListPromises).then(function (opLists) {
-          pageOpList.addOp(_util.OPS.beginAnnotations, []);
-          var _iteratorNormalCompletion2 = true;
-          var _didIteratorError2 = false;
-          var _iteratorError2 = undefined;
+  get _parsedAnnotations() {
+    const parsedAnnotations = this.pdfManager.ensure(this, "annotations").then(() => {
+      const annotationRefs = this.annotations;
+      const annotationPromises = [];
 
-          try {
-            for (var _iterator2 = opLists[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-              var opList = _step2.value;
-              pageOpList.addOpList(opList);
-            }
-          } catch (err) {
-            _didIteratorError2 = true;
-            _iteratorError2 = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-                _iterator2["return"]();
-              }
-            } finally {
-              if (_didIteratorError2) {
-                throw _iteratorError2;
-              }
-            }
-          }
+      for (let i = 0, ii = annotationRefs.length; i < ii; i++) {
+        annotationPromises.push(_annotation.AnnotationFactory.create(this.xref, annotationRefs[i], this.pdfManager, this.idFactory));
+      }
 
-          pageOpList.addOp(_util.OPS.endAnnotations, []);
-          pageOpList.flush(true);
-          return pageOpList;
+      return Promise.all(annotationPromises).then(function (annotations) {
+        return annotations.filter(function isDefined(annotation) {
+          return !!annotation;
         });
+      }, function (reason) {
+        (0, _util.warn)(`_parsedAnnotations: "${reason}".`);
+        return [];
       });
-    }
-  }, {
-    key: "extractTextContent",
-    value: function extractTextContent(_ref7) {
-      var _this3 = this;
+    });
+    return (0, _util.shadow)(this, "_parsedAnnotations", parsedAnnotations);
+  }
 
-      var handler = _ref7.handler,
-          task = _ref7.task,
-          normalizeWhitespace = _ref7.normalizeWhitespace,
-          sink = _ref7.sink,
-          combineTextItems = _ref7.combineTextItems;
-      var contentStreamPromise = this.pdfManager.ensure(this, 'getContentStream');
-      var resourcesPromise = this.loadResources(['ExtGState', 'XObject', 'Font']);
-      var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
-      return dataPromises.then(function (_ref8) {
-        var _ref9 = _slicedToArray(_ref8, 1),
-            contentStream = _ref9[0];
-
-        var partialEvaluator = new _evaluator.PartialEvaluator({
-          xref: _this3.xref,
-          handler: handler,
-          pageIndex: _this3.pageIndex,
-          idFactory: _this3.idFactory,
-          fontCache: _this3.fontCache,
-          builtInCMapCache: _this3.builtInCMapCache,
-          options: _this3.evaluatorOptions,
-          pdfFunctionFactory: _this3.pdfFunctionFactory
-        });
-        return partialEvaluator.getTextContent({
-          stream: contentStream,
-          task: task,
-          resources: _this3.resources,
-          normalizeWhitespace: normalizeWhitespace,
-          combineTextItems: combineTextItems,
-          sink: sink
-        });
-      });
-    }
-  }, {
-    key: "getAnnotationsData",
-    value: function getAnnotationsData(intent) {
-      return this._parsedAnnotations.then(function (annotations) {
-        var annotationsData = [];
-
-        for (var i = 0, ii = annotations.length; i < ii; i++) {
-          if (!intent || isAnnotationRenderable(annotations[i], intent)) {
-            annotationsData.push(annotations[i].data);
-          }
-        }
-
-        return annotationsData;
-      });
-    }
-  }, {
-    key: "content",
-    get: function get() {
-      return this.pageDict.get('Contents');
-    }
-  }, {
-    key: "resources",
-    get: function get() {
-      return (0, _util.shadow)(this, 'resources', this._getInheritableProperty('Resources') || _primitives.Dict.empty);
-    }
-  }, {
-    key: "mediaBox",
-    get: function get() {
-      var mediaBox = this._getInheritableProperty('MediaBox', true);
-
-      if (!Array.isArray(mediaBox) || mediaBox.length !== 4) {
-        return (0, _util.shadow)(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
-      }
-
-      return (0, _util.shadow)(this, 'mediaBox', mediaBox);
-    }
-  }, {
-    key: "cropBox",
-    get: function get() {
-      var cropBox = this._getInheritableProperty('CropBox', true);
-
-      if (!Array.isArray(cropBox) || cropBox.length !== 4) {
-        return (0, _util.shadow)(this, 'cropBox', this.mediaBox);
-      }
-
-      return (0, _util.shadow)(this, 'cropBox', cropBox);
-    }
-  }, {
-    key: "userUnit",
-    get: function get() {
-      var obj = this.pageDict.get('UserUnit');
-
-      if (!(0, _util.isNum)(obj) || obj <= 0) {
-        obj = DEFAULT_USER_UNIT;
-      }
-
-      return (0, _util.shadow)(this, 'userUnit', obj);
-    }
-  }, {
-    key: "view",
-    get: function get() {
-      var mediaBox = this.mediaBox,
-          cropBox = this.cropBox;
-
-      if (mediaBox === cropBox) {
-        return (0, _util.shadow)(this, 'view', mediaBox);
-      }
-
-      var intersection = _util.Util.intersect(cropBox, mediaBox);
-
-      return (0, _util.shadow)(this, 'view', intersection || mediaBox);
-    }
-  }, {
-    key: "rotate",
-    get: function get() {
-      var rotate = this._getInheritableProperty('Rotate') || 0;
-
-      if (rotate % 90 !== 0) {
-        rotate = 0;
-      } else if (rotate >= 360) {
-        rotate = rotate % 360;
-      } else if (rotate < 0) {
-        rotate = (rotate % 360 + 360) % 360;
-      }
-
-      return (0, _util.shadow)(this, 'rotate', rotate);
-    }
-  }, {
-    key: "annotations",
-    get: function get() {
-      return (0, _util.shadow)(this, 'annotations', this._getInheritableProperty('Annots') || []);
-    }
-  }, {
-    key: "_parsedAnnotations",
-    get: function get() {
-      var _this4 = this;
-
-      var parsedAnnotations = this.pdfManager.ensure(this, 'annotations').then(function () {
-        var annotationRefs = _this4.annotations;
-        var annotationPromises = [];
-
-        for (var i = 0, ii = annotationRefs.length; i < ii; i++) {
-          annotationPromises.push(_annotation.AnnotationFactory.create(_this4.xref, annotationRefs[i], _this4.pdfManager, _this4.idFactory));
-        }
-
-        return Promise.all(annotationPromises).then(function (annotations) {
-          return annotations.filter(function isDefined(annotation) {
-            return !!annotation;
-          });
-        }, function (reason) {
-          (0, _util.warn)("_parsedAnnotations: \"".concat(reason, "\"."));
-          return [];
-        });
-      });
-      return (0, _util.shadow)(this, '_parsedAnnotations', parsedAnnotations);
-    }
-  }]);
-
-  return Page;
-}();
+}
 
 exports.Page = Page;
-var FINGERPRINT_FIRST_BYTES = 1024;
-var EMPTY_FINGERPRINT = '\x00\x00\x00\x00\x00\x00\x00' + '\x00\x00\x00\x00\x00\x00\x00\x00\x00';
+const PDF_HEADER_SIGNATURE = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]);
+const STARTXREF_SIGNATURE = new Uint8Array([0x73, 0x74, 0x61, 0x72, 0x74, 0x78, 0x72, 0x65, 0x66]);
+const ENDOBJ_SIGNATURE = new Uint8Array([0x65, 0x6e, 0x64, 0x6f, 0x62, 0x6a]);
+const FINGERPRINT_FIRST_BYTES = 1024;
+const EMPTY_FINGERPRINT = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+const PDF_HEADER_VERSION_REGEXP = /^[1-9]\.[0-9]$/;
 
-function find(stream, needle, limit, backwards) {
-  var pos = stream.pos;
-  var end = stream.end;
+function find(stream, signature, limit = 1024, backwards = false) {
+  const signatureLength = signature.length;
+  const scanBytes = stream.peekBytes(limit);
+  const scanLength = scanBytes.length - signatureLength;
 
-  if (pos + limit > end) {
-    limit = end - pos;
-  }
-
-  var strBuf = [];
-
-  for (var i = 0; i < limit; ++i) {
-    strBuf.push(String.fromCharCode(stream.getByte()));
-  }
-
-  var str = strBuf.join('');
-  stream.pos = pos;
-  var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
-
-  if (index === -1) {
+  if (scanLength <= 0) {
     return false;
   }
 
-  stream.pos += index;
-  return true;
+  if (backwards) {
+    const signatureEnd = signatureLength - 1;
+    let pos = scanBytes.length - 1;
+
+    while (pos >= signatureEnd) {
+      let j = 0;
+
+      while (j < signatureLength && scanBytes[pos - j] === signature[signatureEnd - j]) {
+        j++;
+      }
+
+      if (j >= signatureLength) {
+        stream.pos += pos - signatureEnd;
+        return true;
+      }
+
+      pos--;
+    }
+  } else {
+    let pos = 0;
+
+    while (pos <= scanLength) {
+      let j = 0;
+
+      while (j < signatureLength && scanBytes[pos + j] === signature[j]) {
+        j++;
+      }
+
+      if (j >= signatureLength) {
+        stream.pos += pos;
+        return true;
+      }
+
+      pos++;
+    }
+  }
+
+  return false;
 }
 
-var PDFDocument =
-/*#__PURE__*/
-function () {
-  function PDFDocument(pdfManager, arg) {
-    _classCallCheck(this, PDFDocument);
-
-    var stream;
+class PDFDocument {
+  constructor(pdfManager, arg) {
+    let stream;
 
     if ((0, _primitives.isStream)(arg)) {
       stream = arg;
     } else if ((0, _util.isArrayBuffer)(arg)) {
-      stream = new _stream2.Stream(arg);
+      stream = new _stream.Stream(arg);
     } else {
-      throw new Error('PDFDocument: Unknown argument type');
+      throw new Error("PDFDocument: Unknown argument type");
     }
 
     if (stream.length <= 0) {
-      throw new Error('PDFDocument: Stream must have data');
+      throw new _util.InvalidPDFException("The PDF file is empty, i.e. its size is zero bytes.");
     }
 
     this.pdfManager = pdfManager;
@@ -509,358 +455,318 @@ function () {
     this._pagePromises = [];
   }
 
-  _createClass(PDFDocument, [{
-    key: "parse",
-    value: function parse(recoveryMode) {
-      this.setup(recoveryMode);
-      var version = this.catalog.catDict.get('Version');
+  parse(recoveryMode) {
+    this.setup(recoveryMode);
+    const version = this.catalog.catDict.get("Version");
 
-      if ((0, _primitives.isName)(version)) {
-        this.pdfFormatVersion = version.name;
-      }
-
-      try {
-        this.acroForm = this.catalog.catDict.get('AcroForm');
-
-        if (this.acroForm) {
-          this.xfa = this.acroForm.get('XFA');
-          var fields = this.acroForm.get('Fields');
-
-          if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
-            this.acroForm = null;
-          }
-        }
-      } catch (ex) {
-        if (ex instanceof _core_utils.MissingDataException) {
-          throw ex;
-        }
-
-        (0, _util.info)('Cannot fetch AcroForm entry; assuming no AcroForms are present');
-        this.acroForm = null;
-      }
-
-      try {
-        var collection = this.catalog.catDict.get('Collection');
-
-        if ((0, _primitives.isDict)(collection) && collection.getKeys().length > 0) {
-          this.collection = collection;
-        }
-      } catch (ex) {
-        if (ex instanceof _core_utils.MissingDataException) {
-          throw ex;
-        }
-
-        (0, _util.info)('Cannot fetch Collection dictionary.');
-      }
+    if ((0, _primitives.isName)(version)) {
+      this.pdfFormatVersion = version.name;
     }
-  }, {
-    key: "checkHeader",
-    value: function checkHeader() {
-      var stream = this.stream;
+
+    try {
+      this.acroForm = this.catalog.catDict.get("AcroForm");
+
+      if (this.acroForm) {
+        this.xfa = this.acroForm.get("XFA");
+        const fields = this.acroForm.get("Fields");
+
+        if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
+          this.acroForm = null;
+        }
+      }
+    } catch (ex) {
+      if (ex instanceof _core_utils.MissingDataException) {
+        throw ex;
+      }
+
+      (0, _util.info)("Cannot fetch AcroForm entry; assuming no AcroForms are present");
+      this.acroForm = null;
+    }
+
+    try {
+      const collection = this.catalog.catDict.get("Collection");
+
+      if ((0, _primitives.isDict)(collection) && collection.getKeys().length > 0) {
+        this.collection = collection;
+      }
+    } catch (ex) {
+      if (ex instanceof _core_utils.MissingDataException) {
+        throw ex;
+      }
+
+      (0, _util.info)("Cannot fetch Collection dictionary.");
+    }
+  }
+
+  get linearization() {
+    let linearization = null;
+
+    try {
+      linearization = _parser.Linearization.create(this.stream);
+    } catch (err) {
+      if (err instanceof _core_utils.MissingDataException) {
+        throw err;
+      }
+
+      (0, _util.info)(err);
+    }
+
+    return (0, _util.shadow)(this, "linearization", linearization);
+  }
+
+  get startXRef() {
+    const stream = this.stream;
+    let startXRef = 0;
+
+    if (this.linearization) {
       stream.reset();
 
-      if (!find(stream, '%PDF-', 1024)) {
-        return;
+      if (find(stream, ENDOBJ_SIGNATURE)) {
+        startXRef = stream.pos + 6 - stream.start;
       }
+    } else {
+      const step = 1024;
+      const startXRefLength = STARTXREF_SIGNATURE.length;
+      let found = false,
+          pos = stream.end;
 
-      stream.moveStart();
-      var MAX_PDF_VERSION_LENGTH = 12;
-      var version = '',
-          ch;
+      while (!found && pos > 0) {
+        pos -= step - startXRefLength;
 
-      while ((ch = stream.getByte()) > 0x20) {
-        if (version.length >= MAX_PDF_VERSION_LENGTH) {
-          break;
+        if (pos < 0) {
+          pos = 0;
         }
 
-        version += String.fromCharCode(ch);
+        stream.pos = pos;
+        found = find(stream, STARTXREF_SIGNATURE, step, true);
       }
 
-      if (!this.pdfFormatVersion) {
-        this.pdfFormatVersion = version.substring(5);
+      if (found) {
+        stream.skip(9);
+        let ch;
+
+        do {
+          ch = stream.getByte();
+        } while ((0, _core_utils.isWhiteSpace)(ch));
+
+        let str = "";
+
+        while (ch >= 0x20 && ch <= 0x39) {
+          str += String.fromCharCode(ch);
+          ch = stream.getByte();
+        }
+
+        startXRef = parseInt(str, 10);
+
+        if (isNaN(startXRef)) {
+          startXRef = 0;
+        }
       }
     }
-  }, {
-    key: "parseStartXRef",
-    value: function parseStartXRef() {
-      this.xref.setStartXRef(this.startXRef);
-    }
-  }, {
-    key: "setup",
-    value: function setup(recoveryMode) {
-      this.xref.parse(recoveryMode);
-      this.catalog = new _obj.Catalog(this.pdfManager, this.xref);
-    }
-  }, {
-    key: "_getLinearizationPage",
-    value: function _getLinearizationPage(pageIndex) {
-      var catalog = this.catalog,
-          linearization = this.linearization;
-      (0, _util.assert)(linearization && linearization.pageFirst === pageIndex);
 
-      var ref = _primitives.Ref.get(linearization.objectNumberFirst, 0);
+    return (0, _util.shadow)(this, "startXRef", startXRef);
+  }
 
-      return this.xref.fetchAsync(ref).then(function (obj) {
-        if ((0, _primitives.isDict)(obj, 'Page') || (0, _primitives.isDict)(obj) && !obj.has('Type') && obj.has('Contents')) {
-          if (ref && !catalog.pageKidsCountCache.has(ref)) {
-            catalog.pageKidsCountCache.put(ref, 1);
+  checkHeader() {
+    const stream = this.stream;
+    stream.reset();
+
+    if (!find(stream, PDF_HEADER_SIGNATURE)) {
+      return;
+    }
+
+    stream.moveStart();
+    const MAX_PDF_VERSION_LENGTH = 12;
+    let version = "",
+        ch;
+
+    while ((ch = stream.getByte()) > 0x20) {
+      if (version.length >= MAX_PDF_VERSION_LENGTH) {
+        break;
+      }
+
+      version += String.fromCharCode(ch);
+    }
+
+    if (!this.pdfFormatVersion) {
+      this.pdfFormatVersion = version.substring(5);
+    }
+  }
+
+  parseStartXRef() {
+    this.xref.setStartXRef(this.startXRef);
+  }
+
+  setup(recoveryMode) {
+    this.xref.parse(recoveryMode);
+    this.catalog = new _obj.Catalog(this.pdfManager, this.xref);
+  }
+
+  get numPages() {
+    const linearization = this.linearization;
+    const num = linearization ? linearization.numPages : this.catalog.numPages;
+    return (0, _util.shadow)(this, "numPages", num);
+  }
+
+  get documentInfo() {
+    const DocumentInfoValidators = {
+      Title: _util.isString,
+      Author: _util.isString,
+      Subject: _util.isString,
+      Keywords: _util.isString,
+      Creator: _util.isString,
+      Producer: _util.isString,
+      CreationDate: _util.isString,
+      ModDate: _util.isString,
+      Trapped: _primitives.isName
+    };
+    let version = this.pdfFormatVersion;
+
+    if (typeof version !== "string" || !PDF_HEADER_VERSION_REGEXP.test(version)) {
+      (0, _util.warn)(`Invalid PDF header version number: ${version}`);
+      version = null;
+    }
+
+    const docInfo = {
+      PDFFormatVersion: version,
+      IsLinearized: !!this.linearization,
+      IsAcroFormPresent: !!this.acroForm,
+      IsXFAPresent: !!this.xfa,
+      IsCollectionPresent: !!this.collection
+    };
+    let infoDict;
+
+    try {
+      infoDict = this.xref.trailer.get("Info");
+    } catch (err) {
+      if (err instanceof _core_utils.MissingDataException) {
+        throw err;
+      }
+
+      (0, _util.info)("The document information dictionary is invalid.");
+    }
+
+    if ((0, _primitives.isDict)(infoDict)) {
+      for (const key of infoDict.getKeys()) {
+        const value = infoDict.get(key);
+
+        if (DocumentInfoValidators[key]) {
+          if (DocumentInfoValidators[key](value)) {
+            docInfo[key] = typeof value !== "string" ? value : (0, _util.stringToPDFString)(value);
+          } else {
+            (0, _util.info)(`Bad value in document info for "${key}".`);
+          }
+        } else if (typeof key === "string") {
+          let customValue;
+
+          if ((0, _util.isString)(value)) {
+            customValue = (0, _util.stringToPDFString)(value);
+          } else if ((0, _primitives.isName)(value) || (0, _util.isNum)(value) || (0, _util.isBool)(value)) {
+            customValue = value;
+          } else {
+            (0, _util.info)(`Unsupported value in document info for (custom) "${key}".`);
+            continue;
           }
 
-          return [obj, ref];
+          if (!docInfo["Custom"]) {
+            docInfo["Custom"] = Object.create(null);
+          }
+
+          docInfo["Custom"][key] = customValue;
+        }
+      }
+    }
+
+    return (0, _util.shadow)(this, "documentInfo", docInfo);
+  }
+
+  get fingerprint() {
+    let hash;
+    const idArray = this.xref.trailer.get("ID");
+
+    if (Array.isArray(idArray) && idArray[0] && (0, _util.isString)(idArray[0]) && idArray[0] !== EMPTY_FINGERPRINT) {
+      hash = (0, _util.stringToBytes)(idArray[0]);
+    } else {
+      hash = (0, _crypto.calculateMD5)(this.stream.getByteRange(0, FINGERPRINT_FIRST_BYTES), 0, FINGERPRINT_FIRST_BYTES);
+    }
+
+    const fingerprintBuf = [];
+
+    for (let i = 0, ii = hash.length; i < ii; i++) {
+      const hex = hash[i].toString(16);
+      fingerprintBuf.push(hex.padStart(2, "0"));
+    }
+
+    return (0, _util.shadow)(this, "fingerprint", fingerprintBuf.join(""));
+  }
+
+  _getLinearizationPage(pageIndex) {
+    const {
+      catalog,
+      linearization
+    } = this;
+    (0, _util.assert)(linearization && linearization.pageFirst === pageIndex);
+
+    const ref = _primitives.Ref.get(linearization.objectNumberFirst, 0);
+
+    return this.xref.fetchAsync(ref).then(obj => {
+      if ((0, _primitives.isDict)(obj, "Page") || (0, _primitives.isDict)(obj) && !obj.has("Type") && obj.has("Contents")) {
+        if (ref && !catalog.pageKidsCountCache.has(ref)) {
+          catalog.pageKidsCountCache.put(ref, 1);
         }
 
-        throw new _util.FormatError('The Linearization dictionary doesn\'t point ' + 'to a valid Page dictionary.');
-      })["catch"](function (reason) {
-        (0, _util.info)(reason);
-        return catalog.getPageDict(pageIndex);
+        return [obj, ref];
+      }
+
+      throw new _util.FormatError("The Linearization dictionary doesn't point " + "to a valid Page dictionary.");
+    }).catch(reason => {
+      (0, _util.info)(reason);
+      return catalog.getPageDict(pageIndex);
+    });
+  }
+
+  getPage(pageIndex) {
+    if (this._pagePromises[pageIndex] !== undefined) {
+      return this._pagePromises[pageIndex];
+    }
+
+    const {
+      catalog,
+      linearization
+    } = this;
+    const promise = linearization && linearization.pageFirst === pageIndex ? this._getLinearizationPage(pageIndex) : catalog.getPageDict(pageIndex);
+    return this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
+      return new Page({
+        pdfManager: this.pdfManager,
+        xref: this.xref,
+        pageIndex,
+        pageDict,
+        ref,
+        fontCache: catalog.fontCache,
+        builtInCMapCache: catalog.builtInCMapCache,
+        pdfFunctionFactory: this.pdfFunctionFactory
       });
-    }
-  }, {
-    key: "getPage",
-    value: function getPage(pageIndex) {
-      var _this5 = this;
+    });
+  }
 
-      if (this._pagePromises[pageIndex] !== undefined) {
-        return this._pagePromises[pageIndex];
+  checkFirstPage() {
+    return this.getPage(0).catch(async reason => {
+      if (reason instanceof _core_utils.XRefEntryException) {
+        this._pagePromises.length = 0;
+        await this.cleanup();
+        throw new _core_utils.XRefParseException();
       }
+    });
+  }
 
-      var catalog = this.catalog,
-          linearization = this.linearization;
-      var promise = linearization && linearization.pageFirst === pageIndex ? this._getLinearizationPage(pageIndex) : catalog.getPageDict(pageIndex);
-      return this._pagePromises[pageIndex] = promise.then(function (_ref10) {
-        var _ref11 = _slicedToArray(_ref10, 2),
-            pageDict = _ref11[0],
-            ref = _ref11[1];
+  fontFallback(id, handler) {
+    return this.catalog.fontFallback(id, handler);
+  }
 
-        return new Page({
-          pdfManager: _this5.pdfManager,
-          xref: _this5.xref,
-          pageIndex: pageIndex,
-          pageDict: pageDict,
-          ref: ref,
-          fontCache: catalog.fontCache,
-          builtInCMapCache: catalog.builtInCMapCache,
-          pdfFunctionFactory: _this5.pdfFunctionFactory
-        });
-      });
-    }
-  }, {
-    key: "checkFirstPage",
-    value: function checkFirstPage() {
-      var _this6 = this;
+  async cleanup() {
+    return this.catalog ? this.catalog.cleanup() : (0, _primitives.clearPrimitiveCaches)();
+  }
 
-      return this.getPage(0)["catch"](function (reason) {
-        if (reason instanceof _core_utils.XRefEntryException) {
-          _this6._pagePromises.length = 0;
-
-          _this6.cleanup();
-
-          throw new _core_utils.XRefParseException();
-        }
-      });
-    }
-  }, {
-    key: "fontFallback",
-    value: function fontFallback(id, handler) {
-      return this.catalog.fontFallback(id, handler);
-    }
-  }, {
-    key: "cleanup",
-    value: function cleanup() {
-      return this.catalog.cleanup();
-    }
-  }, {
-    key: "linearization",
-    get: function get() {
-      var linearization = null;
-
-      try {
-        linearization = _parser.Linearization.create(this.stream);
-      } catch (err) {
-        if (err instanceof _core_utils.MissingDataException) {
-          throw err;
-        }
-
-        (0, _util.info)(err);
-      }
-
-      return (0, _util.shadow)(this, 'linearization', linearization);
-    }
-  }, {
-    key: "startXRef",
-    get: function get() {
-      var stream = this.stream;
-      var startXRef = 0;
-
-      if (this.linearization) {
-        stream.reset();
-
-        if (find(stream, 'endobj', 1024)) {
-          startXRef = stream.pos + 6;
-        }
-      } else {
-        var step = 1024;
-        var startXRefLength = 'startxref'.length;
-        var found = false,
-            pos = stream.end;
-
-        while (!found && pos > 0) {
-          pos -= step - startXRefLength;
-
-          if (pos < 0) {
-            pos = 0;
-          }
-
-          stream.pos = pos;
-          found = find(stream, 'startxref', step, true);
-        }
-
-        if (found) {
-          stream.skip(9);
-          var ch;
-
-          do {
-            ch = stream.getByte();
-          } while ((0, _util.isSpace)(ch));
-
-          var str = '';
-
-          while (ch >= 0x20 && ch <= 0x39) {
-            str += String.fromCharCode(ch);
-            ch = stream.getByte();
-          }
-
-          startXRef = parseInt(str, 10);
-
-          if (isNaN(startXRef)) {
-            startXRef = 0;
-          }
-        }
-      }
-
-      return (0, _util.shadow)(this, 'startXRef', startXRef);
-    }
-  }, {
-    key: "numPages",
-    get: function get() {
-      var linearization = this.linearization;
-      var num = linearization ? linearization.numPages : this.catalog.numPages;
-      return (0, _util.shadow)(this, 'numPages', num);
-    }
-  }, {
-    key: "documentInfo",
-    get: function get() {
-      var DocumentInfoValidators = {
-        Title: _util.isString,
-        Author: _util.isString,
-        Subject: _util.isString,
-        Keywords: _util.isString,
-        Creator: _util.isString,
-        Producer: _util.isString,
-        CreationDate: _util.isString,
-        ModDate: _util.isString,
-        Trapped: _primitives.isName
-      };
-      var docInfo = {
-        PDFFormatVersion: this.pdfFormatVersion,
-        IsLinearized: !!this.linearization,
-        IsAcroFormPresent: !!this.acroForm,
-        IsXFAPresent: !!this.xfa,
-        IsCollectionPresent: !!this.collection
-      };
-      var infoDict;
-
-      try {
-        infoDict = this.xref.trailer.get('Info');
-      } catch (err) {
-        if (err instanceof _core_utils.MissingDataException) {
-          throw err;
-        }
-
-        (0, _util.info)('The document information dictionary is invalid.');
-      }
-
-      if ((0, _primitives.isDict)(infoDict)) {
-        var _iteratorNormalCompletion3 = true;
-        var _didIteratorError3 = false;
-        var _iteratorError3 = undefined;
-
-        try {
-          for (var _iterator3 = infoDict.getKeys()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-            var key = _step3.value;
-            var value = infoDict.get(key);
-
-            if (DocumentInfoValidators[key]) {
-              if (DocumentInfoValidators[key](value)) {
-                docInfo[key] = typeof value !== 'string' ? value : (0, _util.stringToPDFString)(value);
-              } else {
-                (0, _util.info)("Bad value in document info for \"".concat(key, "\"."));
-              }
-            } else if (typeof key === 'string') {
-              var customValue = void 0;
-
-              if ((0, _util.isString)(value)) {
-                customValue = (0, _util.stringToPDFString)(value);
-              } else if ((0, _primitives.isName)(value) || (0, _util.isNum)(value) || (0, _util.isBool)(value)) {
-                customValue = value;
-              } else {
-                (0, _util.info)("Unsupported value in document info for (custom) \"".concat(key, "\"."));
-                continue;
-              }
-
-              if (!docInfo['Custom']) {
-                docInfo['Custom'] = Object.create(null);
-              }
-
-              docInfo['Custom'][key] = customValue;
-            }
-          }
-        } catch (err) {
-          _didIteratorError3 = true;
-          _iteratorError3 = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
-              _iterator3["return"]();
-            }
-          } finally {
-            if (_didIteratorError3) {
-              throw _iteratorError3;
-            }
-          }
-        }
-      }
-
-      return (0, _util.shadow)(this, 'documentInfo', docInfo);
-    }
-  }, {
-    key: "fingerprint",
-    get: function get() {
-      var hash;
-      var idArray = this.xref.trailer.get('ID');
-
-      if (Array.isArray(idArray) && idArray[0] && (0, _util.isString)(idArray[0]) && idArray[0] !== EMPTY_FINGERPRINT) {
-        hash = (0, _util.stringToBytes)(idArray[0]);
-      } else {
-        if (this.stream.ensureRange) {
-          this.stream.ensureRange(0, Math.min(FINGERPRINT_FIRST_BYTES, this.stream.end));
-        }
-
-        hash = (0, _crypto.calculateMD5)(this.stream.bytes.subarray(0, FINGERPRINT_FIRST_BYTES), 0, FINGERPRINT_FIRST_BYTES);
-      }
-
-      var fingerprint = '';
-
-      for (var i = 0, ii = hash.length; i < ii; i++) {
-        var hex = hash[i].toString(16);
-        fingerprint += hex.length === 1 ? '0' + hex : hex;
-      }
-
-      return (0, _util.shadow)(this, 'fingerprint', fingerprint);
-    }
-  }]);
-
-  return PDFDocument;
-}();
+}
 
 exports.PDFDocument = PDFDocument;

@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,16 @@
  */
 "use strict";
 
-var _test_utils = require("./test_utils");
+var _test_utils = require("./test_utils.js");
 
-var _display_utils = require("../../display/display_utils");
+var _display_utils = require("../../display/display_utils.js");
 
-var _api = require("../../display/api");
+var _api = require("../../display/api.js");
 
-var _is_node = _interopRequireDefault(require("../../shared/is_node"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+var _is_node = require("../../shared/is_node.js");
 
 function getTopLeftPixel(canvasContext) {
-  var imgData = canvasContext.getImageData(0, 0, 1, 1);
+  const imgData = canvasContext.getImageData(0, 0, 1, 1);
   return {
     r: imgData.data[0],
     g: imgData.data[1],
@@ -41,13 +39,13 @@ function getTopLeftPixel(canvasContext) {
   };
 }
 
-describe('custom canvas rendering', function () {
-  var transparentGetDocumentParams = (0, _test_utils.buildGetDocumentParams)('transparent.pdf');
-  var CanvasFactory;
-  var loadingTask;
-  var page;
+describe("custom canvas rendering", function () {
+  const transparentGetDocumentParams = (0, _test_utils.buildGetDocumentParams)("transparent.pdf");
+  let CanvasFactory;
+  let loadingTask;
+  let page;
   beforeAll(function (done) {
-    if ((0, _is_node["default"])()) {
+    if (_is_node.isNodeJS) {
       CanvasFactory = new _test_utils.NodeCanvasFactory();
     } else {
       CanvasFactory = new _display_utils.DOMCanvasFactory();
@@ -59,21 +57,21 @@ describe('custom canvas rendering', function () {
     }).then(function (data) {
       page = data;
       done();
-    })["catch"](done.fail);
+    }).catch(done.fail);
   });
   afterAll(function (done) {
     CanvasFactory = null;
     page = null;
     loadingTask.destroy().then(done);
   });
-  it('renders to canvas with a default white background', function (done) {
+  it("renders to canvas with a default white background", function (done) {
     var viewport = page.getViewport({
       scale: 1
     });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
-    var renderTask = page.render({
+    const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
-      viewport: viewport
+      viewport
     });
     renderTask.promise.then(function () {
       expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
@@ -84,17 +82,17 @@ describe('custom canvas rendering', function () {
       });
       CanvasFactory.destroy(canvasAndCtx);
       done();
-    })["catch"](done.fail);
+    }).catch(done.fail);
   });
-  it('renders to canvas with a custom background', function (done) {
+  it("renders to canvas with a custom background", function (done) {
     var viewport = page.getViewport({
       scale: 1
     });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
-    var renderTask = page.render({
+    const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
-      viewport: viewport,
-      background: 'rgba(255,0,0,1.0)'
+      viewport,
+      background: "rgba(255,0,0,1.0)"
     });
     renderTask.promise.then(function () {
       expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
@@ -105,6 +103,6 @@ describe('custom canvas rendering', function () {
       });
       CanvasFactory.destroy(canvasAndCtx);
       done();
-    })["catch"](done.fail);
+    }).catch(done.fail);
   });
 });

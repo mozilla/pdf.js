@@ -63,6 +63,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "pdfjs-dist": "file:build/dist",
     "process-nextick-args": "^1.0.7",
     "safe-buffer": "^5.1.1",
     "util-deprecate": "^1.0.2"

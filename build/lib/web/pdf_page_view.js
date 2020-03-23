@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,40 +26,22 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PDFPageView = void 0;
 
-var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
-
-var _ui_utils = require("./ui_utils");
+var _ui_utils = require("./ui_utils.js");
 
 var _pdf = require("../pdf");
 
-var _pdf_rendering_queue = require("./pdf_rendering_queue");
+var _pdf_rendering_queue = require("./pdf_rendering_queue.js");
 
-var _viewer_compatibility = require("./viewer_compatibility");
+var _viewer_compatibility = require("./viewer_compatibility.js");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+const MAX_CANVAS_PIXELS = _viewer_compatibility.viewerCompatibilityParams.maxCanvasPixels || 16777216;
 
-function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
-
-function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var MAX_CANVAS_PIXELS = _viewer_compatibility.viewerCompatibilityParams.maxCanvasPixels || 16777216;
-
-var PDFPageView =
-/*#__PURE__*/
-function () {
-  function PDFPageView(options) {
-    _classCallCheck(this, PDFPageView);
-
-    var container = options.container;
-    var defaultViewport = options.defaultViewport;
+class PDFPageView {
+  constructor(options) {
+    const container = options.container;
+    const defaultViewport = options.defaultViewport;
     this.id = options.id;
-    this.renderingId = 'page' + this.id;
+    this.renderingId = "page" + this.id;
     this.pdfPage = null;
     this.pageLabel = null;
     this.rotation = 0;
@@ -68,7 +50,7 @@ function () {
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
     this.textLayerMode = Number.isInteger(options.textLayerMode) ? options.textLayerMode : _ui_utils.TextLayerMode.ENABLE;
-    this.imageResourcesPath = options.imageResourcesPath || '';
+    this.imageResourcesPath = options.imageResourcesPath || "";
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels || MAX_CANVAS_PIXELS;
@@ -84,592 +66,548 @@ function () {
     this.renderingState = _pdf_rendering_queue.RenderingStates.INITIAL;
     this.resume = null;
     this.error = null;
-    this.onBeforeDraw = null;
-    this.onAfterDraw = null;
     this.annotationLayer = null;
     this.textLayer = null;
     this.zoomLayer = null;
-    var div = document.createElement('div');
-    div.className = 'page';
-    div.style.width = Math.floor(this.viewport.width) + 'px';
-    div.style.height = Math.floor(this.viewport.height) + 'px';
-    div.setAttribute('data-page-number', this.id);
+    const div = document.createElement("div");
+    div.className = "page";
+    div.style.width = Math.floor(this.viewport.width) + "px";
+    div.style.height = Math.floor(this.viewport.height) + "px";
+    div.setAttribute("data-page-number", this.id);
     this.div = div;
     container.appendChild(div);
   }
 
-  _createClass(PDFPageView, [{
-    key: "setPdfPage",
-    value: function setPdfPage(pdfPage) {
-      this.pdfPage = pdfPage;
-      this.pdfPageRotate = pdfPage.rotate;
-      var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-      this.viewport = pdfPage.getViewport({
-        scale: this.scale * _ui_utils.CSS_UNITS,
-        rotation: totalRotation
+  setPdfPage(pdfPage) {
+    this.pdfPage = pdfPage;
+    this.pdfPageRotate = pdfPage.rotate;
+    const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    this.viewport = pdfPage.getViewport({
+      scale: this.scale * _ui_utils.CSS_UNITS,
+      rotation: totalRotation
+    });
+    this.stats = pdfPage.stats;
+    this.reset();
+  }
+
+  destroy() {
+    this.reset();
+
+    if (this.pdfPage) {
+      this.pdfPage.cleanup();
+    }
+  }
+
+  _resetZoomLayer(removeFromDOM = false) {
+    if (!this.zoomLayer) {
+      return;
+    }
+
+    const zoomLayerCanvas = this.zoomLayer.firstChild;
+    this.paintedViewportMap.delete(zoomLayerCanvas);
+    zoomLayerCanvas.width = 0;
+    zoomLayerCanvas.height = 0;
+
+    if (removeFromDOM) {
+      this.zoomLayer.remove();
+    }
+
+    this.zoomLayer = null;
+  }
+
+  reset(keepZoomLayer = false, keepAnnotations = false) {
+    this.cancelRendering(keepAnnotations);
+    this.renderingState = _pdf_rendering_queue.RenderingStates.INITIAL;
+    const div = this.div;
+    div.style.width = Math.floor(this.viewport.width) + "px";
+    div.style.height = Math.floor(this.viewport.height) + "px";
+    const childNodes = div.childNodes;
+    const currentZoomLayerNode = keepZoomLayer && this.zoomLayer || null;
+    const currentAnnotationNode = keepAnnotations && this.annotationLayer && this.annotationLayer.div || null;
+
+    for (let i = childNodes.length - 1; i >= 0; i--) {
+      const node = childNodes[i];
+
+      if (currentZoomLayerNode === node || currentAnnotationNode === node) {
+        continue;
+      }
+
+      div.removeChild(node);
+    }
+
+    div.removeAttribute("data-loaded");
+
+    if (currentAnnotationNode) {
+      this.annotationLayer.hide();
+    } else if (this.annotationLayer) {
+      this.annotationLayer.cancel();
+      this.annotationLayer = null;
+    }
+
+    if (!currentZoomLayerNode) {
+      if (this.canvas) {
+        this.paintedViewportMap.delete(this.canvas);
+        this.canvas.width = 0;
+        this.canvas.height = 0;
+        delete this.canvas;
+      }
+
+      this._resetZoomLayer();
+    }
+
+    if (this.svg) {
+      this.paintedViewportMap.delete(this.svg);
+      delete this.svg;
+    }
+
+    this.loadingIconDiv = document.createElement("div");
+    this.loadingIconDiv.className = "loadingIcon";
+    div.appendChild(this.loadingIconDiv);
+  }
+
+  update(scale, rotation) {
+    this.scale = scale || this.scale;
+
+    if (typeof rotation !== "undefined") {
+      this.rotation = rotation;
+    }
+
+    const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    this.viewport = this.viewport.clone({
+      scale: this.scale * _ui_utils.CSS_UNITS,
+      rotation: totalRotation
+    });
+
+    if (this.svg) {
+      this.cssTransform(this.svg, true);
+      this.eventBus.dispatch("pagerendered", {
+        source: this,
+        pageNumber: this.id,
+        cssTransform: true,
+        timestamp: performance.now()
       });
-      this.stats = pdfPage.stats;
-      this.reset();
+      return;
     }
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this.reset();
 
-      if (this.pdfPage) {
-        this.pdfPage.cleanup();
+    let isScalingRestricted = false;
+
+    if (this.canvas && this.maxCanvasPixels > 0) {
+      const outputScale = this.outputScale;
+
+      if ((Math.floor(this.viewport.width) * outputScale.sx | 0) * (Math.floor(this.viewport.height) * outputScale.sy | 0) > this.maxCanvasPixels) {
+        isScalingRestricted = true;
       }
     }
-  }, {
-    key: "_resetZoomLayer",
-    value: function _resetZoomLayer() {
-      var removeFromDOM = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-      if (!this.zoomLayer) {
-        return;
-      }
-
-      var zoomLayerCanvas = this.zoomLayer.firstChild;
-      this.paintedViewportMap["delete"](zoomLayerCanvas);
-      zoomLayerCanvas.width = 0;
-      zoomLayerCanvas.height = 0;
-
-      if (removeFromDOM) {
-        this.zoomLayer.remove();
-      }
-
-      this.zoomLayer = null;
-    }
-  }, {
-    key: "reset",
-    value: function reset() {
-      var keepZoomLayer = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-      var keepAnnotations = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      this.cancelRendering(keepAnnotations);
-      this.renderingState = _pdf_rendering_queue.RenderingStates.INITIAL;
-      var div = this.div;
-      div.style.width = Math.floor(this.viewport.width) + 'px';
-      div.style.height = Math.floor(this.viewport.height) + 'px';
-      var childNodes = div.childNodes;
-      var currentZoomLayerNode = keepZoomLayer && this.zoomLayer || null;
-      var currentAnnotationNode = keepAnnotations && this.annotationLayer && this.annotationLayer.div || null;
-
-      for (var i = childNodes.length - 1; i >= 0; i--) {
-        var node = childNodes[i];
-
-        if (currentZoomLayerNode === node || currentAnnotationNode === node) {
-          continue;
-        }
-
-        div.removeChild(node);
-      }
-
-      div.removeAttribute('data-loaded');
-
-      if (currentAnnotationNode) {
-        this.annotationLayer.hide();
-      } else if (this.annotationLayer) {
-        this.annotationLayer.cancel();
-        this.annotationLayer = null;
-      }
-
-      if (!currentZoomLayerNode) {
-        if (this.canvas) {
-          this.paintedViewportMap["delete"](this.canvas);
-          this.canvas.width = 0;
-          this.canvas.height = 0;
-          delete this.canvas;
-        }
-
-        this._resetZoomLayer();
-      }
-
-      if (this.svg) {
-        this.paintedViewportMap["delete"](this.svg);
-        delete this.svg;
-      }
-
-      this.loadingIconDiv = document.createElement('div');
-      this.loadingIconDiv.className = 'loadingIcon';
-      div.appendChild(this.loadingIconDiv);
-    }
-  }, {
-    key: "update",
-    value: function update(scale, rotation) {
-      this.scale = scale || this.scale;
-
-      if (typeof rotation !== 'undefined') {
-        this.rotation = rotation;
-      }
-
-      var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-      this.viewport = this.viewport.clone({
-        scale: this.scale * _ui_utils.CSS_UNITS,
-        rotation: totalRotation
-      });
-
-      if (this.svg) {
-        this.cssTransform(this.svg, true);
-        this.eventBus.dispatch('pagerendered', {
+    if (this.canvas) {
+      if (this.useOnlyCssZoom || this.hasRestrictedScaling && isScalingRestricted) {
+        this.cssTransform(this.canvas, true);
+        this.eventBus.dispatch("pagerendered", {
           source: this,
           pageNumber: this.id,
-          cssTransform: true
+          cssTransform: true,
+          timestamp: performance.now()
         });
         return;
       }
 
-      var isScalingRestricted = false;
+      if (!this.zoomLayer && !this.canvas.hasAttribute("hidden")) {
+        this.zoomLayer = this.canvas.parentNode;
+        this.zoomLayer.style.position = "absolute";
+      }
+    }
 
-      if (this.canvas && this.maxCanvasPixels > 0) {
-        var outputScale = this.outputScale;
+    if (this.zoomLayer) {
+      this.cssTransform(this.zoomLayer.firstChild);
+    }
 
-        if ((Math.floor(this.viewport.width) * outputScale.sx | 0) * (Math.floor(this.viewport.height) * outputScale.sy | 0) > this.maxCanvasPixels) {
-          isScalingRestricted = true;
-        }
+    this.reset(true, true);
+  }
+
+  cancelRendering(keepAnnotations = false) {
+    if (this.paintTask) {
+      this.paintTask.cancel();
+      this.paintTask = null;
+    }
+
+    this.resume = null;
+
+    if (this.textLayer) {
+      this.textLayer.cancel();
+      this.textLayer = null;
+    }
+
+    if (!keepAnnotations && this.annotationLayer) {
+      this.annotationLayer.cancel();
+      this.annotationLayer = null;
+    }
+  }
+
+  cssTransform(target, redrawAnnotations = false) {
+    const width = this.viewport.width;
+    const height = this.viewport.height;
+    const div = this.div;
+    target.style.width = target.parentNode.style.width = div.style.width = Math.floor(width) + "px";
+    target.style.height = target.parentNode.style.height = div.style.height = Math.floor(height) + "px";
+    const relativeRotation = this.viewport.rotation - this.paintedViewportMap.get(target).rotation;
+    const absRotation = Math.abs(relativeRotation);
+    let scaleX = 1,
+        scaleY = 1;
+
+    if (absRotation === 90 || absRotation === 270) {
+      scaleX = height / width;
+      scaleY = width / height;
+    }
+
+    const cssTransform = "rotate(" + relativeRotation + "deg) " + "scale(" + scaleX + "," + scaleY + ")";
+    target.style.transform = cssTransform;
+
+    if (this.textLayer) {
+      const textLayerViewport = this.textLayer.viewport;
+      const textRelativeRotation = this.viewport.rotation - textLayerViewport.rotation;
+      const textAbsRotation = Math.abs(textRelativeRotation);
+      let scale = width / textLayerViewport.width;
+
+      if (textAbsRotation === 90 || textAbsRotation === 270) {
+        scale = width / textLayerViewport.height;
       }
 
-      if (this.canvas) {
-        if (this.useOnlyCssZoom || this.hasRestrictedScaling && isScalingRestricted) {
-          this.cssTransform(this.canvas, true);
-          this.eventBus.dispatch('pagerendered', {
-            source: this,
-            pageNumber: this.id,
-            cssTransform: true
-          });
+      const textLayerDiv = this.textLayer.textLayerDiv;
+      let transX, transY;
+
+      switch (textAbsRotation) {
+        case 0:
+          transX = transY = 0;
+          break;
+
+        case 90:
+          transX = 0;
+          transY = "-" + textLayerDiv.style.height;
+          break;
+
+        case 180:
+          transX = "-" + textLayerDiv.style.width;
+          transY = "-" + textLayerDiv.style.height;
+          break;
+
+        case 270:
+          transX = "-" + textLayerDiv.style.width;
+          transY = 0;
+          break;
+
+        default:
+          console.error("Bad rotation value.");
+          break;
+      }
+
+      textLayerDiv.style.transform = "rotate(" + textAbsRotation + "deg) " + "scale(" + scale + ", " + scale + ") " + "translate(" + transX + ", " + transY + ")";
+      textLayerDiv.style.transformOrigin = "0% 0%";
+    }
+
+    if (redrawAnnotations && this.annotationLayer) {
+      this.annotationLayer.render(this.viewport, "display");
+    }
+  }
+
+  get width() {
+    return this.viewport.width;
+  }
+
+  get height() {
+    return this.viewport.height;
+  }
+
+  getPagePoint(x, y) {
+    return this.viewport.convertToPdfPoint(x, y);
+  }
+
+  draw() {
+    if (this.renderingState !== _pdf_rendering_queue.RenderingStates.INITIAL) {
+      console.error("Must be in new state before drawing");
+      this.reset();
+    }
+
+    const {
+      div,
+      pdfPage
+    } = this;
+
+    if (!pdfPage) {
+      this.renderingState = _pdf_rendering_queue.RenderingStates.FINISHED;
+
+      if (this.loadingIconDiv) {
+        div.removeChild(this.loadingIconDiv);
+        delete this.loadingIconDiv;
+      }
+
+      return Promise.reject(new Error("pdfPage is not loaded"));
+    }
+
+    this.renderingState = _pdf_rendering_queue.RenderingStates.RUNNING;
+    const canvasWrapper = document.createElement("div");
+    canvasWrapper.style.width = div.style.width;
+    canvasWrapper.style.height = div.style.height;
+    canvasWrapper.classList.add("canvasWrapper");
+
+    if (this.annotationLayer && this.annotationLayer.div) {
+      div.insertBefore(canvasWrapper, this.annotationLayer.div);
+    } else {
+      div.appendChild(canvasWrapper);
+    }
+
+    let textLayer = null;
+
+    if (this.textLayerMode !== _ui_utils.TextLayerMode.DISABLE && this.textLayerFactory) {
+      const textLayerDiv = document.createElement("div");
+      textLayerDiv.className = "textLayer";
+      textLayerDiv.style.width = canvasWrapper.style.width;
+      textLayerDiv.style.height = canvasWrapper.style.height;
+
+      if (this.annotationLayer && this.annotationLayer.div) {
+        div.insertBefore(textLayerDiv, this.annotationLayer.div);
+      } else {
+        div.appendChild(textLayerDiv);
+      }
+
+      textLayer = this.textLayerFactory.createTextLayerBuilder(textLayerDiv, this.id - 1, this.viewport, this.textLayerMode === _ui_utils.TextLayerMode.ENABLE_ENHANCE, this.eventBus);
+    }
+
+    this.textLayer = textLayer;
+    let renderContinueCallback = null;
+
+    if (this.renderingQueue) {
+      renderContinueCallback = cont => {
+        if (!this.renderingQueue.isHighestPriority(this)) {
+          this.renderingState = _pdf_rendering_queue.RenderingStates.PAUSED;
+
+          this.resume = () => {
+            this.renderingState = _pdf_rendering_queue.RenderingStates.RUNNING;
+            cont();
+          };
+
           return;
         }
 
-        if (!this.zoomLayer && !this.canvas.hasAttribute('hidden')) {
-          this.zoomLayer = this.canvas.parentNode;
-          this.zoomLayer.style.position = 'absolute';
-        }
-      }
-
-      if (this.zoomLayer) {
-        this.cssTransform(this.zoomLayer.firstChild);
-      }
-
-      this.reset(true, true);
+        cont();
+      };
     }
-  }, {
-    key: "cancelRendering",
-    value: function cancelRendering() {
-      var keepAnnotations = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-      if (this.paintTask) {
-        this.paintTask.cancel();
+    const finishPaintTask = async error => {
+      if (paintTask === this.paintTask) {
         this.paintTask = null;
       }
 
-      this.resume = null;
-
-      if (this.textLayer) {
-        this.textLayer.cancel();
-        this.textLayer = null;
+      if (error instanceof _pdf.RenderingCancelledException) {
+        this.error = null;
+        return;
       }
 
-      if (!keepAnnotations && this.annotationLayer) {
-        this.annotationLayer.cancel();
-        this.annotationLayer = null;
-      }
-    }
-  }, {
-    key: "cssTransform",
-    value: function cssTransform(target) {
-      var redrawAnnotations = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var width = this.viewport.width;
-      var height = this.viewport.height;
-      var div = this.div;
-      target.style.width = target.parentNode.style.width = div.style.width = Math.floor(width) + 'px';
-      target.style.height = target.parentNode.style.height = div.style.height = Math.floor(height) + 'px';
-      var relativeRotation = this.viewport.rotation - this.paintedViewportMap.get(target).rotation;
-      var absRotation = Math.abs(relativeRotation);
-      var scaleX = 1,
-          scaleY = 1;
+      this.renderingState = _pdf_rendering_queue.RenderingStates.FINISHED;
 
-      if (absRotation === 90 || absRotation === 270) {
-        scaleX = height / width;
-        scaleY = width / height;
+      if (this.loadingIconDiv) {
+        div.removeChild(this.loadingIconDiv);
+        delete this.loadingIconDiv;
       }
 
-      var cssTransform = 'rotate(' + relativeRotation + 'deg) ' + 'scale(' + scaleX + ',' + scaleY + ')';
-      target.style.transform = cssTransform;
+      this._resetZoomLayer(true);
 
-      if (this.textLayer) {
-        var textLayerViewport = this.textLayer.viewport;
-        var textRelativeRotation = this.viewport.rotation - textLayerViewport.rotation;
-        var textAbsRotation = Math.abs(textRelativeRotation);
-        var scale = width / textLayerViewport.width;
-
-        if (textAbsRotation === 90 || textAbsRotation === 270) {
-          scale = width / textLayerViewport.height;
-        }
-
-        var textLayerDiv = this.textLayer.textLayerDiv;
-        var transX, transY;
-
-        switch (textAbsRotation) {
-          case 0:
-            transX = transY = 0;
-            break;
-
-          case 90:
-            transX = 0;
-            transY = '-' + textLayerDiv.style.height;
-            break;
-
-          case 180:
-            transX = '-' + textLayerDiv.style.width;
-            transY = '-' + textLayerDiv.style.height;
-            break;
-
-          case 270:
-            transX = '-' + textLayerDiv.style.width;
-            transY = 0;
-            break;
-
-          default:
-            console.error('Bad rotation value.');
-            break;
-        }
-
-        textLayerDiv.style.transform = 'rotate(' + textAbsRotation + 'deg) ' + 'scale(' + scale + ', ' + scale + ') ' + 'translate(' + transX + ', ' + transY + ')';
-        textLayerDiv.style.transformOrigin = '0% 0%';
-      }
-
-      if (redrawAnnotations && this.annotationLayer) {
-        this.annotationLayer.render(this.viewport, 'display');
-      }
-    }
-  }, {
-    key: "getPagePoint",
-    value: function getPagePoint(x, y) {
-      return this.viewport.convertToPdfPoint(x, y);
-    }
-  }, {
-    key: "draw",
-    value: function draw() {
-      var _this = this;
-
-      if (this.renderingState !== _pdf_rendering_queue.RenderingStates.INITIAL) {
-        console.error('Must be in new state before drawing');
-        this.reset();
-      }
-
-      if (!this.pdfPage) {
-        this.renderingState = _pdf_rendering_queue.RenderingStates.FINISHED;
-        return Promise.reject(new Error('Page is not loaded'));
-      }
-
-      this.renderingState = _pdf_rendering_queue.RenderingStates.RUNNING;
-      var pdfPage = this.pdfPage;
-      var div = this.div;
-      var canvasWrapper = document.createElement('div');
-      canvasWrapper.style.width = div.style.width;
-      canvasWrapper.style.height = div.style.height;
-      canvasWrapper.classList.add('canvasWrapper');
-
-      if (this.annotationLayer && this.annotationLayer.div) {
-        div.insertBefore(canvasWrapper, this.annotationLayer.div);
-      } else {
-        div.appendChild(canvasWrapper);
-      }
-
-      var textLayer = null;
-
-      if (this.textLayerMode !== _ui_utils.TextLayerMode.DISABLE && this.textLayerFactory) {
-        var textLayerDiv = document.createElement('div');
-        textLayerDiv.className = 'textLayer';
-        textLayerDiv.style.width = canvasWrapper.style.width;
-        textLayerDiv.style.height = canvasWrapper.style.height;
-
-        if (this.annotationLayer && this.annotationLayer.div) {
-          div.insertBefore(textLayerDiv, this.annotationLayer.div);
-        } else {
-          div.appendChild(textLayerDiv);
-        }
-
-        textLayer = this.textLayerFactory.createTextLayerBuilder(textLayerDiv, this.id - 1, this.viewport, this.textLayerMode === _ui_utils.TextLayerMode.ENABLE_ENHANCE);
-      }
-
-      this.textLayer = textLayer;
-      var renderContinueCallback = null;
-
-      if (this.renderingQueue) {
-        renderContinueCallback = function renderContinueCallback(cont) {
-          if (!_this.renderingQueue.isHighestPriority(_this)) {
-            _this.renderingState = _pdf_rendering_queue.RenderingStates.PAUSED;
-
-            _this.resume = function () {
-              _this.renderingState = _pdf_rendering_queue.RenderingStates.RUNNING;
-              cont();
-            };
-
-            return;
-          }
-
-          cont();
-        };
-      }
-
-      var finishPaintTask =
-      /*#__PURE__*/
-      function () {
-        var _ref = _asyncToGenerator(
-        /*#__PURE__*/
-        _regenerator["default"].mark(function _callee(error) {
-          return _regenerator["default"].wrap(function _callee$(_context) {
-            while (1) {
-              switch (_context.prev = _context.next) {
-                case 0:
-                  if (paintTask === _this.paintTask) {
-                    _this.paintTask = null;
-                  }
-
-                  if (!(error instanceof _pdf.RenderingCancelledException)) {
-                    _context.next = 4;
-                    break;
-                  }
-
-                  _this.error = null;
-                  return _context.abrupt("return");
-
-                case 4:
-                  _this.renderingState = _pdf_rendering_queue.RenderingStates.FINISHED;
-
-                  if (_this.loadingIconDiv) {
-                    div.removeChild(_this.loadingIconDiv);
-                    delete _this.loadingIconDiv;
-                  }
-
-                  _this._resetZoomLayer(true);
-
-                  _this.error = error;
-                  _this.stats = pdfPage.stats;
-
-                  if (_this.onAfterDraw) {
-                    _this.onAfterDraw();
-                  }
-
-                  _this.eventBus.dispatch('pagerendered', {
-                    source: _this,
-                    pageNumber: _this.id,
-                    cssTransform: false
-                  });
-
-                  if (!error) {
-                    _context.next = 13;
-                    break;
-                  }
-
-                  throw error;
-
-                case 13:
-                case "end":
-                  return _context.stop();
-              }
-            }
-          }, _callee);
-        }));
-
-        return function finishPaintTask(_x) {
-          return _ref.apply(this, arguments);
-        };
-      }();
-
-      var paintTask = this.renderer === _ui_utils.RendererType.SVG ? this.paintOnSvg(canvasWrapper) : this.paintOnCanvas(canvasWrapper);
-      paintTask.onRenderContinue = renderContinueCallback;
-      this.paintTask = paintTask;
-      var resultPromise = paintTask.promise.then(function () {
-        return finishPaintTask(null).then(function () {
-          if (textLayer) {
-            var readableStream = pdfPage.streamTextContent({
-              normalizeWhitespace: true
-            });
-            textLayer.setTextContentStream(readableStream);
-            textLayer.render();
-          }
-        });
-      }, function (reason) {
-        return finishPaintTask(reason);
+      this.error = error;
+      this.stats = pdfPage.stats;
+      this.eventBus.dispatch("pagerendered", {
+        source: this,
+        pageNumber: this.id,
+        cssTransform: false,
+        timestamp: performance.now()
       });
 
-      if (this.annotationLayerFactory) {
-        if (!this.annotationLayer) {
-          this.annotationLayer = this.annotationLayerFactory.createAnnotationLayerBuilder(div, pdfPage, this.imageResourcesPath, this.renderInteractiveForms, this.l10n);
-        }
-
-        this.annotationLayer.render(this.viewport, 'display');
+      if (error) {
+        throw error;
       }
+    };
 
-      div.setAttribute('data-loaded', true);
-
-      if (this.onBeforeDraw) {
-        this.onBeforeDraw();
-      }
-
-      return resultPromise;
-    }
-  }, {
-    key: "paintOnCanvas",
-    value: function paintOnCanvas(canvasWrapper) {
-      var renderCapability = (0, _pdf.createPromiseCapability)();
-      var result = {
-        promise: renderCapability.promise,
-        onRenderContinue: function onRenderContinue(cont) {
-          cont();
-        },
-        cancel: function cancel() {
-          renderTask.cancel();
+    const paintTask = this.renderer === _ui_utils.RendererType.SVG ? this.paintOnSvg(canvasWrapper) : this.paintOnCanvas(canvasWrapper);
+    paintTask.onRenderContinue = renderContinueCallback;
+    this.paintTask = paintTask;
+    const resultPromise = paintTask.promise.then(function () {
+      return finishPaintTask(null).then(function () {
+        if (textLayer) {
+          const readableStream = pdfPage.streamTextContent({
+            normalizeWhitespace: true
+          });
+          textLayer.setTextContentStream(readableStream);
+          textLayer.render();
         }
-      };
-      var viewport = this.viewport;
-      var canvas = document.createElement('canvas');
-      canvas.id = this.renderingId;
-      canvas.setAttribute('hidden', 'hidden');
-      var isCanvasHidden = true;
-
-      var showCanvas = function showCanvas() {
-        if (isCanvasHidden) {
-          canvas.removeAttribute('hidden');
-          isCanvasHidden = false;
-        }
-      };
-
-      canvasWrapper.appendChild(canvas);
-      this.canvas = canvas;
-      canvas.mozOpaque = true;
-      var ctx = canvas.getContext('2d', {
-        alpha: false
       });
-      var outputScale = (0, _ui_utils.getOutputScale)(ctx);
-      this.outputScale = outputScale;
+    }, function (reason) {
+      return finishPaintTask(reason);
+    });
 
-      if (this.useOnlyCssZoom) {
-        var actualSizeViewport = viewport.clone({
-          scale: _ui_utils.CSS_UNITS
-        });
-        outputScale.sx *= actualSizeViewport.width / viewport.width;
-        outputScale.sy *= actualSizeViewport.height / viewport.height;
-        outputScale.scaled = true;
+    if (this.annotationLayerFactory) {
+      if (!this.annotationLayer) {
+        this.annotationLayer = this.annotationLayerFactory.createAnnotationLayerBuilder(div, pdfPage, this.imageResourcesPath, this.renderInteractiveForms, this.l10n);
       }
 
-      if (this.maxCanvasPixels > 0) {
-        var pixelsInViewport = viewport.width * viewport.height;
-        var maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
-
-        if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
-          outputScale.sx = maxScale;
-          outputScale.sy = maxScale;
-          outputScale.scaled = true;
-          this.hasRestrictedScaling = true;
-        } else {
-          this.hasRestrictedScaling = false;
-        }
-      }
-
-      var sfx = (0, _ui_utils.approximateFraction)(outputScale.sx);
-      var sfy = (0, _ui_utils.approximateFraction)(outputScale.sy);
-      canvas.width = (0, _ui_utils.roundToDivide)(viewport.width * outputScale.sx, sfx[0]);
-      canvas.height = (0, _ui_utils.roundToDivide)(viewport.height * outputScale.sy, sfy[0]);
-      canvas.style.width = (0, _ui_utils.roundToDivide)(viewport.width, sfx[1]) + 'px';
-      canvas.style.height = (0, _ui_utils.roundToDivide)(viewport.height, sfy[1]) + 'px';
-      this.paintedViewportMap.set(canvas, viewport);
-      var transform = !outputScale.scaled ? null : [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
-      var renderContext = {
-        canvasContext: ctx,
-        transform: transform,
-        viewport: this.viewport,
-        enableWebGL: this.enableWebGL,
-        renderInteractiveForms: this.renderInteractiveForms
-      };
-      var renderTask = this.pdfPage.render(renderContext);
-
-      renderTask.onContinue = function (cont) {
-        showCanvas();
-
-        if (result.onRenderContinue) {
-          result.onRenderContinue(cont);
-        } else {
-          cont();
-        }
-      };
-
-      renderTask.promise.then(function () {
-        showCanvas();
-        renderCapability.resolve(undefined);
-      }, function (error) {
-        showCanvas();
-        renderCapability.reject(error);
-      });
-      return result;
+      this.annotationLayer.render(this.viewport, "display");
     }
-  }, {
-    key: "paintOnSvg",
-    value: function paintOnSvg(wrapper) {
-      var _this2 = this;
 
-      var cancelled = false;
+    div.setAttribute("data-loaded", true);
+    this.eventBus.dispatch("pagerender", {
+      source: this,
+      pageNumber: this.id
+    });
+    return resultPromise;
+  }
 
-      var ensureNotCancelled = function ensureNotCancelled() {
-        if (cancelled) {
-          throw new _pdf.RenderingCancelledException('Rendering cancelled, page ' + _this2.id, 'svg');
-        }
-      };
+  paintOnCanvas(canvasWrapper) {
+    const renderCapability = (0, _pdf.createPromiseCapability)();
+    const result = {
+      promise: renderCapability.promise,
 
-      var pdfPage = this.pdfPage;
-      var actualSizeViewport = this.viewport.clone({
+      onRenderContinue(cont) {
+        cont();
+      },
+
+      cancel() {
+        renderTask.cancel();
+      }
+
+    };
+    const viewport = this.viewport;
+    const canvas = document.createElement("canvas");
+    this.l10n.get("page_canvas", {
+      page: this.id
+    }, "Page {{page}}").then(msg => {
+      canvas.setAttribute("aria-label", msg);
+    });
+    canvas.setAttribute("hidden", "hidden");
+    let isCanvasHidden = true;
+
+    const showCanvas = function () {
+      if (isCanvasHidden) {
+        canvas.removeAttribute("hidden");
+        isCanvasHidden = false;
+      }
+    };
+
+    canvasWrapper.appendChild(canvas);
+    this.canvas = canvas;
+    canvas.mozOpaque = true;
+    const ctx = canvas.getContext("2d", {
+      alpha: false
+    });
+    const outputScale = (0, _ui_utils.getOutputScale)(ctx);
+    this.outputScale = outputScale;
+
+    if (this.useOnlyCssZoom) {
+      const actualSizeViewport = viewport.clone({
         scale: _ui_utils.CSS_UNITS
       });
-      var promise = pdfPage.getOperatorList().then(function (opList) {
-        ensureNotCancelled();
-        var svgGfx = new _pdf.SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
-        return svgGfx.getSVG(opList, actualSizeViewport).then(function (svg) {
-          ensureNotCancelled();
-          _this2.svg = svg;
-
-          _this2.paintedViewportMap.set(svg, actualSizeViewport);
-
-          svg.style.width = wrapper.style.width;
-          svg.style.height = wrapper.style.height;
-          _this2.renderingState = _pdf_rendering_queue.RenderingStates.FINISHED;
-          wrapper.appendChild(svg);
-        });
-      });
-      return {
-        promise: promise,
-        onRenderContinue: function onRenderContinue(cont) {
-          cont();
-        },
-        cancel: function cancel() {
-          cancelled = true;
-        }
-      };
+      outputScale.sx *= actualSizeViewport.width / viewport.width;
+      outputScale.sy *= actualSizeViewport.height / viewport.height;
+      outputScale.scaled = true;
     }
-  }, {
-    key: "setPageLabel",
-    value: function setPageLabel(label) {
-      this.pageLabel = typeof label === 'string' ? label : null;
 
-      if (this.pageLabel !== null) {
-        this.div.setAttribute('data-page-label', this.pageLabel);
+    if (this.maxCanvasPixels > 0) {
+      const pixelsInViewport = viewport.width * viewport.height;
+      const maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
+
+      if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
+        outputScale.sx = maxScale;
+        outputScale.sy = maxScale;
+        outputScale.scaled = true;
+        this.hasRestrictedScaling = true;
       } else {
-        this.div.removeAttribute('data-page-label');
+        this.hasRestrictedScaling = false;
       }
     }
-  }, {
-    key: "width",
-    get: function get() {
-      return this.viewport.width;
-    }
-  }, {
-    key: "height",
-    get: function get() {
-      return this.viewport.height;
-    }
-  }]);
 
-  return PDFPageView;
-}();
+    const sfx = (0, _ui_utils.approximateFraction)(outputScale.sx);
+    const sfy = (0, _ui_utils.approximateFraction)(outputScale.sy);
+    canvas.width = (0, _ui_utils.roundToDivide)(viewport.width * outputScale.sx, sfx[0]);
+    canvas.height = (0, _ui_utils.roundToDivide)(viewport.height * outputScale.sy, sfy[0]);
+    canvas.style.width = (0, _ui_utils.roundToDivide)(viewport.width, sfx[1]) + "px";
+    canvas.style.height = (0, _ui_utils.roundToDivide)(viewport.height, sfy[1]) + "px";
+    this.paintedViewportMap.set(canvas, viewport);
+    const transform = !outputScale.scaled ? null : [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
+    const renderContext = {
+      canvasContext: ctx,
+      transform,
+      viewport: this.viewport,
+      enableWebGL: this.enableWebGL,
+      renderInteractiveForms: this.renderInteractiveForms
+    };
+    const renderTask = this.pdfPage.render(renderContext);
+
+    renderTask.onContinue = function (cont) {
+      showCanvas();
+
+      if (result.onRenderContinue) {
+        result.onRenderContinue(cont);
+      } else {
+        cont();
+      }
+    };
+
+    renderTask.promise.then(function () {
+      showCanvas();
+      renderCapability.resolve(undefined);
+    }, function (error) {
+      showCanvas();
+      renderCapability.reject(error);
+    });
+    return result;
+  }
+
+  paintOnSvg(wrapper) {
+    let cancelled = false;
+
+    const ensureNotCancelled = () => {
+      if (cancelled) {
+        throw new _pdf.RenderingCancelledException(`Rendering cancelled, page ${this.id}`, "svg");
+      }
+    };
+
+    const pdfPage = this.pdfPage;
+    const actualSizeViewport = this.viewport.clone({
+      scale: _ui_utils.CSS_UNITS
+    });
+    const promise = pdfPage.getOperatorList().then(opList => {
+      ensureNotCancelled();
+      const svgGfx = new _pdf.SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
+      return svgGfx.getSVG(opList, actualSizeViewport).then(svg => {
+        ensureNotCancelled();
+        this.svg = svg;
+        this.paintedViewportMap.set(svg, actualSizeViewport);
+        svg.style.width = wrapper.style.width;
+        svg.style.height = wrapper.style.height;
+        this.renderingState = _pdf_rendering_queue.RenderingStates.FINISHED;
+        wrapper.appendChild(svg);
+      });
+    });
+    return {
+      promise,
+
+      onRenderContinue(cont) {
+        cont();
+      },
+
+      cancel() {
+        cancelled = true;
+      }
+
+    };
+  }
+
+  setPageLabel(label) {
+    this.pageLabel = typeof label === "string" ? label : null;
+
+    if (this.pageLabel !== null) {
+      this.div.setAttribute("data-page-label", this.pageLabel);
+    } else {
+      this.div.removeAttribute("data-page-label");
+    }
+  }
+
+}
 
 exports.PDFPageView = PDFPageView;

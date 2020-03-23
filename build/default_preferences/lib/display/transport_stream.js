@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PDFDataTransportStream = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
 class PDFDataTransportStream {
   constructor(params, pdfDataRangeTransport) {

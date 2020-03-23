@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@
  * @licend The above is the entire license notice for the
  * Javascript code in this page
  */
-'use strict';
+"use strict";
 
-var TestReporter = function TestReporter(browser, appPath) {
+var TestReporter = function (browser, appPath) {
   function send(action, json, cb) {
     var r = new XMLHttpRequest();
-    r.open('POST', action, true);
-    r.setRequestHeader('Content-Type', 'application/json');
+    r.open("POST", action, true);
+    r.setRequestHeader("Content-Type", "application/json");
 
     r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
       if (r.readyState === 4) {
@@ -39,31 +39,31 @@ var TestReporter = function TestReporter(browser, appPath) {
       }
     };
 
-    json['browser'] = browser;
+    json["browser"] = browser;
     r.send(JSON.stringify(json));
   }
 
   function sendInfo(message) {
-    send('/info', {
-      message: message
+    send("/info", {
+      message
     });
   }
 
   function sendResult(status, description, error) {
     var message = {
-      status: status,
-      description: description
+      status,
+      description
     };
 
-    if (typeof error !== 'undefined') {
-      message['error'] = error;
+    if (typeof error !== "undefined") {
+      message["error"] = error;
     }
 
-    send('/submit_task_results', message);
+    send("/submit_task_results", message);
   }
 
   function sendQuitRequest() {
-    send('/tellMeToQuit?path=' + escape(appPath), {});
+    send("/tellMeToQuit?path=" + escape(appPath), {});
   }
 
   this.now = function () {
@@ -72,7 +72,7 @@ var TestReporter = function TestReporter(browser, appPath) {
 
   this.jasmineStarted = function (suiteInfo) {
     this.runnerStartTime = this.now();
-    sendInfo('Started tests for ' + browser + '.');
+    sendInfo("Started tests for " + browser + ".");
   };
 
   this.suiteStarted = function (result) {};
@@ -81,16 +81,16 @@ var TestReporter = function TestReporter(browser, appPath) {
 
   this.specDone = function (result) {
     if (result.failedExpectations.length === 0) {
-      sendResult('TEST-PASSED', result.description);
+      sendResult("TEST-PASSED", result.description);
     } else {
-      var failedMessages = '';
+      var failedMessages = "";
       var items = result.failedExpectations;
 
       for (var i = 0, ii = items.length; i < ii; i++) {
-        failedMessages += items[i].message + ' ';
+        failedMessages += items[i].message + " ";
       }
 
-      sendResult('TEST-UNEXPECTED-FAIL', result.description, failedMessages);
+      sendResult("TEST-UNEXPECTED-FAIL", result.description, failedMessages);
     }
   };
 

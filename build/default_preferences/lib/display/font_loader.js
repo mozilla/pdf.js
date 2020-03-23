@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.FontLoader = exports.FontFaceObject = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
 class BaseFontLoader {
   constructor({
@@ -13,7 +13,7 @@ class BaseFontLoader {
     onUnsupportedFeature
   }) {
     if (this.constructor === BaseFontLoader) {
-      (0, _util.unreachable)('Cannot initialize BaseFontLoader.');
+      (0, _util.unreachable)("Cannot initialize BaseFontLoader.");
     }
 
     this.docId = docId;
@@ -31,9 +31,9 @@ class BaseFontLoader {
     let styleElement = this.styleElement;
 
     if (!styleElement) {
-      styleElement = this.styleElement = document.createElement('style');
+      styleElement = this.styleElement = document.createElement("style");
       styleElement.id = `PDFJS_FONT_STYLE_TAG_${this.docId}`;
-      document.documentElement.getElementsByTagName('head')[0].appendChild(styleElement);
+      document.documentElement.getElementsByTagName("head")[0].appendChild(styleElement);
     }
 
     const styleSheet = styleElement.sheet;
@@ -54,7 +54,7 @@ class BaseFontLoader {
 
   async bind(font) {
     if (font.attached || font.missingFile) {
-      return undefined;
+      return;
     }
 
     font.attached = true;
@@ -78,7 +78,7 @@ class BaseFontLoader {
         }
       }
 
-      return undefined;
+      return;
     }
 
     const rule = font.createFontFaceRule();
@@ -87,37 +87,36 @@ class BaseFontLoader {
       this.insertRule(rule);
 
       if (this.isSyncFontLoadingSupported) {
-        return undefined;
+        return;
       }
 
-      return new Promise(resolve => {
+      await new Promise(resolve => {
         const request = this._queueLoadingCallback(resolve);
 
         this._prepareFontLoadEvent([rule], [font], request);
       });
     }
-
-    return undefined;
   }
 
   _queueLoadingCallback(callback) {
-    (0, _util.unreachable)('Abstract method `_queueLoadingCallback`.');
+    (0, _util.unreachable)("Abstract method `_queueLoadingCallback`.");
   }
 
   get isFontLoadingAPISupported() {
-    (0, _util.unreachable)('Abstract method `isFontLoadingAPISupported`.');
+    const supported = typeof document !== "undefined" && !!document.fonts;
+    return (0, _util.shadow)(this, "isFontLoadingAPISupported", supported);
   }
 
   get isSyncFontLoadingSupported() {
-    (0, _util.unreachable)('Abstract method `isSyncFontLoadingSupported`.');
+    (0, _util.unreachable)("Abstract method `isSyncFontLoadingSupported`.");
   }
 
   get _loadTestFont() {
-    (0, _util.unreachable)('Abstract method `_loadTestFont`.');
+    (0, _util.unreachable)("Abstract method `_loadTestFont`.");
   }
 
   _prepareFontLoadEvent(rules, fontsToLoad, request) {
-    (0, _util.unreachable)('Abstract method `_prepareFontLoadEvent`.');
+    (0, _util.unreachable)("Abstract method `_prepareFontLoadEvent`.");
   }
 
 }
@@ -135,24 +134,10 @@ exports.FontLoader = FontLoader;
       this.loadTestFontId = 0;
     }
 
-    get isFontLoadingAPISupported() {
-      let supported = typeof document !== 'undefined' && !!document.fonts;
-
-      if (supported && typeof navigator !== 'undefined') {
-        const m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(navigator.userAgent);
-
-        if (m && m[1] < 63) {
-          supported = false;
-        }
-      }
-
-      return (0, _util.shadow)(this, 'isFontLoadingAPISupported', supported);
-    }
-
     get isSyncFontLoadingSupported() {
       let supported = false;
 
-      if (typeof navigator === 'undefined') {
+      if (typeof navigator === "undefined") {
         supported = true;
       } else {
         const m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(navigator.userAgent);
@@ -162,12 +147,12 @@ exports.FontLoader = FontLoader;
         }
       }
 
-      return (0, _util.shadow)(this, 'isSyncFontLoadingSupported', supported);
+      return (0, _util.shadow)(this, "isSyncFontLoadingSupported", supported);
     }
 
     _queueLoadingCallback(callback) {
       function completeRequest() {
-        (0, _util.assert)(!request.done, 'completeRequest() cannot be called twice.');
+        (0, _util.assert)(!request.done, "completeRequest() cannot be called twice.");
         request.done = true;
 
         while (context.requests.length > 0 && context.requests[0].done) {
@@ -189,10 +174,10 @@ exports.FontLoader = FontLoader;
 
     get _loadTestFont() {
       const getLoadTestFont = function () {
-        return atob('T1RUTwALAIAAAwAwQ0ZGIDHtZg4AAAOYAAAAgUZGVE1lkzZwAAAEHAAAABxHREVGABQA' + 'FQAABDgAAAAeT1MvMlYNYwkAAAEgAAAAYGNtYXABDQLUAAACNAAAAUJoZWFk/xVFDQAA' + 'ALwAAAA2aGhlYQdkA+oAAAD0AAAAJGhtdHgD6AAAAAAEWAAAAAZtYXhwAAJQAAAAARgA' + 'AAAGbmFtZVjmdH4AAAGAAAAAsXBvc3T/hgAzAAADeAAAACAAAQAAAAEAALZRFsRfDzz1' + 'AAsD6AAAAADOBOTLAAAAAM4KHDwAAAAAA+gDIQAAAAgAAgAAAAAAAAABAAADIQAAAFoD' + '6AAAAAAD6AABAAAAAAAAAAAAAAAAAAAAAQAAUAAAAgAAAAQD6AH0AAUAAAKKArwAAACM' + 'AooCvAAAAeAAMQECAAACAAYJAAAAAAAAAAAAAQAAAAAAAAAAAAAAAFBmRWQAwAAuAC4D' + 'IP84AFoDIQAAAAAAAQAAAAAAAAAAACAAIAABAAAADgCuAAEAAAAAAAAAAQAAAAEAAAAA' + 'AAEAAQAAAAEAAAAAAAIAAQAAAAEAAAAAAAMAAQAAAAEAAAAAAAQAAQAAAAEAAAAAAAUA' + 'AQAAAAEAAAAAAAYAAQAAAAMAAQQJAAAAAgABAAMAAQQJAAEAAgABAAMAAQQJAAIAAgAB' + 'AAMAAQQJAAMAAgABAAMAAQQJAAQAAgABAAMAAQQJAAUAAgABAAMAAQQJAAYAAgABWABY' + 'AAAAAAAAAwAAAAMAAAAcAAEAAAAAADwAAwABAAAAHAAEACAAAAAEAAQAAQAAAC7//wAA' + 'AC7////TAAEAAAAAAAABBgAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' + 'AAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' + 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' + 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' + 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' + 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAD/gwAyAAAAAQAAAAAAAAAAAAAAAAAA' + 'AAABAAQEAAEBAQJYAAEBASH4DwD4GwHEAvgcA/gXBIwMAYuL+nz5tQXkD5j3CBLnEQAC' + 'AQEBIVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYAAABAQAADwACAQEEE/t3' + 'Dov6fAH6fAT+fPp8+nwHDosMCvm1Cvm1DAz6fBQAAAAAAAABAAAAAMmJbzEAAAAAzgTj' + 'FQAAAADOBOQpAAEAAAAAAAAADAAUAAQAAAABAAAAAgABAAAAAAAAAAAD6AAAAAAAAA==');
+        return atob("T1RUTwALAIAAAwAwQ0ZGIDHtZg4AAAOYAAAAgUZGVE1lkzZwAAAEHAAAABxHREVGABQA" + "FQAABDgAAAAeT1MvMlYNYwkAAAEgAAAAYGNtYXABDQLUAAACNAAAAUJoZWFk/xVFDQAA" + "ALwAAAA2aGhlYQdkA+oAAAD0AAAAJGhtdHgD6AAAAAAEWAAAAAZtYXhwAAJQAAAAARgA" + "AAAGbmFtZVjmdH4AAAGAAAAAsXBvc3T/hgAzAAADeAAAACAAAQAAAAEAALZRFsRfDzz1" + "AAsD6AAAAADOBOTLAAAAAM4KHDwAAAAAA+gDIQAAAAgAAgAAAAAAAAABAAADIQAAAFoD" + "6AAAAAAD6AABAAAAAAAAAAAAAAAAAAAAAQAAUAAAAgAAAAQD6AH0AAUAAAKKArwAAACM" + "AooCvAAAAeAAMQECAAACAAYJAAAAAAAAAAAAAQAAAAAAAAAAAAAAAFBmRWQAwAAuAC4D" + "IP84AFoDIQAAAAAAAQAAAAAAAAAAACAAIAABAAAADgCuAAEAAAAAAAAAAQAAAAEAAAAA" + "AAEAAQAAAAEAAAAAAAIAAQAAAAEAAAAAAAMAAQAAAAEAAAAAAAQAAQAAAAEAAAAAAAUA" + "AQAAAAEAAAAAAAYAAQAAAAMAAQQJAAAAAgABAAMAAQQJAAEAAgABAAMAAQQJAAIAAgAB" + "AAMAAQQJAAMAAgABAAMAAQQJAAQAAgABAAMAAQQJAAUAAgABAAMAAQQJAAYAAgABWABY" + "AAAAAAAAAwAAAAMAAAAcAAEAAAAAADwAAwABAAAAHAAEACAAAAAEAAQAAQAAAC7//wAA" + "AC7////TAAEAAAAAAAABBgAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + "AAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAD/gwAyAAAAAQAAAAAAAAAAAAAAAAAA" + "AAABAAQEAAEBAQJYAAEBASH4DwD4GwHEAvgcA/gXBIwMAYuL+nz5tQXkD5j3CBLnEQAC" + "AQEBIVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYAAABAQAADwACAQEEE/t3" + "Dov6fAH6fAT+fPp8+nwHDosMCvm1Cvm1DAz6fBQAAAAAAAABAAAAAMmJbzEAAAAAzgTj" + "FQAAAADOBOQpAAEAAAAAAAAADAAUAAQAAAABAAAAAgABAAAAAAAAAAAD6AAAAAAAAA==");
       };
 
-      return (0, _util.shadow)(this, '_loadTestFont', getLoadTestFont());
+      return (0, _util.shadow)(this, "_loadTestFont", getLoadTestFont());
     }
 
     _prepareFontLoadEvent(rules, fonts, request) {
@@ -201,30 +186,30 @@ exports.FontLoader = FontLoader;
       }
 
       function spliceString(s, offset, remove, insert) {
-        let chunk1 = s.substring(0, offset);
-        let chunk2 = s.substring(offset + remove);
+        const chunk1 = s.substring(0, offset);
+        const chunk2 = s.substring(offset + remove);
         return chunk1 + insert + chunk2;
       }
 
       let i, ii;
-      let canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = 1;
       canvas.height = 1;
-      let ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       let called = 0;
 
       function isFontReady(name, callback) {
         called++;
 
         if (called > 30) {
-          (0, _util.warn)('Load test font never loaded.');
+          (0, _util.warn)("Load test font never loaded.");
           callback();
           return;
         }
 
-        ctx.font = '30px ' + name;
-        ctx.fillText('.', 0, 20);
-        let imageData = ctx.getImageData(0, 0, 1, 1);
+        ctx.font = "30px " + name;
+        ctx.fillText(".", 0, 20);
+        const imageData = ctx.getImageData(0, 0, 1, 1);
 
         if (imageData.data[3] > 0) {
           callback();
@@ -236,10 +221,10 @@ exports.FontLoader = FontLoader;
 
       const loadTestFontId = `lt${Date.now()}${this.loadTestFontId++}`;
       let data = this._loadTestFont;
-      let COMMENT_OFFSET = 976;
+      const COMMENT_OFFSET = 976;
       data = spliceString(data, COMMENT_OFFSET, loadTestFontId.length, loadTestFontId);
-      let CFF_CHECKSUM_OFFSET = 16;
-      let XXXX_VALUE = 0x58585858;
+      const CFF_CHECKSUM_OFFSET = 16;
+      const XXXX_VALUE = 0x58585858;
       let checksum = int32(data, CFF_CHECKSUM_OFFSET);
 
       for (i = 0, ii = loadTestFontId.length - 3; i < ii; i += 4) {
@@ -247,26 +232,29 @@ exports.FontLoader = FontLoader;
       }
 
       if (i < loadTestFontId.length) {
-        checksum = checksum - XXXX_VALUE + int32(loadTestFontId + 'XXX', i) | 0;
+        checksum = checksum - XXXX_VALUE + int32(loadTestFontId + "XXX", i) | 0;
       }
 
       data = spliceString(data, CFF_CHECKSUM_OFFSET, 4, (0, _util.string32)(checksum));
       const url = `url(data:font/opentype;base64,${btoa(data)});`;
       const rule = `@font-face {font-family:"${loadTestFontId}";src:${url}}`;
       this.insertRule(rule);
-      let names = [];
+      const names = [];
 
       for (i = 0, ii = fonts.length; i < ii; i++) {
         names.push(fonts[i].loadedName);
       }
 
       names.push(loadTestFontId);
-      let div = document.createElement('div');
-      div.setAttribute('style', 'visibility: hidden;' + 'width: 10px; height: 10px;' + 'position: absolute; top: 0px; left: 0px;');
+      const div = document.createElement("div");
+      div.style.visibility = "hidden";
+      div.style.width = div.style.height = "10px";
+      div.style.position = "absolute";
+      div.style.top = div.style.left = "0px";
 
       for (i = 0, ii = names.length; i < ii; ++i) {
-        let span = document.createElement('span');
-        span.textContent = 'Hi';
+        const span = document.createElement("span");
+        span.textContent = "Hi";
         span.style.fontFamily = names[i];
         div.appendChild(span);
       }
@@ -280,12 +268,6 @@ exports.FontLoader = FontLoader;
 
   };
 }
-const IsEvalSupportedCached = {
-  get value() {
-    return (0, _util.shadow)(this, 'value', (0, _util.isEvalSupported)());
-  }
-
-};
 
 class FontFaceObject {
   constructor(translatedData, {
@@ -297,7 +279,7 @@ class FontFaceObject {
   }) {
     this.compiledGlyphs = Object.create(null);
 
-    for (let i in translatedData) {
+    for (const i in translatedData) {
       this[i] = translatedData[i];
     }
 
@@ -346,7 +328,7 @@ class FontFaceObject {
     let cmds, current;
 
     try {
-      cmds = objs.get(this.loadedName + '_path_' + character);
+      cmds = objs.get(this.loadedName + "_path_" + character);
     } catch (ex) {
       if (!this.ignoreErrors) {
         throw ex;
@@ -362,30 +344,30 @@ class FontFaceObject {
       return this.compiledGlyphs[character] = function (c, size) {};
     }
 
-    if (this.isEvalSupported && IsEvalSupportedCached.value) {
+    if (this.isEvalSupported && _util.IsEvalSupportedCached.value) {
       let args,
-          js = '';
+          js = "";
 
       for (let i = 0, ii = cmds.length; i < ii; i++) {
         current = cmds[i];
 
         if (current.args !== undefined) {
-          args = current.args.join(',');
+          args = current.args.join(",");
         } else {
-          args = '';
+          args = "";
         }
 
-        js += 'c.' + current.cmd + '(' + args + ');\n';
+        js += "c." + current.cmd + "(" + args + ");\n";
       }
 
-      return this.compiledGlyphs[character] = new Function('c', 'size', js);
+      return this.compiledGlyphs[character] = new Function("c", "size", js);
     }
 
     return this.compiledGlyphs[character] = function (c, size) {
       for (let i = 0, ii = cmds.length; i < ii; i++) {
         current = cmds[i];
 
-        if (current.cmd === 'scale') {
+        if (current.cmd === "scale") {
           current.args = [size, -size];
         }
 

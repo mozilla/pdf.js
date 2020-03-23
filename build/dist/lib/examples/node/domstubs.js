@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ function xmlEncode(s) {
       ch;
   s = String(s);
 
-  while (i < s.length && (ch = s[i]) !== '&' && ch !== '<' && ch !== '\"' && ch !== '\n' && ch !== '\r' && ch !== '\t') {
+  while (i < s.length && (ch = s[i]) !== "&" && ch !== "<" && ch !== '"' && ch !== "\n" && ch !== "\r" && ch !== "\t") {
     i++;
   }
 
@@ -40,28 +40,28 @@ function xmlEncode(s) {
     ch = s[i++];
 
     switch (ch) {
-      case '&':
-        buf += '&amp;';
+      case "&":
+        buf += "&amp;";
         break;
 
-      case '<':
-        buf += '&lt;';
+      case "<":
+        buf += "&lt;";
         break;
 
-      case '\"':
-        buf += '&quot;';
+      case '"':
+        buf += "&quot;";
         break;
 
-      case '\n':
-        buf += '&#xA;';
+      case "\n":
+        buf += "&#xA;";
         break;
 
-      case '\r':
-        buf += '&#xD;';
+      case "\r":
+        buf += "&#xD;";
         break;
 
-      case '\t':
-        buf += '&#x9;';
+      case "\t":
+        buf += "&#x9;";
         break;
 
       default:
@@ -77,12 +77,12 @@ function DOMElement(name) {
   this.nodeName = name;
   this.childNodes = [];
   this.attributes = {};
-  this.textContent = '';
+  this.textContent = "";
 
-  if (name === 'style') {
+  if (name === "style") {
     this.sheet = {
       cssRules: [],
-      insertRule: function insertRule(rule) {
+      insertRule: function (rule) {
         this.cssRules.push(rule);
       }
     };
@@ -103,7 +103,7 @@ DOMElement.prototype = {
     }
 
     if (NS) {
-      var suffix = ':' + name;
+      var suffix = ":" + name;
 
       for (var fullName in this.attributes) {
         if (fullName.slice(-suffix.length) === suffix) {
@@ -115,7 +115,7 @@ DOMElement.prototype = {
     return null;
   },
   setAttribute: function DOMElement_setAttribute(name, value) {
-    value = value || '';
+    value = value || "";
     value = xmlEncode(value);
     this.attributes[name] = value;
   },
@@ -148,7 +148,7 @@ DOMElement.prototype = {
       buf.push(chunk);
     }
 
-    return buf.join('');
+    return buf.join("");
   },
   getSerializer: function DOMElement_getSerializer() {
     return new DOMElementSerializer(this);
@@ -170,12 +170,12 @@ DOMElementSerializer.prototype = {
     switch (this._state) {
       case 0:
         ++this._state;
-        return '<' + node.nodeName;
+        return "<" + node.nodeName;
 
       case 1:
         ++this._state;
 
-        if (node.nodeName === 'svg:svg') {
+        if (node.nodeName === "svg:svg") {
           return ' xmlns:xlink="http://www.w3.org/1999/xlink"' + ' xmlns:svg="http://www.w3.org/2000/svg"';
         }
 
@@ -187,14 +187,14 @@ DOMElementSerializer.prototype = {
       case 3:
         if (this._loopIndex < this._attributeKeys.length) {
           var name = this._attributeKeys[this._loopIndex++];
-          return ' ' + name + '="' + xmlEncode(node.attributes[name]) + '"';
+          return " " + name + '="' + xmlEncode(node.attributes[name]) + '"';
         }
 
         ++this._state;
-        return '>';
+        return ">";
 
       case 4:
-        if (node.nodeName === 'svg:tspan' || node.nodeName === 'svg:style') {
+        if (node.nodeName === "svg:tspan" || node.nodeName === "svg:style") {
           this._state = 6;
           return xmlEncode(node.textContent);
         }
@@ -225,22 +225,22 @@ DOMElementSerializer.prototype = {
 
       case 6:
         ++this._state;
-        return '</' + node.nodeName + '>';
+        return "</" + node.nodeName + ">";
 
       case 7:
         return null;
 
       default:
-        throw new Error('Unexpected serialization state: ' + this._state);
+        throw new Error("Unexpected serialization state: " + this._state);
     }
   }
 };
-var document = {
+const document = {
   childNodes: [],
 
   get currentScript() {
     return {
-      src: ''
+      src: ""
     };
   },
 
@@ -248,16 +248,16 @@ var document = {
     return this;
   },
 
-  createElementNS: function createElementNS(NS, element) {
+  createElementNS: function (NS, element) {
     var elObject = new DOMElement(element);
     return elObject;
   },
-  createElement: function createElement(element) {
-    return this.createElementNS('', element);
+  createElement: function (element) {
+    return this.createElementNS("", element);
   },
-  getElementsByTagName: function getElementsByTagName(element) {
-    if (element === 'head') {
-      return [this.head || (this.head = new DOMElement('head'))];
+  getElementsByTagName: function (element) {
+    if (element === "head") {
+      return [this.head || (this.head = new DOMElement("head"))];
     }
 
     return [];
@@ -289,14 +289,14 @@ var exported_symbols = Object.keys(exports);
 
 exports.setStubs = function (namespace) {
   exported_symbols.forEach(function (key) {
-    console.assert(!(key in namespace), 'property should not be set: ' + key);
+    console.assert(!(key in namespace), "property should not be set: " + key);
     namespace[key] = exports[key];
   });
 };
 
 exports.unsetStubs = function (namespace) {
   exported_symbols.forEach(function (key) {
-    console.assert(key in namespace, 'property should be set: ' + key);
+    console.assert(key in namespace, "property should be set: " + key);
     delete namespace[key];
   });
 };

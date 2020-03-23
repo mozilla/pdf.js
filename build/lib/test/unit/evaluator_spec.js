@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,49 +21,51 @@
  */
 "use strict";
 
-var _test_utils = require("./test_utils");
+var _test_utils = require("./test_utils.js");
 
-var _primitives = require("../../core/primitives");
+var _primitives = require("../../core/primitives.js");
 
-var _util = require("../../shared/util");
+var _util = require("../../shared/util.js");
 
-var _stream = require("../../core/stream");
+var _stream = require("../../core/stream.js");
 
-var _operator_list = require("../../core/operator_list");
+var _operator_list = require("../../core/operator_list.js");
 
-var _evaluator = require("../../core/evaluator");
+var _evaluator = require("../../core/evaluator.js");
 
-var _worker = require("../../core/worker");
+var _worker = require("../../core/worker.js");
 
-describe('evaluator', function () {
+describe("evaluator", function () {
   function HandlerMock() {
     this.inputs = [];
   }
 
   HandlerMock.prototype = {
-    send: function send(name, data) {
+    send(name, data) {
       this.inputs.push({
-        name: name,
-        data: data
+        name,
+        data
       });
     }
+
   };
 
   function ResourcesMock() {}
 
   ResourcesMock.prototype = {
-    get: function get(name) {
+    get(name) {
       return this[name];
     }
+
   };
 
   function runOperatorListCheck(evaluator, stream, resources, callback) {
     var result = new _operator_list.OperatorList();
-    var task = new _worker.WorkerTask('OperatorListCheck');
+    var task = new _worker.WorkerTask("OperatorListCheck");
     evaluator.getOperatorList({
-      stream: stream,
-      task: task,
-      resources: resources,
+      stream,
+      task,
+      resources,
       operatorList: result
     }).then(function () {
       callback(result);
@@ -85,9 +87,9 @@ describe('evaluator', function () {
   afterAll(function () {
     partialEvaluator = null;
   });
-  describe('splitCombinedOperations', function () {
-    it('should reject unknown operations', function (done) {
-      var stream = new _stream.StringStream('fTT');
+  describe("splitCombinedOperations", function () {
+    it("should reject unknown operations", function (done) {
+      var stream = new _stream.StringStream("fTT");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(1);
@@ -96,8 +98,8 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should handle one operation', function (done) {
-      var stream = new _stream.StringStream('Q');
+    it("should handle one operation", function (done) {
+      var stream = new _stream.StringStream("Q");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(1);
@@ -105,10 +107,10 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should handle two glued operations', function (done) {
+    it("should handle two glued operations", function (done) {
       var resources = new ResourcesMock();
       resources.Res1 = {};
-      var stream = new _stream.StringStream('/Res1 DoQ');
+      var stream = new _stream.StringStream("/Res1 DoQ");
       runOperatorListCheck(partialEvaluator, stream, resources, function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(2);
@@ -117,8 +119,8 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should handle three glued operations', function (done) {
-      var stream = new _stream.StringStream('fff');
+    it("should handle three glued operations", function (done) {
+      var stream = new _stream.StringStream("fff");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(3);
@@ -128,10 +130,10 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should handle three glued operations #2', function (done) {
+    it("should handle three glued operations #2", function (done) {
       var resources = new ResourcesMock();
       resources.Res1 = {};
-      var stream = new _stream.StringStream('B*Bf*');
+      var stream = new _stream.StringStream("B*Bf*");
       runOperatorListCheck(partialEvaluator, stream, resources, function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(3);
@@ -141,8 +143,8 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should handle glued operations and operands', function (done) {
-      var stream = new _stream.StringStream('f5 Ts');
+    it("should handle glued operations and operands", function (done) {
+      var stream = new _stream.StringStream("f5 Ts");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(2);
@@ -154,8 +156,8 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should handle glued operations and literals', function (done) {
-      var stream = new _stream.StringStream('trueifalserinulln');
+    it("should handle glued operations and literals", function (done) {
+      var stream = new _stream.StringStream("trueifalserinulln");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(3);
@@ -172,9 +174,9 @@ describe('evaluator', function () {
       });
     });
   });
-  describe('validateNumberOfArgs', function () {
-    it('should execute if correct number of arguments', function (done) {
-      var stream = new _stream.StringStream('5 1 d0');
+  describe("validateNumberOfArgs", function () {
+    it("should execute if correct number of arguments", function (done) {
+      var stream = new _stream.StringStream("5 1 d0");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(result.argsArray[0][0]).toEqual(5);
         expect(result.argsArray[0][1]).toEqual(1);
@@ -182,8 +184,8 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should execute if too many arguments', function (done) {
-      var stream = new _stream.StringStream('5 1 4 d0');
+    it("should execute if too many arguments", function (done) {
+      var stream = new _stream.StringStream("5 1 4 d0");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(result.argsArray[0][0]).toEqual(1);
         expect(result.argsArray[0][1]).toEqual(4);
@@ -191,8 +193,8 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should execute if nested commands', function (done) {
-      var stream = new _stream.StringStream('/F2 /GS2 gs 5.711 Tf');
+    it("should execute if nested commands", function (done) {
+      var stream = new _stream.StringStream("/F2 /GS2 gs 5.711 Tf");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(result.fnArray.length).toEqual(3);
         expect(result.fnArray[0]).toEqual(_util.OPS.setGState);
@@ -205,34 +207,34 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should skip if too few arguments', function (done) {
-      var stream = new _stream.StringStream('5 d0');
+    it("should skip if too few arguments", function (done) {
+      var stream = new _stream.StringStream("5 d0");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(result.argsArray).toEqual([]);
         expect(result.fnArray).toEqual([]);
         done();
       });
     });
-    it('should error if (many) path operators have too few arguments ' + '(bug 1443140)', function (done) {
-      var NUM_INVALID_OPS = 25;
-      var tempArr = new Array(NUM_INVALID_OPS + 1);
-      var invalidMoveText = tempArr.join('10 Td\n');
-      var moveTextStream = new _stream.StringStream(invalidMoveText);
+    it("should error if (many) path operators have too few arguments " + "(bug 1443140)", function (done) {
+      const NUM_INVALID_OPS = 25;
+      const tempArr = new Array(NUM_INVALID_OPS + 1);
+      const invalidMoveText = tempArr.join("10 Td\n");
+      const moveTextStream = new _stream.StringStream(invalidMoveText);
       runOperatorListCheck(partialEvaluator, moveTextStream, new ResourcesMock(), function (result) {
         expect(result.argsArray).toEqual([]);
         expect(result.fnArray).toEqual([]);
         done();
       });
-      var invalidLineTo = tempArr.join('20 l\n');
-      var lineToStream = new _stream.StringStream(invalidLineTo);
+      const invalidLineTo = tempArr.join("20 l\n");
+      const lineToStream = new _stream.StringStream(invalidLineTo);
       runOperatorListCheck(partialEvaluator, lineToStream, new ResourcesMock(), function (error) {
         expect(error instanceof _util.FormatError).toEqual(true);
-        expect(error.message).toEqual('Invalid command l: expected 2 args, but received 1 args.');
+        expect(error.message).toEqual("Invalid command l: expected 2 args, but received 1 args.");
         done();
       });
     });
-    it('should close opened saves', function (done) {
-      var stream = new _stream.StringStream('qq');
+    it("should close opened saves", function (done) {
+      var stream = new _stream.StringStream("qq");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(4);
@@ -243,23 +245,23 @@ describe('evaluator', function () {
         done();
       });
     });
-    it('should error on paintXObject if name is missing', function (done) {
-      var stream = new _stream.StringStream('/ Do');
+    it("should error on paintXObject if name is missing", function (done) {
+      var stream = new _stream.StringStream("/ Do");
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(), function (result) {
         expect(result instanceof _util.FormatError).toEqual(true);
-        expect(result.message).toEqual('XObject must be referred to by name.');
+        expect(result.message).toEqual("XObject must be referred to by name.");
         done();
       });
     });
-    it('should skip paintXObject if subtype is PS', function (done) {
+    it("should skip paintXObject if subtype is PS", function (done) {
       var xobjStreamDict = new _primitives.Dict();
-      xobjStreamDict.set('Subtype', _primitives.Name.get('PS'));
+      xobjStreamDict.set("Subtype", _primitives.Name.get("PS"));
       var xobjStream = new _stream.Stream([], 0, 0, xobjStreamDict);
       var xobjs = new _primitives.Dict();
-      xobjs.set('Res1', xobjStream);
+      xobjs.set("Res1", xobjStream);
       var resources = new _primitives.Dict();
-      resources.set('XObject', xobjs);
-      var stream = new _stream.StringStream('/Res1 Do');
+      resources.set("XObject", xobjs);
+      var stream = new _stream.StringStream("/Res1 Do");
       runOperatorListCheck(partialEvaluator, stream, resources, function (result) {
         expect(result.argsArray).toEqual([]);
         expect(result.fnArray).toEqual([]);
@@ -267,47 +269,47 @@ describe('evaluator', function () {
       });
     });
   });
-  describe('thread control', function () {
-    it('should abort operator list parsing', function (done) {
-      var stream = new _stream.StringStream('qqQQ');
+  describe("thread control", function () {
+    it("should abort operator list parsing", function (done) {
+      var stream = new _stream.StringStream("qqQQ");
       var resources = new ResourcesMock();
       var result = new _operator_list.OperatorList();
-      var task = new _worker.WorkerTask('OperatorListAbort');
+      var task = new _worker.WorkerTask("OperatorListAbort");
       task.terminate();
       partialEvaluator.getOperatorList({
-        stream: stream,
-        task: task,
-        resources: resources,
+        stream,
+        task,
+        resources,
         operatorList: result
-      })["catch"](function () {
+      }).catch(function () {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(0);
         done();
       });
     });
-    it('should abort text parsing parsing', function (done) {
+    it("should abort text parsing parsing", function (done) {
       var resources = new ResourcesMock();
-      var stream = new _stream.StringStream('qqQQ');
-      var task = new _worker.WorkerTask('TextContentAbort');
+      var stream = new _stream.StringStream("qqQQ");
+      var task = new _worker.WorkerTask("TextContentAbort");
       task.terminate();
       partialEvaluator.getTextContent({
-        stream: stream,
-        task: task,
-        resources: resources
-      })["catch"](function () {
+        stream,
+        task,
+        resources
+      }).catch(function () {
         expect(true).toEqual(true);
         done();
       });
     });
   });
-  describe('operator list', function () {
-    function MessageHandlerMock() {}
+  describe("operator list", function () {
+    class StreamSinkMock {
+      enqueue() {}
 
-    MessageHandlerMock.prototype = {
-      send: function send() {}
-    };
-    it('should get correct total length after flushing', function () {
-      var operatorList = new _operator_list.OperatorList(null, new MessageHandlerMock());
+    }
+
+    it("should get correct total length after flushing", function () {
+      var operatorList = new _operator_list.OperatorList(null, new StreamSinkMock());
       operatorList.addOp(_util.OPS.save, null);
       operatorList.addOp(_util.OPS.restore, null);
       expect(operatorList.totalLength).toEqual(2);

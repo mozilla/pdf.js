@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,29 +26,14 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PDFFindBar = void 0;
 
-var _ui_utils = require("./ui_utils");
+var _ui_utils = require("./ui_utils.js");
 
-var _pdf_find_controller = require("./pdf_find_controller");
+var _pdf_find_controller = require("./pdf_find_controller.js");
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+const MATCHES_COUNT_LIMIT = 1000;
 
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var MATCHES_COUNT_LIMIT = 1000;
-
-var PDFFindBar =
-/*#__PURE__*/
-function () {
-  function PDFFindBar(options) {
-    var _this = this;
-
-    var eventBus = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : (0, _ui_utils.getGlobalEventBus)();
-    var l10n = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _ui_utils.NullL10n;
-
-    _classCallCheck(this, PDFFindBar);
-
+class PDFFindBar {
+  constructor(options, eventBus, l10n = _ui_utils.NullL10n) {
     this.opened = false;
     this.bar = options.bar || null;
     this.toggleButton = options.toggleButton || null;
@@ -60,201 +45,182 @@ function () {
     this.findResultsCount = options.findResultsCount || null;
     this.findPreviousButton = options.findPreviousButton || null;
     this.findNextButton = options.findNextButton || null;
-    this.eventBus = eventBus;
+    this.eventBus = eventBus || (0, _ui_utils.getGlobalEventBus)();
     this.l10n = l10n;
-    this.toggleButton.addEventListener('click', function () {
-      _this.toggle();
+    this.toggleButton.addEventListener("click", () => {
+      this.toggle();
     });
-    this.findField.addEventListener('input', function () {
-      _this.dispatchEvent('');
+    this.findField.addEventListener("input", () => {
+      this.dispatchEvent("");
     });
-    this.bar.addEventListener('keydown', function (e) {
+    this.bar.addEventListener("keydown", e => {
       switch (e.keyCode) {
         case 13:
-          if (e.target === _this.findField) {
-            _this.dispatchEvent('again', e.shiftKey);
+          if (e.target === this.findField) {
+            this.dispatchEvent("again", e.shiftKey);
           }
 
           break;
 
         case 27:
-          _this.close();
-
+          this.close();
           break;
       }
     });
-    this.findPreviousButton.addEventListener('click', function () {
-      _this.dispatchEvent('again', true);
+    this.findPreviousButton.addEventListener("click", () => {
+      this.dispatchEvent("again", true);
     });
-    this.findNextButton.addEventListener('click', function () {
-      _this.dispatchEvent('again', false);
+    this.findNextButton.addEventListener("click", () => {
+      this.dispatchEvent("again", false);
     });
-    this.highlightAll.addEventListener('click', function () {
-      _this.dispatchEvent('highlightallchange');
+    this.highlightAll.addEventListener("click", () => {
+      this.dispatchEvent("highlightallchange");
     });
-    this.caseSensitive.addEventListener('click', function () {
-      _this.dispatchEvent('casesensitivitychange');
+    this.caseSensitive.addEventListener("click", () => {
+      this.dispatchEvent("casesensitivitychange");
     });
-    this.entireWord.addEventListener('click', function () {
-      _this.dispatchEvent('entirewordchange');
+    this.entireWord.addEventListener("click", () => {
+      this.dispatchEvent("entirewordchange");
     });
-    this.eventBus.on('resize', this._adjustWidth.bind(this));
+
+    this.eventBus._on("resize", this._adjustWidth.bind(this));
   }
 
-  _createClass(PDFFindBar, [{
-    key: "reset",
-    value: function reset() {
-      this.updateUIState();
-    }
-  }, {
-    key: "dispatchEvent",
-    value: function dispatchEvent(type, findPrev) {
-      this.eventBus.dispatch('find', {
-        source: this,
-        type: type,
-        query: this.findField.value,
-        phraseSearch: true,
-        caseSensitive: this.caseSensitive.checked,
-        entireWord: this.entireWord.checked,
-        highlightAll: this.highlightAll.checked,
-        findPrevious: findPrev
-      });
-    }
-  }, {
-    key: "updateUIState",
-    value: function updateUIState(state, previous, matchesCount) {
-      var _this2 = this;
+  reset() {
+    this.updateUIState();
+  }
 
-      var notFound = false;
-      var findMsg = '';
-      var status = '';
+  dispatchEvent(type, findPrev) {
+    this.eventBus.dispatch("find", {
+      source: this,
+      type,
+      query: this.findField.value,
+      phraseSearch: true,
+      caseSensitive: this.caseSensitive.checked,
+      entireWord: this.entireWord.checked,
+      highlightAll: this.highlightAll.checked,
+      findPrevious: findPrev
+    });
+  }
 
-      switch (state) {
-        case _pdf_find_controller.FindState.FOUND:
-          break;
+  updateUIState(state, previous, matchesCount) {
+    let notFound = false;
+    let findMsg = "";
+    let status = "";
 
-        case _pdf_find_controller.FindState.PENDING:
-          status = 'pending';
-          break;
+    switch (state) {
+      case _pdf_find_controller.FindState.FOUND:
+        break;
 
-        case _pdf_find_controller.FindState.NOT_FOUND:
-          findMsg = this.l10n.get('find_not_found', null, 'Phrase not found');
-          notFound = true;
-          break;
+      case _pdf_find_controller.FindState.PENDING:
+        status = "pending";
+        break;
 
-        case _pdf_find_controller.FindState.WRAPPED:
-          if (previous) {
-            findMsg = this.l10n.get('find_reached_top', null, 'Reached top of document, continued from bottom');
-          } else {
-            findMsg = this.l10n.get('find_reached_bottom', null, 'Reached end of document, continued from top');
-          }
+      case _pdf_find_controller.FindState.NOT_FOUND:
+        findMsg = this.l10n.get("find_not_found", null, "Phrase not found");
+        notFound = true;
+        break;
 
-          break;
-      }
-
-      this.findField.classList.toggle('notFound', notFound);
-      this.findField.setAttribute('data-status', status);
-      Promise.resolve(findMsg).then(function (msg) {
-        _this2.findMsg.textContent = msg;
-
-        _this2._adjustWidth();
-      });
-      this.updateResultsCount(matchesCount);
-    }
-  }, {
-    key: "updateResultsCount",
-    value: function updateResultsCount() {
-      var _this3 = this;
-
-      var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-          _ref$current = _ref.current,
-          current = _ref$current === void 0 ? 0 : _ref$current,
-          _ref$total = _ref.total,
-          total = _ref$total === void 0 ? 0 : _ref$total;
-
-      if (!this.findResultsCount) {
-        return;
-      }
-
-      var matchesCountMsg = '',
-          limit = MATCHES_COUNT_LIMIT;
-
-      if (total > 0) {
-        if (total > limit) {
-          matchesCountMsg = this.l10n.get('find_match_count_limit', {
-            limit: limit
-          }, 'More than {{limit}} match' + (limit !== 1 ? 'es' : ''));
+      case _pdf_find_controller.FindState.WRAPPED:
+        if (previous) {
+          findMsg = this.l10n.get("find_reached_top", null, "Reached top of document, continued from bottom");
         } else {
-          matchesCountMsg = this.l10n.get('find_match_count', {
-            current: current,
-            total: total
-          }, '{{current}} of {{total}} match' + (total !== 1 ? 'es' : ''));
+          findMsg = this.l10n.get("find_reached_bottom", null, "Reached end of document, continued from top");
         }
-      }
 
-      Promise.resolve(matchesCountMsg).then(function (msg) {
-        _this3.findResultsCount.textContent = msg;
-
-        _this3.findResultsCount.classList.toggle('hidden', !total);
-
-        _this3._adjustWidth();
-      });
+        break;
     }
-  }, {
-    key: "open",
-    value: function open() {
-      if (!this.opened) {
-        this.opened = true;
-        this.toggleButton.classList.add('toggled');
-        this.bar.classList.remove('hidden');
-      }
 
-      this.findField.select();
-      this.findField.focus();
+    this.findField.classList.toggle("notFound", notFound);
+    this.findField.setAttribute("data-status", status);
+    Promise.resolve(findMsg).then(msg => {
+      this.findMsg.textContent = msg;
 
       this._adjustWidth();
-    }
-  }, {
-    key: "close",
-    value: function close() {
-      if (!this.opened) {
-        return;
-      }
+    });
+    this.updateResultsCount(matchesCount);
+  }
 
-      this.opened = false;
-      this.toggleButton.classList.remove('toggled');
-      this.bar.classList.add('hidden');
-      this.eventBus.dispatch('findbarclose', {
-        source: this
-      });
+  updateResultsCount({
+    current = 0,
+    total = 0
+  } = {}) {
+    if (!this.findResultsCount) {
+      return;
     }
-  }, {
-    key: "toggle",
-    value: function toggle() {
-      if (this.opened) {
-        this.close();
+
+    const limit = MATCHES_COUNT_LIMIT;
+    let matchesCountMsg = "";
+
+    if (total > 0) {
+      if (total > limit) {
+        matchesCountMsg = this.l10n.get("find_match_count_limit", {
+          limit
+        }, "More than {{limit}} match" + (limit !== 1 ? "es" : ""));
       } else {
-        this.open();
+        matchesCountMsg = this.l10n.get("find_match_count", {
+          current,
+          total
+        }, "{{current}} of {{total}} match" + (total !== 1 ? "es" : ""));
       }
     }
-  }, {
-    key: "_adjustWidth",
-    value: function _adjustWidth() {
-      if (!this.opened) {
-        return;
-      }
 
-      this.bar.classList.remove('wrapContainers');
-      var findbarHeight = this.bar.clientHeight;
-      var inputContainerHeight = this.bar.firstElementChild.clientHeight;
+    Promise.resolve(matchesCountMsg).then(msg => {
+      this.findResultsCount.textContent = msg;
+      this.findResultsCount.classList.toggle("hidden", !total);
 
-      if (findbarHeight > inputContainerHeight) {
-        this.bar.classList.add('wrapContainers');
-      }
+      this._adjustWidth();
+    });
+  }
+
+  open() {
+    if (!this.opened) {
+      this.opened = true;
+      this.toggleButton.classList.add("toggled");
+      this.bar.classList.remove("hidden");
     }
-  }]);
 
-  return PDFFindBar;
-}();
+    this.findField.select();
+    this.findField.focus();
+
+    this._adjustWidth();
+  }
+
+  close() {
+    if (!this.opened) {
+      return;
+    }
+
+    this.opened = false;
+    this.toggleButton.classList.remove("toggled");
+    this.bar.classList.add("hidden");
+    this.eventBus.dispatch("findbarclose", {
+      source: this
+    });
+  }
+
+  toggle() {
+    if (this.opened) {
+      this.close();
+    } else {
+      this.open();
+    }
+  }
+
+  _adjustWidth() {
+    if (!this.opened) {
+      return;
+    }
+
+    this.bar.classList.remove("wrapContainers");
+    const findbarHeight = this.bar.clientHeight;
+    const inputContainerHeight = this.bar.firstElementChild.clientHeight;
+
+    if (findbarHeight > inputContainerHeight) {
+      this.bar.classList.add("wrapContainers");
+    }
+  }
+
+}
 
 exports.PDFFindBar = PDFFindBar;

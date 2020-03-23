@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,85 +21,53 @@
  */
 "use strict";
 
-var _test_utils = require("./test_utils");
+var _test_utils = require("./test_utils.js");
 
-var _ui_utils = require("../../web/ui_utils");
+var _ui_utils = require("../../web/ui_utils.js");
 
-var _api = require("../../display/api");
+var _api = require("../../display/api.js");
 
-var _pdf_find_controller = require("../../web/pdf_find_controller");
+var _pdf_find_controller = require("../../web/pdf_find_controller.js");
 
-var _pdf_link_service = require("../../web/pdf_link_service");
+var _pdf_link_service = require("../../web/pdf_link_service.js");
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-var MockLinkService =
-/*#__PURE__*/
-function (_SimpleLinkService) {
-  _inherits(MockLinkService, _SimpleLinkService);
-
-  function MockLinkService() {
-    var _this;
-
-    _classCallCheck(this, MockLinkService);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(MockLinkService).call(this));
-    _this._page = 1;
-    _this._pdfDocument = null;
-    return _this;
+class MockLinkService extends _pdf_link_service.SimpleLinkService {
+  constructor() {
+    super();
+    this._page = 1;
+    this._pdfDocument = null;
   }
 
-  _createClass(MockLinkService, [{
-    key: "setDocument",
-    value: function setDocument(pdfDocument) {
-      this._pdfDocument = pdfDocument;
-    }
-  }, {
-    key: "pagesCount",
-    get: function get() {
-      return this._pdfDocument.numPages;
-    }
-  }, {
-    key: "page",
-    get: function get() {
-      return this._page;
-    },
-    set: function set(value) {
-      this._page = value;
-    }
-  }]);
+  setDocument(pdfDocument) {
+    this._pdfDocument = pdfDocument;
+  }
 
-  return MockLinkService;
-}(_pdf_link_service.SimpleLinkService);
+  get pagesCount() {
+    return this._pdfDocument.numPages;
+  }
 
-describe('pdf_find_controller', function () {
-  var eventBus;
-  var pdfFindController;
+  get page() {
+    return this._page;
+  }
+
+  set page(value) {
+    this._page = value;
+  }
+
+}
+
+describe("pdf_find_controller", function () {
+  let eventBus;
+  let pdfFindController;
   beforeEach(function (done) {
-    var loadingTask = (0, _api.getDocument)((0, _test_utils.buildGetDocumentParams)('tracemonkey.pdf'));
+    const loadingTask = (0, _api.getDocument)((0, _test_utils.buildGetDocumentParams)("tracemonkey.pdf"));
     loadingTask.promise.then(function (pdfDocument) {
       eventBus = new _ui_utils.EventBus();
-      var linkService = new MockLinkService();
+      const linkService = new MockLinkService();
       linkService.setDocument(pdfDocument);
       pdfFindController = new _pdf_find_controller.PDFFindController({
-        linkService: linkService,
-        eventBus: eventBus
+        linkService,
+        eventBus
       });
       pdfFindController.setDocument(pdfDocument);
       done();
@@ -110,34 +78,35 @@ describe('pdf_find_controller', function () {
     pdfFindController = null;
   });
 
-  function testSearch(_ref) {
-    var parameters = _ref.parameters,
-        matchesPerPage = _ref.matchesPerPage,
-        selectedMatch = _ref.selectedMatch;
+  function testSearch({
+    parameters,
+    matchesPerPage,
+    selectedMatch
+  }) {
     return new Promise(function (resolve) {
-      pdfFindController.executeCommand('find', parameters);
-      var totalPages = matchesPerPage.length;
+      pdfFindController.executeCommand("find", parameters);
+      let totalPages = matchesPerPage.length;
 
-      for (var i = totalPages - 1; i >= 0; i--) {
+      for (let i = totalPages - 1; i >= 0; i--) {
         if (matchesPerPage[i] > 0) {
           totalPages = i + 1;
           break;
         }
       }
 
-      var totalMatches = matchesPerPage.reduce(function (a, b) {
+      const totalMatches = matchesPerPage.reduce((a, b) => {
         return a + b;
       });
-      eventBus.on('updatefindmatchescount', function onUpdateFindMatchesCount(evt) {
+      eventBus.on("updatefindmatchescount", function onUpdateFindMatchesCount(evt) {
         if (pdfFindController.pageMatches.length !== totalPages) {
           return;
         }
 
-        eventBus.off('updatefindmatchescount', onUpdateFindMatchesCount);
+        eventBus.off("updatefindmatchescount", onUpdateFindMatchesCount);
         expect(evt.matchesCount.total).toBe(totalMatches);
 
-        for (var _i = 0; _i < totalPages; _i++) {
-          expect(pdfFindController.pageMatches[_i].length).toEqual(matchesPerPage[_i]);
+        for (let i = 0; i < totalPages; i++) {
+          expect(pdfFindController.pageMatches[i].length).toEqual(matchesPerPage[i]);
         }
 
         expect(pdfFindController.selected.pageIdx).toEqual(selectedMatch.pageIndex);
@@ -147,10 +116,10 @@ describe('pdf_find_controller', function () {
     });
   }
 
-  it('performs a normal search', function (done) {
+  it("performs a normal search", function (done) {
     testSearch({
       parameters: {
-        query: 'Dynamic',
+        query: "Dynamic",
         caseSensitive: false,
         entireWord: false,
         phraseSearch: true,
@@ -163,10 +132,10 @@ describe('pdf_find_controller', function () {
       }
     }).then(done);
   });
-  it('performs a normal search and finds the previous result', function (done) {
+  it("performs a normal search and finds the previous result", function (done) {
     testSearch({
       parameters: {
-        query: 'conference',
+        query: "conference",
         caseSensitive: false,
         entireWord: false,
         phraseSearch: true,
@@ -179,10 +148,10 @@ describe('pdf_find_controller', function () {
       }
     }).then(done);
   });
-  it('performs a case sensitive search', function (done) {
+  it("performs a case sensitive search", function (done) {
     testSearch({
       parameters: {
-        query: 'Dynamic',
+        query: "Dynamic",
         caseSensitive: true,
         entireWord: false,
         phraseSearch: true,
@@ -195,10 +164,10 @@ describe('pdf_find_controller', function () {
       }
     }).then(done);
   });
-  it('performs an entire word search', function (done) {
+  it("performs an entire word search", function (done) {
     testSearch({
       parameters: {
-        query: 'Government',
+        query: "Government",
         caseSensitive: false,
         entireWord: true,
         phraseSearch: true,
@@ -211,10 +180,10 @@ describe('pdf_find_controller', function () {
       }
     }).then(done);
   });
-  it('performs a multiple term (no phrase) search', function (done) {
+  it("performs a multiple term (no phrase) search", function (done) {
     testSearch({
       parameters: {
-        query: 'alternate solution',
+        query: "alternate solution",
         caseSensitive: false,
         entireWord: false,
         phraseSearch: false,

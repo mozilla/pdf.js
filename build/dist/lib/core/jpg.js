@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,43 +26,26 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.JpegImage = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+var _core_utils = require("./core_utils.js");
 
-var JpegError = function JpegErrorClosure() {
-  function JpegError(msg) {
-    this.message = 'JPEG error: ' + msg;
+class JpegError extends _util.BaseException {
+  constructor(msg) {
+    super(`JPEG error: ${msg}`);
   }
 
-  JpegError.prototype = new Error();
-  JpegError.prototype.name = 'JpegError';
-  JpegError.constructor = JpegError;
-  return JpegError;
-}();
+}
 
-var DNLMarkerError = function DNLMarkerErrorClosure() {
-  function DNLMarkerError(message, scanLines) {
-    this.message = message;
+class DNLMarkerError extends _util.BaseException {
+  constructor(message, scanLines) {
+    super(message);
     this.scanLines = scanLines;
   }
 
-  DNLMarkerError.prototype = new Error();
-  DNLMarkerError.prototype.name = 'DNLMarkerError';
-  DNLMarkerError.constructor = DNLMarkerError;
-  return DNLMarkerError;
-}();
+}
 
-var EOIMarkerError = function EOIMarkerErrorClosure() {
-  function EOIMarkerError(message) {
-    this.message = message;
-  }
-
-  EOIMarkerError.prototype = new Error();
-  EOIMarkerError.prototype.name = 'EOIMarkerError';
-  EOIMarkerError.constructor = EOIMarkerError;
-  return EOIMarkerError;
-}();
+class EOIMarkerError extends _util.BaseException {}
 
 var JpegImage = function JpegImageClosure() {
   var dctZigZag = new Uint8Array([0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51, 58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63]);
@@ -75,13 +58,10 @@ var JpegImage = function JpegImageClosure() {
   var dctSqrt2 = 5793;
   var dctSqrt1d2 = 2896;
 
-  function JpegImage() {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$decodeTransform = _ref.decodeTransform,
-        decodeTransform = _ref$decodeTransform === void 0 ? null : _ref$decodeTransform,
-        _ref$colorTransform = _ref.colorTransform,
-        colorTransform = _ref$colorTransform === void 0 ? -1 : _ref$colorTransform;
-
+  function JpegImage({
+    decodeTransform = null,
+    colorTransform = -1
+  } = {}) {
     this._decodeTransform = decodeTransform;
     this._colorTransform = colorTransform;
   }
@@ -145,8 +125,7 @@ var JpegImage = function JpegImageClosure() {
     return 64 * ((component.blocksPerLine + 1) * row + col);
   }
 
-  function decodeScan(data, offset, frame, components, resetInterval, spectralStart, spectralEnd, successivePrev, successive) {
-    var parseDNLMarker = arguments.length > 9 && arguments[9] !== undefined ? arguments[9] : false;
+  function decodeScan(data, offset, frame, components, resetInterval, spectralStart, spectralEnd, successivePrev, successive, parseDNLMarker = false) {
     var mcusPerLine = frame.mcusPerLine;
     var progressive = frame.progressive;
     var startOffset = offset,
@@ -161,22 +140,31 @@ var JpegImage = function JpegImageClosure() {
 
       bitsData = data[offset++];
 
-      if (bitsData === 0xFF) {
+      if (bitsData === 0xff) {
         var nextByte = data[offset++];
 
         if (nextByte) {
-          if (nextByte === 0xDC && parseDNLMarker) {
+          if (nextByte === 0xdc && parseDNLMarker) {
             offset += 2;
-            var scanLines = data[offset++] << 8 | data[offset++];
+            const scanLines = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
 
             if (scanLines > 0 && scanLines !== frame.scanLines) {
-              throw new DNLMarkerError('Found DNL marker (0xFFDC) while parsing scan data', scanLines);
+              throw new DNLMarkerError("Found DNL marker (0xFFDC) while parsing scan data", scanLines);
             }
-          } else if (nextByte === 0xD9) {
-            throw new EOIMarkerError('Found EOI marker (0xFFD9) while parsing scan data');
+          } else if (nextByte === 0xd9) {
+            if (parseDNLMarker) {
+              const maybeScanLines = blockRow * 8;
+
+              if (maybeScanLines > 0 && maybeScanLines < frame.scanLines / 10) {
+                throw new DNLMarkerError("Found EOI marker (0xFFD9) while parsing scan data, " + "possibly caused by incorrect `scanLines` parameter", maybeScanLines);
+              }
+            }
+
+            throw new EOIMarkerError("Found EOI marker (0xFFD9) while parsing scan data");
           }
 
-          throw new JpegError("unexpected marker ".concat((bitsData << 8 | nextByte).toString(16)));
+          throw new JpegError(`unexpected marker ${(bitsData << 8 | nextByte).toString(16)}`);
         }
       }
 
@@ -190,13 +178,15 @@ var JpegImage = function JpegImageClosure() {
       while (true) {
         node = node[readBit()];
 
-        if (typeof node === 'number') {
-          return node;
+        switch (typeof node) {
+          case "number":
+            return node;
+
+          case "object":
+            continue;
         }
 
-        if (_typeof(node) !== 'object') {
-          throw new JpegError('invalid huffman sequence');
-        }
+        throw new JpegError("invalid huffman sequence");
       }
     }
 
@@ -306,8 +296,8 @@ var JpegImage = function JpegImageClosure() {
       var rs;
 
       while (k <= e) {
-        var offsetZ = offset + dctZigZag[k];
-        var sign = component.blockData[offsetZ] < 0 ? -1 : 1;
+        const offsetZ = offset + dctZigZag[k];
+        const sign = component.blockData[offsetZ] < 0 ? -1 : 1;
 
         switch (successiveACState) {
           case 0:
@@ -325,7 +315,7 @@ var JpegImage = function JpegImageClosure() {
               }
             } else {
               if (s !== 1) {
-                throw new JpegError('invalid ACn encoding');
+                throw new JpegError("invalid ACn encoding");
               }
 
               successiveACNextValue = receiveAndExtend(s);
@@ -378,17 +368,19 @@ var JpegImage = function JpegImageClosure() {
       }
     }
 
+    let blockRow = 0;
+
     function decodeMcu(component, decode, mcu, row, col) {
       var mcuRow = mcu / mcusPerLine | 0;
       var mcuCol = mcu % mcusPerLine;
-      var blockRow = mcuRow * component.v + row;
+      blockRow = mcuRow * component.v + row;
       var blockCol = mcuCol * component.h + col;
       var offset = getBlockBufferOffset(component, blockRow, blockCol);
       decode(component, offset);
     }
 
     function decodeBlock(component, decode, mcu) {
-      var blockRow = mcu / component.blocksPerLine | 0;
+      blockRow = mcu / component.blocksPerLine | 0;
       var blockCol = mcu % component.blocksPerLine;
       var offset = getBlockBufferOffset(component, blockRow, blockCol);
       decode(component, offset);
@@ -457,18 +449,20 @@ var JpegImage = function JpegImageClosure() {
       bitsCount = 0;
       fileMarker = findNextFileMarker(data, offset);
 
-      if (fileMarker && fileMarker.invalid) {
-        (0, _util.warn)('decodeScan - unexpected MCU data, current marker is: ' + fileMarker.invalid);
+      if (!fileMarker) {
+        break;
+      } else if (fileMarker.invalid) {
+        (0, _util.warn)("decodeScan - unexpected MCU data, current marker is: " + fileMarker.invalid);
         offset = fileMarker.offset;
       }
 
       var marker = fileMarker && fileMarker.marker;
 
-      if (!marker || marker <= 0xFF00) {
-        throw new JpegError('marker was not found');
+      if (!marker || marker <= 0xff00) {
+        throw new JpegError("decodeScan - a valid marker was not found.");
       }
 
-      if (marker >= 0xFFD0 && marker <= 0xFFD7) {
+      if (marker >= 0xffd0 && marker <= 0xffd7) {
         offset += 2;
       } else {
         break;
@@ -478,7 +472,7 @@ var JpegImage = function JpegImageClosure() {
     fileMarker = findNextFileMarker(data, offset);
 
     if (fileMarker && fileMarker.invalid) {
-      (0, _util.warn)('decodeScan - unexpected Scan data, current marker is: ' + fileMarker.invalid);
+      (0, _util.warn)("decodeScan - unexpected Scan data, current marker is: " + fileMarker.invalid);
       offset = fileMarker.offset;
     }
 
@@ -493,7 +487,7 @@ var JpegImage = function JpegImageClosure() {
     var t;
 
     if (!qt) {
-      throw new JpegError('missing required Quantization Table.');
+      throw new JpegError("missing required Quantization Table.");
     }
 
     for (var row = 0; row < 64; row += 8) {
@@ -576,7 +570,15 @@ var JpegImage = function JpegImageClosure() {
 
       if ((p1 | p2 | p3 | p4 | p5 | p6 | p7) === 0) {
         t = dctSqrt2 * p0 + 8192 >> 14;
-        t = t < -2040 ? 0 : t >= 2024 ? 255 : t + 2056 >> 4;
+
+        if (t < -2040) {
+          t = 0;
+        } else if (t >= 2024) {
+          t = 255;
+        } else {
+          t = t + 2056 >> 4;
+        }
+
         blockData[blockBufferOffset + col] = t;
         blockData[blockBufferOffset + col + 8] = t;
         blockData[blockBufferOffset + col + 16] = t;
@@ -623,14 +625,71 @@ var JpegImage = function JpegImageClosure() {
       p5 = v2 - v5;
       p3 = v3 + v4;
       p4 = v3 - v4;
-      p0 = p0 < 16 ? 0 : p0 >= 4080 ? 255 : p0 >> 4;
-      p1 = p1 < 16 ? 0 : p1 >= 4080 ? 255 : p1 >> 4;
-      p2 = p2 < 16 ? 0 : p2 >= 4080 ? 255 : p2 >> 4;
-      p3 = p3 < 16 ? 0 : p3 >= 4080 ? 255 : p3 >> 4;
-      p4 = p4 < 16 ? 0 : p4 >= 4080 ? 255 : p4 >> 4;
-      p5 = p5 < 16 ? 0 : p5 >= 4080 ? 255 : p5 >> 4;
-      p6 = p6 < 16 ? 0 : p6 >= 4080 ? 255 : p6 >> 4;
-      p7 = p7 < 16 ? 0 : p7 >= 4080 ? 255 : p7 >> 4;
+
+      if (p0 < 16) {
+        p0 = 0;
+      } else if (p0 >= 4080) {
+        p0 = 255;
+      } else {
+        p0 >>= 4;
+      }
+
+      if (p1 < 16) {
+        p1 = 0;
+      } else if (p1 >= 4080) {
+        p1 = 255;
+      } else {
+        p1 >>= 4;
+      }
+
+      if (p2 < 16) {
+        p2 = 0;
+      } else if (p2 >= 4080) {
+        p2 = 255;
+      } else {
+        p2 >>= 4;
+      }
+
+      if (p3 < 16) {
+        p3 = 0;
+      } else if (p3 >= 4080) {
+        p3 = 255;
+      } else {
+        p3 >>= 4;
+      }
+
+      if (p4 < 16) {
+        p4 = 0;
+      } else if (p4 >= 4080) {
+        p4 = 255;
+      } else {
+        p4 >>= 4;
+      }
+
+      if (p5 < 16) {
+        p5 = 0;
+      } else if (p5 >= 4080) {
+        p5 = 255;
+      } else {
+        p5 >>= 4;
+      }
+
+      if (p6 < 16) {
+        p6 = 0;
+      } else if (p6 >= 4080) {
+        p6 = 255;
+      } else {
+        p6 >>= 4;
+      }
+
+      if (p7 < 16) {
+        p7 = 0;
+      } else if (p7 >= 4080) {
+        p7 = 255;
+      } else {
+        p7 >>= 4;
+      }
+
       blockData[blockBufferOffset + col] = p0;
       blockData[blockBufferOffset + col + 8] = p1;
       blockData[blockBufferOffset + col + 16] = p2;
@@ -657,23 +716,17 @@ var JpegImage = function JpegImageClosure() {
     return component.blockData;
   }
 
-  function findNextFileMarker(data, currentPos) {
-    var startPos = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : currentPos;
-
-    function peekUint16(pos) {
-      return data[pos] << 8 | data[pos + 1];
-    }
-
-    var maxPos = data.length - 1;
+  function findNextFileMarker(data, currentPos, startPos = currentPos) {
+    const maxPos = data.length - 1;
     var newPos = startPos < currentPos ? startPos : currentPos;
 
     if (currentPos >= maxPos) {
       return null;
     }
 
-    var currentMarker = peekUint16(currentPos);
+    var currentMarker = (0, _core_utils.readUint16)(data, currentPos);
 
-    if (currentMarker >= 0xFFC0 && currentMarker <= 0xFFFE) {
+    if (currentMarker >= 0xffc0 && currentMarker <= 0xfffe) {
       return {
         invalid: null,
         marker: currentMarker,
@@ -681,14 +734,14 @@ var JpegImage = function JpegImageClosure() {
       };
     }
 
-    var newMarker = peekUint16(newPos);
+    var newMarker = (0, _core_utils.readUint16)(data, newPos);
 
-    while (!(newMarker >= 0xFFC0 && newMarker <= 0xFFFE)) {
+    while (!(newMarker >= 0xffc0 && newMarker <= 0xfffe)) {
       if (++newPos >= maxPos) {
         return null;
       }
 
-      newMarker = peekUint16(newPos);
+      newMarker = (0, _core_utils.readUint16)(data, newPos);
     }
 
     return {
@@ -699,24 +752,17 @@ var JpegImage = function JpegImageClosure() {
   }
 
   JpegImage.prototype = {
-    parse: function parse(data) {
-      var _ref2 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-          _ref2$dnlScanLines = _ref2.dnlScanLines,
-          dnlScanLines = _ref2$dnlScanLines === void 0 ? null : _ref2$dnlScanLines;
-
-      function readUint16() {
-        var value = data[offset] << 8 | data[offset + 1];
-        offset += 2;
-        return value;
-      }
-
+    parse(data, {
+      dnlScanLines = null
+    } = {}) {
       function readDataBlock() {
-        var length = readUint16();
-        var endOffset = offset + length - 2;
+        const length = (0, _core_utils.readUint16)(data, offset);
+        offset += 2;
+        let endOffset = offset + length - 2;
         var fileMarker = findNextFileMarker(data, endOffset, offset);
 
         if (fileMarker && fileMarker.invalid) {
-          (0, _util.warn)('readDataBlock - incorrect length, current marker is: ' + fileMarker.invalid);
+          (0, _util.warn)("readDataBlock - incorrect length, current marker is: " + fileMarker.invalid);
           endOffset = fileMarker.offset;
         }
 
@@ -749,43 +795,45 @@ var JpegImage = function JpegImageClosure() {
       var jfif = null;
       var adobe = null;
       var frame, resetInterval;
-      var numSOSMarkers = 0;
+      let numSOSMarkers = 0;
       var quantizationTables = [];
       var huffmanTablesAC = [],
           huffmanTablesDC = [];
-      var fileMarker = readUint16();
+      let fileMarker = (0, _core_utils.readUint16)(data, offset);
+      offset += 2;
 
-      if (fileMarker !== 0xFFD8) {
-        throw new JpegError('SOI not found');
+      if (fileMarker !== 0xffd8) {
+        throw new JpegError("SOI not found");
       }
 
-      fileMarker = readUint16();
+      fileMarker = (0, _core_utils.readUint16)(data, offset);
+      offset += 2;
 
-      markerLoop: while (fileMarker !== 0xFFD9) {
+      markerLoop: while (fileMarker !== 0xffd9) {
         var i, j, l;
 
         switch (fileMarker) {
-          case 0xFFE0:
-          case 0xFFE1:
-          case 0xFFE2:
-          case 0xFFE3:
-          case 0xFFE4:
-          case 0xFFE5:
-          case 0xFFE6:
-          case 0xFFE7:
-          case 0xFFE8:
-          case 0xFFE9:
-          case 0xFFEA:
-          case 0xFFEB:
-          case 0xFFEC:
-          case 0xFFED:
-          case 0xFFEE:
-          case 0xFFEF:
-          case 0xFFFE:
+          case 0xffe0:
+          case 0xffe1:
+          case 0xffe2:
+          case 0xffe3:
+          case 0xffe4:
+          case 0xffe5:
+          case 0xffe6:
+          case 0xffe7:
+          case 0xffe8:
+          case 0xffe9:
+          case 0xffea:
+          case 0xffeb:
+          case 0xffec:
+          case 0xffed:
+          case 0xffee:
+          case 0xffef:
+          case 0xfffe:
             var appData = readDataBlock();
 
-            if (fileMarker === 0xFFE0) {
-              if (appData[0] === 0x4A && appData[1] === 0x46 && appData[2] === 0x49 && appData[3] === 0x46 && appData[4] === 0) {
+            if (fileMarker === 0xffe0) {
+              if (appData[0] === 0x4a && appData[1] === 0x46 && appData[2] === 0x49 && appData[3] === 0x46 && appData[4] === 0) {
                 jfif = {
                   version: {
                     major: appData[5],
@@ -801,8 +849,8 @@ var JpegImage = function JpegImageClosure() {
               }
             }
 
-            if (fileMarker === 0xFFEE) {
-              if (appData[0] === 0x41 && appData[1] === 0x64 && appData[2] === 0x6F && appData[3] === 0x62 && appData[4] === 0x65) {
+            if (fileMarker === 0xffee) {
+              if (appData[0] === 0x41 && appData[1] === 0x64 && appData[2] === 0x6f && appData[3] === 0x62 && appData[4] === 0x65) {
                 adobe = {
                   version: appData[5] << 8 | appData[6],
                   flags0: appData[7] << 8 | appData[8],
@@ -814,8 +862,9 @@ var JpegImage = function JpegImageClosure() {
 
             break;
 
-          case 0xFFDB:
-            var quantizationTablesLength = readUint16();
+          case 0xffdb:
+            const quantizationTablesLength = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
             var quantizationTablesEnd = quantizationTablesLength + offset - 2;
             var z;
 
@@ -831,10 +880,11 @@ var JpegImage = function JpegImageClosure() {
               } else if (quantizationTableSpec >> 4 === 1) {
                 for (j = 0; j < 64; j++) {
                   z = dctZigZag[j];
-                  tableData[z] = readUint16();
+                  tableData[z] = (0, _core_utils.readUint16)(data, offset);
+                  offset += 2;
                 }
               } else {
-                throw new JpegError('DQT - invalid table spec');
+                throw new JpegError("DQT - invalid table spec");
               }
 
               quantizationTables[quantizationTableSpec & 15] = tableData;
@@ -842,21 +892,23 @@ var JpegImage = function JpegImageClosure() {
 
             break;
 
-          case 0xFFC0:
-          case 0xFFC1:
-          case 0xFFC2:
+          case 0xffc0:
+          case 0xffc1:
+          case 0xffc2:
             if (frame) {
-              throw new JpegError('Only single frame JPEGs supported');
+              throw new JpegError("Only single frame JPEGs supported");
             }
 
-            readUint16();
+            offset += 2;
             frame = {};
-            frame.extended = fileMarker === 0xFFC1;
-            frame.progressive = fileMarker === 0xFFC2;
+            frame.extended = fileMarker === 0xffc1;
+            frame.progressive = fileMarker === 0xffc2;
             frame.precision = data[offset++];
-            var sofScanLines = readUint16();
+            const sofScanLines = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
             frame.scanLines = dnlScanLines || sofScanLines;
-            frame.samplesPerLine = readUint16();
+            frame.samplesPerLine = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
             frame.components = [];
             frame.componentIds = {};
             var componentsCount = data[offset++],
@@ -879,8 +931,8 @@ var JpegImage = function JpegImageClosure() {
 
               var qId = data[offset + 2];
               l = frame.components.push({
-                h: h,
-                v: v,
+                h,
+                v,
                 quantizationId: qId,
                 quantizationTable: null
               });
@@ -893,8 +945,9 @@ var JpegImage = function JpegImageClosure() {
             prepareComponents(frame);
             break;
 
-          case 0xFFC4:
-            var huffmanLength = readUint16();
+          case 0xffc4:
+            const huffmanLength = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
 
             for (i = 2; i < huffmanLength;) {
               var huffmanTableSpec = data[offset++];
@@ -917,14 +970,15 @@ var JpegImage = function JpegImageClosure() {
 
             break;
 
-          case 0xFFDD:
-            readUint16();
-            resetInterval = readUint16();
+          case 0xffdd:
+            offset += 2;
+            resetInterval = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
             break;
 
-          case 0xFFDA:
-            var parseDNLMarker = ++numSOSMarkers === 1 && !dnlScanLines;
-            readUint16();
+          case 0xffda:
+            const parseDNLMarker = ++numSOSMarkers === 1 && !dnlScanLines;
+            offset += 2;
             var selectorsCount = data[offset++];
             var components = [],
                 component;
@@ -947,12 +1001,12 @@ var JpegImage = function JpegImageClosure() {
               offset += processed;
             } catch (ex) {
               if (ex instanceof DNLMarkerError) {
-                (0, _util.warn)("".concat(ex.message, " -- attempting to re-parse the JPEG image."));
+                (0, _util.warn)(`${ex.message} -- attempting to re-parse the JPEG image.`);
                 return this.parse(data, {
                   dnlScanLines: ex.scanLines
                 });
               } else if (ex instanceof EOIMarkerError) {
-                (0, _util.warn)("".concat(ex.message, " -- ignoring the rest of the image data."));
+                (0, _util.warn)(`${ex.message} -- ignoring the rest of the image data.`);
                 break markerLoop;
               }
 
@@ -961,35 +1015,36 @@ var JpegImage = function JpegImageClosure() {
 
             break;
 
-          case 0xFFDC:
+          case 0xffdc:
             offset += 4;
             break;
 
-          case 0xFFFF:
-            if (data[offset] !== 0xFF) {
+          case 0xffff:
+            if (data[offset] !== 0xff) {
               offset--;
             }
 
             break;
 
           default:
-            if (data[offset - 3] === 0xFF && data[offset - 2] >= 0xC0 && data[offset - 2] <= 0xFE) {
-              offset -= 3;
-              break;
-            }
-
-            var nextFileMarker = findNextFileMarker(data, offset - 2);
+            const nextFileMarker = findNextFileMarker(data, offset - 2, offset - 3);
 
             if (nextFileMarker && nextFileMarker.invalid) {
-              (0, _util.warn)('JpegImage.parse - unexpected data, current marker is: ' + nextFileMarker.invalid);
+              (0, _util.warn)("JpegImage.parse - unexpected data, current marker is: " + nextFileMarker.invalid);
               offset = nextFileMarker.offset;
               break;
             }
 
-            throw new JpegError('unknown marker ' + fileMarker.toString(16));
+            if (offset >= data.length - 1) {
+              (0, _util.warn)("JpegImage.parse - reached the end of the image data " + "without finding an EOI marker (0xFFD9).");
+              break markerLoop;
+            }
+
+            throw new JpegError("JpegImage.parse - unknown marker: " + fileMarker.toString(16));
         }
 
-        fileMarker = readUint16();
+        fileMarker = (0, _core_utils.readUint16)(data, offset);
+        offset += 2;
       }
 
       this.width = frame.samplesPerLine;
@@ -1018,8 +1073,8 @@ var JpegImage = function JpegImageClosure() {
       this.numComponents = this.components.length;
       return undefined;
     },
-    _getLinearizedBlockData: function _getLinearizedBlockData(width, height) {
-      var isSourcePDF = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+    _getLinearizedBlockData(width, height, isSourcePDF = false) {
       var scaleX = this.width / width,
           scaleY = this.height / height;
       var component, componentScaleX, componentScaleY, blocksPerScanline;
@@ -1032,6 +1087,7 @@ var JpegImage = function JpegImageClosure() {
       var data = new Uint8ClampedArray(dataLength);
       var xScaleBlockOffset = new Uint32Array(width);
       var mask3LSB = 0xfffffff8;
+      let lastComponentScaleX;
 
       for (i = 0; i < numComponents; i++) {
         component = this.components[i];
@@ -1041,9 +1097,13 @@ var JpegImage = function JpegImageClosure() {
         output = component.output;
         blocksPerScanline = component.blocksPerLine + 1 << 3;
 
-        for (x = 0; x < width; x++) {
-          j = 0 | x * componentScaleX;
-          xScaleBlockOffset[x] = (j & mask3LSB) << 3 | j & 7;
+        if (componentScaleX !== lastComponentScaleX) {
+          for (x = 0; x < width; x++) {
+            j = 0 | x * componentScaleX;
+            xScaleBlockOffset[x] = (j & mask3LSB) << 3 | j & 7;
+          }
+
+          lastComponentScaleX = componentScaleX;
         }
 
         for (y = 0; y < height; y++) {
@@ -1057,7 +1117,7 @@ var JpegImage = function JpegImageClosure() {
         }
       }
 
-      var transform = this._decodeTransform;
+      let transform = this._decodeTransform;
 
       if (!isSourcePDF && numComponents === 4 && !transform) {
         transform = new Int32Array([-256, 255, -256, 255, -256, 255, -256, 255]);
@@ -1141,30 +1201,28 @@ var JpegImage = function JpegImageClosure() {
     _convertCmykToRgb: function convertCmykToRgb(data) {
       var c, m, y, k;
       var offset = 0;
-      var scale = 1 / 255;
 
       for (var i = 0, length = data.length; i < length; i += 4) {
-        c = data[i] * scale;
-        m = data[i + 1] * scale;
-        y = data[i + 2] * scale;
-        k = data[i + 3] * scale;
-        data[offset++] = 255 + c * (-4.387332384609988 * c + 54.48615194189176 * m + 18.82290502165302 * y + 212.25662451639585 * k - 285.2331026137004) + m * (1.7149763477362134 * m - 5.6096736904047315 * y - 17.873870861415444 * k - 5.497006427196366) + y * (-2.5217340131683033 * y - 21.248923337353073 * k + 17.5119270841813) - k * (21.86122147463605 * k + 189.48180835922747);
-        data[offset++] = 255 + c * (8.841041422036149 * c + 60.118027045597366 * m + 6.871425592049007 * y + 31.159100130055922 * k - 79.2970844816548) + m * (-15.310361306967817 * m + 17.575251261109482 * y + 131.35250912493976 * k - 190.9453302588951) + y * (4.444339102852739 * y + 9.8632861493405 * k - 24.86741582555878) - k * (20.737325471181034 * k + 187.80453709719578);
-        data[offset++] = 255 + c * (0.8842522430003296 * c + 8.078677503112928 * m + 30.89978309703729 * y - 0.23883238689178934 * k - 14.183576799673286) + m * (10.49593273432072 * m + 63.02378494754052 * y + 50.606957656360734 * k - 112.23884253719248) + y * (0.03296041114873217 * y + 115.60384449646641 * k - 193.58209356861505) - k * (22.33816807309886 * k + 180.12613974708367);
+        c = data[i];
+        m = data[i + 1];
+        y = data[i + 2];
+        k = data[i + 3];
+        data[offset++] = 255 + c * (-0.00006747147073602441 * c + 0.0008379262121013727 * m + 0.0002894718188643294 * y + 0.003264231057537806 * k - 1.1185611867203937) + m * (0.000026374107616089405 * m - 0.00008626949158638572 * y - 0.0002748769067499491 * k - 0.02155688794978967) + y * (-0.00003878099212869363 * y - 0.0003267808279485286 * k + 0.0686742238595345) - k * (0.0003361971776183937 * k + 0.7430659151342254);
+        data[offset++] = 255 + c * (0.00013596372813588848 * c + 0.000924537132573585 * m + 0.00010567359618683593 * y + 0.0004791864687436512 * k - 0.3109689587515875) + m * (-0.00023545346108370344 * m + 0.0002702845253534714 * y + 0.0020200308977307156 * k - 0.7488052167015494) + y * (0.00006834815998235662 * y + 0.00015168452363460973 * k - 0.09751927774728933) - k * (0.00031891311758832814 * k + 0.7364883807733168);
+        data[offset++] = 255 + c * (0.000013598650411385307 * c + 0.00012423956175490851 * m + 0.0004751985097583589 * y - 0.0000036729317476630422 * k - 0.05562186980264034) + m * (0.00016141380598724676 * m + 0.0009692239130725186 * y + 0.0007782692450036253 * k - 0.44015232367526463) + y * (5.068882914068769e-7 * y + 0.0017778369011375071 * k - 0.7591454649749609) - k * (0.0003435319965105553 * k + 0.7063770186160144);
       }
 
       return data.subarray(0, offset);
     },
-    getData: function getData(_ref3) {
-      var width = _ref3.width,
-          height = _ref3.height,
-          _ref3$forceRGB = _ref3.forceRGB,
-          forceRGB = _ref3$forceRGB === void 0 ? false : _ref3$forceRGB,
-          _ref3$isSourcePDF = _ref3.isSourcePDF,
-          isSourcePDF = _ref3$isSourcePDF === void 0 ? false : _ref3$isSourcePDF;
 
+    getData({
+      width,
+      height,
+      forceRGB = false,
+      isSourcePDF = false
+    }) {
       if (this.numComponents > 4) {
-        throw new JpegError('Unsupported color mode');
+        throw new JpegError("Unsupported color mode");
       }
 
       var data = this._getLinearizedBlockData(width, height, isSourcePDF);
@@ -1198,6 +1256,7 @@ var JpegImage = function JpegImageClosure() {
 
       return data;
     }
+
   };
   return JpegImage;
 }();

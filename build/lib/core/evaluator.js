@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,58 +26,50 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PartialEvaluator = void 0;
 
-var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
+var _util = require("../shared/util.js");
 
-var _util = require("../shared/util");
+var _cmap = require("./cmap.js");
 
-var _cmap = require("./cmap");
+var _primitives = require("./primitives.js");
 
-var _primitives = require("./primitives");
+var _fonts = require("./fonts.js");
 
-var _fonts = require("./fonts");
+var _encodings = require("./encodings.js");
 
-var _encodings = require("./encodings");
+var _core_utils = require("./core_utils.js");
 
-var _unicode = require("./unicode");
+var _unicode = require("./unicode.js");
 
-var _standard_fonts = require("./standard_fonts");
+var _standard_fonts = require("./standard_fonts.js");
 
-var _pattern = require("./pattern");
+var _pattern = require("./pattern.js");
 
-var _parser = require("./parser");
+var _parser = require("./parser.js");
 
-var _bidi = require("./bidi");
+var _bidi = require("./bidi.js");
 
-var _colorspace = require("./colorspace");
+var _colorspace = require("./colorspace.js");
 
-var _stream = require("./stream");
+var _stream = require("./stream.js");
 
-var _glyphlist = require("./glyphlist");
+var _glyphlist = require("./glyphlist.js");
 
-var _core_utils = require("./core_utils");
+var _metrics = require("./metrics.js");
 
-var _metrics = require("./metrics");
+var _function = require("./function.js");
 
-var _function = require("./function");
+var _jpeg_stream = require("./jpeg_stream.js");
 
-var _jpeg_stream = require("./jpeg_stream");
+var _murmurhash = require("./murmurhash3.js");
 
-var _murmurhash = require("./murmurhash3");
+var _image_utils = require("./image_utils.js");
 
-var _image_utils = require("./image_utils");
+var _operator_list = require("./operator_list.js");
 
-var _operator_list = require("./operator_list");
-
-var _image = require("./image");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
-
-function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+var _image = require("./image.js");
 
 var PartialEvaluator = function PartialEvaluatorClosure() {
-  var DefaultPartialEvaluatorOptions = {
+  const DefaultPartialEvaluatorOptions = {
     forceDataSchema: false,
     maxImageSize: -1,
     disableFontFace: false,
@@ -86,18 +78,16 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
     isEvalSupported: true
   };
 
-  function PartialEvaluator(_ref) {
-    var _this = this;
-
-    var xref = _ref.xref,
-        handler = _ref.handler,
-        pageIndex = _ref.pageIndex,
-        idFactory = _ref.idFactory,
-        fontCache = _ref.fontCache,
-        builtInCMapCache = _ref.builtInCMapCache,
-        _ref$options = _ref.options,
-        options = _ref$options === void 0 ? null : _ref$options,
-        pdfFunctionFactory = _ref.pdfFunctionFactory;
+  function PartialEvaluator({
+    xref,
+    handler,
+    pageIndex,
+    idFactory,
+    fontCache,
+    builtInCMapCache,
+    options = null,
+    pdfFunctionFactory
+  }) {
     this.xref = xref;
     this.handler = handler;
     this.pageIndex = pageIndex;
@@ -108,51 +98,39 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
     this.pdfFunctionFactory = pdfFunctionFactory;
     this.parsingType3Font = false;
 
-    this.fetchBuiltInCMap =
-    /*#__PURE__*/
-    function () {
-      var _ref2 = _asyncToGenerator(
-      /*#__PURE__*/
-      _regenerator["default"].mark(function _callee(name) {
-        var data;
-        return _regenerator["default"].wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                if (!_this.builtInCMapCache.has(name)) {
-                  _context.next = 2;
-                  break;
-                }
+    this.fetchBuiltInCMap = async name => {
+      if (this.builtInCMapCache.has(name)) {
+        return this.builtInCMapCache.get(name);
+      }
 
-                return _context.abrupt("return", _this.builtInCMapCache.get(name));
-
-              case 2:
-                _context.next = 4;
-                return _this.handler.sendWithPromise('FetchBuiltInCMap', {
-                  name: name
-                });
-
-              case 4:
-                data = _context.sent;
-
-                if (data.compressionType !== _util.CMapCompressionType.NONE) {
-                  _this.builtInCMapCache.set(name, data);
-                }
-
-                return _context.abrupt("return", data);
-
-              case 7:
-              case "end":
-                return _context.stop();
+      const readableStream = this.handler.sendWithStream("FetchBuiltInCMap", {
+        name
+      });
+      const reader = readableStream.getReader();
+      const data = await new Promise(function (resolve, reject) {
+        function pump() {
+          reader.read().then(function ({
+            value,
+            done
+          }) {
+            if (done) {
+              return;
             }
-          }
-        }, _callee);
-      }));
 
-      return function (_x) {
-        return _ref2.apply(this, arguments);
-      };
-    }();
+            resolve(value);
+            pump();
+          }, reject);
+        }
+
+        pump();
+      });
+
+      if (data.compressionType !== _util.CMapCompressionType.NONE) {
+        this.builtInCMapCache.set(name, data);
+      }
+
+      return data;
+    };
   }
 
   var TIME_SLOT_DURATION_MS = 20;
@@ -177,78 +155,99 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
     }
   };
 
-  function normalizeBlendMode(value) {
+  function normalizeBlendMode(value, parsingArray = false) {
+    if (Array.isArray(value)) {
+      for (let i = 0, ii = value.length; i < ii; i++) {
+        const maybeBM = normalizeBlendMode(value[i], true);
+
+        if (maybeBM) {
+          return maybeBM;
+        }
+      }
+
+      (0, _util.warn)(`Unsupported blend mode Array: ${value}`);
+      return "source-over";
+    }
+
     if (!(0, _primitives.isName)(value)) {
-      return 'source-over';
+      if (parsingArray) {
+        return null;
+      }
+
+      return "source-over";
     }
 
     switch (value.name) {
-      case 'Normal':
-      case 'Compatible':
-        return 'source-over';
+      case "Normal":
+      case "Compatible":
+        return "source-over";
 
-      case 'Multiply':
-        return 'multiply';
+      case "Multiply":
+        return "multiply";
 
-      case 'Screen':
-        return 'screen';
+      case "Screen":
+        return "screen";
 
-      case 'Overlay':
-        return 'overlay';
+      case "Overlay":
+        return "overlay";
 
-      case 'Darken':
-        return 'darken';
+      case "Darken":
+        return "darken";
 
-      case 'Lighten':
-        return 'lighten';
+      case "Lighten":
+        return "lighten";
 
-      case 'ColorDodge':
-        return 'color-dodge';
+      case "ColorDodge":
+        return "color-dodge";
 
-      case 'ColorBurn':
-        return 'color-burn';
+      case "ColorBurn":
+        return "color-burn";
 
-      case 'HardLight':
-        return 'hard-light';
+      case "HardLight":
+        return "hard-light";
 
-      case 'SoftLight':
-        return 'soft-light';
+      case "SoftLight":
+        return "soft-light";
 
-      case 'Difference':
-        return 'difference';
+      case "Difference":
+        return "difference";
 
-      case 'Exclusion':
-        return 'exclusion';
+      case "Exclusion":
+        return "exclusion";
 
-      case 'Hue':
-        return 'hue';
+      case "Hue":
+        return "hue";
 
-      case 'Saturation':
-        return 'saturation';
+      case "Saturation":
+        return "saturation";
 
-      case 'Color':
-        return 'color';
+      case "Color":
+        return "color";
 
-      case 'Luminosity':
-        return 'luminosity';
+      case "Luminosity":
+        return "luminosity";
     }
 
-    (0, _util.warn)('Unsupported blend mode: ' + value.name);
-    return 'source-over';
+    if (parsingArray) {
+      return null;
+    }
+
+    (0, _util.warn)(`Unsupported blend mode: ${value.name}`);
+    return "source-over";
   }
 
   var deferred = Promise.resolve();
   var TILING_PATTERN = 1,
       SHADING_PATTERN = 2;
   PartialEvaluator.prototype = {
-    clone: function clone() {
-      var newOptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DefaultPartialEvaluatorOptions;
+    clone(newOptions = DefaultPartialEvaluatorOptions) {
       var newEvaluator = Object.create(this);
       newEvaluator.options = newOptions;
       return newEvaluator;
     },
+
     hasBlendModes: function PartialEvaluator_hasBlendModes(resources) {
-      if (!(0, _primitives.isDict)(resources)) {
+      if (!(resources instanceof _primitives.Dict)) {
         return false;
       }
 
@@ -262,42 +261,110 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
           xref = this.xref;
 
       while (nodes.length) {
-        var key, i, ii;
         var node = nodes.shift();
-        var graphicStates = node.get('ExtGState');
+        var graphicStates = node.get("ExtGState");
 
-        if ((0, _primitives.isDict)(graphicStates)) {
+        if (graphicStates instanceof _primitives.Dict) {
           var graphicStatesKeys = graphicStates.getKeys();
 
-          for (i = 0, ii = graphicStatesKeys.length; i < ii; i++) {
-            key = graphicStatesKeys[i];
-            var graphicState = graphicStates.get(key);
-            var bm = graphicState.get('BM');
+          for (let i = 0, ii = graphicStatesKeys.length; i < ii; i++) {
+            const key = graphicStatesKeys[i];
+            let graphicState = graphicStates.getRaw(key);
 
-            if ((0, _primitives.isName)(bm) && bm.name !== 'Normal') {
-              return true;
+            if (graphicState instanceof _primitives.Ref) {
+              if (processed[graphicState.toString()]) {
+                continue;
+              }
+
+              try {
+                graphicState = xref.fetch(graphicState);
+              } catch (ex) {
+                if (ex instanceof _core_utils.MissingDataException) {
+                  throw ex;
+                }
+
+                if (this.options.ignoreErrors) {
+                  if (graphicState instanceof _primitives.Ref) {
+                    processed[graphicState.toString()] = true;
+                  }
+
+                  this.handler.send("UnsupportedFeature", {
+                    featureId: _util.UNSUPPORTED_FEATURES.unknown
+                  });
+                  (0, _util.warn)(`hasBlendModes - ignoring ExtGState: "${ex}".`);
+                  continue;
+                }
+
+                throw ex;
+              }
+            }
+
+            if (!(graphicState instanceof _primitives.Dict)) {
+              continue;
+            }
+
+            if (graphicState.objId) {
+              processed[graphicState.objId] = true;
+            }
+
+            const bm = graphicState.get("BM");
+
+            if (bm instanceof _primitives.Name) {
+              if (bm.name !== "Normal") {
+                return true;
+              }
+
+              continue;
+            }
+
+            if (bm !== undefined && Array.isArray(bm)) {
+              for (let j = 0, jj = bm.length; j < jj; j++) {
+                if (bm[j] instanceof _primitives.Name && bm[j].name !== "Normal") {
+                  return true;
+                }
+              }
             }
           }
         }
 
-        var xObjects = node.get('XObject');
+        var xObjects = node.get("XObject");
 
-        if (!(0, _primitives.isDict)(xObjects)) {
+        if (!(xObjects instanceof _primitives.Dict)) {
           continue;
         }
 
         var xObjectsKeys = xObjects.getKeys();
 
-        for (i = 0, ii = xObjectsKeys.length; i < ii; i++) {
-          key = xObjectsKeys[i];
+        for (let i = 0, ii = xObjectsKeys.length; i < ii; i++) {
+          const key = xObjectsKeys[i];
           var xObject = xObjects.getRaw(key);
 
-          if ((0, _primitives.isRef)(xObject)) {
+          if (xObject instanceof _primitives.Ref) {
             if (processed[xObject.toString()]) {
               continue;
             }
 
-            xObject = xref.fetch(xObject);
+            try {
+              xObject = xref.fetch(xObject);
+            } catch (ex) {
+              if (ex instanceof _core_utils.MissingDataException) {
+                throw ex;
+              }
+
+              if (this.options.ignoreErrors) {
+                if (xObject instanceof _primitives.Ref) {
+                  processed[xObject.toString()] = true;
+                }
+
+                this.handler.send("UnsupportedFeature", {
+                  featureId: _util.UNSUPPORTED_FEATURES.unknown
+                });
+                (0, _util.warn)(`hasBlendModes - ignoring XObject: "${ex}".`);
+                continue;
+              }
+
+              throw ex;
+            }
           }
 
           if (!(0, _primitives.isStream)(xObject)) {
@@ -312,9 +379,9 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
             processed[xObject.dict.objId] = true;
           }
 
-          var xResources = xObject.dict.get('Resources');
+          var xResources = xObject.dict.get("Resources");
 
-          if ((0, _primitives.isDict)(xResources) && (!xResources.objId || !processed[xResources.objId])) {
+          if (xResources instanceof _primitives.Dict && (!xResources.objId || !processed[xResources.objId])) {
             nodes.push(xResources);
 
             if (xResources.objId) {
@@ -326,10 +393,11 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       return false;
     },
-    buildFormXObject: function PartialEvaluator_buildFormXObject(resources, xobj, smask, operatorList, task, initialState) {
+
+    async buildFormXObject(resources, xobj, smask, operatorList, task, initialState) {
       var dict = xobj.dict;
-      var matrix = dict.getArray('Matrix');
-      var bbox = dict.getArray('BBox');
+      var matrix = dict.getArray("Matrix");
+      var bbox = dict.getArray("BBox");
 
       if (Array.isArray(bbox) && bbox.length === 4) {
         bbox = _util.Util.normalizeRect(bbox);
@@ -337,25 +405,28 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         bbox = null;
       }
 
-      var group = dict.get('Group');
+      var group = dict.get("Group");
 
       if (group) {
         var groupOptions = {
-          matrix: matrix,
-          bbox: bbox,
-          smask: smask,
+          matrix,
+          bbox,
+          smask,
           isolated: false,
           knockout: false
         };
-        var groupSubtype = group.get('S');
+        var groupSubtype = group.get("S");
         var colorSpace = null;
 
-        if ((0, _primitives.isName)(groupSubtype, 'Transparency')) {
-          groupOptions.isolated = group.get('I') || false;
-          groupOptions.knockout = group.get('K') || false;
+        if ((0, _primitives.isName)(groupSubtype, "Transparency")) {
+          groupOptions.isolated = group.get("I") || false;
+          groupOptions.knockout = group.get("K") || false;
 
-          if (group.has('CS')) {
-            colorSpace = _colorspace.ColorSpace.parse(group.get('CS'), this.xref, resources, this.pdfFunctionFactory);
+          if (group.has("CS")) {
+            colorSpace = await this.parseColorSpace({
+              cs: group.get("CS"),
+              resources
+            });
           }
         }
 
@@ -370,10 +441,10 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       operatorList.addOp(_util.OPS.paintFormXObjectBegin, [matrix, bbox]);
       return this.getOperatorList({
         stream: xobj,
-        task: task,
-        resources: dict.get('Resources') || resources,
-        operatorList: operatorList,
-        initialState: initialState
+        task,
+        resources: dict.get("Resources") || resources,
+        operatorList,
+        initialState
       }).then(function () {
         operatorList.addOp(_util.OPS.paintFormXObjectEnd, []);
 
@@ -382,223 +453,182 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         }
       });
     },
-    buildPaintImageXObject: function () {
-      var _buildPaintImageXObject = _asyncToGenerator(
-      /*#__PURE__*/
-      _regenerator["default"].mark(function _callee2(_ref3) {
-        var _this2 = this;
 
-        var resources, image, _ref3$isInline, isInline, operatorList, cacheKey, imageCache, _ref3$forceDisableNat, forceDisableNativeImageDecoder, dict, w, h, maxImageSize, imageMask, imgData, args, width, height, bitStrideLength, imgArray, decode, softMask, mask, SMALL_IMAGE_DIMENSIONS, imageObj, nativeImageDecoderSupport, objId, nativeImageDecoder, imgPromise;
+    async buildPaintImageXObject({
+      resources,
+      image,
+      isInline = false,
+      operatorList,
+      cacheKey,
+      imageCache,
+      forceDisableNativeImageDecoder = false
+    }) {
+      var dict = image.dict;
+      var w = dict.get("Width", "W");
+      var h = dict.get("Height", "H");
 
-        return _regenerator["default"].wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                resources = _ref3.resources, image = _ref3.image, _ref3$isInline = _ref3.isInline, isInline = _ref3$isInline === void 0 ? false : _ref3$isInline, operatorList = _ref3.operatorList, cacheKey = _ref3.cacheKey, imageCache = _ref3.imageCache, _ref3$forceDisableNat = _ref3.forceDisableNativeImageDecoder, forceDisableNativeImageDecoder = _ref3$forceDisableNat === void 0 ? false : _ref3$forceDisableNat;
-                dict = image.dict;
-                w = dict.get('Width', 'W');
-                h = dict.get('Height', 'H');
-
-                if (!(!(w && (0, _util.isNum)(w)) || !(h && (0, _util.isNum)(h)))) {
-                  _context2.next = 7;
-                  break;
-                }
-
-                (0, _util.warn)('Image dimensions are missing, or not numbers.');
-                return _context2.abrupt("return", undefined);
-
-              case 7:
-                maxImageSize = this.options.maxImageSize;
-
-                if (!(maxImageSize !== -1 && w * h > maxImageSize)) {
-                  _context2.next = 11;
-                  break;
-                }
-
-                (0, _util.warn)('Image exceeded maximum allowed size and was removed.');
-                return _context2.abrupt("return", undefined);
-
-              case 11:
-                imageMask = dict.get('ImageMask', 'IM') || false;
-
-                if (!imageMask) {
-                  _context2.next = 24;
-                  break;
-                }
-
-                width = dict.get('Width', 'W');
-                height = dict.get('Height', 'H');
-                bitStrideLength = width + 7 >> 3;
-                imgArray = image.getBytes(bitStrideLength * height, true);
-                decode = dict.getArray('Decode', 'D');
-                imgData = _image.PDFImage.createMask({
-                  imgArray: imgArray,
-                  width: width,
-                  height: height,
-                  imageIsFromDecodeStream: image instanceof _stream.DecodeStream,
-                  inverseDecode: !!decode && decode[0] > 0
-                });
-                imgData.cached = !!cacheKey;
-                args = [imgData];
-                operatorList.addOp(_util.OPS.paintImageMaskXObject, args);
-
-                if (cacheKey) {
-                  imageCache[cacheKey] = {
-                    fn: _util.OPS.paintImageMaskXObject,
-                    args: args
-                  };
-                }
-
-                return _context2.abrupt("return", undefined);
-
-              case 24:
-                softMask = dict.get('SMask', 'SM') || false;
-                mask = dict.get('Mask') || false;
-                SMALL_IMAGE_DIMENSIONS = 200;
-
-                if (!(isInline && !softMask && !mask && !(image instanceof _jpeg_stream.JpegStream) && w + h < SMALL_IMAGE_DIMENSIONS)) {
-                  _context2.next = 32;
-                  break;
-                }
-
-                imageObj = new _image.PDFImage({
-                  xref: this.xref,
-                  res: resources,
-                  image: image,
-                  isInline: isInline,
-                  pdfFunctionFactory: this.pdfFunctionFactory
-                });
-                imgData = imageObj.createImageData(true);
-                operatorList.addOp(_util.OPS.paintInlineImageXObject, [imgData]);
-                return _context2.abrupt("return", undefined);
-
-              case 32:
-                nativeImageDecoderSupport = forceDisableNativeImageDecoder ? _util.NativeImageDecoding.NONE : this.options.nativeImageDecoderSupport;
-                objId = "img_".concat(this.idFactory.createObjId());
-
-                if (this.parsingType3Font) {
-                  (0, _util.assert)(nativeImageDecoderSupport === _util.NativeImageDecoding.NONE, 'Type3 image resources should be completely decoded in the worker.');
-                  objId = "".concat(this.idFactory.getDocId(), "_type3res_").concat(objId);
-                }
-
-                if (!(nativeImageDecoderSupport !== _util.NativeImageDecoding.NONE && !softMask && !mask && image instanceof _jpeg_stream.JpegStream && _image_utils.NativeImageDecoder.isSupported(image, this.xref, resources, this.pdfFunctionFactory))) {
-                  _context2.next = 37;
-                  break;
-                }
-
-                return _context2.abrupt("return", this.handler.sendWithPromise('obj', [objId, this.pageIndex, 'JpegStream', image.getIR(this.options.forceDataSchema)]).then(function () {
-                  operatorList.addDependency(objId);
-                  args = [objId, w, h];
-                  operatorList.addOp(_util.OPS.paintJpegXObject, args);
-
-                  if (cacheKey) {
-                    imageCache[cacheKey] = {
-                      fn: _util.OPS.paintJpegXObject,
-                      args: args
-                    };
-                  }
-                }, function (reason) {
-                  (0, _util.warn)('Native JPEG decoding failed -- trying to recover: ' + (reason && reason.message));
-                  return _this2.buildPaintImageXObject({
-                    resources: resources,
-                    image: image,
-                    isInline: isInline,
-                    operatorList: operatorList,
-                    cacheKey: cacheKey,
-                    imageCache: imageCache,
-                    forceDisableNativeImageDecoder: true
-                  });
-                }));
-
-              case 37:
-                nativeImageDecoder = null;
-
-                if (nativeImageDecoderSupport === _util.NativeImageDecoding.DECODE && (image instanceof _jpeg_stream.JpegStream || mask instanceof _jpeg_stream.JpegStream || softMask instanceof _jpeg_stream.JpegStream)) {
-                  nativeImageDecoder = new _image_utils.NativeImageDecoder({
-                    xref: this.xref,
-                    resources: resources,
-                    handler: this.handler,
-                    forceDataSchema: this.options.forceDataSchema,
-                    pdfFunctionFactory: this.pdfFunctionFactory
-                  });
-                }
-
-                operatorList.addDependency(objId);
-                args = [objId, w, h];
-                imgPromise = _image.PDFImage.buildImage({
-                  handler: this.handler,
-                  xref: this.xref,
-                  res: resources,
-                  image: image,
-                  isInline: isInline,
-                  nativeDecoder: nativeImageDecoder,
-                  pdfFunctionFactory: this.pdfFunctionFactory
-                }).then(function (imageObj) {
-                  var imgData = imageObj.createImageData(false);
-
-                  if (_this2.parsingType3Font) {
-                    return _this2.handler.sendWithPromise('commonobj', [objId, 'FontType3Res', imgData], [imgData.data.buffer]);
-                  }
-
-                  _this2.handler.send('obj', [objId, _this2.pageIndex, 'Image', imgData], [imgData.data.buffer]);
-
-                  return undefined;
-                })["catch"](function (reason) {
-                  (0, _util.warn)('Unable to decode image: ' + reason);
-
-                  if (_this2.parsingType3Font) {
-                    return _this2.handler.sendWithPromise('commonobj', [objId, 'FontType3Res', null]);
-                  }
-
-                  _this2.handler.send('obj', [objId, _this2.pageIndex, 'Image', null]);
-
-                  return undefined;
-                });
-
-                if (!this.parsingType3Font) {
-                  _context2.next = 45;
-                  break;
-                }
-
-                _context2.next = 45;
-                return imgPromise;
-
-              case 45:
-                operatorList.addOp(_util.OPS.paintImageXObject, args);
-
-                if (cacheKey) {
-                  imageCache[cacheKey] = {
-                    fn: _util.OPS.paintImageXObject,
-                    args: args
-                  };
-                }
-
-                return _context2.abrupt("return", undefined);
-
-              case 48:
-              case "end":
-                return _context2.stop();
-            }
-          }
-        }, _callee2, this);
-      }));
-
-      function buildPaintImageXObject(_x2) {
-        return _buildPaintImageXObject.apply(this, arguments);
+      if (!(w && (0, _util.isNum)(w)) || !(h && (0, _util.isNum)(h))) {
+        (0, _util.warn)("Image dimensions are missing, or not numbers.");
+        return undefined;
       }
 
-      return buildPaintImageXObject;
-    }(),
+      var maxImageSize = this.options.maxImageSize;
+
+      if (maxImageSize !== -1 && w * h > maxImageSize) {
+        (0, _util.warn)("Image exceeded maximum allowed size and was removed.");
+        return undefined;
+      }
+
+      var imageMask = dict.get("ImageMask", "IM") || false;
+      var imgData, args;
+
+      if (imageMask) {
+        var width = dict.get("Width", "W");
+        var height = dict.get("Height", "H");
+        var bitStrideLength = width + 7 >> 3;
+        var imgArray = image.getBytes(bitStrideLength * height, true);
+        var decode = dict.getArray("Decode", "D");
+        imgData = _image.PDFImage.createMask({
+          imgArray,
+          width,
+          height,
+          imageIsFromDecodeStream: image instanceof _stream.DecodeStream,
+          inverseDecode: !!decode && decode[0] > 0
+        });
+        imgData.cached = !!cacheKey;
+        args = [imgData];
+        operatorList.addOp(_util.OPS.paintImageMaskXObject, args);
+
+        if (cacheKey) {
+          imageCache[cacheKey] = {
+            fn: _util.OPS.paintImageMaskXObject,
+            args
+          };
+        }
+
+        return undefined;
+      }
+
+      var softMask = dict.get("SMask", "SM") || false;
+      var mask = dict.get("Mask") || false;
+      var SMALL_IMAGE_DIMENSIONS = 200;
+
+      if (isInline && !softMask && !mask && !(image instanceof _jpeg_stream.JpegStream) && w + h < SMALL_IMAGE_DIMENSIONS) {
+        const imageObj = new _image.PDFImage({
+          xref: this.xref,
+          res: resources,
+          image,
+          isInline,
+          pdfFunctionFactory: this.pdfFunctionFactory
+        });
+        imgData = imageObj.createImageData(true);
+        operatorList.addOp(_util.OPS.paintInlineImageXObject, [imgData]);
+        return undefined;
+      }
+
+      const nativeImageDecoderSupport = forceDisableNativeImageDecoder ? _util.NativeImageDecoding.NONE : this.options.nativeImageDecoderSupport;
+      let objId = `img_${this.idFactory.createObjId()}`;
+
+      if (this.parsingType3Font) {
+        (0, _util.assert)(nativeImageDecoderSupport === _util.NativeImageDecoding.NONE, "Type3 image resources should be completely decoded in the worker.");
+        objId = `${this.idFactory.getDocId()}_type3res_${objId}`;
+      }
+
+      if (nativeImageDecoderSupport !== _util.NativeImageDecoding.NONE && !softMask && !mask && image instanceof _jpeg_stream.JpegStream && _image_utils.NativeImageDecoder.isSupported(image, this.xref, resources, this.pdfFunctionFactory) && image.maybeValidDimensions) {
+        return this.handler.sendWithPromise("obj", [objId, this.pageIndex, "JpegStream", image.getIR(this.options.forceDataSchema)]).then(function () {
+          operatorList.addDependency(objId);
+          args = [objId, w, h];
+          operatorList.addOp(_util.OPS.paintJpegXObject, args);
+
+          if (cacheKey) {
+            imageCache[cacheKey] = {
+              fn: _util.OPS.paintJpegXObject,
+              args
+            };
+          }
+        }, reason => {
+          (0, _util.warn)("Native JPEG decoding failed -- trying to recover: " + (reason && reason.message));
+          return this.buildPaintImageXObject({
+            resources,
+            image,
+            isInline,
+            operatorList,
+            cacheKey,
+            imageCache,
+            forceDisableNativeImageDecoder: true
+          });
+        });
+      }
+
+      var nativeImageDecoder = null;
+
+      if (nativeImageDecoderSupport === _util.NativeImageDecoding.DECODE && (image instanceof _jpeg_stream.JpegStream || mask instanceof _jpeg_stream.JpegStream || softMask instanceof _jpeg_stream.JpegStream)) {
+        nativeImageDecoder = new _image_utils.NativeImageDecoder({
+          xref: this.xref,
+          resources,
+          handler: this.handler,
+          forceDataSchema: this.options.forceDataSchema,
+          pdfFunctionFactory: this.pdfFunctionFactory
+        });
+      }
+
+      operatorList.addDependency(objId);
+      args = [objId, w, h];
+
+      const imgPromise = _image.PDFImage.buildImage({
+        handler: this.handler,
+        xref: this.xref,
+        res: resources,
+        image,
+        isInline,
+        nativeDecoder: nativeImageDecoder,
+        pdfFunctionFactory: this.pdfFunctionFactory
+      }).then(imageObj => {
+        var imgData = imageObj.createImageData(false);
+
+        if (this.parsingType3Font) {
+          return this.handler.sendWithPromise("commonobj", [objId, "FontType3Res", imgData], [imgData.data.buffer]);
+        }
+
+        this.handler.send("obj", [objId, this.pageIndex, "Image", imgData], [imgData.data.buffer]);
+        return undefined;
+      }).catch(reason => {
+        (0, _util.warn)("Unable to decode image: " + reason);
+
+        if (this.parsingType3Font) {
+          return this.handler.sendWithPromise("commonobj", [objId, "FontType3Res", null]);
+        }
+
+        this.handler.send("obj", [objId, this.pageIndex, "Image", null]);
+        return undefined;
+      });
+
+      if (this.parsingType3Font) {
+        await imgPromise;
+      }
+
+      operatorList.addOp(_util.OPS.paintImageXObject, args);
+
+      if (cacheKey) {
+        imageCache[cacheKey] = {
+          fn: _util.OPS.paintImageXObject,
+          args
+        };
+      }
+
+      return undefined;
+    },
+
     handleSMask: function PartialEvaluator_handleSmask(smask, resources, operatorList, task, stateManager) {
-      var smaskContent = smask.get('G');
+      var smaskContent = smask.get("G");
       var smaskOptions = {
-        subtype: smask.get('S').name,
-        backdrop: smask.get('BC')
+        subtype: smask.get("S").name,
+        backdrop: smask.get("BC")
       };
-      var transferObj = smask.get('TR');
+      var transferObj = smask.get("TR");
 
       if ((0, _function.isPDFFunction)(transferObj)) {
-        var transferFn = this.pdfFunctionFactory.create(transferObj);
+        const transferFn = this.pdfFunctionFactory.create(transferObj);
         var transferMap = new Uint8Array(256);
         var tmp = new Float32Array(1);
 
@@ -613,17 +643,16 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       return this.buildFormXObject(resources, smaskContent, smaskOptions, operatorList, task, stateManager.state.clone());
     },
-    handleTilingType: function handleTilingType(fn, args, resources, pattern, patternDict, operatorList, task) {
-      var _this3 = this;
 
-      var tilingOpList = new _operator_list.OperatorList();
-      var resourcesArray = [patternDict.get('Resources'), resources];
+    handleTilingType(fn, args, resources, pattern, patternDict, operatorList, task) {
+      const tilingOpList = new _operator_list.OperatorList();
+      const resourcesArray = [patternDict.get("Resources"), resources];
 
-      var patternResources = _primitives.Dict.merge(this.xref, resourcesArray);
+      const patternResources = _primitives.Dict.merge(this.xref, resourcesArray);
 
       return this.getOperatorList({
         stream: pattern,
-        task: task,
+        task,
         resources: patternResources,
         operatorList: tilingOpList
       }).then(function () {
@@ -634,22 +663,24 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       }).then(function (tilingPatternIR) {
         operatorList.addDependencies(tilingOpList.dependencies);
         operatorList.addOp(fn, tilingPatternIR);
-      }, function (reason) {
-        if (_this3.options.ignoreErrors) {
-          _this3.handler.send('UnsupportedFeature', {
+      }, reason => {
+        if (reason instanceof _util.AbortException) {
+          return;
+        }
+
+        if (this.options.ignoreErrors) {
+          this.handler.send("UnsupportedFeature", {
             featureId: _util.UNSUPPORTED_FEATURES.unknown
           });
-
-          (0, _util.warn)("handleTilingType - ignoring pattern: \"".concat(reason, "\"."));
+          (0, _util.warn)(`handleTilingType - ignoring pattern: "${reason}".`);
           return;
         }
 
         throw reason;
       });
     },
-    handleSetFont: function PartialEvaluator_handleSetFont(resources, fontArgs, fontRef, operatorList, task, state) {
-      var _this4 = this;
 
+    handleSetFont: function PartialEvaluator_handleSetFont(resources, fontArgs, fontRef, operatorList, task, state) {
       var fontName;
 
       if (fontArgs) {
@@ -657,122 +688,135 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         fontName = fontArgs[0].name;
       }
 
-      return this.loadFont(fontName, fontRef, resources).then(function (translated) {
+      return this.loadFont(fontName, fontRef, resources).then(translated => {
         if (!translated.font.isType3Font) {
           return translated;
         }
 
-        return translated.loadType3Data(_this4, resources, operatorList, task).then(function () {
+        return translated.loadType3Data(this, resources, operatorList, task).then(function () {
           return translated;
-        })["catch"](function (reason) {
-          _this4.handler.send('UnsupportedFeature', {
+        }).catch(reason => {
+          this.handler.send("UnsupportedFeature", {
             featureId: _util.UNSUPPORTED_FEATURES.font
           });
-
-          return new TranslatedFont('g_font_error', new _fonts.ErrorFont('Type3 font load error: ' + reason), translated.font);
+          return new TranslatedFont("g_font_error", new _fonts.ErrorFont("Type3 font load error: " + reason), translated.font);
         });
-      }).then(function (translated) {
+      }).then(translated => {
         state.font = translated.font;
-        translated.send(_this4.handler);
+        translated.send(this.handler);
         return translated.loadedName;
       });
     },
-    handleText: function handleText(chars, state) {
-      var font = state.font;
-      var glyphs = font.charsToGlyphs(chars);
+
+    handleText(chars, state) {
+      const font = state.font;
+      const glyphs = font.charsToGlyphs(chars);
 
       if (font.data) {
-        var isAddToPathSet = !!(state.textRenderingMode & _util.TextRenderingMode.ADD_TO_PATH_FLAG);
+        const isAddToPathSet = !!(state.textRenderingMode & _util.TextRenderingMode.ADD_TO_PATH_FLAG);
 
-        if (isAddToPathSet || state.fillColorSpace.name === 'Pattern' || font.disableFontFace || this.options.disableFontFace) {
+        if (isAddToPathSet || state.fillColorSpace.name === "Pattern" || font.disableFontFace || this.options.disableFontFace) {
           PartialEvaluator.buildFontPaths(font, glyphs, this.handler);
         }
       }
 
       return glyphs;
     },
-    setGState: function PartialEvaluator_setGState(resources, gState, operatorList, task, stateManager) {
-      var _this5 = this;
 
+    ensureStateFont(state) {
+      if (state.font) {
+        return;
+      }
+
+      const reason = new _util.FormatError("Missing setFont (Tf) operator before text rendering operator.");
+
+      if (this.options.ignoreErrors) {
+        this.handler.send("UnsupportedFeature", {
+          featureId: _util.UNSUPPORTED_FEATURES.font
+        });
+        (0, _util.warn)(`ensureStateFont: "${reason}".`);
+        return;
+      }
+
+      throw reason;
+    },
+
+    setGState: function PartialEvaluator_setGState(resources, gState, operatorList, task, stateManager) {
       var gStateObj = [];
       var gStateKeys = gState.getKeys();
       var promise = Promise.resolve();
 
-      var _loop = function _loop() {
-        var key = gStateKeys[i];
-        var value = gState.get(key);
+      for (var i = 0, ii = gStateKeys.length; i < ii; i++) {
+        const key = gStateKeys[i];
+        const value = gState.get(key);
 
         switch (key) {
-          case 'Type':
+          case "Type":
             break;
 
-          case 'LW':
-          case 'LC':
-          case 'LJ':
-          case 'ML':
-          case 'D':
-          case 'RI':
-          case 'FL':
-          case 'CA':
-          case 'ca':
+          case "LW":
+          case "LC":
+          case "LJ":
+          case "ML":
+          case "D":
+          case "RI":
+          case "FL":
+          case "CA":
+          case "ca":
             gStateObj.push([key, value]);
             break;
 
-          case 'Font':
-            promise = promise.then(function () {
-              return _this5.handleSetFont(resources, null, value[0], operatorList, task, stateManager.state).then(function (loadedName) {
+          case "Font":
+            promise = promise.then(() => {
+              return this.handleSetFont(resources, null, value[0], operatorList, task, stateManager.state).then(function (loadedName) {
                 operatorList.addDependency(loadedName);
                 gStateObj.push([key, [loadedName, value[1]]]);
               });
             });
             break;
 
-          case 'BM':
+          case "BM":
             gStateObj.push([key, normalizeBlendMode(value)]);
             break;
 
-          case 'SMask':
-            if ((0, _primitives.isName)(value, 'None')) {
+          case "SMask":
+            if ((0, _primitives.isName)(value, "None")) {
               gStateObj.push([key, false]);
               break;
             }
 
             if ((0, _primitives.isDict)(value)) {
-              promise = promise.then(function () {
-                return _this5.handleSMask(value, resources, operatorList, task, stateManager);
+              promise = promise.then(() => {
+                return this.handleSMask(value, resources, operatorList, task, stateManager);
               });
               gStateObj.push([key, true]);
             } else {
-              (0, _util.warn)('Unsupported SMask type');
+              (0, _util.warn)("Unsupported SMask type");
             }
 
             break;
 
-          case 'OP':
-          case 'op':
-          case 'OPM':
-          case 'BG':
-          case 'BG2':
-          case 'UCR':
-          case 'UCR2':
-          case 'TR':
-          case 'TR2':
-          case 'HT':
-          case 'SM':
-          case 'SA':
-          case 'AIS':
-          case 'TK':
-            (0, _util.info)('graphic state operator ' + key);
+          case "OP":
+          case "op":
+          case "OPM":
+          case "BG":
+          case "BG2":
+          case "UCR":
+          case "UCR2":
+          case "TR":
+          case "TR2":
+          case "HT":
+          case "SM":
+          case "SA":
+          case "AIS":
+          case "TK":
+            (0, _util.info)("graphic state operator " + key);
             break;
 
           default:
-            (0, _util.info)('Unknown graphic state operator ' + key);
+            (0, _util.info)("Unknown graphic state operator " + key);
             break;
         }
-      };
-
-      for (var i = 0, ii = gStateKeys.length; i < ii; i++) {
-        _loop();
       }
 
       return promise.then(function () {
@@ -782,10 +826,8 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       });
     },
     loadFont: function PartialEvaluator_loadFont(fontName, font, resources) {
-      var _this6 = this;
-
       function errorFont() {
-        return Promise.resolve(new TranslatedFont('g_font_error', new _fonts.ErrorFont('Font ' + fontName + ' is not available'), font));
+        return Promise.resolve(new TranslatedFont("g_font_error", new _fonts.ErrorFont("Font " + fontName + " is not available"), font));
       }
 
       var fontRef,
@@ -793,24 +835,31 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       if (font) {
         if (!(0, _primitives.isRef)(font)) {
-          throw new Error('The "font" object should be a reference.');
+          throw new _util.FormatError('The "font" object should be a reference.');
         }
 
         fontRef = font;
       } else {
-        var fontRes = resources.get('Font');
+        var fontRes = resources.get("Font");
 
         if (fontRes) {
           fontRef = fontRes.getRaw(fontName);
-        } else {
-          (0, _util.warn)('fontRes not available');
-          return errorFont();
         }
       }
 
       if (!fontRef) {
-        (0, _util.warn)('fontRef not available');
-        return errorFont();
+        const partialMsg = `Font "${fontName || font && font.toString()}" is not available`;
+
+        if (!this.options.ignoreErrors && !this.parsingType3Font) {
+          (0, _util.warn)(`${partialMsg}.`);
+          return errorFont();
+        }
+
+        this.handler.send("UnsupportedFeature", {
+          featureId: _util.UNSUPPORTED_FEATURES.font
+        });
+        (0, _util.warn)(`${partialMsg} -- attempting to fallback to a default font.`);
+        fontRef = PartialEvaluator.getFallbackFontDict();
       }
 
       if (this.fontCache.has(fontRef)) {
@@ -829,8 +878,10 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       var fontCapability = (0, _util.createPromiseCapability)();
       var preEvaluatedFont = this.preEvaluateFont(font);
-      var descriptor = preEvaluatedFont.descriptor,
-          hash = preEvaluatedFont.hash;
+      const {
+        descriptor,
+        hash
+      } = preEvaluatedFont;
       var fontRefIsRef = (0, _primitives.isRef)(fontRef),
           fontID;
 
@@ -872,11 +923,11 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
           fontID = this.idFactory.createObjId();
         }
 
-        this.fontCache.put("id_".concat(fontID), fontCapability.promise);
+        this.fontCache.put(`id_${fontID}`, fontCapability.promise);
       }
 
       (0, _util.assert)(fontID, 'The "fontID" must be defined.');
-      font.loadedName = "".concat(this.idFactory.getDocId(), "_f").concat(fontID);
+      font.loadedName = `${this.idFactory.getDocId()}_f${fontID}`;
       font.translated = fontCapability.promise;
       var translatedPromise;
 
@@ -893,14 +944,14 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         }
 
         fontCapability.resolve(new TranslatedFont(font.loadedName, translatedFont, font));
-      })["catch"](function (reason) {
-        _this6.handler.send('UnsupportedFeature', {
+      }).catch(reason => {
+        this.handler.send("UnsupportedFeature", {
           featureId: _util.UNSUPPORTED_FEATURES.font
         });
 
         try {
-          var fontFile3 = descriptor && descriptor.get('FontFile3');
-          var subtype = fontFile3 && fontFile3.get('Subtype');
+          var fontFile3 = descriptor && descriptor.get("FontFile3");
+          var subtype = fontFile3 && fontFile3.get("Subtype");
           var fontType = (0, _fonts.getFontType)(preEvaluatedFont.type, subtype && subtype.name);
           var xrefFontStats = xref.stats.fontTypes;
           xrefFontStats[fontType] = true;
@@ -910,8 +961,8 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       });
       return fontCapability.promise;
     },
-    buildPath: function buildPath(operatorList, fn, args) {
-      var parsingText = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+    buildPath(operatorList, fn, args, parsingText = false) {
       var lastIndex = operatorList.length - 1;
 
       if (!args) {
@@ -920,7 +971,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       if (lastIndex < 0 || operatorList.fnArray[lastIndex] !== _util.OPS.constructPath) {
         if (parsingText) {
-          (0, _util.warn)("Encountered path operator \"".concat(fn, "\" inside of a text object."));
+          (0, _util.warn)(`Encountered path operator "${fn}" inside of a text object.`);
           operatorList.addOp(_util.OPS.save, null);
         }
 
@@ -935,74 +986,62 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         Array.prototype.push.apply(opArgs[1], args);
       }
     },
-    handleColorN: function () {
-      var _handleColorN = _asyncToGenerator(
-      /*#__PURE__*/
-      _regenerator["default"].mark(function _callee3(operatorList, fn, args, cs, patterns, resources, task) {
-        var patternName, pattern, dict, typeNum, color, shading, matrix;
-        return _regenerator["default"].wrap(function _callee3$(_context3) {
-          while (1) {
-            switch (_context3.prev = _context3.next) {
-              case 0:
-                patternName = args[args.length - 1];
 
-                if (!((0, _primitives.isName)(patternName) && (pattern = patterns.get(patternName.name)))) {
-                  _context3.next = 16;
-                  break;
-                }
+    parseColorSpace({
+      cs,
+      resources
+    }) {
+      return new Promise(resolve => {
+        resolve(_colorspace.ColorSpace.parse(cs, this.xref, resources, this.pdfFunctionFactory));
+      }).catch(reason => {
+        if (reason instanceof _util.AbortException) {
+          return null;
+        }
 
-                dict = (0, _primitives.isStream)(pattern) ? pattern.dict : pattern;
-                typeNum = dict.get('PatternType');
+        if (this.options.ignoreErrors) {
+          this.handler.send("UnsupportedFeature", {
+            featureId: _util.UNSUPPORTED_FEATURES.unknown
+          });
+          (0, _util.warn)(`parseColorSpace - ignoring ColorSpace: "${reason}".`);
+          return null;
+        }
 
-                if (!(typeNum === TILING_PATTERN)) {
-                  _context3.next = 9;
-                  break;
-                }
+        throw reason;
+      });
+    },
 
-                color = cs.base ? cs.base.getRgb(args, 0) : null;
-                return _context3.abrupt("return", this.handleTilingType(fn, color, resources, pattern, dict, operatorList, task));
+    async handleColorN(operatorList, fn, args, cs, patterns, resources, task) {
+      var patternName = args[args.length - 1];
+      var pattern;
 
-              case 9:
-                if (!(typeNum === SHADING_PATTERN)) {
-                  _context3.next = 15;
-                  break;
-                }
+      if ((0, _primitives.isName)(patternName) && (pattern = patterns.get(patternName.name))) {
+        var dict = (0, _primitives.isStream)(pattern) ? pattern.dict : pattern;
+        var typeNum = dict.get("PatternType");
 
-                shading = dict.get('Shading');
-                matrix = dict.getArray('Matrix');
-                pattern = _pattern.Pattern.parseShading(shading, matrix, this.xref, resources, this.handler, this.pdfFunctionFactory);
-                operatorList.addOp(fn, pattern.getIR());
-                return _context3.abrupt("return", undefined);
+        if (typeNum === TILING_PATTERN) {
+          var color = cs.base ? cs.base.getRgb(args, 0) : null;
+          return this.handleTilingType(fn, color, resources, pattern, dict, operatorList, task);
+        } else if (typeNum === SHADING_PATTERN) {
+          var shading = dict.get("Shading");
+          var matrix = dict.getArray("Matrix");
+          pattern = _pattern.Pattern.parseShading(shading, matrix, this.xref, resources, this.handler, this.pdfFunctionFactory);
+          operatorList.addOp(fn, pattern.getIR());
+          return undefined;
+        }
 
-              case 15:
-                throw new _util.FormatError("Unknown PatternType: ".concat(typeNum));
-
-              case 16:
-                throw new _util.FormatError("Unknown PatternName: ".concat(patternName));
-
-              case 17:
-              case "end":
-                return _context3.stop();
-            }
-          }
-        }, _callee3, this);
-      }));
-
-      function handleColorN(_x3, _x4, _x5, _x6, _x7, _x8, _x9) {
-        return _handleColorN.apply(this, arguments);
+        throw new _util.FormatError(`Unknown PatternType: ${typeNum}`);
       }
 
-      return handleColorN;
-    }(),
-    getOperatorList: function getOperatorList(_ref4) {
-      var _this7 = this;
+      throw new _util.FormatError(`Unknown PatternName: ${patternName}`);
+    },
 
-      var stream = _ref4.stream,
-          task = _ref4.task,
-          resources = _ref4.resources,
-          operatorList = _ref4.operatorList,
-          _ref4$initialState = _ref4.initialState,
-          initialState = _ref4$initialState === void 0 ? null : _ref4$initialState;
+    getOperatorList({
+      stream,
+      task,
+      resources,
+      operatorList,
+      initialState = null
+    }) {
       resources = resources || _primitives.Dict.empty;
       initialState = initialState || new EvalState();
 
@@ -1012,12 +1051,12 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       var self = this;
       var xref = this.xref;
-      var parsingText = false;
+      let parsingText = false;
       var imageCache = Object.create(null);
 
-      var xobjs = resources.get('XObject') || _primitives.Dict.empty;
+      var xobjs = resources.get("XObject") || _primitives.Dict.empty;
 
-      var patterns = resources.get('Pattern') || _primitives.Dict.empty;
+      var patterns = resources.get("Pattern") || _primitives.Dict.empty;
 
       var stateManager = new StateManager(initialState);
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
@@ -1030,8 +1069,8 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       }
 
       return new Promise(function promiseBody(resolve, reject) {
-        var next = function next(promise) {
-          promise.then(function () {
+        const next = function (promise) {
+          Promise.all([promise, operatorList.ready]).then(function () {
             try {
               promiseBody(resolve, reject);
             } catch (ex) {
@@ -1070,10 +1109,10 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
               next(new Promise(function (resolveXObject, rejectXObject) {
                 if (!name) {
-                  throw new _util.FormatError('XObject must be referred to by name.');
+                  throw new _util.FormatError("XObject must be referred to by name.");
                 }
 
-                var xobj = xobjs.get(name);
+                const xobj = xobjs.get(name);
 
                 if (!xobj) {
                   operatorList.addOp(fn, args);
@@ -1082,44 +1121,48 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
                 }
 
                 if (!(0, _primitives.isStream)(xobj)) {
-                  throw new _util.FormatError('XObject should be a stream');
+                  throw new _util.FormatError("XObject should be a stream");
                 }
 
-                var type = xobj.dict.get('Subtype');
+                const type = xobj.dict.get("Subtype");
 
                 if (!(0, _primitives.isName)(type)) {
-                  throw new _util.FormatError('XObject should have a Name subtype');
+                  throw new _util.FormatError("XObject should have a Name subtype");
                 }
 
-                if (type.name === 'Form') {
+                if (type.name === "Form") {
                   stateManager.save();
                   self.buildFormXObject(resources, xobj, null, operatorList, task, stateManager.state.clone()).then(function () {
                     stateManager.restore();
                     resolveXObject();
                   }, rejectXObject);
                   return;
-                } else if (type.name === 'Image') {
+                } else if (type.name === "Image") {
                   self.buildPaintImageXObject({
-                    resources: resources,
+                    resources,
                     image: xobj,
-                    operatorList: operatorList,
+                    operatorList,
                     cacheKey: name,
-                    imageCache: imageCache
+                    imageCache
                   }).then(resolveXObject, rejectXObject);
                   return;
-                } else if (type.name === 'PS') {
-                  (0, _util.info)('Ignored XObject subtype PS');
+                } else if (type.name === "PS") {
+                  (0, _util.info)("Ignored XObject subtype PS");
                 } else {
-                  throw new _util.FormatError("Unhandled XObject subtype ".concat(type.name));
+                  throw new _util.FormatError(`Unhandled XObject subtype ${type.name}`);
                 }
 
                 resolveXObject();
-              })["catch"](function (reason) {
+              }).catch(function (reason) {
+                if (reason instanceof _util.AbortException) {
+                  return;
+                }
+
                 if (self.options.ignoreErrors) {
-                  self.handler.send('UnsupportedFeature', {
+                  self.handler.send("UnsupportedFeature", {
                     featureId: _util.UNSUPPORTED_FEATURES.unknown
                   });
-                  (0, _util.warn)("getOperatorList - ignoring XObject: \"".concat(reason, "\"."));
+                  (0, _util.warn)(`getOperatorList - ignoring XObject: "${reason}".`);
                   return;
                 }
 
@@ -1157,20 +1200,30 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
               }
 
               next(self.buildPaintImageXObject({
-                resources: resources,
+                resources,
                 image: args[0],
                 isInline: true,
-                operatorList: operatorList,
-                cacheKey: cacheKey,
-                imageCache: imageCache
+                operatorList,
+                cacheKey,
+                imageCache
               }));
               return;
 
             case _util.OPS.showText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
+
               args[0] = self.handleText(args[0], stateManager.state);
               break;
 
             case _util.OPS.showSpacedText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
+
               var arr = args[0];
               var combinedGlyphs = [];
               var arrLength = arr.length;
@@ -1191,12 +1244,22 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
               break;
 
             case _util.OPS.nextLineShowText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
+
               operatorList.addOp(_util.OPS.nextLine);
               args[0] = self.handleText(args[0], stateManager.state);
               fn = _util.OPS.showText;
               break;
 
             case _util.OPS.nextLineSetSpacingShowText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
+
               operatorList.addOp(_util.OPS.nextLine);
               operatorList.addOp(_util.OPS.setWordSpacing, [args.shift()]);
               operatorList.addOp(_util.OPS.setCharSpacing, [args.shift()]);
@@ -1209,12 +1272,26 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
               break;
 
             case _util.OPS.setFillColorSpace:
-              stateManager.state.fillColorSpace = _colorspace.ColorSpace.parse(args[0], xref, resources, self.pdfFunctionFactory);
-              continue;
+              next(self.parseColorSpace({
+                cs: args[0],
+                resources
+              }).then(function (colorSpace) {
+                if (colorSpace) {
+                  stateManager.state.fillColorSpace = colorSpace;
+                }
+              }));
+              return;
 
             case _util.OPS.setStrokeColorSpace:
-              stateManager.state.strokeColorSpace = _colorspace.ColorSpace.parse(args[0], xref, resources, self.pdfFunctionFactory);
-              continue;
+              next(self.parseColorSpace({
+                cs: args[0],
+                resources
+              }).then(function (colorSpace) {
+                if (colorSpace) {
+                  stateManager.state.strokeColorSpace = colorSpace;
+                }
+              }));
+              return;
 
             case _util.OPS.setFillColor:
               cs = stateManager.state.fillColorSpace;
@@ -1265,7 +1342,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
             case _util.OPS.setFillColorN:
               cs = stateManager.state.fillColorSpace;
 
-              if (cs.name === 'Pattern') {
+              if (cs.name === "Pattern") {
                 next(self.handleColorN(operatorList, _util.OPS.setFillColorN, args, cs, patterns, resources, task));
                 return;
               }
@@ -1277,7 +1354,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
             case _util.OPS.setStrokeColorN:
               cs = stateManager.state.strokeColorSpace;
 
-              if (cs.name === 'Pattern') {
+              if (cs.name === "Pattern") {
                 next(self.handleColorN(operatorList, _util.OPS.setStrokeColorN, args, cs, patterns, resources, task));
                 return;
               }
@@ -1287,16 +1364,16 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
               break;
 
             case _util.OPS.shadingFill:
-              var shadingRes = resources.get('Shading');
+              var shadingRes = resources.get("Shading");
 
               if (!shadingRes) {
-                throw new _util.FormatError('No shading resource found');
+                throw new _util.FormatError("No shading resource found");
               }
 
               var shading = shadingRes.get(args[0].name);
 
               if (!shading) {
-                throw new _util.FormatError('No shading object found');
+                throw new _util.FormatError("No shading object found");
               }
 
               var shadingFill = _pattern.Pattern.parseShading(shading, null, xref, resources, self.handler, self.pdfFunctionFactory);
@@ -1308,7 +1385,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
             case _util.OPS.setGState:
               var dictName = args[0];
-              var extGState = resources.get('ExtGState');
+              var extGState = resources.get("ExtGState");
 
               if (!(0, _primitives.isDict)(extGState) || !extGState.has(dictName.name)) {
                 break;
@@ -1346,7 +1423,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
                 }
 
                 if (i < ii) {
-                  (0, _util.warn)('getOperatorList - ignoring operator: ' + fn);
+                  (0, _util.warn)("getOperatorList - ignoring operator: " + fn);
                   continue;
                 }
               }
@@ -1363,13 +1440,16 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
         closePendingRestoreOPS();
         resolve();
-      })["catch"](function (reason) {
-        if (_this7.options.ignoreErrors) {
-          _this7.handler.send('UnsupportedFeature', {
+      }).catch(reason => {
+        if (reason instanceof _util.AbortException) {
+          return;
+        }
+
+        if (this.options.ignoreErrors) {
+          this.handler.send("UnsupportedFeature", {
             featureId: _util.UNSUPPORTED_FEATURES.unknown
           });
-
-          (0, _util.warn)("getOperatorList - ignoring errors during \"".concat(task.name, "\" ") + "task: \"".concat(reason, "\"."));
+          (0, _util.warn)(`getOperatorList - ignoring errors during "${task.name}" ` + `task: "${reason}".`);
           closePendingRestoreOPS();
           return;
         }
@@ -1377,21 +1457,17 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         throw reason;
       });
     },
-    getTextContent: function getTextContent(_ref5) {
-      var _this8 = this;
 
-      var stream = _ref5.stream,
-          task = _ref5.task,
-          resources = _ref5.resources,
-          _ref5$stateManager = _ref5.stateManager,
-          stateManager = _ref5$stateManager === void 0 ? null : _ref5$stateManager,
-          _ref5$normalizeWhites = _ref5.normalizeWhitespace,
-          normalizeWhitespace = _ref5$normalizeWhites === void 0 ? false : _ref5$normalizeWhites,
-          _ref5$combineTextItem = _ref5.combineTextItems,
-          combineTextItems = _ref5$combineTextItem === void 0 ? false : _ref5$combineTextItem,
-          sink = _ref5.sink,
-          _ref5$seenStyles = _ref5.seenStyles,
-          seenStyles = _ref5$seenStyles === void 0 ? Object.create(null) : _ref5$seenStyles;
+    getTextContent({
+      stream,
+      task,
+      resources,
+      stateManager = null,
+      normalizeWhitespace = false,
+      combineTextItems = false,
+      sink,
+      seenStyles = Object.create(null)
+    }) {
       resources = resources || _primitives.Dict.empty;
       stateManager = stateManager || new StateManager(new TextState());
       var WhitespaceRegexp = /\s/g;
@@ -1447,7 +1523,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         var tsm = [textState.fontSize * textState.textHScale, 0, 0, textState.fontSize, 0, textState.textRise];
 
         if (font.isType3Font && textState.fontSize <= 1 && !(0, _util.isArrayEqual)(textState.fontMatrix, _util.FONT_IDENTITY_MATRIX)) {
-          var glyphHeight = font.bbox[3] - font.bbox[1];
+          const glyphHeight = font.bbox[3] - font.bbox[1];
 
           if (glyphHeight > 0) {
             tsm[3] *= glyphHeight * textState.fontMatrix[3];
@@ -1502,15 +1578,15 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
             ii = str.length,
             code;
 
-        while (i < ii && (code = str.charCodeAt(i)) >= 0x20 && code <= 0x7F) {
+        while (i < ii && (code = str.charCodeAt(i)) >= 0x20 && code <= 0x7f) {
           i++;
         }
 
-        return i < ii ? str.replace(WhitespaceRegexp, ' ') : str;
+        return i < ii ? str.replace(WhitespaceRegexp, " ") : str;
       }
 
       function runBidiTransform(textChunk) {
-        var str = textChunk.str.join('');
+        var str = textChunk.str.join("");
         var bidiResult = (0, _bidi.bidi)(str, -1, textChunk.vertical);
         return {
           str: normalizeWhitespace ? replaceWhitespace(bidiResult.str) : bidiResult.str,
@@ -1599,14 +1675,14 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         }
 
         if (width < textContentItem.fakeMultiSpaceMin) {
-          strBuf.push(' ');
+          strBuf.push(" ");
           return;
         }
 
         var fakeSpaces = Math.round(width / textContentItem.spaceWidth);
 
         while (fakeSpaces-- > 0) {
-          strBuf.push(' ');
+          strBuf.push(" ");
         }
       }
 
@@ -1627,7 +1703,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       }
 
       function enqueueChunk() {
-        var length = textContent.items.length;
+        const length = textContent.items.length;
 
         if (length > 0) {
           sink.enqueue(textContent, length);
@@ -1638,7 +1714,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       var timeSlotManager = new TimeSlotManager();
       return new Promise(function promiseBody(resolve, reject) {
-        var next = function next(promise) {
+        const next = function (promise) {
           enqueueChunk();
           Promise.all([promise, sink.ready]).then(function () {
             try {
@@ -1760,11 +1836,16 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
               break;
 
             case _util.OPS.showSpacedText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
+
               var items = args[0];
               var offset;
 
               for (var j = 0, jj = items.length; j < jj; j++) {
-                if (typeof items[j] === 'string') {
+                if (typeof items[j] === "string") {
                   buildTextContentItem(items[j]);
                 } else if ((0, _util.isNum)(items[j])) {
                   ensureTextContentItem();
@@ -1801,16 +1882,31 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
               break;
 
             case _util.OPS.showText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
+
               buildTextContentItem(args[0]);
               break;
 
             case _util.OPS.nextLineShowText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
+
               flushTextContentItem();
               textState.carriageReturn();
               buildTextContentItem(args[0]);
               break;
 
             case _util.OPS.nextLineSetSpacingShowText:
+              if (!stateManager.state.font) {
+                self.ensureStateFont(stateManager.state);
+                continue;
+              }
+
               flushTextContentItem();
               textState.wordSpacing = args[0];
               textState.charSpacing = args[1];
@@ -1822,7 +1918,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
               flushTextContentItem();
 
               if (!xobjs) {
-                xobjs = resources.get('XObject') || _primitives.Dict.empty;
+                xobjs = resources.get("XObject") || _primitives.Dict.empty;
               }
 
               var name = args[0].name;
@@ -1833,10 +1929,10 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
               next(new Promise(function (resolveXObject, rejectXObject) {
                 if (!name) {
-                  throw new _util.FormatError('XObject must be referred to by name.');
+                  throw new _util.FormatError("XObject must be referred to by name.");
                 }
 
-                var xobj = xobjs.get(name);
+                const xobj = xobjs.get(name);
 
                 if (!xobj) {
                   resolveXObject();
@@ -1844,33 +1940,34 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
                 }
 
                 if (!(0, _primitives.isStream)(xobj)) {
-                  throw new _util.FormatError('XObject should be a stream');
+                  throw new _util.FormatError("XObject should be a stream");
                 }
 
-                var type = xobj.dict.get('Subtype');
+                const type = xobj.dict.get("Subtype");
 
                 if (!(0, _primitives.isName)(type)) {
-                  throw new _util.FormatError('XObject should have a Name subtype');
+                  throw new _util.FormatError("XObject should have a Name subtype");
                 }
 
-                if (type.name !== 'Form') {
+                if (type.name !== "Form") {
                   skipEmptyXObjs[name] = true;
                   resolveXObject();
                   return;
                 }
 
-                var currentState = stateManager.state.clone();
-                var xObjStateManager = new StateManager(currentState);
-                var matrix = xobj.dict.getArray('Matrix');
+                const currentState = stateManager.state.clone();
+                const xObjStateManager = new StateManager(currentState);
+                const matrix = xobj.dict.getArray("Matrix");
 
                 if (Array.isArray(matrix) && matrix.length === 6) {
                   xObjStateManager.transform(matrix);
                 }
 
                 enqueueChunk();
-                var sinkWrapper = {
+                const sinkWrapper = {
                   enqueueInvoked: false,
-                  enqueue: function enqueue(chunk, size) {
+
+                  enqueue(chunk, size) {
                     this.enqueueInvoked = true;
                     sink.enqueue(chunk, size);
                   },
@@ -1886,13 +1983,13 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
                 };
                 self.getTextContent({
                   stream: xobj,
-                  task: task,
-                  resources: xobj.dict.get('Resources') || resources,
+                  task,
+                  resources: xobj.dict.get("Resources") || resources,
                   stateManager: xObjStateManager,
-                  normalizeWhitespace: normalizeWhitespace,
-                  combineTextItems: combineTextItems,
+                  normalizeWhitespace,
+                  combineTextItems,
                   sink: sinkWrapper,
-                  seenStyles: seenStyles
+                  seenStyles
                 }).then(function () {
                   if (!sinkWrapper.enqueueInvoked) {
                     skipEmptyXObjs[name] = true;
@@ -1900,13 +1997,13 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
                   resolveXObject();
                 }, rejectXObject);
-              })["catch"](function (reason) {
+              }).catch(function (reason) {
                 if (reason instanceof _util.AbortException) {
                   return;
                 }
 
                 if (self.options.ignoreErrors) {
-                  (0, _util.warn)("getTextContent - ignoring XObject: \"".concat(reason, "\"."));
+                  (0, _util.warn)(`getTextContent - ignoring XObject: "${reason}".`);
                   return;
                 }
 
@@ -1917,7 +2014,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
             case _util.OPS.setGState:
               flushTextContentItem();
               var dictName = args[0];
-              var extGState = resources.get('ExtGState');
+              var extGState = resources.get("ExtGState");
 
               if (!(0, _primitives.isDict)(extGState) || !(0, _primitives.isName)(dictName)) {
                 break;
@@ -1929,7 +2026,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
                 break;
               }
 
-              var gStateFont = gState.get('Font');
+              var gStateFont = gState.get("Font");
 
               if (gStateFont) {
                 textState.fontName = null;
@@ -1955,13 +2052,13 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         flushTextContentItem();
         enqueueChunk();
         resolve();
-      })["catch"](function (reason) {
+      }).catch(reason => {
         if (reason instanceof _util.AbortException) {
           return;
         }
 
-        if (_this8.options.ignoreErrors) {
-          (0, _util.warn)("getTextContent - ignoring errors during \"".concat(task.name, "\" ") + "task: \"".concat(reason, "\"."));
+        if (this.options.ignoreErrors) {
+          (0, _util.warn)(`getTextContent - ignoring errors during "${task.name}" ` + `task: "${reason}".`);
           flushTextContentItem();
           enqueueChunk();
           return;
@@ -1970,26 +2067,25 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         throw reason;
       });
     },
-    extractDataStructures: function PartialEvaluator_extractDataStructures(dict, baseDict, properties) {
-      var _this9 = this;
 
-      var xref = this.xref,
-          cidToGidBytes;
-      var toUnicode = dict.get('ToUnicode') || baseDict.get('ToUnicode');
+    extractDataStructures: function PartialEvaluator_extractDataStructures(dict, baseDict, properties) {
+      const xref = this.xref;
+      let cidToGidBytes;
+      var toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
       var toUnicodePromise = toUnicode ? this.readToUnicode(toUnicode) : Promise.resolve(undefined);
 
       if (properties.composite) {
-        var cidSystemInfo = dict.get('CIDSystemInfo');
+        var cidSystemInfo = dict.get("CIDSystemInfo");
 
         if ((0, _primitives.isDict)(cidSystemInfo)) {
           properties.cidSystemInfo = {
-            registry: (0, _util.stringToPDFString)(cidSystemInfo.get('Registry')),
-            ordering: (0, _util.stringToPDFString)(cidSystemInfo.get('Ordering')),
-            supplement: cidSystemInfo.get('Supplement')
+            registry: (0, _util.stringToPDFString)(cidSystemInfo.get("Registry")),
+            ordering: (0, _util.stringToPDFString)(cidSystemInfo.get("Ordering")),
+            supplement: cidSystemInfo.get("Supplement")
           };
         }
 
-        var cidToGidMap = dict.get('CIDToGIDMap');
+        var cidToGidMap = dict.get("CIDToGIDMap");
 
         if ((0, _primitives.isStream)(cidToGidMap)) {
           cidToGidBytes = cidToGidMap.getBytes();
@@ -2000,15 +2096,15 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       var baseEncodingName = null;
       var encoding;
 
-      if (dict.has('Encoding')) {
-        encoding = dict.get('Encoding');
+      if (dict.has("Encoding")) {
+        encoding = dict.get("Encoding");
 
         if ((0, _primitives.isDict)(encoding)) {
-          baseEncodingName = encoding.get('BaseEncoding');
+          baseEncodingName = encoding.get("BaseEncoding");
           baseEncodingName = (0, _primitives.isName)(baseEncodingName) ? baseEncodingName.name : null;
 
-          if (encoding.has('Differences')) {
-            var diffEncoding = encoding.get('Differences');
+          if (encoding.has("Differences")) {
+            var diffEncoding = encoding.get("Differences");
             var index = 0;
 
             for (var j = 0, jj = diffEncoding.length; j < jj; j++) {
@@ -2019,17 +2115,17 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
               } else if ((0, _primitives.isName)(data)) {
                 differences[index++] = data.name;
               } else {
-                throw new _util.FormatError("Invalid entry in 'Differences' array: ".concat(data));
+                throw new _util.FormatError(`Invalid entry in 'Differences' array: ${data}`);
               }
             }
           }
         } else if ((0, _primitives.isName)(encoding)) {
           baseEncodingName = encoding.name;
         } else {
-          throw new _util.FormatError('Encoding is not a Name nor a Dict');
+          throw new _util.FormatError("Encoding is not a Name nor a Dict");
         }
 
-        if (baseEncodingName !== 'MacRomanEncoding' && baseEncodingName !== 'MacExpertEncoding' && baseEncodingName !== 'WinAnsiEncoding') {
+        if (baseEncodingName !== "MacRomanEncoding" && baseEncodingName !== "MacExpertEncoding" && baseEncodingName !== "WinAnsiEncoding") {
           baseEncodingName = null;
         }
       }
@@ -2041,7 +2137,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         var isNonsymbolicFont = !!(properties.flags & _fonts.FontFlags.Nonsymbolic);
         encoding = _encodings.StandardEncoding;
 
-        if (properties.type === 'TrueType' && !isNonsymbolicFont) {
+        if (properties.type === "TrueType" && !isNonsymbolicFont) {
           encoding = _encodings.WinAnsiEncoding;
         }
 
@@ -2051,7 +2147,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
           if (!properties.file) {
             if (/Symbol/i.test(properties.name)) {
               encoding = _encodings.SymbolSetEncoding;
-            } else if (/Dingbats/i.test(properties.name)) {
+            } else if (/Dingbats|Wingdings/i.test(properties.name)) {
               encoding = _encodings.ZapfDingbatsEncoding;
             }
           }
@@ -2064,73 +2160,83 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       properties.baseEncodingName = baseEncodingName;
       properties.hasEncoding = !!baseEncodingName || differences.length > 0;
       properties.dict = dict;
-      return toUnicodePromise.then(function (toUnicode) {
+      return toUnicodePromise.then(toUnicode => {
         properties.toUnicode = toUnicode;
-        return _this9.buildToUnicode(properties);
-      }).then(function (toUnicode) {
+        return this.buildToUnicode(properties);
+      }).then(toUnicode => {
         properties.toUnicode = toUnicode;
 
         if (cidToGidBytes) {
-          properties.cidToGidMap = _this9.readCidToGidMap(cidToGidBytes, toUnicode);
+          properties.cidToGidMap = this.readCidToGidMap(cidToGidBytes, toUnicode);
         }
 
         return properties;
       });
     },
-    _buildSimpleFontToUnicode: function _buildSimpleFontToUnicode(properties) {
-      (0, _util.assert)(!properties.composite, 'Must be a simple font.');
-      var toUnicode = [],
-          charcode,
-          glyphName;
-      var encoding = properties.defaultEncoding.slice();
-      var baseEncodingName = properties.baseEncodingName;
-      var differences = properties.differences;
 
-      for (charcode in differences) {
-        glyphName = differences[charcode];
+    _buildSimpleFontToUnicode(properties, forceGlyphs = false) {
+      (0, _util.assert)(!properties.composite, "Must be a simple font.");
+      const toUnicode = [];
+      const encoding = properties.defaultEncoding.slice();
+      const baseEncodingName = properties.baseEncodingName;
+      const differences = properties.differences;
 
-        if (glyphName === '.notdef') {
+      for (const charcode in differences) {
+        const glyphName = differences[charcode];
+
+        if (glyphName === ".notdef") {
           continue;
         }
 
         encoding[charcode] = glyphName;
       }
 
-      var glyphsUnicodeMap = (0, _glyphlist.getGlyphsUnicode)();
+      const glyphsUnicodeMap = (0, _glyphlist.getGlyphsUnicode)();
 
-      for (charcode in encoding) {
-        glyphName = encoding[charcode];
+      for (const charcode in encoding) {
+        let glyphName = encoding[charcode];
 
-        if (glyphName === '') {
+        if (glyphName === "") {
           continue;
         } else if (glyphsUnicodeMap[glyphName] === undefined) {
-          var code = 0;
+          let code = 0;
 
           switch (glyphName[0]) {
-            case 'G':
+            case "G":
               if (glyphName.length === 3) {
                 code = parseInt(glyphName.substring(1), 16);
               }
 
               break;
 
-            case 'g':
+            case "g":
               if (glyphName.length === 5) {
                 code = parseInt(glyphName.substring(1), 16);
               }
 
               break;
 
-            case 'C':
-            case 'c':
-              if (glyphName.length >= 3) {
-                code = +glyphName.substring(1);
+            case "C":
+            case "c":
+              if (glyphName.length >= 3 && glyphName.length <= 4) {
+                const codeStr = glyphName.substring(1);
+
+                if (forceGlyphs) {
+                  code = parseInt(codeStr, 16);
+                  break;
+                }
+
+                code = +codeStr;
+
+                if (Number.isNaN(code) && Number.isInteger(parseInt(codeStr, 16))) {
+                  return this._buildSimpleFontToUnicode(properties, true);
+                }
               }
 
               break;
 
             default:
-              var unicode = (0, _unicode.getUnicodeForGlyph)(glyphName, glyphsUnicodeMap);
+              const unicode = (0, _unicode.getUnicodeForGlyph)(glyphName, glyphsUnicodeMap);
 
               if (unicode !== -1) {
                 code = unicode;
@@ -2138,9 +2244,9 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
           }
 
-          if (code) {
+          if (code > 0 && Number.isInteger(code)) {
             if (baseEncodingName && code === +charcode) {
-              var baseEncoding = (0, _encodings.getEncoding)(baseEncodingName);
+              const baseEncoding = (0, _encodings.getEncoding)(baseEncodingName);
 
               if (baseEncoding && (glyphName = baseEncoding[charcode])) {
                 toUnicode[charcode] = String.fromCharCode(glyphsUnicodeMap[glyphName]);
@@ -2159,7 +2265,8 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       return new _fonts.ToUnicodeMap(toUnicode);
     },
-    buildToUnicode: function buildToUnicode(properties) {
+
+    buildToUnicode(properties) {
       properties.hasIncludedToUnicodeMap = !!properties.toUnicode && properties.toUnicode.length > 0;
 
       if (properties.hasIncludedToUnicodeMap) {
@@ -2174,25 +2281,25 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         return Promise.resolve(this._buildSimpleFontToUnicode(properties));
       }
 
-      if (properties.composite && (properties.cMap.builtInCMap && !(properties.cMap instanceof _cmap.IdentityCMap) || properties.cidSystemInfo.registry === 'Adobe' && (properties.cidSystemInfo.ordering === 'GB1' || properties.cidSystemInfo.ordering === 'CNS1' || properties.cidSystemInfo.ordering === 'Japan1' || properties.cidSystemInfo.ordering === 'Korea1'))) {
-        var registry = properties.cidSystemInfo.registry;
-        var ordering = properties.cidSystemInfo.ordering;
+      if (properties.composite && (properties.cMap.builtInCMap && !(properties.cMap instanceof _cmap.IdentityCMap) || properties.cidSystemInfo.registry === "Adobe" && (properties.cidSystemInfo.ordering === "GB1" || properties.cidSystemInfo.ordering === "CNS1" || properties.cidSystemInfo.ordering === "Japan1" || properties.cidSystemInfo.ordering === "Korea1"))) {
+        const registry = properties.cidSystemInfo.registry;
+        const ordering = properties.cidSystemInfo.ordering;
 
-        var ucs2CMapName = _primitives.Name.get(registry + '-' + ordering + '-UCS2');
+        const ucs2CMapName = _primitives.Name.get(registry + "-" + ordering + "-UCS2");
 
         return _cmap.CMapFactory.create({
           encoding: ucs2CMapName,
           fetchBuiltInCMap: this.fetchBuiltInCMap,
           useCMap: null
         }).then(function (ucs2CMap) {
-          var cMap = properties.cMap;
-          var toUnicode = [];
+          const cMap = properties.cMap;
+          const toUnicode = [];
           cMap.forEach(function (charcode, cid) {
             if (cid > 0xffff) {
-              throw new _util.FormatError('Max size of CID is 65,535');
+              throw new _util.FormatError("Max size of CID is 65,535");
             }
 
-            var ucs2 = ucs2CMap.lookup(cid);
+            const ucs2 = ucs2CMap.lookup(cid);
 
             if (ucs2) {
               toUnicode[charcode] = String.fromCharCode((ucs2.charCodeAt(0) << 8) + ucs2.charCodeAt(1));
@@ -2204,6 +2311,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       return Promise.resolve(new _fonts.IdentityToUnicodeMap(properties.firstChar, properties.lastChar));
     },
+
     readToUnicode: function PartialEvaluator_readToUnicode(toUnicode) {
       var cmapObj = toUnicode;
 
@@ -2214,7 +2322,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
           useCMap: null
         }).then(function (cmap) {
           if (cmap instanceof _cmap.IdentityCMap) {
-            return new _fonts.IdentityToUnicodeMap(0, 0xFFFF);
+            return new _fonts.IdentityToUnicodeMap(0, 0xffff);
           }
 
           return new _fonts.ToUnicodeMap(cmap.getMap());
@@ -2226,7 +2334,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
           useCMap: null
         }).then(function (cmap) {
           if (cmap instanceof _cmap.IdentityCMap) {
-            return new _fonts.IdentityToUnicodeMap(0, 0xFFFF);
+            return new _fonts.IdentityToUnicodeMap(0, 0xffff);
           }
 
           var map = new Array(cmap.length);
@@ -2236,7 +2344,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
             for (var k = 0; k < token.length; k += 2) {
               var w1 = token.charCodeAt(k) << 8 | token.charCodeAt(k + 1);
 
-              if ((w1 & 0xF800) !== 0xD800) {
+              if ((w1 & 0xf800) !== 0xd800) {
                 str.push(w1);
                 continue;
               }
@@ -2249,17 +2357,32 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
             map[charCode] = String.fromCodePoint.apply(String, str);
           });
           return new _fonts.ToUnicodeMap(map);
+        }, reason => {
+          if (reason instanceof _util.AbortException) {
+            return null;
+          }
+
+          if (this.options.ignoreErrors) {
+            this.handler.send("UnsupportedFeature", {
+              featureId: _util.UNSUPPORTED_FEATURES.font
+            });
+            (0, _util.warn)(`readToUnicode - ignoring ToUnicode data: "${reason}".`);
+            return null;
+          }
+
+          throw reason;
         });
       }
 
       return Promise.resolve(null);
     },
-    readCidToGidMap: function readCidToGidMap(glyphsData, toUnicode) {
+
+    readCidToGidMap(glyphsData, toUnicode) {
       var result = [];
 
       for (var j = 0, jj = glyphsData.length; j < jj; j++) {
         var glyphID = glyphsData[j++] << 8 | glyphsData[j];
-        var code = j >> 1;
+        const code = j >> 1;
 
         if (glyphID === 0 && !toUnicode.has(code)) {
           continue;
@@ -2270,6 +2393,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       return result;
     },
+
     extractWidths: function PartialEvaluator_extractWidths(dict, descriptor, properties) {
       var xref = this.xref;
       var glyphsWidths = [];
@@ -2279,8 +2403,8 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       var i, ii, j, jj, start, code, widths;
 
       if (properties.composite) {
-        defaultWidth = dict.has('DW') ? dict.get('DW') : 1000;
-        widths = dict.get('W');
+        defaultWidth = dict.has("DW") ? dict.get("DW") : 1000;
+        widths = dict.get("W");
 
         if (widths) {
           for (i = 0, ii = widths.length; i < ii; i++) {
@@ -2302,9 +2426,9 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         }
 
         if (properties.vertical) {
-          var vmetrics = dict.getArray('DW2') || [880, -1000];
+          var vmetrics = dict.getArray("DW2") || [880, -1000];
           defaultVMetrics = [vmetrics[1], defaultWidth * 0.5, vmetrics[0]];
-          vmetrics = dict.get('W2');
+          vmetrics = dict.get("W2");
 
           if (vmetrics) {
             for (i = 0, ii = vmetrics.length; i < ii; i++) {
@@ -2327,7 +2451,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         }
       } else {
         var firstChar = properties.firstChar;
-        widths = dict.get('Widths');
+        widths = dict.get("Widths");
 
         if (widths) {
           j = firstChar;
@@ -2336,9 +2460,9 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
             glyphsWidths[j++] = xref.fetchIfRef(widths[i]);
           }
 
-          defaultWidth = parseFloat(descriptor.get('MissingWidth')) || 0;
+          defaultWidth = parseFloat(descriptor.get("MissingWidth")) || 0;
         } else {
-          var baseFontName = dict.get('BaseFont');
+          var baseFontName = dict.get("BaseFont");
 
           if ((0, _primitives.isName)(baseFontName)) {
             var metrics = this.getBaseFontMetrics(baseFontName.name);
@@ -2379,7 +2503,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       properties.vmetrics = glyphsVMetrics;
     },
     isSerifFont: function PartialEvaluator_isSerifFont(baseFontName) {
-      var fontNameWoStyle = baseFontName.split('-')[0];
+      var fontNameWoStyle = baseFontName.split("-")[0];
       return fontNameWoStyle in (0, _standard_fonts.getSerifFonts)() || fontNameWoStyle.search(/serif/gi) !== -1;
     },
     getBaseFontMetrics: function PartialEvaluator_getBaseFontMetrics(name) {
@@ -2392,9 +2516,9 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
 
       if (!(lookupName in Metrics)) {
         if (this.isSerifFont(name)) {
-          lookupName = 'Times-Roman';
+          lookupName = "Times-Roman";
         } else {
-          lookupName = 'Helvetica';
+          lookupName = "Helvetica";
         }
       }
 
@@ -2408,9 +2532,9 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       }
 
       return {
-        defaultWidth: defaultWidth,
-        monospace: monospace,
-        widths: widths
+        defaultWidth,
+        monospace,
+        widths
       };
     },
     buildCharCodeToWidth: function PartialEvaluator_bulildCharCodeToWidth(widthsByGlyphName, properties) {
@@ -2434,37 +2558,37 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
     },
     preEvaluateFont: function PartialEvaluator_preEvaluateFont(dict) {
       var baseDict = dict;
-      var type = dict.get('Subtype');
+      var type = dict.get("Subtype");
 
       if (!(0, _primitives.isName)(type)) {
-        throw new _util.FormatError('invalid font Subtype');
+        throw new _util.FormatError("invalid font Subtype");
       }
 
       var composite = false;
       var uint8array;
 
-      if (type.name === 'Type0') {
-        var df = dict.get('DescendantFonts');
+      if (type.name === "Type0") {
+        var df = dict.get("DescendantFonts");
 
         if (!df) {
-          throw new _util.FormatError('Descendant fonts are not specified');
+          throw new _util.FormatError("Descendant fonts are not specified");
         }
 
         dict = Array.isArray(df) ? this.xref.fetchIfRef(df[0]) : df;
-        type = dict.get('Subtype');
+        type = dict.get("Subtype");
 
         if (!(0, _primitives.isName)(type)) {
-          throw new _util.FormatError('invalid font Subtype');
+          throw new _util.FormatError("invalid font Subtype");
         }
 
         composite = true;
       }
 
-      var descriptor = dict.get('FontDescriptor');
+      var descriptor = dict.get("FontDescriptor");
 
       if (descriptor) {
         var hash = new _murmurhash.MurmurHash3_64();
-        var encoding = baseDict.getRaw('Encoding');
+        var encoding = baseDict.getRaw("Encoding");
 
         if ((0, _primitives.isName)(encoding)) {
           hash.update(encoding.name);
@@ -2499,10 +2623,10 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
           }
         }
 
-        var firstChar = dict.get('FirstChar') || 0;
-        var lastChar = dict.get('LastChar') || (composite ? 0xFFFF : 0xFF);
-        hash.update("".concat(firstChar, "-").concat(lastChar));
-        var toUnicode = dict.get('ToUnicode') || baseDict.get('ToUnicode');
+        const firstChar = dict.get("FirstChar") || 0;
+        const lastChar = dict.get("LastChar") || (composite ? 0xffff : 0xff);
+        hash.update(`${firstChar}-${lastChar}`);
+        var toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
 
         if ((0, _primitives.isStream)(toUnicode)) {
           var stream = toUnicode.str || toUnicode;
@@ -2512,7 +2636,7 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
           hash.update(toUnicode.name);
         }
 
-        var widths = dict.get('Widths') || baseDict.get('Widths');
+        var widths = dict.get("Widths") || baseDict.get("Widths");
 
         if (widths) {
           uint8array = new Uint8Array(new Uint32Array(widths).buffer);
@@ -2521,61 +2645,72 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       }
 
       return {
-        descriptor: descriptor,
-        dict: dict,
-        baseDict: baseDict,
-        composite: composite,
+        descriptor,
+        dict,
+        baseDict,
+        composite,
         type: type.name,
-        hash: hash ? hash.hexdigest() : ''
+        hash: hash ? hash.hexdigest() : ""
       };
     },
     translateFont: function PartialEvaluator_translateFont(preEvaluatedFont) {
-      var _this10 = this;
-
       var baseDict = preEvaluatedFont.baseDict;
       var dict = preEvaluatedFont.dict;
       var composite = preEvaluatedFont.composite;
       var descriptor = preEvaluatedFont.descriptor;
       var type = preEvaluatedFont.type;
-      var maxCharIndex = composite ? 0xFFFF : 0xFF;
+      var maxCharIndex = composite ? 0xffff : 0xff;
       var properties;
+      const firstChar = dict.get("FirstChar") || 0;
+      const lastChar = dict.get("LastChar") || maxCharIndex;
 
       if (!descriptor) {
-        if (type === 'Type3') {
+        if (type === "Type3") {
           descriptor = new _primitives.Dict(null);
-          descriptor.set('FontName', _primitives.Name.get(type));
-          descriptor.set('FontBBox', dict.getArray('FontBBox'));
+          descriptor.set("FontName", _primitives.Name.get(type));
+          descriptor.set("FontBBox", dict.getArray("FontBBox") || [0, 0, 0, 0]);
         } else {
-          var baseFontName = dict.get('BaseFont');
+          var baseFontName = dict.get("BaseFont");
 
           if (!(0, _primitives.isName)(baseFontName)) {
-            throw new _util.FormatError('Base font is not specified');
+            throw new _util.FormatError("Base font is not specified");
           }
 
-          baseFontName = baseFontName.name.replace(/[,_]/g, '-');
+          baseFontName = baseFontName.name.replace(/[,_]/g, "-");
           var metrics = this.getBaseFontMetrics(baseFontName);
-          var fontNameWoStyle = baseFontName.split('-')[0];
+          var fontNameWoStyle = baseFontName.split("-")[0];
           var flags = (this.isSerifFont(fontNameWoStyle) ? _fonts.FontFlags.Serif : 0) | (metrics.monospace ? _fonts.FontFlags.FixedPitch : 0) | ((0, _standard_fonts.getSymbolsFonts)()[fontNameWoStyle] ? _fonts.FontFlags.Symbolic : _fonts.FontFlags.Nonsymbolic);
           properties = {
-            type: type,
+            type,
             name: baseFontName,
             widths: metrics.widths,
             defaultWidth: metrics.defaultWidth,
-            flags: flags,
-            firstChar: 0,
-            lastChar: maxCharIndex
+            flags,
+            firstChar,
+            lastChar
           };
-          return this.extractDataStructures(dict, dict, properties).then(function (properties) {
-            properties.widths = _this10.buildCharCodeToWidth(metrics.widths, properties);
+          const widths = dict.get("Widths");
+          return this.extractDataStructures(dict, dict, properties).then(properties => {
+            if (widths) {
+              const glyphWidths = [];
+              let j = firstChar;
+
+              for (let i = 0, ii = widths.length; i < ii; i++) {
+                glyphWidths[j++] = this.xref.fetchIfRef(widths[i]);
+              }
+
+              properties.widths = glyphWidths;
+            } else {
+              properties.widths = this.buildCharCodeToWidth(metrics.widths, properties);
+            }
+
             return new _fonts.Font(baseFontName, null, properties);
           });
         }
       }
 
-      var firstChar = dict.get('FirstChar') || 0;
-      var lastChar = dict.get('LastChar') || maxCharIndex;
-      var fontName = descriptor.get('FontName');
-      var baseFont = dict.get('BaseFont');
+      var fontName = descriptor.get("FontName");
+      var baseFont = dict.get("BaseFont");
 
       if ((0, _util.isString)(fontName)) {
         fontName = _primitives.Name.get(fontName);
@@ -2585,12 +2720,12 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         baseFont = _primitives.Name.get(baseFont);
       }
 
-      if (type !== 'Type3') {
+      if (type !== "Type3") {
         var fontNameStr = fontName && fontName.name;
         var baseFontStr = baseFont && baseFont.name;
 
         if (fontNameStr !== baseFontStr) {
-          (0, _util.info)("The FontDescriptor's FontName is \"".concat(fontNameStr, "\" but ") + "should be the same as the Font's BaseFont \"".concat(baseFontStr, "\"."));
+          (0, _util.info)(`The FontDescriptor\'s FontName is "${fontNameStr}" but ` + `should be the same as the Font\'s BaseFont "${baseFontStr}".`);
 
           if (fontNameStr && baseFontStr && baseFontStr.startsWith(fontNameStr)) {
             fontName = baseFont;
@@ -2601,53 +2736,52 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
       fontName = fontName || baseFont;
 
       if (!(0, _primitives.isName)(fontName)) {
-        throw new _util.FormatError('invalid font name');
+        throw new _util.FormatError("invalid font name");
       }
 
-      var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
+      var fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
 
       if (fontFile) {
         if (fontFile.dict) {
-          var subtype = fontFile.dict.get('Subtype');
+          var subtype = fontFile.dict.get("Subtype");
 
           if (subtype) {
             subtype = subtype.name;
           }
 
-          var length1 = fontFile.dict.get('Length1');
-          var length2 = fontFile.dict.get('Length2');
-          var length3 = fontFile.dict.get('Length3');
+          var length1 = fontFile.dict.get("Length1");
+          var length2 = fontFile.dict.get("Length2");
+          var length3 = fontFile.dict.get("Length3");
         }
       }
 
       properties = {
-        type: type,
+        type,
         name: fontName.name,
-        subtype: subtype,
+        subtype,
         file: fontFile,
-        length1: length1,
-        length2: length2,
-        length3: length3,
+        length1,
+        length2,
+        length3,
         loadedName: baseDict.loadedName,
-        composite: composite,
-        wideChars: composite,
+        composite,
         fixedPitch: false,
-        fontMatrix: dict.getArray('FontMatrix') || _util.FONT_IDENTITY_MATRIX,
+        fontMatrix: dict.getArray("FontMatrix") || _util.FONT_IDENTITY_MATRIX,
         firstChar: firstChar || 0,
         lastChar: lastChar || maxCharIndex,
-        bbox: descriptor.getArray('FontBBox'),
-        ascent: descriptor.get('Ascent'),
-        descent: descriptor.get('Descent'),
-        xHeight: descriptor.get('XHeight'),
-        capHeight: descriptor.get('CapHeight'),
-        flags: descriptor.get('Flags'),
-        italicAngle: descriptor.get('ItalicAngle'),
+        bbox: descriptor.getArray("FontBBox"),
+        ascent: descriptor.get("Ascent"),
+        descent: descriptor.get("Descent"),
+        xHeight: descriptor.get("XHeight"),
+        capHeight: descriptor.get("CapHeight"),
+        flags: descriptor.get("Flags"),
+        italicAngle: descriptor.get("ItalicAngle"),
         isType3Font: false
       };
       var cMapPromise;
 
       if (composite) {
-        var cidEncoding = baseDict.get('Encoding');
+        var cidEncoding = baseDict.get("Encoding");
 
         if ((0, _primitives.isName)(cidEncoding)) {
           properties.cidEncoding = cidEncoding.name;
@@ -2665,12 +2799,12 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         cMapPromise = Promise.resolve(undefined);
       }
 
-      return cMapPromise.then(function () {
-        return _this10.extractDataStructures(dict, baseDict, properties);
-      }).then(function (properties) {
-        _this10.extractWidths(dict, descriptor, properties);
+      return cMapPromise.then(() => {
+        return this.extractDataStructures(dict, baseDict, properties);
+      }).then(properties => {
+        this.extractWidths(dict, descriptor, properties);
 
-        if (type === 'Type3') {
+        if (type === "Type3") {
           properties.isType3Font = true;
         }
 
@@ -2685,37 +2819,30 @@ var PartialEvaluator = function PartialEvaluatorClosure() {
         return;
       }
 
-      handler.send('commonobj', ["".concat(font.loadedName, "_path_").concat(fontChar), 'FontPath', font.renderer.getPathJs(fontChar)]);
+      handler.send("commonobj", [`${font.loadedName}_path_${fontChar}`, "FontPath", font.renderer.getPathJs(fontChar)]);
     }
 
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
+    for (const glyph of glyphs) {
+      buildPath(glyph.fontChar);
+      const accent = glyph.accent;
 
-    try {
-      for (var _iterator = glyphs[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var glyph = _step.value;
-        buildPath(glyph.fontChar);
-        var accent = glyph.accent;
-
-        if (accent && accent.fontChar) {
-          buildPath(accent.fontChar);
-        }
-      }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-          _iterator["return"]();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
+      if (accent && accent.fontChar) {
+        buildPath(accent.fontChar);
       }
     }
+  };
+
+  PartialEvaluator.getFallbackFontDict = function () {
+    if (this._fallbackFontDict) {
+      return this._fallbackFontDict;
+    }
+
+    const dict = new _primitives.Dict();
+    dict.set("BaseFont", _primitives.Name.get("PDFJS-FallbackFont"));
+    dict.set("Type", _primitives.Name.get("FallbackType"));
+    dict.set("Subtype", _primitives.Name.get("FallbackType"));
+    dict.set("Encoding", _primitives.Name.get("WinAnsiEncoding"));
+    return this._fallbackFontDict = dict;
   };
 
   return PartialEvaluator;
@@ -2733,26 +2860,28 @@ var TranslatedFont = function TranslatedFontClosure() {
   }
 
   TranslatedFont.prototype = {
-    send: function send(handler) {
+    send(handler) {
       if (this.sent) {
         return;
       }
 
       this.sent = true;
-      handler.send('commonobj', [this.loadedName, 'Font', this.font.exportData()]);
+      handler.send("commonobj", [this.loadedName, "Font", this.font.exportData()]);
     },
-    fallback: function fallback(handler) {
+
+    fallback(handler) {
       if (!this.font.data) {
         return;
       }
 
       this.font.disableFontFace = true;
-      var glyphs = this.font.glyphCacheValues;
+      const glyphs = this.font.glyphCacheValues;
       PartialEvaluator.buildFontPaths(this.font, glyphs, handler);
     },
-    loadType3Data: function loadType3Data(evaluator, resources, parentOperatorList, task) {
+
+    loadType3Data(evaluator, resources, parentOperatorList, task) {
       if (!this.font.isType3Font) {
-        throw new Error('Must be a Type3 font.');
+        throw new Error("Must be a Type3 font.");
       }
 
       if (this.type3Loaded) {
@@ -2766,34 +2895,30 @@ var TranslatedFont = function TranslatedFontClosure() {
       type3Evaluator.parsingType3Font = true;
       var translatedFont = this.font;
       var loadCharProcsPromise = Promise.resolve();
-      var charProcs = this.dict.get('CharProcs');
-      var fontResources = this.dict.get('Resources') || resources;
+      var charProcs = this.dict.get("CharProcs");
+      var fontResources = this.dict.get("Resources") || resources;
       var charProcKeys = charProcs.getKeys();
       var charProcOperatorList = Object.create(null);
 
-      var _loop2 = function _loop2() {
-        var key = charProcKeys[i];
+      for (var i = 0, n = charProcKeys.length; i < n; ++i) {
+        const key = charProcKeys[i];
         loadCharProcsPromise = loadCharProcsPromise.then(function () {
           var glyphStream = charProcs.get(key);
           var operatorList = new _operator_list.OperatorList();
           return type3Evaluator.getOperatorList({
             stream: glyphStream,
-            task: task,
+            task,
             resources: fontResources,
-            operatorList: operatorList
+            operatorList
           }).then(function () {
             charProcOperatorList[key] = operatorList.getIR();
             parentOperatorList.addDependencies(operatorList.dependencies);
-          })["catch"](function (reason) {
-            (0, _util.warn)("Type3 font resource \"".concat(key, "\" is not available."));
+          }).catch(function (reason) {
+            (0, _util.warn)(`Type3 font resource "${key}" is not available.`);
             var operatorList = new _operator_list.OperatorList();
             charProcOperatorList[key] = operatorList.getIR();
           });
         });
-      };
-
-      for (var i = 0, n = charProcKeys.length; i < n; ++i) {
-        _loop2();
       }
 
       this.type3Loaded = loadCharProcsPromise.then(function () {
@@ -2801,6 +2926,7 @@ var TranslatedFont = function TranslatedFontClosure() {
       });
       return this.type3Loaded;
     }
+
   };
   return TranslatedFont;
 }();
@@ -2812,21 +2938,24 @@ var StateManager = function StateManagerClosure() {
   }
 
   StateManager.prototype = {
-    save: function save() {
+    save() {
       var old = this.state;
       this.stateStack.push(this.state);
       this.state = old.clone();
     },
-    restore: function restore() {
+
+    restore() {
       var prev = this.stateStack.pop();
 
       if (prev) {
         this.state = prev;
       }
     },
-    transform: function transform(args) {
+
+    transform(args) {
       this.state.ctm = _util.Util.transform(this.state.ctm, args);
     }
+
   };
   return StateManager;
 }();
@@ -2952,232 +3081,232 @@ var EvalState = function EvalStateClosure() {
 
 var EvaluatorPreprocessor = function EvaluatorPreprocessorClosure() {
   var getOPMap = (0, _core_utils.getLookupTableFactory)(function (t) {
-    t['w'] = {
+    t["w"] = {
       id: _util.OPS.setLineWidth,
       numArgs: 1,
       variableArgs: false
     };
-    t['J'] = {
+    t["J"] = {
       id: _util.OPS.setLineCap,
       numArgs: 1,
       variableArgs: false
     };
-    t['j'] = {
+    t["j"] = {
       id: _util.OPS.setLineJoin,
       numArgs: 1,
       variableArgs: false
     };
-    t['M'] = {
+    t["M"] = {
       id: _util.OPS.setMiterLimit,
       numArgs: 1,
       variableArgs: false
     };
-    t['d'] = {
+    t["d"] = {
       id: _util.OPS.setDash,
       numArgs: 2,
       variableArgs: false
     };
-    t['ri'] = {
+    t["ri"] = {
       id: _util.OPS.setRenderingIntent,
       numArgs: 1,
       variableArgs: false
     };
-    t['i'] = {
+    t["i"] = {
       id: _util.OPS.setFlatness,
       numArgs: 1,
       variableArgs: false
     };
-    t['gs'] = {
+    t["gs"] = {
       id: _util.OPS.setGState,
       numArgs: 1,
       variableArgs: false
     };
-    t['q'] = {
+    t["q"] = {
       id: _util.OPS.save,
       numArgs: 0,
       variableArgs: false
     };
-    t['Q'] = {
+    t["Q"] = {
       id: _util.OPS.restore,
       numArgs: 0,
       variableArgs: false
     };
-    t['cm'] = {
+    t["cm"] = {
       id: _util.OPS.transform,
       numArgs: 6,
       variableArgs: false
     };
-    t['m'] = {
+    t["m"] = {
       id: _util.OPS.moveTo,
       numArgs: 2,
       variableArgs: false
     };
-    t['l'] = {
+    t["l"] = {
       id: _util.OPS.lineTo,
       numArgs: 2,
       variableArgs: false
     };
-    t['c'] = {
+    t["c"] = {
       id: _util.OPS.curveTo,
       numArgs: 6,
       variableArgs: false
     };
-    t['v'] = {
+    t["v"] = {
       id: _util.OPS.curveTo2,
       numArgs: 4,
       variableArgs: false
     };
-    t['y'] = {
+    t["y"] = {
       id: _util.OPS.curveTo3,
       numArgs: 4,
       variableArgs: false
     };
-    t['h'] = {
+    t["h"] = {
       id: _util.OPS.closePath,
       numArgs: 0,
       variableArgs: false
     };
-    t['re'] = {
+    t["re"] = {
       id: _util.OPS.rectangle,
       numArgs: 4,
       variableArgs: false
     };
-    t['S'] = {
+    t["S"] = {
       id: _util.OPS.stroke,
       numArgs: 0,
       variableArgs: false
     };
-    t['s'] = {
+    t["s"] = {
       id: _util.OPS.closeStroke,
       numArgs: 0,
       variableArgs: false
     };
-    t['f'] = {
+    t["f"] = {
       id: _util.OPS.fill,
       numArgs: 0,
       variableArgs: false
     };
-    t['F'] = {
+    t["F"] = {
       id: _util.OPS.fill,
       numArgs: 0,
       variableArgs: false
     };
-    t['f*'] = {
+    t["f*"] = {
       id: _util.OPS.eoFill,
       numArgs: 0,
       variableArgs: false
     };
-    t['B'] = {
+    t["B"] = {
       id: _util.OPS.fillStroke,
       numArgs: 0,
       variableArgs: false
     };
-    t['B*'] = {
+    t["B*"] = {
       id: _util.OPS.eoFillStroke,
       numArgs: 0,
       variableArgs: false
     };
-    t['b'] = {
+    t["b"] = {
       id: _util.OPS.closeFillStroke,
       numArgs: 0,
       variableArgs: false
     };
-    t['b*'] = {
+    t["b*"] = {
       id: _util.OPS.closeEOFillStroke,
       numArgs: 0,
       variableArgs: false
     };
-    t['n'] = {
+    t["n"] = {
       id: _util.OPS.endPath,
       numArgs: 0,
       variableArgs: false
     };
-    t['W'] = {
+    t["W"] = {
       id: _util.OPS.clip,
       numArgs: 0,
       variableArgs: false
     };
-    t['W*'] = {
+    t["W*"] = {
       id: _util.OPS.eoClip,
       numArgs: 0,
       variableArgs: false
     };
-    t['BT'] = {
+    t["BT"] = {
       id: _util.OPS.beginText,
       numArgs: 0,
       variableArgs: false
     };
-    t['ET'] = {
+    t["ET"] = {
       id: _util.OPS.endText,
       numArgs: 0,
       variableArgs: false
     };
-    t['Tc'] = {
+    t["Tc"] = {
       id: _util.OPS.setCharSpacing,
       numArgs: 1,
       variableArgs: false
     };
-    t['Tw'] = {
+    t["Tw"] = {
       id: _util.OPS.setWordSpacing,
       numArgs: 1,
       variableArgs: false
     };
-    t['Tz'] = {
+    t["Tz"] = {
       id: _util.OPS.setHScale,
       numArgs: 1,
       variableArgs: false
     };
-    t['TL'] = {
+    t["TL"] = {
       id: _util.OPS.setLeading,
       numArgs: 1,
       variableArgs: false
     };
-    t['Tf'] = {
+    t["Tf"] = {
       id: _util.OPS.setFont,
       numArgs: 2,
       variableArgs: false
     };
-    t['Tr'] = {
+    t["Tr"] = {
       id: _util.OPS.setTextRenderingMode,
       numArgs: 1,
       variableArgs: false
     };
-    t['Ts'] = {
+    t["Ts"] = {
       id: _util.OPS.setTextRise,
       numArgs: 1,
       variableArgs: false
     };
-    t['Td'] = {
+    t["Td"] = {
       id: _util.OPS.moveText,
       numArgs: 2,
       variableArgs: false
     };
-    t['TD'] = {
+    t["TD"] = {
       id: _util.OPS.setLeadingMoveText,
       numArgs: 2,
       variableArgs: false
     };
-    t['Tm'] = {
+    t["Tm"] = {
       id: _util.OPS.setTextMatrix,
       numArgs: 6,
       variableArgs: false
     };
-    t['T*'] = {
+    t["T*"] = {
       id: _util.OPS.nextLine,
       numArgs: 0,
       variableArgs: false
     };
-    t['Tj'] = {
+    t["Tj"] = {
       id: _util.OPS.showText,
       numArgs: 1,
       variableArgs: false
     };
-    t['TJ'] = {
+    t["TJ"] = {
       id: _util.OPS.showSpacedText,
       numArgs: 1,
       variableArgs: false
     };
-    t['\''] = {
+    t["'"] = {
       id: _util.OPS.nextLineShowText,
       numArgs: 1,
       variableArgs: false
@@ -3187,152 +3316,155 @@ var EvaluatorPreprocessor = function EvaluatorPreprocessorClosure() {
       numArgs: 3,
       variableArgs: false
     };
-    t['d0'] = {
+    t["d0"] = {
       id: _util.OPS.setCharWidth,
       numArgs: 2,
       variableArgs: false
     };
-    t['d1'] = {
+    t["d1"] = {
       id: _util.OPS.setCharWidthAndBounds,
       numArgs: 6,
       variableArgs: false
     };
-    t['CS'] = {
+    t["CS"] = {
       id: _util.OPS.setStrokeColorSpace,
       numArgs: 1,
       variableArgs: false
     };
-    t['cs'] = {
+    t["cs"] = {
       id: _util.OPS.setFillColorSpace,
       numArgs: 1,
       variableArgs: false
     };
-    t['SC'] = {
+    t["SC"] = {
       id: _util.OPS.setStrokeColor,
       numArgs: 4,
       variableArgs: true
     };
-    t['SCN'] = {
+    t["SCN"] = {
       id: _util.OPS.setStrokeColorN,
       numArgs: 33,
       variableArgs: true
     };
-    t['sc'] = {
+    t["sc"] = {
       id: _util.OPS.setFillColor,
       numArgs: 4,
       variableArgs: true
     };
-    t['scn'] = {
+    t["scn"] = {
       id: _util.OPS.setFillColorN,
       numArgs: 33,
       variableArgs: true
     };
-    t['G'] = {
+    t["G"] = {
       id: _util.OPS.setStrokeGray,
       numArgs: 1,
       variableArgs: false
     };
-    t['g'] = {
+    t["g"] = {
       id: _util.OPS.setFillGray,
       numArgs: 1,
       variableArgs: false
     };
-    t['RG'] = {
+    t["RG"] = {
       id: _util.OPS.setStrokeRGBColor,
       numArgs: 3,
       variableArgs: false
     };
-    t['rg'] = {
+    t["rg"] = {
       id: _util.OPS.setFillRGBColor,
       numArgs: 3,
       variableArgs: false
     };
-    t['K'] = {
+    t["K"] = {
       id: _util.OPS.setStrokeCMYKColor,
       numArgs: 4,
       variableArgs: false
     };
-    t['k'] = {
+    t["k"] = {
       id: _util.OPS.setFillCMYKColor,
       numArgs: 4,
       variableArgs: false
     };
-    t['sh'] = {
+    t["sh"] = {
       id: _util.OPS.shadingFill,
       numArgs: 1,
       variableArgs: false
     };
-    t['BI'] = {
+    t["BI"] = {
       id: _util.OPS.beginInlineImage,
       numArgs: 0,
       variableArgs: false
     };
-    t['ID'] = {
+    t["ID"] = {
       id: _util.OPS.beginImageData,
       numArgs: 0,
       variableArgs: false
     };
-    t['EI'] = {
+    t["EI"] = {
       id: _util.OPS.endInlineImage,
       numArgs: 1,
       variableArgs: false
     };
-    t['Do'] = {
+    t["Do"] = {
       id: _util.OPS.paintXObject,
       numArgs: 1,
       variableArgs: false
     };
-    t['MP'] = {
+    t["MP"] = {
       id: _util.OPS.markPoint,
       numArgs: 1,
       variableArgs: false
     };
-    t['DP'] = {
+    t["DP"] = {
       id: _util.OPS.markPointProps,
       numArgs: 2,
       variableArgs: false
     };
-    t['BMC'] = {
+    t["BMC"] = {
       id: _util.OPS.beginMarkedContent,
       numArgs: 1,
       variableArgs: false
     };
-    t['BDC'] = {
+    t["BDC"] = {
       id: _util.OPS.beginMarkedContentProps,
       numArgs: 2,
       variableArgs: false
     };
-    t['EMC'] = {
+    t["EMC"] = {
       id: _util.OPS.endMarkedContent,
       numArgs: 0,
       variableArgs: false
     };
-    t['BX'] = {
+    t["BX"] = {
       id: _util.OPS.beginCompat,
       numArgs: 0,
       variableArgs: false
     };
-    t['EX'] = {
+    t["EX"] = {
       id: _util.OPS.endCompat,
       numArgs: 0,
       variableArgs: false
     };
-    t['BM'] = null;
-    t['BD'] = null;
-    t['true'] = null;
-    t['fa'] = null;
-    t['fal'] = null;
-    t['fals'] = null;
-    t['false'] = null;
-    t['nu'] = null;
-    t['nul'] = null;
-    t['null'] = null;
+    t["BM"] = null;
+    t["BD"] = null;
+    t["true"] = null;
+    t["fa"] = null;
+    t["fal"] = null;
+    t["fals"] = null;
+    t["false"] = null;
+    t["nu"] = null;
+    t["nul"] = null;
+    t["null"] = null;
   });
-  var MAX_INVALID_PATH_OPS = 20;
+  const MAX_INVALID_PATH_OPS = 20;
 
   function EvaluatorPreprocessor(stream, xref, stateManager) {
     this.opMap = getOPMap();
-    this.parser = new _parser.Parser(new _parser.Lexer(stream, this.opMap), false, xref);
+    this.parser = new _parser.Parser({
+      lexer: new _parser.Lexer(stream, this.opMap),
+      xref
+    });
     this.stateManager = stateManager;
     this.nonProcessedArgs = [];
     this._numInvalidPathOPS = 0;
@@ -3349,12 +3481,12 @@ var EvaluatorPreprocessor = function EvaluatorPreprocessorClosure() {
       while (true) {
         var obj = this.parser.getObj();
 
-        if ((0, _primitives.isCmd)(obj)) {
+        if (obj instanceof _primitives.Cmd) {
           var cmd = obj.cmd;
           var opSpec = this.opMap[cmd];
 
           if (!opSpec) {
-            (0, _util.warn)("Unknown command \"".concat(cmd, "\"."));
+            (0, _util.warn)(`Unknown command "${cmd}".`);
             continue;
           }
 
@@ -3382,13 +3514,13 @@ var EvaluatorPreprocessor = function EvaluatorPreprocessorClosure() {
             }
 
             if (argsLength < numArgs) {
-              var partialMsg = "command ".concat(cmd, ": expected ").concat(numArgs, " args, ") + "but received ".concat(argsLength, " args.");
+              const partialMsg = `command ${cmd}: expected ${numArgs} args, ` + `but received ${argsLength} args.`;
 
               if (fn >= _util.OPS.moveTo && fn <= _util.OPS.endPath && ++this._numInvalidPathOPS > MAX_INVALID_PATH_OPS) {
-                throw new _util.FormatError("Invalid ".concat(partialMsg));
+                throw new _util.FormatError(`Invalid ${partialMsg}`);
               }
 
-              (0, _util.warn)("Skipping ".concat(partialMsg));
+              (0, _util.warn)(`Skipping ${partialMsg}`);
 
               if (args !== null) {
                 args.length = 0;
@@ -3397,7 +3529,7 @@ var EvaluatorPreprocessor = function EvaluatorPreprocessorClosure() {
               continue;
             }
           } else if (argsLength > numArgs) {
-            (0, _util.info)("Command ".concat(cmd, ": expected [0, ").concat(numArgs, "] args, ") + "but received ".concat(argsLength, " args."));
+            (0, _util.info)(`Command ${cmd}: expected [0, ${numArgs}] args, ` + `but received ${argsLength} args.`);
           }
 
           this.preprocessCommand(fn, args);
@@ -3406,7 +3538,7 @@ var EvaluatorPreprocessor = function EvaluatorPreprocessorClosure() {
           return true;
         }
 
-        if ((0, _primitives.isEOF)(obj)) {
+        if (obj === _primitives.EOF) {
           return false;
         }
 
@@ -3418,7 +3550,7 @@ var EvaluatorPreprocessor = function EvaluatorPreprocessorClosure() {
           args.push(obj);
 
           if (args.length > 33) {
-            throw new _util.FormatError('Too many arguments');
+            throw new _util.FormatError("Too many arguments");
           }
         }
       }

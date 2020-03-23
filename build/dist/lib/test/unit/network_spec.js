@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@
  */
 "use strict";
 
-var _network = require("../../display/network");
+var _util = require("../../shared/util.js");
 
-describe('network', function () {
-  var pdf1 = new URL('../pdfs/tracemonkey.pdf', window.location).href;
+var _network = require("../../display/network.js");
+
+describe("network", function () {
+  var pdf1 = new URL("../pdfs/tracemonkey.pdf", window.location).href;
   var pdf1Length = 1016315;
-  it('read without stream and range', function (done) {
+  it("read without stream and range", function (done) {
     var stream = new _network.PDFNetworkStream({
       url: pdf1,
       rangeChunkSize: 65536,
@@ -42,7 +44,7 @@ describe('network', function () {
     var len = 0,
         count = 0;
 
-    var read = function read() {
+    var read = function () {
       return fullReader.read().then(function (result) {
         if (result.done) {
           return undefined;
@@ -61,11 +63,11 @@ describe('network', function () {
       expect(isStreamingSupported).toEqual(false);
       expect(isRangeSupported).toEqual(false);
       done();
-    })["catch"](function (reason) {
+    }).catch(function (reason) {
       done.fail(reason);
     });
   });
-  it('read custom ranges', function (done) {
+  it("read custom ranges", function (done) {
     var rangeSize = 32768;
     var stream = new _network.PDFNetworkStream({
       url: pdf1,
@@ -79,7 +81,7 @@ describe('network', function () {
     var promise = fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
-      fullReader.cancel('Don\'t need full reader');
+      fullReader.cancel(new _util.AbortException("Don't need fullReader."));
       fullReaderCancelled = true;
     });
     var tailSize = pdf1Length % rangeSize || rangeSize;
@@ -92,7 +94,7 @@ describe('network', function () {
       value: 0
     };
 
-    var read = function read(reader, lenResult) {
+    var read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
           return undefined;
@@ -111,7 +113,7 @@ describe('network', function () {
       expect(isRangeSupported).toEqual(true);
       expect(fullReaderCancelled).toEqual(true);
       done();
-    })["catch"](function (reason) {
+    }).catch(function (reason) {
       done.fail(reason);
     });
   });

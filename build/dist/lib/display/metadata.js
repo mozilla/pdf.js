@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,130 +26,118 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Metadata = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-var _xml_parser = require("./xml_parser");
+var _xml_parser = require("./xml_parser.js");
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var Metadata =
-/*#__PURE__*/
-function () {
-  function Metadata(data) {
-    _classCallCheck(this, Metadata);
-
-    (0, _util.assert)(typeof data === 'string', 'Metadata: input is not a string');
+class Metadata {
+  constructor(data) {
+    (0, _util.assert)(typeof data === "string", "Metadata: input is not a string");
     data = this._repair(data);
-    var parser = new _xml_parser.SimpleXMLParser();
-    var xmlDocument = parser.parseFromString(data);
-    this._metadata = Object.create(null);
+    const parser = new _xml_parser.SimpleXMLParser();
+    const xmlDocument = parser.parseFromString(data);
+    this._metadataMap = new Map();
 
     if (xmlDocument) {
       this._parse(xmlDocument);
     }
   }
 
-  _createClass(Metadata, [{
-    key: "_repair",
-    value: function _repair(data) {
-      return data.replace(/^([^<]+)/, '').replace(/>\\376\\377([^<]+)/g, function (all, codes) {
-        var bytes = codes.replace(/\\([0-3])([0-7])([0-7])/g, function (code, d1, d2, d3) {
-          return String.fromCharCode(d1 * 64 + d2 * 8 + d3 * 1);
-        }).replace(/&(amp|apos|gt|lt|quot);/g, function (str, name) {
-          switch (name) {
-            case 'amp':
-              return '&';
+  _repair(data) {
+    return data.replace(/^[^<]+/, "").replace(/>\\376\\377([^<]+)/g, function (all, codes) {
+      const bytes = codes.replace(/\\([0-3])([0-7])([0-7])/g, function (code, d1, d2, d3) {
+        return String.fromCharCode(d1 * 64 + d2 * 8 + d3 * 1);
+      }).replace(/&(amp|apos|gt|lt|quot);/g, function (str, name) {
+        switch (name) {
+          case "amp":
+            return "&";
 
-            case 'apos':
-              return '\'';
+          case "apos":
+            return "'";
 
-            case 'gt':
-              return '>';
+          case "gt":
+            return ">";
 
-            case 'lt':
-              return '<';
+          case "lt":
+            return "<";
 
-            case 'quot':
-              return '\"';
-          }
-
-          throw new Error("_repair: ".concat(name, " isn't defined."));
-        });
-        var chars = '';
-
-        for (var i = 0, ii = bytes.length; i < ii; i += 2) {
-          var code = bytes.charCodeAt(i) * 256 + bytes.charCodeAt(i + 1);
-
-          if (code >= 32 && code < 127 && code !== 60 && code !== 62 && code !== 38) {
-            chars += String.fromCharCode(code);
-          } else {
-            chars += '&#x' + (0x10000 + code).toString(16).substring(1) + ';';
-          }
+          case "quot":
+            return '"';
         }
 
-        return '>' + chars;
+        throw new Error(`_repair: ${name} isn't defined.`);
       });
-    }
-  }, {
-    key: "_parse",
-    value: function _parse(xmlDocument) {
-      var rdf = xmlDocument.documentElement;
+      let chars = "";
 
-      if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') {
-        rdf = rdf.firstChild;
+      for (let i = 0, ii = bytes.length; i < ii; i += 2) {
+        const code = bytes.charCodeAt(i) * 256 + bytes.charCodeAt(i + 1);
 
-        while (rdf && rdf.nodeName.toLowerCase() !== 'rdf:rdf') {
-          rdf = rdf.nextSibling;
+        if (code >= 32 && code < 127 && code !== 60 && code !== 62 && code !== 38) {
+          chars += String.fromCharCode(code);
+        } else {
+          chars += "&#x" + (0x10000 + code).toString(16).substring(1) + ";";
         }
       }
 
-      var nodeName = rdf ? rdf.nodeName.toLowerCase() : null;
+      return ">" + chars;
+    });
+  }
 
-      if (!rdf || nodeName !== 'rdf:rdf' || !rdf.hasChildNodes()) {
-        return;
-      }
+  _parse(xmlDocument) {
+    let rdf = xmlDocument.documentElement;
 
-      var children = rdf.childNodes;
+    if (rdf.nodeName.toLowerCase() !== "rdf:rdf") {
+      rdf = rdf.firstChild;
 
-      for (var i = 0, ii = children.length; i < ii; i++) {
-        var desc = children[i];
-
-        if (desc.nodeName.toLowerCase() !== 'rdf:description') {
-          continue;
-        }
-
-        for (var j = 0, jj = desc.childNodes.length; j < jj; j++) {
-          if (desc.childNodes[j].nodeName.toLowerCase() !== '#text') {
-            var entry = desc.childNodes[j];
-            var name = entry.nodeName.toLowerCase();
-            this._metadata[name] = entry.textContent.trim();
-          }
-        }
+      while (rdf && rdf.nodeName.toLowerCase() !== "rdf:rdf") {
+        rdf = rdf.nextSibling;
       }
     }
-  }, {
-    key: "get",
-    value: function get(name) {
-      var data = this._metadata[name];
-      return typeof data !== 'undefined' ? data : null;
-    }
-  }, {
-    key: "getAll",
-    value: function getAll() {
-      return this._metadata;
-    }
-  }, {
-    key: "has",
-    value: function has(name) {
-      return typeof this._metadata[name] !== 'undefined';
-    }
-  }]);
 
-  return Metadata;
-}();
+    const nodeName = rdf ? rdf.nodeName.toLowerCase() : null;
+
+    if (!rdf || nodeName !== "rdf:rdf" || !rdf.hasChildNodes()) {
+      return;
+    }
+
+    const children = rdf.childNodes;
+
+    for (let i = 0, ii = children.length; i < ii; i++) {
+      const desc = children[i];
+
+      if (desc.nodeName.toLowerCase() !== "rdf:description") {
+        continue;
+      }
+
+      for (let j = 0, jj = desc.childNodes.length; j < jj; j++) {
+        if (desc.childNodes[j].nodeName.toLowerCase() !== "#text") {
+          const entry = desc.childNodes[j];
+          const name = entry.nodeName.toLowerCase();
+
+          this._metadataMap.set(name, entry.textContent.trim());
+        }
+      }
+    }
+  }
+
+  get(name) {
+    return this._metadataMap.has(name) ? this._metadataMap.get(name) : null;
+  }
+
+  getAll() {
+    const obj = Object.create(null);
+
+    for (const [key, value] of this._metadataMap) {
+      obj[key] = value;
+    }
+
+    return obj;
+  }
+
+  has(name) {
+    return this._metadataMap.has(name);
+  }
+
+}
 
 exports.Metadata = Metadata;

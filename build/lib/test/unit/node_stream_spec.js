@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,113 +21,97 @@
  */
 "use strict";
 
-var _util = require("../../shared/util");
+var _util = require("../../shared/util.js");
 
-var _is_node = _interopRequireDefault(require("../../shared/is_node"));
+var _is_node = require("../../shared/is_node.js");
 
-var _node_stream = require("../../display/node_stream");
+var _node_stream = require("../../display/node_stream.js");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+(0, _util.assert)(_is_node.isNodeJS);
 
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+const path = require("path");
 
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+const url = require("url");
 
-function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+const http = require("http");
 
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+const fs = require("fs");
 
-(0, _util.assert)((0, _is_node["default"])());
-
-var path = require('path');
-
-var url = require('url');
-
-var http = require('http');
-
-var fs = require('fs');
-
-describe('node_stream', function () {
-  var server = null;
-  var port = null;
-  var pdf = url.parse(encodeURI('file://' + path.join(process.cwd(), './test/pdfs/tracemonkey.pdf'))).href;
-  var pdfLength = 1016315;
-  beforeAll(function (done) {
-    server = http.createServer(function (request, response) {
-      var filePath = process.cwd() + '/test/pdfs' + request.url;
-      fs.lstat(filePath, function (error, stat) {
+describe("node_stream", function () {
+  let server = null;
+  let port = null;
+  const pdf = url.parse(encodeURI("file://" + path.join(process.cwd(), "./test/pdfs/tracemonkey.pdf"))).href;
+  const pdfLength = 1016315;
+  beforeAll(done => {
+    server = http.createServer((request, response) => {
+      const filePath = process.cwd() + "/test/pdfs" + request.url;
+      fs.lstat(filePath, (error, stat) => {
         if (error) {
           response.writeHead(404);
-          response.end("File ".concat(request.url, " not found!"));
+          response.end(`File ${request.url} not found!`);
           return;
         }
 
-        if (!request.headers['range']) {
-          var contentLength = stat.size;
-          var stream = fs.createReadStream(filePath);
+        if (!request.headers["range"]) {
+          const contentLength = stat.size;
+          const stream = fs.createReadStream(filePath);
           response.writeHead(200, {
-            'Content-Type': 'application/pdf',
-            'Content-Length': contentLength,
-            'Accept-Ranges': 'bytes'
+            "Content-Type": "application/pdf",
+            "Content-Length": contentLength,
+            "Accept-Ranges": "bytes"
           });
           stream.pipe(response);
         } else {
-          var _request$headers$rang = request.headers['range'].split('=')[1].split('-').map(function (x) {
+          const [start, end] = request.headers["range"].split("=")[1].split("-").map(x => {
             return Number(x);
-          }),
-              _request$headers$rang2 = _slicedToArray(_request$headers$rang, 2),
-              start = _request$headers$rang2[0],
-              end = _request$headers$rang2[1];
-
-          var _stream = fs.createReadStream(filePath, {
-            start: start,
-            end: end
           });
-
+          const stream = fs.createReadStream(filePath, {
+            start,
+            end
+          });
           response.writeHead(206, {
-            'Content-Type': 'application/pdf'
+            "Content-Type": "application/pdf"
           });
-
-          _stream.pipe(response);
+          stream.pipe(response);
         }
       });
     }).listen(0);
     port = server.address().port;
     done();
   });
-  afterAll(function (done) {
+  afterAll(done => {
     server.close();
     done();
   });
-  it('read both http(s) and filesystem pdf files', function (done) {
-    var stream1 = new _node_stream.PDFNodeStream({
-      url: "http://127.0.0.1:".concat(port, "/tracemonkey.pdf"),
+  it("read both http(s) and filesystem pdf files", function (done) {
+    const stream1 = new _node_stream.PDFNodeStream({
+      url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
       rangeChunkSize: 65536,
       disableStream: true,
       disableRange: true
     });
-    var stream2 = new _node_stream.PDFNodeStream({
+    const stream2 = new _node_stream.PDFNodeStream({
       url: pdf,
       rangeChunkSize: 65536,
       disableStream: true,
       disableRange: true
     });
-    var fullReader1 = stream1.getFullReader();
-    var fullReader2 = stream2.getFullReader();
-    var isStreamingSupported1, isRangeSupported1;
-    var promise1 = fullReader1.headersReady.then(function () {
+    const fullReader1 = stream1.getFullReader();
+    const fullReader2 = stream2.getFullReader();
+    let isStreamingSupported1, isRangeSupported1;
+    const promise1 = fullReader1.headersReady.then(() => {
       isStreamingSupported1 = fullReader1.isStreamingSupported;
       isRangeSupported1 = fullReader1.isRangeSupported;
     });
-    var isStreamingSupported2, isRangeSupported2;
-    var promise2 = fullReader2.headersReady.then(function () {
+    let isStreamingSupported2, isRangeSupported2;
+    const promise2 = fullReader2.headersReady.then(() => {
       isStreamingSupported2 = fullReader2.isStreamingSupported;
       isRangeSupported2 = fullReader2.isRangeSupported;
     });
-    var len1 = 0,
+    let len1 = 0,
         len2 = 0;
 
-    var read1 = function read1() {
+    const read1 = function () {
       return fullReader1.read().then(function (result) {
         if (result.done) {
           return undefined;
@@ -138,7 +122,7 @@ describe('node_stream', function () {
       });
     };
 
-    var read2 = function read2() {
+    const read2 = function () {
       return fullReader2.read().then(function (result) {
         if (result.done) {
           return undefined;
@@ -149,8 +133,8 @@ describe('node_stream', function () {
       });
     };
 
-    var readPromise = Promise.all([read1(), read2(), promise1, promise2]);
-    readPromise.then(function (result) {
+    const readPromise = Promise.all([read1(), read2(), promise1, promise2]);
+    readPromise.then(result => {
       expect(isStreamingSupported1).toEqual(false);
       expect(isRangeSupported1).toEqual(false);
       expect(isStreamingSupported2).toEqual(false);
@@ -158,61 +142,61 @@ describe('node_stream', function () {
       expect(len1).toEqual(pdfLength);
       expect(len1).toEqual(len2);
       done();
-    })["catch"](function (reason) {
+    }).catch(reason => {
       done.fail(reason);
     });
   });
-  it('read custom ranges for both http(s) and filesystem urls', function (done) {
-    var rangeSize = 32768;
-    var stream1 = new _node_stream.PDFNodeStream({
-      url: "http://127.0.0.1:".concat(port, "/tracemonkey.pdf"),
+  it("read custom ranges for both http(s) and filesystem urls", function (done) {
+    const rangeSize = 32768;
+    const stream1 = new _node_stream.PDFNodeStream({
+      url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
       length: pdfLength,
       rangeChunkSize: rangeSize,
       disableStream: true,
       disableRange: false
     });
-    var stream2 = new _node_stream.PDFNodeStream({
+    const stream2 = new _node_stream.PDFNodeStream({
       url: pdf,
       length: pdfLength,
       rangeChunkSize: rangeSize,
       disableStream: true,
       disableRange: false
     });
-    var fullReader1 = stream1.getFullReader();
-    var fullReader2 = stream2.getFullReader();
-    var isStreamingSupported1, isRangeSupported1, fullReaderCancelled1;
-    var isStreamingSupported2, isRangeSupported2, fullReaderCancelled2;
-    var promise1 = fullReader1.headersReady.then(function () {
+    const fullReader1 = stream1.getFullReader();
+    const fullReader2 = stream2.getFullReader();
+    let isStreamingSupported1, isRangeSupported1, fullReaderCancelled1;
+    let isStreamingSupported2, isRangeSupported2, fullReaderCancelled2;
+    const promise1 = fullReader1.headersReady.then(function () {
       isStreamingSupported1 = fullReader1.isStreamingSupported;
       isRangeSupported1 = fullReader1.isRangeSupported;
-      fullReader1.cancel('Don\'t need full reader');
+      fullReader1.cancel(new _util.AbortException("Don't need fullReader1."));
       fullReaderCancelled1 = true;
     });
-    var promise2 = fullReader2.headersReady.then(function () {
+    const promise2 = fullReader2.headersReady.then(function () {
       isStreamingSupported2 = fullReader2.isStreamingSupported;
       isRangeSupported2 = fullReader2.isRangeSupported;
-      fullReader2.cancel('Don\'t need full reader');
+      fullReader2.cancel(new _util.AbortException("Don't need fullReader2."));
       fullReaderCancelled2 = true;
     });
-    var tailSize = pdfLength % rangeSize || rangeSize;
-    var range11Reader = stream1.getRangeReader(pdfLength - tailSize - rangeSize, pdfLength - tailSize);
-    var range12Reader = stream1.getRangeReader(pdfLength - tailSize, pdfLength);
-    var range21Reader = stream2.getRangeReader(pdfLength - tailSize - rangeSize, pdfLength - tailSize);
-    var range22Reader = stream2.getRangeReader(pdfLength - tailSize, pdfLength);
-    var result11 = {
+    const tailSize = pdfLength % rangeSize || rangeSize;
+    const range11Reader = stream1.getRangeReader(pdfLength - tailSize - rangeSize, pdfLength - tailSize);
+    const range12Reader = stream1.getRangeReader(pdfLength - tailSize, pdfLength);
+    const range21Reader = stream2.getRangeReader(pdfLength - tailSize - rangeSize, pdfLength - tailSize);
+    const range22Reader = stream2.getRangeReader(pdfLength - tailSize, pdfLength);
+    const result11 = {
       value: 0
     },
-        result12 = {
+          result12 = {
       value: 0
     };
-    var result21 = {
+    const result21 = {
       value: 0
     },
-        result22 = {
+          result22 = {
       value: 0
     };
 
-    var read = function read(reader, lenResult) {
+    const read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
           return undefined;
@@ -223,7 +207,7 @@ describe('node_stream', function () {
       });
     };
 
-    var readPromises = Promise.all([read(range11Reader, result11), read(range12Reader, result12), read(range21Reader, result21), read(range22Reader, result22), promise1, promise2]);
+    const readPromises = Promise.all([read(range11Reader, result11), read(range12Reader, result12), read(range21Reader, result21), read(range22Reader, result22), promise1, promise2]);
     readPromises.then(function () {
       expect(result11.value).toEqual(rangeSize);
       expect(result12.value).toEqual(tailSize);
@@ -236,7 +220,7 @@ describe('node_stream', function () {
       expect(isRangeSupported2).toEqual(true);
       expect(fullReaderCancelled2).toEqual(true);
       done();
-    })["catch"](function (reason) {
+    }).catch(function (reason) {
       done.fail(reason);
     });
   });

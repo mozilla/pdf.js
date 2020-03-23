@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.PDFRenderingQueue = exports.RenderingStates = void 0;
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var CLEANUP_TIMEOUT = 30000;
-var RenderingStates = {
+const CLEANUP_TIMEOUT = 30000;
+const RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
   PAUSED: 2,
@@ -41,12 +34,8 @@ var RenderingStates = {
 };
 exports.RenderingStates = RenderingStates;
 
-var PDFRenderingQueue =
-/*#__PURE__*/
-function () {
-  function PDFRenderingQueue() {
-    _classCallCheck(this, PDFRenderingQueue);
-
+class PDFRenderingQueue {
+  constructor() {
     this.pdfViewer = null;
     this.pdfThumbnailViewer = null;
     this.onIdle = null;
@@ -56,117 +45,107 @@ function () {
     this.isThumbnailViewEnabled = false;
   }
 
-  _createClass(PDFRenderingQueue, [{
-    key: "setViewer",
-    value: function setViewer(pdfViewer) {
-      this.pdfViewer = pdfViewer;
-    }
-  }, {
-    key: "setThumbnailViewer",
-    value: function setThumbnailViewer(pdfThumbnailViewer) {
-      this.pdfThumbnailViewer = pdfThumbnailViewer;
-    }
-  }, {
-    key: "isHighestPriority",
-    value: function isHighestPriority(view) {
-      return this.highestPriorityPage === view.renderingId;
-    }
-  }, {
-    key: "renderHighestPriority",
-    value: function renderHighestPriority(currentlyVisiblePages) {
-      if (this.idleTimeout) {
-        clearTimeout(this.idleTimeout);
-        this.idleTimeout = null;
-      }
+  setViewer(pdfViewer) {
+    this.pdfViewer = pdfViewer;
+  }
 
-      if (this.pdfViewer.forceRendering(currentlyVisiblePages)) {
+  setThumbnailViewer(pdfThumbnailViewer) {
+    this.pdfThumbnailViewer = pdfThumbnailViewer;
+  }
+
+  isHighestPriority(view) {
+    return this.highestPriorityPage === view.renderingId;
+  }
+
+  renderHighestPriority(currentlyVisiblePages) {
+    if (this.idleTimeout) {
+      clearTimeout(this.idleTimeout);
+      this.idleTimeout = null;
+    }
+
+    if (this.pdfViewer.forceRendering(currentlyVisiblePages)) {
+      return;
+    }
+
+    if (this.pdfThumbnailViewer && this.isThumbnailViewEnabled) {
+      if (this.pdfThumbnailViewer.forceRendering()) {
         return;
       }
-
-      if (this.pdfThumbnailViewer && this.isThumbnailViewEnabled) {
-        if (this.pdfThumbnailViewer.forceRendering()) {
-          return;
-        }
-      }
-
-      if (this.printing) {
-        return;
-      }
-
-      if (this.onIdle) {
-        this.idleTimeout = setTimeout(this.onIdle.bind(this), CLEANUP_TIMEOUT);
-      }
     }
-  }, {
-    key: "getHighestPriority",
-    value: function getHighestPriority(visible, views, scrolledDown) {
-      var visibleViews = visible.views;
-      var numVisible = visibleViews.length;
 
-      if (numVisible === 0) {
-        return null;
-      }
+    if (this.printing) {
+      return;
+    }
 
-      for (var i = 0; i < numVisible; ++i) {
-        var view = visibleViews[i].view;
+    if (this.onIdle) {
+      this.idleTimeout = setTimeout(this.onIdle.bind(this), CLEANUP_TIMEOUT);
+    }
+  }
 
-        if (!this.isViewFinished(view)) {
-          return view;
-        }
-      }
+  getHighestPriority(visible, views, scrolledDown) {
+    const visibleViews = visible.views;
+    const numVisible = visibleViews.length;
 
-      if (scrolledDown) {
-        var nextPageIndex = visible.last.id;
-
-        if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex])) {
-          return views[nextPageIndex];
-        }
-      } else {
-        var previousPageIndex = visible.first.id - 2;
-
-        if (views[previousPageIndex] && !this.isViewFinished(views[previousPageIndex])) {
-          return views[previousPageIndex];
-        }
-      }
-
+    if (numVisible === 0) {
       return null;
     }
-  }, {
-    key: "isViewFinished",
-    value: function isViewFinished(view) {
-      return view.renderingState === RenderingStates.FINISHED;
-    }
-  }, {
-    key: "renderView",
-    value: function renderView(view) {
-      var _this = this;
 
-      switch (view.renderingState) {
-        case RenderingStates.FINISHED:
-          return false;
+    for (let i = 0; i < numVisible; ++i) {
+      const view = visibleViews[i].view;
 
-        case RenderingStates.PAUSED:
-          this.highestPriorityPage = view.renderingId;
-          view.resume();
-          break;
-
-        case RenderingStates.RUNNING:
-          this.highestPriorityPage = view.renderingId;
-          break;
-
-        case RenderingStates.INITIAL:
-          this.highestPriorityPage = view.renderingId;
-          view.draw()["finally"](function () {
-            _this.renderHighestPriority();
-          });
-          break;
+      if (!this.isViewFinished(view)) {
+        return view;
       }
-
-      return true;
     }
-  }]);
 
-  return PDFRenderingQueue;
-}();
+    if (scrolledDown) {
+      const nextPageIndex = visible.last.id;
+
+      if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex])) {
+        return views[nextPageIndex];
+      }
+    } else {
+      const previousPageIndex = visible.first.id - 2;
+
+      if (views[previousPageIndex] && !this.isViewFinished(views[previousPageIndex])) {
+        return views[previousPageIndex];
+      }
+    }
+
+    return null;
+  }
+
+  isViewFinished(view) {
+    return view.renderingState === RenderingStates.FINISHED;
+  }
+
+  renderView(view) {
+    switch (view.renderingState) {
+      case RenderingStates.FINISHED:
+        return false;
+
+      case RenderingStates.PAUSED:
+        this.highestPriorityPage = view.renderingId;
+        view.resume();
+        break;
+
+      case RenderingStates.RUNNING:
+        this.highestPriorityPage = view.renderingId;
+        break;
+
+      case RenderingStates.INITIAL:
+        this.highestPriorityPage = view.renderingId;
+        view.draw().finally(() => {
+          this.renderHighestPriority();
+        }).catch(reason => {
+          console.error(`renderView: "${reason}"`);
+        });
+        break;
+    }
+
+    return true;
+  }
+
+}
 
 exports.PDFRenderingQueue = PDFRenderingQueue;

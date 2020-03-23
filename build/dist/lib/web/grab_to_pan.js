@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ function GrabToPan(options) {
   this.element = options.element;
   this.document = options.element.ownerDocument;
 
-  if (typeof options.ignoreTarget === 'function') {
+  if (typeof options.ignoreTarget === "function") {
     this.ignoreTarget = options.ignoreTarget;
   }
 
@@ -41,16 +41,16 @@ function GrabToPan(options) {
   this._onmousedown = this._onmousedown.bind(this);
   this._onmousemove = this._onmousemove.bind(this);
   this._endPan = this._endPan.bind(this);
-  var overlay = this.overlay = document.createElement('div');
-  overlay.className = 'grab-to-pan-grabbing';
+  const overlay = this.overlay = document.createElement("div");
+  overlay.className = "grab-to-pan-grabbing";
 }
 
 GrabToPan.prototype = {
-  CSS_CLASS_GRAB: 'grab-to-pan-grab',
+  CSS_CLASS_GRAB: "grab-to-pan-grab",
   activate: function GrabToPan_activate() {
     if (!this.active) {
       this.active = true;
-      this.element.addEventListener('mousedown', this._onmousedown, true);
+      this.element.addEventListener("mousedown", this._onmousedown, true);
       this.element.classList.add(this.CSS_CLASS_GRAB);
 
       if (this.onActiveChanged) {
@@ -61,7 +61,7 @@ GrabToPan.prototype = {
   deactivate: function GrabToPan_deactivate() {
     if (this.active) {
       this.active = false;
-      this.element.removeEventListener('mousedown', this._onmousedown, true);
+      this.element.removeEventListener("mousedown", this._onmousedown, true);
 
       this._endPan();
 
@@ -80,7 +80,7 @@ GrabToPan.prototype = {
     }
   },
   ignoreTarget: function GrabToPan_ignoreTarget(node) {
-    return node[matchesSelector]('a[href], a[href] *, input, textarea, button, button *, select, option');
+    return node[matchesSelector]("a[href], a[href] *, input, textarea, button, button *, select, option");
   },
   _onmousedown: function GrabToPan__onmousedown(event) {
     if (event.button !== 0 || this.ignoreTarget(event.target)) {
@@ -99,19 +99,19 @@ GrabToPan.prototype = {
     this.scrollTopStart = this.element.scrollTop;
     this.clientXStart = event.clientX;
     this.clientYStart = event.clientY;
-    this.document.addEventListener('mousemove', this._onmousemove, true);
-    this.document.addEventListener('mouseup', this._endPan, true);
-    this.element.addEventListener('scroll', this._endPan, true);
+    this.document.addEventListener("mousemove", this._onmousemove, true);
+    this.document.addEventListener("mouseup", this._endPan, true);
+    this.element.addEventListener("scroll", this._endPan, true);
     event.preventDefault();
     event.stopPropagation();
-    var focusedElement = document.activeElement;
+    const focusedElement = document.activeElement;
 
     if (focusedElement && !focusedElement.contains(event.target)) {
       focusedElement.blur();
     }
   },
   _onmousemove: function GrabToPan__onmousemove(event) {
-    this.element.removeEventListener('scroll', this._endPan, true);
+    this.element.removeEventListener("scroll", this._endPan, true);
 
     if (isLeftMouseReleased(event)) {
       this._endPan();
@@ -119,16 +119,16 @@ GrabToPan.prototype = {
       return;
     }
 
-    var xDiff = event.clientX - this.clientXStart;
-    var yDiff = event.clientY - this.clientYStart;
-    var scrollTop = this.scrollTopStart - yDiff;
-    var scrollLeft = this.scrollLeftStart - xDiff;
+    const xDiff = event.clientX - this.clientXStart;
+    const yDiff = event.clientY - this.clientYStart;
+    const scrollTop = this.scrollTopStart - yDiff;
+    const scrollLeft = this.scrollLeftStart - xDiff;
 
     if (this.element.scrollTo) {
       this.element.scrollTo({
         top: scrollTop,
         left: scrollLeft,
-        behavior: 'instant'
+        behavior: "instant"
       });
     } else {
       this.element.scrollTop = scrollTop;
@@ -140,21 +140,21 @@ GrabToPan.prototype = {
     }
   },
   _endPan: function GrabToPan__endPan() {
-    this.element.removeEventListener('scroll', this._endPan, true);
-    this.document.removeEventListener('mousemove', this._onmousemove, true);
-    this.document.removeEventListener('mouseup', this._endPan, true);
+    this.element.removeEventListener("scroll", this._endPan, true);
+    this.document.removeEventListener("mousemove", this._onmousemove, true);
+    this.document.removeEventListener("mouseup", this._endPan, true);
     this.overlay.remove();
   }
 };
-var matchesSelector;
-['webkitM', 'mozM', 'msM', 'oM', 'm'].some(function (prefix) {
-  var name = prefix + 'atches';
+let matchesSelector;
+["webkitM", "mozM", "msM", "oM", "m"].some(function (prefix) {
+  let name = prefix + "atches";
 
   if (name in document.documentElement) {
     matchesSelector = name;
   }
 
-  name += 'Selector';
+  name += "Selector";
 
   if (name in document.documentElement) {
     matchesSelector = name;
@@ -162,13 +162,13 @@ var matchesSelector;
 
   return matchesSelector;
 });
-var isNotIEorIsIE10plus = !document.documentMode || document.documentMode > 9;
-var chrome = window.chrome;
-var isChrome15OrOpera15plus = chrome && (chrome.webstore || chrome.app);
-var isSafari6plus = /Apple/.test(navigator.vendor) && /Version\/([6-9]\d*|[1-5]\d+)/.test(navigator.userAgent);
+const isNotIEorIsIE10plus = !document.documentMode || document.documentMode > 9;
+const chrome = window.chrome;
+const isChrome15OrOpera15plus = chrome && (chrome.webstore || chrome.app);
+const isSafari6plus = /Apple/.test(navigator.vendor) && /Version\/([6-9]\d*|[1-5]\d+)/.test(navigator.userAgent);
 
 function isLeftMouseReleased(event) {
-  if ('buttons' in event && isNotIEorIsIE10plus) {
+  if ("buttons" in event && isNotIEorIsIE10plus) {
     return !(event.buttons & 1);
   }
 

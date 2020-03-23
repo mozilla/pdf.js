@@ -1,10 +1,12 @@
 "use strict";
 
-let compatibilityParams = Object.create(null);
+const compatibilityParams = Object.create(null);
 {
-  const isNodeJS = require('../shared/is_node');
+  const {
+    isNodeJS
+  } = require("../shared/is_node.js");
 
-  const userAgent = typeof navigator !== 'undefined' && navigator.userAgent || '';
+  const userAgent = typeof navigator !== "undefined" && navigator.userAgent || "";
   const isIE = /Trident/.test(userAgent);
   const isIOSChrome = /CriOS/.test(userAgent);
 
@@ -15,9 +17,9 @@ let compatibilityParams = Object.create(null);
   })();
 
   (function checkFontFaceAndImage() {
-    if (isNodeJS()) {
+    if (isNodeJS) {
       compatibilityParams.disableFontFace = true;
-      compatibilityParams.nativeImageDecoderSupport = 'none';
+      compatibilityParams.nativeImageDecoderSupport = "none";
     }
   })();
 }

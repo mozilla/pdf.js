@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.OperatorList = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
 var QueueOptimizer = function QueueOptimizerClosure() {
   function addState(parentState, pattern, checkFn, iterateFn, processFn) {
@@ -38,9 +38,9 @@ var QueueOptimizer = function QueueOptimizerClosure() {
     }
 
     state[pattern[pattern.length - 1]] = {
-      checkFn: checkFn,
-      iterateFn: iterateFn,
-      processFn: processFn
+      checkFn,
+      iterateFn,
+      processFn
     };
   }
 
@@ -82,7 +82,7 @@ var QueueOptimizer = function QueueOptimizerClosure() {
         return fnArray[i] === _util.OPS.restore;
     }
 
-    throw new Error("iterateInlineImageGroup - invalid pos: ".concat(pos));
+    throw new Error(`iterateInlineImageGroup - invalid pos: ${pos}`);
   }, function foundInlineImageGroup(context, i) {
     var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
     var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
@@ -119,7 +119,7 @@ var QueueOptimizer = function QueueOptimizerClosure() {
       }
 
       map.push({
-        transform: transform,
+        transform,
         x: currentX,
         y: currentY,
         w: img.width,
@@ -190,7 +190,7 @@ var QueueOptimizer = function QueueOptimizerClosure() {
         return fnArray[i] === _util.OPS.restore;
     }
 
-    throw new Error("iterateImageMaskGroup - invalid pos: ".concat(pos));
+    throw new Error(`iterateImageMaskGroup - invalid pos: ${pos}`);
   }, function foundImageMaskGroup(context, i) {
     var MIN_IMAGES_IN_MASKS_BLOCK = 10;
     var MAX_IMAGES_IN_MASKS_BLOCK = 100;
@@ -316,7 +316,7 @@ var QueueOptimizer = function QueueOptimizerClosure() {
         return fnArray[i] === _util.OPS.restore;
     }
 
-    throw new Error("iterateImageGroup - invalid pos: ".concat(pos));
+    throw new Error(`iterateImageGroup - invalid pos: ${pos}`);
   }, function (context, i) {
     var MIN_IMAGES_IN_BLOCK = 3;
     var MAX_IMAGES_IN_BLOCK = 1000;
@@ -384,7 +384,7 @@ var QueueOptimizer = function QueueOptimizerClosure() {
         return fnArray[i] === _util.OPS.endText;
     }
 
-    throw new Error("iterateShowTextGroup - invalid pos: ".concat(pos));
+    throw new Error(`iterateShowTextGroup - invalid pos: ${pos}`);
   }, function (context, i) {
     var MIN_CHARS_IN_BLOCK = 3;
     var MAX_CHARS_IN_BLOCK = 1000;
@@ -435,23 +435,23 @@ var QueueOptimizer = function QueueOptimizerClosure() {
   }
 
   QueueOptimizer.prototype = {
-    _optimize: function _optimize() {
-      var fnArray = this.queue.fnArray;
-      var i = this.lastProcessed,
+    _optimize() {
+      const fnArray = this.queue.fnArray;
+      let i = this.lastProcessed,
           ii = fnArray.length;
-      var state = this.state;
-      var match = this.match;
+      let state = this.state;
+      let match = this.match;
 
       if (!state && !match && i + 1 === ii && !InitialState[fnArray[i]]) {
         this.lastProcessed = ii;
         return;
       }
 
-      var context = this.context;
+      const context = this.context;
 
       while (i < ii) {
         if (match) {
-          var iterate = (0, match.iterateFn)(context, i);
+          const iterate = (0, match.iterateFn)(context, i);
 
           if (iterate) {
             i++;
@@ -491,15 +491,17 @@ var QueueOptimizer = function QueueOptimizerClosure() {
       this.match = match;
       this.lastProcessed = i;
     },
-    push: function push(fn, args) {
+
+    push(fn, args) {
       this.queue.fnArray.push(fn);
       this.queue.argsArray.push(args);
 
       this._optimize();
     },
-    flush: function flush() {
+
+    flush() {
       while (this.match) {
-        var length = this.queue.fnArray.length;
+        const length = this.queue.fnArray.length;
         this.lastProcessed = (0, this.match.processFn)(this.context, length);
         this.match = null;
         this.state = null;
@@ -507,11 +509,13 @@ var QueueOptimizer = function QueueOptimizerClosure() {
         this._optimize();
       }
     },
-    reset: function reset() {
+
+    reset() {
       this.state = null;
       this.match = null;
       this.lastProcessed = 0;
     }
+
   };
   return QueueOptimizer;
 }();
@@ -522,12 +526,15 @@ var NullOptimizer = function NullOptimizerClosure() {
   }
 
   NullOptimizer.prototype = {
-    push: function push(fn, args) {
+    push(fn, args) {
       this.queue.fnArray.push(fn);
       this.queue.argsArray.push(args);
     },
-    flush: function flush() {},
-    reset: function reset() {}
+
+    flush() {},
+
+    reset() {}
+
   };
   return NullOptimizer;
 }();
@@ -536,12 +543,12 @@ var OperatorList = function OperatorListClosure() {
   var CHUNK_SIZE = 1000;
   var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5;
 
-  function OperatorList(intent, messageHandler, pageIndex) {
-    this.messageHandler = messageHandler;
+  function OperatorList(intent, streamSink, pageIndex) {
+    this._streamSink = streamSink;
     this.fnArray = [];
     this.argsArray = [];
 
-    if (messageHandler && intent !== 'oplist') {
+    if (streamSink && intent !== "oplist") {
       this.optimizer = new QueueOptimizer(this);
     } else {
       this.optimizer = new NullOptimizer(this);
@@ -552,6 +559,7 @@ var OperatorList = function OperatorListClosure() {
     this.pageIndex = pageIndex;
     this.intent = intent;
     this.weight = 0;
+    this._resolved = streamSink ? null : Promise.resolve();
   }
 
   OperatorList.prototype = {
@@ -559,15 +567,19 @@ var OperatorList = function OperatorListClosure() {
       return this.argsArray.length;
     },
 
+    get ready() {
+      return this._resolved || this._streamSink.ready;
+    },
+
     get totalLength() {
       return this._totalLength + this.length;
     },
 
-    addOp: function addOp(fn, args) {
+    addOp(fn, args) {
       this.optimizer.push(fn, args);
       this.weight++;
 
-      if (this.messageHandler) {
+      if (this._streamSink) {
         if (this.weight >= CHUNK_SIZE) {
           this.flush();
         } else if (this.weight >= CHUNK_SIZE_ABOUT && (fn === _util.OPS.restore || fn === _util.OPS.endText)) {
@@ -575,7 +587,8 @@ var OperatorList = function OperatorListClosure() {
         }
       }
     },
-    addDependency: function addDependency(dependency) {
+
+    addDependency(dependency) {
       if (dependency in this.dependencies) {
         return;
       }
@@ -583,19 +596,22 @@ var OperatorList = function OperatorListClosure() {
       this.dependencies[dependency] = true;
       this.addOp(_util.OPS.dependency, [dependency]);
     },
-    addDependencies: function addDependencies(dependencies) {
+
+    addDependencies(dependencies) {
       for (var key in dependencies) {
         this.addDependency(key);
       }
     },
-    addOpList: function addOpList(opList) {
+
+    addOpList(opList) {
       Object.assign(this.dependencies, opList.dependencies);
 
       for (var i = 0, ii = opList.length; i < ii; i++) {
         this.addOp(opList.fnArray[i], opList.argsArray[i]);
       }
     },
-    getIR: function getIR() {
+
+    getIR() {
       return {
         fnArray: this.fnArray,
         argsArray: this.argsArray,
@@ -604,17 +620,19 @@ var OperatorList = function OperatorListClosure() {
     },
 
     get _transfers() {
-      var transfers = [];
-      var fnArray = this.fnArray,
-          argsArray = this.argsArray,
-          length = this.length;
+      const transfers = [];
+      const {
+        fnArray,
+        argsArray,
+        length
+      } = this;
 
-      for (var i = 0; i < length; i++) {
+      for (let i = 0; i < length; i++) {
         switch (fnArray[i]) {
           case _util.OPS.paintInlineImageXObject:
           case _util.OPS.paintInlineImageXObjectGroup:
           case _util.OPS.paintImageMaskXObject:
-            var arg = argsArray[i][0];
+            const arg = argsArray[i][0];
             ;
 
             if (!arg.cached) {
@@ -628,27 +646,25 @@ var OperatorList = function OperatorListClosure() {
       return transfers;
     },
 
-    flush: function flush() {
-      var lastChunk = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+    flush(lastChunk = false) {
       this.optimizer.flush();
-      var length = this.length;
+      const length = this.length;
       this._totalLength += length;
-      this.messageHandler.send('RenderPageChunk', {
-        operatorList: {
-          fnArray: this.fnArray,
-          argsArray: this.argsArray,
-          lastChunk: lastChunk,
-          length: length
-        },
-        pageIndex: this.pageIndex,
-        intent: this.intent
-      }, this._transfers);
+
+      this._streamSink.enqueue({
+        fnArray: this.fnArray,
+        argsArray: this.argsArray,
+        lastChunk,
+        length
+      }, 1, this._transfers);
+
       this.dependencies = Object.create(null);
       this.fnArray.length = 0;
       this.argsArray.length = 0;
       this.weight = 0;
       this.optimizer.reset();
     }
+
   };
   return OperatorList;
 }();

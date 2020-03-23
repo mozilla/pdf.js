@@ -7,7 +7,7 @@ exports.OptionKind = exports.AppOptions = void 0;
 
 var _pdf = require("../pdf");
 
-var _viewer_compatibility = require("./viewer_compatibility");
+var _viewer_compatibility = require("./viewer_compatibility.js");
 
 const OptionKind = {
   VIEWER: 0x02,
@@ -22,11 +22,11 @@ const defaultOptions = {
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   defaultUrl: {
-    value: 'compressed.tracemonkey-pldi-09.pdf',
+    value: "compressed.tracemonkey-pldi-09.pdf",
     kind: OptionKind.VIEWER
   },
   defaultZoomValue: {
-    value: '',
+    value: "",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   disableHistory: {
@@ -50,7 +50,7 @@ const defaultOptions = {
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   externalLinkRel: {
-    value: 'noopener noreferrer nofollow',
+    value: "noopener noreferrer nofollow",
     kind: OptionKind.VIEWER
   },
   externalLinkTarget: {
@@ -61,8 +61,12 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
+  ignoreDestinationZoom: {
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
   imageResourcesPath: {
-    value: './images/',
+    value: "./images/",
     kind: OptionKind.VIEWER
   },
   maxCanvasPixels: {
@@ -75,7 +79,7 @@ const defaultOptions = {
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   renderer: {
-    value: 'canvas',
+    value: "canvas",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   renderInteractiveForms: {
@@ -111,7 +115,7 @@ const defaultOptions = {
     kind: OptionKind.API
   },
   cMapUrl: {
-    value: '../web/cmaps/',
+    value: "../web/cmaps/",
     kind: OptionKind.API
   },
   disableAutoFetch: {
@@ -135,6 +139,10 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API + OptionKind.PREFERENCE
   },
+  docBaseUrl: {
+    value: "",
+    kind: OptionKind.API
+  },
   isEvalSupported: {
     value: true,
     kind: OptionKind.API
@@ -147,10 +155,6 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API
   },
-  postMessageTransfers: {
-    value: true,
-    kind: OptionKind.API
-  },
   verbosity: {
     value: 1,
     kind: OptionKind.API
@@ -160,7 +164,7 @@ const defaultOptions = {
     kind: OptionKind.WORKER
   },
   workerSrc: {
-    value: '../build/pdf.worker.js',
+    value: "../build/pdf.worker.js",
     kind: OptionKind.WORKER
   }
 };
@@ -169,7 +173,7 @@ const userOptions = Object.create(null);
 
 class AppOptions {
   constructor() {
-    throw new Error('Cannot initialize AppOptions.');
+    throw new Error("Cannot initialize AppOptions.");
   }
 
   static get(name) {
@@ -203,7 +207,7 @@ class AppOptions {
           const value = defaultOption.value,
                 valueType = typeof value;
 
-          if (valueType === 'boolean' || valueType === 'string' || valueType === 'number' && Number.isInteger(value)) {
+          if (valueType === "boolean" || valueType === "string" || valueType === "number" && Number.isInteger(value)) {
             options[name] = value;
             continue;
           }

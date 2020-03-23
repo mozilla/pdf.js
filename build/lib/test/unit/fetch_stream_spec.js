@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,26 +21,28 @@
  */
 "use strict";
 
-var _fetch_stream = require("../../display/fetch_stream");
+var _util = require("../../shared/util.js");
 
-describe('fetch_stream', function () {
-  var pdfUrl = new URL('../pdfs/tracemonkey.pdf', window.location).href;
-  var pdfLength = 1016315;
-  it('read with streaming', function (done) {
-    var stream = new _fetch_stream.PDFFetchStream({
+var _fetch_stream = require("../../display/fetch_stream.js");
+
+describe("fetch_stream", function () {
+  const pdfUrl = new URL("../pdfs/tracemonkey.pdf", window.location).href;
+  const pdfLength = 1016315;
+  it("read with streaming", function (done) {
+    const stream = new _fetch_stream.PDFFetchStream({
       url: pdfUrl,
       disableStream: false,
       disableRange: true
     });
-    var fullReader = stream.getFullReader();
-    var isStreamingSupported, isRangeSupported;
-    var promise = fullReader.headersReady.then(function () {
+    const fullReader = stream.getFullReader();
+    let isStreamingSupported, isRangeSupported;
+    const promise = fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
     });
-    var len = 0;
+    let len = 0;
 
-    var read = function read() {
+    const read = function () {
       return fullReader.read().then(function (result) {
         if (result.done) {
           return undefined;
@@ -51,41 +53,41 @@ describe('fetch_stream', function () {
       });
     };
 
-    var readPromise = Promise.all([read(), promise]);
+    const readPromise = Promise.all([read(), promise]);
     readPromise.then(function () {
       expect(len).toEqual(pdfLength);
       expect(isStreamingSupported).toEqual(true);
       expect(isRangeSupported).toEqual(false);
       done();
-    })["catch"](done.fail);
+    }).catch(done.fail);
   });
-  it('read ranges with streaming', function (done) {
-    var rangeSize = 32768;
-    var stream = new _fetch_stream.PDFFetchStream({
+  it("read ranges with streaming", function (done) {
+    const rangeSize = 32768;
+    const stream = new _fetch_stream.PDFFetchStream({
       url: pdfUrl,
       rangeChunkSize: rangeSize,
       disableStream: false,
       disableRange: false
     });
-    var fullReader = stream.getFullReader();
-    var isStreamingSupported, isRangeSupported, fullReaderCancelled;
-    var promise = fullReader.headersReady.then(function () {
+    const fullReader = stream.getFullReader();
+    let isStreamingSupported, isRangeSupported, fullReaderCancelled;
+    const promise = fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
-      fullReader.cancel(new Error('Don\'t need full reader'));
+      fullReader.cancel(new _util.AbortException("Don't need fullReader."));
       fullReaderCancelled = true;
     });
-    var tailSize = pdfLength % rangeSize || rangeSize;
-    var rangeReader1 = stream.getRangeReader(pdfLength - tailSize - rangeSize, pdfLength - tailSize);
-    var rangeReader2 = stream.getRangeReader(pdfLength - tailSize, pdfLength);
-    var result1 = {
+    const tailSize = pdfLength % rangeSize || rangeSize;
+    const rangeReader1 = stream.getRangeReader(pdfLength - tailSize - rangeSize, pdfLength - tailSize);
+    const rangeReader2 = stream.getRangeReader(pdfLength - tailSize, pdfLength);
+    const result1 = {
       value: 0
     },
-        result2 = {
+          result2 = {
       value: 0
     };
 
-    var read = function read(reader, lenResult) {
+    const read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
           return undefined;
@@ -96,7 +98,7 @@ describe('fetch_stream', function () {
       });
     };
 
-    var readPromise = Promise.all([read(rangeReader1, result1), read(rangeReader2, result2), promise]);
+    const readPromise = Promise.all([read(rangeReader1, result1), read(rangeReader2, result2), promise]);
     readPromise.then(function () {
       expect(isStreamingSupported).toEqual(true);
       expect(isRangeSupported).toEqual(true);
@@ -104,6 +106,6 @@ describe('fetch_stream', function () {
       expect(result1.value).toEqual(rangeSize);
       expect(result2.value).toEqual(tailSize);
       done();
-    })["catch"](done.fail);
+    }).catch(done.fail);
   });
 });

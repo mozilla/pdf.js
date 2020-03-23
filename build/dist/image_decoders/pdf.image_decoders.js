@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,45 +128,45 @@ Object.defineProperty(exports, "__esModule", {
 });
 Object.defineProperty(exports, "getVerbosityLevel", {
   enumerable: true,
-  get: function get() {
+  get: function () {
     return _util.getVerbosityLevel;
   }
 });
 Object.defineProperty(exports, "setVerbosityLevel", {
   enumerable: true,
-  get: function get() {
+  get: function () {
     return _util.setVerbosityLevel;
   }
 });
 Object.defineProperty(exports, "Jbig2mage", {
   enumerable: true,
-  get: function get() {
+  get: function () {
     return _jbig.Jbig2mage;
   }
 });
 Object.defineProperty(exports, "JpegImage", {
   enumerable: true,
-  get: function get() {
+  get: function () {
     return _jpg.JpegImage;
   }
 });
 Object.defineProperty(exports, "JpxImage", {
   enumerable: true,
-  get: function get() {
+  get: function () {
     return _jpx.JpxImage;
   }
 });
 
 var _util = __w_pdfjs_require__(1);
 
-var _jbig = __w_pdfjs_require__(133);
+var _jbig = __w_pdfjs_require__(3);
 
-var _jpg = __w_pdfjs_require__(136);
+var _jpg = __w_pdfjs_require__(7);
 
-var _jpx = __w_pdfjs_require__(137);
+var _jpx = __w_pdfjs_require__(8);
 
-var pdfjsVersion = '2.2.213';
-var pdfjsBuild = '97f1d7e6';
+const pdfjsVersion = '2.5.32';
+const pdfjsBuild = 'b1e3b21b';
 
 /***/ }),
 /* 1 */
@@ -191,15 +191,8 @@ exports.isBool = isBool;
 exports.isEmptyObj = isEmptyObj;
 exports.isNum = isNum;
 exports.isString = isString;
-exports.isSpace = isSpace;
 exports.isSameOrigin = isSameOrigin;
 exports.createValidAbsoluteUrl = createValidAbsoluteUrl;
-exports.isLittleEndian = isLittleEndian;
-exports.isEvalSupported = isEvalSupported;
-exports.log2 = log2;
-exports.readInt8 = readInt8;
-exports.readUint16 = readUint16;
-exports.readUint32 = readUint32;
 exports.removeNullCharacters = removeNullCharacters;
 exports.setVerbosityLevel = setVerbosityLevel;
 exports.shadow = shadow;
@@ -210,39 +203,21 @@ exports.stringToUTF8String = stringToUTF8String;
 exports.utf8StringToString = utf8StringToString;
 exports.warn = warn;
 exports.unreachable = unreachable;
-Object.defineProperty(exports, "ReadableStream", {
-  enumerable: true,
-  get: function get() {
-    return _streams_polyfill.ReadableStream;
-  }
-});
-Object.defineProperty(exports, "URL", {
-  enumerable: true,
-  get: function get() {
-    return _url_polyfill.URL;
-  }
-});
-exports.createObjectURL = exports.FormatError = exports.Util = exports.UnknownErrorException = exports.UnexpectedResponseException = exports.TextRenderingMode = exports.StreamType = exports.PermissionFlag = exports.PasswordResponses = exports.PasswordException = exports.NativeImageDecoding = exports.MissingPDFException = exports.InvalidPDFException = exports.AbortException = exports.CMapCompressionType = exports.ImageKind = exports.FontType = exports.AnnotationType = exports.AnnotationFlag = exports.AnnotationFieldFlag = exports.AnnotationBorderStyleType = exports.UNSUPPORTED_FEATURES = exports.VerbosityLevel = exports.OPS = exports.IDENTITY_MATRIX = exports.FONT_IDENTITY_MATRIX = void 0;
+exports.IsEvalSupportedCached = exports.IsLittleEndianCached = exports.createObjectURL = exports.FormatError = exports.Util = exports.UnknownErrorException = exports.UnexpectedResponseException = exports.TextRenderingMode = exports.StreamType = exports.PermissionFlag = exports.PasswordResponses = exports.PasswordException = exports.NativeImageDecoding = exports.MissingPDFException = exports.InvalidPDFException = exports.AbortException = exports.CMapCompressionType = exports.ImageKind = exports.FontType = exports.AnnotationType = exports.AnnotationStateModelType = exports.AnnotationReviewState = exports.AnnotationReplyType = exports.AnnotationMarkedState = exports.AnnotationFlag = exports.AnnotationFieldFlag = exports.AnnotationBorderStyleType = exports.UNSUPPORTED_FEATURES = exports.VerbosityLevel = exports.OPS = exports.IDENTITY_MATRIX = exports.FONT_IDENTITY_MATRIX = exports.BaseException = void 0;
 
 __w_pdfjs_require__(2);
 
-var _streams_polyfill = __w_pdfjs_require__(131);
-
-var _url_polyfill = __w_pdfjs_require__(132);
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
+const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 exports.IDENTITY_MATRIX = IDENTITY_MATRIX;
-var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
+const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 exports.FONT_IDENTITY_MATRIX = FONT_IDENTITY_MATRIX;
-var NativeImageDecoding = {
-  NONE: 'none',
-  DECODE: 'decode',
-  DISPLAY: 'display'
+const NativeImageDecoding = {
+  NONE: "none",
+  DECODE: "decode",
+  DISPLAY: "display"
 };
 exports.NativeImageDecoding = NativeImageDecoding;
-var PermissionFlag = {
+const PermissionFlag = {
   PRINT: 0x04,
   MODIFY_CONTENTS: 0x08,
   COPY: 0x10,
@@ -253,7 +228,7 @@ var PermissionFlag = {
   PRINT_HIGH_QUALITY: 0x800
 };
 exports.PermissionFlag = PermissionFlag;
-var TextRenderingMode = {
+const TextRenderingMode = {
   FILL: 0,
   STROKE: 1,
   FILL_STROKE: 2,
@@ -266,13 +241,13 @@ var TextRenderingMode = {
   ADD_TO_PATH_FLAG: 4
 };
 exports.TextRenderingMode = TextRenderingMode;
-var ImageKind = {
+const ImageKind = {
   GRAYSCALE_1BPP: 1,
   RGB_24BPP: 2,
   RGBA_32BPP: 3
 };
 exports.ImageKind = ImageKind;
-var AnnotationType = {
+const AnnotationType = {
   TEXT: 1,
   LINK: 2,
   FREETEXT: 3,
@@ -301,7 +276,30 @@ var AnnotationType = {
   REDACT: 26
 };
 exports.AnnotationType = AnnotationType;
-var AnnotationFlag = {
+const AnnotationStateModelType = {
+  MARKED: "Marked",
+  REVIEW: "Review"
+};
+exports.AnnotationStateModelType = AnnotationStateModelType;
+const AnnotationMarkedState = {
+  MARKED: "Marked",
+  UNMARKED: "Unmarked"
+};
+exports.AnnotationMarkedState = AnnotationMarkedState;
+const AnnotationReviewState = {
+  ACCEPTED: "Accepted",
+  REJECTED: "Rejected",
+  CANCELLED: "Cancelled",
+  COMPLETED: "Completed",
+  NONE: "None"
+};
+exports.AnnotationReviewState = AnnotationReviewState;
+const AnnotationReplyType = {
+  GROUP: "Group",
+  REPLY: "R"
+};
+exports.AnnotationReplyType = AnnotationReplyType;
+const AnnotationFlag = {
   INVISIBLE: 0x01,
   HIDDEN: 0x02,
   PRINT: 0x04,
@@ -314,7 +312,7 @@ var AnnotationFlag = {
   LOCKEDCONTENTS: 0x200
 };
 exports.AnnotationFlag = AnnotationFlag;
-var AnnotationFieldFlag = {
+const AnnotationFieldFlag = {
   READONLY: 0x0000001,
   REQUIRED: 0x0000002,
   NOEXPORT: 0x0000004,
@@ -336,7 +334,7 @@ var AnnotationFieldFlag = {
   COMMITONSELCHANGE: 0x4000000
 };
 exports.AnnotationFieldFlag = AnnotationFieldFlag;
-var AnnotationBorderStyleType = {
+const AnnotationBorderStyleType = {
   SOLID: 1,
   DASHED: 2,
   BEVELED: 3,
@@ -344,46 +342,46 @@ var AnnotationBorderStyleType = {
   UNDERLINE: 5
 };
 exports.AnnotationBorderStyleType = AnnotationBorderStyleType;
-var StreamType = {
-  UNKNOWN: 0,
-  FLATE: 1,
-  LZW: 2,
-  DCT: 3,
-  JPX: 4,
-  JBIG: 5,
-  A85: 6,
-  AHX: 7,
-  CCF: 8,
-  RL: 9
+const StreamType = {
+  UNKNOWN: "UNKNOWN",
+  FLATE: "FLATE",
+  LZW: "LZW",
+  DCT: "DCT",
+  JPX: "JPX",
+  JBIG: "JBIG",
+  A85: "A85",
+  AHX: "AHX",
+  CCF: "CCF",
+  RLX: "RLX"
 };
 exports.StreamType = StreamType;
-var FontType = {
-  UNKNOWN: 0,
-  TYPE1: 1,
-  TYPE1C: 2,
-  CIDFONTTYPE0: 3,
-  CIDFONTTYPE0C: 4,
-  TRUETYPE: 5,
-  CIDFONTTYPE2: 6,
-  TYPE3: 7,
-  OPENTYPE: 8,
-  TYPE0: 9,
-  MMTYPE1: 10
+const FontType = {
+  UNKNOWN: "UNKNOWN",
+  TYPE1: "TYPE1",
+  TYPE1C: "TYPE1C",
+  CIDFONTTYPE0: "CIDFONTTYPE0",
+  CIDFONTTYPE0C: "CIDFONTTYPE0C",
+  TRUETYPE: "TRUETYPE",
+  CIDFONTTYPE2: "CIDFONTTYPE2",
+  TYPE3: "TYPE3",
+  OPENTYPE: "OPENTYPE",
+  TYPE0: "TYPE0",
+  MMTYPE1: "MMTYPE1"
 };
 exports.FontType = FontType;
-var VerbosityLevel = {
+const VerbosityLevel = {
   ERRORS: 0,
   WARNINGS: 1,
   INFOS: 5
 };
 exports.VerbosityLevel = VerbosityLevel;
-var CMapCompressionType = {
+const CMapCompressionType = {
   NONE: 0,
   BINARY: 1,
   STREAM: 2
 };
 exports.CMapCompressionType = CMapCompressionType;
-var OPS = {
+const OPS = {
   dependency: 1,
   setLineWidth: 2,
   setLineCap: 3,
@@ -477,21 +475,21 @@ var OPS = {
   constructPath: 91
 };
 exports.OPS = OPS;
-var UNSUPPORTED_FEATURES = {
-  unknown: 'unknown',
-  forms: 'forms',
-  javaScript: 'javaScript',
-  smask: 'smask',
-  shadingPattern: 'shadingPattern',
-  font: 'font'
+const UNSUPPORTED_FEATURES = {
+  unknown: "unknown",
+  forms: "forms",
+  javaScript: "javaScript",
+  smask: "smask",
+  shadingPattern: "shadingPattern",
+  font: "font"
 };
 exports.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
-var PasswordResponses = {
+const PasswordResponses = {
   NEED_PASSWORD: 1,
   INCORRECT_PASSWORD: 2
 };
 exports.PasswordResponses = PasswordResponses;
-var verbosity = VerbosityLevel.WARNINGS;
+let verbosity = VerbosityLevel.WARNINGS;
 
 function setVerbosityLevel(level) {
   if (Number.isInteger(level)) {
@@ -505,13 +503,13 @@ function getVerbosityLevel() {
 
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
-    console.log('Info: ' + msg);
+    console.log(`Info: ${msg}`);
   }
 }
 
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
-    console.log('Warning: ' + msg);
+    console.log(`Warning: ${msg}`);
   }
 }
 
@@ -526,17 +524,19 @@ function assert(cond, msg) {
 }
 
 function isSameOrigin(baseUrl, otherUrl) {
-  try {
-    var base = new _url_polyfill.URL(baseUrl);
+  let base;
 
-    if (!base.origin || base.origin === 'null') {
+  try {
+    base = new URL(baseUrl);
+
+    if (!base.origin || base.origin === "null") {
       return false;
     }
   } catch (e) {
     return false;
   }
 
-  var other = new _url_polyfill.URL(otherUrl, base);
+  const other = new URL(otherUrl, base);
   return base.origin === other.origin;
 }
 
@@ -546,11 +546,11 @@ function _isValidProtocol(url) {
   }
 
   switch (url.protocol) {
-    case 'http:':
-    case 'https:':
-    case 'ftp:':
-    case 'mailto:':
-    case 'tel:':
+    case "http:":
+    case "https:":
+    case "ftp:":
+    case "mailto:":
+    case "tel:":
       return true;
 
     default:
@@ -564,7 +564,7 @@ function createValidAbsoluteUrl(url, baseUrl) {
   }
 
   try {
-    var absoluteUrl = baseUrl ? new _url_polyfill.URL(url, baseUrl) : new _url_polyfill.URL(url);
+    const absoluteUrl = baseUrl ? new URL(url, baseUrl) : new URL(url);
 
     if (_isValidProtocol(absoluteUrl)) {
       return absoluteUrl;
@@ -576,7 +576,7 @@ function createValidAbsoluteUrl(url, baseUrl) {
 
 function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, {
-    value: value,
+    value,
     enumerable: true,
     configurable: true,
     writable: false
@@ -584,137 +584,106 @@ function shadow(obj, prop, value) {
   return value;
 }
 
-var PasswordException = function PasswordExceptionClosure() {
-  function PasswordException(msg, code) {
-    this.name = 'PasswordException';
-    this.message = msg;
+const BaseException = function BaseExceptionClosure() {
+  function BaseException(message) {
+    if (this.constructor === BaseException) {
+      unreachable("Cannot initialize BaseException.");
+    }
+
+    this.message = message;
+    this.name = this.constructor.name;
+  }
+
+  BaseException.prototype = new Error();
+  BaseException.constructor = BaseException;
+  return BaseException;
+}();
+
+exports.BaseException = BaseException;
+
+class PasswordException extends BaseException {
+  constructor(msg, code) {
+    super(msg);
     this.code = code;
   }
 
-  PasswordException.prototype = new Error();
-  PasswordException.constructor = PasswordException;
-  return PasswordException;
-}();
+}
 
 exports.PasswordException = PasswordException;
 
-var UnknownErrorException = function UnknownErrorExceptionClosure() {
-  function UnknownErrorException(msg, details) {
-    this.name = 'UnknownErrorException';
-    this.message = msg;
+class UnknownErrorException extends BaseException {
+  constructor(msg, details) {
+    super(msg);
     this.details = details;
   }
 
-  UnknownErrorException.prototype = new Error();
-  UnknownErrorException.constructor = UnknownErrorException;
-  return UnknownErrorException;
-}();
+}
 
 exports.UnknownErrorException = UnknownErrorException;
 
-var InvalidPDFException = function InvalidPDFExceptionClosure() {
-  function InvalidPDFException(msg) {
-    this.name = 'InvalidPDFException';
-    this.message = msg;
-  }
-
-  InvalidPDFException.prototype = new Error();
-  InvalidPDFException.constructor = InvalidPDFException;
-  return InvalidPDFException;
-}();
+class InvalidPDFException extends BaseException {}
 
 exports.InvalidPDFException = InvalidPDFException;
 
-var MissingPDFException = function MissingPDFExceptionClosure() {
-  function MissingPDFException(msg) {
-    this.name = 'MissingPDFException';
-    this.message = msg;
-  }
-
-  MissingPDFException.prototype = new Error();
-  MissingPDFException.constructor = MissingPDFException;
-  return MissingPDFException;
-}();
+class MissingPDFException extends BaseException {}
 
 exports.MissingPDFException = MissingPDFException;
 
-var UnexpectedResponseException = function UnexpectedResponseExceptionClosure() {
-  function UnexpectedResponseException(msg, status) {
-    this.name = 'UnexpectedResponseException';
-    this.message = msg;
+class UnexpectedResponseException extends BaseException {
+  constructor(msg, status) {
+    super(msg);
     this.status = status;
   }
 
-  UnexpectedResponseException.prototype = new Error();
-  UnexpectedResponseException.constructor = UnexpectedResponseException;
-  return UnexpectedResponseException;
-}();
+}
 
 exports.UnexpectedResponseException = UnexpectedResponseException;
 
-var FormatError = function FormatErrorClosure() {
-  function FormatError(msg) {
-    this.message = msg;
-  }
-
-  FormatError.prototype = new Error();
-  FormatError.prototype.name = 'FormatError';
-  FormatError.constructor = FormatError;
-  return FormatError;
-}();
+class FormatError extends BaseException {}
 
 exports.FormatError = FormatError;
 
-var AbortException = function AbortExceptionClosure() {
-  function AbortException(msg) {
-    this.name = 'AbortException';
-    this.message = msg;
-  }
-
-  AbortException.prototype = new Error();
-  AbortException.constructor = AbortException;
-  return AbortException;
-}();
+class AbortException extends BaseException {}
 
 exports.AbortException = AbortException;
-var NullCharactersRegExp = /\x00/g;
+const NullCharactersRegExp = /\x00/g;
 
 function removeNullCharacters(str) {
-  if (typeof str !== 'string') {
-    warn('The argument for removeNullCharacters must be a string.');
+  if (typeof str !== "string") {
+    warn("The argument for removeNullCharacters must be a string.");
     return str;
   }
 
-  return str.replace(NullCharactersRegExp, '');
+  return str.replace(NullCharactersRegExp, "");
 }
 
 function bytesToString(bytes) {
-  assert(bytes !== null && _typeof(bytes) === 'object' && bytes.length !== undefined, 'Invalid argument for bytesToString');
-  var length = bytes.length;
-  var MAX_ARGUMENT_COUNT = 8192;
+  assert(bytes !== null && typeof bytes === "object" && bytes.length !== undefined, "Invalid argument for bytesToString");
+  const length = bytes.length;
+  const MAX_ARGUMENT_COUNT = 8192;
 
   if (length < MAX_ARGUMENT_COUNT) {
     return String.fromCharCode.apply(null, bytes);
   }
 
-  var strBuf = [];
+  const strBuf = [];
 
-  for (var i = 0; i < length; i += MAX_ARGUMENT_COUNT) {
-    var chunkEnd = Math.min(i + MAX_ARGUMENT_COUNT, length);
-    var chunk = bytes.subarray(i, chunkEnd);
+  for (let i = 0; i < length; i += MAX_ARGUMENT_COUNT) {
+    const chunkEnd = Math.min(i + MAX_ARGUMENT_COUNT, length);
+    const chunk = bytes.subarray(i, chunkEnd);
     strBuf.push(String.fromCharCode.apply(null, chunk));
   }
 
-  return strBuf.join('');
+  return strBuf.join("");
 }
 
 function stringToBytes(str) {
-  assert(typeof str === 'string', 'Invalid argument for stringToBytes');
-  var length = str.length;
-  var bytes = new Uint8Array(length);
+  assert(typeof str === "string", "Invalid argument for stringToBytes");
+  const length = str.length;
+  const bytes = new Uint8Array(length);
 
-  for (var i = 0; i < length; ++i) {
-    bytes[i] = str.charCodeAt(i) & 0xFF;
+  for (let i = 0; i < length; ++i) {
+    bytes[i] = str.charCodeAt(i) & 0xff;
   }
 
   return bytes;
@@ -730,36 +699,33 @@ function arrayByteLength(arr) {
 }
 
 function arraysToBytes(arr) {
-  if (arr.length === 1 && arr[0] instanceof Uint8Array) {
+  const length = arr.length;
+
+  if (length === 1 && arr[0] instanceof Uint8Array) {
     return arr[0];
   }
 
-  var resultLength = 0;
-  var i,
-      ii = arr.length;
-  var item, itemLength;
+  let resultLength = 0;
 
-  for (i = 0; i < ii; i++) {
-    item = arr[i];
-    itemLength = arrayByteLength(item);
-    resultLength += itemLength;
+  for (let i = 0; i < length; i++) {
+    resultLength += arrayByteLength(arr[i]);
   }
 
-  var pos = 0;
-  var data = new Uint8Array(resultLength);
+  let pos = 0;
+  const data = new Uint8Array(resultLength);
 
-  for (i = 0; i < ii; i++) {
-    item = arr[i];
+  for (let i = 0; i < length; i++) {
+    let item = arr[i];
 
     if (!(item instanceof Uint8Array)) {
-      if (typeof item === 'string') {
+      if (typeof item === "string") {
         item = stringToBytes(item);
       } else {
         item = new Uint8Array(item);
       }
     }
 
-    itemLength = item.byteLength;
+    const itemLength = item.byteLength;
     data.set(item, pos);
     pos += itemLength;
   }
@@ -771,103 +737,96 @@ function string32(value) {
   return String.fromCharCode(value >> 24 & 0xff, value >> 16 & 0xff, value >> 8 & 0xff, value & 0xff);
 }
 
-function log2(x) {
-  if (x <= 0) {
-    return 0;
-  }
-
-  return Math.ceil(Math.log2(x));
-}
-
-function readInt8(data, start) {
-  return data[start] << 24 >> 24;
-}
-
-function readUint16(data, offset) {
-  return data[offset] << 8 | data[offset + 1];
-}
-
-function readUint32(data, offset) {
-  return (data[offset] << 24 | data[offset + 1] << 16 | data[offset + 2] << 8 | data[offset + 3]) >>> 0;
-}
-
 function isLittleEndian() {
-  var buffer8 = new Uint8Array(4);
+  const buffer8 = new Uint8Array(4);
   buffer8[0] = 1;
-  var view32 = new Uint32Array(buffer8.buffer, 0, 1);
+  const view32 = new Uint32Array(buffer8.buffer, 0, 1);
   return view32[0] === 1;
 }
 
+const IsLittleEndianCached = {
+  get value() {
+    return shadow(this, "value", isLittleEndian());
+  }
+
+};
+exports.IsLittleEndianCached = IsLittleEndianCached;
+
 function isEvalSupported() {
   try {
-    new Function('');
+    new Function("");
     return true;
   } catch (e) {
     return false;
   }
 }
 
-var Util = function UtilClosure() {
-  function Util() {}
+const IsEvalSupportedCached = {
+  get value() {
+    return shadow(this, "value", isEvalSupported());
+  }
 
-  var rgbBuf = ['rgb(', 0, ',', 0, ',', 0, ')'];
+};
+exports.IsEvalSupportedCached = IsEvalSupportedCached;
+const rgbBuf = ["rgb(", 0, ",", 0, ",", 0, ")"];
 
-  Util.makeCssRgb = function Util_makeCssRgb(r, g, b) {
+class Util {
+  static makeCssRgb(r, g, b) {
     rgbBuf[1] = r;
     rgbBuf[3] = g;
     rgbBuf[5] = b;
-    return rgbBuf.join('');
-  };
+    return rgbBuf.join("");
+  }
 
-  Util.transform = function Util_transform(m1, m2) {
+  static transform(m1, m2) {
     return [m1[0] * m2[0] + m1[2] * m2[1], m1[1] * m2[0] + m1[3] * m2[1], m1[0] * m2[2] + m1[2] * m2[3], m1[1] * m2[2] + m1[3] * m2[3], m1[0] * m2[4] + m1[2] * m2[5] + m1[4], m1[1] * m2[4] + m1[3] * m2[5] + m1[5]];
-  };
+  }
 
-  Util.applyTransform = function Util_applyTransform(p, m) {
-    var xt = p[0] * m[0] + p[1] * m[2] + m[4];
-    var yt = p[0] * m[1] + p[1] * m[3] + m[5];
+  static applyTransform(p, m) {
+    const xt = p[0] * m[0] + p[1] * m[2] + m[4];
+    const yt = p[0] * m[1] + p[1] * m[3] + m[5];
     return [xt, yt];
-  };
+  }
 
-  Util.applyInverseTransform = function Util_applyInverseTransform(p, m) {
-    var d = m[0] * m[3] - m[1] * m[2];
-    var xt = (p[0] * m[3] - p[1] * m[2] + m[2] * m[5] - m[4] * m[3]) / d;
-    var yt = (-p[0] * m[1] + p[1] * m[0] + m[4] * m[1] - m[5] * m[0]) / d;
+  static applyInverseTransform(p, m) {
+    const d = m[0] * m[3] - m[1] * m[2];
+    const xt = (p[0] * m[3] - p[1] * m[2] + m[2] * m[5] - m[4] * m[3]) / d;
+    const yt = (-p[0] * m[1] + p[1] * m[0] + m[4] * m[1] - m[5] * m[0]) / d;
     return [xt, yt];
-  };
+  }
 
-  Util.getAxialAlignedBoundingBox = function Util_getAxialAlignedBoundingBox(r, m) {
-    var p1 = Util.applyTransform(r, m);
-    var p2 = Util.applyTransform(r.slice(2, 4), m);
-    var p3 = Util.applyTransform([r[0], r[3]], m);
-    var p4 = Util.applyTransform([r[2], r[1]], m);
+  static getAxialAlignedBoundingBox(r, m) {
+    const p1 = Util.applyTransform(r, m);
+    const p2 = Util.applyTransform(r.slice(2, 4), m);
+    const p3 = Util.applyTransform([r[0], r[3]], m);
+    const p4 = Util.applyTransform([r[2], r[1]], m);
     return [Math.min(p1[0], p2[0], p3[0], p4[0]), Math.min(p1[1], p2[1], p3[1], p4[1]), Math.max(p1[0], p2[0], p3[0], p4[0]), Math.max(p1[1], p2[1], p3[1], p4[1])];
-  };
+  }
 
-  Util.inverseTransform = function Util_inverseTransform(m) {
-    var d = m[0] * m[3] - m[1] * m[2];
+  static inverseTransform(m) {
+    const d = m[0] * m[3] - m[1] * m[2];
     return [m[3] / d, -m[1] / d, -m[2] / d, m[0] / d, (m[2] * m[5] - m[4] * m[3]) / d, (m[4] * m[1] - m[5] * m[0]) / d];
-  };
+  }
 
-  Util.apply3dTransform = function Util_apply3dTransform(m, v) {
+  static apply3dTransform(m, v) {
     return [m[0] * v[0] + m[1] * v[1] + m[2] * v[2], m[3] * v[0] + m[4] * v[1] + m[5] * v[2], m[6] * v[0] + m[7] * v[1] + m[8] * v[2]];
-  };
+  }
 
-  Util.singularValueDecompose2dScale = function Util_singularValueDecompose2dScale(m) {
-    var transpose = [m[0], m[2], m[1], m[3]];
-    var a = m[0] * transpose[0] + m[1] * transpose[2];
-    var b = m[0] * transpose[1] + m[1] * transpose[3];
-    var c = m[2] * transpose[0] + m[3] * transpose[2];
-    var d = m[2] * transpose[1] + m[3] * transpose[3];
-    var first = (a + d) / 2;
-    var second = Math.sqrt((a + d) * (a + d) - 4 * (a * d - c * b)) / 2;
-    var sx = first + second || 1;
-    var sy = first - second || 1;
+  static singularValueDecompose2dScale(m) {
+    const transpose = [m[0], m[2], m[1], m[3]];
+    const a = m[0] * transpose[0] + m[1] * transpose[2];
+    const b = m[0] * transpose[1] + m[1] * transpose[3];
+    const c = m[2] * transpose[0] + m[3] * transpose[2];
+    const d = m[2] * transpose[1] + m[3] * transpose[3];
+    const first = (a + d) / 2;
+    const second = Math.sqrt((a + d) * (a + d) - 4 * (a * d - c * b)) / 2;
+    const sx = first + second || 1;
+    const sy = first - second || 1;
     return [Math.sqrt(sx), Math.sqrt(sy)];
-  };
+  }
 
-  Util.normalizeRect = function Util_normalizeRect(rect) {
-    var r = rect.slice(0);
+  static normalizeRect(rect) {
+    const r = rect.slice(0);
 
     if (rect[0] > rect[2]) {
       r[0] = rect[2];
@@ -880,16 +839,16 @@ var Util = function UtilClosure() {
     }
 
     return r;
-  };
+  }
 
-  Util.intersect = function Util_intersect(rect1, rect2) {
+  static intersect(rect1, rect2) {
     function compare(a, b) {
       return a - b;
     }
 
-    var orderedX = [rect1[0], rect1[2], rect2[0], rect2[2]].sort(compare),
-        orderedY = [rect1[1], rect1[3], rect2[1], rect2[3]].sort(compare),
-        result = [];
+    const orderedX = [rect1[0], rect1[2], rect2[0], rect2[2]].sort(compare);
+    const orderedY = [rect1[1], rect1[3], rect2[1], rect2[3]].sort(compare);
+    const result = [];
     rect1 = Util.normalizeRect(rect1);
     rect2 = Util.normalizeRect(rect2);
 
@@ -897,42 +856,44 @@ var Util = function UtilClosure() {
       result[0] = orderedX[1];
       result[2] = orderedX[2];
     } else {
-      return false;
+      return null;
     }
 
     if (orderedY[0] === rect1[1] && orderedY[1] === rect2[1] || orderedY[0] === rect2[1] && orderedY[1] === rect1[1]) {
       result[1] = orderedY[1];
       result[3] = orderedY[2];
     } else {
-      return false;
+      return null;
     }
 
     return result;
-  };
+  }
 
-  return Util;
-}();
+}
 
 exports.Util = Util;
-var PDFStringTranslateTable = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2D8, 0x2C7, 0x2C6, 0x2D9, 0x2DD, 0x2DB, 0x2DA, 0x2DC, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014, 0x2013, 0x192, 0x2044, 0x2039, 0x203A, 0x2212, 0x2030, 0x201E, 0x201C, 0x201D, 0x2018, 0x2019, 0x201A, 0x2122, 0xFB01, 0xFB02, 0x141, 0x152, 0x160, 0x178, 0x17D, 0x131, 0x142, 0x153, 0x161, 0x17E, 0, 0x20AC];
+const PDFStringTranslateTable = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2D8, 0x2C7, 0x2C6, 0x2D9, 0x2DD, 0x2DB, 0x2DA, 0x2DC, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014, 0x2013, 0x192, 0x2044, 0x2039, 0x203A, 0x2212, 0x2030, 0x201E, 0x201C, 0x201D, 0x2018, 0x2019, 0x201A, 0x2122, 0xFB01, 0xFB02, 0x141, 0x152, 0x160, 0x178, 0x17D, 0x131, 0x142, 0x153, 0x161, 0x17E, 0, 0x20AC];
 
 function stringToPDFString(str) {
-  var i,
-      n = str.length,
-      strBuf = [];
+  const length = str.length,
+        strBuf = [];
 
-  if (str[0] === '\xFE' && str[1] === '\xFF') {
-    for (i = 2; i < n; i += 2) {
+  if (str[0] === "\xFE" && str[1] === "\xFF") {
+    for (let i = 2; i < length; i += 2) {
       strBuf.push(String.fromCharCode(str.charCodeAt(i) << 8 | str.charCodeAt(i + 1)));
     }
+  } else if (str[0] === "\xFF" && str[1] === "\xFE") {
+    for (let i = 2; i < length; i += 2) {
+      strBuf.push(String.fromCharCode(str.charCodeAt(i + 1) << 8 | str.charCodeAt(i)));
+    }
   } else {
-    for (i = 0; i < n; ++i) {
-      var code = PDFStringTranslateTable[str.charCodeAt(i)];
+    for (let i = 0; i < length; ++i) {
+      const code = PDFStringTranslateTable[str.charCodeAt(i)];
       strBuf.push(code ? String.fromCharCode(code) : str.charAt(i));
     }
   }
 
-  return strBuf.join('');
+  return strBuf.join("");
 }
 
 function stringToUTF8String(str) {
@@ -944,7 +905,7 @@ function utf8StringToString(str) {
 }
 
 function isEmptyObj(obj) {
-  for (var key in obj) {
+  for (const key in obj) {
     return false;
   }
 
@@ -952,19 +913,19 @@ function isEmptyObj(obj) {
 }
 
 function isBool(v) {
-  return typeof v === 'boolean';
+  return typeof v === "boolean";
 }
 
 function isNum(v) {
-  return typeof v === 'number';
+  return typeof v === "number";
 }
 
 function isString(v) {
-  return typeof v === 'string';
+  return typeof v === "string";
 }
 
 function isArrayBuffer(v) {
-  return _typeof(v) === 'object' && v !== null && v.byteLength !== undefined;
+  return typeof v === "object" && v !== null && v.byteLength !== undefined;
 }
 
 function isArrayEqual(arr1, arr2) {
@@ -977,17 +938,14 @@ function isArrayEqual(arr1, arr2) {
   });
 }
 
-function isSpace(ch) {
-  return ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A;
-}
-
 function createPromiseCapability() {
-  var capability = Object.create(null);
-  var isSettled = false;
-  Object.defineProperty(capability, 'settled', {
-    get: function get() {
+  const capability = Object.create(null);
+  let isSettled = false;
+  Object.defineProperty(capability, "settled", {
+    get() {
       return isSettled;
     }
+
   });
   capability.promise = new Promise(function (resolve, reject) {
     capability.resolve = function (data) {
@@ -1003,28 +961,26 @@ function createPromiseCapability() {
   return capability;
 }
 
-var createObjectURL = function createObjectURLClosure() {
-  var digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-  return function createObjectURL(data, contentType) {
-    var forceDataSchema = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
-    if (!forceDataSchema && _url_polyfill.URL.createObjectURL) {
-      var blob = new Blob([data], {
+const createObjectURL = function createObjectURLClosure() {
+  const digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+  return function createObjectURL(data, contentType, forceDataSchema = false) {
+    if (!forceDataSchema && URL.createObjectURL) {
+      const blob = new Blob([data], {
         type: contentType
       });
-      return _url_polyfill.URL.createObjectURL(blob);
+      return URL.createObjectURL(blob);
     }
 
-    var buffer = 'data:' + contentType + ';base64,';
+    let buffer = `data:${contentType};base64,`;
 
-    for (var i = 0, ii = data.length; i < ii; i += 3) {
-      var b1 = data[i] & 0xFF;
-      var b2 = data[i + 1] & 0xFF;
-      var b3 = data[i + 2] & 0xFF;
-      var d1 = b1 >> 2,
-          d2 = (b1 & 3) << 4 | b2 >> 4;
-      var d3 = i + 1 < ii ? (b2 & 0xF) << 2 | b3 >> 6 : 64;
-      var d4 = i + 2 < ii ? b3 & 0x3F : 64;
+    for (let i = 0, ii = data.length; i < ii; i += 3) {
+      const b1 = data[i] & 0xff;
+      const b2 = data[i + 1] & 0xff;
+      const b3 = data[i + 2] & 0xff;
+      const d1 = b1 >> 2,
+            d2 = (b1 & 3) << 4 | b2 >> 4;
+      const d3 = i + 1 < ii ? (b2 & 0xf) << 2 | b3 >> 6 : 64;
+      const d4 = i + 2 < ii ? b3 & 0x3f : 64;
       buffer += digits[d1] + digits[d2] + digits[d3] + digits[d4];
     }
 
@@ -1041,3536 +997,10 @@ exports.createObjectURL = createObjectURL;
 "use strict";
 
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var globalScope = __w_pdfjs_require__(3);
-
-if (!globalScope._pdfjsCompatibilityChecked) {
-  globalScope._pdfjsCompatibilityChecked = true;
-
-  var isNodeJS = __w_pdfjs_require__(4);
-
-  var hasDOM = (typeof window === "undefined" ? "undefined" : _typeof(window)) === 'object' && (typeof document === "undefined" ? "undefined" : _typeof(document)) === 'object';
-
-  (function checkNodeBtoa() {
-    if (globalScope.btoa || !isNodeJS()) {
-      return;
-    }
-
-    globalScope.btoa = function (chars) {
-      return Buffer.from(chars, 'binary').toString('base64');
-    };
-  })();
-
-  (function checkNodeAtob() {
-    if (globalScope.atob || !isNodeJS()) {
-      return;
-    }
-
-    globalScope.atob = function (input) {
-      return Buffer.from(input, 'base64').toString('binary');
-    };
-  })();
-
-  (function checkChildNodeRemove() {
-    if (!hasDOM) {
-      return;
-    }
-
-    if (typeof Element.prototype.remove !== 'undefined') {
-      return;
-    }
-
-    Element.prototype.remove = function () {
-      if (this.parentNode) {
-        this.parentNode.removeChild(this);
-      }
-    };
-  })();
-
-  (function checkDOMTokenListAddRemove() {
-    if (!hasDOM || isNodeJS()) {
-      return;
-    }
-
-    var div = document.createElement('div');
-    div.classList.add('testOne', 'testTwo');
-
-    if (div.classList.contains('testOne') === true && div.classList.contains('testTwo') === true) {
-      return;
-    }
-
-    var OriginalDOMTokenListAdd = DOMTokenList.prototype.add;
-    var OriginalDOMTokenListRemove = DOMTokenList.prototype.remove;
-
-    DOMTokenList.prototype.add = function () {
-      for (var _len = arguments.length, tokens = new Array(_len), _key = 0; _key < _len; _key++) {
-        tokens[_key] = arguments[_key];
-      }
-
-      for (var _i = 0, _tokens = tokens; _i < _tokens.length; _i++) {
-        var token = _tokens[_i];
-        OriginalDOMTokenListAdd.call(this, token);
-      }
-    };
-
-    DOMTokenList.prototype.remove = function () {
-      for (var _len2 = arguments.length, tokens = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        tokens[_key2] = arguments[_key2];
-      }
-
-      for (var _i2 = 0, _tokens2 = tokens; _i2 < _tokens2.length; _i2++) {
-        var token = _tokens2[_i2];
-        OriginalDOMTokenListRemove.call(this, token);
-      }
-    };
-  })();
-
-  (function checkDOMTokenListToggle() {
-    if (!hasDOM || isNodeJS()) {
-      return;
-    }
-
-    var div = document.createElement('div');
-
-    if (div.classList.toggle('test', 0) === false) {
-      return;
-    }
-
-    DOMTokenList.prototype.toggle = function (token) {
-      var force = arguments.length > 1 ? !!arguments[1] : !this.contains(token);
-      return this[force ? 'add' : 'remove'](token), force;
-    };
-  })();
-
-  (function checkStringStartsWith() {
-    if (String.prototype.startsWith) {
-      return;
-    }
-
-    __w_pdfjs_require__(5);
-  })();
-
-  (function checkStringEndsWith() {
-    if (String.prototype.endsWith) {
-      return;
-    }
-
-    __w_pdfjs_require__(36);
-  })();
-
-  (function checkStringIncludes() {
-    if (String.prototype.includes) {
-      return;
-    }
-
-    __w_pdfjs_require__(38);
-  })();
-
-  (function checkArrayIncludes() {
-    if (Array.prototype.includes) {
-      return;
-    }
-
-    __w_pdfjs_require__(40);
-  })();
-
-  (function checkArrayFrom() {
-    if (Array.from) {
-      return;
-    }
-
-    __w_pdfjs_require__(47);
-  })();
-
-  (function checkObjectAssign() {
-    if (Object.assign) {
-      return;
-    }
-
-    __w_pdfjs_require__(70);
-  })();
-
-  (function checkMathLog2() {
-    if (Math.log2) {
-      return;
-    }
-
-    Math.log2 = __w_pdfjs_require__(75);
-  })();
-
-  (function checkNumberIsNaN() {
-    if (Number.isNaN) {
-      return;
-    }
-
-    Number.isNaN = __w_pdfjs_require__(77);
-  })();
-
-  (function checkNumberIsInteger() {
-    if (Number.isInteger) {
-      return;
-    }
-
-    Number.isInteger = __w_pdfjs_require__(79);
-  })();
-
-  (function checkPromise() {})();
-
-  (function checkWeakMap() {
-    if (globalScope.WeakMap) {
-      return;
-    }
-
-    globalScope.WeakMap = __w_pdfjs_require__(82);
-  })();
-
-  (function checkWeakSet() {
-    if (globalScope.WeakSet) {
-      return;
-    }
-
-    globalScope.WeakSet = __w_pdfjs_require__(106);
-  })();
-
-  (function checkStringCodePointAt() {
-    if (String.codePointAt) {
-      return;
-    }
-
-    String.codePointAt = __w_pdfjs_require__(110);
-  })();
-
-  (function checkStringFromCodePoint() {
-    if (String.fromCodePoint) {
-      return;
-    }
-
-    String.fromCodePoint = __w_pdfjs_require__(112);
-  })();
-
-  (function checkSymbol() {
-    if (globalScope.Symbol) {
-      return;
-    }
-
-    __w_pdfjs_require__(114);
-  })();
-
-  (function checkStringPadStart() {
-    if (String.prototype.padStart) {
-      return;
-    }
-
-    __w_pdfjs_require__(121);
-  })();
-
-  (function checkStringPadEnd() {
-    if (String.prototype.padEnd) {
-      return;
-    }
-
-    __w_pdfjs_require__(126);
-  })();
-
-  (function checkObjectValues() {
-    if (Object.values) {
-      return;
-    }
-
-    Object.values = __w_pdfjs_require__(128);
-  })();
-}
+;
 
 /***/ }),
 /* 3 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = typeof window !== 'undefined' && window.Math === Math ? window : typeof global !== 'undefined' && global.Math === Math ? global : typeof self !== 'undefined' && self.Math === Math ? self : {};
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-module.exports = function isNodeJS() {
-  return (typeof process === "undefined" ? "undefined" : _typeof(process)) === 'object' && process + '' === '[object process]' && !process.versions['nw'] && !process.versions['electron'];
-};
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(6);
-
-module.exports = __w_pdfjs_require__(9).String.startsWith;
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var toLength = __w_pdfjs_require__(28);
-
-var context = __w_pdfjs_require__(30);
-
-var STARTS_WITH = 'startsWith';
-var $startsWith = ''[STARTS_WITH];
-$export($export.P + $export.F * __w_pdfjs_require__(35)(STARTS_WITH), 'String', {
-  startsWith: function startsWith(searchString) {
-    var that = context(this, searchString, STARTS_WITH);
-    var index = toLength(Math.min(arguments.length > 1 ? arguments[1] : undefined, that.length));
-    var search = String(searchString);
-    return $startsWith ? $startsWith.call(that, search, index) : that.slice(index, index + search.length) === search;
-  }
-});
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var global = __w_pdfjs_require__(8);
-
-var core = __w_pdfjs_require__(9);
-
-var hide = __w_pdfjs_require__(10);
-
-var redefine = __w_pdfjs_require__(20);
-
-var ctx = __w_pdfjs_require__(26);
-
-var PROTOTYPE = 'prototype';
-
-var $export = function $export(type, name, source) {
-  var IS_FORCED = type & $export.F;
-  var IS_GLOBAL = type & $export.G;
-  var IS_STATIC = type & $export.S;
-  var IS_PROTO = type & $export.P;
-  var IS_BIND = type & $export.B;
-  var target = IS_GLOBAL ? global : IS_STATIC ? global[name] || (global[name] = {}) : (global[name] || {})[PROTOTYPE];
-  var exports = IS_GLOBAL ? core : core[name] || (core[name] = {});
-  var expProto = exports[PROTOTYPE] || (exports[PROTOTYPE] = {});
-  var key, own, out, exp;
-  if (IS_GLOBAL) source = name;
-
-  for (key in source) {
-    own = !IS_FORCED && target && target[key] !== undefined;
-    out = (own ? target : source)[key];
-    exp = IS_BIND && own ? ctx(out, global) : IS_PROTO && typeof out == 'function' ? ctx(Function.call, out) : out;
-    if (target) redefine(target, key, out, type & $export.U);
-    if (exports[key] != out) hide(exports, key, exp);
-    if (IS_PROTO && expProto[key] != out) expProto[key] = out;
-  }
-};
-
-global.core = core;
-$export.F = 1;
-$export.G = 2;
-$export.S = 4;
-$export.P = 8;
-$export.B = 16;
-$export.W = 32;
-$export.U = 64;
-$export.R = 128;
-module.exports = $export;
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var global = module.exports = typeof window != 'undefined' && window.Math == Math ? window : typeof self != 'undefined' && self.Math == Math ? self : Function('return this')();
-if (typeof __g == 'number') __g = global;
-
-/***/ }),
-/* 9 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var core = module.exports = {
-  version: '2.6.8'
-};
-if (typeof __e == 'number') __e = core;
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var dP = __w_pdfjs_require__(11);
-
-var createDesc = __w_pdfjs_require__(19);
-
-module.exports = __w_pdfjs_require__(15) ? function (object, key, value) {
-  return dP.f(object, key, createDesc(1, value));
-} : function (object, key, value) {
-  object[key] = value;
-  return object;
-};
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var anObject = __w_pdfjs_require__(12);
-
-var IE8_DOM_DEFINE = __w_pdfjs_require__(14);
-
-var toPrimitive = __w_pdfjs_require__(18);
-
-var dP = Object.defineProperty;
-exports.f = __w_pdfjs_require__(15) ? Object.defineProperty : function defineProperty(O, P, Attributes) {
-  anObject(O);
-  P = toPrimitive(P, true);
-  anObject(Attributes);
-  if (IE8_DOM_DEFINE) try {
-    return dP(O, P, Attributes);
-  } catch (e) {}
-  if ('get' in Attributes || 'set' in Attributes) throw TypeError('Accessors not supported!');
-  if ('value' in Attributes) O[P] = Attributes.value;
-  return O;
-};
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isObject = __w_pdfjs_require__(13);
-
-module.exports = function (it) {
-  if (!isObject(it)) throw TypeError(it + ' is not an object!');
-  return it;
-};
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-module.exports = function (it) {
-  return _typeof(it) === 'object' ? it !== null : typeof it === 'function';
-};
-
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = !__w_pdfjs_require__(15) && !__w_pdfjs_require__(16)(function () {
-  return Object.defineProperty(__w_pdfjs_require__(17)('div'), 'a', {
-    get: function get() {
-      return 7;
-    }
-  }).a != 7;
-});
-
-/***/ }),
-/* 15 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = !__w_pdfjs_require__(16)(function () {
-  return Object.defineProperty({}, 'a', {
-    get: function get() {
-      return 7;
-    }
-  }).a != 7;
-});
-
-/***/ }),
-/* 16 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = function (exec) {
-  try {
-    return !!exec();
-  } catch (e) {
-    return true;
-  }
-};
-
-/***/ }),
-/* 17 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isObject = __w_pdfjs_require__(13);
-
-var document = __w_pdfjs_require__(8).document;
-
-var is = isObject(document) && isObject(document.createElement);
-
-module.exports = function (it) {
-  return is ? document.createElement(it) : {};
-};
-
-/***/ }),
-/* 18 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isObject = __w_pdfjs_require__(13);
-
-module.exports = function (it, S) {
-  if (!isObject(it)) return it;
-  var fn, val;
-  if (S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
-  if (typeof (fn = it.valueOf) == 'function' && !isObject(val = fn.call(it))) return val;
-  if (!S && typeof (fn = it.toString) == 'function' && !isObject(val = fn.call(it))) return val;
-  throw TypeError("Can't convert object to primitive value");
-};
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = function (bitmap, value) {
-  return {
-    enumerable: !(bitmap & 1),
-    configurable: !(bitmap & 2),
-    writable: !(bitmap & 4),
-    value: value
-  };
-};
-
-/***/ }),
-/* 20 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var global = __w_pdfjs_require__(8);
-
-var hide = __w_pdfjs_require__(10);
-
-var has = __w_pdfjs_require__(21);
-
-var SRC = __w_pdfjs_require__(22)('src');
-
-var $toString = __w_pdfjs_require__(23);
-
-var TO_STRING = 'toString';
-var TPL = ('' + $toString).split(TO_STRING);
-
-__w_pdfjs_require__(9).inspectSource = function (it) {
-  return $toString.call(it);
-};
-
-(module.exports = function (O, key, val, safe) {
-  var isFunction = typeof val == 'function';
-  if (isFunction) has(val, 'name') || hide(val, 'name', key);
-  if (O[key] === val) return;
-  if (isFunction) has(val, SRC) || hide(val, SRC, O[key] ? '' + O[key] : TPL.join(String(key)));
-
-  if (O === global) {
-    O[key] = val;
-  } else if (!safe) {
-    delete O[key];
-    hide(O, key, val);
-  } else if (O[key]) {
-    O[key] = val;
-  } else {
-    hide(O, key, val);
-  }
-})(Function.prototype, TO_STRING, function toString() {
-  return typeof this == 'function' && this[SRC] || $toString.call(this);
-});
-
-/***/ }),
-/* 21 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var hasOwnProperty = {}.hasOwnProperty;
-
-module.exports = function (it, key) {
-  return hasOwnProperty.call(it, key);
-};
-
-/***/ }),
-/* 22 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var id = 0;
-var px = Math.random();
-
-module.exports = function (key) {
-  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
-};
-
-/***/ }),
-/* 23 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = __w_pdfjs_require__(24)('native-function-to-string', Function.toString);
-
-/***/ }),
-/* 24 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var core = __w_pdfjs_require__(9);
-
-var global = __w_pdfjs_require__(8);
-
-var SHARED = '__core-js_shared__';
-var store = global[SHARED] || (global[SHARED] = {});
-(module.exports = function (key, value) {
-  return store[key] || (store[key] = value !== undefined ? value : {});
-})('versions', []).push({
-  version: core.version,
-  mode: __w_pdfjs_require__(25) ? 'pure' : 'global',
-  copyright: '© 2019 Denis Pushkarev (zloirock.ru)'
-});
-
-/***/ }),
-/* 25 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = false;
-
-/***/ }),
-/* 26 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var aFunction = __w_pdfjs_require__(27);
-
-module.exports = function (fn, that, length) {
-  aFunction(fn);
-  if (that === undefined) return fn;
-
-  switch (length) {
-    case 1:
-      return function (a) {
-        return fn.call(that, a);
-      };
-
-    case 2:
-      return function (a, b) {
-        return fn.call(that, a, b);
-      };
-
-    case 3:
-      return function (a, b, c) {
-        return fn.call(that, a, b, c);
-      };
-  }
-
-  return function () {
-    return fn.apply(that, arguments);
-  };
-};
-
-/***/ }),
-/* 27 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = function (it) {
-  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
-  return it;
-};
-
-/***/ }),
-/* 28 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var toInteger = __w_pdfjs_require__(29);
-
-var min = Math.min;
-
-module.exports = function (it) {
-  return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0;
-};
-
-/***/ }),
-/* 29 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var ceil = Math.ceil;
-var floor = Math.floor;
-
-module.exports = function (it) {
-  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
-};
-
-/***/ }),
-/* 30 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isRegExp = __w_pdfjs_require__(31);
-
-var defined = __w_pdfjs_require__(34);
-
-module.exports = function (that, searchString, NAME) {
-  if (isRegExp(searchString)) throw TypeError('String#' + NAME + " doesn't accept regex!");
-  return String(defined(that));
-};
-
-/***/ }),
-/* 31 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isObject = __w_pdfjs_require__(13);
-
-var cof = __w_pdfjs_require__(32);
-
-var MATCH = __w_pdfjs_require__(33)('match');
-
-module.exports = function (it) {
-  var isRegExp;
-  return isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : cof(it) == 'RegExp');
-};
-
-/***/ }),
-/* 32 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var toString = {}.toString;
-
-module.exports = function (it) {
-  return toString.call(it).slice(8, -1);
-};
-
-/***/ }),
-/* 33 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var store = __w_pdfjs_require__(24)('wks');
-
-var uid = __w_pdfjs_require__(22);
-
-var _Symbol = __w_pdfjs_require__(8).Symbol;
-
-var USE_SYMBOL = typeof _Symbol == 'function';
-
-var $exports = module.exports = function (name) {
-  return store[name] || (store[name] = USE_SYMBOL && _Symbol[name] || (USE_SYMBOL ? _Symbol : uid)('Symbol.' + name));
-};
-
-$exports.store = store;
-
-/***/ }),
-/* 34 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = function (it) {
-  if (it == undefined) throw TypeError("Can't call method on  " + it);
-  return it;
-};
-
-/***/ }),
-/* 35 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var MATCH = __w_pdfjs_require__(33)('match');
-
-module.exports = function (KEY) {
-  var re = /./;
-
-  try {
-    '/./'[KEY](re);
-  } catch (e) {
-    try {
-      re[MATCH] = false;
-      return !'/./'[KEY](re);
-    } catch (f) {}
-  }
-
-  return true;
-};
-
-/***/ }),
-/* 36 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(37);
-
-module.exports = __w_pdfjs_require__(9).String.endsWith;
-
-/***/ }),
-/* 37 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var toLength = __w_pdfjs_require__(28);
-
-var context = __w_pdfjs_require__(30);
-
-var ENDS_WITH = 'endsWith';
-var $endsWith = ''[ENDS_WITH];
-$export($export.P + $export.F * __w_pdfjs_require__(35)(ENDS_WITH), 'String', {
-  endsWith: function endsWith(searchString) {
-    var that = context(this, searchString, ENDS_WITH);
-    var endPosition = arguments.length > 1 ? arguments[1] : undefined;
-    var len = toLength(that.length);
-    var end = endPosition === undefined ? len : Math.min(toLength(endPosition), len);
-    var search = String(searchString);
-    return $endsWith ? $endsWith.call(that, search, end) : that.slice(end - search.length, end) === search;
-  }
-});
-
-/***/ }),
-/* 38 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(39);
-
-module.exports = __w_pdfjs_require__(9).String.includes;
-
-/***/ }),
-/* 39 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var context = __w_pdfjs_require__(30);
-
-var INCLUDES = 'includes';
-$export($export.P + $export.F * __w_pdfjs_require__(35)(INCLUDES), 'String', {
-  includes: function includes(searchString) {
-    return !!~context(this, searchString, INCLUDES).indexOf(searchString, arguments.length > 1 ? arguments[1] : undefined);
-  }
-});
-
-/***/ }),
-/* 40 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(41);
-
-module.exports = __w_pdfjs_require__(9).Array.includes;
-
-/***/ }),
-/* 41 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var $includes = __w_pdfjs_require__(42)(true);
-
-$export($export.P, 'Array', {
-  includes: function includes(el) {
-    return $includes(this, el, arguments.length > 1 ? arguments[1] : undefined);
-  }
-});
-
-__w_pdfjs_require__(46)('includes');
-
-/***/ }),
-/* 42 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var toIObject = __w_pdfjs_require__(43);
-
-var toLength = __w_pdfjs_require__(28);
-
-var toAbsoluteIndex = __w_pdfjs_require__(45);
-
-module.exports = function (IS_INCLUDES) {
-  return function ($this, el, fromIndex) {
-    var O = toIObject($this);
-    var length = toLength(O.length);
-    var index = toAbsoluteIndex(fromIndex, length);
-    var value;
-    if (IS_INCLUDES && el != el) while (length > index) {
-      value = O[index++];
-      if (value != value) return true;
-    } else for (; length > index; index++) {
-      if (IS_INCLUDES || index in O) {
-        if (O[index] === el) return IS_INCLUDES || index || 0;
-      }
-    }
-    return !IS_INCLUDES && -1;
-  };
-};
-
-/***/ }),
-/* 43 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var IObject = __w_pdfjs_require__(44);
-
-var defined = __w_pdfjs_require__(34);
-
-module.exports = function (it) {
-  return IObject(defined(it));
-};
-
-/***/ }),
-/* 44 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var cof = __w_pdfjs_require__(32);
-
-module.exports = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
-  return cof(it) == 'String' ? it.split('') : Object(it);
-};
-
-/***/ }),
-/* 45 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var toInteger = __w_pdfjs_require__(29);
-
-var max = Math.max;
-var min = Math.min;
-
-module.exports = function (index, length) {
-  index = toInteger(index);
-  return index < 0 ? max(index + length, 0) : min(index, length);
-};
-
-/***/ }),
-/* 46 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var UNSCOPABLES = __w_pdfjs_require__(33)('unscopables');
-
-var ArrayProto = Array.prototype;
-if (ArrayProto[UNSCOPABLES] == undefined) __w_pdfjs_require__(10)(ArrayProto, UNSCOPABLES, {});
-
-module.exports = function (key) {
-  ArrayProto[UNSCOPABLES][key] = true;
-};
-
-/***/ }),
-/* 47 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(48);
-
-__w_pdfjs_require__(63);
-
-module.exports = __w_pdfjs_require__(9).Array.from;
-
-/***/ }),
-/* 48 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $at = __w_pdfjs_require__(49)(true);
-
-__w_pdfjs_require__(50)(String, 'String', function (iterated) {
-  this._t = String(iterated);
-  this._i = 0;
-}, function () {
-  var O = this._t;
-  var index = this._i;
-  var point;
-  if (index >= O.length) return {
-    value: undefined,
-    done: true
-  };
-  point = $at(O, index);
-  this._i += point.length;
-  return {
-    value: point,
-    done: false
-  };
-});
-
-/***/ }),
-/* 49 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var toInteger = __w_pdfjs_require__(29);
-
-var defined = __w_pdfjs_require__(34);
-
-module.exports = function (TO_STRING) {
-  return function (that, pos) {
-    var s = String(defined(that));
-    var i = toInteger(pos);
-    var l = s.length;
-    var a, b;
-    if (i < 0 || i >= l) return TO_STRING ? '' : undefined;
-    a = s.charCodeAt(i);
-    return a < 0xd800 || a > 0xdbff || i + 1 === l || (b = s.charCodeAt(i + 1)) < 0xdc00 || b > 0xdfff ? TO_STRING ? s.charAt(i) : a : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
-  };
-};
-
-/***/ }),
-/* 50 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var LIBRARY = __w_pdfjs_require__(25);
-
-var $export = __w_pdfjs_require__(7);
-
-var redefine = __w_pdfjs_require__(20);
-
-var hide = __w_pdfjs_require__(10);
-
-var Iterators = __w_pdfjs_require__(51);
-
-var $iterCreate = __w_pdfjs_require__(52);
-
-var setToStringTag = __w_pdfjs_require__(60);
-
-var getPrototypeOf = __w_pdfjs_require__(61);
-
-var ITERATOR = __w_pdfjs_require__(33)('iterator');
-
-var BUGGY = !([].keys && 'next' in [].keys());
-var FF_ITERATOR = '@@iterator';
-var KEYS = 'keys';
-var VALUES = 'values';
-
-var returnThis = function returnThis() {
-  return this;
-};
-
-module.exports = function (Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCED) {
-  $iterCreate(Constructor, NAME, next);
-
-  var getMethod = function getMethod(kind) {
-    if (!BUGGY && kind in proto) return proto[kind];
-
-    switch (kind) {
-      case KEYS:
-        return function keys() {
-          return new Constructor(this, kind);
-        };
-
-      case VALUES:
-        return function values() {
-          return new Constructor(this, kind);
-        };
-    }
-
-    return function entries() {
-      return new Constructor(this, kind);
-    };
-  };
-
-  var TAG = NAME + ' Iterator';
-  var DEF_VALUES = DEFAULT == VALUES;
-  var VALUES_BUG = false;
-  var proto = Base.prototype;
-  var $native = proto[ITERATOR] || proto[FF_ITERATOR] || DEFAULT && proto[DEFAULT];
-  var $default = $native || getMethod(DEFAULT);
-  var $entries = DEFAULT ? !DEF_VALUES ? $default : getMethod('entries') : undefined;
-  var $anyNative = NAME == 'Array' ? proto.entries || $native : $native;
-  var methods, key, IteratorPrototype;
-
-  if ($anyNative) {
-    IteratorPrototype = getPrototypeOf($anyNative.call(new Base()));
-
-    if (IteratorPrototype !== Object.prototype && IteratorPrototype.next) {
-      setToStringTag(IteratorPrototype, TAG, true);
-      if (!LIBRARY && typeof IteratorPrototype[ITERATOR] != 'function') hide(IteratorPrototype, ITERATOR, returnThis);
-    }
-  }
-
-  if (DEF_VALUES && $native && $native.name !== VALUES) {
-    VALUES_BUG = true;
-
-    $default = function values() {
-      return $native.call(this);
-    };
-  }
-
-  if ((!LIBRARY || FORCED) && (BUGGY || VALUES_BUG || !proto[ITERATOR])) {
-    hide(proto, ITERATOR, $default);
-  }
-
-  Iterators[NAME] = $default;
-  Iterators[TAG] = returnThis;
-
-  if (DEFAULT) {
-    methods = {
-      values: DEF_VALUES ? $default : getMethod(VALUES),
-      keys: IS_SET ? $default : getMethod(KEYS),
-      entries: $entries
-    };
-    if (FORCED) for (key in methods) {
-      if (!(key in proto)) redefine(proto, key, methods[key]);
-    } else $export($export.P + $export.F * (BUGGY || VALUES_BUG), NAME, methods);
-  }
-
-  return methods;
-};
-
-/***/ }),
-/* 51 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = {};
-
-/***/ }),
-/* 52 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var create = __w_pdfjs_require__(53);
-
-var descriptor = __w_pdfjs_require__(19);
-
-var setToStringTag = __w_pdfjs_require__(60);
-
-var IteratorPrototype = {};
-
-__w_pdfjs_require__(10)(IteratorPrototype, __w_pdfjs_require__(33)('iterator'), function () {
-  return this;
-});
-
-module.exports = function (Constructor, NAME, next) {
-  Constructor.prototype = create(IteratorPrototype, {
-    next: descriptor(1, next)
-  });
-  setToStringTag(Constructor, NAME + ' Iterator');
-};
-
-/***/ }),
-/* 53 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var anObject = __w_pdfjs_require__(12);
-
-var dPs = __w_pdfjs_require__(54);
-
-var enumBugKeys = __w_pdfjs_require__(58);
-
-var IE_PROTO = __w_pdfjs_require__(57)('IE_PROTO');
-
-var Empty = function Empty() {};
-
-var PROTOTYPE = 'prototype';
-
-var _createDict = function createDict() {
-  var iframe = __w_pdfjs_require__(17)('iframe');
-
-  var i = enumBugKeys.length;
-  var lt = '<';
-  var gt = '>';
-  var iframeDocument;
-  iframe.style.display = 'none';
-
-  __w_pdfjs_require__(59).appendChild(iframe);
-
-  iframe.src = 'javascript:';
-  iframeDocument = iframe.contentWindow.document;
-  iframeDocument.open();
-  iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
-  iframeDocument.close();
-  _createDict = iframeDocument.F;
-
-  while (i--) {
-    delete _createDict[PROTOTYPE][enumBugKeys[i]];
-  }
-
-  return _createDict();
-};
-
-module.exports = Object.create || function create(O, Properties) {
-  var result;
-
-  if (O !== null) {
-    Empty[PROTOTYPE] = anObject(O);
-    result = new Empty();
-    Empty[PROTOTYPE] = null;
-    result[IE_PROTO] = O;
-  } else result = _createDict();
-
-  return Properties === undefined ? result : dPs(result, Properties);
-};
-
-/***/ }),
-/* 54 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var dP = __w_pdfjs_require__(11);
-
-var anObject = __w_pdfjs_require__(12);
-
-var getKeys = __w_pdfjs_require__(55);
-
-module.exports = __w_pdfjs_require__(15) ? Object.defineProperties : function defineProperties(O, Properties) {
-  anObject(O);
-  var keys = getKeys(Properties);
-  var length = keys.length;
-  var i = 0;
-  var P;
-
-  while (length > i) {
-    dP.f(O, P = keys[i++], Properties[P]);
-  }
-
-  return O;
-};
-
-/***/ }),
-/* 55 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $keys = __w_pdfjs_require__(56);
-
-var enumBugKeys = __w_pdfjs_require__(58);
-
-module.exports = Object.keys || function keys(O) {
-  return $keys(O, enumBugKeys);
-};
-
-/***/ }),
-/* 56 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var has = __w_pdfjs_require__(21);
-
-var toIObject = __w_pdfjs_require__(43);
-
-var arrayIndexOf = __w_pdfjs_require__(42)(false);
-
-var IE_PROTO = __w_pdfjs_require__(57)('IE_PROTO');
-
-module.exports = function (object, names) {
-  var O = toIObject(object);
-  var i = 0;
-  var result = [];
-  var key;
-
-  for (key in O) {
-    if (key != IE_PROTO) has(O, key) && result.push(key);
-  }
-
-  while (names.length > i) {
-    if (has(O, key = names[i++])) {
-      ~arrayIndexOf(result, key) || result.push(key);
-    }
-  }
-
-  return result;
-};
-
-/***/ }),
-/* 57 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var shared = __w_pdfjs_require__(24)('keys');
-
-var uid = __w_pdfjs_require__(22);
-
-module.exports = function (key) {
-  return shared[key] || (shared[key] = uid(key));
-};
-
-/***/ }),
-/* 58 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = 'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'.split(',');
-
-/***/ }),
-/* 59 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var document = __w_pdfjs_require__(8).document;
-
-module.exports = document && document.documentElement;
-
-/***/ }),
-/* 60 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var def = __w_pdfjs_require__(11).f;
-
-var has = __w_pdfjs_require__(21);
-
-var TAG = __w_pdfjs_require__(33)('toStringTag');
-
-module.exports = function (it, tag, stat) {
-  if (it && !has(it = stat ? it : it.prototype, TAG)) def(it, TAG, {
-    configurable: true,
-    value: tag
-  });
-};
-
-/***/ }),
-/* 61 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var has = __w_pdfjs_require__(21);
-
-var toObject = __w_pdfjs_require__(62);
-
-var IE_PROTO = __w_pdfjs_require__(57)('IE_PROTO');
-
-var ObjectProto = Object.prototype;
-
-module.exports = Object.getPrototypeOf || function (O) {
-  O = toObject(O);
-  if (has(O, IE_PROTO)) return O[IE_PROTO];
-
-  if (typeof O.constructor == 'function' && O instanceof O.constructor) {
-    return O.constructor.prototype;
-  }
-
-  return O instanceof Object ? ObjectProto : null;
-};
-
-/***/ }),
-/* 62 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var defined = __w_pdfjs_require__(34);
-
-module.exports = function (it) {
-  return Object(defined(it));
-};
-
-/***/ }),
-/* 63 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var ctx = __w_pdfjs_require__(26);
-
-var $export = __w_pdfjs_require__(7);
-
-var toObject = __w_pdfjs_require__(62);
-
-var call = __w_pdfjs_require__(64);
-
-var isArrayIter = __w_pdfjs_require__(65);
-
-var toLength = __w_pdfjs_require__(28);
-
-var createProperty = __w_pdfjs_require__(66);
-
-var getIterFn = __w_pdfjs_require__(67);
-
-$export($export.S + $export.F * !__w_pdfjs_require__(69)(function (iter) {
-  Array.from(iter);
-}), 'Array', {
-  from: function from(arrayLike) {
-    var O = toObject(arrayLike);
-    var C = typeof this == 'function' ? this : Array;
-    var aLen = arguments.length;
-    var mapfn = aLen > 1 ? arguments[1] : undefined;
-    var mapping = mapfn !== undefined;
-    var index = 0;
-    var iterFn = getIterFn(O);
-    var length, result, step, iterator;
-    if (mapping) mapfn = ctx(mapfn, aLen > 2 ? arguments[2] : undefined, 2);
-
-    if (iterFn != undefined && !(C == Array && isArrayIter(iterFn))) {
-      for (iterator = iterFn.call(O), result = new C(); !(step = iterator.next()).done; index++) {
-        createProperty(result, index, mapping ? call(iterator, mapfn, [step.value, index], true) : step.value);
-      }
-    } else {
-      length = toLength(O.length);
-
-      for (result = new C(length); length > index; index++) {
-        createProperty(result, index, mapping ? mapfn(O[index], index) : O[index]);
-      }
-    }
-
-    result.length = index;
-    return result;
-  }
-});
-
-/***/ }),
-/* 64 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var anObject = __w_pdfjs_require__(12);
-
-module.exports = function (iterator, fn, value, entries) {
-  try {
-    return entries ? fn(anObject(value)[0], value[1]) : fn(value);
-  } catch (e) {
-    var ret = iterator['return'];
-    if (ret !== undefined) anObject(ret.call(iterator));
-    throw e;
-  }
-};
-
-/***/ }),
-/* 65 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var Iterators = __w_pdfjs_require__(51);
-
-var ITERATOR = __w_pdfjs_require__(33)('iterator');
-
-var ArrayProto = Array.prototype;
-
-module.exports = function (it) {
-  return it !== undefined && (Iterators.Array === it || ArrayProto[ITERATOR] === it);
-};
-
-/***/ }),
-/* 66 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $defineProperty = __w_pdfjs_require__(11);
-
-var createDesc = __w_pdfjs_require__(19);
-
-module.exports = function (object, index, value) {
-  if (index in object) $defineProperty.f(object, index, createDesc(0, value));else object[index] = value;
-};
-
-/***/ }),
-/* 67 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var classof = __w_pdfjs_require__(68);
-
-var ITERATOR = __w_pdfjs_require__(33)('iterator');
-
-var Iterators = __w_pdfjs_require__(51);
-
-module.exports = __w_pdfjs_require__(9).getIteratorMethod = function (it) {
-  if (it != undefined) return it[ITERATOR] || it['@@iterator'] || Iterators[classof(it)];
-};
-
-/***/ }),
-/* 68 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var cof = __w_pdfjs_require__(32);
-
-var TAG = __w_pdfjs_require__(33)('toStringTag');
-
-var ARG = cof(function () {
-  return arguments;
-}()) == 'Arguments';
-
-var tryGet = function tryGet(it, key) {
-  try {
-    return it[key];
-  } catch (e) {}
-};
-
-module.exports = function (it) {
-  var O, T, B;
-  return it === undefined ? 'Undefined' : it === null ? 'Null' : typeof (T = tryGet(O = Object(it), TAG)) == 'string' ? T : ARG ? cof(O) : (B = cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
-};
-
-/***/ }),
-/* 69 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var ITERATOR = __w_pdfjs_require__(33)('iterator');
-
-var SAFE_CLOSING = false;
-
-try {
-  var riter = [7][ITERATOR]();
-
-  riter['return'] = function () {
-    SAFE_CLOSING = true;
-  };
-
-  Array.from(riter, function () {
-    throw 2;
-  });
-} catch (e) {}
-
-module.exports = function (exec, skipClosing) {
-  if (!skipClosing && !SAFE_CLOSING) return false;
-  var safe = false;
-
-  try {
-    var arr = [7];
-    var iter = arr[ITERATOR]();
-
-    iter.next = function () {
-      return {
-        done: safe = true
-      };
-    };
-
-    arr[ITERATOR] = function () {
-      return iter;
-    };
-
-    exec(arr);
-  } catch (e) {}
-
-  return safe;
-};
-
-/***/ }),
-/* 70 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(71);
-
-module.exports = __w_pdfjs_require__(9).Object.assign;
-
-/***/ }),
-/* 71 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-$export($export.S + $export.F, 'Object', {
-  assign: __w_pdfjs_require__(72)
-});
-
-/***/ }),
-/* 72 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var DESCRIPTORS = __w_pdfjs_require__(15);
-
-var getKeys = __w_pdfjs_require__(55);
-
-var gOPS = __w_pdfjs_require__(73);
-
-var pIE = __w_pdfjs_require__(74);
-
-var toObject = __w_pdfjs_require__(62);
-
-var IObject = __w_pdfjs_require__(44);
-
-var $assign = Object.assign;
-module.exports = !$assign || __w_pdfjs_require__(16)(function () {
-  var A = {};
-  var B = {};
-  var S = Symbol();
-  var K = 'abcdefghijklmnopqrst';
-  A[S] = 7;
-  K.split('').forEach(function (k) {
-    B[k] = k;
-  });
-  return $assign({}, A)[S] != 7 || Object.keys($assign({}, B)).join('') != K;
-}) ? function assign(target, source) {
-  var T = toObject(target);
-  var aLen = arguments.length;
-  var index = 1;
-  var getSymbols = gOPS.f;
-  var isEnum = pIE.f;
-
-  while (aLen > index) {
-    var S = IObject(arguments[index++]);
-    var keys = getSymbols ? getKeys(S).concat(getSymbols(S)) : getKeys(S);
-    var length = keys.length;
-    var j = 0;
-    var key;
-
-    while (length > j) {
-      key = keys[j++];
-      if (!DESCRIPTORS || isEnum.call(S, key)) T[key] = S[key];
-    }
-  }
-
-  return T;
-} : $assign;
-
-/***/ }),
-/* 73 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-exports.f = Object.getOwnPropertySymbols;
-
-/***/ }),
-/* 74 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-exports.f = {}.propertyIsEnumerable;
-
-/***/ }),
-/* 75 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(76);
-
-module.exports = __w_pdfjs_require__(9).Math.log2;
-
-/***/ }),
-/* 76 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-$export($export.S, 'Math', {
-  log2: function log2(x) {
-    return Math.log(x) / Math.LN2;
-  }
-});
-
-/***/ }),
-/* 77 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(78);
-
-module.exports = __w_pdfjs_require__(9).Number.isNaN;
-
-/***/ }),
-/* 78 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-$export($export.S, 'Number', {
-  isNaN: function isNaN(number) {
-    return number != number;
-  }
-});
-
-/***/ }),
-/* 79 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(80);
-
-module.exports = __w_pdfjs_require__(9).Number.isInteger;
-
-/***/ }),
-/* 80 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-$export($export.S, 'Number', {
-  isInteger: __w_pdfjs_require__(81)
-});
-
-/***/ }),
-/* 81 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isObject = __w_pdfjs_require__(13);
-
-var floor = Math.floor;
-
-module.exports = function isInteger(it) {
-  return !isObject(it) && isFinite(it) && floor(it) === it;
-};
-
-/***/ }),
-/* 82 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(83);
-
-__w_pdfjs_require__(84);
-
-__w_pdfjs_require__(87);
-
-__w_pdfjs_require__(102);
-
-__w_pdfjs_require__(104);
-
-module.exports = __w_pdfjs_require__(9).WeakMap;
-
-/***/ }),
-/* 83 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var classof = __w_pdfjs_require__(68);
-
-var test = {};
-test[__w_pdfjs_require__(33)('toStringTag')] = 'z';
-
-if (test + '' != '[object z]') {
-  __w_pdfjs_require__(20)(Object.prototype, 'toString', function toString() {
-    return '[object ' + classof(this) + ']';
-  }, true);
-}
-
-/***/ }),
-/* 84 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $iterators = __w_pdfjs_require__(85);
-
-var getKeys = __w_pdfjs_require__(55);
-
-var redefine = __w_pdfjs_require__(20);
-
-var global = __w_pdfjs_require__(8);
-
-var hide = __w_pdfjs_require__(10);
-
-var Iterators = __w_pdfjs_require__(51);
-
-var wks = __w_pdfjs_require__(33);
-
-var ITERATOR = wks('iterator');
-var TO_STRING_TAG = wks('toStringTag');
-var ArrayValues = Iterators.Array;
-var DOMIterables = {
-  CSSRuleList: true,
-  CSSStyleDeclaration: false,
-  CSSValueList: false,
-  ClientRectList: false,
-  DOMRectList: false,
-  DOMStringList: false,
-  DOMTokenList: true,
-  DataTransferItemList: false,
-  FileList: false,
-  HTMLAllCollection: false,
-  HTMLCollection: false,
-  HTMLFormElement: false,
-  HTMLSelectElement: false,
-  MediaList: true,
-  MimeTypeArray: false,
-  NamedNodeMap: false,
-  NodeList: true,
-  PaintRequestList: false,
-  Plugin: false,
-  PluginArray: false,
-  SVGLengthList: false,
-  SVGNumberList: false,
-  SVGPathSegList: false,
-  SVGPointList: false,
-  SVGStringList: false,
-  SVGTransformList: false,
-  SourceBufferList: false,
-  StyleSheetList: true,
-  TextTrackCueList: false,
-  TextTrackList: false,
-  TouchList: false
-};
-
-for (var collections = getKeys(DOMIterables), i = 0; i < collections.length; i++) {
-  var NAME = collections[i];
-  var explicit = DOMIterables[NAME];
-  var Collection = global[NAME];
-  var proto = Collection && Collection.prototype;
-  var key;
-
-  if (proto) {
-    if (!proto[ITERATOR]) hide(proto, ITERATOR, ArrayValues);
-    if (!proto[TO_STRING_TAG]) hide(proto, TO_STRING_TAG, NAME);
-    Iterators[NAME] = ArrayValues;
-    if (explicit) for (key in $iterators) {
-      if (!proto[key]) redefine(proto, key, $iterators[key], true);
-    }
-  }
-}
-
-/***/ }),
-/* 85 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var addToUnscopables = __w_pdfjs_require__(46);
-
-var step = __w_pdfjs_require__(86);
-
-var Iterators = __w_pdfjs_require__(51);
-
-var toIObject = __w_pdfjs_require__(43);
-
-module.exports = __w_pdfjs_require__(50)(Array, 'Array', function (iterated, kind) {
-  this._t = toIObject(iterated);
-  this._i = 0;
-  this._k = kind;
-}, function () {
-  var O = this._t;
-  var kind = this._k;
-  var index = this._i++;
-
-  if (!O || index >= O.length) {
-    this._t = undefined;
-    return step(1);
-  }
-
-  if (kind == 'keys') return step(0, index);
-  if (kind == 'values') return step(0, O[index]);
-  return step(0, [index, O[index]]);
-}, 'values');
-Iterators.Arguments = Iterators.Array;
-addToUnscopables('keys');
-addToUnscopables('values');
-addToUnscopables('entries');
-
-/***/ }),
-/* 86 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = function (done, value) {
-  return {
-    value: value,
-    done: !!done
-  };
-};
-
-/***/ }),
-/* 87 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var global = __w_pdfjs_require__(8);
-
-var each = __w_pdfjs_require__(88)(0);
-
-var redefine = __w_pdfjs_require__(20);
-
-var meta = __w_pdfjs_require__(92);
-
-var assign = __w_pdfjs_require__(72);
-
-var weak = __w_pdfjs_require__(93);
-
-var isObject = __w_pdfjs_require__(13);
-
-var validate = __w_pdfjs_require__(97);
-
-var NATIVE_WEAK_MAP = __w_pdfjs_require__(97);
-
-var IS_IE11 = !global.ActiveXObject && 'ActiveXObject' in global;
-var WEAK_MAP = 'WeakMap';
-var getWeak = meta.getWeak;
-var isExtensible = Object.isExtensible;
-var uncaughtFrozenStore = weak.ufstore;
-var InternalMap;
-
-var wrapper = function wrapper(get) {
-  return function WeakMap() {
-    return get(this, arguments.length > 0 ? arguments[0] : undefined);
-  };
-};
-
-var methods = {
-  get: function get(key) {
-    if (isObject(key)) {
-      var data = getWeak(key);
-      if (data === true) return uncaughtFrozenStore(validate(this, WEAK_MAP)).get(key);
-      return data ? data[this._i] : undefined;
-    }
-  },
-  set: function set(key, value) {
-    return weak.def(validate(this, WEAK_MAP), key, value);
-  }
-};
-
-var $WeakMap = module.exports = __w_pdfjs_require__(98)(WEAK_MAP, wrapper, methods, weak, true, true);
-
-if (NATIVE_WEAK_MAP && IS_IE11) {
-  InternalMap = weak.getConstructor(wrapper, WEAK_MAP);
-  assign(InternalMap.prototype, methods);
-  meta.NEED = true;
-  each(['delete', 'has', 'get', 'set'], function (key) {
-    var proto = $WeakMap.prototype;
-    var method = proto[key];
-    redefine(proto, key, function (a, b) {
-      if (isObject(a) && !isExtensible(a)) {
-        if (!this._f) this._f = new InternalMap();
-
-        var result = this._f[key](a, b);
-
-        return key == 'set' ? this : result;
-      }
-
-      return method.call(this, a, b);
-    });
-  });
-}
-
-/***/ }),
-/* 88 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var ctx = __w_pdfjs_require__(26);
-
-var IObject = __w_pdfjs_require__(44);
-
-var toObject = __w_pdfjs_require__(62);
-
-var toLength = __w_pdfjs_require__(28);
-
-var asc = __w_pdfjs_require__(89);
-
-module.exports = function (TYPE, $create) {
-  var IS_MAP = TYPE == 1;
-  var IS_FILTER = TYPE == 2;
-  var IS_SOME = TYPE == 3;
-  var IS_EVERY = TYPE == 4;
-  var IS_FIND_INDEX = TYPE == 6;
-  var NO_HOLES = TYPE == 5 || IS_FIND_INDEX;
-  var create = $create || asc;
-  return function ($this, callbackfn, that) {
-    var O = toObject($this);
-    var self = IObject(O);
-    var f = ctx(callbackfn, that, 3);
-    var length = toLength(self.length);
-    var index = 0;
-    var result = IS_MAP ? create($this, length) : IS_FILTER ? create($this, 0) : undefined;
-    var val, res;
-
-    for (; length > index; index++) {
-      if (NO_HOLES || index in self) {
-        val = self[index];
-        res = f(val, index, O);
-
-        if (TYPE) {
-          if (IS_MAP) result[index] = res;else if (res) switch (TYPE) {
-            case 3:
-              return true;
-
-            case 5:
-              return val;
-
-            case 6:
-              return index;
-
-            case 2:
-              result.push(val);
-          } else if (IS_EVERY) return false;
-        }
-      }
-    }
-
-    return IS_FIND_INDEX ? -1 : IS_SOME || IS_EVERY ? IS_EVERY : result;
-  };
-};
-
-/***/ }),
-/* 89 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var speciesConstructor = __w_pdfjs_require__(90);
-
-module.exports = function (original, length) {
-  return new (speciesConstructor(original))(length);
-};
-
-/***/ }),
-/* 90 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isObject = __w_pdfjs_require__(13);
-
-var isArray = __w_pdfjs_require__(91);
-
-var SPECIES = __w_pdfjs_require__(33)('species');
-
-module.exports = function (original) {
-  var C;
-
-  if (isArray(original)) {
-    C = original.constructor;
-    if (typeof C == 'function' && (C === Array || isArray(C.prototype))) C = undefined;
-
-    if (isObject(C)) {
-      C = C[SPECIES];
-      if (C === null) C = undefined;
-    }
-  }
-
-  return C === undefined ? Array : C;
-};
-
-/***/ }),
-/* 91 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var cof = __w_pdfjs_require__(32);
-
-module.exports = Array.isArray || function isArray(arg) {
-  return cof(arg) == 'Array';
-};
-
-/***/ }),
-/* 92 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var META = __w_pdfjs_require__(22)('meta');
-
-var isObject = __w_pdfjs_require__(13);
-
-var has = __w_pdfjs_require__(21);
-
-var setDesc = __w_pdfjs_require__(11).f;
-
-var id = 0;
-
-var isExtensible = Object.isExtensible || function () {
-  return true;
-};
-
-var FREEZE = !__w_pdfjs_require__(16)(function () {
-  return isExtensible(Object.preventExtensions({}));
-});
-
-var setMeta = function setMeta(it) {
-  setDesc(it, META, {
-    value: {
-      i: 'O' + ++id,
-      w: {}
-    }
-  });
-};
-
-var fastKey = function fastKey(it, create) {
-  if (!isObject(it)) return _typeof(it) == 'symbol' ? it : (typeof it == 'string' ? 'S' : 'P') + it;
-
-  if (!has(it, META)) {
-    if (!isExtensible(it)) return 'F';
-    if (!create) return 'E';
-    setMeta(it);
-  }
-
-  return it[META].i;
-};
-
-var getWeak = function getWeak(it, create) {
-  if (!has(it, META)) {
-    if (!isExtensible(it)) return true;
-    if (!create) return false;
-    setMeta(it);
-  }
-
-  return it[META].w;
-};
-
-var onFreeze = function onFreeze(it) {
-  if (FREEZE && meta.NEED && isExtensible(it) && !has(it, META)) setMeta(it);
-  return it;
-};
-
-var meta = module.exports = {
-  KEY: META,
-  NEED: false,
-  fastKey: fastKey,
-  getWeak: getWeak,
-  onFreeze: onFreeze
-};
-
-/***/ }),
-/* 93 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var redefineAll = __w_pdfjs_require__(94);
-
-var getWeak = __w_pdfjs_require__(92).getWeak;
-
-var anObject = __w_pdfjs_require__(12);
-
-var isObject = __w_pdfjs_require__(13);
-
-var anInstance = __w_pdfjs_require__(95);
-
-var forOf = __w_pdfjs_require__(96);
-
-var createArrayMethod = __w_pdfjs_require__(88);
-
-var $has = __w_pdfjs_require__(21);
-
-var validate = __w_pdfjs_require__(97);
-
-var arrayFind = createArrayMethod(5);
-var arrayFindIndex = createArrayMethod(6);
-var id = 0;
-
-var uncaughtFrozenStore = function uncaughtFrozenStore(that) {
-  return that._l || (that._l = new UncaughtFrozenStore());
-};
-
-var UncaughtFrozenStore = function UncaughtFrozenStore() {
-  this.a = [];
-};
-
-var findUncaughtFrozen = function findUncaughtFrozen(store, key) {
-  return arrayFind(store.a, function (it) {
-    return it[0] === key;
-  });
-};
-
-UncaughtFrozenStore.prototype = {
-  get: function get(key) {
-    var entry = findUncaughtFrozen(this, key);
-    if (entry) return entry[1];
-  },
-  has: function has(key) {
-    return !!findUncaughtFrozen(this, key);
-  },
-  set: function set(key, value) {
-    var entry = findUncaughtFrozen(this, key);
-    if (entry) entry[1] = value;else this.a.push([key, value]);
-  },
-  'delete': function _delete(key) {
-    var index = arrayFindIndex(this.a, function (it) {
-      return it[0] === key;
-    });
-    if (~index) this.a.splice(index, 1);
-    return !!~index;
-  }
-};
-module.exports = {
-  getConstructor: function getConstructor(wrapper, NAME, IS_MAP, ADDER) {
-    var C = wrapper(function (that, iterable) {
-      anInstance(that, C, NAME, '_i');
-      that._t = NAME;
-      that._i = id++;
-      that._l = undefined;
-      if (iterable != undefined) forOf(iterable, IS_MAP, that[ADDER], that);
-    });
-    redefineAll(C.prototype, {
-      'delete': function _delete(key) {
-        if (!isObject(key)) return false;
-        var data = getWeak(key);
-        if (data === true) return uncaughtFrozenStore(validate(this, NAME))['delete'](key);
-        return data && $has(data, this._i) && delete data[this._i];
-      },
-      has: function has(key) {
-        if (!isObject(key)) return false;
-        var data = getWeak(key);
-        if (data === true) return uncaughtFrozenStore(validate(this, NAME)).has(key);
-        return data && $has(data, this._i);
-      }
-    });
-    return C;
-  },
-  def: function def(that, key, value) {
-    var data = getWeak(anObject(key), true);
-    if (data === true) uncaughtFrozenStore(that).set(key, value);else data[that._i] = value;
-    return that;
-  },
-  ufstore: uncaughtFrozenStore
-};
-
-/***/ }),
-/* 94 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var redefine = __w_pdfjs_require__(20);
-
-module.exports = function (target, src, safe) {
-  for (var key in src) {
-    redefine(target, key, src[key], safe);
-  }
-
-  return target;
-};
-
-/***/ }),
-/* 95 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-module.exports = function (it, Constructor, name, forbiddenField) {
-  if (!(it instanceof Constructor) || forbiddenField !== undefined && forbiddenField in it) {
-    throw TypeError(name + ': incorrect invocation!');
-  }
-
-  return it;
-};
-
-/***/ }),
-/* 96 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var ctx = __w_pdfjs_require__(26);
-
-var call = __w_pdfjs_require__(64);
-
-var isArrayIter = __w_pdfjs_require__(65);
-
-var anObject = __w_pdfjs_require__(12);
-
-var toLength = __w_pdfjs_require__(28);
-
-var getIterFn = __w_pdfjs_require__(67);
-
-var BREAK = {};
-var RETURN = {};
-
-var _exports = module.exports = function (iterable, entries, fn, that, ITERATOR) {
-  var iterFn = ITERATOR ? function () {
-    return iterable;
-  } : getIterFn(iterable);
-  var f = ctx(fn, that, entries ? 2 : 1);
-  var index = 0;
-  var length, step, iterator, result;
-  if (typeof iterFn != 'function') throw TypeError(iterable + ' is not iterable!');
-  if (isArrayIter(iterFn)) for (length = toLength(iterable.length); length > index; index++) {
-    result = entries ? f(anObject(step = iterable[index])[0], step[1]) : f(iterable[index]);
-    if (result === BREAK || result === RETURN) return result;
-  } else for (iterator = iterFn.call(iterable); !(step = iterator.next()).done;) {
-    result = call(iterator, f, step.value, entries);
-    if (result === BREAK || result === RETURN) return result;
-  }
-};
-
-_exports.BREAK = BREAK;
-_exports.RETURN = RETURN;
-
-/***/ }),
-/* 97 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isObject = __w_pdfjs_require__(13);
-
-module.exports = function (it, TYPE) {
-  if (!isObject(it) || it._t !== TYPE) throw TypeError('Incompatible receiver, ' + TYPE + ' required!');
-  return it;
-};
-
-/***/ }),
-/* 98 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var global = __w_pdfjs_require__(8);
-
-var $export = __w_pdfjs_require__(7);
-
-var redefine = __w_pdfjs_require__(20);
-
-var redefineAll = __w_pdfjs_require__(94);
-
-var meta = __w_pdfjs_require__(92);
-
-var forOf = __w_pdfjs_require__(96);
-
-var anInstance = __w_pdfjs_require__(95);
-
-var isObject = __w_pdfjs_require__(13);
-
-var fails = __w_pdfjs_require__(16);
-
-var $iterDetect = __w_pdfjs_require__(69);
-
-var setToStringTag = __w_pdfjs_require__(60);
-
-var inheritIfRequired = __w_pdfjs_require__(99);
-
-module.exports = function (NAME, wrapper, methods, common, IS_MAP, IS_WEAK) {
-  var Base = global[NAME];
-  var C = Base;
-  var ADDER = IS_MAP ? 'set' : 'add';
-  var proto = C && C.prototype;
-  var O = {};
-
-  var fixMethod = function fixMethod(KEY) {
-    var fn = proto[KEY];
-    redefine(proto, KEY, KEY == 'delete' ? function (a) {
-      return IS_WEAK && !isObject(a) ? false : fn.call(this, a === 0 ? 0 : a);
-    } : KEY == 'has' ? function has(a) {
-      return IS_WEAK && !isObject(a) ? false : fn.call(this, a === 0 ? 0 : a);
-    } : KEY == 'get' ? function get(a) {
-      return IS_WEAK && !isObject(a) ? undefined : fn.call(this, a === 0 ? 0 : a);
-    } : KEY == 'add' ? function add(a) {
-      fn.call(this, a === 0 ? 0 : a);
-      return this;
-    } : function set(a, b) {
-      fn.call(this, a === 0 ? 0 : a, b);
-      return this;
-    });
-  };
-
-  if (typeof C != 'function' || !(IS_WEAK || proto.forEach && !fails(function () {
-    new C().entries().next();
-  }))) {
-    C = common.getConstructor(wrapper, NAME, IS_MAP, ADDER);
-    redefineAll(C.prototype, methods);
-    meta.NEED = true;
-  } else {
-    var instance = new C();
-    var HASNT_CHAINING = instance[ADDER](IS_WEAK ? {} : -0, 1) != instance;
-    var THROWS_ON_PRIMITIVES = fails(function () {
-      instance.has(1);
-    });
-    var ACCEPT_ITERABLES = $iterDetect(function (iter) {
-      new C(iter);
-    });
-    var BUGGY_ZERO = !IS_WEAK && fails(function () {
-      var $instance = new C();
-      var index = 5;
-
-      while (index--) {
-        $instance[ADDER](index, index);
-      }
-
-      return !$instance.has(-0);
-    });
-
-    if (!ACCEPT_ITERABLES) {
-      C = wrapper(function (target, iterable) {
-        anInstance(target, C, NAME);
-        var that = inheritIfRequired(new Base(), target, C);
-        if (iterable != undefined) forOf(iterable, IS_MAP, that[ADDER], that);
-        return that;
-      });
-      C.prototype = proto;
-      proto.constructor = C;
-    }
-
-    if (THROWS_ON_PRIMITIVES || BUGGY_ZERO) {
-      fixMethod('delete');
-      fixMethod('has');
-      IS_MAP && fixMethod('get');
-    }
-
-    if (BUGGY_ZERO || HASNT_CHAINING) fixMethod(ADDER);
-    if (IS_WEAK && proto.clear) delete proto.clear;
-  }
-
-  setToStringTag(C, NAME);
-  O[NAME] = C;
-  $export($export.G + $export.W + $export.F * (C != Base), O);
-  if (!IS_WEAK) common.setStrong(C, NAME, IS_MAP);
-  return C;
-};
-
-/***/ }),
-/* 99 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isObject = __w_pdfjs_require__(13);
-
-var setPrototypeOf = __w_pdfjs_require__(100).set;
-
-module.exports = function (that, target, C) {
-  var S = target.constructor;
-  var P;
-
-  if (S !== C && typeof S == 'function' && (P = S.prototype) !== C.prototype && isObject(P) && setPrototypeOf) {
-    setPrototypeOf(that, P);
-  }
-
-  return that;
-};
-
-/***/ }),
-/* 100 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var isObject = __w_pdfjs_require__(13);
-
-var anObject = __w_pdfjs_require__(12);
-
-var check = function check(O, proto) {
-  anObject(O);
-  if (!isObject(proto) && proto !== null) throw TypeError(proto + ": can't set as prototype!");
-};
-
-module.exports = {
-  set: Object.setPrototypeOf || ('__proto__' in {} ? function (test, buggy, set) {
-    try {
-      set = __w_pdfjs_require__(26)(Function.call, __w_pdfjs_require__(101).f(Object.prototype, '__proto__').set, 2);
-      set(test, []);
-      buggy = !(test instanceof Array);
-    } catch (e) {
-      buggy = true;
-    }
-
-    return function setPrototypeOf(O, proto) {
-      check(O, proto);
-      if (buggy) O.__proto__ = proto;else set(O, proto);
-      return O;
-    };
-  }({}, false) : undefined),
-  check: check
-};
-
-/***/ }),
-/* 101 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var pIE = __w_pdfjs_require__(74);
-
-var createDesc = __w_pdfjs_require__(19);
-
-var toIObject = __w_pdfjs_require__(43);
-
-var toPrimitive = __w_pdfjs_require__(18);
-
-var has = __w_pdfjs_require__(21);
-
-var IE8_DOM_DEFINE = __w_pdfjs_require__(14);
-
-var gOPD = Object.getOwnPropertyDescriptor;
-exports.f = __w_pdfjs_require__(15) ? gOPD : function getOwnPropertyDescriptor(O, P) {
-  O = toIObject(O);
-  P = toPrimitive(P, true);
-  if (IE8_DOM_DEFINE) try {
-    return gOPD(O, P);
-  } catch (e) {}
-  if (has(O, P)) return createDesc(!pIE.f.call(O, P), O[P]);
-};
-
-/***/ }),
-/* 102 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(103)('WeakMap');
-
-/***/ }),
-/* 103 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-module.exports = function (COLLECTION) {
-  $export($export.S, COLLECTION, {
-    of: function of() {
-      var length = arguments.length;
-      var A = new Array(length);
-
-      while (length--) {
-        A[length] = arguments[length];
-      }
-
-      return new this(A);
-    }
-  });
-};
-
-/***/ }),
-/* 104 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(105)('WeakMap');
-
-/***/ }),
-/* 105 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var aFunction = __w_pdfjs_require__(27);
-
-var ctx = __w_pdfjs_require__(26);
-
-var forOf = __w_pdfjs_require__(96);
-
-module.exports = function (COLLECTION) {
-  $export($export.S, COLLECTION, {
-    from: function from(source) {
-      var mapFn = arguments[1];
-      var mapping, A, n, cb;
-      aFunction(this);
-      mapping = mapFn !== undefined;
-      if (mapping) aFunction(mapFn);
-      if (source == undefined) return new this();
-      A = [];
-
-      if (mapping) {
-        n = 0;
-        cb = ctx(mapFn, arguments[2], 2);
-        forOf(source, false, function (nextItem) {
-          A.push(cb(nextItem, n++));
-        });
-      } else {
-        forOf(source, false, A.push, A);
-      }
-
-      return new this(A);
-    }
-  });
-};
-
-/***/ }),
-/* 106 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(83);
-
-__w_pdfjs_require__(84);
-
-__w_pdfjs_require__(107);
-
-__w_pdfjs_require__(108);
-
-__w_pdfjs_require__(109);
-
-module.exports = __w_pdfjs_require__(9).WeakSet;
-
-/***/ }),
-/* 107 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var weak = __w_pdfjs_require__(93);
-
-var validate = __w_pdfjs_require__(97);
-
-var WEAK_SET = 'WeakSet';
-
-__w_pdfjs_require__(98)(WEAK_SET, function (get) {
-  return function WeakSet() {
-    return get(this, arguments.length > 0 ? arguments[0] : undefined);
-  };
-}, {
-  add: function add(value) {
-    return weak.def(validate(this, WEAK_SET), value, true);
-  }
-}, weak, false, true);
-
-/***/ }),
-/* 108 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(103)('WeakSet');
-
-/***/ }),
-/* 109 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(105)('WeakSet');
-
-/***/ }),
-/* 110 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(111);
-
-module.exports = __w_pdfjs_require__(9).String.codePointAt;
-
-/***/ }),
-/* 111 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var $at = __w_pdfjs_require__(49)(false);
-
-$export($export.P, 'String', {
-  codePointAt: function codePointAt(pos) {
-    return $at(this, pos);
-  }
-});
-
-/***/ }),
-/* 112 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(113);
-
-module.exports = __w_pdfjs_require__(9).String.fromCodePoint;
-
-/***/ }),
-/* 113 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var toAbsoluteIndex = __w_pdfjs_require__(45);
-
-var fromCharCode = String.fromCharCode;
-var $fromCodePoint = String.fromCodePoint;
-$export($export.S + $export.F * (!!$fromCodePoint && $fromCodePoint.length != 1), 'String', {
-  fromCodePoint: function fromCodePoint(x) {
-    var res = [];
-    var aLen = arguments.length;
-    var i = 0;
-    var code;
-
-    while (aLen > i) {
-      code = +arguments[i++];
-      if (toAbsoluteIndex(code, 0x10ffff) !== code) throw RangeError(code + ' is not a valid code point');
-      res.push(code < 0x10000 ? fromCharCode(code) : fromCharCode(((code -= 0x10000) >> 10) + 0xd800, code % 0x400 + 0xdc00));
-    }
-
-    return res.join('');
-  }
-});
-
-/***/ }),
-/* 114 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(115);
-
-__w_pdfjs_require__(83);
-
-module.exports = __w_pdfjs_require__(9).Symbol;
-
-/***/ }),
-/* 115 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var global = __w_pdfjs_require__(8);
-
-var has = __w_pdfjs_require__(21);
-
-var DESCRIPTORS = __w_pdfjs_require__(15);
-
-var $export = __w_pdfjs_require__(7);
-
-var redefine = __w_pdfjs_require__(20);
-
-var META = __w_pdfjs_require__(92).KEY;
-
-var $fails = __w_pdfjs_require__(16);
-
-var shared = __w_pdfjs_require__(24);
-
-var setToStringTag = __w_pdfjs_require__(60);
-
-var uid = __w_pdfjs_require__(22);
-
-var wks = __w_pdfjs_require__(33);
-
-var wksExt = __w_pdfjs_require__(116);
-
-var wksDefine = __w_pdfjs_require__(117);
-
-var enumKeys = __w_pdfjs_require__(118);
-
-var isArray = __w_pdfjs_require__(91);
-
-var anObject = __w_pdfjs_require__(12);
-
-var isObject = __w_pdfjs_require__(13);
-
-var toObject = __w_pdfjs_require__(62);
-
-var toIObject = __w_pdfjs_require__(43);
-
-var toPrimitive = __w_pdfjs_require__(18);
-
-var createDesc = __w_pdfjs_require__(19);
-
-var _create = __w_pdfjs_require__(53);
-
-var gOPNExt = __w_pdfjs_require__(119);
-
-var $GOPD = __w_pdfjs_require__(101);
-
-var $GOPS = __w_pdfjs_require__(73);
-
-var $DP = __w_pdfjs_require__(11);
-
-var $keys = __w_pdfjs_require__(55);
-
-var gOPD = $GOPD.f;
-var dP = $DP.f;
-var gOPN = gOPNExt.f;
-var $Symbol = global.Symbol;
-var $JSON = global.JSON;
-
-var _stringify = $JSON && $JSON.stringify;
-
-var PROTOTYPE = 'prototype';
-var HIDDEN = wks('_hidden');
-var TO_PRIMITIVE = wks('toPrimitive');
-var isEnum = {}.propertyIsEnumerable;
-var SymbolRegistry = shared('symbol-registry');
-var AllSymbols = shared('symbols');
-var OPSymbols = shared('op-symbols');
-var ObjectProto = Object[PROTOTYPE];
-var USE_NATIVE = typeof $Symbol == 'function' && !!$GOPS.f;
-var QObject = global.QObject;
-var setter = !QObject || !QObject[PROTOTYPE] || !QObject[PROTOTYPE].findChild;
-var setSymbolDesc = DESCRIPTORS && $fails(function () {
-  return _create(dP({}, 'a', {
-    get: function get() {
-      return dP(this, 'a', {
-        value: 7
-      }).a;
-    }
-  })).a != 7;
-}) ? function (it, key, D) {
-  var protoDesc = gOPD(ObjectProto, key);
-  if (protoDesc) delete ObjectProto[key];
-  dP(it, key, D);
-  if (protoDesc && it !== ObjectProto) dP(ObjectProto, key, protoDesc);
-} : dP;
-
-var wrap = function wrap(tag) {
-  var sym = AllSymbols[tag] = _create($Symbol[PROTOTYPE]);
-
-  sym._k = tag;
-  return sym;
-};
-
-var isSymbol = USE_NATIVE && _typeof($Symbol.iterator) == 'symbol' ? function (it) {
-  return _typeof(it) == 'symbol';
-} : function (it) {
-  return it instanceof $Symbol;
-};
-
-var $defineProperty = function defineProperty(it, key, D) {
-  if (it === ObjectProto) $defineProperty(OPSymbols, key, D);
-  anObject(it);
-  key = toPrimitive(key, true);
-  anObject(D);
-
-  if (has(AllSymbols, key)) {
-    if (!D.enumerable) {
-      if (!has(it, HIDDEN)) dP(it, HIDDEN, createDesc(1, {}));
-      it[HIDDEN][key] = true;
-    } else {
-      if (has(it, HIDDEN) && it[HIDDEN][key]) it[HIDDEN][key] = false;
-      D = _create(D, {
-        enumerable: createDesc(0, false)
-      });
-    }
-
-    return setSymbolDesc(it, key, D);
-  }
-
-  return dP(it, key, D);
-};
-
-var $defineProperties = function defineProperties(it, P) {
-  anObject(it);
-  var keys = enumKeys(P = toIObject(P));
-  var i = 0;
-  var l = keys.length;
-  var key;
-
-  while (l > i) {
-    $defineProperty(it, key = keys[i++], P[key]);
-  }
-
-  return it;
-};
-
-var $create = function create(it, P) {
-  return P === undefined ? _create(it) : $defineProperties(_create(it), P);
-};
-
-var $propertyIsEnumerable = function propertyIsEnumerable(key) {
-  var E = isEnum.call(this, key = toPrimitive(key, true));
-  if (this === ObjectProto && has(AllSymbols, key) && !has(OPSymbols, key)) return false;
-  return E || !has(this, key) || !has(AllSymbols, key) || has(this, HIDDEN) && this[HIDDEN][key] ? E : true;
-};
-
-var $getOwnPropertyDescriptor = function getOwnPropertyDescriptor(it, key) {
-  it = toIObject(it);
-  key = toPrimitive(key, true);
-  if (it === ObjectProto && has(AllSymbols, key) && !has(OPSymbols, key)) return;
-  var D = gOPD(it, key);
-  if (D && has(AllSymbols, key) && !(has(it, HIDDEN) && it[HIDDEN][key])) D.enumerable = true;
-  return D;
-};
-
-var $getOwnPropertyNames = function getOwnPropertyNames(it) {
-  var names = gOPN(toIObject(it));
-  var result = [];
-  var i = 0;
-  var key;
-
-  while (names.length > i) {
-    if (!has(AllSymbols, key = names[i++]) && key != HIDDEN && key != META) result.push(key);
-  }
-
-  return result;
-};
-
-var $getOwnPropertySymbols = function getOwnPropertySymbols(it) {
-  var IS_OP = it === ObjectProto;
-  var names = gOPN(IS_OP ? OPSymbols : toIObject(it));
-  var result = [];
-  var i = 0;
-  var key;
-
-  while (names.length > i) {
-    if (has(AllSymbols, key = names[i++]) && (IS_OP ? has(ObjectProto, key) : true)) result.push(AllSymbols[key]);
-  }
-
-  return result;
-};
-
-if (!USE_NATIVE) {
-  $Symbol = function _Symbol() {
-    if (this instanceof $Symbol) throw TypeError('Symbol is not a constructor!');
-    var tag = uid(arguments.length > 0 ? arguments[0] : undefined);
-
-    var $set = function $set(value) {
-      if (this === ObjectProto) $set.call(OPSymbols, value);
-      if (has(this, HIDDEN) && has(this[HIDDEN], tag)) this[HIDDEN][tag] = false;
-      setSymbolDesc(this, tag, createDesc(1, value));
-    };
-
-    if (DESCRIPTORS && setter) setSymbolDesc(ObjectProto, tag, {
-      configurable: true,
-      set: $set
-    });
-    return wrap(tag);
-  };
-
-  redefine($Symbol[PROTOTYPE], 'toString', function toString() {
-    return this._k;
-  });
-  $GOPD.f = $getOwnPropertyDescriptor;
-  $DP.f = $defineProperty;
-  __w_pdfjs_require__(120).f = gOPNExt.f = $getOwnPropertyNames;
-  __w_pdfjs_require__(74).f = $propertyIsEnumerable;
-  $GOPS.f = $getOwnPropertySymbols;
-
-  if (DESCRIPTORS && !__w_pdfjs_require__(25)) {
-    redefine(ObjectProto, 'propertyIsEnumerable', $propertyIsEnumerable, true);
-  }
-
-  wksExt.f = function (name) {
-    return wrap(wks(name));
-  };
-}
-
-$export($export.G + $export.W + $export.F * !USE_NATIVE, {
-  Symbol: $Symbol
-});
-
-for (var es6Symbols = 'hasInstance,isConcatSpreadable,iterator,match,replace,search,species,split,toPrimitive,toStringTag,unscopables'.split(','), j = 0; es6Symbols.length > j;) {
-  wks(es6Symbols[j++]);
-}
-
-for (var wellKnownSymbols = $keys(wks.store), k = 0; wellKnownSymbols.length > k;) {
-  wksDefine(wellKnownSymbols[k++]);
-}
-
-$export($export.S + $export.F * !USE_NATIVE, 'Symbol', {
-  'for': function _for(key) {
-    return has(SymbolRegistry, key += '') ? SymbolRegistry[key] : SymbolRegistry[key] = $Symbol(key);
-  },
-  keyFor: function keyFor(sym) {
-    if (!isSymbol(sym)) throw TypeError(sym + ' is not a symbol!');
-
-    for (var key in SymbolRegistry) {
-      if (SymbolRegistry[key] === sym) return key;
-    }
-  },
-  useSetter: function useSetter() {
-    setter = true;
-  },
-  useSimple: function useSimple() {
-    setter = false;
-  }
-});
-$export($export.S + $export.F * !USE_NATIVE, 'Object', {
-  create: $create,
-  defineProperty: $defineProperty,
-  defineProperties: $defineProperties,
-  getOwnPropertyDescriptor: $getOwnPropertyDescriptor,
-  getOwnPropertyNames: $getOwnPropertyNames,
-  getOwnPropertySymbols: $getOwnPropertySymbols
-});
-var FAILS_ON_PRIMITIVES = $fails(function () {
-  $GOPS.f(1);
-});
-$export($export.S + $export.F * FAILS_ON_PRIMITIVES, 'Object', {
-  getOwnPropertySymbols: function getOwnPropertySymbols(it) {
-    return $GOPS.f(toObject(it));
-  }
-});
-$JSON && $export($export.S + $export.F * (!USE_NATIVE || $fails(function () {
-  var S = $Symbol();
-  return _stringify([S]) != '[null]' || _stringify({
-    a: S
-  }) != '{}' || _stringify(Object(S)) != '{}';
-})), 'JSON', {
-  stringify: function stringify(it) {
-    var args = [it];
-    var i = 1;
-    var replacer, $replacer;
-
-    while (arguments.length > i) {
-      args.push(arguments[i++]);
-    }
-
-    $replacer = replacer = args[1];
-    if (!isObject(replacer) && it === undefined || isSymbol(it)) return;
-    if (!isArray(replacer)) replacer = function replacer(key, value) {
-      if (typeof $replacer == 'function') value = $replacer.call(this, key, value);
-      if (!isSymbol(value)) return value;
-    };
-    args[1] = replacer;
-    return _stringify.apply($JSON, args);
-  }
-});
-$Symbol[PROTOTYPE][TO_PRIMITIVE] || __w_pdfjs_require__(10)($Symbol[PROTOTYPE], TO_PRIMITIVE, $Symbol[PROTOTYPE].valueOf);
-setToStringTag($Symbol, 'Symbol');
-setToStringTag(Math, 'Math', true);
-setToStringTag(global.JSON, 'JSON', true);
-
-/***/ }),
-/* 116 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-exports.f = __w_pdfjs_require__(33);
-
-/***/ }),
-/* 117 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var global = __w_pdfjs_require__(8);
-
-var core = __w_pdfjs_require__(9);
-
-var LIBRARY = __w_pdfjs_require__(25);
-
-var wksExt = __w_pdfjs_require__(116);
-
-var defineProperty = __w_pdfjs_require__(11).f;
-
-module.exports = function (name) {
-  var $Symbol = core.Symbol || (core.Symbol = LIBRARY ? {} : global.Symbol || {});
-  if (name.charAt(0) != '_' && !(name in $Symbol)) defineProperty($Symbol, name, {
-    value: wksExt.f(name)
-  });
-};
-
-/***/ }),
-/* 118 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var getKeys = __w_pdfjs_require__(55);
-
-var gOPS = __w_pdfjs_require__(73);
-
-var pIE = __w_pdfjs_require__(74);
-
-module.exports = function (it) {
-  var result = getKeys(it);
-  var getSymbols = gOPS.f;
-
-  if (getSymbols) {
-    var symbols = getSymbols(it);
-    var isEnum = pIE.f;
-    var i = 0;
-    var key;
-
-    while (symbols.length > i) {
-      if (isEnum.call(it, key = symbols[i++])) result.push(key);
-    }
-  }
-
-  return result;
-};
-
-/***/ }),
-/* 119 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var toIObject = __w_pdfjs_require__(43);
-
-var gOPN = __w_pdfjs_require__(120).f;
-
-var toString = {}.toString;
-var windowNames = (typeof window === "undefined" ? "undefined" : _typeof(window)) == 'object' && window && Object.getOwnPropertyNames ? Object.getOwnPropertyNames(window) : [];
-
-var getWindowNames = function getWindowNames(it) {
-  try {
-    return gOPN(it);
-  } catch (e) {
-    return windowNames.slice();
-  }
-};
-
-module.exports.f = function getOwnPropertyNames(it) {
-  return windowNames && toString.call(it) == '[object Window]' ? getWindowNames(it) : gOPN(toIObject(it));
-};
-
-/***/ }),
-/* 120 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $keys = __w_pdfjs_require__(56);
-
-var hiddenKeys = __w_pdfjs_require__(58).concat('length', 'prototype');
-
-exports.f = Object.getOwnPropertyNames || function getOwnPropertyNames(O) {
-  return $keys(O, hiddenKeys);
-};
-
-/***/ }),
-/* 121 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(122);
-
-module.exports = __w_pdfjs_require__(9).String.padStart;
-
-/***/ }),
-/* 122 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var $pad = __w_pdfjs_require__(123);
-
-var userAgent = __w_pdfjs_require__(125);
-
-var WEBKIT_BUG = /Version\/10\.\d+(\.\d+)?( Mobile\/\w+)? Safari\//.test(userAgent);
-$export($export.P + $export.F * WEBKIT_BUG, 'String', {
-  padStart: function padStart(maxLength) {
-    return $pad(this, maxLength, arguments.length > 1 ? arguments[1] : undefined, true);
-  }
-});
-
-/***/ }),
-/* 123 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var toLength = __w_pdfjs_require__(28);
-
-var repeat = __w_pdfjs_require__(124);
-
-var defined = __w_pdfjs_require__(34);
-
-module.exports = function (that, maxLength, fillString, left) {
-  var S = String(defined(that));
-  var stringLength = S.length;
-  var fillStr = fillString === undefined ? ' ' : String(fillString);
-  var intMaxLength = toLength(maxLength);
-  if (intMaxLength <= stringLength || fillStr == '') return S;
-  var fillLen = intMaxLength - stringLength;
-  var stringFiller = repeat.call(fillStr, Math.ceil(fillLen / fillStr.length));
-  if (stringFiller.length > fillLen) stringFiller = stringFiller.slice(0, fillLen);
-  return left ? stringFiller + S : S + stringFiller;
-};
-
-/***/ }),
-/* 124 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var toInteger = __w_pdfjs_require__(29);
-
-var defined = __w_pdfjs_require__(34);
-
-module.exports = function repeat(count) {
-  var str = String(defined(this));
-  var res = '';
-  var n = toInteger(count);
-  if (n < 0 || n == Infinity) throw RangeError("Count can't be negative");
-
-  for (; n > 0; (n >>>= 1) && (str += str)) {
-    if (n & 1) res += str;
-  }
-
-  return res;
-};
-
-/***/ }),
-/* 125 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var global = __w_pdfjs_require__(8);
-
-var navigator = global.navigator;
-module.exports = navigator && navigator.userAgent || '';
-
-/***/ }),
-/* 126 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(127);
-
-module.exports = __w_pdfjs_require__(9).String.padEnd;
-
-/***/ }),
-/* 127 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var $pad = __w_pdfjs_require__(123);
-
-var userAgent = __w_pdfjs_require__(125);
-
-var WEBKIT_BUG = /Version\/10\.\d+(\.\d+)?( Mobile\/\w+)? Safari\//.test(userAgent);
-$export($export.P + $export.F * WEBKIT_BUG, 'String', {
-  padEnd: function padEnd(maxLength) {
-    return $pad(this, maxLength, arguments.length > 1 ? arguments[1] : undefined, false);
-  }
-});
-
-/***/ }),
-/* 128 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-__w_pdfjs_require__(129);
-
-module.exports = __w_pdfjs_require__(9).Object.values;
-
-/***/ }),
-/* 129 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var $export = __w_pdfjs_require__(7);
-
-var $values = __w_pdfjs_require__(130)(false);
-
-$export($export.S, 'Object', {
-  values: function values(it) {
-    return $values(it);
-  }
-});
-
-/***/ }),
-/* 130 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-var DESCRIPTORS = __w_pdfjs_require__(15);
-
-var getKeys = __w_pdfjs_require__(55);
-
-var toIObject = __w_pdfjs_require__(43);
-
-var isEnum = __w_pdfjs_require__(74).f;
-
-module.exports = function (isEntries) {
-  return function (it) {
-    var O = toIObject(it);
-    var keys = getKeys(O);
-    var length = keys.length;
-    var i = 0;
-    var result = [];
-    var key;
-
-    while (length > i) {
-      key = keys[i++];
-
-      if (!DESCRIPTORS || isEnum.call(O, key)) {
-        result.push(isEntries ? [key, O[key]] : O[key]);
-      }
-    }
-
-    return result;
-  };
-};
-
-/***/ }),
-/* 131 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-{
-  var isReadableStreamSupported = false;
-
-  if (typeof ReadableStream !== 'undefined') {
-    try {
-      new ReadableStream({
-        start: function start(controller) {
-          controller.close();
-        }
-      });
-      isReadableStreamSupported = true;
-    } catch (e) {}
-  }
-
-  if (isReadableStreamSupported) {
-    exports.ReadableStream = ReadableStream;
-  } else {
-    var DummyReadableStream = function DummyReadableStream() {
-      _classCallCheck(this, DummyReadableStream);
-
-      throw new Error('The current image decoders are synchronous, ' + 'hence `ReadableStream` shouldn\'t need to be ' + 'polyfilled for the IMAGE_DECODERS build target.');
-    };
-
-    exports.ReadableStream = DummyReadableStream;
-  }
-}
-
-/***/ }),
-/* 132 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
-
-"use strict";
-
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-{
-  var isURLSupported = false;
-
-  try {
-    if (typeof URL === 'function' && _typeof(URL.prototype) === 'object' && 'origin' in URL.prototype) {
-      var u = new URL('b', 'http://a');
-      u.pathname = 'c%20d';
-      isURLSupported = u.href === 'http://a/c%20d';
-    }
-  } catch (ex) {}
-
-  if (isURLSupported) {
-    exports.URL = URL;
-  } else {
-    var DummyURL = function DummyURL() {
-      _classCallCheck(this, DummyURL);
-
-      throw new Error('The current image decoders doesn\'t utilize the ' + '`URL` constructor, hence it shouldn\'t need to be ' + 'polyfilled for the IMAGE_DECODERS build target.');
-    };
-
-    exports.URL = DummyURL;
-  }
-}
-
-/***/ }),
-/* 133 */
 /***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
@@ -4583,32 +1013,31 @@ exports.Jbig2Image = void 0;
 
 var _util = __w_pdfjs_require__(1);
 
-var _arithmetic_decoder = __w_pdfjs_require__(134);
+var _core_utils = __w_pdfjs_require__(4);
 
-var _ccitt = __w_pdfjs_require__(135);
+var _arithmetic_decoder = __w_pdfjs_require__(5);
 
-var Jbig2Error = function Jbig2ErrorClosure() {
-  function Jbig2Error(msg) {
-    this.message = 'JBIG2 error: ' + msg;
+var _ccitt = __w_pdfjs_require__(6);
+
+class Jbig2Error extends _util.BaseException {
+  constructor(msg) {
+    super(`JBIG2 error: ${msg}`);
   }
 
-  Jbig2Error.prototype = new Error();
-  Jbig2Error.prototype.name = 'Jbig2Error';
-  Jbig2Error.constructor = Jbig2Error;
-  return Jbig2Error;
-}();
+}
 
 var Jbig2Image = function Jbig2ImageClosure() {
   function ContextCache() {}
 
   ContextCache.prototype = {
-    getContexts: function getContexts(id) {
+    getContexts(id) {
       if (id in this) {
         return this[id];
       }
 
       return this[id] = new Int8Array(1 << 16);
     }
+
   };
 
   function DecodingContext(data, start, end) {
@@ -4620,12 +1049,12 @@ var Jbig2Image = function Jbig2ImageClosure() {
   DecodingContext.prototype = {
     get decoder() {
       var decoder = new _arithmetic_decoder.ArithmeticDecoder(this.data, this.start, this.end);
-      return (0, _util.shadow)(this, 'decoder', decoder);
+      return (0, _util.shadow)(this, "decoder", decoder);
     },
 
     get contextCache() {
       var cache = new ContextCache();
-      return (0, _util.shadow)(this, 'contextCache', cache);
+      return (0, _util.shadow)(this, "contextCache", cache);
     }
 
   };
@@ -4648,11 +1077,18 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
     var sign = readBits(1);
     var value = readBits(1) ? readBits(1) ? readBits(1) ? readBits(1) ? readBits(1) ? readBits(32) + 4436 : readBits(12) + 340 : readBits(8) + 84 : readBits(6) + 20 : readBits(4) + 4 : readBits(2);
-    return sign === 0 ? value : value > 0 ? -value : null;
+
+    if (sign === 0) {
+      return value;
+    } else if (value > 0) {
+      return -value;
+    }
+
+    return null;
   }
 
   function decodeIAID(contextCache, decoder, codeLength) {
-    var contexts = contextCache.getContexts('IAID');
+    var contexts = contextCache.getContexts("IAID");
     var prev = 1;
 
     for (var i = 0; i < codeLength; i++) {
@@ -4664,10 +1100,10 @@ var Jbig2Image = function Jbig2ImageClosure() {
       return prev & (1 << codeLength) - 1;
     }
 
-    return prev & 0x7FFFFFFF;
+    return prev & 0x7fffffff;
   }
 
-  var SegmentTypes = ['SymbolDictionary', null, null, null, 'IntermediateTextRegion', null, 'ImmediateTextRegion', 'ImmediateLosslessTextRegion', null, null, null, null, null, null, null, null, 'PatternDictionary', null, null, null, 'IntermediateHalftoneRegion', null, 'ImmediateHalftoneRegion', 'ImmediateLosslessHalftoneRegion', null, null, null, null, null, null, null, null, null, null, null, null, 'IntermediateGenericRegion', null, 'ImmediateGenericRegion', 'ImmediateLosslessGenericRegion', 'IntermediateGenericRefinementRegion', null, 'ImmediateGenericRefinementRegion', 'ImmediateLosslessGenericRefinementRegion', null, null, null, null, 'PageInformation', 'EndOfPage', 'EndOfStripe', 'EndOfFile', 'Profiles', 'Tables', null, null, null, null, null, null, null, null, 'Extension'];
+  var SegmentTypes = ["SymbolDictionary", null, null, null, "IntermediateTextRegion", null, "ImmediateTextRegion", "ImmediateLosslessTextRegion", null, null, null, null, null, null, null, null, "PatternDictionary", null, null, null, "IntermediateHalftoneRegion", null, "ImmediateHalftoneRegion", "ImmediateLosslessHalftoneRegion", null, null, null, null, null, null, null, null, null, null, null, null, "IntermediateGenericRegion", null, "ImmediateGenericRegion", "ImmediateLosslessGenericRegion", "IntermediateGenericRefinementRegion", null, "ImmediateGenericRefinementRegion", "ImmediateLosslessGenericRefinementRegion", null, null, null, null, "PageInformation", "EndOfPage", "EndOfStripe", "EndOfFile", "Profiles", "Tables", null, null, null, null, null, null, null, null, "Extension"];
   var CodingTemplates = [[{
     x: -1,
     y: -2
@@ -4865,12 +1301,12 @@ var Jbig2Image = function Jbig2ImageClosure() {
       y: 1
     }]
   }];
-  var ReusedContexts = [0x9B25, 0x0795, 0x00E5, 0x0195];
+  var ReusedContexts = [0x9b25, 0x0795, 0x00e5, 0x0195];
   var RefinementReusedContexts = [0x0020, 0x0008];
 
   function decodeBitmapTemplate0(width, height, decodingContext) {
     var decoder = decodingContext.decoder;
-    var contexts = decodingContext.contextCache.getContexts('GB');
+    var contexts = decodingContext.contextCache.getContexts("GB");
     var contextLabel,
         i,
         j,
@@ -4879,7 +1315,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
         row1,
         row2,
         bitmap = [];
-    var OLD_PIXEL_MASK = 0x7BF7;
+    var OLD_PIXEL_MASK = 0x7bf7;
 
     for (i = 0; i < height; i++) {
       row = bitmap[i] = new Uint8Array(width);
@@ -4898,7 +1334,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
   function decodeBitmap(mmr, width, height, templateIndex, prediction, skip, at, decodingContext) {
     if (mmr) {
-      var input = new Reader(decodingContext.data, decodingContext.start, decodingContext.end);
+      const input = new Reader(decodingContext.data, decodingContext.start, decodingContext.end);
       return decodeMMRBitmap(input, width, height, false);
     }
 
@@ -4954,7 +1390,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
     var row = new Uint8Array(width);
     var bitmap = [];
     var decoder = decodingContext.decoder;
-    var contexts = decodingContext.contextCache.getContexts('GB');
+    var contexts = decodingContext.contextCache.getContexts("GB");
     var ltp = 0,
         j,
         i0,
@@ -5062,7 +1498,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
     var pseudoPixelContext = RefinementReusedContexts[templateIndex];
     var bitmap = [];
     var decoder = decodingContext.decoder;
-    var contexts = decodingContext.contextCache.getContexts('GR');
+    var contexts = decodingContext.contextCache.getContexts("GR");
     var ltp = 0;
 
     for (var i = 0; i < height; i++) {
@@ -5071,7 +1507,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
         ltp ^= sltp;
 
         if (ltp) {
-          throw new Jbig2Error('prediction is not supported');
+          throw new Jbig2Error("prediction is not supported");
         }
       }
 
@@ -5114,15 +1550,15 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
   function decodeSymbolDictionary(huffman, refinement, symbols, numberOfNewSymbols, numberOfExportedSymbols, huffmanTables, templateIndex, at, refinementTemplateIndex, refinementAt, decodingContext, huffmanInput) {
     if (huffman && refinement) {
-      throw new Jbig2Error('symbol refinement with Huffman is not supported');
+      throw new Jbig2Error("symbol refinement with Huffman is not supported");
     }
 
     var newSymbols = [];
     var currentHeight = 0;
-    var symbolCodeLength = (0, _util.log2)(symbols.length + numberOfNewSymbols);
+    var symbolCodeLength = (0, _core_utils.log2)(symbols.length + numberOfNewSymbols);
     var decoder = decodingContext.decoder;
     var contextCache = decodingContext.contextCache;
-    var tableB1, symbolWidths;
+    let tableB1, symbolWidths;
 
     if (huffman) {
       tableB1 = getStandardTable(1);
@@ -5131,14 +1567,14 @@ var Jbig2Image = function Jbig2ImageClosure() {
     }
 
     while (newSymbols.length < numberOfNewSymbols) {
-      var deltaHeight = huffman ? huffmanTables.tableDeltaHeight.decode(huffmanInput) : decodeInteger(contextCache, 'IADH', decoder);
+      var deltaHeight = huffman ? huffmanTables.tableDeltaHeight.decode(huffmanInput) : decodeInteger(contextCache, "IADH", decoder);
       currentHeight += deltaHeight;
-      var currentWidth = 0,
+      let currentWidth = 0,
           totalWidth = 0;
-      var firstSymbol = huffman ? symbolWidths.length : 0;
+      const firstSymbol = huffman ? symbolWidths.length : 0;
 
       while (true) {
-        var deltaWidth = huffman ? huffmanTables.tableDeltaWidth.decode(huffmanInput) : decodeInteger(contextCache, 'IADW', decoder);
+        var deltaWidth = huffman ? huffmanTables.tableDeltaWidth.decode(huffmanInput) : decodeInteger(contextCache, "IADW", decoder);
 
         if (deltaWidth === null) {
           break;
@@ -5149,14 +1585,14 @@ var Jbig2Image = function Jbig2ImageClosure() {
         var bitmap;
 
         if (refinement) {
-          var numberOfInstances = decodeInteger(contextCache, 'IAAI', decoder);
+          var numberOfInstances = decodeInteger(contextCache, "IAAI", decoder);
 
           if (numberOfInstances > 1) {
             bitmap = decodeTextRegion(huffman, refinement, currentWidth, currentHeight, 0, numberOfInstances, 1, symbols.concat(newSymbols), symbolCodeLength, 0, 0, 1, 0, huffmanTables, refinementTemplateIndex, refinementAt, decodingContext, 0, huffmanInput);
           } else {
             var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
-            var rdx = decodeInteger(contextCache, 'IARDX', decoder);
-            var rdy = decodeInteger(contextCache, 'IARDY', decoder);
+            var rdx = decodeInteger(contextCache, "IARDX", decoder);
+            var rdy = decodeInteger(contextCache, "IARDY", decoder);
             var symbol = symbolId < symbols.length ? symbols[symbolId] : newSymbols[symbolId - symbols.length];
             bitmap = decodeRefinement(currentWidth, currentHeight, refinementTemplateIndex, symbol, rdx, rdy, false, refinementAt, decodingContext);
           }
@@ -5171,35 +1607,35 @@ var Jbig2Image = function Jbig2ImageClosure() {
       }
 
       if (huffman && !refinement) {
-        var bitmapSize = huffmanTables.tableBitmapSize.decode(huffmanInput);
+        const bitmapSize = huffmanTables.tableBitmapSize.decode(huffmanInput);
         huffmanInput.byteAlign();
-        var collectiveBitmap = void 0;
+        let collectiveBitmap;
 
         if (bitmapSize === 0) {
           collectiveBitmap = readUncompressedBitmap(huffmanInput, totalWidth, currentHeight);
         } else {
-          var originalEnd = huffmanInput.end;
-          var bitmapEnd = huffmanInput.position + bitmapSize;
+          const originalEnd = huffmanInput.end;
+          const bitmapEnd = huffmanInput.position + bitmapSize;
           huffmanInput.end = bitmapEnd;
           collectiveBitmap = decodeMMRBitmap(huffmanInput, totalWidth, currentHeight, false);
           huffmanInput.end = originalEnd;
           huffmanInput.position = bitmapEnd;
         }
 
-        var numberOfSymbolsDecoded = symbolWidths.length;
+        const numberOfSymbolsDecoded = symbolWidths.length;
 
         if (firstSymbol === numberOfSymbolsDecoded - 1) {
           newSymbols.push(collectiveBitmap);
         } else {
-          var _i = void 0,
-              y = void 0,
+          let i,
+              y,
               xMin = 0,
-              xMax = void 0,
-              bitmapWidth = void 0,
-              symbolBitmap = void 0;
+              xMax,
+              bitmapWidth,
+              symbolBitmap;
 
-          for (_i = firstSymbol; _i < numberOfSymbolsDecoded; _i++) {
-            bitmapWidth = symbolWidths[_i];
+          for (i = firstSymbol; i < numberOfSymbolsDecoded; i++) {
+            bitmapWidth = symbolWidths[i];
             xMax = xMin + bitmapWidth;
             symbolBitmap = [];
 
@@ -5220,7 +1656,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
     var totalSymbolsLength = symbols.length + numberOfNewSymbols;
 
     while (flags.length < totalSymbolsLength) {
-      var runLength = huffman ? tableB1.decode(huffmanInput) : decodeInteger(contextCache, 'IAEX', decoder);
+      var runLength = huffman ? tableB1.decode(huffmanInput) : decodeInteger(contextCache, "IAEX", decoder);
 
       while (runLength--) {
         flags.push(currentFlag);
@@ -5246,7 +1682,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
   function decodeTextRegion(huffman, refinement, width, height, defaultPixelValue, numberOfSymbolInstances, stripSize, inputSymbols, symbolCodeLength, transposed, dsOffset, referenceCorner, combinationOperator, huffmanTables, refinementTemplateIndex, refinementAt, decodingContext, logStripSize, huffmanInput) {
     if (huffman && refinement) {
-      throw new Jbig2Error('refinement with Huffman is not supported');
+      throw new Jbig2Error("refinement with Huffman is not supported");
     }
 
     var bitmap = [];
@@ -5266,36 +1702,36 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
     var decoder = decodingContext.decoder;
     var contextCache = decodingContext.contextCache;
-    var stripT = huffman ? -huffmanTables.tableDeltaT.decode(huffmanInput) : -decodeInteger(contextCache, 'IADT', decoder);
+    var stripT = huffman ? -huffmanTables.tableDeltaT.decode(huffmanInput) : -decodeInteger(contextCache, "IADT", decoder);
     var firstS = 0;
     i = 0;
 
     while (i < numberOfSymbolInstances) {
-      var deltaT = huffman ? huffmanTables.tableDeltaT.decode(huffmanInput) : decodeInteger(contextCache, 'IADT', decoder);
+      var deltaT = huffman ? huffmanTables.tableDeltaT.decode(huffmanInput) : decodeInteger(contextCache, "IADT", decoder);
       stripT += deltaT;
-      var deltaFirstS = huffman ? huffmanTables.tableFirstS.decode(huffmanInput) : decodeInteger(contextCache, 'IAFS', decoder);
+      var deltaFirstS = huffman ? huffmanTables.tableFirstS.decode(huffmanInput) : decodeInteger(contextCache, "IAFS", decoder);
       firstS += deltaFirstS;
       var currentS = firstS;
 
       do {
-        var currentT = 0;
+        let currentT = 0;
 
         if (stripSize > 1) {
-          currentT = huffman ? huffmanInput.readBits(logStripSize) : decodeInteger(contextCache, 'IAIT', decoder);
+          currentT = huffman ? huffmanInput.readBits(logStripSize) : decodeInteger(contextCache, "IAIT", decoder);
         }
 
         var t = stripSize * stripT + currentT;
         var symbolId = huffman ? huffmanTables.symbolIDTable.decode(huffmanInput) : decodeIAID(contextCache, decoder, symbolCodeLength);
-        var applyRefinement = refinement && (huffman ? huffmanInput.readBit() : decodeInteger(contextCache, 'IARI', decoder));
+        var applyRefinement = refinement && (huffman ? huffmanInput.readBit() : decodeInteger(contextCache, "IARI", decoder));
         var symbolBitmap = inputSymbols[symbolId];
         var symbolWidth = symbolBitmap[0].length;
         var symbolHeight = symbolBitmap.length;
 
         if (applyRefinement) {
-          var rdw = decodeInteger(contextCache, 'IARDW', decoder);
-          var rdh = decodeInteger(contextCache, 'IARDH', decoder);
-          var rdx = decodeInteger(contextCache, 'IARDX', decoder);
-          var rdy = decodeInteger(contextCache, 'IARDY', decoder);
+          var rdw = decodeInteger(contextCache, "IARDW", decoder);
+          var rdh = decodeInteger(contextCache, "IARDH", decoder);
+          var rdx = decodeInteger(contextCache, "IARDX", decoder);
+          var rdy = decodeInteger(contextCache, "IARDY", decoder);
           symbolWidth += rdw;
           symbolHeight += rdh;
           symbolBitmap = decodeRefinement(symbolWidth, symbolHeight, refinementTemplateIndex, symbolBitmap, (rdw >> 1) + rdx, (rdh >> 1) + rdy, false, refinementAt, decodingContext);
@@ -5332,7 +1768,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
                 break;
 
               default:
-                throw new Jbig2Error("operator ".concat(combinationOperator, " is not supported"));
+                throw new Jbig2Error(`operator ${combinationOperator} is not supported`);
             }
           }
 
@@ -5363,7 +1799,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
                 break;
 
               default:
-                throw new Jbig2Error("operator ".concat(combinationOperator, " is not supported"));
+                throw new Jbig2Error(`operator ${combinationOperator} is not supported`);
             }
           }
 
@@ -5371,7 +1807,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
         }
 
         i++;
-        var deltaS = huffman ? huffmanTables.tableDeltaS.decode(huffmanInput) : decodeInteger(contextCache, 'IADS', decoder);
+        var deltaS = huffman ? huffmanTables.tableDeltaS.decode(huffmanInput) : decodeInteger(contextCache, "IADS", decoder);
 
         if (deltaS === null) {
           break;
@@ -5385,7 +1821,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
   }
 
   function decodePatternDictionary(mmr, patternWidth, patternHeight, maxPatternIndex, template, decodingContext) {
-    var at = [];
+    const at = [];
 
     if (!mmr) {
       at.push({
@@ -5409,44 +1845,38 @@ var Jbig2Image = function Jbig2ImageClosure() {
       }
     }
 
-    var collectiveWidth = (maxPatternIndex + 1) * patternWidth;
-    var collectiveBitmap = decodeBitmap(mmr, collectiveWidth, patternHeight, template, false, null, at, decodingContext);
-    var patterns = [],
-        i = 0,
-        patternBitmap,
-        xMin,
-        xMax,
-        y;
+    const collectiveWidth = (maxPatternIndex + 1) * patternWidth;
+    const collectiveBitmap = decodeBitmap(mmr, collectiveWidth, patternHeight, template, false, null, at, decodingContext);
+    const patterns = [];
 
-    while (i <= maxPatternIndex) {
-      patternBitmap = [];
-      xMin = patternWidth * i;
-      xMax = xMin + patternWidth;
+    for (let i = 0; i <= maxPatternIndex; i++) {
+      const patternBitmap = [];
+      const xMin = patternWidth * i;
+      const xMax = xMin + patternWidth;
 
-      for (y = 0; y < patternHeight; y++) {
+      for (let y = 0; y < patternHeight; y++) {
         patternBitmap.push(collectiveBitmap[y].subarray(xMin, xMax));
       }
 
       patterns.push(patternBitmap);
-      i++;
     }
 
     return patterns;
   }
 
   function decodeHalftoneRegion(mmr, patterns, template, regionWidth, regionHeight, defaultPixelValue, enableSkip, combinationOperator, gridWidth, gridHeight, gridOffsetX, gridOffsetY, gridVectorX, gridVectorY, decodingContext) {
-    var skip = null;
+    const skip = null;
 
     if (enableSkip) {
-      throw new Jbig2Error('skip is not supported');
+      throw new Jbig2Error("skip is not supported");
     }
 
     if (combinationOperator !== 0) {
-      throw new Jbig2Error('operator ' + combinationOperator + ' is not supported in halftone region');
+      throw new Jbig2Error("operator " + combinationOperator + " is not supported in halftone region");
     }
 
-    var regionBitmap = [];
-    var i, j, row;
+    const regionBitmap = [];
+    let i, j, row;
 
     for (i = 0; i < regionHeight; i++) {
       row = new Uint8Array(regionWidth);
@@ -5460,12 +1890,12 @@ var Jbig2Image = function Jbig2ImageClosure() {
       regionBitmap.push(row);
     }
 
-    var numberOfPatterns = patterns.length;
-    var pattern0 = patterns[0];
-    var patternWidth = pattern0[0].length,
-        patternHeight = pattern0.length;
-    var bitsPerValue = (0, _util.log2)(numberOfPatterns);
-    var at = [];
+    const numberOfPatterns = patterns.length;
+    const pattern0 = patterns[0];
+    const patternWidth = pattern0[0].length,
+          patternHeight = pattern0.length;
+    const bitsPerValue = (0, _core_utils.log2)(numberOfPatterns);
+    const at = [];
 
     if (!mmr) {
       at.push({
@@ -5489,9 +1919,8 @@ var Jbig2Image = function Jbig2ImageClosure() {
       }
     }
 
-    var grayScaleBitPlanes = [],
-        mmrInput,
-        bitmap;
+    const grayScaleBitPlanes = [];
+    let mmrInput, bitmap;
 
     if (mmr) {
       mmrInput = new Reader(decodingContext.data, decodingContext.start, decodingContext.end);
@@ -5507,7 +1936,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
       grayScaleBitPlanes[i] = bitmap;
     }
 
-    var mg, ng, bit, patternIndex, patternBitmap, x, y, patternRow, regionRow;
+    let mg, ng, bit, patternIndex, patternBitmap, x, y, patternRow, regionRow;
 
     for (mg = 0; mg < gridHeight; mg++) {
       for (ng = 0; ng < gridWidth; ng++) {
@@ -5533,8 +1962,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
             }
           }
         } else {
-          var regionX = void 0,
-              regionY = void 0;
+          let regionX, regionY;
 
           for (i = 0; i < patternHeight; i++) {
             regionY = y + i;
@@ -5563,12 +1991,12 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
   function readSegmentHeader(data, start) {
     var segmentHeader = {};
-    segmentHeader.number = (0, _util.readUint32)(data, start);
+    segmentHeader.number = (0, _core_utils.readUint32)(data, start);
     var flags = data[start + 4];
-    var segmentType = flags & 0x3F;
+    var segmentType = flags & 0x3f;
 
     if (!SegmentTypes[segmentType]) {
-      throw new Jbig2Error('invalid segment type: ' + segmentType);
+      throw new Jbig2Error("invalid segment type: " + segmentType);
     }
 
     segmentHeader.type = segmentType;
@@ -5581,7 +2009,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
     var position = start + 6;
 
     if (referredFlags === 7) {
-      referredToCount = (0, _util.readUint32)(data, position - 1) & 0x1FFFFFFF;
+      referredToCount = (0, _core_utils.readUint32)(data, position - 1) & 0x1fffffff;
       position += 3;
       var bytes = referredToCount + 7 >> 3;
       retainBits[0] = data[position++];
@@ -5590,16 +2018,32 @@ var Jbig2Image = function Jbig2ImageClosure() {
         retainBits.push(data[position++]);
       }
     } else if (referredFlags === 5 || referredFlags === 6) {
-      throw new Jbig2Error('invalid referred-to flags');
+      throw new Jbig2Error("invalid referred-to flags");
     }
 
     segmentHeader.retainBits = retainBits;
-    var referredToSegmentNumberSize = segmentHeader.number <= 256 ? 1 : segmentHeader.number <= 65536 ? 2 : 4;
+    let referredToSegmentNumberSize = 4;
+
+    if (segmentHeader.number <= 256) {
+      referredToSegmentNumberSize = 1;
+    } else if (segmentHeader.number <= 65536) {
+      referredToSegmentNumberSize = 2;
+    }
+
     var referredTo = [];
     var i, ii;
 
     for (i = 0; i < referredToCount; i++) {
-      var number = referredToSegmentNumberSize === 1 ? data[position] : referredToSegmentNumberSize === 2 ? (0, _util.readUint16)(data, position) : (0, _util.readUint32)(data, position);
+      let number;
+
+      if (referredToSegmentNumberSize === 1) {
+        number = data[position];
+      } else if (referredToSegmentNumberSize === 2) {
+        number = (0, _core_utils.readUint16)(data, position);
+      } else {
+        number = (0, _core_utils.readUint32)(data, position);
+      }
+
       referredTo.push(number);
       position += referredToSegmentNumberSize;
     }
@@ -5609,14 +2053,14 @@ var Jbig2Image = function Jbig2ImageClosure() {
     if (!pageAssociationFieldSize) {
       segmentHeader.pageAssociation = data[position++];
     } else {
-      segmentHeader.pageAssociation = (0, _util.readUint32)(data, position);
+      segmentHeader.pageAssociation = (0, _core_utils.readUint32)(data, position);
       position += 4;
     }
 
-    segmentHeader.length = (0, _util.readUint32)(data, position);
+    segmentHeader.length = (0, _core_utils.readUint32)(data, position);
     position += 4;
 
-    if (segmentHeader.length === 0xFFFFFFFF) {
+    if (segmentHeader.length === 0xffffffff) {
       if (segmentType === 38) {
         var genericRegionInfo = readRegionSegmentInformation(data, position);
         var genericRegionSegmentFlags = data[position + RegionSegmentInformationFieldLength];
@@ -5625,14 +2069,14 @@ var Jbig2Image = function Jbig2ImageClosure() {
         var searchPattern = new Uint8Array(searchPatternLength);
 
         if (!genericRegionMmr) {
-          searchPattern[0] = 0xFF;
-          searchPattern[1] = 0xAC;
+          searchPattern[0] = 0xff;
+          searchPattern[1] = 0xac;
         }
 
-        searchPattern[2] = genericRegionInfo.height >>> 24 & 0xFF;
-        searchPattern[3] = genericRegionInfo.height >> 16 & 0xFF;
-        searchPattern[4] = genericRegionInfo.height >> 8 & 0xFF;
-        searchPattern[5] = genericRegionInfo.height & 0xFF;
+        searchPattern[2] = genericRegionInfo.height >>> 24 & 0xff;
+        searchPattern[3] = genericRegionInfo.height >> 16 & 0xff;
+        searchPattern[4] = genericRegionInfo.height >> 8 & 0xff;
+        searchPattern[5] = genericRegionInfo.height & 0xff;
 
         for (i = position, ii = data.length; i < ii; i++) {
           var j = 0;
@@ -5647,11 +2091,11 @@ var Jbig2Image = function Jbig2ImageClosure() {
           }
         }
 
-        if (segmentHeader.length === 0xFFFFFFFF) {
-          throw new Jbig2Error('segment end was not found');
+        if (segmentHeader.length === 0xffffffff) {
+          throw new Jbig2Error("segment end was not found");
         }
       } else {
-        throw new Jbig2Error('invalid unknown segment length');
+        throw new Jbig2Error("invalid unknown segment length");
       }
     }
 
@@ -5668,7 +2112,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
       position = segmentHeader.headerEnd;
       var segment = {
         header: segmentHeader,
-        data: data
+        data
       };
 
       if (!header.randomAccess) {
@@ -5697,10 +2141,10 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
   function readRegionSegmentInformation(data, start) {
     return {
-      width: (0, _util.readUint32)(data, start),
-      height: (0, _util.readUint32)(data, start + 4),
-      x: (0, _util.readUint32)(data, start + 8),
-      y: (0, _util.readUint32)(data, start + 12),
+      width: (0, _core_utils.readUint32)(data, start),
+      height: (0, _core_utils.readUint32)(data, start + 4),
+      x: (0, _core_utils.readUint32)(data, start + 8),
+      y: (0, _core_utils.readUint32)(data, start + 12),
       combinationOperator: data[start + 16] & 7
     };
   }
@@ -5717,7 +2161,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
     switch (header.type) {
       case 0:
         var dictionary = {};
-        var dictionaryFlags = (0, _util.readUint16)(data, position);
+        var dictionaryFlags = (0, _core_utils.readUint16)(data, position);
         dictionary.huffman = !!(dictionaryFlags & 1);
         dictionary.refinement = !!(dictionaryFlags & 2);
         dictionary.huffmanDHSelector = dictionaryFlags >> 2 & 3;
@@ -5736,8 +2180,8 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
           for (i = 0; i < atLength; i++) {
             at.push({
-              x: (0, _util.readInt8)(data, position),
-              y: (0, _util.readInt8)(data, position + 1)
+              x: (0, _core_utils.readInt8)(data, position),
+              y: (0, _core_utils.readInt8)(data, position + 1)
             });
             position += 2;
           }
@@ -5750,8 +2194,8 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
           for (i = 0; i < 2; i++) {
             at.push({
-              x: (0, _util.readInt8)(data, position),
-              y: (0, _util.readInt8)(data, position + 1)
+              x: (0, _core_utils.readInt8)(data, position),
+              y: (0, _core_utils.readInt8)(data, position + 1)
             });
             position += 2;
           }
@@ -5759,9 +2203,9 @@ var Jbig2Image = function Jbig2ImageClosure() {
           dictionary.refinementAt = at;
         }
 
-        dictionary.numberOfExportedSymbols = (0, _util.readUint32)(data, position);
+        dictionary.numberOfExportedSymbols = (0, _core_utils.readUint32)(data, position);
         position += 4;
-        dictionary.numberOfNewSymbols = (0, _util.readUint32)(data, position);
+        dictionary.numberOfNewSymbols = (0, _core_utils.readUint32)(data, position);
         position += 4;
         args = [dictionary, header.number, header.referredTo, data, position, end];
         break;
@@ -5771,7 +2215,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
         var textRegion = {};
         textRegion.info = readRegionSegmentInformation(data, position);
         position += RegionSegmentInformationFieldLength;
-        var textRegionSegmentFlags = (0, _util.readUint16)(data, position);
+        var textRegionSegmentFlags = (0, _core_utils.readUint16)(data, position);
         position += 2;
         textRegion.huffman = !!(textRegionSegmentFlags & 1);
         textRegion.refinement = !!(textRegionSegmentFlags & 2);
@@ -5785,7 +2229,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
         textRegion.refinementTemplate = textRegionSegmentFlags >> 15 & 1;
 
         if (textRegion.huffman) {
-          var textRegionHuffmanFlags = (0, _util.readUint16)(data, position);
+          var textRegionHuffmanFlags = (0, _core_utils.readUint16)(data, position);
           position += 2;
           textRegion.huffmanFS = textRegionHuffmanFlags & 3;
           textRegion.huffmanDS = textRegionHuffmanFlags >> 2 & 3;
@@ -5802,8 +2246,8 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
           for (i = 0; i < 2; i++) {
             at.push({
-              x: (0, _util.readInt8)(data, position),
-              y: (0, _util.readInt8)(data, position + 1)
+              x: (0, _core_utils.readInt8)(data, position),
+              y: (0, _core_utils.readInt8)(data, position + 1)
             });
             position += 2;
           }
@@ -5811,45 +2255,45 @@ var Jbig2Image = function Jbig2ImageClosure() {
           textRegion.refinementAt = at;
         }
 
-        textRegion.numberOfSymbolInstances = (0, _util.readUint32)(data, position);
+        textRegion.numberOfSymbolInstances = (0, _core_utils.readUint32)(data, position);
         position += 4;
         args = [textRegion, header.referredTo, data, position, end];
         break;
 
       case 16:
-        var patternDictionary = {};
-        var patternDictionaryFlags = data[position++];
+        const patternDictionary = {};
+        const patternDictionaryFlags = data[position++];
         patternDictionary.mmr = !!(patternDictionaryFlags & 1);
         patternDictionary.template = patternDictionaryFlags >> 1 & 3;
         patternDictionary.patternWidth = data[position++];
         patternDictionary.patternHeight = data[position++];
-        patternDictionary.maxPatternIndex = (0, _util.readUint32)(data, position);
+        patternDictionary.maxPatternIndex = (0, _core_utils.readUint32)(data, position);
         position += 4;
         args = [patternDictionary, header.number, data, position, end];
         break;
 
       case 22:
       case 23:
-        var halftoneRegion = {};
+        const halftoneRegion = {};
         halftoneRegion.info = readRegionSegmentInformation(data, position);
         position += RegionSegmentInformationFieldLength;
-        var halftoneRegionFlags = data[position++];
+        const halftoneRegionFlags = data[position++];
         halftoneRegion.mmr = !!(halftoneRegionFlags & 1);
         halftoneRegion.template = halftoneRegionFlags >> 1 & 3;
         halftoneRegion.enableSkip = !!(halftoneRegionFlags & 8);
         halftoneRegion.combinationOperator = halftoneRegionFlags >> 4 & 7;
         halftoneRegion.defaultPixelValue = halftoneRegionFlags >> 7 & 1;
-        halftoneRegion.gridWidth = (0, _util.readUint32)(data, position);
+        halftoneRegion.gridWidth = (0, _core_utils.readUint32)(data, position);
         position += 4;
-        halftoneRegion.gridHeight = (0, _util.readUint32)(data, position);
+        halftoneRegion.gridHeight = (0, _core_utils.readUint32)(data, position);
         position += 4;
-        halftoneRegion.gridOffsetX = (0, _util.readUint32)(data, position) & 0xFFFFFFFF;
+        halftoneRegion.gridOffsetX = (0, _core_utils.readUint32)(data, position) & 0xffffffff;
         position += 4;
-        halftoneRegion.gridOffsetY = (0, _util.readUint32)(data, position) & 0xFFFFFFFF;
+        halftoneRegion.gridOffsetY = (0, _core_utils.readUint32)(data, position) & 0xffffffff;
         position += 4;
-        halftoneRegion.gridVectorX = (0, _util.readUint16)(data, position);
+        halftoneRegion.gridVectorX = (0, _core_utils.readUint16)(data, position);
         position += 2;
-        halftoneRegion.gridVectorY = (0, _util.readUint16)(data, position);
+        halftoneRegion.gridVectorY = (0, _core_utils.readUint16)(data, position);
         position += 2;
         args = [halftoneRegion, header.referredTo, data, position, end];
         break;
@@ -5870,8 +2314,8 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
           for (i = 0; i < atLength; i++) {
             at.push({
-              x: (0, _util.readInt8)(data, position),
-              y: (0, _util.readInt8)(data, position + 1)
+              x: (0, _core_utils.readInt8)(data, position),
+              y: (0, _core_utils.readInt8)(data, position + 1)
             });
             position += 2;
           }
@@ -5884,18 +2328,18 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
       case 48:
         var pageInfo = {
-          width: (0, _util.readUint32)(data, position),
-          height: (0, _util.readUint32)(data, position + 4),
-          resolutionX: (0, _util.readUint32)(data, position + 8),
-          resolutionY: (0, _util.readUint32)(data, position + 12)
+          width: (0, _core_utils.readUint32)(data, position),
+          height: (0, _core_utils.readUint32)(data, position + 4),
+          resolutionX: (0, _core_utils.readUint32)(data, position + 8),
+          resolutionY: (0, _core_utils.readUint32)(data, position + 12)
         };
 
-        if (pageInfo.height === 0xFFFFFFFF) {
+        if (pageInfo.height === 0xffffffff) {
           delete pageInfo.height;
         }
 
         var pageSegmentFlags = data[position + 16];
-        (0, _util.readUint16)(data, position + 17);
+        (0, _core_utils.readUint16)(data, position + 17);
         pageInfo.lossless = !!(pageSegmentFlags & 1);
         pageInfo.refinement = !!(pageSegmentFlags & 2);
         pageInfo.defaultPixelValue = pageSegmentFlags >> 2 & 1;
@@ -5922,10 +2366,10 @@ var Jbig2Image = function Jbig2ImageClosure() {
         break;
 
       default:
-        throw new Jbig2Error("segment type ".concat(header.typeName, "(").concat(header.type, ")") + ' is not implemented');
+        throw new Jbig2Error(`segment type ${header.typeName}(${header.type})` + " is not implemented");
     }
 
-    var callbackName = 'on' + header.typeName;
+    var callbackName = "on" + header.typeName;
 
     if (callbackName in visitor) {
       visitor[callbackName].apply(visitor, args);
@@ -5951,39 +2395,40 @@ var Jbig2Image = function Jbig2ImageClosure() {
   }
 
   function parseJbig2(data) {
-    var position = 0,
-        end = data.length;
+    const end = data.length;
+    let position = 0;
 
-    if (data[position] !== 0x97 || data[position + 1] !== 0x4A || data[position + 2] !== 0x42 || data[position + 3] !== 0x32 || data[position + 4] !== 0x0D || data[position + 5] !== 0x0A || data[position + 6] !== 0x1A || data[position + 7] !== 0x0A) {
-      throw new Jbig2Error('parseJbig2 - invalid header.');
+    if (data[position] !== 0x97 || data[position + 1] !== 0x4a || data[position + 2] !== 0x42 || data[position + 3] !== 0x32 || data[position + 4] !== 0x0d || data[position + 5] !== 0x0a || data[position + 6] !== 0x1a || data[position + 7] !== 0x0a) {
+      throw new Jbig2Error("parseJbig2 - invalid header.");
     }
 
-    var header = Object.create(null);
+    const header = Object.create(null);
     position += 8;
-    var flags = data[position++];
+    const flags = data[position++];
     header.randomAccess = !(flags & 1);
 
     if (!(flags & 2)) {
-      header.numberOfPages = (0, _util.readUint32)(data, position);
+      header.numberOfPages = (0, _core_utils.readUint32)(data, position);
       position += 4;
     }
 
-    var segments = readSegments(header, data, position, end);
-    var visitor = new SimpleSegmentVisitor();
+    const segments = readSegments(header, data, position, end);
+    const visitor = new SimpleSegmentVisitor();
     processSegments(segments, visitor);
-    var _visitor$currentPageI = visitor.currentPageInfo,
-        width = _visitor$currentPageI.width,
-        height = _visitor$currentPageI.height;
-    var bitPacked = visitor.buffer;
-    var imgData = new Uint8ClampedArray(width * height);
-    var q = 0,
+    const {
+      width,
+      height
+    } = visitor.currentPageInfo;
+    const bitPacked = visitor.buffer;
+    const imgData = new Uint8ClampedArray(width * height);
+    let q = 0,
         k = 0;
 
-    for (var i = 0; i < height; i++) {
-      var mask = 0,
-          buffer = void 0;
+    for (let i = 0; i < height; i++) {
+      let mask = 0,
+          buffer;
 
-      for (var j = 0; j < width; j++) {
+      for (let j = 0; j < width; j++) {
         if (!mask) {
           mask = 128;
           buffer = bitPacked[k++];
@@ -5995,9 +2440,9 @@ var Jbig2Image = function Jbig2ImageClosure() {
     }
 
     return {
-      imgData: imgData,
-      width: width,
-      height: height
+      imgData,
+      width,
+      height
     };
   }
 
@@ -6011,7 +2456,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
       if (info.defaultPixelValue) {
         for (var i = 0, ii = buffer.length; i < ii; i++) {
-          buffer[i] = 0xFF;
+          buffer[i] = 0xff;
         }
       }
 
@@ -6076,7 +2521,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
           break;
 
         default:
-          throw new Jbig2Error("operator ".concat(combinationOperator, " is not supported"));
+          throw new Jbig2Error(`operator ${combinationOperator} is not supported`);
       }
     },
     onImmediateGenericRegion: function SimpleSegmentVisitor_onImmediateGenericRegion(region, data, start, end) {
@@ -6089,7 +2534,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
       this.onImmediateGenericRegion.apply(this, arguments);
     },
     onSymbolDictionary: function SimpleSegmentVisitor_onSymbolDictionary(dictionary, currentSegment, referredSegments, data, start, end) {
-      var huffmanTables, huffmanInput;
+      let huffmanTables, huffmanInput;
 
       if (dictionary.huffman) {
         huffmanTables = getSymbolDictionaryHuffmanTables(dictionary, referredSegments, this.customTables);
@@ -6105,7 +2550,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
       var inputSymbols = [];
 
       for (var i = 0, ii = referredSegments.length; i < ii; i++) {
-        var referredSymbols = symbols[referredSegments[i]];
+        const referredSymbols = symbols[referredSegments[i]];
 
         if (referredSymbols) {
           inputSymbols = inputSymbols.concat(referredSymbols);
@@ -6117,19 +2562,19 @@ var Jbig2Image = function Jbig2ImageClosure() {
     },
     onImmediateTextRegion: function SimpleSegmentVisitor_onImmediateTextRegion(region, referredSegments, data, start, end) {
       var regionInfo = region.info;
-      var huffmanTables, huffmanInput;
+      let huffmanTables, huffmanInput;
       var symbols = this.symbols;
       var inputSymbols = [];
 
       for (var i = 0, ii = referredSegments.length; i < ii; i++) {
-        var referredSymbols = symbols[referredSegments[i]];
+        const referredSymbols = symbols[referredSegments[i]];
 
         if (referredSymbols) {
           inputSymbols = inputSymbols.concat(referredSymbols);
         }
       }
 
-      var symbolCodeLength = (0, _util.log2)(inputSymbols.length);
+      var symbolCodeLength = (0, _core_utils.log2)(inputSymbols.length);
 
       if (region.huffman) {
         huffmanInput = new Reader(data, start, end);
@@ -6143,28 +2588,32 @@ var Jbig2Image = function Jbig2ImageClosure() {
     onImmediateLosslessTextRegion: function SimpleSegmentVisitor_onImmediateLosslessTextRegion() {
       this.onImmediateTextRegion.apply(this, arguments);
     },
-    onPatternDictionary: function onPatternDictionary(dictionary, currentSegment, data, start, end) {
-      var patterns = this.patterns;
+
+    onPatternDictionary(dictionary, currentSegment, data, start, end) {
+      let patterns = this.patterns;
 
       if (!patterns) {
         this.patterns = patterns = {};
       }
 
-      var decodingContext = new DecodingContext(data, start, end);
+      const decodingContext = new DecodingContext(data, start, end);
       patterns[currentSegment] = decodePatternDictionary(dictionary.mmr, dictionary.patternWidth, dictionary.patternHeight, dictionary.maxPatternIndex, dictionary.template, decodingContext);
     },
-    onImmediateHalftoneRegion: function onImmediateHalftoneRegion(region, referredSegments, data, start, end) {
-      var patterns = this.patterns[referredSegments[0]];
-      var regionInfo = region.info;
-      var decodingContext = new DecodingContext(data, start, end);
-      var bitmap = decodeHalftoneRegion(region.mmr, patterns, region.template, regionInfo.width, regionInfo.height, region.defaultPixelValue, region.enableSkip, region.combinationOperator, region.gridWidth, region.gridHeight, region.gridOffsetX, region.gridOffsetY, region.gridVectorX, region.gridVectorY, decodingContext);
+
+    onImmediateHalftoneRegion(region, referredSegments, data, start, end) {
+      const patterns = this.patterns[referredSegments[0]];
+      const regionInfo = region.info;
+      const decodingContext = new DecodingContext(data, start, end);
+      const bitmap = decodeHalftoneRegion(region.mmr, patterns, region.template, regionInfo.width, regionInfo.height, region.defaultPixelValue, region.enableSkip, region.combinationOperator, region.gridWidth, region.gridHeight, region.gridOffsetX, region.gridOffsetY, region.gridVectorX, region.gridVectorY, decodingContext);
       this.drawBitmap(regionInfo, bitmap);
     },
-    onImmediateLosslessHalftoneRegion: function onImmediateLosslessHalftoneRegion() {
+
+    onImmediateLosslessHalftoneRegion() {
       this.onImmediateHalftoneRegion.apply(this, arguments);
     },
-    onTables: function onTables(currentSegment, data, start, end) {
-      var customTables = this.customTables;
+
+    onTables(currentSegment, data, start, end) {
+      let customTables = this.customTables;
 
       if (!customTables) {
         this.customTables = customTables = {};
@@ -6172,6 +2621,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
       customTables[currentSegment] = decodeTablesSegment(data, start, end);
     }
+
   };
 
   function HuffmanLine(lineData) {
@@ -6188,7 +2638,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
       this.prefixLength = lineData[1];
       this.rangeLength = lineData[2];
       this.prefixCode = lineData[3];
-      this.isLowerRange = lineData[4] === 'lower';
+      this.isLowerRange = lineData[4] === "lower";
     }
   }
 
@@ -6207,13 +2657,13 @@ var Jbig2Image = function Jbig2ImageClosure() {
   }
 
   HuffmanTreeNode.prototype = {
-    buildTree: function buildTree(line, shift) {
-      var bit = line.prefixCode >> shift & 1;
+    buildTree(line, shift) {
+      const bit = line.prefixCode >> shift & 1;
 
       if (shift <= 0) {
         this.children[bit] = new HuffmanTreeNode(line);
       } else {
-        var node = this.children[bit];
+        let node = this.children[bit];
 
         if (!node) {
           this.children[bit] = node = new HuffmanTreeNode(null);
@@ -6222,24 +2672,26 @@ var Jbig2Image = function Jbig2ImageClosure() {
         node.buildTree(line, shift - 1);
       }
     },
-    decodeNode: function decodeNode(reader) {
+
+    decodeNode(reader) {
       if (this.isLeaf) {
         if (this.isOOB) {
           return null;
         }
 
-        var htOffset = reader.readBits(this.rangeLength);
+        const htOffset = reader.readBits(this.rangeLength);
         return this.rangeLow + (this.isLowerRange ? -htOffset : htOffset);
       }
 
-      var node = this.children[reader.readBit()];
+      const node = this.children[reader.readBit()];
 
       if (!node) {
-        throw new Jbig2Error('invalid Huffman data');
+        throw new Jbig2Error("invalid Huffman data");
       }
 
       return node.decodeNode(reader);
     }
+
   };
 
   function HuffmanTable(lines, prefixCodesDone) {
@@ -6248,12 +2700,9 @@ var Jbig2Image = function Jbig2ImageClosure() {
     }
 
     this.rootNode = new HuffmanTreeNode(null);
-    var i,
-        ii = lines.length,
-        line;
 
-    for (i = 0; i < ii; i++) {
-      line = lines[i];
+    for (let i = 0, ii = lines.length; i < ii; i++) {
+      const line = lines[i];
 
       if (line.prefixLength > 0) {
         this.rootNode.buildTree(line, line.prefixLength - 1);
@@ -6262,25 +2711,25 @@ var Jbig2Image = function Jbig2ImageClosure() {
   }
 
   HuffmanTable.prototype = {
-    decode: function decode(reader) {
+    decode(reader) {
       return this.rootNode.decodeNode(reader);
     },
-    assignPrefixCodes: function assignPrefixCodes(lines) {
-      var linesLength = lines.length,
-          prefixLengthMax = 0,
-          i;
 
-      for (i = 0; i < linesLength; i++) {
+    assignPrefixCodes(lines) {
+      const linesLength = lines.length;
+      let prefixLengthMax = 0;
+
+      for (let i = 0; i < linesLength; i++) {
         prefixLengthMax = Math.max(prefixLengthMax, lines[i].prefixLength);
       }
 
-      var histogram = new Uint32Array(prefixLengthMax + 1);
+      const histogram = new Uint32Array(prefixLengthMax + 1);
 
-      for (i = 0; i < linesLength; i++) {
+      for (let i = 0; i < linesLength; i++) {
         histogram[lines[i].prefixLength]++;
       }
 
-      var currentLength = 1,
+      let currentLength = 1,
           firstCode = 0,
           currentCode,
           currentTemp,
@@ -6306,17 +2755,18 @@ var Jbig2Image = function Jbig2ImageClosure() {
         currentLength++;
       }
     }
+
   };
 
   function decodeTablesSegment(data, start, end) {
-    var flags = data[start];
-    var lowestValue = (0, _util.readUint32)(data, start + 1) & 0xFFFFFFFF;
-    var highestValue = (0, _util.readUint32)(data, start + 5) & 0xFFFFFFFF;
-    var reader = new Reader(data, start + 9, end);
-    var prefixSizeBits = (flags >> 1 & 7) + 1;
-    var rangeSizeBits = (flags >> 4 & 7) + 1;
-    var lines = [];
-    var prefixLength,
+    const flags = data[start];
+    const lowestValue = (0, _core_utils.readUint32)(data, start + 1) & 0xffffffff;
+    const highestValue = (0, _core_utils.readUint32)(data, start + 5) & 0xffffffff;
+    const reader = new Reader(data, start + 9, end);
+    const prefixSizeBits = (flags >> 1 & 7) + 1;
+    const rangeSizeBits = (flags >> 4 & 7) + 1;
+    const lines = [];
+    let prefixLength,
         rangeLength,
         currentRangeLow = lowestValue;
 
@@ -6328,7 +2778,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
     } while (currentRangeLow < highestValue);
 
     prefixLength = reader.readBits(prefixSizeBits);
-    lines.push(new HuffmanLine([lowestValue - 1, prefixLength, 32, 0, 'lower']));
+    lines.push(new HuffmanLine([lowestValue - 1, prefixLength, 32, 0, "lower"]));
     prefixLength = reader.readBits(prefixSizeBits);
     lines.push(new HuffmanLine([highestValue, prefixLength, 32, 0]));
 
@@ -6340,16 +2790,16 @@ var Jbig2Image = function Jbig2ImageClosure() {
     return new HuffmanTable(lines, false);
   }
 
-  var standardTablesCache = {};
+  const standardTablesCache = {};
 
   function getStandardTable(number) {
-    var table = standardTablesCache[number];
+    let table = standardTablesCache[number];
 
     if (table) {
       return table;
     }
 
-    var lines;
+    let lines;
 
     switch (number) {
       case 1:
@@ -6357,51 +2807,51 @@ var Jbig2Image = function Jbig2ImageClosure() {
         break;
 
       case 2:
-        lines = [[0, 1, 0, 0x0], [1, 2, 0, 0x2], [2, 3, 0, 0x6], [3, 4, 3, 0xE], [11, 5, 6, 0x1E], [75, 6, 32, 0x3E], [6, 0x3F]];
+        lines = [[0, 1, 0, 0x0], [1, 2, 0, 0x2], [2, 3, 0, 0x6], [3, 4, 3, 0xe], [11, 5, 6, 0x1e], [75, 6, 32, 0x3e], [6, 0x3f]];
         break;
 
       case 3:
-        lines = [[-256, 8, 8, 0xFE], [0, 1, 0, 0x0], [1, 2, 0, 0x2], [2, 3, 0, 0x6], [3, 4, 3, 0xE], [11, 5, 6, 0x1E], [-257, 8, 32, 0xFF, 'lower'], [75, 7, 32, 0x7E], [6, 0x3E]];
+        lines = [[-256, 8, 8, 0xfe], [0, 1, 0, 0x0], [1, 2, 0, 0x2], [2, 3, 0, 0x6], [3, 4, 3, 0xe], [11, 5, 6, 0x1e], [-257, 8, 32, 0xff, "lower"], [75, 7, 32, 0x7e], [6, 0x3e]];
         break;
 
       case 4:
-        lines = [[1, 1, 0, 0x0], [2, 2, 0, 0x2], [3, 3, 0, 0x6], [4, 4, 3, 0xE], [12, 5, 6, 0x1E], [76, 5, 32, 0x1F]];
+        lines = [[1, 1, 0, 0x0], [2, 2, 0, 0x2], [3, 3, 0, 0x6], [4, 4, 3, 0xe], [12, 5, 6, 0x1e], [76, 5, 32, 0x1f]];
         break;
 
       case 5:
-        lines = [[-255, 7, 8, 0x7E], [1, 1, 0, 0x0], [2, 2, 0, 0x2], [3, 3, 0, 0x6], [4, 4, 3, 0xE], [12, 5, 6, 0x1E], [-256, 7, 32, 0x7F, 'lower'], [76, 6, 32, 0x3E]];
+        lines = [[-255, 7, 8, 0x7e], [1, 1, 0, 0x0], [2, 2, 0, 0x2], [3, 3, 0, 0x6], [4, 4, 3, 0xe], [12, 5, 6, 0x1e], [-256, 7, 32, 0x7f, "lower"], [76, 6, 32, 0x3e]];
         break;
 
       case 6:
-        lines = [[-2048, 5, 10, 0x1C], [-1024, 4, 9, 0x8], [-512, 4, 8, 0x9], [-256, 4, 7, 0xA], [-128, 5, 6, 0x1D], [-64, 5, 5, 0x1E], [-32, 4, 5, 0xB], [0, 2, 7, 0x0], [128, 3, 7, 0x2], [256, 3, 8, 0x3], [512, 4, 9, 0xC], [1024, 4, 10, 0xD], [-2049, 6, 32, 0x3E, 'lower'], [2048, 6, 32, 0x3F]];
+        lines = [[-2048, 5, 10, 0x1c], [-1024, 4, 9, 0x8], [-512, 4, 8, 0x9], [-256, 4, 7, 0xa], [-128, 5, 6, 0x1d], [-64, 5, 5, 0x1e], [-32, 4, 5, 0xb], [0, 2, 7, 0x0], [128, 3, 7, 0x2], [256, 3, 8, 0x3], [512, 4, 9, 0xc], [1024, 4, 10, 0xd], [-2049, 6, 32, 0x3e, "lower"], [2048, 6, 32, 0x3f]];
         break;
 
       case 7:
-        lines = [[-1024, 4, 9, 0x8], [-512, 3, 8, 0x0], [-256, 4, 7, 0x9], [-128, 5, 6, 0x1A], [-64, 5, 5, 0x1B], [-32, 4, 5, 0xA], [0, 4, 5, 0xB], [32, 5, 5, 0x1C], [64, 5, 6, 0x1D], [128, 4, 7, 0xC], [256, 3, 8, 0x1], [512, 3, 9, 0x2], [1024, 3, 10, 0x3], [-1025, 5, 32, 0x1E, 'lower'], [2048, 5, 32, 0x1F]];
+        lines = [[-1024, 4, 9, 0x8], [-512, 3, 8, 0x0], [-256, 4, 7, 0x9], [-128, 5, 6, 0x1a], [-64, 5, 5, 0x1b], [-32, 4, 5, 0xa], [0, 4, 5, 0xb], [32, 5, 5, 0x1c], [64, 5, 6, 0x1d], [128, 4, 7, 0xc], [256, 3, 8, 0x1], [512, 3, 9, 0x2], [1024, 3, 10, 0x3], [-1025, 5, 32, 0x1e, "lower"], [2048, 5, 32, 0x1f]];
         break;
 
       case 8:
-        lines = [[-15, 8, 3, 0xFC], [-7, 9, 1, 0x1FC], [-5, 8, 1, 0xFD], [-3, 9, 0, 0x1FD], [-2, 7, 0, 0x7C], [-1, 4, 0, 0xA], [0, 2, 1, 0x0], [2, 5, 0, 0x1A], [3, 6, 0, 0x3A], [4, 3, 4, 0x4], [20, 6, 1, 0x3B], [22, 4, 4, 0xB], [38, 4, 5, 0xC], [70, 5, 6, 0x1B], [134, 5, 7, 0x1C], [262, 6, 7, 0x3C], [390, 7, 8, 0x7D], [646, 6, 10, 0x3D], [-16, 9, 32, 0x1FE, 'lower'], [1670, 9, 32, 0x1FF], [2, 0x1]];
+        lines = [[-15, 8, 3, 0xfc], [-7, 9, 1, 0x1fc], [-5, 8, 1, 0xfd], [-3, 9, 0, 0x1fd], [-2, 7, 0, 0x7c], [-1, 4, 0, 0xa], [0, 2, 1, 0x0], [2, 5, 0, 0x1a], [3, 6, 0, 0x3a], [4, 3, 4, 0x4], [20, 6, 1, 0x3b], [22, 4, 4, 0xb], [38, 4, 5, 0xc], [70, 5, 6, 0x1b], [134, 5, 7, 0x1c], [262, 6, 7, 0x3c], [390, 7, 8, 0x7d], [646, 6, 10, 0x3d], [-16, 9, 32, 0x1fe, "lower"], [1670, 9, 32, 0x1ff], [2, 0x1]];
         break;
 
       case 9:
-        lines = [[-31, 8, 4, 0xFC], [-15, 9, 2, 0x1FC], [-11, 8, 2, 0xFD], [-7, 9, 1, 0x1FD], [-5, 7, 1, 0x7C], [-3, 4, 1, 0xA], [-1, 3, 1, 0x2], [1, 3, 1, 0x3], [3, 5, 1, 0x1A], [5, 6, 1, 0x3A], [7, 3, 5, 0x4], [39, 6, 2, 0x3B], [43, 4, 5, 0xB], [75, 4, 6, 0xC], [139, 5, 7, 0x1B], [267, 5, 8, 0x1C], [523, 6, 8, 0x3C], [779, 7, 9, 0x7D], [1291, 6, 11, 0x3D], [-32, 9, 32, 0x1FE, 'lower'], [3339, 9, 32, 0x1FF], [2, 0x0]];
+        lines = [[-31, 8, 4, 0xfc], [-15, 9, 2, 0x1fc], [-11, 8, 2, 0xfd], [-7, 9, 1, 0x1fd], [-5, 7, 1, 0x7c], [-3, 4, 1, 0xa], [-1, 3, 1, 0x2], [1, 3, 1, 0x3], [3, 5, 1, 0x1a], [5, 6, 1, 0x3a], [7, 3, 5, 0x4], [39, 6, 2, 0x3b], [43, 4, 5, 0xb], [75, 4, 6, 0xc], [139, 5, 7, 0x1b], [267, 5, 8, 0x1c], [523, 6, 8, 0x3c], [779, 7, 9, 0x7d], [1291, 6, 11, 0x3d], [-32, 9, 32, 0x1fe, "lower"], [3339, 9, 32, 0x1ff], [2, 0x0]];
         break;
 
       case 10:
-        lines = [[-21, 7, 4, 0x7A], [-5, 8, 0, 0xFC], [-4, 7, 0, 0x7B], [-3, 5, 0, 0x18], [-2, 2, 2, 0x0], [2, 5, 0, 0x19], [3, 6, 0, 0x36], [4, 7, 0, 0x7C], [5, 8, 0, 0xFD], [6, 2, 6, 0x1], [70, 5, 5, 0x1A], [102, 6, 5, 0x37], [134, 6, 6, 0x38], [198, 6, 7, 0x39], [326, 6, 8, 0x3A], [582, 6, 9, 0x3B], [1094, 6, 10, 0x3C], [2118, 7, 11, 0x7D], [-22, 8, 32, 0xFE, 'lower'], [4166, 8, 32, 0xFF], [2, 0x2]];
+        lines = [[-21, 7, 4, 0x7a], [-5, 8, 0, 0xfc], [-4, 7, 0, 0x7b], [-3, 5, 0, 0x18], [-2, 2, 2, 0x0], [2, 5, 0, 0x19], [3, 6, 0, 0x36], [4, 7, 0, 0x7c], [5, 8, 0, 0xfd], [6, 2, 6, 0x1], [70, 5, 5, 0x1a], [102, 6, 5, 0x37], [134, 6, 6, 0x38], [198, 6, 7, 0x39], [326, 6, 8, 0x3a], [582, 6, 9, 0x3b], [1094, 6, 10, 0x3c], [2118, 7, 11, 0x7d], [-22, 8, 32, 0xfe, "lower"], [4166, 8, 32, 0xff], [2, 0x2]];
         break;
 
       case 11:
-        lines = [[1, 1, 0, 0x0], [2, 2, 1, 0x2], [4, 4, 0, 0xC], [5, 4, 1, 0xD], [7, 5, 1, 0x1C], [9, 5, 2, 0x1D], [13, 6, 2, 0x3C], [17, 7, 2, 0x7A], [21, 7, 3, 0x7B], [29, 7, 4, 0x7C], [45, 7, 5, 0x7D], [77, 7, 6, 0x7E], [141, 7, 32, 0x7F]];
+        lines = [[1, 1, 0, 0x0], [2, 2, 1, 0x2], [4, 4, 0, 0xc], [5, 4, 1, 0xd], [7, 5, 1, 0x1c], [9, 5, 2, 0x1d], [13, 6, 2, 0x3c], [17, 7, 2, 0x7a], [21, 7, 3, 0x7b], [29, 7, 4, 0x7c], [45, 7, 5, 0x7d], [77, 7, 6, 0x7e], [141, 7, 32, 0x7f]];
         break;
 
       case 12:
-        lines = [[1, 1, 0, 0x0], [2, 2, 0, 0x2], [3, 3, 1, 0x6], [5, 5, 0, 0x1C], [6, 5, 1, 0x1D], [8, 6, 1, 0x3C], [10, 7, 0, 0x7A], [11, 7, 1, 0x7B], [13, 7, 2, 0x7C], [17, 7, 3, 0x7D], [25, 7, 4, 0x7E], [41, 8, 5, 0xFE], [73, 8, 32, 0xFF]];
+        lines = [[1, 1, 0, 0x0], [2, 2, 0, 0x2], [3, 3, 1, 0x6], [5, 5, 0, 0x1c], [6, 5, 1, 0x1d], [8, 6, 1, 0x3c], [10, 7, 0, 0x7a], [11, 7, 1, 0x7b], [13, 7, 2, 0x7c], [17, 7, 3, 0x7d], [25, 7, 4, 0x7e], [41, 8, 5, 0xfe], [73, 8, 32, 0xff]];
         break;
 
       case 13:
-        lines = [[1, 1, 0, 0x0], [2, 3, 0, 0x4], [3, 4, 0, 0xC], [4, 5, 0, 0x1C], [5, 4, 1, 0xD], [7, 3, 3, 0x5], [15, 6, 1, 0x3A], [17, 6, 2, 0x3B], [21, 6, 3, 0x3C], [29, 6, 4, 0x3D], [45, 6, 5, 0x3E], [77, 7, 6, 0x7E], [141, 7, 32, 0x7F]];
+        lines = [[1, 1, 0, 0x0], [2, 3, 0, 0x4], [3, 4, 0, 0xc], [4, 5, 0, 0x1c], [5, 4, 1, 0xd], [7, 3, 3, 0x5], [15, 6, 1, 0x3a], [17, 6, 2, 0x3b], [21, 6, 3, 0x3c], [29, 6, 4, 0x3d], [45, 6, 5, 0x3e], [77, 7, 6, 0x7e], [141, 7, 32, 0x7f]];
         break;
 
       case 14:
@@ -6409,17 +2859,14 @@ var Jbig2Image = function Jbig2ImageClosure() {
         break;
 
       case 15:
-        lines = [[-24, 7, 4, 0x7C], [-8, 6, 2, 0x3C], [-4, 5, 1, 0x1C], [-2, 4, 0, 0xC], [-1, 3, 0, 0x4], [0, 1, 0, 0x0], [1, 3, 0, 0x5], [2, 4, 0, 0xD], [3, 5, 1, 0x1D], [5, 6, 2, 0x3D], [9, 7, 4, 0x7D], [-25, 7, 32, 0x7E, 'lower'], [25, 7, 32, 0x7F]];
+        lines = [[-24, 7, 4, 0x7c], [-8, 6, 2, 0x3c], [-4, 5, 1, 0x1c], [-2, 4, 0, 0xc], [-1, 3, 0, 0x4], [0, 1, 0, 0x0], [1, 3, 0, 0x5], [2, 4, 0, 0xd], [3, 5, 1, 0x1d], [5, 6, 2, 0x3d], [9, 7, 4, 0x7d], [-25, 7, 32, 0x7e, "lower"], [25, 7, 32, 0x7f]];
         break;
 
       default:
-        throw new Jbig2Error("standard table B.".concat(number, " does not exist"));
+        throw new Jbig2Error(`standard table B.${number} does not exist`);
     }
 
-    var length = lines.length,
-        i;
-
-    for (i = 0; i < length; i++) {
+    for (let i = 0, ii = lines.length; i < ii; i++) {
       lines[i] = new HuffmanLine(lines[i]);
     }
 
@@ -6438,22 +2885,23 @@ var Jbig2Image = function Jbig2ImageClosure() {
   }
 
   Reader.prototype = {
-    readBit: function readBit() {
+    readBit() {
       if (this.shift < 0) {
         if (this.position >= this.end) {
-          throw new Jbig2Error('end of data while reading bit');
+          throw new Jbig2Error("end of data while reading bit");
         }
 
         this.currentByte = this.data[this.position++];
         this.shift = 7;
       }
 
-      var bit = this.currentByte >> this.shift & 1;
+      const bit = this.currentByte >> this.shift & 1;
       this.shift--;
       return bit;
     },
-    readBits: function readBits(numBits) {
-      var result = 0,
+
+    readBits(numBits) {
+      let result = 0,
           i;
 
       for (i = numBits - 1; i >= 0; i--) {
@@ -6462,26 +2910,26 @@ var Jbig2Image = function Jbig2ImageClosure() {
 
       return result;
     },
-    byteAlign: function byteAlign() {
+
+    byteAlign() {
       this.shift = -1;
     },
-    next: function next() {
+
+    next() {
       if (this.position >= this.end) {
         return -1;
       }
 
       return this.data[this.position++];
     }
+
   };
 
   function getCustomHuffmanTable(index, referredTo, customTables) {
-    var currentIndex = 0,
-        i,
-        ii = referredTo.length,
-        table;
+    let currentIndex = 0;
 
-    for (i = 0; i < ii; i++) {
-      table = customTables[referredTo[i]];
+    for (let i = 0, ii = referredTo.length; i < ii; i++) {
+      const table = customTables[referredTo[i]];
 
       if (table) {
         if (index === currentIndex) {
@@ -6492,34 +2940,30 @@ var Jbig2Image = function Jbig2ImageClosure() {
       }
     }
 
-    throw new Jbig2Error('can\'t find custom Huffman table');
+    throw new Jbig2Error("can't find custom Huffman table");
   }
 
   function getTextRegionHuffmanTables(textRegion, referredTo, customTables, numberOfSymbols, reader) {
-    var codes = [],
-        i,
-        codeLength;
+    const codes = [];
 
-    for (i = 0; i <= 34; i++) {
-      codeLength = reader.readBits(4);
+    for (let i = 0; i <= 34; i++) {
+      const codeLength = reader.readBits(4);
       codes.push(new HuffmanLine([i, codeLength, 0, 0]));
     }
 
-    var runCodesTable = new HuffmanTable(codes, false);
+    const runCodesTable = new HuffmanTable(codes, false);
     codes.length = 0;
 
-    for (i = 0; i < numberOfSymbols;) {
-      codeLength = runCodesTable.decode(reader);
+    for (let i = 0; i < numberOfSymbols;) {
+      const codeLength = runCodesTable.decode(reader);
 
       if (codeLength >= 32) {
-        var repeatedLength = void 0,
-            numberOfRepeats = void 0,
-            j = void 0;
+        let repeatedLength, numberOfRepeats, j;
 
         switch (codeLength) {
           case 32:
             if (i === 0) {
-              throw new Jbig2Error('no previous value in symbol ID table');
+              throw new Jbig2Error("no previous value in symbol ID table");
             }
 
             numberOfRepeats = reader.readBits(2) + 3;
@@ -6537,7 +2981,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
             break;
 
           default:
-            throw new Jbig2Error('invalid code length in symbol ID table');
+            throw new Jbig2Error("invalid code length in symbol ID table");
         }
 
         for (j = 0; j < numberOfRepeats; j++) {
@@ -6551,8 +2995,8 @@ var Jbig2Image = function Jbig2ImageClosure() {
     }
 
     reader.byteAlign();
-    var symbolIDTable = new HuffmanTable(codes, false);
-    var customIndex = 0,
+    const symbolIDTable = new HuffmanTable(codes, false);
+    let customIndex = 0,
         tableFirstS,
         tableDeltaS,
         tableDeltaT;
@@ -6569,7 +3013,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
         break;
 
       default:
-        throw new Jbig2Error('invalid Huffman FS selector');
+        throw new Jbig2Error("invalid Huffman FS selector");
     }
 
     switch (textRegion.huffmanDS) {
@@ -6585,7 +3029,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
         break;
 
       default:
-        throw new Jbig2Error('invalid Huffman DS selector');
+        throw new Jbig2Error("invalid Huffman DS selector");
     }
 
     switch (textRegion.huffmanDT) {
@@ -6601,23 +3045,23 @@ var Jbig2Image = function Jbig2ImageClosure() {
         break;
 
       default:
-        throw new Jbig2Error('invalid Huffman DT selector');
+        throw new Jbig2Error("invalid Huffman DT selector");
     }
 
     if (textRegion.refinement) {
-      throw new Jbig2Error('refinement with Huffman is not supported');
+      throw new Jbig2Error("refinement with Huffman is not supported");
     }
 
     return {
-      symbolIDTable: symbolIDTable,
-      tableFirstS: tableFirstS,
-      tableDeltaS: tableDeltaS,
-      tableDeltaT: tableDeltaT
+      symbolIDTable,
+      tableFirstS,
+      tableDeltaS,
+      tableDeltaT
     };
   }
 
   function getSymbolDictionaryHuffmanTables(dictionary, referredTo, customTables) {
-    var customIndex = 0,
+    let customIndex = 0,
         tableDeltaHeight,
         tableDeltaWidth;
 
@@ -6633,7 +3077,7 @@ var Jbig2Image = function Jbig2ImageClosure() {
         break;
 
       default:
-        throw new Jbig2Error('invalid Huffman DH selector');
+        throw new Jbig2Error("invalid Huffman DH selector");
     }
 
     switch (dictionary.huffmanDWSelector) {
@@ -6648,10 +3092,10 @@ var Jbig2Image = function Jbig2ImageClosure() {
         break;
 
       default:
-        throw new Jbig2Error('invalid Huffman DW selector');
+        throw new Jbig2Error("invalid Huffman DW selector");
     }
 
-    var tableBitmapSize, tableAggregateInstances;
+    let tableBitmapSize, tableAggregateInstances;
 
     if (dictionary.bitmapSizeSelector) {
       tableBitmapSize = getCustomHuffmanTable(customIndex, referredTo, customTables);
@@ -6667,24 +3111,21 @@ var Jbig2Image = function Jbig2ImageClosure() {
     }
 
     return {
-      tableDeltaHeight: tableDeltaHeight,
-      tableDeltaWidth: tableDeltaWidth,
-      tableBitmapSize: tableBitmapSize,
-      tableAggregateInstances: tableAggregateInstances
+      tableDeltaHeight,
+      tableDeltaWidth,
+      tableBitmapSize,
+      tableAggregateInstances
     };
   }
 
   function readUncompressedBitmap(reader, width, height) {
-    var bitmap = [],
-        x,
-        y,
-        row;
+    const bitmap = [];
 
-    for (y = 0; y < height; y++) {
-      row = new Uint8Array(width);
+    for (let y = 0; y < height; y++) {
+      const row = new Uint8Array(width);
       bitmap.push(row);
 
-      for (x = 0; x < width; x++) {
+      for (let x = 0; x < width; x++) {
         row[x] = reader.readBit();
       }
 
@@ -6695,28 +3136,24 @@ var Jbig2Image = function Jbig2ImageClosure() {
   }
 
   function decodeMMRBitmap(input, width, height, endOfBlock) {
-    var params = {
+    const params = {
       K: -1,
       Columns: width,
       Rows: height,
       BlackIs1: true,
       EndOfBlock: endOfBlock
     };
-    var decoder = new _ccitt.CCITTFaxDecoder(input, params);
-    var bitmap = [],
-        x,
-        y,
-        row,
-        currentByte,
-        shift,
+    const decoder = new _ccitt.CCITTFaxDecoder(input, params);
+    const bitmap = [];
+    let currentByte,
         eof = false;
 
-    for (y = 0; y < height; y++) {
-      row = new Uint8Array(width);
+    for (let y = 0; y < height; y++) {
+      const row = new Uint8Array(width);
       bitmap.push(row);
-      shift = -1;
+      let shift = -1;
 
-      for (x = 0; x < width; x++) {
+      for (let x = 0; x < width; x++) {
         if (shift < 0) {
           currentByte = decoder.readNextChar();
 
@@ -6734,9 +3171,9 @@ var Jbig2Image = function Jbig2ImageClosure() {
     }
 
     if (endOfBlock && !eof) {
-      var lookForEOFLimit = 5;
+      const lookForEOFLimit = 5;
 
-      for (var i = 0; i < lookForEOFLimit; i++) {
+      for (let i = 0; i < lookForEOFLimit; i++) {
         if (decoder.readNextChar() === -1) {
           break;
         }
@@ -6749,19 +3186,21 @@ var Jbig2Image = function Jbig2ImageClosure() {
   function Jbig2Image() {}
 
   Jbig2Image.prototype = {
-    parseChunks: function parseChunks(chunks) {
+    parseChunks(chunks) {
       return parseJbig2Chunks(chunks);
     },
-    parse: function parse(data) {
-      var _parseJbig = parseJbig2(data),
-          imgData = _parseJbig.imgData,
-          width = _parseJbig.width,
-          height = _parseJbig.height;
 
+    parse(data) {
+      const {
+        imgData,
+        width,
+        height
+      } = parseJbig2(data);
       this.width = width;
       this.height = height;
       return imgData;
     }
+
   };
   return Jbig2Image;
 }();
@@ -6769,7 +3208,144 @@ var Jbig2Image = function Jbig2ImageClosure() {
 exports.Jbig2Image = Jbig2Image;
 
 /***/ }),
-/* 134 */
+/* 4 */
+/***/ (function(module, exports, __w_pdfjs_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getLookupTableFactory = getLookupTableFactory;
+exports.getInheritableProperty = getInheritableProperty;
+exports.toRomanNumerals = toRomanNumerals;
+exports.log2 = log2;
+exports.readInt8 = readInt8;
+exports.readUint16 = readUint16;
+exports.readUint32 = readUint32;
+exports.isWhiteSpace = isWhiteSpace;
+exports.XRefParseException = exports.XRefEntryException = exports.MissingDataException = void 0;
+
+var _util = __w_pdfjs_require__(1);
+
+function getLookupTableFactory(initializer) {
+  let lookup;
+  return function () {
+    if (initializer) {
+      lookup = Object.create(null);
+      initializer(lookup);
+      initializer = null;
+    }
+
+    return lookup;
+  };
+}
+
+class MissingDataException extends _util.BaseException {
+  constructor(begin, end) {
+    super(`Missing data [${begin}, ${end})`);
+    this.begin = begin;
+    this.end = end;
+  }
+
+}
+
+exports.MissingDataException = MissingDataException;
+
+class XRefEntryException extends _util.BaseException {}
+
+exports.XRefEntryException = XRefEntryException;
+
+class XRefParseException extends _util.BaseException {}
+
+exports.XRefParseException = XRefParseException;
+
+function getInheritableProperty({
+  dict,
+  key,
+  getArray = false,
+  stopWhenFound = true
+}) {
+  const LOOP_LIMIT = 100;
+  let loopCount = 0;
+  let values;
+
+  while (dict) {
+    const value = getArray ? dict.getArray(key) : dict.get(key);
+
+    if (value !== undefined) {
+      if (stopWhenFound) {
+        return value;
+      }
+
+      if (!values) {
+        values = [];
+      }
+
+      values.push(value);
+    }
+
+    if (++loopCount > LOOP_LIMIT) {
+      (0, _util.warn)(`getInheritableProperty: maximum loop count exceeded for "${key}"`);
+      break;
+    }
+
+    dict = dict.get("Parent");
+  }
+
+  return values;
+}
+
+const ROMAN_NUMBER_MAP = ["", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM", "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC", "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
+
+function toRomanNumerals(number, lowerCase = false) {
+  (0, _util.assert)(Number.isInteger(number) && number > 0, "The number should be a positive integer.");
+  const romanBuf = [];
+  let pos;
+
+  while (number >= 1000) {
+    number -= 1000;
+    romanBuf.push("M");
+  }
+
+  pos = number / 100 | 0;
+  number %= 100;
+  romanBuf.push(ROMAN_NUMBER_MAP[pos]);
+  pos = number / 10 | 0;
+  number %= 10;
+  romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
+  romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
+  const romanStr = romanBuf.join("");
+  return lowerCase ? romanStr.toLowerCase() : romanStr;
+}
+
+function log2(x) {
+  if (x <= 0) {
+    return 0;
+  }
+
+  return Math.ceil(Math.log2(x));
+}
+
+function readInt8(data, offset) {
+  return data[offset] << 24 >> 24;
+}
+
+function readUint16(data, offset) {
+  return data[offset] << 8 | data[offset + 1];
+}
+
+function readUint32(data, offset) {
+  return (data[offset] << 24 | data[offset + 1] << 16 | data[offset + 2] << 8 | data[offset + 3]) >>> 0;
+}
+
+function isWhiteSpace(ch) {
+  return ch === 0x20 || ch === 0x09 || ch === 0x0d || ch === 0x0a;
+}
+
+/***/ }),
+/* 5 */
 /***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
@@ -6779,14 +3355,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.ArithmeticDecoder = void 0;
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var QeTable = [{
+const QeTable = [{
   qe: 0x5601,
   nmps: 1,
   nlps: 1,
@@ -6802,7 +3371,7 @@ var QeTable = [{
   nlps: 9,
   switchFlag: 0
 }, {
-  qe: 0x0AC1,
+  qe: 0x0ac1,
   nmps: 4,
   nlps: 12,
   switchFlag: 0
@@ -6847,7 +3416,7 @@ var QeTable = [{
   nlps: 18,
   switchFlag: 0
 }, {
-  qe: 0x1C01,
+  qe: 0x1c01,
   nmps: 13,
   nlps: 20,
   switchFlag: 0
@@ -6907,7 +3476,7 @@ var QeTable = [{
   nlps: 21,
   switchFlag: 0
 }, {
-  qe: 0x1C01,
+  qe: 0x1c01,
   nmps: 25,
   nlps: 22,
   switchFlag: 0
@@ -6937,17 +3506,17 @@ var QeTable = [{
   nlps: 27,
   switchFlag: 0
 }, {
-  qe: 0x0AC1,
+  qe: 0x0ac1,
   nmps: 31,
   nlps: 28,
   switchFlag: 0
 }, {
-  qe: 0x09C1,
+  qe: 0x09c1,
   nmps: 32,
   nlps: 29,
   switchFlag: 0
 }, {
-  qe: 0x08A1,
+  qe: 0x08a1,
   nmps: 33,
   nlps: 30,
   switchFlag: 0
@@ -6962,7 +3531,7 @@ var QeTable = [{
   nlps: 32,
   switchFlag: 0
 }, {
-  qe: 0x02A1,
+  qe: 0x02a1,
   nmps: 36,
   nlps: 33,
   switchFlag: 0
@@ -7023,123 +3592,114 @@ var QeTable = [{
   switchFlag: 0
 }];
 
-var ArithmeticDecoder =
-/*#__PURE__*/
-function () {
-  function ArithmeticDecoder(data, start, end) {
-    _classCallCheck(this, ArithmeticDecoder);
-
+class ArithmeticDecoder {
+  constructor(data, start, end) {
     this.data = data;
     this.bp = start;
     this.dataEnd = end;
     this.chigh = data[start];
     this.clow = 0;
     this.byteIn();
-    this.chigh = this.chigh << 7 & 0xFFFF | this.clow >> 9 & 0x7F;
-    this.clow = this.clow << 7 & 0xFFFF;
+    this.chigh = this.chigh << 7 & 0xffff | this.clow >> 9 & 0x7f;
+    this.clow = this.clow << 7 & 0xffff;
     this.ct -= 7;
     this.a = 0x8000;
   }
 
-  _createClass(ArithmeticDecoder, [{
-    key: "byteIn",
-    value: function byteIn() {
-      var data = this.data;
-      var bp = this.bp;
+  byteIn() {
+    const data = this.data;
+    let bp = this.bp;
 
-      if (data[bp] === 0xFF) {
-        if (data[bp + 1] > 0x8F) {
-          this.clow += 0xFF00;
-          this.ct = 8;
-        } else {
-          bp++;
-          this.clow += data[bp] << 9;
-          this.ct = 7;
-          this.bp = bp;
-        }
+    if (data[bp] === 0xff) {
+      if (data[bp + 1] > 0x8f) {
+        this.clow += 0xff00;
+        this.ct = 8;
       } else {
         bp++;
-        this.clow += bp < this.dataEnd ? data[bp] << 8 : 0xFF00;
-        this.ct = 8;
+        this.clow += data[bp] << 9;
+        this.ct = 7;
         this.bp = bp;
       }
-
-      if (this.clow > 0xFFFF) {
-        this.chigh += this.clow >> 16;
-        this.clow &= 0xFFFF;
-      }
+    } else {
+      bp++;
+      this.clow += bp < this.dataEnd ? data[bp] << 8 : 0xff00;
+      this.ct = 8;
+      this.bp = bp;
     }
-  }, {
-    key: "readBit",
-    value: function readBit(contexts, pos) {
-      var cx_index = contexts[pos] >> 1,
-          cx_mps = contexts[pos] & 1;
-      var qeTableIcx = QeTable[cx_index];
-      var qeIcx = qeTableIcx.qe;
-      var d;
-      var a = this.a - qeIcx;
 
-      if (this.chigh < qeIcx) {
-        if (a < qeIcx) {
-          a = qeIcx;
-          d = cx_mps;
-          cx_index = qeTableIcx.nmps;
-        } else {
-          a = qeIcx;
-          d = 1 ^ cx_mps;
+    if (this.clow > 0xffff) {
+      this.chigh += this.clow >> 16;
+      this.clow &= 0xffff;
+    }
+  }
 
-          if (qeTableIcx.switchFlag === 1) {
-            cx_mps = d;
-          }
+  readBit(contexts, pos) {
+    let cx_index = contexts[pos] >> 1,
+        cx_mps = contexts[pos] & 1;
+    const qeTableIcx = QeTable[cx_index];
+    const qeIcx = qeTableIcx.qe;
+    let d;
+    let a = this.a - qeIcx;
 
-          cx_index = qeTableIcx.nlps;
-        }
+    if (this.chigh < qeIcx) {
+      if (a < qeIcx) {
+        a = qeIcx;
+        d = cx_mps;
+        cx_index = qeTableIcx.nmps;
       } else {
-        this.chigh -= qeIcx;
+        a = qeIcx;
+        d = 1 ^ cx_mps;
 
-        if ((a & 0x8000) !== 0) {
-          this.a = a;
-          return cx_mps;
+        if (qeTableIcx.switchFlag === 1) {
+          cx_mps = d;
         }
 
-        if (a < qeIcx) {
-          d = 1 ^ cx_mps;
+        cx_index = qeTableIcx.nlps;
+      }
+    } else {
+      this.chigh -= qeIcx;
 
-          if (qeTableIcx.switchFlag === 1) {
-            cx_mps = d;
-          }
-
-          cx_index = qeTableIcx.nlps;
-        } else {
-          d = cx_mps;
-          cx_index = qeTableIcx.nmps;
-        }
+      if ((a & 0x8000) !== 0) {
+        this.a = a;
+        return cx_mps;
       }
 
-      do {
-        if (this.ct === 0) {
-          this.byteIn();
+      if (a < qeIcx) {
+        d = 1 ^ cx_mps;
+
+        if (qeTableIcx.switchFlag === 1) {
+          cx_mps = d;
         }
 
-        a <<= 1;
-        this.chigh = this.chigh << 1 & 0xFFFF | this.clow >> 15 & 1;
-        this.clow = this.clow << 1 & 0xFFFF;
-        this.ct--;
-      } while ((a & 0x8000) === 0);
-
-      this.a = a;
-      contexts[pos] = cx_index << 1 | cx_mps;
-      return d;
+        cx_index = qeTableIcx.nlps;
+      } else {
+        d = cx_mps;
+        cx_index = qeTableIcx.nmps;
+      }
     }
-  }]);
 
-  return ArithmeticDecoder;
-}();
+    do {
+      if (this.ct === 0) {
+        this.byteIn();
+      }
+
+      a <<= 1;
+      this.chigh = this.chigh << 1 & 0xffff | this.clow >> 15 & 1;
+      this.clow = this.clow << 1 & 0xffff;
+      this.ct--;
+    } while ((a & 0x8000) === 0);
+
+    this.a = a;
+    contexts[pos] = cx_index << 1 | cx_mps;
+    return d;
+  }
+
+}
 
 exports.ArithmeticDecoder = ArithmeticDecoder;
 
 /***/ }),
-/* 135 */
+/* 6 */
 /***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
@@ -7152,47 +3712,45 @@ exports.CCITTFaxDecoder = void 0;
 
 var _util = __w_pdfjs_require__(1);
 
-var CCITTFaxDecoder = function CCITTFaxDecoder() {
-  var ccittEOL = -2;
-  var ccittEOF = -1;
-  var twoDimPass = 0;
-  var twoDimHoriz = 1;
-  var twoDimVert0 = 2;
-  var twoDimVertR1 = 3;
-  var twoDimVertL1 = 4;
-  var twoDimVertR2 = 5;
-  var twoDimVertL2 = 6;
-  var twoDimVertR3 = 7;
-  var twoDimVertL3 = 8;
-  var twoDimTable = [[-1, -1], [-1, -1], [7, twoDimVertL3], [7, twoDimVertR3], [6, twoDimVertL2], [6, twoDimVertL2], [6, twoDimVertR2], [6, twoDimVertR2], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0]];
-  var whiteTable1 = [[-1, -1], [12, ccittEOL], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [11, 1792], [11, 1792], [12, 1984], [12, 2048], [12, 2112], [12, 2176], [12, 2240], [12, 2304], [11, 1856], [11, 1856], [11, 1920], [11, 1920], [12, 2368], [12, 2432], [12, 2496], [12, 2560]];
-  var whiteTable2 = [[-1, -1], [-1, -1], [-1, -1], [-1, -1], [8, 29], [8, 29], [8, 30], [8, 30], [8, 45], [8, 45], [8, 46], [8, 46], [7, 22], [7, 22], [7, 22], [7, 22], [7, 23], [7, 23], [7, 23], [7, 23], [8, 47], [8, 47], [8, 48], [8, 48], [6, 13], [6, 13], [6, 13], [6, 13], [6, 13], [6, 13], [6, 13], [6, 13], [7, 20], [7, 20], [7, 20], [7, 20], [8, 33], [8, 33], [8, 34], [8, 34], [8, 35], [8, 35], [8, 36], [8, 36], [8, 37], [8, 37], [8, 38], [8, 38], [7, 19], [7, 19], [7, 19], [7, 19], [8, 31], [8, 31], [8, 32], [8, 32], [6, 1], [6, 1], [6, 1], [6, 1], [6, 1], [6, 1], [6, 1], [6, 1], [6, 12], [6, 12], [6, 12], [6, 12], [6, 12], [6, 12], [6, 12], [6, 12], [8, 53], [8, 53], [8, 54], [8, 54], [7, 26], [7, 26], [7, 26], [7, 26], [8, 39], [8, 39], [8, 40], [8, 40], [8, 41], [8, 41], [8, 42], [8, 42], [8, 43], [8, 43], [8, 44], [8, 44], [7, 21], [7, 21], [7, 21], [7, 21], [7, 28], [7, 28], [7, 28], [7, 28], [8, 61], [8, 61], [8, 62], [8, 62], [8, 63], [8, 63], [8, 0], [8, 0], [8, 320], [8, 320], [8, 384], [8, 384], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [7, 27], [7, 27], [7, 27], [7, 27], [8, 59], [8, 59], [8, 60], [8, 60], [9, 1472], [9, 1536], [9, 1600], [9, 1728], [7, 18], [7, 18], [7, 18], [7, 18], [7, 24], [7, 24], [7, 24], [7, 24], [8, 49], [8, 49], [8, 50], [8, 50], [8, 51], [8, 51], [8, 52], [8, 52], [7, 25], [7, 25], [7, 25], [7, 25], [8, 55], [8, 55], [8, 56], [8, 56], [8, 57], [8, 57], [8, 58], [8, 58], [6, 192], [6, 192], [6, 192], [6, 192], [6, 192], [6, 192], [6, 192], [6, 192], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [8, 448], [8, 448], [8, 512], [8, 512], [9, 704], [9, 768], [8, 640], [8, 640], [8, 576], [8, 576], [9, 832], [9, 896], [9, 960], [9, 1024], [9, 1088], [9, 1152], [9, 1216], [9, 1280], [9, 1344], [9, 1408], [7, 256], [7, 256], [7, 256], [7, 256], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [6, 16], [6, 16], [6, 16], [6, 16], [6, 16], [6, 16], [6, 16], [6, 16], [6, 17], [6, 17], [6, 17], [6, 17], [6, 17], [6, 17], [6, 17], [6, 17], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [6, 14], [6, 14], [6, 14], [6, 14], [6, 14], [6, 14], [6, 14], [6, 14], [6, 15], [6, 15], [6, 15], [6, 15], [6, 15], [6, 15], [6, 15], [6, 15], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7]];
-  var blackTable1 = [[-1, -1], [-1, -1], [12, ccittEOL], [12, ccittEOL], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [11, 1792], [11, 1792], [11, 1792], [11, 1792], [12, 1984], [12, 1984], [12, 2048], [12, 2048], [12, 2112], [12, 2112], [12, 2176], [12, 2176], [12, 2240], [12, 2240], [12, 2304], [12, 2304], [11, 1856], [11, 1856], [11, 1856], [11, 1856], [11, 1920], [11, 1920], [11, 1920], [11, 1920], [12, 2368], [12, 2368], [12, 2432], [12, 2432], [12, 2496], [12, 2496], [12, 2560], [12, 2560], [10, 18], [10, 18], [10, 18], [10, 18], [10, 18], [10, 18], [10, 18], [10, 18], [12, 52], [12, 52], [13, 640], [13, 704], [13, 768], [13, 832], [12, 55], [12, 55], [12, 56], [12, 56], [13, 1280], [13, 1344], [13, 1408], [13, 1472], [12, 59], [12, 59], [12, 60], [12, 60], [13, 1536], [13, 1600], [11, 24], [11, 24], [11, 24], [11, 24], [11, 25], [11, 25], [11, 25], [11, 25], [13, 1664], [13, 1728], [12, 320], [12, 320], [12, 384], [12, 384], [12, 448], [12, 448], [13, 512], [13, 576], [12, 53], [12, 53], [12, 54], [12, 54], [13, 896], [13, 960], [13, 1024], [13, 1088], [13, 1152], [13, 1216], [10, 64], [10, 64], [10, 64], [10, 64], [10, 64], [10, 64], [10, 64], [10, 64]];
-  var blackTable2 = [[8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [11, 23], [11, 23], [12, 50], [12, 51], [12, 44], [12, 45], [12, 46], [12, 47], [12, 57], [12, 58], [12, 61], [12, 256], [10, 16], [10, 16], [10, 16], [10, 16], [10, 17], [10, 17], [10, 17], [10, 17], [12, 48], [12, 49], [12, 62], [12, 63], [12, 30], [12, 31], [12, 32], [12, 33], [12, 40], [12, 41], [11, 22], [11, 22], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [9, 15], [9, 15], [9, 15], [9, 15], [9, 15], [9, 15], [9, 15], [9, 15], [12, 128], [12, 192], [12, 26], [12, 27], [12, 28], [12, 29], [11, 19], [11, 19], [11, 20], [11, 20], [12, 34], [12, 35], [12, 36], [12, 37], [12, 38], [12, 39], [11, 21], [11, 21], [12, 42], [12, 43], [10, 0], [10, 0], [10, 0], [10, 0], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12]];
-  var blackTable3 = [[-1, -1], [-1, -1], [-1, -1], [-1, -1], [6, 9], [6, 8], [5, 7], [5, 7], [4, 6], [4, 6], [4, 6], [4, 6], [4, 5], [4, 5], [4, 5], [4, 5], [3, 1], [3, 1], [3, 1], [3, 1], [3, 1], [3, 1], [3, 1], [3, 1], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2]];
+const CCITTFaxDecoder = function CCITTFaxDecoder() {
+  const ccittEOL = -2;
+  const ccittEOF = -1;
+  const twoDimPass = 0;
+  const twoDimHoriz = 1;
+  const twoDimVert0 = 2;
+  const twoDimVertR1 = 3;
+  const twoDimVertL1 = 4;
+  const twoDimVertR2 = 5;
+  const twoDimVertL2 = 6;
+  const twoDimVertR3 = 7;
+  const twoDimVertL3 = 8;
+  const twoDimTable = [[-1, -1], [-1, -1], [7, twoDimVertL3], [7, twoDimVertR3], [6, twoDimVertL2], [6, twoDimVertL2], [6, twoDimVertR2], [6, twoDimVertR2], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [4, twoDimPass], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimHoriz], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertL1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [3, twoDimVertR1], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0], [1, twoDimVert0]];
+  const whiteTable1 = [[-1, -1], [12, ccittEOL], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [11, 1792], [11, 1792], [12, 1984], [12, 2048], [12, 2112], [12, 2176], [12, 2240], [12, 2304], [11, 1856], [11, 1856], [11, 1920], [11, 1920], [12, 2368], [12, 2432], [12, 2496], [12, 2560]];
+  const whiteTable2 = [[-1, -1], [-1, -1], [-1, -1], [-1, -1], [8, 29], [8, 29], [8, 30], [8, 30], [8, 45], [8, 45], [8, 46], [8, 46], [7, 22], [7, 22], [7, 22], [7, 22], [7, 23], [7, 23], [7, 23], [7, 23], [8, 47], [8, 47], [8, 48], [8, 48], [6, 13], [6, 13], [6, 13], [6, 13], [6, 13], [6, 13], [6, 13], [6, 13], [7, 20], [7, 20], [7, 20], [7, 20], [8, 33], [8, 33], [8, 34], [8, 34], [8, 35], [8, 35], [8, 36], [8, 36], [8, 37], [8, 37], [8, 38], [8, 38], [7, 19], [7, 19], [7, 19], [7, 19], [8, 31], [8, 31], [8, 32], [8, 32], [6, 1], [6, 1], [6, 1], [6, 1], [6, 1], [6, 1], [6, 1], [6, 1], [6, 12], [6, 12], [6, 12], [6, 12], [6, 12], [6, 12], [6, 12], [6, 12], [8, 53], [8, 53], [8, 54], [8, 54], [7, 26], [7, 26], [7, 26], [7, 26], [8, 39], [8, 39], [8, 40], [8, 40], [8, 41], [8, 41], [8, 42], [8, 42], [8, 43], [8, 43], [8, 44], [8, 44], [7, 21], [7, 21], [7, 21], [7, 21], [7, 28], [7, 28], [7, 28], [7, 28], [8, 61], [8, 61], [8, 62], [8, 62], [8, 63], [8, 63], [8, 0], [8, 0], [8, 320], [8, 320], [8, 384], [8, 384], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 10], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [5, 11], [7, 27], [7, 27], [7, 27], [7, 27], [8, 59], [8, 59], [8, 60], [8, 60], [9, 1472], [9, 1536], [9, 1600], [9, 1728], [7, 18], [7, 18], [7, 18], [7, 18], [7, 24], [7, 24], [7, 24], [7, 24], [8, 49], [8, 49], [8, 50], [8, 50], [8, 51], [8, 51], [8, 52], [8, 52], [7, 25], [7, 25], [7, 25], [7, 25], [8, 55], [8, 55], [8, 56], [8, 56], [8, 57], [8, 57], [8, 58], [8, 58], [6, 192], [6, 192], [6, 192], [6, 192], [6, 192], [6, 192], [6, 192], [6, 192], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [6, 1664], [8, 448], [8, 448], [8, 512], [8, 512], [9, 704], [9, 768], [8, 640], [8, 640], [8, 576], [8, 576], [9, 832], [9, 896], [9, 960], [9, 1024], [9, 1088], [9, 1152], [9, 1216], [9, 1280], [9, 1344], [9, 1408], [7, 256], [7, 256], [7, 256], [7, 256], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 2], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [4, 3], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 128], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 8], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [5, 9], [6, 16], [6, 16], [6, 16], [6, 16], [6, 16], [6, 16], [6, 16], [6, 16], [6, 17], [6, 17], [6, 17], [6, 17], [6, 17], [6, 17], [6, 17], [6, 17], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 4], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [4, 5], [6, 14], [6, 14], [6, 14], [6, 14], [6, 14], [6, 14], [6, 14], [6, 14], [6, 15], [6, 15], [6, 15], [6, 15], [6, 15], [6, 15], [6, 15], [6, 15], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [5, 64], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 6], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7], [4, 7]];
+  const blackTable1 = [[-1, -1], [-1, -1], [12, ccittEOL], [12, ccittEOL], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [-1, -1], [11, 1792], [11, 1792], [11, 1792], [11, 1792], [12, 1984], [12, 1984], [12, 2048], [12, 2048], [12, 2112], [12, 2112], [12, 2176], [12, 2176], [12, 2240], [12, 2240], [12, 2304], [12, 2304], [11, 1856], [11, 1856], [11, 1856], [11, 1856], [11, 1920], [11, 1920], [11, 1920], [11, 1920], [12, 2368], [12, 2368], [12, 2432], [12, 2432], [12, 2496], [12, 2496], [12, 2560], [12, 2560], [10, 18], [10, 18], [10, 18], [10, 18], [10, 18], [10, 18], [10, 18], [10, 18], [12, 52], [12, 52], [13, 640], [13, 704], [13, 768], [13, 832], [12, 55], [12, 55], [12, 56], [12, 56], [13, 1280], [13, 1344], [13, 1408], [13, 1472], [12, 59], [12, 59], [12, 60], [12, 60], [13, 1536], [13, 1600], [11, 24], [11, 24], [11, 24], [11, 24], [11, 25], [11, 25], [11, 25], [11, 25], [13, 1664], [13, 1728], [12, 320], [12, 320], [12, 384], [12, 384], [12, 448], [12, 448], [13, 512], [13, 576], [12, 53], [12, 53], [12, 54], [12, 54], [13, 896], [13, 960], [13, 1024], [13, 1088], [13, 1152], [13, 1216], [10, 64], [10, 64], [10, 64], [10, 64], [10, 64], [10, 64], [10, 64], [10, 64]];
+  const blackTable2 = [[8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [8, 13], [11, 23], [11, 23], [12, 50], [12, 51], [12, 44], [12, 45], [12, 46], [12, 47], [12, 57], [12, 58], [12, 61], [12, 256], [10, 16], [10, 16], [10, 16], [10, 16], [10, 17], [10, 17], [10, 17], [10, 17], [12, 48], [12, 49], [12, 62], [12, 63], [12, 30], [12, 31], [12, 32], [12, 33], [12, 40], [12, 41], [11, 22], [11, 22], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [8, 14], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 10], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [7, 11], [9, 15], [9, 15], [9, 15], [9, 15], [9, 15], [9, 15], [9, 15], [9, 15], [12, 128], [12, 192], [12, 26], [12, 27], [12, 28], [12, 29], [11, 19], [11, 19], [11, 20], [11, 20], [12, 34], [12, 35], [12, 36], [12, 37], [12, 38], [12, 39], [11, 21], [11, 21], [12, 42], [12, 43], [10, 0], [10, 0], [10, 0], [10, 0], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12], [7, 12]];
+  const blackTable3 = [[-1, -1], [-1, -1], [-1, -1], [-1, -1], [6, 9], [6, 8], [5, 7], [5, 7], [4, 6], [4, 6], [4, 6], [4, 6], [4, 5], [4, 5], [4, 5], [4, 5], [3, 1], [3, 1], [3, 1], [3, 1], [3, 1], [3, 1], [3, 1], [3, 1], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2]];
 
-  function CCITTFaxDecoder(source) {
-    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    if (!source || typeof source.next !== 'function') {
+  function CCITTFaxDecoder(source, options = {}) {
+    if (!source || typeof source.next !== "function") {
       throw new Error('CCITTFaxDecoder - invalid "source" parameter.');
     }
 
     this.source = source;
     this.eof = false;
-    this.encoding = options['K'] || 0;
-    this.eoline = options['EndOfLine'] || false;
-    this.byteAlign = options['EncodedByteAlign'] || false;
-    this.columns = options['Columns'] || 1728;
-    this.rows = options['Rows'] || 0;
-    var eoblock = options['EndOfBlock'];
+    this.encoding = options["K"] || 0;
+    this.eoline = options["EndOfLine"] || false;
+    this.byteAlign = options["EncodedByteAlign"] || false;
+    this.columns = options["Columns"] || 1728;
+    this.rows = options["Rows"] || 0;
+    let eoblock = options["EndOfBlock"];
 
     if (eoblock === null || eoblock === undefined) {
       eoblock = true;
     }
 
     this.eoblock = eoblock;
-    this.black = options['BlackIs1'] || false;
+    this.black = options["BlackIs1"] || false;
     this.codingLine = new Uint32Array(this.columns + 1);
     this.refLine = new Uint32Array(this.columns + 2);
     this.codingLine[0] = this.columns;
@@ -7203,7 +3761,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
     this.inputBuf = 0;
     this.outputBits = 0;
     this.rowsDone = false;
-    var code1;
+    let code1;
 
     while ((code1 = this._lookBits(12)) === 0) {
       this._eatBits(1);
@@ -7221,15 +3779,15 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
   }
 
   CCITTFaxDecoder.prototype = {
-    readNextChar: function readNextChar() {
+    readNextChar() {
       if (this.eof) {
         return -1;
       }
 
-      var refLine = this.refLine;
-      var codingLine = this.codingLine;
-      var columns = this.columns;
-      var refPos, blackPixels, bits, i;
+      const refLine = this.refLine;
+      const codingLine = this.codingLine;
+      const columns = this.columns;
+      let refPos, blackPixels, bits, i;
 
       if (this.outputBits === 0) {
         if (this.rowsDone) {
@@ -7241,7 +3799,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
         }
 
         this.err = false;
-        var code1, code2, code3;
+        let code1, code2, code3;
 
         if (this.nextLine2D) {
           for (i = 0; codingLine[i] < columns; ++i) {
@@ -7425,7 +3983,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
                 break;
 
               default:
-                (0, _util.info)('bad 2d code');
+                (0, _util.info)("bad 2d code");
 
                 this._addPixels(columns, 0);
 
@@ -7456,7 +4014,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
           }
         }
 
-        var gotEOL = false;
+        let gotEOL = false;
 
         if (this.byteAlign) {
           this.inputBits &= ~7;
@@ -7513,7 +4071,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
                 code1 = this._lookBits(12);
 
                 if (code1 !== 1) {
-                  (0, _util.info)('bad rtc code: ' + code1);
+                  (0, _util.info)("bad rtc code: " + code1);
                 }
 
                 this._eatBits(12);
@@ -7562,10 +4120,10 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
         this.row++;
       }
 
-      var c;
+      let c;
 
       if (this.outputBits >= 8) {
-        c = this.codingPos & 1 ? 0 : 0xFF;
+        c = this.codingPos & 1 ? 0 : 0xff;
         this.outputBits -= 8;
 
         if (this.outputBits === 0 && codingLine[this.codingPos] < columns) {
@@ -7581,7 +4139,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
             c <<= bits;
 
             if (!(this.codingPos & 1)) {
-              c |= 0xFF >> 8 - bits;
+              c |= 0xff >> 8 - bits;
             }
 
             this.outputBits -= bits;
@@ -7590,7 +4148,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
             c <<= this.outputBits;
 
             if (!(this.codingPos & 1)) {
-              c |= 0xFF >> 8 - this.outputBits;
+              c |= 0xff >> 8 - this.outputBits;
             }
 
             bits -= this.outputBits;
@@ -7608,18 +4166,19 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
       }
 
       if (this.black) {
-        c ^= 0xFF;
+        c ^= 0xff;
       }
 
       return c;
     },
-    _addPixels: function _addPixels(a1, blackPixels) {
-      var codingLine = this.codingLine;
-      var codingPos = this.codingPos;
+
+    _addPixels(a1, blackPixels) {
+      const codingLine = this.codingLine;
+      let codingPos = this.codingPos;
 
       if (a1 > codingLine[codingPos]) {
         if (a1 > this.columns) {
-          (0, _util.info)('row is wrong length');
+          (0, _util.info)("row is wrong length");
           this.err = true;
           a1 = this.columns;
         }
@@ -7633,13 +4192,14 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
 
       this.codingPos = codingPos;
     },
-    _addPixelsNeg: function _addPixelsNeg(a1, blackPixels) {
-      var codingLine = this.codingLine;
-      var codingPos = this.codingPos;
+
+    _addPixelsNeg(a1, blackPixels) {
+      const codingLine = this.codingLine;
+      let codingPos = this.codingPos;
 
       if (a1 > codingLine[codingPos]) {
         if (a1 > this.columns) {
-          (0, _util.info)('row is wrong length');
+          (0, _util.info)("row is wrong length");
           this.err = true;
           a1 = this.columns;
         }
@@ -7651,7 +4211,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
         codingLine[codingPos] = a1;
       } else if (a1 < codingLine[codingPos]) {
         if (a1 < 0) {
-          (0, _util.info)('invalid code');
+          (0, _util.info)("invalid code");
           this.err = true;
           a1 = 0;
         }
@@ -7665,11 +4225,12 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
 
       this.codingPos = codingPos;
     },
-    _findTableCode: function _findTableCode(start, end, table, limit) {
-      var limitValue = limit || 0;
 
-      for (var i = start; i <= end; ++i) {
-        var code = this._lookBits(i);
+    _findTableCode(start, end, table, limit) {
+      const limitValue = limit || 0;
+
+      for (let i = start; i <= end; ++i) {
+        let code = this._lookBits(i);
 
         if (code === ccittEOF) {
           return [true, 1, false];
@@ -7680,7 +4241,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
         }
 
         if (!limitValue || code >= limitValue) {
-          var p = table[code - limitValue];
+          const p = table[code - limitValue];
 
           if (p[0] === i) {
             this._eatBits(i);
@@ -7692,9 +4253,10 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
 
       return [false, 0, false];
     },
-    _getTwoDimCode: function _getTwoDimCode() {
-      var code = 0;
-      var p;
+
+    _getTwoDimCode() {
+      let code = 0;
+      let p;
 
       if (this.eoblock) {
         code = this._lookBits(7);
@@ -7706,19 +4268,20 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
           return p[1];
         }
       } else {
-        var result = this._findTableCode(1, 7, twoDimTable);
+        const result = this._findTableCode(1, 7, twoDimTable);
 
         if (result[0] && result[2]) {
           return result[1];
         }
       }
 
-      (0, _util.info)('Bad two dim code');
+      (0, _util.info)("Bad two dim code");
       return ccittEOF;
     },
-    _getWhiteCode: function _getWhiteCode() {
-      var code = 0;
-      var p;
+
+    _getWhiteCode() {
+      let code = 0;
+      let p;
 
       if (this.eoblock) {
         code = this._lookBits(12);
@@ -7739,7 +4302,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
           return p[1];
         }
       } else {
-        var result = this._findTableCode(1, 9, whiteTable2);
+        let result = this._findTableCode(1, 9, whiteTable2);
 
         if (result[0]) {
           return result[1];
@@ -7752,14 +4315,15 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
         }
       }
 
-      (0, _util.info)('bad white code');
+      (0, _util.info)("bad white code");
 
       this._eatBits(1);
 
       return 1;
     },
-    _getBlackCode: function _getBlackCode() {
-      var code, p;
+
+    _getBlackCode() {
+      let code, p;
 
       if (this.eoblock) {
         code = this._lookBits(13);
@@ -7782,7 +4346,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
           return p[1];
         }
       } else {
-        var result = this._findTableCode(2, 6, blackTable3);
+        let result = this._findTableCode(2, 6, blackTable3);
 
         if (result[0]) {
           return result[1];
@@ -7801,14 +4365,15 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
         }
       }
 
-      (0, _util.info)('bad black code');
+      (0, _util.info)("bad black code");
 
       this._eatBits(1);
 
       return 1;
     },
-    _lookBits: function _lookBits(n) {
-      var c;
+
+    _lookBits(n) {
+      let c;
 
       while (this.inputBits < n) {
         if ((c = this.source.next()) === -1) {
@@ -7816,20 +4381,22 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
             return ccittEOF;
           }
 
-          return this.inputBuf << n - this.inputBits & 0xFFFF >> 16 - n;
+          return this.inputBuf << n - this.inputBits & 0xffff >> 16 - n;
         }
 
         this.inputBuf = this.inputBuf << 8 | c;
         this.inputBits += 8;
       }
 
-      return this.inputBuf >> this.inputBits - n & 0xFFFF >> 16 - n;
+      return this.inputBuf >> this.inputBits - n & 0xffff >> 16 - n;
     },
-    _eatBits: function _eatBits(n) {
+
+    _eatBits(n) {
       if ((this.inputBits -= n) < 0) {
         this.inputBits = 0;
       }
     }
+
   };
   return CCITTFaxDecoder;
 }();
@@ -7837,7 +4404,7 @@ var CCITTFaxDecoder = function CCITTFaxDecoder() {
 exports.CCITTFaxDecoder = CCITTFaxDecoder;
 
 /***/ }),
-/* 136 */
+/* 7 */
 /***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
@@ -7850,41 +4417,24 @@ exports.JpegImage = void 0;
 
 var _util = __w_pdfjs_require__(1);
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+var _core_utils = __w_pdfjs_require__(4);
 
-var JpegError = function JpegErrorClosure() {
-  function JpegError(msg) {
-    this.message = 'JPEG error: ' + msg;
+class JpegError extends _util.BaseException {
+  constructor(msg) {
+    super(`JPEG error: ${msg}`);
   }
 
-  JpegError.prototype = new Error();
-  JpegError.prototype.name = 'JpegError';
-  JpegError.constructor = JpegError;
-  return JpegError;
-}();
+}
 
-var DNLMarkerError = function DNLMarkerErrorClosure() {
-  function DNLMarkerError(message, scanLines) {
-    this.message = message;
+class DNLMarkerError extends _util.BaseException {
+  constructor(message, scanLines) {
+    super(message);
     this.scanLines = scanLines;
   }
 
-  DNLMarkerError.prototype = new Error();
-  DNLMarkerError.prototype.name = 'DNLMarkerError';
-  DNLMarkerError.constructor = DNLMarkerError;
-  return DNLMarkerError;
-}();
+}
 
-var EOIMarkerError = function EOIMarkerErrorClosure() {
-  function EOIMarkerError(message) {
-    this.message = message;
-  }
-
-  EOIMarkerError.prototype = new Error();
-  EOIMarkerError.prototype.name = 'EOIMarkerError';
-  EOIMarkerError.constructor = EOIMarkerError;
-  return EOIMarkerError;
-}();
+class EOIMarkerError extends _util.BaseException {}
 
 var JpegImage = function JpegImageClosure() {
   var dctZigZag = new Uint8Array([0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51, 58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63]);
@@ -7897,13 +4447,10 @@ var JpegImage = function JpegImageClosure() {
   var dctSqrt2 = 5793;
   var dctSqrt1d2 = 2896;
 
-  function JpegImage() {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$decodeTransform = _ref.decodeTransform,
-        decodeTransform = _ref$decodeTransform === void 0 ? null : _ref$decodeTransform,
-        _ref$colorTransform = _ref.colorTransform,
-        colorTransform = _ref$colorTransform === void 0 ? -1 : _ref$colorTransform;
-
+  function JpegImage({
+    decodeTransform = null,
+    colorTransform = -1
+  } = {}) {
     this._decodeTransform = decodeTransform;
     this._colorTransform = colorTransform;
   }
@@ -7967,8 +4514,7 @@ var JpegImage = function JpegImageClosure() {
     return 64 * ((component.blocksPerLine + 1) * row + col);
   }
 
-  function decodeScan(data, offset, frame, components, resetInterval, spectralStart, spectralEnd, successivePrev, successive) {
-    var parseDNLMarker = arguments.length > 9 && arguments[9] !== undefined ? arguments[9] : false;
+  function decodeScan(data, offset, frame, components, resetInterval, spectralStart, spectralEnd, successivePrev, successive, parseDNLMarker = false) {
     var mcusPerLine = frame.mcusPerLine;
     var progressive = frame.progressive;
     var startOffset = offset,
@@ -7983,22 +4529,31 @@ var JpegImage = function JpegImageClosure() {
 
       bitsData = data[offset++];
 
-      if (bitsData === 0xFF) {
+      if (bitsData === 0xff) {
         var nextByte = data[offset++];
 
         if (nextByte) {
-          if (nextByte === 0xDC && parseDNLMarker) {
+          if (nextByte === 0xdc && parseDNLMarker) {
             offset += 2;
-            var scanLines = data[offset++] << 8 | data[offset++];
+            const scanLines = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
 
             if (scanLines > 0 && scanLines !== frame.scanLines) {
-              throw new DNLMarkerError('Found DNL marker (0xFFDC) while parsing scan data', scanLines);
+              throw new DNLMarkerError("Found DNL marker (0xFFDC) while parsing scan data", scanLines);
             }
-          } else if (nextByte === 0xD9) {
-            throw new EOIMarkerError('Found EOI marker (0xFFD9) while parsing scan data');
+          } else if (nextByte === 0xd9) {
+            if (parseDNLMarker) {
+              const maybeScanLines = blockRow * 8;
+
+              if (maybeScanLines > 0 && maybeScanLines < frame.scanLines / 10) {
+                throw new DNLMarkerError("Found EOI marker (0xFFD9) while parsing scan data, " + "possibly caused by incorrect `scanLines` parameter", maybeScanLines);
+              }
+            }
+
+            throw new EOIMarkerError("Found EOI marker (0xFFD9) while parsing scan data");
           }
 
-          throw new JpegError("unexpected marker ".concat((bitsData << 8 | nextByte).toString(16)));
+          throw new JpegError(`unexpected marker ${(bitsData << 8 | nextByte).toString(16)}`);
         }
       }
 
@@ -8012,13 +4567,15 @@ var JpegImage = function JpegImageClosure() {
       while (true) {
         node = node[readBit()];
 
-        if (typeof node === 'number') {
-          return node;
+        switch (typeof node) {
+          case "number":
+            return node;
+
+          case "object":
+            continue;
         }
 
-        if (_typeof(node) !== 'object') {
-          throw new JpegError('invalid huffman sequence');
-        }
+        throw new JpegError("invalid huffman sequence");
       }
     }
 
@@ -8128,8 +4685,8 @@ var JpegImage = function JpegImageClosure() {
       var rs;
 
       while (k <= e) {
-        var offsetZ = offset + dctZigZag[k];
-        var sign = component.blockData[offsetZ] < 0 ? -1 : 1;
+        const offsetZ = offset + dctZigZag[k];
+        const sign = component.blockData[offsetZ] < 0 ? -1 : 1;
 
         switch (successiveACState) {
           case 0:
@@ -8147,7 +4704,7 @@ var JpegImage = function JpegImageClosure() {
               }
             } else {
               if (s !== 1) {
-                throw new JpegError('invalid ACn encoding');
+                throw new JpegError("invalid ACn encoding");
               }
 
               successiveACNextValue = receiveAndExtend(s);
@@ -8200,17 +4757,19 @@ var JpegImage = function JpegImageClosure() {
       }
     }
 
+    let blockRow = 0;
+
     function decodeMcu(component, decode, mcu, row, col) {
       var mcuRow = mcu / mcusPerLine | 0;
       var mcuCol = mcu % mcusPerLine;
-      var blockRow = mcuRow * component.v + row;
+      blockRow = mcuRow * component.v + row;
       var blockCol = mcuCol * component.h + col;
       var offset = getBlockBufferOffset(component, blockRow, blockCol);
       decode(component, offset);
     }
 
     function decodeBlock(component, decode, mcu) {
-      var blockRow = mcu / component.blocksPerLine | 0;
+      blockRow = mcu / component.blocksPerLine | 0;
       var blockCol = mcu % component.blocksPerLine;
       var offset = getBlockBufferOffset(component, blockRow, blockCol);
       decode(component, offset);
@@ -8279,18 +4838,20 @@ var JpegImage = function JpegImageClosure() {
       bitsCount = 0;
       fileMarker = findNextFileMarker(data, offset);
 
-      if (fileMarker && fileMarker.invalid) {
-        (0, _util.warn)('decodeScan - unexpected MCU data, current marker is: ' + fileMarker.invalid);
+      if (!fileMarker) {
+        break;
+      } else if (fileMarker.invalid) {
+        (0, _util.warn)("decodeScan - unexpected MCU data, current marker is: " + fileMarker.invalid);
         offset = fileMarker.offset;
       }
 
       var marker = fileMarker && fileMarker.marker;
 
-      if (!marker || marker <= 0xFF00) {
-        throw new JpegError('marker was not found');
+      if (!marker || marker <= 0xff00) {
+        throw new JpegError("decodeScan - a valid marker was not found.");
       }
 
-      if (marker >= 0xFFD0 && marker <= 0xFFD7) {
+      if (marker >= 0xffd0 && marker <= 0xffd7) {
         offset += 2;
       } else {
         break;
@@ -8300,7 +4861,7 @@ var JpegImage = function JpegImageClosure() {
     fileMarker = findNextFileMarker(data, offset);
 
     if (fileMarker && fileMarker.invalid) {
-      (0, _util.warn)('decodeScan - unexpected Scan data, current marker is: ' + fileMarker.invalid);
+      (0, _util.warn)("decodeScan - unexpected Scan data, current marker is: " + fileMarker.invalid);
       offset = fileMarker.offset;
     }
 
@@ -8315,7 +4876,7 @@ var JpegImage = function JpegImageClosure() {
     var t;
 
     if (!qt) {
-      throw new JpegError('missing required Quantization Table.');
+      throw new JpegError("missing required Quantization Table.");
     }
 
     for (var row = 0; row < 64; row += 8) {
@@ -8398,7 +4959,15 @@ var JpegImage = function JpegImageClosure() {
 
       if ((p1 | p2 | p3 | p4 | p5 | p6 | p7) === 0) {
         t = dctSqrt2 * p0 + 8192 >> 14;
-        t = t < -2040 ? 0 : t >= 2024 ? 255 : t + 2056 >> 4;
+
+        if (t < -2040) {
+          t = 0;
+        } else if (t >= 2024) {
+          t = 255;
+        } else {
+          t = t + 2056 >> 4;
+        }
+
         blockData[blockBufferOffset + col] = t;
         blockData[blockBufferOffset + col + 8] = t;
         blockData[blockBufferOffset + col + 16] = t;
@@ -8445,14 +5014,71 @@ var JpegImage = function JpegImageClosure() {
       p5 = v2 - v5;
       p3 = v3 + v4;
       p4 = v3 - v4;
-      p0 = p0 < 16 ? 0 : p0 >= 4080 ? 255 : p0 >> 4;
-      p1 = p1 < 16 ? 0 : p1 >= 4080 ? 255 : p1 >> 4;
-      p2 = p2 < 16 ? 0 : p2 >= 4080 ? 255 : p2 >> 4;
-      p3 = p3 < 16 ? 0 : p3 >= 4080 ? 255 : p3 >> 4;
-      p4 = p4 < 16 ? 0 : p4 >= 4080 ? 255 : p4 >> 4;
-      p5 = p5 < 16 ? 0 : p5 >= 4080 ? 255 : p5 >> 4;
-      p6 = p6 < 16 ? 0 : p6 >= 4080 ? 255 : p6 >> 4;
-      p7 = p7 < 16 ? 0 : p7 >= 4080 ? 255 : p7 >> 4;
+
+      if (p0 < 16) {
+        p0 = 0;
+      } else if (p0 >= 4080) {
+        p0 = 255;
+      } else {
+        p0 >>= 4;
+      }
+
+      if (p1 < 16) {
+        p1 = 0;
+      } else if (p1 >= 4080) {
+        p1 = 255;
+      } else {
+        p1 >>= 4;
+      }
+
+      if (p2 < 16) {
+        p2 = 0;
+      } else if (p2 >= 4080) {
+        p2 = 255;
+      } else {
+        p2 >>= 4;
+      }
+
+      if (p3 < 16) {
+        p3 = 0;
+      } else if (p3 >= 4080) {
+        p3 = 255;
+      } else {
+        p3 >>= 4;
+      }
+
+      if (p4 < 16) {
+        p4 = 0;
+      } else if (p4 >= 4080) {
+        p4 = 255;
+      } else {
+        p4 >>= 4;
+      }
+
+      if (p5 < 16) {
+        p5 = 0;
+      } else if (p5 >= 4080) {
+        p5 = 255;
+      } else {
+        p5 >>= 4;
+      }
+
+      if (p6 < 16) {
+        p6 = 0;
+      } else if (p6 >= 4080) {
+        p6 = 255;
+      } else {
+        p6 >>= 4;
+      }
+
+      if (p7 < 16) {
+        p7 = 0;
+      } else if (p7 >= 4080) {
+        p7 = 255;
+      } else {
+        p7 >>= 4;
+      }
+
       blockData[blockBufferOffset + col] = p0;
       blockData[blockBufferOffset + col + 8] = p1;
       blockData[blockBufferOffset + col + 16] = p2;
@@ -8479,23 +5105,17 @@ var JpegImage = function JpegImageClosure() {
     return component.blockData;
   }
 
-  function findNextFileMarker(data, currentPos) {
-    var startPos = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : currentPos;
-
-    function peekUint16(pos) {
-      return data[pos] << 8 | data[pos + 1];
-    }
-
-    var maxPos = data.length - 1;
+  function findNextFileMarker(data, currentPos, startPos = currentPos) {
+    const maxPos = data.length - 1;
     var newPos = startPos < currentPos ? startPos : currentPos;
 
     if (currentPos >= maxPos) {
       return null;
     }
 
-    var currentMarker = peekUint16(currentPos);
+    var currentMarker = (0, _core_utils.readUint16)(data, currentPos);
 
-    if (currentMarker >= 0xFFC0 && currentMarker <= 0xFFFE) {
+    if (currentMarker >= 0xffc0 && currentMarker <= 0xfffe) {
       return {
         invalid: null,
         marker: currentMarker,
@@ -8503,14 +5123,14 @@ var JpegImage = function JpegImageClosure() {
       };
     }
 
-    var newMarker = peekUint16(newPos);
+    var newMarker = (0, _core_utils.readUint16)(data, newPos);
 
-    while (!(newMarker >= 0xFFC0 && newMarker <= 0xFFFE)) {
+    while (!(newMarker >= 0xffc0 && newMarker <= 0xfffe)) {
       if (++newPos >= maxPos) {
         return null;
       }
 
-      newMarker = peekUint16(newPos);
+      newMarker = (0, _core_utils.readUint16)(data, newPos);
     }
 
     return {
@@ -8521,24 +5141,17 @@ var JpegImage = function JpegImageClosure() {
   }
 
   JpegImage.prototype = {
-    parse: function parse(data) {
-      var _ref2 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-          _ref2$dnlScanLines = _ref2.dnlScanLines,
-          dnlScanLines = _ref2$dnlScanLines === void 0 ? null : _ref2$dnlScanLines;
-
-      function readUint16() {
-        var value = data[offset] << 8 | data[offset + 1];
-        offset += 2;
-        return value;
-      }
-
+    parse(data, {
+      dnlScanLines = null
+    } = {}) {
       function readDataBlock() {
-        var length = readUint16();
-        var endOffset = offset + length - 2;
+        const length = (0, _core_utils.readUint16)(data, offset);
+        offset += 2;
+        let endOffset = offset + length - 2;
         var fileMarker = findNextFileMarker(data, endOffset, offset);
 
         if (fileMarker && fileMarker.invalid) {
-          (0, _util.warn)('readDataBlock - incorrect length, current marker is: ' + fileMarker.invalid);
+          (0, _util.warn)("readDataBlock - incorrect length, current marker is: " + fileMarker.invalid);
           endOffset = fileMarker.offset;
         }
 
@@ -8571,43 +5184,45 @@ var JpegImage = function JpegImageClosure() {
       var jfif = null;
       var adobe = null;
       var frame, resetInterval;
-      var numSOSMarkers = 0;
+      let numSOSMarkers = 0;
       var quantizationTables = [];
       var huffmanTablesAC = [],
           huffmanTablesDC = [];
-      var fileMarker = readUint16();
+      let fileMarker = (0, _core_utils.readUint16)(data, offset);
+      offset += 2;
 
-      if (fileMarker !== 0xFFD8) {
-        throw new JpegError('SOI not found');
+      if (fileMarker !== 0xffd8) {
+        throw new JpegError("SOI not found");
       }
 
-      fileMarker = readUint16();
+      fileMarker = (0, _core_utils.readUint16)(data, offset);
+      offset += 2;
 
-      markerLoop: while (fileMarker !== 0xFFD9) {
+      markerLoop: while (fileMarker !== 0xffd9) {
         var i, j, l;
 
         switch (fileMarker) {
-          case 0xFFE0:
-          case 0xFFE1:
-          case 0xFFE2:
-          case 0xFFE3:
-          case 0xFFE4:
-          case 0xFFE5:
-          case 0xFFE6:
-          case 0xFFE7:
-          case 0xFFE8:
-          case 0xFFE9:
-          case 0xFFEA:
-          case 0xFFEB:
-          case 0xFFEC:
-          case 0xFFED:
-          case 0xFFEE:
-          case 0xFFEF:
-          case 0xFFFE:
+          case 0xffe0:
+          case 0xffe1:
+          case 0xffe2:
+          case 0xffe3:
+          case 0xffe4:
+          case 0xffe5:
+          case 0xffe6:
+          case 0xffe7:
+          case 0xffe8:
+          case 0xffe9:
+          case 0xffea:
+          case 0xffeb:
+          case 0xffec:
+          case 0xffed:
+          case 0xffee:
+          case 0xffef:
+          case 0xfffe:
             var appData = readDataBlock();
 
-            if (fileMarker === 0xFFE0) {
-              if (appData[0] === 0x4A && appData[1] === 0x46 && appData[2] === 0x49 && appData[3] === 0x46 && appData[4] === 0) {
+            if (fileMarker === 0xffe0) {
+              if (appData[0] === 0x4a && appData[1] === 0x46 && appData[2] === 0x49 && appData[3] === 0x46 && appData[4] === 0) {
                 jfif = {
                   version: {
                     major: appData[5],
@@ -8623,8 +5238,8 @@ var JpegImage = function JpegImageClosure() {
               }
             }
 
-            if (fileMarker === 0xFFEE) {
-              if (appData[0] === 0x41 && appData[1] === 0x64 && appData[2] === 0x6F && appData[3] === 0x62 && appData[4] === 0x65) {
+            if (fileMarker === 0xffee) {
+              if (appData[0] === 0x41 && appData[1] === 0x64 && appData[2] === 0x6f && appData[3] === 0x62 && appData[4] === 0x65) {
                 adobe = {
                   version: appData[5] << 8 | appData[6],
                   flags0: appData[7] << 8 | appData[8],
@@ -8636,8 +5251,9 @@ var JpegImage = function JpegImageClosure() {
 
             break;
 
-          case 0xFFDB:
-            var quantizationTablesLength = readUint16();
+          case 0xffdb:
+            const quantizationTablesLength = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
             var quantizationTablesEnd = quantizationTablesLength + offset - 2;
             var z;
 
@@ -8653,10 +5269,11 @@ var JpegImage = function JpegImageClosure() {
               } else if (quantizationTableSpec >> 4 === 1) {
                 for (j = 0; j < 64; j++) {
                   z = dctZigZag[j];
-                  tableData[z] = readUint16();
+                  tableData[z] = (0, _core_utils.readUint16)(data, offset);
+                  offset += 2;
                 }
               } else {
-                throw new JpegError('DQT - invalid table spec');
+                throw new JpegError("DQT - invalid table spec");
               }
 
               quantizationTables[quantizationTableSpec & 15] = tableData;
@@ -8664,21 +5281,23 @@ var JpegImage = function JpegImageClosure() {
 
             break;
 
-          case 0xFFC0:
-          case 0xFFC1:
-          case 0xFFC2:
+          case 0xffc0:
+          case 0xffc1:
+          case 0xffc2:
             if (frame) {
-              throw new JpegError('Only single frame JPEGs supported');
+              throw new JpegError("Only single frame JPEGs supported");
             }
 
-            readUint16();
+            offset += 2;
             frame = {};
-            frame.extended = fileMarker === 0xFFC1;
-            frame.progressive = fileMarker === 0xFFC2;
+            frame.extended = fileMarker === 0xffc1;
+            frame.progressive = fileMarker === 0xffc2;
             frame.precision = data[offset++];
-            var sofScanLines = readUint16();
+            const sofScanLines = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
             frame.scanLines = dnlScanLines || sofScanLines;
-            frame.samplesPerLine = readUint16();
+            frame.samplesPerLine = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
             frame.components = [];
             frame.componentIds = {};
             var componentsCount = data[offset++],
@@ -8701,8 +5320,8 @@ var JpegImage = function JpegImageClosure() {
 
               var qId = data[offset + 2];
               l = frame.components.push({
-                h: h,
-                v: v,
+                h,
+                v,
                 quantizationId: qId,
                 quantizationTable: null
               });
@@ -8715,8 +5334,9 @@ var JpegImage = function JpegImageClosure() {
             prepareComponents(frame);
             break;
 
-          case 0xFFC4:
-            var huffmanLength = readUint16();
+          case 0xffc4:
+            const huffmanLength = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
 
             for (i = 2; i < huffmanLength;) {
               var huffmanTableSpec = data[offset++];
@@ -8739,14 +5359,15 @@ var JpegImage = function JpegImageClosure() {
 
             break;
 
-          case 0xFFDD:
-            readUint16();
-            resetInterval = readUint16();
+          case 0xffdd:
+            offset += 2;
+            resetInterval = (0, _core_utils.readUint16)(data, offset);
+            offset += 2;
             break;
 
-          case 0xFFDA:
-            var parseDNLMarker = ++numSOSMarkers === 1 && !dnlScanLines;
-            readUint16();
+          case 0xffda:
+            const parseDNLMarker = ++numSOSMarkers === 1 && !dnlScanLines;
+            offset += 2;
             var selectorsCount = data[offset++];
             var components = [],
                 component;
@@ -8769,12 +5390,12 @@ var JpegImage = function JpegImageClosure() {
               offset += processed;
             } catch (ex) {
               if (ex instanceof DNLMarkerError) {
-                (0, _util.warn)("".concat(ex.message, " -- attempting to re-parse the JPEG image."));
+                (0, _util.warn)(`${ex.message} -- attempting to re-parse the JPEG image.`);
                 return this.parse(data, {
                   dnlScanLines: ex.scanLines
                 });
               } else if (ex instanceof EOIMarkerError) {
-                (0, _util.warn)("".concat(ex.message, " -- ignoring the rest of the image data."));
+                (0, _util.warn)(`${ex.message} -- ignoring the rest of the image data.`);
                 break markerLoop;
               }
 
@@ -8783,35 +5404,36 @@ var JpegImage = function JpegImageClosure() {
 
             break;
 
-          case 0xFFDC:
+          case 0xffdc:
             offset += 4;
             break;
 
-          case 0xFFFF:
-            if (data[offset] !== 0xFF) {
+          case 0xffff:
+            if (data[offset] !== 0xff) {
               offset--;
             }
 
             break;
 
           default:
-            if (data[offset - 3] === 0xFF && data[offset - 2] >= 0xC0 && data[offset - 2] <= 0xFE) {
-              offset -= 3;
-              break;
-            }
-
-            var nextFileMarker = findNextFileMarker(data, offset - 2);
+            const nextFileMarker = findNextFileMarker(data, offset - 2, offset - 3);
 
             if (nextFileMarker && nextFileMarker.invalid) {
-              (0, _util.warn)('JpegImage.parse - unexpected data, current marker is: ' + nextFileMarker.invalid);
+              (0, _util.warn)("JpegImage.parse - unexpected data, current marker is: " + nextFileMarker.invalid);
               offset = nextFileMarker.offset;
               break;
             }
 
-            throw new JpegError('unknown marker ' + fileMarker.toString(16));
+            if (offset >= data.length - 1) {
+              (0, _util.warn)("JpegImage.parse - reached the end of the image data " + "without finding an EOI marker (0xFFD9).");
+              break markerLoop;
+            }
+
+            throw new JpegError("JpegImage.parse - unknown marker: " + fileMarker.toString(16));
         }
 
-        fileMarker = readUint16();
+        fileMarker = (0, _core_utils.readUint16)(data, offset);
+        offset += 2;
       }
 
       this.width = frame.samplesPerLine;
@@ -8840,8 +5462,8 @@ var JpegImage = function JpegImageClosure() {
       this.numComponents = this.components.length;
       return undefined;
     },
-    _getLinearizedBlockData: function _getLinearizedBlockData(width, height) {
-      var isSourcePDF = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+    _getLinearizedBlockData(width, height, isSourcePDF = false) {
       var scaleX = this.width / width,
           scaleY = this.height / height;
       var component, componentScaleX, componentScaleY, blocksPerScanline;
@@ -8854,6 +5476,7 @@ var JpegImage = function JpegImageClosure() {
       var data = new Uint8ClampedArray(dataLength);
       var xScaleBlockOffset = new Uint32Array(width);
       var mask3LSB = 0xfffffff8;
+      let lastComponentScaleX;
 
       for (i = 0; i < numComponents; i++) {
         component = this.components[i];
@@ -8863,9 +5486,13 @@ var JpegImage = function JpegImageClosure() {
         output = component.output;
         blocksPerScanline = component.blocksPerLine + 1 << 3;
 
-        for (x = 0; x < width; x++) {
-          j = 0 | x * componentScaleX;
-          xScaleBlockOffset[x] = (j & mask3LSB) << 3 | j & 7;
+        if (componentScaleX !== lastComponentScaleX) {
+          for (x = 0; x < width; x++) {
+            j = 0 | x * componentScaleX;
+            xScaleBlockOffset[x] = (j & mask3LSB) << 3 | j & 7;
+          }
+
+          lastComponentScaleX = componentScaleX;
         }
 
         for (y = 0; y < height; y++) {
@@ -8879,7 +5506,7 @@ var JpegImage = function JpegImageClosure() {
         }
       }
 
-      var transform = this._decodeTransform;
+      let transform = this._decodeTransform;
 
       if (!isSourcePDF && numComponents === 4 && !transform) {
         transform = new Int32Array([-256, 255, -256, 255, -256, 255, -256, 255]);
@@ -8963,30 +5590,28 @@ var JpegImage = function JpegImageClosure() {
     _convertCmykToRgb: function convertCmykToRgb(data) {
       var c, m, y, k;
       var offset = 0;
-      var scale = 1 / 255;
 
       for (var i = 0, length = data.length; i < length; i += 4) {
-        c = data[i] * scale;
-        m = data[i + 1] * scale;
-        y = data[i + 2] * scale;
-        k = data[i + 3] * scale;
-        data[offset++] = 255 + c * (-4.387332384609988 * c + 54.48615194189176 * m + 18.82290502165302 * y + 212.25662451639585 * k - 285.2331026137004) + m * (1.7149763477362134 * m - 5.6096736904047315 * y - 17.873870861415444 * k - 5.497006427196366) + y * (-2.5217340131683033 * y - 21.248923337353073 * k + 17.5119270841813) - k * (21.86122147463605 * k + 189.48180835922747);
-        data[offset++] = 255 + c * (8.841041422036149 * c + 60.118027045597366 * m + 6.871425592049007 * y + 31.159100130055922 * k - 79.2970844816548) + m * (-15.310361306967817 * m + 17.575251261109482 * y + 131.35250912493976 * k - 190.9453302588951) + y * (4.444339102852739 * y + 9.8632861493405 * k - 24.86741582555878) - k * (20.737325471181034 * k + 187.80453709719578);
-        data[offset++] = 255 + c * (0.8842522430003296 * c + 8.078677503112928 * m + 30.89978309703729 * y - 0.23883238689178934 * k - 14.183576799673286) + m * (10.49593273432072 * m + 63.02378494754052 * y + 50.606957656360734 * k - 112.23884253719248) + y * (0.03296041114873217 * y + 115.60384449646641 * k - 193.58209356861505) - k * (22.33816807309886 * k + 180.12613974708367);
+        c = data[i];
+        m = data[i + 1];
+        y = data[i + 2];
+        k = data[i + 3];
+        data[offset++] = 255 + c * (-0.00006747147073602441 * c + 0.0008379262121013727 * m + 0.0002894718188643294 * y + 0.003264231057537806 * k - 1.1185611867203937) + m * (0.000026374107616089405 * m - 0.00008626949158638572 * y - 0.0002748769067499491 * k - 0.02155688794978967) + y * (-0.00003878099212869363 * y - 0.0003267808279485286 * k + 0.0686742238595345) - k * (0.0003361971776183937 * k + 0.7430659151342254);
+        data[offset++] = 255 + c * (0.00013596372813588848 * c + 0.000924537132573585 * m + 0.00010567359618683593 * y + 0.0004791864687436512 * k - 0.3109689587515875) + m * (-0.00023545346108370344 * m + 0.0002702845253534714 * y + 0.0020200308977307156 * k - 0.7488052167015494) + y * (0.00006834815998235662 * y + 0.00015168452363460973 * k - 0.09751927774728933) - k * (0.00031891311758832814 * k + 0.7364883807733168);
+        data[offset++] = 255 + c * (0.000013598650411385307 * c + 0.00012423956175490851 * m + 0.0004751985097583589 * y - 0.0000036729317476630422 * k - 0.05562186980264034) + m * (0.00016141380598724676 * m + 0.0009692239130725186 * y + 0.0007782692450036253 * k - 0.44015232367526463) + y * (5.068882914068769e-7 * y + 0.0017778369011375071 * k - 0.7591454649749609) - k * (0.0003435319965105553 * k + 0.7063770186160144);
       }
 
       return data.subarray(0, offset);
     },
-    getData: function getData(_ref3) {
-      var width = _ref3.width,
-          height = _ref3.height,
-          _ref3$forceRGB = _ref3.forceRGB,
-          forceRGB = _ref3$forceRGB === void 0 ? false : _ref3$forceRGB,
-          _ref3$isSourcePDF = _ref3.isSourcePDF,
-          isSourcePDF = _ref3$isSourcePDF === void 0 ? false : _ref3$isSourcePDF;
 
+    getData({
+      width,
+      height,
+      forceRGB = false,
+      isSourcePDF = false
+    }) {
       if (this.numComponents > 4) {
-        throw new JpegError('Unsupported color mode');
+        throw new JpegError("Unsupported color mode");
       }
 
       var data = this._getLinearizedBlockData(width, height, isSourcePDF);
@@ -9020,6 +5645,7 @@ var JpegImage = function JpegImageClosure() {
 
       return data;
     }
+
   };
   return JpegImage;
 }();
@@ -9027,7 +5653,7 @@ var JpegImage = function JpegImageClosure() {
 exports.JpegImage = JpegImage;
 
 /***/ }),
-/* 137 */
+/* 8 */
 /***/ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
@@ -9040,25 +5666,23 @@ exports.JpxImage = void 0;
 
 var _util = __w_pdfjs_require__(1);
 
-var _arithmetic_decoder = __w_pdfjs_require__(134);
+var _core_utils = __w_pdfjs_require__(4);
 
-var JpxError = function JpxErrorClosure() {
-  function JpxError(msg) {
-    this.message = 'JPX error: ' + msg;
+var _arithmetic_decoder = __w_pdfjs_require__(5);
+
+class JpxError extends _util.BaseException {
+  constructor(msg) {
+    super(`JPX error: ${msg}`);
   }
 
-  JpxError.prototype = new Error();
-  JpxError.prototype.name = 'JpxError';
-  JpxError.constructor = JpxError;
-  return JpxError;
-}();
+}
 
 var JpxImage = function JpxImageClosure() {
   var SubbandsGainLog2 = {
-    'LL': 0,
-    'LH': 1,
-    'HL': 1,
-    'HH': 2
+    LL: 0,
+    LH: 1,
+    HL: 1,
+    HH: 2
   };
 
   function JpxImage() {
@@ -9067,9 +5691,9 @@ var JpxImage = function JpxImageClosure() {
 
   JpxImage.prototype = {
     parse: function JpxImage_parse(data) {
-      var head = (0, _util.readUint16)(data, 0);
+      var head = (0, _core_utils.readUint16)(data, 0);
 
-      if (head === 0xFF4F) {
+      if (head === 0xff4f) {
         this.parseCodestream(data, 0, data.length);
         return;
       }
@@ -9079,12 +5703,12 @@ var JpxImage = function JpxImageClosure() {
 
       while (position < length) {
         var headerSize = 8;
-        var lbox = (0, _util.readUint32)(data, position);
-        var tbox = (0, _util.readUint32)(data, position + 4);
+        var lbox = (0, _core_utils.readUint32)(data, position);
+        var tbox = (0, _core_utils.readUint32)(data, position + 4);
         position += headerSize;
 
         if (lbox === 1) {
-          lbox = (0, _util.readUint32)(data, position) * 4294967296 + (0, _util.readUint32)(data, position + 4);
+          lbox = (0, _core_utils.readUint32)(data, position) * 4294967296 + (0, _core_utils.readUint32)(data, position + 4);
           position += 8;
           headerSize += 8;
         }
@@ -9094,22 +5718,22 @@ var JpxImage = function JpxImageClosure() {
         }
 
         if (lbox < headerSize) {
-          throw new JpxError('Invalid box field size');
+          throw new JpxError("Invalid box field size");
         }
 
         var dataLength = lbox - headerSize;
         var jumpDataLength = true;
 
         switch (tbox) {
-          case 0x6A703268:
+          case 0x6a703268:
             jumpDataLength = false;
             break;
 
-          case 0x636F6C72:
+          case 0x636f6c72:
             var method = data[position];
 
             if (method === 1) {
-              var colorspace = (0, _util.readUint32)(data, position + 3);
+              var colorspace = (0, _core_utils.readUint32)(data, position + 3);
 
               switch (colorspace) {
                 case 16:
@@ -9118,27 +5742,27 @@ var JpxImage = function JpxImageClosure() {
                   break;
 
                 default:
-                  (0, _util.warn)('Unknown colorspace ' + colorspace);
+                  (0, _util.warn)("Unknown colorspace " + colorspace);
                   break;
               }
             } else if (method === 2) {
-              (0, _util.info)('ICC profile not supported');
+              (0, _util.info)("ICC profile not supported");
             }
 
             break;
 
-          case 0x6A703263:
+          case 0x6a703263:
             this.parseCodestream(data, position, position + dataLength);
             break;
 
-          case 0x6A502020:
-            if ((0, _util.readUint32)(data, position) !== 0x0d0a870a) {
-              (0, _util.warn)('Invalid JP2 signature');
+          case 0x6a502020:
+            if ((0, _core_utils.readUint32)(data, position) !== 0x0d0a870a) {
+              (0, _util.warn)("Invalid JP2 signature");
             }
 
             break;
 
-          case 0x6A501A1A:
+          case 0x6a501a1a:
           case 0x66747970:
           case 0x72726571:
           case 0x72657320:
@@ -9146,8 +5770,8 @@ var JpxImage = function JpxImageClosure() {
             break;
 
           default:
-            var headerType = String.fromCharCode(tbox >> 24 & 0xFF, tbox >> 16 & 0xFF, tbox >> 8 & 0xFF, tbox & 0xFF);
-            (0, _util.warn)('Unsupported header type ' + tbox + ' (' + headerType + ')');
+            var headerType = String.fromCharCode(tbox >> 24 & 0xff, tbox >> 16 & 0xff, tbox >> 8 & 0xff, tbox & 0xff);
+            (0, _util.warn)("Unsupported header type " + tbox + " (" + headerType + ")");
             break;
         }
 
@@ -9164,7 +5788,7 @@ var JpxImage = function JpxImageClosure() {
         newByte = stream.getByte();
         var code = oldByte << 8 | newByte;
 
-        if (code === 0xFF51) {
+        if (code === 0xff51) {
           stream.skip(4);
           var Xsiz = stream.getInt32() >>> 0;
           var Ysiz = stream.getInt32() >>> 0;
@@ -9180,7 +5804,7 @@ var JpxImage = function JpxImageClosure() {
         }
       }
 
-      throw new JpxError('No size marker found in JPX stream');
+      throw new JpxError("No size marker found in JPX stream");
     },
     parseCodestream: function JpxImage_parseCodestream(data, start, end) {
       var context = {};
@@ -9190,7 +5814,7 @@ var JpxImage = function JpxImageClosure() {
         var position = start;
 
         while (position + 1 < end) {
-          var code = (0, _util.readUint16)(data, position);
+          var code = (0, _core_utils.readUint16)(data, position);
           position += 2;
           var length = 0,
               j,
@@ -9201,32 +5825,32 @@ var JpxImage = function JpxImageClosure() {
               tile;
 
           switch (code) {
-            case 0xFF4F:
+            case 0xff4f:
               context.mainHeader = true;
               break;
 
-            case 0xFFD9:
+            case 0xffd9:
               break;
 
-            case 0xFF51:
-              length = (0, _util.readUint16)(data, position);
+            case 0xff51:
+              length = (0, _core_utils.readUint16)(data, position);
               var siz = {};
-              siz.Xsiz = (0, _util.readUint32)(data, position + 4);
-              siz.Ysiz = (0, _util.readUint32)(data, position + 8);
-              siz.XOsiz = (0, _util.readUint32)(data, position + 12);
-              siz.YOsiz = (0, _util.readUint32)(data, position + 16);
-              siz.XTsiz = (0, _util.readUint32)(data, position + 20);
-              siz.YTsiz = (0, _util.readUint32)(data, position + 24);
-              siz.XTOsiz = (0, _util.readUint32)(data, position + 28);
-              siz.YTOsiz = (0, _util.readUint32)(data, position + 32);
-              var componentsCount = (0, _util.readUint16)(data, position + 36);
+              siz.Xsiz = (0, _core_utils.readUint32)(data, position + 4);
+              siz.Ysiz = (0, _core_utils.readUint32)(data, position + 8);
+              siz.XOsiz = (0, _core_utils.readUint32)(data, position + 12);
+              siz.YOsiz = (0, _core_utils.readUint32)(data, position + 16);
+              siz.XTsiz = (0, _core_utils.readUint32)(data, position + 20);
+              siz.YTsiz = (0, _core_utils.readUint32)(data, position + 24);
+              siz.XTOsiz = (0, _core_utils.readUint32)(data, position + 28);
+              siz.YTOsiz = (0, _core_utils.readUint32)(data, position + 32);
+              var componentsCount = (0, _core_utils.readUint16)(data, position + 36);
               siz.Csiz = componentsCount;
               var components = [];
               j = position + 38;
 
               for (var i = 0; i < componentsCount; i++) {
                 var component = {
-                  precision: (data[j] & 0x7F) + 1,
+                  precision: (data[j] & 0x7f) + 1,
                   isSigned: !!(data[j] & 0x80),
                   XRsiz: data[j + 1],
                   YRsiz: data[j + 2]
@@ -9243,13 +5867,13 @@ var JpxImage = function JpxImageClosure() {
               context.COC = [];
               break;
 
-            case 0xFF5C:
-              length = (0, _util.readUint16)(data, position);
+            case 0xff5c:
+              length = (0, _core_utils.readUint16)(data, position);
               var qcd = {};
               j = position + 2;
               sqcd = data[j++];
 
-              switch (sqcd & 0x1F) {
+              switch (sqcd & 0x1f) {
                 case 0:
                   spqcdSize = 8;
                   scalarExpounded = true;
@@ -9266,7 +5890,7 @@ var JpxImage = function JpxImageClosure() {
                   break;
 
                 default:
-                  throw new Error('Invalid SQcd value ' + sqcd);
+                  throw new Error("Invalid SQcd value " + sqcd);
               }
 
               qcd.noQuantization = spqcdSize === 8;
@@ -9300,8 +5924,8 @@ var JpxImage = function JpxImageClosure() {
 
               break;
 
-            case 0xFF5D:
-              length = (0, _util.readUint16)(data, position);
+            case 0xff5d:
+              length = (0, _core_utils.readUint16)(data, position);
               var qcc = {};
               j = position + 2;
               var cqcc;
@@ -9309,13 +5933,13 @@ var JpxImage = function JpxImageClosure() {
               if (context.SIZ.Csiz < 257) {
                 cqcc = data[j++];
               } else {
-                cqcc = (0, _util.readUint16)(data, j);
+                cqcc = (0, _core_utils.readUint16)(data, j);
                 j += 2;
               }
 
               sqcd = data[j++];
 
-              switch (sqcd & 0x1F) {
+              switch (sqcd & 0x1f) {
                 case 0:
                   spqcdSize = 8;
                   scalarExpounded = true;
@@ -9332,7 +5956,7 @@ var JpxImage = function JpxImageClosure() {
                   break;
 
                 default:
-                  throw new Error('Invalid SQcd value ' + sqcd);
+                  throw new Error("Invalid SQcd value " + sqcd);
               }
 
               qcc.noQuantization = spqcdSize === 8;
@@ -9365,8 +5989,8 @@ var JpxImage = function JpxImageClosure() {
 
               break;
 
-            case 0xFF52:
-              length = (0, _util.readUint16)(data, position);
+            case 0xff52:
+              length = (0, _core_utils.readUint16)(data, position);
               var cod = {};
               j = position + 2;
               var scod = data[j++];
@@ -9374,12 +5998,12 @@ var JpxImage = function JpxImageClosure() {
               cod.sopMarkerUsed = !!(scod & 2);
               cod.ephMarkerUsed = !!(scod & 4);
               cod.progressionOrder = data[j++];
-              cod.layersCount = (0, _util.readUint16)(data, j);
+              cod.layersCount = (0, _core_utils.readUint16)(data, j);
               j += 2;
               cod.multipleComponentTransform = data[j++];
               cod.decompositionLevelsCount = data[j++];
-              cod.xcb = (data[j++] & 0xF) + 2;
-              cod.ycb = (data[j++] & 0xF) + 2;
+              cod.xcb = (data[j++] & 0xf) + 2;
+              cod.ycb = (data[j++] & 0xf) + 2;
               var blockStyle = data[j++];
               cod.selectiveArithmeticCodingBypass = !!(blockStyle & 1);
               cod.resetContextProbabilities = !!(blockStyle & 2);
@@ -9395,7 +6019,7 @@ var JpxImage = function JpxImageClosure() {
                 while (j < length + position) {
                   var precinctsSize = data[j++];
                   precinctsSizes.push({
-                    PPx: precinctsSize & 0xF,
+                    PPx: precinctsSize & 0xf,
                     PPy: precinctsSize >> 4
                   });
                 }
@@ -9406,28 +6030,28 @@ var JpxImage = function JpxImageClosure() {
               var unsupported = [];
 
               if (cod.selectiveArithmeticCodingBypass) {
-                unsupported.push('selectiveArithmeticCodingBypass');
+                unsupported.push("selectiveArithmeticCodingBypass");
               }
 
               if (cod.resetContextProbabilities) {
-                unsupported.push('resetContextProbabilities');
+                unsupported.push("resetContextProbabilities");
               }
 
               if (cod.terminationOnEachCodingPass) {
-                unsupported.push('terminationOnEachCodingPass');
+                unsupported.push("terminationOnEachCodingPass");
               }
 
               if (cod.verticallyStripe) {
-                unsupported.push('verticallyStripe');
+                unsupported.push("verticallyStripe");
               }
 
               if (cod.predictableTermination) {
-                unsupported.push('predictableTermination');
+                unsupported.push("predictableTermination");
               }
 
               if (unsupported.length > 0) {
                 doNotRecover = true;
-                throw new Error('Unsupported COD options (' + unsupported.join(', ') + ')');
+                throw new Error("Unsupported COD options (" + unsupported.join(", ") + ")");
               }
 
               if (context.mainHeader) {
@@ -9439,11 +6063,11 @@ var JpxImage = function JpxImageClosure() {
 
               break;
 
-            case 0xFF90:
-              length = (0, _util.readUint16)(data, position);
+            case 0xff90:
+              length = (0, _core_utils.readUint16)(data, position);
               tile = {};
-              tile.index = (0, _util.readUint16)(data, position + 2);
-              tile.length = (0, _util.readUint32)(data, position + 4);
+              tile.index = (0, _core_utils.readUint16)(data, position + 2);
+              tile.length = (0, _core_utils.readUint32)(data, position + 4);
               tile.dataEnd = tile.length + position - 2;
               tile.partIndex = data[position + 8];
               tile.partsCount = data[position + 9];
@@ -9459,7 +6083,7 @@ var JpxImage = function JpxImageClosure() {
               context.currentTile = tile;
               break;
 
-            case 0xFF93:
+            case 0xff93:
               tile = context.currentTile;
 
               if (tile.partIndex === 0) {
@@ -9471,18 +6095,18 @@ var JpxImage = function JpxImageClosure() {
               parseTilePackets(context, data, position, length);
               break;
 
-            case 0xFF55:
-            case 0xFF57:
-            case 0xFF58:
-            case 0xFF64:
-              length = (0, _util.readUint16)(data, position);
+            case 0xff55:
+            case 0xff57:
+            case 0xff58:
+            case 0xff64:
+              length = (0, _core_utils.readUint16)(data, position);
               break;
 
-            case 0xFF53:
-              throw new Error('Codestream code 0xFF53 (COC) is ' + 'not implemented');
+            case 0xff53:
+              throw new Error("Codestream code 0xFF53 (COC) is not implemented");
 
             default:
-              throw new Error('Unknown codestream code: ' + code.toString(16));
+              throw new Error("Unknown codestream code: " + code.toString(16));
           }
 
           position += length;
@@ -9491,7 +6115,7 @@ var JpxImage = function JpxImageClosure() {
         if (doNotRecover || this.failOnCorruptedImage) {
           throw new JpxError(e.message);
         } else {
-          (0, _util.warn)('JPX: Trying to recover from: ' + e.message);
+          (0, _util.warn)("JPX: Trying to recover from: " + e.message);
         }
       }
 
@@ -9579,13 +6203,13 @@ var JpxImage = function JpxImageClosure() {
     var numprecinctshigh = resolution.try1 > resolution.try0 ? Math.ceil(resolution.try1 / precinctHeight) - Math.floor(resolution.try0 / precinctHeight) : 0;
     var numprecincts = numprecinctswide * numprecinctshigh;
     resolution.precinctParameters = {
-      precinctWidth: precinctWidth,
-      precinctHeight: precinctHeight,
-      numprecinctswide: numprecinctswide,
-      numprecinctshigh: numprecinctshigh,
-      numprecincts: numprecincts,
-      precinctWidthInSubband: precinctWidthInSubband,
-      precinctHeightInSubband: precinctHeightInSubband
+      precinctWidth,
+      precinctHeight,
+      numprecinctswide,
+      numprecinctshigh,
+      numprecincts,
+      precinctWidthInSubband,
+      precinctHeightInSubband
     };
   }
 
@@ -9686,7 +6310,7 @@ var JpxImage = function JpxImageClosure() {
     }
 
     return {
-      layerNumber: layerNumber,
+      layerNumber,
       codeblocks: precinctCodeblocks
     };
   }
@@ -9736,7 +6360,7 @@ var JpxImage = function JpxImageClosure() {
         r = 0;
       }
 
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
 
@@ -9785,7 +6409,7 @@ var JpxImage = function JpxImageClosure() {
         l = 0;
       }
 
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
 
@@ -9856,7 +6480,7 @@ var JpxImage = function JpxImageClosure() {
         p = 0;
       }
 
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
 
@@ -9908,7 +6532,7 @@ var JpxImage = function JpxImageClosure() {
         px = 0;
       }
 
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
 
@@ -9960,7 +6584,7 @@ var JpxImage = function JpxImageClosure() {
         py = 0;
       }
 
-      throw new JpxError('Out of packets');
+      throw new JpxError("Out of packets");
     };
   }
 
@@ -10024,10 +6648,10 @@ var JpxImage = function JpxImageClosure() {
 
     return {
       components: sizePerComponent,
-      minWidth: minWidth,
-      minHeight: minHeight,
-      maxNumWide: maxNumWide,
-      maxNumHigh: maxNumHigh
+      minWidth,
+      minHeight,
+      maxNumWide,
+      maxNumHigh
     };
   }
 
@@ -10058,7 +6682,7 @@ var JpxImage = function JpxImageClosure() {
 
         if (r === 0) {
           subband = {};
-          subband.type = 'LL';
+          subband.type = "LL";
           subband.tbx0 = Math.ceil(component.tcx0 / scale);
           subband.tby0 = Math.ceil(component.tcy0 / scale);
           subband.tbx1 = Math.ceil(component.tcx1 / scale);
@@ -10071,7 +6695,7 @@ var JpxImage = function JpxImageClosure() {
           var bscale = 1 << decompositionLevelsCount - r + 1;
           var resolutionSubbands = [];
           subband = {};
-          subband.type = 'HL';
+          subband.type = "HL";
           subband.tbx0 = Math.ceil(component.tcx0 / bscale - 0.5);
           subband.tby0 = Math.ceil(component.tcy0 / bscale);
           subband.tbx1 = Math.ceil(component.tcx1 / bscale - 0.5);
@@ -10081,7 +6705,7 @@ var JpxImage = function JpxImageClosure() {
           subbands.push(subband);
           resolutionSubbands.push(subband);
           subband = {};
-          subband.type = 'LH';
+          subband.type = "LH";
           subband.tbx0 = Math.ceil(component.tcx0 / bscale);
           subband.tby0 = Math.ceil(component.tcy0 / bscale - 0.5);
           subband.tbx1 = Math.ceil(component.tcx1 / bscale);
@@ -10091,7 +6715,7 @@ var JpxImage = function JpxImageClosure() {
           subbands.push(subband);
           resolutionSubbands.push(subband);
           subband = {};
-          subband.type = 'HH';
+          subband.type = "HH";
           subband.tbx0 = Math.ceil(component.tcx0 / bscale - 0.5);
           subband.tby0 = Math.ceil(component.tcy0 / bscale - 0.5);
           subband.tbx1 = Math.ceil(component.tcx1 / bscale - 0.5);
@@ -10132,7 +6756,7 @@ var JpxImage = function JpxImageClosure() {
         break;
 
       default:
-        throw new JpxError("Unsupported progression order ".concat(progressionOrder));
+        throw new JpxError(`Unsupported progression order ${progressionOrder}`);
     }
   }
 
@@ -10156,7 +6780,7 @@ var JpxImage = function JpxImageClosure() {
           bufferSize += 8;
         }
 
-        if (b === 0xFF) {
+        if (b === 0xff) {
           skipNextBit = true;
         }
       }
@@ -10166,10 +6790,10 @@ var JpxImage = function JpxImageClosure() {
     }
 
     function skipMarkerIfEqual(value) {
-      if (data[offset + position - 1] === 0xFF && data[offset + position] === value) {
+      if (data[offset + position - 1] === 0xff && data[offset + position] === value) {
         skipBytes(1);
         return true;
-      } else if (data[offset + position] === 0xFF && data[offset + position + 1] === value) {
+      } else if (data[offset + position] === 0xff && data[offset + position + 1] === value) {
         skipBytes(2);
         return true;
       }
@@ -10247,13 +6871,13 @@ var JpxImage = function JpxImageClosure() {
         var firstTimeInclusion = false;
         var valueReady;
 
-        if (codeblock['included'] !== undefined) {
+        if (codeblock["included"] !== undefined) {
           codeblockIncluded = !!readBits(1);
         } else {
           precinct = codeblock.precinct;
           var inclusionTree, zeroBitPlanesTree;
 
-          if (precinct['inclusionTree'] !== undefined) {
+          if (precinct["inclusionTree"] !== undefined) {
             inclusionTree = precinct.inclusionTree;
           } else {
             var width = precinct.cbxMax - precinct.cbxMin + 1;
@@ -10311,12 +6935,12 @@ var JpxImage = function JpxImageClosure() {
           codeblock.Lblock++;
         }
 
-        var codingpassesLog2 = (0, _util.log2)(codingpasses);
+        var codingpassesLog2 = (0, _core_utils.log2)(codingpasses);
         var bits = (codingpasses < 1 << codingpassesLog2 ? codingpassesLog2 - 1 : codingpassesLog2) + codeblock.Lblock;
         var codedDataLength = readBits(bits);
         queue.push({
-          codeblock: codeblock,
-          codingpasses: codingpasses,
+          codeblock,
+          codingpasses,
           dataLength: codedDataLength
         });
       }
@@ -10331,12 +6955,12 @@ var JpxImage = function JpxImageClosure() {
         var packetItem = queue.shift();
         codeblock = packetItem.codeblock;
 
-        if (codeblock['data'] === undefined) {
+        if (codeblock["data"] === undefined) {
           codeblock.data = [];
         }
 
         codeblock.data.push({
-          data: data,
+          data,
           start: offset + position,
           end: offset + position + packetItem.dataLength,
           codingpasses: packetItem.codingpasses
@@ -10353,8 +6977,8 @@ var JpxImage = function JpxImageClosure() {
     var y0 = subband.tby0;
     var width = subband.tbx1 - subband.tbx0;
     var codeblocks = subband.codeblocks;
-    var right = subband.type.charAt(0) === 'H' ? 1 : 0;
-    var bottom = subband.type.charAt(1) === 'H' ? levelWidth : 0;
+    var right = subband.type.charAt(0) === "H" ? 1 : 0;
+    var bottom = subband.type.charAt(1) === "H" ? levelWidth : 0;
 
     for (var i = 0, ii = codeblocks.length; i < ii; ++i) {
       var codeblock = codeblocks[i];
@@ -10365,7 +6989,7 @@ var JpxImage = function JpxImageClosure() {
         continue;
       }
 
-      if (codeblock['data'] === undefined) {
+      if (codeblock["data"] === undefined) {
         continue;
       }
 
@@ -10426,7 +7050,7 @@ var JpxImage = function JpxImageClosure() {
       var magnitudeCorrection = reversible ? 0 : 0.5;
       var k, n, nb;
       position = 0;
-      var interleave = subband.type !== 'LL';
+      var interleave = subband.type !== "LL";
 
       for (j = 0; j < blockHeight; j++) {
         var row = offset / width | 0;
@@ -10496,14 +7120,14 @@ var JpxImage = function JpxImageClosure() {
 
         var subband = resolution.subbands[j];
         var gainLog2 = SubbandsGainLog2[subband.type];
-        var delta = reversible ? 1 : Math.pow(2, precision + gainLog2 - epsilon) * (1 + mu / 2048);
+        var delta = reversible ? 1 : 2 ** (precision + gainLog2 - epsilon) * (1 + mu / 2048);
         var mb = guardBits + epsilon - 1;
         copyCoefficients(coefficients, width, height, subband, delta, mb, reversible, segmentationSymbolUsed);
       }
 
       subbandCoefficients.push({
-        width: width,
-        height: height,
+        width,
+        height,
         items: coefficients
       });
     }
@@ -10576,7 +7200,7 @@ var JpxImage = function JpxImageClosure() {
             y0 = y0items[j] + offset;
             y1 = y1items[j];
             y2 = y2items[j];
-            var g = y0 - (y2 + y1 >> 2);
+            const g = y0 - (y2 + y1 >> 2);
             out[pos++] = g + y2 >> shift;
             out[pos++] = g >> shift;
             out[pos++] = g + y1 >> shift;
@@ -10625,13 +7249,13 @@ var JpxImage = function JpxImageClosure() {
 
   var TagTree = function TagTreeClosure() {
     function TagTree(width, height) {
-      var levelsLength = (0, _util.log2)(Math.max(width, height)) + 1;
+      var levelsLength = (0, _core_utils.log2)(Math.max(width, height)) + 1;
       this.levels = [];
 
       for (var i = 0; i < levelsLength; i++) {
         var level = {
-          width: width,
-          height: height,
+          width,
+          height,
           items: []
         };
         this.levels.push(level);
@@ -10693,7 +7317,7 @@ var JpxImage = function JpxImageClosure() {
 
   var InclusionTree = function InclusionTreeClosure() {
     function InclusionTree(width, height, defaultValue) {
-      var levelsLength = (0, _util.log2)(Math.max(width, height)) + 1;
+      var levelsLength = (0, _core_utils.log2)(Math.max(width, height)) + 1;
       this.levels = [];
 
       for (var i = 0; i < levelsLength; i++) {
@@ -10704,9 +7328,9 @@ var JpxImage = function JpxImageClosure() {
         }
 
         var level = {
-          width: width,
-          height: height,
-          items: items
+          width,
+          height,
+          items
         };
         this.levels.push(level);
         width = Math.ceil(width / 2);
@@ -10724,7 +7348,7 @@ var JpxImage = function JpxImageClosure() {
           level.index = index;
           var value = level.items[index];
 
-          if (value === 0xFF) {
+          if (value === 0xff) {
             break;
           }
 
@@ -10761,7 +7385,7 @@ var JpxImage = function JpxImageClosure() {
         var currentLevel = this.currentLevel;
         var level = this.levels[currentLevel];
         var value = level.items[level.index];
-        level.items[level.index] = 0xFF;
+        level.items[level.index] = 0xff;
         currentLevel--;
 
         if (currentLevel < 0) {
@@ -10787,11 +7411,31 @@ var JpxImage = function JpxImageClosure() {
     function BitModel(width, height, subband, zeroBitPlanes, mb) {
       this.width = width;
       this.height = height;
-      this.contextLabelTable = subband === 'HH' ? HHContextLabel : subband === 'HL' ? HLContextLabel : LLAndLHContextsLabel;
+      let contextLabelTable;
+
+      if (subband === "HH") {
+        contextLabelTable = HHContextLabel;
+      } else if (subband === "HL") {
+        contextLabelTable = HLContextLabel;
+      } else {
+        contextLabelTable = LLAndLHContextsLabel;
+      }
+
+      this.contextLabelTable = contextLabelTable;
       var coefficientCount = width * height;
       this.neighborsSignificance = new Uint8Array(coefficientCount);
       this.coefficentsSign = new Uint8Array(coefficientCount);
-      this.coefficentsMagnitude = mb > 14 ? new Uint32Array(coefficientCount) : mb > 6 ? new Uint16Array(coefficientCount) : new Uint8Array(coefficientCount);
+      let coefficentsMagnitude;
+
+      if (mb > 14) {
+        coefficentsMagnitude = new Uint32Array(coefficientCount);
+      } else if (mb > 6) {
+        coefficentsMagnitude = new Uint16Array(coefficientCount);
+      } else {
+        coefficentsMagnitude = new Uint8Array(coefficientCount);
+      }
+
+      this.coefficentsMagnitude = coefficentsMagnitude;
       this.processingFlags = new Uint8Array(coefficientCount);
       var bitsDecoded = new Uint8Array(coefficientCount);
 
@@ -11092,8 +7736,8 @@ var JpxImage = function JpxImageClosure() {
         var contexts = this.contexts;
         var symbol = decoder.readBit(contexts, UNIFORM_CONTEXT) << 3 | decoder.readBit(contexts, UNIFORM_CONTEXT) << 2 | decoder.readBit(contexts, UNIFORM_CONTEXT) << 1 | decoder.readBit(contexts, UNIFORM_CONTEXT);
 
-        if (symbol !== 0xA) {
-          throw new JpxError('Invalid segmentation symbol');
+        if (symbol !== 0xa) {
+          throw new JpxError("Invalid segmentation symbol");
         }
       }
     };
@@ -11213,9 +7857,9 @@ var JpxImage = function JpxImageClosure() {
       }
 
       return {
-        width: width,
-        height: height,
-        items: items
+        width,
+        height,
+        items
       };
     };
 

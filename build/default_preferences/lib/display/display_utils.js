@@ -10,22 +10,22 @@ exports.isValidFetchUrl = isValidFetchUrl;
 exports.loadScript = loadScript;
 exports.deprecated = deprecated;
 exports.releaseImageResources = releaseImageResources;
-exports.PDFDateString = exports.DummyStatTimer = exports.StatTimer = exports.DOMSVGFactory = exports.DOMCMapReaderFactory = exports.DOMCanvasFactory = exports.DEFAULT_LINK_REL = exports.LinkTarget = exports.RenderingCancelledException = exports.PageViewport = void 0;
+exports.PDFDateString = exports.StatTimer = exports.DOMSVGFactory = exports.DOMCMapReaderFactory = exports.DOMCanvasFactory = exports.DEFAULT_LINK_REL = exports.LinkTarget = exports.RenderingCancelledException = exports.PageViewport = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
+const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;
-const SVG_NS = 'http://www.w3.org/2000/svg';
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 class DOMCanvasFactory {
   create(width, height) {
     if (width <= 0 || height <= 0) {
-      throw new Error('Invalid canvas size');
+      throw new Error("Invalid canvas size");
     }
 
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
     canvas.width = width;
     canvas.height = height;
     return {
@@ -36,11 +36,11 @@ class DOMCanvasFactory {
 
   reset(canvasAndContext, width, height) {
     if (!canvasAndContext.canvas) {
-      throw new Error('Canvas is not specified');
+      throw new Error("Canvas is not specified");
     }
 
     if (width <= 0 || height <= 0) {
-      throw new Error('Invalid canvas size');
+      throw new Error("Invalid canvas size");
     }
 
     canvasAndContext.canvas.width = width;
@@ -49,7 +49,7 @@ class DOMCanvasFactory {
 
   destroy(canvasAndContext) {
     if (!canvasAndContext.canvas) {
-      throw new Error('Canvas is not specified');
+      throw new Error("Canvas is not specified");
     }
 
     canvasAndContext.canvas.width = 0;
@@ -79,10 +79,10 @@ class DOMCMapReaderFactory {
     }
 
     if (!name) {
-      throw new Error('CMap name must be specified.');
+      throw new Error("CMap name must be specified.");
     }
 
-    const url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+    const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
     const compressionType = this.isCompressed ? _util.CMapCompressionType.BINARY : _util.CMapCompressionType.NONE;
 
     if (isFetchSupported() && isValidFetchUrl(url, document.baseURI)) {
@@ -104,16 +104,16 @@ class DOMCMapReaderFactory {
           compressionType
         };
       }).catch(reason => {
-        throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` + `CMap at: ${url}`);
+        throw new Error(`Unable to load ${this.isCompressed ? "binary " : ""}` + `CMap at: ${url}`);
       });
     }
 
     return new Promise((resolve, reject) => {
       const request = new XMLHttpRequest();
-      request.open('GET', url, true);
+      request.open("GET", url, true);
 
       if (this.isCompressed) {
-        request.responseType = 'arraybuffer';
+        request.responseType = "arraybuffer";
       }
 
       request.onreadystatechange = () => {
@@ -144,7 +144,7 @@ class DOMCMapReaderFactory {
 
       request.send(null);
     }).catch(reason => {
-      throw new Error(`Unable to load ${this.isCompressed ? 'binary ' : ''}` + `CMap at: ${url}`);
+      throw new Error(`Unable to load ${this.isCompressed ? "binary " : ""}` + `CMap at: ${url}`);
     });
   }
 
@@ -154,18 +154,18 @@ exports.DOMCMapReaderFactory = DOMCMapReaderFactory;
 
 class DOMSVGFactory {
   create(width, height) {
-    (0, _util.assert)(width > 0 && height > 0, 'Invalid SVG dimensions');
-    const svg = document.createElementNS(SVG_NS, 'svg:svg');
-    svg.setAttribute('version', '1.1');
-    svg.setAttribute('width', width + 'px');
-    svg.setAttribute('height', height + 'px');
-    svg.setAttribute('preserveAspectRatio', 'none');
-    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    (0, _util.assert)(width > 0 && height > 0, "Invalid SVG dimensions");
+    const svg = document.createElementNS(SVG_NS, "svg:svg");
+    svg.setAttribute("version", "1.1");
+    svg.setAttribute("width", width + "px");
+    svg.setAttribute("height", height + "px");
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
     return svg;
   }
 
   createElement(type) {
-    (0, _util.assert)(typeof type === 'string', 'Invalid SVG element type');
+    (0, _util.assert)(typeof type === "string", "Invalid SVG element type");
     return document.createElementNS(SVG_NS, type);
   }
 
@@ -251,14 +251,16 @@ class PageViewport {
   clone({
     scale = this.scale,
     rotation = this.rotation,
+    offsetX = this.offsetX,
+    offsetY = this.offsetY,
     dontFlip = false
   } = {}) {
     return new PageViewport({
       viewBox: this.viewBox.slice(),
       scale,
       rotation,
-      offsetX: this.offsetX,
-      offsetY: this.offsetY,
+      offsetX,
+      offsetY,
       dontFlip
     });
   }
@@ -283,17 +285,13 @@ class PageViewport {
 
 exports.PageViewport = PageViewport;
 
-const RenderingCancelledException = function RenderingCancelledException() {
-  function RenderingCancelledException(msg, type) {
-    this.message = msg;
+class RenderingCancelledException extends _util.BaseException {
+  constructor(msg, type) {
+    super(msg);
     this.type = type;
   }
 
-  RenderingCancelledException.prototype = new Error();
-  RenderingCancelledException.prototype.name = 'RenderingCancelledException';
-  RenderingCancelledException.constructor = RenderingCancelledException;
-  return RenderingCancelledException;
-}();
+}
 
 exports.RenderingCancelledException = RenderingCancelledException;
 const LinkTarget = {
@@ -304,69 +302,91 @@ const LinkTarget = {
   TOP: 4
 };
 exports.LinkTarget = LinkTarget;
-const LinkTargetStringMap = ['', '_self', '_blank', '_parent', '_top'];
 
 function addLinkAttributes(link, {
   url,
   target,
-  rel
+  rel,
+  enabled = true
 } = {}) {
-  link.href = link.title = url ? (0, _util.removeNullCharacters)(url) : '';
+  (0, _util.assert)(url && typeof url === "string", 'addLinkAttributes: A valid "url" parameter must provided.');
+  const urlNullRemoved = (0, _util.removeNullCharacters)(url);
 
-  if (url) {
-    const LinkTargetValues = Object.values(LinkTarget);
-    const targetIndex = LinkTargetValues.includes(target) ? target : LinkTarget.NONE;
-    link.target = LinkTargetStringMap[targetIndex];
-    link.rel = typeof rel === 'string' ? rel : DEFAULT_LINK_REL;
+  if (enabled) {
+    link.href = link.title = urlNullRemoved;
+  } else {
+    link.href = "";
+    link.title = `Disabled: ${urlNullRemoved}`;
+
+    link.onclick = () => {
+      return false;
+    };
   }
+
+  let targetStr = "";
+
+  switch (target) {
+    case LinkTarget.NONE:
+      break;
+
+    case LinkTarget.SELF:
+      targetStr = "_self";
+      break;
+
+    case LinkTarget.BLANK:
+      targetStr = "_blank";
+      break;
+
+    case LinkTarget.PARENT:
+      targetStr = "_parent";
+      break;
+
+    case LinkTarget.TOP:
+      targetStr = "_top";
+      break;
+  }
+
+  link.target = targetStr;
+  link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
 }
 
 function getFilenameFromUrl(url) {
-  const anchor = url.indexOf('#');
-  const query = url.indexOf('?');
+  const anchor = url.indexOf("#");
+  const query = url.indexOf("?");
   const end = Math.min(anchor > 0 ? anchor : url.length, query > 0 ? query : url.length);
-  return url.substring(url.lastIndexOf('/', end) + 1, end);
+  return url.substring(url.lastIndexOf("/", end) + 1, end);
 }
 
 class StatTimer {
-  constructor(enable = true) {
-    this.enabled = !!enable;
+  constructor() {
     this.started = Object.create(null);
     this.times = [];
   }
 
   time(name) {
-    if (!this.enabled) {
-      return;
-    }
-
     if (name in this.started) {
-      (0, _util.warn)('Timer is already running for ' + name);
+      (0, _util.warn)(`Timer is already running for ${name}`);
     }
 
     this.started[name] = Date.now();
   }
 
   timeEnd(name) {
-    if (!this.enabled) {
-      return;
-    }
-
     if (!(name in this.started)) {
-      (0, _util.warn)('Timer has not been started for ' + name);
+      (0, _util.warn)(`Timer has not been started for ${name}`);
     }
 
     this.times.push({
-      'name': name,
-      'start': this.started[name],
-      'end': Date.now()
+      name,
+      start: this.started[name],
+      end: Date.now()
     });
     delete this.started[name];
   }
 
   toString() {
-    let out = '',
-        longest = 0;
+    const outBuf = [];
+    let longest = 0;
 
     for (const time of this.times) {
       const name = time.name;
@@ -378,43 +398,26 @@ class StatTimer {
 
     for (const time of this.times) {
       const duration = time.end - time.start;
-      out += `${time.name.padEnd(longest)} ${duration}ms\n`;
+      outBuf.push(`${time.name.padEnd(longest)} ${duration}ms\n`);
     }
 
-    return out;
+    return outBuf.join("");
   }
 
 }
 
 exports.StatTimer = StatTimer;
 
-class DummyStatTimer {
-  constructor() {
-    (0, _util.unreachable)('Cannot initialize DummyStatTimer.');
-  }
-
-  static time(name) {}
-
-  static timeEnd(name) {}
-
-  static toString() {
-    return '';
-  }
-
-}
-
-exports.DummyStatTimer = DummyStatTimer;
-
 function isFetchSupported() {
-  return typeof fetch !== 'undefined' && typeof Response !== 'undefined' && 'body' in Response.prototype && typeof ReadableStream !== 'undefined';
+  return typeof fetch !== "undefined" && typeof Response !== "undefined" && "body" in Response.prototype && typeof ReadableStream !== "undefined";
 }
 
 function isValidFetchUrl(url, baseUrl) {
   try {
     const {
       protocol
-    } = baseUrl ? new _util.URL(url, baseUrl) : new _util.URL(url);
-    return protocol === 'http:' || protocol === 'https:';
+    } = baseUrl ? new URL(url, baseUrl) : new URL(url);
+    return protocol === "http:" || protocol === "https:";
   } catch (ex) {
     return false;
   }
@@ -422,7 +425,7 @@ function isValidFetchUrl(url, baseUrl) {
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = src;
     script.onload = resolve;
 
@@ -435,18 +438,18 @@ function loadScript(src) {
 }
 
 function deprecated(details) {
-  console.log('Deprecated API usage: ' + details);
+  console.log("Deprecated API usage: " + details);
 }
 
 function releaseImageResources(img) {
-  (0, _util.assert)(img instanceof Image, 'Invalid `img` parameter.');
+  (0, _util.assert)(img instanceof Image, "Invalid `img` parameter.");
   const url = img.src;
 
-  if (typeof url === 'string' && url.startsWith('blob:') && _util.URL.revokeObjectURL) {
-    _util.URL.revokeObjectURL(url);
+  if (typeof url === "string" && url.startsWith("blob:") && URL.revokeObjectURL) {
+    URL.revokeObjectURL(url);
   }
 
-  img.removeAttribute('src');
+  img.removeAttribute("src");
 }
 
 let pdfDateStringRegex;
@@ -458,7 +461,7 @@ class PDFDateString {
     }
 
     if (!pdfDateStringRegex) {
-      pdfDateStringRegex = new RegExp('^D:' + '(\\d{4})' + '(\\d{2})?' + '(\\d{2})?' + '(\\d{2})?' + '(\\d{2})?' + '(\\d{2})?' + '([Z|+|-])?' + '(\\d{2})?' + '\'?' + '(\\d{2})?' + '\'?');
+      pdfDateStringRegex = new RegExp("^D:" + "(\\d{4})" + "(\\d{2})?" + "(\\d{2})?" + "(\\d{2})?" + "(\\d{2})?" + "(\\d{2})?" + "([Z|+|-])?" + "(\\d{2})?" + "'?" + "(\\d{2})?" + "'?");
     }
 
     const matches = pdfDateStringRegex.exec(input);
@@ -478,16 +481,16 @@ class PDFDateString {
     minute = minute >= 0 && minute <= 59 ? minute : 0;
     let second = parseInt(matches[6], 10);
     second = second >= 0 && second <= 59 ? second : 0;
-    const universalTimeRelation = matches[7] || 'Z';
+    const universalTimeRelation = matches[7] || "Z";
     let offsetHour = parseInt(matches[8], 10);
     offsetHour = offsetHour >= 0 && offsetHour <= 23 ? offsetHour : 0;
     let offsetMinute = parseInt(matches[9], 10) || 0;
     offsetMinute = offsetMinute >= 0 && offsetMinute <= 59 ? offsetMinute : 0;
 
-    if (universalTimeRelation === '-') {
+    if (universalTimeRelation === "-") {
       hour += offsetHour;
       minute += offsetMinute;
-    } else if (universalTimeRelation === '+') {
+    } else if (universalTimeRelation === "+") {
       hour -= offsetHour;
       minute -= offsetMinute;
     }

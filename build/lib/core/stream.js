@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.LZWStream = exports.StringStream = exports.StreamsSequenceStream = exports.Stream = exports.RunLengthStream = exports.PredictorStream = exports.NullStream = exports.FlateStream = exports.DecodeStream = exports.DecryptStream = exports.AsciiHexStream = exports.Ascii85Stream = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-var _primitives = require("./primitives");
+var _primitives = require("./primitives.js");
 
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+var _core_utils = require("./core_utils.js");
 
 var Stream = function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
@@ -80,16 +74,15 @@ var Stream = function StreamClosure() {
       var b3 = this.getByte();
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
-    getBytes: function getBytes(length) {
-      var forceClamped = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+    getBytes(length, forceClamped = false) {
       var bytes = this.bytes;
       var pos = this.pos;
       var strEnd = this.end;
 
       if (!length) {
-        var _subarray = bytes.subarray(pos, strEnd);
-
-        return forceClamped ? new Uint8ClampedArray(_subarray) : _subarray;
+        const subarray = bytes.subarray(pos, strEnd);
+        return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
       }
 
       var end = pos + length;
@@ -99,20 +92,38 @@ var Stream = function StreamClosure() {
       }
 
       this.pos = end;
-      var subarray = bytes.subarray(pos, end);
+      const subarray = bytes.subarray(pos, end);
       return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
     },
+
     peekByte: function Stream_peekByte() {
       var peekedByte = this.getByte();
-      this.pos--;
+
+      if (peekedByte !== -1) {
+        this.pos--;
+      }
+
       return peekedByte;
     },
-    peekBytes: function peekBytes(length) {
-      var forceClamped = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+    peekBytes(length, forceClamped = false) {
       var bytes = this.getBytes(length, forceClamped);
       this.pos -= bytes.length;
       return bytes;
     },
+
+    getByteRange(begin, end) {
+      if (begin < 0) {
+        begin = 0;
+      }
+
+      if (end > this.end) {
+        end = this.end;
+      }
+
+      return this.bytes.subarray(begin, end);
+    },
+
     skip: function Stream_skip(n) {
       if (!n) {
         n = 1;
@@ -137,7 +148,7 @@ exports.Stream = Stream;
 
 var StringStream = function StringStreamClosure() {
   function StringStream(str) {
-    var bytes = (0, _util.stringToBytes)(str);
+    const bytes = (0, _util.stringToBytes)(str);
     Stream.call(this, bytes);
   }
 
@@ -221,8 +232,8 @@ var DecodeStream = function DecodeStreamClosure() {
       var b3 = this.getByte();
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
-    getBytes: function getBytes(length) {
-      var forceClamped = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+    getBytes(length, forceClamped = false) {
       var end,
           pos = this.pos;
 
@@ -248,20 +259,26 @@ var DecodeStream = function DecodeStreamClosure() {
       }
 
       this.pos = end;
-      var subarray = this.buffer.subarray(pos, end);
+      const subarray = this.buffer.subarray(pos, end);
       return forceClamped && !(subarray instanceof Uint8ClampedArray) ? new Uint8ClampedArray(subarray) : subarray;
     },
+
     peekByte: function DecodeStream_peekByte() {
       var peekedByte = this.getByte();
-      this.pos--;
+
+      if (peekedByte !== -1) {
+        this.pos--;
+      }
+
       return peekedByte;
     },
-    peekBytes: function peekBytes(length) {
-      var forceClamped = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+    peekBytes(length, forceClamped = false) {
       var bytes = this.getBytes(length, forceClamped);
       this.pos -= bytes.length;
       return bytes;
     },
+
     makeSubStream: function DecodeStream_makeSubStream(start, length, dict) {
       var end = start + length;
 
@@ -271,6 +288,11 @@ var DecodeStream = function DecodeStreamClosure() {
 
       return new Stream(this.buffer, start, length, dict);
     },
+
+    getByteRange(begin, end) {
+      (0, _util.unreachable)("Should not call DecodeStream.getByteRange");
+    },
+
     skip: function DecodeStream_skip(n) {
       if (!n) {
         n = 1;
@@ -297,10 +319,10 @@ exports.DecodeStream = DecodeStream;
 var StreamsSequenceStream = function StreamsSequenceStreamClosure() {
   function StreamsSequenceStream(streams) {
     this.streams = streams;
-    var maybeLength = 0;
+    let maybeLength = 0;
 
-    for (var i = 0, ii = streams.length; i < ii; i++) {
-      var stream = streams[i];
+    for (let i = 0, ii = streams.length; i < ii; i++) {
+      const stream = streams[i];
 
       if (stream instanceof DecodeStream) {
         maybeLength += stream._rawMinBufferLength;
@@ -338,7 +360,7 @@ var StreamsSequenceStream = function StreamsSequenceStreamClosure() {
       var stream = this.streams[i];
 
       if (stream.getBaseStreams) {
-        baseStreams.push.apply(baseStreams, _toConsumableArray(stream.getBaseStreams()));
+        baseStreams.push(...stream.getBaseStreams());
       }
     }
 
@@ -364,19 +386,19 @@ var FlateStream = function FlateStreamClosure() {
     var flg = str.getByte();
 
     if (cmf === -1 || flg === -1) {
-      throw new _util.FormatError("Invalid header in flate stream: ".concat(cmf, ", ").concat(flg));
+      throw new _util.FormatError(`Invalid header in flate stream: ${cmf}, ${flg}`);
     }
 
     if ((cmf & 0x0f) !== 0x08) {
-      throw new _util.FormatError("Unknown compression method in flate stream: ".concat(cmf, ", ").concat(flg));
+      throw new _util.FormatError(`Unknown compression method in flate stream: ${cmf}, ${flg}`);
     }
 
     if (((cmf << 8) + flg) % 31 !== 0) {
-      throw new _util.FormatError("Bad FCHECK in flate stream: ".concat(cmf, ", ").concat(flg));
+      throw new _util.FormatError(`Bad FCHECK in flate stream: ${cmf}, ${flg}`);
     }
 
     if (flg & 0x20) {
-      throw new _util.FormatError("FDICT bit set in flate stream: ".concat(cmf, ", ").concat(flg));
+      throw new _util.FormatError(`FDICT bit set in flate stream: ${cmf}, ${flg}`);
     }
 
     this.codeSize = 0;
@@ -394,7 +416,7 @@ var FlateStream = function FlateStreamClosure() {
 
     while (codeSize < bits) {
       if ((b = str.getByte()) === -1) {
-        throw new _util.FormatError('Bad encoding in flate stream');
+        throw new _util.FormatError("Bad encoding in flate stream");
       }
 
       codeBuf |= b << codeSize;
@@ -429,7 +451,7 @@ var FlateStream = function FlateStreamClosure() {
     var codeVal = code & 0xffff;
 
     if (codeLen < 1 || codeSize < codeLen) {
-      throw new _util.FormatError('Bad encoding in flate stream');
+      throw new _util.FormatError("Bad encoding in flate stream");
     }
 
     this.codeBuf = codeBuf >> codeLen;
@@ -489,38 +511,38 @@ var FlateStream = function FlateStreamClosure() {
       var b;
 
       if ((b = str.getByte()) === -1) {
-        throw new _util.FormatError('Bad block header in flate stream');
+        throw new _util.FormatError("Bad block header in flate stream");
       }
 
       var blockLen = b;
 
       if ((b = str.getByte()) === -1) {
-        throw new _util.FormatError('Bad block header in flate stream');
+        throw new _util.FormatError("Bad block header in flate stream");
       }
 
       blockLen |= b << 8;
 
       if ((b = str.getByte()) === -1) {
-        throw new _util.FormatError('Bad block header in flate stream');
+        throw new _util.FormatError("Bad block header in flate stream");
       }
 
       var check = b;
 
       if ((b = str.getByte()) === -1) {
-        throw new _util.FormatError('Bad block header in flate stream');
+        throw new _util.FormatError("Bad block header in flate stream");
       }
 
       check |= b << 8;
 
       if (check !== (~blockLen & 0xffff) && (blockLen !== 0 || check !== 0)) {
-        throw new _util.FormatError('Bad uncompressed block length in flate stream');
+        throw new _util.FormatError("Bad uncompressed block length in flate stream");
       }
 
       this.codeBuf = 0;
       this.codeSize = 0;
-      var bufferLength = this.bufferLength;
-      buffer = this.ensureBuffer(bufferLength + blockLen);
-      var end = bufferLength + blockLen;
+      const bufferLength = this.bufferLength,
+            end = bufferLength + blockLen;
+      buffer = this.ensureBuffer(end);
       this.bufferLength = end;
 
       if (blockLen === 0) {
@@ -528,13 +550,11 @@ var FlateStream = function FlateStreamClosure() {
           this.eof = true;
         }
       } else {
-        for (var n = bufferLength; n < end; ++n) {
-          if ((b = str.getByte()) === -1) {
-            this.eof = true;
-            break;
-          }
+        const block = str.getBytes(blockLen);
+        buffer.set(block, bufferLength);
 
-          buffer[n] = b;
+        if (block.length < blockLen) {
+          this.eof = true;
         }
       }
 
@@ -595,7 +615,7 @@ var FlateStream = function FlateStreamClosure() {
       litCodeTable = this.generateHuffmanTable(codeLengths.subarray(0, numLitCodes));
       distCodeTable = this.generateHuffmanTable(codeLengths.subarray(numLitCodes, codes));
     } else {
-      throw new _util.FormatError('Unknown block type in flate stream');
+      throw new _util.FormatError("Unknown block type in flate stream");
     }
 
     buffer = this.buffer;
@@ -661,14 +681,14 @@ var PredictorStream = function PredictorStreamClosure() {
       return str;
     }
 
-    var predictor = this.predictor = params.get('Predictor') || 1;
+    var predictor = this.predictor = params.get("Predictor") || 1;
 
     if (predictor <= 1) {
       return str;
     }
 
     if (predictor !== 2 && (predictor < 10 || predictor > 15)) {
-      throw new _util.FormatError("Unsupported predictor: ".concat(predictor));
+      throw new _util.FormatError(`Unsupported predictor: ${predictor}`);
     }
 
     if (predictor === 2) {
@@ -679,9 +699,9 @@ var PredictorStream = function PredictorStreamClosure() {
 
     this.str = str;
     this.dict = str.dict;
-    var colors = this.colors = params.get('Colors') || 1;
-    var bits = this.bits = params.get('BitsPerComponent') || 8;
-    var columns = this.columns = params.get('Columns') || 1;
+    var colors = this.colors = params.get("Colors") || 1;
+    var bits = this.bits = params.get("BitsPerComponent") || 8;
+    var columns = this.columns = params.get("Columns") || 1;
     this.pixBytes = colors * bits + 7 >> 3;
     this.rowBytes = columns * colors * bits + 7 >> 3;
     DecodeStream.call(this, maybeLength);
@@ -736,9 +756,9 @@ var PredictorStream = function PredictorStreamClosure() {
       }
 
       for (; i < rowBytes; i += 2) {
-        var sum = ((rawBytes[i] & 0xFF) << 8) + (rawBytes[i + 1] & 0xFF) + ((buffer[pos - bytesPerPixel] & 0xFF) << 8) + (buffer[pos - bytesPerPixel + 1] & 0xFF);
-        buffer[pos++] = sum >> 8 & 0xFF;
-        buffer[pos++] = sum & 0xFF;
+        var sum = ((rawBytes[i] & 0xff) << 8) + (rawBytes[i + 1] & 0xff) + ((buffer[pos - bytesPerPixel] & 0xff) << 8) + (buffer[pos - bytesPerPixel + 1] & 0xff);
+        buffer[pos++] = sum >> 8 & 0xff;
+        buffer[pos++] = sum & 0xff;
       }
     } else {
       var compArray = new Uint8Array(colors + 1);
@@ -750,7 +770,7 @@ var PredictorStream = function PredictorStreamClosure() {
       for (i = 0; i < columns; ++i) {
         for (var kk = 0; kk < colors; ++kk) {
           if (inbits < bits) {
-            inbuf = inbuf << 8 | rawBytes[j++] & 0xFF;
+            inbuf = inbuf << 8 | rawBytes[j++] & 0xff;
             inbits += 8;
           }
 
@@ -760,7 +780,7 @@ var PredictorStream = function PredictorStreamClosure() {
           outbits += bits;
 
           if (outbits >= 8) {
-            buffer[k++] = outbuf >> outbits - 8 & 0xFF;
+            buffer[k++] = outbuf >> outbits - 8 & 0xff;
             outbits -= 8;
           }
         }
@@ -812,7 +832,7 @@ var PredictorStream = function PredictorStreamClosure() {
         }
 
         for (; i < rowBytes; ++i) {
-          buffer[j] = buffer[j - pixBytes] + rawBytes[i] & 0xFF;
+          buffer[j] = buffer[j - pixBytes] + rawBytes[i] & 0xff;
           j++;
         }
 
@@ -820,7 +840,7 @@ var PredictorStream = function PredictorStreamClosure() {
 
       case 2:
         for (i = 0; i < rowBytes; ++i) {
-          buffer[j++] = prevRow[i] + rawBytes[i] & 0xFF;
+          buffer[j++] = prevRow[i] + rawBytes[i] & 0xff;
         }
 
         break;
@@ -831,7 +851,7 @@ var PredictorStream = function PredictorStreamClosure() {
         }
 
         for (; i < rowBytes; ++i) {
-          buffer[j] = (prevRow[i] + buffer[j - pixBytes] >> 1) + rawBytes[i] & 0xFF;
+          buffer[j] = (prevRow[i] + buffer[j - pixBytes] >> 1) + rawBytes[i] & 0xff;
           j++;
         }
 
@@ -881,7 +901,7 @@ var PredictorStream = function PredictorStreamClosure() {
         break;
 
       default:
-        throw new _util.FormatError("Unsupported predictor: ".concat(predictor));
+        throw new _util.FormatError(`Unsupported predictor: ${predictor}`);
     }
 
     this.bufferLength += rowBytes;
@@ -957,13 +977,13 @@ var Ascii85Stream = function Ascii85StreamClosure() {
   Ascii85Stream.prototype = Object.create(DecodeStream.prototype);
 
   Ascii85Stream.prototype.readBlock = function Ascii85Stream_readBlock() {
-    var TILDA_CHAR = 0x7E;
-    var Z_LOWER_CHAR = 0x7A;
+    var TILDA_CHAR = 0x7e;
+    var Z_LOWER_CHAR = 0x7a;
     var EOF = -1;
     var str = this.str;
     var c = str.getByte();
 
-    while ((0, _util.isSpace)(c)) {
+    while ((0, _core_utils.isWhiteSpace)(c)) {
       c = str.getByte();
     }
 
@@ -991,7 +1011,7 @@ var Ascii85Stream = function Ascii85StreamClosure() {
       for (i = 1; i < 5; ++i) {
         c = str.getByte();
 
-        while ((0, _util.isSpace)(c)) {
+        while ((0, _core_utils.isWhiteSpace)(c)) {
           c = str.getByte();
         }
 
@@ -1020,7 +1040,7 @@ var Ascii85Stream = function Ascii85StreamClosure() {
       }
 
       for (i = 3; i >= 0; --i) {
-        buffer[bufferLength + i] = t & 0xFF;
+        buffer[bufferLength + i] = t & 0xff;
         t >>= 8;
       }
     }
@@ -1065,10 +1085,10 @@ var AsciiHexStream = function AsciiHexStreamClosure() {
           digit;
 
       if (ch >= 0x30 && ch <= 0x39) {
-        digit = ch & 0x0F;
+        digit = ch & 0x0f;
       } else if (ch >= 0x41 && ch <= 0x46 || ch >= 0x61 && ch <= 0x66) {
-        digit = (ch & 0x0F) + 9;
-      } else if (ch === 0x3E) {
+        digit = (ch & 0x0f) + 9;
+      } else if (ch === 0x3e) {
         this.eof = true;
         break;
       } else {
@@ -1153,7 +1173,7 @@ var LZWStream = function LZWStreamClosure() {
     this.bitsCached = 0;
     var maxLzwDictionarySize = 4096;
     var lzwState = {
-      earlyChange: earlyChange,
+      earlyChange,
       codeLength: 9,
       nextCode: 258,
       dictionaryValues: new Uint8Array(maxLzwDictionarySize),

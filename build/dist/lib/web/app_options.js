@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,34 +28,26 @@ exports.OptionKind = exports.AppOptions = void 0;
 
 var _pdf = require("../pdf");
 
-var _viewer_compatibility = require("./viewer_compatibility");
+var _viewer_compatibility = require("./viewer_compatibility.js");
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var OptionKind = {
+const OptionKind = {
   VIEWER: 0x02,
   API: 0x04,
   WORKER: 0x08,
   PREFERENCE: 0x80
 };
 exports.OptionKind = OptionKind;
-var defaultOptions = {
+const defaultOptions = {
   cursorToolOnLoad: {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   defaultUrl: {
-    value: 'compressed.tracemonkey-pldi-09.pdf',
+    value: "compressed.tracemonkey-pldi-09.pdf",
     kind: OptionKind.VIEWER
   },
   defaultZoomValue: {
-    value: '',
+    value: "",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   disableHistory: {
@@ -79,7 +71,7 @@ var defaultOptions = {
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   externalLinkRel: {
-    value: 'noopener noreferrer nofollow',
+    value: "noopener noreferrer nofollow",
     kind: OptionKind.VIEWER
   },
   externalLinkTarget: {
@@ -90,8 +82,12 @@ var defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
+  ignoreDestinationZoom: {
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
   imageResourcesPath: {
-    value: './images/',
+    value: "./images/",
     kind: OptionKind.VIEWER
   },
   maxCanvasPixels: {
@@ -104,7 +100,7 @@ var defaultOptions = {
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   renderer: {
-    value: 'canvas',
+    value: "canvas",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   renderInteractiveForms: {
@@ -140,7 +136,7 @@ var defaultOptions = {
     kind: OptionKind.API
   },
   cMapUrl: {
-    value: '../web/cmaps/',
+    value: "../web/cmaps/",
     kind: OptionKind.API
   },
   disableAutoFetch: {
@@ -164,6 +160,10 @@ var defaultOptions = {
     value: false,
     kind: OptionKind.API + OptionKind.PREFERENCE
   },
+  docBaseUrl: {
+    value: "",
+    kind: OptionKind.API
+  },
   isEvalSupported: {
     value: true,
     kind: OptionKind.API
@@ -176,10 +176,6 @@ var defaultOptions = {
     value: false,
     kind: OptionKind.API
   },
-  postMessageTransfers: {
-    value: true,
-    kind: OptionKind.API
-  },
   verbosity: {
     value: 1,
     kind: OptionKind.API
@@ -189,85 +185,73 @@ var defaultOptions = {
     kind: OptionKind.WORKER
   },
   workerSrc: {
-    value: '../build/pdf.worker.js',
+    value: "../build/pdf.worker.js",
     kind: OptionKind.WORKER
   }
 };
 ;
-var userOptions = Object.create(null);
+const userOptions = Object.create(null);
 
-var AppOptions =
-/*#__PURE__*/
-function () {
-  function AppOptions() {
-    _classCallCheck(this, AppOptions);
-
-    throw new Error('Cannot initialize AppOptions.');
+class AppOptions {
+  constructor() {
+    throw new Error("Cannot initialize AppOptions.");
   }
 
-  _createClass(AppOptions, null, [{
-    key: "get",
-    value: function get(name) {
-      var userOption = userOptions[name];
+  static get(name) {
+    const userOption = userOptions[name];
 
-      if (userOption !== undefined) {
-        return userOption;
-      }
-
-      var defaultOption = defaultOptions[name];
-
-      if (defaultOption !== undefined) {
-        return defaultOption.compatibility || defaultOption.value;
-      }
-
-      return undefined;
+    if (userOption !== undefined) {
+      return userOption;
     }
-  }, {
-    key: "getAll",
-    value: function getAll() {
-      var kind = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var options = Object.create(null);
 
-      for (var name in defaultOptions) {
-        var defaultOption = defaultOptions[name];
+    const defaultOption = defaultOptions[name];
 
-        if (kind) {
-          if ((kind & defaultOption.kind) === 0) {
+    if (defaultOption !== undefined) {
+      return defaultOption.compatibility || defaultOption.value;
+    }
+
+    return undefined;
+  }
+
+  static getAll(kind = null) {
+    const options = Object.create(null);
+
+    for (const name in defaultOptions) {
+      const defaultOption = defaultOptions[name];
+
+      if (kind) {
+        if ((kind & defaultOption.kind) === 0) {
+          continue;
+        }
+
+        if (kind === OptionKind.PREFERENCE) {
+          const value = defaultOption.value,
+                valueType = typeof value;
+
+          if (valueType === "boolean" || valueType === "string" || valueType === "number" && Number.isInteger(value)) {
+            options[name] = value;
             continue;
           }
 
-          if (kind === OptionKind.PREFERENCE) {
-            var value = defaultOption.value,
-                valueType = _typeof(value);
-
-            if (valueType === 'boolean' || valueType === 'string' || valueType === 'number' && Number.isInteger(value)) {
-              options[name] = value;
-              continue;
-            }
-
-            throw new Error("Invalid type for preference: ".concat(name));
-          }
+          throw new Error(`Invalid type for preference: ${name}`);
         }
-
-        var userOption = userOptions[name];
-        options[name] = userOption !== undefined ? userOption : defaultOption.compatibility || defaultOption.value;
       }
 
-      return options;
+      const userOption = userOptions[name];
+      options[name] = userOption !== undefined ? userOption : defaultOption.compatibility || defaultOption.value;
     }
-  }, {
-    key: "set",
-    value: function set(name, value) {
-      userOptions[name] = value;
-    }
-  }, {
-    key: "remove",
-    value: function remove(name) {
-      delete userOptions[name];
-    }
-  }]);
 
-  return AppOptions;
-}();
+    return options;
+  }
+
+  static set(name, value) {
+    userOptions[name] = value;
+  }
+
+  static remove(name) {
+    delete userOptions[name];
+  }
+
+}
 
 exports.AppOptions = AppOptions;

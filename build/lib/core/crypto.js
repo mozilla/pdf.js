@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,29 +26,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.calculateSHA512 = exports.calculateSHA384 = exports.calculateSHA256 = exports.calculateMD5 = exports.PDF20 = exports.PDF17 = exports.CipherTransformFactory = exports.ARCFourCipher = exports.AES256Cipher = exports.AES128Cipher = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-var _primitives = require("./primitives");
+var _primitives = require("./primitives.js");
 
-var _stream = require("./stream");
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+var _stream = require("./stream.js");
 
 var ARCFourCipher = function ARCFourCipherClosure() {
   function ARCFourCipher(key) {
@@ -66,7 +48,7 @@ var ARCFourCipher = function ARCFourCipherClosure() {
 
     for (i = 0; i < 256; ++i) {
       tmp = s[i];
-      j = j + tmp + key[i % keyLength] & 0xFF;
+      j = j + tmp + key[i % keyLength] & 0xff;
       s[i] = s[j];
       s[j] = tmp;
     }
@@ -86,13 +68,13 @@ var ARCFourCipher = function ARCFourCipherClosure() {
       var output = new Uint8Array(n);
 
       for (i = 0; i < n; ++i) {
-        a = a + 1 & 0xFF;
+        a = a + 1 & 0xff;
         tmp = s[a];
-        b = b + tmp & 0xFF;
+        b = b + tmp & 0xff;
         tmp2 = s[b];
         s[a] = tmp2;
         s[b] = tmp;
-        output[i] = data[i] ^ s[tmp + tmp2 & 0xFF];
+        output[i] = data[i] ^ s[tmp + tmp2 & 0xff];
       }
 
       this.a = a;
@@ -130,11 +112,11 @@ var calculateMD5 = function calculateMD5Closure() {
       padded[i++] = 0;
     }
 
-    padded[i++] = length << 3 & 0xFF;
-    padded[i++] = length >> 5 & 0xFF;
-    padded[i++] = length >> 13 & 0xFF;
-    padded[i++] = length >> 21 & 0xFF;
-    padded[i++] = length >>> 29 & 0xFF;
+    padded[i++] = length << 3 & 0xff;
+    padded[i++] = length >> 5 & 0xff;
+    padded[i++] = length >> 13 & 0xff;
+    padded[i++] = length >> 21 & 0xff;
+    padded[i++] = length >>> 29 & 0xff;
     padded[i++] = 0;
     padded[i++] = 0;
     padded[i++] = 0;
@@ -250,7 +232,7 @@ var Word64 = function Word64Closure() {
       var lowAdd = (this.low >>> 0) + (word.low >>> 0);
       var highAdd = (this.high >>> 0) + (word.high >>> 0);
 
-      if (lowAdd > 0xFFFFFFFF) {
+      if (lowAdd > 0xffffffff) {
         highAdd += 1;
       }
 
@@ -258,14 +240,14 @@ var Word64 = function Word64Closure() {
       this.high = highAdd | 0;
     },
     copyTo: function Word64_copyTo(bytes, offset) {
-      bytes[offset] = this.high >>> 24 & 0xFF;
-      bytes[offset + 1] = this.high >> 16 & 0xFF;
-      bytes[offset + 2] = this.high >> 8 & 0xFF;
-      bytes[offset + 3] = this.high & 0xFF;
-      bytes[offset + 4] = this.low >>> 24 & 0xFF;
-      bytes[offset + 5] = this.low >> 16 & 0xFF;
-      bytes[offset + 6] = this.low >> 8 & 0xFF;
-      bytes[offset + 7] = this.low & 0xFF;
+      bytes[offset] = this.high >>> 24 & 0xff;
+      bytes[offset + 1] = this.high >> 16 & 0xff;
+      bytes[offset + 2] = this.high >> 8 & 0xff;
+      bytes[offset + 3] = this.high & 0xff;
+      bytes[offset + 4] = this.low >>> 24 & 0xff;
+      bytes[offset + 5] = this.low >> 16 & 0xff;
+      bytes[offset + 6] = this.low >> 8 & 0xff;
+      bytes[offset + 7] = this.low & 0xff;
     },
     assign: function Word64_assign(word) {
       this.high = word.high;
@@ -333,11 +315,11 @@ var calculateSHA256 = function calculateSHA256Closure() {
     padded[i++] = 0;
     padded[i++] = 0;
     padded[i++] = 0;
-    padded[i++] = length >>> 29 & 0xFF;
-    padded[i++] = length >> 21 & 0xFF;
-    padded[i++] = length >> 13 & 0xFF;
-    padded[i++] = length >> 5 & 0xFF;
-    padded[i++] = length << 3 & 0xFF;
+    padded[i++] = length >>> 29 & 0xff;
+    padded[i++] = length >> 21 & 0xff;
+    padded[i++] = length >> 13 & 0xff;
+    padded[i++] = length >> 5 & 0xff;
+    padded[i++] = length << 3 & 0xff;
     var w = new Uint32Array(64);
 
     for (i = 0; i < paddedLength;) {
@@ -509,11 +491,11 @@ var calculateSHA512 = function calculateSHA512Closure() {
     padded[i++] = 0;
     padded[i++] = 0;
     padded[i++] = 0;
-    padded[i++] = length >>> 29 & 0xFF;
-    padded[i++] = length >> 21 & 0xFF;
-    padded[i++] = length >> 13 & 0xFF;
-    padded[i++] = length >> 5 & 0xFF;
-    padded[i++] = length << 3 & 0xFF;
+    padded[i++] = length >>> 29 & 0xff;
+    padded[i++] = length >> 21 & 0xff;
+    padded[i++] = length >> 13 & 0xff;
+    padded[i++] = length >> 5 & 0xff;
+    padded[i++] = length << 3 & 0xff;
     var w = new Array(80);
 
     for (i = 0; i < 80; i++) {
@@ -645,14 +627,10 @@ var NullCipher = function NullCipherClosure() {
   return NullCipher;
 }();
 
-var AESBaseCipher =
-/*#__PURE__*/
-function () {
-  function AESBaseCipher() {
-    _classCallCheck(this, AESBaseCipher);
-
+class AESBaseCipher {
+  constructor() {
     if (this.constructor === AESBaseCipher) {
-      (0, _util.unreachable)('Cannot initialize AESBaseCipher.');
+      (0, _util.unreachable)("Cannot initialize AESBaseCipher.");
     }
 
     this._s = new Uint8Array([0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0, 0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15, 0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75, 0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84, 0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, 0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf, 0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, 0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8, 0x51, 0xa3, 0x40, 0x8f, 0x92, 0x9d, 0x38, 0xf5, 0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2, 0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73, 0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb, 0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79, 0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08, 0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a, 0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e, 0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf, 0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16]);
@@ -660,7 +638,7 @@ function () {
     this._mix = new Uint32Array([0x00000000, 0x0e090d0b, 0x1c121a16, 0x121b171d, 0x3824342c, 0x362d3927, 0x24362e3a, 0x2a3f2331, 0x70486858, 0x7e416553, 0x6c5a724e, 0x62537f45, 0x486c5c74, 0x4665517f, 0x547e4662, 0x5a774b69, 0xe090d0b0, 0xee99ddbb, 0xfc82caa6, 0xf28bc7ad, 0xd8b4e49c, 0xd6bde997, 0xc4a6fe8a, 0xcaaff381, 0x90d8b8e8, 0x9ed1b5e3, 0x8ccaa2fe, 0x82c3aff5, 0xa8fc8cc4, 0xa6f581cf, 0xb4ee96d2, 0xbae79bd9, 0xdb3bbb7b, 0xd532b670, 0xc729a16d, 0xc920ac66, 0xe31f8f57, 0xed16825c, 0xff0d9541, 0xf104984a, 0xab73d323, 0xa57ade28, 0xb761c935, 0xb968c43e, 0x9357e70f, 0x9d5eea04, 0x8f45fd19, 0x814cf012, 0x3bab6bcb, 0x35a266c0, 0x27b971dd, 0x29b07cd6, 0x038f5fe7, 0x0d8652ec, 0x1f9d45f1, 0x119448fa, 0x4be30393, 0x45ea0e98, 0x57f11985, 0x59f8148e, 0x73c737bf, 0x7dce3ab4, 0x6fd52da9, 0x61dc20a2, 0xad766df6, 0xa37f60fd, 0xb16477e0, 0xbf6d7aeb, 0x955259da, 0x9b5b54d1, 0x894043cc, 0x87494ec7, 0xdd3e05ae, 0xd33708a5, 0xc12c1fb8, 0xcf2512b3, 0xe51a3182, 0xeb133c89, 0xf9082b94, 0xf701269f, 0x4de6bd46, 0x43efb04d, 0x51f4a750, 0x5ffdaa5b, 0x75c2896a, 0x7bcb8461, 0x69d0937c, 0x67d99e77, 0x3daed51e, 0x33a7d815, 0x21bccf08, 0x2fb5c203, 0x058ae132, 0x0b83ec39, 0x1998fb24, 0x1791f62f, 0x764dd68d, 0x7844db86, 0x6a5fcc9b, 0x6456c190, 0x4e69e2a1, 0x4060efaa, 0x527bf8b7, 0x5c72f5bc, 0x0605bed5, 0x080cb3de, 0x1a17a4c3, 0x141ea9c8, 0x3e218af9, 0x302887f2, 0x223390ef, 0x2c3a9de4, 0x96dd063d, 0x98d40b36, 0x8acf1c2b, 0x84c61120, 0xaef93211, 0xa0f03f1a, 0xb2eb2807, 0xbce2250c, 0xe6956e65, 0xe89c636e, 0xfa877473, 0xf48e7978, 0xdeb15a49, 0xd0b85742, 0xc2a3405f, 0xccaa4d54, 0x41ecdaf7, 0x4fe5d7fc, 0x5dfec0e1, 0x53f7cdea, 0x79c8eedb, 0x77c1e3d0, 0x65daf4cd, 0x6bd3f9c6, 0x31a4b2af, 0x3fadbfa4, 0x2db6a8b9, 0x23bfa5b2, 0x09808683, 0x07898b88, 0x15929c95, 0x1b9b919e, 0xa17c0a47, 0xaf75074c, 0xbd6e1051, 0xb3671d5a, 0x99583e6b, 0x97513360, 0x854a247d, 0x8b432976, 0xd134621f, 0xdf3d6f14, 0xcd267809, 0xc32f7502, 0xe9105633, 0xe7195b38, 0xf5024c25, 0xfb0b412e, 0x9ad7618c, 0x94de6c87, 0x86c57b9a, 0x88cc7691, 0xa2f355a0, 0xacfa58ab, 0xbee14fb6, 0xb0e842bd, 0xea9f09d4, 0xe49604df, 0xf68d13c2, 0xf8841ec9, 0xd2bb3df8, 0xdcb230f3, 0xcea927ee, 0xc0a02ae5, 0x7a47b13c, 0x744ebc37, 0x6655ab2a, 0x685ca621, 0x42638510, 0x4c6a881b, 0x5e719f06, 0x5078920d, 0x0a0fd964, 0x0406d46f, 0x161dc372, 0x1814ce79, 0x322bed48, 0x3c22e043, 0x2e39f75e, 0x2030fa55, 0xec9ab701, 0xe293ba0a, 0xf088ad17, 0xfe81a01c, 0xd4be832d, 0xdab78e26, 0xc8ac993b, 0xc6a59430, 0x9cd2df59, 0x92dbd252, 0x80c0c54f, 0x8ec9c844, 0xa4f6eb75, 0xaaffe67e, 0xb8e4f163, 0xb6edfc68, 0x0c0a67b1, 0x02036aba, 0x10187da7, 0x1e1170ac, 0x342e539d, 0x3a275e96, 0x283c498b, 0x26354480, 0x7c420fe9, 0x724b02e2, 0x605015ff, 0x6e5918f4, 0x44663bc5, 0x4a6f36ce, 0x587421d3, 0x567d2cd8, 0x37a10c7a, 0x39a80171, 0x2bb3166c, 0x25ba1b67, 0x0f853856, 0x018c355d, 0x13972240, 0x1d9e2f4b, 0x47e96422, 0x49e06929, 0x5bfb7e34, 0x55f2733f, 0x7fcd500e, 0x71c45d05, 0x63df4a18, 0x6dd64713, 0xd731dcca, 0xd938d1c1, 0xcb23c6dc, 0xc52acbd7, 0xef15e8e6, 0xe11ce5ed, 0xf307f2f0, 0xfd0efffb, 0xa779b492, 0xa970b999, 0xbb6bae84, 0xb562a38f, 0x9f5d80be, 0x91548db5, 0x834f9aa8, 0x8d4697a3]);
     this._mixCol = new Uint8Array(256);
 
-    for (var i = 0; i < 256; i++) {
+    for (let i = 0; i < 256; i++) {
       if (i < 128) {
         this._mixCol[i] = i << 1;
       } else {
@@ -672,63 +650,20 @@ function () {
     this.bufferPosition = 0;
   }
 
-  _createClass(AESBaseCipher, [{
-    key: "_expandKey",
-    value: function _expandKey(cipherKey) {
-      (0, _util.unreachable)('Cannot call `_expandKey` on the base class');
+  _expandKey(cipherKey) {
+    (0, _util.unreachable)("Cannot call `_expandKey` on the base class");
+  }
+
+  _decrypt(input, key) {
+    let t, u, v;
+    const state = new Uint8Array(16);
+    state.set(input);
+
+    for (let j = 0, k = this._keySize; j < 16; ++j, ++k) {
+      state[j] ^= key[k];
     }
-  }, {
-    key: "_decrypt",
-    value: function _decrypt(input, key) {
-      var t, u, v;
-      var state = new Uint8Array(16);
-      state.set(input);
 
-      for (var j = 0, k = this._keySize; j < 16; ++j, ++k) {
-        state[j] ^= key[k];
-      }
-
-      for (var i = this._cyclesOfRepetition - 1; i >= 1; --i) {
-        t = state[13];
-        state[13] = state[9];
-        state[9] = state[5];
-        state[5] = state[1];
-        state[1] = t;
-        t = state[14];
-        u = state[10];
-        state[14] = state[6];
-        state[10] = state[2];
-        state[6] = t;
-        state[2] = u;
-        t = state[15];
-        u = state[11];
-        v = state[7];
-        state[15] = state[3];
-        state[11] = t;
-        state[7] = u;
-        state[3] = v;
-
-        for (var _j = 0; _j < 16; ++_j) {
-          state[_j] = this._inv_s[state[_j]];
-        }
-
-        for (var _j2 = 0, _k = i * 16; _j2 < 16; ++_j2, ++_k) {
-          state[_j2] ^= key[_k];
-        }
-
-        for (var _j3 = 0; _j3 < 16; _j3 += 4) {
-          var s0 = this._mix[state[_j3]];
-          var s1 = this._mix[state[_j3 + 1]];
-          var s2 = this._mix[state[_j3 + 2]];
-          var s3 = this._mix[state[_j3 + 3]];
-          t = s0 ^ s1 >>> 8 ^ s1 << 24 ^ s2 >>> 16 ^ s2 << 16 ^ s3 >>> 24 ^ s3 << 8;
-          state[_j3] = t >>> 24 & 0xFF;
-          state[_j3 + 1] = t >> 16 & 0xFF;
-          state[_j3 + 2] = t >> 8 & 0xFF;
-          state[_j3 + 3] = t & 0xFF;
-        }
-      }
-
+    for (let i = this._cyclesOfRepetition - 1; i >= 1; --i) {
       t = state[13];
       state[13] = state[9];
       state[9] = state[5];
@@ -748,68 +683,67 @@ function () {
       state[7] = u;
       state[3] = v;
 
-      for (var _j4 = 0; _j4 < 16; ++_j4) {
-        state[_j4] = this._inv_s[state[_j4]];
-        state[_j4] ^= key[_j4];
+      for (let j = 0; j < 16; ++j) {
+        state[j] = this._inv_s[state[j]];
       }
 
-      return state;
+      for (let j = 0, k = i * 16; j < 16; ++j, ++k) {
+        state[j] ^= key[k];
+      }
+
+      for (let j = 0; j < 16; j += 4) {
+        const s0 = this._mix[state[j]];
+        const s1 = this._mix[state[j + 1]];
+        const s2 = this._mix[state[j + 2]];
+        const s3 = this._mix[state[j + 3]];
+        t = s0 ^ s1 >>> 8 ^ s1 << 24 ^ s2 >>> 16 ^ s2 << 16 ^ s3 >>> 24 ^ s3 << 8;
+        state[j] = t >>> 24 & 0xff;
+        state[j + 1] = t >> 16 & 0xff;
+        state[j + 2] = t >> 8 & 0xff;
+        state[j + 3] = t & 0xff;
+      }
     }
-  }, {
-    key: "_encrypt",
-    value: function _encrypt(input, key) {
-      var s = this._s;
-      var t, u, v;
-      var state = new Uint8Array(16);
-      state.set(input);
 
-      for (var j = 0; j < 16; ++j) {
-        state[j] ^= key[j];
-      }
+    t = state[13];
+    state[13] = state[9];
+    state[9] = state[5];
+    state[5] = state[1];
+    state[1] = t;
+    t = state[14];
+    u = state[10];
+    state[14] = state[6];
+    state[10] = state[2];
+    state[6] = t;
+    state[2] = u;
+    t = state[15];
+    u = state[11];
+    v = state[7];
+    state[15] = state[3];
+    state[11] = t;
+    state[7] = u;
+    state[3] = v;
 
-      for (var i = 1; i < this._cyclesOfRepetition; i++) {
-        for (var _j5 = 0; _j5 < 16; ++_j5) {
-          state[_j5] = s[state[_j5]];
-        }
+    for (let j = 0; j < 16; ++j) {
+      state[j] = this._inv_s[state[j]];
+      state[j] ^= key[j];
+    }
 
-        v = state[1];
-        state[1] = state[5];
-        state[5] = state[9];
-        state[9] = state[13];
-        state[13] = v;
-        v = state[2];
-        u = state[6];
-        state[2] = state[10];
-        state[6] = state[14];
-        state[10] = v;
-        state[14] = u;
-        v = state[3];
-        u = state[7];
-        t = state[11];
-        state[3] = state[15];
-        state[7] = v;
-        state[11] = u;
-        state[15] = t;
+    return state;
+  }
 
-        for (var _j6 = 0; _j6 < 16; _j6 += 4) {
-          var s0 = state[_j6 + 0];
-          var s1 = state[_j6 + 1];
-          var s2 = state[_j6 + 2];
-          var s3 = state[_j6 + 3];
-          t = s0 ^ s1 ^ s2 ^ s3;
-          state[_j6 + 0] ^= t ^ this._mixCol[s0 ^ s1];
-          state[_j6 + 1] ^= t ^ this._mixCol[s1 ^ s2];
-          state[_j6 + 2] ^= t ^ this._mixCol[s2 ^ s3];
-          state[_j6 + 3] ^= t ^ this._mixCol[s3 ^ s0];
-        }
+  _encrypt(input, key) {
+    const s = this._s;
+    let t, u, v;
+    const state = new Uint8Array(16);
+    state.set(input);
 
-        for (var _j7 = 0, k = i * 16; _j7 < 16; ++_j7, ++k) {
-          state[_j7] ^= key[k];
-        }
-      }
+    for (let j = 0; j < 16; ++j) {
+      state[j] ^= key[j];
+    }
 
-      for (var _j8 = 0; _j8 < 16; ++_j8) {
-        state[_j8] = s[state[_j8]];
+    for (let i = 1; i < this._cyclesOfRepetition; i++) {
+      for (let j = 0; j < 16; ++j) {
+        state[j] = s[state[j]];
       }
 
       v = state[1];
@@ -831,285 +765,293 @@ function () {
       state[11] = u;
       state[15] = t;
 
-      for (var _j9 = 0, _k2 = this._keySize; _j9 < 16; ++_j9, ++_k2) {
-        state[_j9] ^= key[_k2];
+      for (let j = 0; j < 16; j += 4) {
+        const s0 = state[j + 0];
+        const s1 = state[j + 1];
+        const s2 = state[j + 2];
+        const s3 = state[j + 3];
+        t = s0 ^ s1 ^ s2 ^ s3;
+        state[j + 0] ^= t ^ this._mixCol[s0 ^ s1];
+        state[j + 1] ^= t ^ this._mixCol[s1 ^ s2];
+        state[j + 2] ^= t ^ this._mixCol[s2 ^ s3];
+        state[j + 3] ^= t ^ this._mixCol[s3 ^ s0];
       }
 
-      return state;
+      for (let j = 0, k = i * 16; j < 16; ++j, ++k) {
+        state[j] ^= key[k];
+      }
     }
-  }, {
-    key: "_decryptBlock2",
-    value: function _decryptBlock2(data, finalize) {
-      var sourceLength = data.length;
-      var buffer = this.buffer,
-          bufferLength = this.bufferPosition;
-      var result = [],
-          iv = this.iv;
 
-      for (var i = 0; i < sourceLength; ++i) {
-        buffer[bufferLength] = data[i];
-        ++bufferLength;
-
-        if (bufferLength < 16) {
-          continue;
-        }
-
-        var plain = this._decrypt(buffer, this._key);
-
-        for (var j = 0; j < 16; ++j) {
-          plain[j] ^= iv[j];
-        }
-
-        iv = buffer;
-        result.push(plain);
-        buffer = new Uint8Array(16);
-        bufferLength = 0;
-      }
-
-      this.buffer = buffer;
-      this.bufferLength = bufferLength;
-      this.iv = iv;
-
-      if (result.length === 0) {
-        return new Uint8Array(0);
-      }
-
-      var outputLength = 16 * result.length;
-
-      if (finalize) {
-        var lastBlock = result[result.length - 1];
-        var psLen = lastBlock[15];
-
-        if (psLen <= 16) {
-          for (var _i = 15, ii = 16 - psLen; _i >= ii; --_i) {
-            if (lastBlock[_i] !== psLen) {
-              psLen = 0;
-              break;
-            }
-          }
-
-          outputLength -= psLen;
-          result[result.length - 1] = lastBlock.subarray(0, 16 - psLen);
-        }
-      }
-
-      var output = new Uint8Array(outputLength);
-
-      for (var _i2 = 0, _j10 = 0, _ii = result.length; _i2 < _ii; ++_i2, _j10 += 16) {
-        output.set(result[_i2], _j10);
-      }
-
-      return output;
+    for (let j = 0; j < 16; ++j) {
+      state[j] = s[state[j]];
     }
-  }, {
-    key: "decryptBlock",
-    value: function decryptBlock(data, finalize) {
-      var iv = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      var sourceLength = data.length;
-      var buffer = this.buffer,
-          bufferLength = this.bufferPosition;
 
-      if (iv) {
-        this.iv = iv;
-      } else {
-        for (var i = 0; bufferLength < 16 && i < sourceLength; ++i, ++bufferLength) {
-          buffer[bufferLength] = data[i];
-        }
+    v = state[1];
+    state[1] = state[5];
+    state[5] = state[9];
+    state[9] = state[13];
+    state[13] = v;
+    v = state[2];
+    u = state[6];
+    state[2] = state[10];
+    state[6] = state[14];
+    state[10] = v;
+    state[14] = u;
+    v = state[3];
+    u = state[7];
+    t = state[11];
+    state[3] = state[15];
+    state[7] = v;
+    state[11] = u;
+    state[15] = t;
 
-        if (bufferLength < 16) {
-          this.bufferLength = bufferLength;
-          return new Uint8Array(0);
-        }
-
-        this.iv = buffer;
-        data = data.subarray(16);
-      }
-
-      this.buffer = new Uint8Array(16);
-      this.bufferLength = 0;
-      this.decryptBlock = this._decryptBlock2;
-      return this.decryptBlock(data, finalize);
+    for (let j = 0, k = this._keySize; j < 16; ++j, ++k) {
+      state[j] ^= key[k];
     }
-  }, {
-    key: "encrypt",
-    value: function encrypt(data, iv) {
-      var sourceLength = data.length;
-      var buffer = this.buffer,
-          bufferLength = this.bufferPosition;
-      var result = [];
 
-      if (!iv) {
-        iv = new Uint8Array(16);
-      }
-
-      for (var i = 0; i < sourceLength; ++i) {
-        buffer[bufferLength] = data[i];
-        ++bufferLength;
-
-        if (bufferLength < 16) {
-          continue;
-        }
-
-        for (var j = 0; j < 16; ++j) {
-          buffer[j] ^= iv[j];
-        }
-
-        var cipher = this._encrypt(buffer, this._key);
-
-        iv = cipher;
-        result.push(cipher);
-        buffer = new Uint8Array(16);
-        bufferLength = 0;
-      }
-
-      this.buffer = buffer;
-      this.bufferLength = bufferLength;
-      this.iv = iv;
-
-      if (result.length === 0) {
-        return new Uint8Array(0);
-      }
-
-      var outputLength = 16 * result.length;
-      var output = new Uint8Array(outputLength);
-
-      for (var _i3 = 0, _j11 = 0, ii = result.length; _i3 < ii; ++_i3, _j11 += 16) {
-        output.set(result[_i3], _j11);
-      }
-
-      return output;
-    }
-  }]);
-
-  return AESBaseCipher;
-}();
-
-var AES128Cipher =
-/*#__PURE__*/
-function (_AESBaseCipher) {
-  _inherits(AES128Cipher, _AESBaseCipher);
-
-  function AES128Cipher(key) {
-    var _this;
-
-    _classCallCheck(this, AES128Cipher);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(AES128Cipher).call(this));
-    _this._cyclesOfRepetition = 10;
-    _this._keySize = 160;
-    _this._rcon = new Uint8Array([0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d]);
-    _this._key = _this._expandKey(key);
-    return _this;
+    return state;
   }
 
-  _createClass(AES128Cipher, [{
-    key: "_expandKey",
-    value: function _expandKey(cipherKey) {
-      var b = 176;
-      var s = this._s;
-      var rcon = this._rcon;
-      var result = new Uint8Array(b);
-      result.set(cipherKey);
+  _decryptBlock2(data, finalize) {
+    const sourceLength = data.length;
+    let buffer = this.buffer,
+        bufferLength = this.bufferPosition;
+    const result = [];
+    let iv = this.iv;
 
-      for (var j = 16, i = 1; j < b; ++i) {
-        var t1 = result[j - 3];
-        var t2 = result[j - 2];
-        var t3 = result[j - 1];
-        var t4 = result[j - 4];
+    for (let i = 0; i < sourceLength; ++i) {
+      buffer[bufferLength] = data[i];
+      ++bufferLength;
+
+      if (bufferLength < 16) {
+        continue;
+      }
+
+      const plain = this._decrypt(buffer, this._key);
+
+      for (let j = 0; j < 16; ++j) {
+        plain[j] ^= iv[j];
+      }
+
+      iv = buffer;
+      result.push(plain);
+      buffer = new Uint8Array(16);
+      bufferLength = 0;
+    }
+
+    this.buffer = buffer;
+    this.bufferLength = bufferLength;
+    this.iv = iv;
+
+    if (result.length === 0) {
+      return new Uint8Array(0);
+    }
+
+    let outputLength = 16 * result.length;
+
+    if (finalize) {
+      const lastBlock = result[result.length - 1];
+      let psLen = lastBlock[15];
+
+      if (psLen <= 16) {
+        for (let i = 15, ii = 16 - psLen; i >= ii; --i) {
+          if (lastBlock[i] !== psLen) {
+            psLen = 0;
+            break;
+          }
+        }
+
+        outputLength -= psLen;
+        result[result.length - 1] = lastBlock.subarray(0, 16 - psLen);
+      }
+    }
+
+    const output = new Uint8Array(outputLength);
+
+    for (let i = 0, j = 0, ii = result.length; i < ii; ++i, j += 16) {
+      output.set(result[i], j);
+    }
+
+    return output;
+  }
+
+  decryptBlock(data, finalize, iv = null) {
+    const sourceLength = data.length;
+    const buffer = this.buffer;
+    let bufferLength = this.bufferPosition;
+
+    if (iv) {
+      this.iv = iv;
+    } else {
+      for (let i = 0; bufferLength < 16 && i < sourceLength; ++i, ++bufferLength) {
+        buffer[bufferLength] = data[i];
+      }
+
+      if (bufferLength < 16) {
+        this.bufferLength = bufferLength;
+        return new Uint8Array(0);
+      }
+
+      this.iv = buffer;
+      data = data.subarray(16);
+    }
+
+    this.buffer = new Uint8Array(16);
+    this.bufferLength = 0;
+    this.decryptBlock = this._decryptBlock2;
+    return this.decryptBlock(data, finalize);
+  }
+
+  encrypt(data, iv) {
+    const sourceLength = data.length;
+    let buffer = this.buffer,
+        bufferLength = this.bufferPosition;
+    const result = [];
+
+    if (!iv) {
+      iv = new Uint8Array(16);
+    }
+
+    for (let i = 0; i < sourceLength; ++i) {
+      buffer[bufferLength] = data[i];
+      ++bufferLength;
+
+      if (bufferLength < 16) {
+        continue;
+      }
+
+      for (let j = 0; j < 16; ++j) {
+        buffer[j] ^= iv[j];
+      }
+
+      const cipher = this._encrypt(buffer, this._key);
+
+      iv = cipher;
+      result.push(cipher);
+      buffer = new Uint8Array(16);
+      bufferLength = 0;
+    }
+
+    this.buffer = buffer;
+    this.bufferLength = bufferLength;
+    this.iv = iv;
+
+    if (result.length === 0) {
+      return new Uint8Array(0);
+    }
+
+    const outputLength = 16 * result.length;
+    const output = new Uint8Array(outputLength);
+
+    for (let i = 0, j = 0, ii = result.length; i < ii; ++i, j += 16) {
+      output.set(result[i], j);
+    }
+
+    return output;
+  }
+
+}
+
+class AES128Cipher extends AESBaseCipher {
+  constructor(key) {
+    super();
+    this._cyclesOfRepetition = 10;
+    this._keySize = 160;
+    this._rcon = new Uint8Array([0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d]);
+    this._key = this._expandKey(key);
+  }
+
+  _expandKey(cipherKey) {
+    const b = 176;
+    const s = this._s;
+    const rcon = this._rcon;
+    const result = new Uint8Array(b);
+    result.set(cipherKey);
+
+    for (let j = 16, i = 1; j < b; ++i) {
+      let t1 = result[j - 3];
+      let t2 = result[j - 2];
+      let t3 = result[j - 1];
+      let t4 = result[j - 4];
+      t1 = s[t1];
+      t2 = s[t2];
+      t3 = s[t3];
+      t4 = s[t4];
+      t1 = t1 ^ rcon[i];
+
+      for (let n = 0; n < 4; ++n) {
+        result[j] = t1 ^= result[j - 16];
+        j++;
+        result[j] = t2 ^= result[j - 16];
+        j++;
+        result[j] = t3 ^= result[j - 16];
+        j++;
+        result[j] = t4 ^= result[j - 16];
+        j++;
+      }
+    }
+
+    return result;
+  }
+
+}
+
+exports.AES128Cipher = AES128Cipher;
+
+class AES256Cipher extends AESBaseCipher {
+  constructor(key) {
+    super();
+    this._cyclesOfRepetition = 14;
+    this._keySize = 224;
+    this._key = this._expandKey(key);
+  }
+
+  _expandKey(cipherKey) {
+    const b = 240;
+    const s = this._s;
+    const result = new Uint8Array(b);
+    result.set(cipherKey);
+    let r = 1;
+    let t1, t2, t3, t4;
+
+    for (let j = 32, i = 1; j < b; ++i) {
+      if (j % 32 === 16) {
         t1 = s[t1];
         t2 = s[t2];
         t3 = s[t3];
         t4 = s[t4];
-        t1 = t1 ^ rcon[i];
+      } else if (j % 32 === 0) {
+        t1 = result[j - 3];
+        t2 = result[j - 2];
+        t3 = result[j - 1];
+        t4 = result[j - 4];
+        t1 = s[t1];
+        t2 = s[t2];
+        t3 = s[t3];
+        t4 = s[t4];
+        t1 = t1 ^ r;
 
-        for (var n = 0; n < 4; ++n) {
-          result[j] = t1 ^= result[j - 16];
-          j++;
-          result[j] = t2 ^= result[j - 16];
-          j++;
-          result[j] = t3 ^= result[j - 16];
-          j++;
-          result[j] = t4 ^= result[j - 16];
-          j++;
+        if ((r <<= 1) >= 256) {
+          r = (r ^ 0x1b) & 0xff;
         }
       }
 
-      return result;
+      for (let n = 0; n < 4; ++n) {
+        result[j] = t1 ^= result[j - 32];
+        j++;
+        result[j] = t2 ^= result[j - 32];
+        j++;
+        result[j] = t3 ^= result[j - 32];
+        j++;
+        result[j] = t4 ^= result[j - 32];
+        j++;
+      }
     }
-  }]);
 
-  return AES128Cipher;
-}(AESBaseCipher);
-
-exports.AES128Cipher = AES128Cipher;
-
-var AES256Cipher =
-/*#__PURE__*/
-function (_AESBaseCipher2) {
-  _inherits(AES256Cipher, _AESBaseCipher2);
-
-  function AES256Cipher(key) {
-    var _this2;
-
-    _classCallCheck(this, AES256Cipher);
-
-    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(AES256Cipher).call(this));
-    _this2._cyclesOfRepetition = 14;
-    _this2._keySize = 224;
-    _this2._key = _this2._expandKey(key);
-    return _this2;
+    return result;
   }
 
-  _createClass(AES256Cipher, [{
-    key: "_expandKey",
-    value: function _expandKey(cipherKey) {
-      var b = 240;
-      var s = this._s;
-      var result = new Uint8Array(b);
-      result.set(cipherKey);
-      var r = 1;
-      var t1, t2, t3, t4;
-
-      for (var j = 32, i = 1; j < b; ++i) {
-        if (j % 32 === 16) {
-          t1 = s[t1];
-          t2 = s[t2];
-          t3 = s[t3];
-          t4 = s[t4];
-        } else if (j % 32 === 0) {
-          t1 = result[j - 3];
-          t2 = result[j - 2];
-          t3 = result[j - 1];
-          t4 = result[j - 4];
-          t1 = s[t1];
-          t2 = s[t2];
-          t3 = s[t3];
-          t4 = s[t4];
-          t1 = t1 ^ r;
-
-          if ((r <<= 1) >= 256) {
-            r = (r ^ 0x1b) & 0xFF;
-          }
-        }
-
-        for (var n = 0; n < 4; ++n) {
-          result[j] = t1 ^= result[j - 32];
-          j++;
-          result[j] = t2 ^= result[j - 32];
-          j++;
-          result[j] = t3 ^= result[j - 32];
-          j++;
-          result[j] = t4 ^= result[j - 32];
-          j++;
-        }
-      }
-
-      return result;
-    }
-  }]);
-
-  return AES256Cipher;
-}(AESBaseCipher);
+}
 
 exports.AES256Cipher = AES256Cipher;
 
@@ -1351,20 +1293,20 @@ var CipherTransformFactory = function CipherTransformFactoryClosure() {
       hashData[i++] = ownerPassword[j];
     }
 
-    hashData[i++] = flags & 0xFF;
-    hashData[i++] = flags >> 8 & 0xFF;
-    hashData[i++] = flags >> 16 & 0xFF;
-    hashData[i++] = flags >>> 24 & 0xFF;
+    hashData[i++] = flags & 0xff;
+    hashData[i++] = flags >> 8 & 0xff;
+    hashData[i++] = flags >> 16 & 0xff;
+    hashData[i++] = flags >>> 24 & 0xff;
 
     for (j = 0, n = fileId.length; j < n; ++j) {
       hashData[i++] = fileId[j];
     }
 
     if (revision >= 4 && !encryptMetadata) {
-      hashData[i++] = 0xFF;
-      hashData[i++] = 0xFF;
-      hashData[i++] = 0xFF;
-      hashData[i++] = 0xFF;
+      hashData[i++] = 0xff;
+      hashData[i++] = 0xff;
+      hashData[i++] = 0xff;
+      hashData[i++] = 0xff;
     }
 
     var hash = calculateMD5(hashData, 0, i);
@@ -1471,36 +1413,36 @@ var CipherTransformFactory = function CipherTransformFactoryClosure() {
     return userPassword;
   }
 
-  var identityName = _primitives.Name.get('Identity');
+  var identityName = _primitives.Name.get("Identity");
 
   function CipherTransformFactory(dict, fileId, password) {
-    var filter = dict.get('Filter');
+    var filter = dict.get("Filter");
 
-    if (!(0, _primitives.isName)(filter, 'Standard')) {
-      throw new _util.FormatError('unknown encryption method');
+    if (!(0, _primitives.isName)(filter, "Standard")) {
+      throw new _util.FormatError("unknown encryption method");
     }
 
     this.dict = dict;
-    var algorithm = dict.get('V');
+    var algorithm = dict.get("V");
 
     if (!Number.isInteger(algorithm) || algorithm !== 1 && algorithm !== 2 && algorithm !== 4 && algorithm !== 5) {
-      throw new _util.FormatError('unsupported encryption algorithm');
+      throw new _util.FormatError("unsupported encryption algorithm");
     }
 
     this.algorithm = algorithm;
-    var keyLength = dict.get('Length');
+    var keyLength = dict.get("Length");
 
     if (!keyLength) {
       if (algorithm <= 3) {
         keyLength = 40;
       } else {
-        var cfDict = dict.get('CF');
-        var streamCryptoName = dict.get('StmF');
+        var cfDict = dict.get("CF");
+        var streamCryptoName = dict.get("StmF");
 
         if ((0, _primitives.isDict)(cfDict) && (0, _primitives.isName)(streamCryptoName)) {
           cfDict.suppressEncryption = true;
           var handlerDict = cfDict.get(streamCryptoName.name);
-          keyLength = handlerDict && handlerDict.get('Length') || 128;
+          keyLength = handlerDict && handlerDict.get("Length") || 128;
 
           if (keyLength < 40) {
             keyLength <<= 3;
@@ -1510,14 +1452,14 @@ var CipherTransformFactory = function CipherTransformFactoryClosure() {
     }
 
     if (!Number.isInteger(keyLength) || keyLength < 40 || keyLength % 8 !== 0) {
-      throw new _util.FormatError('invalid key length');
+      throw new _util.FormatError("invalid key length");
     }
 
-    var ownerPassword = (0, _util.stringToBytes)(dict.get('O')).subarray(0, 32);
-    var userPassword = (0, _util.stringToBytes)(dict.get('U')).subarray(0, 32);
-    var flags = dict.get('P');
-    var revision = dict.get('R');
-    var encryptMetadata = (algorithm === 4 || algorithm === 5) && dict.get('EncryptMetadata') !== false;
+    var ownerPassword = (0, _util.stringToBytes)(dict.get("O")).subarray(0, 32);
+    var userPassword = (0, _util.stringToBytes)(dict.get("U")).subarray(0, 32);
+    var flags = dict.get("P");
+    var revision = dict.get("R");
+    var encryptMetadata = (algorithm === 4 || algorithm === 5) && dict.get("EncryptMetadata") !== false;
     this.encryptMetadata = encryptMetadata;
     var fileIdBytes = (0, _util.stringToBytes)(fileId);
     var passwordBytes;
@@ -1527,7 +1469,7 @@ var CipherTransformFactory = function CipherTransformFactoryClosure() {
         try {
           password = (0, _util.utf8StringToString)(password);
         } catch (ex) {
-          (0, _util.warn)('CipherTransformFactory: ' + 'Unable to convert UTF8 encoded password.');
+          (0, _util.warn)("CipherTransformFactory: " + "Unable to convert UTF8 encoded password.");
         }
       }
 
@@ -1539,41 +1481,41 @@ var CipherTransformFactory = function CipherTransformFactoryClosure() {
     if (algorithm !== 5) {
       encryptionKey = prepareKeyData(fileIdBytes, passwordBytes, ownerPassword, userPassword, flags, revision, keyLength, encryptMetadata);
     } else {
-      var ownerValidationSalt = (0, _util.stringToBytes)(dict.get('O')).subarray(32, 40);
-      var ownerKeySalt = (0, _util.stringToBytes)(dict.get('O')).subarray(40, 48);
-      var uBytes = (0, _util.stringToBytes)(dict.get('U')).subarray(0, 48);
-      var userValidationSalt = (0, _util.stringToBytes)(dict.get('U')).subarray(32, 40);
-      var userKeySalt = (0, _util.stringToBytes)(dict.get('U')).subarray(40, 48);
-      var ownerEncryption = (0, _util.stringToBytes)(dict.get('OE'));
-      var userEncryption = (0, _util.stringToBytes)(dict.get('UE'));
-      var perms = (0, _util.stringToBytes)(dict.get('Perms'));
+      var ownerValidationSalt = (0, _util.stringToBytes)(dict.get("O")).subarray(32, 40);
+      var ownerKeySalt = (0, _util.stringToBytes)(dict.get("O")).subarray(40, 48);
+      var uBytes = (0, _util.stringToBytes)(dict.get("U")).subarray(0, 48);
+      var userValidationSalt = (0, _util.stringToBytes)(dict.get("U")).subarray(32, 40);
+      var userKeySalt = (0, _util.stringToBytes)(dict.get("U")).subarray(40, 48);
+      var ownerEncryption = (0, _util.stringToBytes)(dict.get("OE"));
+      var userEncryption = (0, _util.stringToBytes)(dict.get("UE"));
+      var perms = (0, _util.stringToBytes)(dict.get("Perms"));
       encryptionKey = createEncryptionKey20(revision, passwordBytes, ownerPassword, ownerValidationSalt, ownerKeySalt, uBytes, userPassword, userValidationSalt, userKeySalt, ownerEncryption, userEncryption, perms);
     }
 
     if (!encryptionKey && !password) {
-      throw new _util.PasswordException('No password given', _util.PasswordResponses.NEED_PASSWORD);
+      throw new _util.PasswordException("No password given", _util.PasswordResponses.NEED_PASSWORD);
     } else if (!encryptionKey && password) {
       var decodedPassword = decodeUserPassword(passwordBytes, ownerPassword, revision, keyLength);
       encryptionKey = prepareKeyData(fileIdBytes, decodedPassword, ownerPassword, userPassword, flags, revision, keyLength, encryptMetadata);
     }
 
     if (!encryptionKey) {
-      throw new _util.PasswordException('Incorrect Password', _util.PasswordResponses.INCORRECT_PASSWORD);
+      throw new _util.PasswordException("Incorrect Password", _util.PasswordResponses.INCORRECT_PASSWORD);
     }
 
     this.encryptionKey = encryptionKey;
 
     if (algorithm >= 4) {
-      var cf = dict.get('CF');
+      var cf = dict.get("CF");
 
       if ((0, _primitives.isDict)(cf)) {
         cf.suppressEncryption = true;
       }
 
       this.cf = cf;
-      this.stmf = dict.get('StmF') || identityName;
-      this.strf = dict.get('StrF') || identityName;
-      this.eff = dict.get('EFF') || this.stmf;
+      this.stmf = dict.get("StmF") || identityName;
+      this.strf = dict.get("StrF") || identityName;
+      this.eff = dict.get("EFF") || this.stmf;
     }
   }
 
@@ -1586,16 +1528,16 @@ var CipherTransformFactory = function CipherTransformFactoryClosure() {
       key[i] = encryptionKey[i];
     }
 
-    key[i++] = num & 0xFF;
-    key[i++] = num >> 8 & 0xFF;
-    key[i++] = num >> 16 & 0xFF;
-    key[i++] = gen & 0xFF;
-    key[i++] = gen >> 8 & 0xFF;
+    key[i++] = num & 0xff;
+    key[i++] = num >> 8 & 0xff;
+    key[i++] = num >> 16 & 0xff;
+    key[i++] = gen & 0xff;
+    key[i++] = gen >> 8 & 0xff;
 
     if (isAes) {
       key[i++] = 0x73;
       key[i++] = 0x41;
-      key[i++] = 0x6C;
+      key[i++] = 0x6c;
       key[i++] = 0x54;
     }
 
@@ -1605,41 +1547,41 @@ var CipherTransformFactory = function CipherTransformFactoryClosure() {
 
   function buildCipherConstructor(cf, name, num, gen, key) {
     if (!(0, _primitives.isName)(name)) {
-      throw new _util.FormatError('Invalid crypt filter name.');
+      throw new _util.FormatError("Invalid crypt filter name.");
     }
 
     var cryptFilter = cf.get(name.name);
     var cfm;
 
     if (cryptFilter !== null && cryptFilter !== undefined) {
-      cfm = cryptFilter.get('CFM');
+      cfm = cryptFilter.get("CFM");
     }
 
-    if (!cfm || cfm.name === 'None') {
+    if (!cfm || cfm.name === "None") {
       return function cipherTransformFactoryBuildCipherConstructorNone() {
         return new NullCipher();
       };
     }
 
-    if (cfm.name === 'V2') {
+    if (cfm.name === "V2") {
       return function cipherTransformFactoryBuildCipherConstructorV2() {
         return new ARCFourCipher(buildObjectKey(num, gen, key, false));
       };
     }
 
-    if (cfm.name === 'AESV2') {
+    if (cfm.name === "AESV2") {
       return function cipherTransformFactoryBuildCipherConstructorAESV2() {
         return new AES128Cipher(buildObjectKey(num, gen, key, true));
       };
     }
 
-    if (cfm.name === 'AESV3') {
+    if (cfm.name === "AESV3") {
       return function cipherTransformFactoryBuildCipherConstructorAESV3() {
         return new AES256Cipher(key);
       };
     }
 
-    throw new _util.FormatError('Unknown crypto method');
+    throw new _util.FormatError("Unknown crypto method");
   }
 
   CipherTransformFactory.prototype = {

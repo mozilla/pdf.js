@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,16 @@
  */
 "use strict";
 
-var _util = require("../../shared/util");
+var _util = require("../../shared/util.js");
 
-var _is_node = _interopRequireDefault(require("../../shared/is_node"));
+var _is_node = require("../../shared/is_node.js");
 
-var _node_stream = require("../../display/node_stream");
+var _node_stream = require("../../display/node_stream.js");
 
-var _api = require("../../display/api");
+var _api = require("../../display/api.js");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
-if (!(0, _is_node["default"])()) {
-  throw new Error('The `gulp unittestcli` command can only be used in ' + 'Node.js environments.');
+if (!_is_node.isNodeJS) {
+  throw new Error("The `gulp unittestcli` command can only be used in " + "Node.js environments.");
 }
 
 (0, _util.setVerbosityLevel)(_util.VerbosityLevel.ERRORS);

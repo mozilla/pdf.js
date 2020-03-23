@@ -7,7 +7,7 @@ exports.getFilenameFromContentDispositionHeader = getFilenameFromContentDisposit
 
 function getFilenameFromContentDispositionHeader(contentDisposition) {
   let needsEncodingFixup = true;
-  let tmp = toParamRegExp('filename\\*', 'i').exec(contentDisposition);
+  let tmp = toParamRegExp("filename\\*", "i").exec(contentDisposition);
 
   if (tmp) {
     tmp = tmp[1];
@@ -21,11 +21,11 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   tmp = rfc2231getparam(contentDisposition);
 
   if (tmp) {
-    let filename = rfc2047decode(tmp);
+    const filename = rfc2047decode(tmp);
     return fixupEncoding(filename);
   }
 
-  tmp = toParamRegExp('filename', 'i').exec(contentDisposition);
+  tmp = toParamRegExp("filename", "i").exec(contentDisposition);
 
   if (tmp) {
     tmp = tmp[1];
@@ -35,7 +35,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   }
 
   function toParamRegExp(attributePattern, flags) {
-    return new RegExp('(?:^|;)\\s*' + attributePattern + '\\s*=\\s*' + '(' + '[^";\\s][^;\\s]*' + '|' + '"(?:[^"\\\\]|\\\\"?)+"?' + ')', flags);
+    return new RegExp("(?:^|;)\\s*" + attributePattern + "\\s*=\\s*" + "(" + '[^";\\s][^;\\s]*' + "|" + '"(?:[^"\\\\]|\\\\"?)+"?' + ")", flags);
   }
 
   function textdecode(encoding, value) {
@@ -45,11 +45,11 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
       }
 
       try {
-        let decoder = new TextDecoder(encoding, {
+        const decoder = new TextDecoder(encoding, {
           fatal: true
         });
-        let bytes = Array.from(value, function (ch) {
-          return ch.charCodeAt(0) & 0xFF;
+        const bytes = Array.from(value, function (ch) {
+          return ch.charCodeAt(0) & 0xff;
         });
         value = decoder.decode(new Uint8Array(bytes));
         needsEncodingFixup = false;
@@ -68,22 +68,22 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
 
   function fixupEncoding(value) {
     if (needsEncodingFixup && /[\x80-\xff]/.test(value)) {
-      value = textdecode('utf-8', value);
+      value = textdecode("utf-8", value);
 
       if (needsEncodingFixup) {
-        value = textdecode('iso-8859-1', value);
+        value = textdecode("iso-8859-1", value);
       }
     }
 
     return value;
   }
 
-  function rfc2231getparam(contentDisposition) {
-    let matches = [],
-        match;
-    let iter = toParamRegExp('filename\\*((?!0\\d)\\d+)(\\*?)', 'ig');
+  function rfc2231getparam(contentDispositionStr) {
+    const matches = [];
+    let match;
+    const iter = toParamRegExp("filename\\*((?!0\\d)\\d+)(\\*?)", "ig");
 
-    while ((match = iter.exec(contentDisposition)) !== null) {
+    while ((match = iter.exec(contentDispositionStr)) !== null) {
       let [, n, quot, part] = match;
       n = parseInt(n, 10);
 
@@ -98,7 +98,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
       matches[n] = [quot, part];
     }
 
-    let parts = [];
+    const parts = [];
 
     for (let n = 0; n < matches.length; ++n) {
       if (!(n in matches)) {
@@ -119,22 +119,22 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
       parts.push(part);
     }
 
-    return parts.join('');
+    return parts.join("");
   }
 
   function rfc2616unquote(value) {
     if (value.startsWith('"')) {
-      let parts = value.slice(1).split('\\"');
+      const parts = value.slice(1).split('\\"');
 
       for (let i = 0; i < parts.length; ++i) {
-        let quotindex = parts[i].indexOf('"');
+        const quotindex = parts[i].indexOf('"');
 
         if (quotindex !== -1) {
           parts[i] = parts[i].slice(0, quotindex);
           parts.length = i + 1;
         }
 
-        parts[i] = parts[i].replace(/\\(.)/g, '$1');
+        parts[i] = parts[i].replace(/\\(.)/g, "$1");
       }
 
       value = parts.join('"');
@@ -144,27 +144,27 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   }
 
   function rfc5987decode(extvalue) {
-    let encodingend = extvalue.indexOf('\'');
+    const encodingend = extvalue.indexOf("'");
 
     if (encodingend === -1) {
       return extvalue;
     }
 
-    let encoding = extvalue.slice(0, encodingend);
-    let langvalue = extvalue.slice(encodingend + 1);
-    let value = langvalue.replace(/^[^']*'/, '');
+    const encoding = extvalue.slice(0, encodingend);
+    const langvalue = extvalue.slice(encodingend + 1);
+    const value = langvalue.replace(/^[^']*'/, "");
     return textdecode(encoding, value);
   }
 
   function rfc2047decode(value) {
-    if (!value.startsWith('=?') || /[\x00-\x19\x80-\xff]/.test(value)) {
+    if (!value.startsWith("=?") || /[\x00-\x19\x80-\xff]/.test(value)) {
       return value;
     }
 
-    return value.replace(/=\?([\w-]*)\?([QqBb])\?((?:[^?]|\?(?!=))*)\?=/g, function (_, charset, encoding, text) {
-      if (encoding === 'q' || encoding === 'Q') {
-        text = text.replace(/_/g, ' ');
-        text = text.replace(/=([0-9a-fA-F]{2})/g, function (_, hex) {
+    return value.replace(/=\?([\w-]*)\?([QqBb])\?((?:[^?]|\?(?!=))*)\?=/g, function (matches, charset, encoding, text) {
+      if (encoding === "q" || encoding === "Q") {
+        text = text.replace(/_/g, " ");
+        text = text.replace(/=([0-9a-fA-F]{2})/g, function (match, hex) {
           return String.fromCharCode(parseInt(hex, 16));
         });
         return textdecode(charset, text);
@@ -178,5 +178,5 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     });
   }
 
-  return '';
+  return "";
 }

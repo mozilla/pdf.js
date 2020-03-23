@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.ArithmeticDecoder = void 0;
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var QeTable = [{
+const QeTable = [{
   qe: 0x5601,
   nmps: 1,
   nlps: 1,
@@ -48,7 +41,7 @@ var QeTable = [{
   nlps: 9,
   switchFlag: 0
 }, {
-  qe: 0x0AC1,
+  qe: 0x0ac1,
   nmps: 4,
   nlps: 12,
   switchFlag: 0
@@ -93,7 +86,7 @@ var QeTable = [{
   nlps: 18,
   switchFlag: 0
 }, {
-  qe: 0x1C01,
+  qe: 0x1c01,
   nmps: 13,
   nlps: 20,
   switchFlag: 0
@@ -153,7 +146,7 @@ var QeTable = [{
   nlps: 21,
   switchFlag: 0
 }, {
-  qe: 0x1C01,
+  qe: 0x1c01,
   nmps: 25,
   nlps: 22,
   switchFlag: 0
@@ -183,17 +176,17 @@ var QeTable = [{
   nlps: 27,
   switchFlag: 0
 }, {
-  qe: 0x0AC1,
+  qe: 0x0ac1,
   nmps: 31,
   nlps: 28,
   switchFlag: 0
 }, {
-  qe: 0x09C1,
+  qe: 0x09c1,
   nmps: 32,
   nlps: 29,
   switchFlag: 0
 }, {
-  qe: 0x08A1,
+  qe: 0x08a1,
   nmps: 33,
   nlps: 30,
   switchFlag: 0
@@ -208,7 +201,7 @@ var QeTable = [{
   nlps: 32,
   switchFlag: 0
 }, {
-  qe: 0x02A1,
+  qe: 0x02a1,
   nmps: 36,
   nlps: 33,
   switchFlag: 0
@@ -269,117 +262,108 @@ var QeTable = [{
   switchFlag: 0
 }];
 
-var ArithmeticDecoder =
-/*#__PURE__*/
-function () {
-  function ArithmeticDecoder(data, start, end) {
-    _classCallCheck(this, ArithmeticDecoder);
-
+class ArithmeticDecoder {
+  constructor(data, start, end) {
     this.data = data;
     this.bp = start;
     this.dataEnd = end;
     this.chigh = data[start];
     this.clow = 0;
     this.byteIn();
-    this.chigh = this.chigh << 7 & 0xFFFF | this.clow >> 9 & 0x7F;
-    this.clow = this.clow << 7 & 0xFFFF;
+    this.chigh = this.chigh << 7 & 0xffff | this.clow >> 9 & 0x7f;
+    this.clow = this.clow << 7 & 0xffff;
     this.ct -= 7;
     this.a = 0x8000;
   }
 
-  _createClass(ArithmeticDecoder, [{
-    key: "byteIn",
-    value: function byteIn() {
-      var data = this.data;
-      var bp = this.bp;
+  byteIn() {
+    const data = this.data;
+    let bp = this.bp;
 
-      if (data[bp] === 0xFF) {
-        if (data[bp + 1] > 0x8F) {
-          this.clow += 0xFF00;
-          this.ct = 8;
-        } else {
-          bp++;
-          this.clow += data[bp] << 9;
-          this.ct = 7;
-          this.bp = bp;
-        }
+    if (data[bp] === 0xff) {
+      if (data[bp + 1] > 0x8f) {
+        this.clow += 0xff00;
+        this.ct = 8;
       } else {
         bp++;
-        this.clow += bp < this.dataEnd ? data[bp] << 8 : 0xFF00;
-        this.ct = 8;
+        this.clow += data[bp] << 9;
+        this.ct = 7;
         this.bp = bp;
       }
-
-      if (this.clow > 0xFFFF) {
-        this.chigh += this.clow >> 16;
-        this.clow &= 0xFFFF;
-      }
+    } else {
+      bp++;
+      this.clow += bp < this.dataEnd ? data[bp] << 8 : 0xff00;
+      this.ct = 8;
+      this.bp = bp;
     }
-  }, {
-    key: "readBit",
-    value: function readBit(contexts, pos) {
-      var cx_index = contexts[pos] >> 1,
-          cx_mps = contexts[pos] & 1;
-      var qeTableIcx = QeTable[cx_index];
-      var qeIcx = qeTableIcx.qe;
-      var d;
-      var a = this.a - qeIcx;
 
-      if (this.chigh < qeIcx) {
-        if (a < qeIcx) {
-          a = qeIcx;
-          d = cx_mps;
-          cx_index = qeTableIcx.nmps;
-        } else {
-          a = qeIcx;
-          d = 1 ^ cx_mps;
+    if (this.clow > 0xffff) {
+      this.chigh += this.clow >> 16;
+      this.clow &= 0xffff;
+    }
+  }
 
-          if (qeTableIcx.switchFlag === 1) {
-            cx_mps = d;
-          }
+  readBit(contexts, pos) {
+    let cx_index = contexts[pos] >> 1,
+        cx_mps = contexts[pos] & 1;
+    const qeTableIcx = QeTable[cx_index];
+    const qeIcx = qeTableIcx.qe;
+    let d;
+    let a = this.a - qeIcx;
 
-          cx_index = qeTableIcx.nlps;
-        }
+    if (this.chigh < qeIcx) {
+      if (a < qeIcx) {
+        a = qeIcx;
+        d = cx_mps;
+        cx_index = qeTableIcx.nmps;
       } else {
-        this.chigh -= qeIcx;
+        a = qeIcx;
+        d = 1 ^ cx_mps;
 
-        if ((a & 0x8000) !== 0) {
-          this.a = a;
-          return cx_mps;
+        if (qeTableIcx.switchFlag === 1) {
+          cx_mps = d;
         }
 
-        if (a < qeIcx) {
-          d = 1 ^ cx_mps;
+        cx_index = qeTableIcx.nlps;
+      }
+    } else {
+      this.chigh -= qeIcx;
 
-          if (qeTableIcx.switchFlag === 1) {
-            cx_mps = d;
-          }
-
-          cx_index = qeTableIcx.nlps;
-        } else {
-          d = cx_mps;
-          cx_index = qeTableIcx.nmps;
-        }
+      if ((a & 0x8000) !== 0) {
+        this.a = a;
+        return cx_mps;
       }
 
-      do {
-        if (this.ct === 0) {
-          this.byteIn();
+      if (a < qeIcx) {
+        d = 1 ^ cx_mps;
+
+        if (qeTableIcx.switchFlag === 1) {
+          cx_mps = d;
         }
 
-        a <<= 1;
-        this.chigh = this.chigh << 1 & 0xFFFF | this.clow >> 15 & 1;
-        this.clow = this.clow << 1 & 0xFFFF;
-        this.ct--;
-      } while ((a & 0x8000) === 0);
-
-      this.a = a;
-      contexts[pos] = cx_index << 1 | cx_mps;
-      return d;
+        cx_index = qeTableIcx.nlps;
+      } else {
+        d = cx_mps;
+        cx_index = qeTableIcx.nmps;
+      }
     }
-  }]);
 
-  return ArithmeticDecoder;
-}();
+    do {
+      if (this.ct === 0) {
+        this.byteIn();
+      }
+
+      a <<= 1;
+      this.chigh = this.chigh << 1 & 0xffff | this.clow >> 15 & 1;
+      this.clow = this.clow << 1 & 0xffff;
+      this.ct--;
+    } while ((a & 0x8000) === 0);
+
+    this.a = a;
+    contexts[pos] = cx_index << 1 | cx_mps;
+    return d;
+  }
+
+}
 
 exports.ArithmeticDecoder = ArithmeticDecoder;

@@ -5,19 +5,35 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PDFFetchStream = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-var _network_utils = require("./network_utils");
+var _network_utils = require("./network_utils.js");
 
 function createFetchOptions(headers, withCredentials, abortController) {
   return {
-    method: 'GET',
+    method: "GET",
     headers,
     signal: abortController && abortController.signal,
-    mode: 'cors',
-    credentials: withCredentials ? 'include' : 'same-origin',
-    redirect: 'follow'
+    mode: "cors",
+    credentials: withCredentials ? "include" : "same-origin",
+    redirect: "follow"
   };
+}
+
+function createHeaders(httpHeaders) {
+  const headers = new Headers();
+
+  for (const property in httpHeaders) {
+    const value = httpHeaders[property];
+
+    if (typeof value === "undefined") {
+      continue;
+    }
+
+    headers.append(property, value);
+  }
+
+  return headers;
 }
 
 class PDFFetchStream {
@@ -84,24 +100,13 @@ class PDFFetchStreamReader {
       this._disableRange = true;
     }
 
-    if (typeof AbortController !== 'undefined') {
+    if (typeof AbortController !== "undefined") {
       this._abortController = new AbortController();
     }
 
     this._isStreamingSupported = !source.disableStream;
     this._isRangeSupported = !source.disableRange;
-    this._headers = new Headers();
-
-    for (const property in this._stream.httpHeaders) {
-      const value = this._stream.httpHeaders[property];
-
-      if (typeof value === 'undefined') {
-        continue;
-      }
-
-      this._headers.append(property, value);
-    }
-
+    this._headers = createHeaders(this._stream.httpHeaders);
     const url = source.url;
     fetch(url, createFetchOptions(this._headers, this._withCredentials, this._abortController)).then(response => {
       if (!(0, _network_utils.validateResponseStatus)(response.status)) {
@@ -130,7 +135,7 @@ class PDFFetchStreamReader {
       this._filename = (0, _network_utils.extractFilenameFromHeader)(getResponseHeader);
 
       if (!this._isStreamingSupported && this._isRangeSupported) {
-        this.cancel(new _util.AbortException('Streaming is disabled.'));
+        this.cancel(new _util.AbortException("Streaming is disabled."));
       }
     }).catch(this._headersCapability.reject);
     this.onProgress = null;
@@ -208,23 +213,13 @@ class PDFFetchStreamRangeReader {
     this._readCapability = (0, _util.createPromiseCapability)();
     this._isStreamingSupported = !source.disableStream;
 
-    if (typeof AbortController !== 'undefined') {
+    if (typeof AbortController !== "undefined") {
       this._abortController = new AbortController();
     }
 
-    this._headers = new Headers();
+    this._headers = createHeaders(this._stream.httpHeaders);
 
-    for (const property in this._stream.httpHeaders) {
-      const value = this._stream.httpHeaders[property];
-
-      if (typeof value === 'undefined') {
-        continue;
-      }
-
-      this._headers.append(property, value);
-    }
-
-    this._headers.append('Range', `bytes=${begin}-${end - 1}`);
+    this._headers.append("Range", `bytes=${begin}-${end - 1}`);
 
     const url = source.url;
     fetch(url, createFetchOptions(this._headers, this._withCredentials, this._abortController)).then(response => {

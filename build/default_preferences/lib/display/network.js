@@ -5,9 +5,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.PDFNetworkStream = void 0;
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-var _network_utils = require("./network_utils");
+var _network_utils = require("./network_utils.js");
 
 ;
 const OK_RESPONSE = 200;
@@ -16,7 +16,7 @@ const PARTIAL_CONTENT_RESPONSE = 206;
 function getArrayBuffer(xhr) {
   const data = xhr.response;
 
-  if (typeof data !== 'string') {
+  if (typeof data !== "string") {
     return data;
   }
 
@@ -63,27 +63,27 @@ class NetworkManager {
     const pendingRequest = this.pendingRequests[xhrId] = {
       xhr
     };
-    xhr.open('GET', this.url);
+    xhr.open("GET", this.url);
     xhr.withCredentials = this.withCredentials;
 
     for (const property in this.httpHeaders) {
       const value = this.httpHeaders[property];
 
-      if (typeof value === 'undefined') {
+      if (typeof value === "undefined") {
         continue;
       }
 
       xhr.setRequestHeader(property, value);
     }
 
-    if (this.isHttp && 'begin' in args && 'end' in args) {
-      xhr.setRequestHeader('Range', `bytes=${args.begin}-${args.end - 1}`);
+    if (this.isHttp && "begin" in args && "end" in args) {
+      xhr.setRequestHeader("Range", `bytes=${args.begin}-${args.end - 1}`);
       pendingRequest.expectedStatus = PARTIAL_CONTENT_RESPONSE;
     } else {
       pendingRequest.expectedStatus = OK_RESPONSE;
     }
 
-    xhr.responseType = 'arraybuffer';
+    xhr.responseType = "arraybuffer";
 
     if (args.onError) {
       xhr.onerror = function (evt) {
@@ -159,7 +159,7 @@ class NetworkManager {
     const chunk = getArrayBuffer(xhr);
 
     if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
-      const rangeHeader = xhr.getResponseHeader('Content-Range');
+      const rangeHeader = xhr.getResponseHeader("Content-Range");
       const matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
       pendingRequest.onDone({
         begin: parseInt(matches[1], 10),

@@ -2,7 +2,7 @@
  * @licstart The following is the entire license notice for the
  * Javascript code in this page
  *
- * Copyright 2019 Mozilla Foundation
+ * Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Jbig2Stream = void 0;
 
-var _primitives = require("./primitives");
+var _primitives = require("./primitives.js");
 
-var _stream = require("./stream");
+var _stream = require("./stream.js");
 
-var _jbig = require("./jbig2");
+var _jbig = require("./jbig2.js");
 
-var _util = require("../shared/util");
+var _util = require("../shared/util.js");
 
-var Jbig2Stream = function Jbig2StreamClosure() {
+const Jbig2Stream = function Jbig2StreamClosure() {
   function Jbig2Stream(stream, maybeLength, dict, params) {
     this.stream = stream;
     this.maybeLength = maybeLength;
@@ -45,10 +45,11 @@ var Jbig2Stream = function Jbig2StreamClosure() {
   }
 
   Jbig2Stream.prototype = Object.create(_stream.DecodeStream.prototype);
-  Object.defineProperty(Jbig2Stream.prototype, 'bytes', {
-    get: function get() {
-      return (0, _util.shadow)(this, 'bytes', this.stream.getBytes(this.maybeLength));
+  Object.defineProperty(Jbig2Stream.prototype, "bytes", {
+    get() {
+      return (0, _util.shadow)(this, "bytes", this.stream.getBytes(this.maybeLength));
     },
+
     configurable: true
   });
 
@@ -59,14 +60,14 @@ var Jbig2Stream = function Jbig2StreamClosure() {
       return;
     }
 
-    var jbig2Image = new _jbig.Jbig2Image();
-    var chunks = [];
+    const jbig2Image = new _jbig.Jbig2Image();
+    const chunks = [];
 
     if ((0, _primitives.isDict)(this.params)) {
-      var globalsStream = this.params.get('JBIG2Globals');
+      const globalsStream = this.params.get("JBIG2Globals");
 
       if ((0, _primitives.isStream)(globalsStream)) {
-        var globals = globalsStream.getBytes();
+        const globals = globalsStream.getBytes();
         chunks.push({
           data: globals,
           start: 0,
@@ -80,11 +81,11 @@ var Jbig2Stream = function Jbig2StreamClosure() {
       start: 0,
       end: this.bytes.length
     });
-    var data = jbig2Image.parseChunks(chunks);
-    var dataLength = data.length;
+    const data = jbig2Image.parseChunks(chunks);
+    const dataLength = data.length;
 
-    for (var i = 0; i < dataLength; i++) {
-      data[i] ^= 0xFF;
+    for (let i = 0; i < dataLength; i++) {
+      data[i] ^= 0xff;
     }
 
     this.buffer = data;
