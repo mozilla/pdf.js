@@ -455,7 +455,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.setAttribute("value", this.data.fieldValue);
       }
 
-      element.setAttribute("name", this.data.fieldName);
+      element.name = this.data.fieldName;
       element.disabled = this.data.readOnly;
 
       if (this.data.maxLen !== null) {
@@ -621,8 +621,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
-    selectElement.setAttribute("name", this.data.fieldName);
-    
+    selectElement.name = this.data.fieldName;
+
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
       selectElement.size = this.data.options.length;
