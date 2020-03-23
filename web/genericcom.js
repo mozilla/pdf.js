@@ -13,40 +13,43 @@
  * limitations under the License.
  */
 
-import { DefaultExternalServices, PDFViewerApplication } from './app';
-import { BasePreferences } from './preferences';
-import { DownloadManager } from './download_manager';
-import { GenericL10n } from './genericl10n';
+import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
+import { BasePreferences } from "./preferences.js";
+import { DownloadManager } from "./download_manager.js";
+import { GenericL10n } from "./genericl10n.js";
 
-if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('GENERIC')) {
-  throw new Error('Module "pdfjs-web/genericcom" shall not be used outside ' +
-                  'GENERIC build.');
+if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
+  throw new Error(
+    'Module "pdfjs-web/genericcom" shall not be used outside ' +
+      "GENERIC build."
+  );
 }
 
-let GenericCom = {};
+const GenericCom = {};
 
 class GenericPreferences extends BasePreferences {
   async _writeToStorage(prefObj) {
-    localStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));
+    localStorage.setItem("pdfjs.preferences", JSON.stringify(prefObj));
   }
 
   async _readFromStorage(prefObj) {
-    return JSON.parse(localStorage.getItem('pdfjs.preferences'));
+    return JSON.parse(localStorage.getItem("pdfjs.preferences"));
   }
 }
 
-let GenericExternalServices = Object.create(DefaultExternalServices);
-GenericExternalServices.createDownloadManager = function(options) {
-  return new DownloadManager(options);
-};
-GenericExternalServices.createPreferences = function() {
-  return new GenericPreferences();
-};
-GenericExternalServices.createL10n = function({ locale = 'en-US', }) {
-  return new GenericL10n(locale);
-};
+class GenericExternalServices extends DefaultExternalServices {
+  static createDownloadManager(options) {
+    return new DownloadManager(options);
+  }
+
+  static createPreferences() {
+    return new GenericPreferences();
+  }
+
+  static createL10n({ locale = "en-US" }) {
+    return new GenericL10n(locale);
+  }
+}
 PDFViewerApplication.externalServices = GenericExternalServices;
 
-export {
-  GenericCom,
-};
+export { GenericCom };
