@@ -66,7 +66,7 @@ var COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
 var MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
 var REPO = "git@github.com:mozilla/pdf.js.git";
-var DIST_REPO_URL = 'https://github.com/macroplant/pdf.js';
+var DIST_REPO_URL = "https://github.com/macroplant/pdf.js";
 
 var builder = require("./external/builder/builder.js");
 
@@ -1535,67 +1535,10 @@ gulp.task("wintersmith", function(done) {
   });
 });
 
-// <<<<<<< HEAD
-//   console.log();
-//   console.log('### Cloning baseline distribution');
-//
-//   rimraf.sync(DIST_DIR);
-//   mkdirp.sync(DIST_DIR);
-//   // safeSpawnSync('git', ['clone', '--depth', '1', DIST_REPO_URL, DIST_DIR]);
-//
-//   console.log();
-//   console.log('### Overwriting all files');
-//   rimraf.sync(path.join(DIST_DIR, '*'));
-//
-//   // Rebuilding manifests
-//   var DIST_NAME = 'pdfjs-dist';
-//   var DIST_DESCRIPTION = 'Generic build of Mozilla\'s PDF.js library.';
-//   var DIST_KEYWORDS = ['Mozilla', 'pdf', 'pdf.js'];
-//   var DIST_HOMEPAGE = 'http://mozilla.github.io/pdf.js/';
-//   var DIST_BUGS_URL = 'https://github.com/mozilla/pdf.js/issues';
-//   var DIST_LICENSE = 'Apache-2.0';
-//   var npmManifest = {
-//     name: DIST_NAME,
-//     version: VERSION,
-//     main: 'build/pdf.js',
-//     description: DIST_DESCRIPTION,
-//     keywords: DIST_KEYWORDS,
-//     homepage: DIST_HOMEPAGE,
-//     bugs: DIST_BUGS_URL,
-//     license: DIST_LICENSE,
-//     dependencies: {
-//       'node-ensure': '^0.0.0', // shim for node for require.ensure
-//       'worker-loader': '^2.0.0', // used in external/dist/webpack.json
-//     },
-//     peerDependencies: {
-//       'webpack': '^3.0.0 || ^4.0.0-alpha.0 || ^4.0.0', // from 'worker-loader'
-//     },
-//     browser: {
-//       'fs': false,
-//       'http': false,
-//       'https': false,
-//       'node-ensure': false,
-//       'zlib': false,
-//     },
-//     format: 'amd', // to not allow system.js to choose 'cjs'
-//     repository: {
-//       type: 'git',
-//       url: DIST_REPO_URL,
-//     },
-//   };
-//   var packageJsonSrc =
-//     createStringSource('package.json', JSON.stringify(npmManifest, null, 2));
-//   var bowerManifest = {
-//     name: DIST_NAME,
-//     version: VERSION,
-//     main: [
-//       'build/pdf.js',
-//       'build/pdf.worker.js',
-
-
 gulp.task("gh-pages-git", function(done) {
   var VERSION = getVersionJSON().version;
   var reason = process.env["PDFJS_UPDATE_REASON"];
+
   safeSpawnSync("git", ["init"], { cwd: GH_PAGES_DIR });
   safeSpawnSync("git", ["remote", "add", "origin", REPO], {
     cwd: GH_PAGES_DIR,
@@ -1649,7 +1592,7 @@ gulp.task(
 
       rimraf.sync(DIST_DIR);
       mkdirp.sync(DIST_DIR);
-      safeSpawnSync("git", ["clone", "--depth", "1", DIST_REPO_URL, DIST_DIR]);
+      // safeSpawnSync("git", ["clone", "--depth", "1", DIST_REPO_URL, DIST_DIR]);
 
       console.log();
       console.log("### Overwriting all files");
