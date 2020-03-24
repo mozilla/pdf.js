@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-import { buildGetDocumentParams, NodeCanvasFactory } from './test_utils';
-import { DOMCanvasFactory } from '../../src/display/display_utils';
-import { getDocument } from '../../src/display/api';
-import isNodeJS from '../../src/shared/is_node';
+import { buildGetDocumentParams, NodeCanvasFactory } from "./test_utils.js";
+import { DOMCanvasFactory } from "../../src/display/display_utils.js";
+import { getDocument } from "../../src/display/api.js";
+import { isNodeJS } from "../../src/shared/is_node.js";
 
 function getTopLeftPixel(canvasContext) {
-  let imgData = canvasContext.getImageData(0, 0, 1, 1);
+  const imgData = canvasContext.getImageData(0, 0, 1, 1);
   return {
     r: imgData.data[0],
     g: imgData.data[1],
@@ -28,26 +28,31 @@ function getTopLeftPixel(canvasContext) {
   };
 }
 
-describe('custom canvas rendering', function() {
-  let transparentGetDocumentParams = buildGetDocumentParams('transparent.pdf');
+describe("custom canvas rendering", function() {
+  const transparentGetDocumentParams = buildGetDocumentParams(
+    "transparent.pdf"
+  );
 
   let CanvasFactory;
   let loadingTask;
   let page;
 
   beforeAll(function(done) {
-    if (isNodeJS()) {
+    if (isNodeJS) {
       CanvasFactory = new NodeCanvasFactory();
     } else {
       CanvasFactory = new DOMCanvasFactory();
     }
     loadingTask = getDocument(transparentGetDocumentParams);
-    loadingTask.promise.then(function(doc) {
-      return doc.getPage(1);
-    }).then(function(data) {
-      page = data;
-      done();
-    }).catch(done.fail);
+    loadingTask.promise
+      .then(function(doc) {
+        return doc.getPage(1);
+      })
+      .then(function(data) {
+        page = data;
+        done();
+      })
+      .catch(done.fail);
   });
 
   afterAll(function(done) {
@@ -56,36 +61,48 @@ describe('custom canvas rendering', function() {
     loadingTask.destroy().then(done);
   });
 
-  it('renders to canvas with a default white background', function(done) {
-    var viewport = page.getViewport({ scale: 1, });
+  it("renders to canvas with a default white background", function(done) {
+    var viewport = page.getViewport({ scale: 1 });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
       viewport,
     });
-    renderTask.promise.then(function() {
-      expect(getTopLeftPixel(canvasAndCtx.context)).toEqual(
-        { r: 255, g: 255, b: 255, a: 255, });
-      CanvasFactory.destroy(canvasAndCtx);
-      done();
-    }).catch(done.fail);
+    renderTask.promise
+      .then(function() {
+        expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
+          r: 255,
+          g: 255,
+          b: 255,
+          a: 255,
+        });
+        CanvasFactory.destroy(canvasAndCtx);
+        done();
+      })
+      .catch(done.fail);
   });
 
-  it('renders to canvas with a custom background', function(done) {
-    var viewport = page.getViewport({ scale: 1, });
+  it("renders to canvas with a custom background", function(done) {
+    var viewport = page.getViewport({ scale: 1 });
     var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
       viewport,
-      background: 'rgba(255,0,0,1.0)',
+      background: "rgba(255,0,0,1.0)",
     });
-    renderTask.promise.then(function() {
-      expect(getTopLeftPixel(canvasAndCtx.context)).toEqual(
-        { r: 255, g: 0, b: 0, a: 255, });
-      CanvasFactory.destroy(canvasAndCtx);
-      done();
-    }).catch(done.fail);
+    renderTask.promise
+      .then(function() {
+        expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
+          r: 255,
+          g: 0,
+          b: 0,
+          a: 255,
+        });
+        CanvasFactory.destroy(canvasAndCtx);
+        done();
+      })
+      .catch(done.fail);
   });
 });

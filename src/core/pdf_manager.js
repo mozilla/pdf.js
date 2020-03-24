@@ -14,17 +14,20 @@
  */
 
 import {
-  createValidAbsoluteUrl, shadow, unreachable, warn
-} from '../shared/util';
-import { ChunkedStreamManager } from './chunked_stream';
-import { MissingDataException } from './core_utils';
-import { PDFDocument } from './document';
-import { Stream } from './stream';
+  createValidAbsoluteUrl,
+  shadow,
+  unreachable,
+  warn,
+} from "../shared/util.js";
+import { ChunkedStreamManager } from "./chunked_stream.js";
+import { MissingDataException } from "./core_utils.js";
+import { PDFDocument } from "./document.js";
+import { Stream } from "./stream.js";
 
 class BasePdfManager {
   constructor() {
     if (this.constructor === BasePdfManager) {
-      unreachable('Cannot initialize BasePdfManager.');
+      unreachable("Cannot initialize BasePdfManager.");
     }
   }
 
@@ -46,11 +49,11 @@ class BasePdfManager {
         warn(`Invalid absolute docBaseUrl: "${this._docBaseUrl}".`);
       }
     }
-    return shadow(this, 'docBaseUrl', docBaseUrl);
+    return shadow(this, "docBaseUrl", docBaseUrl);
   }
 
   onLoadedStream() {
-    unreachable('Abstract method `onLoadedStream` called');
+    unreachable("Abstract method `onLoadedStream` called");
   }
 
   ensureDoc(prop, args) {
@@ -78,19 +81,19 @@ class BasePdfManager {
   }
 
   async ensure(obj, prop, args) {
-    unreachable('Abstract method `ensure` called');
+    unreachable("Abstract method `ensure` called");
   }
 
   requestRange(begin, end) {
-    unreachable('Abstract method `requestRange` called');
+    unreachable("Abstract method `requestRange` called");
   }
 
   requestLoadedStream() {
-    unreachable('Abstract method `requestLoadedStream` called');
+    unreachable("Abstract method `requestLoadedStream` called");
   }
 
   sendProgressiveData(chunk) {
-    unreachable('Abstract method `sendProgressiveData` called');
+    unreachable("Abstract method `sendProgressiveData` called");
   }
 
   updatePassword(password) {
@@ -98,7 +101,7 @@ class BasePdfManager {
   }
 
   terminate(reason) {
-    unreachable('Abstract method `terminate` called');
+    unreachable("Abstract method `terminate` called");
   }
 }
 
@@ -118,7 +121,7 @@ class LocalPdfManager extends BasePdfManager {
 
   async ensure(obj, prop, args) {
     const value = obj[prop];
-    if (typeof value === 'function') {
+    if (typeof value === "function") {
       return value.apply(obj, args);
     }
     return value;
@@ -159,7 +162,7 @@ class NetworkPdfManager extends BasePdfManager {
   async ensure(obj, prop, args) {
     try {
       const value = obj[prop];
-      if (typeof value === 'function') {
+      if (typeof value === "function") {
         return value.apply(obj, args);
       }
       return value;
@@ -181,7 +184,7 @@ class NetworkPdfManager extends BasePdfManager {
   }
 
   sendProgressiveData(chunk) {
-    this.streamManager.onReceiveData({ chunk, });
+    this.streamManager.onReceiveData({ chunk });
   }
 
   onLoadedStream() {
@@ -193,7 +196,4 @@ class NetworkPdfManager extends BasePdfManager {
   }
 }
 
-export {
-  LocalPdfManager,
-  NetworkPdfManager,
-};
+export { LocalPdfManager, NetworkPdfManager };

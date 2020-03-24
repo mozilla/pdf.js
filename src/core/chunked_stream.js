@@ -15,9 +15,12 @@
 /* eslint no-var: error */
 
 import {
-  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj
-} from '../shared/util';
-import { MissingDataException } from './core_utils';
+  arrayByteLength,
+  arraysToBytes,
+  createPromiseCapability,
+  isEmptyObj,
+} from "../shared/util.js";
+import { MissingDataException } from "./core_utils.js";
 
 class ChunkedStream {
   constructor(length, chunkSize, manager) {
@@ -86,8 +89,10 @@ class ChunkedStream {
     this.bytes.set(new Uint8Array(data), position);
     position += data.byteLength;
     this.progressiveDataLength = position;
-    const endChunk = position >= this.end ? this.numChunks :
-                     Math.floor(position / this.chunkSize);
+    const endChunk =
+      position >= this.end
+        ? this.numChunks
+        : Math.floor(position / this.chunkSize);
 
     for (let curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
       if (!this.loadedChunks[curChunk]) {
@@ -194,7 +199,7 @@ class ChunkedStream {
       }
       const subarray = bytes.subarray(pos, strEnd);
       // `this.bytes` is always a `Uint8Array` here.
-      return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
+      return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
     }
 
     let end = pos + length;
@@ -208,12 +213,14 @@ class ChunkedStream {
     this.pos = end;
     const subarray = bytes.subarray(pos, end);
     // `this.bytes` is always a `Uint8Array` here.
-    return (forceClamped ? new Uint8ClampedArray(subarray) : subarray);
+    return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
   }
 
   peekByte() {
     const peekedByte = this.getByte();
-    this.pos--;
+    if (peekedByte !== -1) {
+      this.pos--;
+    }
     return peekedByte;
   }
 
@@ -285,6 +292,12 @@ class ChunkedStream {
       }
       return missingChunks;
     };
+    ChunkedStreamSubstream.prototype.allChunksLoaded = function() {
+      if (this.numChunksLoaded === this.numChunks) {
+        return true;
+      }
+      return this.getMissingChunks().length === 0;
+    };
 
     const subStream = new ChunkedStreamSubstream();
     subStream.pos = subStream.start = start;
@@ -324,16 +337,17 @@ class ChunkedStreamManager {
       rangeReader.onProgress = this.onProgress.bind(this);
     }
 
-    let chunks = [], loaded = 0;
+    let chunks = [],
+      loaded = 0;
     const promise = new Promise((resolve, reject) => {
-      const readChunk = (chunk) => {
+      const readChunk = chunk => {
         try {
           if (!chunk.done) {
             const data = chunk.value;
             chunks.push(data);
             loaded += arrayByteLength(data);
             if (rangeReader.isStreamingSupported) {
-              this.onProgress({ loaded, });
+              this.onProgress({ loaded });
             }
             rangeReader.read().then(readChunk, reject);
             return;
@@ -347,11 +361,11 @@ class ChunkedStreamManager {
       };
       rangeReader.read().then(readChunk, reject);
     });
-    promise.then((data) => {
+    promise.then(data => {
       if (this.aborted) {
         return; // Ignoring any data after abort.
       }
-      this.onReceiveData({ chunk: data, begin, });
+      this.onReceiveData({ chunk: data, begin });
     });
     // TODO check errors
   }
@@ -462,13 +476,11 @@ class ChunkedStreamManager {
       }
 
       if (prevChunk >= 0 && prevChunk + 1 !== chunk) {
-        groupedChunks.push({ beginChunk,
-                             endChunk: prevChunk + 1, });
+        groupedChunks.push({ beginChunk, endChunk: prevChunk + 1 });
         beginChunk = chunk;
       }
       if (i + 1 === chunks.length) {
-        groupedChunks.push({ beginChunk,
-                             endChunk: chunk + 1, });
+        groupedChunks.push({ beginChunk, endChunk: chunk + 1 });
       }
 
       prevChunk = chunk;
@@ -477,21 +489,23 @@ class ChunkedStreamManager {
   }
 
   onProgress(args) {
-    this.msgHandler.send('DocProgress', {
+    this.msgHandler.send("DocProgress", {
       loaded: this.stream.numChunksLoaded * this.chunkSize + args.loaded,
       total: this.length,
     });
   }
 
   onReceiveData(args) {
-    let chunk = args.chunk;
+    const chunk = args.chunk;
     const isProgressive = args.begin === undefined;
     const begin = isProgressive ? this.progressiveDataLength : args.begin;
     const end = begin + chunk.byteLength;
 
     const beginChunk = Math.floor(begin / this.chunkSize);
-    const endChunk = end < this.length ? Math.floor(end / this.chunkSize) :
-                                         Math.ceil(end / this.chunkSize);
+    const endChunk =
+      end < this.length
+        ? Math.floor(end / this.chunkSize)
+        : Math.ceil(end / this.chunkSize);
 
     if (isProgressive) {
       this.stream.onReceiveProgressiveData(chunk);
@@ -549,7 +563,7 @@ class ChunkedStreamManager {
       capability.resolve();
     }
 
-    this.msgHandler.send('DocProgress', {
+    this.msgHandler.send("DocProgress", {
       loaded: this.stream.numChunksLoaded * this.chunkSize,
       total: this.length,
     });
@@ -578,7 +592,4 @@ class ChunkedStreamManager {
   }
 }
 
-export {
-  ChunkedStream,
-  ChunkedStreamManager,
-};
+export { ChunkedStream, ChunkedStreamManager };

@@ -2,10 +2,18 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 function xmlEncode(s) {
-  var i = 0, ch;
+  var i = 0,
+    ch;
   s = String(s);
-  while (i < s.length && (ch = s[i]) !== '&' && ch !== '<' &&
-         ch !== '\"' && ch !== '\n' && ch !== '\r' && ch !== '\t') {
+  while (
+    i < s.length &&
+    (ch = s[i]) !== "&" &&
+    ch !== "<" &&
+    ch !== '"' &&
+    ch !== "\n" &&
+    ch !== "\r" &&
+    ch !== "\t"
+  ) {
     i++;
   }
   if (i >= s.length) {
@@ -15,23 +23,23 @@ function xmlEncode(s) {
   while (i < s.length) {
     ch = s[i++];
     switch (ch) {
-      case '&':
-        buf += '&amp;';
+      case "&":
+        buf += "&amp;";
         break;
-      case '<':
-        buf += '&lt;';
+      case "<":
+        buf += "&lt;";
         break;
-      case '\"':
-        buf += '&quot;';
+      case '"':
+        buf += "&quot;";
         break;
-      case '\n':
-        buf += '&#xA;';
+      case "\n":
+        buf += "&#xA;";
         break;
-      case '\r':
-        buf += '&#xD;';
+      case "\r":
+        buf += "&#xD;";
         break;
-      case '\t':
-        buf += '&#x9;';
+      case "\t":
+        buf += "&#x9;";
         break;
       default:
         buf += ch;
@@ -45,9 +53,9 @@ function DOMElement(name) {
   this.nodeName = name;
   this.childNodes = [];
   this.attributes = {};
-  this.textContent = '';
+  this.textContent = "";
 
-  if (name === 'style') {
+  if (name === "style") {
     this.sheet = {
       cssRules: [],
       insertRule: function(rule) {
@@ -74,7 +82,7 @@ DOMElement.prototype = {
     // Assuming that there is only one matching attribute for a given name,
     // across all namespaces.
     if (NS) {
-      var suffix = ':' + name;
+      var suffix = ":" + name;
       for (var fullName in this.attributes) {
         if (fullName.slice(-suffix.length) === suffix) {
           return this.attributes[fullName];
@@ -85,7 +93,7 @@ DOMElement.prototype = {
   },
 
   setAttribute: function DOMElement_setAttribute(name, value) {
-    value = value || '';
+    value = value || "";
     value = xmlEncode(value);
     this.attributes[name] = value;
   },
@@ -123,7 +131,7 @@ DOMElement.prototype = {
     while ((chunk = serializer.getNext()) !== null) {
       buf.push(chunk);
     }
-    return buf.join('');
+    return buf.join("");
   },
 
   getSerializer: function DOMElement_getSerializer() {
@@ -147,37 +155,39 @@ DOMElementSerializer.prototype = {
   getNext: function DOMElementSerializer_getNext() {
     var node = this._node;
     switch (this._state) {
-      case 0:  // Start opening tag.
+      case 0: // Start opening tag.
         ++this._state;
-        return '<' + node.nodeName;
-      case 1:  // Add SVG namespace if this is the root element.
+        return "<" + node.nodeName;
+      case 1: // Add SVG namespace if this is the root element.
         ++this._state;
-        if (node.nodeName === 'svg:svg') {
-          return ' xmlns:xlink="http://www.w3.org/1999/xlink"' +
-                 ' xmlns:svg="http://www.w3.org/2000/svg"';
+        if (node.nodeName === "svg:svg") {
+          return (
+            ' xmlns:xlink="http://www.w3.org/1999/xlink"' +
+            ' xmlns:svg="http://www.w3.org/2000/svg"'
+          );
         }
-        /* falls through */
-      case 2:  // Initialize variables for looping over attributes.
+      /* falls through */
+      case 2: // Initialize variables for looping over attributes.
         ++this._state;
         this._loopIndex = 0;
         this._attributeKeys = Object.keys(node.attributes);
-        /* falls through */
-      case 3:  // Serialize any attributes and end opening tag.
+      /* falls through */
+      case 3: // Serialize any attributes and end opening tag.
         if (this._loopIndex < this._attributeKeys.length) {
           var name = this._attributeKeys[this._loopIndex++];
-          return ' ' + name + '="' + xmlEncode(node.attributes[name]) + '"';
+          return " " + name + '="' + xmlEncode(node.attributes[name]) + '"';
         }
         ++this._state;
-        return '>';
-      case 4:  // Serialize textContent for tspan/style elements.
-        if (node.nodeName === 'svg:tspan' || node.nodeName === 'svg:style') {
+        return ">";
+      case 4: // Serialize textContent for tspan/style elements.
+        if (node.nodeName === "svg:tspan" || node.nodeName === "svg:style") {
           this._state = 6;
           return xmlEncode(node.textContent);
         }
         ++this._state;
         this._loopIndex = 0;
-        /* falls through */
-      case 5:  // Serialize child nodes (only for non-tspan/style elements).
+      /* falls through */
+      case 5: // Serialize child nodes (only for non-tspan/style elements).
         var value;
         while (true) {
           value = this._childSerializer && this._childSerializer.getNext();
@@ -193,14 +203,14 @@ DOMElementSerializer.prototype = {
             break;
           }
         }
-        /* falls through */
-      case 6:  // Ending tag.
+      /* falls through */
+      case 6: // Ending tag.
         ++this._state;
-        return '</' + node.nodeName + '>';
-      case 7:  // Done.
+        return "</" + node.nodeName + ">";
+      case 7: // Done.
         return null;
       default:
-        throw new Error('Unexpected serialization state: ' + this._state);
+        throw new Error("Unexpected serialization state: " + this._state);
     }
   },
 };
@@ -209,7 +219,7 @@ const document = {
   childNodes: [],
 
   get currentScript() {
-    return { src: '', };
+    return { src: "" };
   },
 
   get documentElement() {
@@ -222,12 +232,12 @@ const document = {
   },
 
   createElement: function(element) {
-    return this.createElementNS('', element);
+    return this.createElementNS("", element);
   },
 
   getElementsByTagName: function(element) {
-    if (element === 'head') {
-      return [this.head || (this.head = new DOMElement('head'))];
+    if (element === "head") {
+      return [this.head || (this.head = new DOMElement("head"))];
     }
     return [];
   },
@@ -256,13 +266,13 @@ var exported_symbols = Object.keys(exports);
 
 exports.setStubs = function(namespace) {
   exported_symbols.forEach(function(key) {
-    console.assert(!(key in namespace), 'property should not be set: ' + key);
+    console.assert(!(key in namespace), "property should not be set: " + key);
     namespace[key] = exports[key];
   });
 };
 exports.unsetStubs = function(namespace) {
   exported_symbols.forEach(function(key) {
-    console.assert(key in namespace, 'property should be set: ' + key);
+    console.assert(key in namespace, "property should be set: " + key);
     delete namespace[key];
   });
 };

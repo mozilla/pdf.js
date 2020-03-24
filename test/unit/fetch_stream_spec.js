@@ -14,14 +14,14 @@
  */
 /* eslint no-var: error */
 
-import { AbortException } from '../../src/shared/util';
-import { PDFFetchStream } from '../../src/display/fetch_stream';
+import { AbortException } from "../../src/shared/util.js";
+import { PDFFetchStream } from "../../src/display/fetch_stream.js";
 
-describe('fetch_stream', function() {
-  const pdfUrl = new URL('../pdfs/tracemonkey.pdf', window.location).href;
+describe("fetch_stream", function() {
+  const pdfUrl = new URL("../pdfs/tracemonkey.pdf", window.location).href;
   const pdfLength = 1016315;
 
-  it('read with streaming', function(done) {
+  it("read with streaming", function(done) {
     const stream = new PDFFetchStream({
       url: pdfUrl,
       disableStream: false,
@@ -49,15 +49,17 @@ describe('fetch_stream', function() {
     };
 
     const readPromise = Promise.all([read(), promise]);
-    readPromise.then(function() {
-      expect(len).toEqual(pdfLength);
-      expect(isStreamingSupported).toEqual(true);
-      expect(isRangeSupported).toEqual(false);
-      done();
-    }).catch(done.fail);
+    readPromise
+      .then(function() {
+        expect(len).toEqual(pdfLength);
+        expect(isStreamingSupported).toEqual(true);
+        expect(isRangeSupported).toEqual(false);
+        done();
+      })
+      .catch(done.fail);
   });
 
-  it('read ranges with streaming', function(done) {
+  it("read ranges with streaming", function(done) {
     const rangeSize = 32768;
     const stream = new PDFFetchStream({
       url: pdfUrl,
@@ -73,16 +75,19 @@ describe('fetch_stream', function() {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // We shall be able to close full reader without any issue.
-      fullReader.cancel(new AbortException('Don\'t need fullReader.'));
+      fullReader.cancel(new AbortException("Don't need fullReader."));
       fullReaderCancelled = true;
     });
 
-    const tailSize = (pdfLength % rangeSize) || rangeSize;
-    const rangeReader1 = stream.getRangeReader(pdfLength - tailSize - rangeSize,
-                                               pdfLength - tailSize);
+    const tailSize = pdfLength % rangeSize || rangeSize;
+    const rangeReader1 = stream.getRangeReader(
+      pdfLength - tailSize - rangeSize,
+      pdfLength - tailSize
+    );
     const rangeReader2 = stream.getRangeReader(pdfLength - tailSize, pdfLength);
 
-    let result1 = { value: 0, }, result2 = { value: 0, };
+    const result1 = { value: 0 },
+      result2 = { value: 0 };
     const read = function(reader, lenResult) {
       return reader.read().then(function(result) {
         if (result.done) {
@@ -94,16 +99,20 @@ describe('fetch_stream', function() {
       });
     };
 
-    const readPromise = Promise.all([read(rangeReader1, result1),
-                                     read(rangeReader2, result2),
-                                     promise]);
-    readPromise.then(function() {
-      expect(isStreamingSupported).toEqual(true);
-      expect(isRangeSupported).toEqual(true);
-      expect(fullReaderCancelled).toEqual(true);
-      expect(result1.value).toEqual(rangeSize);
-      expect(result2.value).toEqual(tailSize);
-      done();
-    }).catch(done.fail);
+    const readPromise = Promise.all([
+      read(rangeReader1, result1),
+      read(rangeReader2, result2),
+      promise,
+    ]);
+    readPromise
+      .then(function() {
+        expect(isStreamingSupported).toEqual(true);
+        expect(isRangeSupported).toEqual(true);
+        expect(fullReaderCancelled).toEqual(true);
+        expect(result1.value).toEqual(rangeSize);
+        expect(result2.value).toEqual(tailSize);
+        done();
+      })
+      .catch(done.fail);
   });
 });

@@ -18,7 +18,7 @@
  */
 /* eslint no-var: error */
 
-import { isArrayBuffer, isString } from '../shared/util';
+import { isArrayBuffer, isString } from "../shared/util.js";
 
 const SEED = 0xc3d2e1f0;
 // Workaround for missing math precision in JS.
@@ -49,35 +49,41 @@ class MurmurHash3_64 {
       data = input;
       length = data.byteLength;
     } else {
-      throw new Error('Wrong data format in MurmurHash3_64_update. ' +
-                      'Input must be a string or array.');
+      throw new Error(
+        "Wrong data format in MurmurHash3_64_update. " +
+          "Input must be a string or array."
+      );
     }
 
     const blockCounts = length >> 2;
     const tailLength = length - blockCounts * 4;
     // We don't care about endianness here.
     const dataUint32 = new Uint32Array(data.buffer, 0, blockCounts);
-    let k1 = 0, k2 = 0;
-    let h1 = this.h1, h2 = this.h2;
-    const C1 = 0xcc9e2d51, C2 = 0x1b873593;
-    const C1_LOW = C1 & MASK_LOW, C2_LOW = C2 & MASK_LOW;
+    let k1 = 0,
+      k2 = 0;
+    let h1 = this.h1,
+      h2 = this.h2;
+    const C1 = 0xcc9e2d51,
+      C2 = 0x1b873593;
+    const C1_LOW = C1 & MASK_LOW,
+      C2_LOW = C2 & MASK_LOW;
 
     for (let i = 0; i < blockCounts; i++) {
       if (i & 1) {
         k1 = dataUint32[i];
-        k1 = (k1 * C1 & MASK_HIGH) | (k1 * C1_LOW & MASK_LOW);
-        k1 = k1 << 15 | k1 >>> 17;
-        k1 = (k1 * C2 & MASK_HIGH) | (k1 * C2_LOW & MASK_LOW);
+        k1 = ((k1 * C1) & MASK_HIGH) | ((k1 * C1_LOW) & MASK_LOW);
+        k1 = (k1 << 15) | (k1 >>> 17);
+        k1 = ((k1 * C2) & MASK_HIGH) | ((k1 * C2_LOW) & MASK_LOW);
         h1 ^= k1;
-        h1 = h1 << 13 | h1 >>> 19;
+        h1 = (h1 << 13) | (h1 >>> 19);
         h1 = h1 * 5 + 0xe6546b64;
       } else {
         k2 = dataUint32[i];
-        k2 = (k2 * C1 & MASK_HIGH) | (k2 * C1_LOW & MASK_LOW);
-        k2 = k2 << 15 | k2 >>> 17;
-        k2 = (k2 * C2 & MASK_HIGH) | (k2 * C2_LOW & MASK_LOW);
+        k2 = ((k2 * C1) & MASK_HIGH) | ((k2 * C1_LOW) & MASK_LOW);
+        k2 = (k2 << 15) | (k2 >>> 17);
+        k2 = ((k2 * C2) & MASK_HIGH) | ((k2 * C2_LOW) & MASK_LOW);
         h2 ^= k2;
-        h2 = h2 << 13 | h2 >>> 19;
+        h2 = (h2 << 13) | (h2 >>> 19);
         h2 = h2 * 5 + 0xe6546b64;
       }
     }
@@ -87,17 +93,17 @@ class MurmurHash3_64 {
     switch (tailLength) {
       case 3:
         k1 ^= data[blockCounts * 4 + 2] << 16;
-        /* falls through */
+      /* falls through */
       case 2:
         k1 ^= data[blockCounts * 4 + 1] << 8;
-        /* falls through */
+      /* falls through */
       case 1:
         k1 ^= data[blockCounts * 4];
         /* falls through */
 
-        k1 = (k1 * C1 & MASK_HIGH) | (k1 * C1_LOW & MASK_LOW);
-        k1 = k1 << 15 | k1 >>> 17;
-        k1 = (k1 * C2 & MASK_HIGH) | (k1 * C2_LOW & MASK_LOW);
+        k1 = ((k1 * C1) & MASK_HIGH) | ((k1 * C1_LOW) & MASK_LOW);
+        k1 = (k1 << 15) | (k1 >>> 17);
+        k1 = ((k1 * C2) & MASK_HIGH) | ((k1 * C2_LOW) & MASK_LOW);
         if (blockCounts & 1) {
           h1 ^= k1;
         } else {
@@ -110,23 +116,25 @@ class MurmurHash3_64 {
   }
 
   hexdigest() {
-    let h1 = this.h1, h2 = this.h2;
+    let h1 = this.h1,
+      h2 = this.h2;
 
     h1 ^= h2 >>> 1;
-    h1 = (h1 * 0xed558ccd & MASK_HIGH) | (h1 * 0x8ccd & MASK_LOW);
-    h2 = (h2 * 0xff51afd7 & MASK_HIGH) |
-         (((h2 << 16 | h1 >>> 16) * 0xafd7ed55 & MASK_HIGH) >>> 16);
+    h1 = ((h1 * 0xed558ccd) & MASK_HIGH) | ((h1 * 0x8ccd) & MASK_LOW);
+    h2 =
+      ((h2 * 0xff51afd7) & MASK_HIGH) |
+      (((((h2 << 16) | (h1 >>> 16)) * 0xafd7ed55) & MASK_HIGH) >>> 16);
     h1 ^= h2 >>> 1;
-    h1 = (h1 * 0x1a85ec53 & MASK_HIGH) | (h1 * 0xec53 & MASK_LOW);
-    h2 = (h2 * 0xc4ceb9fe & MASK_HIGH) |
-         (((h2 << 16 | h1 >>> 16) * 0xb9fe1a85 & MASK_HIGH) >>> 16);
+    h1 = ((h1 * 0x1a85ec53) & MASK_HIGH) | ((h1 * 0xec53) & MASK_LOW);
+    h2 =
+      ((h2 * 0xc4ceb9fe) & MASK_HIGH) |
+      (((((h2 << 16) | (h1 >>> 16)) * 0xb9fe1a85) & MASK_HIGH) >>> 16);
     h1 ^= h2 >>> 1;
 
-    const hex1 = (h1 >>> 0).toString(16), hex2 = (h2 >>> 0).toString(16);
-    return hex1.padStart(8, '0') + hex2.padStart(8, '0');
+    const hex1 = (h1 >>> 0).toString(16),
+      hex2 = (h2 >>> 0).toString(16);
+    return hex1.padStart(8, "0") + hex2.padStart(8, "0");
   }
 }
 
-export {
-  MurmurHash3_64,
-};
+export { MurmurHash3_64 };

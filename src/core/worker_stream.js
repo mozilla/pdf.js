@@ -14,7 +14,7 @@
  */
 /* eslint no-var: error */
 
-import { assert } from '../shared/util';
+import { assert } from "../shared/util.js";
 
 /** @implements {IPDFStream} */
 class PDFWorkerStream {
@@ -58,15 +58,16 @@ class PDFWorkerStreamReader {
     this._isRangeSupported = false;
     this._isStreamingSupported = false;
 
-    const readableStream = this._msgHandler.sendWithStream('GetReader');
+    const readableStream = this._msgHandler.sendWithStream("GetReader");
     this._reader = readableStream.getReader();
 
-    this._headersReady = this._msgHandler.sendWithPromise('ReaderHeadersReady').
-        then((data) => {
-      this._isStreamingSupported = data.isStreamingSupported;
-      this._isRangeSupported = data.isRangeSupported;
-      this._contentLength = data.contentLength;
-    });
+    this._headersReady = this._msgHandler
+      .sendWithPromise("ReaderHeadersReady")
+      .then(data => {
+        this._isStreamingSupported = data.isStreamingSupported;
+        this._isRangeSupported = data.isRangeSupported;
+        this._contentLength = data.contentLength;
+      });
   }
 
   get headersReady() {
@@ -86,13 +87,13 @@ class PDFWorkerStreamReader {
   }
 
   async read() {
-    const { value, done, } = await this._reader.read();
+    const { value, done } = await this._reader.read();
     if (done) {
-      return { value: undefined, done: true, };
+      return { value: undefined, done: true };
     }
     // `value` is wrapped into Uint8Array, we need to
     // unwrap it to ArrayBuffer for further processing.
-    return { value: value.buffer, done: false, };
+    return { value: value.buffer, done: false };
   }
 
   cancel(reason) {
@@ -106,8 +107,10 @@ class PDFWorkerStreamRangeReader {
     this._msgHandler = msgHandler;
     this.onProgress = null;
 
-    const readableStream = this._msgHandler.sendWithStream('GetRangeReader',
-                                                           { begin, end, });
+    const readableStream = this._msgHandler.sendWithStream("GetRangeReader", {
+      begin,
+      end,
+    });
     this._reader = readableStream.getReader();
   }
 
@@ -116,11 +119,11 @@ class PDFWorkerStreamRangeReader {
   }
 
   async read() {
-    const { value, done, } = await this._reader.read();
+    const { value, done } = await this._reader.read();
     if (done) {
-      return { value: undefined, done: true, };
+      return { value: undefined, done: true };
     }
-    return { value: value.buffer, done: false, };
+    return { value: value.buffer, done: false };
   }
 
   cancel(reason) {
@@ -128,6 +131,4 @@ class PDFWorkerStreamRangeReader {
   }
 }
 
-export {
-  PDFWorkerStream,
-};
+export { PDFWorkerStream };

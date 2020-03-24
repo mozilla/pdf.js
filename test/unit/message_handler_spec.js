@@ -14,342 +14,414 @@
  */
 
 import {
-  AbortException, createPromiseCapability, UnknownErrorException
-} from '../../src/shared/util';
-import { LoopbackPort } from '../../src/display/api';
-import { MessageHandler } from '../../src/shared/message_handler';
+  AbortException,
+  createPromiseCapability,
+  UnknownErrorException,
+} from "../../src/shared/util.js";
+import { LoopbackPort } from "../../src/display/api.js";
+import { MessageHandler } from "../../src/shared/message_handler.js";
 
-describe('message_handler', function () {
+describe("message_handler", function() {
   // Sleep function to wait for sometime, similar to setTimeout but faster.
   function sleep(ticks) {
     return Promise.resolve().then(() => {
-      return (ticks && sleep(ticks - 1));
+      return ticks && sleep(ticks - 1);
     });
   }
 
-  describe('sendWithStream', function () {
-    it('should return a ReadableStream', function () {
-      let port = new LoopbackPort();
-      let messageHandler1 = new MessageHandler('main', 'worker', port);
-      let readable = messageHandler1.sendWithStream('fakeHandler');
+  describe("sendWithStream", function() {
+    it("should return a ReadableStream", function() {
+      const port = new LoopbackPort();
+      const messageHandler1 = new MessageHandler("main", "worker", port);
+      const readable = messageHandler1.sendWithStream("fakeHandler");
       // Check if readable is an instance of ReadableStream.
-      expect(typeof readable).toEqual('object');
-      expect(typeof readable.getReader).toEqual('function');
+      expect(typeof readable).toEqual("object");
+      expect(typeof readable.getReader).toEqual("function");
     });
 
-    it('should read using a reader', function (done) {
-      let log = '';
-      let port = new LoopbackPort();
-      let messageHandler1 = new MessageHandler('main', 'worker', port);
-      let messageHandler2 = new MessageHandler('worker', 'main', port);
-      messageHandler2.on('fakeHandler', (data, sink) => {
-        sink.onPull = function () {
-          log += 'p';
+    it("should read using a reader", function(done) {
+      let log = "";
+      const port = new LoopbackPort();
+      const messageHandler1 = new MessageHandler("main", "worker", port);
+      const messageHandler2 = new MessageHandler("worker", "main", port);
+      messageHandler2.on("fakeHandler", (data, sink) => {
+        sink.onPull = function() {
+          log += "p";
         };
-        sink.onCancel = function (reason) {
-          log += 'c';
+        sink.onCancel = function(reason) {
+          log += "c";
         };
-        sink.ready.then(() => {
-          sink.enqueue('hi');
-          return sink.ready;
-        }).then(() => {
-          sink.close();
-        });
+        sink.ready
+          .then(() => {
+            sink.enqueue("hi");
+            return sink.ready;
+          })
+          .then(() => {
+            sink.close();
+          });
         return sleep(5);
       });
-      let readable = messageHandler1.sendWithStream('fakeHandler', {}, {
-        highWaterMark: 1,
-        size() {
-          return 1;
-        },
-      });
-      let reader = readable.getReader();
-      sleep(10).then(() => {
-        expect(log).toEqual('');
-        return reader.read();
-      }).then((result) => {
-        expect(log).toEqual('p');
-        expect(result.value).toEqual('hi');
-        expect(result.done).toEqual(false);
-        return sleep(10);
-      }).then(() => {
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual(undefined);
-        expect(result.done).toEqual(true);
-        done();
-      });
+      const readable = messageHandler1.sendWithStream(
+        "fakeHandler",
+        {},
+        {
+          highWaterMark: 1,
+          size() {
+            return 1;
+          },
+        }
+      );
+      const reader = readable.getReader();
+      sleep(10)
+        .then(() => {
+          expect(log).toEqual("");
+          return reader.read();
+        })
+        .then(result => {
+          expect(log).toEqual("p");
+          expect(result.value).toEqual("hi");
+          expect(result.done).toEqual(false);
+          return sleep(10);
+        })
+        .then(() => {
+          return reader.read();
+        })
+        .then(result => {
+          expect(result.value).toEqual(undefined);
+          expect(result.done).toEqual(true);
+          done();
+        });
     });
 
-    it('should not read any data when cancelled', function (done) {
-      let log = '';
-      let port = new LoopbackPort();
-      let messageHandler2 = new MessageHandler('worker', 'main', port);
-      messageHandler2.on('fakeHandler', (data, sink) => {
-        sink.onPull = function () {
-          log += 'p';
+    it("should not read any data when cancelled", function(done) {
+      let log = "";
+      const port = new LoopbackPort();
+      const messageHandler2 = new MessageHandler("worker", "main", port);
+      messageHandler2.on("fakeHandler", (data, sink) => {
+        sink.onPull = function() {
+          log += "p";
         };
-        sink.onCancel = function (reason) {
-          log += 'c';
+        sink.onCancel = function(reason) {
+          log += "c";
         };
-        log += '0';
-        sink.ready.then(() => {
-          log += '1';
-          sink.enqueue([1, 2, 3, 4], 4);
-          return sink.ready;
-        }).then(() => {
-          log += '2';
-          sink.enqueue([5, 6, 7, 8], 4);
-          return sink.ready;
-        }).then(() => {
-          log += '3';
-          sink.close();
-        }, () => {
-          log += '4';
-        });
+        log += "0";
+        sink.ready
+          .then(() => {
+            log += "1";
+            sink.enqueue([1, 2, 3, 4], 4);
+            return sink.ready;
+          })
+          .then(() => {
+            log += "2";
+            sink.enqueue([5, 6, 7, 8], 4);
+            return sink.ready;
+          })
+          .then(
+            () => {
+              log += "3";
+              sink.close();
+            },
+            () => {
+              log += "4";
+            }
+          );
       });
-      let messageHandler1 = new MessageHandler('main', 'worker', port);
-      let readable = messageHandler1.sendWithStream('fakeHandler', {}, {
-        highWaterMark: 4,
-        size(arr) {
-          return arr.length;
-        },
-      });
+      const messageHandler1 = new MessageHandler("main", "worker", port);
+      const readable = messageHandler1.sendWithStream(
+        "fakeHandler",
+        {},
+        {
+          highWaterMark: 4,
+          size(arr) {
+            return arr.length;
+          },
+        }
+      );
 
-      let reader = readable.getReader();
-      sleep(10).then(() => {
-        expect(log).toEqual('01');
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual([1, 2, 3, 4]);
-        expect(result.done).toEqual(false);
-        return sleep(10);
-      }).then(() => {
-        expect(log).toEqual('01p2');
-        return reader.cancel(new AbortException('reader cancelled.'));
-      }).then(() => {
-        expect(log).toEqual('01p2c4');
-        done();
-      });
+      const reader = readable.getReader();
+      sleep(10)
+        .then(() => {
+          expect(log).toEqual("01");
+          return reader.read();
+        })
+        .then(result => {
+          expect(result.value).toEqual([1, 2, 3, 4]);
+          expect(result.done).toEqual(false);
+          return sleep(10);
+        })
+        .then(() => {
+          expect(log).toEqual("01p2");
+          return reader.cancel(new AbortException("reader cancelled."));
+        })
+        .then(() => {
+          expect(log).toEqual("01p2c4");
+          done();
+        });
     });
 
-    it('should not read when errored', function(done) {
-      let log = '';
-      let port = new LoopbackPort();
-      let messageHandler2 = new MessageHandler('worker', 'main', port);
-      messageHandler2.on('fakeHandler', (data, sink) => {
-        sink.onPull = function () {
-          log += 'p';
+    it("should not read when errored", function(done) {
+      let log = "";
+      const port = new LoopbackPort();
+      const messageHandler2 = new MessageHandler("worker", "main", port);
+      messageHandler2.on("fakeHandler", (data, sink) => {
+        sink.onPull = function() {
+          log += "p";
         };
-        sink.onCancel = function (reason) {
-          log += 'c';
+        sink.onCancel = function(reason) {
+          log += "c";
         };
-        log += '0';
-        sink.ready.then(() => {
-          log += '1';
-          sink.enqueue([1, 2, 3, 4], 4);
-          return sink.ready;
-        }).then(() => {
-          log += 'e';
-          sink.error(new Error('should not read when errored'));
+        log += "0";
+        sink.ready
+          .then(() => {
+            log += "1";
+            sink.enqueue([1, 2, 3, 4], 4);
+            return sink.ready;
+          })
+          .then(() => {
+            log += "e";
+            sink.error(new Error("should not read when errored"));
+          });
+      });
+      const messageHandler1 = new MessageHandler("main", "worker", port);
+      const readable = messageHandler1.sendWithStream(
+        "fakeHandler",
+        {},
+        {
+          highWaterMark: 4,
+          size(arr) {
+            return arr.length;
+          },
+        }
+      );
+
+      const reader = readable.getReader();
+
+      sleep(10)
+        .then(() => {
+          expect(log).toEqual("01");
+          return reader.read();
+        })
+        .then(result => {
+          expect(result.value).toEqual([1, 2, 3, 4]);
+          expect(result.done).toEqual(false);
+          return reader.read();
+        })
+        .catch(reason => {
+          expect(log).toEqual("01pe");
+          expect(reason instanceof UnknownErrorException).toEqual(true);
+          expect(reason.message).toEqual("should not read when errored");
+          done();
         });
-      });
-      let messageHandler1 = new MessageHandler('main', 'worker', port);
-      let readable = messageHandler1.sendWithStream('fakeHandler', {}, {
-        highWaterMark: 4,
-        size(arr) {
-          return arr.length;
-        },
-      });
-
-      let reader = readable.getReader();
-
-      sleep(10).then(() => {
-        expect(log).toEqual('01');
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual([1, 2, 3, 4]);
-        expect(result.done).toEqual(false);
-        return reader.read();
-      }).catch((reason) => {
-        expect(log).toEqual('01pe');
-        expect(reason instanceof UnknownErrorException).toEqual(true);
-        expect(reason.message).toEqual('should not read when errored');
-        done();
-      });
     });
 
-    it('should read data with blocking promise', function (done) {
-      let log = '';
-      let port = new LoopbackPort();
-      let messageHandler2 = new MessageHandler('worker', 'main', port);
-      messageHandler2.on('fakeHandler', (data, sink) => {
-        sink.onPull = function () {
-          log += 'p';
+    it("should read data with blocking promise", function(done) {
+      let log = "";
+      const port = new LoopbackPort();
+      const messageHandler2 = new MessageHandler("worker", "main", port);
+      messageHandler2.on("fakeHandler", (data, sink) => {
+        sink.onPull = function() {
+          log += "p";
         };
-        sink.onCancel = function (reason) {
-          log += 'c';
+        sink.onCancel = function(reason) {
+          log += "c";
         };
-        log += '0';
-        sink.ready.then(() => {
-          log += '1';
-          sink.enqueue([1, 2, 3, 4], 4);
-          return sink.ready;
-        }).then(() => {
-          log += '2';
-          sink.enqueue([5, 6, 7, 8], 4);
-          return sink.ready;
-        }).then(() => {
-          sink.close();
-        });
+        log += "0";
+        sink.ready
+          .then(() => {
+            log += "1";
+            sink.enqueue([1, 2, 3, 4], 4);
+            return sink.ready;
+          })
+          .then(() => {
+            log += "2";
+            sink.enqueue([5, 6, 7, 8], 4);
+            return sink.ready;
+          })
+          .then(() => {
+            sink.close();
+          });
       });
 
-      let messageHandler1 = new MessageHandler('main', 'worker', port);
-      let readable = messageHandler1.sendWithStream('fakeHandler', {}, {
-        highWaterMark: 4,
-        size(arr) {
-          return arr.length;
-        },
-      });
+      const messageHandler1 = new MessageHandler("main", "worker", port);
+      const readable = messageHandler1.sendWithStream(
+        "fakeHandler",
+        {},
+        {
+          highWaterMark: 4,
+          size(arr) {
+            return arr.length;
+          },
+        }
+      );
 
-      let reader = readable.getReader();
+      const reader = readable.getReader();
       // Sleep for 10ms, so that read() is not unblocking the ready promise.
       // Chain all read() to stream in sequence.
-      sleep(10).then(() => {
-        expect(log).toEqual('01');
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual([1, 2, 3, 4]);
-        expect(result.done).toEqual(false);
-        return sleep(10);
-      }).then(() => {
-        expect(log).toEqual('01p2');
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual([5, 6, 7, 8]);
-        expect(result.done).toEqual(false);
-        return sleep(10);
-      }).then(() => {
-        expect(log).toEqual('01p2p');
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual(undefined);
-        expect(result.done).toEqual(true);
-        done();
-      });
-    });
-
-    it('should read data with blocking promise and buffer whole data' +
-       ' into stream', function (done) {
-      let log = '';
-      let port = new LoopbackPort();
-      let messageHandler2 = new MessageHandler('worker', 'main', port);
-      messageHandler2.on('fakeHandler', (data, sink) => {
-        sink.onPull = function () {
-          log += 'p';
-        };
-        sink.onCancel = function (reason) {
-          log += 'c';
-        };
-        log += '0';
-        sink.ready.then(() => {
-          log += '1';
-          sink.enqueue([1, 2, 3, 4], 4);
-          return sink.ready;
-        }).then(() => {
-          log += '2';
-          sink.enqueue([5, 6, 7, 8], 4);
-          return sink.ready;
-        }).then(() => {
-          sink.close();
-        });
-        return sleep(10);
-      });
-
-      let messageHandler1 = new MessageHandler('main', 'worker', port);
-      let readable = messageHandler1.sendWithStream('fakeHandler', {}, {
-        highWaterMark: 8,
-        size(arr) {
-          return arr.length;
-        },
-      });
-
-      let reader = readable.getReader();
-
-      sleep(10).then(() => {
-        expect(log).toEqual('012');
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual([1, 2, 3, 4]);
-        expect(result.done).toEqual(false);
-        return sleep(10);
-      }).then(() => {
-        expect(log).toEqual('012p');
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual([5, 6, 7, 8]);
-        expect(result.done).toEqual(false);
-        return sleep(10);
-      }).then(() => {
-        expect(log).toEqual('012p');
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual(undefined);
-        expect(result.done).toEqual(true);
-        done();
-      });
-    });
-
-    it('should ignore any pull after close is called', function (done) {
-      let log = '';
-      let port = new LoopbackPort();
-      let capability = createPromiseCapability();
-      let messageHandler2 = new MessageHandler('worker', 'main', port);
-      messageHandler2.on('fakeHandler', (data, sink) => {
-        sink.onPull = function () {
-          log += 'p';
-        };
-        sink.onCancel = function (reason) {
-          log += 'c';
-        };
-        log += '0';
-        sink.ready.then(() => {
-          log += '1';
-          sink.enqueue([1, 2, 3, 4], 4);
-        });
-        return capability.promise.then(() => {
-          sink.close();
-        });
-      });
-
-      let messageHandler1 = new MessageHandler('main', 'worker', port);
-      let readable = messageHandler1.sendWithStream('fakeHandler', {}, {
-        highWaterMark: 10,
-        size(arr) {
-          return arr.length;
-        },
-      });
-
-      let reader = readable.getReader();
-
-      sleep(10).then(() => {
-        expect(log).toEqual('01');
-        capability.resolve();
-        return capability.promise.then(() => {
+      sleep(10)
+        .then(() => {
+          expect(log).toEqual("01");
           return reader.read();
+        })
+        .then(result => {
+          expect(result.value).toEqual([1, 2, 3, 4]);
+          expect(result.done).toEqual(false);
+          return sleep(10);
+        })
+        .then(() => {
+          expect(log).toEqual("01p2");
+          return reader.read();
+        })
+        .then(result => {
+          expect(result.value).toEqual([5, 6, 7, 8]);
+          expect(result.done).toEqual(false);
+          return sleep(10);
+        })
+        .then(() => {
+          expect(log).toEqual("01p2p");
+          return reader.read();
+        })
+        .then(result => {
+          expect(result.value).toEqual(undefined);
+          expect(result.done).toEqual(true);
+          done();
         });
-      }).then((result) => {
-        expect(result.value).toEqual([1, 2, 3, 4]);
-        expect(result.done).toEqual(false);
-        return sleep(10);
-      }).then(() => {
-        expect(log).toEqual('01');
-        return reader.read();
-      }).then((result) => {
-        expect(result.value).toEqual(undefined);
-        expect(result.done).toEqual(true);
-        done();
+    });
+
+    it(
+      "should read data with blocking promise and buffer whole data" +
+        " into stream",
+      function(done) {
+        let log = "";
+        const port = new LoopbackPort();
+        const messageHandler2 = new MessageHandler("worker", "main", port);
+        messageHandler2.on("fakeHandler", (data, sink) => {
+          sink.onPull = function() {
+            log += "p";
+          };
+          sink.onCancel = function(reason) {
+            log += "c";
+          };
+          log += "0";
+          sink.ready
+            .then(() => {
+              log += "1";
+              sink.enqueue([1, 2, 3, 4], 4);
+              return sink.ready;
+            })
+            .then(() => {
+              log += "2";
+              sink.enqueue([5, 6, 7, 8], 4);
+              return sink.ready;
+            })
+            .then(() => {
+              sink.close();
+            });
+          return sleep(10);
+        });
+
+        const messageHandler1 = new MessageHandler("main", "worker", port);
+        const readable = messageHandler1.sendWithStream(
+          "fakeHandler",
+          {},
+          {
+            highWaterMark: 8,
+            size(arr) {
+              return arr.length;
+            },
+          }
+        );
+
+        const reader = readable.getReader();
+
+        sleep(10)
+          .then(() => {
+            expect(log).toEqual("012");
+            return reader.read();
+          })
+          .then(result => {
+            expect(result.value).toEqual([1, 2, 3, 4]);
+            expect(result.done).toEqual(false);
+            return sleep(10);
+          })
+          .then(() => {
+            expect(log).toEqual("012p");
+            return reader.read();
+          })
+          .then(result => {
+            expect(result.value).toEqual([5, 6, 7, 8]);
+            expect(result.done).toEqual(false);
+            return sleep(10);
+          })
+          .then(() => {
+            expect(log).toEqual("012p");
+            return reader.read();
+          })
+          .then(result => {
+            expect(result.value).toEqual(undefined);
+            expect(result.done).toEqual(true);
+            done();
+          });
+      }
+    );
+
+    it("should ignore any pull after close is called", function(done) {
+      let log = "";
+      const port = new LoopbackPort();
+      const capability = createPromiseCapability();
+      const messageHandler2 = new MessageHandler("worker", "main", port);
+      messageHandler2.on("fakeHandler", (data, sink) => {
+        sink.onPull = function() {
+          log += "p";
+        };
+        sink.onCancel = function(reason) {
+          log += "c";
+        };
+        log += "0";
+        sink.ready.then(() => {
+          log += "1";
+          sink.enqueue([1, 2, 3, 4], 4);
+        });
+        return capability.promise.then(() => {
+          sink.close();
+        });
       });
+
+      const messageHandler1 = new MessageHandler("main", "worker", port);
+      const readable = messageHandler1.sendWithStream(
+        "fakeHandler",
+        {},
+        {
+          highWaterMark: 10,
+          size(arr) {
+            return arr.length;
+          },
+        }
+      );
+
+      const reader = readable.getReader();
+
+      sleep(10)
+        .then(() => {
+          expect(log).toEqual("01");
+          capability.resolve();
+          return capability.promise.then(() => {
+            return reader.read();
+          });
+        })
+        .then(result => {
+          expect(result.value).toEqual([1, 2, 3, 4]);
+          expect(result.done).toEqual(false);
+          return sleep(10);
+        })
+        .then(() => {
+          expect(log).toEqual("01");
+          return reader.read();
+        })
+        .then(result => {
+          expect(result.value).toEqual(undefined);
+          expect(result.done).toEqual(true);
+          done();
+        });
     });
   });
 });
