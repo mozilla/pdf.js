@@ -629,7 +629,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         pdfFunctionFactory: this.pdfFunctionFactory,
       })
         .then(imageObj => {
-          var imgData = imageObj.createImageData(/* forceRGBA = */ false);
+          imgData = imageObj.createImageData(/* forceRGBA = */ false);
 
           if (this.parsingType3Font) {
             return this.handler.sendWithPromise(
@@ -2479,16 +2479,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       properties.hasEncoding = !!baseEncodingName || differences.length > 0;
       properties.dict = dict;
       return toUnicodePromise
-        .then(toUnicode => {
-          properties.toUnicode = toUnicode;
+        .then(readToUnicode => {
+          properties.toUnicode = readToUnicode;
           return this.buildToUnicode(properties);
         })
-        .then(toUnicode => {
-          properties.toUnicode = toUnicode;
+        .then(builtToUnicode => {
+          properties.toUnicode = builtToUnicode;
           if (cidToGidBytes) {
             properties.cidToGidMap = this.readCidToGidMap(
               cidToGidBytes,
-              toUnicode
+              builtToUnicode
             );
           }
           return properties;
@@ -3092,21 +3092,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           };
           const widths = dict.get("Widths");
           return this.extractDataStructures(dict, dict, properties).then(
-            properties => {
+            newProperties => {
               if (widths) {
                 const glyphWidths = [];
                 let j = firstChar;
                 for (let i = 0, ii = widths.length; i < ii; i++) {
                   glyphWidths[j++] = this.xref.fetchIfRef(widths[i]);
                 }
-                properties.widths = glyphWidths;
+                newProperties.widths = glyphWidths;
               } else {
-                properties.widths = this.buildCharCodeToWidth(
+                newProperties.widths = this.buildCharCodeToWidth(
                   metrics.widths,
-                  properties
+                  newProperties
                 );
               }
-              return new Font(baseFontName, null, properties);
+              return new Font(baseFontName, null, newProperties);
             }
           );
         }
@@ -3212,13 +3212,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         .then(() => {
           return this.extractDataStructures(dict, baseDict, properties);
         })
-        .then(properties => {
-          this.extractWidths(dict, descriptor, properties);
+        .then(newProperties => {
+          this.extractWidths(dict, descriptor, newProperties);
 
           if (type === "Type3") {
-            properties.isType3Font = true;
+            newProperties.isType3Font = true;
           }
-          return new Font(fontName.name, fontFile, properties);
+          return new Font(fontName.name, fontFile, newProperties);
         });
     },
   };
@@ -3352,8 +3352,8 @@ var TranslatedFont = (function TranslatedFontClosure() {
             })
             .catch(function(reason) {
               warn(`Type3 font resource "${key}" is not available.`);
-              var operatorList = new OperatorList();
-              charProcOperatorList[key] = operatorList.getIR();
+              const dummyOperatorList = new OperatorList();
+              charProcOperatorList[key] = dummyOperatorList.getIR();
             });
         });
       }
