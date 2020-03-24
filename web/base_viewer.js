@@ -397,6 +397,27 @@ class BaseViewer {
   }
 
   /**
+   * @private
+   */
+  _onePageRenderedOrForceFetch() {
+    // Unless the viewer *and* its pages are visible, rendering won't start and
+    // `this._onePageRenderedCapability` thus won't be resolved.
+    // To ensure that automatic printing, on document load, still works even in
+    // those cases we force-allow fetching of all pages when:
+    //  - The viewer is hidden in the DOM, e.g. in a `display: none` <iframe>
+    //    element; fixes bug 1618621.
+    //  - The viewer is visible, but none of the pages are (e.g. if the
+    //    viewer is very small); fixes bug 1618955.
+    if (
+      !this.container.offsetParent ||
+      this._getVisiblePages().views.length === 0
+    ) {
+      return Promise.resolve();
+    }
+    return this._onePageRenderedCapability.promise;
+  }
+
+  /**
    * @param pdfDocument {PDFDocument}
    */
   setDocument(pdfDocument) {
@@ -492,7 +513,7 @@ class BaseViewer {
         // Fetch all the pages since the viewport is needed before printing
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
-        this._onePageRenderedCapability.promise.then(() => {
+        this._onePageRenderedOrForceFetch().then(() => {
           if (this.findController) {
             this.findController.setDocument(pdfDocument); // Enable searching.
           }
