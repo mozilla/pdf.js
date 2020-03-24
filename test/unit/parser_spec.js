@@ -159,11 +159,11 @@ describe("parser", function() {
 
         const numbers = ["..", "-.", "+.", "-\r\n.", "+\r\n."];
         for (const number of numbers) {
-          const input = new StringStream(number);
-          const lexer = new Lexer(input);
+          const invalidInput = new StringStream(number);
+          const invalidLexer = new Lexer(invalidInput);
 
           expect(function() {
-            return lexer.getNumber();
+            return invalidLexer.getNumber();
           }).toThrowError(FormatError, /^Invalid number:\s/);
         }
       });
