@@ -182,19 +182,19 @@ var WorkerMessageHandler = {
 
     function getPdfManager(data, evaluatorOptions) {
       var pdfManagerCapability = createPromiseCapability();
-      var pdfManager;
+      let newPdfManager;
 
       var source = data.source;
       if (source.data) {
         try {
-          pdfManager = new LocalPdfManager(
+          newPdfManager = new LocalPdfManager(
             docId,
             source.data,
             source.password,
             evaluatorOptions,
             docBaseUrl
           );
-          pdfManagerCapability.resolve(pdfManager);
+          pdfManagerCapability.resolve(newPdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
         }
@@ -220,7 +220,7 @@ var WorkerMessageHandler = {
           // We don't need auto-fetch when streaming is enabled.
           var disableAutoFetch =
             source.disableAutoFetch || fullRequest.isStreamingSupported;
-          pdfManager = new NetworkPdfManager(
+          newPdfManager = new NetworkPdfManager(
             docId,
             pdfStream,
             {
@@ -233,16 +233,15 @@ var WorkerMessageHandler = {
             evaluatorOptions,
             docBaseUrl
           );
-          // There may be a chance that `pdfManager` is not initialized
-          // for first few runs of `readchunk` block of code. Be sure
-          // to send all cached chunks, if any, to chunked_stream via
-          // pdf_manager.
+          // There may be a chance that `newPdfManager` is not initialized for
+          // the first few runs of `readchunk` block of code. Be sure to send
+          // all cached chunks, if any, to chunked_stream via pdf_manager.
           for (let i = 0; i < cachedChunks.length; i++) {
-            pdfManager.sendProgressiveData(cachedChunks[i]);
+            newPdfManager.sendProgressiveData(cachedChunks[i]);
           }
 
           cachedChunks = [];
-          pdfManagerCapability.resolve(pdfManager);
+          pdfManagerCapability.resolve(newPdfManager);
           cancelXHRs = null;
         })
         .catch(function(reason) {
@@ -258,33 +257,32 @@ var WorkerMessageHandler = {
         }
         // the data is array, instantiating directly from it
         try {
-          pdfManager = new LocalPdfManager(
+          newPdfManager = new LocalPdfManager(
             docId,
             pdfFile,
             source.password,
             evaluatorOptions,
             docBaseUrl
           );
-          pdfManagerCapability.resolve(pdfManager);
+          pdfManagerCapability.resolve(newPdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
         }
         cachedChunks = [];
       };
       var readPromise = new Promise(function(resolve, reject) {
-        var readChunk = function(chunk) {
+        var readChunk = function({ value, done }) {
           try {
             ensureNotTerminated();
-            if (chunk.done) {
-              if (!pdfManager) {
+            if (done) {
+              if (!newPdfManager) {
                 flushChunks();
               }
               cancelXHRs = null;
               return;
             }
 
-            var data = chunk.value;
-            loaded += arrayByteLength(data);
+            loaded += arrayByteLength(value);
             if (!fullRequest.isStreamingSupported) {
               handler.send("DocProgress", {
                 loaded,
@@ -292,10 +290,10 @@ var WorkerMessageHandler = {
               });
             }
 
-            if (pdfManager) {
-              pdfManager.sendProgressiveData(data);
+            if (newPdfManager) {
+              newPdfManager.sendProgressiveData(value);
             } else {
-              cachedChunks.push(data);
+              cachedChunks.push(value);
             }
 
             fullRequest.read().then(readChunk, reject);
@@ -332,9 +330,9 @@ var WorkerMessageHandler = {
 
           handler
             .sendWithPromise("PasswordRequest", ex)
-            .then(function(data) {
+            .then(function({ password }) {
               finishWorkerTask(task);
-              pdfManager.updatePassword(data.password);
+              pdfManager.updatePassword(password);
               pdfManagerReady();
             })
             .catch(function() {
