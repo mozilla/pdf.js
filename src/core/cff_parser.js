@@ -803,7 +803,7 @@ var CFFParser = (function CFFParserClosure() {
       var bytes = this.bytes;
       var start = pos;
       var format = bytes[pos++];
-      var charset = [".notdef"];
+      const charset = [cid ? 0 : ".notdef"];
       var id, count, i;
 
       // subtract 1 for the .notdef glyph
