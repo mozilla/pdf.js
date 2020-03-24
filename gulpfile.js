@@ -64,8 +64,8 @@ var COMMON_WEB_FILES = [
 ];
 var MOZCENTRAL_DIFF_FILE = 'mozcentral.diff';
 
-var REPO = 'git@github.com:mozilla/pdf.js.git';
-var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
+var REPO = 'git@github.com:macroplant/pdf.js.git';
+var DIST_REPO_URL = 'https://github.com/macroplant/pdfjs-dist';
 
 var builder = require('./external/builder/builder.js');
 

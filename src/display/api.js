@@ -877,6 +877,8 @@ class PDFDocumentProxy {
  * @property {boolean} renderInteractiveForms - (optional) Whether or not
  *                     interactive form elements are rendered in the display
  *                     layer. If so, we do not render them on canvas as well.
+ * @property {Array} annotationsNotRendered - (optional) annotations not
+ *                    rendered during page rendering.
  * @property {Array}  transform - (optional) Additional transform, applied
  *                    just before viewport transform.
  * @property {Object} imageLayer - (optional) An object that has beginLayout,
@@ -1000,7 +1002,7 @@ class PDFPageProxy {
    */
   render({ canvasContext, viewport, intent = 'display', enableWebGL = false,
            renderInteractiveForms = false, transform = null, imageLayer = null,
-           canvasFactory = null, background = null, }) {
+           canvasFactory = null, background = null, annotationsNotRendered = [], }) {
     const stats = this._stats;
     stats.time('Overall');
 
@@ -1040,6 +1042,7 @@ class PDFPageProxy {
         pageIndex: this.pageNumber - 1,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
+        annotationsNotRendered: annotationsNotRendered,
       });
     }
 
@@ -1318,7 +1321,7 @@ class PDFPageProxy {
   _pumpOperatorList(args) {
     assert(args.intent,
            'PDFPageProxy._pumpOperatorList: Expected "intent" argument.');
-
+    console.log("_pumpOperatorList args", args)
     const readableStream =
       this._transport.messageHandler.sendWithStream('GetOperatorList', args);
     const reader = readableStream.getReader();
