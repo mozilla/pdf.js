@@ -391,9 +391,9 @@ class BaseViewer {
   /**
    * @private
    */
-  get _setDocumentViewerElement() {
+  get _viewerElement() {
     // In most viewers, e.g. `PDFViewer`, this should return `this.viewer`.
-    throw new Error("Not implemented: _setDocumentViewerElement");
+    throw new Error("Not implemented: _viewerElement");
   }
 
   /**
@@ -479,7 +479,7 @@ class BaseViewer {
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
-            container: this._setDocumentViewerElement,
+            container: this._viewerElement,
             eventBus: this.eventBus,
             id: pageNum,
             scale,

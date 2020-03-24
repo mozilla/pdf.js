@@ -17,8 +17,8 @@ import { BaseViewer } from "./base_viewer.js";
 import { shadow } from "pdfjs-lib";
 
 class PDFViewer extends BaseViewer {
-  get _setDocumentViewerElement() {
-    return shadow(this, "_setDocumentViewerElement", this.viewer);
+  get _viewerElement() {
+    return shadow(this, "_viewerElement", this.viewer);
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null }) {
