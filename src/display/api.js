@@ -1321,7 +1321,7 @@ class PDFPageProxy {
   _pumpOperatorList(args) {
     assert(args.intent,
            'PDFPageProxy._pumpOperatorList: Expected "intent" argument.');
-    console.log("_pumpOperatorList args", args)
+
     const readableStream =
       this._transport.messageHandler.sendWithStream('GetOperatorList', args);
     const reader = readableStream.getReader();

@@ -42,7 +42,6 @@ function isAnnotationRenderable(annotation, intent) {
 }
 
 function isAnnotationNotRendered(annotation, annotationsNotRendered) {
-  console.log("isAnnotationNotRendered annotationsNotRendered", annotationsNotRendered)
   if (!annotation
     || !annotation.data
     || !annotation.data.annotationType
@@ -53,7 +52,6 @@ function isAnnotationNotRendered(annotation, annotationsNotRendered) {
   let data = annotation.data;
   return annotationsNotRendered.some((itm) => {
     if (typeof itm === 'object') {
-      console.log("isAnnotationRemoved object", itm, data);
       if (Object.keys(itm).length == 0) {return false;}
       let remove = true;
       for (const k in itm) {
@@ -67,7 +65,6 @@ function isAnnotationNotRendered(annotation, annotationsNotRendered) {
           remove = (data[k] === itm[k]);
         }
       }
-      console.log("isAnnotationRemoved object remove", remove);
       return remove;
     } else if (typeof itm === 'number') {
       return itm === data.annotationType;
@@ -240,7 +237,7 @@ class Page {
       'XObject',
       'Font',
     ]);
-    console.log("isAnnotationNotRendered annotationsNotRendered", annotationsNotRendered);
+
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
