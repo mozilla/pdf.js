@@ -479,29 +479,30 @@ describe("api", function() {
     });
   });
   describe("PDFDocument", function() {
-    var loadingTask;
-    var doc;
+    let pdfLoadingTask, pdfDocument;
 
     beforeAll(function(done) {
-      loadingTask = getDocument(basicApiGetDocumentParams);
-      loadingTask.promise.then(function(data) {
-        doc = data;
+      pdfLoadingTask = getDocument(basicApiGetDocumentParams);
+      pdfLoadingTask.promise.then(function(data) {
+        pdfDocument = data;
         done();
       });
     });
 
     afterAll(function(done) {
-      loadingTask.destroy().then(done);
+      pdfLoadingTask.destroy().then(done);
     });
 
     it("gets number of pages", function() {
-      expect(doc.numPages).toEqual(3);
+      expect(pdfDocument.numPages).toEqual(3);
     });
     it("gets fingerprint", function() {
-      expect(doc.fingerprint).toEqual("ea8b35919d6279a369e835bde778611b");
+      expect(pdfDocument.fingerprint).toEqual(
+        "ea8b35919d6279a369e835bde778611b"
+      );
     });
     it("gets page", function(done) {
-      var promise = doc.getPage(1);
+      var promise = pdfDocument.getPage(1);
       promise
         .then(function(data) {
           expect(data instanceof PDFPageProxy).toEqual(true);
@@ -511,9 +512,9 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets non-existent page", function(done) {
-      var outOfRangePromise = doc.getPage(100);
-      var nonIntegerPromise = doc.getPage(2.5);
-      var nonNumberPromise = doc.getPage("1");
+      var outOfRangePromise = pdfDocument.getPage(100);
+      var nonIntegerPromise = pdfDocument.getPage(2.5);
+      var nonNumberPromise = pdfDocument.getPage("1");
 
       outOfRangePromise = outOfRangePromise.then(
         function() {
@@ -586,7 +587,7 @@ describe("api", function() {
     it("gets page index", function(done) {
       // reference to second page
       var ref = { num: 17, gen: 0 };
-      var promise = doc.getPageIndex(ref);
+      var promise = pdfDocument.getPageIndex(ref);
       promise
         .then(function(pageIndex) {
           expect(pageIndex).toEqual(1);
@@ -596,7 +597,7 @@ describe("api", function() {
     });
     it("gets invalid page index", function(done) {
       var ref = { num: 3, gen: 0 }; // Reference to a font dictionary.
-      var promise = doc.getPageIndex(ref);
+      var promise = pdfDocument.getPageIndex(ref);
       promise
         .then(function() {
           done.fail("shall fail for invalid page reference.");
@@ -608,7 +609,7 @@ describe("api", function() {
     });
 
     it("gets destinations, from /Dests dictionary", function(done) {
-      var promise = doc.getDestinations();
+      var promise = pdfDocument.getDestinations();
       promise
         .then(function(data) {
           expect(data).toEqual({
@@ -619,7 +620,7 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets a destination, from /Dests dictionary", function(done) {
-      var promise = doc.getDestination("chapter1");
+      var promise = pdfDocument.getDestination("chapter1");
       promise
         .then(function(data) {
           expect(data).toEqual([
@@ -634,7 +635,9 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets a non-existent destination, from /Dests dictionary", function(done) {
-      var promise = doc.getDestination("non-existent-named-destination");
+      var promise = pdfDocument.getDestination(
+        "non-existent-named-destination"
+      );
       promise
         .then(function(data) {
           expect(data).toEqual(null);
@@ -645,8 +648,8 @@ describe("api", function() {
 
     it("gets destinations, from /Names (NameTree) dictionary", function(done) {
       var loadingTask = getDocument(buildGetDocumentParams("issue6204.pdf"));
-      var promise = loadingTask.promise.then(function(pdfDocument) {
-        return pdfDocument.getDestinations();
+      var promise = loadingTask.promise.then(function(pdfDoc) {
+        return pdfDoc.getDestinations();
       });
       promise
         .then(function(destinations) {
@@ -661,8 +664,8 @@ describe("api", function() {
     });
     it("gets a destination, from /Names (NameTree) dictionary", function(done) {
       var loadingTask = getDocument(buildGetDocumentParams("issue6204.pdf"));
-      var promise = loadingTask.promise.then(function(pdfDocument) {
-        return pdfDocument.getDestination("Page.1");
+      var promise = loadingTask.promise.then(function(pdfDoc) {
+        return pdfDoc.getDestination("Page.1");
       });
       promise
         .then(function(destination) {
@@ -680,8 +683,8 @@ describe("api", function() {
     });
     it("gets a non-existent destination, from /Names (NameTree) dictionary", function(done) {
       var loadingTask = getDocument(buildGetDocumentParams("issue6204.pdf"));
-      var promise = loadingTask.promise.then(function(pdfDocument) {
-        return pdfDocument.getDestination("non-existent-named-destination");
+      var promise = loadingTask.promise.then(function(pdfDoc) {
+        return pdfDoc.getDestination("non-existent-named-destination");
       });
       promise
         .then(function(destination) {
@@ -693,9 +696,9 @@ describe("api", function() {
     });
 
     it("gets non-string destination", function(done) {
-      let numberPromise = doc.getDestination(4.3);
-      let booleanPromise = doc.getDestination(true);
-      let arrayPromise = doc.getDestination([
+      let numberPromise = pdfDocument.getDestination(4.3);
+      let booleanPromise = pdfDocument.getDestination(true);
+      let arrayPromise = pdfDocument.getDestination([
         { num: 17, gen: 0 },
         { name: "XYZ" },
         0,
@@ -735,7 +738,7 @@ describe("api", function() {
     });
 
     it("gets non-existent page labels", function(done) {
-      var promise = doc.getPageLabels();
+      var promise = pdfDocument.getPageLabels();
       promise
         .then(function(data) {
           expect(data).toEqual(null);
@@ -791,8 +794,8 @@ describe("api", function() {
       var loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
 
       loadingTask.promise
-        .then(function(pdfDocument) {
-          return pdfDocument.getPageLayout();
+        .then(function(pdfDoc) {
+          return pdfDoc.getPageLayout();
         })
         .then(function(mode) {
           expect(mode).toEqual("");
@@ -802,7 +805,7 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets non-default page layout", function(done) {
-      doc
+      pdfDocument
         .getPageLayout()
         .then(function(mode) {
           expect(mode).toEqual("SinglePage");
@@ -815,8 +818,8 @@ describe("api", function() {
       var loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
 
       loadingTask.promise
-        .then(function(pdfDocument) {
-          return pdfDocument.getPageMode();
+        .then(function(pdfDoc) {
+          return pdfDoc.getPageMode();
         })
         .then(function(mode) {
           expect(mode).toEqual("UseNone");
@@ -826,7 +829,7 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets non-default page mode", function(done) {
-      doc
+      pdfDocument
         .getPageMode()
         .then(function(mode) {
           expect(mode).toEqual("UseOutlines");
@@ -839,8 +842,8 @@ describe("api", function() {
       var loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
 
       loadingTask.promise
-        .then(function(pdfDocument) {
-          return pdfDocument.getViewerPreferences();
+        .then(function(pdfDoc) {
+          return pdfDoc.getViewerPreferences();
         })
         .then(function(prefs) {
           expect(
@@ -852,7 +855,7 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets non-default viewer preferences", function(done) {
-      doc
+      pdfDocument
         .getViewerPreferences()
         .then(function(prefs) {
           expect(prefs).toEqual({
@@ -867,8 +870,8 @@ describe("api", function() {
       var loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
 
       loadingTask.promise
-        .then(function(pdfDocument) {
-          return pdfDocument.getOpenAction();
+        .then(function(pdfDoc) {
+          return pdfDoc.getOpenAction();
         })
         .then(function(openAction) {
           expect(openAction).toEqual(null);
@@ -878,7 +881,7 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets non-default open action (with destination)", function(done) {
-      doc
+      pdfDocument
         .getOpenAction()
         .then(function(openAction) {
           expect(openAction.dest).toEqual([
@@ -904,8 +907,8 @@ describe("api", function() {
       );
 
       const promise1 = loadingTask1.promise
-        .then(function(pdfDocument) {
-          return pdfDocument.getOpenAction();
+        .then(function(pdfDoc) {
+          return pdfDoc.getOpenAction();
         })
         .then(function(openAction) {
           expect(openAction.dest).toBeUndefined();
@@ -914,8 +917,8 @@ describe("api", function() {
           return loadingTask1.destroy();
         });
       const promise2 = loadingTask2.promise
-        .then(function(pdfDocument) {
-          return pdfDocument.getOpenAction();
+        .then(function(pdfDoc) {
+          return pdfDoc.getOpenAction();
         })
         .then(function(openAction) {
           expect(openAction.dest).toBeUndefined();
@@ -928,7 +931,7 @@ describe("api", function() {
     });
 
     it("gets non-existent attachments", function(done) {
-      var promise = doc.getAttachments();
+      var promise = pdfDocument.getAttachments();
       promise
         .then(function(data) {
           expect(data).toEqual(null);
@@ -955,7 +958,7 @@ describe("api", function() {
     });
 
     it("gets javascript", function(done) {
-      var promise = doc.getJavaScript();
+      var promise = pdfDocument.getJavaScript();
       promise
         .then(function(data) {
           expect(data).toEqual(null);
@@ -966,8 +969,8 @@ describe("api", function() {
     it("gets javascript with printing instructions (JS action)", function(done) {
       // PDF document with "JavaScript" action in the OpenAction dictionary.
       var loadingTask = getDocument(buildGetDocumentParams("issue6106.pdf"));
-      var promise = loadingTask.promise.then(function(doc) {
-        return doc.getJavaScript();
+      var promise = loadingTask.promise.then(function(pdfDoc) {
+        return pdfDoc.getJavaScript();
       });
       promise
         .then(function(data) {
@@ -983,8 +986,8 @@ describe("api", function() {
     it("gets non-existent outline", function(done) {
       var loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
 
-      var promise = loadingTask.promise.then(function(pdfDocument) {
-        return pdfDocument.getOutline();
+      var promise = loadingTask.promise.then(function(pdfDoc) {
+        return pdfDoc.getOutline();
       });
       promise
         .then(function(outline) {
@@ -995,7 +998,7 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets outline", function(done) {
-      var promise = doc.getOutline();
+      var promise = pdfDocument.getOutline();
       promise
         .then(function(outline) {
           // Two top level entries.
@@ -1025,8 +1028,8 @@ describe("api", function() {
       var loadingTask = getDocument(buildGetDocumentParams("issue3214.pdf"));
 
       loadingTask.promise
-        .then(function(pdfDocument) {
-          pdfDocument.getOutline().then(function(outline) {
+        .then(function(pdfDoc) {
+          pdfDoc.getOutline().then(function(outline) {
             expect(Array.isArray(outline)).toEqual(true);
             expect(outline.length).toEqual(5);
 
@@ -1051,7 +1054,7 @@ describe("api", function() {
     });
 
     it("gets non-existent permissions", function(done) {
-      doc
+      pdfDocument
         .getPermissions()
         .then(function(permissions) {
           expect(permissions).toEqual(null);
@@ -1066,24 +1069,24 @@ describe("api", function() {
       const loadingTask0 = getDocument(
         buildGetDocumentParams("issue9972-1.pdf")
       );
-      const promise0 = loadingTask0.promise.then(function(pdfDocument) {
-        return pdfDocument.getPermissions();
+      const promise0 = loadingTask0.promise.then(function(pdfDoc) {
+        return pdfDoc.getPermissions();
       });
 
       // Printing not allowed.
       const loadingTask1 = getDocument(
         buildGetDocumentParams("issue9972-2.pdf")
       );
-      const promise1 = loadingTask1.promise.then(function(pdfDocument) {
-        return pdfDocument.getPermissions();
+      const promise1 = loadingTask1.promise.then(function(pdfDoc) {
+        return pdfDoc.getPermissions();
       });
 
       // Copying not allowed.
       const loadingTask2 = getDocument(
         buildGetDocumentParams("issue9972-3.pdf")
       );
-      const promise2 = loadingTask2.promise.then(function(pdfDocument) {
-        return pdfDocument.getPermissions();
+      const promise2 = loadingTask2.promise.then(function(pdfDoc) {
+        return pdfDoc.getPermissions();
       });
 
       const totalPermissionCount = Object.keys(PermissionFlag).length;
@@ -1113,7 +1116,7 @@ describe("api", function() {
     });
 
     it("gets metadata", function(done) {
-      var promise = doc.getMetadata();
+      var promise = pdfDocument.getMetadata();
       promise
         .then(function({ info, metadata, contentDispositionFilename }) {
           expect(info["Title"]).toEqual("Basic API Test");
@@ -1138,8 +1141,8 @@ describe("api", function() {
       var loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
 
       loadingTask.promise
-        .then(function(pdfDocument) {
-          return pdfDocument.getMetadata();
+        .then(function(pdfDoc) {
+          return pdfDoc.getMetadata();
         })
         .then(function({ info, metadata, contentDispositionFilename }) {
           expect(info["Creator"]).toEqual("TeX");
@@ -1171,8 +1174,8 @@ describe("api", function() {
       const loadingTask = getDocument(buildGetDocumentParams("bug1606566.pdf"));
 
       loadingTask.promise
-        .then(function(pdfDocument) {
-          return pdfDocument.getMetadata();
+        .then(function(pdfDoc) {
+          return pdfDoc.getMetadata();
         })
         .then(function({ info, metadata, contentDispositionFilename }) {
           // The following are PDF.js specific, non-standard, properties.
@@ -1191,7 +1194,7 @@ describe("api", function() {
     });
 
     it("gets data", function(done) {
-      var promise = doc.getData();
+      var promise = pdfDocument.getData();
       promise
         .then(function(data) {
           expect(data instanceof Uint8Array).toEqual(true);
@@ -1201,7 +1204,7 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets download info", function(done) {
-      var promise = doc.getDownloadInfo();
+      var promise = pdfDocument.getDownloadInfo();
       promise
         .then(function(data) {
           expect(data).toEqual({ length: basicApiFileLength });
@@ -1210,7 +1213,7 @@ describe("api", function() {
         .catch(done.fail);
     });
     it("gets document stats", function(done) {
-      var promise = doc.getStats();
+      var promise = pdfDocument.getStats();
       promise
         .then(function(stats) {
           expect(stats).toEqual({ streamTypes: {}, fontTypes: {} });
@@ -1220,7 +1223,7 @@ describe("api", function() {
     });
 
     it("cleans up document resources", function(done) {
-      const promise = doc.cleanup();
+      const promise = pdfDocument.cleanup();
       promise.then(function() {
         expect(true).toEqual(true);
         done();
@@ -1330,12 +1333,11 @@ describe("api", function() {
     });
   });
   describe("Page", function() {
-    var loadingTask;
-    var pdfDocument, page;
+    let pdfLoadingTask, pdfDocument, page;
 
     beforeAll(function(done) {
-      loadingTask = getDocument(basicApiGetDocumentParams);
-      loadingTask.promise
+      pdfLoadingTask = getDocument(basicApiGetDocumentParams);
+      pdfLoadingTask.promise
         .then(function(doc) {
           pdfDocument = doc;
           pdfDocument.getPage(1).then(function(data) {
@@ -1347,7 +1349,7 @@ describe("api", function() {
     });
 
     afterAll(function(done) {
-      loadingTask.destroy().then(done);
+      pdfLoadingTask.destroy().then(done);
     });
 
     it("gets page number", function() {
