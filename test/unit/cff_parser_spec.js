@@ -268,7 +268,7 @@ describe("CFFParser", function() {
 
     // CID font
     charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
-    expect(charset.charset).toEqual([".notdef", 8, 9]);
+    expect(charset.charset).toEqual([0, 8, 9]);
   });
 
   it("parses charset format 2", function() {
@@ -286,7 +286,7 @@ describe("CFFParser", function() {
 
     // CID font
     charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
-    expect(charset.charset).toEqual([".notdef", 8, 9]);
+    expect(charset.charset).toEqual([0, 8, 9]);
   });
 
   it("parses encoding format 0", function() {

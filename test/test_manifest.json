@@ -3339,6 +3339,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue11718",
+       "file": "pdfs/issue11718_reduced.pdf",
+       "md5": "a0deea064b4171bb8ea9f6e8a523e594",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3061",
       "file": "pdfs/issue3061.pdf",
       "md5": "696a7cb1b194d095ca3f7861779a606b",
