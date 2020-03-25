@@ -232,6 +232,13 @@ class PDFLinkService {
           phraseSearch: params["phrase"] === "true",
         });
       }
+      if ("searchArray" in params) {
+        this.eventBus.dispatch("findfromurlhash", {
+          source: this,
+          query: JSON.parse(params["search"]),
+          phraseSearch: true, // This does not matter
+        });
+      }
       // borrowing syntax from "Parameters for Opening PDF Files"
       if ("nameddest" in params) {
         this.navigateTo(params.nameddest);

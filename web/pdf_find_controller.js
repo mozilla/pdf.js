@@ -237,6 +237,28 @@ class PDFFindController {
     return this._normalizedQuery;
   }
 
+  /**
+   * @type {array} The (current) normalized search query array.
+   */
+  get _arrayQuery() {
+	if(!this._isArrayQuery()) return [this._query];
+	this._rawQuery = this._state.query;
+	this._normalizedQuery = [];
+	for(let i=0; i<this._state.query.length; i++) {
+		this._normalizedQuery.push(normalize(this._state.query[i]))
+	}
+    return this._normalizedQuery;
+  }
+
+  _isArrayQuery() {
+	return Array.isArray(this._state.query);
+  }
+
+  _isEmptyQuery() {
+	if(this._isArrayQuery()) return this._state.query.length == 0;
+	return this._query === "";
+  }
+
   _shouldDirtyMatch(cmd, state) {
     // When the search query changes, regardless of the actual search command
     // used, always re-calculate matches to avoid errors (fixes bug 1030622).
@@ -368,10 +390,14 @@ class PDFFindController {
   }
 
   _calculateWordMatch(query, pageIndex, pageContent, entireWord) {
-    const matchesWithLength = [];
-
     // Divide the query into pieces and search for text in each piece.
     const queryArray = query.match(/\S+/g);
+    this._calculateArrayMatch(queryArray, pageIndex, pageContent, entireWord);
+  }
+
+  _calculateArrayMatch(queryArray, pageIndex, pageContent, entireWord) {
+    const matchesWithLength = [];
+
     for (let i = 0, len = queryArray.length; i < len; i++) {
       const subquery = queryArray[i];
       const subqueryLen = subquery.length;
@@ -409,27 +435,39 @@ class PDFFindController {
       this._pageMatchesLength[pageIndex]
     );
   }
-
   _calculateMatch(pageIndex) {
     let pageContent = this._pageContents[pageIndex];
-    let query = this._query;
+    let query;
     const { caseSensitive, entireWord, phraseSearch } = this._state;
 
-    if (query.length === 0) {
+    if(this._isEmptyQuery()) {
       // Do nothing: the matches should be wiped out already.
       return;
     }
+    if(this._isArrayQuery()) {
+      query = this._arrayQuery;
+      if (!caseSensitive) {
+        pageContent = pageContent.toLowerCase();
+        for(i=0; i<query.length; i++) {
+          query[i] = query[i].toLowerCase();
+        }
+      }
+      this._calculateArrayMatch(query, pageIndex, pageContent, entireWord);
+    } else{
+      query = this._query;
+      if (!caseSensitive) {
+        pageContent = pageContent.toLowerCase();
+        query = query.toLowerCase();
+      }
 
-    if (!caseSensitive) {
-      pageContent = pageContent.toLowerCase();
-      query = query.toLowerCase();
+      if (phraseSearch) {
+        this._calculatePhraseMatch(query, pageIndex, pageContent, entireWord);
+      } else {
+        this._calculateWordMatch(query, pageIndex, pageContent, entireWord);
+      }
     }
 
-    if (phraseSearch) {
-      this._calculatePhraseMatch(query, pageIndex, pageContent, entireWord);
-    } else {
-      this._calculateWordMatch(query, pageIndex, pageContent, entireWord);
-    }
+    
 
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
@@ -551,7 +589,7 @@ class PDFFindController {
     }
 
     // If there's no query there's no point in searching.
-    if (this._query === "") {
+    if (this._isEmptyQuery()) {
       this._updateUIState(FindState.FOUND);
       return;
     }
