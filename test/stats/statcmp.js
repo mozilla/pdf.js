@@ -37,16 +37,16 @@ function parseOptions() {
 function group(stats, groupBy) {
   var vals = [];
   for (var i = 0; i < stats.length; i++) {
-    var stat = stats[i];
+    var curStat = stats[i];
     var keyArr = [];
     for (var j = 0; j < groupBy.length; j++) {
-      keyArr.push(stat[groupBy[j]]);
+      keyArr.push(curStat[groupBy[j]]);
     }
     var key = keyArr.join(",");
     if (vals[key] === undefined) {
       vals[key] = [];
     }
-    vals[key].push(stat["time"]);
+    vals[key].push(curStat["time"]);
   }
   return vals;
 }
@@ -57,13 +57,13 @@ function group(stats, groupBy) {
  */
 function flatten(stats) {
   var rows = [];
-  stats.forEach(function(stat) {
-    stat["stats"].forEach(function(s) {
+  stats.forEach(function(curStat) {
+    curStat["stats"].forEach(function(s) {
       rows.push({
-        browser: stat["browser"],
-        page: stat["page"],
-        pdf: stat["pdf"],
-        round: stat["round"],
+        browser: curStat["browser"],
+        page: curStat["page"],
+        pdf: curStat["pdf"],
+        round: curStat["round"],
         stat: s["name"],
         time: s["end"] - s["start"],
       });
