@@ -904,6 +904,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue11740",
+       "file": "pdfs/issue11740_reduced.pdf",
+       "md5": "f3f2957f171af52229c6e749e8a5572b",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue10491",
        "file": "pdfs/issue10491.pdf",
        "md5": "0759ec46739b13bb0b66170a18d33d4f",
