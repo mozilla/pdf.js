@@ -823,7 +823,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
           // might actually map to a different glyph.
           continue;
         }
-        current.xcoords.push(current.x + x * textHScale);
+        current.xcoords.push(current.x + x);
         current.tspan.textContent += character;
         x += charWidth;
       }
@@ -892,7 +892,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       current.txtElement.setAttributeNS(
         null,
         "transform",
-        `${pm(textMatrix)} scale(1, -1)`
+        `${pm(textMatrix)} scale(${pf(textHScale)}, -1)`
       );
       current.txtElement.setAttributeNS(XML_NS, "xml:space", "preserve");
       current.txtElement.appendChild(current.tspan);

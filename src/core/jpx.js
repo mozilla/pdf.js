@@ -736,7 +736,7 @@ var JpxImage = (function JpxImageClosure() {
     var l, r, c, p;
     var maxDecompositionLevelsCount = 0;
     for (c = 0; c < componentsCount; c++) {
-      var component = tile.components[c];
+      const component = tile.components[c];
       maxDecompositionLevelsCount = Math.max(
         maxDecompositionLevelsCount,
         component.codingStyleParameters.decompositionLevelsCount
@@ -768,7 +768,7 @@ var JpxImage = (function JpxImageClosure() {
       for (; r <= maxDecompositionLevelsCount; r++) {
         for (; p < maxNumPrecinctsInLevel[r]; p++) {
           for (; c < componentsCount; c++) {
-            var component = tile.components[c];
+            const component = tile.components[c];
             if (r > component.codingStyleParameters.decompositionLevelsCount) {
               continue;
             }
@@ -1434,7 +1434,7 @@ var JpxImage = (function JpxImageClosure() {
         // calculate quantization coefficient (Section E.1.1.1)
         var delta = reversible
           ? 1
-          : Math.pow(2, precision + gainLog2 - epsilon) * (1 + mu / 2048);
+          : 2 ** (precision + gainLog2 - epsilon) * (1 + mu / 2048);
         var mb = guardBits + epsilon - 1;
 
         // In the first resolution level, copyCoefficients will fill the

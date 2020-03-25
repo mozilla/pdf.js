@@ -592,9 +592,12 @@ class Catalog {
     return shadow(this, "viewerPreferences", prefs);
   }
 
-  get openActionDestination() {
+  /**
+   * NOTE: "JavaScript" actions are, for now, handled by `get javaScript` below.
+   */
+  get openAction() {
     const obj = this.catDict.get("OpenAction");
-    let openActionDest = null;
+    let openAction = null;
 
     if (isDict(obj)) {
       // Convert the OpenAction dictionary into a format that works with
@@ -602,16 +605,27 @@ class Catalog {
       const destDict = new Dict(this.xref);
       destDict.set("A", obj);
 
-      const resultObj = { url: null, dest: null };
+      const resultObj = { url: null, dest: null, action: null };
       Catalog.parseDestDictionary({ destDict, resultObj });
 
       if (Array.isArray(resultObj.dest)) {
-        openActionDest = resultObj.dest;
+        if (!openAction) {
+          openAction = Object.create(null);
+        }
+        openAction.dest = resultObj.dest;
+      } else if (resultObj.action) {
+        if (!openAction) {
+          openAction = Object.create(null);
+        }
+        openAction.action = resultObj.action;
       }
     } else if (Array.isArray(obj)) {
-      openActionDest = obj;
+      if (!openAction) {
+        openAction = Object.create(null);
+      }
+      openAction.dest = obj;
     }
-    return shadow(this, "openActionDestination", openActionDest);
+    return shadow(this, "openAction", openAction);
   }
 
   get attachments() {
@@ -668,27 +682,10 @@ class Catalog {
       }
     }
 
-    // Append OpenAction actions to the JavaScript array.
-    const openActionDict = this.catDict.get("OpenAction");
-    if (
-      isDict(openActionDict) &&
-      (isName(openActionDict.get("Type"), "Action") ||
-        !openActionDict.has("Type"))
-    ) {
-      const actionType = openActionDict.get("S");
-      if (isName(actionType, "Named")) {
-        // The named Print action is not a part of the PDF 1.7 specification,
-        // but is supported by many PDF readers/writers (including Adobe's).
-        const action = openActionDict.get("N");
-        if (isName(action, "Print")) {
-          if (!javaScript) {
-            javaScript = [];
-          }
-          javaScript.push("print({});");
-        }
-      } else {
-        appendIfJavaScriptDict(openActionDict);
-      }
+    // Append OpenAction "JavaScript" actions to the JavaScript array.
+    const openAction = this.catDict.get("OpenAction");
+    if (isDict(openAction) && isName(openAction.get("S"), "JavaScript")) {
+      appendIfJavaScriptDict(openAction);
     }
 
     return shadow(this, "javaScript", javaScript);
@@ -897,12 +894,12 @@ class Catalog {
               break;
             }
             kidPromises.push(
-              xref.fetchAsync(kid).then(function(kid) {
-                if (!isDict(kid)) {
+              xref.fetchAsync(kid).then(function(obj) {
+                if (!isDict(obj)) {
                   throw new FormatError("Kid node must be a dictionary.");
                 }
-                if (kid.has("Count")) {
-                  total += kid.get("Count");
+                if (obj.has("Count")) {
+                  total += obj.get("Count");
                 } else {
                   // Page leaf node.
                   total++;

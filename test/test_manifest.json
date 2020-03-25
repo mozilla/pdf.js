@@ -3339,6 +3339,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue11718",
+       "file": "pdfs/issue11718_reduced.pdf",
+       "md5": "a0deea064b4171bb8ea9f6e8a523e594",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3061",
       "file": "pdfs/issue3061.pdf",
       "md5": "696a7cb1b194d095ca3f7861779a606b",
@@ -3368,6 +3374,13 @@
        "link": false,
        "type": "eq",
        "about": "The same PDF file as in bug1175943."
+    },
+    {  "id": "issue11697",
+       "file": "pdfs/issue11697_reduced.pdf",
+       "md5": "5b3793a76f92b357bd8ccc02e1c54ba0",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
     },
     {  "id": "issue1878",
       "file": "pdfs/issue1878.pdf",
@@ -4428,5 +4441,5 @@
       "md5": "f84ce8b7414f6a18e75a6ce69c902501",
       "rounds": 1,
       "type": "eq"
-   }
+    }
 ]

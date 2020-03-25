@@ -172,17 +172,21 @@ describe("CFFParser", function() {
   });
 
   it("parses a CharString endchar with 4 args w/seac enabled", function() {
-    var parser = new CFFParser(fontData, {}, /* seacAnalysisEnabled = */ true);
-    parser.parse(); // cff
+    const cffParser = new CFFParser(
+      fontData,
+      {},
+      /* seacAnalysisEnabled = */ true
+    );
+    cffParser.parse(); // cff
 
     // prettier-ignore
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
                                 237, 247, 22, 247, 72, 204, 247, 86, 14]);
-    parser.bytes = bytes;
-    var charStringsIndex = parser.parseIndex(0).obj;
-    var result = parser.parseCharStrings({
+    cffParser.bytes = bytes;
+    var charStringsIndex = cffParser.parseIndex(0).obj;
+    var result = cffParser.parseCharStrings({
       charStrings: charStringsIndex,
       privateDict: privateDictStub,
     });
@@ -197,17 +201,21 @@ describe("CFFParser", function() {
   });
 
   it("parses a CharString endchar with 4 args w/seac disabled", function() {
-    var parser = new CFFParser(fontData, {}, /* seacAnalysisEnabled = */ false);
-    parser.parse(); // cff
+    const cffParser = new CFFParser(
+      fontData,
+      {},
+      /* seacAnalysisEnabled = */ false
+    );
+    cffParser.parse(); // cff
 
     // prettier-ignore
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
                                 237, 247, 22, 247, 72, 204, 247, 86, 14]);
-    parser.bytes = bytes;
-    var charStringsIndex = parser.parseIndex(0).obj;
-    var result = parser.parseCharStrings({
+    cffParser.bytes = bytes;
+    var charStringsIndex = cffParser.parseIndex(0).obj;
+    var result = cffParser.parseCharStrings({
       charStrings: charStringsIndex,
       privateDict: privateDictStub,
     });
@@ -268,7 +276,7 @@ describe("CFFParser", function() {
 
     // CID font
     charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
-    expect(charset.charset).toEqual([".notdef", 8, 9]);
+    expect(charset.charset).toEqual([0, 8, 9]);
   });
 
   it("parses charset format 2", function() {
@@ -286,7 +294,7 @@ describe("CFFParser", function() {
 
     // CID font
     charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
-    expect(charset.charset).toEqual([".notdef", 8, 9]);
+    expect(charset.charset).toEqual([0, 8, 9]);
   });
 
   it("parses encoding format 0", function() {

@@ -606,7 +606,7 @@ gulp.task("default_preferences-pre", function() {
       ],
       { base: "src/" }
     ),
-    gulp.src(["web/*.js", "!web/{app,pdfjs,preferences,viewer}.js"], {
+    gulp.src(["web/{app_options,viewer_compatibility}.js"], {
       base: ".",
     }),
   ])
