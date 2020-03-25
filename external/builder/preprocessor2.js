@@ -289,7 +289,7 @@ function traverseTree(ctx, node) {
   for (var i in node) {
     var child = node[i];
     if (typeof child === "object" && child !== null && child.type) {
-      var result = traverseTree(ctx, child);
+      const result = traverseTree(ctx, child);
       if (result !== child) {
         node[i] = result;
       }
@@ -300,7 +300,7 @@ function traverseTree(ctx, node) {
           childItem !== null &&
           childItem.type
         ) {
-          var result = traverseTree(ctx, childItem);
+          const result = traverseTree(ctx, childItem);
           if (result !== childItem) {
             child[index] = result;
           }
