@@ -836,6 +836,7 @@ const DeviceCmykCS = (function DeviceCmykCSClosure() {
       k * (-22.33816807309886 * k - 180.12613974708367);
   }
 
+  // eslint-disable-next-line no-shadow
   class DeviceCmykCS extends ColorSpace {
     constructor() {
       super("DeviceCMYK", 4);
@@ -902,6 +903,7 @@ const CalGrayCS = (function CalGrayCSClosure() {
     dest[destOffset + 2] = val;
   }
 
+  // eslint-disable-next-line no-shadow
   class CalGrayCS extends ColorSpace {
     constructor(whitePoint, blackPoint, gamma) {
       super("CalGray", 1);
@@ -1190,6 +1192,7 @@ const CalRGBCS = (function CalRGBCSClosure() {
     dest[destOffset + 2] = sRGBTransferFunction(SRGB[2]) * 255;
   }
 
+  // eslint-disable-next-line no-shadow
   class CalRGBCS extends ColorSpace {
     constructor(whitePoint, blackPoint, gamma, matrix) {
       super("CalRGB", 3);
@@ -1371,6 +1374,7 @@ const LabCS = (function LabCSClosure() {
     dest[destOffset + 2] = Math.sqrt(b) * 255;
   }
 
+  // eslint-disable-next-line no-shadow
   class LabCS extends ColorSpace {
     constructor(whitePoint, blackPoint, range) {
       super("Lab", 3);

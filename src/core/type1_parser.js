@@ -79,6 +79,7 @@ var Type1CharString = (function Type1CharStringClosure() {
     hvcurveto: [31],
   };
 
+  // eslint-disable-next-line no-shadow
   function Type1CharString() {
     this.width = 0;
     this.lsb = 0;
@@ -451,6 +452,7 @@ var Type1Parser = (function Type1ParserClosure() {
     );
   }
 
+  // eslint-disable-next-line no-shadow
   function Type1Parser(stream, encrypted, seacAnalysisEnabled) {
     if (encrypted) {
       var data = stream.getBytes();

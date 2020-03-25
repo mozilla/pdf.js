@@ -96,6 +96,7 @@ var PDFImage = (function PDFImageClosure() {
     return dest;
   }
 
+  // eslint-disable-next-line no-shadow
   function PDFImage({
     xref,
     res,

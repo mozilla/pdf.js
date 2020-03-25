@@ -23,6 +23,7 @@ import { shadow } from "../shared/util.js";
  * the stream behaves like all the other DecodeStreams.
  */
 const Jbig2Stream = (function Jbig2StreamClosure() {
+  // eslint-disable-next-line no-shadow
   function Jbig2Stream(stream, maybeLength, dict, params) {
     this.stream = stream;
     this.maybeLength = maybeLength;

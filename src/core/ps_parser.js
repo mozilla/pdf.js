@@ -113,6 +113,7 @@ const PostScriptTokenTypes = {
 const PostScriptToken = (function PostScriptTokenClosure() {
   const opCache = Object.create(null);
 
+  // eslint-disable-next-line no-shadow
   class PostScriptToken {
     constructor(type, value) {
       this.type = type;

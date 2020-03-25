@@ -465,6 +465,7 @@ const CCITTFaxDecoder = (function CCITTFaxDecoder() {
    * @param {CCITTFaxDecoderSource} source - The data which should be decoded.
    * @param {Object} [options] - Decoding options.
    */
+  // eslint-disable-next-line no-shadow
   function CCITTFaxDecoder(source, options = {}) {
     if (!source || typeof source.next !== "function") {
       throw new Error('CCITTFaxDecoder - invalid "source" parameter.');
