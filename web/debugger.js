@@ -285,6 +285,7 @@ var Stepper = (function StepperClosure() {
     return simpleObj;
   }
 
+  // eslint-disable-next-line no-shadow
   function Stepper(panel, pageIndex, initialBreakPoints) {
     this.panel = panel;
     this.breakPoint = 0;

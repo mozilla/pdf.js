@@ -2567,6 +2567,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return bitmap;
   }
 
+  // eslint-disable-next-line no-shadow
   function Jbig2Image() {}
 
   Jbig2Image.prototype = {

@@ -26,9 +26,9 @@ var crypto = require("crypto");
 
 var tempDirPrefix = "pdfjs_";
 
-function WebBrowser(name, path, headless) {
+function WebBrowser(name, execPath, headless) {
   this.name = name;
-  this.path = path;
+  this.path = execPath;
   this.headless = headless;
   this.tmpDir = null;
   this.profileDir = null;
@@ -197,7 +197,7 @@ WebBrowser.prototype = {
     // Note: First process' output it shown, the later outputs are suppressed.
     execAsyncNoStdin(
       cmdKillAll,
-      function checkAlive(exitCode, firstStdout) {
+      function checkAlive(firstExitCode, firstStdout) {
         execAsyncNoStdin(
           cmdCheckAllKilled,
           function(exitCode, stdout) {
@@ -227,14 +227,14 @@ WebBrowser.prototype = {
 
 var firefoxResourceDir = path.join(__dirname, "resources", "firefox");
 
-function FirefoxBrowser(name, path, headless) {
+function FirefoxBrowser(name, execPath, headless) {
   if (os.platform() === "darwin") {
-    var m = /([^.\/]+)\.app(\/?)$/.exec(path);
+    var m = /([^.\/]+)\.app(\/?)$/.exec(execPath);
     if (m) {
-      path += (m[2] ? "" : "/") + "Contents/MacOS/firefox";
+      execPath += (m[2] ? "" : "/") + "Contents/MacOS/firefox";
     }
   }
-  WebBrowser.call(this, name, path, headless);
+  WebBrowser.call(this, name, execPath, headless);
 }
 FirefoxBrowser.prototype = Object.create(WebBrowser.prototype);
 FirefoxBrowser.prototype.buildArguments = function(url) {
@@ -253,15 +253,14 @@ FirefoxBrowser.prototype.setupProfileDir = function(dir) {
   testUtils.copySubtreeSync(firefoxResourceDir, dir);
 };
 
-function ChromiumBrowser(name, path, headless) {
+function ChromiumBrowser(name, execPath, headless) {
   if (os.platform() === "darwin") {
-    var m = /([^.\/]+)\.app(\/?)$/.exec(path);
+    var m = /([^.\/]+)\.app(\/?)$/.exec(execPath);
     if (m) {
-      path += (m[2] ? "" : "/") + "Contents/MacOS/" + m[1];
-      console.log(path);
+      execPath += (m[2] ? "" : "/") + "Contents/MacOS/" + m[1];
     }
   }
-  WebBrowser.call(this, name, path, headless);
+  WebBrowser.call(this, name, execPath, headless);
 }
 ChromiumBrowser.prototype = Object.create(WebBrowser.prototype);
 ChromiumBrowser.prototype.buildArguments = function(url) {
@@ -291,18 +290,18 @@ ChromiumBrowser.prototype.buildArguments = function(url) {
 
 WebBrowser.create = function(desc) {
   var name = desc.name;
-  var path = fs.realpathSync(desc.path);
-  if (!path) {
+  var execPath = fs.realpathSync(desc.path);
+  if (!execPath) {
     throw new Error("Browser executable not found: " + desc.path);
   }
 
   if (/firefox/i.test(name)) {
-    return new FirefoxBrowser(name, path, desc.headless);
+    return new FirefoxBrowser(name, execPath, desc.headless);
   }
   if (/(chrome|chromium|opera)/i.test(name)) {
-    return new ChromiumBrowser(name, path, desc.headless);
+    return new ChromiumBrowser(name, execPath, desc.headless);
   }
-  return new WebBrowser(name, path, desc.headless);
+  return new WebBrowser(name, execPath, desc.headless);
 };
 
 exports.WebBrowser = WebBrowser;

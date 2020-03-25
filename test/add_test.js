@@ -22,9 +22,9 @@ if (!fs.existsSync(file)) {
   throw new Error(`PDF file does not exist '${file}'.`);
 }
 
-function calculateMD5(file, callback) {
+function calculateMD5(pdfFile, callback) {
   var hash = crypto.createHash("md5");
-  var stream = fs.createReadStream(file);
+  var stream = fs.createReadStream(pdfFile);
   stream.on("data", function(data) {
     hash.update(data);
   });

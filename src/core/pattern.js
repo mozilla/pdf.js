@@ -38,6 +38,7 @@ var ShadingType = {
 
 var Pattern = (function PatternClosure() {
   // Constructor should define this.getPattern
+  // eslint-disable-next-line no-shadow
   function Pattern() {
     unreachable("should not call Pattern constructor");
   }
@@ -450,6 +451,8 @@ Shadings.Mesh = (function MeshClosure() {
       return lut;
     }
     var cache = [];
+
+    // eslint-disable-next-line no-shadow
     return function getB(count) {
       if (!cache[count]) {
         cache[count] = buildB(count);

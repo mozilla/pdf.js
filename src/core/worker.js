@@ -38,6 +38,7 @@ import { PDFWorkerStream } from "./worker_stream.js";
 import { XRefParseException } from "./core_utils.js";
 
 var WorkerTask = (function WorkerTaskClosure() {
+  // eslint-disable-next-line no-shadow
   function WorkerTask(name) {
     this.name = name;
     this.terminated = false;
