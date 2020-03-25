@@ -619,8 +619,8 @@ function refTestPostHandler(req, res) {
     if (pathname === "/tellMeToQuit") {
       // finding by path
       var browserPath = parsedUrl.query.path;
-      session = sessions.filter(function(session) {
-        return session.config.path === browserPath;
+      session = sessions.filter(function(curSession) {
+        return curSession.config.path === browserPath;
       })[0];
       monitorBrowserTimeout(session, null);
       closeSession(session.name);
@@ -689,7 +689,7 @@ function refTestPostHandler(req, res) {
   return true;
 }
 
-function startUnitTest(url, name) {
+function startUnitTest(testUrl, name) {
   var startTime = Date.now();
   startServer();
   server.hooks["POST"].push(unitTestPostHandler);
@@ -712,7 +712,7 @@ function startUnitTest(url, name) {
     var runtime = (Date.now() - startTime) / 1000;
     console.log(name + " tests runtime was " + runtime.toFixed(1) + " seconds");
   };
-  startBrowsers(url, function(session) {
+  startBrowsers(testUrl, function(session) {
     session.numRuns = 0;
     session.numErrors = 0;
   });
@@ -784,7 +784,7 @@ function unitTestPostHandler(req, res) {
   return true;
 }
 
-function startBrowsers(url, initSessionCallback) {
+function startBrowsers(testUrl, initSessionCallback) {
   var browsers;
   if (options.browserManifestFile) {
     browsers = JSON.parse(fs.readFileSync(options.browserManifestFile));
@@ -801,7 +801,7 @@ function startBrowsers(url, initSessionCallback) {
     var browser = WebBrowser.create(b);
     var startUrl =
       getServerBaseAddress() +
-      url +
+      testUrl +
       "?browser=" +
       encodeURIComponent(b.name) +
       "&manifestFile=" +

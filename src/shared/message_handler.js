@@ -114,15 +114,15 @@ class MessageHandler {
         throw new Error(`Unknown action from worker: ${data.action}`);
       }
       if (data.callbackId) {
-        const sourceName = this.sourceName;
-        const targetName = data.sourceName;
+        const cbSourceName = this.sourceName;
+        const cbTargetName = data.sourceName;
         new Promise(function(resolve) {
           resolve(action(data.data));
         }).then(
           function(result) {
             comObj.postMessage({
-              sourceName,
-              targetName,
+              sourceName: cbSourceName,
+              targetName: cbTargetName,
               callback: CallbackKind.DATA,
               callbackId: data.callbackId,
               data: result,
@@ -130,8 +130,8 @@ class MessageHandler {
           },
           function(reason) {
             comObj.postMessage({
-              sourceName,
-              targetName,
+              sourceName: cbSourceName,
+              targetName: cbTargetName,
               callback: CallbackKind.ERROR,
               callbackId: data.callbackId,
               reason: wrapReason(reason),
