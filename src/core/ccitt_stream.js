@@ -18,6 +18,7 @@ import { CCITTFaxDecoder } from "./ccitt.js";
 import { DecodeStream } from "./stream.js";
 
 var CCITTFaxStream = (function CCITTFaxStreamClosure() {
+  // eslint-disable-next-line no-shadow
   function CCITTFaxStream(str, maybeLength, params) {
     this.str = str;
     this.dict = str.dict;

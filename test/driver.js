@@ -45,6 +45,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
     return textLayerStylePromise;
   }
 
+  // eslint-disable-next-line no-shadow
   function rasterizeTextLayer(
     ctx,
     viewport,
@@ -178,6 +179,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     return imagePromises;
   }
 
+  // eslint-disable-next-line no-shadow
   function rasterizeAnnotationLayer(
     ctx,
     viewport,
@@ -228,10 +230,10 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           for (var i = 0, ii = data.length; i < ii; i++) {
             images[i].src = data[i];
             loadedPromises.push(
-              new Promise(function(resolve, reject) {
-                images[i].onload = resolve;
+              new Promise(function(resolveImage, rejectImage) {
+                images[i].onload = resolveImage;
                 images[i].onerror = function(e) {
-                  reject(new Error("Error loading image " + e));
+                  rejectImage(new Error("Error loading image " + e));
                 };
               })
             );
@@ -283,6 +285,7 @@ var Driver = (function DriverClosure() {
    * @constructs Driver
    * @param {DriverOptions} options
    */
+  // eslint-disable-next-line no-shadow
   function Driver(options) {
     // Configure the global worker options.
     pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC;

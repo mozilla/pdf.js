@@ -27,6 +27,7 @@ import { isDict, isName, Name } from "./primitives.js";
 import { DecryptStream } from "./stream.js";
 
 var ARCFourCipher = (function ARCFourCipherClosure() {
+  // eslint-disable-next-line no-shadow
   function ARCFourCipher(key) {
     this.a = 0;
     this.b = 0;
@@ -177,6 +178,7 @@ var calculateMD5 = (function calculateMD5Closure() {
   return hash;
 })();
 var Word64 = (function Word64Closure() {
+  // eslint-disable-next-line no-shadow
   function Word64(highInteger, lowInteger) {
     this.high = highInteger | 0;
     this.low = lowInteger | 0;
@@ -690,6 +692,7 @@ var calculateSHA384 = (function calculateSHA384Closure() {
   return hash;
 })();
 var NullCipher = (function NullCipherClosure() {
+  // eslint-disable-next-line no-shadow
   function NullCipher() {}
 
   NullCipher.prototype = {
@@ -1265,6 +1268,7 @@ var PDF17 = (function PDF17Closure() {
     return true;
   }
 
+  // eslint-disable-next-line no-shadow
   function PDF17() {}
 
   PDF17.prototype = {
@@ -1372,6 +1376,7 @@ var PDF20 = (function PDF20Closure() {
     return k.subarray(0, 32);
   }
 
+  // eslint-disable-next-line no-shadow
   function PDF20() {}
 
   function compareByteArrays(array1, array2) {
@@ -1446,6 +1451,7 @@ var PDF20 = (function PDF20Closure() {
 })();
 
 var CipherTransform = (function CipherTransformClosure() {
+  // eslint-disable-next-line no-shadow
   function CipherTransform(stringCipherConstructor, streamCipherConstructor) {
     this.StringCipherConstructor = stringCipherConstructor;
     this.StreamCipherConstructor = streamCipherConstructor;
@@ -1661,6 +1667,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   var identityName = Name.get("Identity");
 
+  // eslint-disable-next-line no-shadow
   function CipherTransformFactory(dict, fileId, password) {
     var filter = dict.get("Filter");
     if (!isName(filter, "Standard")) {

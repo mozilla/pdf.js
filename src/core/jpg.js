@@ -73,6 +73,7 @@ var JpegImage = (function JpegImageClosure() {
   var dctSqrt2 = 5793; // sqrt(2)
   var dctSqrt1d2 = 2896; // sqrt(2) / 2
 
+  // eslint-disable-next-line no-shadow
   function JpegImage({ decodeTransform = null, colorTransform = -1 } = {}) {
     this._decodeTransform = decodeTransform;
     this._colorTransform = colorTransform;

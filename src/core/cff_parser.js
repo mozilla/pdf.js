@@ -217,6 +217,7 @@ var CFFParser = (function CFFParserClosure() {
     { id: "flex1", min: 11, resetStack: true },
   ];
 
+  // eslint-disable-next-line no-shadow
   function CFFParser(file, properties, seacAnalysisEnabled) {
     this.bytes = file.getBytes();
     this.properties = properties;
@@ -964,6 +965,7 @@ var CFFParser = (function CFFParserClosure() {
 
 // Compact Font Format
 var CFF = (function CFFClosure() {
+  // eslint-disable-next-line no-shadow
   function CFF() {
     this.header = null;
     this.names = [];
@@ -1009,6 +1011,7 @@ var CFF = (function CFFClosure() {
 })();
 
 var CFFHeader = (function CFFHeaderClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFHeader(major, minor, hdrSize, offSize) {
     this.major = major;
     this.minor = minor;
@@ -1019,6 +1022,7 @@ var CFFHeader = (function CFFHeaderClosure() {
 })();
 
 var CFFStrings = (function CFFStringsClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFStrings() {
     this.strings = [];
   }
@@ -1054,6 +1058,7 @@ var CFFStrings = (function CFFStringsClosure() {
 })();
 
 var CFFIndex = (function CFFIndexClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFIndex() {
     this.objects = [];
     this.length = 0;
@@ -1078,6 +1083,7 @@ var CFFIndex = (function CFFIndexClosure() {
 })();
 
 var CFFDict = (function CFFDictClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFDict(tables, strings) {
     this.keyToNameMap = tables.keyToNameMap;
     this.nameToKeyMap = tables.nameToKeyMap;
@@ -1205,6 +1211,8 @@ var CFFTopDict = (function CFFTopDictClosure() {
     [[12, 38], "FontName", "sid", null],
   ];
   var tables = null;
+
+  // eslint-disable-next-line no-shadow
   function CFFTopDict(strings) {
     if (tables === null) {
       tables = CFFDict.createTables(layout);
@@ -1238,6 +1246,8 @@ var CFFPrivateDict = (function CFFPrivateDictClosure() {
     [19, "Subrs", "offset", null],
   ];
   var tables = null;
+
+  // eslint-disable-next-line no-shadow
   function CFFPrivateDict(strings) {
     if (tables === null) {
       tables = CFFDict.createTables(layout);
@@ -1255,6 +1265,7 @@ var CFFCharsetPredefinedTypes = {
   EXPERT_SUBSET: 2,
 };
 var CFFCharset = (function CFFCharsetClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFCharset(predefined, format, charset, raw) {
     this.predefined = predefined;
     this.format = format;
@@ -1265,6 +1276,7 @@ var CFFCharset = (function CFFCharsetClosure() {
 })();
 
 var CFFEncoding = (function CFFEncodingClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFEncoding(predefined, format, encoding, raw) {
     this.predefined = predefined;
     this.format = format;
@@ -1275,6 +1287,7 @@ var CFFEncoding = (function CFFEncodingClosure() {
 })();
 
 var CFFFDSelect = (function CFFFDSelectClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFFDSelect(format, fdSelect) {
     this.format = format;
     this.fdSelect = fdSelect;
@@ -1293,6 +1306,7 @@ var CFFFDSelect = (function CFFFDSelectClosure() {
 // Helper class to keep track of where an offset is within the data and helps
 // filling in that offset once it's known.
 var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFOffsetTracker() {
     this.offsets = Object.create(null);
   }
@@ -1352,6 +1366,7 @@ var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
 
 // Takes a CFF and converts it to the binary representation.
 var CFFCompiler = (function CFFCompilerClosure() {
+  // eslint-disable-next-line no-shadow
   function CFFCompiler(cff) {
     this.cff = cff;
   }
