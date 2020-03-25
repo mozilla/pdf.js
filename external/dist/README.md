@@ -33,4 +33,4 @@ pdfJsPage.render({
 
 # Build
 
-This build is currently pegged at mozilla's 2.3.200 build (https://github.com/mozilla/pdfjs-dist/commit/e9492b7a725ec4edd466880223474f4295a5fb45), source: https://github.com/macroplant/pdf.js/tree/hide-annotations-pdfjs-dist-2.3.200
+source https://github.com/macroplant/pdf.js/tree/hide-annotations-pdfjs-dist
