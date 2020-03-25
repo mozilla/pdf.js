@@ -719,6 +719,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
    * @param {TextLayerRenderParameters} renderParameters
    * @returns {TextLayerRenderTask}
    */
+  // eslint-disable-next-line no-shadow
   function renderTextLayer(renderParameters) {
     var task = new TextLayerRenderTask({
       textContent: renderParameters.textContent,

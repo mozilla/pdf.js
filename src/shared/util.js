@@ -405,6 +405,7 @@ function shadow(obj, prop, value) {
 }
 
 const BaseException = (function BaseExceptionClosure() {
+  // eslint-disable-next-line no-shadow
   function BaseException(message) {
     if (this.constructor === BaseException) {
       unreachable("Cannot initialize BaseException.");
@@ -859,6 +860,7 @@ const createObjectURL = (function createObjectURLClosure() {
   const digits =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
+  // eslint-disable-next-line no-shadow
   return function createObjectURL(data, contentType, forceDataSchema = false) {
     if (!forceDataSchema && URL.createObjectURL) {
       const blob = new Blob([data], { type: contentType });

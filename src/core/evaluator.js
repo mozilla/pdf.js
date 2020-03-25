@@ -96,6 +96,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     isEvalSupported: true,
   };
 
+  // eslint-disable-next-line no-shadow
   function PartialEvaluator({
     xref,
     handler,
@@ -3266,6 +3267,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 })();
 
 var TranslatedFont = (function TranslatedFontClosure() {
+  // eslint-disable-next-line no-shadow
   function TranslatedFont(loadedName, font, dict) {
     this.loadedName = loadedName;
     this.font = font;
@@ -3367,6 +3369,7 @@ var TranslatedFont = (function TranslatedFontClosure() {
 })();
 
 var StateManager = (function StateManagerClosure() {
+  // eslint-disable-next-line no-shadow
   function StateManager(initialState) {
     this.state = initialState;
     this.stateStack = [];
@@ -3391,6 +3394,7 @@ var StateManager = (function StateManagerClosure() {
 })();
 
 var TextState = (function TextStateClosure() {
+  // eslint-disable-next-line no-shadow
   function TextState() {
     this.ctm = new Float32Array(IDENTITY_MATRIX);
     this.fontName = null;
@@ -3496,6 +3500,7 @@ var TextState = (function TextStateClosure() {
 })();
 
 var EvalState = (function EvalStateClosure() {
+  // eslint-disable-next-line no-shadow
   function EvalState() {
     this.ctm = new Float32Array(IDENTITY_MATRIX);
     this.font = null;
@@ -3637,6 +3642,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
 
   const MAX_INVALID_PATH_OPS = 20;
 
+  // eslint-disable-next-line no-shadow
   function EvaluatorPreprocessor(stream, xref, stateManager) {
     this.opMap = getOPMap();
     // TODO(mduan): pass array of knownCommands rather than this.opMap

@@ -21,6 +21,7 @@ var EOF = {};
 var Name = (function NameClosure() {
   let nameCache = Object.create(null);
 
+  // eslint-disable-next-line no-shadow
   function Name(name) {
     this.name = name;
   }
@@ -43,6 +44,7 @@ var Name = (function NameClosure() {
 var Cmd = (function CmdClosure() {
   let cmdCache = Object.create(null);
 
+  // eslint-disable-next-line no-shadow
   function Cmd(cmd) {
     this.cmd = cmd;
   }
@@ -68,6 +70,7 @@ var Dict = (function DictClosure() {
   };
 
   // xref is optional
+  // eslint-disable-next-line no-shadow
   function Dict(xref) {
     // Map should only be used internally, use functions below to access.
     this._map = Object.create(null);
@@ -185,6 +188,7 @@ var Dict = (function DictClosure() {
 var Ref = (function RefClosure() {
   let refCache = Object.create(null);
 
+  // eslint-disable-next-line no-shadow
   function Ref(num, gen) {
     this.num = num;
     this.gen = gen;
@@ -218,6 +222,7 @@ var Ref = (function RefClosure() {
 // The reference is identified by number and generation.
 // This structure stores only one instance of the reference.
 var RefSet = (function RefSetClosure() {
+  // eslint-disable-next-line no-shadow
   function RefSet() {
     this.dict = Object.create(null);
   }
@@ -240,6 +245,7 @@ var RefSet = (function RefSetClosure() {
 })();
 
 var RefSetCache = (function RefSetCacheClosure() {
+  // eslint-disable-next-line no-shadow
   function RefSetCache() {
     this.dict = Object.create(null);
   }

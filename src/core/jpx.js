@@ -31,6 +31,8 @@ var JpxImage = (function JpxImageClosure() {
     HL: 1,
     HH: 2,
   };
+
+  // eslint-disable-next-line no-shadow
   function JpxImage() {
     this.failOnCorruptedImage = false;
   }
@@ -1585,6 +1587,7 @@ var JpxImage = (function JpxImageClosure() {
 
   // Section B.10.2 Tag trees
   var TagTree = (function TagTreeClosure() {
+    // eslint-disable-next-line no-shadow
     function TagTree(width, height) {
       var levelsLength = log2(Math.max(width, height)) + 1;
       this.levels = [];
@@ -1646,6 +1649,7 @@ var JpxImage = (function JpxImageClosure() {
   })();
 
   var InclusionTree = (function InclusionTreeClosure() {
+    // eslint-disable-next-line no-shadow
     function InclusionTree(width, height, defaultValue) {
       var levelsLength = log2(Math.max(width, height)) + 1;
       this.levels = [];
@@ -1752,6 +1756,7 @@ var JpxImage = (function JpxImageClosure() {
       8, 0, 8, 8, 8, 0, 8, 8, 8, 0, 0, 0, 0, 0, 8, 8, 8, 0, 8, 8, 8, 0, 8, 8, 8
     ]);
 
+    // eslint-disable-next-line no-shadow
     function BitModel(width, height, subband, zeroBitPlanes, mb) {
       this.width = width;
       this.height = height;
@@ -2107,6 +2112,7 @@ var JpxImage = (function JpxImageClosure() {
 
   // Section F, Discrete wavelet transformation
   var Transform = (function TransformClosure() {
+    // eslint-disable-next-line no-shadow
     function Transform() {}
 
     Transform.prototype.calculate = function transformCalculate(
@@ -2248,6 +2254,7 @@ var JpxImage = (function JpxImageClosure() {
 
   // Section 3.8.2 Irreversible 9-7 filter
   var IrreversibleTransform = (function IrreversibleTransformClosure() {
+    // eslint-disable-next-line no-shadow
     function IrreversibleTransform() {
       Transform.call(this);
     }
@@ -2345,6 +2352,7 @@ var JpxImage = (function JpxImageClosure() {
 
   // Section 3.8.1 Reversible 5-3 filter
   var ReversibleTransform = (function ReversibleTransformClosure() {
+    // eslint-disable-next-line no-shadow
     function ReversibleTransform() {
       Transform.call(this);
     }
