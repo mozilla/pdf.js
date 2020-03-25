@@ -258,7 +258,6 @@ function ChromiumBrowser(name, execPath, headless) {
     var m = /([^.\/]+)\.app(\/?)$/.exec(execPath);
     if (m) {
       execPath += (m[2] ? "" : "/") + "Contents/MacOS/" + m[1];
-      console.log(execPath);
     }
   }
   WebBrowser.call(this, name, execPath, headless);
