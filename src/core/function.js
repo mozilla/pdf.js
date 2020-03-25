@@ -565,6 +565,8 @@ function isPDFFunction(v) {
 
 var PostScriptStack = (function PostScriptStackClosure() {
   var MAX_STACK_SIZE = 100;
+
+  // eslint-disable-next-line no-shadow
   function PostScriptStack(initialStack) {
     this.stack = !initialStack
       ? []
@@ -625,6 +627,7 @@ var PostScriptStack = (function PostScriptStackClosure() {
   return PostScriptStack;
 })();
 var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
+  // eslint-disable-next-line no-shadow
   function PostScriptEvaluator(operators) {
     this.operators = operators;
   }
@@ -1084,6 +1087,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     return new AstMin(num1, max);
   }
 
+  // eslint-disable-next-line no-shadow
   function PostScriptCompiler() {}
   PostScriptCompiler.prototype = {
     compile: function PostScriptCompiler_compile(code, domain, range) {

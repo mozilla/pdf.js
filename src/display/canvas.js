@@ -168,6 +168,7 @@ function addContextCurrentTransform(ctx) {
 }
 
 var CachedCanvases = (function CachedCanvasesClosure() {
+  // eslint-disable-next-line no-shadow
   function CachedCanvases(canvasFactory) {
     this.canvasFactory = canvasFactory;
     this.cache = Object.create(null);
@@ -383,6 +384,7 @@ function compileType3Glyph(imgData) {
 }
 
 var CanvasExtraState = (function CanvasExtraStateClosure() {
+  // eslint-disable-next-line no-shadow
   function CanvasExtraState() {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
@@ -435,6 +437,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the number of steps before checking the execution time
   var EXECUTION_STEPS = 10;
 
+  // eslint-disable-next-line no-shadow
   function CanvasGraphics(
     canvasCtx,
     commonObjs,

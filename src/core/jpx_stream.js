@@ -22,6 +22,7 @@ import { shadow } from "../shared/util.js";
  * the stream behaves like all the other DecodeStreams.
  */
 const JpxStream = (function JpxStreamClosure() {
+  // eslint-disable-next-line no-shadow
   function JpxStream(stream, maybeLength, dict, params) {
     this.stream = stream;
     this.maybeLength = maybeLength;
