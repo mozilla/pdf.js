@@ -241,22 +241,26 @@ class PDFFindController {
    * @type {array} The (current) normalized search query array.
    */
   get _arrayQuery() {
-	if(!this._isArrayQuery()) return [this._query];
-	this._rawQuery = this._state.query;
-	this._normalizedQuery = [];
-	for(let i=0; i<this._state.query.length; i++) {
-		this._normalizedQuery.push(normalize(this._state.query[i]))
-	}
+    if(!this._isArrayQuery()) {
+      return [this._query];
+    }
+    this._rawQuery = this._state.query;
+    this._normalizedQuery = [];
+    for (let i = 0; i < this._state.query.length; i++) {
+      this._normalizedQuery.push(normalize(this._state.query[i]))
+    }
     return this._normalizedQuery;
   }
 
   _isArrayQuery() {
-	return Array.isArray(this._state.query);
+    return Array.isArray(this._state.query);
   }
 
   _isEmptyQuery() {
-	if(this._isArrayQuery()) return this._state.query.length == 0;
-	return this._query === "";
+    if (this._isArrayQuery()) {
+      return this._state.query.length === 0;
+    }
+    return this._query === "";
   }
 
   _shouldDirtyMatch(cmd, state) {
@@ -435,6 +439,7 @@ class PDFFindController {
       this._pageMatchesLength[pageIndex]
     );
   }
+
   _calculateMatch(pageIndex) {
     let pageContent = this._pageContents[pageIndex];
     let query;
@@ -448,7 +453,7 @@ class PDFFindController {
       query = this._arrayQuery;
       if (!caseSensitive) {
         pageContent = pageContent.toLowerCase();
-        for(i=0; i<query.length; i++) {
+        for (let i = 0; i < query.length; i++) {
           query[i] = query[i].toLowerCase();
         }
       }
@@ -466,8 +471,6 @@ class PDFFindController {
         this._calculateWordMatch(query, pageIndex, pageContent, entireWord);
       }
     }
-
-    
 
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
