@@ -1719,7 +1719,7 @@ const PDFViewerApplication = {
     const { _boundEvents } = this;
 
     window.removeEventListener("visibilitychange", webViewerVisibilityChange);
-    window.removeEventListener("wheel", webViewerWheel);
+    window.removeEventListener("wheel", webViewerWheel, { passive: false });
     window.removeEventListener("click", webViewerClick);
     window.removeEventListener("keydown", webViewerKeyDown);
     window.removeEventListener("resize", _boundEvents.windowResize);
