@@ -224,6 +224,15 @@ if (
     Number.isInteger = require("core-js/es/number/is-integer.js");
   })();
 
+  // Provides support for TypedArray.prototype.slice in legacy browsers.
+  // Support: IE
+  (function checkTypedArraySlice() {
+    if (Uint8Array.prototype.slice) {
+      return;
+    }
+    require("core-js/es/typed-array/slice");
+  })();
+
   // Support: IE, Safari<11, Chrome<63
   (function checkPromise() {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
