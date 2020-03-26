@@ -523,7 +523,6 @@ var Font = (function FontClosure() {
     this.name = name;
     this.loadedName = properties.loadedName;
     this.isType3Font = properties.isType3Font;
-    this.sizes = [];
     this.missingFile = false;
 
     this.glyphCache = Object.create(null);
@@ -652,7 +651,6 @@ var Font = (function FontClosure() {
     this.widths = properties.widths;
     this.defaultWidth = properties.defaultWidth;
     this.toUnicode = properties.toUnicode;
-    this.encoding = properties.baseEncoding;
     this.seacMap = properties.seacMap;
   }
 
@@ -1253,7 +1251,6 @@ var Font = (function FontClosure() {
     name: null,
     font: null,
     mimetype: null,
-    encoding: null,
     disableFontFace: false,
 
     get renderer() {
