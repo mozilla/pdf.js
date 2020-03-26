@@ -449,7 +449,7 @@ class PDFFindController {
       // Do nothing: the matches should be wiped out already.
       return;
     }
-    if( this._isArrayQuery()) {
+    if (this._isArrayQuery()) {
       query = this._arrayQuery;
       if (!caseSensitive) {
         pageContent = pageContent.toLowerCase();
