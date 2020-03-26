@@ -241,13 +241,13 @@ class PDFFindController {
    * @type {array} The (current) normalized search query array.
    */
   get _arrayQuery() {
-    if(!this._isArrayQuery()) {
+    if (!this._isArrayQuery()) {
       return [this._query];
     }
     this._rawQuery = this._state.query;
     this._normalizedQuery = [];
     for (let i = 0; i < this._state.query.length; i++) {
-      this._normalizedQuery.push(normalize(this._state.query[i]))
+      this._normalizedQuery.push(normalize(this._state.query[i]));
     }
     return this._normalizedQuery;
   }
@@ -445,11 +445,11 @@ class PDFFindController {
     let query;
     const { caseSensitive, entireWord, phraseSearch } = this._state;
 
-    if(this._isEmptyQuery()) {
+    if (this._isEmptyQuery()) {
       // Do nothing: the matches should be wiped out already.
       return;
     }
-    if(this._isArrayQuery()) {
+    if( this._isArrayQuery()) {
       query = this._arrayQuery;
       if (!caseSensitive) {
         pageContent = pageContent.toLowerCase();
@@ -458,7 +458,7 @@ class PDFFindController {
         }
       }
       this._calculateArrayMatch(query, pageIndex, pageContent, entireWord);
-    } else{
+    } else {
       query = this._query;
       if (!caseSensitive) {
         pageContent = pageContent.toLowerCase();
