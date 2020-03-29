@@ -37,7 +37,7 @@ import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { XRefParseException } from "./core_utils.js";
 
-var WorkerTask = (function WorkerTaskClosure() {
+const WorkerTask = (function WorkerTaskClosure() {
   // eslint-disable-next-line no-shadow
   function WorkerTask(name) {
     this.name = name;
@@ -70,7 +70,7 @@ var WorkerTask = (function WorkerTaskClosure() {
 
 var WorkerMessageHandler = {
   setup(handler, port) {
-    var testMessageProcessed = false;
+    let testMessageProcessed = false;
     handler.on("test", function wphSetupTest(data) {
       if (testMessageProcessed) {
         return; // we already processed 'test' message once
@@ -100,10 +100,10 @@ var WorkerMessageHandler = {
   createDocumentHandler(docParams, port) {
     // This context is actually holds references on pdfManager and handler,
     // until the latter is destroyed.
-    var pdfManager;
-    var terminated = false;
-    var cancelXHRs = null;
-    var WorkerTasks = [];
+    let pdfManager;
+    let terminated = false;
+    let cancelXHRs = null;
+    const WorkerTasks = [];
     const verbosity = getVerbosityLevel();
 
     const apiVersion = docParams.apiVersion;
@@ -138,10 +138,10 @@ var WorkerMessageHandler = {
       }
     }
 
-    var docId = docParams.docId;
-    var docBaseUrl = docParams.docBaseUrl;
-    var workerHandlerName = docParams.docId + "_worker";
-    var handler = new MessageHandler(workerHandlerName, docId, port);
+    const docId = docParams.docId;
+    const docBaseUrl = docParams.docBaseUrl;
+    const workerHandlerName = docParams.docId + "_worker";
+    let handler = new MessageHandler(workerHandlerName, docId, port);
 
     // Ensure that postMessage transfers are always correctly enabled/disabled,
     // to prevent "DataCloneError" in browsers without transfers support.
@@ -159,7 +159,7 @@ var WorkerMessageHandler = {
 
     function finishWorkerTask(task) {
       task.finish();
-      var i = WorkerTasks.indexOf(task);
+      const i = WorkerTasks.indexOf(task);
       WorkerTasks.splice(i, 1);
     }
 
@@ -182,10 +182,10 @@ var WorkerMessageHandler = {
     }
 
     function getPdfManager(data, evaluatorOptions) {
-      var pdfManagerCapability = createPromiseCapability();
+      const pdfManagerCapability = createPromiseCapability();
       let newPdfManager;
 
-      var source = data.source;
+      const source = data.source;
       if (source.data) {
         try {
           newPdfManager = new LocalPdfManager(
@@ -202,7 +202,7 @@ var WorkerMessageHandler = {
         return pdfManagerCapability.promise;
       }
 
-      var pdfStream,
+      let pdfStream,
         cachedChunks = [];
       try {
         pdfStream = new PDFWorkerStream(handler);
@@ -211,7 +211,7 @@ var WorkerMessageHandler = {
         return pdfManagerCapability.promise;
       }
 
-      var fullRequest = pdfStream.getFullReader();
+      const fullRequest = pdfStream.getFullReader();
       fullRequest.headersReady
         .then(function() {
           if (!fullRequest.isRangeSupported) {
@@ -219,7 +219,7 @@ var WorkerMessageHandler = {
           }
 
           // We don't need auto-fetch when streaming is enabled.
-          var disableAutoFetch =
+          const disableAutoFetch =
             source.disableAutoFetch || fullRequest.isStreamingSupported;
           newPdfManager = new NetworkPdfManager(
             docId,
@@ -250,9 +250,9 @@ var WorkerMessageHandler = {
           cancelXHRs = null;
         });
 
-      var loaded = 0;
-      var flushChunks = function() {
-        var pdfFile = arraysToBytes(cachedChunks);
+      let loaded = 0;
+      const flushChunks = function() {
+        const pdfFile = arraysToBytes(cachedChunks);
         if (source.length && pdfFile.length !== source.length) {
           warn("reported HTTP length is different from actual");
         }
@@ -271,7 +271,7 @@ var WorkerMessageHandler = {
         }
         cachedChunks = [];
       };
-      var readPromise = new Promise(function(resolve, reject) {
+      const readPromise = new Promise(function(resolve, reject) {
         var readChunk = function({ value, done }) {
           try {
             ensureNotTerminated();
@@ -326,7 +326,7 @@ var WorkerMessageHandler = {
         ensureNotTerminated();
 
         if (ex instanceof PasswordException) {
-          var task = new WorkerTask(`PasswordException: response ${ex.code}`);
+          const task = new WorkerTask(`PasswordException: response ${ex.code}`);
           startWorkerTask(task);
 
           handler
@@ -381,7 +381,7 @@ var WorkerMessageHandler = {
 
       ensureNotTerminated();
 
-      var evaluatorOptions = {
+      const evaluatorOptions = {
         forceDataSchema: data.disableCreateObjectURL,
         maxImageSize: data.maxImageSize,
         disableFontFace: data.disableFontFace,
@@ -428,8 +428,8 @@ var WorkerMessageHandler = {
     });
 
     handler.on("GetPageIndex", function wphSetupGetPageIndex(data) {
-      var ref = Ref.get(data.ref.num, data.ref.gen);
-      var catalog = pdfManager.pdfDocument.catalog;
+      const ref = Ref.get(data.ref.num, data.ref.gen);
+      const catalog = pdfManager.pdfDocument.catalog;
       return catalog.getPageIndex(ref);
     });
 
@@ -504,9 +504,9 @@ var WorkerMessageHandler = {
     handler.on(
       "GetOperatorList",
       function wphSetupRenderPage(data, sink) {
-        var pageIndex = data.pageIndex;
+        const pageIndex = data.pageIndex;
         pdfManager.getPage(pageIndex).then(function(page) {
-          var task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
+          const task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
           startWorkerTask(task);
 
           // NOTE: Keep this condition in sync with the `info` helper function.
@@ -557,12 +557,12 @@ var WorkerMessageHandler = {
     );
 
     handler.on("GetTextContent", function wphExtractText(data, sink) {
-      var pageIndex = data.pageIndex;
+      const pageIndex = data.pageIndex;
       sink.onPull = function(desiredSize) {};
       sink.onCancel = function(reason) {};
 
       pdfManager.getPage(pageIndex).then(function(page) {
-        var task = new WorkerTask("GetTextContent: page " + pageIndex);
+        const task = new WorkerTask("GetTextContent: page " + pageIndex);
         startWorkerTask(task);
 
         // NOTE: Keep this condition in sync with the `info` helper function.
@@ -648,7 +648,7 @@ var WorkerMessageHandler = {
     return workerHandlerName;
   },
   initializeFromPort(port) {
-    var handler = new MessageHandler("worker", "main", port);
+    const handler = new MessageHandler("worker", "main", port);
     WorkerMessageHandler.setup(handler, port);
     handler.send("ready", null);
   },

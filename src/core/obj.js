@@ -1115,7 +1115,7 @@ class Catalog {
   }
 }
 
-var XRef = (function XRefClosure() {
+const XRef = (function XRefClosure() {
   // eslint-disable-next-line no-shadow
   function XRef(stream, pdfManager) {
     this.stream = stream;
@@ -1137,7 +1137,7 @@ var XRef = (function XRefClosure() {
     },
 
     parse: function XRef_parse(recoveryMode) {
-      var trailerDict;
+      let trailerDict;
       if (!recoveryMode) {
         trailerDict = this.readXRef();
       } else {
@@ -1157,8 +1157,8 @@ var XRef = (function XRefClosure() {
         warn(`XRef.parse - Invalid "Encrypt" reference: "${ex}".`);
       }
       if (isDict(encrypt)) {
-        var ids = trailerDict.get("ID");
-        var fileId = ids && ids.length ? ids[0] : "";
+        const ids = trailerDict.get("ID");
+        const fileId = ids && ids.length ? ids[0] : "";
         // The 'Encrypt' dictionary itself should not be encrypted, and by
         // setting `suppressEncryption` we can prevent an infinite loop inside
         // of `XRef_fetchUncompressed` if the dictionary contains indirect
@@ -1203,7 +1203,7 @@ var XRef = (function XRefClosure() {
         };
       }
 
-      var obj = this.readXRefTable(parser);
+      const obj = this.readXRefTable(parser);
 
       // Sanity check
       if (!isCmd(obj, "trailer")) {
@@ -1220,7 +1220,7 @@ var XRef = (function XRefClosure() {
       //    >>
       // The parser goes through the entire stream << ... >> and provides
       // a getter interface for the key-value table
-      var dict = parser.getObj();
+      let dict = parser.getObj();
 
       // The pdflib PDF generator can generate a nested trailer dictionary
       if (!isDict(dict) && dict.dict) {
@@ -1247,14 +1247,14 @@ var XRef = (function XRefClosure() {
       // trailer
       // ...
 
-      var stream = parser.lexer.stream;
-      var tableState = this.tableState;
+      const stream = parser.lexer.stream;
+      const tableState = this.tableState;
       stream.pos = tableState.streamPos;
       parser.buf1 = tableState.parserBuf1;
       parser.buf2 = tableState.parserBuf2;
 
       // Outer loop is over subsection headers
-      var obj;
+      let obj;
 
       while (true) {
         if (!("firstEntryNum" in tableState) || !("entryCount" in tableState)) {
@@ -1265,24 +1265,24 @@ var XRef = (function XRefClosure() {
           tableState.entryCount = parser.getObj();
         }
 
-        var first = tableState.firstEntryNum;
-        var count = tableState.entryCount;
+        let first = tableState.firstEntryNum;
+        const count = tableState.entryCount;
         if (!Number.isInteger(first) || !Number.isInteger(count)) {
           throw new FormatError(
             "Invalid XRef table: wrong types in subsection header"
           );
         }
         // Inner loop is over objects themselves
-        for (var i = tableState.entryNum; i < count; i++) {
+        for (let i = tableState.entryNum; i < count; i++) {
           tableState.streamPos = stream.pos;
           tableState.entryNum = i;
           tableState.parserBuf1 = parser.buf1;
           tableState.parserBuf2 = parser.buf2;
 
-          var entry = {};
+          const entry = {};
           entry.offset = parser.getObj();
           entry.gen = parser.getObj();
-          var type = parser.getObj();
+          const type = parser.getObj();
 
           if (type instanceof Cmd) {
             switch (type.cmd) {
@@ -1336,9 +1336,9 @@ var XRef = (function XRefClosure() {
       if (!("streamState" in this)) {
         // Stores state of the stream as we process it so we can resume
         // from middle of stream in case of missing data error
-        var streamParameters = stream.dict;
-        var byteWidths = streamParameters.get("W");
-        var range = streamParameters.get("Index");
+        const streamParameters = stream.dict;
+        const byteWidths = streamParameters.get("W");
+        let range = streamParameters.get("Index");
         if (!range) {
           range = [0, streamParameters.get("Size")];
         }
@@ -1357,19 +1357,19 @@ var XRef = (function XRefClosure() {
     },
 
     readXRefStream: function XRef_readXRefStream(stream) {
-      var i, j;
-      var streamState = this.streamState;
+      let i, j;
+      const streamState = this.streamState;
       stream.pos = streamState.streamPos;
 
-      var byteWidths = streamState.byteWidths;
-      var typeFieldWidth = byteWidths[0];
-      var offsetFieldWidth = byteWidths[1];
-      var generationFieldWidth = byteWidths[2];
+      const byteWidths = streamState.byteWidths;
+      const typeFieldWidth = byteWidths[0];
+      const offsetFieldWidth = byteWidths[1];
+      const generationFieldWidth = byteWidths[2];
 
-      var entryRanges = streamState.entryRanges;
+      const entryRanges = streamState.entryRanges;
       while (entryRanges.length > 0) {
-        var first = entryRanges[0];
-        var n = entryRanges[1];
+        const first = entryRanges[0];
+        const n = entryRanges[1];
 
         if (!Number.isInteger(first) || !Number.isInteger(n)) {
           throw new FormatError(`Invalid XRef range fields: ${first}, ${n}`);
@@ -1387,7 +1387,7 @@ var XRef = (function XRefClosure() {
           streamState.entryNum = i;
           streamState.streamPos = stream.pos;
 
-          var type = 0,
+          let type = 0,
             offset = 0,
             generation = 0;
           for (j = 0; j < typeFieldWidth; ++j) {
@@ -1403,7 +1403,7 @@ var XRef = (function XRefClosure() {
           for (j = 0; j < generationFieldWidth; ++j) {
             generation = (generation << 8) | stream.getByte();
           }
-          var entry = {};
+          const entry = {};
           entry.offset = offset;
           entry.gen = generation;
           switch (type) {
@@ -1432,15 +1432,15 @@ var XRef = (function XRefClosure() {
     indexObjects: function XRef_indexObjects() {
       // Simple scan through the PDF content to find objects,
       // trailers and XRef streams.
-      var TAB = 0x9,
+      const TAB = 0x9,
         LF = 0xa,
         CR = 0xd,
         SPACE = 0x20;
-      var PERCENT = 0x25,
+      const PERCENT = 0x25,
         LT = 0x3c;
 
       function readToken(data, offset) {
-        var token = "",
+        let token = "",
           ch = data[offset];
         while (ch !== LF && ch !== CR && ch !== LT) {
           if (++offset >= data.length) {
@@ -1452,12 +1452,12 @@ var XRef = (function XRefClosure() {
         return token;
       }
       function skipUntil(data, offset, what) {
-        var length = what.length,
+        const length = what.length,
           dataLength = data.length;
-        var skipped = 0;
+        let skipped = 0;
         // finding byte sequence
         while (offset < dataLength) {
-          var i = 0;
+          let i = 0;
           while (i < length && data[offset + i] === what[i]) {
             ++i;
           }
@@ -1469,30 +1469,30 @@ var XRef = (function XRefClosure() {
         }
         return skipped;
       }
-      var objRegExp = /^(\d+)\s+(\d+)\s+obj\b/;
+      const objRegExp = /^(\d+)\s+(\d+)\s+obj\b/;
       const endobjRegExp = /\bendobj[\b\s]$/;
       const nestedObjRegExp = /\s+(\d+\s+\d+\s+obj[\b\s<])$/;
       const CHECK_CONTENT_LENGTH = 25;
 
-      var trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
+      const trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
       // prettier-ignore
-      var startxrefBytes = new Uint8Array([115, 116, 97, 114, 116, 120, 114,
+      const startxrefBytes = new Uint8Array([115, 116, 97, 114, 116, 120, 114,
                                            101, 102]);
       const objBytes = new Uint8Array([111, 98, 106]);
-      var xrefBytes = new Uint8Array([47, 88, 82, 101, 102]);
+      const xrefBytes = new Uint8Array([47, 88, 82, 101, 102]);
 
       // Clear out any existing entries, since they may be bogus.
       this.entries.length = 0;
 
-      var stream = this.stream;
+      const stream = this.stream;
       stream.pos = 0;
-      var buffer = stream.getBytes();
-      var position = stream.start,
+      const buffer = stream.getBytes();
+      let position = stream.start,
         length = buffer.length;
-      var trailers = [],
+      const trailers = [],
         xrefStms = [];
       while (position < length) {
-        var ch = buffer[position];
+        let ch = buffer[position];
         if (ch === TAB || ch === LF || ch === CR || ch === SPACE) {
           ++position;
           continue;
@@ -1508,7 +1508,7 @@ var XRef = (function XRefClosure() {
           } while (ch !== LF && ch !== CR);
           continue;
         }
-        var token = readToken(buffer, position);
+        const token = readToken(buffer, position);
         var m;
         if (
           token.startsWith("xref") &&
@@ -1563,7 +1563,7 @@ var XRef = (function XRefClosure() {
 
           // checking XRef stream suspect
           // (it shall have '/XRef' and next char is not a letter)
-          var xrefTagOffset = skipUntil(content, 0, xrefBytes);
+          const xrefTagOffset = skipUntil(content, 0, xrefBytes);
           if (
             xrefTagOffset < contentLength &&
             content[xrefTagOffset + 5] < 64
@@ -1584,7 +1584,7 @@ var XRef = (function XRefClosure() {
         }
       }
       // reading XRef streams
-      var i, ii;
+      let i, ii;
       for (i = 0, ii = xrefStms.length; i < ii; ++i) {
         this.startXRefQueue.push(xrefStms[i]);
         this.readXRef(/* recoveryMode */ true);
@@ -1599,7 +1599,7 @@ var XRef = (function XRefClosure() {
           allowStreams: true,
           recoveryMode: true,
         });
-        var obj = parser.getObj();
+        const obj = parser.getObj();
         if (!isCmd(obj, "trailer")) {
           continue;
         }
@@ -1637,7 +1637,7 @@ var XRef = (function XRefClosure() {
     },
 
     readXRef: function XRef_readXRef(recoveryMode) {
-      var stream = this.stream;
+      const stream = this.stream;
       // Keep track of already parsed XRef tables, to prevent an infinite loop
       // when parsing corrupt PDF files where e.g. the /Prev entries create a
       // circular dependency between tables (fixes bug1393476.pdf).
@@ -1645,7 +1645,7 @@ var XRef = (function XRefClosure() {
 
       try {
         while (this.startXRefQueue.length) {
-          var startXRef = this.startXRefQueue[0];
+          const startXRef = this.startXRefQueue[0];
 
           if (startXRefParsedCache[startXRef]) {
             warn("readXRef - skipping XRef table since it was already parsed.");
@@ -1661,7 +1661,7 @@ var XRef = (function XRefClosure() {
             xref: this,
             allowStreams: true,
           });
-          var obj = parser.getObj();
+          let obj = parser.getObj();
           var dict;
 
           // Get dictionary
@@ -1675,7 +1675,7 @@ var XRef = (function XRefClosure() {
             // Recursively get other XRefs 'XRefStm', if any
             obj = dict.get("XRefStm");
             if (Number.isInteger(obj)) {
-              var pos = obj;
+              const pos = obj;
               // ignore previously loaded xref streams
               // (possible infinite recursion)
               if (!(pos in this.xrefstms)) {
@@ -1731,7 +1731,7 @@ var XRef = (function XRefClosure() {
     },
 
     getEntry: function XRef_getEntry(i) {
-      var xrefEntry = this.entries[i];
+      const xrefEntry = this.entries[i];
       if (xrefEntry && !xrefEntry.free && xrefEntry.offset) {
         return xrefEntry;
       }
@@ -1785,12 +1785,12 @@ var XRef = (function XRefClosure() {
     },
 
     fetchUncompressed(ref, xrefEntry, suppressEncryption = false) {
-      var gen = ref.gen;
-      var num = ref.num;
+      const gen = ref.gen;
+      let num = ref.num;
       if (xrefEntry.gen !== gen) {
         throw new XRefEntryException(`Inconsistent generation in XRef: ${ref}`);
       }
-      var stream = this.stream.makeSubStream(
+      const stream = this.stream.makeSubStream(
         xrefEntry.offset + this.stream.start
       );
       const parser = new Parser({
@@ -1798,9 +1798,9 @@ var XRef = (function XRefClosure() {
         xref: this,
         allowStreams: true,
       });
-      var obj1 = parser.getObj();
-      var obj2 = parser.getObj();
-      var obj3 = parser.getObj();
+      const obj1 = parser.getObj();
+      const obj2 = parser.getObj();
+      const obj3 = parser.getObj();
 
       if (obj1 !== num || obj2 !== gen || !(obj3 instanceof Cmd)) {
         throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
@@ -2133,7 +2133,7 @@ var FileSpec = (function FileSpecClosure() {
   FileSpec.prototype = {
     get filename() {
       if (!this._filename && this.root) {
-        var filename = pickPlatformItem(this.root) || "unnamed";
+        const filename = pickPlatformItem(this.root) || "unnamed";
         this._filename = stringToPDFString(filename)
           .replace(/\\\\/g, "\\")
           .replace(/\\\//g, "/")
@@ -2148,10 +2148,10 @@ var FileSpec = (function FileSpecClosure() {
       if (!this.contentRef && this.root) {
         this.contentRef = pickPlatformItem(this.root.get("EF"));
       }
-      var content = null;
+      let content = null;
       if (this.contentRef) {
-        var xref = this.xref;
-        var fileObj = xref.fetchIfRef(this.contentRef);
+        const xref = this.xref;
+        const fileObj = xref.fetchIfRef(this.contentRef);
         if (fileObj && isStream(fileObj)) {
           content = fileObj.getBytes();
         } else {
