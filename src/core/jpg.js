@@ -80,8 +80,8 @@ const JpegImage = (function JpegImageClosure() {
   }
 
   function buildHuffmanTable(codeLengths, values) {
+    const code = [];
     let k = 0,
-      code = [],
       i,
       j,
       length = 16;
@@ -136,8 +136,8 @@ const JpegImage = (function JpegImageClosure() {
     const mcusPerLine = frame.mcusPerLine;
     const progressive = frame.progressive;
 
-    let startOffset = offset,
-      bitsData = 0,
+    const startOffset = offset;
+    let bitsData = 0,
       bitsCount = 0;
 
     function readBit() {
@@ -263,8 +263,8 @@ const JpegImage = (function JpegImageClosure() {
         eobrun--;
         return;
       }
-      let k = spectralStart,
-        e = spectralEnd;
+      let k = spectralStart;
+      const e = spectralEnd;
       while (k <= e) {
         const rs = decodeHuffman(component.huffmanTableAC);
         const s = rs & 15,

@@ -157,12 +157,10 @@ var WebGLUtils = (function WebGLUtilsClosure() {
   let smaskCache = null;
 
   function initSmaskGL() {
-    let canvas, gl;
-
     generateGL();
-    canvas = currentCanvas;
+    const canvas = currentCanvas;
     currentCanvas = null;
-    gl = currentGL;
+    const gl = currentGL;
     currentGL = null;
 
     // setup a GLSL program
@@ -302,12 +300,10 @@ var WebGLUtils = (function WebGLUtilsClosure() {
   let figuresCache = null;
 
   function initFiguresGL() {
-    let canvas, gl;
-
     generateGL();
-    canvas = currentCanvas;
+    const canvas = currentCanvas;
     currentCanvas = null;
-    gl = currentGL;
+    const gl = currentGL;
     currentGL = null;
 
     // setup a GLSL program

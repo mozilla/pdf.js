@@ -152,9 +152,9 @@ const FontRendererFactory = (function FontRendererFactoryClosure() {
   }
 
   function lookupCmap(ranges, unicode) {
-    let code = unicode.codePointAt(0),
-      gid = 0;
-    let l = 0,
+    const code = unicode.codePointAt(0);
+    let gid = 0,
+      l = 0,
       r = ranges.length - 1;
     while (l < r) {
       const c = (l + r + 1) >> 1;

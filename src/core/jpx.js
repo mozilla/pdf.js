@@ -45,8 +45,8 @@ const JpxImage = (function JpxImageClosure() {
         return;
       }
 
-      let position = 0,
-        length = data.length;
+      const length = data.length;
+      let position = 0;
       while (position < length) {
         let headerSize = 8;
         let lbox = readUint32(data, position);
@@ -432,8 +432,8 @@ const JpxImage = (function JpxImageClosure() {
   function calculateTileGrids(context, components) {
     const siz = context.SIZ;
     // Section B.3 Division into tile and tile-components
-    let tile,
-      tiles = [];
+    const tiles = [];
+    let tile;
     const numXtiles = Math.ceil((siz.Xsiz - siz.XTOsiz) / siz.XTsiz);
     const numYtiles = Math.ceil((siz.Ysiz - siz.YTOsiz) / siz.YTsiz);
     for (let q = 0; q < numYtiles; q++) {
@@ -1318,8 +1318,8 @@ const JpxImage = (function JpxImageClosure() {
       currentCodingpassType = 2; // first bit plane starts from cleanup
 
       // collect data
-      let data = codeblock.data,
-        totalLength = 0,
+      const data = codeblock.data;
+      let totalLength = 0,
         codingpasses = 0;
       var j, jj, dataItem;
       for (j = 0, jj = data.length; j < jj; j++) {
@@ -2148,9 +2148,9 @@ const JpxImage = (function JpxImageClosure() {
       u0,
       v0
     ) {
-      let llWidth = ll.width,
-        llHeight = ll.height,
-        llItems = ll.items;
+      const llWidth = ll.width,
+        llHeight = ll.height;
+      let llItems = ll.items;
       const width = hl_lh_hh.width;
       const height = hl_lh_hh.height;
       const items = hl_lh_hh.items;

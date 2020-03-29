@@ -389,8 +389,8 @@ const renderTextLayer = (function renderTextLayerClosure() {
       }
 
       // Fixing the horizon.
-      let changedHorizon = [],
-        lastBoundary = null;
+      const changedHorizon = [];
+      let lastBoundary = null;
       for (q = i; q <= j; q++) {
         horizonPart = horizon[q];
         affectedBoundary = horizonPart.boundary;

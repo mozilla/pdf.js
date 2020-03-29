@@ -75,16 +75,16 @@ const Jbig2Image = (function Jbig2ImageClosure() {
     // prettier-ignore
     /* eslint-disable no-nested-ternary */
     const value = readBits(1) ?
-                  (readBits(1) ?
                     (readBits(1) ?
                       (readBits(1) ?
                         (readBits(1) ?
-                          (readBits(32) + 4436) :
-                        readBits(12) + 340) :
-                      readBits(8) + 84) :
-                    readBits(6) + 20) :
-                  readBits(4) + 4) :
-                readBits(2);
+                          (readBits(1) ?
+                            (readBits(32) + 4436) :
+                          readBits(12) + 340) :
+                        readBits(8) + 84) :
+                      readBits(6) + 20) :
+                    readBits(4) + 4) :
+                  readBits(2);
     /* eslint-enable no-nested-ternary */
     if (sign === 0) {
       return value;
@@ -281,14 +281,8 @@ const Jbig2Image = (function Jbig2ImageClosure() {
   function decodeBitmapTemplate0(width, height, decodingContext) {
     const decoder = decodingContext.decoder;
     const contexts = decodingContext.contextCache.getContexts("GB");
-    let contextLabel,
-      i,
-      j,
-      pixel,
-      row,
-      row1,
-      row2,
-      bitmap = [];
+    const bitmap = [];
+    let contextLabel, i, j, pixel, row, row1, row2;
 
     // ...ooooo....
     // ..ooooooo... Context template for current pixel (X)
@@ -756,9 +750,9 @@ const Jbig2Image = (function Jbig2ImageClosure() {
     }
 
     // 6.5.10 Exported symbols
-    const exportedSymbols = [];
-    let flags = [],
-      currentFlag = false;
+    const exportedSymbols = [],
+      flags = [];
+    let currentFlag = false;
     const totalSymbolsLength = symbols.length + numberOfNewSymbols;
     while (flags.length < totalSymbolsLength) {
       let runLength = huffman
@@ -1294,9 +1288,9 @@ const Jbig2Image = (function Jbig2ImageClosure() {
   function processSegment(segment, visitor) {
     const header = segment.header;
 
-    let data = segment.data,
-      position = segment.start,
+    const data = segment.data,
       end = segment.end;
+    let position = segment.start;
     let args, at, i, atLength;
     switch (header.type) {
       case 0: // SymbolDictionary

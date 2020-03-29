@@ -211,10 +211,8 @@ function compileType3Glyph(imgData) {
 
   const width = imgData.width,
     height = imgData.height;
-  let i,
-    j,
-    j0,
-    width1 = width + 1;
+  const width1 = width + 1;
+  let i, ii, j, j0;
   const points = new Uint8Array(width1 * (height + 1));
   // prettier-ignore
   const POINT_TYPES =
@@ -223,12 +221,11 @@ function compileType3Glyph(imgData) {
   // decodes bit-packed mask data
   const lineSize = (width + 7) & ~7,
     data0 = imgData.data;
-  let data = new Uint8Array(lineSize * height),
-    pos = 0,
-    ii;
+  const data = new Uint8Array(lineSize * height);
+  let pos = 0;
   for (i = 0, ii = data0.length; i < ii; i++) {
-    let mask = 128,
-      elem = data0[i];
+    const elem = data0[i];
+    let mask = 128;
     while (mask > 0) {
       data[pos++] = elem & mask ? 0 : 255;
       mask >>= 1;

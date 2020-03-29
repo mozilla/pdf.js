@@ -212,8 +212,8 @@ const DecodeStream = (function DecodeStreamClosure() {
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
     getBytes(length, forceClamped = false) {
-      let end,
-        pos = this.pos;
+      const pos = this.pos;
+      let end;
 
       if (length) {
         this.ensureBuffer(pos + length);
@@ -972,10 +972,9 @@ const DecryptStream = (function DecryptStreamClosure() {
     chunk = decrypt(chunk, !hasMoreData);
 
     let bufferLength = this.bufferLength;
-    let i,
-      n = chunk.length;
+    const n = chunk.length;
     const buffer = this.ensureBuffer(bufferLength + n);
-    for (i = 0; i < n; i++) {
+    for (let i = 0; i < n; i++) {
       buffer[bufferLength++] = chunk[i];
     }
     this.bufferLength = bufferLength;
@@ -1018,9 +1017,8 @@ const Ascii85Stream = (function Ascii85StreamClosure() {
       return;
     }
 
-    let bufferLength = this.bufferLength,
-      buffer;
-    let i;
+    const bufferLength = this.bufferLength;
+    let buffer, i;
 
     // special code for z
     if (c === Z_LOWER_CHAR) {
@@ -1234,8 +1232,8 @@ const LZWStream = (function LZWStreamClosure() {
 
   LZWStream.prototype.readBlock = function LZWStream_readBlock() {
     const blockSize = 512;
-    let estimatedDecodedSize = blockSize * 2,
-      decodedSizeDelta = blockSize;
+    let estimatedDecodedSize = blockSize * 2;
+    const decodedSizeDelta = blockSize;
     let i, j, q;
 
     const lzwState = this.lzwState;

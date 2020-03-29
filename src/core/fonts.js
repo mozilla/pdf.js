@@ -782,8 +782,8 @@ const Font = (function FontClosure() {
   }
 
   function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
-    let toFontChar = [],
-      unicode;
+    const toFontChar = [];
+    let unicode;
     for (let i = 0, ii = encoding.length; i < ii; i++) {
       unicode = getUnicodeForGlyph(encoding[i], glyphsUnicodeMap);
       if (unicode !== -1) {
@@ -1645,8 +1645,8 @@ const Font = (function FontClosure() {
           // might be changed
           const segCount = file.getUint16() >> 1;
           file.getBytes(6); // skipping range fields
-          let segIndex,
-            segments = [];
+          const segments = [];
+          let segIndex;
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segments.push({ end: file.getUint16() });
           }
@@ -3378,8 +3378,8 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   }
 
   // Lastly, merge in the differences.
-  let differences = properties.differences,
-    glyphsUnicodeMap;
+  const differences = properties.differences;
+  let glyphsUnicodeMap;
   if (differences) {
     for (charCode in differences) {
       const glyphName = differences[charCode];
@@ -3606,8 +3606,8 @@ var Type1Font = (function Type1FontClosure() {
 
     getGlyphMapping: function Type1Font_getGlyphMapping(properties) {
       const charstrings = this.charstrings;
-      let glyphNames = [".notdef"],
-        glyphId;
+      const glyphNames = [".notdef"];
+      let glyphId;
       for (glyphId = 0; glyphId < charstrings.length; glyphId++) {
         glyphNames.push(charstrings[glyphId].glyphName);
       }

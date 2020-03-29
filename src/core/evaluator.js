@@ -966,8 +966,8 @@ const PartialEvaluator = (function PartialEvaluatorClosure() {
         );
       }
 
-      let fontRef,
-        xref = this.xref;
+      const xref = this.xref;
+      let fontRef;
       if (font) {
         // Loading by ref.
         if (!isRef(font)) {
@@ -1020,8 +1020,8 @@ const PartialEvaluator = (function PartialEvaluatorClosure() {
       const preEvaluatedFont = this.preEvaluateFont(font);
       const { descriptor, hash } = preEvaluatedFont;
 
-      let fontRefIsRef = isRef(fontRef),
-        fontID;
+      const fontRefIsRef = isRef(fontRef);
+      let fontID;
       if (fontRefIsRef) {
         fontID = fontRef.toString();
       }
@@ -1279,11 +1279,9 @@ const PartialEvaluator = (function PartialEvaluatorClosure() {
         };
         task.ensureNotTerminated();
         timeSlotManager.reset();
-        let stop,
-          operation = {},
-          i,
-          ii,
-          cs;
+
+        const operation = {};
+        let stop, i, ii, cs;
         while (!(stop = timeSlotManager.check())) {
           // The arguments parsed by read() are used beyond this loop, so we
           // cannot reuse the same array on each iteration. Therefore we pass
@@ -1845,8 +1843,8 @@ const PartialEvaluator = (function PartialEvaluatorClosure() {
         // Replaces all whitespaces with standard spaces (0x20), to avoid
         // alignment issues between the textLayer and the canvas if the text
         // contains e.g. tabs (fixes issue6612.pdf).
+        const ii = str.length;
         let i = 0,
-          ii = str.length,
           code;
         while (i < ii && (code = str.charCodeAt(i)) >= 0x20 && code <= 0x7f) {
           i++;
@@ -1992,8 +1990,9 @@ const PartialEvaluator = (function PartialEvaluatorClosure() {
         };
         task.ensureNotTerminated();
         timeSlotManager.reset();
+
+        const operation = {};
         let stop,
-          operation = {},
           args = [];
         while (!(stop = timeSlotManager.check())) {
           // The arguments parsed by read() are not used beyond this loop, so
@@ -3468,9 +3467,8 @@ var TextState = (function TextStateClosure() {
       if ((font.vertical && txDiff !== 0) || (!font.vertical && tyDiff !== 0)) {
         return null;
       }
-      let tx,
-        ty,
-        denominator = a * d - b * c;
+      const denominator = a * d - b * c;
+      let tx, ty;
       if (font.vertical) {
         tx = (-tyDiff * c) / denominator;
         ty = (tyDiff * a) / denominator;

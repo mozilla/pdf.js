@@ -601,12 +601,10 @@ const PostScriptStack = (function PostScriptStackClosure() {
     // rotate the last n stack elements p times
     roll: function PostScriptStack_roll(n, p) {
       const stack = this.stack;
-      const l = stack.length - n;
-      let r = stack.length - 1,
-        c = l + (p - Math.floor(p / n) * n),
-        i,
-        j,
-        t;
+      const l = stack.length - n,
+        r = stack.length - 1,
+        c = l + (p - Math.floor(p / n) * n);
+      let i, j, t;
       for (i = l, j = r; i < j; i++, j--) {
         t = stack[i];
         stack[i] = stack[j];

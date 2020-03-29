@@ -105,8 +105,8 @@ const QueueOptimizer = (function QueueOptimizerClosure() {
 
       // assuming that heights of those image is too small (~1 pixel)
       // packing as much as possible by lines
-      let maxX = 0;
-      let map = [],
+      const map = [];
+      let maxX = 0,
         maxLineHeight = 0;
       let currentX = IMAGE_PADDING,
         currentY = IMAGE_PADDING;

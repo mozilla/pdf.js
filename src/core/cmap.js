@@ -485,8 +485,8 @@ const BinaryCMapReader = (function BinaryCMapReaderClosure() {
       this.pos += size + 1;
     },
     readHexNumber(num, size) {
-      let last;
-      let stack = this.tmpBuf,
+      const stack = this.tmpBuf;
+      let last,
         sp = 0;
       do {
         const b = this.readByte();

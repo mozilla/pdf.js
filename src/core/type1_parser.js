@@ -395,9 +395,9 @@ const Type1Parser = (function Type1ParserClosure() {
     if (discardNumber >= data.length) {
       return new Uint8Array(0);
     }
+    const c1 = 52845,
+      c2 = 22719;
     let r = key | 0,
-      c1 = 52845,
-      c2 = 22719,
       i,
       j;
     for (i = 0; i < discardNumber; i++) {
@@ -414,9 +414,9 @@ const Type1Parser = (function Type1ParserClosure() {
   }
 
   function decryptAscii(data, key, discardNumber) {
-    let r = key | 0,
-      c1 = 52845,
+    const c1 = 52845,
       c2 = 22719;
+    let r = key | 0;
     const count = data.length,
       maybeLength = count >>> 1;
     const decrypted = new Uint8Array(maybeLength);

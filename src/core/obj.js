@@ -1486,9 +1486,9 @@ const XRef = (function XRefClosure() {
 
       const stream = this.stream;
       stream.pos = 0;
-      const buffer = stream.getBytes();
-      let position = stream.start,
+      const buffer = stream.getBytes(),
         length = buffer.length;
+      let position = stream.start;
       const trailers = [],
         xrefStms = [];
       while (position < length) {
