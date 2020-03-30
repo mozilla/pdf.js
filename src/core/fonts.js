@@ -87,6 +87,49 @@ var PDF_GLYPH_SPACE_UNITS = 1000;
 // custom one. Windows just refuses to draw glyphs with seac operators.
 var SEAC_ANALYSIS_ENABLED = true;
 
+const EXPORT_DATA_PROPERTIES = [
+  "_shadowWidth",
+  "ascent",
+  "bbox",
+  "black",
+  "bold",
+  "cMap",
+  "charProcOperatorList",
+  "charsCache",
+  "cidEncoding",
+  "composite",
+  "data",
+  "defaultEncoding",
+  "defaultVMetrics",
+  "defaultWidth",
+  "descent",
+  "differences",
+  "fallbackName",
+  "fallbackToUnicode",
+  "fontMatrix",
+  "fontType",
+  "glyphCache",
+  "isMonospace",
+  "isOpenType",
+  "isSerifFont",
+  "isSymbolicFont",
+  "isType3Font",
+  "italic",
+  "loadedName",
+  "mimetype",
+  "missingFile",
+  "name",
+  "remeasure",
+  "seacMap",
+  "subtype",
+  "toFontChar",
+  "toUnicode",
+  "type",
+  "vertical",
+  "vmetrics",
+  "widths",
+];
+
 var FontFlags = {
   FixedPitch: 1,
   Serif: 2,
@@ -1258,12 +1301,14 @@ var Font = (function FontClosure() {
       return shadow(this, "renderer", renderer);
     },
 
-    exportData: function Font_exportData() {
-      // TODO remove enumerating of the properties, e.g. hardcode exact names.
-      var data = {};
-      for (var i in this) {
-        if (this.hasOwnProperty(i)) {
-          data[i] = this[i];
+    exportData() {
+      const data = Object.create(null);
+      let property, value;
+      for (property of EXPORT_DATA_PROPERTIES) {
+        value = this[property];
+        // Ignore properties that haven't been explicitly set.
+        if (value !== undefined) {
+          data[property] = value;
         }
       }
       return data;
