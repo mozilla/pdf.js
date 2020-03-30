@@ -14,7 +14,6 @@
  */
 
 import {
-  getGlobalEventBus,
   isValidRotation,
   parseQueryString,
   waitOnEventOrTimeout,
@@ -59,7 +58,7 @@ class PDFHistory {
    */
   constructor({ linkService, eventBus }) {
     this.linkService = linkService;
-    this.eventBus = eventBus || getGlobalEventBus();
+    this.eventBus = eventBus;
 
     this._initialized = false;
     this._fingerprint = "";
