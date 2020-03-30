@@ -773,46 +773,46 @@ html[dir="rtl"] .secondaryToolbarButton::before {
   right: 4px;
 }
 
-html[dir='ltr'] .toolbarButton#sidebarToggle::before {
+.toolbarButton#sidebarToggle::before {
   content: url(images/toolbarButton-sidebarToggle.png);
 }
 html[dir='rtl'] .toolbarButton#sidebarToggle::before {
-  content: url(images/toolbarButton-sidebarToggle-rtl.png);
+  transform: scaleX(-1);
 }
 
-html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
+.toolbarButton#secondaryToolbarToggle::before {
   content: url(images/toolbarButton-secondaryToolbarToggle.png);
 }
 html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
-  content: url(images/toolbarButton-secondaryToolbarToggle-rtl.png);
+  transform: scaleX(-1);
 }
 
-html[dir='ltr'] .toolbarButton.findPrevious::before {
+.toolbarButton.findPrevious::before {
   content: url(images/findbarButton-previous.png);
 }
 html[dir='rtl'] .toolbarButton.findPrevious::before {
-  content: url(images/findbarButton-previous-rtl.png);
+  transform: scaleX(-1);
 }
 
-html[dir='ltr'] .toolbarButton.findNext::before {
+.toolbarButton.findNext::before {
   content: url(images/findbarButton-next.png);
 }
 html[dir='rtl'] .toolbarButton.findNext::before {
-  content: url(images/findbarButton-next-rtl.png);
+  transform: scaleX(-1);
 }
 
-html[dir='ltr'] .toolbarButton.pageUp::before {
+.toolbarButton.pageUp::before {
   content: url(images/toolbarButton-pageUp.png);
 }
 html[dir='rtl'] .toolbarButton.pageUp::before {
-  content: url(images/toolbarButton-pageUp-rtl.png);
+  transform: scaleX(-1);
 }
 
-html[dir='ltr'] .toolbarButton.pageDown::before {
+.toolbarButton.pageDown::before {
   content: url(images/toolbarButton-pageDown.png);
 }
 html[dir='rtl'] .toolbarButton.pageDown::before {
-  content: url(images/toolbarButton-pageDown-rtl.png);
+  transform: scaleX(-1);
 }
 
 .toolbarButton.zoomOut::before {
@@ -868,11 +868,11 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-viewThumbnail.png);
 }
 
-html[dir="ltr"] #viewOutline.toolbarButton::before {
+#viewOutline.toolbarButton::before {
   content: url(images/toolbarButton-viewOutline.png);
 }
 html[dir="rtl"] #viewOutline.toolbarButton::before {
-  content: url(images/toolbarButton-viewOutline-rtl.png);
+  transform: scaleX(-1);
 }
 
 #viewAttachments.toolbarButton::before {
@@ -1237,11 +1237,11 @@ html[dir='rtl'] .attachmentsItem > button {
   display: inline-block;
   position: absolute;
 }
-html[dir='ltr'] .outlineItemToggler.outlineItemsHidden::before {
+.outlineItemToggler.outlineItemsHidden::before {
   content: url(images/treeitem-collapsed.png);
 }
 html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
-  content: url(images/treeitem-collapsed-rtl.png);
+  transform: scaleX(-1);
 }
 .outlineItemToggler.outlineItemsHidden ~ .outlineItems {
   display: none;
@@ -1594,46 +1594,46 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     left: 4px;
   }
 
-  html[dir='ltr'] .toolbarButton#sidebarToggle::before {
+  .toolbarButton#sidebarToggle::before {
     content: url(images/toolbarButton-sidebarToggle@2x.png);
   }
   html[dir='rtl'] .toolbarButton#sidebarToggle::before {
-    content: url(images/toolbarButton-sidebarToggle-rtl@2x.png);
+    transform: scale(-0.5, 0.5);
   }
 
-  html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
+  .toolbarButton#secondaryToolbarToggle::before {
     content: url(images/toolbarButton-secondaryToolbarToggle@2x.png);
   }
   html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
-    content: url(images/toolbarButton-secondaryToolbarToggle-rtl@2x.png);
+    transform: scale(-0.5, 0.5);
   }
 
-  html[dir='ltr'] .toolbarButton.findPrevious::before {
+  .toolbarButton.findPrevious::before {
     content: url(images/findbarButton-previous@2x.png);
   }
   html[dir='rtl'] .toolbarButton.findPrevious::before {
-    content: url(images/findbarButton-previous-rtl@2x.png);
+    transform: scale(-0.5, 0.5);
   }
 
-  html[dir='ltr'] .toolbarButton.findNext::before {
+  .toolbarButton.findNext::before {
     content: url(images/findbarButton-next@2x.png);
   }
   html[dir='rtl'] .toolbarButton.findNext::before {
-    content: url(images/findbarButton-next-rtl@2x.png);
+    transform: scale(-0.5, 0.5);
   }
 
-  html[dir='ltr'] .toolbarButton.pageUp::before {
+  .toolbarButton.pageUp::before {
     content: url(images/toolbarButton-pageUp@2x.png);
   }
   html[dir='rtl'] .toolbarButton.pageUp::before {
-    content: url(images/toolbarButton-pageUp-rtl@2x.png);
+    transform: scale(-0.5, 0.5);
   }
 
-  html[dir='ltr'] .toolbarButton.pageDown::before {
+  .toolbarButton.pageDown::before {
     content: url(images/toolbarButton-pageDown@2x.png);
   }
   html[dir='rtl'] .toolbarButton.pageDown::before {
-    content: url(images/toolbarButton-pageDown-rtl@2x.png);
+    transform: scale(-0.5, 0.5);
   }
 
   .toolbarButton.zoomIn::before {
@@ -1673,11 +1673,11 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     content: url(images/toolbarButton-viewThumbnail@2x.png);
   }
 
-  html[dir="ltr"] #viewOutline.toolbarButton::before {
+  #viewOutline.toolbarButton::before {
     content: url(images/toolbarButton-viewOutline@2x.png);
   }
   html[dir="rtl"] #viewOutline.toolbarButton::before {
-    content: url(images/toolbarButton-viewOutline-rtl@2x.png);
+    transform: scale(-0.5, 0.5);
   }
 
   #viewAttachments.toolbarButton::before {
@@ -1745,11 +1745,11 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     top: -1px;
     content: url(images/treeitem-expanded@2x.png);
   }
-  html[dir='ltr'] .outlineItemToggler.outlineItemsHidden::before {
+  .outlineItemToggler.outlineItemsHidden::before {
     content: url(images/treeitem-collapsed@2x.png);
   }
   html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
-    content: url(images/treeitem-collapsed-rtl@2x.png);
+    transform: scale(-0.5, 0.5);
   }
   html[dir='ltr'] .outlineItemToggler::before {
     right: 0;
