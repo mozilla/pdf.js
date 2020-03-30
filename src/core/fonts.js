@@ -88,15 +88,12 @@ var PDF_GLYPH_SPACE_UNITS = 1000;
 var SEAC_ANALYSIS_ENABLED = true;
 
 const EXPORT_DATA_PROPERTIES = [
-  "_shadowWidth",
   "ascent",
   "bbox",
   "black",
   "bold",
   "cMap",
   "charProcOperatorList",
-  "charsCache",
-  "cidEncoding",
   "composite",
   "data",
   "defaultEncoding",
@@ -105,12 +102,9 @@ const EXPORT_DATA_PROPERTIES = [
   "descent",
   "differences",
   "fallbackName",
-  "fallbackToUnicode",
   "fontMatrix",
   "fontType",
-  "glyphCache",
   "isMonospace",
-  "isOpenType",
   "isSerifFont",
   "isSymbolicFont",
   "isType3Font",
