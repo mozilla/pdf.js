@@ -125,6 +125,10 @@ class DefaultExternalServices {
       metaKey: true,
     });
   }
+
+  static get isInAutomation() {
+    return shadow(this, "isInAutomation", false);
+  }
 }
 
 const PDFViewerApplication = {
@@ -339,12 +343,12 @@ const PDFViewerApplication = {
   async _initializeViewerComponents() {
     const appConfig = this.appConfig;
 
-    this.overlayManager = new OverlayManager();
-
     const eventBus =
       appConfig.eventBus ||
-      new EventBus({ dispatchToDOM: AppOptions.get("eventBusDispatchToDOM") });
+      new EventBus({ isInAutomation: this.externalServices.isInAutomation });
     this.eventBus = eventBus;
+
+    this.overlayManager = new OverlayManager();
 
     const pdfRenderingQueue = new PDFRenderingQueue();
     pdfRenderingQueue.onIdle = this.cleanup.bind(this);

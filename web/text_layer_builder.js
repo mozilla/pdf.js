@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { getGlobalEventBus } from "./ui_utils.js";
 import { renderTextLayer } from "pdfjs-lib";
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
@@ -45,7 +44,7 @@ class TextLayerBuilder {
     enhanceTextSelection = false,
   }) {
     this.textLayerDiv = textLayerDiv;
-    this.eventBus = eventBus || getGlobalEventBus();
+    this.eventBus = eventBus;
     this.textContent = null;
     this.textContentItemsStr = [];
     this.textContentStream = null;
