@@ -3169,10 +3169,6 @@ var Font = (function FontClosure() {
     },
 
     get spaceWidth() {
-      if ("_shadowWidth" in this) {
-        return this._shadowWidth;
-      }
-
       // trying to estimate space character width
       var possibleSpaceReplacements = ["space", "minus", "one", "i", "I"];
       var width;
@@ -3187,10 +3183,8 @@ var Font = (function FontClosure() {
         var glyphUnicode = glyphsUnicodeMap[glyphName];
         // finding the charcode via unicodeToCID map
         var charcode = 0;
-        if (this.composite) {
-          if (this.cMap.contains(glyphUnicode)) {
-            charcode = this.cMap.lookup(glyphUnicode);
-          }
+        if (this.composite && this.cMap.contains(glyphUnicode)) {
+          charcode = this.cMap.lookup(glyphUnicode);
         }
         // ... via toUnicode map
         if (!charcode && this.toUnicode) {
@@ -3207,10 +3201,7 @@ var Font = (function FontClosure() {
         }
       }
       width = width || this.defaultWidth;
-      // Do not shadow the property here. See discussion:
-      // https://github.com/mozilla/pdf.js/pull/2127#discussion_r1662280
-      this._shadowWidth = width;
-      return width;
+      return shadow(this, "spaceWidth", width);
     },
 
     charToGlyph: function Font_charToGlyph(charcode, isSpace) {
