@@ -1150,92 +1150,105 @@ gulp.task("jsdoc", function(done) {
   });
 });
 
+function buildLib(defines, dir) {
+  // When we create a bundle, webpack is run on the source and it will replace
+  // require with __webpack_require__. When we want to use the real require,
+  // __non_webpack_require__ has to be used.
+  // In this target, we don't create a bundle, so we have to replace the
+  // occurences of __non_webpack_require__ ourselves.
+  function babelPluginReplaceNonWebPackRequire(babel) {
+    return {
+      visitor: {
+        Identifier(curPath, state) {
+          if (curPath.node.name === "__non_webpack_require__") {
+            curPath.replaceWith(babel.types.identifier("require"));
+          }
+        },
+      },
+    };
+  }
+  function preprocess(content) {
+    var skipBabel =
+      bundleDefines.SKIP_BABEL || /\/\*\s*no-babel-preset\s*\*\//.test(content);
+    content = preprocessor2.preprocessPDFJSCode(ctx, content);
+    content = babel.transform(content, {
+      sourceType: "module",
+      presets: skipBabel ? undefined : ["@babel/preset-env"],
+      plugins: [
+        "@babel/plugin-transform-modules-commonjs",
+        [
+          "@babel/plugin-transform-runtime",
+          {
+            helpers: false,
+            regenerator: true,
+          },
+        ],
+        babelPluginReplaceNonWebPackRequire,
+      ],
+    }).code;
+    var removeCjsSrc = /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
+    content = content.replace(removeCjsSrc, (all, prefix, interop, suffix) => {
+      return prefix + suffix;
+    });
+    return licenseHeaderLibre + content;
+  }
+  var babel = require("@babel/core");
+  var versionInfo = getVersionJSON();
+  var bundleDefines = builder.merge(defines, {
+    BUNDLE_VERSION: versionInfo.version,
+    BUNDLE_BUILD: versionInfo.commit,
+    TESTING: process.env["TESTING"] === "true",
+  });
+  var ctx = {
+    rootPath: __dirname,
+    saveComments: false,
+    defines: bundleDefines,
+    map: {
+      "pdfjs-lib": "../pdf",
+    },
+  };
+  var licenseHeaderLibre = fs
+    .readFileSync("./src/license_header_libre.js")
+    .toString();
+  var preprocessor2 = require("./external/builder/preprocessor2.js");
+  return merge([
+    gulp.src(
+      [
+        "src/{core,display,shared}/*.js",
+        "!src/shared/{cffStandardStrings,fonts_utils}.js",
+        "src/{pdf,pdf.worker}.js",
+      ],
+      { base: "src/" }
+    ),
+    gulp.src(
+      ["examples/node/domstubs.js", "web/*.js", "!web/{pdfjs,viewer}.js"],
+      { base: "." }
+    ),
+    gulp.src("test/unit/*.js", { base: "." }),
+  ])
+    .pipe(transform("utf8", preprocess))
+    .pipe(gulp.dest(dir));
+}
+
 gulp.task(
   "lib",
   gulp.series("buildnumber", "default_preferences", function() {
-    // When we create a bundle, webpack is run on the source and it will replace
-    // require with __webpack_require__. When we want to use the real require,
-    // __non_webpack_require__ has to be used.
-    // In this target, we don't create a bundle, so we have to replace the
-    // occurences of __non_webpack_require__ ourselves.
-    function babelPluginReplaceNonWebPackRequire(babel) {
-      return {
-        visitor: {
-          Identifier(curPath, state) {
-            if (curPath.node.name === "__non_webpack_require__") {
-              curPath.replaceWith(babel.types.identifier("require"));
-            }
-          },
-        },
-      };
-    }
-    function preprocess(content) {
-      var skipBabel =
-        bundleDefines.SKIP_BABEL ||
-        /\/\*\s*no-babel-preset\s*\*\//.test(content);
-      content = preprocessor2.preprocessPDFJSCode(ctx, content);
-      content = babel.transform(content, {
-        sourceType: "module",
-        presets: skipBabel ? undefined : ["@babel/preset-env"],
-        plugins: [
-          "@babel/plugin-transform-modules-commonjs",
-          [
-            "@babel/plugin-transform-runtime",
-            {
-              helpers: false,
-              regenerator: true,
-            },
-          ],
-          babelPluginReplaceNonWebPackRequire,
-        ],
-      }).code;
-      var removeCjsSrc = /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
-      content = content.replace(
-        removeCjsSrc,
-        (all, prefix, interop, suffix) => {
-          return prefix + suffix;
-        }
-      );
-      return licenseHeaderLibre + content;
-    }
-    var babel = require("@babel/core");
-    var versionInfo = getVersionJSON();
-    var bundleDefines = builder.merge(DEFINES, {
+    var defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
+
+    return buildLib(defines, "build/lib/");
+  })
+);
+
+gulp.task(
+  "lib-es5",
+  gulp.series("buildnumber", "default_preferences", function() {
+    var defines = builder.merge(DEFINES, {
       GENERIC: true,
       LIB: true,
-      BUNDLE_VERSION: versionInfo.version,
-      BUNDLE_BUILD: versionInfo.commit,
-      TESTING: process.env["TESTING"] === "true",
+      SKIP_BABEL: false,
     });
-    var ctx = {
-      rootPath: __dirname,
-      saveComments: false,
-      defines: bundleDefines,
-      map: {
-        "pdfjs-lib": "../pdf",
-      },
-    };
-    var licenseHeaderLibre = fs
-      .readFileSync("./src/license_header_libre.js")
-      .toString();
-    var preprocessor2 = require("./external/builder/preprocessor2.js");
-    return merge([
-      gulp.src(
-        [
-          "src/{core,display,shared}/*.js",
-          "!src/shared/{cffStandardStrings,fonts_utils}.js",
-          "src/{pdf,pdf.worker}.js",
-        ],
-        { base: "src/" }
-      ),
-      gulp.src(
-        ["examples/node/domstubs.js", "web/*.js", "!web/{pdfjs,viewer}.js"],
-        { base: "." }
-      ),
-      gulp.src("test/unit/*.js", { base: "." }),
-    ])
-      .pipe(transform("utf8", preprocess))
-      .pipe(gulp.dest("build/lib/"));
+
+    return buildLib(defines, "build/lib-es5/");
   })
 );
 
@@ -1371,7 +1384,7 @@ gulp.task("baseline", function(done) {
 
 gulp.task(
   "unittestcli",
-  gulp.series("testing-pre", "lib", function(done) {
+  gulp.series("testing-pre", "lib-es5", function(done) {
     var options = [
       "node_modules/jasmine/bin/jasmine",
       "JASMINE_CONFIG_PATH=test/unit/clitests.json",
