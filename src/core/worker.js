@@ -136,6 +136,21 @@ var WorkerMessageHandler = {
             "; thus breaking e.g. `for...in` iteration of `Array`s."
         );
       }
+
+      // Ensure that (primarily) Node.js users won't accidentally attempt to use
+      // a non-translated/non-polyfilled build of the library, since that would
+      // quickly fail anyway because of missing functionality (such as e.g.
+      // `ReadableStream).
+      if (
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) &&
+        typeof ReadableStream === "undefined"
+      ) {
+        throw new Error(
+          "The browser/environment lacks native support for critical " +
+            "functionality used by the PDF.js library (e.g. `ReadableStream`); " +
+            "please use an ES5-compatible build instead."
+        );
+      }
     }
 
     var docId = docParams.docId;
