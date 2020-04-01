@@ -610,7 +610,7 @@ var Font = (function FontClosure() {
     }
 
     this.cidEncoding = properties.cidEncoding;
-    this.vertical = properties.vertical;
+    this.vertical = !!properties.vertical;
     if (this.vertical) {
       this.vmetrics = properties.vmetrics;
       this.defaultVMetrics = properties.defaultVMetrics;
