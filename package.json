@@ -34,7 +34,7 @@
     "jsdoc": "^3.6.3",
     "jstransformer-markdown-it": "^2.1.0",
     "merge-stream": "^1.0.1",
-    "mkdirp": "^0.5.4",
+    "mkdirp": "^1.0.3",
     "postcss-calc": "^7.0.2",
     "postcss-css-variables": "^0.14.0",
     "prettier": "^1.19.1",
