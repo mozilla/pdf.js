@@ -803,11 +803,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               this.handler.send("UnsupportedFeature", {
                 featureId: UNSUPPORTED_FEATURES.font,
               });
-              return new TranslatedFont(
-                "g_font_error",
-                new ErrorFont("Type3 font load error: " + reason),
-                translated.font
-              );
+              return new TranslatedFont({
+                loadedName: "g_font_error",
+                font: new ErrorFont(`Type3 font load error: ${reason}`),
+                dict: translated.font,
+              });
             });
         })
         .then(translated => {
@@ -958,11 +958,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     loadFont: function PartialEvaluator_loadFont(fontName, font, resources) {
       function errorFont() {
         return Promise.resolve(
-          new TranslatedFont(
-            "g_font_error",
-            new ErrorFont("Font " + fontName + " is not available"),
-            font
-          )
+          new TranslatedFont({
+            loadedName: "g_font_error",
+            font: new ErrorFont(`Font "${fontName}" is not available.`),
+            dict: font,
+          })
         );
       }
 
@@ -1103,7 +1103,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
 
           fontCapability.resolve(
-            new TranslatedFont(font.loadedName, translatedFont, font)
+            new TranslatedFont({
+              loadedName: font.loadedName,
+              font: translatedFont,
+              dict: font,
+            })
           );
         })
         .catch(reason => {
@@ -1126,11 +1130,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           } catch (ex) {}
 
           fontCapability.resolve(
-            new TranslatedFont(
-              font.loadedName,
-              new ErrorFont(reason instanceof Error ? reason.message : reason),
-              font
-            )
+            new TranslatedFont({
+              loadedName: font.loadedName,
+              font: new ErrorFont(
+                reason instanceof Error ? reason.message : reason
+              ),
+              dict: font,
+            })
           );
         });
       return fontCapability.promise;
@@ -3266,107 +3272,104 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   return PartialEvaluator;
 })();
 
-var TranslatedFont = (function TranslatedFontClosure() {
-  // eslint-disable-next-line no-shadow
-  function TranslatedFont(loadedName, font, dict) {
+class TranslatedFont {
+  constructor({ loadedName, font, dict }) {
     this.loadedName = loadedName;
     this.font = font;
     this.dict = dict;
     this.type3Loaded = null;
     this.sent = false;
   }
-  TranslatedFont.prototype = {
-    send(handler) {
-      if (this.sent) {
-        return;
-      }
-      this.sent = true;
 
-      handler.send("commonobj", [
-        this.loadedName,
-        "Font",
-        this.font.exportData(),
-      ]);
-    },
+  send(handler) {
+    if (this.sent) {
+      return;
+    }
+    this.sent = true;
 
-    fallback(handler) {
-      if (!this.font.data) {
-        return;
-      }
-      // When font loading failed, fall back to the built-in font renderer.
-      this.font.disableFontFace = true;
-      // An arbitrary number of text rendering operators could have been
-      // encountered between the point in time when the 'Font' message was sent
-      // to the main-thread, and the point in time when the 'FontFallback'
-      // message was received on the worker-thread.
-      // To ensure that all 'FontPath's are available on the main-thread, when
-      // font loading failed, attempt to resend *all* previously parsed glyphs.
-      const glyphs = this.font.glyphCacheValues;
-      PartialEvaluator.buildFontPaths(this.font, glyphs, handler);
-    },
+    handler.send("commonobj", [
+      this.loadedName,
+      "Font",
+      this.font.exportData(),
+    ]);
+  }
 
-    loadType3Data(evaluator, resources, parentOperatorList, task) {
-      if (!this.font.isType3Font) {
-        throw new Error("Must be a Type3 font.");
-      }
+  fallback(handler) {
+    if (!this.font.data) {
+      return;
+    }
+    // When font loading failed, fall back to the built-in font renderer.
+    this.font.disableFontFace = true;
+    // An arbitrary number of text rendering operators could have been
+    // encountered between the point in time when the 'Font' message was sent
+    // to the main-thread, and the point in time when the 'FontFallback'
+    // message was received on the worker-thread.
+    // To ensure that all 'FontPath's are available on the main-thread, when
+    // font loading failed, attempt to resend *all* previously parsed glyphs.
+    const glyphs = this.font.glyphCacheValues;
+    PartialEvaluator.buildFontPaths(this.font, glyphs, handler);
+  }
 
-      if (this.type3Loaded) {
-        return this.type3Loaded;
-      }
-      // When parsing Type3 glyphs, always ignore them if there are errors.
-      // Compared to the parsing of e.g. an entire page, it doesn't really
-      // make sense to only be able to render a Type3 glyph partially.
-      //
-      // Also, ensure that any Type3 image resources (which should be very rare
-      // in practice) are completely decoded on the worker-thread, to simplify
-      // the rendering code on the main-thread (see issue10717.pdf).
-      var type3Options = Object.create(evaluator.options);
-      type3Options.ignoreErrors = false;
-      type3Options.nativeImageDecoderSupport = NativeImageDecoding.NONE;
-      var type3Evaluator = evaluator.clone(type3Options);
-      type3Evaluator.parsingType3Font = true;
+  loadType3Data(evaluator, resources, parentOperatorList, task) {
+    if (!this.font.isType3Font) {
+      throw new Error("Must be a Type3 font.");
+    }
 
-      var translatedFont = this.font;
-      var loadCharProcsPromise = Promise.resolve();
-      var charProcs = this.dict.get("CharProcs");
-      var fontResources = this.dict.get("Resources") || resources;
-      var charProcKeys = charProcs.getKeys();
-      var charProcOperatorList = Object.create(null);
-
-      for (var i = 0, n = charProcKeys.length; i < n; ++i) {
-        const key = charProcKeys[i];
-        loadCharProcsPromise = loadCharProcsPromise.then(function() {
-          var glyphStream = charProcs.get(key);
-          var operatorList = new OperatorList();
-          return type3Evaluator
-            .getOperatorList({
-              stream: glyphStream,
-              task,
-              resources: fontResources,
-              operatorList,
-            })
-            .then(function() {
-              charProcOperatorList[key] = operatorList.getIR();
-
-              // Add the dependencies to the parent operator list so they are
-              // resolved before sub operator list is executed synchronously.
-              parentOperatorList.addDependencies(operatorList.dependencies);
-            })
-            .catch(function(reason) {
-              warn(`Type3 font resource "${key}" is not available.`);
-              const dummyOperatorList = new OperatorList();
-              charProcOperatorList[key] = dummyOperatorList.getIR();
-            });
-        });
-      }
-      this.type3Loaded = loadCharProcsPromise.then(function() {
-        translatedFont.charProcOperatorList = charProcOperatorList;
-      });
+    if (this.type3Loaded) {
       return this.type3Loaded;
-    },
-  };
-  return TranslatedFont;
-})();
+    }
+    // When parsing Type3 glyphs, always ignore them if there are errors.
+    // Compared to the parsing of e.g. an entire page, it doesn't really
+    // make sense to only be able to render a Type3 glyph partially.
+    //
+    // Also, ensure that any Type3 image resources (which should be very rare
+    // in practice) are completely decoded on the worker-thread, to simplify
+    // the rendering code on the main-thread (see issue10717.pdf).
+    var type3Options = Object.create(evaluator.options);
+    type3Options.ignoreErrors = false;
+    type3Options.nativeImageDecoderSupport = NativeImageDecoding.NONE;
+    var type3Evaluator = evaluator.clone(type3Options);
+    type3Evaluator.parsingType3Font = true;
+
+    var translatedFont = this.font;
+    var loadCharProcsPromise = Promise.resolve();
+    var charProcs = this.dict.get("CharProcs");
+    var fontResources = this.dict.get("Resources") || resources;
+    var charProcKeys = charProcs.getKeys();
+    var charProcOperatorList = Object.create(null);
+
+    for (var i = 0, n = charProcKeys.length; i < n; ++i) {
+      const key = charProcKeys[i];
+      loadCharProcsPromise = loadCharProcsPromise.then(function() {
+        var glyphStream = charProcs.get(key);
+        var operatorList = new OperatorList();
+        return type3Evaluator
+          .getOperatorList({
+            stream: glyphStream,
+            task,
+            resources: fontResources,
+            operatorList,
+          })
+          .then(function() {
+            charProcOperatorList[key] = operatorList.getIR();
+
+            // Add the dependencies to the parent operator list so they are
+            // resolved before sub operator list is executed synchronously.
+            parentOperatorList.addDependencies(operatorList.dependencies);
+          })
+          .catch(function(reason) {
+            warn(`Type3 font resource "${key}" is not available.`);
+            const dummyOperatorList = new OperatorList();
+            charProcOperatorList[key] = dummyOperatorList.getIR();
+          });
+      });
+    }
+    this.type3Loaded = loadCharProcsPromise.then(function() {
+      translatedFont.charProcOperatorList = charProcOperatorList;
+    });
+    return this.type3Loaded;
+  }
+}
 
 var StateManager = (function StateManagerClosure() {
   // eslint-disable-next-line no-shadow
