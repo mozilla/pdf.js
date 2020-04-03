@@ -309,6 +309,8 @@ const PDFViewerApplication = {
     }
     if ("pdfbug" in hashParams) {
       AppOptions.set("pdfBug", true);
+      AppOptions.set("fontExtraProperties", true);
+
       const enabled = hashParams["pdfbug"].split(",");
       waitOn.push(loadAndEnablePDFBug(enabled));
     }
