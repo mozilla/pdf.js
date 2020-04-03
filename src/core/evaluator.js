@@ -94,6 +94,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     nativeImageDecoderSupport: NativeImageDecoding.DECODE,
     ignoreErrors: false,
     isEvalSupported: true,
+    fontExtraProperties: false,
   };
 
   // eslint-disable-next-line no-shadow
@@ -807,6 +808,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 loadedName: "g_font_error",
                 font: new ErrorFont(`Type3 font load error: ${reason}`),
                 dict: translated.font,
+                extraProperties: this.options.fontExtraProperties,
               });
             });
         })
@@ -956,15 +958,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     loadFont: function PartialEvaluator_loadFont(fontName, font, resources) {
-      function errorFont() {
+      const errorFont = () => {
         return Promise.resolve(
           new TranslatedFont({
             loadedName: "g_font_error",
             font: new ErrorFont(`Font "${fontName}" is not available.`),
             dict: font,
+            extraProperties: this.options.fontExtraProperties,
           })
         );
-      }
+      };
 
       var fontRef,
         xref = this.xref;
@@ -1096,7 +1099,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       translatedPromise
-        .then(function(translatedFont) {
+        .then(translatedFont => {
           if (translatedFont.fontType !== undefined) {
             var xrefFontStats = xref.stats.fontTypes;
             xrefFontStats[translatedFont.fontType] = true;
@@ -1107,6 +1110,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               loadedName: font.loadedName,
               font: translatedFont,
               dict: font,
+              extraProperties: this.options.fontExtraProperties,
             })
           );
         })
@@ -1136,6 +1140,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 reason instanceof Error ? reason.message : reason
               ),
               dict: font,
+              extraProperties: this.options.fontExtraProperties,
             })
           );
         });
@@ -3273,10 +3278,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 })();
 
 class TranslatedFont {
-  constructor({ loadedName, font, dict }) {
+  constructor({ loadedName, font, dict, extraProperties = false }) {
     this.loadedName = loadedName;
     this.font = font;
     this.dict = dict;
+    this._extraProperties = extraProperties;
     this.type3Loaded = null;
     this.sent = false;
   }
@@ -3290,7 +3296,7 @@ class TranslatedFont {
     handler.send("commonobj", [
       this.loadedName,
       "Font",
-      this.font.exportData(),
+      this.font.exportData(this._extraProperties),
     ]);
   }
 

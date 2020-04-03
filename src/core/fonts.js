@@ -92,21 +92,17 @@ const EXPORT_DATA_PROPERTIES = [
   "bbox",
   "black",
   "bold",
-  "cMap",
   "charProcOperatorList",
   "composite",
   "data",
-  "defaultEncoding",
   "defaultVMetrics",
   "defaultWidth",
   "descent",
-  "differences",
   "fallbackName",
   "fontMatrix",
   "fontType",
   "isMonospace",
   "isSerifFont",
-  "isSymbolicFont",
   "isType3Font",
   "italic",
   "loadedName",
@@ -114,12 +110,19 @@ const EXPORT_DATA_PROPERTIES = [
   "missingFile",
   "name",
   "remeasure",
-  "seacMap",
   "subtype",
-  "toFontChar",
-  "toUnicode",
   "type",
   "vertical",
+];
+
+const EXPORT_DATA_EXTRA_PROPERTIES = [
+  "cMap",
+  "defaultEncoding",
+  "differences",
+  "isSymbolicFont",
+  "seacMap",
+  "toFontChar",
+  "toUnicode",
   "vmetrics",
   "widths",
 ];
@@ -1295,10 +1298,14 @@ var Font = (function FontClosure() {
       return shadow(this, "renderer", renderer);
     },
 
-    exportData() {
+    exportData(extraProperties = false) {
+      const exportDataProperties = extraProperties
+        ? [...EXPORT_DATA_PROPERTIES, ...EXPORT_DATA_EXTRA_PROPERTIES]
+        : EXPORT_DATA_PROPERTIES;
+
       const data = Object.create(null);
       let property, value;
-      for (property of EXPORT_DATA_PROPERTIES) {
+      for (property of exportDataProperties) {
         value = this[property];
         // Ignore properties that haven't been explicitly set.
         if (value !== undefined) {
@@ -3352,7 +3359,7 @@ var ErrorFont = (function ErrorFontClosure() {
     charsToGlyphs: function ErrorFont_charsToGlyphs() {
       return [];
     },
-    exportData: function ErrorFont_exportData() {
+    exportData(extraProperties = false) {
       return { error: this.error };
     },
   };
