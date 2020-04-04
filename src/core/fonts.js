@@ -3216,10 +3216,14 @@ var Font = (function FontClosure() {
         };
       }
 
-      var fontChar =
-        typeof fontCharCode === "number"
-          ? String.fromCodePoint(fontCharCode)
-          : "";
+      let fontChar = "";
+      if (typeof fontCharCode === "number") {
+        if (fontCharCode <= 0x10ffff) {
+          fontChar = String.fromCodePoint(fontCharCode);
+        } else {
+          warn(`charToGlyph - invalid fontCharCode: ${fontCharCode}`);
+        }
+      }
 
       var glyph = this.glyphCache[charcode];
       if (
