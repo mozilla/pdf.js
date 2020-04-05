@@ -1270,19 +1270,10 @@ const PDFViewerApplication = {
 
     // Provides some basic debug information
     console.log(
-      "PDF " +
-        pdfDocument.fingerprint +
-        " [" +
-        info.PDFFormatVersion +
-        " " +
-        (info.Producer || "-").trim() +
-        " / " +
-        (info.Creator || "-").trim() +
-        "]" +
-        " (PDF.js: " +
-        (version || "-") +
-        (AppOptions.get("enableWebGL") ? " [WebGL]" : "") +
-        ")"
+      `PDF ${pdfDocument.fingerprint} [${info.PDFFormatVersion} ` +
+        `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
+        `(PDF.js: ${version || "-"}` +
+        `${this.pdfViewer.enableWebGL ? " [WebGL]" : ""})`
     );
 
     let pdfTitle;
@@ -1444,7 +1435,7 @@ const PDFViewerApplication = {
    * @private
    */
   _initializePdfHistory({ fingerprint, viewOnLoad, initialDest = null }) {
-    if (AppOptions.get("disableHistory") || this.isViewerEmbedded) {
+    if (this.isViewerEmbedded || AppOptions.get("disableHistory")) {
       // The browsing history is only enabled when the viewer is standalone,
       // i.e. not when it is embedded in a web page.
       return;
