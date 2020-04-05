@@ -1139,7 +1139,7 @@ gulp.task("jsdoc", function(done) {
   var JSDOC_FILES = ["src/doc_helper.js", "src/display/api.js"];
 
   rimraf(JSDOC_BUILD_DIR, function() {
-    mkdirp(JSDOC_BUILD_DIR, function() {
+    mkdirp(JSDOC_BUILD_DIR).then(function() {
       var command =
         '"node_modules/.bin/jsdoc" -d ' +
         JSDOC_BUILD_DIR +
