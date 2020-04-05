@@ -1761,7 +1761,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             fontFamily: font.fallbackName,
             ascent: font.ascent,
             descent: font.descent,
-            vertical: !!font.vertical,
+            vertical: font.vertical,
           };
         }
         textContentItem.fontName = font.loadedName;

@@ -87,6 +87,43 @@ var PDF_GLYPH_SPACE_UNITS = 1000;
 // custom one. Windows just refuses to draw glyphs with seac operators.
 var SEAC_ANALYSIS_ENABLED = true;
 
+const EXPORT_DATA_PROPERTIES = [
+  "ascent",
+  "bbox",
+  "black",
+  "bold",
+  "cMap",
+  "charProcOperatorList",
+  "composite",
+  "data",
+  "defaultEncoding",
+  "defaultVMetrics",
+  "defaultWidth",
+  "descent",
+  "differences",
+  "fallbackName",
+  "fontMatrix",
+  "fontType",
+  "isMonospace",
+  "isSerifFont",
+  "isSymbolicFont",
+  "isType3Font",
+  "italic",
+  "loadedName",
+  "mimetype",
+  "missingFile",
+  "name",
+  "remeasure",
+  "seacMap",
+  "subtype",
+  "toFontChar",
+  "toUnicode",
+  "type",
+  "vertical",
+  "vmetrics",
+  "widths",
+];
+
 var FontFlags = {
   FixedPitch: 1,
   Serif: 2,
@@ -570,7 +607,7 @@ var Font = (function FontClosure() {
     }
 
     this.cidEncoding = properties.cidEncoding;
-    this.vertical = properties.vertical;
+    this.vertical = !!properties.vertical;
     if (this.vertical) {
       this.vmetrics = properties.vmetrics;
       this.defaultVMetrics = properties.defaultVMetrics;
@@ -1258,12 +1295,14 @@ var Font = (function FontClosure() {
       return shadow(this, "renderer", renderer);
     },
 
-    exportData: function Font_exportData() {
-      // TODO remove enumerating of the properties, e.g. hardcode exact names.
-      var data = {};
-      for (var i in this) {
-        if (this.hasOwnProperty(i)) {
-          data[i] = this[i];
+    exportData() {
+      const data = Object.create(null);
+      let property, value;
+      for (property of EXPORT_DATA_PROPERTIES) {
+        value = this[property];
+        // Ignore properties that haven't been explicitly set.
+        if (value !== undefined) {
+          data[property] = value;
         }
       }
       return data;
@@ -3119,10 +3158,6 @@ var Font = (function FontClosure() {
     },
 
     get spaceWidth() {
-      if ("_shadowWidth" in this) {
-        return this._shadowWidth;
-      }
-
       // trying to estimate space character width
       var possibleSpaceReplacements = ["space", "minus", "one", "i", "I"];
       var width;
@@ -3137,10 +3172,8 @@ var Font = (function FontClosure() {
         var glyphUnicode = glyphsUnicodeMap[glyphName];
         // finding the charcode via unicodeToCID map
         var charcode = 0;
-        if (this.composite) {
-          if (this.cMap.contains(glyphUnicode)) {
-            charcode = this.cMap.lookup(glyphUnicode);
-          }
+        if (this.composite && this.cMap.contains(glyphUnicode)) {
+          charcode = this.cMap.lookup(glyphUnicode);
         }
         // ... via toUnicode map
         if (!charcode && this.toUnicode) {
@@ -3157,10 +3190,7 @@ var Font = (function FontClosure() {
         }
       }
       width = width || this.defaultWidth;
-      // Do not shadow the property here. See discussion:
-      // https://github.com/mozilla/pdf.js/pull/2127#discussion_r1662280
-      this._shadowWidth = width;
-      return width;
+      return shadow(this, "spaceWidth", width);
     },
 
     charToGlyph: function Font_charToGlyph(charcode, isSpace) {
