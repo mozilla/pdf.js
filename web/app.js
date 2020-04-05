@@ -1185,46 +1185,8 @@ const PDFViewerApplication = {
         });
     });
 
-    pagesPromise.then(async () => {
-      const [openAction, javaScript] = await Promise.all([
-        openActionPromise,
-        pdfDocument.getJavaScript(),
-      ]);
-      let triggerAutoPrint = false;
-
-      if (openAction && openAction.action === "Print") {
-        triggerAutoPrint = true;
-      }
-      if (javaScript) {
-        javaScript.some(js => {
-          if (!js) {
-            // Don't warn/fallback for empty JavaScript actions.
-            return false;
-          }
-          console.warn("Warning: JavaScript is not supported");
-          this.fallback(UNSUPPORTED_FEATURES.javaScript);
-          return true;
-        });
-
-        if (!triggerAutoPrint) {
-          // Hack to support auto printing.
-          for (const js of javaScript) {
-            if (js && AutoPrintRegExp.test(js)) {
-              triggerAutoPrint = true;
-              break;
-            }
-          }
-        }
-      }
-
-      if (!this.supportsPrinting) {
-        return;
-      }
-      if (triggerAutoPrint) {
-        setTimeout(function() {
-          window.print();
-        });
-      }
+    pagesPromise.then(() => {
+      this._initializeAutoPrint(pdfDocument, openActionPromise);
     });
 
     onePageRendered.then(() => {
@@ -1238,6 +1200,55 @@ const PDFViewerApplication = {
 
     this._initializePageLabels(pdfDocument);
     this._initializeMetadata(pdfDocument);
+  },
+
+  /**
+   * @private
+   */
+  async _initializeAutoPrint(pdfDocument, openActionPromise) {
+    const [openAction, javaScript] = await Promise.all([
+      openActionPromise,
+      pdfDocument.getJavaScript(),
+    ]);
+
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the auto print data resolved.
+    }
+    let triggerAutoPrint = false;
+
+    if (openAction && openAction.action === "Print") {
+      triggerAutoPrint = true;
+    }
+    if (javaScript) {
+      javaScript.some(js => {
+        if (!js) {
+          // Don't warn/fallback for empty JavaScript actions.
+          return false;
+        }
+        console.warn("Warning: JavaScript is not supported");
+        this.fallback(UNSUPPORTED_FEATURES.javaScript);
+        return true;
+      });
+
+      if (!triggerAutoPrint) {
+        // Hack to support auto printing.
+        for (const js of javaScript) {
+          if (js && AutoPrintRegExp.test(js)) {
+            triggerAutoPrint = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!this.supportsPrinting) {
+      return;
+    }
+    if (triggerAutoPrint) {
+      setTimeout(function() {
+        window.print();
+      });
+    }
   },
 
   /**
