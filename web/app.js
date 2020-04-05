@@ -1185,79 +1185,8 @@ const PDFViewerApplication = {
         });
     });
 
-    pdfDocument.getPageLabels().then(labels => {
-      if (!labels || AppOptions.get("disablePageLabels")) {
-        return;
-      }
-      const numLabels = labels.length;
-      if (numLabels !== this.pagesCount) {
-        console.error(
-          "The number of Page Labels does not match " +
-            "the number of pages in the document."
-        );
-        return;
-      }
-      let i = 0;
-      // Ignore page labels that correspond to standard page numbering.
-      while (i < numLabels && labels[i] === (i + 1).toString()) {
-        i++;
-      }
-      if (i === numLabels) {
-        return;
-      }
-
-      pdfViewer.setPageLabels(labels);
-      pdfThumbnailViewer.setPageLabels(labels);
-
-      // Changing toolbar page display to use labels and we need to set
-      // the label of the current page.
-      this.toolbar.setPagesCount(pdfDocument.numPages, true);
-      this.toolbar.setPageNumber(
-        pdfViewer.currentPageNumber,
-        pdfViewer.currentPageLabel
-      );
-    });
-
-    pagesPromise.then(async () => {
-      const [openAction, javaScript] = await Promise.all([
-        openActionPromise,
-        pdfDocument.getJavaScript(),
-      ]);
-      let triggerAutoPrint = false;
-
-      if (openAction && openAction.action === "Print") {
-        triggerAutoPrint = true;
-      }
-      if (javaScript) {
-        javaScript.some(js => {
-          if (!js) {
-            // Don't warn/fallback for empty JavaScript actions.
-            return false;
-          }
-          console.warn("Warning: JavaScript is not supported");
-          this.fallback(UNSUPPORTED_FEATURES.javaScript);
-          return true;
-        });
-
-        if (!triggerAutoPrint) {
-          // Hack to support auto printing.
-          for (const js of javaScript) {
-            if (js && AutoPrintRegExp.test(js)) {
-              triggerAutoPrint = true;
-              break;
-            }
-          }
-        }
-      }
-
-      if (!this.supportsPrinting) {
-        return;
-      }
-      if (triggerAutoPrint) {
-        setTimeout(function() {
-          window.print();
-        });
-      }
+    pagesPromise.then(() => {
+      this._initializeAutoPrint(pdfDocument, openActionPromise);
     });
 
     onePageRendered.then(() => {
@@ -1269,150 +1198,244 @@ const PDFViewerApplication = {
       });
     });
 
-    pdfDocument
-      .getMetadata()
-      .then(({ info, metadata, contentDispositionFilename }) => {
-        this.documentInfo = info;
-        this.metadata = metadata;
-        this.contentDispositionFilename = contentDispositionFilename;
+    this._initializePageLabels(pdfDocument);
+    this._initializeMetadata(pdfDocument);
+  },
 
-        // Provides some basic debug information
-        console.log(
-          "PDF " +
-            pdfDocument.fingerprint +
-            " [" +
-            info.PDFFormatVersion +
-            " " +
-            (info.Producer || "-").trim() +
-            " / " +
-            (info.Creator || "-").trim() +
-            "]" +
-            " (PDF.js: " +
-            (version || "-") +
-            (AppOptions.get("enableWebGL") ? " [WebGL]" : "") +
-            ")"
-        );
+  /**
+   * @private
+   */
+  async _initializeAutoPrint(pdfDocument, openActionPromise) {
+    const [openAction, javaScript] = await Promise.all([
+      openActionPromise,
+      pdfDocument.getJavaScript(),
+    ]);
 
-        let pdfTitle;
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the auto print data resolved.
+    }
+    let triggerAutoPrint = false;
 
-        const infoTitle = info && info["Title"];
-        if (infoTitle) {
-          pdfTitle = infoTitle;
+    if (openAction && openAction.action === "Print") {
+      triggerAutoPrint = true;
+    }
+    if (javaScript) {
+      javaScript.some(js => {
+        if (!js) {
+          // Don't warn/fallback for empty JavaScript actions.
+          return false;
         }
-        const metadataTitle = metadata && metadata.get("dc:title");
-        if (metadataTitle) {
-          // Ghostscript can produce invalid 'dc:title' Metadata entries:
-          //  - The title may be "Untitled" (fixes bug 1031612).
-          //  - The title may contain incorrectly encoded characters, which thus
-          //    looks broken, hence we ignore the Metadata entry when it
-          //    contains characters from the Specials Unicode block
-          //    (fixes bug 1605526).
-          if (
-            metadataTitle !== "Untitled" &&
-            !/[\uFFF0-\uFFFF]/g.test(metadataTitle)
-          ) {
-            pdfTitle = metadataTitle;
-          }
-        }
-
-        if (pdfTitle) {
-          this.setTitle(
-            `${pdfTitle} - ${contentDispositionFilename || document.title}`
-          );
-        } else if (contentDispositionFilename) {
-          this.setTitle(contentDispositionFilename);
-        }
-
-        if (info.IsAcroFormPresent) {
-          console.warn("Warning: AcroForm/XFA is not supported");
-          this.fallback(UNSUPPORTED_FEATURES.forms);
-        }
-
-        if (
-          typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("MOZCENTRAL || GENERIC")
-        ) {
-          // Telemetry labels must be C++ variable friendly.
-          let versionId = "other";
-          // Keep these in sync with mozilla central's Histograms.json.
-          const KNOWN_VERSIONS = [
-            "1.0",
-            "1.1",
-            "1.2",
-            "1.3",
-            "1.4",
-            "1.5",
-            "1.6",
-            "1.7",
-            "1.8",
-            "1.9",
-            "2.0",
-            "2.1",
-            "2.2",
-            "2.3",
-          ];
-          if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
-            versionId = `v${info.PDFFormatVersion.replace(".", "_")}`;
-          }
-
-          let generatorId = "other";
-          // Keep these in sync with mozilla central's Histograms.json.
-          const KNOWN_GENERATORS = [
-            "acrobat distiller",
-            "acrobat pdfwriter",
-            "adobe livecycle",
-            "adobe pdf library",
-            "adobe photoshop",
-            "ghostscript",
-            "tcpdf",
-            "cairo",
-            "dvipdfm",
-            "dvips",
-            "pdftex",
-            "pdfkit",
-            "itext",
-            "prince",
-            "quarkxpress",
-            "mac os x",
-            "microsoft",
-            "openoffice",
-            "oracle",
-            "luradocument",
-            "pdf-xchange",
-            "antenna house",
-            "aspose.cells",
-            "fpdf",
-          ];
-          if (info.Producer) {
-            const producer = info.Producer.toLowerCase();
-            KNOWN_GENERATORS.some(function(generator) {
-              if (!producer.includes(generator)) {
-                return false;
-              }
-              generatorId = generator.replace(/[ .\-]/g, "_");
-              return true;
-            });
-          }
-
-          let formType = null;
-          if (info.IsAcroFormPresent) {
-            formType = info.IsXFAPresent ? "xfa" : "acroform";
-          }
-          this.externalServices.reportTelemetry({
-            type: "documentInfo",
-            version: versionId,
-            generator: generatorId,
-            formType,
-          });
-        }
+        console.warn("Warning: JavaScript is not supported");
+        this.fallback(UNSUPPORTED_FEATURES.javaScript);
+        return true;
       });
+
+      if (!triggerAutoPrint) {
+        // Hack to support auto printing.
+        for (const js of javaScript) {
+          if (js && AutoPrintRegExp.test(js)) {
+            triggerAutoPrint = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!this.supportsPrinting) {
+      return;
+    }
+    if (triggerAutoPrint) {
+      setTimeout(function() {
+        window.print();
+      });
+    }
+  },
+
+  /**
+   * @private
+   */
+  async _initializeMetadata(pdfDocument) {
+    const {
+      info,
+      metadata,
+      contentDispositionFilename,
+    } = await pdfDocument.getMetadata();
+
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the metadata resolved.
+    }
+    this.documentInfo = info;
+    this.metadata = metadata;
+    this.contentDispositionFilename = contentDispositionFilename;
+
+    // Provides some basic debug information
+    console.log(
+      `PDF ${pdfDocument.fingerprint} [${info.PDFFormatVersion} ` +
+        `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
+        `(PDF.js: ${version || "-"}` +
+        `${this.pdfViewer.enableWebGL ? " [WebGL]" : ""})`
+    );
+
+    let pdfTitle;
+
+    const infoTitle = info && info["Title"];
+    if (infoTitle) {
+      pdfTitle = infoTitle;
+    }
+    const metadataTitle = metadata && metadata.get("dc:title");
+    if (metadataTitle) {
+      // Ghostscript can produce invalid 'dc:title' Metadata entries:
+      //  - The title may be "Untitled" (fixes bug 1031612).
+      //  - The title may contain incorrectly encoded characters, which thus
+      //    looks broken, hence we ignore the Metadata entry when it
+      //    contains characters from the Specials Unicode block
+      //    (fixes bug 1605526).
+      if (
+        metadataTitle !== "Untitled" &&
+        !/[\uFFF0-\uFFFF]/g.test(metadataTitle)
+      ) {
+        pdfTitle = metadataTitle;
+      }
+    }
+
+    if (pdfTitle) {
+      this.setTitle(
+        `${pdfTitle} - ${contentDispositionFilename || document.title}`
+      );
+    } else if (contentDispositionFilename) {
+      this.setTitle(contentDispositionFilename);
+    }
+
+    if (info.IsAcroFormPresent) {
+      console.warn("Warning: AcroForm/XFA is not supported");
+      this.fallback(UNSUPPORTED_FEATURES.forms);
+    }
+
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("MOZCENTRAL || GENERIC")
+    ) {
+      // Telemetry labels must be C++ variable friendly.
+      let versionId = "other";
+      // Keep these in sync with mozilla central's Histograms.json.
+      const KNOWN_VERSIONS = [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7",
+        "1.8",
+        "1.9",
+        "2.0",
+        "2.1",
+        "2.2",
+        "2.3",
+      ];
+      if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
+        versionId = `v${info.PDFFormatVersion.replace(".", "_")}`;
+      }
+
+      let generatorId = "other";
+      // Keep these in sync with mozilla central's Histograms.json.
+      const KNOWN_GENERATORS = [
+        "acrobat distiller",
+        "acrobat pdfwriter",
+        "adobe livecycle",
+        "adobe pdf library",
+        "adobe photoshop",
+        "ghostscript",
+        "tcpdf",
+        "cairo",
+        "dvipdfm",
+        "dvips",
+        "pdftex",
+        "pdfkit",
+        "itext",
+        "prince",
+        "quarkxpress",
+        "mac os x",
+        "microsoft",
+        "openoffice",
+        "oracle",
+        "luradocument",
+        "pdf-xchange",
+        "antenna house",
+        "aspose.cells",
+        "fpdf",
+      ];
+      if (info.Producer) {
+        const producer = info.Producer.toLowerCase();
+        KNOWN_GENERATORS.some(function(generator) {
+          if (!producer.includes(generator)) {
+            return false;
+          }
+          generatorId = generator.replace(/[ .\-]/g, "_");
+          return true;
+        });
+      }
+
+      let formType = null;
+      if (info.IsAcroFormPresent) {
+        formType = info.IsXFAPresent ? "xfa" : "acroform";
+      }
+      this.externalServices.reportTelemetry({
+        type: "documentInfo",
+        version: versionId,
+        generator: generatorId,
+        formType,
+      });
+    }
+  },
+
+  /**
+   * @private
+   */
+  async _initializePageLabels(pdfDocument) {
+    const labels = await pdfDocument.getPageLabels();
+
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the page labels resolved.
+    }
+    if (!labels || AppOptions.get("disablePageLabels")) {
+      return;
+    }
+    const numLabels = labels.length;
+    if (numLabels !== this.pagesCount) {
+      console.error(
+        "The number of Page Labels does not match the number of pages in the document."
+      );
+      return;
+    }
+    let i = 0;
+    // Ignore page labels that correspond to standard page numbering.
+    while (i < numLabels && labels[i] === (i + 1).toString()) {
+      i++;
+    }
+    if (i === numLabels) {
+      return;
+    }
+    const { pdfViewer, pdfThumbnailViewer, toolbar } = this;
+
+    pdfViewer.setPageLabels(labels);
+    pdfThumbnailViewer.setPageLabels(labels);
+
+    // Changing toolbar page display to use labels and we need to set
+    // the label of the current page.
+    toolbar.setPagesCount(numLabels, true);
+    toolbar.setPageNumber(
+      pdfViewer.currentPageNumber,
+      pdfViewer.currentPageLabel
+    );
   },
 
   /**
    * @private
    */
   _initializePdfHistory({ fingerprint, viewOnLoad, initialDest = null }) {
-    if (AppOptions.get("disableHistory") || this.isViewerEmbedded) {
+    if (this.isViewerEmbedded || AppOptions.get("disableHistory")) {
       // The browsing history is only enabled when the viewer is standalone,
       // i.e. not when it is embedded in a web page.
       return;
