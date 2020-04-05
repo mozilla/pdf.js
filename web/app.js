@@ -1185,39 +1185,6 @@ const PDFViewerApplication = {
         });
     });
 
-    pdfDocument.getPageLabels().then(labels => {
-      if (!labels || AppOptions.get("disablePageLabels")) {
-        return;
-      }
-      const numLabels = labels.length;
-      if (numLabels !== this.pagesCount) {
-        console.error(
-          "The number of Page Labels does not match " +
-            "the number of pages in the document."
-        );
-        return;
-      }
-      let i = 0;
-      // Ignore page labels that correspond to standard page numbering.
-      while (i < numLabels && labels[i] === (i + 1).toString()) {
-        i++;
-      }
-      if (i === numLabels) {
-        return;
-      }
-
-      pdfViewer.setPageLabels(labels);
-      pdfThumbnailViewer.setPageLabels(labels);
-
-      // Changing toolbar page display to use labels and we need to set
-      // the label of the current page.
-      this.toolbar.setPagesCount(pdfDocument.numPages, true);
-      this.toolbar.setPageNumber(
-        pdfViewer.currentPageNumber,
-        pdfViewer.currentPageLabel
-      );
-    });
-
     pagesPromise.then(async () => {
       const [openAction, javaScript] = await Promise.all([
         openActionPromise,
@@ -1268,6 +1235,8 @@ const PDFViewerApplication = {
         this.pdfAttachmentViewer.render({ attachments });
       });
     });
+
+    this._initializePageLabels(pdfDocument);
 
     pdfDocument
       .getMetadata()
@@ -1406,6 +1375,47 @@ const PDFViewerApplication = {
           });
         }
       });
+  },
+
+  /**
+   * @private
+   */
+  async _initializePageLabels(pdfDocument) {
+    const labels = await pdfDocument.getPageLabels();
+
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the page labels resolved.
+    }
+    if (!labels || AppOptions.get("disablePageLabels")) {
+      return;
+    }
+    const numLabels = labels.length;
+    if (numLabels !== this.pagesCount) {
+      console.error(
+        "The number of Page Labels does not match the number of pages in the document."
+      );
+      return;
+    }
+    let i = 0;
+    // Ignore page labels that correspond to standard page numbering.
+    while (i < numLabels && labels[i] === (i + 1).toString()) {
+      i++;
+    }
+    if (i === numLabels) {
+      return;
+    }
+    const { pdfViewer, pdfThumbnailViewer, toolbar } = this;
+
+    pdfViewer.setPageLabels(labels);
+    pdfThumbnailViewer.setPageLabels(labels);
+
+    // Changing toolbar page display to use labels and we need to set
+    // the label of the current page.
+    toolbar.setPagesCount(numLabels, true);
+    toolbar.setPageNumber(
+      pdfViewer.currentPageNumber,
+      pdfViewer.currentPageLabel
+    );
   },
 
   /**
