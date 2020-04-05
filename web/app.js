@@ -1237,144 +1237,155 @@ const PDFViewerApplication = {
     });
 
     this._initializePageLabels(pdfDocument);
+    this._initializeMetadata(pdfDocument);
+  },
 
-    pdfDocument
-      .getMetadata()
-      .then(({ info, metadata, contentDispositionFilename }) => {
-        this.documentInfo = info;
-        this.metadata = metadata;
-        this.contentDispositionFilename = contentDispositionFilename;
+  /**
+   * @private
+   */
+  async _initializeMetadata(pdfDocument) {
+    const {
+      info,
+      metadata,
+      contentDispositionFilename,
+    } = await pdfDocument.getMetadata();
 
-        // Provides some basic debug information
-        console.log(
-          "PDF " +
-            pdfDocument.fingerprint +
-            " [" +
-            info.PDFFormatVersion +
-            " " +
-            (info.Producer || "-").trim() +
-            " / " +
-            (info.Creator || "-").trim() +
-            "]" +
-            " (PDF.js: " +
-            (version || "-") +
-            (AppOptions.get("enableWebGL") ? " [WebGL]" : "") +
-            ")"
-        );
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the metadata resolved.
+    }
+    this.documentInfo = info;
+    this.metadata = metadata;
+    this.contentDispositionFilename = contentDispositionFilename;
 
-        let pdfTitle;
+    // Provides some basic debug information
+    console.log(
+      "PDF " +
+        pdfDocument.fingerprint +
+        " [" +
+        info.PDFFormatVersion +
+        " " +
+        (info.Producer || "-").trim() +
+        " / " +
+        (info.Creator || "-").trim() +
+        "]" +
+        " (PDF.js: " +
+        (version || "-") +
+        (AppOptions.get("enableWebGL") ? " [WebGL]" : "") +
+        ")"
+    );
 
-        const infoTitle = info && info["Title"];
-        if (infoTitle) {
-          pdfTitle = infoTitle;
-        }
-        const metadataTitle = metadata && metadata.get("dc:title");
-        if (metadataTitle) {
-          // Ghostscript can produce invalid 'dc:title' Metadata entries:
-          //  - The title may be "Untitled" (fixes bug 1031612).
-          //  - The title may contain incorrectly encoded characters, which thus
-          //    looks broken, hence we ignore the Metadata entry when it
-          //    contains characters from the Specials Unicode block
-          //    (fixes bug 1605526).
-          if (
-            metadataTitle !== "Untitled" &&
-            !/[\uFFF0-\uFFFF]/g.test(metadataTitle)
-          ) {
-            pdfTitle = metadataTitle;
+    let pdfTitle;
+
+    const infoTitle = info && info["Title"];
+    if (infoTitle) {
+      pdfTitle = infoTitle;
+    }
+    const metadataTitle = metadata && metadata.get("dc:title");
+    if (metadataTitle) {
+      // Ghostscript can produce invalid 'dc:title' Metadata entries:
+      //  - The title may be "Untitled" (fixes bug 1031612).
+      //  - The title may contain incorrectly encoded characters, which thus
+      //    looks broken, hence we ignore the Metadata entry when it
+      //    contains characters from the Specials Unicode block
+      //    (fixes bug 1605526).
+      if (
+        metadataTitle !== "Untitled" &&
+        !/[\uFFF0-\uFFFF]/g.test(metadataTitle)
+      ) {
+        pdfTitle = metadataTitle;
+      }
+    }
+
+    if (pdfTitle) {
+      this.setTitle(
+        `${pdfTitle} - ${contentDispositionFilename || document.title}`
+      );
+    } else if (contentDispositionFilename) {
+      this.setTitle(contentDispositionFilename);
+    }
+
+    if (info.IsAcroFormPresent) {
+      console.warn("Warning: AcroForm/XFA is not supported");
+      this.fallback(UNSUPPORTED_FEATURES.forms);
+    }
+
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("MOZCENTRAL || GENERIC")
+    ) {
+      // Telemetry labels must be C++ variable friendly.
+      let versionId = "other";
+      // Keep these in sync with mozilla central's Histograms.json.
+      const KNOWN_VERSIONS = [
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5",
+        "1.6",
+        "1.7",
+        "1.8",
+        "1.9",
+        "2.0",
+        "2.1",
+        "2.2",
+        "2.3",
+      ];
+      if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
+        versionId = `v${info.PDFFormatVersion.replace(".", "_")}`;
+      }
+
+      let generatorId = "other";
+      // Keep these in sync with mozilla central's Histograms.json.
+      const KNOWN_GENERATORS = [
+        "acrobat distiller",
+        "acrobat pdfwriter",
+        "adobe livecycle",
+        "adobe pdf library",
+        "adobe photoshop",
+        "ghostscript",
+        "tcpdf",
+        "cairo",
+        "dvipdfm",
+        "dvips",
+        "pdftex",
+        "pdfkit",
+        "itext",
+        "prince",
+        "quarkxpress",
+        "mac os x",
+        "microsoft",
+        "openoffice",
+        "oracle",
+        "luradocument",
+        "pdf-xchange",
+        "antenna house",
+        "aspose.cells",
+        "fpdf",
+      ];
+      if (info.Producer) {
+        const producer = info.Producer.toLowerCase();
+        KNOWN_GENERATORS.some(function(generator) {
+          if (!producer.includes(generator)) {
+            return false;
           }
-        }
+          generatorId = generator.replace(/[ .\-]/g, "_");
+          return true;
+        });
+      }
 
-        if (pdfTitle) {
-          this.setTitle(
-            `${pdfTitle} - ${contentDispositionFilename || document.title}`
-          );
-        } else if (contentDispositionFilename) {
-          this.setTitle(contentDispositionFilename);
-        }
-
-        if (info.IsAcroFormPresent) {
-          console.warn("Warning: AcroForm/XFA is not supported");
-          this.fallback(UNSUPPORTED_FEATURES.forms);
-        }
-
-        if (
-          typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("MOZCENTRAL || GENERIC")
-        ) {
-          // Telemetry labels must be C++ variable friendly.
-          let versionId = "other";
-          // Keep these in sync with mozilla central's Histograms.json.
-          const KNOWN_VERSIONS = [
-            "1.0",
-            "1.1",
-            "1.2",
-            "1.3",
-            "1.4",
-            "1.5",
-            "1.6",
-            "1.7",
-            "1.8",
-            "1.9",
-            "2.0",
-            "2.1",
-            "2.2",
-            "2.3",
-          ];
-          if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
-            versionId = `v${info.PDFFormatVersion.replace(".", "_")}`;
-          }
-
-          let generatorId = "other";
-          // Keep these in sync with mozilla central's Histograms.json.
-          const KNOWN_GENERATORS = [
-            "acrobat distiller",
-            "acrobat pdfwriter",
-            "adobe livecycle",
-            "adobe pdf library",
-            "adobe photoshop",
-            "ghostscript",
-            "tcpdf",
-            "cairo",
-            "dvipdfm",
-            "dvips",
-            "pdftex",
-            "pdfkit",
-            "itext",
-            "prince",
-            "quarkxpress",
-            "mac os x",
-            "microsoft",
-            "openoffice",
-            "oracle",
-            "luradocument",
-            "pdf-xchange",
-            "antenna house",
-            "aspose.cells",
-            "fpdf",
-          ];
-          if (info.Producer) {
-            const producer = info.Producer.toLowerCase();
-            KNOWN_GENERATORS.some(function(generator) {
-              if (!producer.includes(generator)) {
-                return false;
-              }
-              generatorId = generator.replace(/[ .\-]/g, "_");
-              return true;
-            });
-          }
-
-          let formType = null;
-          if (info.IsAcroFormPresent) {
-            formType = info.IsXFAPresent ? "xfa" : "acroform";
-          }
-          this.externalServices.reportTelemetry({
-            type: "documentInfo",
-            version: versionId,
-            generator: generatorId,
-            formType,
-          });
-        }
+      let formType = null;
+      if (info.IsAcroFormPresent) {
+        formType = info.IsXFAPresent ? "xfa" : "acroform";
+      }
+      this.externalServices.reportTelemetry({
+        type: "documentInfo",
+        version: versionId,
+        generator: generatorId,
+        formType,
       });
+    }
   },
 
   /**
