@@ -3642,6 +3642,22 @@ var Type1Font = (function Type1FontClosure() {
 
     getGlyphMapping: function Type1Font_getGlyphMapping(properties) {
       var charstrings = this.charstrings;
+
+      if (properties.composite) {
+        const charCodeToGlyphId = Object.create(null);
+        // Map CIDs directly to GIDs.
+        for (
+          let glyphId = 0, charstringsLen = charstrings.length;
+          glyphId < charstringsLen;
+          glyphId++
+        ) {
+          const charCode = properties.cMap.charCodeOf(glyphId);
+          // Add 1 because glyph 0 is duplicated.
+          charCodeToGlyphId[charCode] = glyphId + 1;
+        }
+        return charCodeToGlyphId;
+      }
+
       var glyphNames = [".notdef"],
         glyphId;
       for (glyphId = 0; glyphId < charstrings.length; glyphId++) {

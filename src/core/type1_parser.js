@@ -437,7 +437,7 @@ var Type1Parser = (function Type1ParserClosure() {
         r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
       }
     }
-    return Array.prototype.slice.call(decrypted, discardNumber, j);
+    return decrypted.slice(discardNumber, j);
   }
 
   function isSpecial(c) {
@@ -457,10 +457,14 @@ var Type1Parser = (function Type1ParserClosure() {
     if (encrypted) {
       var data = stream.getBytes();
       var isBinary = !(
-        isHexDigit(data[0]) &&
+        (isHexDigit(data[0]) || isWhiteSpace(data[0])) &&
         isHexDigit(data[1]) &&
         isHexDigit(data[2]) &&
-        isHexDigit(data[3])
+        isHexDigit(data[3]) &&
+        isHexDigit(data[4]) &&
+        isHexDigit(data[5]) &&
+        isHexDigit(data[6]) &&
+        isHexDigit(data[7])
       );
       stream = new Stream(
         isBinary
