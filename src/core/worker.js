@@ -403,6 +403,7 @@ var WorkerMessageHandler = {
         nativeImageDecoderSupport: data.nativeImageDecoderSupport,
         ignoreErrors: data.ignoreErrors,
         isEvalSupported: data.isEvalSupported,
+        fontExtraProperties: data.fontExtraProperties,
       };
 
       getPdfManager(data, evaluatorOptions)
