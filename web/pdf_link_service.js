@@ -293,6 +293,31 @@ class PDFLinkService {
           }
         }
       }
+      if ("view" in params) {
+        // Build the destination array.
+        const viewArgs = params.view.split(","); // scale,left/top
+        const viewArg = viewArgs[0];
+
+        if (viewArg === "Fit" || viewArg === "FitB") {
+          dest = [null, { name: viewArg }];
+        } else if (
+          viewArg === "FitH" ||
+          viewArg === "FitBH" ||
+          viewArg === "FitV" ||
+          viewArg === "FitBV"
+        ) {
+          dest = [
+            null,
+            { name: viewArg },
+            viewArgs.length > 1 ? viewArgs[1] | 0 : null,
+          ];
+        } else {
+          console.error(
+            `PDFLinkService.setHash: "${viewArg}" is not ` +
+              "a valid view value."
+          );
+        }
+      }
       if (dest) {
         this.pdfViewer.scrollPageIntoView({
           pageNumber: pageNumber || this.page,
