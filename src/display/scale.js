@@ -3,7 +3,11 @@ import { ImageKind } from "../shared/util.js";
 class ScaleJS {
   isMobile() {
     if (typeof navigator !== "undefined") {
-      return /Mobi/.test(navigator.userAgent);
+      return (
+        /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+        window &&
+        !window.MSStream
+      );
     }
     return false;
   }
