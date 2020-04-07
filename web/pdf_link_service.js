@@ -257,20 +257,7 @@ class PDFLinkService {
             zoomArgNumber ? zoomArgNumber / 100 : zoomArg,
           ];
         } else {
-          if (zoomArg === "Fit" || zoomArg === "FitB") {
-            dest = [null, { name: zoomArg }];
-          } else if (
-            zoomArg === "FitH" ||
-            zoomArg === "FitBH" ||
-            zoomArg === "FitV" ||
-            zoomArg === "FitBV"
-          ) {
-            dest = [
-              null,
-              { name: zoomArg },
-              zoomArgs.length > 1 ? zoomArgs[1] | 0 : null,
-            ];
-          } else if (zoomArg === "FitR") {
+          if (zoomArg === "FitR") {
             if (zoomArgs.length !== 5) {
               console.error(
                 'PDFLinkService.setHash: Not enough parameters for "FitR".'

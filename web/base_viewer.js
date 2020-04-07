@@ -813,7 +813,7 @@ class BaseViewer {
     switch (destArray[1].name) {
       case "XYZ":
         x = destArray[2];
-        y = pageHeight - destArray[3];
+        y = destArray[3];
         scale = destArray[4];
         // If x and/or y coordinates are not supplied, default to
         // _top_ left of the page (not the obvious bottom left,
@@ -828,7 +828,7 @@ class BaseViewer {
         break;
       case "FitH":
       case "FitBH":
-        y = pageHeight - destArray[2];
+        y = destArray[2];
         scale = "page-width";
         // According to the PDF spec, section 12.3.2.2, a `null` value in the
         // parameter should maintain the position relative to the new page.
@@ -846,7 +846,7 @@ class BaseViewer {
         break;
       case "FitR":
         x = destArray[2];
-        y = pageHeight - destArray[3];
+        y = destArray[3];
         width = destArray[4] - x;
         height = destArray[5] - y;
         const hPadding = this.removePageBorders ? 0 : SCROLLBAR_PADDING;
