@@ -48,6 +48,7 @@ import {
   MissingPDFException,
   OPS,
   PDFWorker,
+  PermissionFlag,
   shadow,
   UnexpectedResponseException,
   UNSUPPORTED_FEATURES,
@@ -77,6 +78,7 @@ const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
+const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -679,6 +681,7 @@ const PDFViewerApplication = {
       this.pdfLinkService.setDocument(null);
       this.pdfDocumentProperties.setDocument(null);
     }
+    webViewerResetPermissions();
     this.store = null;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
@@ -1149,6 +1152,10 @@ const PDFViewerApplication = {
             pdfViewer.focus();
           }
 
+          // Currently only the "copy"-permission is supported, hence we delay
+          // the `getPermissions` API call until *after* rendering has started.
+          this._initializePermissions(pdfDocument);
+
           // For documents with different page sizes, once all pages are
           // resolved, ensure that the correct location becomes visible on load.
           // (To reduce the risk, in very large and/or slow loading documents,
@@ -1464,6 +1471,24 @@ const PDFViewerApplication = {
       // TODO: Re-factor the `PDFHistory` initialization to remove this hack
       // that's currently necessary to prevent weird initial history state.
       this.pdfHistory.push({ explicitDest: initialDest, pageNumber: null });
+    }
+  },
+
+  /**
+   * @private
+   */
+  async _initializePermissions(pdfDocument) {
+    const permissions = await pdfDocument.getPermissions();
+
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the permissions resolved.
+    }
+    if (!permissions || !AppOptions.get("enablePermissions")) {
+      return;
+    }
+    // Currently only the "copy"-permission is supported.
+    if (!permissions.includes(PermissionFlag.COPY)) {
+      this.appConfig.viewerContainer.classList.add(ENABLE_PERMISSIONS_CLASS);
     }
   },
 
@@ -1977,6 +2002,15 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       throw new Error("Not implemented: webViewerOpenFileViaURL");
     }
   };
+}
+
+function webViewerResetPermissions() {
+  const { appConfig } = PDFViewerApplication;
+  if (!appConfig) {
+    return;
+  }
+  // Currently only the "copy"-permission is supported.
+  appConfig.viewerContainer.classList.remove(ENABLE_PERMISSIONS_CLASS);
 }
 
 function webViewerPageRendered(evt) {

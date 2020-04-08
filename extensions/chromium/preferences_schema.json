@@ -151,6 +151,10 @@
       "type": "boolean",
       "default": false
     },
+    "enablePermissions": {
+      "type": "boolean",
+      "default": false
+    },
     "historyUpdateUrl": {
       "type": "boolean",
       "default": false
