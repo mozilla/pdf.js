@@ -175,6 +175,52 @@ function createIdFactory(pageIndex) {
   return page.idFactory;
 }
 
+  class BaseViewerMock {
+    constructor(){
+      this.used = 0;
+      this.x = 0;
+      this.y = 0;
+      this.desName = "";
+    }
+    scrollPageIntoView({
+      pageNumber,
+      destArray = null,
+      allowNegativeOffset = false,
+      ignoreDestinationZoom = false,
+    }){
+      this.used = 1;
+      this.desName = destArray[1].name;
+      var x = destArray[2];
+      var y = destArray[3];
+      this.x = x !== null ? x : 0;
+      this.y = y !== null ? y : 0; //for testing purposes
+    } 
+    
+    reset(){
+      this.used = 0;
+      this.x = 0;
+      this.y = 0;
+      this.desName = "";
+    }
+
+    getUsed(){
+      return this.used;
+    }
+    
+    getX(){
+      return this.x;
+    }
+
+    getY(){
+      return this.y;
+    }
+
+    getName(){
+      return this.desName;
+    }
+  }
+
+
 export {
   DOMFileReaderFactory,
   NodeFileReaderFactory,
@@ -184,4 +230,5 @@ export {
   buildGetDocumentParams,
   TEST_PDFS_PATH,
   createIdFactory,
+  BaseViewerMock,
 };
