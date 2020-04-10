@@ -1027,11 +1027,17 @@ gulp.task(
     var version = versionJSON.version,
       commit = versionJSON.commit;
 
+    // Ignore the fallback cursor images, since they're unnecessary in Firefox.
+    const MOZCENTRAL_COMMON_WEB_FILES = [
+      ...COMMON_WEB_FILES,
+      "!web/images/*.cur",
+    ];
+
     return merge([
       createBundle(defines).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")),
       createWebBundle(defines).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
       gulp
-        .src(COMMON_WEB_FILES, { base: "web/" })
+        .src(MOZCENTRAL_COMMON_WEB_FILES, { base: "web/" })
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
       gulp
         .src(["external/bcmaps/*.bcmap", "external/bcmaps/LICENSE"], {
