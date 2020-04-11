@@ -76,16 +76,6 @@ It is also possible to view all test PDF files on the right side by opening:
 
 + http://localhost:8888/test/pdfs/?frame
 
-### Online setup with a single click
-
-It's highly recommended to follow the [Getting the Code](#getting-the-code)
-section above, which is the officially supported way to obtain the code.
-However, you may also use [Gitpod](https://gitpod.io) (a free online IDE). With
-a single click it will launch a ready to use development environment, with all
-the necessary dependencies pre-installed and the web server running.
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/mozilla/pdf.js)
-
 ## Building PDF.js
 
 In order to bundle all `src/` files into two production scripts and build the generic
