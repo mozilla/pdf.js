@@ -140,14 +140,16 @@ var WorkerMessageHandler = {
       // Ensure that (primarily) Node.js users won't accidentally attempt to use
       // a non-translated/non-polyfilled build of the library, since that would
       // quickly fail anyway because of missing functionality (such as e.g.
-      // `ReadableStream).
+      // `ReadableStream` and `Promise.allSettled`).
       if (
         (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) &&
-        typeof ReadableStream === "undefined"
+        (typeof ReadableStream === "undefined" ||
+          typeof Promise.allSettled === "undefined")
       ) {
         throw new Error(
           "The browser/environment lacks native support for critical " +
-            "functionality used by the PDF.js library (e.g. `ReadableStream`); " +
+            "functionality used by the PDF.js library (e.g. " +
+            "`ReadableStream` and/or `Promise.allSettled`); " +
             "please use an ES5-compatible build instead."
         );
       }
