@@ -429,23 +429,17 @@ var JpegImage = (function JpegImageClosure() {
       bitsCount = 0;
       fileMarker = findNextFileMarker(data, offset);
       if (!fileMarker) {
-        // Reached the end of the image data without finding an EOI marker.
-        break;
-      } else if (fileMarker.invalid) {
+        break; // Reached the end of the image data without finding any marker.
+      }
+      if (fileMarker.invalid) {
         // Some bad images seem to pad Scan blocks with e.g. zero bytes, skip
         // past those to attempt to find a valid marker (fixes issue4090.pdf).
         warn(
-          "decodeScan - unexpected MCU data, current marker is: " +
-            fileMarker.invalid
+          `decodeScan - unexpected MCU data, current marker is: ${fileMarker.invalid}`
         );
         offset = fileMarker.offset;
       }
-      var marker = fileMarker && fileMarker.marker;
-      if (!marker || marker <= 0xff00) {
-        throw new JpegError("decodeScan - a valid marker was not found.");
-      }
-
-      if (marker >= 0xffd0 && marker <= 0xffd7) {
+      if (fileMarker.marker >= 0xffd0 && fileMarker.marker <= 0xffd7) {
         // RSTx
         offset += 2;
       } else {
@@ -458,8 +452,7 @@ var JpegImage = (function JpegImageClosure() {
     // attempt to find the next valid marker (fixes issue8182.pdf).
     if (fileMarker && fileMarker.invalid) {
       warn(
-        "decodeScan - unexpected Scan data, current marker is: " +
-          fileMarker.invalid
+        `decodeScan - unexpected Scan data, current marker is: ${fileMarker.invalid}`
       );
       offset = fileMarker.offset;
     }
