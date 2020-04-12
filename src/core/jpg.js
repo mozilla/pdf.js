@@ -393,35 +393,42 @@ var JpegImage = (function JpegImageClosure() {
     }
 
     var h, v;
-    while (mcu < mcuExpected) {
+    while (mcu <= mcuExpected) {
       // reset interval stuff
       var mcuToRead = resetInterval
         ? Math.min(mcuExpected - mcu, resetInterval)
         : mcuExpected;
-      for (i = 0; i < componentsLength; i++) {
-        components[i].pred = 0;
-      }
-      eobrun = 0;
 
-      if (componentsLength === 1) {
-        component = components[0];
-        for (n = 0; n < mcuToRead; n++) {
-          decodeBlock(component, decodeFn, mcu);
-          mcu++;
+      // The `mcuToRead === 0` case should only occur when all of the expected
+      // MCU data has been already parsed, i.e. when `mcu === mcuExpected`, but
+      // some corrupt JPEG images contain more data than intended and we thus
+      // want to skip over any extra RSTx markers below (fixes issue11794.pdf).
+      if (mcuToRead > 0) {
+        for (i = 0; i < componentsLength; i++) {
+          components[i].pred = 0;
         }
-      } else {
-        for (n = 0; n < mcuToRead; n++) {
-          for (i = 0; i < componentsLength; i++) {
-            component = components[i];
-            h = component.h;
-            v = component.v;
-            for (j = 0; j < v; j++) {
-              for (k = 0; k < h; k++) {
-                decodeMcu(component, decodeFn, mcu, j, k);
+        eobrun = 0;
+
+        if (componentsLength === 1) {
+          component = components[0];
+          for (n = 0; n < mcuToRead; n++) {
+            decodeBlock(component, decodeFn, mcu);
+            mcu++;
+          }
+        } else {
+          for (n = 0; n < mcuToRead; n++) {
+            for (i = 0; i < componentsLength; i++) {
+              component = components[i];
+              h = component.h;
+              v = component.v;
+              for (j = 0; j < v; j++) {
+                for (k = 0; k < h; k++) {
+                  decodeMcu(component, decodeFn, mcu, j, k);
+                }
               }
             }
+            mcu++;
           }
-          mcu++;
         }
       }
 
@@ -434,8 +441,9 @@ var JpegImage = (function JpegImageClosure() {
       if (fileMarker.invalid) {
         // Some bad images seem to pad Scan blocks with e.g. zero bytes, skip
         // past those to attempt to find a valid marker (fixes issue4090.pdf).
+        const partialMsg = mcuToRead > 0 ? "unexpected" : "excessive";
         warn(
-          `decodeScan - unexpected MCU data, current marker is: ${fileMarker.invalid}`
+          `decodeScan - ${partialMsg} MCU data, current marker is: ${fileMarker.invalid}`
         );
         offset = fileMarker.offset;
       }
