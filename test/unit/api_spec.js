@@ -24,7 +24,6 @@ import {
   createPromiseCapability,
   FontType,
   InvalidPDFException,
-  isEmptyObj,
   MissingPDFException,
   OPS,
   PasswordException,
@@ -846,9 +845,7 @@ describe("api", function () {
           return pdfDoc.getViewerPreferences();
         })
         .then(function (prefs) {
-          expect(
-            typeof prefs === "object" && prefs !== null && isEmptyObj(prefs)
-          ).toEqual(true);
+          expect(prefs).toEqual(null);
 
           loadingTask.destroy().then(done);
         })
