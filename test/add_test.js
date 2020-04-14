@@ -25,13 +25,13 @@ if (!fs.existsSync(file)) {
 function calculateMD5(pdfFile, callback) {
   var hash = crypto.createHash("md5");
   var stream = fs.createReadStream(pdfFile);
-  stream.on("data", function(data) {
+  stream.on("data", function (data) {
     hash.update(data);
   });
-  stream.on("error", function(err) {
+  stream.on("error", function (err) {
     callback(err);
   });
-  stream.on("end", function() {
+  stream.on("end", function () {
     var result = hash.digest("hex");
     callback(null, result);
   });

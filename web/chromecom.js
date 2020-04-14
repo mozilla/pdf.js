@@ -72,13 +72,13 @@ const ChromeCom = {
       // Assumption: The file being opened is the file that was requested.
       // There is no UI to input a different URL, so this assumption will hold
       // for now.
-      setReferer(file, function() {
+      setReferer(file, function () {
         callback(file);
       });
       return;
     }
     if (/^file?:/.test(file)) {
-      getEmbedderOrigin(function(origin) {
+      getEmbedderOrigin(function (origin) {
         // If the origin cannot be determined, let Chrome decide whether to
         // allow embedding files. Otherwise, only allow local files to be
         // embedded from local files or Chrome extensions.
@@ -95,7 +95,7 @@ const ChromeCom = {
           );
           return;
         }
-        isAllowedFileSchemeAccess(function(isAllowedAccess) {
+        isAllowedFileSchemeAccess(function (isAllowedAccess) {
           if (isAllowedAccess) {
             callback(file);
           } else {
@@ -156,7 +156,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     // for detecting unload of the top-level frame. Should this ever change
     // (crbug.com/511670), then the user can just reload the tab.
     window.addEventListener("focus", reloadIfRuntimeIsUnavailable);
-    onCloseOverlay = function() {
+    onCloseOverlay = function () {
       window.removeEventListener("focus", reloadIfRuntimeIsUnavailable);
       reloadIfRuntimeIsUnavailable();
       overlayManager.close("chromeFileAccessOverlay");
@@ -170,7 +170,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
       true
     );
   }
-  chromeFileAccessOverlayPromise.then(function() {
+  chromeFileAccessOverlayPromise.then(function () {
     const iconPath = chrome.runtime.getManifest().icons[48];
     document.getElementById("chrome-pdfjs-logo-bg").style.backgroundImage =
       "url(" + chrome.runtime.getURL(iconPath) + ")";
@@ -190,7 +190,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
 
     const link = document.getElementById("chrome-link-to-extensions-page");
     link.href = "chrome://extensions/?id=" + chrome.runtime.id;
-    link.onclick = function(e) {
+    link.onclick = function (e) {
       // Direct navigation to chrome:// URLs is blocked by Chrome, so we
       // have to ask the background page to open chrome://extensions/?id=...
       e.preventDefault();
@@ -206,7 +206,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     // why this permission request is shown.
     document.getElementById("chrome-url-of-local-file").textContent = fileUrl;
 
-    document.getElementById("chrome-file-fallback").onchange = function() {
+    document.getElementById("chrome-file-fallback").onchange = function () {
       const file = this.files[0];
       if (file) {
         const originalFilename = decodeURIComponent(fileUrl.split("/").pop());
@@ -242,7 +242,7 @@ if (window === top) {
   // localStorage and restored by extension-router.js.
   // Unfortunately, the window and tab index are not restored. And if it was
   // the only tab in an incognito window, then the tab is not restored either.
-  addEventListener("unload", function() {
+  addEventListener("unload", function () {
     // If the runtime is still available, the unload is most likely a normal
     // tab closure. Otherwise it is most likely an extension reload.
     if (!isRuntimeAvailable()) {
@@ -318,11 +318,11 @@ class ChromePreferences extends BasePreferences {
         const keysToRemove = Object.keys(this.defaults);
         // If the storage is reset, remove the keys so that the values from
         // managed storage are applied again.
-        storageArea.remove(keysToRemove, function() {
+        storageArea.remove(keysToRemove, function () {
           resolve();
         });
       } else {
-        storageArea.set(prefObj, function() {
+        storageArea.set(prefObj, function () {
           resolve();
         });
       }
@@ -336,7 +336,7 @@ class ChromePreferences extends BasePreferences {
           // Managed storage not supported, e.g. in Opera.
           defaultPrefs = this.defaults;
         }
-        storageArea.get(defaultPrefs, function(readPrefs) {
+        storageArea.get(defaultPrefs, function (readPrefs) {
           resolve(readPrefs);
         });
       };
@@ -360,7 +360,7 @@ class ChromePreferences extends BasePreferences {
           this.defaults
         );
 
-        chrome.storage.managed.get(defaultManagedPrefs, function(items) {
+        chrome.storage.managed.get(defaultManagedPrefs, function (items) {
           items = items || defaultManagedPrefs;
           // Migration logic for deprecated preferences: If the new preference
           // is not defined by an administrator (i.e. the value is the same as
@@ -410,7 +410,7 @@ class ChromeExternalServices extends DefaultExternalServices {
     ChromeCom.resolvePDFFile(
       AppOptions.get("defaultUrl"),
       PDFViewerApplication.overlayManager,
-      function(url, length, originalUrl) {
+      function (url, length, originalUrl) {
         callbacks.onOpenWithURL(url, length, originalUrl);
       }
     );

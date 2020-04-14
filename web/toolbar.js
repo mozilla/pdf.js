@@ -137,17 +137,17 @@ class Toolbar {
       });
     }
     // The non-button elements within the toolbar.
-    pageNumber.addEventListener("click", function() {
+    pageNumber.addEventListener("click", function () {
       this.select();
     });
-    pageNumber.addEventListener("change", function() {
+    pageNumber.addEventListener("change", function () {
       self.eventBus.dispatch("pagenumberchanged", {
         source: self,
         value: this.value,
       });
     });
 
-    scaleSelect.addEventListener("change", function() {
+    scaleSelect.addEventListener("change", function () {
       if (this.value === "custom") {
         return;
       }

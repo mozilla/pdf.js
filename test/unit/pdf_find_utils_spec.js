@@ -15,9 +15,9 @@
 
 import { CharacterType, getCharacterType } from "../../web/pdf_find_utils.js";
 
-describe("pdf_find_utils", function() {
-  describe("getCharacterType", function() {
-    it("gets expected character types", function() {
+describe("pdf_find_utils", function () {
+  describe("getCharacterType", function () {
+    it("gets expected character types", function () {
       const characters = {
         A: CharacterType.ALPHA_LETTER,
         a: CharacterType.ALPHA_LETTER,

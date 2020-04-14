@@ -40,7 +40,7 @@ function downloadFile(file, url, callback, redirects) {
   var completed = false;
   var protocol = /^https:\/\//.test(url) ? https : http;
   protocol
-    .get(url, function(response) {
+    .get(url, function (response) {
       var redirectTo;
       if (
         response.statusCode === 301 ||
@@ -71,14 +71,14 @@ function downloadFile(file, url, callback, redirects) {
         return;
       }
       var stream = fs.createWriteStream(file);
-      stream.on("error", function(err) {
+      stream.on("error", function (err) {
         if (!completed) {
           completed = true;
           callback(err);
         }
       });
       response.pipe(stream);
-      stream.on("finish", function() {
+      stream.on("finish", function () {
         stream.end();
         if (!completed) {
           completed = true;
@@ -86,7 +86,7 @@ function downloadFile(file, url, callback, redirects) {
         }
       });
     })
-    .on("error", function(err) {
+    .on("error", function (err) {
       if (!completed) {
         if (
           typeof err === "object" &&
@@ -113,7 +113,7 @@ function downloadManifestFiles(manifest, callback) {
     var file = links[i].file;
     var url = links[i].url;
     console.log("Downloading " + url + " to " + file + "...");
-    downloadFile(file, url, function(err) {
+    downloadFile(file, url, function (err) {
       if (err) {
         console.error("Error during downloading of " + url + ": " + err);
         fs.writeFileSync(file, ""); // making it empty file
@@ -125,10 +125,10 @@ function downloadManifestFiles(manifest, callback) {
   }
 
   var links = manifest
-    .filter(function(item) {
+    .filter(function (item) {
       return item.link && !fs.existsSync(item.file);
     })
-    .map(function(item) {
+    .map(function (item) {
       var file = item.file;
       var linkfile = file + ".link";
       var url = fs.readFileSync(linkfile).toString();
@@ -143,13 +143,13 @@ function downloadManifestFiles(manifest, callback) {
 function calculateMD5(file, callback) {
   var hash = crypto.createHash("md5");
   var stream = fs.createReadStream(file);
-  stream.on("data", function(data) {
+  stream.on("data", function (data) {
     hash.update(data);
   });
-  stream.on("error", function(err) {
+  stream.on("error", function (err) {
     callback(err);
   });
-  stream.on("end", function() {
+  stream.on("end", function () {
     var result = hash.digest("hex");
     callback(null, result);
   });
@@ -171,7 +171,7 @@ function verifyManifestFiles(manifest, callback) {
       verifyNext();
       return;
     }
-    calculateMD5(item.file, function(err, md5) {
+    calculateMD5(item.file, function (err, md5) {
       if (err) {
         console.log('WARNING: Unable to open file for reading "' + err + '".');
         error = true;

@@ -34,7 +34,7 @@ var Name = (function NameClosure() {
     return nameValue ? nameValue : (nameCache[name] = new Name(name));
   };
 
-  Name._clearCache = function() {
+  Name._clearCache = function () {
     nameCache = Object.create(null);
   };
 
@@ -57,7 +57,7 @@ var Cmd = (function CmdClosure() {
     return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
   };
 
-  Cmd._clearCache = function() {
+  Cmd._clearCache = function () {
     cmdCache = Object.create(null);
   };
 
@@ -164,7 +164,7 @@ var Dict = (function DictClosure() {
 
   Dict.empty = new Dict(null);
 
-  Dict.merge = function(xref, dictArray) {
+  Dict.merge = function (xref, dictArray) {
     const mergedDict = new Dict(xref);
 
     for (let i = 0, ii = dictArray.length; i < ii; i++) {
@@ -205,14 +205,14 @@ var Ref = (function RefClosure() {
     },
   };
 
-  Ref.get = function(num, gen) {
+  Ref.get = function (num, gen) {
     const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
     const refValue = refCache[key];
     // eslint-disable-next-line no-restricted-syntax
     return refValue ? refValue : (refCache[key] = new Ref(num, gen));
   };
 
-  Ref._clearCache = function() {
+  Ref._clearCache = function () {
     refCache = Object.create(null);
   };
 

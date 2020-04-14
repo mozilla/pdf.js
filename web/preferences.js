@@ -21,13 +21,13 @@ function getDefaultPreferences() {
         PDFJSDev.json("$ROOT/build/default_preferences.json")
       );
     } else {
-      defaultPreferences = new Promise(function(resolve, reject) {
+      defaultPreferences = new Promise(function (resolve, reject) {
         if (typeof SystemJS === "object") {
           SystemJS.import("./app_options.js").then(resolve, reject);
         } else {
           reject(new Error("SystemJS must be used to load AppOptions."));
         }
-      }).then(function({ AppOptions, OptionKind }) {
+      }).then(function ({ AppOptions, OptionKind }) {
         return AppOptions.getAll(OptionKind.PREFERENCE);
       });
     }

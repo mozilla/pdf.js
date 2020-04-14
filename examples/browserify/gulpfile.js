@@ -8,7 +8,7 @@ var source = require("vinyl-source-stream");
 var OUTPUT_PATH = "../../build/browserify";
 var TMP_FILE_PREFIX = "../../build/browserify_";
 
-gulp.task("build-bundle", function() {
+gulp.task("build-bundle", function () {
   return browserify("main.js", { output: TMP_FILE_PREFIX + "main.tmp" })
     .ignore(require.resolve("pdfjs-dist/build/pdf.worker")) // Reducing size
     .bundle()
@@ -18,7 +18,7 @@ gulp.task("build-bundle", function() {
     .pipe(gulp.dest(OUTPUT_PATH));
 });
 
-gulp.task("build-worker", function() {
+gulp.task("build-worker", function () {
   // We can create our own viewer (see worker.js) or use already defined one.
   var workerSrc = require.resolve("pdfjs-dist/build/pdf.worker.entry");
   return browserify(workerSrc, { output: TMP_FILE_PREFIX + "worker.tmp" })

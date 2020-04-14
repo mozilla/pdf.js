@@ -1,7 +1,7 @@
 "use strict";
 
 // eslint-disable-next-line no-unused-vars
-var TestReporter = function(browser, appPath) {
+var TestReporter = function (browser, appPath) {
   function send(action, json, cb) {
     var r = new XMLHttpRequest();
     // (The POST URI is ignored atm.)
@@ -42,20 +42,20 @@ var TestReporter = function(browser, appPath) {
     send("/tellMeToQuit?path=" + escape(appPath), {});
   }
 
-  this.now = function() {
+  this.now = function () {
     return new Date().getTime();
   };
 
-  this.jasmineStarted = function(suiteInfo) {
+  this.jasmineStarted = function (suiteInfo) {
     this.runnerStartTime = this.now();
     sendInfo("Started tests for " + browser + ".");
   };
 
-  this.suiteStarted = function(result) {};
+  this.suiteStarted = function (result) {};
 
-  this.specStarted = function(result) {};
+  this.specStarted = function (result) {};
 
-  this.specDone = function(result) {
+  this.specDone = function (result) {
     if (result.failedExpectations.length === 0) {
       sendResult("TEST-PASSED", result.description);
     } else {
@@ -68,9 +68,9 @@ var TestReporter = function(browser, appPath) {
     }
   };
 
-  this.suiteDone = function(result) {};
+  this.suiteDone = function (result) {};
 
-  this.jasmineDone = function() {
+  this.jasmineDone = function () {
     // Give the test.py some time process any queued up requests
     setTimeout(sendQuitRequest, 500);
   };

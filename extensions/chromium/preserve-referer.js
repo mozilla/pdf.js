@@ -43,7 +43,7 @@ var g_referrers = {};
 
 var extraInfoSpecWithHeaders; // = ['requestHeaders', 'extraHeaders']
 
-(function() {
+(function () {
   var requestFilter = {
     urls: ["*://*/*"],
     types: ["main_frame", "sub_frame"],
@@ -52,7 +52,7 @@ var extraInfoSpecWithHeaders; // = ['requestHeaders', 'extraHeaders']
     extraInfoSpecWithHeaders = extraInfoSpec;
     // May throw if the given extraInfoSpec is unsupported.
     chrome.webRequest.onSendHeaders.addListener(
-      function(details) {
+      function (details) {
         g_requestHeaders[details.requestId] = details.requestHeaders;
       },
       requestFilter,
@@ -87,7 +87,7 @@ function saveReferer(details) {
   g_referrers[details.tabId][details.frameId] = referer;
 }
 
-chrome.tabs.onRemoved.addListener(function(tabId) {
+chrome.tabs.onRemoved.addListener(function (tabId) {
   delete g_referrers[tabId];
 });
 
@@ -108,7 +108,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
 
   // If the PDF is viewed for the first time, then the referer will be set here.
   var referer = (g_referrers[tabId] && g_referrers[tabId][frameId]) || "";
-  port.onMessage.addListener(function(data) {
+  port.onMessage.addListener(function (data) {
     // If the viewer was opened directly (without opening a PDF URL first), then
     // the background script does not know about g_referrers, but the viewer may
     // know about the referer if stored in the history state (see chromecom.js).
@@ -133,7 +133,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
   });
 
   // The port is only disconnected when the other end reloads.
-  port.onDisconnect.addListener(function() {
+  port.onDisconnect.addListener(function () {
     if (g_referrers[tabId]) {
       delete g_referrers[tabId][frameId];
     }

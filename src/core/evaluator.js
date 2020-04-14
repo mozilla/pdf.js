@@ -127,9 +127,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
       const reader = readableStream.getReader();
 
-      const data = await new Promise(function(resolve, reject) {
+      const data = await new Promise(function (resolve, reject) {
         function pump() {
-          reader.read().then(function({ value, done }) {
+          reader.read().then(function ({ value, done }) {
             if (done) {
               return;
             }
@@ -432,7 +432,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         resources: dict.get("Resources") || resources,
         operatorList,
         initialState,
-      }).then(function() {
+      }).then(function () {
         operatorList.addOp(OPS.paintFormXObjectEnd, []);
 
         if (group) {
@@ -566,7 +566,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             image.getIR(this.options.forceDataSchema),
           ])
           .then(
-            function() {
+            function () {
               // Only add the dependency once we know that the native JPEG
               // decoding succeeded, to ensure that rendering will always
               // complete.
@@ -738,7 +738,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         resources: patternResources,
         operatorList: tilingOpList,
       })
-        .then(function() {
+        .then(function () {
           return getTilingPatternIR(
             {
               fnArray: tilingOpList.fnArray,
@@ -749,7 +749,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           );
         })
         .then(
-          function(tilingPatternIR) {
+          function (tilingPatternIR) {
             // Add the dependencies to the parent operator list so they are
             // resolved before the sub operator list is executed synchronously.
             operatorList.addDependencies(tilingOpList.dependencies);
@@ -795,7 +795,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
           return translated
             .loadType3Data(this, resources, operatorList, task)
-            .then(function() {
+            .then(function () {
               return translated;
             })
             .catch(reason => {
@@ -896,7 +896,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 operatorList,
                 task,
                 stateManager.state
-              ).then(function(loadedName) {
+              ).then(function (loadedName) {
                 operatorList.addDependency(loadedName);
                 gStateObj.push([key, [loadedName, value[1]]]);
               });
@@ -950,7 +950,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             break;
         }
       }
-      return promise.then(function() {
+      return promise.then(function () {
         if (gStateObj.length > 0) {
           operatorList.addOp(OPS.setGState, [gStateObj]);
         }
@@ -985,8 +985,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
       if (!fontRef) {
-        const partialMsg = `Font "${fontName ||
-          (font && font.toString())}" is not available`;
+        const partialMsg = `Font "${
+          fontName || (font && font.toString())
+        }" is not available`;
 
         if (!this.options.ignoreErrors && !this.parsingType3Font) {
           warn(`${partialMsg}.`);
@@ -1275,8 +1276,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return new Promise(function promiseBody(resolve, reject) {
-        const next = function(promise) {
-          Promise.all([promise, operatorList.ready]).then(function() {
+        const next = function (promise) {
+          Promise.all([promise, operatorList.ready]).then(function () {
             try {
               promiseBody(resolve, reject);
             } catch (ex) {
@@ -1314,7 +1315,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               next(
-                new Promise(function(resolveXObject, rejectXObject) {
+                new Promise(function (resolveXObject, rejectXObject) {
                   if (!name) {
                     throw new FormatError(
                       "XObject must be referred to by name."
@@ -1347,7 +1348,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         task,
                         stateManager.state.clone()
                       )
-                      .then(function() {
+                      .then(function () {
                         stateManager.restore();
                         resolveXObject();
                       }, rejectXObject);
@@ -1373,7 +1374,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     );
                   }
                   resolveXObject();
-                }).catch(function(reason) {
+                }).catch(function (reason) {
                   if (reason instanceof AbortException) {
                     return;
                   }
@@ -1403,7 +1404,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     task,
                     stateManager.state
                   )
-                  .then(function(loadedName) {
+                  .then(function (loadedName) {
                     operatorList.addDependency(loadedName);
                     operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
                   })
@@ -1497,7 +1498,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     cs: args[0],
                     resources,
                   })
-                  .then(function(colorSpace) {
+                  .then(function (colorSpace) {
                     if (colorSpace) {
                       stateManager.state.fillColorSpace = colorSpace;
                     }
@@ -1511,7 +1512,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     cs: args[0],
                     resources,
                   })
-                  .then(function(colorSpace) {
+                  .then(function (colorSpace) {
                     if (colorSpace) {
                       stateManager.state.strokeColorSpace = colorSpace;
                     }
@@ -1875,7 +1876,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       function handleSetFont(fontName, fontRef) {
         return self
           .loadFont(fontName, fontRef, resources)
-          .then(function(translated) {
+          .then(function (translated) {
             textState.font = translated.font;
             textState.fontMatrix =
               translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
@@ -1983,9 +1984,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var timeSlotManager = new TimeSlotManager();
 
       return new Promise(function promiseBody(resolve, reject) {
-        const next = function(promise) {
+        const next = function (promise) {
           enqueueChunk();
-          Promise.all([promise, sink.ready]).then(function() {
+          Promise.all([promise, sink.ready]).then(function () {
             try {
               promiseBody(resolve, reject);
             } catch (ex) {
@@ -2236,7 +2237,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               next(
-                new Promise(function(resolveXObject, rejectXObject) {
+                new Promise(function (resolveXObject, rejectXObject) {
                   if (!name) {
                     throw new FormatError(
                       "XObject must be referred to by name."
@@ -2307,13 +2308,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                       sink: sinkWrapper,
                       seenStyles,
                     })
-                    .then(function() {
+                    .then(function () {
                       if (!sinkWrapper.enqueueInvoked) {
                         skipEmptyXObjs[name] = true;
                       }
                       resolveXObject();
                     }, rejectXObject);
-                }).catch(function(reason) {
+                }).catch(function (reason) {
                   if (reason instanceof AbortException) {
                     return;
                   }
@@ -2673,10 +2674,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           encoding: ucs2CMapName,
           fetchBuiltInCMap: this.fetchBuiltInCMap,
           useCMap: null,
-        }).then(function(ucs2CMap) {
+        }).then(function (ucs2CMap) {
           const cMap = properties.cMap;
           const toUnicode = [];
-          cMap.forEach(function(charcode, cid) {
+          cMap.forEach(function (charcode, cid) {
             if (cid > 0xffff) {
               throw new FormatError("Max size of CID is 65,535");
             }
@@ -2706,7 +2707,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           encoding: cmapObj,
           fetchBuiltInCMap: this.fetchBuiltInCMap,
           useCMap: null,
-        }).then(function(cmap) {
+        }).then(function (cmap) {
           if (cmap instanceof IdentityCMap) {
             return new IdentityToUnicodeMap(0, 0xffff);
           }
@@ -2718,7 +2719,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           fetchBuiltInCMap: this.fetchBuiltInCMap,
           useCMap: null,
         }).then(
-          function(cmap) {
+          function (cmap) {
             if (cmap instanceof IdentityCMap) {
               return new IdentityToUnicodeMap(0, 0xffff);
             }
@@ -2726,7 +2727,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             // Convert UTF-16BE
             // NOTE: cmap can be a sparse array, so use forEach instead of
             // `for(;;)` to iterate over all keys.
-            cmap.forEach(function(charCode, token) {
+            cmap.forEach(function (charCode, token) {
               var str = [];
               for (var k = 0; k < token.length; k += 2) {
                 var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
@@ -3212,7 +3213,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           encoding: cidEncoding,
           fetchBuiltInCMap: this.fetchBuiltInCMap,
           useCMap: null,
-        }).then(function(cMap) {
+        }).then(function (cMap) {
           properties.cMap = cMap;
           properties.vertical = properties.cMap.vertical;
         });
@@ -3235,7 +3236,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
   };
 
-  PartialEvaluator.buildFontPaths = function(font, glyphs, handler) {
+  PartialEvaluator.buildFontPaths = function (font, glyphs, handler) {
     function buildPath(fontChar) {
       if (font.renderer.hasBuiltPath(fontChar)) {
         return;
@@ -3261,7 +3262,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
   // TODO: Change this to a `static` getter, using shadowing, once
   //       `PartialEvaluator` is converted to a proper class.
-  PartialEvaluator.getFallbackFontDict = function() {
+  PartialEvaluator.getFallbackFontDict = function () {
     if (this._fallbackFontDict) {
       return this._fallbackFontDict;
     }
@@ -3346,7 +3347,7 @@ class TranslatedFont {
 
     for (var i = 0, n = charProcKeys.length; i < n; ++i) {
       const key = charProcKeys[i];
-      loadCharProcsPromise = loadCharProcsPromise.then(function() {
+      loadCharProcsPromise = loadCharProcsPromise.then(function () {
         var glyphStream = charProcs.get(key);
         var operatorList = new OperatorList();
         return type3Evaluator
@@ -3356,21 +3357,21 @@ class TranslatedFont {
             resources: fontResources,
             operatorList,
           })
-          .then(function() {
+          .then(function () {
             charProcOperatorList[key] = operatorList.getIR();
 
             // Add the dependencies to the parent operator list so they are
             // resolved before sub operator list is executed synchronously.
             parentOperatorList.addDependencies(operatorList.dependencies);
           })
-          .catch(function(reason) {
+          .catch(function (reason) {
             warn(`Type3 font resource "${key}" is not available.`);
             const dummyOperatorList = new OperatorList();
             charProcOperatorList[key] = dummyOperatorList.getIR();
           });
       });
     }
-    this.type3Loaded = loadCharProcsPromise.then(function() {
+    this.type3Loaded = loadCharProcsPromise.then(function () {
       translatedFont.charProcOperatorList = charProcOperatorList;
     });
     return this.type3Loaded;
@@ -3530,7 +3531,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
   //
   // If variableArgs === true: [0, `numArgs`] expected
   // If variableArgs === false: exactly `numArgs` expected
-  var getOPMap = getLookupTableFactory(function(t) {
+  var getOPMap = getLookupTableFactory(function (t) {
     // Graphic state
     t["w"] = { id: OPS.setLineWidth, numArgs: 1, variableArgs: false };
     t["J"] = { id: OPS.setLineCap, numArgs: 1, variableArgs: false };

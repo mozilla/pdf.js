@@ -22,17 +22,17 @@ var dbPromise;
 
 function getDb() {
   if (!dbPromise) {
-    dbPromise = new Promise(function(resolve, reject) {
+    dbPromise = new Promise(function (resolve, reject) {
       var request = indexedDB.open(dbName, dbVersion);
-      request.onupgradeneeded = function() {
+      request.onupgradeneeded = function () {
         var db = request.result;
         db.createObjectStore(dbCacheTable, { keyPath: "address" });
       };
-      request.onsuccess = function() {
+      request.onsuccess = function () {
         var db = request.result;
         resolve(db);
       };
-      request.onerror = function() {
+      request.onerror = function () {
         console.warn("getDb: " + request.error);
         reject(request.error);
       };
@@ -42,7 +42,7 @@ function getDb() {
 }
 
 function storeCache(address, hashCode, translated, format) {
-  return getDb().then(function(db) {
+  return getDb().then(function (db) {
     var tx = db.transaction(dbCacheTable, "readwrite");
     var store = tx.objectStore(dbCacheTable);
     store.put({
@@ -52,11 +52,11 @@ function storeCache(address, hashCode, translated, format) {
       expires: Date.now() + cacheExpiration,
       format: format,
     });
-    return new Promise(function(resolve, reject) {
-      tx.oncomplete = function() {
+    return new Promise(function (resolve, reject) {
+      tx.oncomplete = function () {
         resolve();
       };
-      tx.onerror = function() {
+      tx.onerror = function () {
         resolve();
       };
     });
@@ -64,12 +64,12 @@ function storeCache(address, hashCode, translated, format) {
 }
 
 function loadCache(address, hashCode) {
-  return getDb().then(function(db) {
+  return getDb().then(function (db) {
     var tx = db.transaction(dbCacheTable, "readonly");
     var store = tx.objectStore(dbCacheTable);
     var getAddress = store.get(address);
-    return new Promise(function(resolve, reject) {
-      tx.oncomplete = function() {
+    return new Promise(function (resolve, reject) {
+      tx.oncomplete = function () {
         var found = getAddress.result;
         var isValid =
           found && found.hashCode === hashCode && Date.now() < found.expires;
@@ -82,7 +82,7 @@ function loadCache(address, hashCode) {
             : null
         );
       };
-      tx.onerror = function() {
+      tx.onerror = function () {
         resolve(null);
       };
     });
@@ -92,7 +92,7 @@ function loadCache(address, hashCode) {
 var encoder = new TextEncoder("utf-8");
 function sha256(str) {
   var buffer = encoder.encode(str);
-  return crypto.subtle.digest("SHA-256", buffer).then(function(hash) {
+  return crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
     var data = new Int32Array(hash);
     return (
       data[0].toString(36) +
@@ -106,38 +106,38 @@ function sha256(str) {
   });
 }
 
-exports.translate = function(load, opt) {
+exports.translate = function (load, opt) {
   var savedHashCode, babelTranslateError;
   return sha256(load.source)
-    .then(function(hashCode) {
+    .then(function (hashCode) {
       savedHashCode = hashCode;
       return loadCache(load.address, hashCode);
     })
     .then(
-      function(cache) {
+      function (cache) {
         if (cache) {
           load.metadata.format = cache.format;
           return cache.translated;
         }
         return babel.translate.call(this, load, opt).then(
-          function(translated) {
+          function (translated) {
             return storeCache(
               load.address,
               savedHashCode,
               translated,
               load.metadata.format
-            ).then(function() {
+            ).then(function () {
               return translated;
             });
           },
-          function(reason) {
+          function (reason) {
             throw (babelTranslateError = reason);
           }
         );
       }.bind(this)
     )
     .catch(
-      function(reason) {
+      function (reason) {
         if (babelTranslateError) {
           throw babelTranslateError;
         }

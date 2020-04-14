@@ -73,10 +73,7 @@ function getHeaderFromHeaders(headers, headerName) {
 function isPdfFile(details) {
   var header = getHeaderFromHeaders(details.responseHeaders, "content-type");
   if (header) {
-    var headerValue = header.value
-      .toLowerCase()
-      .split(";", 1)[0]
-      .trim();
+    var headerValue = header.value.toLowerCase().split(";", 1)[0].trim();
     if (headerValue === "application/pdf") {
       return true;
     }
@@ -120,7 +117,7 @@ function getHeadersWithContentDispositionAttachment(details) {
 }
 
 chrome.webRequest.onHeadersReceived.addListener(
-  function(details) {
+  function (details) {
     if (details.method !== "GET") {
       // Don't intercept POST requests until http://crbug.com/104058 is fixed.
       return undefined;
@@ -148,7 +145,7 @@ chrome.webRequest.onHeadersReceived.addListener(
 );
 
 chrome.webRequest.onBeforeRequest.addListener(
-  function(details) {
+  function (details) {
     if (isPdfDownloadable(details)) {
       return undefined;
     }
@@ -176,7 +173,7 @@ chrome.webRequest.onBeforeRequest.addListener(
   ["blocking"]
 );
 
-chrome.extension.isAllowedFileSchemeAccess(function(isAllowedAccess) {
+chrome.extension.isAllowedFileSchemeAccess(function (isAllowedAccess) {
   if (isAllowedAccess) {
     return;
   }
@@ -186,7 +183,7 @@ chrome.extension.isAllowedFileSchemeAccess(function(isAllowedAccess) {
   // The viewer will detect that it has no access to file:-URLs, and prompt the
   // user to activate file permissions.
   chrome.webNavigation.onBeforeNavigate.addListener(
-    function(details) {
+    function (details) {
       if (details.frameId === 0 && !isPdfDownloadable(details)) {
         chrome.tabs.update(details.tabId, {
           url: getViewerURL(details.url),
@@ -208,7 +205,7 @@ chrome.extension.isAllowedFileSchemeAccess(function(isAllowedAccess) {
   );
 });
 
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message && message.action === "getParentOrigin") {
     // getParentOrigin is used to determine whether it is safe to embed a
     // sensitive (local) file in a frame.

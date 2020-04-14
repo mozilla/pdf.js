@@ -100,7 +100,7 @@ class NetworkManager {
     xhr.responseType = "arraybuffer";
 
     if (args.onError) {
-      xhr.onerror = function(evt) {
+      xhr.onerror = function (evt) {
         args.onError(xhr.status);
       };
     }
@@ -271,7 +271,7 @@ class PDFNetworkStream {
       this._fullRequestReader.cancel(reason);
     }
     const readers = this._rangeRequestReaders.slice(0);
-    readers.forEach(function(reader) {
+    readers.forEach(function (reader) {
       reader.cancel(reason);
     });
   }
@@ -359,7 +359,7 @@ class PDFNetworkStreamFullRequestReader {
     if (this._cachedChunks.length > 0) {
       return;
     }
-    this._requests.forEach(function(requestCapability) {
+    this._requests.forEach(function (requestCapability) {
       requestCapability.resolve({ value: undefined, done: true });
     });
     this._requests = [];
@@ -370,7 +370,7 @@ class PDFNetworkStreamFullRequestReader {
     const exception = createResponseStatusError(status, url);
     this._storedError = exception;
     this._headersReceivedCapability.reject(exception);
-    this._requests.forEach(function(requestCapability) {
+    this._requests.forEach(function (requestCapability) {
       requestCapability.reject(exception);
     });
     this._requests = [];
@@ -425,7 +425,7 @@ class PDFNetworkStreamFullRequestReader {
   cancel(reason) {
     this._done = true;
     this._headersReceivedCapability.reject(reason);
-    this._requests.forEach(function(requestCapability) {
+    this._requests.forEach(function (requestCapability) {
       requestCapability.resolve({ value: undefined, done: true });
     });
     this._requests = [];
@@ -468,7 +468,7 @@ class PDFNetworkStreamRangeRequestReader {
       this._queuedChunk = chunk;
     }
     this._done = true;
-    this._requests.forEach(function(requestCapability) {
+    this._requests.forEach(function (requestCapability) {
       requestCapability.resolve({ value: undefined, done: true });
     });
     this._requests = [];
@@ -503,7 +503,7 @@ class PDFNetworkStreamRangeRequestReader {
 
   cancel(reason) {
     this._done = true;
-    this._requests.forEach(function(requestCapability) {
+    this._requests.forEach(function (requestCapability) {
       requestCapability.resolve({ value: undefined, done: true });
     });
     this._requests = [];

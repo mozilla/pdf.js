@@ -53,7 +53,7 @@ function WebServer() {
   };
 }
 WebServer.prototype = {
-  start: function(callback) {
+  start: function (callback) {
     this._ensureNonZeroPort();
     this.server = http.createServer(this._handler.bind(this));
     this.server.listen(this.port, this.host, callback);
@@ -61,11 +61,11 @@ WebServer.prototype = {
       "Server running at http://" + this.host + ":" + this.port + "/"
     );
   },
-  stop: function(callback) {
+  stop: function (callback) {
     this.server.close(callback);
     this.server = null;
   },
-  _ensureNonZeroPort: function() {
+  _ensureNonZeroPort: function () {
     if (!this.port) {
       // If port is 0, a random port will be chosen instead. Do not set a host
       // name to make sure that the port is synchronously set by .listen().
@@ -78,7 +78,7 @@ WebServer.prototype = {
       server.close();
     }
   },
-  _handler: function(req, res) {
+  _handler: function (req, res) {
     var url = req.url.replace(/\/\//g, "/");
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     try {
@@ -107,7 +107,7 @@ WebServer.prototype = {
       res.end("Unsupported request method", "utf8");
       return;
     }
-    var handled = methodHooks.some(function(hook) {
+    var handled = methodHooks.some(function (hook) {
       return hook(req, res);
     });
     if (handled) {
@@ -218,7 +218,7 @@ WebServer.prototype = {
         return;
       }
       var all = queryPart === "all";
-      fs.readdir(dir, function(err, files) {
+      fs.readdir(dir, function (err, files) {
         if (err) {
           res.end();
           return;
@@ -232,7 +232,7 @@ WebServer.prototype = {
         if (pathPart !== "/") {
           res.write('<a href="..">..</a><br>\n');
         }
-        files.forEach(function(file) {
+        files.forEach(function (file) {
           var stat;
           var item = pathPart + file;
           var href = "";
@@ -286,7 +286,7 @@ WebServer.prototype = {
     function serveRequestedFile(reqFilePath) {
       var stream = fs.createReadStream(reqFilePath, { flags: "rs" });
 
-      stream.on("error", function(error) {
+      stream.on("error", function (error) {
         res.writeHead(500);
         res.end();
       });
@@ -316,7 +316,7 @@ WebServer.prototype = {
         end: end - 1,
       });
 
-      stream.on("error", function(error) {
+      stream.on("error", function (error) {
         res.writeHead(500);
         res.end();
       });

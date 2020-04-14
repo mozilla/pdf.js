@@ -42,12 +42,12 @@ const JpxStream = (function JpxStreamClosure() {
     configurable: true,
   });
 
-  JpxStream.prototype.ensureBuffer = function(requested) {
+  JpxStream.prototype.ensureBuffer = function (requested) {
     // No-op, since `this.readBlock` will always parse the entire image and
     // directly insert all of its data into `this.buffer`.
   };
 
-  JpxStream.prototype.readBlock = function() {
+  JpxStream.prototype.readBlock = function () {
     if (this.eof) {
       return;
     }
