@@ -19,7 +19,7 @@ var getLookupTableFactory = require("./core_utils.js").getLookupTableFactory;
 // Some characters, e.g. copyrightserif, are mapped to the private use area
 // and might not be displayed using standard fonts. Mapping/hacking well-known
 // chars to the similar equivalents in the normal characters range.
-var getSpecialPUASymbols = getLookupTableFactory(function(t) {
+var getSpecialPUASymbols = getLookupTableFactory(function (t) {
   t[63721] = 0x00a9; // copyrightsans (0xF8E9) => copyright
   t[63193] = 0x00a9; // copyrightserif (0xF6D9) => copyright
   t[63720] = 0x00ae; // registersans (0xF8E8) => registered
@@ -241,7 +241,7 @@ function isRTLRangeFor(value) {
 
 // The normalization table is obtained by filtering the Unicode characters
 // database with <compat> entries.
-var getNormalizedUnicodes = getLookupTableFactory(function(t) {
+var getNormalizedUnicodes = getLookupTableFactory(function (t) {
   t["\u00A8"] = "\u0020\u0308";
   t["\u00AF"] = "\u0020\u0304";
   t["\u00B4"] = "\u0020\u0301";

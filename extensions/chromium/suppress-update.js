@@ -19,7 +19,7 @@ limitations under the License.
 // Do not reload the extension when an update becomes available, UNLESS the PDF
 // viewer is not displaying any PDF files. Otherwise the tabs would close, which
 // is quite disruptive (crbug.com/511670).
-chrome.runtime.onUpdateAvailable.addListener(function() {
+chrome.runtime.onUpdateAvailable.addListener(function () {
   if (chrome.extension.getViews({ type: "tab" }).length === 0) {
     chrome.runtime.reload();
   }

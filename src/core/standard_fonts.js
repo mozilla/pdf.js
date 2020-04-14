@@ -20,7 +20,7 @@ import { getLookupTableFactory } from "./core_utils.js";
  * Hold a map of decoded fonts and of the standard fourteen Type1
  * fonts and their acronyms.
  */
-const getStdFontMap = getLookupTableFactory(function(t) {
+const getStdFontMap = getLookupTableFactory(function (t) {
   t["ArialNarrow"] = "Helvetica";
   t["ArialNarrow-Bold"] = "Helvetica-Bold";
   t["ArialNarrow-BoldItalic"] = "Helvetica-BoldOblique";
@@ -82,7 +82,7 @@ const getStdFontMap = getLookupTableFactory(function(t) {
  * Holds the map of the non-standard fonts that might be included as
  * a standard fonts without glyph data.
  */
-const getNonStdFontMap = getLookupTableFactory(function(t) {
+const getNonStdFontMap = getLookupTableFactory(function (t) {
   t["Calibri"] = "Helvetica";
   t["Calibri-Bold"] = "Helvetica-Bold";
   t["Calibri-BoldItalic"] = "Helvetica-BoldOblique";
@@ -122,7 +122,7 @@ const getNonStdFontMap = getLookupTableFactory(function(t) {
   t["Wingdings-Regular"] = "ZapfDingbats";
 });
 
-const getSerifFonts = getLookupTableFactory(function(t) {
+const getSerifFonts = getLookupTableFactory(function (t) {
   t["Adobe Jenson"] = true;
   t["Adobe Text"] = true;
   t["Albertus"] = true;
@@ -258,7 +258,7 @@ const getSerifFonts = getLookupTableFactory(function(t) {
   t["XITS"] = true;
 });
 
-const getSymbolsFonts = getLookupTableFactory(function(t) {
+const getSymbolsFonts = getLookupTableFactory(function (t) {
   t["Dingbats"] = true;
   t["Symbol"] = true;
   t["ZapfDingbats"] = true;
@@ -267,7 +267,7 @@ const getSymbolsFonts = getLookupTableFactory(function(t) {
 // Glyph map for well-known standard fonts. Sometimes Ghostscript uses CID
 // fonts, but does not embed the CID to GID mapping. The mapping is incomplete
 // for all glyphs, but common for some set of the standard fonts.
-const getGlyphMapForStandardFonts = getLookupTableFactory(function(t) {
+const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
   t[2] = 10;
   t[3] = 32;
   t[4] = 33;
@@ -666,7 +666,9 @@ const getGlyphMapForStandardFonts = getLookupTableFactory(function(t) {
 // The glyph map for ArialBlack differs slightly from the glyph map used for
 // other well-known standard fonts. Hence we use this (incomplete) CID to GID
 // mapping to adjust the glyph map for non-embedded ArialBlack fonts.
-const getSupplementalGlyphMapForArialBlack = getLookupTableFactory(function(t) {
+const getSupplementalGlyphMapForArialBlack = getLookupTableFactory(function (
+  t
+) {
   t[227] = 322;
   t[264] = 261;
   t[291] = 346;
@@ -675,7 +677,7 @@ const getSupplementalGlyphMapForArialBlack = getLookupTableFactory(function(t) {
 // The glyph map for Calibri (a Windows font) differs from the glyph map used
 // in the standard fonts. Hence we use this (incomplete) CID to GID mapping to
 // adjust the glyph map for non-embedded Calibri fonts.
-const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function(t) {
+const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function (t) {
   t[1] = 32;
   t[4] = 65;
   t[17] = 66;

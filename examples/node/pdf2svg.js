@@ -54,7 +54,7 @@ function ReadableSVGStream(options) {
 }
 util.inherits(ReadableSVGStream, stream.Readable);
 // Implements https://nodejs.org/api/stream.html#stream_readable_read_size_1
-ReadableSVGStream.prototype._read = function() {
+ReadableSVGStream.prototype._read = function () {
   var chunk;
   while ((chunk = this.serializer.getNext()) !== null) {
     if (!this.push(chunk)) {
@@ -70,12 +70,12 @@ function writeSvgToFile(svgElement, filePath) {
     svgElement: svgElement,
   });
   var writableStream = fs.createWriteStream(filePath);
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     readableSvgStream.once("error", reject);
     writableStream.once("error", reject);
     writableStream.once("finish", resolve);
     readableSvgStream.pipe(writableStream);
-  }).catch(function(err) {
+  }).catch(function (err) {
     readableSvgStream = null; // Explicitly null because of v8 bug 6512.
     writableStream.end();
     throw err;
@@ -91,29 +91,29 @@ var loadingTask = pdfjsLib.getDocument({
   nativeImageDecoderSupport: pdfjsLib.NativeImageDecoding.DISPLAY,
 });
 loadingTask.promise
-  .then(function(doc) {
+  .then(function (doc) {
     var numPages = doc.numPages;
     console.log("# Document Loaded");
     console.log("Number of Pages: " + numPages);
     console.log();
 
     var lastPromise = Promise.resolve(); // will be used to chain promises
-    var loadPage = function(pageNum) {
-      return doc.getPage(pageNum).then(function(page) {
+    var loadPage = function (pageNum) {
+      return doc.getPage(pageNum).then(function (page) {
         console.log("# Page " + pageNum);
         var viewport = page.getViewport({ scale: 1.0 });
         console.log("Size: " + viewport.width + "x" + viewport.height);
         console.log();
 
-        return page.getOperatorList().then(function(opList) {
+        return page.getOperatorList().then(function (opList) {
           var svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
           svgGfx.embedFonts = true;
-          return svgGfx.getSVG(opList, viewport).then(function(svg) {
+          return svgGfx.getSVG(opList, viewport).then(function (svg) {
             return writeSvgToFile(svg, getFilePathForPage(pageNum)).then(
-              function() {
+              function () {
                 console.log("Page: " + pageNum);
               },
-              function(err) {
+              function (err) {
                 console.log("Error: " + err);
               }
             );
@@ -128,10 +128,10 @@ loadingTask.promise
     return lastPromise;
   })
   .then(
-    function() {
+    function () {
       console.log("# End of Document");
     },
-    function(err) {
+    function (err) {
       console.error("Error: " + err);
     }
   );

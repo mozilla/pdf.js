@@ -30,7 +30,7 @@ function buildSVG(viewport, textContent) {
   svg.setAttribute("font-size", 1);
 
   // processing all items
-  textContent.items.forEach(function(textItem) {
+  textContent.items.forEach(function (textItem) {
     // we have to take in account viewport transform, which includes scale,
     // rotation and Y-axis flip, and not forgetting to flip text.
     var tx = pdfjsLib.Util.transform(
@@ -51,10 +51,10 @@ function buildSVG(viewport, textContent) {
 function pageLoaded() {
   // Loading document and page text content
   var loadingTask = pdfjsLib.getDocument({ url: PDF_PATH });
-  loadingTask.promise.then(function(pdfDocument) {
-    pdfDocument.getPage(PAGE_NUMBER).then(function(page) {
+  loadingTask.promise.then(function (pdfDocument) {
+    pdfDocument.getPage(PAGE_NUMBER).then(function (page) {
       var viewport = page.getViewport({ scale: PAGE_SCALE });
-      page.getTextContent().then(function(textContent) {
+      page.getTextContent().then(function (textContent) {
         // building SVG and adding that to the DOM
         var svg = buildSVG(viewport, textContent);
         document.getElementById("pageContainer").appendChild(svg);
@@ -63,7 +63,7 @@ function pageLoaded() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   if (typeof pdfjsLib === "undefined") {
     alert(
       "Built version of PDF.js was not found.\n" +

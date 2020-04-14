@@ -42,7 +42,7 @@ class PDFWorkerStream {
       this._fullRequestReader.cancel(reason);
     }
     const readers = this._rangeRequestReaders.slice(0);
-    readers.forEach(function(reader) {
+    readers.forEach(function (reader) {
       reader.cancel(reason);
     });
   }

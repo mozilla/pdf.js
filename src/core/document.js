@@ -282,7 +282,7 @@ class Page {
           resources: this.resources,
           operatorList: opList,
         })
-        .then(function() {
+        .then(function () {
           return opList;
         });
     });
@@ -290,7 +290,7 @@ class Page {
     // Fetch the page's annotations and add their operator lists to the
     // page's operator list to render them.
     return Promise.all([pageListPromise, this._parsedAnnotations]).then(
-      function([pageOpList, annotations]) {
+      function ([pageOpList, annotations]) {
         if (annotations.length === 0) {
           pageOpList.flush(true);
           return { length: pageOpList.totalLength };
@@ -311,7 +311,7 @@ class Page {
           }
         }
 
-        return Promise.all(opListPromises).then(function(opLists) {
+        return Promise.all(opListPromises).then(function (opLists) {
           pageOpList.addOp(OPS.beginAnnotations, []);
           for (const opList of opLists) {
             pageOpList.addOpList(opList);
@@ -366,7 +366,7 @@ class Page {
   }
 
   getAnnotationsData(intent) {
-    return this._parsedAnnotations.then(function(annotations) {
+    return this._parsedAnnotations.then(function (annotations) {
       const annotationsData = [];
       for (let i = 0, ii = annotations.length; i < ii; i++) {
         if (!intent || isAnnotationRenderable(annotations[i], intent)) {
@@ -403,12 +403,12 @@ class Page {
         }
 
         return Promise.all(annotationPromises).then(
-          function(annotations) {
+          function (annotations) {
             return annotations.filter(function isDefined(annotation) {
               return !!annotation;
             });
           },
-          function(reason) {
+          function (reason) {
             warn(`_parsedAnnotations: "${reason}".`);
             return [];
           }

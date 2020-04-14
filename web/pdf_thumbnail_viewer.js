@@ -102,7 +102,7 @@ class PDFThumbnailViewer {
       if (pageNumber <= first || pageNumber >= last) {
         shouldScroll = true;
       } else {
-        visibleThumbs.views.some(function(view) {
+        visibleThumbs.views.some(function (view) {
           if (view.id !== pageNumber) {
             return false;
           }

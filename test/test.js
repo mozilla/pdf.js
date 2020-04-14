@@ -27,7 +27,7 @@ var testUtils = require("./testutils.js");
 
 function parseOptions() {
   function describeCheck(fn, text) {
-    fn.toString = function() {
+    fn.toString = function () {
       return text;
     };
     return fn;
@@ -102,7 +102,7 @@ function parseOptions() {
     )
     .default("statsDelay", 0)
     .check(
-      describeCheck(function(argv) {
+      describeCheck(function (argv) {
         return (
           +argv.reftest + argv.unitTest + argv.fontTest + argv.masterMode <= 1
         );
@@ -110,18 +110,18 @@ function parseOptions() {
         "specified at the same time.")
     )
     .check(
-      describeCheck(function(argv) {
+      describeCheck(function (argv) {
         return !argv.noDownload || !argv.downloadOnly;
       }, "--noDownload and --downloadOnly cannot be used together.")
     )
     .check(
-      describeCheck(function(argv) {
+      describeCheck(function (argv) {
         return !argv.masterMode || argv.manifestFile === "test_manifest.json";
       }, "when --masterMode is specified --manifestFile shall be equal " +
         "test_manifest.json")
     )
     .check(
-      describeCheck(function(argv) {
+      describeCheck(function (argv) {
         return !argv.browser || !argv.browserManifestFile;
       }, "--browser and --browserManifestFile must not be specified at the " +
         "same time.")
@@ -151,7 +151,7 @@ function monitorBrowserTimeout(session, onTimeout) {
     session.timeoutMonitor = null;
     return;
   }
-  session.timeoutMonitor = setTimeout(function() {
+  session.timeoutMonitor = setTimeout(function () {
     onTimeout(session);
   }, browserTimeout * 1000);
 }
@@ -172,7 +172,7 @@ function updateRefImages() {
   }
   testUtils.confirm(
     "Would you like to update the master copy in ref/? [yn] ",
-    function(confirmed) {
+    function (confirmed) {
       if (confirmed) {
         sync(true);
       } else {
@@ -203,7 +203,7 @@ function startRefTest(masterMode, showRefImages) {
     var numFBFFailures = 0;
     var numEqFailures = 0;
     var numEqNoSnapshot = 0;
-    sessions.forEach(function(session) {
+    sessions.forEach(function (session) {
       numErrors += session.numErrors;
       numFBFFailures += session.numFBFFailures;
       numEqFailures += session.numEqFailures;
@@ -274,12 +274,12 @@ function startRefTest(masterMode, showRefImages) {
     server.hooks["POST"].push(refTestPostHandler);
     onAllSessionsClosed = finalize;
 
-    startBrowsers("/test/test_slave.html", function(session) {
+    startBrowsers("/test/test_slave.html", function (session) {
       session.masterMode = masterMode;
       session.taskResults = {};
       session.tasks = {};
       session.remaining = manifest.length;
-      manifest.forEach(function(item) {
+      manifest.forEach(function (item) {
         var rounds = item.rounds || 1;
         var roundsResults = [];
         roundsResults.length = rounds;
@@ -304,7 +304,7 @@ function startRefTest(masterMode, showRefImages) {
       console.log("tmp/ can be removed if it has nothing you need.");
       testUtils.confirm(
         "SHOULD THIS SCRIPT REMOVE tmp/? THINK CAREFULLY [yn] ",
-        function(confirmed) {
+        function (confirmed) {
           if (confirmed) {
             testUtils.removeDirSync(refsTmpDir);
           }
@@ -350,7 +350,7 @@ function getTestManifest() {
 
   var testFilter = options.testfilter.slice(0);
   if (testFilter.length) {
-    manifest = manifest.filter(function(item) {
+    manifest = manifest.filter(function (item) {
       var i = testFilter.indexOf(item.id);
       if (i !== -1) {
         testFilter.splice(i, 1);
@@ -533,8 +533,8 @@ function checkRefTestResults(browser, id, results) {
   var failed = false;
   var session = getSession(browser);
   var task = session.tasks[id];
-  results.forEach(function(roundResults, round) {
-    roundResults.forEach(function(pageResult, page) {
+  results.forEach(function (roundResults, round) {
+    roundResults.forEach(function (pageResult, page) {
       if (!pageResult) {
         return; // no results
       }
@@ -589,8 +589,8 @@ function checkRefTestResults(browser, id, results) {
       throw new Error("Unknown test type");
   }
   // clear memory
-  results.forEach(function(roundResults, round) {
-    roundResults.forEach(function(pageResult, page) {
+  results.forEach(function (roundResults, round) {
+    roundResults.forEach(function (pageResult, page) {
       pageResult.snapshot = null;
     });
   });
@@ -608,10 +608,10 @@ function refTestPostHandler(req, res) {
   }
 
   var body = "";
-  req.on("data", function(data) {
+  req.on("data", function (data) {
     body += data;
   });
-  req.on("end", function() {
+  req.on("end", function () {
     res.writeHead(200, { "Content-Type": "text/plain" });
     res.end();
 
@@ -619,7 +619,7 @@ function refTestPostHandler(req, res) {
     if (pathname === "/tellMeToQuit") {
       // finding by path
       var browserPath = parsedUrl.query.path;
-      session = sessions.filter(function(curSession) {
+      session = sessions.filter(function (curSession) {
         return curSession.config.path === browserPath;
       })[0];
       monitorBrowserTimeout(session, null);
@@ -693,11 +693,11 @@ function startUnitTest(testUrl, name) {
   var startTime = Date.now();
   startServer();
   server.hooks["POST"].push(unitTestPostHandler);
-  onAllSessionsClosed = function() {
+  onAllSessionsClosed = function () {
     stopServer();
     var numRuns = 0,
       numErrors = 0;
-    sessions.forEach(function(session) {
+    sessions.forEach(function (session) {
       numRuns += session.numRuns;
       numErrors += session.numErrors;
     });
@@ -712,7 +712,7 @@ function startUnitTest(testUrl, name) {
     var runtime = (Date.now() - startTime) / 1000;
     console.log(name + " tests runtime was " + runtime.toFixed(1) + " seconds");
   };
-  startBrowsers(testUrl, function(session) {
+  startBrowsers(testUrl, function (session) {
     session.numRuns = 0;
     session.numErrors = 0;
   });
@@ -731,25 +731,25 @@ function unitTestPostHandler(req, res) {
   }
 
   var body = "";
-  req.on("data", function(data) {
+  req.on("data", function (data) {
     body += data;
   });
-  req.on("end", function() {
+  req.on("end", function () {
     if (pathname === "/ttx") {
       var translateFont = require("./font/ttxdriver.js").translateFont;
       var onCancel = null,
         ttxTimeout = 10000;
-      var timeoutId = setTimeout(function() {
+      var timeoutId = setTimeout(function () {
         if (onCancel) {
           onCancel("TTX timeout");
         }
       }, ttxTimeout);
       translateFont(
         body,
-        function(fn) {
+        function (fn) {
           onCancel = fn;
         },
-        function(err, xml) {
+        function (err, xml) {
           clearTimeout(timeoutId);
           res.writeHead(200, { "Content-Type": "text/xml" });
           res.end(err ? "<error>" + err + "</error>" : xml);
@@ -797,7 +797,7 @@ function startBrowsers(testUrl, initSessionCallback) {
     process.exit(1);
   }
   sessions = [];
-  browsers.forEach(function(b) {
+  browsers.forEach(function (b) {
     var browser = WebBrowser.create(b);
     var startUrl =
       getServerBaseAddress() +
@@ -846,7 +846,7 @@ function stopServer() {
 }
 
 function getSession(browser) {
-  return sessions.filter(function(session) {
+  return sessions.filter(function (session) {
     return session.name === browser;
   })[0];
 }
@@ -858,9 +858,9 @@ function closeSession(browser) {
   }
   if (i < sessions.length) {
     var session = sessions[i];
-    session.browser.stop(function() {
+    session.browser.stop(function () {
       session.closed = true;
-      var allClosed = sessions.every(function(s) {
+      var allClosed = sessions.every(function (s) {
         return s.closed;
       });
       if (allClosed && onAllSessionsClosed) {
@@ -873,8 +873,8 @@ function closeSession(browser) {
 function ensurePDFsDownloaded(callback) {
   var downloadUtils = require("./downloadutils.js");
   var manifest = getTestManifest();
-  downloadUtils.downloadManifestFiles(manifest, function() {
-    downloadUtils.verifyManifestFiles(manifest, function(hasErrors) {
+  downloadUtils.downloadManifestFiles(manifest, function () {
+    downloadUtils.verifyManifestFiles(manifest, function (hasErrors) {
       if (hasErrors) {
         console.log(
           "Unable to verify the checksum for the files that are " +
@@ -899,12 +899,12 @@ function main() {
   }
 
   if (options.downloadOnly) {
-    ensurePDFsDownloaded(function() {});
+    ensurePDFsDownloaded(function () {});
   } else if (!options.browser && !options.browserManifestFile) {
     startServer();
   } else if (options.unitTest) {
     // Allows linked PDF files in unit-tests as well.
-    ensurePDFsDownloaded(function() {
+    ensurePDFsDownloaded(function () {
       startUnitTest("/test/unit/unit_test.html", "unit");
     });
   } else if (options.fontTest) {

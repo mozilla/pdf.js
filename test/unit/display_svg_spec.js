@@ -58,37 +58,37 @@ function withZlib(isZlibRequired, callback) {
   return promise;
 }
 
-describe("SVGGraphics", function() {
+describe("SVGGraphics", function () {
   var loadingTask;
   var page;
-  beforeAll(function(done) {
+  beforeAll(function (done) {
     loadingTask = getDocument(
       buildGetDocumentParams("xobject-image.pdf", {
         nativeImageDecoderSupport: NativeImageDecoding.DISPLAY,
       })
     );
-    loadingTask.promise.then(function(doc) {
-      doc.getPage(1).then(function(firstPage) {
+    loadingTask.promise.then(function (doc) {
+      doc.getPage(1).then(function (firstPage) {
         page = firstPage;
         done();
       });
     });
   });
-  afterAll(function(done) {
+  afterAll(function (done) {
     loadingTask.destroy().then(done);
   });
 
-  describe("paintImageXObject", function() {
+  describe("paintImageXObject", function () {
     function getSVGImage() {
       var svgGfx;
       return page
         .getOperatorList()
-        .then(function(opList) {
+        .then(function (opList) {
           var forceDataSchema = true;
           svgGfx = new SVGGraphics(page.commonObjs, page.objs, forceDataSchema);
           return svgGfx.loadDependencies(opList);
         })
-        .then(function() {
+        .then(function () {
           var svgImg;
           // A mock to steal the svg:image element from paintInlineImageXObject.
           var elementContainer = {
@@ -114,7 +114,7 @@ describe("SVGGraphics", function() {
         });
     }
 
-    it('should fail require("zlib") unless in Node.js', function() {
+    it('should fail require("zlib") unless in Node.js', function () {
       function testFunc() {
         __non_webpack_require__("zlib");
       }
@@ -129,12 +129,12 @@ describe("SVGGraphics", function() {
       }
     });
 
-    it("should produce a reasonably small svg:image", function(done) {
+    it("should produce a reasonably small svg:image", function (done) {
       if (!isNodeJS) {
         pending("zlib.deflateSync is not supported in non-Node environments.");
       }
       withZlib(true, getSVGImage)
-        .then(function(svgImg) {
+        .then(function (svgImg) {
           expect(svgImg.nodeName).toBe("svg:image");
           expect(svgImg.getAttributeNS(null, "width")).toBe("200px");
           expect(svgImg.getAttributeNS(null, "height")).toBe("100px");
@@ -150,9 +150,9 @@ describe("SVGGraphics", function() {
         .then(done, done.fail);
     });
 
-    it("should be able to produce a svg:image without zlib", function(done) {
+    it("should be able to produce a svg:image without zlib", function (done) {
       withZlib(false, getSVGImage)
-        .then(function(svgImg) {
+        .then(function (svgImg) {
           expect(svgImg.nodeName).toBe("svg:image");
           expect(svgImg.getAttributeNS(null, "width")).toBe("200px");
           expect(svgImg.getAttributeNS(null, "height")).toBe("100px");

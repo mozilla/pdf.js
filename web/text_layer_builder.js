@@ -111,7 +111,7 @@ class TextLayerBuilder {
         this._finishRendering();
         this._updateMatches();
       },
-      function(reason) {
+      function (reason) {
         // Cancelled or failed to render text layer; skipping errors.
       }
     );

@@ -36,7 +36,7 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
   canvasWrapper.appendChild(canvas);
   printContainer.appendChild(canvasWrapper);
 
-  canvas.mozPrintCallback = function(obj) {
+  canvas.mozPrintCallback = function (obj) {
     // Printing/rendering the page.
     const ctx = obj.context;
 
@@ -47,7 +47,7 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
 
     pdfDocument
       .getPage(pageNumber)
-      .then(function(pdfPage) {
+      .then(function (pdfPage) {
         const renderContext = {
           canvasContext: ctx,
           transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
@@ -57,11 +57,11 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
         return pdfPage.render(renderContext).promise;
       })
       .then(
-        function() {
+        function () {
           // Tell the printEngine that rendering this canvas/page has finished.
           obj.done();
         },
-        function(error) {
+        function (error) {
           console.error(error);
           // Tell the printEngine that rendering this canvas/page has failed.
           // This will make the print process stop.

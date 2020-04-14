@@ -34,10 +34,7 @@ var fs = require("fs"),
  */
 function preprocess(inFilename, outFilename, defines) {
   // TODO make this really read line by line.
-  var lines = fs
-    .readFileSync(inFilename)
-    .toString()
-    .split("\n");
+  var lines = fs.readFileSync(inFilename).toString().split("\n");
   var totalLines = lines.length;
   var out = "";
   var i = 0;
@@ -50,7 +47,7 @@ function preprocess(inFilename, outFilename, defines) {
   var writeLine =
     typeof outFilename === "function"
       ? outFilename
-      : function(line) {
+      : function (line) {
           out += line + "\n";
         };
   function evaluateCondition(code) {
@@ -95,7 +92,7 @@ function preprocess(inFilename, outFilename, defines) {
     }
   }
   function expand(line) {
-    line = line.replace(/__[\w]+__/g, function(variable) {
+    line = line.replace(/__[\w]+__/g, function (variable) {
       variable = variable.substring(2, variable.length - 2);
       if (variable in defines) {
         return defines[variable];
@@ -122,7 +119,7 @@ function preprocess(inFilename, outFilename, defines) {
   var stack = [];
   var control = /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/;
   var lineNumber = 0;
-  var loc = function() {
+  var loc = function () {
     return fs.realpathSync(inFilename) + ":" + lineNumber;
   };
   while ((line = readLine()) !== null) {
@@ -215,7 +212,7 @@ function preprocessCSS(mode, source, destination) {
   }
 
   function expandImports(content, baseUrl) {
-    return content.replace(/^\s*@import\s+url\(([^\)]+)\);\s*$/gm, function(
+    return content.replace(/^\s*@import\s+url\(([^\)]+)\);\s*$/gm, function (
       all,
       url
     ) {

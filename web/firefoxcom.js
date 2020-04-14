@@ -133,14 +133,14 @@ class DownloadManager {
 
 class FirefoxPreferences extends BasePreferences {
   async _writeToStorage(prefObj) {
-    return new Promise(function(resolve) {
+    return new Promise(function (resolve) {
       FirefoxCom.request("setPreferences", prefObj, resolve);
     });
   }
 
   async _readFromStorage(prefObj) {
-    return new Promise(function(resolve) {
-      FirefoxCom.request("getPreferences", prefObj, function(prefStr) {
+    return new Promise(function (resolve) {
+      FirefoxCom.request("getPreferences", prefObj, function (prefStr) {
         const readPrefs = JSON.parse(prefStr);
         resolve(readPrefs);
       });
@@ -179,7 +179,7 @@ class MozL10n {
     "findentirewordchange",
     "findbarclose",
   ];
-  const handleEvent = function({ type, detail }) {
+  const handleEvent = function ({ type, detail }) {
     if (!PDFViewerApplication.initialized) {
       return;
     }
@@ -206,7 +206,7 @@ class MozL10n {
 
 (function listenZoomEvents() {
   const events = ["zoomin", "zoomout", "zoomreset"];
-  const handleEvent = function({ type, detail }) {
+  const handleEvent = function ({ type, detail }) {
     if (!PDFViewerApplication.initialized) {
       return;
     }

@@ -29,7 +29,7 @@ import {
 import { DOMSVGFactory } from "./display_utils.js";
 import { isNodeJS } from "../shared/is_node.js";
 
-let SVGGraphics = function() {
+let SVGGraphics = function () {
   throw new Error("Not implemented: SVGGraphics");
 };
 
@@ -44,7 +44,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const LINE_CAP_STYLES = ["butt", "round", "square"];
   const LINE_JOIN_STYLES = ["miter", "round", "bevel"];
 
-  const convertImgDataToPng = (function() {
+  const convertImgDataToPng = (function () {
     const PNG_HEADER = new Uint8Array([
       0x89,
       0x50,
@@ -1327,7 +1327,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         // The previous clipping group content can go out of order -- resetting
         // cached clipGroups.
         current.clipGroup = null;
-        this.extraStack.forEach(function(prev) {
+        this.extraStack.forEach(function (prev) {
           prev.clipGroup = null;
         });
         // Intersect with the previous clipping path.
@@ -1439,7 +1439,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       const current = this.current;
       let dashArray = current.dashArray;
       if (lineWidthScale !== 1 && dashArray.length > 0) {
-        dashArray = dashArray.map(function(value) {
+        dashArray = dashArray.map(function (value) {
           return lineWidthScale * value;
         });
       }

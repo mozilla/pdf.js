@@ -503,7 +503,7 @@ class Annotation {
       }
 
       const objectLoader = new ObjectLoader(resources, keys, resources.xref);
-      return objectLoader.load().then(function() {
+      return objectLoader.load().then(function () {
         return resources;
       });
     });
@@ -941,7 +941,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
         resources: this.fieldResources,
         operatorList,
       })
-      .then(function() {
+      .then(function () {
         return operatorList;
       });
   }

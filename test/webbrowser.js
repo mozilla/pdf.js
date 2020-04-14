@@ -41,14 +41,14 @@ function WebBrowser(name, execPath, headless) {
   this.uniqStringId = "webbrowser" + crypto.randomBytes(32).toString("hex");
 }
 WebBrowser.prototype = {
-  start: function(url) {
+  start: function (url) {
     this.tmpDir = path.join(os.tmpdir(), tempDirPrefix + this.name);
     if (!fs.existsSync(this.tmpDir)) {
       fs.mkdirSync(this.tmpDir);
     }
     this.startProcess(url);
   },
-  getProfileDir: function() {
+  getProfileDir: function () {
     if (!this.profileDir) {
       var profileDir = path.join(this.tmpDir, "profile");
       if (fs.existsSync(profileDir)) {
@@ -60,11 +60,11 @@ WebBrowser.prototype = {
     }
     return this.profileDir;
   },
-  buildArguments: function(url) {
+  buildArguments: function (url) {
     return [url];
   },
-  setupProfileDir: function(dir) {},
-  startProcess: function(url) {
+  setupProfileDir: function (dir) {},
+  startProcess: function (url) {
     console.assert(!this.process, "startProcess may be called only once");
 
     var args = this.buildArguments(url);
@@ -76,7 +76,7 @@ WebBrowser.prototype = {
 
     this.process.on(
       "exit",
-      function(code, signal) {
+      function (code, signal) {
         this.process = null;
         var exitInfo =
           code !== null
@@ -93,7 +93,7 @@ WebBrowser.prototype = {
       }.bind(this)
     );
   },
-  cleanup: function() {
+  cleanup: function () {
     console.assert(
       this.requestedExit,
       "cleanup should only be called after an explicit stop() request"
@@ -123,7 +123,7 @@ WebBrowser.prototype = {
     this.log("Clean-up finished. Going to call callback...");
     this.callback();
   },
-  stop: function(callback) {
+  stop: function (callback) {
     console.assert(this.tmpDir, ".start() must be called before stop()");
     // Require the callback to ensure that callers do not make any assumptions
     // on the state of this browser instance until the callback is called.
@@ -145,7 +145,7 @@ WebBrowser.prototype = {
       this.killProcessUnknownPid(this.cleanup.bind(this));
     }
   },
-  killProcessUnknownPid: function(callback) {
+  killProcessUnknownPid: function (callback) {
     this.log("pid unknown, killing processes matching " + this.uniqStringId);
 
     var cmdKillAll, cmdCheckAllKilled, isAllKilled;
@@ -168,13 +168,13 @@ WebBrowser.prototype = {
         file: "wmic",
         args: wmicPrefix.concat(["get", "CommandLine"]),
       };
-      isAllKilled = function(exitCode, stdout) {
+      isAllKilled = function (exitCode, stdout) {
         return !stdout.includes(this.uniqStringId);
       }.bind(this);
     } else {
       cmdKillAll = { file: "pkill", args: ["-f", this.uniqStringId] };
       cmdCheckAllKilled = { file: "pgrep", args: ["-f", this.uniqStringId] };
-      isAllKilled = function(pgrepStatus) {
+      isAllKilled = function (pgrepStatus) {
         return pgrepStatus === 1; // "No process matched.", per man pgrep.
       };
     }
@@ -200,7 +200,7 @@ WebBrowser.prototype = {
       function checkAlive(firstExitCode, firstStdout) {
         execAsyncNoStdin(
           cmdCheckAllKilled,
-          function(exitCode, stdout) {
+          function (exitCode, stdout) {
             if (isAllKilled(exitCode, stdout)) {
               callback();
             } else if (Date.now() - killDateStart > 10000) {
@@ -220,7 +220,7 @@ WebBrowser.prototype = {
       }.bind(this)
     );
   },
-  log: function(msg) {
+  log: function (msg) {
     console.log("[" + this.name + "] " + msg);
   },
 };
@@ -237,7 +237,7 @@ function FirefoxBrowser(name, execPath, headless) {
   WebBrowser.call(this, name, execPath, headless);
 }
 FirefoxBrowser.prototype = Object.create(WebBrowser.prototype);
-FirefoxBrowser.prototype.buildArguments = function(url) {
+FirefoxBrowser.prototype.buildArguments = function (url) {
   var profileDir = this.getProfileDir();
   var args = [];
   if (os.platform() === "darwin") {
@@ -249,7 +249,7 @@ FirefoxBrowser.prototype.buildArguments = function(url) {
   args.push("-no-remote", "-profile", profileDir, url);
   return args;
 };
-FirefoxBrowser.prototype.setupProfileDir = function(dir) {
+FirefoxBrowser.prototype.setupProfileDir = function (dir) {
   testUtils.copySubtreeSync(firefoxResourceDir, dir);
 };
 
@@ -263,7 +263,7 @@ function ChromiumBrowser(name, execPath, headless) {
   WebBrowser.call(this, name, execPath, headless);
 }
 ChromiumBrowser.prototype = Object.create(WebBrowser.prototype);
-ChromiumBrowser.prototype.buildArguments = function(url) {
+ChromiumBrowser.prototype.buildArguments = function (url) {
   var profileDir = this.getProfileDir();
   var crashDumpsDir = path.join(this.tmpDir, "crash_dumps");
   var args = [
@@ -288,7 +288,7 @@ ChromiumBrowser.prototype.buildArguments = function(url) {
   return args;
 };
 
-WebBrowser.create = function(desc) {
+WebBrowser.create = function (desc) {
   var name = desc.name;
   var execPath = fs.realpathSync(desc.path);
   if (!execPath) {

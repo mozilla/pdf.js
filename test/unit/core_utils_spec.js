@@ -22,9 +22,9 @@ import {
 } from "../../src/core/core_utils.js";
 import { XRefMock } from "./test_utils.js";
 
-describe("core_utils", function() {
-  describe("getInheritableProperty", function() {
-    it("handles non-dictionary arguments", function() {
+describe("core_utils", function () {
+  describe("getInheritableProperty", function () {
+    it("handles non-dictionary arguments", function () {
       expect(getInheritableProperty({ dict: null, key: "foo" })).toEqual(
         undefined
       );
@@ -33,7 +33,7 @@ describe("core_utils", function() {
       );
     });
 
-    it("handles dictionaries that do not contain the property", function() {
+    it("handles dictionaries that do not contain the property", function () {
       // Empty dictionary.
       const emptyDict = new Dict();
       expect(getInheritableProperty({ dict: emptyDict, key: "foo" })).toEqual(
@@ -48,7 +48,7 @@ describe("core_utils", function() {
       );
     });
 
-    it("fetches the property if it is not inherited", function() {
+    it("fetches the property if it is not inherited", function () {
       const ref = Ref.get(10, 0);
       const xref = new XRefMock([{ ref, data: "quux" }]);
       const dict = new Dict(xref);
@@ -64,7 +64,7 @@ describe("core_utils", function() {
       ).toEqual(["qux", "quux"]);
     });
 
-    it("fetches the property if it is inherited and present on one level", function() {
+    it("fetches the property if it is inherited and present on one level", function () {
       const ref = Ref.get(10, 0);
       const xref = new XRefMock([{ ref, data: "quux" }]);
       const firstDict = new Dict(xref);
@@ -84,7 +84,7 @@ describe("core_utils", function() {
       ).toEqual(["qux", "quux"]);
     });
 
-    it("fetches the property if it is inherited and present on multiple levels", function() {
+    it("fetches the property if it is inherited and present on multiple levels", function () {
       const ref = Ref.get(10, 0);
       const xref = new XRefMock([{ ref, data: "quux" }]);
       const firstDict = new Dict(xref);
@@ -122,7 +122,7 @@ describe("core_utils", function() {
       ]);
     });
 
-    it("stops searching when the loop limit is reached", function() {
+    it("stops searching when the loop limit is reached", function () {
       const dict = new Dict();
       let currentDict = dict;
       let parentDict = null;
@@ -147,16 +147,16 @@ describe("core_utils", function() {
     });
   });
 
-  describe("toRomanNumerals", function() {
-    it("handles invalid arguments", function() {
+  describe("toRomanNumerals", function () {
+    it("handles invalid arguments", function () {
       for (const input of ["foo", -1, 0]) {
-        expect(function() {
+        expect(function () {
           toRomanNumerals(input);
         }).toThrow(new Error("The number should be a positive integer."));
       }
     });
 
-    it("converts numbers to uppercase Roman numerals", function() {
+    it("converts numbers to uppercase Roman numerals", function () {
       expect(toRomanNumerals(1)).toEqual("I");
       expect(toRomanNumerals(6)).toEqual("VI");
       expect(toRomanNumerals(7)).toEqual("VII");
@@ -169,7 +169,7 @@ describe("core_utils", function() {
       expect(toRomanNumerals(2019)).toEqual("MMXIX");
     });
 
-    it("converts numbers to lowercase Roman numerals", function() {
+    it("converts numbers to lowercase Roman numerals", function () {
       expect(toRomanNumerals(1, /* lowercase = */ true)).toEqual("i");
       expect(toRomanNumerals(6, /* lowercase = */ true)).toEqual("vi");
       expect(toRomanNumerals(7, /* lowercase = */ true)).toEqual("vii");
@@ -183,13 +183,13 @@ describe("core_utils", function() {
     });
   });
 
-  describe("log2", function() {
-    it("handles values smaller than/equal to zero", function() {
+  describe("log2", function () {
+    it("handles values smaller than/equal to zero", function () {
       expect(log2(0)).toEqual(0);
       expect(log2(-1)).toEqual(0);
     });
 
-    it("handles values larger than zero", function() {
+    it("handles values larger than zero", function () {
       expect(log2(1)).toEqual(0);
       expect(log2(2)).toEqual(1);
       expect(log2(3)).toEqual(2);
@@ -197,15 +197,15 @@ describe("core_utils", function() {
     });
   });
 
-  describe("isWhiteSpace", function() {
-    it("handles space characters", function() {
+  describe("isWhiteSpace", function () {
+    it("handles space characters", function () {
       expect(isWhiteSpace(0x20)).toEqual(true);
       expect(isWhiteSpace(0x09)).toEqual(true);
       expect(isWhiteSpace(0x0d)).toEqual(true);
       expect(isWhiteSpace(0x0a)).toEqual(true);
     });
 
-    it("handles non-space characters", function() {
+    it("handles non-space characters", function () {
       expect(isWhiteSpace(0x0b)).toEqual(false);
       expect(isWhiteSpace(null)).toEqual(false);
       expect(isWhiteSpace(undefined)).toEqual(false);

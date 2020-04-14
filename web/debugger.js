@@ -126,14 +126,14 @@ var FontInspector = (function FontInspectorClosure() {
       var logIt = document.createElement("a");
       logIt.href = "";
       logIt.textContent = "Log";
-      logIt.addEventListener("click", function(event) {
+      logIt.addEventListener("click", function (event) {
         event.preventDefault();
         console.log(fontObj);
       });
       const select = document.createElement("input");
       select.setAttribute("type", "checkbox");
       select.dataset.fontName = fontName;
-      select.addEventListener("click", function() {
+      select.addEventListener("click", function () {
         selectFont(fontName, select.checked);
       });
       font.appendChild(select);
@@ -174,7 +174,7 @@ var StepperManager = (function StepperManagerClosure() {
       var self = this;
       stepperControls = document.createElement("div");
       stepperChooser = document.createElement("select");
-      stepperChooser.addEventListener("change", function(event) {
+      stepperChooser.addEventListener("change", function (event) {
         self.selectStepper(this.value);
       });
       stepperControls.appendChild(stepperChooser);
@@ -390,7 +390,7 @@ var Stepper = (function StepperClosure() {
       this.table.appendChild(chunk);
     },
     getNextBreakPoint: function getNextBreakPoint() {
-      this.breakPoints.sort(function(a, b) {
+      this.breakPoints.sort(function (a, b) {
         return a - b;
       });
       for (var i = 0; i < this.breakPoints.length; i++) {
@@ -405,7 +405,7 @@ var Stepper = (function StepperClosure() {
       var self = this;
       var dom = document;
       self.currentIdx = idx;
-      var listener = function(e) {
+      var listener = function (e) {
         switch (e.keyCode) {
           case 83: // step
             dom.removeEventListener("keydown", listener);
@@ -486,7 +486,7 @@ var Stats = (function Stats() {
       wrapper.appendChild(title);
       wrapper.appendChild(statsDiv);
       stats.push({ pageNumber, div: wrapper });
-      stats.sort(function(a, b) {
+      stats.sort(function (a, b) {
         return a.pageNumber - b.pageNumber;
       });
       clear(this.panel);
@@ -523,7 +523,7 @@ window.PDFBug = (function PDFBugClosure() {
       }
       if (!all) {
         // Sort the tools by the order they are enabled.
-        tools.sort(function(a, b) {
+        tools.sort(function (a, b) {
           var indexA = ids.indexOf(a.id);
           indexA = indexA < 0 ? tools.length : indexA;
           var indexB = ids.indexOf(b.id);
@@ -566,8 +566,8 @@ window.PDFBug = (function PDFBugClosure() {
         panelButton.textContent = tool.name;
         panelButton.addEventListener(
           "click",
-          (function(selected) {
-            return function(event) {
+          (function (selected) {
+            return function (event) {
               event.preventDefault();
               self.selectPanel(selected);
             };

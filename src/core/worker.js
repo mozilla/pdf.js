@@ -230,7 +230,7 @@ var WorkerMessageHandler = {
 
       var fullRequest = pdfStream.getFullReader();
       fullRequest.headersReady
-        .then(function() {
+        .then(function () {
           if (!fullRequest.isRangeSupported) {
             return;
           }
@@ -262,13 +262,13 @@ var WorkerMessageHandler = {
           pdfManagerCapability.resolve(newPdfManager);
           cancelXHRs = null;
         })
-        .catch(function(reason) {
+        .catch(function (reason) {
           pdfManagerCapability.reject(reason);
           cancelXHRs = null;
         });
 
       var loaded = 0;
-      var flushChunks = function() {
+      var flushChunks = function () {
         var pdfFile = arraysToBytes(cachedChunks);
         if (source.length && pdfFile.length !== source.length) {
           warn("reported HTTP length is different from actual");
@@ -288,8 +288,8 @@ var WorkerMessageHandler = {
         }
         cachedChunks = [];
       };
-      var readPromise = new Promise(function(resolve, reject) {
-        var readChunk = function({ value, done }) {
+      var readPromise = new Promise(function (resolve, reject) {
+        var readChunk = function ({ value, done }) {
           try {
             ensureNotTerminated();
             if (done) {
@@ -321,12 +321,12 @@ var WorkerMessageHandler = {
         };
         fullRequest.read().then(readChunk, reject);
       });
-      readPromise.catch(function(e) {
+      readPromise.catch(function (e) {
         pdfManagerCapability.reject(e);
         cancelXHRs = null;
       });
 
-      cancelXHRs = function(reason) {
+      cancelXHRs = function (reason) {
         pdfStream.cancelAllRequests(reason);
       };
 
@@ -348,12 +348,12 @@ var WorkerMessageHandler = {
 
           handler
             .sendWithPromise("PasswordRequest", ex)
-            .then(function({ password }) {
+            .then(function ({ password }) {
               finishWorkerTask(task);
               pdfManager.updatePassword(password);
               pdfManagerReady();
             })
-            .catch(function() {
+            .catch(function () {
               finishWorkerTask(task);
               handler.send("DocException", ex);
             });
@@ -386,7 +386,7 @@ var WorkerMessageHandler = {
               return;
             }
             pdfManager.requestLoadedStream();
-            pdfManager.onLoadedStream().then(function() {
+            pdfManager.onLoadedStream().then(function () {
               ensureNotTerminated();
 
               loadDocument(true).then(onSuccess, onFailure);
@@ -409,7 +409,7 @@ var WorkerMessageHandler = {
       };
 
       getPdfManager(data, evaluatorOptions)
-        .then(function(newPdfManager) {
+        .then(function (newPdfManager) {
           if (terminated) {
             // We were in a process of setting up the manager, but it got
             // terminated in the middle.
@@ -420,7 +420,7 @@ var WorkerMessageHandler = {
           }
           pdfManager = newPdfManager;
 
-          pdfManager.onLoadedStream().then(function(stream) {
+          pdfManager.onLoadedStream().then(function (stream) {
             handler.send("DataLoaded", { length: stream.bytes.byteLength });
           });
         })
@@ -428,13 +428,13 @@ var WorkerMessageHandler = {
     }
 
     handler.on("GetPage", function wphSetupGetPage(data) {
-      return pdfManager.getPage(data.pageIndex).then(function(page) {
+      return pdfManager.getPage(data.pageIndex).then(function (page) {
         return Promise.all([
           pdfManager.ensure(page, "rotate"),
           pdfManager.ensure(page, "ref"),
           pdfManager.ensure(page, "userUnit"),
           pdfManager.ensure(page, "view"),
-        ]).then(function([rotate, ref, userUnit, view]) {
+        ]).then(function ([rotate, ref, userUnit, view]) {
           return {
             rotate,
             ref,
@@ -471,11 +471,11 @@ var WorkerMessageHandler = {
       return pdfManager.ensureCatalog("pageMode");
     });
 
-    handler.on("GetViewerPreferences", function(data) {
+    handler.on("GetViewerPreferences", function (data) {
       return pdfManager.ensureCatalog("viewerPreferences");
     });
 
-    handler.on("GetOpenAction", function(data) {
+    handler.on("GetOpenAction", function (data) {
       return pdfManager.ensureCatalog("openAction");
     });
 
@@ -491,7 +491,7 @@ var WorkerMessageHandler = {
       return pdfManager.ensureCatalog("documentOutline");
     });
 
-    handler.on("GetPermissions", function(data) {
+    handler.on("GetPermissions", function (data) {
       return pdfManager.ensureCatalog("permissions");
     });
 
@@ -504,7 +504,7 @@ var WorkerMessageHandler = {
 
     handler.on("GetData", function wphSetupGetData(data) {
       pdfManager.requestLoadedStream();
-      return pdfManager.onLoadedStream().then(function(stream) {
+      return pdfManager.onLoadedStream().then(function (stream) {
         return stream.bytes;
       });
     });
@@ -513,8 +513,8 @@ var WorkerMessageHandler = {
       return pdfManager.pdfDocument.xref.stats;
     });
 
-    handler.on("GetAnnotations", function({ pageIndex, intent }) {
-      return pdfManager.getPage(pageIndex).then(function(page) {
+    handler.on("GetAnnotations", function ({ pageIndex, intent }) {
+      return pdfManager.getPage(pageIndex).then(function (page) {
         return page.getAnnotationsData(intent);
       });
     });
@@ -523,7 +523,7 @@ var WorkerMessageHandler = {
       "GetOperatorList",
       function wphSetupRenderPage(data, sink) {
         var pageIndex = data.pageIndex;
-        pdfManager.getPage(pageIndex).then(function(page) {
+        pdfManager.getPage(pageIndex).then(function (page) {
           var task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
           startWorkerTask(task);
 
@@ -540,7 +540,7 @@ var WorkerMessageHandler = {
               renderInteractiveForms: data.renderInteractiveForms,
             })
             .then(
-              function(operatorListInfo) {
+              function (operatorListInfo) {
                 finishWorkerTask(task);
 
                 if (start) {
@@ -551,7 +551,7 @@ var WorkerMessageHandler = {
                 }
                 sink.close();
               },
-              function(reason) {
+              function (reason) {
                 finishWorkerTask(task);
                 if (task.terminated) {
                   return; // ignoring errors from the terminated thread
@@ -576,10 +576,10 @@ var WorkerMessageHandler = {
 
     handler.on("GetTextContent", function wphExtractText(data, sink) {
       var pageIndex = data.pageIndex;
-      sink.onPull = function(desiredSize) {};
-      sink.onCancel = function(reason) {};
+      sink.onPull = function (desiredSize) {};
+      sink.onCancel = function (reason) {};
 
-      pdfManager.getPage(pageIndex).then(function(page) {
+      pdfManager.getPage(pageIndex).then(function (page) {
         var task = new WorkerTask("GetTextContent: page " + pageIndex);
         startWorkerTask(task);
 
@@ -595,7 +595,7 @@ var WorkerMessageHandler = {
             combineTextItems: data.combineTextItems,
           })
           .then(
-            function() {
+            function () {
               finishWorkerTask(task);
 
               if (start) {
@@ -606,7 +606,7 @@ var WorkerMessageHandler = {
               }
               sink.close();
             },
-            function(reason) {
+            function (reason) {
               finishWorkerTask(task);
               if (task.terminated) {
                 return; // ignoring errors from the terminated thread
@@ -620,7 +620,7 @@ var WorkerMessageHandler = {
       });
     });
 
-    handler.on("FontFallback", function(data) {
+    handler.on("FontFallback", function (data) {
       return pdfManager.fontFallback(data.id, handler);
     });
 
@@ -646,12 +646,12 @@ var WorkerMessageHandler = {
         cancelXHRs(new AbortException("Worker was terminated."));
       }
 
-      WorkerTasks.forEach(function(task) {
+      WorkerTasks.forEach(function (task) {
         waitOn.push(task.finished);
         task.terminate();
       });
 
-      return Promise.all(waitOn).then(function() {
+      return Promise.all(waitOn).then(function () {
         // Notice that even if we destroying handler, resolved response promise
         // must be sent back.
         handler.destroy();
