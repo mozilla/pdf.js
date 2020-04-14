@@ -56,7 +56,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 } else if (PDFJSDev.test("CHROME")) {
   const PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
   let PDFFetchStream;
-  const isChromeWithFetchCredentials = function() {
+  const isChromeWithFetchCredentials = function () {
     // fetch does not include credentials until Chrome 61.0.3138.0 and later.
     // https://chromium.googlesource.com/chromium/src/+/2e231cf052ca5e68e22baf0008ac9e5e29121707
     try {

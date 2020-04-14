@@ -32,7 +32,7 @@ import {
   stringToBytes,
 } from "../../src/shared/util.js";
 
-describe("crypto", function() {
+describe("crypto", function () {
   function hex2binary(s) {
     var digits = "0123456789ABCDEF";
     s = s.toUpperCase();
@@ -50,43 +50,43 @@ describe("crypto", function() {
   }
 
   // RFC 1321, A.5 Test suite
-  describe("calculateMD5", function() {
-    it("should pass RFC 1321 test #1", function() {
+  describe("calculateMD5", function () {
+    it("should pass RFC 1321 test #1", function () {
       var input, result, expected;
       input = stringToBytes("");
       result = calculateMD5(input, 0, input.length);
       expected = hex2binary("d41d8cd98f00b204e9800998ecf8427e");
       expect(result).toEqual(expected);
     });
-    it("should pass RFC 1321 test #2", function() {
+    it("should pass RFC 1321 test #2", function () {
       var input, result, expected;
       input = stringToBytes("a");
       result = calculateMD5(input, 0, input.length);
       expected = hex2binary("0cc175b9c0f1b6a831c399e269772661");
       expect(result).toEqual(expected);
     });
-    it("should pass RFC 1321 test #3", function() {
+    it("should pass RFC 1321 test #3", function () {
       var input, result, expected;
       input = stringToBytes("abc");
       result = calculateMD5(input, 0, input.length);
       expected = hex2binary("900150983cd24fb0d6963f7d28e17f72");
       expect(result).toEqual(expected);
     });
-    it("should pass RFC 1321 test #4", function() {
+    it("should pass RFC 1321 test #4", function () {
       var input, result, expected;
       input = stringToBytes("message digest");
       result = calculateMD5(input, 0, input.length);
       expected = hex2binary("f96b697d7cb7938d525a2f31aaf161d0");
       expect(result).toEqual(expected);
     });
-    it("should pass RFC 1321 test #5", function() {
+    it("should pass RFC 1321 test #5", function () {
       var input, result, expected;
       input = stringToBytes("abcdefghijklmnopqrstuvwxyz");
       result = calculateMD5(input, 0, input.length);
       expected = hex2binary("c3fcd3d76192e4007dfb496cca67e13b");
       expect(result).toEqual(expected);
     });
-    it("should pass RFC 1321 test #6", function() {
+    it("should pass RFC 1321 test #6", function () {
       var input, result, expected;
       input = stringToBytes(
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -95,7 +95,7 @@ describe("crypto", function() {
       expected = hex2binary("d174ab98d277d9f5a5611c2c9f419d9f");
       expect(result).toEqual(expected);
     });
-    it("should pass RFC 1321 test #7", function() {
+    it("should pass RFC 1321 test #7", function () {
       var input, result, expected;
       input = stringToBytes(
         "123456789012345678901234567890123456789012345678" +
@@ -108,8 +108,8 @@ describe("crypto", function() {
   });
 
   // http://www.freemedialibrary.com/index.php/RC4_test_vectors are used
-  describe("ARCFourCipher", function() {
-    it("should pass test #1", function() {
+  describe("ARCFourCipher", function () {
+    it("should pass test #1", function () {
       var key, input, result, expected, cipher;
       key = hex2binary("0123456789abcdef");
       input = hex2binary("0123456789abcdef");
@@ -118,7 +118,7 @@ describe("crypto", function() {
       expected = hex2binary("75b7878099e0c596");
       expect(result).toEqual(expected);
     });
-    it("should pass test #2", function() {
+    it("should pass test #2", function () {
       var key, input, result, expected, cipher;
       key = hex2binary("0123456789abcdef");
       input = hex2binary("0000000000000000");
@@ -127,7 +127,7 @@ describe("crypto", function() {
       expected = hex2binary("7494c2e7104b0879");
       expect(result).toEqual(expected);
     });
-    it("should pass test #3", function() {
+    it("should pass test #3", function () {
       var key, input, result, expected, cipher;
       key = hex2binary("0000000000000000");
       input = hex2binary("0000000000000000");
@@ -136,7 +136,7 @@ describe("crypto", function() {
       expected = hex2binary("de188941a3375d3a");
       expect(result).toEqual(expected);
     });
-    it("should pass test #4", function() {
+    it("should pass test #4", function () {
       var key, input, result, expected, cipher;
       key = hex2binary("ef012345");
       input = hex2binary("00000000000000000000");
@@ -145,7 +145,7 @@ describe("crypto", function() {
       expected = hex2binary("d6a141a7ec3c38dfbd61");
       expect(result).toEqual(expected);
     });
-    it("should pass test #5", function() {
+    it("should pass test #5", function () {
       var key, input, result, expected, cipher;
       key = hex2binary("0123456789abcdef");
       input = hex2binary(
@@ -188,7 +188,7 @@ describe("crypto", function() {
       );
       expect(result).toEqual(expected);
     });
-    it("should pass test #6", function() {
+    it("should pass test #6", function () {
       var key, input, result, expected, cipher;
       key = hex2binary("fb029e3031323334");
       input = hex2binary(
@@ -205,7 +205,7 @@ describe("crypto", function() {
       );
       expect(result).toEqual(expected);
     });
-    it("should pass test #7", function() {
+    it("should pass test #7", function () {
       var key, input, result, expected, cipher;
       key = hex2binary("0123456789abcdef");
       input = hex2binary(
@@ -220,8 +220,8 @@ describe("crypto", function() {
     });
   });
 
-  describe("calculateSHA256", function() {
-    it("should properly hash abc", function() {
+  describe("calculateSHA256", function () {
+    it("should properly hash abc", function () {
       var input, result, expected;
       input = stringToBytes("abc");
       result = calculateSHA256(input, 0, input.length);
@@ -230,7 +230,7 @@ describe("crypto", function() {
       );
       expect(result).toEqual(expected);
     });
-    it("should properly hash a multiblock input", function() {
+    it("should properly hash a multiblock input", function () {
       var input, result, expected;
       input = stringToBytes(
         "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
@@ -243,8 +243,8 @@ describe("crypto", function() {
     });
   });
 
-  describe("calculateSHA384", function() {
-    it("should properly hash abc", function() {
+  describe("calculateSHA384", function () {
+    it("should properly hash abc", function () {
       var input, result, expected;
       input = stringToBytes("abc");
       result = calculateSHA384(input, 0, input.length);
@@ -254,7 +254,7 @@ describe("crypto", function() {
       );
       expect(result).toEqual(expected);
     });
-    it("should properly hash a multiblock input", function() {
+    it("should properly hash a multiblock input", function () {
       var input, result, expected;
       input = stringToBytes(
         "abcdefghbcdefghicdefghijdefghijkefghijklfghijklm" +
@@ -270,8 +270,8 @@ describe("crypto", function() {
     });
   });
 
-  describe("calculateSHA512", function() {
-    it("should properly hash abc", function() {
+  describe("calculateSHA512", function () {
+    it("should properly hash abc", function () {
       var input, result, expected;
       input = stringToBytes("abc");
       result = calculateSHA512(input, 0, input.length);
@@ -282,7 +282,7 @@ describe("crypto", function() {
       );
       expect(result).toEqual(expected);
     });
-    it("should properly hash a multiblock input", function() {
+    it("should properly hash a multiblock input", function () {
       var input, result, expected;
       input = stringToBytes(
         "abcdefghbcdefghicdefghijdefghijkefghijklfghijklm" +
@@ -299,9 +299,9 @@ describe("crypto", function() {
     });
   });
 
-  describe("AES128", function() {
-    describe("Encryption", function() {
-      it("should be able to encrypt a block", function() {
+  describe("AES128", function () {
+    describe("Encryption", function () {
+      it("should be able to encrypt a block", function () {
         var input, key, result, expected, iv, cipher;
         input = hex2binary("00112233445566778899aabbccddeeff");
         key = hex2binary("000102030405060708090a0b0c0d0e0f");
@@ -313,8 +313,8 @@ describe("crypto", function() {
       });
     });
 
-    describe("Decryption", function() {
-      it("should be able to decrypt a block with IV in stream", function() {
+    describe("Decryption", function () {
+      it("should be able to decrypt a block with IV in stream", function () {
         var input, key, result, expected, cipher;
         input = hex2binary(
           "0000000000000000000000000000000069c4e0d86a7b0430d" +
@@ -329,9 +329,9 @@ describe("crypto", function() {
     });
   });
 
-  describe("AES256", function() {
-    describe("Encryption", function() {
-      it("should be able to encrypt a block", function() {
+  describe("AES256", function () {
+    describe("Encryption", function () {
+      it("should be able to encrypt a block", function () {
         var input, key, result, expected, iv, cipher;
         input = hex2binary("00112233445566778899aabbccddeeff");
         key = hex2binary(
@@ -346,8 +346,8 @@ describe("crypto", function() {
       });
     });
 
-    describe("Decryption", function() {
-      it("should be able to decrypt a block with specified iv", function() {
+    describe("Decryption", function () {
+      it("should be able to decrypt a block with specified iv", function () {
         var input, key, result, expected, cipher, iv;
         input = hex2binary("8ea2b7ca516745bfeafc49904b496089");
         key = hex2binary(
@@ -360,7 +360,7 @@ describe("crypto", function() {
         expected = hex2binary("00112233445566778899aabbccddeeff");
         expect(result).toEqual(expected);
       });
-      it("should be able to decrypt a block with IV in stream", function() {
+      it("should be able to decrypt a block with IV in stream", function () {
         var input, key, result, expected, cipher;
         input = hex2binary(
           "000000000000000000000000000000008ea2b7ca516745bf" +
@@ -378,8 +378,8 @@ describe("crypto", function() {
     });
   });
 
-  describe("PDF17Algorithm", function() {
-    it("should correctly check a user key", function() {
+  describe("PDF17Algorithm", function () {
+    it("should correctly check a user key", function () {
       var password, userValidation, userPassword, alg, result;
       alg = new PDF17();
       password = new Uint8Array([117, 115, 101, 114]);
@@ -393,7 +393,7 @@ describe("crypto", function() {
       expect(result).toEqual(true);
     });
 
-    it("should correctly check an owner key", function() {
+    it("should correctly check an owner key", function () {
       var password, ownerValidation, ownerPassword, alg, result, uBytes;
       alg = new PDF17();
       password = new Uint8Array([111, 119, 110, 101, 114]);
@@ -418,7 +418,7 @@ describe("crypto", function() {
       expect(result).toEqual(true);
     });
 
-    it("should generate a file encryption key from the user key", function() {
+    it("should generate a file encryption key from the user key", function () {
       var password, userKeySalt, expected, alg, result, userEncryption;
       alg = new PDF17();
       password = new Uint8Array([117, 115, 101, 114]);
@@ -437,7 +437,7 @@ describe("crypto", function() {
       expect(result).toEqual(expected);
     });
 
-    it("should generate a file encryption key from the owner key", function() {
+    it("should generate a file encryption key from the owner key", function () {
       var password, ownerKeySalt, expected, alg, result, ownerEncryption;
       var uBytes;
       alg = new PDF17();
@@ -464,8 +464,8 @@ describe("crypto", function() {
     });
   });
 
-  describe("PDF20Algorithm", function() {
-    it("should correctly check a user key", function() {
+  describe("PDF20Algorithm", function () {
+    it("should correctly check a user key", function () {
       var password, userValidation, userPassword, alg, result;
       alg = new PDF20();
       password = new Uint8Array([117, 115, 101, 114]);
@@ -479,7 +479,7 @@ describe("crypto", function() {
       expect(result).toEqual(true);
     });
 
-    it("should correctly check an owner key", function() {
+    it("should correctly check an owner key", function () {
       var password, ownerValidation, ownerPassword, alg, result, uBytes;
       alg = new PDF20();
       password = new Uint8Array([111, 119, 110, 101, 114]);
@@ -504,7 +504,7 @@ describe("crypto", function() {
       expect(result).toEqual(true);
     });
 
-    it("should generate a file encryption key from the user key", function() {
+    it("should generate a file encryption key from the user key", function () {
       var password, userKeySalt, expected, alg, result, userEncryption;
       alg = new PDF20();
       password = new Uint8Array([117, 115, 101, 114]);
@@ -523,7 +523,7 @@ describe("crypto", function() {
       expect(result).toEqual(expected);
     });
 
-    it("should generate a file encryption key from the owner key", function() {
+    it("should generate a file encryption key from the owner key", function () {
       var password, ownerKeySalt, expected, alg, result, ownerEncryption;
       var uBytes;
       alg = new PDF20();
@@ -551,7 +551,7 @@ describe("crypto", function() {
   });
 });
 
-describe("CipherTransformFactory", function() {
+describe("CipherTransformFactory", function () {
   function buildDict(map) {
     var dict = new Dict();
     for (var key in map) {
@@ -602,7 +602,7 @@ describe("CipherTransformFactory", function() {
   var fileId1, fileId2, dict1, dict2;
   var aes256Dict, aes256IsoDict, aes256BlankDict, aes256IsoBlankDict;
 
-  beforeAll(function(done) {
+  beforeAll(function (done) {
     fileId1 = unescape("%F6%C6%AF%17%F3rR%8DRM%9A%80%D1%EF%DF%18");
     fileId2 = unescape("%3CL_%3AD%96%AF@%9A%9D%B3%3Cx%1Cv%AC");
 
@@ -741,61 +741,61 @@ describe("CipherTransformFactory", function() {
     done();
   });
 
-  afterAll(function() {
+  afterAll(function () {
     fileId1 = fileId2 = dict1 = dict2 = null;
     aes256Dict = aes256IsoDict = aes256BlankDict = aes256IsoBlankDict = null;
   });
 
-  describe("#ctor", function() {
-    describe("AES256 Revision 5", function() {
-      it("should accept user password", function(done) {
+  describe("#ctor", function () {
+    describe("AES256 Revision 5", function () {
+      it("should accept user password", function (done) {
         ensurePasswordCorrect(done, aes256Dict, fileId1, "user");
       });
-      it("should accept owner password", function(done) {
+      it("should accept owner password", function (done) {
         ensurePasswordCorrect(done, aes256Dict, fileId1, "owner");
       });
-      it("should not accept blank password", function(done) {
+      it("should not accept blank password", function (done) {
         ensurePasswordNeeded(done, aes256Dict, fileId1);
       });
-      it("should not accept wrong password", function(done) {
+      it("should not accept wrong password", function (done) {
         ensurePasswordIncorrect(done, aes256Dict, fileId1, "wrong");
       });
-      it("should accept blank password", function(done) {
+      it("should accept blank password", function (done) {
         ensurePasswordCorrect(done, aes256BlankDict, fileId1);
       });
     });
 
-    describe("AES256 Revision 6", function() {
-      it("should accept user password", function(done) {
+    describe("AES256 Revision 6", function () {
+      it("should accept user password", function (done) {
         ensurePasswordCorrect(done, aes256IsoDict, fileId1, "user");
       });
-      it("should accept owner password", function(done) {
+      it("should accept owner password", function (done) {
         ensurePasswordCorrect(done, aes256IsoDict, fileId1, "owner");
       });
-      it("should not accept blank password", function(done) {
+      it("should not accept blank password", function (done) {
         ensurePasswordNeeded(done, aes256IsoDict, fileId1);
       });
-      it("should not accept wrong password", function(done) {
+      it("should not accept wrong password", function (done) {
         ensurePasswordIncorrect(done, aes256IsoDict, fileId1, "wrong");
       });
-      it("should accept blank password", function(done) {
+      it("should accept blank password", function (done) {
         ensurePasswordCorrect(done, aes256IsoBlankDict, fileId1);
       });
     });
 
-    it("should accept user password", function(done) {
+    it("should accept user password", function (done) {
       ensurePasswordCorrect(done, dict1, fileId1, "123456");
     });
-    it("should accept owner password", function(done) {
+    it("should accept owner password", function (done) {
       ensurePasswordCorrect(done, dict1, fileId1, "654321");
     });
-    it("should not accept blank password", function(done) {
+    it("should not accept blank password", function (done) {
       ensurePasswordNeeded(done, dict1, fileId1);
     });
-    it("should not accept wrong password", function(done) {
+    it("should not accept wrong password", function (done) {
       ensurePasswordIncorrect(done, dict1, fileId1, "wrong");
     });
-    it("should accept blank password", function(done) {
+    it("should accept blank password", function (done) {
       ensurePasswordCorrect(done, dict2, fileId2);
     });
   });

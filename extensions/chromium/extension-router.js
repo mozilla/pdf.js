@@ -61,7 +61,7 @@ limitations under the License.
   //            (or rewrite the query string parser in viewer.js to get it to
   //             recognize the non-URL-encoded PDF URL.)
   chrome.webRequest.onBeforeRequest.addListener(
-    function(details) {
+    function (details) {
       // This listener converts chrome-extension://.../http://...pdf to
       // chrome-extension://.../content/web/viewer.html?file=http%3A%2F%2F...pdf
       var url = parseExtensionURL(details.url);
@@ -78,7 +78,7 @@ limitations under the License.
     },
     {
       types: ["main_frame", "sub_frame"],
-      urls: schemes.map(function(scheme) {
+      urls: schemes.map(function (scheme) {
         // Format: "chrome-extension://[EXTENSIONID]/<scheme>*"
         return CRX_BASE_URL + scheme + "*";
       }),
@@ -94,7 +94,7 @@ limitations under the License.
     {
       url: CRX_BASE_URL + "*:*",
     },
-    function(tabsFromLastSession) {
+    function (tabsFromLastSession) {
       for (var i = 0; i < tabsFromLastSession.length; ++i) {
         chrome.tabs.reload(tabsFromLastSession[i].id);
       }
@@ -102,7 +102,7 @@ limitations under the License.
   );
   console.log("Set up extension URL router.");
 
-  Object.keys(localStorage).forEach(function(key) {
+  Object.keys(localStorage).forEach(function (key) {
     // The localStorage item is set upon unload by chromecom.js.
     var parsedKey = /^unload-(\d+)-(true|false)-(.+)/.exec(key);
     if (parsedKey) {

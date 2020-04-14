@@ -280,7 +280,7 @@ class ChunkedStream {
 
     function ChunkedStreamSubstream() {}
     ChunkedStreamSubstream.prototype = Object.create(this);
-    ChunkedStreamSubstream.prototype.getMissingChunks = function() {
+    ChunkedStreamSubstream.prototype.getMissingChunks = function () {
       const chunkSize = this.chunkSize;
       const beginChunk = Math.floor(this.start / chunkSize);
       const endChunk = Math.floor((this.end - 1) / chunkSize) + 1;
@@ -292,7 +292,7 @@ class ChunkedStream {
       }
       return missingChunks;
     };
-    ChunkedStreamSubstream.prototype.allChunksLoaded = function() {
+    ChunkedStreamSubstream.prototype.allChunksLoaded = function () {
       if (this.numChunksLoaded === this.numChunks) {
         return true;
       }
@@ -454,7 +454,7 @@ class ChunkedStreamManager {
       }
     }
 
-    chunksToRequest.sort(function(a, b) {
+    chunksToRequest.sort(function (a, b) {
       return a - b;
     });
     return this._requestChunks(chunksToRequest);

@@ -16,8 +16,8 @@
 import { PredictorStream, Stream } from "../../src/core/stream.js";
 import { Dict } from "../../src/core/primitives.js";
 
-describe("stream", function() {
-  beforeEach(function() {
+describe("stream", function () {
+  beforeEach(function () {
     jasmine.addMatchers({
       toMatchTypedArray(util, customEqualityTesters) {
         return {
@@ -47,8 +47,8 @@ describe("stream", function() {
       },
     });
   });
-  describe("PredictorStream", function() {
-    it("should decode simple predictor data", function() {
+  describe("PredictorStream", function () {
+    it("should decode simple predictor data", function () {
       var dict = new Dict();
       dict.set("Predictor", 12);
       dict.set("Colors", 1);

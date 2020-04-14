@@ -16,8 +16,8 @@
 import { isEmptyObj } from "../../src/shared/util.js";
 import { Metadata } from "../../src/display/metadata.js";
 
-describe("metadata", function() {
-  it("should handle valid metadata", function() {
+describe("metadata", function () {
+  it("should handle valid metadata", function () {
     const data =
       "<x:xmpmeta xmlns:x='adobe:ns:meta/'>" +
       "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>" +
@@ -35,7 +35,7 @@ describe("metadata", function() {
     expect(metadata.getAll()).toEqual({ "dc:title": "Foo bar baz" });
   });
 
-  it("should repair and handle invalid metadata", function() {
+  it("should repair and handle invalid metadata", function () {
     const data =
       "<x:xmpmeta xmlns:x='adobe:ns:meta/'>" +
       "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>" +
@@ -53,7 +53,7 @@ describe("metadata", function() {
     expect(metadata.getAll()).toEqual({ "dc:title": "PDF&" });
   });
 
-  it("should repair and handle invalid metadata (bug 1424938)", function() {
+  it("should repair and handle invalid metadata (bug 1424938)", function () {
     const data =
       "<x:xmpmeta xmlns:x='adobe:ns:meta/' " +
       "x:xmptk='XMP toolkit 2.9.1-13, framework 1.6'>" +
@@ -102,7 +102,7 @@ describe("metadata", function() {
     });
   });
 
-  it("should gracefully handle incomplete tags (issue 8884)", function() {
+  it("should gracefully handle incomplete tags (issue 8884)", function () {
     const data =
       '<?xpacket begin="Ã¯Â»Â¿" id="W5M0MpCehiHzreSzNTczkc9d' +
       '<x:xmpmeta xmlns:x="adobe:ns:meta/">' +
@@ -133,7 +133,7 @@ describe("metadata", function() {
     expect(isEmptyObj(metadata.getAll())).toEqual(true);
   });
 
-  it('should gracefully handle "junk" before the actual metadata (issue 10395)', function() {
+  it('should gracefully handle "junk" before the actual metadata (issue 10395)', function () {
     const data =
       'ï»¿<?xpacket begin="ï»¿" id="W5M0MpCehiHzreSzNTczkc9d"?>' +
       '<x:xmpmeta x:xmptk="TallComponents PDFObjects 1.0" ' +
@@ -183,7 +183,7 @@ describe("metadata", function() {
     });
   });
 
-  it('should correctly handle metadata containing "&apos" (issue 10407)', function() {
+  it('should correctly handle metadata containing "&apos" (issue 10407)', function () {
     const data =
       "<x:xmpmeta xmlns:x='adobe:ns:meta/'>" +
       "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>" +
@@ -202,7 +202,7 @@ describe("metadata", function() {
     expect(metadata.getAll()).toEqual({ "dc:title": "'Foo bar baz'" });
   });
 
-  it("should gracefully handle unbalanced end tags (issue 10410)", function() {
+  it("should gracefully handle unbalanced end tags (issue 10410)", function () {
     const data =
       '<?xpacket begin="Ã¯Â»Â¿" id="W5M0MpCehiHzreSzNTczkc9d"?>' +
       '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">' +
@@ -225,7 +225,7 @@ describe("metadata", function() {
     expect(isEmptyObj(metadata.getAll())).toEqual(true);
   });
 
-  it("should not be vulnerable to the billion laughs attack", function() {
+  it("should not be vulnerable to the billion laughs attack", function () {
     const data =
       '<?xml version="1.0"?>' +
       "<!DOCTYPE lolz [" +

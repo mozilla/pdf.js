@@ -23,7 +23,7 @@ import {
 import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts.js";
 import { Stream } from "../../src/core/stream.js";
 
-describe("CFFParser", function() {
+describe("CFFParser", function () {
   function createWithNullProto(obj) {
     var result = Object.create(null);
     for (var i in obj) {
@@ -41,7 +41,7 @@ describe("CFFParser", function() {
 
   var fontData, parser, cff;
 
-  beforeAll(function(done) {
+  beforeAll(function (done) {
     // This example font comes from the CFF spec:
     // http://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5176.CFF.pdf
     var exampleFont =
@@ -64,22 +64,22 @@ describe("CFFParser", function() {
     done();
   });
 
-  afterAll(function() {
+  afterAll(function () {
     fontData = null;
   });
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     parser = new CFFParser(fontData, {}, SEAC_ANALYSIS_ENABLED);
     cff = parser.parse();
     done();
   });
 
-  afterEach(function(done) {
+  afterEach(function (done) {
     parser = cff = null;
     done();
   });
 
-  it("parses header", function() {
+  it("parses header", function () {
     var header = cff.header;
     expect(header.major).toEqual(1);
     expect(header.minor).toEqual(0);
@@ -87,20 +87,20 @@ describe("CFFParser", function() {
     expect(header.offSize).toEqual(1);
   });
 
-  it("parses name index", function() {
+  it("parses name index", function () {
     var names = cff.names;
     expect(names.length).toEqual(1);
     expect(names[0]).toEqual("ABCDEF+Times-Roman");
   });
 
-  it("parses string index", function() {
+  it("parses string index", function () {
     var strings = cff.strings;
     expect(strings.count).toEqual(3);
     expect(strings.get(0)).toEqual(".notdef");
     expect(strings.get(391)).toEqual("001.007");
   });
 
-  it("parses top dict", function() {
+  it("parses top dict", function () {
     var topDict = cff.topDict;
     // 391 version 392 FullName 393 FamilyName 389 Weight 28416 UniqueID
     // -168 -218 1000 898 FontBBox 94 CharStrings 45 102 Private
@@ -114,7 +114,7 @@ describe("CFFParser", function() {
     expect(topDict.getByName("Private")).toEqual([45, 102]);
   });
 
-  it("refuses to add topDict key with invalid value (bug 1068432)", function() {
+  it("refuses to add topDict key with invalid value (bug 1068432)", function () {
     var topDict = cff.topDict;
     var defaultValue = topDict.getByName("UnderlinePosition");
 
@@ -125,7 +125,7 @@ describe("CFFParser", function() {
   it(
     "ignores reserved commands in parseDict, and refuses to add privateDict " +
       "keys with invalid values (bug 1308536)",
-    function() {
+    function () {
       // prettier-ignore
       var bytes = new Uint8Array([
       64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6
@@ -134,7 +134,7 @@ describe("CFFParser", function() {
       var topDict = cff.topDict;
       topDict.setByName("Private", [bytes.length, 0]);
 
-      var parsePrivateDict = function() {
+      var parsePrivateDict = function () {
         parser.parsePrivateDict(topDict);
       };
       expect(parsePrivateDict).not.toThrow();
@@ -144,7 +144,7 @@ describe("CFFParser", function() {
     }
   );
 
-  it("parses a CharString having cntrmask", function() {
+  it("parses a CharString having cntrmask", function () {
     // prettier-ignore
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
@@ -171,7 +171,7 @@ describe("CFFParser", function() {
     expect(charStrings.get(0).length).toEqual(38);
   });
 
-  it("parses a CharString endchar with 4 args w/seac enabled", function() {
+  it("parses a CharString endchar with 4 args w/seac enabled", function () {
     const cffParser = new CFFParser(
       fontData,
       {},
@@ -200,7 +200,7 @@ describe("CFFParser", function() {
     expect(result.seacs[0][3]).toEqual(194);
   });
 
-  it("parses a CharString endchar with 4 args w/seac disabled", function() {
+  it("parses a CharString endchar with 4 args w/seac disabled", function () {
     const cffParser = new CFFParser(
       fontData,
       {},
@@ -224,7 +224,7 @@ describe("CFFParser", function() {
     expect(result.seacs.length).toEqual(0);
   });
 
-  it("parses a CharString endchar no args", function() {
+  it("parses a CharString endchar no args", function () {
     // prettier-ignore
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
@@ -241,12 +241,12 @@ describe("CFFParser", function() {
     expect(result.seacs.length).toEqual(0);
   });
 
-  it("parses predefined charsets", function() {
+  it("parses predefined charsets", function () {
     var charset = parser.parseCharsets(0, 0, null, true);
     expect(charset.predefined).toEqual(true);
   });
 
-  it("parses charset format 0", function() {
+  it("parses charset format 0", function () {
     // The first three bytes make the offset large enough to skip predefined.
     // prettier-ignore
     var bytes = new Uint8Array([0x00, 0x00, 0x00,
@@ -262,7 +262,7 @@ describe("CFFParser", function() {
     expect(charset.charset[1]).toEqual(2);
   });
 
-  it("parses charset format 1", function() {
+  it("parses charset format 1", function () {
     // The first three bytes make the offset large enough to skip predefined.
     // prettier-ignore
     var bytes = new Uint8Array([0x00, 0x00, 0x00,
@@ -279,7 +279,7 @@ describe("CFFParser", function() {
     expect(charset.charset).toEqual([0, 8, 9]);
   });
 
-  it("parses charset format 2", function() {
+  it("parses charset format 2", function () {
     // format 2 is the same as format 1 but the left is card16
     // The first three bytes make the offset large enough to skip predefined.
     // prettier-ignore
@@ -297,7 +297,7 @@ describe("CFFParser", function() {
     expect(charset.charset).toEqual([0, 8, 9]);
   });
 
-  it("parses encoding format 0", function() {
+  it("parses encoding format 0", function () {
     // The first two bytes make the offset large enough to skip predefined.
     // prettier-ignore
     var bytes = new Uint8Array([0x00, 0x00,
@@ -310,7 +310,7 @@ describe("CFFParser", function() {
     expect(encoding.encoding).toEqual(createWithNullProto({ 0x8: 1 }));
   });
 
-  it("parses encoding format 1", function() {
+  it("parses encoding format 1", function () {
     // The first two bytes make the offset large enough to skip predefined.
     // prettier-ignore
     var bytes = new Uint8Array([0x00, 0x00,
@@ -326,7 +326,7 @@ describe("CFFParser", function() {
     );
   });
 
-  it("parses fdselect format 0", function() {
+  it("parses fdselect format 0", function () {
     // prettier-ignore
     var bytes = new Uint8Array([0x00, // format
                                 0x00, // gid: 0 fd: 0
@@ -339,7 +339,7 @@ describe("CFFParser", function() {
     expect(fdSelect.format).toEqual(0);
   });
 
-  it("parses fdselect format 3", function() {
+  it("parses fdselect format 3", function () {
     // prettier-ignore
     var bytes = new Uint8Array([0x03, // format
                                 0x00, 0x02, // range count
@@ -356,7 +356,7 @@ describe("CFFParser", function() {
     expect(fdSelect.format).toEqual(3);
   });
 
-  it("parses invalid fdselect format 3 (bug 1146106)", function() {
+  it("parses invalid fdselect format 3 (bug 1146106)", function () {
     // prettier-ignore
     var bytes = new Uint8Array([0x03, // format
                                 0x00, 0x02, // range count
@@ -376,7 +376,7 @@ describe("CFFParser", function() {
   // TODO fdArray
 });
 
-describe("CFFCompiler", function() {
+describe("CFFCompiler", function () {
   function testParser(bytes) {
     bytes = new Uint8Array(bytes);
     return new CFFParser(
@@ -390,7 +390,7 @@ describe("CFFCompiler", function() {
     );
   }
 
-  it("encodes integers", function() {
+  it("encodes integers", function () {
     var c = new CFFCompiler();
     // all the examples from the spec
     expect(c.encodeInteger(0)).toEqual([0x8b]);
@@ -404,13 +404,13 @@ describe("CFFCompiler", function() {
     expect(c.encodeInteger(-100000)).toEqual([0x1d, 0xff, 0xfe, 0x79, 0x60]);
   });
 
-  it("encodes floats", function() {
+  it("encodes floats", function () {
     var c = new CFFCompiler();
     expect(c.encodeFloat(-2.25)).toEqual([0x1e, 0xe2, 0xa2, 0x5f]);
     expect(c.encodeFloat(5e-11)).toEqual([0x1e, 0x5c, 0x11, 0xff]);
   });
 
-  it("sanitizes name index", function() {
+  it("sanitizes name index", function () {
     var c = new CFFCompiler();
     var nameIndexCompiled = c.compileNameIndex(["[a"]);
     var parser = testParser(nameIndexCompiled);
@@ -429,7 +429,7 @@ describe("CFFCompiler", function() {
     expect(names[0].length).toEqual(127);
   });
 
-  it("compiles fdselect format 0", function() {
+  it("compiles fdselect format 0", function () {
     var fdSelect = new CFFFDSelect(0, [3, 2, 1]);
     var c = new CFFCompiler();
     var out = c.compileFDSelect(fdSelect);
@@ -441,7 +441,7 @@ describe("CFFCompiler", function() {
     ]);
   });
 
-  it("compiles fdselect format 3", function() {
+  it("compiles fdselect format 3", function () {
     var fdSelect = new CFFFDSelect(3, [0, 0, 1, 1]);
     var c = new CFFCompiler();
     var out = c.compileFDSelect(fdSelect);
@@ -460,7 +460,7 @@ describe("CFFCompiler", function() {
     ]);
   });
 
-  it("compiles fdselect format 3, single range", function() {
+  it("compiles fdselect format 3, single range", function () {
     var fdSelect = new CFFFDSelect(3, [0, 0]);
     var c = new CFFCompiler();
     var out = c.compileFDSelect(fdSelect);
@@ -476,7 +476,7 @@ describe("CFFCompiler", function() {
     ]);
   });
 
-  it("compiles charset of CID font", function() {
+  it("compiles charset of CID font", function () {
     var charset = new CFFCharset();
     var c = new CFFCompiler();
     var numGlyphs = 7;
@@ -491,7 +491,7 @@ describe("CFFCompiler", function() {
     ]);
   });
 
-  it("compiles charset of non CID font", function() {
+  it("compiles charset of non CID font", function () {
     var charset = new CFFCharset(false, 0, ["space", "exclam"]);
     var c = new CFFCompiler();
     var numGlyphs = 3;

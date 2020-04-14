@@ -233,7 +233,7 @@ class SecondaryToolbar {
   }
 
   _bindCursorToolsListener(buttons) {
-    this.eventBus._on("cursortoolchanged", function({ tool }) {
+    this.eventBus._on("cursortoolchanged", function ({ tool }) {
       buttons.cursorSelectToolButton.classList.toggle(
         "toggled",
         tool === CursorTool.SELECT
@@ -340,8 +340,9 @@ class SecondaryToolbar {
     if (this.containerHeight === this.previousContainerHeight) {
       return;
     }
-    this.toolbarButtonContainer.style.maxHeight = `${this.containerHeight -
-      SCROLLBAR_PADDING}px`;
+    this.toolbarButtonContainer.style.maxHeight = `${
+      this.containerHeight - SCROLLBAR_PADDING
+    }px`;
 
     this.previousContainerHeight = this.containerHeight;
   }

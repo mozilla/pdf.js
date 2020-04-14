@@ -51,7 +51,7 @@ var Pattern = (function PatternClosure() {
     },
   };
 
-  Pattern.parseShading = function(
+  Pattern.parseShading = function (
     shading,
     matrix,
     xref,

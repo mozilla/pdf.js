@@ -234,7 +234,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       // Finding intersections with expanded box.
       var points = [[0, 0], [0, b.size[1]], [b.size[0], 0], b.size];
       var ts = new Float64Array(64);
-      points.forEach(function(p, j) {
+      points.forEach(function (p, j) {
         var t = Util.applyTransform(p, m);
         ts[j + 0] = c && (e.left - t[0]) / c;
         ts[j + 4] = s && (e.top - t[1]) / s;
@@ -268,7 +268,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
   }
 
   function expandBounds(width, height, boxes) {
-    var bounds = boxes.map(function(box, i) {
+    var bounds = boxes.map(function (box, i) {
       return {
         x1: box.left,
         y1: box.top,
@@ -281,7 +281,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     });
     expandBoundsLTR(width, bounds);
     var expanded = new Array(boxes.length);
-    bounds.forEach(function(b) {
+    bounds.forEach(function (b) {
       var i = b.index;
       expanded[i] = {
         left: b.x1New,
@@ -293,7 +293,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
     // Rotating on 90 degrees and extending extended boxes. Reusing the bounds
     // array and objects.
-    boxes.map(function(box, i) {
+    boxes.map(function (box, i) {
       var e = expanded[i],
         b = bounds[i];
       b.x1 = box.top;
@@ -306,7 +306,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     });
     expandBoundsLTR(height, bounds);
 
-    bounds.forEach(function(b) {
+    bounds.forEach(function (b) {
       var i = b.index;
       expanded[i].top = b.x1New;
       expanded[i].bottom = b.x2New;
@@ -316,7 +316,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
   function expandBoundsLTR(width, bounds) {
     // Sorting by x1 coordinate and walk by the bounds in the same order.
-    bounds.sort(function(a, b) {
+    bounds.sort(function (a, b) {
       return a.x1 - b.x1 || a.index - b.index;
     });
 
@@ -338,7 +338,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       },
     ];
 
-    bounds.forEach(function(boundary) {
+    bounds.forEach(function (boundary) {
       // Searching for the affected part of horizon.
       // TODO red-black tree or simple binary search
       var i = 0;
@@ -480,7 +480,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     });
 
     // Set new x2 for all unset boundaries.
-    horizon.forEach(function(horizonPart) {
+    horizon.forEach(function (horizonPart) {
       var affectedBoundary = horizonPart.boundary;
       if (affectedBoundary.x2New === undefined) {
         affectedBoundary.x2New = Math.max(width, affectedBoundary.x2);

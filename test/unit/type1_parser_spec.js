@@ -17,8 +17,8 @@ import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts.js";
 import { StringStream } from "../../src/core/stream.js";
 import { Type1Parser } from "../../src/core/type1_parser.js";
 
-describe("Type1Parser", function() {
-  it("splits tokens", function() {
+describe("Type1Parser", function () {
+  it("splits tokens", function () {
     var stream = new StringStream("/BlueValues[-17 0]noaccess def");
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.getToken()).toEqual("/");
@@ -32,7 +32,7 @@ describe("Type1Parser", function() {
     expect(parser.getToken()).toEqual(null);
   });
 
-  it("handles glued tokens", function() {
+  it("handles glued tokens", function () {
     var stream = new StringStream("dup/CharStrings");
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.getToken()).toEqual("dup");
@@ -40,27 +40,27 @@ describe("Type1Parser", function() {
     expect(parser.getToken()).toEqual("CharStrings");
   });
 
-  it("ignores whitespace", function() {
+  it("ignores whitespace", function () {
     var stream = new StringStream("\nab   c\t");
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.getToken()).toEqual("ab");
     expect(parser.getToken()).toEqual("c");
   });
 
-  it("parses numbers", function() {
+  it("parses numbers", function () {
     var stream = new StringStream("123");
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.readNumber()).toEqual(123);
   });
 
-  it("parses booleans", function() {
+  it("parses booleans", function () {
     var stream = new StringStream("true false");
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.readBoolean()).toEqual(1);
     expect(parser.readBoolean()).toEqual(0);
   });
 
-  it("parses number arrays", function() {
+  it("parses number arrays", function () {
     var stream = new StringStream("[1 2]");
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.readNumberArray()).toEqual([1, 2]);
@@ -70,7 +70,7 @@ describe("Type1Parser", function() {
     expect(parser.readNumberArray()).toEqual([1, 2]);
   });
 
-  it("skips comments", function() {
+  it("skips comments", function () {
     var stream = new StringStream(
       "%!PS-AdobeFont-1.0: CMSY10 003.002\n" +
         "%%Title: CMSY10\n" +
@@ -81,7 +81,7 @@ describe("Type1Parser", function() {
     expect(parser.getToken()).toEqual("FontDirectory");
   });
 
-  it("parses font program", function() {
+  it("parses font program", function () {
     var stream = new StringStream(
       "/ExpansionFactor  99\n" +
         "/Subrs 1 array\n" +
@@ -97,7 +97,7 @@ describe("Type1Parser", function() {
     expect(program.properties.privateData.ExpansionFactor).toEqual(99);
   });
 
-  it("parses font header font matrix", function() {
+  it("parses font header font matrix", function () {
     var stream = new StringStream(
       "/FontMatrix [0.001 0 0 0.001 0 0 ]readonly def\n"
     );
@@ -107,7 +107,7 @@ describe("Type1Parser", function() {
     expect(props.fontMatrix).toEqual([0.001, 0, 0, 0.001, 0, 0]);
   });
 
-  it("parses font header encoding", function() {
+  it("parses font header encoding", function () {
     var stream = new StringStream(
       "/Encoding 256 array\n" +
         "0 1 255 {1 index exch /.notdef put} for\n" +

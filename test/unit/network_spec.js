@@ -16,11 +16,11 @@
 import { AbortException } from "../../src/shared/util.js";
 import { PDFNetworkStream } from "../../src/display/network.js";
 
-describe("network", function() {
+describe("network", function () {
   var pdf1 = new URL("../pdfs/tracemonkey.pdf", window.location).href;
   var pdf1Length = 1016315;
 
-  it("read without stream and range", function(done) {
+  it("read without stream and range", function (done) {
     var stream = new PDFNetworkStream({
       url: pdf1,
       rangeChunkSize: 65536,
@@ -31,15 +31,15 @@ describe("network", function() {
     var fullReader = stream.getFullReader();
 
     var isStreamingSupported, isRangeSupported;
-    var promise = fullReader.headersReady.then(function() {
+    var promise = fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
     });
 
     var len = 0,
       count = 0;
-    var read = function() {
-      return fullReader.read().then(function(result) {
+    var read = function () {
+      return fullReader.read().then(function (result) {
         if (result.done) {
           return undefined;
         }
@@ -52,19 +52,19 @@ describe("network", function() {
     var readPromise = Promise.all([read(), promise]);
 
     readPromise
-      .then(function(page) {
+      .then(function (page) {
         expect(len).toEqual(pdf1Length);
         expect(count).toEqual(1);
         expect(isStreamingSupported).toEqual(false);
         expect(isRangeSupported).toEqual(false);
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
 
-  it("read custom ranges", function(done) {
+  it("read custom ranges", function (done) {
     // We don't test on browsers that don't support range request, so
     // requiring this test to pass.
     var rangeSize = 32768;
@@ -79,7 +79,7 @@ describe("network", function() {
     var fullReader = stream.getFullReader();
 
     var isStreamingSupported, isRangeSupported, fullReaderCancelled;
-    var promise = fullReader.headersReady.then(function() {
+    var promise = fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // we shall be able to close the full reader without issues
@@ -98,8 +98,8 @@ describe("network", function() {
 
     var result1 = { value: 0 },
       result2 = { value: 0 };
-    var read = function(reader, lenResult) {
-      return reader.read().then(function(result) {
+    var read = function (reader, lenResult) {
+      return reader.read().then(function (result) {
         if (result.done) {
           return undefined;
         }
@@ -115,7 +115,7 @@ describe("network", function() {
     ]);
 
     readPromises
-      .then(function() {
+      .then(function () {
         expect(result1.value).toEqual(rangeSize);
         expect(result2.value).toEqual(tailSize);
         expect(isStreamingSupported).toEqual(false);
@@ -123,7 +123,7 @@ describe("network", function() {
         expect(fullReaderCancelled).toEqual(true);
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });

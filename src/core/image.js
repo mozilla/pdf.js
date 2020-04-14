@@ -265,7 +265,7 @@ var PDFImage = (function PDFImageClosure() {
    * Handles processing of image data and returns the Promise that is resolved
    * with a PDFImage when the image is ready to be used.
    */
-  PDFImage.buildImage = function({
+  PDFImage.buildImage = function ({
     handler,
     xref,
     res,
@@ -300,7 +300,7 @@ var PDFImage = (function PDFImageClosure() {
       }
     }
     return Promise.all([imagePromise, smaskPromise, maskPromise]).then(
-      function([imageData, smaskData, maskData]) {
+      function ([imageData, smaskData, maskData]) {
         return new PDFImage({
           xref,
           res,
@@ -314,7 +314,7 @@ var PDFImage = (function PDFImageClosure() {
     );
   };
 
-  PDFImage.createMask = function({
+  PDFImage.createMask = function ({
     imgArray,
     width,
     height,

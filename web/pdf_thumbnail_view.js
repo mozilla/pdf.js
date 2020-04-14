@@ -128,7 +128,7 @@ class PDFThumbnailView {
     this._thumbPageTitle.then(msg => {
       anchor.title = msg;
     });
-    anchor.onclick = function() {
+    anchor.onclick = function () {
       linkService.page = id;
       return false;
     };
@@ -350,10 +350,10 @@ class PDFThumbnailView {
     renderTask.onContinue = renderContinueCallback;
 
     renderTask.promise.then(
-      function() {
+      function () {
         finishRenderTask(null);
       },
-      function(error) {
+      function (error) {
         finishRenderTask(error);
       }
     );

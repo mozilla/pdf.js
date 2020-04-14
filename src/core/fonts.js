@@ -283,7 +283,7 @@ var Glyph = (function GlyphClosure() {
     this.isInFont = isInFont;
   }
 
-  Glyph.prototype.matchesForCache = function(
+  Glyph.prototype.matchesForCache = function (
     fontChar,
     unicode,
     accent,
@@ -694,7 +694,7 @@ var Font = (function FontClosure() {
     this.seacMap = properties.seacMap;
   }
 
-  Font.getFontID = (function() {
+  Font.getFontID = (function () {
     var ID = 1;
     return function Font_getFontID() {
       return String(ID++);
@@ -1367,7 +1367,7 @@ var Font = (function FontClosure() {
 
         var isIdentityUnicode = this.toUnicode instanceof IdentityToUnicodeMap;
         if (!isIdentityUnicode) {
-          this.toUnicode.forEach(function(charCode, unicodeCharCode) {
+          this.toUnicode.forEach(function (charCode, unicodeCharCode) {
             map[+charCode] = unicodeCharCode;
           });
         }
@@ -1775,7 +1775,7 @@ var Font = (function FontClosure() {
         }
 
         // removing duplicate entries
-        mappings.sort(function(a, b) {
+        mappings.sort(function (a, b) {
           return a.charCode - b.charCode;
         });
         for (i = 1; i < mappings.length; i++) {
@@ -2764,7 +2764,7 @@ var Font = (function FontClosure() {
         var cidToGidMap = properties.cidToGidMap || [];
         var isCidToGidMapEmpty = cidToGidMap.length === 0;
 
-        properties.cMap.forEach(function(charCode, cid) {
+        properties.cMap.forEach(function (charCode, cid) {
           if (cid > 0xffff) {
             throw new FormatError("Max size of CID is 65,535");
           }

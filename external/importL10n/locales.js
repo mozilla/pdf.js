@@ -36,15 +36,15 @@ function downloadLanguageCodes() {
   var ALL_LOCALES =
     "https://hg.mozilla.org/mozilla-central/raw-file/tip/browser/locales/all-locales";
 
-  return new Promise(function(resolve) {
-    https.get(ALL_LOCALES, function(response) {
+  return new Promise(function (resolve) {
+    https.get(ALL_LOCALES, function (response) {
       if (response.statusCode === 200) {
         var content = "";
         response.setEncoding("utf8");
-        response.on("data", function(chunk) {
+        response.on("data", function (chunk) {
           content += chunk;
         });
-        response.on("end", function() {
+        response.on("end", function () {
           content = content.trim(); // Remove any leading/trailing white-space.
           var langCodes = normalizeText(content).split("\n");
           // Remove all locales that we don't want to download below.
@@ -80,22 +80,22 @@ function downloadLanguageFiles(root, langCode) {
     fs.mkdirSync(outputDir);
   }
 
-  return new Promise(function(resolve) {
+  return new Promise(function (resolve) {
     // Download the necessary files for this language.
-    files.forEach(function(fileName) {
+    files.forEach(function (fileName) {
       var outputPath = path.join(outputDir, fileName);
       var url = MOZ_CENTRAL_ROOT + langCode + MOZ_CENTRAL_PDFJS_DIR + fileName;
 
-      https.get(url, function(response) {
+      https.get(url, function (response) {
         // Not all files exist for each language. Files without translations
         // have been removed (https://bugzilla.mozilla.org/show_bug.cgi?id=1443175).
         if (response.statusCode === 200) {
           var content = "";
           response.setEncoding("utf8");
-          response.on("data", function(chunk) {
+          response.on("data", function (chunk) {
             content += chunk;
           });
-          response.on("end", function() {
+          response.on("end", function () {
             fs.writeFileSync(outputPath, normalizeText(content), "utf8");
             if (--downloadsLeft === 0) {
               resolve();

@@ -43,7 +43,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
 
   return pdfDocument
     .getPage(pageNumber)
-    .then(function(pdfPage) {
+    .then(function (pdfPage) {
       const renderContext = {
         canvasContext: ctx,
         transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
@@ -52,7 +52,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
       };
       return pdfPage.render(renderContext).promise;
     })
-    .then(function() {
+    .then(function () {
       return {
         width,
         height,
@@ -79,7 +79,7 @@ PDFPrintService.prototype = {
     const body = document.querySelector("body");
     body.setAttribute("data-pdfjsprinting", true);
 
-    const hasEqualPageSizes = this.pagesOverview.every(function(size) {
+    const hasEqualPageSizes = this.pagesOverview.every(function (size) {
       return (
         size.width === this.pagesOverview[0].width &&
         size.height === this.pagesOverview[0].height
@@ -135,7 +135,7 @@ PDFPrintService.prototype = {
     this.scratchCanvas.width = this.scratchCanvas.height = 0;
     this.scratchCanvas = null;
     activeService = null;
-    ensureOverlay().then(function() {
+    ensureOverlay().then(function () {
       if (overlayManager.active !== "printServiceOverlay") {
         return; // overlay was already closed
       }
@@ -156,7 +156,7 @@ PDFPrintService.prototype = {
       renderProgress(index, pageCount, this.l10n);
       renderPage(this, this.pdfDocument, index + 1, this.pagesOverview[index])
         .then(this.useRenderedPage.bind(this))
-        .then(function() {
+        .then(function () {
           renderNextPage(resolve, reject);
         }, reject);
     };
@@ -171,7 +171,7 @@ PDFPrintService.prototype = {
 
     const scratchCanvas = this.scratchCanvas;
     if ("toBlob" in scratchCanvas && !this.disableCreateObjectURL) {
-      scratchCanvas.toBlob(function(blob) {
+      scratchCanvas.toBlob(function (blob) {
         img.src = URL.createObjectURL(blob);
       });
     } else {
@@ -182,7 +182,7 @@ PDFPrintService.prototype = {
     wrapper.appendChild(img);
     this.printContainer.appendChild(wrapper);
 
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       img.onload = resolve;
       img.onerror = reject;
     });
@@ -218,12 +218,12 @@ PDFPrintService.prototype = {
 };
 
 const print = window.print;
-window.print = function() {
+window.print = function () {
   if (activeService) {
     console.warn("Ignored window.print() because of a pending print job.");
     return;
   }
-  ensureOverlay().then(function() {
+  ensureOverlay().then(function () {
     if (activeService) {
       overlayManager.open("printServiceOverlay");
     }
@@ -234,7 +234,7 @@ window.print = function() {
   } finally {
     if (!activeService) {
       console.error("Expected print service to be initialized.");
-      ensureOverlay().then(function() {
+      ensureOverlay().then(function () {
         if (overlayManager.active === "printServiceOverlay") {
           overlayManager.close("printServiceOverlay");
         }
@@ -244,13 +244,13 @@ window.print = function() {
     const activeServiceOnEntry = activeService;
     activeService
       .renderPages()
-      .then(function() {
+      .then(function () {
         return activeServiceOnEntry.performPrint();
       })
-      .catch(function() {
+      .catch(function () {
         // Ignore any error messages.
       })
-      .then(function() {
+      .then(function () {
         // aborts acts on the "active" print request, so we need to check
         // whether the print request (activeServiceOnEntry) is still active.
         // Without the check, an unrelated print request (created after aborting
@@ -289,7 +289,7 @@ function renderProgress(index, total, l10n) {
 
 window.addEventListener(
   "keydown",
-  function(event) {
+  function (event) {
     // Intercept Cmd/Ctrl + P in all browsers.
     // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
     if (
@@ -316,7 +316,7 @@ window.addEventListener(
 if ("onbeforeprint" in window) {
   // Do not propagate before/afterprint events when they are not triggered
   // from within this polyfill. (FF /IE / Chrome 63+).
-  const stopPropagationIfNeeded = function(event) {
+  const stopPropagationIfNeeded = function (event) {
     if (event.detail !== "custom" && event.stopImmediatePropagation) {
       event.stopImmediatePropagation();
     }

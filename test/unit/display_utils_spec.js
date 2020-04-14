@@ -23,32 +23,32 @@ import {
 } from "../../src/display/display_utils.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 
-describe("display_utils", function() {
-  describe("DOMCanvasFactory", function() {
+describe("display_utils", function () {
+  describe("DOMCanvasFactory", function () {
     let canvasFactory;
 
-    beforeAll(function(done) {
+    beforeAll(function (done) {
       canvasFactory = new DOMCanvasFactory();
       done();
     });
 
-    afterAll(function() {
+    afterAll(function () {
       canvasFactory = null;
     });
 
-    it("`create` should throw an error if the dimensions are invalid", function() {
+    it("`create` should throw an error if the dimensions are invalid", function () {
       // Invalid width.
-      expect(function() {
+      expect(function () {
         return canvasFactory.create(-1, 1);
       }).toThrow(new Error("Invalid canvas size"));
 
       // Invalid height.
-      expect(function() {
+      expect(function () {
         return canvasFactory.create(1, -1);
       }).toThrow(new Error("Invalid canvas size"));
     });
 
-    it("`create` should return a canvas if the dimensions are valid", function() {
+    it("`create` should return a canvas if the dimensions are valid", function () {
       if (isNodeJS) {
         pending("Document is not supported in Node.js.");
       }
@@ -60,29 +60,29 @@ describe("display_utils", function() {
       expect(canvas.height).toBe(40);
     });
 
-    it("`reset` should throw an error if no canvas is provided", function() {
+    it("`reset` should throw an error if no canvas is provided", function () {
       const canvasAndContext = { canvas: null, context: null };
 
-      expect(function() {
+      expect(function () {
         return canvasFactory.reset(canvasAndContext, 20, 40);
       }).toThrow(new Error("Canvas is not specified"));
     });
 
-    it("`reset` should throw an error if the dimensions are invalid", function() {
+    it("`reset` should throw an error if the dimensions are invalid", function () {
       const canvasAndContext = { canvas: "foo", context: "bar" };
 
       // Invalid width.
-      expect(function() {
+      expect(function () {
         return canvasFactory.reset(canvasAndContext, -1, 1);
       }).toThrow(new Error("Invalid canvas size"));
 
       // Invalid height.
-      expect(function() {
+      expect(function () {
         return canvasFactory.reset(canvasAndContext, 1, -1);
       }).toThrow(new Error("Invalid canvas size"));
     });
 
-    it("`reset` should alter the canvas/context if the dimensions are valid", function() {
+    it("`reset` should alter the canvas/context if the dimensions are valid", function () {
       if (isNodeJS) {
         pending("Document is not supported in Node.js.");
       }
@@ -97,13 +97,13 @@ describe("display_utils", function() {
       expect(canvas.height).toBe(80);
     });
 
-    it("`destroy` should throw an error if no canvas is provided", function() {
-      expect(function() {
+    it("`destroy` should throw an error if no canvas is provided", function () {
+      expect(function () {
         return canvasFactory.destroy({});
       }).toThrow(new Error("Canvas is not specified"));
     });
 
-    it("`destroy` should clear the canvas/context", function() {
+    it("`destroy` should clear the canvas/context", function () {
       if (isNodeJS) {
         pending("Document is not supported in Node.js.");
       }
@@ -117,31 +117,31 @@ describe("display_utils", function() {
     });
   });
 
-  describe("DOMSVGFactory", function() {
+  describe("DOMSVGFactory", function () {
     let svgFactory;
 
-    beforeAll(function(done) {
+    beforeAll(function (done) {
       svgFactory = new DOMSVGFactory();
       done();
     });
 
-    afterAll(function() {
+    afterAll(function () {
       svgFactory = null;
     });
 
-    it("`create` should throw an error if the dimensions are invalid", function() {
+    it("`create` should throw an error if the dimensions are invalid", function () {
       // Invalid width.
-      expect(function() {
+      expect(function () {
         return svgFactory.create(-1, 0);
       }).toThrow(new Error("Invalid SVG dimensions"));
 
       // Invalid height.
-      expect(function() {
+      expect(function () {
         return svgFactory.create(0, -1);
       }).toThrow(new Error("Invalid SVG dimensions"));
     });
 
-    it("`create` should return an SVG element if the dimensions are valid", function() {
+    it("`create` should return an SVG element if the dimensions are valid", function () {
       if (isNodeJS) {
         pending("Document is not supported in Node.js.");
       }
@@ -155,13 +155,13 @@ describe("display_utils", function() {
       expect(svg.getAttribute("viewBox")).toBe("0 0 20 40");
     });
 
-    it("`createElement` should throw an error if the type is not a string", function() {
-      expect(function() {
+    it("`createElement` should throw an error if the type is not a string", function () {
+      expect(function () {
         return svgFactory.createElement(true);
       }).toThrow(new Error("Invalid SVG element type"));
     });
 
-    it("`createElement` should return an SVG element if the type is valid", function() {
+    it("`createElement` should return an SVG element if the type is valid", function () {
       if (isNodeJS) {
         pending("Document is not supported in Node.js.");
       }
@@ -171,55 +171,55 @@ describe("display_utils", function() {
     });
   });
 
-  describe("getFilenameFromUrl", function() {
-    it("should get the filename from an absolute URL", function() {
+  describe("getFilenameFromUrl", function () {
+    it("should get the filename from an absolute URL", function () {
       const url = "https://server.org/filename.pdf";
       expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
     });
 
-    it("should get the filename from a relative URL", function() {
+    it("should get the filename from a relative URL", function () {
       const url = "../../filename.pdf";
       expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
     });
 
-    it("should get the filename from a URL with an anchor", function() {
+    it("should get the filename from a URL with an anchor", function () {
       const url = "https://server.org/filename.pdf#foo";
       expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
     });
 
-    it("should get the filename from a URL with query parameters", function() {
+    it("should get the filename from a URL with query parameters", function () {
       const url = "https://server.org/filename.pdf?foo=bar";
       expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
     });
   });
 
-  describe("isValidFetchUrl", function() {
-    it("handles invalid Fetch URLs", function() {
+  describe("isValidFetchUrl", function () {
+    it("handles invalid Fetch URLs", function () {
       expect(isValidFetchUrl(null)).toEqual(false);
       expect(isValidFetchUrl(100)).toEqual(false);
       expect(isValidFetchUrl("foo")).toEqual(false);
       expect(isValidFetchUrl("/foo", 100)).toEqual(false);
     });
 
-    it("handles relative Fetch URLs", function() {
+    it("handles relative Fetch URLs", function () {
       expect(isValidFetchUrl("/foo", "file://www.example.com")).toEqual(false);
       expect(isValidFetchUrl("/foo", "http://www.example.com")).toEqual(true);
     });
 
-    it("handles unsupported Fetch protocols", function() {
+    it("handles unsupported Fetch protocols", function () {
       expect(isValidFetchUrl("file://www.example.com")).toEqual(false);
       expect(isValidFetchUrl("ftp://www.example.com")).toEqual(false);
     });
 
-    it("handles supported Fetch protocols", function() {
+    it("handles supported Fetch protocols", function () {
       expect(isValidFetchUrl("http://www.example.com")).toEqual(true);
       expect(isValidFetchUrl("https://www.example.com")).toEqual(true);
     });
   });
 
-  describe("PDFDateString", function() {
-    describe("toDateObject", function() {
-      it("converts PDF date strings to JavaScript `Date` objects", function() {
+  describe("PDFDateString", function () {
+    describe("toDateObject", function () {
+      it("converts PDF date strings to JavaScript `Date` objects", function () {
         const expectations = {
           undefined: null,
           null: null,

@@ -46,7 +46,7 @@ function initializePDFJS(callback) {
     SystemJS.import("pdfjs/core/stream.js"),
     SystemJS.import("pdfjs/core/primitives.js"),
     SystemJS.import("pdfjs/core/cmap.js"),
-  ]).then(function(modules) {
+  ]).then(function (modules) {
     var fonts = modules[0],
       stream = modules[1],
       primitives = modules[2],
@@ -62,7 +62,7 @@ function initializePDFJS(callback) {
   });
 }
 
-(function() {
+(function () {
   window.jasmine = jasmineRequire.core(jasmineRequire);
 
   jasmineRequire.html(jasmine);
@@ -134,7 +134,7 @@ function initializePDFJS(callback) {
     },
   });
 
-  config.specFilter = function(spec) {
+  config.specFilter = function (spec) {
     return specFilter.matches(spec.getFullName());
   };
 
@@ -148,12 +148,12 @@ function initializePDFJS(callback) {
   // instance and then executing the loaded Jasmine environment.
   var currentWindowOnload = window.onload;
 
-  window.onload = function() {
+  window.onload = function () {
     if (currentWindowOnload) {
       currentWindowOnload();
     }
 
-    initializePDFJS(function() {
+    initializePDFJS(function () {
       htmlReporter.initialize();
       env.execute();
     });

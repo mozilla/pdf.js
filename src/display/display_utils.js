@@ -502,7 +502,7 @@ function loadScript(src) {
     script.src = src;
 
     script.onload = resolve;
-    script.onerror = function() {
+    script.onerror = function () {
       reject(new Error(`Cannot load script at: ${script.src}`));
     };
     (document.head || document.documentElement).appendChild(script);

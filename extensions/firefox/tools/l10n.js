@@ -1,7 +1,7 @@
 "use strict";
 
 // Small subset of the webL10n API by Fabien Cazenave for PDF.js extension.
-(function(window) {
+(function (window) {
   var gLanguage = "";
   var gExternalLocalizerServices = null;
   var gReadyState = "loading";
@@ -21,7 +21,7 @@
     if (!args) {
       return text;
     }
-    return text.replace(/\{\{\s*(\w+)\s*\}\}/g, function(all, name) {
+    return text.replace(/\{\{\s*(\w+)\s*\}\}/g, function (all, name) {
       return name in args ? args[name] : "{{" + name + "}}";
     });
   }

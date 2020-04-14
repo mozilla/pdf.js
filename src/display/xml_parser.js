@@ -317,7 +317,7 @@ class SimpleDOMNode {
       return this.nodeValue || "";
     }
     return this.childNodes
-      .map(function(child) {
+      .map(function (child) {
         return child.textContent;
       })
       .join("");
