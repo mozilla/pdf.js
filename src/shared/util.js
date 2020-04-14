@@ -812,7 +812,7 @@ function isArrayEqual(arr1, arr2) {
   if (arr1.length !== arr2.length) {
     return false;
   }
-  return arr1.every(function(element, index) {
+  return arr1.every(function (element, index) {
     return element === arr2[index];
   });
 }
@@ -842,12 +842,12 @@ function createPromiseCapability() {
       return isSettled;
     },
   });
-  capability.promise = new Promise(function(resolve, reject) {
-    capability.resolve = function(data) {
+  capability.promise = new Promise(function (resolve, reject) {
+    capability.resolve = function (data) {
       isSettled = true;
       resolve(data);
     };
-    capability.reject = function(reason) {
+    capability.reject = function (reason) {
       isSettled = true;
       reject(reason);
     };

@@ -15,7 +15,7 @@ limitations under the License.
 */
 /* eslint strict: ["error", "function"] */
 
-(function() {
+(function () {
   "use strict";
   var storageLocal = chrome.storage.local;
   var storageSync = chrome.storage.sync;
@@ -25,8 +25,8 @@ limitations under the License.
     return;
   }
 
-  getStorageNames(function(storageKeys) {
-    storageLocal.get(storageKeys, function(values) {
+  getStorageNames(function (storageKeys) {
+    storageLocal.get(storageKeys, function (values) {
       if (!values || !Object.keys(values).length) {
         // No local storage - nothing to migrate.
         // ... except possibly for a renamed preference name.
@@ -41,7 +41,7 @@ limitations under the License.
     var x = new XMLHttpRequest();
     var schema_location = chrome.runtime.getManifest().storage.managed_schema;
     x.open("get", chrome.runtime.getURL(schema_location));
-    x.onload = function() {
+    x.onload = function () {
       var storageKeys = Object.keys(x.response.properties);
       callback(storageKeys);
     };
@@ -52,7 +52,7 @@ limitations under the License.
   // Save |values| to storage.sync and delete the values with that key from
   // storage.local.
   function migrateToSyncStorage(values) {
-    storageSync.set(values, function() {
+    storageSync.set(values, function () {
       if (chrome.runtime.lastError) {
         console.error(
           "Failed to migrate settings due to an error: " +
@@ -61,7 +61,7 @@ limitations under the License.
         return;
       }
       // Migration successful. Delete local settings.
-      storageLocal.remove(Object.keys(values), function() {
+      storageLocal.remove(Object.keys(values), function () {
         // In theory remove() could fail (e.g. if the browser's storage
         // backend is corrupt), but since storageSync.set succeeded, consider
         // the migration successful.
@@ -89,7 +89,7 @@ limitations under the License.
         "disablePageMode",
         "viewOnLoad",
       ],
-      function(items) {
+      function (items) {
         // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
         if (typeof items.enableHandToolOnLoad === "boolean") {
           if (items.enableHandToolOnLoad) {
@@ -97,7 +97,7 @@ limitations under the License.
               {
                 cursorToolOnLoad: 1,
               },
-              function() {
+              function () {
                 if (!chrome.runtime.lastError) {
                   storageSync.remove("enableHandToolOnLoad");
                 }
@@ -121,7 +121,7 @@ limitations under the License.
               {
                 textLayerMode: textLayerMode,
               },
-              function() {
+              function () {
                 if (!chrome.runtime.lastError) {
                   storageSync.remove([
                     "disableTextLayer",
@@ -141,7 +141,7 @@ limitations under the License.
               {
                 viewOnLoad: 1,
               },
-              function() {
+              function () {
                 if (!chrome.runtime.lastError) {
                   storageSync.remove([
                     "showPreviousViewOnLoad",

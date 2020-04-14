@@ -58,7 +58,7 @@ function DOMElement(name) {
   if (name === "style") {
     this.sheet = {
       cssRules: [],
-      insertRule: function(rule) {
+      insertRule: function (rule) {
         this.cssRules.push(rule);
       },
     };
@@ -226,16 +226,16 @@ const document = {
     return this;
   },
 
-  createElementNS: function(NS, element) {
+  createElementNS: function (NS, element) {
     var elObject = new DOMElement(element);
     return elObject;
   },
 
-  createElement: function(element) {
+  createElement: function (element) {
     return this.createElementNS("", element);
   },
 
-  getElementsByTagName: function(element) {
+  getElementsByTagName: function (element) {
     if (element === "head") {
       return [this.head || (this.head = new DOMElement("head"))];
     }
@@ -264,14 +264,14 @@ exports.Image = Image;
 
 var exported_symbols = Object.keys(exports);
 
-exports.setStubs = function(namespace) {
-  exported_symbols.forEach(function(key) {
+exports.setStubs = function (namespace) {
+  exported_symbols.forEach(function (key) {
     console.assert(!(key in namespace), "property should not be set: " + key);
     namespace[key] = exports[key];
   });
 };
-exports.unsetStubs = function(namespace) {
-  exported_symbols.forEach(function(key) {
+exports.unsetStubs = function (namespace) {
+  exported_symbols.forEach(function (key) {
     console.assert(key in namespace, "property should be set: " + key);
     delete namespace[key];
   });

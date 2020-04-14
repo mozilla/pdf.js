@@ -34,10 +34,10 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
     if (textLayerStylePromise) {
       return textLayerStylePromise;
     }
-    textLayerStylePromise = new Promise(function(resolve) {
+    textLayerStylePromise = new Promise(function (resolve) {
       var xhr = new XMLHttpRequest();
       xhr.open("GET", "./text_layer_test.css");
-      xhr.onload = function() {
+      xhr.onload = function () {
         resolve(xhr.responseText);
       };
       xhr.send(null);
@@ -52,7 +52,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
     textContent,
     enhanceTextSelection
   ) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, "svg:svg");
       svg.setAttribute("width", viewport.width + "px");
@@ -80,7 +80,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
         viewport,
         enhanceTextSelection,
       });
-      Promise.all([stylePromise, task.promise]).then(function(results) {
+      Promise.all([stylePromise, task.promise]).then(function (results) {
         task.expandTextDivs(true);
         style.textContent = results[0];
         svg.appendChild(foreignObject);
@@ -91,11 +91,11 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
         );
         var img = new Image();
         img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
-        img.onload = function() {
+        img.onload = function () {
           ctx.drawImage(img, 0, 0);
           resolve();
         };
-        img.onerror = function(e) {
+        img.onerror = function (e) {
           reject(new Error("Error rasterizing text layer " + e));
         };
       });
@@ -139,13 +139,13 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
 
     // Load the style files and cache the results.
     for (const key in styles) {
-      styles[key].promise = new Promise(function(resolve, reject) {
+      styles[key].promise = new Promise(function (resolve, reject) {
         const xhr = new XMLHttpRequest();
         xhr.open("GET", styles[key].file);
-        xhr.onload = function() {
+        xhr.onload = function () {
           resolve(xhr.responseText);
         };
-        xhr.onerror = function(e) {
+        xhr.onerror = function (e) {
           reject(new Error("Error fetching annotation style " + e));
         };
         xhr.send(null);
@@ -158,17 +158,17 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   function inlineAnnotationImages(images) {
     var imagePromises = [];
     for (var i = 0, ii = images.length; i < ii; i++) {
-      var imagePromise = new Promise(function(resolve, reject) {
+      var imagePromise = new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
         xhr.responseType = "blob";
-        xhr.onload = function() {
+        xhr.onload = function () {
           var reader = new FileReader();
-          reader.onloadend = function() {
+          reader.onloadend = function () {
             resolve(reader.result);
           };
           reader.readAsDataURL(xhr.response);
         };
-        xhr.onerror = function(e) {
+        xhr.onerror = function (e) {
           reject(new Error("Error fetching inline annotation image " + e));
         };
         xhr.open("GET", images[i].src);
@@ -188,7 +188,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     imageResourcesPath,
     renderInteractiveForms
   ) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, "svg:svg");
       svg.setAttribute("width", viewport.width + "px");
@@ -207,7 +207,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
       div.className = "annotationLayer";
 
       // Rendering annotation layer as HTML.
-      stylePromise.then(function(common, overrides) {
+      stylePromise.then(function (common, overrides) {
         style.textContent = common + overrides;
 
         var annotation_viewport = viewport.clone({ dontFlip: true });
@@ -225,14 +225,14 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
         // Inline SVG images from text annotations.
         var images = div.getElementsByTagName("img");
         var imagePromises = inlineAnnotationImages(images);
-        var converted = Promise.all(imagePromises).then(function(data) {
+        var converted = Promise.all(imagePromises).then(function (data) {
           var loadedPromises = [];
           for (var i = 0, ii = data.length; i < ii; i++) {
             images[i].src = data[i];
             loadedPromises.push(
-              new Promise(function(resolveImage, rejectImage) {
+              new Promise(function (resolveImage, rejectImage) {
                 images[i].onload = resolveImage;
-                images[i].onerror = function(e) {
+                images[i].onerror = function (e) {
                   rejectImage(new Error("Error loading image " + e));
                 };
               })
@@ -245,17 +245,17 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
         svg.appendChild(foreignObject);
 
         // We need to have UTF-8 encoded XML.
-        converted.then(function() {
+        converted.then(function () {
           var svg_xml = unescape(
             encodeURIComponent(new XMLSerializer().serializeToString(svg))
           );
           var img = new Image();
           img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
-          img.onload = function() {
+          img.onload = function () {
             ctx.drawImage(img, 0, 0);
             resolve();
           };
-          img.onerror = function(e) {
+          img.onerror = function (e) {
             reject(new Error("Error rasterizing annotation layer " + e));
           };
         });
@@ -325,7 +325,7 @@ var Driver = (function DriverClosure() {
 
     run: function Driver_run() {
       var self = this;
-      window.onerror = function(message, source, line, column, error) {
+      window.onerror = function (message, source, line, column, error) {
         self._info(
           "Error: " +
             message +
@@ -351,12 +351,12 @@ var Driver = (function DriverClosure() {
 
       var r = new XMLHttpRequest();
       r.open("GET", this.manifestFile, false);
-      r.onreadystatechange = function() {
+      r.onreadystatechange = function () {
         if (r.readyState === 4) {
           self._log("done\n");
           self.manifest = JSON.parse(r.responseText);
           if (self.testFilter && self.testFilter.length) {
-            self.manifest = self.manifest.filter(function(item) {
+            self.manifest = self.manifest.filter(function (item) {
               return self.testFilter.includes(item.id);
             });
           }
@@ -369,7 +369,7 @@ var Driver = (function DriverClosure() {
       }
       // When gathering the stats the numbers seem to be more reliable
       // if the browser is given more time to start.
-      setTimeout(function() {
+      setTimeout(function () {
         r.send(null);
       }, this.delay);
     },
@@ -472,7 +472,7 @@ var Driver = (function DriverClosure() {
 
       if (!task.pdfDoc) {
         var dataUrl = this.canvas.toDataURL("image/png");
-        this._sendResult(dataUrl, task, failure, function() {
+        this._sendResult(dataUrl, task, failure, function () {
           self._log(
             "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
           );
@@ -518,7 +518,7 @@ var Driver = (function DriverClosure() {
           this.canvas.mozOpaque = true;
           ctx = this.canvas.getContext("2d", { alpha: false });
           task.pdfDoc.getPage(task.pageNum).then(
-            function(page) {
+            function (page) {
               var viewport = page.getViewport({ scale: PDF_TO_CSS_UNITS });
               self.canvas.width = viewport.width;
               self.canvas.height = viewport.height;
@@ -552,7 +552,7 @@ var Driver = (function DriverClosure() {
                   .getTextContent({
                     normalizeWhitespace: true,
                   })
-                  .then(function(textContent) {
+                  .then(function (textContent) {
                     return rasterizeTextLayer(
                       textLayerContext,
                       viewport,
@@ -590,7 +590,7 @@ var Driver = (function DriverClosure() {
                   // The annotation builder will draw its content on the canvas.
                   initPromise = page
                     .getAnnotations({ intent: "display" })
-                    .then(function(annotations) {
+                    .then(function (annotations) {
                       return rasterizeAnnotationLayer(
                         annotationLayerContext,
                         viewport,
@@ -611,7 +611,7 @@ var Driver = (function DriverClosure() {
                 viewport,
                 renderInteractiveForms: renderForms,
               };
-              var completeRender = function(error) {
+              var completeRender = function (error) {
                 // if text layer is present, compose it on top of the page
                 if (textLayerCanvas) {
                   ctx.save();
@@ -633,16 +633,16 @@ var Driver = (function DriverClosure() {
                 self._snapshot(task, error);
               };
               initPromise
-                .then(function() {
-                  return page.render(renderContext).promise.then(function() {
+                .then(function () {
+                  return page.render(renderContext).promise.then(function () {
                     completeRender(false);
                   });
                 })
-                .catch(function(error) {
+                .catch(function (error) {
                   completeRender("render : " + error);
                 });
             },
-            function(error) {
+            function (error) {
               self._snapshot(task, "render : " + error);
             }
           );
@@ -664,7 +664,7 @@ var Driver = (function DriverClosure() {
       this._log("Snapshotting... ");
 
       var dataUrl = this.canvas.toDataURL("image/png");
-      this._sendResult(dataUrl, task, failure, function() {
+      this._sendResult(dataUrl, task, failure, function () {
         self._log(
           "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
         );
@@ -680,7 +680,7 @@ var Driver = (function DriverClosure() {
       // Send the quit request
       var r = new XMLHttpRequest();
       r.open("POST", "/tellMeToQuit?path=" + escape(this.appPath), false);
-      r.onreadystatechange = function(e) {
+      r.onreadystatechange = function (e) {
         if (r.readyState === 4) {
           window.close();
         }
@@ -744,13 +744,13 @@ var Driver = (function DriverClosure() {
       var r = new XMLHttpRequest();
       r.open("POST", url, true);
       r.setRequestHeader("Content-Type", "application/json");
-      r.onreadystatechange = function(e) {
+      r.onreadystatechange = function (e) {
         if (r.readyState === 4) {
           self.inFlightRequests--;
 
           // Retry until successful
           if (r.status !== 200) {
-            setTimeout(function() {
+            setTimeout(function () {
               self._send(url, message);
             });
           }

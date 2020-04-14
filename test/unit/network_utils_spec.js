@@ -24,15 +24,15 @@ import {
   UnexpectedResponseException,
 } from "../../src/shared/util.js";
 
-describe("network_utils", function() {
-  describe("validateRangeRequestCapabilities", function() {
-    it("rejects range chunk sizes that are not larger than zero", function() {
-      expect(function() {
+describe("network_utils", function () {
+  describe("validateRangeRequestCapabilities", function () {
+    it("rejects range chunk sizes that are not larger than zero", function () {
+      expect(function () {
         validateRangeRequestCapabilities({ rangeChunkSize: 0 });
       }).toThrow(new Error("Range chunk size must be larger than zero"));
     });
 
-    it("rejects disabled or non-HTTP range requests", function() {
+    it("rejects disabled or non-HTTP range requests", function () {
       expect(
         validateRangeRequestCapabilities({
           disableRange: true,
@@ -68,7 +68,7 @@ describe("network_utils", function() {
       });
     });
 
-    it("rejects invalid Accept-Ranges header values", function() {
+    it("rejects invalid Accept-Ranges header values", function () {
       expect(
         validateRangeRequestCapabilities({
           disableRange: false,
@@ -89,7 +89,7 @@ describe("network_utils", function() {
       });
     });
 
-    it("rejects invalid Content-Encoding header values", function() {
+    it("rejects invalid Content-Encoding header values", function () {
       expect(
         validateRangeRequestCapabilities({
           disableRange: false,
@@ -112,7 +112,7 @@ describe("network_utils", function() {
       });
     });
 
-    it("rejects invalid Content-Length header values", function() {
+    it("rejects invalid Content-Length header values", function () {
       expect(
         validateRangeRequestCapabilities({
           disableRange: false,
@@ -135,7 +135,7 @@ describe("network_utils", function() {
       });
     });
 
-    it("rejects file sizes that are too small for range requests", function() {
+    it("rejects file sizes that are too small for range requests", function () {
       expect(
         validateRangeRequestCapabilities({
           disableRange: false,
@@ -158,7 +158,7 @@ describe("network_utils", function() {
       });
     });
 
-    it("accepts file sizes large enough for range requests", function() {
+    it("accepts file sizes large enough for range requests", function () {
       expect(
         validateRangeRequestCapabilities({
           disableRange: false,
@@ -182,8 +182,8 @@ describe("network_utils", function() {
     });
   });
 
-  describe("extractFilenameFromHeader", function() {
-    it("returns null when content disposition header is blank", function() {
+  describe("extractFilenameFromHeader", function () {
+    it("returns null when content disposition header is blank", function () {
       expect(
         extractFilenameFromHeader(headerName => {
           if (headerName === "Content-Disposition") {
@@ -212,7 +212,7 @@ describe("network_utils", function() {
       ).toBeNull();
     });
 
-    it("gets the filename from the response header", function() {
+    it("gets the filename from the response header", function () {
       expect(
         extractFilenameFromHeader(headerName => {
           if (headerName === "Content-Disposition") {
@@ -295,7 +295,7 @@ describe("network_utils", function() {
       ).toEqual("100%.pdf");
     });
 
-    it("gets the filename from the response header (RFC 6266)", function() {
+    it("gets the filename from the response header (RFC 6266)", function () {
       expect(
         extractFilenameFromHeader(headerName => {
           if (headerName === "Content-Disposition") {
@@ -342,7 +342,7 @@ describe("network_utils", function() {
       ).toEqual("filename.pdf");
     });
 
-    it("gets the filename from the response header (RFC 2231)", function() {
+    it("gets the filename from the response header (RFC 2231)", function () {
       // Tests continuations (RFC 2231 section 3, via RFC 5987 section 3.1).
       expect(
         extractFilenameFromHeader(headerName => {
@@ -354,7 +354,7 @@ describe("network_utils", function() {
       ).toEqual("filename.pdf");
     });
 
-    it("only extracts filename with pdf extension", function() {
+    it("only extracts filename with pdf extension", function () {
       expect(
         extractFilenameFromHeader(headerName => {
           if (headerName === "Content-Disposition") {
@@ -365,7 +365,7 @@ describe("network_utils", function() {
       ).toBeNull();
     });
 
-    it("extension validation is case insensitive", function() {
+    it("extension validation is case insensitive", function () {
       expect(
         extractFilenameFromHeader(headerName => {
           if (headerName === "Content-Disposition") {
@@ -377,8 +377,8 @@ describe("network_utils", function() {
     });
   });
 
-  describe("createResponseStatusError", function() {
-    it("handles missing PDF file responses", function() {
+  describe("createResponseStatusError", function () {
+    it("handles missing PDF file responses", function () {
       expect(createResponseStatusError(404, "https://foo.com/bar.pdf")).toEqual(
         new MissingPDFException('Missing PDF "https://foo.com/bar.pdf".')
       );
@@ -388,7 +388,7 @@ describe("network_utils", function() {
       );
     });
 
-    it("handles unexpected responses", function() {
+    it("handles unexpected responses", function () {
       expect(createResponseStatusError(302, "https://foo.com/bar.pdf")).toEqual(
         new UnexpectedResponseException(
           "Unexpected server response (302) while retrieving PDF " +
@@ -405,13 +405,13 @@ describe("network_utils", function() {
     });
   });
 
-  describe("validateResponseStatus", function() {
-    it("accepts valid response statuses", function() {
+  describe("validateResponseStatus", function () {
+    it("accepts valid response statuses", function () {
       expect(validateResponseStatus(200)).toEqual(true);
       expect(validateResponseStatus(206)).toEqual(true);
     });
 
-    it("rejects invalid response statuses", function() {
+    it("rejects invalid response statuses", function () {
       expect(validateResponseStatus(302)).toEqual(false);
       expect(validateResponseStatus(404)).toEqual(false);
       expect(validateResponseStatus(null)).toEqual(false);

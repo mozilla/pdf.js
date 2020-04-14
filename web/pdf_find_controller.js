@@ -49,7 +49,7 @@ function normalize(text) {
     const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join("");
     normalizationRegex = new RegExp(`[${replace}]`, "g");
   }
-  return text.replace(normalizationRegex, function(ch) {
+  return text.replace(normalizationRegex, function (ch) {
     return CHARACTERS_TO_NORMALIZE[ch];
   });
 }
@@ -312,7 +312,7 @@ class PDFFindController {
 
     // Sort the array of `{ match: <match>, matchLength: <matchLength> }`
     // objects on increasing index first and on the length otherwise.
-    matchesWithLength.sort(function(a, b) {
+    matchesWithLength.sort(function (a, b) {
       return a.match === b.match
         ? a.matchLength - b.matchLength
         : a.match - b.match;

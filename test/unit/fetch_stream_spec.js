@@ -17,11 +17,11 @@
 import { AbortException } from "../../src/shared/util.js";
 import { PDFFetchStream } from "../../src/display/fetch_stream.js";
 
-describe("fetch_stream", function() {
+describe("fetch_stream", function () {
   const pdfUrl = new URL("../pdfs/tracemonkey.pdf", window.location).href;
   const pdfLength = 1016315;
 
-  it("read with streaming", function(done) {
+  it("read with streaming", function (done) {
     const stream = new PDFFetchStream({
       url: pdfUrl,
       disableStream: false,
@@ -31,14 +31,14 @@ describe("fetch_stream", function() {
     const fullReader = stream.getFullReader();
 
     let isStreamingSupported, isRangeSupported;
-    const promise = fullReader.headersReady.then(function() {
+    const promise = fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
     });
 
     let len = 0;
-    const read = function() {
-      return fullReader.read().then(function(result) {
+    const read = function () {
+      return fullReader.read().then(function (result) {
         if (result.done) {
           return undefined;
         }
@@ -50,7 +50,7 @@ describe("fetch_stream", function() {
 
     const readPromise = Promise.all([read(), promise]);
     readPromise
-      .then(function() {
+      .then(function () {
         expect(len).toEqual(pdfLength);
         expect(isStreamingSupported).toEqual(true);
         expect(isRangeSupported).toEqual(false);
@@ -59,7 +59,7 @@ describe("fetch_stream", function() {
       .catch(done.fail);
   });
 
-  it("read ranges with streaming", function(done) {
+  it("read ranges with streaming", function (done) {
     const rangeSize = 32768;
     const stream = new PDFFetchStream({
       url: pdfUrl,
@@ -71,7 +71,7 @@ describe("fetch_stream", function() {
     const fullReader = stream.getFullReader();
 
     let isStreamingSupported, isRangeSupported, fullReaderCancelled;
-    const promise = fullReader.headersReady.then(function() {
+    const promise = fullReader.headersReady.then(function () {
       isStreamingSupported = fullReader.isStreamingSupported;
       isRangeSupported = fullReader.isRangeSupported;
       // We shall be able to close full reader without any issue.
@@ -88,8 +88,8 @@ describe("fetch_stream", function() {
 
     const result1 = { value: 0 },
       result2 = { value: 0 };
-    const read = function(reader, lenResult) {
-      return reader.read().then(function(result) {
+    const read = function (reader, lenResult) {
+      return reader.read().then(function (result) {
         if (result.done) {
           return undefined;
         }
@@ -105,7 +105,7 @@ describe("fetch_stream", function() {
       promise,
     ]);
     readPromise
-      .then(function() {
+      .then(function () {
         expect(isStreamingSupported).toEqual(true);
         expect(isRangeSupported).toEqual(true);
         expect(fullReaderCancelled).toEqual(true);

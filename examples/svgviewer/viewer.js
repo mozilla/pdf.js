@@ -49,7 +49,7 @@ var pdfViewer = new pdfjsViewer.PDFViewer({
 });
 pdfLinkService.setViewer(pdfViewer);
 
-eventBus.on("pagesinit", function() {
+eventBus.on("pagesinit", function () {
   // We can use pdfViewer now, e.g. let's change default scale.
   pdfViewer.currentScaleValue = "page-width";
 });
@@ -60,7 +60,7 @@ var loadingTask = pdfjsLib.getDocument({
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
 });
-loadingTask.promise.then(function(pdfDocument) {
+loadingTask.promise.then(function (pdfDocument) {
   // Document loaded, specifying document for the viewer and
   // the (optional) linkService.
   pdfViewer.setDocument(pdfDocument);

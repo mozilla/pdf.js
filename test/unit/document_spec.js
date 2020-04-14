@@ -15,9 +15,9 @@
 
 import { createIdFactory } from "./test_utils.js";
 
-describe("document", function() {
-  describe("Page", function() {
-    it("should create correct objId using the idFactory", function() {
+describe("document", function () {
+  describe("Page", function () {
+    it("should create correct objId using the idFactory", function () {
       const idFactory1 = createIdFactory(/* pageIndex = */ 0);
       const idFactory2 = createIdFactory(/* pageIndex = */ 1);
 

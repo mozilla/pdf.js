@@ -14,9 +14,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 // Loading a document.
 var loadingTask = pdfjsLib.getDocument(pdfPath);
 loadingTask.promise
-  .then(function(pdfDocument) {
+  .then(function (pdfDocument) {
     // Request a first page
-    return pdfDocument.getPage(1).then(function(pdfPage) {
+    return pdfDocument.getPage(1).then(function (pdfPage) {
       // Display page on the existing canvas with 100% scale.
       var viewport = pdfPage.getViewport({ scale: 1.0 });
       var canvas = document.getElementById("theCanvas");
@@ -30,6 +30,6 @@ loadingTask.promise
       return renderTask.promise;
     });
   })
-  .catch(function(reason) {
+  .catch(function (reason) {
     console.error("Error: " + reason);
   });

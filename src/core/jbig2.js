@@ -371,7 +371,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     // Sorting is non-standard, and it is not required. But sorting increases
     // the number of template bits that can be reused from the previous
     // contextLabel in the main loop.
-    template.sort(function(a, b) {
+    template.sort(function (a, b) {
       return a.y - b.y || a.x - b.x;
     });
 

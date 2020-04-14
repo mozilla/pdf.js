@@ -17,14 +17,14 @@ var pdfPath = process.argv[2] || "../../web/compressed.tracemonkey-pldi-09.pdf";
 // callback.
 var loadingTask = pdfjsLib.getDocument(pdfPath);
 loadingTask.promise
-  .then(function(doc) {
+  .then(function (doc) {
     var numPages = doc.numPages;
     console.log("# Document Loaded");
     console.log("Number of Pages: " + numPages);
     console.log();
 
     var lastPromise; // will be used to chain promises
-    lastPromise = doc.getMetadata().then(function(data) {
+    lastPromise = doc.getMetadata().then(function (data) {
       console.log("# Metadata Is Loaded");
       console.log("## Info");
       console.log(JSON.stringify(data.info, null, 2));
@@ -36,24 +36,24 @@ loadingTask.promise
       }
     });
 
-    var loadPage = function(pageNum) {
-      return doc.getPage(pageNum).then(function(page) {
+    var loadPage = function (pageNum) {
+      return doc.getPage(pageNum).then(function (page) {
         console.log("# Page " + pageNum);
         var viewport = page.getViewport({ scale: 1.0 });
         console.log("Size: " + viewport.width + "x" + viewport.height);
         console.log();
         return page
           .getTextContent()
-          .then(function(content) {
+          .then(function (content) {
             // Content contains lots of information about the text layout and
             // styles, but we need only strings at the moment
-            var strings = content.items.map(function(item) {
+            var strings = content.items.map(function (item) {
               return item.str;
             });
             console.log("## Text Content");
             console.log(strings.join(" "));
           })
-          .then(function() {
+          .then(function () {
             console.log();
           });
       });
@@ -66,10 +66,10 @@ loadingTask.promise
     return lastPromise;
   })
   .then(
-    function() {
+    function () {
       console.log("# End of Document");
     },
-    function(err) {
+    function (err) {
       console.error("Error: " + err);
     }
   );

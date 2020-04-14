@@ -159,7 +159,7 @@ var PDFFunction = (function PDFFunctionClosure() {
           this.parse({ xref, isEvalSupported, fn: xref.fetchIfRef(fnObj[j]) })
         );
       }
-      return function(src, srcOffset, dest, destOffset) {
+      return function (src, srcOffset, dest, destOffset) {
         for (var i = 0, ii = fnArray.length; i < ii; i++) {
           fnArray[i](src, srcOffset, dest, destOffset + i);
         }
@@ -873,7 +873,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
   function AstNode(type) {
     this.type = type;
   }
-  AstNode.prototype.visit = function(visitor) {
+  AstNode.prototype.visit = function (visitor) {
     unreachable("abstract method");
   };
 
@@ -884,7 +884,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.max = max;
   }
   AstArgument.prototype = Object.create(AstNode.prototype);
-  AstArgument.prototype.visit = function(visitor) {
+  AstArgument.prototype.visit = function (visitor) {
     visitor.visitArgument(this);
   };
 
@@ -895,7 +895,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.max = number;
   }
   AstLiteral.prototype = Object.create(AstNode.prototype);
-  AstLiteral.prototype.visit = function(visitor) {
+  AstLiteral.prototype.visit = function (visitor) {
     visitor.visitLiteral(this);
   };
 
@@ -908,7 +908,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.max = max;
   }
   AstBinaryOperation.prototype = Object.create(AstNode.prototype);
-  AstBinaryOperation.prototype.visit = function(visitor) {
+  AstBinaryOperation.prototype.visit = function (visitor) {
     visitor.visitBinaryOperation(this);
   };
 
@@ -919,7 +919,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.max = max;
   }
   AstMin.prototype = Object.create(AstNode.prototype);
-  AstMin.prototype.visit = function(visitor) {
+  AstMin.prototype.visit = function (visitor) {
     visitor.visitMin(this);
   };
 
@@ -930,7 +930,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.max = max;
   }
   AstVariable.prototype = Object.create(AstNode.prototype);
-  AstVariable.prototype.visit = function(visitor) {
+  AstVariable.prototype.visit = function (visitor) {
     visitor.visitVariable(this);
   };
 
@@ -940,7 +940,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.arg = arg;
   }
   AstVariableDefinition.prototype = Object.create(AstNode.prototype);
-  AstVariableDefinition.prototype.visit = function(visitor) {
+  AstVariableDefinition.prototype.visit = function (visitor) {
     visitor.visitVariableDefinition(this);
   };
 
@@ -1245,12 +1245,12 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
       }
 
       var result = [];
-      instructions.forEach(function(instruction) {
+      instructions.forEach(function (instruction) {
         var statementBuilder = new ExpressionBuilderVisitor();
         instruction.visit(statementBuilder);
         result.push(statementBuilder.toString());
       });
-      stack.forEach(function(expr, i) {
+      stack.forEach(function (expr, i) {
         var statementBuilder = new ExpressionBuilderVisitor();
         expr.visit(statementBuilder);
         var min = range[i * 2],

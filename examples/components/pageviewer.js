@@ -43,9 +43,9 @@ var loadingTask = pdfjsLib.getDocument({
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
 });
-loadingTask.promise.then(function(pdfDocument) {
+loadingTask.promise.then(function (pdfDocument) {
   // Document loaded, retrieving the page.
-  return pdfDocument.getPage(PAGE_TO_VIEW).then(function(pdfPage) {
+  return pdfDocument.getPage(PAGE_TO_VIEW).then(function (pdfPage) {
     // Creating the page view with default parameters.
     var pdfPageView = new pdfjsViewer.PDFPageView({
       container: container,

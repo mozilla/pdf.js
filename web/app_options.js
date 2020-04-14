@@ -162,9 +162,9 @@ const defaultOptions = {
   cMapUrl: {
     /** @type {string} */
     value:
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
         ? "../external/bcmaps/"
-        : "../web/cmaps/"),
+        : "../web/cmaps/",
     kind: OptionKind.API,
   },
   disableAutoFetch: {
@@ -232,9 +232,9 @@ const defaultOptions = {
   workerSrc: {
     /** @type {string} */
     value:
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
         ? "../src/worker_loader.js"
-        : "../build/pdf.worker.js"),
+        : "../build/pdf.worker.js",
     kind: OptionKind.WORKER,
   },
 };
@@ -249,7 +249,7 @@ if (
   };
   defaultOptions.locale = {
     /** @type {string} */
-    value: (typeof navigator !== "undefined" ? navigator.language : "en-US"),
+    value: typeof navigator !== "undefined" ? navigator.language : "en-US",
     kind: OptionKind.VIEWER,
   };
   defaultOptions.printResolution = {

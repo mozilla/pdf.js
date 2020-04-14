@@ -59,11 +59,11 @@ var rawData = new Uint8Array(fs.readFileSync(pdfURL));
 // Load the PDF file.
 var loadingTask = pdfjsLib.getDocument(rawData);
 loadingTask.promise
-  .then(function(pdfDocument) {
+  .then(function (pdfDocument) {
     console.log("# PDF document loaded.");
 
     // Get the first page.
-    pdfDocument.getPage(1).then(function(page) {
+    pdfDocument.getPage(1).then(function (page) {
       // Render the page on a Node canvas with 100% scale.
       var viewport = page.getViewport({ scale: 1.0 });
       var canvasFactory = new NodeCanvasFactory();
@@ -78,10 +78,10 @@ loadingTask.promise
       };
 
       var renderTask = page.render(renderContext);
-      renderTask.promise.then(function() {
+      renderTask.promise.then(function () {
         // Convert the canvas to an image buffer.
         var image = canvasAndContext.canvas.toBuffer();
-        fs.writeFile("output.png", image, function(error) {
+        fs.writeFile("output.png", image, function (error) {
           if (error) {
             console.error("Error: " + error);
           } else {
@@ -93,6 +93,6 @@ loadingTask.promise
       });
     });
   })
-  .catch(function(reason) {
+  .catch(function (reason) {
     console.log(reason);
   });

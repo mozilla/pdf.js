@@ -18,7 +18,7 @@ import { assert, BaseException, warn } from "../shared/util.js";
 
 function getLookupTableFactory(initializer) {
   let lookup;
-  return function() {
+  return function () {
     if (initializer) {
       lookup = Object.create(null);
       initializer(lookup);

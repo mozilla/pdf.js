@@ -82,7 +82,7 @@ const DEFAULT_CACHE_SIZE = 10;
 
 function PDFPageViewBuffer(size) {
   const data = [];
-  this.push = function(view) {
+  this.push = function (view) {
     const i = data.indexOf(view);
     if (i >= 0) {
       data.splice(i, 1);
@@ -99,14 +99,14 @@ function PDFPageViewBuffer(size) {
    * impact on the final size of the buffer; if pagesToKeep has length larger
    * than newSize, some of those pages will be destroyed anyway.
    */
-  this.resize = function(newSize, pagesToKeep) {
+  this.resize = function (newSize, pagesToKeep) {
     size = newSize;
     if (pagesToKeep) {
       const pageIdsToKeep = new Set();
       for (let i = 0, iMax = pagesToKeep.length; i < iMax; ++i) {
         pageIdsToKeep.add(pagesToKeep[i].id);
       }
-      moveToEndOfArray(data, function(page) {
+      moveToEndOfArray(data, function (page) {
         return pageIdsToKeep.has(page.id);
       });
     }
@@ -202,7 +202,7 @@ class BaseViewer {
     }
     // Prevent printing errors when 'disableAutoFetch' is set, by ensuring
     // that *all* pages have in fact been completely loaded.
-    return this._pages.every(function(pageView) {
+    return this._pages.every(function (pageView) {
       return pageView && pageView.pdfPage;
     });
   }
@@ -1042,7 +1042,7 @@ class BaseViewer {
       );
       return false;
     }
-    return this._getVisiblePages().views.some(function(view) {
+    return this._getVisiblePages().views.some(function (view) {
       return view.id === pageNumber;
     });
   }
@@ -1195,7 +1195,7 @@ class BaseViewer {
    * @returns {Array} Array of objects with width/height/rotation fields.
    */
   getPagesOverview() {
-    const pagesOverview = this._pages.map(function(pageView) {
+    const pagesOverview = this._pages.map(function (pageView) {
       const viewport = pageView.pdfPage.getViewport({ scale: 1 });
       return {
         width: viewport.width,
@@ -1207,7 +1207,7 @@ class BaseViewer {
       return pagesOverview;
     }
     const isFirstPagePortrait = isPortraitOrientation(pagesOverview[0]);
-    return pagesOverview.map(function(size) {
+    return pagesOverview.map(function (size) {
       if (isFirstPagePortrait === isPortraitOrientation(size)) {
         return size;
       }

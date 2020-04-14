@@ -15,7 +15,7 @@ limitations under the License.
 */
 /* eslint strict: ["error", "function"] */
 
-(function() {
+(function () {
   "use strict";
   // This module sends the browser and extension version to a server, to
   // determine whether it is safe to drop support for old Chrome versions in
@@ -46,7 +46,7 @@ limitations under the License.
   setInterval(maybeSendPing, 36e5);
 
   function maybeSendPing() {
-    getLoggingPref(function(didOptOut) {
+    getLoggingPref(function (didOptOut) {
       if (didOptOut) {
         // Respect the user's decision to not send statistics.
         return;
@@ -154,7 +154,7 @@ limitations under the License.
         return;
       }
 
-      chrome.storage[storageAreaName].get("disableTelemetry", function(items) {
+      chrome.storage[storageAreaName].get("disableTelemetry", function (items) {
         next(items && items.disableTelemetry);
       });
     }
