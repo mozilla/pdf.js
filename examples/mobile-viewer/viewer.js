@@ -47,11 +47,11 @@ var PDFViewerApplication = {
    * @returns {Promise} - Returns the promise, which is resolved when document
    *                      is opened.
    */
-  open: function(params) {
+  open: function (params) {
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document
       return this.close().then(
-        function() {
+        function () {
           // ... and repeat the open() call.
           return this.open(params);
         }.bind(this)
@@ -71,12 +71,12 @@ var PDFViewerApplication = {
     });
     this.pdfLoadingTask = loadingTask;
 
-    loadingTask.onProgress = function(progressData) {
+    loadingTask.onProgress = function (progressData) {
       self.progress(progressData.loaded / progressData.total);
     };
 
     return loadingTask.promise.then(
-      function(pdfDocument) {
+      function (pdfDocument) {
         // Document loaded, specifying document for the viewer.
         self.pdfDocument = pdfDocument;
         self.pdfViewer.setDocument(pdfDocument);
@@ -86,7 +86,7 @@ var PDFViewerApplication = {
         self.loadingBar.hide();
         self.setTitleUsingMetadata(pdfDocument);
       },
-      function(exception) {
+      function (exception) {
         var message = exception && exception.message;
         var l10n = self.l10n;
         var loadingErrorMessage;
@@ -119,7 +119,7 @@ var PDFViewerApplication = {
           );
         }
 
-        loadingErrorMessage.then(function(msg) {
+        loadingErrorMessage.then(function (msg) {
           self.error(msg, { message: message });
         });
         self.loadingBar.hide();
@@ -132,7 +132,7 @@ var PDFViewerApplication = {
    * @returns {Promise} - Returns the promise, which is resolved when all
    *                      destruction is completed.
    */
-  close: function() {
+  close: function () {
     var errorWrapper = document.getElementById("errorWrapper");
     errorWrapper.setAttribute("hidden", "true");
 
@@ -175,9 +175,9 @@ var PDFViewerApplication = {
     this.setTitle(title);
   },
 
-  setTitleUsingMetadata: function(pdfDocument) {
+  setTitleUsingMetadata: function (pdfDocument) {
     var self = this;
-    pdfDocument.getMetadata().then(function(data) {
+    pdfDocument.getMetadata().then(function (data) {
       var info = data.info,
         metadata = data.metadata;
       self.documentInfo = info;
@@ -275,27 +275,27 @@ var PDFViewerApplication = {
     errorMessage.textContent = message;
 
     var closeButton = document.getElementById("errorClose");
-    closeButton.onclick = function() {
+    closeButton.onclick = function () {
       errorWrapper.setAttribute("hidden", "true");
     };
 
     var errorMoreInfo = document.getElementById("errorMoreInfo");
     var moreInfoButton = document.getElementById("errorShowMore");
     var lessInfoButton = document.getElementById("errorShowLess");
-    moreInfoButton.onclick = function() {
+    moreInfoButton.onclick = function () {
       errorMoreInfo.removeAttribute("hidden");
       moreInfoButton.setAttribute("hidden", "true");
       lessInfoButton.removeAttribute("hidden");
       errorMoreInfo.style.height = errorMoreInfo.scrollHeight + "px";
     };
-    lessInfoButton.onclick = function() {
+    lessInfoButton.onclick = function () {
       errorMoreInfo.setAttribute("hidden", "true");
       moreInfoButton.removeAttribute("hidden");
       lessInfoButton.setAttribute("hidden", "true");
     };
     moreInfoButton.removeAttribute("hidden");
     lessInfoButton.setAttribute("hidden", "true");
-    Promise.all(moreInfoText).then(function(parts) {
+    Promise.all(moreInfoText).then(function (parts) {
       errorMoreInfo.value = parts.join("\n");
     });
   },
@@ -369,29 +369,31 @@ var PDFViewerApplication = {
     });
     linkService.setHistory(this.pdfHistory);
 
-    document.getElementById("previous").addEventListener("click", function() {
+    document.getElementById("previous").addEventListener("click", function () {
       PDFViewerApplication.page--;
     });
 
-    document.getElementById("next").addEventListener("click", function() {
+    document.getElementById("next").addEventListener("click", function () {
       PDFViewerApplication.page++;
     });
 
-    document.getElementById("zoomIn").addEventListener("click", function() {
+    document.getElementById("zoomIn").addEventListener("click", function () {
       PDFViewerApplication.zoomIn();
     });
 
-    document.getElementById("zoomOut").addEventListener("click", function() {
+    document.getElementById("zoomOut").addEventListener("click", function () {
       PDFViewerApplication.zoomOut();
-    });
-
-    document.getElementById("pageNumber").addEventListener("click", function() {
-      this.select();
     });
 
     document
       .getElementById("pageNumber")
-      .addEventListener("change", function() {
+      .addEventListener("click", function () {
+        this.select();
+      });
+
+    document
+      .getElementById("pageNumber")
+      .addEventListener("change", function () {
         PDFViewerApplication.page = this.value | 0;
 
         // Ensure that the page number input displays the correct value,
@@ -402,14 +404,14 @@ var PDFViewerApplication = {
         }
       });
 
-    eventBus.on("pagesinit", function() {
+    eventBus.on("pagesinit", function () {
       // We can use pdfViewer now, e.g. let's change default scale.
       pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
     });
 
     eventBus.on(
       "pagechanging",
-      function(evt) {
+      function (evt) {
         var page = evt.pageNumber;
         var numPages = PDFViewerApplication.pagesCount;
 
@@ -424,7 +426,7 @@ var PDFViewerApplication = {
 
 document.addEventListener(
   "DOMContentLoaded",
-  function() {
+  function () {
     PDFViewerApplication.initUI();
   },
   true
@@ -433,13 +435,15 @@ document.addEventListener(
 (function animationStartedClosure() {
   // The offsetParent is not set until the PDF.js iframe or object is visible.
   // Waiting for first animation.
-  PDFViewerApplication.animationStartedPromise = new Promise(function(resolve) {
+  PDFViewerApplication.animationStartedPromise = new Promise(function (
+    resolve
+  ) {
     window.requestAnimationFrame(resolve);
   });
 })();
 
 // We need to delay opening until all HTML is loaded.
-PDFViewerApplication.animationStartedPromise.then(function() {
+PDFViewerApplication.animationStartedPromise.then(function () {
   PDFViewerApplication.open({
     url: DEFAULT_URL,
   });

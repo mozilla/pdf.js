@@ -26,10 +26,10 @@ var cMapUrl = {
 };
 var cMapPacked = true;
 
-describe("cmap", function() {
+describe("cmap", function () {
   var fetchBuiltInCMap;
 
-  beforeAll(function(done) {
+  beforeAll(function (done) {
     // Allow CMap testing in Node.js, e.g. for Travis.
     var CMapReaderFactory;
     if (isNodeJS) {
@@ -44,7 +44,7 @@ describe("cmap", function() {
       });
     }
 
-    fetchBuiltInCMap = function(name) {
+    fetchBuiltInCMap = function (name) {
       return CMapReaderFactory.fetch({
         name,
       });
@@ -52,11 +52,11 @@ describe("cmap", function() {
     done();
   });
 
-  afterAll(function() {
+  afterAll(function () {
     fetchBuiltInCMap = null;
   });
 
-  it("parses beginbfchar", function(done) {
+  it("parses beginbfchar", function (done) {
     // prettier-ignore
     var str = "2 beginbfchar\n" +
               "<03> <00>\n" +
@@ -65,17 +65,17 @@ describe("cmap", function() {
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({ encoding: stream });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap.lookup(0x03)).toEqual(String.fromCharCode(0x00));
         expect(cmap.lookup(0x04)).toEqual(String.fromCharCode(0x01));
         expect(cmap.lookup(0x05)).toBeUndefined();
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("parses beginbfrange with range", function(done) {
+  it("parses beginbfrange with range", function (done) {
     // prettier-ignore
     var str = "1 beginbfrange\n" +
               "<06> <0B> 0\n" +
@@ -83,18 +83,18 @@ describe("cmap", function() {
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({ encoding: stream });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap.lookup(0x05)).toBeUndefined();
         expect(cmap.lookup(0x06)).toEqual(String.fromCharCode(0x00));
         expect(cmap.lookup(0x0b)).toEqual(String.fromCharCode(0x05));
         expect(cmap.lookup(0x0c)).toBeUndefined();
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("parses beginbfrange with array", function(done) {
+  it("parses beginbfrange with array", function (done) {
     // prettier-ignore
     var str = "1 beginbfrange\n" +
               "<0D> <12> [ 0 1 2 3 4 5 ]\n" +
@@ -102,18 +102,18 @@ describe("cmap", function() {
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({ encoding: stream });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap.lookup(0x0c)).toBeUndefined();
         expect(cmap.lookup(0x0d)).toEqual(0x00);
         expect(cmap.lookup(0x12)).toEqual(0x05);
         expect(cmap.lookup(0x13)).toBeUndefined();
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("parses begincidchar", function(done) {
+  it("parses begincidchar", function (done) {
     // prettier-ignore
     var str = "1 begincidchar\n" +
               "<14> 0\n" +
@@ -121,16 +121,16 @@ describe("cmap", function() {
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({ encoding: stream });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap.lookup(0x14)).toEqual(0x00);
         expect(cmap.lookup(0x15)).toBeUndefined();
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("parses begincidrange", function(done) {
+  it("parses begincidrange", function (done) {
     // prettier-ignore
     var str = "1 begincidrange\n" +
               "<0016> <001B>   0\n" +
@@ -138,18 +138,18 @@ describe("cmap", function() {
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({ encoding: stream });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap.lookup(0x15)).toBeUndefined();
         expect(cmap.lookup(0x16)).toEqual(0x00);
         expect(cmap.lookup(0x1b)).toEqual(0x05);
         expect(cmap.lookup(0x1c)).toBeUndefined();
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("decodes codespace ranges", function(done) {
+  it("decodes codespace ranges", function (done) {
     // prettier-ignore
     var str = "1 begincodespacerange\n" +
               "<01> <02>\n" +
@@ -158,7 +158,7 @@ describe("cmap", function() {
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({ encoding: stream });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         var c = {};
         cmap.readCharCode(String.fromCharCode(1), 0, c);
         expect(c.charcode).toEqual(1);
@@ -168,11 +168,11 @@ describe("cmap", function() {
         expect(c.length).toEqual(4);
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("decodes 4 byte codespace ranges", function(done) {
+  it("decodes 4 byte codespace ranges", function (done) {
     // prettier-ignore
     var str = "1 begincodespacerange\n" +
               "<8EA1A1A1> <8EA1FEFE>\n" +
@@ -180,18 +180,18 @@ describe("cmap", function() {
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({ encoding: stream });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         var c = {};
         cmap.readCharCode(String.fromCharCode(0x8e, 0xa1, 0xa1, 0xa1), 0, c);
         expect(c.charcode).toEqual(0x8ea1a1a1);
         expect(c.length).toEqual(4);
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("read usecmap", function(done) {
+  it("read usecmap", function (done) {
     var str = "/Adobe-Japan1-1 usecmap\n";
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({
@@ -200,7 +200,7 @@ describe("cmap", function() {
       useCMap: null,
     });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap instanceof CMap).toEqual(true);
         expect(cmap.useCMap).not.toBeNull();
         expect(cmap.builtInCMap).toBeFalsy();
@@ -208,44 +208,44 @@ describe("cmap", function() {
         expect(cmap.isIdentityCMap).toEqual(false);
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("parses cmapname", function(done) {
+  it("parses cmapname", function (done) {
     var str = "/CMapName /Identity-H def\n";
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({ encoding: stream });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap.name).toEqual("Identity-H");
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("parses wmode", function(done) {
+  it("parses wmode", function (done) {
     var str = "/WMode 1 def\n";
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({ encoding: stream });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap.vertical).toEqual(true);
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("loads built in cmap", function(done) {
+  it("loads built in cmap", function (done) {
     var cmapPromise = CMapFactory.create({
       encoding: Name.get("Adobe-Japan1-1"),
       fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap instanceof CMap).toEqual(true);
         expect(cmap.useCMap).toBeNull();
         expect(cmap.builtInCMap).toBeTruthy();
@@ -253,42 +253,42 @@ describe("cmap", function() {
         expect(cmap.isIdentityCMap).toEqual(false);
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
-  it("loads built in identity cmap", function(done) {
+  it("loads built in identity cmap", function (done) {
     var cmapPromise = CMapFactory.create({
       encoding: Name.get("Identity-H"),
       fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise
-      .then(function(cmap) {
+      .then(function (cmap) {
         expect(cmap instanceof IdentityCMap).toEqual(true);
         expect(cmap.vertical).toEqual(false);
         expect(cmap.length).toEqual(0x10000);
-        expect(function() {
+        expect(function () {
           return cmap.isIdentityCMap;
         }).toThrow(new Error("should not access .isIdentityCMap"));
         done();
       })
-      .catch(function(reason) {
+      .catch(function (reason) {
         done.fail(reason);
       });
   });
 
-  it("attempts to load a non-existent built-in CMap", function(done) {
+  it("attempts to load a non-existent built-in CMap", function (done) {
     var cmapPromise = CMapFactory.create({
       encoding: Name.get("null"),
       fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise.then(
-      function() {
+      function () {
         done.fail("No CMap should be loaded");
       },
-      function(reason) {
+      function (reason) {
         expect(reason instanceof Error).toEqual(true);
         expect(reason.message).toEqual("Unknown CMap name: null");
         done();
@@ -296,7 +296,7 @@ describe("cmap", function() {
     );
   });
 
-  it("attempts to load a built-in CMap without the necessary API parameters", function(done) {
+  it("attempts to load a built-in CMap without the necessary API parameters", function (done) {
     function tmpFetchBuiltInCMap(name) {
       var CMapReaderFactory = isNodeJS
         ? new NodeCMapReaderFactory({})
@@ -312,10 +312,10 @@ describe("cmap", function() {
       useCMap: null,
     });
     cmapPromise.then(
-      function() {
+      function () {
         done.fail("No CMap should be loaded");
       },
-      function(reason) {
+      function (reason) {
         expect(reason instanceof Error).toEqual(true);
         expect(reason.message).toEqual(
           'The CMap "baseUrl" parameter must be specified, ensure that ' +
@@ -326,7 +326,7 @@ describe("cmap", function() {
     );
   });
 
-  it("attempts to load a built-in CMap with inconsistent API parameters", function(done) {
+  it("attempts to load a built-in CMap with inconsistent API parameters", function (done) {
     function tmpFetchBuiltInCMap(name) {
       let CMapReaderFactory;
       if (isNodeJS) {
@@ -351,10 +351,10 @@ describe("cmap", function() {
       useCMap: null,
     });
     cmapPromise.then(
-      function() {
+      function () {
         done.fail("No CMap should be loaded");
       },
-      function(reason) {
+      function (reason) {
         expect(reason instanceof Error).toEqual(true);
         const message = reason.message;
         expect(message.startsWith("Unable to load CMap at: ")).toEqual(true);

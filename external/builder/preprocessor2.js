@@ -294,7 +294,7 @@ function traverseTree(ctx, node) {
         node[i] = result;
       }
     } else if (Array.isArray(child)) {
-      child.forEach(function(childItem, index) {
+      child.forEach(function (childItem, index) {
         if (
           typeof childItem === "object" &&
           childItem !== null &&

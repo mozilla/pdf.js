@@ -84,7 +84,7 @@ class PDFAttachmentViewer {
       );
     }
     let blobUrl;
-    button.onclick = function() {
+    button.onclick = function () {
       if (!blobUrl) {
         blobUrl = createObjectURL(content, "application/pdf");
       }
@@ -135,7 +135,7 @@ class PDFAttachmentViewer {
       return;
     }
 
-    const names = Object.keys(attachments).sort(function(a, b) {
+    const names = Object.keys(attachments).sort(function (a, b) {
       return a.toLowerCase().localeCompare(b.toLowerCase());
     });
     attachmentsCount = names.length;

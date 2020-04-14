@@ -66,7 +66,7 @@ class PDFDataTransportStream {
         this._queuedChunks.push(buffer);
       }
     } else {
-      const found = this._rangeReaders.some(function(rangeReader) {
+      const found = this._rangeReaders.some(function (rangeReader) {
         if (rangeReader._begin !== args.begin) {
           return false;
         }
@@ -136,7 +136,7 @@ class PDFDataTransportStream {
       this._fullRequestReader.cancel(reason);
     }
     const readers = this._rangeReaders.slice(0);
-    readers.forEach(function(rangeReader) {
+    readers.forEach(function (rangeReader) {
       rangeReader.cancel(reason);
     });
     this._pdfDataRangeTransport.abort();
@@ -209,7 +209,7 @@ class PDFDataTransportStreamReader {
 
   cancel(reason) {
     this._done = true;
-    this._requests.forEach(function(requestCapability) {
+    this._requests.forEach(function (requestCapability) {
       requestCapability.resolve({ value: undefined, done: true });
     });
     this._requests = [];
@@ -245,7 +245,7 @@ class PDFDataTransportStreamRangeReader {
     } else {
       const requestsCapability = this._requests.shift();
       requestsCapability.resolve({ value: chunk, done: false });
-      this._requests.forEach(function(requestCapability) {
+      this._requests.forEach(function (requestCapability) {
         requestCapability.resolve({ value: undefined, done: true });
       });
       this._requests = [];
@@ -274,7 +274,7 @@ class PDFDataTransportStreamRangeReader {
 
   cancel(reason) {
     this._done = true;
-    this._requests.forEach(function(requestCapability) {
+    this._requests.forEach(function (requestCapability) {
       requestCapability.resolve({ value: undefined, done: true });
     });
     this._requests = [];

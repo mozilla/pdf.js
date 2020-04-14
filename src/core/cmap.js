@@ -530,7 +530,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
   };
 
   function processBinaryCMap(data, cMap, extend) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       var stream = new BinaryCMapStream(data);
       var header = stream.readByte();
       cMap.vertical = !!(header & 1);
@@ -934,7 +934,9 @@ var CMapFactory = (function CMapFactoryClosure() {
   }
 
   function extendCMap(cMap, fetchBuiltInCMap, useCMap) {
-    return createBuiltInCMap(useCMap, fetchBuiltInCMap).then(function(newCMap) {
+    return createBuiltInCMap(useCMap, fetchBuiltInCMap).then(function (
+      newCMap
+    ) {
       cMap.useCMap = newCMap;
       // If there aren't any code space ranges defined clone all the parent ones
       // into this cMap.
@@ -947,7 +949,7 @@ var CMapFactory = (function CMapFactoryClosure() {
       }
       // Merge the map into the current one, making sure not to override
       // any previously defined entries.
-      cMap.useCMap.forEach(function(key, value) {
+      cMap.useCMap.forEach(function (key, value) {
         if (!cMap.contains(key)) {
           cMap.mapOne(key, cMap.useCMap.lookup(key));
         }
@@ -972,13 +974,13 @@ var CMapFactory = (function CMapFactoryClosure() {
       );
     }
 
-    return fetchBuiltInCMap(name).then(function(data) {
+    return fetchBuiltInCMap(name).then(function (data) {
       var cMapData = data.cMapData,
         compressionType = data.compressionType;
       var cMap = new CMap(true);
 
       if (compressionType === CMapCompressionType.BINARY) {
-        return new BinaryCMapReader().process(cMapData, cMap, function(
+        return new BinaryCMapReader().process(cMapData, cMap, function (
           useCMap
         ) {
           return extendCMap(cMap, fetchBuiltInCMap, useCMap);
@@ -1007,7 +1009,7 @@ var CMapFactory = (function CMapFactoryClosure() {
       } else if (isStream(encoding)) {
         var cMap = new CMap();
         var lexer = new Lexer(encoding);
-        return parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap).then(function(
+        return parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap).then(function (
           parsedCMap
         ) {
           if (parsedCMap.isIdentityCMap) {

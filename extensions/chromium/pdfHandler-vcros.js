@@ -16,7 +16,7 @@ limitations under the License.
 /* eslint strict: ["error", "function"] */
 /* import-globals-from pdfHandler.js */
 
-(function() {
+(function () {
   "use strict";
 
   if (!chrome.fileBrowserHandler) {
@@ -41,12 +41,12 @@ limitations under the License.
     // the other Chrome APIs that use "tabId" (http://crbug.com/179767)
     var tabId = details.tab_id || details.tabId;
     if (tabId > 0) {
-      chrome.tabs.get(tabId, function(tab) {
+      chrome.tabs.get(tabId, function (tab) {
         openViewer(tab && tab.windowId, fileEntries);
       });
     } else {
       // Re-use existing window, if available.
-      chrome.windows.getLastFocused(function(chromeWindow) {
+      chrome.windows.getLastFocused(function (chromeWindow) {
         var windowId = chromeWindow && chromeWindow.id;
         if (windowId) {
           chrome.windows.update(windowId, { focused: true });
@@ -82,7 +82,7 @@ limitations under the License.
           active: true,
           url: url,
         },
-        function() {
+        function () {
           openViewer(windowId, fileEntries);
         }
       );
@@ -93,7 +93,7 @@ limitations under the License.
           focused: true,
           url: url,
         },
-        function(chromeWindow) {
+        function (chromeWindow) {
           openViewer(chromeWindow.id, fileEntries);
         }
       );

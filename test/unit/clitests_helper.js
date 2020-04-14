@@ -31,6 +31,6 @@ if (!isNodeJS) {
 setVerbosityLevel(VerbosityLevel.ERRORS);
 
 // Set the network stream factory for the unit-tests.
-setPDFNetworkStreamFactory(function(params) {
+setPDFNetworkStreamFactory(function (params) {
   return new PDFNodeStream(params);
 });

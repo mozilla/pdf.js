@@ -15,9 +15,9 @@
 
 import { getEncoding } from "../../src/core/encodings.js";
 
-describe("encodings", function() {
-  describe("getEncoding", function() {
-    it("fetches a valid array for known encoding names", function() {
+describe("encodings", function () {
+  describe("getEncoding", function () {
+    it("fetches a valid array for known encoding names", function () {
       const knownEncodingNames = [
         "ExpertEncoding",
         "MacExpertEncoding",
@@ -39,7 +39,7 @@ describe("encodings", function() {
       }
     });
 
-    it("fetches `null` for unknown encoding names", function() {
+    it("fetches `null` for unknown encoding names", function () {
       expect(getEncoding("FooBarEncoding")).toEqual(null);
     });
   });

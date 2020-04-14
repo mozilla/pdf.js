@@ -27,14 +27,14 @@ var eventBus = new pdfjsViewer.EventBus();
 
 // Fetch the PDF document from the URL using promises.
 var loadingTask = pdfjsLib.getDocument(DEFAULT_URL);
-loadingTask.promise.then(function(doc) {
+loadingTask.promise.then(function (doc) {
   // Use a promise to fetch and render the next page.
   var promise = Promise.resolve();
 
   for (var i = 1; i <= doc.numPages; i++) {
     promise = promise.then(
-      function(pageNum) {
-        return doc.getPage(pageNum).then(function(pdfPage) {
+      function (pageNum) {
+        return doc.getPage(pageNum).then(function (pdfPage) {
           // Create the page view.
           var pdfPageView = new pdfjsViewer.PDFPageView({
             container: container,

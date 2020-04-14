@@ -85,7 +85,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
       }
       try {
         const decoder = new TextDecoder(encoding, { fatal: true });
-        const bytes = Array.from(value, function(ch) {
+        const bytes = Array.from(value, function (ch) {
           return ch.charCodeAt(0) & 0xff;
         });
         value = decoder.decode(new Uint8Array(bytes));
@@ -205,11 +205,11 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     //        ... but Firefox permits ? and space.
     return value.replace(
       /=\?([\w-]*)\?([QqBb])\?((?:[^?]|\?(?!=))*)\?=/g,
-      function(matches, charset, encoding, text) {
+      function (matches, charset, encoding, text) {
         if (encoding === "q" || encoding === "Q") {
           // RFC 2047 section 4.2.
           text = text.replace(/_/g, " ");
-          text = text.replace(/=([0-9a-fA-F]{2})/g, function(match, hex) {
+          text = text.replace(/=([0-9a-fA-F]{2})/g, function (match, hex) {
             return String.fromCharCode(parseInt(hex, 16));
           });
           return textdecode(charset, text);

@@ -45,13 +45,13 @@ function createExtensionGlobal() {
   window.chrome.extension.inIncognitoContext = false;
   window.chrome.runtime = {};
   window.chrome.runtime.id = "oemmndcbldboiebfnladdacbdfmadadm";
-  window.chrome.runtime.getManifest = function() {
+  window.chrome.runtime.getManifest = function () {
     return { version: "1.0.0" };
   };
 
   function createStorageAPI() {
     var storageArea = {};
-    storageArea.get = function(key, callback) {
+    storageArea.get = function (key, callback) {
       assert.equal(key, "disableTelemetry");
       // chrome.storage.*. is async, but we make it synchronous to ease testing.
       callback(storageArea.mock_data);
@@ -73,7 +73,7 @@ function createExtensionGlobal() {
 
   var getRandomValues_state = 0;
   window.crypto = {};
-  window.crypto.getRandomValues = function(buf) {
+  window.crypto.getRandomValues = function (buf) {
     var state = getRandomValues_state++;
     for (var i = 0; i < buf.length; ++i) {
       // Totally random byte ;)
@@ -89,38 +89,38 @@ function createExtensionGlobal() {
       throw new TypeError("Illegal invocation");
     },
   };
-  window.fetch = function(url, options) {
+  window.fetch = function (url, options) {
     assert.equal(url, LOG_URL);
     assert.equal(options.method, "POST");
     assert.equal(options.mode, "cors");
     assert.ok(!options.body);
     test_requests.push(options.headers);
   };
-  window.Headers = function(headers) {
+  window.Headers = function (headers) {
     headers = JSON.parse(JSON.stringify(headers)); // Clone.
-    Object.keys(headers).forEach(function(k) {
+    Object.keys(headers).forEach(function (k) {
       headers[k] = String(headers[k]);
     });
     return headers;
   };
-  window.XMLHttpRequest = function() {
+  window.XMLHttpRequest = function () {
     var invoked = {
       open: false,
       send: false,
     };
     var headers = {};
     return {
-      open: function(method, url) {
+      open: function (method, url) {
         assert.equal(invoked.open, false);
         invoked.open = true;
         assert.equal(method, "POST");
         assert.equal(url, LOG_URL);
       },
-      setRequestHeader: function(k, v) {
+      setRequestHeader: function (k, v) {
         assert.equal(invoked.open, true);
         headers[k] = String(v);
       },
-      send: function(body) {
+      send: function (body) {
         assert.equal(invoked.open, true);
         assert.equal(invoked.send, false);
         invoked.send = true;
@@ -132,19 +132,19 @@ function createExtensionGlobal() {
 
   // Time-related logic.
   var timers = [];
-  window.setInterval = function(callback, ms) {
+  window.setInterval = function (callback, ms) {
     assert.equal(typeof callback, "function");
     timers.push(callback);
   };
   window.Date = {
     test_now_value: Date.now(),
-    now: function() {
+    now: function () {
       return window.Date.test_now_value;
     },
   };
-  window.test_fireTimers = function() {
+  window.test_fireTimers = function () {
     assert.ok(timers.length);
-    timers.forEach(function(timer) {
+    timers.forEach(function (timer) {
       timer();
     });
   };
@@ -156,7 +156,7 @@ function createExtensionGlobal() {
 function updateBrowser(window) {
   window.navigator.userAgent = window.navigator.userAgent.replace(
     /Chrome\/(\d+)/,
-    function(_, v) {
+    function (_, v) {
       return "Chrome/" + (parseInt(v) + 1);
     }
   );
@@ -351,7 +351,7 @@ var tests = [
   function test_extension_update() {
     var window = createExtensionGlobal();
     telemetryScript.runInNewContext(window);
-    window.chrome.runtime.getManifest = function() {
+    window.chrome.runtime.getManifest = function () {
       return { version: "1.0.1" };
     };
     window.Date.test_now_value += 12 * 36e5;
@@ -373,7 +373,7 @@ var tests = [
     var window = createExtensionGlobal();
     var didWarn = false;
     window.console = {};
-    window.console.warn = function() {
+    window.console.warn = function () {
       didWarn = true;
     };
     window.chrome.runtime.id = "abcdefghijklmnopabcdefghijklmnop";
@@ -413,7 +413,7 @@ var tests = [
   function test_fetch_mode_not_supported() {
     var window = createExtensionGlobal();
     delete window.Request.prototype.mode;
-    window.fetch = function() {
+    window.fetch = function () {
       throw new Error("Unexpected call to fetch!");
     };
     telemetryScript.runInNewContext(window);

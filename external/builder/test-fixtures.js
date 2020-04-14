@@ -9,13 +9,13 @@ var errors = 0;
 var baseDir = path.join(__dirname, "fixtures");
 var files = fs
   .readdirSync(baseDir)
-  .filter(function(name) {
+  .filter(function (name) {
     return /-expected\./.test(name);
   })
-  .map(function(name) {
+  .map(function (name) {
     return path.join(baseDir, name);
   });
-files.forEach(function(expectationFilename) {
+files.forEach(function (expectationFilename) {
   var inFilename = expectationFilename.replace("-expected", "");
   var expectation = fs
     .readFileSync(expectationFilename)
@@ -24,7 +24,7 @@ files.forEach(function(expectationFilename) {
     .replace(/__filename/g, fs.realpathSync(inFilename));
   var outLines = [];
 
-  var outFilename = function(line) {
+  var outFilename = function (line) {
     outLines.push(line);
   };
   var defines = {

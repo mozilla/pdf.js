@@ -37,7 +37,7 @@ limitations under the License.
     }
   }
 
-  chrome.runtime.onMessage.addListener(function(message, sender) {
+  chrome.runtime.onMessage.addListener(function (message, sender) {
     if (message === "showPageAction" && sender.tab) {
       showPageAction(sender.tab.id, sender.tab.url);
     }

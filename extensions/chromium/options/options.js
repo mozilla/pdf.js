@@ -25,13 +25,13 @@ Promise.all([
       return;
     }
     // Get preferences as set by the system administrator.
-    chrome.storage.managed.get(null, function(prefs) {
+    chrome.storage.managed.get(null, function (prefs) {
       // Managed storage may be disabled, e.g. in Opera.
       resolve(prefs || {});
     });
   }),
   new Promise(function getUserPrefs(resolve) {
-    storageArea.get(null, function(prefs) {
+    storageArea.get(null, function (prefs) {
       resolve(prefs || {});
     });
   }),
@@ -40,14 +40,14 @@ Promise.all([
     var x = new XMLHttpRequest();
     var schema_location = chrome.runtime.getManifest().storage.managed_schema;
     x.open("get", chrome.runtime.getURL(schema_location));
-    x.onload = function() {
+    x.onload = function () {
       resolve(x.response.properties);
     };
     x.responseType = "json";
     x.send();
   }),
 ])
-  .then(function(values) {
+  .then(function (values) {
     var managedPrefs = values[0];
     var userPrefs = values[1];
     var schema = values[2];
@@ -62,7 +62,7 @@ Promise.all([
     var prefNames = Object.keys(schema);
     var renderPreferenceFunctions = {};
     // Render options
-    prefNames.forEach(function(prefName) {
+    prefNames.forEach(function (prefName) {
       var prefSchema = schema[prefName];
       if (!prefSchema.title) {
         // Don't show preferences if the title is missing.
@@ -102,17 +102,17 @@ Promise.all([
     var renderedPrefNames = Object.keys(renderPreferenceFunctions);
 
     // Reset button to restore default settings.
-    document.getElementById("reset-button").onclick = function() {
+    document.getElementById("reset-button").onclick = function () {
       userPrefs = {};
-      storageArea.remove(prefNames, function() {
-        renderedPrefNames.forEach(function(prefName) {
+      storageArea.remove(prefNames, function () {
+        renderedPrefNames.forEach(function (prefName) {
           renderPreferenceFunctions[prefName](getPrefValue(prefName));
         });
       });
     };
 
     // Automatically update the UI when the preferences were changed elsewhere.
-    chrome.storage.onChanged.addListener(function(changes, areaName) {
+    chrome.storage.onChanged.addListener(function (changes, areaName) {
       var prefs = null;
       if (areaName === storageAreaName) {
         prefs = userPrefs;
@@ -120,7 +120,7 @@ Promise.all([
         prefs = managedPrefs;
       }
       if (prefs) {
-        renderedPrefNames.forEach(function(prefName) {
+        renderedPrefNames.forEach(function (prefName) {
           var prefChanges = changes[prefName];
           if (prefChanges) {
             if ("newValue" in prefChanges) {
@@ -149,7 +149,7 @@ function renderBooleanPref(shortDescription, description, prefName) {
   wrapper.title = description;
 
   var checkbox = wrapper.querySelector('input[type="checkbox"]');
-  checkbox.onchange = function() {
+  checkbox.onchange = function () {
     var pref = {};
     pref[prefName] = this.checked;
     storageArea.set(pref);
@@ -166,7 +166,7 @@ function renderBooleanPref(shortDescription, description, prefName) {
 function renderEnumPref(shortDescription, prefName) {
   var wrapper = importTemplate(prefName + "-template");
   var select = wrapper.querySelector("select");
-  select.onchange = function() {
+  select.onchange = function () {
     var pref = {};
     pref[prefName] = parseInt(this.value);
     storageArea.set(pref);
@@ -183,7 +183,7 @@ function renderEnumPref(shortDescription, prefName) {
 function renderDefaultZoomValue(shortDescription) {
   var wrapper = importTemplate("defaultZoomValue-template");
   var select = wrapper.querySelector("select");
-  select.onchange = function() {
+  select.onchange = function () {
     storageArea.set({
       defaultZoomValue: this.value,
     });

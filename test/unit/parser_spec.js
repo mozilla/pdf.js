@@ -19,10 +19,10 @@ import { FormatError } from "../../src/shared/util.js";
 import { Name } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 
-describe("parser", function() {
-  describe("Parser", function() {
-    describe("inlineStreamSkipEI", function() {
-      it("should skip over the EI marker if it is found", function() {
+describe("parser", function () {
+  describe("Parser", function () {
+    describe("inlineStreamSkipEI", function () {
+      it("should skip over the EI marker if it is found", function () {
         const string =
           "q 1 0 0 1 0 0 cm BI /W 10 /H 10 /BPC 1 " +
           "/F /A85 ID abc123~> EI Q";
@@ -38,7 +38,7 @@ describe("parser", function() {
         expect(input.peekByte()).toEqual(0x51); // 'Q'
       });
 
-      it("should skip to the end of stream if the EI marker is not found", function() {
+      it("should skip to the end of stream if the EI marker is not found", function () {
         const string =
           "q 1 0 0 1 0 0 cm BI /W 10 /H 10 /BPC 1 /F /A85 ID abc123~> Q";
         const input = new StringStream(string);
@@ -55,16 +55,16 @@ describe("parser", function() {
     });
   });
 
-  describe("Lexer", function() {
-    describe("nextChar", function() {
-      it("should return and set -1 when the end of the stream is reached", function() {
+  describe("Lexer", function () {
+    describe("nextChar", function () {
+      it("should return and set -1 when the end of the stream is reached", function () {
         const input = new StringStream("");
         const lexer = new Lexer(input);
         expect(lexer.nextChar()).toEqual(-1);
         expect(lexer.currentChar).toEqual(-1);
       });
 
-      it("should return and set the character after the current position", function() {
+      it("should return and set the character after the current position", function () {
         const input = new StringStream("123");
         const lexer = new Lexer(input);
         expect(lexer.nextChar()).toEqual(0x32); // '2'
@@ -72,15 +72,15 @@ describe("parser", function() {
       });
     });
 
-    describe("peekChar", function() {
-      it("should only return -1 when the end of the stream is reached", function() {
+    describe("peekChar", function () {
+      it("should only return -1 when the end of the stream is reached", function () {
         const input = new StringStream("");
         const lexer = new Lexer(input);
         expect(lexer.peekChar()).toEqual(-1);
         expect(lexer.currentChar).toEqual(-1);
       });
 
-      it("should only return the character after the current position", function() {
+      it("should only return the character after the current position", function () {
         const input = new StringStream("123");
         const lexer = new Lexer(input);
         expect(lexer.peekChar()).toEqual(0x32); // '2'
@@ -88,14 +88,14 @@ describe("parser", function() {
       });
     });
 
-    describe("getNumber", function() {
-      it("should stop parsing numbers at the end of stream", function() {
+    describe("getNumber", function () {
+      it("should stop parsing numbers at the end of stream", function () {
         const input = new StringStream("11.234");
         const lexer = new Lexer(input);
         expect(lexer.getNumber()).toEqual(11.234);
       });
 
-      it("should parse PostScript numbers", function() {
+      it("should parse PostScript numbers", function () {
         const numbers = [
           "-.002",
           "34.5",
@@ -130,19 +130,19 @@ describe("parser", function() {
         }
       });
 
-      it("should ignore double negative before number", function() {
+      it("should ignore double negative before number", function () {
         const input = new StringStream("--205.88");
         const lexer = new Lexer(input);
         expect(lexer.getNumber()).toEqual(-205.88);
       });
 
-      it("should ignore minus signs in the middle of number", function() {
+      it("should ignore minus signs in the middle of number", function () {
         const input = new StringStream("205--.88");
         const lexer = new Lexer(input);
         expect(lexer.getNumber()).toEqual(205.88);
       });
 
-      it("should ignore line-breaks between operator and digit in number", function() {
+      it("should ignore line-breaks between operator and digit in number", function () {
         const minusInput = new StringStream("-\r\n205.88");
         const minusLexer = new Lexer(minusInput);
         expect(minusLexer.getNumber()).toEqual(-205.88);
@@ -152,7 +152,7 @@ describe("parser", function() {
         expect(plusLexer.getNumber()).toEqual(205.88);
       });
 
-      it("should treat a single decimal point as zero", function() {
+      it("should treat a single decimal point as zero", function () {
         const input = new StringStream(".");
         const lexer = new Lexer(input);
         expect(lexer.getNumber()).toEqual(0);
@@ -162,13 +162,13 @@ describe("parser", function() {
           const invalidInput = new StringStream(number);
           const invalidLexer = new Lexer(invalidInput);
 
-          expect(function() {
+          expect(function () {
             return invalidLexer.getNumber();
           }).toThrowError(FormatError, /^Invalid number:\s/);
         }
       });
 
-      it("should handle glued numbers and operators", function() {
+      it("should handle glued numbers and operators", function () {
         const input = new StringStream("123ET");
         const lexer = new Lexer(input);
         expect(lexer.getNumber()).toEqual(123);
@@ -177,10 +177,10 @@ describe("parser", function() {
       });
     });
 
-    describe("getString", function() {
-      it("should stop parsing strings at the end of stream", function() {
+    describe("getString", function () {
+      it("should stop parsing strings at the end of stream", function () {
         const input = new StringStream("(1$4)");
-        input.getByte = function(super_getByte) {
+        input.getByte = function (super_getByte) {
           // Simulating end of file using null (see issue 2766).
           const ch = super_getByte.call(input);
           return ch === 0x24 /* '$' */ ? -1 : ch;
@@ -189,7 +189,7 @@ describe("parser", function() {
         expect(lexer.getString()).toEqual("1");
       });
 
-      it("should ignore escaped CR and LF", function() {
+      it("should ignore escaped CR and LF", function () {
         // '(\101\<CR><LF>\102)' should be parsed as 'AB'.
         const input = new StringStream("(\\101\\\r\n\\102\\\r\\103\\\n\\104)");
         const lexer = new Lexer(input);
@@ -197,8 +197,8 @@ describe("parser", function() {
       });
     });
 
-    describe("getHexString", function() {
-      it("should not throw exception on bad input", function() {
+    describe("getHexString", function () {
+      it("should not throw exception on bad input", function () {
         // '7 0 2 15 5 2 2 2 4 3 2 4' should be parsed as '70 21 55 22 24 32'.
         const input = new StringStream("<7 0 2 15 5 2 2 2 4 3 2 4>");
         const lexer = new Lexer(input);
@@ -206,8 +206,8 @@ describe("parser", function() {
       });
     });
 
-    describe("getName", function() {
-      it("should handle Names with invalid usage of NUMBER SIGN (#)", function() {
+    describe("getName", function () {
+      it("should handle Names with invalid usage of NUMBER SIGN (#)", function () {
         const inputNames = ["/# 680 0 R", "/#AQwerty", "/#A<</B"];
         const expectedNames = ["#", "#AQwerty", "#A"];
 
@@ -220,8 +220,8 @@ describe("parser", function() {
     });
   });
 
-  describe("Linearization", function() {
-    it("should not find a linearization dictionary", function() {
+  describe("Linearization", function () {
+    it("should not find a linearization dictionary", function () {
       // Not an actual linearization dictionary.
       // prettier-ignore
       const stream1 = new StringStream(
@@ -246,7 +246,7 @@ describe("parser", function() {
       expect(Linearization.create(stream2)).toEqual(null);
     });
 
-    it("should accept a valid linearization dictionary", function() {
+    it("should accept a valid linearization dictionary", function () {
       // prettier-ignore
       const stream = new StringStream(
         "131 0 obj\n" +
@@ -276,7 +276,7 @@ describe("parser", function() {
     it(
       "should reject a linearization dictionary with invalid " +
         "integer parameters",
-      function() {
+      function () {
         // The /L parameter should be equal to the stream length.
         // prettier-ignore
         const stream1 = new StringStream(
@@ -292,7 +292,7 @@ describe("parser", function() {
         ">>\n" +
         "endobj"
       );
-        expect(function() {
+        expect(function () {
           return Linearization.create(stream1);
         }).toThrow(
           new Error(
@@ -316,7 +316,7 @@ describe("parser", function() {
         ">>\n" +
         "endobj"
       );
-        expect(function() {
+        expect(function () {
           return Linearization.create(stream2);
         }).toThrow(
           new Error(
@@ -339,7 +339,7 @@ describe("parser", function() {
         ">>\n" +
         "endobj"
       );
-        expect(function() {
+        expect(function () {
           return Linearization.create(stream3);
         }).toThrow(
           new Error(
@@ -349,7 +349,7 @@ describe("parser", function() {
       }
     );
 
-    it("should reject a linearization dictionary with invalid hint parameters", function() {
+    it("should reject a linearization dictionary with invalid hint parameters", function () {
       // The /H parameter should be an array.
       // prettier-ignore
       const stream1 = new StringStream(
@@ -365,7 +365,7 @@ describe("parser", function() {
         ">>\n" +
         "endobj"
       );
-      expect(function() {
+      expect(function () {
         return Linearization.create(stream1);
       }).toThrow(
         new Error("Hint array in the linearization dictionary is invalid.")
@@ -386,7 +386,7 @@ describe("parser", function() {
         ">>\n" +
         "endobj"
       );
-      expect(function() {
+      expect(function () {
         return Linearization.create(stream2);
       }).toThrow(
         new Error("Hint array in the linearization dictionary is invalid.")
@@ -407,7 +407,7 @@ describe("parser", function() {
         ">>\n" +
         "endobj"
       );
-      expect(function() {
+      expect(function () {
         return Linearization.create(stream3);
       }).toThrow(
         new Error("Hint (2) in the linearization dictionary is invalid.")

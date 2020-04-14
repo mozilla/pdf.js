@@ -33,14 +33,14 @@ import { Dict, Name, Ref } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
 import { StringStream } from "../../src/core/stream.js";
 
-describe("annotation", function() {
+describe("annotation", function () {
   class PDFManagerMock {
     constructor(params) {
       this.docBaseUrl = params.docBaseUrl || null;
     }
 
     ensure(obj, prop, args) {
-      return new Promise(function(resolve) {
+      return new Promise(function (resolve) {
         const value = obj[prop];
         if (typeof value === "function") {
           resolve(value.apply(obj, args));
@@ -53,7 +53,7 @@ describe("annotation", function() {
 
   let pdfManagerMock, idFactoryMock;
 
-  beforeAll(function(done) {
+  beforeAll(function (done) {
     pdfManagerMock = new PDFManagerMock({
       docBaseUrl: null,
     });
@@ -61,13 +61,13 @@ describe("annotation", function() {
     done();
   });
 
-  afterAll(function() {
+  afterAll(function () {
     pdfManagerMock = null;
     idFactoryMock = null;
   });
 
-  describe("AnnotationFactory", function() {
-    it("should get id for annotation", function(done) {
+  describe("AnnotationFactory", function () {
+    it("should get id for annotation", function (done) {
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Link"));
@@ -90,7 +90,7 @@ describe("annotation", function() {
     it(
       "should handle, and get fallback IDs for, annotations that are not " +
         "indirect objects (issue 7569)",
-      function(done) {
+      function (done) {
         const annotationDict = new Dict();
         annotationDict.set("Type", Name.get("Annot"));
         annotationDict.set("Subtype", Name.get("Link"));
@@ -122,7 +122,7 @@ describe("annotation", function() {
       }
     );
 
-    it("should handle missing /Subtype", function(done) {
+    it("should handle missing /Subtype", function (done) {
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
 
@@ -141,35 +141,35 @@ describe("annotation", function() {
     });
   });
 
-  describe("getQuadPoints", function() {
+  describe("getQuadPoints", function () {
     let dict, rect;
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       dict = new Dict();
       rect = [];
       done();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       dict = null;
       rect = null;
     });
 
-    it("should ignore missing quadpoints", function() {
+    it("should ignore missing quadpoints", function () {
       expect(getQuadPoints(dict, rect)).toEqual(null);
     });
 
-    it("should ignore non-array values", function() {
+    it("should ignore non-array values", function () {
       dict.set("QuadPoints", "foo");
       expect(getQuadPoints(dict, rect)).toEqual(null);
     });
 
-    it("should ignore arrays where the length is not a multiple of eight", function() {
+    it("should ignore arrays where the length is not a multiple of eight", function () {
       dict.set("QuadPoints", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
       expect(getQuadPoints(dict, rect)).toEqual(null);
     });
 
-    it("should ignore quadpoints if one coordinate lies outside the rectangle", function() {
+    it("should ignore quadpoints if one coordinate lies outside the rectangle", function () {
       rect = [10, 10, 20, 20];
       const inputs = [
         [11, 11, 12, 12, 9, 13, 14, 14], // Smaller than lower x coordinate.
@@ -183,7 +183,7 @@ describe("annotation", function() {
       }
     });
 
-    it("should process valid quadpoints arrays", function() {
+    it("should process valid quadpoints arrays", function () {
       rect = [10, 10, 20, 20];
       dict.set("QuadPoints", [
         11,
@@ -220,48 +220,48 @@ describe("annotation", function() {
     });
   });
 
-  describe("Annotation", function() {
+  describe("Annotation", function () {
     let dict, ref;
 
-    beforeAll(function(done) {
+    beforeAll(function (done) {
       dict = new Dict();
       ref = Ref.get(1, 0);
       done();
     });
 
-    afterAll(function() {
+    afterAll(function () {
       dict = ref = null;
     });
 
-    it("should set and get valid contents", function() {
+    it("should set and get valid contents", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setContents("Foo bar baz");
 
       expect(annotation.contents).toEqual("Foo bar baz");
     });
 
-    it("should not set and get invalid contents", function() {
+    it("should not set and get invalid contents", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setContents(undefined);
 
       expect(annotation.contents).toEqual("");
     });
 
-    it("should set and get a valid modification date", function() {
+    it("should set and get a valid modification date", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setModificationDate("D:20190422");
 
       expect(annotation.modificationDate).toEqual("D:20190422");
     });
 
-    it("should not set and get an invalid modification date", function() {
+    it("should not set and get an invalid modification date", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setModificationDate(undefined);
 
       expect(annotation.modificationDate).toEqual(null);
     });
 
-    it("should set and get flags", function() {
+    it("should set and get flags", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setFlags(13);
 
@@ -271,63 +271,63 @@ describe("annotation", function() {
       expect(annotation.hasFlag(AnnotationFlag.READONLY)).toEqual(false);
     });
 
-    it("should be viewable and not printable by default", function() {
+    it("should be viewable and not printable by default", function () {
       const annotation = new Annotation({ dict, ref });
 
       expect(annotation.viewable).toEqual(true);
       expect(annotation.printable).toEqual(false);
     });
 
-    it("should set and get a valid rectangle", function() {
+    it("should set and get a valid rectangle", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setRectangle([117, 694, 164.298, 720]);
 
       expect(annotation.rectangle).toEqual([117, 694, 164.298, 720]);
     });
 
-    it("should not set and get an invalid rectangle", function() {
+    it("should not set and get an invalid rectangle", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setRectangle([117, 694, 164.298]);
 
       expect(annotation.rectangle).toEqual([0, 0, 0, 0]);
     });
 
-    it("should reject a color if it is not an array", function() {
+    it("should reject a color if it is not an array", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setColor("red");
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
     });
 
-    it("should set and get a transparent color", function() {
+    it("should set and get a transparent color", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setColor([]);
 
       expect(annotation.color).toEqual(null);
     });
 
-    it("should set and get a grayscale color", function() {
+    it("should set and get a grayscale color", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setColor([0.4]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([102, 102, 102]));
     });
 
-    it("should set and get an RGB color", function() {
+    it("should set and get an RGB color", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setColor([0, 0, 1]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
     });
 
-    it("should set and get a CMYK color", function() {
+    it("should set and get a CMYK color", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setColor([0.1, 0.92, 0.84, 0.02]);
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([234, 59, 48]));
     });
 
-    it("should not set and get an invalid color", function() {
+    it("should not set and get an invalid color", function () {
       const annotation = new Annotation({ dict, ref });
       annotation.setColor([0.4, 0.6]);
 
@@ -335,22 +335,22 @@ describe("annotation", function() {
     });
   });
 
-  describe("AnnotationBorderStyle", function() {
-    it("should set and get a valid width", function() {
+  describe("AnnotationBorderStyle", function () {
+    it("should set and get a valid width", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setWidth(3);
 
       expect(borderStyle.width).toEqual(3);
     });
 
-    it("should not set and get an invalid width", function() {
+    it("should not set and get an invalid width", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setWidth("three");
 
       expect(borderStyle.width).toEqual(1);
     });
 
-    it("should set the width to zero, when the input is a `Name` (issue 10385)", function() {
+    it("should set the width to zero, when the input is a `Name` (issue 10385)", function () {
       const borderStyleZero = new AnnotationBorderStyle();
       borderStyleZero.setWidth(Name.get("0"));
       const borderStyleFive = new AnnotationBorderStyle();
@@ -360,56 +360,56 @@ describe("annotation", function() {
       expect(borderStyleFive.width).toEqual(0);
     });
 
-    it("should set and get a valid style", function() {
+    it("should set and get a valid style", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setStyle(Name.get("D"));
 
       expect(borderStyle.style).toEqual(AnnotationBorderStyleType.DASHED);
     });
 
-    it("should not set and get an invalid style", function() {
+    it("should not set and get an invalid style", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setStyle("Dashed");
 
       expect(borderStyle.style).toEqual(AnnotationBorderStyleType.SOLID);
     });
 
-    it("should set and get a valid dash array", function() {
+    it("should set and get a valid dash array", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setDashArray([1, 2, 3]);
 
       expect(borderStyle.dashArray).toEqual([1, 2, 3]);
     });
 
-    it("should not set and get an invalid dash array", function() {
+    it("should not set and get an invalid dash array", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setDashArray([0, 0]);
 
       expect(borderStyle.dashArray).toEqual([3]);
     });
 
-    it("should set and get a valid horizontal corner radius", function() {
+    it("should set and get a valid horizontal corner radius", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setHorizontalCornerRadius(3);
 
       expect(borderStyle.horizontalCornerRadius).toEqual(3);
     });
 
-    it("should not set and get an invalid horizontal corner radius", function() {
+    it("should not set and get an invalid horizontal corner radius", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setHorizontalCornerRadius("three");
 
       expect(borderStyle.horizontalCornerRadius).toEqual(0);
     });
 
-    it("should set and get a valid vertical corner radius", function() {
+    it("should set and get a valid vertical corner radius", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setVerticalCornerRadius(3);
 
       expect(borderStyle.verticalCornerRadius).toEqual(3);
     });
 
-    it("should not set and get an invalid vertical corner radius", function() {
+    it("should not set and get an invalid vertical corner radius", function () {
       const borderStyle = new AnnotationBorderStyle();
       borderStyle.setVerticalCornerRadius("three");
 
@@ -417,34 +417,34 @@ describe("annotation", function() {
     });
   });
 
-  describe("MarkupAnnotation", function() {
+  describe("MarkupAnnotation", function () {
     let dict, ref;
 
-    beforeAll(function(done) {
+    beforeAll(function (done) {
       dict = new Dict();
       ref = Ref.get(1, 0);
       done();
     });
 
-    afterAll(function() {
+    afterAll(function () {
       dict = ref = null;
     });
 
-    it("should set and get a valid creation date", function() {
+    it("should set and get a valid creation date", function () {
       const markupAnnotation = new MarkupAnnotation({ dict, ref });
       markupAnnotation.setCreationDate("D:20190422");
 
       expect(markupAnnotation.creationDate).toEqual("D:20190422");
     });
 
-    it("should not set and get an invalid creation date", function() {
+    it("should not set and get an invalid creation date", function () {
       const markupAnnotation = new MarkupAnnotation({ dict, ref });
       markupAnnotation.setCreationDate(undefined);
 
       expect(markupAnnotation.creationDate).toEqual(null);
     });
 
-    it("should not parse IRT/RT when not defined", function(done) {
+    it("should not parse IRT/RT when not defined", function (done) {
       dict.set("Type", Name.get("Annot"));
       dict.set("Subtype", Name.get("Text"));
 
@@ -460,7 +460,7 @@ describe("annotation", function() {
       );
     });
 
-    it("should parse IRT and set default RT when not defined.", function(done) {
+    it("should parse IRT and set default RT when not defined.", function (done) {
       const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
@@ -491,7 +491,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should parse IRT/RT for a group type", function(done) {
+    it("should parse IRT/RT for a group type", function (done) {
       const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
@@ -548,7 +548,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should parse IRT/RT for a reply type", function(done) {
+    it("should parse IRT/RT for a reply type", function (done) {
       const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
@@ -606,8 +606,8 @@ describe("annotation", function() {
     });
   });
 
-  describe("TextAnnotation", function() {
-    it("should not parse state model and state when not defined", function(done) {
+  describe("TextAnnotation", function () {
+    it("should not parse state model and state when not defined", function (done) {
       const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
@@ -641,7 +641,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should correctly parse state model and state when defined", function(done) {
+    it("should correctly parse state model and state when defined", function (done) {
       const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
@@ -676,8 +676,8 @@ describe("annotation", function() {
     });
   });
 
-  describe("LinkAnnotation", function() {
-    it("should correctly parse a URI action", function(done) {
+  describe("LinkAnnotation", function () {
+    it("should correctly parse a URI action", function (done) {
       const actionDict = new Dict();
       actionDict.set("Type", Name.get("Action"));
       actionDict.set("S", Name.get("URI"));
@@ -710,7 +710,7 @@ describe("annotation", function() {
     it(
       "should correctly parse a URI action, where the URI entry " +
         "is missing a protocol",
-      function(done) {
+      function (done) {
         const actionDict = new Dict();
         actionDict.set("Type", Name.get("Action"));
         actionDict.set("S", Name.get("URI"));
@@ -744,7 +744,7 @@ describe("annotation", function() {
     it(
       "should correctly parse a URI action, where the URI entry " +
         "has an incorrect encoding (bug 1122280)",
-      function(done) {
+      function (done) {
         const actionStream = new StringStream(
           "<<\n" +
             "/Type /Action\n" +
@@ -793,7 +793,7 @@ describe("annotation", function() {
       }
     );
 
-    it("should correctly parse a GoTo action", function(done) {
+    it("should correctly parse a GoTo action", function (done) {
       const actionDict = new Dict();
       actionDict.set("Type", Name.get("Action"));
       actionDict.set("S", Name.get("GoTo"));
@@ -824,7 +824,7 @@ describe("annotation", function() {
     it(
       "should correctly parse a GoToR action, where the FileSpec entry " +
         "is a string containing a relative URL",
-      function(done) {
+      function (done) {
         const actionDict = new Dict();
         actionDict.set("Type", Name.get("Action"));
         actionDict.set("S", Name.get("GoToR"));
@@ -861,7 +861,7 @@ describe("annotation", function() {
     it(
       "should correctly parse a GoToR action, containing a relative URL, " +
         'with the "docBaseUrl" parameter specified',
-      function(done) {
+      function (done) {
         const actionDict = new Dict();
         actionDict.set("Type", Name.get("Action"));
         actionDict.set("S", Name.get("GoToR"));
@@ -898,7 +898,7 @@ describe("annotation", function() {
       }
     );
 
-    it("should correctly parse a GoToR action, with named destination", function(done) {
+    it("should correctly parse a GoToR action, with named destination", function (done) {
       const actionDict = new Dict();
       actionDict.set("Type", Name.get("Action"));
       actionDict.set("S", Name.get("GoToR"));
@@ -928,7 +928,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should correctly parse a GoToR action, with explicit destination array", function(done) {
+    it("should correctly parse a GoToR action, with explicit destination array", function (done) {
       const actionDict = new Dict();
       actionDict.set("Type", Name.get("Action"));
       actionDict.set("S", Name.get("GoToR"));
@@ -969,7 +969,7 @@ describe("annotation", function() {
     it(
       "should correctly parse a Launch action, where the FileSpec dict " +
         'contains a relative URL, with the "docBaseUrl" parameter specified',
-      function(done) {
+      function (done) {
         const fileSpecDict = new Dict();
         fileSpecDict.set("Type", Name.get("FileSpec"));
         fileSpecDict.set("F", "Part II/Part II.pdf");
@@ -1015,7 +1015,7 @@ describe("annotation", function() {
     it(
       "should recover valid URLs from JavaScript actions having certain " +
         "white-listed formats",
-      function(done) {
+      function (done) {
         function checkJsAction(params) {
           const jsEntry = params.jsEntry;
           const expectedUrl = params.expectedUrl;
@@ -1084,7 +1084,7 @@ describe("annotation", function() {
       }
     );
 
-    it("should correctly parse a Named action", function(done) {
+    it("should correctly parse a Named action", function (done) {
       const actionDict = new Dict();
       actionDict.set("Type", Name.get("Action"));
       actionDict.set("S", Name.get("Named"));
@@ -1112,7 +1112,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should correctly parse a simple Dest", function(done) {
+    it("should correctly parse a simple Dest", function (done) {
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Link"));
@@ -1135,7 +1135,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should correctly parse a simple Dest, with explicit destination array", function(done) {
+    it("should correctly parse a simple Dest, with explicit destination array", function (done) {
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Link"));
@@ -1173,7 +1173,7 @@ describe("annotation", function() {
     it(
       "should correctly parse a Dest, which violates the specification " +
         "by containing a dictionary",
-      function(done) {
+      function (done) {
         const destDict = new Dict();
         destDict.set("Type", Name.get("Action"));
         destDict.set("S", Name.get("GoTo"));
@@ -1206,7 +1206,7 @@ describe("annotation", function() {
       }
     );
 
-    it("should not set quadpoints if not defined", function(done) {
+    it("should not set quadpoints if not defined", function (done) {
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Link"));
@@ -1226,7 +1226,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should set quadpoints if defined", function(done) {
+    it("should set quadpoints if defined", function (done) {
       const annotationDict = new Dict();
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Link"));
@@ -1256,21 +1256,21 @@ describe("annotation", function() {
     });
   });
 
-  describe("WidgetAnnotation", function() {
+  describe("WidgetAnnotation", function () {
     let widgetDict;
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       widgetDict = new Dict();
       widgetDict.set("Type", Name.get("Annot"));
       widgetDict.set("Subtype", Name.get("Widget"));
       done();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       widgetDict = null;
     });
 
-    it("should handle unknown field names", function(done) {
+    it("should handle unknown field names", function (done) {
       const widgetRef = Ref.get(20, 0);
       const xref = new XRefMock([{ ref: widgetRef, data: widgetDict }]);
 
@@ -1286,7 +1286,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should construct the field name when there are no ancestors", function(done) {
+    it("should construct the field name when there are no ancestors", function (done) {
       widgetDict.set("T", "foo");
 
       const widgetRef = Ref.get(21, 0);
@@ -1304,7 +1304,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should construct the field name when there are ancestors", function(done) {
+    it("should construct the field name when there are ancestors", function (done) {
       const firstParent = new Dict();
       firstParent.set("T", "foo");
 
@@ -1333,7 +1333,7 @@ describe("annotation", function() {
     it(
       "should construct the field name if a parent is not a dictionary " +
         "(issue 8143)",
-      function(done) {
+      function (done) {
         const parentDict = new Dict();
         parentDict.set("Parent", null);
         parentDict.set("T", "foo");
@@ -1358,10 +1358,10 @@ describe("annotation", function() {
     );
   });
 
-  describe("TextWidgetAnnotation", function() {
+  describe("TextWidgetAnnotation", function () {
     let textWidgetDict;
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       textWidgetDict = new Dict();
       textWidgetDict.set("Type", Name.get("Annot"));
       textWidgetDict.set("Subtype", Name.get("Widget"));
@@ -1369,11 +1369,11 @@ describe("annotation", function() {
       done();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       textWidgetDict = null;
     });
 
-    it("should handle unknown text alignment, maximum length and flags", function(done) {
+    it("should handle unknown text alignment, maximum length and flags", function (done) {
       const textWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([{ ref: textWidgetRef, data: textWidgetDict }]);
 
@@ -1393,7 +1393,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should not set invalid text alignment, maximum length and flags", function(done) {
+    it("should not set invalid text alignment, maximum length and flags", function (done) {
       textWidgetDict.set("Q", "center");
       textWidgetDict.set("MaxLen", "five");
       textWidgetDict.set("Ff", "readonly");
@@ -1417,7 +1417,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should set valid text alignment, maximum length and flags", function(done) {
+    it("should set valid text alignment, maximum length and flags", function (done) {
       textWidgetDict.set("Q", 1);
       textWidgetDict.set("MaxLen", 20);
       textWidgetDict.set(
@@ -1443,7 +1443,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should reject comb fields without a maximum length", function(done) {
+    it("should reject comb fields without a maximum length", function (done) {
       textWidgetDict.set("Ff", AnnotationFieldFlag.COMB);
 
       const textWidgetRef = Ref.get(46, 0);
@@ -1461,7 +1461,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should accept comb fields with a maximum length", function(done) {
+    it("should accept comb fields with a maximum length", function (done) {
       textWidgetDict.set("MaxLen", 20);
       textWidgetDict.set("Ff", AnnotationFieldFlag.COMB);
 
@@ -1480,7 +1480,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should only accept comb fields when the flags are valid", function(done) {
+    it("should only accept comb fields when the flags are valid", function (done) {
       const invalidFieldFlags = [
         AnnotationFieldFlag.MULTILINE,
         AnnotationFieldFlag.PASSWORD,
@@ -1528,10 +1528,10 @@ describe("annotation", function() {
     });
   });
 
-  describe("ButtonWidgetAnnotation", function() {
+  describe("ButtonWidgetAnnotation", function () {
     let buttonWidgetDict;
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       buttonWidgetDict = new Dict();
       buttonWidgetDict.set("Type", Name.get("Annot"));
       buttonWidgetDict.set("Subtype", Name.get("Widget"));
@@ -1539,11 +1539,11 @@ describe("annotation", function() {
       done();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       buttonWidgetDict = null;
     });
 
-    it("should handle checkboxes with export value", function(done) {
+    it("should handle checkboxes with export value", function (done) {
       buttonWidgetDict.set("V", Name.get("1"));
 
       const appearanceStatesDict = new Dict();
@@ -1574,7 +1574,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle checkboxes without export value", function(done) {
+    it("should handle checkboxes without export value", function (done) {
       buttonWidgetDict.set("V", Name.get("1"));
 
       const buttonWidgetRef = Ref.get(124, 0);
@@ -1596,7 +1596,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle radio buttons with a field value", function(done) {
+    it("should handle radio buttons with a field value", function (done) {
       const parentDict = new Dict();
       parentDict.set("V", Name.get("1"));
 
@@ -1630,7 +1630,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle radio buttons without a field value", function(done) {
+    it("should handle radio buttons without a field value", function (done) {
       const normalAppearanceStateDict = new Dict();
       normalAppearanceStateDict.set("2", null);
 
@@ -1661,10 +1661,10 @@ describe("annotation", function() {
     });
   });
 
-  describe("ChoiceWidgetAnnotation", function() {
+  describe("ChoiceWidgetAnnotation", function () {
     let choiceWidgetDict;
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       choiceWidgetDict = new Dict();
       choiceWidgetDict.set("Type", Name.get("Annot"));
       choiceWidgetDict.set("Subtype", Name.get("Widget"));
@@ -1672,11 +1672,11 @@ describe("annotation", function() {
       done();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       choiceWidgetDict = null;
     });
 
-    it("should handle missing option arrays", function(done) {
+    it("should handle missing option arrays", function (done) {
       const choiceWidgetRef = Ref.get(122, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict },
@@ -1694,7 +1694,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle option arrays with array elements", function(done) {
+    it("should handle option arrays with array elements", function (done) {
       const optionBarRef = Ref.get(20, 0);
       const optionBarStr = "Bar";
       const optionOneRef = Ref.get(10, 0);
@@ -1727,7 +1727,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle option arrays with string elements", function(done) {
+    it("should handle option arrays with string elements", function (done) {
       const optionBarRef = Ref.get(10, 0);
       const optionBarStr = "Bar";
 
@@ -1757,7 +1757,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle inherited option arrays (issue 8094)", function(done) {
+    it("should handle inherited option arrays (issue 8094)", function (done) {
       const options = [
         ["Value1", "Description1"],
         ["Value2", "Description2"],
@@ -1789,7 +1789,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should sanitize display values in option arrays (issue 8947)", function(done) {
+    it("should sanitize display values in option arrays (issue 8947)", function (done) {
       // The option value is a UTF-16BE string. The display value should be
       // sanitized, but the export value should remain the same since that
       // may be used as a unique identifier when exporting form values.
@@ -1817,7 +1817,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle array field values", function(done) {
+    it("should handle array field values", function (done) {
       const fieldValue = ["Foo", "Bar"];
 
       choiceWidgetDict.set("V", fieldValue);
@@ -1839,7 +1839,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle string field values", function(done) {
+    it("should handle string field values", function (done) {
       const fieldValue = "Foo";
 
       choiceWidgetDict.set("V", fieldValue);
@@ -1861,7 +1861,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle unknown flags", function(done) {
+    it("should handle unknown flags", function (done) {
       const choiceWidgetRef = Ref.get(166, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict },
@@ -1881,7 +1881,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should not set invalid flags", function(done) {
+    it("should not set invalid flags", function (done) {
       choiceWidgetDict.set("Ff", "readonly");
 
       const choiceWidgetRef = Ref.get(165, 0);
@@ -1903,7 +1903,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should set valid flags", function(done) {
+    it("should set valid flags", function (done) {
       choiceWidgetDict.set(
         "Ff",
         AnnotationFieldFlag.READONLY +
@@ -1931,8 +1931,8 @@ describe("annotation", function() {
     });
   });
 
-  describe("LineAnnotation", function() {
-    it("should set the line coordinates", function(done) {
+  describe("LineAnnotation", function () {
+    it("should set the line coordinates", function (done) {
       const lineDict = new Dict();
       lineDict.set("Type", Name.get("Annot"));
       lineDict.set("Subtype", Name.get("Line"));
@@ -1954,8 +1954,8 @@ describe("annotation", function() {
     });
   });
 
-  describe("FileAttachmentAnnotation", function() {
-    it("should correctly parse a file attachment", function(done) {
+  describe("FileAttachmentAnnotation", function () {
+    it("should correctly parse a file attachment", function (done) {
       const fileStream = new StringStream(
         "<<\n" +
           "/Type /EmbeddedFile\n" +
@@ -2015,8 +2015,8 @@ describe("annotation", function() {
     });
   });
 
-  describe("PopupAnnotation", function() {
-    it("should inherit properties from its parent", function(done) {
+  describe("PopupAnnotation", function () {
+    it("should inherit properties from its parent", function (done) {
       const parentDict = new Dict();
       parentDict.set("Type", Name.get("Annot"));
       parentDict.set("Subtype", Name.get("Text"));
@@ -2044,7 +2044,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle missing parent properties", function(done) {
+    it("should handle missing parent properties", function (done) {
       const parentDict = new Dict();
       parentDict.set("Type", Name.get("Annot"));
       parentDict.set("Subtype", Name.get("Text"));
@@ -2073,7 +2073,7 @@ describe("annotation", function() {
     it(
       "should inherit the parent flags when the Popup is not viewable, " +
         "but the parent is (PR 7352)",
-      function(done) {
+      function (done) {
         const parentDict = new Dict();
         parentDict.set("Type", Name.get("Annot"));
         parentDict.set("Subtype", Name.get("Text"));
@@ -2108,7 +2108,7 @@ describe("annotation", function() {
     it(
       "should correctly inherit Contents from group-master annotation " +
         "if parent has ReplyType == Group",
-      function(done) {
+      function (done) {
         const annotationRef = Ref.get(819, 0);
         const annotationDict = new Dict();
         annotationDict.set("Type", Name.get("Annot"));
@@ -2165,8 +2165,8 @@ describe("annotation", function() {
     );
   });
 
-  describe("InkAnnotation", function() {
-    it("should handle a single ink list", function(done) {
+  describe("InkAnnotation", function () {
+    it("should handle a single ink list", function (done) {
       const inkDict = new Dict();
       inkDict.set("Type", Name.get("Annot"));
       inkDict.set("Subtype", Name.get("Ink"));
@@ -2193,7 +2193,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should handle multiple ink lists", function(done) {
+    it("should handle multiple ink lists", function (done) {
       const inkDict = new Dict();
       inkDict.set("Type", Name.get("Annot"));
       inkDict.set("Subtype", Name.get("Ink"));
@@ -2226,8 +2226,8 @@ describe("annotation", function() {
     });
   });
 
-  describe("HightlightAnnotation", function() {
-    it("should not set quadpoints if not defined", function(done) {
+  describe("HightlightAnnotation", function () {
+    it("should not set quadpoints if not defined", function (done) {
       const highlightDict = new Dict();
       highlightDict.set("Type", Name.get("Annot"));
       highlightDict.set("Subtype", Name.get("Highlight"));
@@ -2247,7 +2247,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should set quadpoints if defined", function(done) {
+    it("should set quadpoints if defined", function (done) {
       const highlightDict = new Dict();
       highlightDict.set("Type", Name.get("Annot"));
       highlightDict.set("Subtype", Name.get("Highlight"));
@@ -2277,8 +2277,8 @@ describe("annotation", function() {
     });
   });
 
-  describe("UnderlineAnnotation", function() {
-    it("should not set quadpoints if not defined", function(done) {
+  describe("UnderlineAnnotation", function () {
+    it("should not set quadpoints if not defined", function (done) {
       const underlineDict = new Dict();
       underlineDict.set("Type", Name.get("Annot"));
       underlineDict.set("Subtype", Name.get("Underline"));
@@ -2298,7 +2298,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should set quadpoints if defined", function(done) {
+    it("should set quadpoints if defined", function (done) {
       const underlineDict = new Dict();
       underlineDict.set("Type", Name.get("Annot"));
       underlineDict.set("Subtype", Name.get("Underline"));
@@ -2328,8 +2328,8 @@ describe("annotation", function() {
     });
   });
 
-  describe("SquigglyAnnotation", function() {
-    it("should not set quadpoints if not defined", function(done) {
+  describe("SquigglyAnnotation", function () {
+    it("should not set quadpoints if not defined", function (done) {
       const squigglyDict = new Dict();
       squigglyDict.set("Type", Name.get("Annot"));
       squigglyDict.set("Subtype", Name.get("Squiggly"));
@@ -2349,7 +2349,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should set quadpoints if defined", function(done) {
+    it("should set quadpoints if defined", function (done) {
       const squigglyDict = new Dict();
       squigglyDict.set("Type", Name.get("Annot"));
       squigglyDict.set("Subtype", Name.get("Squiggly"));
@@ -2379,8 +2379,8 @@ describe("annotation", function() {
     });
   });
 
-  describe("StrikeOutAnnotation", function() {
-    it("should not set quadpoints if not defined", function(done) {
+  describe("StrikeOutAnnotation", function () {
+    it("should not set quadpoints if not defined", function (done) {
       const strikeOutDict = new Dict();
       strikeOutDict.set("Type", Name.get("Annot"));
       strikeOutDict.set("Subtype", Name.get("StrikeOut"));
@@ -2400,7 +2400,7 @@ describe("annotation", function() {
       }, done.fail);
     });
 
-    it("should set quadpoints if defined", function(done) {
+    it("should set quadpoints if defined", function (done) {
       const strikeOutDict = new Dict();
       strikeOutDict.set("Type", Name.get("Annot"));
       strikeOutDict.set("Subtype", Name.get("StrikeOut"));

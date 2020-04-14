@@ -16,7 +16,7 @@
 
 var getLookupTableFactory = require("./core_utils.js").getLookupTableFactory;
 
-var getGlyphsUnicode = getLookupTableFactory(function(t) {
+var getGlyphsUnicode = getLookupTableFactory(function (t) {
   t["A"] = 0x0041;
   t["AE"] = 0x00c6;
   t["AEacute"] = 0x01fc;
@@ -4343,7 +4343,7 @@ var getGlyphsUnicode = getLookupTableFactory(function(t) {
   t["vextendsingle"] = 0x2223;
 });
 
-var getDingbatsGlyphsUnicode = getLookupTableFactory(function(t) {
+var getDingbatsGlyphsUnicode = getLookupTableFactory(function (t) {
   t["space"] = 0x0020;
   t["a1"] = 0x2701;
   t["a2"] = 0x2702;
