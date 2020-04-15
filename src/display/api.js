@@ -663,7 +663,8 @@ class PDFDocumentProxy {
 
   /**
    * @returns {Promise} A promise that is resolved with an {Object} containing
-   *   the viewer preferences.
+   *   the viewer preferences, or `null` when no viewer preferences are present
+   *   in the PDF file.
    */
   getViewerPreferences() {
     return this._transport.getViewerPreferences();

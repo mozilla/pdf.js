@@ -479,7 +479,7 @@ class Catalog {
     };
 
     const obj = this.catDict.get("ViewerPreferences");
-    const prefs = Object.create(null);
+    let prefs = null;
 
     if (isDict(obj)) {
       for (const key in ViewerPreferencesValidators) {
@@ -583,6 +583,9 @@ class Catalog {
         }
 
         if (prefValue !== undefined) {
+          if (!prefs) {
+            prefs = Object.create(null);
+          }
           prefs[key] = prefValue;
         } else {
           info(`Bad value in ViewerPreferences for "${key}".`);
