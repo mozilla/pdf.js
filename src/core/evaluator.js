@@ -2587,7 +2587,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 code = unicode;
               }
           }
-          if (code > 0 && Number.isInteger(code)) {
+          if (code > 0 && code <= 0x10ffff && Number.isInteger(code)) {
             // If `baseEncodingName` is one the predefined encodings, and `code`
             // equals `charcode`, using the glyph defined in the baseEncoding
             // seems to yield a better `toUnicode` mapping (fixes issue 5070).
