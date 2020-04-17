@@ -136,8 +136,8 @@ var JpegImage = (function JpegImageClosure() {
     var mcusPerLine = frame.mcusPerLine;
     var progressive = frame.progressive;
 
-    var startOffset = offset,
-      bitsData = 0,
+    const startOffset = offset;
+    let bitsData = 0,
       bitsCount = 0;
 
     function readBit() {
@@ -453,16 +453,6 @@ var JpegImage = (function JpegImageClosure() {
       } else {
         break;
       }
-    }
-
-    fileMarker = findNextFileMarker(data, offset);
-    // Some images include more Scan blocks than expected, skip past those and
-    // attempt to find the next valid marker (fixes issue8182.pdf).
-    if (fileMarker && fileMarker.invalid) {
-      warn(
-        `decodeScan - unexpected Scan data, current marker is: ${fileMarker.invalid}`
-      );
-      offset = fileMarker.offset;
     }
 
     return offset - startOffset;
