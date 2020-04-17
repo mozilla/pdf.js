@@ -1188,13 +1188,13 @@ var JpxImage = (function JpxImageClosure() {
         var codeblockIncluded = false;
         var firstTimeInclusion = false;
         var valueReady;
-        if (codeblock["included"] !== undefined) {
+        if (codeblock.included !== undefined) {
           codeblockIncluded = !!readBits(1);
         } else {
           // reading inclusion tree
           precinct = codeblock.precinct;
           var inclusionTree, zeroBitPlanesTree;
-          if (precinct["inclusionTree"] !== undefined) {
+          if (precinct.inclusionTree !== undefined) {
             inclusionTree = precinct.inclusionTree;
           } else {
             // building inclusion and zero bit-planes trees
@@ -1264,7 +1264,7 @@ var JpxImage = (function JpxImageClosure() {
       while (queue.length > 0) {
         var packetItem = queue.shift();
         codeblock = packetItem.codeblock;
-        if (codeblock["data"] === undefined) {
+        if (codeblock.data === undefined) {
           codeblock.data = [];
         }
         codeblock.data.push({
@@ -1302,7 +1302,7 @@ var JpxImage = (function JpxImageClosure() {
       if (blockWidth === 0 || blockHeight === 0) {
         continue;
       }
-      if (codeblock["data"] === undefined) {
+      if (codeblock.data === undefined) {
         continue;
       }
 

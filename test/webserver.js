@@ -163,7 +163,7 @@ WebServer.prototype = {
         return;
       }
 
-      var range = req.headers["range"];
+      var range = req.headers.range;
       if (range && !disableRangeRequests) {
         var rangesMatches = /^bytes=(\d+)\-(\d+)?/.exec(range);
         if (!rangesMatches) {
@@ -344,11 +344,11 @@ WebServer.prototype = {
 // http://localhost:8888/test/unit/unit_test.html?spec=Cross-origin
 function crossOriginHandler(req, res) {
   if (req.url === "/test/pdfs/basicapi.pdf?cors=withCredentials") {
-    res.setHeader("Access-Control-Allow-Origin", req.headers["origin"]);
+    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
   }
   if (req.url === "/test/pdfs/basicapi.pdf?cors=withoutCredentials") {
-    res.setHeader("Access-Control-Allow-Origin", req.headers["origin"]);
+    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
   }
 }
 

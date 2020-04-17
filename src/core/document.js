@@ -725,10 +725,10 @@ class PDFDocument {
             continue;
           }
 
-          if (!docInfo["Custom"]) {
-            docInfo["Custom"] = Object.create(null);
+          if (!docInfo.Custom) {
+            docInfo.Custom = Object.create(null);
           }
-          docInfo["Custom"][key] = customValue;
+          docInfo.Custom[key] = customValue;
         }
       }
     }

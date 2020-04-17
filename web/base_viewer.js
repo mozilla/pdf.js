@@ -519,10 +519,7 @@ class BaseViewer {
 
           // In addition to 'disableAutoFetch' being set, also attempt to reduce
           // resource usage when loading *very* long/large documents.
-          if (
-            pdfDocument.loadingParams["disableAutoFetch"] ||
-            pagesCount > 7500
-          ) {
+          if (pdfDocument.loadingParams.disableAutoFetch || pagesCount > 7500) {
             // XXX: Printing is semi-broken with auto fetch disabled.
             this._pagesCapability.resolve();
             return;
