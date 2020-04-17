@@ -75,6 +75,7 @@
     }],
     "consistent-return": "error",
     "curly": ["error", "all"],
+    "dot-notation": "error",
     "eqeqeq": ["error", "always"],
     "no-caller": "error",
     "no-else-return": "error",

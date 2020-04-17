@@ -1116,15 +1116,15 @@ describe("api", function () {
       var promise = pdfDocument.getMetadata();
       promise
         .then(function ({ info, metadata, contentDispositionFilename }) {
-          expect(info["Title"]).toEqual("Basic API Test");
+          expect(info.Title).toEqual("Basic API Test");
           // Custom, non-standard, information dictionary entries.
-          expect(info["Custom"]).toEqual(undefined);
+          expect(info.Custom).toEqual(undefined);
           // The following are PDF.js specific, non-standard, properties.
-          expect(info["PDFFormatVersion"]).toEqual("1.7");
-          expect(info["IsLinearized"]).toEqual(false);
-          expect(info["IsAcroFormPresent"]).toEqual(false);
-          expect(info["IsXFAPresent"]).toEqual(false);
-          expect(info["IsCollectionPresent"]).toEqual(false);
+          expect(info.PDFFormatVersion).toEqual("1.7");
+          expect(info.IsLinearized).toEqual(false);
+          expect(info.IsAcroFormPresent).toEqual(false);
+          expect(info.IsXFAPresent).toEqual(false);
+          expect(info.IsCollectionPresent).toEqual(false);
 
           expect(metadata instanceof Metadata).toEqual(true);
           expect(metadata.get("dc:title")).toEqual("Basic API Test");
@@ -1142,11 +1142,11 @@ describe("api", function () {
           return pdfDoc.getMetadata();
         })
         .then(function ({ info, metadata, contentDispositionFilename }) {
-          expect(info["Creator"]).toEqual("TeX");
-          expect(info["Producer"]).toEqual("pdfeTeX-1.21a");
-          expect(info["CreationDate"]).toEqual("D:20090401163925-07'00'");
+          expect(info.Creator).toEqual("TeX");
+          expect(info.Producer).toEqual("pdfeTeX-1.21a");
+          expect(info.CreationDate).toEqual("D:20090401163925-07'00'");
           // Custom, non-standard, information dictionary entries.
-          const custom = info["Custom"];
+          const custom = info.Custom;
           expect(typeof custom === "object" && custom !== null).toEqual(true);
 
           expect(custom["PTEX.Fullbanner"]).toEqual(
@@ -1154,11 +1154,11 @@ describe("api", function () {
               "Version 3.141592-1.21a-2.2 (Web2C 7.5.4) kpathsea version 3.5.6"
           );
           // The following are PDF.js specific, non-standard, properties.
-          expect(info["PDFFormatVersion"]).toEqual("1.4");
-          expect(info["IsLinearized"]).toEqual(false);
-          expect(info["IsAcroFormPresent"]).toEqual(false);
-          expect(info["IsXFAPresent"]).toEqual(false);
-          expect(info["IsCollectionPresent"]).toEqual(false);
+          expect(info.PDFFormatVersion).toEqual("1.4");
+          expect(info.IsLinearized).toEqual(false);
+          expect(info.IsAcroFormPresent).toEqual(false);
+          expect(info.IsXFAPresent).toEqual(false);
+          expect(info.IsCollectionPresent).toEqual(false);
 
           expect(metadata).toEqual(null);
           expect(contentDispositionFilename).toEqual(null);
@@ -1176,11 +1176,11 @@ describe("api", function () {
         })
         .then(function ({ info, metadata, contentDispositionFilename }) {
           // The following are PDF.js specific, non-standard, properties.
-          expect(info["PDFFormatVersion"]).toEqual(null);
-          expect(info["IsLinearized"]).toEqual(false);
-          expect(info["IsAcroFormPresent"]).toEqual(false);
-          expect(info["IsXFAPresent"]).toEqual(false);
-          expect(info["IsCollectionPresent"]).toEqual(false);
+          expect(info.PDFFormatVersion).toEqual(null);
+          expect(info.IsLinearized).toEqual(false);
+          expect(info.IsAcroFormPresent).toEqual(false);
+          expect(info.IsXFAPresent).toEqual(false);
+          expect(info.IsCollectionPresent).toEqual(false);
 
           expect(metadata).toEqual(null);
           expect(contentDispositionFilename).toEqual(null);
