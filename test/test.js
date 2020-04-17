@@ -191,7 +191,7 @@ function examineRefImages() {
     server.port +
     "/test/resources/reftest-analyzer.html#web=/test/eq.log";
   var config = Object.assign({}, sessions[0].config);
-  config["headless"] = false;
+  config.headless = false;
   var browser = WebBrowser.create(config);
   browser.start(startUrl);
 }
@@ -271,7 +271,7 @@ function startRefTest(masterMode, showRefImages) {
 
     startTime = Date.now();
     startServer();
-    server.hooks["POST"].push(refTestPostHandler);
+    server.hooks.POST.push(refTestPostHandler);
     onAllSessionsClosed = finalize;
 
     startBrowsers("/test/test_slave.html", function (session) {
@@ -692,7 +692,7 @@ function refTestPostHandler(req, res) {
 function startUnitTest(testUrl, name) {
   var startTime = Date.now();
   startServer();
-  server.hooks["POST"].push(unitTestPostHandler);
+  server.hooks.POST.push(unitTestPostHandler);
   onAllSessionsClosed = function () {
     stopServer();
     var numRuns = 0,

@@ -263,41 +263,35 @@ const PDFViewerApplication = {
     const hashParams = parseQueryString(hash),
       waitOn = [];
 
-    if (
-      "disableworker" in hashParams &&
-      hashParams["disableworker"] === "true"
-    ) {
+    if ("disableworker" in hashParams && hashParams.disableworker === "true") {
       waitOn.push(loadFakeWorker());
     }
     if ("disablerange" in hashParams) {
-      AppOptions.set("disableRange", hashParams["disablerange"] === "true");
+      AppOptions.set("disableRange", hashParams.disablerange === "true");
     }
     if ("disablestream" in hashParams) {
-      AppOptions.set("disableStream", hashParams["disablestream"] === "true");
+      AppOptions.set("disableStream", hashParams.disablestream === "true");
     }
     if ("disableautofetch" in hashParams) {
       AppOptions.set(
         "disableAutoFetch",
-        hashParams["disableautofetch"] === "true"
+        hashParams.disableautofetch === "true"
       );
     }
     if ("disablefontface" in hashParams) {
-      AppOptions.set(
-        "disableFontFace",
-        hashParams["disablefontface"] === "true"
-      );
+      AppOptions.set("disableFontFace", hashParams.disablefontface === "true");
     }
     if ("disablehistory" in hashParams) {
-      AppOptions.set("disableHistory", hashParams["disablehistory"] === "true");
+      AppOptions.set("disableHistory", hashParams.disablehistory === "true");
     }
     if ("webgl" in hashParams) {
-      AppOptions.set("enableWebGL", hashParams["webgl"] === "true");
+      AppOptions.set("enableWebGL", hashParams.webgl === "true");
     }
     if ("verbosity" in hashParams) {
-      AppOptions.set("verbosity", hashParams["verbosity"] | 0);
+      AppOptions.set("verbosity", hashParams.verbosity | 0);
     }
     if ("textlayer" in hashParams) {
-      switch (hashParams["textlayer"]) {
+      switch (hashParams.textlayer) {
         case "off":
           AppOptions.set("textLayerMode", TextLayerMode.DISABLE);
           break;
@@ -305,7 +299,7 @@ const PDFViewerApplication = {
         case "shadow":
         case "hover":
           const viewer = this.appConfig.viewerContainer;
-          viewer.classList.add("textLayer-" + hashParams["textlayer"]);
+          viewer.classList.add("textLayer-" + hashParams.textlayer);
           break;
       }
     }
@@ -313,7 +307,7 @@ const PDFViewerApplication = {
       AppOptions.set("pdfBug", true);
       AppOptions.set("fontExtraProperties", true);
 
-      const enabled = hashParams["pdfbug"].split(",");
+      const enabled = hashParams.pdfbug.split(",");
       waitOn.push(loadAndEnablePDFBug(enabled));
     }
     // It is not possible to change locale for the (various) extension builds.
@@ -322,7 +316,7 @@ const PDFViewerApplication = {
         PDFJSDev.test("!PRODUCTION || GENERIC")) &&
       "locale" in hashParams
     ) {
-      AppOptions.set("locale", hashParams["locale"]);
+      AppOptions.set("locale", hashParams.locale);
     }
 
     return Promise.all(waitOn).catch(reason => {
@@ -1004,7 +998,7 @@ const PDFViewerApplication = {
       // To prevent displaying a partially filled loading bar permanently, we
       // hide it when no data has been loaded during a certain amount of time.
       const disableAutoFetch = this.pdfDocument
-        ? this.pdfDocument.loadingParams["disableAutoFetch"]
+        ? this.pdfDocument.loadingParams.disableAutoFetch
         : AppOptions.get("disableAutoFetch");
 
       if (disableAutoFetch && percent) {
@@ -1287,7 +1281,7 @@ const PDFViewerApplication = {
 
     let pdfTitle;
 
-    const infoTitle = info && info["Title"];
+    const infoTitle = info && info.Title;
     if (infoTitle) {
       pdfTitle = infoTitle;
     }

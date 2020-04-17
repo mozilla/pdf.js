@@ -209,8 +209,8 @@ var PDFViewerApplication = {
         }
       }
 
-      if (!pdfTitle && info && info["Title"]) {
-        pdfTitle = info["Title"];
+      if (!pdfTitle && info && info.Title) {
+        pdfTitle = info.Title;
       }
 
       if (pdfTitle) {

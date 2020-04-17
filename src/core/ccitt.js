@@ -473,17 +473,17 @@ const CCITTFaxDecoder = (function CCITTFaxDecoder() {
     this.source = source;
     this.eof = false;
 
-    this.encoding = options["K"] || 0;
-    this.eoline = options["EndOfLine"] || false;
-    this.byteAlign = options["EncodedByteAlign"] || false;
-    this.columns = options["Columns"] || 1728;
-    this.rows = options["Rows"] || 0;
-    let eoblock = options["EndOfBlock"];
+    this.encoding = options.K || 0;
+    this.eoline = options.EndOfLine || false;
+    this.byteAlign = options.EncodedByteAlign || false;
+    this.columns = options.Columns || 1728;
+    this.rows = options.Rows || 0;
+    let eoblock = options.EndOfBlock;
     if (eoblock === null || eoblock === undefined) {
       eoblock = true;
     }
     this.eoblock = eoblock;
-    this.black = options["BlackIs1"] || false;
+    this.black = options.BlackIs1 || false;
 
     this.codingLine = new Uint32Array(this.columns + 1);
     this.refLine = new Uint32Array(this.columns + 2);

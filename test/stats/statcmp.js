@@ -46,7 +46,7 @@ function group(stats, groupBy) {
     if (vals[key] === undefined) {
       vals[key] = [];
     }
-    vals[key].push(curStat["time"]);
+    vals[key].push(curStat.time);
   }
   return vals;
 }
@@ -58,14 +58,14 @@ function group(stats, groupBy) {
 function flatten(stats) {
   var rows = [];
   stats.forEach(function (curStat) {
-    curStat["stats"].forEach(function (s) {
+    curStat.stats.forEach(function (s) {
       rows.push({
-        browser: curStat["browser"],
-        page: curStat["page"],
-        pdf: curStat["pdf"],
-        round: curStat["round"],
-        stat: s["name"],
-        time: s["end"] - s["start"],
+        browser: curStat.browser,
+        page: curStat.page,
+        pdf: curStat.pdf,
+        round: curStat.round,
+        stat: s.name,
+        time: s.end - s.start,
       });
     });
   });

@@ -118,8 +118,8 @@ class PDFDocumentProperties {
       // just update the dialog immediately to avoid redundant lookups.
       if (
         this.fieldData &&
-        currentPageNumber === this.fieldData["_currentPageNumber"] &&
-        pagesRotation === this.fieldData["_pagesRotation"]
+        currentPageNumber === this.fieldData._currentPageNumber &&
+        pagesRotation === this.fieldData._pagesRotation
       ) {
         this._updateUI();
         return;
@@ -186,11 +186,11 @@ class PDFDocumentProperties {
           return this._parseFileSize(length);
         })
         .then(fileSize => {
-          if (fileSize === this.fieldData["fileSize"]) {
+          if (fileSize === this.fieldData.fileSize) {
             return; // The fileSize has already been correctly set.
           }
           const data = Object.assign(Object.create(null), this.fieldData);
-          data["fileSize"] = fileSize;
+          data.fileSize = fileSize;
 
           freezeFieldData(data);
           this._updateUI();
