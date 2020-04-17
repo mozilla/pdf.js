@@ -19,7 +19,7 @@ var TestReporter = function (browser, appPath) {
         }
       }
     };
-    json["browser"] = browser;
+    json.browser = browser;
     r.send(JSON.stringify(json));
   }
 
@@ -33,7 +33,7 @@ var TestReporter = function (browser, appPath) {
       description,
     };
     if (typeof error !== "undefined") {
-      message["error"] = error;
+      message.error = error;
     }
     send("/submit_task_results", message);
   }

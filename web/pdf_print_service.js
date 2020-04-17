@@ -66,7 +66,7 @@ function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
   this.printContainer = printContainer;
   this.l10n = l10n || NullL10n;
   this.disableCreateObjectURL =
-    pdfDocument.loadingParams["disableCreateObjectURL"];
+    pdfDocument.loadingParams.disableCreateObjectURL;
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
   this.scratchCanvas = document.createElement("canvas");

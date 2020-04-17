@@ -47,7 +47,7 @@ describe("node_stream", function () {
             response.end(`File ${request.url} not found!`);
             return;
           }
-          if (!request.headers["range"]) {
+          if (!request.headers.range) {
             const contentLength = stat.size;
             const stream = fs.createReadStream(filePath);
             response.writeHead(200, {
@@ -57,7 +57,7 @@ describe("node_stream", function () {
             });
             stream.pipe(response);
           } else {
-            const [start, end] = request.headers["range"]
+            const [start, end] = request.headers.range
               .split("=")[1]
               .split("-")
               .map(x => {
