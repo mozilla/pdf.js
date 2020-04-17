@@ -107,7 +107,7 @@ describe("unicode", function () {
     });
 
     it("should not normalize standard characters", function () {
-      expect(NormalizedUnicodes["A"]).toEqual(undefined);
+      expect(NormalizedUnicodes.A).toEqual(undefined);
     });
   });
 

@@ -171,7 +171,7 @@ function createWebpackConfig(defines, output) {
   var bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
-    TESTING: defines.TESTING || process.env["TESTING"] === "true",
+    TESTING: defines.TESTING || process.env.TESTING === "true",
   });
   var licenseHeaderLibre = fs
     .readFileSync("./src/license_header_libre.js")
@@ -414,9 +414,9 @@ function createTestSource(testsName, bot) {
     console.log();
     console.log("### Running " + testsName + " tests");
 
-    var PDF_TEST = process.env["PDF_TEST"] || "test_manifest.json";
+    var PDF_TEST = process.env.PDF_TEST || "test_manifest.json";
     var PDF_BROWSERS =
-      process.env["PDF_BROWSERS"] ||
+      process.env.PDF_BROWSERS ||
       "resources/browser_manifests/browser_manifest.json";
 
     if (!checkFile("test/" + PDF_BROWSERS)) {
@@ -467,7 +467,7 @@ function makeRef(done, bot) {
   console.log("### Creating reference images");
 
   var PDF_BROWSERS =
-    process.env["PDF_BROWSERS"] ||
+    process.env.PDF_BROWSERS ||
     "resources/browser_manifests/browser_manifest.json";
 
   if (!checkFile("test/" + PDF_BROWSERS)) {
@@ -1201,7 +1201,7 @@ function buildLib(defines, dir) {
   var bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
-    TESTING: process.env["TESTING"] === "true",
+    TESTING: process.env.TESTING === "true",
   });
   var ctx = {
     rootPath: __dirname,
@@ -1287,7 +1287,7 @@ gulp.task(
 );
 
 gulp.task("testing-pre", function (done) {
-  process.env["TESTING"] = "true";
+  process.env.TESTING = "true";
   done();
 });
 
@@ -1353,7 +1353,7 @@ gulp.task("baseline", function (done) {
   console.log();
   console.log("### Creating baseline environment");
 
-  var baselineCommit = process.env["BASELINE"];
+  var baselineCommit = process.env.BASELINE;
   if (!baselineCommit) {
     done(new Error("Missing baseline commit. Specify the BASELINE variable."));
     return;
@@ -1552,7 +1552,7 @@ gulp.task("wintersmith", function (done) {
 
 gulp.task("gh-pages-git", function (done) {
   var VERSION = getVersionJSON().version;
-  var reason = process.env["PDFJS_UPDATE_REASON"];
+  var reason = process.env.PDFJS_UPDATE_REASON;
 
   safeSpawnSync("git", ["init"], { cwd: GH_PAGES_DIR });
   safeSpawnSync("git", ["remote", "add", "origin", REPO], {
@@ -1720,7 +1720,7 @@ gulp.task(
   gulp.series("dist-pre", function (done) {
     var distPath = DIST_DIR;
     var opts = {};
-    var installPath = process.env["PDFJS_INSTALL_PATH"];
+    var installPath = process.env.PDFJS_INSTALL_PATH;
     if (installPath) {
       opts.cwd = installPath;
       distPath = path.relative(installPath, distPath);
@@ -1738,7 +1738,7 @@ gulp.task(
     console.log();
     console.log("### Committing changes");
 
-    var reason = process.env["PDFJS_UPDATE_REASON"];
+    var reason = process.env.PDFJS_UPDATE_REASON;
     // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
     if (typeof reason === "string") {
       var reasonParts = /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(
