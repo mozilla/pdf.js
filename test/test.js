@@ -617,11 +617,7 @@ function refTestPostHandler(req, res) {
 
     var session;
     if (pathname === "/tellMeToQuit") {
-      // finding by path
-      var browserPath = parsedUrl.query.path;
-      session = sessions.filter(function (curSession) {
-        return curSession.config.path === browserPath;
-      })[0];
+      session = getSession(parsedUrl.query.browser);
       monitorBrowserTimeout(session, null);
       closeSession(session.name);
       return;

@@ -300,7 +300,6 @@ var Driver = (function DriverClosure() {
     var parameters = this._getQueryStringParameters();
     this.browser = parameters.browser;
     this.manifestFile = parameters.manifestFile;
-    this.appPath = parameters.path;
     this.delay = parameters.delay | 0 || 0;
     this.inFlightRequests = 0;
     this.testFilter = parameters.testFilter
@@ -340,13 +339,7 @@ var Driver = (function DriverClosure() {
         );
       };
       this._info("User agent: " + navigator.userAgent);
-      this._log(
-        'Harness thinks this browser is "' +
-          this.browser +
-          '" with path "' +
-          this.appPath +
-          '"\n'
-      );
+      this._log(`Harness thinks this browser is ${this.browser}\n`);
       this._log('Fetching manifest "' + this.manifestFile + '"... ');
 
       var r = new XMLHttpRequest();
@@ -679,7 +672,7 @@ var Driver = (function DriverClosure() {
 
       // Send the quit request
       var r = new XMLHttpRequest();
-      r.open("POST", "/tellMeToQuit?path=" + escape(this.appPath), false);
+      r.open("POST", `/tellMeToQuit?browser=${escape(this.browser)}`, false);
       r.onreadystatechange = function (e) {
         if (r.readyState === 4) {
           window.close();
