@@ -1,7 +1,7 @@
 "use strict";
 
 // eslint-disable-next-line no-unused-vars
-var TestReporter = function (browser, appPath) {
+var TestReporter = function (browser) {
   function send(action, json, cb) {
     var r = new XMLHttpRequest();
     // (The POST URI is ignored atm.)
@@ -39,7 +39,7 @@ var TestReporter = function (browser, appPath) {
   }
 
   function sendQuitRequest() {
-    send("/tellMeToQuit?path=" + escape(appPath), {});
+    send(`/tellMeToQuit?browser=${escape(browser)}`, {});
   }
 
   this.now = function () {
