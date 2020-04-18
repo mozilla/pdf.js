@@ -43,6 +43,7 @@ function parseOptions() {
       "fontTest",
       "noPrompts",
       "noDownload",
+      "noChrome",
       "downloadOnly",
       "strictVerify",
     ])
@@ -77,6 +78,7 @@ function parseOptions() {
     .describe("unitTest", "Run the unit tests.")
     .describe("fontTest", "Run the font tests.")
     .describe("noDownload", "Skips test PDFs downloading.")
+    .describe("noChrome", "Skip Chrome when running tests.")
     .describe("downloadOnly", "Download test PDFs without running the tests.")
     .describe("strictVerify", "Error if verifying the manifest files fails.")
     .describe("statsFile", "The file where to store stats.")
@@ -799,8 +801,10 @@ async function startBrowser(browserName, startUrl) {
 }
 
 function startBrowsers(rootUrl, initSessionCallback) {
+  const browserNames = options.noChrome ? ["firefox"] : ["firefox", "chrome"];
+
   sessions = [];
-  for (const browserName of ["chrome", "firefox"]) {
+  for (const browserName of browserNames) {
     // The session must be pushed first and augmented with the browser once
     // it's initialized. The reason for this is that browser initialization
     // takes more time when the browser is not found locally yet and we don't
