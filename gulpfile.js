@@ -436,6 +436,9 @@ function createTestSource(testsName, bot) {
     if (bot) {
       args.push("--strictVerify");
     }
+    if (process.argv.includes("--noChrome")) {
+      args.push("--noChrome");
+    }
 
     var testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
     testProcess.on("close", function (code) {
@@ -454,6 +457,10 @@ function makeRef(done, bot) {
   if (bot) {
     args.push("--noPrompts", "--strictVerify");
   }
+  if (process.argv.includes("--noChrome")) {
+    args.push("--noChrome");
+  }
+
   var testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
   testProcess.on("close", function (code) {
     done();
