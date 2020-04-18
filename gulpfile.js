@@ -415,21 +415,6 @@ function createTestSource(testsName, bot) {
     console.log("### Running " + testsName + " tests");
 
     var PDF_TEST = process.env.PDF_TEST || "test_manifest.json";
-    var PDF_BROWSERS =
-      process.env.PDF_BROWSERS ||
-      "resources/browser_manifests/browser_manifest.json";
-
-    if (!checkFile("test/" + PDF_BROWSERS)) {
-      console.log(
-        "Browser manifest file test/" + PDF_BROWSERS + " does not exist."
-      );
-      console.log(
-        "Copy and adjust the example in test/resources/browser_manifests."
-      );
-      this.emit("error", new Error("Missing manifest file"));
-      return null;
-    }
-
     var args = ["test.js"];
     switch (testsName) {
       case "browser":
@@ -448,7 +433,6 @@ function createTestSource(testsName, bot) {
         this.emit("error", new Error("Unknown name: " + testsName));
         return null;
     }
-    args.push("--browserManifestFile=" + PDF_BROWSERS);
     if (bot) {
       args.push("--strictVerify");
     }
@@ -466,26 +450,10 @@ function makeRef(done, bot) {
   console.log();
   console.log("### Creating reference images");
 
-  var PDF_BROWSERS =
-    process.env.PDF_BROWSERS ||
-    "resources/browser_manifests/browser_manifest.json";
-
-  if (!checkFile("test/" + PDF_BROWSERS)) {
-    console.log(
-      "Browser manifest file test/" + PDF_BROWSERS + " does not exist."
-    );
-    console.log(
-      "Copy and adjust the example in test/resources/browser_manifests."
-    );
-    done(new Error("Missing manifest file"));
-    return;
-  }
-
   var args = ["test.js", "--masterMode"];
   if (bot) {
     args.push("--noPrompts", "--strictVerify");
   }
-  args.push("--browserManifestFile=" + PDF_BROWSERS);
   var testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
   testProcess.on("close", function (code) {
     done();
