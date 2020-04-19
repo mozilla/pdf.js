@@ -1068,7 +1068,7 @@ var Font = (function FontClosure() {
     var version = stream.getUint16();
     // TODO verify all OS/2 tables fields, but currently we validate only those
     // that give us issues
-    stream.getBytes(60); // skipping type, misc sizes, panose, unicode ranges
+    stream.skip(60); // skipping type, misc sizes, panose, unicode ranges
     var selection = stream.getUint16();
     if (version < 4 && selection & 0x0300) {
       return false;
@@ -1078,7 +1078,7 @@ var Font = (function FontClosure() {
     if (firstChar > lastChar) {
       return false;
     }
-    stream.getBytes(6); // skipping sTypoAscender/Descender/LineGap
+    stream.skip(6); // skipping sTypoAscender/Descender/LineGap
     var usWinAscent = stream.getUint16();
     if (usWinAscent === 0) {
       // makes font unreadable by windows
@@ -1689,7 +1689,7 @@ var Font = (function FontClosure() {
           // re-creating the table in format 4 since the encoding
           // might be changed
           var segCount = file.getUint16() >> 1;
-          file.getBytes(6); // skipping range fields
+          file.skip(6); // skipping range fields
           var segIndex,
             segments = [];
           for (segIndex = 0; segIndex < segCount; segIndex++) {
@@ -2162,7 +2162,7 @@ var Font = (function FontClosure() {
           end = start + length;
         var version = font.getInt32();
         // skip rest to the tables
-        font.getBytes(28);
+        font.skip(28);
 
         var glyphNames;
         var valid = true;
