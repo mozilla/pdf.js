@@ -1590,7 +1590,7 @@ var Font = (function FontClosure() {
         var start = (file.start ? file.start : 0) + cmap.offset;
         file.pos = start;
 
-        file.getUint16(); // version
+        file.skip(2); // version
         var numTables = file.getUint16();
 
         var potentialTable;
@@ -1665,8 +1665,7 @@ var Font = (function FontClosure() {
         }
 
         var format = file.getUint16();
-        file.getUint16(); // length
-        file.getUint16(); // language
+        file.skip(2 + 2); // length + language
 
         var hasShortCmap = false;
         var mappings = [];
@@ -1695,7 +1694,7 @@ var Font = (function FontClosure() {
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segments.push({ end: file.getUint16() });
           }
-          file.getUint16();
+          file.skip(2);
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segments[segIndex].start = file.getUint16();
           }
