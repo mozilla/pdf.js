@@ -2581,6 +2581,13 @@ function webViewerKeyDown(evt) {
           eventBus.dispatch("download", { source: window });
           handled = true;
           break;
+
+        case 79: // o
+          if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+            eventBus.dispatch("openfile", { source: window });
+            handled = true;
+          }
+          break;
       }
     }
   }
