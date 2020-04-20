@@ -1063,23 +1063,23 @@ var Font = (function FontClosure() {
     );
   }
 
-  function validateOS2Table(os2) {
-    var stream = new Stream(os2.data);
-    var version = stream.getUint16();
+  function validateOS2Table(os2, file) {
+    file.pos = (file.start || 0) + os2.offset;
+    var version = file.getUint16();
     // TODO verify all OS/2 tables fields, but currently we validate only those
     // that give us issues
-    stream.getBytes(60); // skipping type, misc sizes, panose, unicode ranges
-    var selection = stream.getUint16();
+    file.skip(60); // skipping type, misc sizes, panose, unicode ranges
+    var selection = file.getUint16();
     if (version < 4 && selection & 0x0300) {
       return false;
     }
-    var firstChar = stream.getUint16();
-    var lastChar = stream.getUint16();
+    var firstChar = file.getUint16();
+    var lastChar = file.getUint16();
     if (firstChar > lastChar) {
       return false;
     }
-    stream.getBytes(6); // skipping sTypoAscender/Descender/LineGap
-    var usWinAscent = stream.getUint16();
+    file.skip(6); // skipping sTypoAscender/Descender/LineGap
+    var usWinAscent = file.getUint16();
     if (usWinAscent === 0) {
       // makes font unreadable by windows
       return false;
@@ -1590,7 +1590,7 @@ var Font = (function FontClosure() {
         var start = (file.start ? file.start : 0) + cmap.offset;
         file.pos = start;
 
-        file.getUint16(); // version
+        file.skip(2); // version
         var numTables = file.getUint16();
 
         var potentialTable;
@@ -1665,8 +1665,7 @@ var Font = (function FontClosure() {
         }
 
         var format = file.getUint16();
-        file.getUint16(); // length
-        file.getUint16(); // language
+        file.skip(2 + 2); // length + language
 
         var hasShortCmap = false;
         var mappings = [];
@@ -1689,13 +1688,13 @@ var Font = (function FontClosure() {
           // re-creating the table in format 4 since the encoding
           // might be changed
           var segCount = file.getUint16() >> 1;
-          file.getBytes(6); // skipping range fields
+          file.skip(6); // skipping range fields
           var segIndex,
             segments = [];
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segments.push({ end: file.getUint16() });
           }
-          file.getUint16();
+          file.skip(2);
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segments[segIndex].start = file.getUint16();
           }
@@ -2162,7 +2161,7 @@ var Font = (function FontClosure() {
           end = start + length;
         var version = font.getInt32();
         // skip rest to the tables
-        font.getBytes(28);
+        font.skip(28);
 
         var glyphNames;
         var valid = true;
@@ -2917,7 +2916,7 @@ var Font = (function FontClosure() {
         data: createCmapTable(newMapping.charCodeToGlyphId, numGlyphsOut),
       };
 
-      if (!tables["OS/2"] || !validateOS2Table(tables["OS/2"])) {
+      if (!tables["OS/2"] || !validateOS2Table(tables["OS/2"], font)) {
         tables["OS/2"] = {
           tag: "OS/2",
           data: createOS2Table(
