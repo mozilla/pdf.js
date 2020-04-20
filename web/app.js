@@ -229,7 +229,11 @@ const PDFViewerApplication = {
    * @private
    */
   async _readPreferences() {
-    if (AppOptions.get("disablePreferences") === true) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      AppOptions.get("disablePreferences")
+    ) {
       // Give custom implementations of the default viewer a simpler way to
       // opt-out of having the `Preferences` override existing `AppOptions`.
       return;
@@ -328,9 +332,11 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeL10n() {
-    this.l10n = this.externalServices.createL10n({
-      locale: AppOptions.get("locale"),
-    });
+    this.l10n = this.externalServices.createL10n(
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")
+        ? { locale: AppOptions.get("locale") }
+        : null
+    );
     const dir = await this.l10n.getDirection();
     document.getElementsByTagName("html")[0].dir = dir;
   },
