@@ -53,14 +53,14 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  /**
+   * The `disablePreferences` is, conditionally, defined below.
+   */
   enablePermissions: {
     /** @type {boolean} */
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  /**
-   * The `disablePreferences` is, conditionally, defined below.
-   */
   enablePrintAutoRotate: {
     /** @type {boolean} */
     value: false,
@@ -110,9 +110,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  /**
-   * The `printResolution` is, conditionally, defined below.
-   */
+  printResolution: {
+    /** @type {number} */
+    value: 150,
+    kind: OptionKind.VIEWER,
+  },
   renderer: {
     /** @type {string} */
     value: "canvas",
@@ -250,11 +252,6 @@ if (
   defaultOptions.locale = {
     /** @type {string} */
     value: typeof navigator !== "undefined" ? navigator.language : "en-US",
-    kind: OptionKind.VIEWER,
-  };
-  defaultOptions.printResolution = {
-    /** @type {number} */
-    value: 150,
     kind: OptionKind.VIEWER,
   };
 }
