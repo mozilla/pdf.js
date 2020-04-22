@@ -1427,6 +1427,16 @@ describe("api", function () {
       expect(viewport.transform).toEqual([1, 0, 0, -1, 0, 841.89]);
       expect(dontFlipViewport.transform).toEqual([1, 0, -0, 1, 0, 0]);
     });
+    it("gets viewport with invalid rotation", function () {
+      expect(function () {
+        page.getViewport({ scale: 1, rotation: 45 });
+      }).toThrow(
+        new Error(
+          "PageViewport: Invalid rotation, must be a multiple of 90 degrees."
+        )
+      );
+    });
+
     it("gets annotations", function (done) {
       var defaultPromise = page.getAnnotations().then(function (data) {
         expect(data.length).toEqual(4);
