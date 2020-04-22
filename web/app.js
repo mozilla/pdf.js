@@ -817,7 +817,7 @@ const PDFViewerApplication = {
 
         return loadingErrorMessage.then(msg => {
           this.error(msg, { message });
-          throw new Error(msg);
+          throw exception;
         });
       }
     );
