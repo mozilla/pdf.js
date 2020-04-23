@@ -948,6 +948,12 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
 
     addFontStyle(fontObj) {
+      if (!fontObj.data) {
+        throw new Error(
+          "addFontStyle: No font data available, " +
+            'ensure that the "fontExtraProperties" API parameter is set.'
+        );
+      }
       if (!this.cssStyle) {
         this.cssStyle = this.svgFactory.createElement("svg:style");
         this.cssStyle.setAttributeNS(null, "type", "text/css");
@@ -972,7 +978,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
       if (
         this.embedFonts &&
-        fontObj.data &&
+        !fontObj.missingFile &&
         !this.embeddedFonts[fontObj.loadedName]
       ) {
         this.addFontStyle(fontObj);

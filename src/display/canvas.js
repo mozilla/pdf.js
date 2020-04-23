@@ -1498,7 +1498,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var isAddToPathSet = !!(
         textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG
       );
-      const patternFill = current.patternFill && font.data;
+      const patternFill = current.patternFill && !font.missingFile;
 
       var addToPath;
       if (font.disableFontFace || isAddToPathSet || patternFill) {
