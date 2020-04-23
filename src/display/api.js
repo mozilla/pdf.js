@@ -2244,20 +2244,22 @@ class WorkerTransport {
             fontRegistry,
           });
 
-          this.fontLoader.bind(font).then(
-            () => {
+          this.fontLoader
+            .bind(font)
+            .catch(reason => {
+              return messageHandler.sendWithPromise("FontFallback", { id });
+            })
+            .finally(() => {
+              if (!params.fontExtraProperties && font.data) {
+                // Immediately release the `font.data` property once the font
+                // has been attached to the DOM, since it's no longer needed,
+                // rather than waiting for a `PDFDocumentProxy.cleanup` call.
+                // Since `font.data` could be very large, e.g. in some cases
+                // multiple megabytes, this will help reduce memory usage.
+                font.data = null;
+              }
               this.commonObjs.resolve(id, font);
-            },
-            reason => {
-              messageHandler
-                .sendWithPromise("FontFallback", {
-                  id,
-                })
-                .finally(() => {
-                  this.commonObjs.resolve(id, font);
-                });
-            }
-          );
+            });
           break;
         case "FontPath":
         case "FontType3Res":
