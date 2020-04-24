@@ -14,7 +14,6 @@
  */
 
 import {
-  createObjectURL,
   createPromiseCapability,
   getFilenameFromUrl,
   removeNullCharacters,
@@ -86,7 +85,9 @@ class PDFAttachmentViewer {
     let blobUrl;
     button.onclick = function () {
       if (!blobUrl) {
-        blobUrl = createObjectURL(content, "application/pdf");
+        blobUrl = URL.createObjectURL(
+          new Blob([content], { type: "application/pdf" })
+        );
       }
       let viewerUrl;
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
