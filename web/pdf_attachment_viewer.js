@@ -14,7 +14,6 @@
  */
 
 import {
-  createObjectURL,
   createPromiseCapability,
   getFilenameFromUrl,
   removeNullCharacters,
@@ -84,14 +83,19 @@ class PDFAttachmentViewer {
       );
     }
     let blobUrl;
-    button.onclick = function () {
+    button.onclick = () => {
       if (!blobUrl) {
-        blobUrl = createObjectURL(content, "application/pdf");
+        blobUrl = URL.createObjectURL(
+          new Blob([content], { type: "application/pdf" })
+        );
       }
       let viewerUrl;
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         // The current URL is the viewer, let's use it and append the file.
         viewerUrl = "?file=" + encodeURIComponent(blobUrl + "#" + filename);
+      } else if (PDFJSDev.test("MOZCENTRAL")) {
+        // Let Firefox's content handler catch the URL and display the PDF.
+        viewerUrl = blobUrl + "?" + encodeURIComponent(filename);
       } else if (PDFJSDev.test("CHROME")) {
         // In the Chrome extension, the URL is rewritten using the history API
         // in viewer.js, so an absolute URL must be generated.
@@ -100,11 +104,17 @@ class PDFAttachmentViewer {
           chrome.runtime.getURL("/content/web/viewer.html") +
           "?file=" +
           encodeURIComponent(blobUrl + "#" + filename);
-      } else if (PDFJSDev.test("MOZCENTRAL")) {
-        // Let Firefox's content handler catch the URL and display the PDF.
-        viewerUrl = blobUrl + "?" + encodeURIComponent(filename);
       }
-      window.open(viewerUrl);
+      try {
+        window.open(viewerUrl);
+      } catch (ex) {
+        console.error(`_bindPdfLink: ${ex}`);
+        // Release the `blobUrl`, since opening it failed...
+        URL.revokeObjectURL(blobUrl);
+        blobUrl = null;
+        // ... and fallback to downloading the PDF file.
+        this.downloadManager.downloadData(content, filename, "application/pdf");
+      }
       return false;
     };
   }
