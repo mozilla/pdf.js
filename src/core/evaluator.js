@@ -549,13 +549,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         !softMask &&
         !mask &&
         image instanceof JpegStream &&
+        image.maybeValidDimensions &&
         NativeImageDecoder.isSupported(
           image,
           this.xref,
           resources,
           this.pdfFunctionFactory
-        ) &&
-        image.maybeValidDimensions
+        )
       ) {
         // These JPEGs don't need any more processing so we can just send it.
         return this.handler
