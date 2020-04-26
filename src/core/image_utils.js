@@ -36,13 +36,13 @@ class NativeImageDecoder {
   canDecode(image) {
     return (
       image instanceof JpegStream &&
+      image.maybeValidDimensions &&
       NativeImageDecoder.isDecodable(
         image,
         this.xref,
         this.resources,
         this.pdfFunctionFactory
-      ) &&
-      image.maybeValidDimensions
+      )
     );
   }
 
