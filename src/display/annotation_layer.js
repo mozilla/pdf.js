@@ -456,6 +456,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       }
 
       element.disabled = this.data.readOnly;
+      element.name = this.data.fieldName;
 
       if (this.data.maxLen !== null) {
         element.maxLength = this.data.maxLen;
@@ -545,6 +546,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const element = document.createElement("input");
     element.disabled = this.data.readOnly;
     element.type = "checkbox";
+    element.name = this.data.fieldName;
     if (this.data.fieldValue && this.data.fieldValue !== "Off") {
       element.setAttribute("checked", true);
     }
@@ -620,6 +622,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
+    selectElement.name = this.data.fieldName;
 
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
