@@ -119,10 +119,7 @@ function initializePDFJS(callback) {
   env.addReporter(htmlReporter);
 
   if (queryString.getParam("browser")) {
-    var testReporter = new TestReporter(
-      queryString.getParam("browser"),
-      queryString.getParam("path")
-    );
+    var testReporter = new TestReporter(queryString.getParam("browser"));
     env.addReporter(testReporter);
   }
 

@@ -18,10 +18,10 @@
 "use strict";
 
 var WebServer = require("./webserver.js").WebServer;
-var WebBrowser = require("./webbrowser.js").WebBrowser;
 var path = require("path");
 var fs = require("fs");
 var os = require("os");
+var puppeteer = require("puppeteer");
 var url = require("url");
 var testUtils = require("./testutils.js");
 
@@ -43,19 +43,11 @@ function parseOptions() {
       "fontTest",
       "noPrompts",
       "noDownload",
+      "noChrome",
       "downloadOnly",
       "strictVerify",
     ])
-    .string([
-      "manifestFile",
-      "browser",
-      "browserManifestFile",
-      "port",
-      "statsFile",
-      "statsDelay",
-      "testfilter",
-    ])
-    .alias("browser", "b")
+    .string(["manifestFile", "port", "statsFile", "statsDelay", "testfilter"])
     .alias("help", "h")
     .alias("masterMode", "m")
     .alias("testfilter", "t")
@@ -70,12 +62,6 @@ function parseOptions() {
       "A path to JSON file in the form of test_manifest.json"
     )
     .default("manifestFile", "test_manifest.json")
-    .describe("browser", "The path to a single browser ")
-    .describe(
-      "browserManifestFile",
-      "A path to JSON file in the form of " +
-        "those found in resources/browser_manifests/"
-    )
     .describe(
       "reftest",
       "Automatically start reftest showing comparison " +
@@ -84,14 +70,15 @@ function parseOptions() {
     .describe("testfilter", "Run specific reftest(s).")
     .default("testfilter", [])
     .example(
-      "$0 --b=firefox -t=issue5567 -t=issue5909",
-      "Run the reftest identified by issue5567 and issue5909 in Firefox."
+      "$0 -t=issue5567 -t=issue5909",
+      "Run the reftest identified by issue5567 and issue5909."
     )
     .describe("port", "The port the HTTP server should listen on.")
     .default("port", 0)
     .describe("unitTest", "Run the unit tests.")
     .describe("fontTest", "Run the font tests.")
     .describe("noDownload", "Skips test PDFs downloading.")
+    .describe("noChrome", "Skip Chrome when running tests.")
     .describe("downloadOnly", "Download test PDFs without running the tests.")
     .describe("strictVerify", "Error if verifying the manifest files fails.")
     .describe("statsFile", "The file where to store stats.")
@@ -119,12 +106,6 @@ function parseOptions() {
         return !argv.masterMode || argv.manifestFile === "test_manifest.json";
       }, "when --masterMode is specified --manifestFile shall be equal " +
         "test_manifest.json")
-    )
-    .check(
-      describeCheck(function (argv) {
-        return !argv.browser || !argv.browserManifestFile;
-      }, "--browser and --browserManifestFile must not be specified at the " +
-        "same time.")
     );
   var result = yargs.argv;
   if (result.help) {
@@ -184,16 +165,14 @@ function updateRefImages() {
 
 function examineRefImages() {
   startServer();
-  var startUrl =
-    "http://" +
-    server.host +
-    ":" +
-    server.port +
-    "/test/resources/reftest-analyzer.html#web=/test/eq.log";
-  var config = Object.assign({}, sessions[0].config);
-  config.headless = false;
-  var browser = WebBrowser.create(config);
-  browser.start(startUrl);
+
+  const startUrl = `http://${host}:${server.port}/test/resources/reftest-analyzer.html#web=/test/eq.log`;
+  startBrowser("firefox", startUrl).then(function (browser) {
+    browser.on("disconnected", function () {
+      stopServer();
+      process.exit(0);
+    });
+  });
 }
 
 function startRefTest(masterMode, showRefImages) {
@@ -274,7 +253,8 @@ function startRefTest(masterMode, showRefImages) {
     server.hooks.POST.push(refTestPostHandler);
     onAllSessionsClosed = finalize;
 
-    startBrowsers("/test/test_slave.html", function (session) {
+    const startUrl = `http://${host}:${server.port}/test/test_slave.html`;
+    startBrowsers(startUrl, function (session) {
       session.masterMode = masterMode;
       session.taskResults = {};
       session.tasks = {};
@@ -617,11 +597,7 @@ function refTestPostHandler(req, res) {
 
     var session;
     if (pathname === "/tellMeToQuit") {
-      // finding by path
-      var browserPath = parsedUrl.query.path;
-      session = sessions.filter(function (curSession) {
-        return curSession.config.path === browserPath;
-      })[0];
+      session = getSession(parsedUrl.query.browser);
       monitorBrowserTimeout(session, null);
       closeSession(session.name);
       return;
@@ -712,7 +688,9 @@ function startUnitTest(testUrl, name) {
     var runtime = (Date.now() - startTime) / 1000;
     console.log(name + " tests runtime was " + runtime.toFixed(1) + " seconds");
   };
-  startBrowsers(testUrl, function (session) {
+
+  const startUrl = `http://${host}:${server.port}${testUrl}`;
+  startBrowsers(startUrl, function (session) {
     session.numRuns = 0;
     session.numErrors = 0;
   });
@@ -784,52 +762,84 @@ function unitTestPostHandler(req, res) {
   return true;
 }
 
-function startBrowsers(testUrl, initSessionCallback) {
-  var browsers;
-  if (options.browserManifestFile) {
-    browsers = JSON.parse(fs.readFileSync(options.browserManifestFile));
-  } else if (options.browser) {
-    var browserPath = options.browser;
-    var name = path.basename(browserPath, path.extname(browserPath));
-    browsers = [{ name: name, path: browserPath }];
-  } else {
-    console.error("Specify either browser or browserManifestFile.");
-    process.exit(1);
-  }
-  sessions = [];
-  browsers.forEach(function (b) {
-    var browser = WebBrowser.create(b);
-    var startUrl =
-      getServerBaseAddress() +
-      testUrl +
-      "?browser=" +
-      encodeURIComponent(b.name) +
-      "&manifestFile=" +
-      encodeURIComponent("/test/" + options.manifestFile) +
-      "&testFilter=" +
-      JSON.stringify(options.testfilter) +
-      "&path=" +
-      encodeURIComponent(b.path) +
-      "&delay=" +
-      options.statsDelay +
-      "&masterMode=" +
-      options.masterMode;
-    browser.start(startUrl);
-    var session = {
-      name: b.name,
-      config: b,
-      browser: browser,
-      closed: false,
-    };
-    if (initSessionCallback) {
-      initSessionCallback(session);
-    }
-    sessions.push(session);
+async function startBrowser(browserName, startUrl) {
+  const revisions = require("puppeteer/package.json").puppeteer;
+  const wantedRevision =
+    browserName === "chrome"
+      ? revisions.chrome_revision
+      : revisions.firefox_revision;
+
+  // Remove other revisions than the one we want to use. Updating Puppeteer can
+  // cause a new revision to be used, and not removing older revisions causes
+  // the disk to fill up.
+  const browserFetcher = puppeteer.createBrowserFetcher({
+    product: browserName,
   });
+  const localRevisions = await browserFetcher.localRevisions();
+  if (localRevisions.length > 1) {
+    for (const localRevision of localRevisions) {
+      if (localRevision !== wantedRevision) {
+        console.log(`Removing old ${browserName} revision ${localRevision}...`);
+        await browserFetcher.remove(localRevision);
+      }
+    }
+  }
+
+  const browser = await puppeteer.launch({
+    product: browserName,
+    headless: false,
+    defaultViewport: null,
+    // Firefox must complete its execution before starting, mainly on Windows.
+    // Refer to https://github.com/puppeteer/puppeteer/issues/5376 and
+    // https://phabricator.services.mozilla.com/D6702.
+    args: browserName === "firefox" ? ["--wait-for-browser"] : [],
+  });
+  const pages = await browser.pages();
+  const page = pages[0];
+  await page.goto(startUrl, { timeout: 0 });
+  return browser;
 }
 
-function getServerBaseAddress() {
-  return "http://" + host + ":" + server.port;
+function startBrowsers(rootUrl, initSessionCallback) {
+  const browserNames = options.noChrome ? ["firefox"] : ["firefox", "chrome"];
+
+  sessions = [];
+  for (const browserName of browserNames) {
+    // The session must be pushed first and augmented with the browser once
+    // it's initialized. The reason for this is that browser initialization
+    // takes more time when the browser is not found locally yet and we don't
+    // want `onAllSessionsClosed` to trigger if one of the browsers is done
+    // and the other one is still initializing, since that would mean that
+    // once the browser is initialized the server would have stopped already.
+    // Pushing the session first ensures that `onAllSessionsClosed` will
+    // only trigger once all browsers are initialized and done.
+    const session = {
+      name: browserName,
+      browser: undefined,
+      closed: false,
+    };
+    sessions.push(session);
+
+    const queryParameters =
+      `?browser=${encodeURIComponent(browserName)}` +
+      `&manifestFile=${encodeURIComponent("/test/" + options.manifestFile)}` +
+      `&testFilter=${JSON.stringify(options.testfilter)}` +
+      `&delay=${options.statsDelay}` +
+      `&masterMode=${options.masterMode}`;
+    const startUrl = rootUrl + queryParameters;
+
+    startBrowser(browserName, startUrl)
+      .then(function (browser) {
+        session.browser = browser;
+        if (initSessionCallback) {
+          initSessionCallback(session);
+        }
+      })
+      .catch(function (ex) {
+        console.log(`Error while starting ${browserName}: ${ex}`);
+        closeSession(browserName);
+      });
+  }
 }
 
 function startServer() {
@@ -851,22 +861,24 @@ function getSession(browser) {
   })[0];
 }
 
-function closeSession(browser) {
-  var i = 0;
-  while (i < sessions.length && sessions[i].name !== browser) {
-    i++;
-  }
-  if (i < sessions.length) {
-    var session = sessions[i];
-    session.browser.stop(function () {
-      session.closed = true;
-      var allClosed = sessions.every(function (s) {
-        return s.closed;
-      });
-      if (allClosed && onAllSessionsClosed) {
-        onAllSessionsClosed();
+async function closeSession(browser) {
+  for (const session of sessions) {
+    if (session.name !== browser) {
+      continue;
+    }
+    if (session.browser !== undefined) {
+      for (const page of await session.browser.pages()) {
+        await page.close();
       }
+      await session.browser.close();
+    }
+    session.closed = true;
+    const allClosed = sessions.every(function (s) {
+      return s.closed;
     });
+    if (allClosed && onAllSessionsClosed) {
+      onAllSessionsClosed();
+    }
   }
 }
 
@@ -900,8 +912,6 @@ function main() {
 
   if (options.downloadOnly) {
     ensurePDFsDownloaded(function () {});
-  } else if (!options.browser && !options.browserManifestFile) {
-    startServer();
   } else if (options.unitTest) {
     // Allows linked PDF files in unit-tests as well.
     ensurePDFsDownloaded(function () {
