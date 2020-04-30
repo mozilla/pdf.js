@@ -559,7 +559,7 @@ var WorkerMessageHandler = {
                 // For compatibility with older behavior, generating unknown
                 // unsupported feature notification on errors.
                 handler.send("UnsupportedFeature", {
-                  featureId: UNSUPPORTED_FEATURES.unknown,
+                  featureId: UNSUPPORTED_FEATURES.errorOperatorList,
                 });
 
                 sink.error(reason);
