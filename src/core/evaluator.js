@@ -282,7 +282,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   // Error(s) in the ExtGState -- sending unsupported feature
                   // notification and allow parsing/rendering to continue.
                   this.handler.send("UnsupportedFeature", {
-                    featureId: UNSUPPORTED_FEATURES.unknown,
+                    featureId: UNSUPPORTED_FEATURES.errorExtGState,
                   });
                   warn(`hasBlendModes - ignoring ExtGState: "${ex}".`);
                   continue;
@@ -344,7 +344,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 // Error(s) in the XObject -- sending unsupported feature
                 // notification and allow parsing/rendering to continue.
                 this.handler.send("UnsupportedFeature", {
-                  featureId: UNSUPPORTED_FEATURES.unknown,
+                  featureId: UNSUPPORTED_FEATURES.errorXObject,
                 });
                 warn(`hasBlendModes - ignoring XObject: "${ex}".`);
                 continue;
@@ -763,7 +763,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // Error(s) in the TilingPattern -- sending unsupported feature
               // notification and allow rendering to continue.
               this.handler.send("UnsupportedFeature", {
-                featureId: UNSUPPORTED_FEATURES.unknown,
+                featureId: UNSUPPORTED_FEATURES.errorTilingPattern,
               });
               warn(`handleTilingType - ignoring pattern: "${reason}".`);
               return;
@@ -802,7 +802,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // Error in the font data -- sending unsupported feature
               // notification.
               this.handler.send("UnsupportedFeature", {
-                featureId: UNSUPPORTED_FEATURES.font,
+                featureId: UNSUPPORTED_FEATURES.errorFontLoadType3,
               });
               return new TranslatedFont({
                 loadedName: "g_font_error",
@@ -851,7 +851,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // Missing setFont operator before text rendering operator -- sending
         // unsupported feature notification and allow rendering to continue.
         this.handler.send("UnsupportedFeature", {
-          featureId: UNSUPPORTED_FEATURES.font,
+          featureId: UNSUPPORTED_FEATURES.errorFontState,
         });
         warn(`ensureStateFont: "${reason}".`);
         return;
@@ -995,7 +995,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         // Font not found -- sending unsupported feature notification.
         this.handler.send("UnsupportedFeature", {
-          featureId: UNSUPPORTED_FEATURES.font,
+          featureId: UNSUPPORTED_FEATURES.errorFontMissing,
         });
         warn(`${partialMsg} -- attempting to fallback to a default font.`);
 
@@ -1119,7 +1119,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // TODO fontCapability.reject?
           // Error in the font data -- sending unsupported feature notification.
           this.handler.send("UnsupportedFeature", {
-            featureId: UNSUPPORTED_FEATURES.font,
+            featureId: UNSUPPORTED_FEATURES.errorFontTranslate,
           });
 
           try {
@@ -1194,7 +1194,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // Error(s) in the ColorSpace -- sending unsupported feature
           // notification and allow rendering to continue.
           this.handler.send("UnsupportedFeature", {
-            featureId: UNSUPPORTED_FEATURES.unknown,
+            featureId: UNSUPPORTED_FEATURES.errorColorSpace,
           });
           warn(`parseColorSpace - ignoring ColorSpace: "${reason}".`);
           return null;
@@ -1382,7 +1382,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     // Error(s) in the XObject -- sending unsupported feature
                     // notification and allow rendering to continue.
                     self.handler.send("UnsupportedFeature", {
-                      featureId: UNSUPPORTED_FEATURES.unknown,
+                      featureId: UNSUPPORTED_FEATURES.errorXObject,
                     });
                     warn(`getOperatorList - ignoring XObject: "${reason}".`);
                     return;
@@ -1695,7 +1695,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // Error(s) in the OperatorList -- sending unsupported feature
           // notification and allow rendering to continue.
           this.handler.send("UnsupportedFeature", {
-            featureId: UNSUPPORTED_FEATURES.unknown,
+            featureId: UNSUPPORTED_FEATURES.errorOperatorList,
           });
           warn(
             `getOperatorList - ignoring errors during "${task.name}" ` +
@@ -2752,7 +2752,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // Error in the ToUnicode data -- sending unsupported feature
               // notification and allow font parsing to continue.
               this.handler.send("UnsupportedFeature", {
-                featureId: UNSUPPORTED_FEATURES.font,
+                featureId: UNSUPPORTED_FEATURES.errorFontToUnicode,
               });
               warn(`readToUnicode - ignoring ToUnicode data: "${reason}".`);
               return null;
