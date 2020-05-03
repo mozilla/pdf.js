@@ -677,13 +677,6 @@ gulp.task("cmaps", function (done) {
   done();
 });
 
-gulp.task(
-  "bundle",
-  gulp.series("buildnumber", function () {
-    return createBundle(DEFINES).pipe(gulp.dest(BUILD_DIR));
-  })
-);
-
 function preprocessCSS(source, mode, defines, cleanup) {
   var outName = getTempFile("~preprocess", ".css");
   builder.preprocessCSS(mode, source, outName);
