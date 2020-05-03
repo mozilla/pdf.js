@@ -296,10 +296,7 @@ function replaceJSRootName(amdName, jsName) {
   );
 }
 
-function createBundle(defines) {
-  console.log();
-  console.log("### Bundling files into pdf.js");
-
+function createMainBundle(defines) {
   var mainAMDName = "pdfjs-dist/build/pdf";
   var mainOutputName = "pdf.js";
 
@@ -309,12 +306,14 @@ function createBundle(defines) {
     libraryTarget: "umd",
     umdNamedDefine: true,
   });
-  var mainOutput = gulp
+  return gulp
     .src("./src/pdf.js")
     .pipe(webpack2Stream(mainFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceJSRootName(mainAMDName, "pdfjsLib"));
+}
 
+function createWorkerBundle(defines) {
   var workerAMDName = "pdfjs-dist/build/pdf.worker";
   var workerOutputName = "pdf.worker.js";
 
@@ -324,13 +323,11 @@ function createBundle(defines) {
     libraryTarget: "umd",
     umdNamedDefine: true,
   });
-
-  var workerOutput = gulp
+  return gulp
     .src("./src/pdf.worker.js")
     .pipe(webpack2Stream(workerFileConfig))
     .pipe(replaceWebpackRequire())
     .pipe(replaceJSRootName(workerAMDName, "pdfjsWorker"));
-  return merge([mainOutput, workerOutput]);
 }
 
 function createWebBundle(defines) {
@@ -706,7 +703,8 @@ function buildGeneric(defines, dir) {
   rimraf.sync(dir);
 
   return merge([
-    createBundle(defines).pipe(gulp.dest(dir + "build")),
+    createMainBundle(defines).pipe(gulp.dest(dir + "build")),
+    createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createWebBundle(defines).pipe(gulp.dest(dir + "web")),
     gulp.src(COMMON_WEB_FILES, { base: "web/" }).pipe(gulp.dest(dir + "web")),
     gulp.src("LICENSE").pipe(gulp.dest(dir)),
@@ -840,7 +838,8 @@ gulp.task(
     rimraf.sync(MINIFIED_DIR);
 
     return merge([
-      createBundle(defines).pipe(gulp.dest(MINIFIED_DIR + "build")),
+      createMainBundle(defines).pipe(gulp.dest(MINIFIED_DIR + "build")),
+      createWorkerBundle(defines).pipe(gulp.dest(MINIFIED_DIR + "build")),
       createWebBundle(defines).pipe(gulp.dest(MINIFIED_DIR + "web")),
       createImageDecodersBundle(
         builder.merge(defines, { IMAGE_DECODERS: true })
@@ -1000,7 +999,12 @@ gulp.task(
     ];
 
     return merge([
-      createBundle(defines).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")),
+      createMainBundle(defines).pipe(
+        gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+      ),
+      createWorkerBundle(defines).pipe(
+        gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+      ),
       createWebBundle(defines).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
       gulp
         .src(MOZCENTRAL_COMMON_WEB_FILES, { base: "web/" })
@@ -1055,7 +1059,12 @@ gulp.task(
     var version = getVersionJSON().version;
 
     return merge([
-      createBundle(defines).pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")),
+      createMainBundle(defines).pipe(
+        gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
+      ),
+      createWorkerBundle(defines).pipe(
+        gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
+      ),
       createWebBundle(defines).pipe(
         gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
       ),
