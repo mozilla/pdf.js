@@ -302,11 +302,15 @@ class Page {
         for (const annotation of annotations) {
           if (isAnnotationRenderable(annotation, intent)) {
             opListPromises.push(
-              annotation.getOperatorList(
-                partialEvaluator,
-                task,
-                renderInteractiveForms
-              )
+              annotation
+                .getOperatorList(partialEvaluator, task, renderInteractiveForms)
+                .catch(function (reason) {
+                  warn(
+                    "getOperatorList - ignoring annotation data during " +
+                      `"${task.name}" task: "${reason}".`
+                  );
+                  return null;
+                })
             );
           }
         }
