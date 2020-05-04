@@ -82,7 +82,9 @@ class BaseFontLoader {
         try {
           await nativeFontFace.loaded;
         } catch (ex) {
-          this._onUnsupportedFeature({ featureId: UNSUPPORTED_FEATURES.font });
+          this._onUnsupportedFeature({
+            featureId: UNSUPPORTED_FEATURES.errorFontLoadNative,
+          });
           warn(`Failed to load font '${nativeFontFace.family}': '${ex}'.`);
 
           // When font loading failed, fall back to the built-in font renderer.
@@ -400,7 +402,9 @@ class FontFaceObject {
         throw ex;
       }
       if (this._onUnsupportedFeature) {
-        this._onUnsupportedFeature({ featureId: UNSUPPORTED_FEATURES.font });
+        this._onUnsupportedFeature({
+          featureId: UNSUPPORTED_FEATURES.errorFontGetPath,
+        });
       }
       warn(`getPathGenerator - ignoring character: "${ex}".`);
 
