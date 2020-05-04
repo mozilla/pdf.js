@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, ImageKind, OPS } from "../shared/util.js";
+import { assert, ImageKind, OPS, warn } from "../shared/util.js";
 
 var QueueOptimizer = (function QueueOptimizerClosure() {
   function addState(parentState, pattern, checkFn, iterateFn, processFn) {
@@ -674,6 +674,10 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     addOpList(opList) {
+      if (!(opList instanceof OperatorList)) {
+        warn('addOpList - ignoring invalid "opList" parameter.');
+        return;
+      }
       Object.assign(this.dependencies, opList.dependencies);
       for (var i = 0, ii = opList.length; i < ii; i++) {
         this.addOp(opList.fnArray[i], opList.argsArray[i]);
