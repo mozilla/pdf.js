@@ -26,7 +26,10 @@ class PDFWorkerStream {
   }
 
   getFullReader() {
-    assert(!this._fullRequestReader);
+    assert(
+      !this._fullRequestReader,
+      "PDFWorkerStream.getFullReader can only be called once."
+    );
     this._fullRequestReader = new PDFWorkerStreamReader(this._msgHandler);
     return this._fullRequestReader;
   }

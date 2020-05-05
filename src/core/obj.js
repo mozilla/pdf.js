@@ -578,7 +578,11 @@ class Catalog {
             }
             break;
           default:
-            assert(typeof value === "boolean");
+            if (typeof value !== "boolean") {
+              throw new FormatError(
+                `viewerPreferences - expected a boolean value for: ${key}`
+              );
+            }
             prefValue = value;
         }
 

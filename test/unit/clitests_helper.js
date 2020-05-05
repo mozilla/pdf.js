@@ -21,8 +21,7 @@ import { setPDFNetworkStreamFactory } from "../../src/display/api.js";
 // Ensure that this script only runs in Node.js environments.
 if (!isNodeJS) {
   throw new Error(
-    "The `gulp unittestcli` command can only be used in " +
-      "Node.js environments."
+    "The `gulp unittestcli` command can only be used in Node.js environments."
   );
 }
 
