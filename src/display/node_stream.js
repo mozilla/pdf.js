@@ -67,7 +67,10 @@ class PDFNodeStream {
   }
 
   getFullReader() {
-    assert(!this._fullRequestReader);
+    assert(
+      !this._fullRequestReader,
+      "PDFNodeStream.getFullReader can only be called once."
+    );
     this._fullRequestReader = this.isFsUrl
       ? new PDFNodeStreamFsFullReader(this)
       : new PDFNodeStreamFullReader(this);
