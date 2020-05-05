@@ -2023,7 +2023,10 @@ class WorkerTransport {
     const { messageHandler, loadingTask } = this;
 
     messageHandler.on("GetReader", (data, sink) => {
-      assert(this._networkStream);
+      assert(
+        this._networkStream,
+        "GetReader - no `IPDFStream` instance available."
+      );
       this._fullReader = this._networkStream.getFullReader();
       this._fullReader.onProgress = evt => {
         this._lastProgress = {
@@ -2039,7 +2042,10 @@ class WorkerTransport {
               sink.close();
               return;
             }
-            assert(isArrayBuffer(value));
+            assert(
+              isArrayBuffer(value),
+              "GetReader - expected an ArrayBuffer."
+            );
             // Enqueue data chunk into sink, and transfer it
             // to other side as `Transferable` object.
             sink.enqueue(new Uint8Array(value), 1, [value]);
@@ -2085,7 +2091,10 @@ class WorkerTransport {
     });
 
     messageHandler.on("GetRangeReader", (data, sink) => {
-      assert(this._networkStream);
+      assert(
+        this._networkStream,
+        "GetRangeReader - no `IPDFStream` instance available."
+      );
       const rangeReader = this._networkStream.getRangeReader(
         data.begin,
         data.end
@@ -2114,7 +2123,10 @@ class WorkerTransport {
               sink.close();
               return;
             }
-            assert(isArrayBuffer(value));
+            assert(
+              isArrayBuffer(value),
+              "GetRangeReader - expected an ArrayBuffer."
+            );
             sink.enqueue(new Uint8Array(value), 1, [value]);
           })
           .catch(reason => {

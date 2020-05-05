@@ -92,8 +92,7 @@ function initializePDFJS(callback) {
 
     if (isNodeJS) {
       throw new Error(
-        "The `gulp unittest` command cannot be used in " +
-          "Node.js environments."
+        "The `gulp unittest` command cannot be used in Node.js environments."
       );
     }
     // Set the network stream factory for unit-tests.

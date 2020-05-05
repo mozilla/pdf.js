@@ -65,7 +65,10 @@ class PDFFetchStream {
   }
 
   getFullReader() {
-    assert(!this._fullRequestReader);
+    assert(
+      !this._fullRequestReader,
+      "PDFFetchStream.getFullReader can only be called once."
+    );
     this._fullRequestReader = new PDFFetchStreamReader(this);
     return this._fullRequestReader;
   }
