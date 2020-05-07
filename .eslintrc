@@ -147,6 +147,10 @@
     "no-new-object": "error",
     "no-restricted-syntax": ["error",
       {
+        "selector": "CallExpression[callee.name='assert'][arguments.length!=2]",
+        "message": "`assert()` must always be invoked with two arguments.",
+      },
+      {
         "selector": "NewExpression[callee.name='Cmd']",
         "message": "Use `Cmd.get()` rather than `new Cmd()`.",
       },

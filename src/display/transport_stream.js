@@ -19,7 +19,10 @@ import { assert, createPromiseCapability } from "../shared/util.js";
 /** @implements {IPDFStream} */
 class PDFDataTransportStream {
   constructor(params, pdfDataRangeTransport) {
-    assert(pdfDataRangeTransport);
+    assert(
+      pdfDataRangeTransport,
+      'PDFDataTransportStream - missing required "pdfDataRangeTransport" argument.'
+    );
 
     this._queuedChunks = [];
     this._progressiveDone = params.progressiveDone || false;
@@ -73,7 +76,10 @@ class PDFDataTransportStream {
         rangeReader._enqueue(buffer);
         return true;
       });
-      assert(found);
+      assert(
+        found,
+        "_onReceiveData - no `PDFDataTransportStreamRangeReader` instance found."
+      );
     }
   }
 
@@ -111,7 +117,10 @@ class PDFDataTransportStream {
   }
 
   getFullReader() {
-    assert(!this._fullRequestReader);
+    assert(
+      !this._fullRequestReader,
+      "PDFDataTransportStream.getFullReader can only be called once."
+    );
     const queuedChunks = this._queuedChunks;
     this._queuedChunks = null;
     return new PDFDataTransportStreamReader(
