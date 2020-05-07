@@ -247,7 +247,10 @@ class PDFNetworkStream {
   }
 
   getFullReader() {
-    assert(!this._fullRequestReader);
+    assert(
+      !this._fullRequestReader,
+      "PDFNetworkStream.getFullReader can only be called once."
+    );
     this._fullRequestReader = new PDFNetworkStreamFullRequestReader(
       this._manager,
       this._source

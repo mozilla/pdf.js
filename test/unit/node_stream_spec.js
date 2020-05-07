@@ -14,12 +14,16 @@
  */
 /* globals __non_webpack_require__ */
 
-import { AbortException, assert } from "../../src/shared/util.js";
+import { AbortException } from "../../src/shared/util.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 import { PDFNodeStream } from "../../src/display/node_stream.js";
 
-// Make sure that we only running this script is Node.js environments.
-assert(isNodeJS);
+// Ensure that these test only runs in Node.js environments.
+if (!isNodeJS) {
+  throw new Error(
+    'The "node_stream" unit-tests can only be run in Node.js environments.'
+  );
+}
 
 const path = __non_webpack_require__("path");
 const url = __non_webpack_require__("url");
