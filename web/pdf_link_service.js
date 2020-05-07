@@ -233,10 +233,6 @@ class PDFLinkService {
         });
       }
       // borrowing syntax from "Parameters for Opening PDF Files"
-      if ("nameddest" in params) {
-        this.navigateTo(params.nameddest);
-        return;
-      }
       if ("page" in params) {
         pageNumber = params.page | 0 || 1;
       }
@@ -307,6 +303,11 @@ class PDFLinkService {
           source: this,
           mode: params.pagemode,
         });
+      }
+      // Ensure that this parameter is *always* handled last, in order to
+      // guarantee that it won't be overridden (e.g. by the "page" parameter).
+      if ("nameddest" in params) {
+        this.navigateTo(params.nameddest);
       }
     } else {
       // Named (or explicit) destination.
