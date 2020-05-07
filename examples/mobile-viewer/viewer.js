@@ -312,12 +312,12 @@ var PDFViewerApplication = {
     return this.pdfDocument.numPages;
   },
 
-  set page(val) {
-    this.pdfViewer.currentPageNumber = val;
-  },
-
   get page() {
     return this.pdfViewer.currentPageNumber;
+  },
+
+  set page(val) {
+    this.pdfViewer.currentPageNumber = val;
   },
 
   zoomIn: function pdfViewZoomIn(ticks) {
