@@ -77,6 +77,7 @@
     "curly": ["error", "all"],
     "dot-notation": "error",
     "eqeqeq": ["error", "always"],
+    "grouped-accessor-pairs": ["error", "getBeforeSet"],
     "no-caller": "error",
     "no-else-return": "error",
     "no-empty-pattern": "error",
