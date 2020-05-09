@@ -393,30 +393,24 @@ class Page {
     const parsedAnnotations = this.pdfManager
       .ensure(this, "annotations")
       .then(() => {
-        const annotationRefs = this.annotations;
         const annotationPromises = [];
-        for (let i = 0, ii = annotationRefs.length; i < ii; i++) {
+        for (const annotationRef of this.annotations) {
           annotationPromises.push(
             AnnotationFactory.create(
               this.xref,
-              annotationRefs[i],
+              annotationRef,
               this.pdfManager,
               this.idFactory
-            )
+            ).catch(function (reason) {
+              warn(`_parsedAnnotations: "${reason}".`);
+              return null;
+            })
           );
         }
 
-        return Promise.all(annotationPromises).then(
-          function (annotations) {
-            return annotations.filter(function isDefined(annotation) {
-              return !!annotation;
-            });
-          },
-          function (reason) {
-            warn(`_parsedAnnotations: "${reason}".`);
-            return [];
-          }
-        );
+        return Promise.all(annotationPromises).then(function (annotations) {
+          return annotations.filter(annotation => !!annotation);
+        });
       });
 
     return shadow(this, "_parsedAnnotations", parsedAnnotations);
