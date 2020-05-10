@@ -943,12 +943,12 @@ gulp.task(
 
 gulp.task("minified", gulp.series("minified-post"));
 
-gulp.task("minifined-es5-config", function(done) {
+gulp.task("minifined-es5-config", function (done) {
   DEFINES.SKIP_BABEL = false;
   done();
 });
 
-gulp.task("minified-es5", gulp.series("minifined-es5-config","minified-post"));
+gulp.task("minified-es5", gulp.series("minifined-es5-config", "minified-post"));
 
 function preprocessDefaultPreferences(content) {
   var preprocessor2 = require("./external/builder/preprocessor2.js");
