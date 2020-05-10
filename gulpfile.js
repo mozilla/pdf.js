@@ -90,7 +90,7 @@ var CSS_VARIABLES_CONFIG = {
   preserve: true,
 };
 
-var DEFINES = {
+const DEFINES = Object.freeze({
   PRODUCTION: true,
   SKIP_BABEL: true,
   TESTING: false,
@@ -102,7 +102,7 @@ var DEFINES = {
   COMPONENTS: false,
   LIB: false,
   IMAGE_DECODERS: false,
-};
+});
 
 function transform(charEncoding, transformFunction) {
   return through.obj(function (vinylFile, enc, done) {
