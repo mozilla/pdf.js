@@ -65,7 +65,7 @@
     "no-unreachable": "error",
     "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
-    "use-isnan": "error",
+    "use-isnan": ["error", { "enforceForIndexOf": true, }],
     "valid-typeof": ["error", { "requireStringLiterals": true, }],
 
     // Best Practices
@@ -75,6 +75,7 @@
     }],
     "consistent-return": "error",
     "curly": ["error", "all"],
+    "default-case-last": "error",
     "dot-notation": "error",
     "eqeqeq": ["error", "always"],
     "grouped-accessor-pairs": ["error", "getBeforeSet"],
