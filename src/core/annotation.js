@@ -811,10 +811,11 @@ class WidgetAnnotation extends Annotation {
     // Hide signatures because we cannot validate them, and unset the fieldValue
     // since it's (most likely) a `Dict` which is non-serializable and will thus
     // cause errors when sending annotations to the main-thread (issue 10347).
-    if (data.fieldType === "Sig") {
-      data.fieldValue = null;
-      this.setFlags(AnnotationFlag.HIDDEN);
-    }
+    // UPDATE: show the signatures anyway
+    // if (data.fieldType === "Sig") {
+    //   data.fieldValue = null;
+    //   this.setFlags(AnnotationFlag.HIDDEN);
+    // }
   }
 
   /**
