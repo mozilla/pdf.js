@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+import { isNodeJS } from "../shared/is_node.js";
+
 const compatibilityParams = Object.create(null);
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  const { isNodeJS } = require("../shared/is_node.js");
-
   const userAgent =
     (typeof navigator !== "undefined" && navigator.userAgent) || "";
   const isIE = /Trident/.test(userAgent);
@@ -41,5 +41,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
   })();
 }
+const apiCompatibilityParams = Object.freeze(compatibilityParams);
 
-exports.apiCompatibilityParams = Object.freeze(compatibilityParams);
+export { apiCompatibilityParams };

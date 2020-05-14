@@ -14,6 +14,8 @@
  */
 /* eslint no-var: error */
 
+import { isNodeJS } from "./is_node.js";
+
 // Skip compatibility checks for modern builds and if we already ran the module.
 if (
   (typeof PDFJSDev === "undefined" || !PDFJSDev.test("SKIP_BABEL")) &&
@@ -26,8 +28,6 @@ if (
     globalThis = require("core-js/es/global-this");
   }
   globalThis._pdfjsCompatibilityChecked = true;
-
-  const { isNodeJS } = require("./is_node.js");
 
   const hasDOM = typeof window === "object" && typeof document === "object";
   const userAgent =
@@ -248,14 +248,17 @@ if (
 
   // Support: IE
   (function checkURL() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
-      // The current image decoders don't use the `URL` constructor, so it
-      // doesn't need to be polyfilled for the IMAGE_DECODERS build target.
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+      // Prevent "require is not a function" errors in development mode,
+      // since the `URL` constructor should be available in modern browers.
       return;
-    }
-    if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
+    } else if (!PDFJSDev.test("GENERIC")) {
       // The `URL` constructor is assumed to be available in the extension
       // builds.
+      return;
+    } else if (PDFJSDev.test("IMAGE_DECODERS")) {
+      // The current image decoders don't use the `URL` constructor, so it
+      // doesn't need to be polyfilled for the IMAGE_DECODERS build target.
       return;
     }
     globalThis.URL = require("core-js/web/url.js");
