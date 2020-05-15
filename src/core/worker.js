@@ -678,7 +678,7 @@ function isMessagePort(maybePort) {
   );
 }
 
-// Worker thread (and not node.js)?
+// Worker thread (and not Node.js)?
 if (
   typeof window === "undefined" &&
   !isNodeJS &&
