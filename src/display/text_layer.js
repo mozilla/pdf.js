@@ -607,6 +607,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
       this._textDivProperties.set(textDiv, textDivProperties);
       this._container.appendChild(textDiv);
+      if (window.chrome) {
+        this._container.appendChild(document.createElement("br"));
+      }
     },
 
     _render: function TextLayer_render(timeout) {
