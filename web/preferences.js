@@ -13,23 +13,19 @@
  * limitations under the License.
  */
 
+import { AppOptions, OptionKind } from "./app_options.js";
+
 let defaultPreferences = null;
 function getDefaultPreferences() {
   if (!defaultPreferences) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("PRODUCTION")) {
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+      defaultPreferences = Promise.resolve(
+        AppOptions.getAll(OptionKind.PREFERENCE)
+      );
+    } else {
       defaultPreferences = Promise.resolve(
         PDFJSDev.json("$ROOT/build/default_preferences.json")
       );
-    } else {
-      defaultPreferences = new Promise(function (resolve, reject) {
-        if (typeof SystemJS === "object") {
-          SystemJS.import("./app_options.js").then(resolve, reject);
-        } else {
-          reject(new Error("SystemJS must be used to load AppOptions."));
-        }
-      }).then(function ({ AppOptions, OptionKind }) {
-        return AppOptions.getAll(OptionKind.PREFERENCE);
-      });
     }
   }
   return defaultPreferences;
