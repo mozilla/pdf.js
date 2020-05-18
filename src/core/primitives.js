@@ -251,6 +251,10 @@ var RefSetCache = (function RefSetCacheClosure() {
   }
 
   RefSetCache.prototype = {
+    get size() {
+      return Object.keys(this.dict).length;
+    },
+
     get: function RefSetCache_get(ref) {
       return this.dict[ref.toString()];
     },

@@ -54,6 +54,7 @@ import {
 } from "./core_utils.js";
 import { CipherTransformFactory } from "./crypto.js";
 import { ColorSpace } from "./colorspace.js";
+import { GlobalImageCache } from "./image_utils.js";
 
 function fetchDestination(dest) {
   return isDict(dest) ? dest.get("D") : dest;
@@ -71,6 +72,7 @@ class Catalog {
 
     this.fontCache = new RefSetCache();
     this.builtInCMapCache = new Map();
+    this.globalImageCache = new GlobalImageCache();
     this.pageKidsCountCache = new RefSetCache();
   }
 
@@ -716,6 +718,7 @@ class Catalog {
 
   cleanup() {
     clearPrimitiveCaches();
+    this.globalImageCache.clear();
     this.pageKidsCountCache.clear();
 
     const promises = [];
