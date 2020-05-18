@@ -2288,6 +2288,7 @@ class WorkerTransport {
           break;
         case "FontPath":
         case "FontType3Res":
+        case "Image":
           this.commonObjs.resolve(id, exportedData);
           break;
         default:
