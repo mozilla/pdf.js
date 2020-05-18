@@ -105,6 +105,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     idFactory,
     fontCache,
     builtInCMapCache,
+    globalImageCache,
     options = null,
     pdfFunctionFactory,
   }) {
@@ -114,6 +115,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.idFactory = idFactory;
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
+    this.globalImageCache = globalImageCache;
     this.options = options || DefaultPartialEvaluatorOptions;
     this.pdfFunctionFactory = pdfFunctionFactory;
     this.parsingType3Font = false;
@@ -451,6 +453,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       forceDisableNativeImageDecoder = false,
     }) {
       var dict = image.dict;
+      const imageRef = dict.objId;
       var w = dict.get("Width", "W");
       var h = dict.get("Height", "H");
 
@@ -528,12 +531,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return undefined;
       }
 
-      const nativeImageDecoderSupport = forceDisableNativeImageDecoder
+      let nativeImageDecoderSupport = forceDisableNativeImageDecoder
         ? NativeImageDecoding.NONE
         : this.options.nativeImageDecoderSupport;
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
-      let objId = `img_${this.idFactory.createObjId()}`;
+      let objId = `img_${this.idFactory.createObjId()}`,
+        cacheGlobally = false;
 
       if (this.parsingType3Font) {
         assert(
@@ -542,6 +546,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         );
 
         objId = `${this.idFactory.getDocId()}_type3res_${objId}`;
+      } else if (imageRef) {
+        cacheGlobally = this.globalImageCache.shouldCache(
+          imageRef,
+          this.pageIndex
+        );
+
+        if (cacheGlobally) {
+          // Ensure that the image is *completely* decoded on the worker-thread,
+          // in order to simplify the caching/rendering code on the main-thread.
+          nativeImageDecoderSupport = NativeImageDecoding.NONE;
+
+          objId = `${this.idFactory.getDocId()}_${objId}`;
+        }
       }
 
       if (
@@ -566,7 +583,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             image.getIR(this.options.forceDataSchema),
           ])
           .then(
-            function () {
+            () => {
               // Only add the dependency once we know that the native JPEG
               // decoding succeeded, to ensure that rendering will always
               // complete.
@@ -579,6 +596,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   fn: OPS.paintJpegXObject,
                   args,
                 };
+
+                if (imageRef) {
+                  this.globalImageCache.addPageIndex(imageRef, this.pageIndex);
+                }
               }
             },
             reason => {
@@ -639,6 +660,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               [objId, "FontType3Res", imgData],
               [imgData.data.buffer]
             );
+          } else if (cacheGlobally) {
+            this.handler.send(
+              "commonobj",
+              [objId, "Image", imgData],
+              [imgData.data.buffer]
+            );
+            return undefined;
           }
           this.handler.send(
             "obj",
@@ -656,6 +684,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               "FontType3Res",
               null,
             ]);
+          } else if (cacheGlobally) {
+            this.handler.send("commonobj", [objId, "Image", null]);
+            return undefined;
           }
           this.handler.send("obj", [objId, this.pageIndex, "Image", null]);
           return undefined;
@@ -674,6 +705,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           fn: OPS.paintImageXObject,
           args,
         };
+
+        if (imageRef) {
+          this.globalImageCache.addPageIndex(imageRef, this.pageIndex);
+
+          if (cacheGlobally) {
+            this.globalImageCache.setData(imageRef, {
+              objId,
+              fn: OPS.paintImageXObject,
+              args,
+            });
+          }
+        }
       }
       return undefined;
     },
@@ -1322,7 +1365,23 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     );
                   }
 
-                  const xobj = xobjs.get(name);
+                  let xobj = xobjs.getRaw(name);
+                  if (xobj instanceof Ref) {
+                    const globalImage = self.globalImageCache.getData(
+                      xobj,
+                      self.pageIndex
+                    );
+
+                    if (globalImage) {
+                      operatorList.addDependency(globalImage.objId);
+                      operatorList.addOp(globalImage.fn, globalImage.args);
+
+                      resolveXObject();
+                      return;
+                    }
+                    xobj = xref.fetch(xobj);
+                  }
+
                   if (!xobj) {
                     operatorList.addOp(fn, args);
                     resolveXObject();
