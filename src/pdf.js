@@ -65,8 +65,8 @@ const pdfjsBuild =
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
   const streamsPromise = Promise.all([
-    SystemJS.import("pdfjs/display/network.js"),
-    SystemJS.import("pdfjs/display/fetch_stream.js"),
+    import("pdfjs/display/network.js"),
+    import("pdfjs/display/fetch_stream.js"),
   ]);
   setPDFNetworkStreamFactory(params => {
     return streamsPromise.then(streams => {

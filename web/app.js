@@ -1833,7 +1833,9 @@ async function loadFakeWorker() {
   }
   if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
     if (typeof SystemJS !== "object") {
-      throw new Error("SystemJS must be used to load fake worker.");
+      // Manually load SystemJS, since it's only necessary for fake workers.
+      await loadScript("../node_modules/systemjs/dist/system.js");
+      await loadScript("../systemjs.config.js");
     }
     window.pdfjsWorker = await SystemJS.import("pdfjs/core/worker.js");
     return undefined;

@@ -322,7 +322,7 @@ function preprocessPDFJSCode(ctx, code) {
     },
   };
   var parseOptions = {
-    ecmaVersion: 8,
+    ecmaVersion: 2020,
     locations: true,
     sourceFile: ctx.sourceFile,
     sourceType: "module",
