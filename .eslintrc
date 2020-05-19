@@ -1,6 +1,6 @@
 {
   "parserOptions": {
-    "ecmaVersion": 8,
+    "ecmaVersion": 2020,
     "sourceType": "module",
   },
 
@@ -17,13 +17,12 @@
 
   "env": {
     "browser": true,
-    "es6": true,
+    "es2020": true,
     "worker": true,
     "amd": true,
   },
 
   "globals": {
-    "globalThis": false,
     "PDFJSDev": false,
     "exports": false,
     "SystemJS": false,
