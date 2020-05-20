@@ -95,7 +95,7 @@ class PDFAttachmentViewer {
         viewerUrl = "?file=" + encodeURIComponent(blobUrl + "#" + filename);
       } else if (PDFJSDev.test("MOZCENTRAL")) {
         // Let Firefox's content handler catch the URL and display the PDF.
-        viewerUrl = blobUrl + "?" + encodeURIComponent(filename);
+        viewerUrl = blobUrl + "#filename=" + encodeURIComponent(filename);
       } else if (PDFJSDev.test("CHROME")) {
         // In the Chrome extension, the URL is rewritten using the history API
         // in viewer.js, so an absolute URL must be generated.
