@@ -1858,7 +1858,7 @@ function webViewerInitialized() {
     file = "file" in params ? params.file : AppOptions.get("defaultUrl");
     validateFileURL(file);
   } else if (PDFJSDev.test("MOZCENTRAL")) {
-    file = window.location.href.split("#")[0];
+    file = window.location.href;
   } else if (PDFJSDev.test("CHROME")) {
     file = AppOptions.get("defaultUrl");
   }
