@@ -12,42 +12,86 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-unused-vars */
 
-"use strict";
+import {
+  addLinkAttributes,
+  getFilenameFromUrl,
+  isFetchSupported,
+  isValidFetchUrl,
+  LinkTarget,
+  loadScript,
+  PDFDateString,
+  RenderingCancelledException,
+} from "./display/display_utils.js";
+import {
+  build,
+  getDocument,
+  LoopbackPort,
+  PDFDataRangeTransport,
+  PDFWorker,
+  setPDFNetworkStreamFactory,
+  version,
+} from "./display/api.js";
+import {
+  CMapCompressionType,
+  createObjectURL,
+  createPromiseCapability,
+  createValidAbsoluteUrl,
+  InvalidPDFException,
+  MissingPDFException,
+  NativeImageDecoding,
+  OPS,
+  PasswordResponses,
+  PermissionFlag,
+  removeNullCharacters,
+  shadow,
+  UnexpectedResponseException,
+  UNSUPPORTED_FEATURES,
+  Util,
+  VerbosityLevel,
+} from "./shared/util.js";
+import { AnnotationLayer } from "./display/annotation_layer.js";
+import { apiCompatibilityParams } from "./display/api_compatibility.js";
+import { GlobalWorkerOptions } from "./display/worker_options.js";
+import { renderTextLayer } from "./display/text_layer.js";
+import { SVGGraphics } from "./display/svg.js";
 
-var pdfjsVersion =
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsVersion =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : void 0;
-var pdfjsBuild =
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsBuild =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
-var pdfjsSharedUtil = require("./shared/util.js");
-var pdfjsDisplayAPI = require("./display/api.js");
-var pdfjsDisplayTextLayer = require("./display/text_layer.js");
-var pdfjsDisplayAnnotationLayer = require("./display/annotation_layer.js");
-var pdfjsDisplayDisplayUtils = require("./display/display_utils.js");
-var pdfjsDisplaySVG = require("./display/svg.js");
-const pdfjsDisplayWorkerOptions = require("./display/worker_options.js");
-const pdfjsDisplayAPICompatibility = require("./display/api_compatibility.js");
-
-if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+  const streamsPromise = Promise.all([
+    SystemJS.import("pdfjs/display/network.js"),
+    SystemJS.import("pdfjs/display/fetch_stream.js"),
+  ]);
+  setPDFNetworkStreamFactory(params => {
+    return streamsPromise.then(streams => {
+      const [{ PDFNetworkStream }, { PDFFetchStream }] = streams;
+      if (isFetchSupported() && isValidFetchUrl(params.url)) {
+        return new PDFFetchStream(params);
+      }
+      return new PDFNetworkStream(params);
+    });
+  });
+} else if (PDFJSDev.test("GENERIC")) {
   const { isNodeJS } = require("./shared/is_node.js");
   if (isNodeJS) {
     const PDFNodeStream = require("./display/node_stream.js").PDFNodeStream;
-    pdfjsDisplayAPI.setPDFNetworkStreamFactory(params => {
+    setPDFNetworkStreamFactory(params => {
       return new PDFNodeStream(params);
     });
   } else {
     const PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
     let PDFFetchStream;
-    if (pdfjsDisplayDisplayUtils.isFetchSupported()) {
+    if (isFetchSupported()) {
       PDFFetchStream = require("./display/fetch_stream.js").PDFFetchStream;
     }
-    pdfjsDisplayAPI.setPDFNetworkStreamFactory(params => {
-      if (
-        PDFFetchStream &&
-        pdfjsDisplayDisplayUtils.isValidFetchUrl(params.url)
-      ) {
+    setPDFNetworkStreamFactory(params => {
+      if (PDFFetchStream && isValidFetchUrl(params.url)) {
         return new PDFFetchStream(params);
       }
       return new PDFNetworkStream(params);
@@ -69,56 +113,49 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       return true;
     }
   };
-  if (
-    pdfjsDisplayDisplayUtils.isFetchSupported() &&
-    isChromeWithFetchCredentials()
-  ) {
+  if (isFetchSupported() && isChromeWithFetchCredentials()) {
     PDFFetchStream = require("./display/fetch_stream.js").PDFFetchStream;
   }
-  pdfjsDisplayAPI.setPDFNetworkStreamFactory(params => {
-    if (
-      PDFFetchStream &&
-      pdfjsDisplayDisplayUtils.isValidFetchUrl(params.url)
-    ) {
+  setPDFNetworkStreamFactory(params => {
+    if (PDFFetchStream && isValidFetchUrl(params.url)) {
       return new PDFFetchStream(params);
     }
     return new PDFNetworkStream(params);
   });
 }
 
-exports.build = pdfjsDisplayAPI.build;
-exports.version = pdfjsDisplayAPI.version;
-exports.getDocument = pdfjsDisplayAPI.getDocument;
-exports.LoopbackPort = pdfjsDisplayAPI.LoopbackPort;
-exports.PDFDataRangeTransport = pdfjsDisplayAPI.PDFDataRangeTransport;
-exports.PDFWorker = pdfjsDisplayAPI.PDFWorker;
-exports.renderTextLayer = pdfjsDisplayTextLayer.renderTextLayer;
-exports.AnnotationLayer = pdfjsDisplayAnnotationLayer.AnnotationLayer;
-exports.createPromiseCapability = pdfjsSharedUtil.createPromiseCapability;
-exports.PasswordResponses = pdfjsSharedUtil.PasswordResponses;
-exports.InvalidPDFException = pdfjsSharedUtil.InvalidPDFException;
-exports.MissingPDFException = pdfjsSharedUtil.MissingPDFException;
-exports.SVGGraphics = pdfjsDisplaySVG.SVGGraphics;
-exports.NativeImageDecoding = pdfjsSharedUtil.NativeImageDecoding;
-exports.CMapCompressionType = pdfjsSharedUtil.CMapCompressionType;
-exports.PermissionFlag = pdfjsSharedUtil.PermissionFlag;
-exports.UnexpectedResponseException =
-  pdfjsSharedUtil.UnexpectedResponseException;
-exports.OPS = pdfjsSharedUtil.OPS;
-exports.VerbosityLevel = pdfjsSharedUtil.VerbosityLevel;
-exports.UNSUPPORTED_FEATURES = pdfjsSharedUtil.UNSUPPORTED_FEATURES;
-exports.createValidAbsoluteUrl = pdfjsSharedUtil.createValidAbsoluteUrl;
-exports.createObjectURL = pdfjsSharedUtil.createObjectURL;
-exports.removeNullCharacters = pdfjsSharedUtil.removeNullCharacters;
-exports.shadow = pdfjsSharedUtil.shadow;
-exports.Util = pdfjsSharedUtil.Util;
-exports.RenderingCancelledException =
-  pdfjsDisplayDisplayUtils.RenderingCancelledException;
-exports.getFilenameFromUrl = pdfjsDisplayDisplayUtils.getFilenameFromUrl;
-exports.LinkTarget = pdfjsDisplayDisplayUtils.LinkTarget;
-exports.addLinkAttributes = pdfjsDisplayDisplayUtils.addLinkAttributes;
-exports.loadScript = pdfjsDisplayDisplayUtils.loadScript;
-exports.PDFDateString = pdfjsDisplayDisplayUtils.PDFDateString;
-exports.GlobalWorkerOptions = pdfjsDisplayWorkerOptions.GlobalWorkerOptions;
-exports.apiCompatibilityParams =
-  pdfjsDisplayAPICompatibility.apiCompatibilityParams;
+export {
+  addLinkAttributes,
+  getFilenameFromUrl,
+  LinkTarget,
+  loadScript,
+  PDFDateString,
+  RenderingCancelledException,
+  build,
+  getDocument,
+  LoopbackPort,
+  PDFDataRangeTransport,
+  PDFWorker,
+  version,
+  CMapCompressionType,
+  createObjectURL,
+  createPromiseCapability,
+  createValidAbsoluteUrl,
+  InvalidPDFException,
+  MissingPDFException,
+  NativeImageDecoding,
+  OPS,
+  PasswordResponses,
+  PermissionFlag,
+  removeNullCharacters,
+  shadow,
+  UnexpectedResponseException,
+  UNSUPPORTED_FEATURES,
+  Util,
+  VerbosityLevel,
+  AnnotationLayer,
+  apiCompatibilityParams,
+  GlobalWorkerOptions,
+  renderTextLayer,
+  SVGGraphics,
+};

@@ -26,6 +26,12 @@ import {
   validateResponseStatus,
 } from "./network_utils.js";
 
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+  throw new Error(
+    'Module "./fetch_stream.js" shall not be used with MOZCENTRAL builds.'
+  );
+}
+
 function createFetchOptions(headers, withCredentials, abortController) {
   return {
     method: "GET",
