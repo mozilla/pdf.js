@@ -132,7 +132,7 @@ class PDFDocumentProperties {
           return Promise.all([
             info,
             metadata,
-            contentDispositionFilename || getPDFFileNameFromURL(this.url || ""),
+            contentDispositionFilename || getPDFFileNameFromURL(this.url),
             this._parseFileSize(this.maybeFileSize),
             this._parseDate(info.CreationDate),
             this._parseDate(info.ModDate),
