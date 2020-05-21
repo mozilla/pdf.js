@@ -2114,7 +2114,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintJpegXObject: function CanvasGraphics_paintJpegXObject(objId, w, h) {
-      const domImage = this.processingType3
+      const domImage = objId.startsWith("g_")
         ? this.commonObjs.get(objId)
         : this.objs.get(objId);
       if (!domImage) {
@@ -2277,7 +2277,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintImageXObject: function CanvasGraphics_paintImageXObject(objId) {
-      const imgData = this.processingType3
+      const imgData = objId.startsWith("g_")
         ? this.commonObjs.get(objId)
         : this.objs.get(objId);
       if (!imgData) {
@@ -2294,7 +2294,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       scaleY,
       positions
     ) {
-      const imgData = this.processingType3
+      const imgData = objId.startsWith("g_")
         ? this.commonObjs.get(objId)
         : this.objs.get(objId);
       if (!imgData) {

@@ -14,8 +14,10 @@
  */
 /* eslint no-var: error */
 
+import { assert, info, shadow } from "../shared/util.js";
 import { ColorSpace } from "./colorspace.js";
 import { JpegStream } from "./jpeg_stream.js";
+import { RefSetCache } from "./primitives.js";
 import { Stream } from "./stream.js";
 
 class NativeImageDecoder {
@@ -111,4 +113,96 @@ class NativeImageDecoder {
   }
 }
 
-export { NativeImageDecoder };
+class GlobalImageCache {
+  static get NUM_PAGES_THRESHOLD() {
+    return shadow(this, "NUM_PAGES_THRESHOLD", 2);
+  }
+
+  static get MAX_IMAGES_TO_CACHE() {
+    return shadow(this, "MAX_IMAGES_TO_CACHE", 10);
+  }
+
+  constructor() {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        GlobalImageCache.NUM_PAGES_THRESHOLD > 1,
+        "GlobalImageCache - invalid NUM_PAGES_THRESHOLD constant."
+      );
+    }
+    this._refCache = new RefSetCache();
+    this._imageCache = new RefSetCache();
+  }
+
+  shouldCache(ref, pageIndex) {
+    const pageIndexSet = this._refCache.get(ref);
+    const numPages = pageIndexSet
+      ? pageIndexSet.size + (pageIndexSet.has(pageIndex) ? 0 : 1)
+      : 1;
+
+    if (numPages < GlobalImageCache.NUM_PAGES_THRESHOLD) {
+      return false;
+    }
+    if (
+      !this._imageCache.has(ref) &&
+      this._imageCache.size >= GlobalImageCache.MAX_IMAGES_TO_CACHE
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  addPageIndex(ref, pageIndex) {
+    let pageIndexSet = this._refCache.get(ref);
+    if (!pageIndexSet) {
+      pageIndexSet = new Set();
+      this._refCache.put(ref, pageIndexSet);
+    }
+    pageIndexSet.add(pageIndex);
+  }
+
+  getData(ref, pageIndex) {
+    if (!this._refCache.has(ref)) {
+      return null;
+    }
+    const pageIndexSet = this._refCache.get(ref);
+
+    if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
+      return null;
+    }
+    if (!this._imageCache.has(ref)) {
+      return null;
+    }
+    // Ensure that we keep track of all pages containing the image reference.
+    pageIndexSet.add(pageIndex);
+
+    return this._imageCache.get(ref);
+  }
+
+  setData(ref, data) {
+    if (!this._refCache.has(ref)) {
+      throw new Error(
+        'GlobalImageCache.setData - expected "addPageIndex" to have been called.'
+      );
+    }
+    if (this._imageCache.has(ref)) {
+      return;
+    }
+    if (this._imageCache.size >= GlobalImageCache.MAX_IMAGES_TO_CACHE) {
+      info(
+        "GlobalImageCache.setData - ignoring image above MAX_IMAGES_TO_CACHE."
+      );
+      return;
+    }
+    this._imageCache.put(ref, data);
+  }
+
+  clear() {
+    this._refCache.clear();
+    this._imageCache.clear();
+  }
+}
+
+export { NativeImageDecoder, GlobalImageCache };
