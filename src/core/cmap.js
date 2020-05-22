@@ -198,6 +198,10 @@ var BUILT_IN_CMAPS = [
   "WP-Symbol",
 ];
 
+// Heuristic to avoid hanging the worker-thread for CMap data with ridiculously
+// large ranges, such as e.g. 0xFFFFFFFF (fixes issue11922_reduced.pdf).
+const MAX_MAP_RANGE = 2 ** 24 - 1; // = 0xFFFFFF
+
 // CMap, not to be confused with TrueType's cmap.
 class CMap {
   constructor(builtInCMap = false) {
@@ -223,12 +227,18 @@ class CMap {
   }
 
   mapCidRange(low, high, dstLow) {
+    if (high - low > MAX_MAP_RANGE) {
+      throw new Error("mapCidRange - ignoring data above MAX_MAP_RANGE.");
+    }
     while (low <= high) {
       this._map[low++] = dstLow++;
     }
   }
 
   mapBfRange(low, high, dstLow) {
+    if (high - low > MAX_MAP_RANGE) {
+      throw new Error("mapBfRange - ignoring data above MAX_MAP_RANGE.");
+    }
     var lastByte = dstLow.length - 1;
     while (low <= high) {
       this._map[low++] = dstLow;
@@ -240,6 +250,9 @@ class CMap {
   }
 
   mapBfRangeToArray(low, high, array) {
+    if (high - low > MAX_MAP_RANGE) {
+      throw new Error("mapBfRangeToArray - ignoring data above MAX_MAP_RANGE.");
+    }
     const ii = array.length;
     let i = 0;
     while (low <= high && i < ii) {
