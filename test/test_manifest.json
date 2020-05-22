@@ -726,6 +726,12 @@
        "annotations": true,
        "about": "Annotation with Rect array containing indirect objects."
     },
+    {  "id": "issue11922",
+       "file": "pdfs/issue11922_reduced.pdf",
+       "md5": "711bb4b4bf92d967644b4f88d11a93db",
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "file_url_link",
        "file": "pdfs/file_url_link.pdf",
        "md5": "b0253c96c38d43bc49259bbf36db938a",
