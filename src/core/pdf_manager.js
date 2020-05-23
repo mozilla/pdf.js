@@ -76,8 +76,8 @@ class BasePdfManager {
     return this.pdfDocument.fontFallback(id, handler);
   }
 
-  cleanup() {
-    return this.pdfDocument.cleanup();
+  cleanup(manuallyTriggered = false) {
+    return this.pdfDocument.cleanup(manuallyTriggered);
   }
 
   async ensure(obj, prop, args) {
