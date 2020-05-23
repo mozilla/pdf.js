@@ -844,8 +844,10 @@ class PDFDocument {
     return this.catalog.fontFallback(id, handler);
   }
 
-  async cleanup() {
-    return this.catalog ? this.catalog.cleanup() : clearPrimitiveCaches();
+  async cleanup(manuallyTriggered = false) {
+    return this.catalog
+      ? this.catalog.cleanup(manuallyTriggered)
+      : clearPrimitiveCaches();
   }
 }
 

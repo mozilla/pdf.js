@@ -625,7 +625,7 @@ var WorkerMessageHandler = {
     });
 
     handler.on("Cleanup", function wphCleanup(data) {
-      return pdfManager.cleanup();
+      return pdfManager.cleanup(/* manuallyTriggered = */ true);
     });
 
     handler.on("Terminate", function wphTerminate(data) {
