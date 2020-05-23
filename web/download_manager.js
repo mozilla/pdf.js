@@ -13,11 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  apiCompatibilityParams,
-  createObjectURL,
-  createValidAbsoluteUrl,
-} from "pdfjs-lib";
+import { createObjectURL, createValidAbsoluteUrl } from "pdfjs-lib";
+import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("CHROME || GENERIC")) {
   throw new Error(
@@ -27,7 +24,7 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("CHROME || GENERIC")) {
 }
 
 const DISABLE_CREATE_OBJECT_URL =
-  apiCompatibilityParams.disableCreateObjectURL || false;
+  viewerCompatibilityParams.disableCreateObjectURL || false;
 
 function download(blobUrl, filename) {
   const a = document.createElement("a");

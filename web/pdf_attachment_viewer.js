@@ -74,14 +74,10 @@ class PDFAttachmentViewer {
   }
 
   /**
+   * NOTE: Should only be used when `URL.createObjectURL` is natively supported.
    * @private
    */
   _bindPdfLink(button, content, filename) {
-    if (this.downloadManager.disableCreateObjectURL) {
-      throw new Error(
-        'bindPdfLink: Unsupported "disableCreateObjectURL" value.'
-      );
-    }
     let blobUrl;
     button.onclick = () => {
       if (!blobUrl) {
