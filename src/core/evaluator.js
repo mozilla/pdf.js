@@ -79,6 +79,7 @@ import { DecodeStream } from "./stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { isPDFFunction } from "./function.js";
+import { LocalImageCache } from "./image_utils.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -444,7 +445,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       isInline = false,
       operatorList,
       cacheKey,
-      imageCache,
+      localImageCache,
     }) {
       var dict = image.dict;
       const imageRef = dict.objId;
@@ -491,10 +492,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         operatorList.addOp(OPS.paintImageMaskXObject, args);
         if (cacheKey) {
-          imageCache[cacheKey] = {
+          localImageCache.set(cacheKey, imageRef, {
             fn: OPS.paintImageMaskXObject,
             args,
-          };
+          });
         }
         return undefined;
       }
@@ -598,10 +599,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       operatorList.addOp(OPS.paintImageXObject, args);
       if (cacheKey) {
-        imageCache[cacheKey] = {
+        localImageCache.set(cacheKey, imageRef, {
           fn: OPS.paintImageXObject,
           args,
-        };
+        });
 
         if (imageRef) {
           this.globalImageCache.addPageIndex(imageRef, this.pageIndex);
@@ -1201,7 +1202,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var self = this;
       var xref = this.xref;
       let parsingText = false;
-      var imageCache = Object.create(null);
+      const localImageCache = new LocalImageCache();
 
       var xobjs = resources.get("XObject") || Dict.empty;
       var patterns = resources.get("Pattern") || Dict.empty;
@@ -1248,10 +1249,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.paintXObject:
               // eagerly compile XForm objects
               var name = args[0].name;
-              if (name && imageCache[name] !== undefined) {
-                operatorList.addOp(imageCache[name].fn, imageCache[name].args);
-                args = null;
-                continue;
+              if (name) {
+                const localImage = localImageCache.getByName(name);
+                if (localImage) {
+                  operatorList.addOp(localImage.fn, localImage.args);
+                  args = null;
+                  continue;
+                }
               }
 
               next(
@@ -1264,11 +1268,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
                   let xobj = xobjs.getRaw(name);
                   if (xobj instanceof Ref) {
+                    const localImage = localImageCache.getByRef(xobj);
+                    if (localImage) {
+                      operatorList.addOp(localImage.fn, localImage.args);
+
+                      resolveXObject();
+                      return;
+                    }
+
                     const globalImage = self.globalImageCache.getData(
                       xobj,
                       self.pageIndex
                     );
-
                     if (globalImage) {
                       operatorList.addDependency(globalImage.objId);
                       operatorList.addOp(globalImage.fn, globalImage.args);
@@ -1276,6 +1287,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                       resolveXObject();
                       return;
                     }
+
                     xobj = xref.fetch(xobj);
                   }
 
@@ -1316,7 +1328,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         image: xobj,
                         operatorList,
                         cacheKey: name,
-                        imageCache,
+                        localImageCache,
                       })
                       .then(resolveXObject, rejectXObject);
                     return;
@@ -1375,9 +1387,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.endInlineImage:
               var cacheKey = args[0].cacheKey;
               if (cacheKey) {
-                var cacheEntry = imageCache[cacheKey];
-                if (cacheEntry !== undefined) {
-                  operatorList.addOp(cacheEntry.fn, cacheEntry.args);
+                const localImage = localImageCache.getByName(cacheKey);
+                if (localImage) {
+                  operatorList.addOp(localImage.fn, localImage.args);
                   args = null;
                   continue;
                 }
@@ -1389,7 +1401,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   isInline: true,
                   operatorList,
                   cacheKey,
-                  imageCache,
+                  localImageCache,
                 })
               );
               return;
