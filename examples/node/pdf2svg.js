@@ -87,9 +87,6 @@ function writeSvgToFile(svgElement, filePath) {
 var loadingTask = pdfjsLib.getDocument({
   data: data,
   fontExtraProperties: true,
-  // Try to export JPEG images directly if they don't need any further
-  // processing.
-  nativeImageDecoderSupport: pdfjsLib.NativeImageDecoding.DISPLAY,
 });
 loadingTask.promise
   .then(function (doc) {

@@ -23,9 +23,21 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     (typeof navigator !== "undefined" && navigator.maxTouchPoints) || 1;
 
   const isAndroid = /Android/.test(userAgent);
+  const isIE = /Trident/.test(userAgent);
   const isIOS =
     /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent) ||
     (platform === "MacIntel" && maxTouchPoints > 1);
+  const isIOSChrome = /CriOS/.test(userAgent);
+
+  // Checks if possible to use URL.createObjectURL()
+  // Support: IE, Chrome on iOS
+  (function checkOnBlobSupport() {
+    // Sometimes IE and Chrome on iOS losing the data created with
+    // createObjectURL(), see issues #3977 and #8081.
+    if (isIE || isIOSChrome) {
+      compatibilityParams.disableCreateObjectURL = true;
+    }
+  })();
 
   // Limit canvas size to 5 mega-pixels on mobile.
   // Support: Android, iOS

@@ -2113,46 +2113,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.restore();
     },
 
-    paintJpegXObject: function CanvasGraphics_paintJpegXObject(objId, w, h) {
-      const domImage = objId.startsWith("g_")
-        ? this.commonObjs.get(objId)
-        : this.objs.get(objId);
-      if (!domImage) {
-        warn("Dependent image isn't ready yet");
-        return;
-      }
-
-      this.save();
-
-      var ctx = this.ctx;
-      // scale the image to the unit square
-      ctx.scale(1 / w, -1 / h);
-
-      ctx.drawImage(
-        domImage,
-        0,
-        0,
-        domImage.width,
-        domImage.height,
-        0,
-        -h,
-        w,
-        h
-      );
-      if (this.imageLayer) {
-        var currentTransform = ctx.mozCurrentTransformInverse;
-        var position = this.getCanvasPosition(0, 0);
-        this.imageLayer.appendImage({
-          objId,
-          left: position[0],
-          top: position[1],
-          width: w / currentTransform[0],
-          height: h / currentTransform[3],
-        });
-      }
-      this.restore();
-    },
-
     paintImageMaskXObject: function CanvasGraphics_paintImageMaskXObject(img) {
       var ctx = this.ctx;
       var width = img.width,
@@ -2353,9 +2313,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var paintWidth = width,
         paintHeight = height;
       var tmpCanvasId = "prescale1";
-      // Vertial or horizontal scaling shall not be more than 2 to not loose the
+      // Vertical or horizontal scaling shall not be more than 2 to not lose the
       // pixels during drawImage operation, painting on the temporary canvas(es)
-      // that are twice smaller in size
+      // that are twice smaller in size.
       while (
         (widthScale > 2 && paintWidth > 1) ||
         (heightScale > 2 && paintHeight > 1)

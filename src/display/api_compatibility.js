@@ -17,27 +17,11 @@ import { isNodeJS } from "../shared/is_node.js";
 
 const compatibilityParams = Object.create(null);
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  const userAgent =
-    (typeof navigator !== "undefined" && navigator.userAgent) || "";
-  const isIE = /Trident/.test(userAgent);
-  const isIOSChrome = /CriOS/.test(userAgent);
-
-  // Checks if possible to use URL.createObjectURL()
-  // Support: IE, Chrome on iOS
-  (function checkOnBlobSupport() {
-    // Sometimes IE and Chrome on iOS losing the data created with
-    // createObjectURL(), see issues #3977 and #8081.
-    if (isIE || isIOSChrome) {
-      compatibilityParams.disableCreateObjectURL = true;
-    }
-  })();
-
   // Support: Node.js
-  (function checkFontFaceAndImage() {
-    // Node.js is missing native support for `@font-face` and `Image`.
+  (function checkFontFace() {
+    // Node.js is missing native support for `@font-face`.
     if (isNodeJS) {
       compatibilityParams.disableFontFace = true;
-      compatibilityParams.nativeImageDecoderSupport = "none";
     }
   })();
 }
