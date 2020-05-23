@@ -199,8 +199,10 @@ class GlobalImageCache {
     this._imageCache.put(ref, data);
   }
 
-  clear() {
-    this._refCache.clear();
+  clear(onlyData = false) {
+    if (!onlyData) {
+      this._refCache.clear();
+    }
     this._imageCache.clear();
   }
 }
