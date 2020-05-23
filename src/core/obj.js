@@ -716,9 +716,9 @@ class Catalog {
     });
   }
 
-  cleanup() {
+  cleanup(manuallyTriggered = false) {
     clearPrimitiveCaches();
-    this.globalImageCache.clear();
+    this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
     this.pageKidsCountCache.clear();
 
     const promises = [];
