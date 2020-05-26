@@ -1724,7 +1724,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
-      var skipEmptyXObjs = Object.create(null);
+      const emptyXObjectCache = new LocalImageCache();
 
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
@@ -2200,7 +2200,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var name = args[0].name;
-              if (name && skipEmptyXObjs[name] !== undefined) {
+              if (name && emptyXObjectCache.getByName(name)) {
                 break;
               }
 
@@ -2212,7 +2212,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     );
                   }
 
-                  const xobj = xobjs.get(name);
+                  let xobj = xobjs.getRaw(name);
+                  if (xobj instanceof Ref) {
+                    if (emptyXObjectCache.getByRef(xobj)) {
+                      resolveXObject();
+                      return;
+                    }
+
+                    xobj = xref.fetch(xobj);
+                  }
+
                   if (!xobj) {
                     resolveXObject();
                     return;
@@ -2227,7 +2236,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   }
 
                   if (type.name !== "Form") {
-                    skipEmptyXObjs[name] = true;
+                    emptyXObjectCache.set(name, xobj.dict.objId, true);
+
                     resolveXObject();
                     return;
                   }
@@ -2278,7 +2288,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     })
                     .then(function () {
                       if (!sinkWrapper.enqueueInvoked) {
-                        skipEmptyXObjs[name] = true;
+                        emptyXObjectCache.set(name, xobj.dict.objId, true);
                       }
                       resolveXObject();
                     }, rejectXObject);
