@@ -17,6 +17,45 @@
 import { assert, info, shadow } from "../shared/util.js";
 import { RefSetCache } from "./primitives.js";
 
+class LocalImageCache {
+  constructor() {
+    this._nameRefMap = new Map();
+    this._imageMap = new Map();
+    this._imageCache = new RefSetCache();
+  }
+
+  getByName(name) {
+    const ref = this._nameRefMap.get(name);
+    if (ref) {
+      return this.getByRef(ref);
+    }
+    return this._imageMap.get(name) || null;
+  }
+
+  getByRef(ref) {
+    return this._imageCache.get(ref) || null;
+  }
+
+  set(name, ref = null, data) {
+    if (!name) {
+      throw new Error('LocalImageCache.set - expected "name" argument.');
+    }
+    if (ref) {
+      if (this._imageCache.has(ref)) {
+        return;
+      }
+      this._nameRefMap.set(name, ref);
+      this._imageCache.put(ref, data);
+      return;
+    }
+    // name
+    if (this._imageMap.has(name)) {
+      return;
+    }
+    this._imageMap.set(name, data);
+  }
+}
+
 class GlobalImageCache {
   static get NUM_PAGES_THRESHOLD() {
     return shadow(this, "NUM_PAGES_THRESHOLD", 2);
@@ -111,4 +150,4 @@ class GlobalImageCache {
   }
 }
 
-export { GlobalImageCache };
+export { LocalImageCache, GlobalImageCache };
