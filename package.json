@@ -7,7 +7,7 @@
     "@babel/plugin-transform-runtime": "^7.9.6",
     "@babel/preset-env": "^7.9.6",
     "@babel/runtime": "^7.9.6",
-    "acorn": "^6.4.1",
+    "acorn": "^7.2.0",
     "autoprefixer": "^9.7.6",
     "babel-loader": "^8.1.0",
     "canvas": "^2.6.1",
