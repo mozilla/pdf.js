@@ -124,18 +124,21 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
 }
 
 export {
+  // From "./display/display_utils.js":
   addLinkAttributes,
   getFilenameFromUrl,
   LinkTarget,
   loadScript,
   PDFDateString,
   RenderingCancelledException,
+  // From "./display/api.js":
   build,
   getDocument,
   LoopbackPort,
   PDFDataRangeTransport,
   PDFWorker,
   version,
+  // From "./shared/util.js":
   CMapCompressionType,
   createObjectURL,
   createPromiseCapability,
@@ -151,9 +154,14 @@ export {
   UNSUPPORTED_FEATURES,
   Util,
   VerbosityLevel,
+  // From "./display/annotation_layer.js":
   AnnotationLayer,
+  // From "./display/api_compatibility.js":
   apiCompatibilityParams,
+  // From "./display/worker_options.js":
   GlobalWorkerOptions,
+  // From "./display/text_layer.js":
   renderTextLayer,
+  // From "./display/svg.js":
   SVGGraphics,
 };
