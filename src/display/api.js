@@ -302,6 +302,7 @@ function getDocument(src) {
       if (task.destroyed) {
         throw new Error("Loading aborted");
       }
+
       return _fetchDocument(worker, params, rangeTransport, docId).then(
         function(workerId) {
           if (task.destroyed) {
@@ -398,6 +399,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       nativeImageDecoderSupport: source.nativeImageDecoderSupport,
       ignoreErrors: source.ignoreErrors,
       isEvalSupported: source.isEvalSupported,
+      disableFlattenedAnnotations: source.disableFlattenedAnnotations
     })
     .then(function(workerId) {
       if (worker.destroyed) {

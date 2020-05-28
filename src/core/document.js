@@ -52,6 +52,9 @@ const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
 function isAnnotationRenderable(annotation, intent) {
+  // console.log(self)
+  if (self.disableFlattenedAnnotations) return false;
+
   return (
     (intent === "display" && annotation.viewable) ||
     (intent === "print" && annotation.printable)
@@ -394,7 +397,7 @@ class Page {
             )
           );
         }
-
+        
         return Promise.all(annotationPromises).then(
           function(annotations) {
             return annotations.filter(function isDefined(annotation) {

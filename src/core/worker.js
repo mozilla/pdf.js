@@ -124,6 +124,16 @@ var WorkerMessageHandler = {
     var docId = docParams.docId;
     var docBaseUrl = docParams.docBaseUrl;
     var workerHandlerName = docParams.docId + "_worker";
+    var disableFlattenedAnnotations = docParams.disableFlattenedAnnotations;
+    
+    if (typeof self !== 'undefined') {
+      self.disableFlattenedAnnotations = disableFlattenedAnnotations
+    }
+
+    if (typeof window !== 'undefined') {
+      window.disableFlattenedAnnotations = disableFlattenedAnnotations;
+    }
+
     var handler = new MessageHandler(workerHandlerName, docId, port);
 
     // Ensure that postMessage transfers are always correctly enabled/disabled,
