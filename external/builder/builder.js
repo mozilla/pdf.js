@@ -196,19 +196,13 @@ function preprocess(inFilename, outFilename, defines) {
 }
 exports.preprocess = preprocess;
 
-var deprecatedInMozcentral = new RegExp(
-  "(^|\\W)(" + ["-moz-box-sizing", "-moz-grab", "-moz-grabbing"].join("|") + ")"
-);
-
 function preprocessCSS(mode, source, destination) {
   function hasPrefixedFirefox(line) {
     return /(^|\W)-(ms|o|webkit)-\w/.test(line);
   }
 
   function hasPrefixedMozcentral(line) {
-    return (
-      /(^|\W)-(ms|o|webkit)-\w/.test(line) || deprecatedInMozcentral.test(line)
-    );
+    return /(^|\W)-(ms|o|webkit)-\w/.test(line);
   }
 
   function expandImports(content, baseUrl) {
