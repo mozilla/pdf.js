@@ -197,10 +197,6 @@ function preprocess(inFilename, outFilename, defines) {
 exports.preprocess = preprocess;
 
 function preprocessCSS(mode, source, destination) {
-  function hasPrefixedFirefox(line) {
-    return /(^|\W)-(ms|o|webkit)-\w/.test(line);
-  }
-
   function hasPrefixedMozcentral(line) {
     return /(^|\W)-(ms|o|webkit)-\w/.test(line);
   }
@@ -269,11 +265,8 @@ function preprocessCSS(mode, source, destination) {
 
   var content = fs.readFileSync(source, "utf8").toString();
   content = expandImports(content, source);
-  if (mode === "mozcentral" || mode === "firefox") {
-    content = removePrefixed(
-      content,
-      mode === "mozcentral" ? hasPrefixedMozcentral : hasPrefixedFirefox
-    );
+  if (mode === "mozcentral") {
+    content = removePrefixed(content, hasPrefixedMozcentral);
   }
   fs.writeFileSync(destination, content);
 }
