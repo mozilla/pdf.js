@@ -605,6 +605,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         });
 
         if (imageRef) {
+          assert(!isInline, "Cannot cache an inline image globally.");
           this.globalImageCache.addPageIndex(imageRef, this.pageIndex);
 
           if (cacheGlobally) {
