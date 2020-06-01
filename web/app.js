@@ -136,7 +136,6 @@ class DefaultExternalServices {
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   _initializedCapability: createPromiseCapability(),
-  fellback: false,
   appConfig: null,
   pdfDocument: null,
   pdfLoadingTask: null,
@@ -189,6 +188,8 @@ const PDFViewerApplication = {
   externalServices: DefaultExternalServices,
   _boundEvents: {},
   contentDispositionFilename: null,
+  _hasInteracted: false,
+  _featureId: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -868,14 +869,17 @@ const PDFViewerApplication = {
       PDFJSDev.test("MOZCENTRAL || GENERIC")
     ) {
       // Only trigger the fallback once so we don't spam the user with messages
-      // for one PDF.
-      if (this.fellback) {
+      // for one PDF. It should only be triggered once the user has clicked
+      // within the PDF.
+      if (!PDFViewerApplication._hasInteracted) {
+        if (!this._featureId) {
+          this._featureId = featureId;
+        }
         return;
       }
-      this.fellback = true;
       this.externalServices.fallback(
         {
-          featureId,
+          featureId: this._featureId,
           url: this.baseUrl,
         },
         function response(download) {
@@ -2473,6 +2477,8 @@ function webViewerWheel(evt) {
 }
 
 function webViewerClick(evt) {
+  PDFViewerApplication._hasInteracted = true;
+  PDFViewerApplication.fallback();
   if (!PDFViewerApplication.secondaryToolbar.isOpen) {
     return;
   }
