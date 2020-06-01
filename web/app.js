@@ -189,6 +189,8 @@ const PDFViewerApplication = {
   externalServices: DefaultExternalServices,
   _boundEvents: {},
   contentDispositionFilename: null,
+  _hasInteracted: false,
+  _delayedFallbackFeatureIds: [],
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -867,11 +869,20 @@ const PDFViewerApplication = {
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("MOZCENTRAL || GENERIC")
     ) {
+      // For PDFs that contain script and form errors, we should only trigger
+      // the fallback once the user has interacted with the page.
+      if (this._delayedFallbackFeatureIds.length >= 1 && this._hasInteracted) {
+        featureId = this._delayedFallbackFeatureIds[0];
+        // Reset to prevent all click events from showing fallback bar.
+        this._delayedFallbackFeatureIds = [];
+      }
+
       // Only trigger the fallback once so we don't spam the user with messages
       // for one PDF.
       if (this.fellback) {
         return;
       }
+
       this.fellback = true;
       this.externalServices.fallback(
         {
@@ -1235,7 +1246,7 @@ const PDFViewerApplication = {
           return false;
         }
         console.warn("Warning: JavaScript is not supported");
-        this.fallback(UNSUPPORTED_FEATURES.javaScript);
+        this._delayedFallbackFeatureIds.push(UNSUPPORTED_FEATURES.javaScript);
         return true;
       });
 
@@ -1317,7 +1328,7 @@ const PDFViewerApplication = {
 
     if (info.IsAcroFormPresent) {
       console.warn("Warning: AcroForm/XFA is not supported");
-      this.fallback(UNSUPPORTED_FEATURES.forms);
+      this._delayedFallbackFeatureIds.push(UNSUPPORTED_FEATURES.forms);
     }
 
     if (
@@ -1715,6 +1726,7 @@ const PDFViewerApplication = {
     window.addEventListener("wheel", webViewerWheel, { passive: false });
     window.addEventListener("click", webViewerClick);
     window.addEventListener("keydown", webViewerKeyDown);
+    window.addEventListener("keyup", webViewerKeyUp);
     window.addEventListener("resize", _boundEvents.windowResize);
     window.addEventListener("hashchange", _boundEvents.windowHashChange);
     window.addEventListener("beforeprint", _boundEvents.windowBeforePrint);
@@ -1776,6 +1788,7 @@ const PDFViewerApplication = {
     window.removeEventListener("wheel", webViewerWheel, { passive: false });
     window.removeEventListener("click", webViewerClick);
     window.removeEventListener("keydown", webViewerKeyDown);
+    window.removeEventListener("keyup", webViewerKeyUp);
     window.removeEventListener("resize", _boundEvents.windowResize);
     window.removeEventListener("hashchange", _boundEvents.windowHashChange);
     window.removeEventListener("beforeprint", _boundEvents.windowBeforePrint);
@@ -2473,6 +2486,17 @@ function webViewerWheel(evt) {
 }
 
 function webViewerClick(evt) {
+  PDFViewerApplication._hasInteracted = true;
+
+  // Avoid triggering the fallback bar when the user clicks on the
+  // toolbar or sidebar.
+  if (
+    PDFViewerApplication._delayedFallbackFeatureIds.length >= 1 &&
+    PDFViewerApplication.pdfViewer.containsElement(evt.target)
+  ) {
+    PDFViewerApplication.fallback();
+  }
+
   if (!PDFViewerApplication.secondaryToolbar.isOpen) {
     return;
   }
@@ -2483,6 +2507,18 @@ function webViewerClick(evt) {
       evt.target !== appConfig.secondaryToolbar.toggleButton)
   ) {
     PDFViewerApplication.secondaryToolbar.close();
+  }
+}
+
+function webViewerKeyUp(evt) {
+  if (evt.keyCode === 9) {
+    // The user is tabbing into the pdf. Display the error message
+    // if it has not already been displayed.
+    PDFViewerApplication._hasInteracted = true;
+
+    if (PDFViewerApplication._delayedFallbackFeatureIds.length >= 1) {
+      PDFViewerApplication.fallback();
+    }
   }
 }
 
