@@ -661,13 +661,6 @@ class PDFDocumentProxy {
     return this._transport.getOpenAction();
   }
 
-  getOpenActionDestination() {
-    deprecated("getOpenActionDestination, use getOpenAction instead.");
-    return this.getOpenAction().then(function (openAction) {
-      return openAction && openAction.dest ? openAction.dest : null;
-    });
-  }
-
   /**
    * @returns {Promise} A promise that is resolved with a lookup table for
    *   mapping named attachments to their content.
