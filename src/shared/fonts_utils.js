@@ -73,7 +73,7 @@ function readCharstringEncoding(aString) {
   var charstringTokens = [];
 
   var count = aString.length;
-  for (var i = 0; i < count; ) { // eslint-disable-line space-in-parens
+  for (var i = 0; i < count; ) {
     var value = aString[i++] | 0;
     var token = null;
 

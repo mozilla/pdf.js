@@ -1,4 +1,4 @@
-/* Copyright 2016 Mozilla Foundation
+/* Copyright 2020 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,5 +13,7 @@
  * limitations under the License.
  */
 
-(typeof window !== 'undefined' ? window : {}).pdfjsWorker =
-  require('./pdf.worker.js');
+(typeof window !== "undefined"
+  ? window
+  : {}
+).pdfjsWorker = require("./pdf.worker.js");

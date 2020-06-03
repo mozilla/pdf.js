@@ -13,33 +13,18 @@
  * limitations under the License.
  */
 
-let compatibilityParams = Object.create(null);
-if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-  const isNodeJS = require('../shared/is_node');
+import { isNodeJS } from "../shared/is_node.js";
 
-  const userAgent =
-    (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-  const isIE = /Trident/.test(userAgent);
-  const isIOSChrome = /CriOS/.test(userAgent);
-
-  // Checks if possible to use URL.createObjectURL()
-  // Support: IE, Chrome on iOS
-  (function checkOnBlobSupport() {
-    // Sometimes IE and Chrome on iOS losing the data created with
-    // createObjectURL(), see issues #3977 and #8081.
-    if (isIE || isIOSChrome) {
-      compatibilityParams.disableCreateObjectURL = true;
-    }
-  })();
-
+const compatibilityParams = Object.create(null);
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   // Support: Node.js
-  (function checkFontFaceAndImage() {
-    // Node.js is missing native support for `@font-face` and `Image`.
-    if (isNodeJS()) {
+  (function checkFontFace() {
+    // Node.js is missing native support for `@font-face`.
+    if (isNodeJS) {
       compatibilityParams.disableFontFace = true;
-      compatibilityParams.nativeImageDecoderSupport = 'none';
     }
   })();
 }
+const apiCompatibilityParams = Object.freeze(compatibilityParams);
 
-exports.apiCompatibilityParams = Object.freeze(compatibilityParams);
+export { apiCompatibilityParams };

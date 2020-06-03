@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-import { assert, ImageKind, OPS } from '../shared/util';
+import { assert, ImageKind, OPS, warn } from "../shared/util.js";
 
 var QueueOptimizer = (function QueueOptimizerClosure() {
   function addState(parentState, pattern, checkFn, iterateFn, processFn) {
     var state = parentState;
     for (var i = 0, ii = pattern.length - 1; i < ii; i++) {
       var item = pattern[i];
-      state = (state[item] || (state[item] = []));
+      state = state[item] || (state[item] = []);
     }
     state[pattern[pattern.length - 1]] = {
       checkFn,
@@ -29,8 +29,12 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     };
   }
 
-  function handlePaintSolidColorImageMask(iFirstSave, count, fnArray,
-                                          argsArray) {
+  function handlePaintSolidColorImageMask(
+    iFirstSave,
+    count,
+    fnArray,
+    argsArray
+  ) {
     // Handles special case of mainly LaTeX documents which use image masks to
     // draw lines with the current fill style.
     // 'count' groups of (save, transform, paintImageMaskXObject, restore)+
@@ -39,9 +43,13 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     for (var i = 0; i < count; i++) {
       var arg = argsArray[iFirstPIMXO + 4 * i];
       var imageMask = arg.length === 1 && arg[0];
-      if (imageMask && imageMask.width === 1 && imageMask.height === 1 &&
-          (!imageMask.data.length ||
-           (imageMask.data.length === 1 && imageMask.data[0] === 0))) {
+      if (
+        imageMask &&
+        imageMask.width === 1 &&
+        imageMask.height === 1 &&
+        (!imageMask.data.length ||
+          (imageMask.data.length === 1 && imageMask.data[0] === 0))
+      ) {
         fnArray[iFirstPIMXO + 4 * i] = OPS.paintSolidColorImageMask;
         continue;
       }
@@ -54,7 +62,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
   // This replaces (save, transform, paintInlineImageXObject, restore)+
   // sequences with one |paintInlineImageXObjectGroup| operation.
-  addState(InitialState,
+  addState(
+    InitialState,
     [OPS.save, OPS.transform, OPS.paintInlineImageXObject, OPS.restore],
     null,
     function iterateInlineImageGroup(context, i) {
@@ -79,23 +88,28 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var MAX_WIDTH = 1000;
       var IMAGE_PADDING = 1;
 
-      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var fnArray = context.fnArray,
+        argsArray = context.argsArray;
       var curr = context.iCurr;
       var iFirstSave = curr - 3;
       var iFirstTransform = curr - 2;
       var iFirstPIIXO = curr - 1;
 
-      var count = Math.min(Math.floor((i - iFirstSave) / 4),
-                           MAX_IMAGES_IN_INLINE_IMAGES_BLOCK);
+      var count = Math.min(
+        Math.floor((i - iFirstSave) / 4),
+        MAX_IMAGES_IN_INLINE_IMAGES_BLOCK
+      );
       if (count < MIN_IMAGES_IN_INLINE_IMAGES_BLOCK) {
-        return i - (i - iFirstSave) % 4;
+        return i - ((i - iFirstSave) % 4);
       }
 
       // assuming that heights of those image is too small (~1 pixel)
       // packing as much as possible by lines
       var maxX = 0;
-      var map = [], maxLineHeight = 0;
-      var currentX = IMAGE_PADDING, currentY = IMAGE_PADDING;
+      var map = [],
+        maxLineHeight = 0;
+      var currentX = IMAGE_PADDING,
+        currentY = IMAGE_PADDING;
       var q;
       for (q = 0; q < count; q++) {
         var transform = argsArray[iFirstTransform + (q << 2)];
@@ -109,8 +123,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         }
         map.push({
           transform,
-          x: currentX, y: currentY,
-          w: img.width, h: img.height,
+          x: currentX,
+          y: currentY,
+          w: img.width,
+          h: img.height,
         });
         currentX += img.width + 2 * IMAGE_PADDING;
         maxLineHeight = Math.max(maxLineHeight, img.height);
@@ -147,17 +163,25 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       // Replace queue items.
       fnArray.splice(iFirstSave, count * 4, OPS.paintInlineImageXObjectGroup);
-      argsArray.splice(iFirstSave, count * 4,
-        [{ width: imgWidth, height: imgHeight, kind: ImageKind.RGBA_32BPP,
-           data: imgData, }, map]);
+      argsArray.splice(iFirstSave, count * 4, [
+        {
+          width: imgWidth,
+          height: imgHeight,
+          kind: ImageKind.RGBA_32BPP,
+          data: imgData,
+        },
+        map,
+      ]);
 
       return iFirstSave + 1;
-    });
+    }
+  );
 
   // This replaces (save, transform, paintImageMaskXObject, restore)+
   // sequences with one |paintImageMaskXObjectGroup| or one
   // |paintImageMaskXObjectRepeat| operation.
-  addState(InitialState,
+  addState(
+    InitialState,
     [OPS.save, OPS.transform, OPS.paintImageMaskXObject, OPS.restore],
     null,
     function iterateImageMaskGroup(context, i) {
@@ -181,7 +205,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var MAX_IMAGES_IN_MASKS_BLOCK = 100;
       var MAX_SAME_IMAGES_IN_MASKS_BLOCK = 1000;
 
-      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var fnArray = context.fnArray,
+        argsArray = context.argsArray;
       var curr = context.iCurr;
       var iFirstSave = curr - 3;
       var iFirstTransform = curr - 2;
@@ -190,18 +215,24 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       // At this point, i is the index of the first op past the last valid
       // quartet.
       var count = Math.floor((i - iFirstSave) / 4);
-      count = handlePaintSolidColorImageMask(iFirstSave, count, fnArray,
-                                             argsArray);
+      count = handlePaintSolidColorImageMask(
+        iFirstSave,
+        count,
+        fnArray,
+        argsArray
+      );
       if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
-        return i - (i - iFirstSave) % 4;
+        return i - ((i - iFirstSave) % 4);
       }
 
       var q;
       var isSameImage = false;
       var iTransform, transformArgs;
       var firstPIMXOArg0 = argsArray[iFirstPIMXO][0];
-      if (argsArray[iFirstTransform][1] === 0 &&
-          argsArray[iFirstTransform][2] === 0) {
+      if (
+        argsArray[iFirstTransform][1] === 0 &&
+        argsArray[iFirstTransform][2] === 0
+      ) {
         isSameImage = true;
         var firstTransformArg0 = argsArray[iFirstTransform][0];
         var firstTransformArg3 = argsArray[iFirstTransform][3];
@@ -209,11 +240,13 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         var iPIMXO = iFirstPIMXO + 4;
         for (q = 1; q < count; q++, iTransform += 4, iPIMXO += 4) {
           transformArgs = argsArray[iTransform];
-          if (argsArray[iPIMXO][0] !== firstPIMXOArg0 ||
-              transformArgs[0] !== firstTransformArg0 ||
-              transformArgs[1] !== 0 ||
-              transformArgs[2] !== 0 ||
-              transformArgs[3] !== firstTransformArg3) {
+          if (
+            argsArray[iPIMXO][0] !== firstPIMXOArg0 ||
+            transformArgs[0] !== firstTransformArg0 ||
+            transformArgs[1] !== 0 ||
+            transformArgs[2] !== 0 ||
+            transformArgs[3] !== firstTransformArg3
+          ) {
             if (q < MIN_IMAGES_IN_MASKS_BLOCK) {
               isSameImage = false;
             } else {
@@ -230,23 +263,30 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         iTransform = iFirstTransform;
         for (q = 0; q < count; q++, iTransform += 4) {
           transformArgs = argsArray[iTransform];
-          positions[(q << 1)] = transformArgs[4];
+          positions[q << 1] = transformArgs[4];
           positions[(q << 1) + 1] = transformArgs[5];
         }
 
         // Replace queue items.
         fnArray.splice(iFirstSave, count * 4, OPS.paintImageMaskXObjectRepeat);
-        argsArray.splice(iFirstSave, count * 4,
-          [firstPIMXOArg0, firstTransformArg0, firstTransformArg3, positions]);
+        argsArray.splice(iFirstSave, count * 4, [
+          firstPIMXOArg0,
+          firstTransformArg0,
+          firstTransformArg3,
+          positions,
+        ]);
       } else {
         count = Math.min(count, MAX_IMAGES_IN_MASKS_BLOCK);
         var images = [];
         for (q = 0; q < count; q++) {
           transformArgs = argsArray[iFirstTransform + (q << 2)];
           var maskParams = argsArray[iFirstPIMXO + (q << 2)][0];
-          images.push({ data: maskParams.data, width: maskParams.width,
-                        height: maskParams.height,
-                        transform: transformArgs, });
+          images.push({
+            data: maskParams.data,
+            width: maskParams.width,
+            height: maskParams.height,
+            transform: transformArgs,
+          });
         }
 
         // Replace queue items.
@@ -255,21 +295,26 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       }
 
       return iFirstSave + 1;
-    });
+    }
+  );
 
   // This replaces (save, transform, paintImageXObject, restore)+ sequences
   // with one paintImageXObjectRepeat operation, if the |transform| and
   // |paintImageXObjectRepeat| ops are appropriate.
-  addState(InitialState,
+  addState(
+    InitialState,
     [OPS.save, OPS.transform, OPS.paintImageXObject, OPS.restore],
     function (context) {
       var argsArray = context.argsArray;
       var iFirstTransform = context.iCurr - 2;
-      return argsArray[iFirstTransform][1] === 0 &&
-             argsArray[iFirstTransform][2] === 0;
+      return (
+        argsArray[iFirstTransform][1] === 0 &&
+        argsArray[iFirstTransform][2] === 0
+      );
     },
     function iterateImageGroup(context, i) {
-      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var fnArray = context.fnArray,
+        argsArray = context.argsArray;
       var iFirstSave = context.iCurr - 3;
       var pos = (i - iFirstSave) % 4;
       switch (pos) {
@@ -282,10 +327,12 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
           var iFirstTransform = context.iCurr - 2;
           var firstTransformArg0 = argsArray[iFirstTransform][0];
           var firstTransformArg3 = argsArray[iFirstTransform][3];
-          if (argsArray[i][0] !== firstTransformArg0 ||
-              argsArray[i][1] !== 0 ||
-              argsArray[i][2] !== 0 ||
-              argsArray[i][3] !== firstTransformArg3) {
+          if (
+            argsArray[i][0] !== firstTransformArg0 ||
+            argsArray[i][1] !== 0 ||
+            argsArray[i][2] !== 0 ||
+            argsArray[i][3] !== firstTransformArg3
+          ) {
             return false; // transforms don't match
           }
           return true;
@@ -308,7 +355,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var MIN_IMAGES_IN_BLOCK = 3;
       var MAX_IMAGES_IN_BLOCK = 1000;
 
-      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var fnArray = context.fnArray,
+        argsArray = context.argsArray;
       var curr = context.iCurr;
       var iFirstSave = curr - 3;
       var iFirstTransform = curr - 2;
@@ -319,10 +367,12 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       // At this point, i is the index of the first op past the last valid
       // quartet.
-      var count = Math.min(Math.floor((i - iFirstSave) / 4),
-                           MAX_IMAGES_IN_BLOCK);
+      var count = Math.min(
+        Math.floor((i - iFirstSave) / 4),
+        MAX_IMAGES_IN_BLOCK
+      );
       if (count < MIN_IMAGES_IN_BLOCK) {
-        return i - (i - iFirstSave) % 4;
+        return i - ((i - iFirstSave) % 4);
       }
 
       // Extract the (x,y) positions from all of the matching transforms.
@@ -330,27 +380,34 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var iTransform = iFirstTransform;
       for (var q = 0; q < count; q++, iTransform += 4) {
         var transformArgs = argsArray[iTransform];
-        positions[(q << 1)] = transformArgs[4];
+        positions[q << 1] = transformArgs[4];
         positions[(q << 1) + 1] = transformArgs[5];
       }
 
       // Replace queue items.
-      var args = [firstPIXOArg0, firstTransformArg0, firstTransformArg3,
-                  positions];
+      var args = [
+        firstPIXOArg0,
+        firstTransformArg0,
+        firstTransformArg3,
+        positions,
+      ];
       fnArray.splice(iFirstSave, count * 4, OPS.paintImageXObjectRepeat);
       argsArray.splice(iFirstSave, count * 4, args);
 
       return iFirstSave + 1;
-    });
+    }
+  );
 
   // This replaces (beginText, setFont, setTextMatrix, showText, endText)+
   // sequences with (beginText, setFont, (setTextMatrix, showText)+, endText)+
   // sequences, if the font for each one is the same.
-  addState(InitialState,
+  addState(
+    InitialState,
     [OPS.beginText, OPS.setFont, OPS.setTextMatrix, OPS.showText, OPS.endText],
     null,
     function iterateShowTextGroup(context, i) {
-      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var fnArray = context.fnArray,
+        argsArray = context.argsArray;
       var iFirstSave = context.iCurr - 4;
       var pos = (i - iFirstSave) % 5;
       switch (pos) {
@@ -367,8 +424,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
           var iFirstSetFont = context.iCurr - 3;
           var firstSetFontArg0 = argsArray[iFirstSetFont][0];
           var firstSetFontArg1 = argsArray[iFirstSetFont][1];
-          if (argsArray[i][0] !== firstSetFontArg0 ||
-              argsArray[i][1] !== firstSetFontArg1) {
+          if (
+            argsArray[i][0] !== firstSetFontArg0 ||
+            argsArray[i][1] !== firstSetFontArg1
+          ) {
             return false; // fonts don't match
           }
           return true;
@@ -381,7 +440,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var MIN_CHARS_IN_BLOCK = 3;
       var MAX_CHARS_IN_BLOCK = 1000;
 
-      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var fnArray = context.fnArray,
+        argsArray = context.argsArray;
       var curr = context.iCurr;
       var iFirstBeginText = curr - 4;
       var iFirstSetFont = curr - 3;
@@ -393,23 +453,27 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       // At this point, i is the index of the first op past the last valid
       // quintet.
-      var count = Math.min(Math.floor((i - iFirstBeginText) / 5),
-                           MAX_CHARS_IN_BLOCK);
+      var count = Math.min(
+        Math.floor((i - iFirstBeginText) / 5),
+        MAX_CHARS_IN_BLOCK
+      );
       if (count < MIN_CHARS_IN_BLOCK) {
-        return i - (i - iFirstBeginText) % 5;
+        return i - ((i - iFirstBeginText) % 5);
       }
 
       // If the preceding quintet is (<something>, setFont, setTextMatrix,
       // showText, endText), include that as well. (E.g. <something> might be
       // |dependency|.)
       var iFirst = iFirstBeginText;
-      if (iFirstBeginText >= 4 &&
-          fnArray[iFirstBeginText - 4] === fnArray[iFirstSetFont] &&
-          fnArray[iFirstBeginText - 3] === fnArray[iFirstSetTextMatrix] &&
-          fnArray[iFirstBeginText - 2] === fnArray[iFirstShowText] &&
-          fnArray[iFirstBeginText - 1] === fnArray[iFirstEndText] &&
-          argsArray[iFirstBeginText - 4][0] === firstSetFontArg0 &&
-          argsArray[iFirstBeginText - 4][1] === firstSetFontArg1) {
+      if (
+        iFirstBeginText >= 4 &&
+        fnArray[iFirstBeginText - 4] === fnArray[iFirstSetFont] &&
+        fnArray[iFirstBeginText - 3] === fnArray[iFirstSetTextMatrix] &&
+        fnArray[iFirstBeginText - 2] === fnArray[iFirstShowText] &&
+        fnArray[iFirstBeginText - 1] === fnArray[iFirstEndText] &&
+        argsArray[iFirstBeginText - 4][0] === firstSetFontArg0 &&
+        argsArray[iFirstBeginText - 4][1] === firstSetFontArg1
+      ) {
         count++;
         iFirst -= 5;
       }
@@ -423,8 +487,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       }
 
       return iEndText + 1;
-    });
+    }
+  );
 
+  // eslint-disable-next-line no-shadow
   function QueueOptimizer(queue) {
     this.queue = queue;
     this.state = null;
@@ -441,10 +507,11 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     _optimize() {
       // Process new fnArray item(s) chunk.
       const fnArray = this.queue.fnArray;
-      let i = this.lastProcessed, ii = fnArray.length;
+      let i = this.lastProcessed,
+        ii = fnArray.length;
       let state = this.state;
       let match = this.match;
-      if (!state && !match && (i + 1 === ii) && !InitialState[fnArray[i]]) {
+      if (!state && !match && i + 1 === ii && !InitialState[fnArray[i]]) {
         // Micro-optimization for the common case: last item is not
         // optimizable, just skipping it.
         this.lastProcessed = ii;
@@ -518,6 +585,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 })();
 
 var NullOptimizer = (function NullOptimizerClosure() {
+  // eslint-disable-next-line no-shadow
   function NullOptimizer(queue) {
     this.queue = queue;
   }
@@ -528,9 +596,9 @@ var NullOptimizer = (function NullOptimizerClosure() {
       this.queue.argsArray.push(args);
     },
 
-    flush() { },
+    flush() {},
 
-    reset() { },
+    reset() {},
   };
 
   return NullOptimizer;
@@ -540,11 +608,12 @@ var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 1000;
   var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
-  function OperatorList(intent, messageHandler, pageIndex) {
-    this.messageHandler = messageHandler;
+  // eslint-disable-next-line no-shadow
+  function OperatorList(intent, streamSink, pageIndex) {
+    this._streamSink = streamSink;
     this.fnArray = [];
     this.argsArray = [];
-    if (messageHandler && intent !== 'oplist') {
+    if (streamSink && intent !== "oplist") {
       this.optimizer = new QueueOptimizer(this);
     } else {
       this.optimizer = new NullOptimizer(this);
@@ -554,6 +623,7 @@ var OperatorList = (function OperatorListClosure() {
     this.pageIndex = pageIndex;
     this.intent = intent;
     this.weight = 0;
+    this._resolved = streamSink ? null : Promise.resolve();
   }
 
   OperatorList.prototype = {
@@ -561,22 +631,28 @@ var OperatorList = (function OperatorListClosure() {
       return this.argsArray.length;
     },
 
+    get ready() {
+      return this._resolved || this._streamSink.ready;
+    },
+
     /**
-     * @returns {number} The total length of the entire operator list,
-     *                   since `this.length === 0` after flushing.
+     * @type {number} The total length of the entire operator list, since
+     *                `this.length === 0` after flushing.
      */
     get totalLength() {
-      return (this._totalLength + this.length);
+      return this._totalLength + this.length;
     },
 
     addOp(fn, args) {
       this.optimizer.push(fn, args);
       this.weight++;
-      if (this.messageHandler) {
+      if (this._streamSink) {
         if (this.weight >= CHUNK_SIZE) {
           this.flush();
-        } else if (this.weight >= CHUNK_SIZE_ABOUT &&
-                   (fn === OPS.restore || fn === OPS.endText)) {
+        } else if (
+          this.weight >= CHUNK_SIZE_ABOUT &&
+          (fn === OPS.restore || fn === OPS.endText)
+        ) {
           // heuristic to flush on boundary of restore or endText
           this.flush();
         }
@@ -598,6 +674,10 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     addOpList(opList) {
+      if (!(opList instanceof OperatorList)) {
+        warn('addOpList - ignoring invalid "opList" parameter.');
+        return;
+      }
       Object.assign(this.dependencies, opList.dependencies);
       for (var i = 0, ii = opList.length; i < ii; i++) {
         this.addOp(opList.fnArray[i], opList.argsArray[i]);
@@ -614,7 +694,7 @@ var OperatorList = (function OperatorListClosure() {
 
     get _transfers() {
       const transfers = [];
-      const { fnArray, argsArray, length, } = this;
+      const { fnArray, argsArray, length } = this;
       for (let i = 0; i < length; i++) {
         switch (fnArray[i]) {
           case OPS.paintInlineImageXObject:
@@ -622,10 +702,14 @@ var OperatorList = (function OperatorListClosure() {
           case OPS.paintImageMaskXObject:
             const arg = argsArray[i][0]; // first param in imgData
 
-            if (typeof PDFJSDev === 'undefined' ||
-                PDFJSDev.test('!PRODUCTION || TESTING')) {
-              assert(arg.data instanceof Uint8ClampedArray,
-                     'OperatorList._transfers: Unsupported "arg.data" type.');
+            if (
+              typeof PDFJSDev === "undefined" ||
+              PDFJSDev.test("!PRODUCTION || TESTING")
+            ) {
+              assert(
+                arg.data instanceof Uint8ClampedArray,
+                'OperatorList._transfers: Unsupported "arg.data" type.'
+              );
             }
             if (!arg.cached) {
               transfers.push(arg.data.buffer);
@@ -641,16 +725,16 @@ var OperatorList = (function OperatorListClosure() {
       const length = this.length;
       this._totalLength += length;
 
-      this.messageHandler.send('RenderPageChunk', {
-        operatorList: {
+      this._streamSink.enqueue(
+        {
           fnArray: this.fnArray,
           argsArray: this.argsArray,
           lastChunk,
           length,
         },
-        pageIndex: this.pageIndex,
-        intent: this.intent,
-      }, this._transfers);
+        1,
+        this._transfers
+      );
 
       this.dependencies = Object.create(null);
       this.fnArray.length = 0;
@@ -663,6 +747,4 @@ var OperatorList = (function OperatorListClosure() {
   return OperatorList;
 })();
 
-export {
-  OperatorList,
-};
+export { OperatorList };

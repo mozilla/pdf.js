@@ -38,16 +38,19 @@
 
 // Modified jasmine's boot.js file to load PDF.js libraries async.
 
-'use strict';
+"use strict";
 
 function initializePDFJS(callback) {
-  Promise.all([SystemJS.import('pdfjs/core/fonts'),
-               SystemJS.import('pdfjs/core/stream'),
-               SystemJS.import('pdfjs/core/primitives'),
-               SystemJS.import('pdfjs/core/cmap')])
-         .then(function (modules) {
-    var fonts = modules[0], stream = modules[1],
-        primitives = modules[2], cmap = modules[3];
+  Promise.all([
+    SystemJS.import("pdfjs/core/fonts.js"),
+    SystemJS.import("pdfjs/core/stream.js"),
+    SystemJS.import("pdfjs/core/primitives.js"),
+    SystemJS.import("pdfjs/core/cmap.js"),
+  ]).then(function (modules) {
+    var fonts = modules[0],
+      stream = modules[1],
+      primitives = modules[2],
+      cmap = modules[3];
     // Expose some of the PDFJS members to global scope for tests.
     window.Font = fonts.Font;
     window.ToUnicodeMap = fonts.ToUnicodeMap;
@@ -59,7 +62,7 @@ function initializePDFJS(callback) {
   });
 }
 
-(function() {
+(function () {
   window.jasmine = jasmineRequire.core(jasmineRequire);
 
   jasmineRequire.html(jasmine);
@@ -77,17 +80,17 @@ function initializePDFJS(callback) {
   });
 
   var config = {
-    failFast: queryString.getParam('failFast'),
-    oneFailurePerSpec: queryString.getParam('oneFailurePerSpec'),
-    hideDisabled: queryString.getParam('hideDisabled'),
+    failFast: queryString.getParam("failFast"),
+    oneFailurePerSpec: queryString.getParam("oneFailurePerSpec"),
+    hideDisabled: queryString.getParam("hideDisabled"),
   };
 
-  var random = queryString.getParam('random');
-  if (random !== undefined && random !== '') {
+  var random = queryString.getParam("random");
+  if (random !== undefined && random !== "") {
     config.random = random;
   }
 
-  var seed = queryString.getParam('seed');
+  var seed = queryString.getParam("seed");
   if (seed) {
     config.seed = seed;
   }
@@ -115,9 +118,8 @@ function initializePDFJS(callback) {
 
   env.addReporter(htmlReporter);
 
-  if (queryString.getParam('browser')) {
-    var testReporter = new TestReporter(queryString.getParam('browser'),
-                                        queryString.getParam('path'));
+  if (queryString.getParam("browser")) {
+    var testReporter = new TestReporter(queryString.getParam("browser"));
     env.addReporter(testReporter);
   }
 
@@ -125,11 +127,11 @@ function initializePDFJS(callback) {
   // against the `spec` query param.
   var specFilter = new jasmine.HtmlSpecFilter({
     filterString() {
-      return queryString.getParam('spec');
+      return queryString.getParam("spec");
     },
   });
 
-  config.specFilter = function(spec) {
+  config.specFilter = function (spec) {
     return specFilter.matches(spec.getFullName());
   };
 
@@ -143,7 +145,7 @@ function initializePDFJS(callback) {
   // instance and then executing the loaded Jasmine environment.
   var currentWindowOnload = window.onload;
 
-  window.onload = function() {
+  window.onload = function () {
     if (currentWindowOnload) {
       currentWindowOnload();
     }
@@ -160,4 +162,4 @@ function initializePDFJS(callback) {
     }
     return destination;
   }
-}());
+})();

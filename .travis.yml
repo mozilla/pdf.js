@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - node
+  - lts/*
 cache:
   directories:
     - node_modules
@@ -8,4 +8,3 @@ install:
   - npm install -g npm@latest
   - npm install -g gulp-cli
   - npm install
-  - npm update
