@@ -864,11 +864,24 @@ const PDFViewerApplication = {
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
 
+  _recordFallbackErrorTelemetry(featureId) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) {
+      this.externalServices.reportTelemetry({
+        type: "unsupportedFeature",
+        featureId,
+      });
+    }
+  },
+
   fallback(featureId) {
     if (
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("MOZCENTRAL || GENERIC")
     ) {
+      if (featureId) {
+        this._recordFallbackErrorTelemetry(featureId);
+      }
+
       // For PDFs that contain script and form errors, we should only trigger
       // the fallback once the user has interacted with the page.
       if (this._delayedFallbackFeatureIds.length >= 1 && this._hasInteracted) {
@@ -1247,6 +1260,7 @@ const PDFViewerApplication = {
         }
         console.warn("Warning: JavaScript is not supported");
         this._delayedFallbackFeatureIds.push(UNSUPPORTED_FEATURES.javaScript);
+        this._recordFallbackErrorTelemetry(UNSUPPORTED_FEATURES.javaScript);
         return true;
       });
 
@@ -1329,6 +1343,7 @@ const PDFViewerApplication = {
     if (info.IsAcroFormPresent) {
       console.warn("Warning: AcroForm/XFA is not supported");
       this._delayedFallbackFeatureIds.push(UNSUPPORTED_FEATURES.forms);
+      this._recordFallbackErrorTelemetry(UNSUPPORTED_FEATURES.forms);
     }
 
     if (
