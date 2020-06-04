@@ -991,8 +991,10 @@ var JpegImage = (function JpegImageClosure() {
             var components = [],
               component;
             for (i = 0; i < selectorsCount; i++) {
-              var componentIndex = frame.componentIds[data[offset++]];
+              const index = data[offset++];
+              var componentIndex = frame.componentIds[index];
               component = frame.components[componentIndex];
+              component.index = index;
               var tableSpec = data[offset++];
               component.huffmanTableDC = huffmanTablesDC[tableSpec >> 4];
               component.huffmanTableAC = huffmanTablesAC[tableSpec & 15];
@@ -1088,6 +1090,7 @@ var JpegImage = (function JpegImageClosure() {
         }
 
         this.components.push({
+          index: component.index,
           output: buildComponentData(frame, component),
           scaleX: component.h / frame.maxH,
           scaleY: component.v / frame.maxV,
@@ -1181,6 +1184,14 @@ var JpegImage = (function JpegImageClosure() {
         if (this._colorTransform === 0) {
           // If the Adobe transform marker is not present and the image
           // dictionary has a 'ColorTransform' entry, explicitly set to `0`,
+          // then the colours should *not* be transformed.
+          return false;
+        } else if (
+          this.components[0].index === /* "R" = */ 0x52 &&
+          this.components[1].index === /* "G" = */ 0x47 &&
+          this.components[2].index === /* "B" = */ 0x42
+        ) {
+          // If the three components are indexed as RGB in ASCII
           // then the colours should *not* be transformed.
           return false;
         }
