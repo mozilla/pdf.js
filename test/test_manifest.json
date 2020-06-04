@@ -3068,6 +3068,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "jpeg_rgb",
+       "file": "pdfs/jpeg_rgb.pdf",
+       "md5": "9ea233037992e1f10280420a49e72845",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue11045",
        "file": "pdfs/issue11045.pdf",
        "md5": "101d4cb649cc006e0f2b14923e8d97d6",
