@@ -20,7 +20,12 @@ the worker code, and the `workerSrc` path shall be set to the latter file.
 
 ## Worker loading
 
-If you are getting the `Setting up fake worker` warning, make sure you are importing `pdfjs-dist/webpack` which is the zero-configuration method for Webpack users:
+If you are getting the `Setting up fake worker` warning, make sure you are
+importing `pdfjs-dist/webpack` which is the zero-configuration method for
+Webpack users. You will need to install
+[worker-loader](https://github.com/webpack-contrib/worker-loader) as a
+dependency in your project in order to use `pdfjs-dist/webpack` (configuring
+`worker-loader` is not necessary; just installing it is sufficient).
 
     import pdfjsLib from 'pdfjs-dist/webpack';
 
