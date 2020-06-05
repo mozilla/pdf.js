@@ -29,8 +29,7 @@ class ChunkedStream {
     this.pos = 0;
     this.end = length;
     this.chunkSize = chunkSize;
-    this.loadedChunks = [];
-    this.numChunksLoaded = 0;
+    this._loadedChunks = new Set();
     this.numChunks = Math.ceil(length / chunkSize);
     this.manager = manager;
     this.progressiveDataLength = 0;
@@ -42,7 +41,7 @@ class ChunkedStream {
   getMissingChunks() {
     const chunks = [];
     for (let chunk = 0, n = this.numChunks; chunk < n; ++chunk) {
-      if (!this.loadedChunks[chunk]) {
+      if (!this._loadedChunks.has(chunk)) {
         chunks.push(chunk);
       }
     }
@@ -51,6 +50,10 @@ class ChunkedStream {
 
   getBaseStreams() {
     return [this];
+  }
+
+  get numChunksLoaded() {
+    return this._loadedChunks.size;
   }
 
   allChunksLoaded() {
@@ -75,10 +78,9 @@ class ChunkedStream {
     const endChunk = Math.floor((end - 1) / chunkSize) + 1;
 
     for (let curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
-      if (!this.loadedChunks[curChunk]) {
-        this.loadedChunks[curChunk] = true;
-        ++this.numChunksLoaded;
-      }
+      // Since a value can only occur *once* in a `Set`, there's no need to
+      // manually check `Set.prototype.has()` before adding the value here.
+      this._loadedChunks.add(curChunk);
     }
   }
 
@@ -95,10 +97,9 @@ class ChunkedStream {
         : Math.floor(position / this.chunkSize);
 
     for (let curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
-      if (!this.loadedChunks[curChunk]) {
-        this.loadedChunks[curChunk] = true;
-        ++this.numChunksLoaded;
-      }
+      // Since a value can only occur *once* in a `Set`, there's no need to
+      // manually check `Set.prototype.has()` before adding the value here.
+      this._loadedChunks.add(curChunk);
     }
   }
 
@@ -112,7 +113,7 @@ class ChunkedStream {
       return;
     }
 
-    if (!this.loadedChunks[chunk]) {
+    if (!this._loadedChunks.has(chunk)) {
       throw new MissingDataException(pos, pos + 1);
     }
     this.lastSuccessfulEnsureByteChunk = chunk;
@@ -130,7 +131,7 @@ class ChunkedStream {
     const beginChunk = Math.floor(begin / chunkSize);
     const endChunk = Math.floor((end - 1) / chunkSize) + 1;
     for (let chunk = beginChunk; chunk < endChunk; ++chunk) {
-      if (!this.loadedChunks[chunk]) {
+      if (!this._loadedChunks.has(chunk)) {
         throw new MissingDataException(begin, end);
       }
     }
@@ -140,7 +141,7 @@ class ChunkedStream {
     const numChunks = this.numChunks;
     for (let i = 0; i < numChunks; ++i) {
       const chunk = (beginChunk + i) % numChunks; // Wrap around to beginning.
-      if (!this.loadedChunks[chunk]) {
+      if (!this._loadedChunks.has(chunk)) {
         return chunk;
       }
     }
@@ -148,7 +149,7 @@ class ChunkedStream {
   }
 
   hasChunk(chunk) {
-    return !!this.loadedChunks[chunk];
+    return this._loadedChunks.has(chunk);
   }
 
   get length() {
@@ -286,7 +287,7 @@ class ChunkedStream {
       const endChunk = Math.floor((this.end - 1) / chunkSize) + 1;
       const missingChunks = [];
       for (let chunk = beginChunk; chunk < endChunk; ++chunk) {
-        if (!this.loadedChunks[chunk]) {
+        if (!this._loadedChunks.has(chunk)) {
           missingChunks.push(chunk);
         }
       }
