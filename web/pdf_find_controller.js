@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line no-unused-vars
+import * as levenshtein from "../external/fast-levenshtein/levenshtein.js";
 import { createPromiseCapability } from "pdfjs-lib";
 import { getCharacterType } from "./pdf_find_utils.js";
 import { scrollIntoView } from "./ui_utils.js";
@@ -349,6 +351,26 @@ class PDFFindController {
     return true;
   }
 
+  _calculateFuzzyMatch(query, pageIndex, pageContent) {
+    const matches = [];
+
+    const queryLen = query.length;
+    const maxDistance = Math.round(queryLen / 5);
+
+    for (let index = 0; index < pageContent.length - queryLen; index++) {
+      const currentContent = pageContent.substring(index, index + queryLen);
+      const distance = window.Levenshtein.get(query, currentContent, {
+        useCollator: true,
+      });
+      if (distance <= maxDistance) {
+        matches.push(index);
+        index += queryLen - 1;
+        console.log(distance);
+      }
+    }
+    this._pageMatches[pageIndex] = matches;
+  }
+
   _calculatePhraseMatch(query, pageIndex, pageContent, entireWord) {
     const matches = [];
     const queryLen = query.length;
@@ -414,6 +436,7 @@ class PDFFindController {
     let pageContent = this._pageContents[pageIndex];
     let query = this._query;
     const { caseSensitive, entireWord, phraseSearch } = this._state;
+    const fuzzy = true;
 
     if (query.length === 0) {
       // Do nothing: the matches should be wiped out already.
@@ -425,7 +448,13 @@ class PDFFindController {
       query = query.toLowerCase();
     }
 
-    if (phraseSearch) {
+    if (fuzzy) {
+      if (query.length <= 2) {
+        this._calculatePhraseMatch(query, pageIndex, pageContent, false);
+      } else {
+        this._calculateFuzzyMatch(query, pageIndex, pageContent);
+      }
+    } else if (phraseSearch) {
       this._calculatePhraseMatch(query, pageIndex, pageContent, entireWord);
     } else {
       this._calculateWordMatch(query, pageIndex, pageContent, entireWord);
