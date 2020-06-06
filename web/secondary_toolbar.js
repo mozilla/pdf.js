@@ -209,6 +209,13 @@ class SecondaryToolbar {
     this.items.lastPage.disabled = this.pageNumber >= this.pagesCount;
     this.items.pageRotateCw.disabled = this.pagesCount === 0;
     this.items.pageRotateCcw.disabled = this.pagesCount === 0;
+
+    this.eventBus.dispatch("updateuistate", {
+      source: this,
+      widget: "SecondaryToolbar",
+      pageNumber: this.pageNumber,
+      pagesCount: this.pagesCount,
+    });
   }
 
   _bindClickListeners() {

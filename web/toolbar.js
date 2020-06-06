@@ -226,6 +226,14 @@ class Toolbar {
           items.customScaleOption.selected = true;
         }
       });
+    this.eventBus.dispatch("updateuistate", {
+      source: this,
+      widget: "Toolbar",
+      pageNumber,
+      pagesCount,
+      pageScaleValue,
+      pageScale,
+    });
   }
 
   updateLoadingIndicatorState(loading = false) {
@@ -271,7 +279,7 @@ class Toolbar {
       }
     }
     const overflow = SCALE_SELECT_WIDTH - SCALE_SELECT_CONTAINER_WIDTH;
-    maxWidth += 1.5 * overflow;
+    maxWidth += 10 + 1.5 * overflow;
 
     if (maxWidth > SCALE_SELECT_CONTAINER_WIDTH) {
       items.scaleSelect.style.width = `${maxWidth + overflow}px`;

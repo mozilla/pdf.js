@@ -70,6 +70,7 @@ class AnnotationLayerBuilder {
         annotations,
         page: this.pdfPage,
         imageResourcesPath: this.imageResourcesPath,
+        removePageBorders: this.removePageBorders, // #194
         renderInteractiveForms: this.renderInteractiveForms,
         linkService: this.linkService,
         downloadManager: this.downloadManager,

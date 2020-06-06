@@ -488,6 +488,7 @@ class BaseViewer {
             textLayerMode: this.textLayerMode,
             annotationLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
+            removePageBorders: this.removePageBorders, // #194
             renderInteractiveForms: this.renderInteractiveForms,
             renderer: this.renderer,
             enableWebGL: this.enableWebGL,

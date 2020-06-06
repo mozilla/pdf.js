@@ -31,9 +31,12 @@ class PDFFindBar {
     this.bar = options.bar || null;
     this.toggleButton = options.toggleButton || null;
     this.findField = options.findField || null;
+    this.findFieldMultiline = options.findFieldMultiline || null; // #201
     this.highlightAll = options.highlightAllCheckbox || null;
     this.caseSensitive = options.caseSensitiveCheckbox || null;
     this.entireWord = options.entireWordCheckbox || null;
+    this.multipleSearchTexts = options.findMultipleSearchTextsCheckbox || null; // #201
+    this.ignoreAccents = options.ignoreAccentsCheckbox || null; // #177
     this.findMsg = options.findMsg || null;
     this.findResultsCount = options.findResultsCount || null;
     this.findPreviousButton = options.findPreviousButton || null;
@@ -44,6 +47,11 @@ class PDFFindBar {
     // Add event listeners to the DOM elements.
     this.toggleButton.addEventListener("click", () => {
       this.toggle();
+    });
+
+    this.findFieldMultiline.addEventListener("input", () => {
+      // #201
+      this.dispatchEvent("");
     });
 
     this.findField.addEventListener("input", () => {
@@ -83,6 +91,16 @@ class PDFFindBar {
       this.dispatchEvent("entirewordchange");
     });
 
+    this.multipleSearchTexts.addEventListener("click", () => {
+      // #201
+      this.dispatchEvent("multiplesearchtextschange"); // #201
+    }); // #201
+
+    this.ignoreAccents.addEventListener("click", () => {
+      // #177
+      this.dispatchEvent("ignoreAccentsChange"); // #177
+    }); // #177
+
     this.eventBus._on("resize", this._adjustWidth.bind(this));
   }
 
@@ -94,10 +112,13 @@ class PDFFindBar {
     this.eventBus.dispatch("find", {
       source: this,
       type,
-      query: this.findField.value,
-      phraseSearch: true,
+      query: this.findFieldMultiline.classList.contains("hidden")
+        ? this.findField.value
+        : this.findFieldMultiline.value, // #201
+      phraseSearch: !this.multipleSearchTexts.checked, // #201
       caseSensitive: this.caseSensitive.checked,
       entireWord: this.entireWord.checked,
+      ignoreAccents: this.ignoreAccents.checked, // #177
       highlightAll: this.highlightAll.checked,
       findPrevious: findPrev,
     });
@@ -140,6 +161,8 @@ class PDFFindBar {
 
     this.findField.classList.toggle("notFound", notFound);
     this.findField.setAttribute("data-status", status);
+    this.findFieldMultiline.classList.toggle("notFound", notFound); // #201
+    this.findFieldMultiline.setAttribute("data-status", status); // #201
 
     Promise.resolve(findMsg).then(msg => {
       this.findMsg.textContent = msg;
@@ -218,6 +241,7 @@ class PDFFindBar {
     }
     this.findField.select();
     this.findField.focus();
+    this.dispatchEvent(""); // #206
 
     this._adjustWidth();
   }

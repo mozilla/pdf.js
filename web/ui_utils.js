@@ -599,6 +599,10 @@ function isDataSchema(url) {
  * @returns {string} Guessed PDF filename.
  */
 function getPDFFileNameFromURL(url, defaultFilename = "document.pdf") {
+  if (window.PDFViewerApplication.appConfig.filenameForDownload) {
+    return window.PDFViewerApplication.appConfig.filenameForDownload;
+  }
+
   if (typeof url !== "string") {
     return defaultFilename;
   }
@@ -896,7 +900,9 @@ class ProgressBar {
     // Fetch the sub-elements for later.
     this.div = document.querySelector(id + " .progress");
     // Get the loading bar element, so it can be resized to fit the viewer.
-    this.bar = this.div.parentNode;
+    if (this.div) {
+      this.bar = this.div.parentNode;
+    }
 
     // Get options, with sensible defaults.
     this.height = height || 100;
@@ -904,7 +910,9 @@ class ProgressBar {
     this.units = units || "%";
 
     // Initialize heights.
-    this.div.style.height = this.height + this.units;
+    if (this.div) {
+      this.div.style.height = this.height + this.units;
+    }
     this.percent = 0;
   }
 
@@ -915,9 +923,14 @@ class ProgressBar {
       return;
     }
 
-    this.div.classList.remove("indeterminate");
+    if (this.div) {
+      this.div.classList.remove("indeterminate");
+    }
+
     const progressSize = (this.width * this._percent) / 100;
-    this.div.style.width = progressSize + this.units;
+    if (this.div) {
+      this.div.style.width = progressSize + this.units;
+    }
   }
 
   get percent() {
@@ -942,11 +955,13 @@ class ProgressBar {
   }
 
   hide() {
-    if (!this.visible) {
-      return;
-    }
     this.visible = false;
-    this.bar.classList.add("hidden");
+    this.div = document.querySelector(".body #mainContainer .progress"); // always set this new instead of trying to cache this value
+    if (this.div) {
+      this.bar = this.div.parentNode; // always set this new instead of trying to cache this value
+      this.bar.classList.add("hidden");
+    }
+
     document.body.classList.remove("loadingInProgress");
   }
 
