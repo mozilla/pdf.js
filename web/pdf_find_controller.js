@@ -355,17 +355,24 @@ class PDFFindController {
     const matches = [];
 
     const queryLen = query.length;
+    const shortLen = queryLen < 5 ? queryLen : 5;
     const maxDistance = Math.round(queryLen / 5);
+    const shortQuery = query.substring(0, shortLen);
+    const options = {
+      useCollator: true,
+    };
+    const lev = window.Levenshtein;
 
-    for (let index = 0; index < pageContent.length - queryLen; index++) {
-      const currentContent = pageContent.substring(index, index + queryLen);
-      const distance = window.Levenshtein.get(query, currentContent, {
-        useCollator: true,
-      });
-      if (distance <= maxDistance) {
-        matches.push(index);
-        index += queryLen - 1;
-        console.log(distance);
+    for (let i = 0; i < pageContent.length - queryLen; i++) {
+      const shortCurrentContent = pageContent.substring(i, i + shortLen);
+      if (lev.get(shortQuery, shortCurrentContent, options) < 3) {
+        const currentContent = pageContent.substring(i, i + queryLen);
+
+        const distance = window.Levenshtein.get(query, currentContent, options);
+        if (distance <= maxDistance) {
+          matches.push(i);
+          i += queryLen - 1;
+        }
       }
     }
     this._pageMatches[pageIndex] = matches;
