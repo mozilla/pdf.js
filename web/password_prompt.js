@@ -67,6 +67,7 @@ class PasswordPrompt {
 
   open() {
     this.overlayManager.open(this.overlayName).then(() => {
+      this.input.type = "password";
       this.input.focus();
 
       let promptString;
@@ -92,6 +93,7 @@ class PasswordPrompt {
 
   close() {
     this.overlayManager.close(this.overlayName).then(() => {
+      this.input.type = "";
       this.input.value = "";
     });
   }

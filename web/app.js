@@ -293,6 +293,13 @@ const PDFViewerApplication = {
     if ("webgl" in hashParams) {
       AppOptions.set("enableWebGL", hashParams.webgl === "true");
     }
+    if ("removepageborders" in hashParams) {
+      // #194
+      AppOptions.set(
+        "removePageBorders",
+        hashParams["removepageborders"] === "true"
+      ); // #194
+    }
     if ("verbosity" in hashParams) {
       AppOptions.set("verbosity", hashParams.verbosity | 0);
     }
@@ -394,6 +401,7 @@ const PDFViewerApplication = {
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
+      removePageBorders: AppOptions.get("removePageBorders"), // #194
       renderInteractiveForms: AppOptions.get("renderInteractiveForms"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
@@ -825,6 +833,7 @@ const PDFViewerApplication = {
 
         return loadingErrorMessage.then(msg => {
           this.error(msg, { message });
+          this.onError(exception); // #205
           throw exception;
         });
       }
@@ -1266,7 +1275,7 @@ const PDFViewerApplication = {
     }
     if (triggerAutoPrint) {
       setTimeout(function () {
-        window.print();
+        window.printPDF();
       });
     }
   },
@@ -1290,10 +1299,18 @@ const PDFViewerApplication = {
 
     // Provides some basic debug information
     console.log(
+      "PDF viewer: ngx-extended-pdf-viewer running on pdf.js " +
+        (window["pdfjs-dist/build/pdf"]
+          ? window["pdfjs-dist/build/pdf"].version
+          : " developer version (?)")
+    );
+    console.log(
       `PDF ${pdfDocument.fingerprint} [${info.PDFFormatVersion} ` +
         `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
         `(PDF.js: ${version || "-"}` +
-        `${this.pdfViewer.enableWebGL ? " [WebGL]" : ""})`
+        `${
+          this.pdfViewer.enableWebGL ? " [WebGL]" : ""
+        }) modified by ngx-extended-pdf-viewer)`
     );
 
     let pdfTitle;
@@ -1632,6 +1649,7 @@ const PDFViewerApplication = {
 
   afterPrint() {
     if (this.printService) {
+      document.body.removeAttribute("data-pdfjsprinting");
       this.printService.destroy();
       this.printService = null;
     }
@@ -1882,6 +1900,7 @@ function webViewerInitialized() {
     const fileInput = document.createElement("input");
     fileInput.id = appConfig.openFileInputName;
     fileInput.className = "fileInput";
+    fileInput.setAttribute("accept", ".pdf,application/pdf");
     fileInput.setAttribute("type", "file");
     fileInput.oncontextmenu = noContextMenuHandler;
     document.body.appendChild(fileInput);
@@ -2274,7 +2293,7 @@ function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
 }
 function webViewerPrint() {
-  window.print();
+  window.printPDF();
 }
 function webViewerDownload() {
   PDFViewerApplication.download();
@@ -2349,6 +2368,7 @@ function webViewerFind(evt) {
     phraseSearch: evt.phraseSearch,
     caseSensitive: evt.caseSensitive,
     entireWord: evt.entireWord,
+    ignoreAccents: evt.ignoreAccents, // #177
     highlightAll: evt.highlightAll,
     findPrevious: evt.findPrevious,
   });
@@ -2360,6 +2380,7 @@ function webViewerFindFromUrlHash(evt) {
     phraseSearch: evt.phraseSearch,
     caseSensitive: false,
     entireWord: false,
+    ignoreAccents: false, // #177
     highlightAll: true,
     findPrevious: false,
   });
@@ -2416,6 +2437,11 @@ function webViewerPageChanging(evt) {
       Stats.add(page, pageView.stats);
     }
   }
+  const pageNumberInput = document.getElementById("pageNumber");
+  if (pageNumberInput) {
+    const pageScrollEvent = new CustomEvent("page-change");
+    pageNumberInput.dispatchEvent(pageScrollEvent);
+  }
 }
 
 function webViewerVisibilityChange(evt) {
@@ -2442,6 +2468,16 @@ function webViewerWheel(evt) {
   } = PDFViewerApplication;
 
   if (pdfViewer.isInPresentationMode) {
+    return;
+  }
+
+  const cmd =
+    (evt.ctrlKey ? 1 : 0) |
+    (evt.altKey ? 2 : 0) |
+    (evt.shiftKey ? 4 : 0) |
+    (evt.metaKey ? 8 : 0);
+
+  if (window.isKeyIgnored && window.isKeyIgnored(cmd, "WHEEL")) {
     return;
   }
 
@@ -2494,6 +2530,21 @@ function webViewerClick(evt) {
     PDFViewerApplication._delayedFallbackFeatureIds.length >= 1 &&
     PDFViewerApplication.pdfViewer.containsElement(evt.target)
   ) {
+    if (
+      evt.target &&
+      evt.target.parentElement === appConfig.secondaryToolbar.toggleButton
+    ) {
+      return;
+    }
+    if (
+      evt.target &&
+      evt.target.parentElement &&
+      evt.target.parentElement.parentElement ===
+        appConfig.secondaryToolbar.toggleButton
+    ) {
+      return;
+    }
+
     PDFViewerApplication.fallback();
   }
 
@@ -2506,6 +2557,21 @@ function webViewerClick(evt) {
     (appConfig.toolbar.container.contains(evt.target) &&
       evt.target !== appConfig.secondaryToolbar.toggleButton)
   ) {
+    if (
+      evt.target &&
+      evt.target.parentElement === appConfig.secondaryToolbar.toggleButton
+    ) {
+      return;
+    }
+    if (
+      evt.target &&
+      evt.target.parentElement &&
+      evt.target.parentElement.parentElement ===
+        appConfig.secondaryToolbar.toggleButton
+    ) {
+      return;
+    }
+
     PDFViewerApplication.secondaryToolbar.close();
   }
 }
@@ -2539,6 +2605,9 @@ function webViewerKeyDown(evt) {
   const isViewerInPresentationMode =
     pdfViewer && pdfViewer.isInPresentationMode;
 
+  if (window.isKeyIgnored && window.isKeyIgnored(cmd, evt.keyCode)) {
+    return;
+  }
   // First, handle the key bindings that are independent whether an input
   // control is selected or not.
   if (cmd === 1 || cmd === 8 || cmd === 5 || cmd === 12) {
@@ -2559,6 +2628,7 @@ function webViewerKeyDown(evt) {
               phraseSearch: findState.phraseSearch,
               caseSensitive: findState.caseSensitive,
               entireWord: findState.entireWord,
+              ignoreAccents: findState.ignoreAccents, // #177
               highlightAll: findState.highlightAll,
               findPrevious: cmd === 5 || cmd === 12,
             });
@@ -2817,17 +2887,7 @@ function webViewerKeyDown(evt) {
     }
   }
 
-  if (!handled && !isViewerInPresentationMode) {
-    // 33=Page Up  34=Page Down  35=End    36=Home
-    // 37=Left     38=Up         39=Right  40=Down
-    // 32=Spacebar
-    if (
-      (evt.keyCode >= 33 && evt.keyCode <= 40) ||
-      (evt.keyCode === 32 && curElementTagName !== "BUTTON")
-    ) {
-      ensureViewerFocused = true;
-    }
-  }
+  // ngx-extended-pdf-viewer must not enforce getting the focus
 
   if (ensureViewerFocused && !pdfViewer.containsElement(curElement)) {
     // The page container is not focused, but a page navigation key has been

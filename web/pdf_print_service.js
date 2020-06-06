@@ -139,20 +139,43 @@ PDFPrintService.prototype = {
         return; // overlay was already closed
       }
       overlayManager.close("printServiceOverlay");
+      overlayManager.unregister("printServiceOverlay"); // #104
     });
+    overlayPromise = undefined; // #104
   },
 
   renderPages() {
     const pageCount = this.pagesOverview.length;
     const renderNextPage = (resolve, reject) => {
       this.throwIfInactive();
-      if (++this.currentPage >= pageCount) {
-        renderProgress(pageCount, pageCount, this.l10n);
+      while (true) {
+        // #243
+        ++this.currentPage; // #243
+        if (this.currentPage >= pageCount) {
+          // #243
+          break; // #243
+        } // #243
+        if (
+          !window.isInPDFPrintRange ||
+          window.isInPDFPrintRange(this.currentPage)
+        ) {
+          // #243
+          break; // #243
+        } // #243
+      } // #243
+
+      if (this.currentPage >= pageCount) {
+        renderProgress(
+          window.filteredPageCount | pageCount,
+          window.filteredPageCount | pageCount,
+          this.l10n
+        ); // #243
         resolve();
         return;
       }
+
       const index = this.currentPage;
-      renderProgress(index, pageCount, this.l10n);
+      renderProgress(index, window.filteredPageCount | pageCount, this.l10n); // #243
       renderPage(this, this.pdfDocument, index + 1, this.pagesOverview[index])
         .then(this.useRenderedPage.bind(this))
         .then(function () {
@@ -217,9 +240,12 @@ PDFPrintService.prototype = {
 };
 
 const print = window.print;
-window.print = function () {
+window.printPDF = function () {
+  if (!PDFViewerApplication.enablePrint) {
+    return;
+  }
   if (activeService) {
-    console.warn("Ignored window.print() because of a pending print job.");
+    console.warn("Ignored window.printPDF() because of a pending print job.");
     return;
   }
   ensureOverlay().then(function () {
@@ -286,31 +312,27 @@ function renderProgress(index, total, l10n) {
   });
 }
 
-window.addEventListener(
-  "keydown",
-  function (event) {
-    // Intercept Cmd/Ctrl + P in all browsers.
-    // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
-    if (
-      event.keyCode === /* P= */ 80 &&
-      (event.ctrlKey || event.metaKey) &&
-      !event.altKey &&
-      (!event.shiftKey || window.chrome || window.opera)
-    ) {
-      window.print();
+PDFViewerApplication.printKeyDownListener = function (event) {
+  // Intercept Cmd/Ctrl + P in all browsers.
+  // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
+  if (
+    event.keyCode === /* P= */ 80 &&
+    (event.ctrlKey || event.metaKey) &&
+    !event.altKey &&
+    (!event.shiftKey || window.chrome || window.opera)
+  ) {
+    window.printPDF();
 
-      // The (browser) print dialog cannot be prevented from being shown in
-      // IE11.
-      event.preventDefault();
-      if (event.stopImmediatePropagation) {
-        event.stopImmediatePropagation();
-      } else {
-        event.stopPropagation();
-      }
+    // The (browser) print dialog cannot be prevented from being shown in
+    // IE11.
+    event.preventDefault();
+    if (event.stopImmediatePropagation) {
+      event.stopImmediatePropagation();
+    } else {
+      event.stopPropagation();
     }
-  },
-  true
-);
+  }
+};
 
 if ("onbeforeprint" in window) {
   // Do not propagate before/afterprint events when they are not triggered

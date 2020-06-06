@@ -34,7 +34,7 @@ const defaultOptions = {
   },
   defaultUrl: {
     /** @type {string} */
-    value: "compressed.tracemonkey-pldi-09.pdf",
+    value: "",
     kind: OptionKind.VIEWER,
   },
   defaultZoomValue: {
@@ -119,6 +119,11 @@ const defaultOptions = {
     /** @type {number} */
     value: 150,
     kind: OptionKind.VIEWER,
+  },
+  removePageBorders: {
+    // #194
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   renderer: {
     /** @type {string} */
@@ -235,7 +240,7 @@ const defaultOptions = {
     value:
       typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
         ? "../src/worker_loader.js"
-        : "../build/pdf.worker.js",
+        : "./assets/pdf.worker.js", // todo or pdf.worker-es5.js
     kind: OptionKind.WORKER,
   },
 };
