@@ -134,12 +134,14 @@ function getViewerConfiguration() {
       bar: document.getElementById("findbar"),
       toggleButton: document.getElementById("viewFind"),
       findField: document.getElementById("findInput"),
-      findFieldMultiline: document.getElementById('findInputMultiline'), // #201
+      findFieldMultiline: document.getElementById("findInputMultiline"), // #201
       highlightAllCheckbox: document.getElementById("findHighlightAll"),
       caseSensitiveCheckbox: document.getElementById("findMatchCase"),
       entireWordCheckbox: document.getElementById("findEntireWord"),
-      findMultipleSearchTextsCheckbox: document.getElementById('findMultipleSearchTexts'), // #201
-      ignoreAccentsCheckbox: document.getElementById('findIgnoreAccents'), // #177
+      findMultipleSearchTextsCheckbox: document.getElementById(
+        "findMultipleSearchTexts"
+      ), // #201
+      ignoreAccentsCheckbox: document.getElementById("findIgnoreAccents"), // #177
       findMsg: document.getElementById("findMsg"),
       findResultsCount: document.getElementById("findResultsCount"),
       findPreviousButton: document.getElementById("findPrevious"),
@@ -234,12 +236,15 @@ function webViewerLoad() {
   }
 }
 
-if (
-  document.readyState === "interactive" ||
-  document.readyState === "complete"
-) {
-  webViewerLoad();
+if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+  if (
+    document.readyState === "interactive" ||
+    document.readyState === "complete"
+  ) {
+    webViewerLoad();
+  } else {
+    document.addEventListener("DOMContentLoaded", webViewerLoad, true);
+  }
 } else {
-  document.addEventListener("DOMContentLoaded", webViewerLoad, true);
+  window.webViewerLoad = webViewerLoad;
 }
-window.webViewerLoad = webViewerLoad;
