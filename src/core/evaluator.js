@@ -439,6 +439,30 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
+    _sendImgData(objId, imgData, cacheGlobally = false) {
+      const transfers = imgData ? [imgData.data.buffer] : null;
+
+      if (this.parsingType3Font) {
+        return this.handler.sendWithPromise(
+          "commonobj",
+          [objId, "FontType3Res", imgData],
+          transfers
+        );
+      }
+      if (cacheGlobally) {
+        return this.handler.send(
+          "commonobj",
+          [objId, "Image", imgData],
+          transfers
+        );
+      }
+      return this.handler.send(
+        "obj",
+        [objId, this.pageIndex, "Image", imgData],
+        transfers
+      );
+    },
+
     async buildPaintImageXObject({
       resources,
       image,
@@ -552,42 +576,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         .then(imageObj => {
           imgData = imageObj.createImageData(/* forceRGBA = */ false);
 
-          if (this.parsingType3Font) {
-            return this.handler.sendWithPromise(
-              "commonobj",
-              [objId, "FontType3Res", imgData],
-              [imgData.data.buffer]
-            );
-          } else if (cacheGlobally) {
-            this.handler.send(
-              "commonobj",
-              [objId, "Image", imgData],
-              [imgData.data.buffer]
-            );
-            return undefined;
-          }
-          this.handler.send(
-            "obj",
-            [objId, this.pageIndex, "Image", imgData],
-            [imgData.data.buffer]
-          );
-          return undefined;
+          return this._sendImgData(objId, imgData, cacheGlobally);
         })
         .catch(reason => {
           warn("Unable to decode image: " + reason);
 
-          if (this.parsingType3Font) {
-            return this.handler.sendWithPromise("commonobj", [
-              objId,
-              "FontType3Res",
-              null,
-            ]);
-          } else if (cacheGlobally) {
-            this.handler.send("commonobj", [objId, "Image", null]);
-            return undefined;
-          }
-          this.handler.send("obj", [objId, this.pageIndex, "Image", null]);
-          return undefined;
+          return this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
         });
 
       if (this.parsingType3Font) {
