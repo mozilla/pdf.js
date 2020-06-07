@@ -298,8 +298,9 @@ function replaceJSRootName(amdName, jsName) {
 }
 
 function createMainBundle(defines) {
+  var skipBabel = defines.SKIP_BABEL;
   var mainAMDName = "pdfjs-dist/build/pdf";
-  var mainOutputName = "pdf.js";
+  var mainOutputName = skipBabel ? "pdf.js" : "pdf-es5.js";
 
   var mainFileConfig = createWebpackConfig(defines, {
     filename: mainOutputName,
@@ -315,8 +316,9 @@ function createMainBundle(defines) {
 }
 
 function createWorkerBundle(defines) {
+  var skipBabel = defines.SKIP_BABEL;
   var workerAMDName = "pdfjs-dist/build/pdf.worker";
-  var workerOutputName = "pdf.worker.js";
+  var workerOutputName = skipBabel ? "pdf.worker.js" : "pdf.worker-es5.js";
 
   var workerFileConfig = createWebpackConfig(defines, {
     filename: workerOutputName,
@@ -332,7 +334,8 @@ function createWorkerBundle(defines) {
 }
 
 function createWebBundle(defines) {
-  var viewerOutputName = "viewer.js";
+  var skipBabel = defines.SKIP_BABEL;
+  var viewerOutputName = skipBabel ? "viewer.js" : "viewer-es5.js";
 
   var viewerFileConfig = createWebpackConfig(defines, {
     filename: viewerOutputName,
