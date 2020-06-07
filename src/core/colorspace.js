@@ -1057,6 +1057,15 @@ const CalRGBCS = (function CalRGBCSClosure() {
     if (color <= 0.0031308) {
       return adjustToRange(0, 1, 12.92 * color);
     }
+    // Optimization:
+    // If color is close enough to 1, skip calling the following transform
+    // since calling Math.pow is expensive. If color is larger than
+    // the threshold, the final result is larger than 254.5 since
+    // ((1 + 0.055) * 0.99554525 ** (1 / 2.4) - 0.055) * 255 ===
+    // 254.50000003134699
+    if (color >= 0.99554525) {
+      return 1;
+    }
     return adjustToRange(0, 1, (1 + 0.055) * color ** (1 / 2.4) - 0.055);
   }
 
@@ -1156,9 +1165,9 @@ const CalRGBCS = (function CalRGBCSClosure() {
     // A <---> AGR in the spec
     // B <---> BGG in the spec
     // C <---> CGB in the spec
-    const AGR = A ** cs.GR;
-    const BGG = B ** cs.GG;
-    const CGB = C ** cs.GB;
+    const AGR = A === 1 ? 1 : A ** cs.GR;
+    const BGG = B === 1 ? 1 : B ** cs.GG;
+    const CGB = C === 1 ? 1 : C ** cs.GB;
 
     // Computes intermediate variables L, M, N as per spec.
     // To decode X, Y, Z values map L, M, N directly to them.
