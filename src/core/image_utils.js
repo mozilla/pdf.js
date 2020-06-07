@@ -107,11 +107,10 @@ class GlobalImageCache {
   }
 
   getData(ref, pageIndex) {
-    if (!this._refCache.has(ref)) {
+    const pageIndexSet = this._refCache.get(ref);
+    if (!pageIndexSet) {
       return null;
     }
-    const pageIndexSet = this._refCache.get(ref);
-
     if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
       return null;
     }
