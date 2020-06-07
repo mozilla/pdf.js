@@ -99,7 +99,7 @@ const DEFINES = Object.freeze({
   GENERIC: false,
   MOZCENTRAL: false,
   CHROME: false,
-  MINIFIED: false,
+  MINIFIED: true,
   COMPONENTS: false,
   LIB: false,
   IMAGE_DECODERS: false,
@@ -831,9 +831,6 @@ function buildMinified(defines, dir) {
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createWebBundle(defines).pipe(gulp.dest(dir + "web")),
-    createImageDecodersBundle(
-      builder.merge(defines, { IMAGE_DECODERS: true })
-    ).pipe(gulp.dest(dir + "image_decoders")),
     gulp.src(COMMON_WEB_FILES, { base: "web/" }).pipe(gulp.dest(dir + "web")),
     gulp
       .src(["web/locale/*/viewer.properties", "web/locale/locale.properties"], {
@@ -847,7 +844,7 @@ function buildMinified(defines, dir) {
       .pipe(gulp.dest(dir + "web/cmaps")),
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
-    preprocessCSS("web/viewer.css", "minified", defines, true)
+    preprocessCSS("web/viewer.css", "generic", defines, true)
       .pipe(
         postcss([
           cssvariables(CSS_VARIABLES_CONFIG),
@@ -867,7 +864,7 @@ gulp.task(
   "minified-pre",
   gulp.series("buildnumber", "default_preferences", "locale", function () {
     console.log();
-    console.log("### Creating minified viewer");
+    console.log("### Creating minified generic viewer");
     var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
 
     return buildMinified(defines, MINIFIED_DIR);
@@ -878,7 +875,7 @@ gulp.task(
   "minified-es5-pre",
   gulp.series("buildnumber", "default_preferences", "locale", function () {
     console.log();
-    console.log("### Creating minified (ES5) viewer");
+    console.log("### Creating minified generic (ES5) viewer");
     var defines = builder.merge(DEFINES, {
       MINIFIED: true,
       GENERIC: true,
@@ -889,16 +886,14 @@ gulp.task(
   })
 );
 
-function parseMinified(dir) {
-  var pdfFile = fs.readFileSync(dir + "/build/pdf.js").toString();
-  var pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker.js").toString();
-  var pdfImageDecodersFile = fs
-    .readFileSync(dir + "/image_decoders/pdf.image_decoders.js")
+function parseMinified(dir, suffix) {
+  var pdfFile = fs.readFileSync(dir + "/build/pdf" + suffix + ".js").toString();
+  var pdfWorkerFile = fs
+    .readFileSync(dir + "/build/pdf.worker" + suffix + ".js")
     .toString();
-  var viewerFiles = {
-    "pdf.js": pdfFile,
-    "viewer.js": fs.readFileSync(dir + "/web/viewer.js").toString(),
-  };
+  var viewerFile = fs
+    .readFileSync(dir + "/web/viewer" + suffix + ".js")
+    .toString();
 
   console.log();
   console.log("### Minifying js files");
@@ -907,37 +902,24 @@ function parseMinified(dir) {
   // V8 chokes on very long sequences. Works around that.
   var optsForHugeFile = { compress: { sequences: false } };
 
-  fs.writeFileSync(dir + "/web/pdf.viewer.js", Terser.minify(viewerFiles).code);
-  fs.writeFileSync(dir + "/build/pdf.min.js", Terser.minify(pdfFile).code);
   fs.writeFileSync(
-    dir + "/build/pdf.worker.min.js",
+    dir + "/web/viewer" + suffix + ".min.js",
+    Terser.minify(viewerFile).code
+  );
+  fs.writeFileSync(
+    dir + "/build/pdf" + suffix + ".min.js",
+    Terser.minify(pdfFile).code
+  );
+  fs.writeFileSync(
+    dir + "/build/pdf.worker" + suffix + ".min.js",
     Terser.minify(pdfWorkerFile, optsForHugeFile).code
-  );
-  fs.writeFileSync(
-    dir + "image_decoders/pdf.image_decoders.min.js",
-    Terser.minify(pdfImageDecodersFile).code
-  );
-
-  console.log();
-  console.log("### Cleaning js files");
-
-  fs.unlinkSync(dir + "/web/viewer.js");
-  fs.unlinkSync(dir + "/web/debugger.js");
-  fs.unlinkSync(dir + "/build/pdf.js");
-  fs.unlinkSync(dir + "/build/pdf.worker.js");
-
-  fs.renameSync(dir + "/build/pdf.min.js", dir + "/build/pdf.js");
-  fs.renameSync(dir + "/build/pdf.worker.min.js", dir + "/build/pdf.worker.js");
-  fs.renameSync(
-    dir + "/image_decoders/pdf.image_decoders.min.js",
-    dir + "/image_decoders/pdf.image_decoders.js"
   );
 }
 
 gulp.task(
   "minified",
   gulp.series("minified-pre", function (done) {
-    parseMinified(MINIFIED_DIR);
+    parseMinified(MINIFIED_DIR, "");
     done();
   })
 );
@@ -945,7 +927,7 @@ gulp.task(
 gulp.task(
   "minified-es5",
   gulp.series("minified-es5-pre", function (done) {
-    parseMinified(MINIFIED_ES5_DIR);
+    parseMinified(MINIFIED_ES5_DIR, "-es5");
     done();
   })
 );
