@@ -2370,14 +2370,18 @@ var Font = (function FontClosure() {
               // collecting information about which functions are used
               funcId = stack[stack.length - 1];
               if (isNaN(funcId)) {
-                info("TT: CALL empty stack (or invalid entry).");
+                info(
+                  "The font embedded in the PDF file contains errors: TT:  CALL empty stack (or invalid entry)."
+                );
               } else {
                 ttContext.functionsUsed[funcId] = true;
                 if (funcId in ttContext.functionsStackDeltas) {
                   const newStackLength =
                     stack.length + ttContext.functionsStackDeltas[funcId];
                   if (newStackLength < 0) {
-                    warn("TT: CALL invalid functions stack delta.");
+                    warn(
+                      "The font embedded in the PDF file contains errors: TT:  CALL invalid functions stack delta."
+                    );
                     ttContext.hintsValid = false;
                     return;
                   }
@@ -2390,7 +2394,9 @@ var Font = (function FontClosure() {
                   functionsCalled.push(funcId);
                   pc = ttContext.functionsDefined[funcId];
                   if (!pc) {
-                    warn("TT: CALL non-existent function");
+                    warn(
+                      "The font embedded in the PDF file contains errors: TT:  CALL non-existent function"
+                    );
                     ttContext.hintsValid = false;
                     return;
                   }
@@ -2402,7 +2408,9 @@ var Font = (function FontClosure() {
           } else if (op === 0x2c && !tooComplexToFollowFunctions) {
             // FDEF
             if (inFDEF || inELSE) {
-              warn("TT: nested FDEFs not allowed");
+              warn(
+                "The font embedded in the PDF file contains errors: TT:  nested FDEFs not allowed"
+              );
               tooComplexToFollowFunctions = true;
             }
             inFDEF = true;
@@ -2418,7 +2426,9 @@ var Font = (function FontClosure() {
             } else {
               pc = callstack.pop();
               if (!pc) {
-                warn("TT: ENDF bad stack");
+                warn(
+                  "The font embedded in the PDF file contains errors: TT:  ENDF bad stack"
+                );
                 ttContext.hintsValid = false;
                 return;
               }
@@ -2431,7 +2441,9 @@ var Font = (function FontClosure() {
           } else if (op === 0x89) {
             // IDEF - instruction definition
             if (inFDEF || inELSE) {
-              warn("TT: nested IDEFs not allowed");
+              warn(
+                "The font embedded in the PDF file contains errors: TT:  nested IDEFs not allowed"
+              );
               tooComplexToFollowFunctions = true;
             }
             inFDEF = true;
@@ -2491,7 +2503,9 @@ var Font = (function FontClosure() {
           content.push(new Uint8Array(i - data.length));
         }
         if (lastDeff > lastEndf) {
-          warn("TT: complementing a missing function tail");
+          warn(
+            "The font embedded in the PDF file contains errors: TT:  complementing a missing function tail"
+          );
           // new function definition started, but not finished
           // complete function by [CLEAR, ENDF]
           content.push(new Uint8Array([0x22, 0x2d]));
@@ -2504,18 +2518,26 @@ var Font = (function FontClosure() {
           return;
         }
         if (ttContext.functionsDefined.length > maxFunctionDefs) {
-          warn("TT: more functions defined than expected");
+          warn(
+            "The font embedded in the PDF file contains errors: TT:  more functions defined than expected"
+          );
           ttContext.hintsValid = false;
           return;
         }
         for (var j = 0, jj = ttContext.functionsUsed.length; j < jj; j++) {
           if (j > maxFunctionDefs) {
-            warn("TT: invalid function id: " + j);
+            warn(
+              "The font embedded in the PDF file contains errors: TT:  invalid function id: " +
+                j
+            );
             ttContext.hintsValid = false;
             return;
           }
           if (ttContext.functionsUsed[j] && !ttContext.functionsDefined[j]) {
-            warn("TT: undefined function: " + j);
+            warn(
+              "The font embedded in the PDF file contains errors: TT:  undefined function: " +
+                j
+            );
             ttContext.hintsValid = false;
             return;
           }

@@ -47,10 +47,14 @@ import {
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
-import { apiCompatibilityParams } from "./api_compatibility.js";
+// ngx-extended-pdf-viewer doesn't need the apiCompatibilityParams
+// import { apiCompatibilityParams } from "./api_compatibility.js";
+// end of modification
 import { CanvasGraphics } from "./canvas.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
-import { isNodeJS } from "../shared/is_node.js";
+// ngx-extended-pdf-viewer doesn't need the node.js support
+// import { isNodeJS } from "../shared/is_node.js";
+//  end of modification
 import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
@@ -58,6 +62,14 @@ import { WebGLContext } from "./webgl.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
+
+// #171 receive options from ngx-extended-pdf-viewer
+const ServiceWorkerOptions = {
+  showUnverifiedSignatures: false,
+};
+
+window.ServiceWorkerOptions = ServiceWorkerOptions;
+// #171 end
 
 /**
  * @typedef {function} IPDFStreamFactory
@@ -254,7 +266,9 @@ function getDocument(src) {
     params.isEvalSupported = true;
   }
   if (typeof params.disableFontFace !== "boolean") {
-    params.disableFontFace = apiCompatibilityParams.disableFontFace || false;
+    // modified by ngx-extended-pdf-viewer - we don't need the api compatibility
+    params.disableFontFace = false;
+    // end of modification
   }
 
   if (typeof params.disableRange !== "boolean") {
@@ -341,6 +355,12 @@ function getDocument(src) {
             params
           );
           task._transport = transport;
+          // #171 receive options from ngx-extended-pdf-viewer
+          messageHandler.send(
+            "showUnverifiedSignatures",
+            window.ServiceWorkerOptions.showUnverifiedSignatures
+          );
+          // #171 end of receive options from ngx-extended-pdf-viewer
           messageHandler.send("Ready", null);
         }
       );
@@ -1561,7 +1581,12 @@ const PDFWorker = (function PDFWorkerClosure() {
       if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB")) {
         fallbackWorkerSrc = "../pdf.worker.js";
       } else {
-        fallbackWorkerSrc = "./pdf.worker.js";
+        // modified by ngx-extended-pdf-viewer
+        const isIE = !!window.MSInputMethodContext && !!document.documentMode;
+        const isEdge = /Edge\/\d./i.test(navigator.userAgent);
+
+        fallbackWorkerSrc = (isIE || isEdge) ? "./assets/pdf.worker-es5.js" : "./assets/pdf.worker.js";
+        // end of modification
       }
     } else if (typeof document === "object" && "currentScript" in document) {
       const pdfjsFilePath =
