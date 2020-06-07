@@ -16,15 +16,19 @@
 import {
   Cmd,
   Dict,
+  EOF,
   isCmd,
   isDict,
+  isEOF,
   isName,
   isRef,
   isRefsEqual,
+  isStream,
   Name,
   Ref,
   RefSet,
 } from "../../src/core/primitives.js";
+import { StringStream } from "../../src/core/stream.js";
 import { XRefMock } from "./test_utils.js";
 
 describe("primitives", function () {
@@ -101,6 +105,15 @@ describe("primitives", function () {
 
     afterAll(function () {
       emptyDict = dictWithSizeKey = dictWithManyKeys = null;
+    });
+
+    it("should allow assigning an XRef table after creation", function () {
+      const dict = new Dict(null);
+      expect(dict.xref).toEqual(null);
+
+      const xref = new XRefMock([]);
+      dict.assignXref(xref);
+      expect(dict.xref).toEqual(xref);
     });
 
     it("should return invalid values for unknown keys", function () {
@@ -276,12 +289,32 @@ describe("primitives", function () {
   });
 
   describe("Ref", function () {
+    it("should get a string representation", function () {
+      const nonZeroRef = Ref.get(4, 2);
+      expect(nonZeroRef.toString()).toEqual("4R2");
+
+      // If the generation number is 0, a shorter representation is used.
+      const zeroRef = Ref.get(4, 0);
+      expect(zeroRef.toString()).toEqual("4R");
+    });
+
     it("should retain the stored values", function () {
       const storedNum = 4;
       const storedGen = 2;
       const ref = Ref.get(storedNum, storedGen);
       expect(ref.num).toEqual(storedNum);
       expect(ref.gen).toEqual(storedGen);
+    });
+
+    it("should create only one object for a reference and cache it", function () {
+      const firstRef = Ref.get(4, 2);
+      const secondRef = Ref.get(4, 2);
+      const firstOtherRef = Ref.get(5, 2);
+      const secondOtherRef = Ref.get(5, 2);
+
+      expect(firstRef).toBe(secondRef);
+      expect(firstOtherRef).toBe(secondOtherRef);
+      expect(firstRef).not.toBe(firstOtherRef);
     });
   });
 
@@ -300,6 +333,17 @@ describe("primitives", function () {
       refset.put(ref);
       const anotherRef = Ref.get(2, 4);
       expect(refset.has(anotherRef)).toBeFalsy();
+    });
+  });
+
+  describe("isEOF", function () {
+    it("handles non-EOF", function () {
+      const nonEOF = "foo";
+      expect(isEOF(nonEOF)).toEqual(false);
+    });
+
+    it("handles EOF", function () {
+      expect(isEOF(EOF)).toEqual(true);
     });
   });
 
@@ -382,6 +426,18 @@ describe("primitives", function () {
       const ref1 = Ref.get(1, 0);
       const ref2 = Ref.get(2, 0);
       expect(isRefsEqual(ref1, ref2)).toEqual(false);
+    });
+  });
+
+  describe("isStream", function () {
+    it("handles non-streams", function () {
+      const nonStream = {};
+      expect(isStream(nonStream)).toEqual(false);
+    });
+
+    it("handles streams", function () {
+      const stream = new StringStream("foo");
+      expect(isStream(stream)).toEqual(true);
     });
   });
 });
