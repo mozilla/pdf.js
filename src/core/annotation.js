@@ -813,7 +813,14 @@ class WidgetAnnotation extends Annotation {
     // cause errors when sending annotations to the main-thread (issue 10347).
     if (data.fieldType === "Sig") {
       data.fieldValue = null;
-      this.setFlags(AnnotationFlag.HIDDEN);
+      // #171 modification start
+      if (!self.showUnverifiedSignatures) {
+        this.setFlags(AnnotationFlag.HIDDEN);
+        console.log(
+          "The PDF file contains a signature. Please take into account that it can't be verified yet."
+        );
+      }
+      // #171 modification end
     }
   }
 

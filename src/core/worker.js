@@ -32,7 +32,9 @@ import {
 } from "../shared/util.js";
 import { clearPrimitiveCaches, Ref } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
-import { isNodeJS } from "../shared/is_node.js";
+// ngx-extended-pdf-viewer doesn't need node.js support
+// import { isNodeJS } from "../shared/is_node.js";
+// end of modification
 import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { XRefParseException } from "./core_utils.js";
@@ -661,6 +663,20 @@ var WorkerMessageHandler = {
       setupDoc(docParams);
       docParams = null; // we don't need docParams anymore -- saving memory.
     });
+
+    // #171 receive options from ngx-extended-pdf-viewer
+    handler.on("showUnverifiedSignatures", function wphReady(data) {
+      if (data) {
+        console.log(
+          "showUnverifiedSignatures=" +
+            data +
+            ". This is an incompletely implemented feature. Signatures cannot be validated, so use it at own risk."
+        );
+      }
+      self.showUnverifiedSignatures = data;
+    });
+    // #171 end of receive options from ngx-extended-pdf-viewer
+
     return workerHandlerName;
   },
   initializeFromPort(port) {
@@ -679,7 +695,8 @@ function isMessagePort(maybePort) {
 // Worker thread (and not Node.js)?
 if (
   typeof window === "undefined" &&
-  !isNodeJS &&
+  // modified by ngx-extended-pdf-viewer - we don't need node.js support
+  // !isNodeJS &&
   typeof self !== "undefined" &&
   isMessagePort(self)
 ) {
