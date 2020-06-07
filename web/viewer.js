@@ -15,6 +15,31 @@
 
 "use strict";
 
+// modified by ngx-extended-pdf-viewer
+if (!HTMLCollection.prototype[Symbol.iterator]) {
+  HTMLCollection.prototype[Symbol.iterator] = Array.prototype[Symbol.iterator];
+}
+(function () {
+  if (typeof window.CustomEvent === "function") {
+    return;
+  }
+
+  function CustomEvent(event, params) {
+    params = params || { bubbles: false, cancelable: false, detail: null };
+    const evt = document.createEvent("CustomEvent");
+    evt.initCustomEvent(
+      event,
+      params.bubbles,
+      params.cancelable,
+      params.detail
+    );
+    return evt;
+  }
+
+  window.CustomEvent = CustomEvent;
+})();
+// end of modification
+
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
   var defaultUrl; // eslint-disable-line no-var
 
@@ -142,6 +167,7 @@ function getViewerConfiguration() {
         "findMultipleSearchTexts"
       ), // #201
       ignoreAccentsCheckbox: document.getElementById("findIgnoreAccents"), // #177
+      fuzzyCheckbox: document.getElementById("findFuzzy"), // #304
       findMsg: document.getElementById("findMsg"),
       findResultsCount: document.getElementById("findResultsCount"),
       findPreviousButton: document.getElementById("findPrevious"),

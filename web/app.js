@@ -2369,6 +2369,7 @@ function webViewerFind(evt) {
     caseSensitive: evt.caseSensitive,
     entireWord: evt.entireWord,
     ignoreAccents: evt.ignoreAccents, // #177
+    fuzzySearch: evt.fuzzySearch, // #304
     highlightAll: evt.highlightAll,
     findPrevious: evt.findPrevious,
   });
@@ -2381,6 +2382,7 @@ function webViewerFindFromUrlHash(evt) {
     caseSensitive: false,
     entireWord: false,
     ignoreAccents: false, // #177
+    fuzzySearch: false, // #304
     highlightAll: true,
     findPrevious: false,
   });
@@ -2629,6 +2631,7 @@ function webViewerKeyDown(evt) {
               caseSensitive: findState.caseSensitive,
               entireWord: findState.entireWord,
               ignoreAccents: findState.ignoreAccents, // #177
+              fuzzySearch: findState.fuzzySearch, // #304
               highlightAll: findState.highlightAll,
               findPrevious: cmd === 5 || cmd === 12,
             });
