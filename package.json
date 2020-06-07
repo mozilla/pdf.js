@@ -61,7 +61,8 @@
   },
   "scripts": {
     "postinstall": "node -e \"require('child_process').execSync('cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js');\"",
-    "test": "gulp npm-test"
+    "test": "gulp npm-test",
+    "update": "./updateLatestChanges.sh"
   },
   "repository": {
     "type": "git",
