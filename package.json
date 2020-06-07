@@ -60,7 +60,7 @@
     "yargs": "^11.1.1"
   },
   "scripts": {
-    "postinstall": "cp -r ./node_modules/fast-levenshtein ./external && node -e \"require('child_process').execSync('cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js');\"",
+    "postinstall": "node -e \"require('child_process').execSync('cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js');\"",
     "test": "gulp npm-test"
   },
   "repository": {

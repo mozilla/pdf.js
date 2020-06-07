@@ -1573,22 +1573,9 @@ const PDFWorker = (function PDFWorkerClosure() {
   let fakeWorkerCapability;
 
   if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
-    // eslint-disable-next-line no-undef
-    if (isNodeJS && typeof __non_webpack_require__ === "function") {
-      // Workers aren't supported in Node.js, force-disabling them there.
-      isWorkerDisabled = true;
-
-      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB")) {
-        fallbackWorkerSrc = "../pdf.worker.js";
-      } else {
-        // modified by ngx-extended-pdf-viewer
-        const isIE = !!window.MSInputMethodContext && !!document.documentMode;
-        const isEdge = /Edge\/\d./i.test(navigator.userAgent);
-
-        fallbackWorkerSrc = (isIE || isEdge) ? "./assets/pdf.worker-es5.js" : "./assets/pdf.worker.js";
-        // end of modification
-      }
-    } else if (typeof document === "object" && "currentScript" in document) {
+    // modified by ngx-extended-pdf-viewer - we don't need node.js support,
+    // so we've removed the if branch
+    if (typeof document === "object" && "currentScript" in document) {
       const pdfjsFilePath =
         document.currentScript && document.currentScript.src;
       if (pdfjsFilePath) {
@@ -1605,9 +1592,8 @@ const PDFWorker = (function PDFWorkerClosure() {
       return GlobalWorkerOptions.workerSrc;
     }
     if (typeof fallbackWorkerSrc !== "undefined") {
-      if (!isNodeJS) {
-        deprecated('No "GlobalWorkerOptions.workerSrc" specified.');
-      }
+      // modified by ngx-extended-pdf-viewer - we don't need node.js support,
+      deprecated('No "GlobalWorkerOptions.workerSrc" specified.');
       return fallbackWorkerSrc;
     }
     throw new Error('No "GlobalWorkerOptions.workerSrc" specified.');
@@ -1647,28 +1633,8 @@ const PDFWorker = (function PDFWorkerClosure() {
         const worker = await SystemJS.import("pdfjs/core/worker.js");
         return worker.WorkerMessageHandler;
       }
-      if (
-        PDFJSDev.test("GENERIC") &&
-        isNodeJS &&
-        // eslint-disable-next-line no-undef
-        typeof __non_webpack_require__ === "function"
-      ) {
-        // Since bundlers, such as Webpack, cannot be told to leave `require`
-        // statements alone we are thus forced to jump through hoops in order
-        // to prevent `Critical dependency: ...` warnings in third-party
-        // deployments of the built `pdf.js`/`pdf.worker.js` files; see
-        // https://github.com/webpack/webpack/issues/8826
-        //
-        // The following hack is based on the assumption that code running in
-        // Node.js won't ever be affected by e.g. Content Security Policies that
-        // prevent the use of `eval`. If that ever occurs, we should revert this
-        // to a normal `__non_webpack_require__` statement and simply document
-        // the Webpack warnings instead (telling users to ignore them).
-        //
-        // eslint-disable-next-line no-eval
-        const worker = eval("require")(getWorkerSrc());
-        return worker.WorkerMessageHandler;
-      }
+      // modified by ngx-extended-pdf-viewer - we don't need node.js support,
+      // so we can drop the if statement
       await loadScript(getWorkerSrc());
       return window.pdfjsWorker.WorkerMessageHandler;
     };
