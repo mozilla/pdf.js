@@ -198,25 +198,12 @@ class NetworkManager {
     }
   }
 
-  hasPendingRequests() {
-    for (const xhrId in this.pendingRequests) {
-      return true;
-    }
-    return false;
-  }
-
   getRequestXhr(xhrId) {
     return this.pendingRequests[xhrId].xhr;
   }
 
   isPendingRequest(xhrId) {
     return xhrId in this.pendingRequests;
-  }
-
-  abortAllRequests() {
-    for (const xhrId in this.pendingRequests) {
-      this.abortRequest(xhrId | 0);
-    }
   }
 
   abortRequest(xhrId) {
