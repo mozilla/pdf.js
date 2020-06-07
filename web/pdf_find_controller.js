@@ -16,6 +16,7 @@
 // eslint-disable-next-line no-unused-vars
 import * as levenshtein from "../external/fast-levenshtein/levenshtein.js";
 import { createPromiseCapability } from "pdfjs-lib";
+import { deburr } from "../external/lodash.deburr/index.js"; // #177
 import { getCharacterType } from "./pdf_find_utils.js";
 import { scrollIntoView } from "./ui_utils.js";
 
@@ -400,8 +401,8 @@ class PDFFindController {
     // #177
     if (ignoreAccents) {
       // #177
-      pageContent = window.deburr(pageContent); // #177
-      query = window.deburr(query); // #177
+      pageContent = deburr(pageContent); // #177
+      query = deburr(query); // #177
     } // #177
 
     const matches = [];
@@ -492,9 +493,10 @@ class PDFFindController {
       caseSensitive,
       entireWord,
       ignoreAccents, // #177
+      fuzzySearch, // #304
       phraseSearch,
     } = this._state;
-    const fuzzy = true;
+    debugger;
 
     if (query.length === 0) {
       // Do nothing: the matches should be wiped out already.
@@ -506,7 +508,7 @@ class PDFFindController {
       query = query.toLowerCase();
     }
 
-    if (fuzzy) {
+    if (fuzzySearch) {
       if (query.length <= 2) {
         this._calculatePhraseMatch(query, pageIndex, pageContent, false);
       } else {

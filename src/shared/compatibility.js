@@ -14,7 +14,10 @@
  */
 /* eslint no-var: error */
 
-import { isNodeJS } from "./is_node.js";
+// modified by ngx-extended-pdf-viewer - removed node.js support
+// import { isNodeJS } from "./is_node.js";
+
+const isNodeJS = false;
 
 // Skip compatibility checks for modern builds and if we already ran the module.
 if (
@@ -34,27 +37,8 @@ if (
     (typeof navigator !== "undefined" && navigator.userAgent) || "";
   const isIE = /Trident/.test(userAgent);
 
-  // Support: Node.js
-  (function checkNodeBtoa() {
-    if (globalThis.btoa || !isNodeJS) {
-      return;
-    }
-    globalThis.btoa = function (chars) {
-      // eslint-disable-next-line no-undef
-      return Buffer.from(chars, "binary").toString("base64");
-    };
-  })();
-
-  // Support: Node.js
-  (function checkNodeAtob() {
-    if (globalThis.atob || !isNodeJS) {
-      return;
-    }
-    globalThis.atob = function (input) {
-      // eslint-disable-next-line no-undef
-      return Buffer.from(input, "base64").toString("binary");
-    };
-  })();
+  // modified by ngx-extended-pdf-viewer - we don't need node.js support,
+  // so we remove two polyfills
 
   // Provides support for ChildNode.remove in legacy browsers.
   // Support: IE.
