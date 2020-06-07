@@ -14,10 +14,10 @@
  */
 
 // eslint-disable-next-line no-unused-vars
-import * as levenshtein from "../external/fast-levenshtein/levenshtein.js";
 import { createPromiseCapability } from "pdfjs-lib";
 import { deburr } from "../external/lodash.deburr/index.js"; // #177
 import { getCharacterType } from "./pdf_find_utils.js";
+import { Levenshtein } from "../external/fast-levenshtein/levenshtein.js";
 import { scrollIntoView } from "./ui_utils.js";
 
 const FindState = {
@@ -374,14 +374,13 @@ class PDFFindController {
     const options = {
       useCollator: true,
     };
-    const lev = window.Levenshtein;
 
     for (let i = 0; i < pageContent.length - queryLen; i++) {
       const shortCurrentContent = pageContent.substring(i, i + shortLen);
-      if (lev.get(shortQuery, shortCurrentContent, options) < 3) {
+      if (Levenshtein.distance(shortQuery, shortCurrentContent, options) < 3) {
         const currentContent = pageContent.substring(i, i + queryLen);
 
-        const distance = window.Levenshtein.get(query, currentContent, options);
+        const distance = Levenshtein.distance(query, currentContent, options);
         if (distance <= maxDistance) {
           matches.push(i);
           i += queryLen - 1;
@@ -496,7 +495,6 @@ class PDFFindController {
       fuzzySearch, // #304
       phraseSearch,
     } = this._state;
-    debugger;
 
     if (query.length === 0) {
       // Do nothing: the matches should be wiped out already.
