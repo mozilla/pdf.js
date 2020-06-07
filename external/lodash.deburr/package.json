@@ -1,0 +1,70 @@
+{
+  "_from": "lodash.deburr",
+  "_id": "lodash.deburr@4.1.0",
+  "_inBundle": false,
+  "_integrity": "sha1-3bG7s+8HRYwBd7oH3hRCLLAz/5s=",
+  "_location": "/lodash.deburr",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "lodash.deburr",
+    "name": "lodash.deburr",
+    "escapedName": "lodash.deburr",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#DEV:/",
+    "#USER"
+  ],
+  "_resolved": "https://registry.npmjs.org/lodash.deburr/-/lodash.deburr-4.1.0.tgz",
+  "_shasum": "ddb1bbb3ef07458c0177ba07de14422cb033ff9b",
+  "_spec": "lodash.deburr",
+  "_where": "/Users/stephan/git/embedded-pdf/mypdf.js",
+  "author": {
+    "name": "John-David Dalton",
+    "email": "john.david.dalton@gmail.com",
+    "url": "http://allyoucanleet.com/"
+  },
+  "bugs": {
+    "url": "https://github.com/lodash/lodash/issues"
+  },
+  "bundleDependencies": false,
+  "contributors": [
+    {
+      "name": "John-David Dalton",
+      "email": "john.david.dalton@gmail.com",
+      "url": "http://allyoucanleet.com/"
+    },
+    {
+      "name": "Blaine Bublitz",
+      "email": "blaine.bublitz@gmail.com",
+      "url": "https://github.com/phated"
+    },
+    {
+      "name": "Mathias Bynens",
+      "email": "mathias@qiwi.be",
+      "url": "https://mathiasbynens.be/"
+    }
+  ],
+  "deprecated": false,
+  "description": "The lodash method `_.deburr` exported as a module.",
+  "homepage": "https://lodash.com/",
+  "icon": "https://lodash.com/icon.svg",
+  "keywords": [
+    "lodash-modularized",
+    "deburr"
+  ],
+  "license": "MIT",
+  "name": "lodash.deburr",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lodash/lodash.git"
+  },
+  "scripts": {
+    "test": "echo \"See https://travis-ci.org/lodash/lodash-cli for testing details.\""
+  },
+  "version": "4.1.0"
+}
