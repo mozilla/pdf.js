@@ -36,6 +36,7 @@
     "jasmine-core": "^3.5.0",
     "jsdoc": "^3.6.4",
     "jstransformer-markdown-it": "^2.1.0",
+    "lodash.deburr": "^4.1.0",
     "merge-stream": "^1.0.1",
     "mkdirp": "^1.0.4",
     "postcss-calc": "^7.0.2",
