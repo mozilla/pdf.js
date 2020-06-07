@@ -221,28 +221,23 @@ var Ref = (function RefClosure() {
 
 // The reference is identified by number and generation.
 // This structure stores only one instance of the reference.
-var RefSet = (function RefSetClosure() {
-  // eslint-disable-next-line no-shadow
-  function RefSet() {
-    this.dict = Object.create(null);
+class RefSet {
+  constructor() {
+    this._set = new Set();
   }
 
-  RefSet.prototype = {
-    has: function RefSet_has(ref) {
-      return ref.toString() in this.dict;
-    },
+  has(ref) {
+    return this._set.has(ref.toString());
+  }
 
-    put: function RefSet_put(ref) {
-      this.dict[ref.toString()] = true;
-    },
+  put(ref) {
+    this._set.add(ref.toString());
+  }
 
-    remove: function RefSet_remove(ref) {
-      delete this.dict[ref.toString()];
-    },
-  };
-
-  return RefSet;
-})();
+  remove(ref) {
+    this._set.delete(ref.toString());
+  }
+}
 
 var RefSetCache = (function RefSetCacheClosure() {
   // eslint-disable-next-line no-shadow
