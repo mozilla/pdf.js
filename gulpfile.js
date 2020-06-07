@@ -899,20 +899,55 @@ function parseMinified(dir, suffix) {
   console.log("### Minifying js files");
 
   var Terser = require("terser");
-  // V8 chokes on very long sequences. Works around that.
-  var optsForHugeFile = { compress: { sequences: false } };
 
+  const viewerSource = fs
+    .readFileSync(dir + "/web/viewer" + suffix + ".js.map")
+    .toString();
+  const sourcemapOptsViewer = {
+    sourceMap: {
+      content: viewerSource,
+      url: "viewer" + suffix + ".min.js.map",
+    },
+  };
+
+  const miniViewer = Terser.minify(viewerFile, sourcemapOptsViewer);
+  fs.writeFileSync(dir + "/web/viewer" + suffix + ".min.js", miniViewer.code);
   fs.writeFileSync(
-    dir + "/web/viewer" + suffix + ".min.js",
-    Terser.minify(viewerFile).code
+    dir + "/web/viewer" + suffix + ".min.js.map",
+    miniViewer.map
   );
-  fs.writeFileSync(
-    dir + "/build/pdf" + suffix + ".min.js",
-    Terser.minify(pdfFile).code
-  );
+
+  const pdfSource = fs
+    .readFileSync(dir + "/build/pdf" + suffix + ".js.map")
+    .toString();
+  const sourcemapOptsPDF = {
+    sourceMap: { content: pdfSource, url: "pdf" + suffix + ".min.js.map" },
+  };
+
+  const miniPDF = Terser.minify(pdfFile, sourcemapOptsPDF);
+
+  fs.writeFileSync(dir + "/build/pdf" + suffix + ".min.js", miniPDF.code);
+  fs.writeFileSync(dir + "/build/pdf" + suffix + ".min.js.map", miniPDF.map);
+
+  const pdfWorkerSource = fs
+    .readFileSync(dir + "/build/pdf.worker" + suffix + ".js.map")
+    .toString();
+  // V8 chokes on very long sequences. Works around that.
+  var optsForHugeFile = {
+    compress: { sequences: false },
+    sourceMap: {
+      content: pdfWorkerSource,
+      url: "pdf.worker" + suffix + ".min.js.map",
+    },
+  };
+  const miniWorker = Terser.minify(pdfWorkerFile, optsForHugeFile);
   fs.writeFileSync(
     dir + "/build/pdf.worker" + suffix + ".min.js",
-    Terser.minify(pdfWorkerFile, optsForHugeFile).code
+    miniWorker.code
+  );
+  fs.writeFileSync(
+    dir + "/build/pdf.worker" + suffix + ".min.js.map",
+    miniWorker.map
   );
 }
 
