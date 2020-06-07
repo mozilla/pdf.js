@@ -431,8 +431,8 @@ class PDFFindController {
     // #177
     if (ignoreAccents) {
       // #177
-      pageContent = window.deburr(pageContent); // #177
-      query = window.deburr(query); // #177
+      pageContent = deburr(pageContent); // #177
+      query = deburr(query); // #177
     } // #177
     const matchesWithLength = [];
 
