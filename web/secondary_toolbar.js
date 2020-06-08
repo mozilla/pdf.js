@@ -206,7 +206,14 @@ class SecondaryToolbar {
 
   _updateUIState() {
     this.items.firstPage.disabled = this.pageNumber <= 1;
+    if (document.getElementById("previousPage")) {
+      document.getElementById("previousPage").disabled = this.pageNumber <= 1;
+    }
     this.items.lastPage.disabled = this.pageNumber >= this.pagesCount;
+    if (document.getElementById("nextPage")) {
+      document.getElementById("nextPage").disabled = this.pageNumber >= this.pagesCount;
+    }
+
     this.items.pageRotateCw.disabled = this.pagesCount === 0;
     this.items.pageRotateCcw.disabled = this.pagesCount === 0;
 
