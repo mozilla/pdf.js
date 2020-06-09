@@ -19,7 +19,6 @@ import {
   createValidAbsoluteUrl,
   isArrayBuffer,
   isBool,
-  isEmptyObj,
   isNum,
   isSameOrigin,
   isString,
@@ -86,16 +85,6 @@ describe("util", function () {
       expect(isBool(0)).toEqual(false);
       expect(isBool(null)).toEqual(false);
       expect(isBool(undefined)).toEqual(false);
-    });
-  });
-
-  describe("isEmptyObj", function () {
-    it("handles empty objects", function () {
-      expect(isEmptyObj({})).toEqual(true);
-    });
-
-    it("handles non-empty objects", function () {
-      expect(isEmptyObj({ foo: "bar" })).toEqual(false);
     });
   });
 
