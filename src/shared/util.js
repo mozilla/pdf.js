@@ -793,13 +793,6 @@ function utf8StringToString(str) {
   return unescape(encodeURIComponent(str));
 }
 
-function isEmptyObj(obj) {
-  for (const key in obj) {
-    return false;
-  }
-  return true;
-}
-
 function isBool(v) {
   return typeof v === "boolean";
 }
@@ -931,7 +924,6 @@ export {
   isArrayBuffer,
   isArrayEqual,
   isBool,
-  isEmptyObj,
   isNum,
   isString,
   isSameOrigin,

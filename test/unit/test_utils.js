@@ -175,6 +175,14 @@ function createIdFactory(pageIndex) {
   return page.idFactory;
 }
 
+function isEmptyObj(obj) {
+  assert(
+    typeof obj === "object" && obj !== null,
+    "isEmptyObj - invalid argument."
+  );
+  return Object.keys(obj).length === 0;
+}
+
 export {
   DOMFileReaderFactory,
   NodeFileReaderFactory,
@@ -184,4 +192,5 @@ export {
   buildGetDocumentParams,
   TEST_PDFS_PATH,
   createIdFactory,
+  isEmptyObj,
 };
