@@ -320,7 +320,7 @@ class ChunkedStreamManager {
     this.currRequestId = 0;
 
     this._chunksNeededByRequest = new Map();
-    this.requestsByChunk = Object.create(null);
+    this._requestsByChunk = new Map();
     this.promisesByRequest = Object.create(null);
     this.progressiveDataLength = 0;
     this.aborted = false;
@@ -401,11 +401,14 @@ class ChunkedStreamManager {
 
     const chunksToRequest = [];
     for (const chunk of chunksNeeded) {
-      if (!(chunk in this.requestsByChunk)) {
-        this.requestsByChunk[chunk] = [];
+      let requestIds = this._requestsByChunk.get(chunk);
+      if (!requestIds) {
+        requestIds = [];
+        this._requestsByChunk.set(chunk, requestIds);
+
         chunksToRequest.push(chunk);
       }
-      this.requestsByChunk[chunk].push(requestId);
+      requestIds.push(requestId);
     }
 
     if (!chunksToRequest.length) {
@@ -521,8 +524,11 @@ class ChunkedStreamManager {
     const loadedRequests = [];
     for (let curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
       // The server might return more chunks than requested.
-      const requestIds = this.requestsByChunk[curChunk] || [];
-      delete this.requestsByChunk[curChunk];
+      const requestIds = this._requestsByChunk.get(curChunk);
+      if (!requestIds) {
+        continue;
+      }
+      this._requestsByChunk.delete(curChunk);
 
       for (const requestId of requestIds) {
         const chunksNeeded = this._chunksNeededByRequest.get(requestId);
@@ -539,7 +545,7 @@ class ChunkedStreamManager {
 
     // If there are no pending requests, automatically fetch the next
     // unfetched chunk of the PDF file.
-    if (!this.disableAutoFetch && isEmptyObj(this.requestsByChunk)) {
+    if (!this.disableAutoFetch && this._requestsByChunk.size === 0) {
       let nextEmptyChunk;
       if (this.stream.numChunksLoaded === 1) {
         // This is a special optimization so that after fetching the first
