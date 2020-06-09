@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { isEmptyObj } from "../../src/shared/util.js";
+import { isEmptyObj } from "./test_utils.js";
 import { Metadata } from "../../src/display/metadata.js";
 
 describe("metadata", function () {
