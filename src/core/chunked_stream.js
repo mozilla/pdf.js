@@ -18,7 +18,6 @@ import {
   arrayByteLength,
   arraysToBytes,
   createPromiseCapability,
-  isEmptyObj,
 } from "../shared/util.js";
 import { MissingDataException } from "./core_utils.js";
 
@@ -321,7 +320,7 @@ class ChunkedStreamManager {
 
     this._chunksNeededByRequest = new Map();
     this._requestsByChunk = new Map();
-    this.promisesByRequest = Object.create(null);
+    this._promisesByRequest = new Map();
     this.progressiveDataLength = 0;
     this.aborted = false;
 
@@ -397,7 +396,7 @@ class ChunkedStreamManager {
     }
 
     const capability = createPromiseCapability();
-    this.promisesByRequest[requestId] = capability;
+    this._promisesByRequest.set(requestId, capability);
 
     const chunksToRequest = [];
     for (const chunk of chunksNeeded) {
@@ -564,8 +563,8 @@ class ChunkedStreamManager {
     }
 
     for (const requestId of loadedRequests) {
-      const capability = this.promisesByRequest[requestId];
-      delete this.promisesByRequest[requestId];
+      const capability = this._promisesByRequest.get(requestId);
+      this._promisesByRequest.delete(requestId);
       capability.resolve();
     }
 
@@ -592,8 +591,8 @@ class ChunkedStreamManager {
     if (this.pdfNetworkStream) {
       this.pdfNetworkStream.cancelAllRequests(reason);
     }
-    for (const requestId in this.promisesByRequest) {
-      this.promisesByRequest[requestId].reject(reason);
+    for (const [, capability] of this._promisesByRequest) {
+      capability.reject(reason);
     }
   }
 }
