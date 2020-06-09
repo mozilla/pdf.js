@@ -319,7 +319,7 @@ class ChunkedStreamManager {
 
     this.currRequestId = 0;
 
-    this.chunksNeededByRequest = Object.create(null);
+    this._chunksNeededByRequest = new Map();
     this.requestsByChunk = Object.create(null);
     this.promisesByRequest = Object.create(null);
     this.progressiveDataLength = 0;
@@ -384,15 +384,15 @@ class ChunkedStreamManager {
   _requestChunks(chunks) {
     const requestId = this.currRequestId++;
 
-    const chunksNeeded = Object.create(null);
-    this.chunksNeededByRequest[requestId] = chunksNeeded;
+    const chunksNeeded = new Set();
+    this._chunksNeededByRequest.set(requestId, chunksNeeded);
     for (const chunk of chunks) {
       if (!this.stream.hasChunk(chunk)) {
-        chunksNeeded[chunk] = true;
+        chunksNeeded.add(chunk);
       }
     }
 
-    if (isEmptyObj(chunksNeeded)) {
+    if (chunksNeeded.size === 0) {
       return Promise.resolve();
     }
 
@@ -400,8 +400,7 @@ class ChunkedStreamManager {
     this.promisesByRequest[requestId] = capability;
 
     const chunksToRequest = [];
-    for (let chunk in chunksNeeded) {
-      chunk = chunk | 0;
+    for (const chunk of chunksNeeded) {
       if (!(chunk in this.requestsByChunk)) {
         this.requestsByChunk[chunk] = [];
         chunksToRequest.push(chunk);
@@ -526,12 +525,12 @@ class ChunkedStreamManager {
       delete this.requestsByChunk[curChunk];
 
       for (const requestId of requestIds) {
-        const chunksNeeded = this.chunksNeededByRequest[requestId];
-        if (curChunk in chunksNeeded) {
-          delete chunksNeeded[curChunk];
+        const chunksNeeded = this._chunksNeededByRequest.get(requestId);
+        if (chunksNeeded.has(curChunk)) {
+          chunksNeeded.delete(curChunk);
         }
 
-        if (!isEmptyObj(chunksNeeded)) {
+        if (chunksNeeded.size > 0) {
           continue;
         }
         loadedRequests.push(requestId);
