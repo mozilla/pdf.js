@@ -609,7 +609,7 @@ var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
   // eslint-disable-next-line no-shadow
-  function OperatorList(intent, streamSink, pageIndex) {
+  function OperatorList(intent, streamSink) {
     this._streamSink = streamSink;
     this.fnArray = [];
     this.argsArray = [];
@@ -620,8 +620,6 @@ var OperatorList = (function OperatorListClosure() {
     }
     this.dependencies = Object.create(null);
     this._totalLength = 0;
-    this.pageIndex = pageIndex;
-    this.intent = intent;
     this.weight = 0;
     this._resolved = streamSink ? null : Promise.resolve();
   }
