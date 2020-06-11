@@ -618,7 +618,7 @@ var OperatorList = (function OperatorListClosure() {
     } else {
       this.optimizer = new NullOptimizer(this);
     }
-    this.dependencies = Object.create(null);
+    this.dependencies = new Set();
     this._totalLength = 0;
     this.weight = 0;
     this._resolved = streamSink ? null : Promise.resolve();
@@ -658,16 +658,16 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     addDependency(dependency) {
-      if (dependency in this.dependencies) {
+      if (this.dependencies.has(dependency)) {
         return;
       }
-      this.dependencies[dependency] = true;
+      this.dependencies.add(dependency);
       this.addOp(OPS.dependency, [dependency]);
     },
 
     addDependencies(dependencies) {
-      for (var key in dependencies) {
-        this.addDependency(key);
+      for (const dependency of dependencies) {
+        this.addDependency(dependency);
       }
     },
 
@@ -676,7 +676,9 @@ var OperatorList = (function OperatorListClosure() {
         warn('addOpList - ignoring invalid "opList" parameter.');
         return;
       }
-      Object.assign(this.dependencies, opList.dependencies);
+      for (const dependency of opList.dependencies) {
+        this.dependencies.add(dependency);
+      }
       for (var i = 0, ii = opList.length; i < ii; i++) {
         this.addOp(opList.fnArray[i], opList.argsArray[i]);
       }
@@ -734,7 +736,7 @@ var OperatorList = (function OperatorListClosure() {
         this._transfers
       );
 
-      this.dependencies = Object.create(null);
+      this.dependencies.clear();
       this.fnArray.length = 0;
       this.argsArray.length = 0;
       this.weight = 0;
