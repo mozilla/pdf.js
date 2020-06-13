@@ -381,7 +381,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       smask,
       operatorList,
       task,
-      initialState
+      initialState,
+      localColorSpaceCache
     ) {
       var dict = xobj.dict;
       var matrix = dict.getArray("Matrix");
@@ -407,10 +408,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           groupOptions.isolated = group.get("I") || false;
           groupOptions.knockout = group.get("K") || false;
           if (group.has("CS")) {
-            colorSpace = await this.parseColorSpace({
-              cs: group.get("CS"),
-              resources,
-            });
+            const cs = group.get("CS");
+
+            const localColorSpace =
+              cs instanceof Name && localColorSpaceCache.getByName(cs.name);
+            if (localColorSpace) {
+              colorSpace = localColorSpace;
+            } else {
+              colorSpace = await this.parseColorSpace({
+                cs,
+                resources,
+                localColorSpaceCache,
+              });
+            }
           }
         }
 
@@ -619,7 +629,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       resources,
       operatorList,
       task,
-      stateManager
+      stateManager,
+      localColorSpaceCache
     ) {
       var smaskContent = smask.get("G");
       var smaskOptions = {
@@ -648,7 +659,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         smaskOptions,
         operatorList,
         task,
-        stateManager.state.clone()
+        stateManager.state.clone(),
+        localColorSpaceCache
       );
     },
 
@@ -800,7 +812,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       gState,
       operatorList,
       task,
-      stateManager
+      stateManager,
+      localColorSpaceCache
     ) {
       // This array holds the converted/processed state data.
       var gStateObj = [];
@@ -853,7 +866,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   resources,
                   operatorList,
                   task,
-                  stateManager
+                  stateManager,
+                  localColorSpaceCache
                 );
               });
               gStateObj.push([key, true]);
@@ -1117,11 +1131,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
     },
 
-    parseColorSpace({ cs, resources }) {
+    parseColorSpace({ cs, resources, localColorSpaceCache }) {
       return new Promise(resolve => {
-        resolve(
-          ColorSpace.parse(cs, this.xref, resources, this.pdfFunctionFactory)
+        const parsedColorSpace = ColorSpace.parse(
+          cs,
+          this.xref,
+          resources,
+          this.pdfFunctionFactory
         );
+
+        const csName = cs instanceof Name ? cs.name : null;
+        if (csName) {
+          localColorSpaceCache.set(csName, /* ref = */ null, parsedColorSpace);
+        }
+        resolve(parsedColorSpace);
       }).catch(reason => {
         if (reason instanceof AbortException) {
           return null;
@@ -1198,6 +1221,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var xref = this.xref;
       let parsingText = false;
       const localImageCache = new LocalImageCache();
+      const localColorSpaceCache = new LocalImageCache();
 
       var xobjs = resources.get("XObject") || Dict.empty;
       var patterns = resources.get("Pattern") || Dict.empty;
@@ -1309,7 +1333,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         null,
                         operatorList,
                         task,
-                        stateManager.state.clone()
+                        stateManager.state.clone(),
+                        localColorSpaceCache
                       )
                       .then(function () {
                         stateManager.restore();
@@ -1454,12 +1479,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               stateManager.state.textRenderingMode = args[0];
               break;
 
-            case OPS.setFillColorSpace:
+            case OPS.setFillColorSpace: {
+              const localColorSpace =
+                args[0] instanceof Name &&
+                localColorSpaceCache.getByName(args[0].name);
+              if (localColorSpace) {
+                stateManager.state.fillColorSpace = localColorSpace;
+                continue;
+              }
+
               next(
                 self
                   .parseColorSpace({
                     cs: args[0],
                     resources,
+                    localColorSpaceCache,
                   })
                   .then(function (colorSpace) {
                     if (colorSpace) {
@@ -1468,12 +1502,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   })
               );
               return;
-            case OPS.setStrokeColorSpace:
+            }
+            case OPS.setStrokeColorSpace: {
+              const localColorSpace =
+                args[0] instanceof Name &&
+                localColorSpaceCache.getByName(args[0].name);
+              if (localColorSpace) {
+                stateManager.state.strokeColorSpace = localColorSpace;
+                continue;
+              }
+
               next(
                 self
                   .parseColorSpace({
                     cs: args[0],
                     resources,
+                    localColorSpaceCache,
                   })
                   .then(function (colorSpace) {
                     if (colorSpace) {
@@ -1482,6 +1526,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   })
               );
               return;
+            }
             case OPS.setFillColor:
               cs = stateManager.state.fillColorSpace;
               args = cs.getRgb(args, 0);
@@ -1597,7 +1642,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   gState,
                   operatorList,
                   task,
-                  stateManager
+                  stateManager,
+                  localColorSpaceCache
                 )
               );
               return;
