@@ -248,7 +248,7 @@ var PDFImage = (function PDFImageClosure() {
    * Handles processing of image data and returns the Promise that is resolved
    * with a PDFImage when the image is ready to be used.
    */
-  PDFImage.buildImage = function ({
+  PDFImage.buildImage = async function ({
     xref,
     res,
     image,
@@ -271,17 +271,16 @@ var PDFImage = (function PDFImageClosure() {
         warn("Unsupported mask format.");
       }
     }
-    return Promise.resolve(
-      new PDFImage({
-        xref,
-        res,
-        image: imageData,
-        isInline,
-        smask: smaskData,
-        mask: maskData,
-        pdfFunctionFactory,
-      })
-    );
+
+    return new PDFImage({
+      xref,
+      res,
+      image: imageData,
+      isInline,
+      smask: smaskData,
+      mask: maskData,
+      pdfFunctionFactory,
+    });
   };
 
   PDFImage.createMask = function ({
