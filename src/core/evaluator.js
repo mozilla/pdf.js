@@ -579,7 +579,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           return this._sendImgData(objId, imgData, cacheGlobally);
         })
         .catch(reason => {
-          warn("Unable to decode image: " + reason);
+          warn(`Unable to decode image "${objId}": "${reason}".`);
 
           return this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
         });
