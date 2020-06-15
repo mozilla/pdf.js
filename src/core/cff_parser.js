@@ -1366,6 +1366,8 @@ var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
 
 // Takes a CFF and converts it to the binary representation.
 var CFFCompiler = (function CFFCompilerClosure() {
+  let EncodeFloatRegExp = null; // Lazily initialized by `encodeFloat`.
+
   // eslint-disable-next-line no-shadow
   function CFFCompiler(cff) {
     this.cff = cff;
@@ -1491,8 +1493,11 @@ var CFFCompiler = (function CFFCompilerClosure() {
     encodeFloat: function CFFCompiler_encodeFloat(num) {
       var value = num.toString();
 
-      // rounding inaccurate doubles
-      var m = /\.(\d*?)(?:9{5,20}|0{5,20})\d{0,2}(?:e(.+)|$)/.exec(value);
+      if (!EncodeFloatRegExp) {
+        EncodeFloatRegExp = /\.(\d*?)(?:9{5,20}|0{5,20})\d{0,2}(?:e(.+)|$)/;
+      }
+      // Rounding inaccurate doubles.
+      var m = EncodeFloatRegExp.exec(value);
       if (m) {
         var epsilon = parseFloat("1e" + ((m[2] ? +m[2] : 0) + m[1].length));
         value = (Math.round(num * epsilon) / epsilon).toString();
