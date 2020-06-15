@@ -1483,8 +1483,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       return output.data;
     },
     encodeNumber: function CFFCompiler_encodeNumber(value) {
-      if (parseFloat(value) === parseInt(value, 10) && !isNaN(value)) {
-        // isInt
+      if (Number.isInteger(value)) {
         return this.encodeInteger(value);
       }
       return this.encodeFloat(value);
