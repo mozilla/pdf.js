@@ -37,39 +37,34 @@ import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { XRefParseException } from "./core_utils.js";
 
-var WorkerTask = (function WorkerTaskClosure() {
-  // eslint-disable-next-line no-shadow
-  function WorkerTask(name) {
+class WorkerTask {
+  constructor(name) {
     this.name = name;
     this.terminated = false;
     this._capability = createPromiseCapability();
   }
 
-  WorkerTask.prototype = {
-    get finished() {
-      return this._capability.promise;
-    },
+  get finished() {
+    return this._capability.promise;
+  }
 
-    finish() {
-      this._capability.resolve();
-    },
+  finish() {
+    this._capability.resolve();
+  }
 
-    terminate() {
-      this.terminated = true;
-    },
+  terminate() {
+    this.terminated = true;
+  }
 
-    ensureNotTerminated() {
-      if (this.terminated) {
-        throw new Error("Worker task was terminated");
-      }
-    },
-  };
+  ensureNotTerminated() {
+    if (this.terminated) {
+      throw new Error("Worker task was terminated");
+    }
+  }
+}
 
-  return WorkerTask;
-})();
-
-var WorkerMessageHandler = {
-  setup(handler, port) {
+class WorkerMessageHandler {
+  static setup(handler, port) {
     var testMessageProcessed = false;
     handler.on("test", function wphSetupTest(data) {
       if (testMessageProcessed) {
@@ -96,8 +91,9 @@ var WorkerMessageHandler = {
     handler.on("GetDocRequest", function wphSetupDoc(data) {
       return WorkerMessageHandler.createDocumentHandler(data, port);
     });
-  },
-  createDocumentHandler(docParams, port) {
+  }
+
+  static createDocumentHandler(docParams, port) {
     // This context is actually holds references on pdfManager and handler,
     // until the latter is destroyed.
     var pdfManager;
@@ -662,13 +658,14 @@ var WorkerMessageHandler = {
       docParams = null; // we don't need docParams anymore -- saving memory.
     });
     return workerHandlerName;
-  },
-  initializeFromPort(port) {
+  }
+
+  static initializeFromPort(port) {
     var handler = new MessageHandler("worker", "main", port);
     WorkerMessageHandler.setup(handler, port);
     handler.send("ready", null);
-  },
-};
+  }
+}
 
 function isMessagePort(maybePort) {
   return (
