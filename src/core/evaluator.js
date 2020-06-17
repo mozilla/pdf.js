@@ -73,13 +73,13 @@ import {
 } from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
 import { Lexer, Parser } from "./parser.js";
+import { LocalColorSpaceCache, LocalImageCache } from "./image_utils.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { isPDFFunction } from "./function.js";
-import { LocalImageCache } from "./image_utils.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -1224,7 +1224,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var xref = this.xref;
       let parsingText = false;
       const localImageCache = new LocalImageCache();
-      const localColorSpaceCache = new LocalImageCache();
+      const localColorSpaceCache = new LocalColorSpaceCache();
 
       var xobjs = resources.get("XObject") || Dict.empty;
       var patterns = resources.get("Pattern") || Dict.empty;
