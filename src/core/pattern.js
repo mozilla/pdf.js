@@ -57,7 +57,8 @@ var Pattern = (function PatternClosure() {
     xref,
     res,
     handler,
-    pdfFunctionFactory
+    pdfFunctionFactory,
+    localColorSpaceCache
   ) {
     var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get("ShadingType");
@@ -72,7 +73,8 @@ var Pattern = (function PatternClosure() {
             matrix,
             xref,
             res,
-            pdfFunctionFactory
+            pdfFunctionFactory,
+            localColorSpaceCache
           );
         case ShadingType.FREE_FORM_MESH:
         case ShadingType.LATTICE_FORM_MESH:
@@ -83,7 +85,8 @@ var Pattern = (function PatternClosure() {
             matrix,
             xref,
             res,
-            pdfFunctionFactory
+            pdfFunctionFactory,
+            localColorSpaceCache
           );
         default:
           throw new FormatError("Unsupported ShadingType: " + type);
@@ -111,16 +114,24 @@ Shadings.SMALL_NUMBER = 1e-6;
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes
 Shadings.RadialAxial = (function RadialAxialClosure() {
-  function RadialAxial(dict, matrix, xref, resources, pdfFunctionFactory) {
+  function RadialAxial(
+    dict,
+    matrix,
+    xref,
+    resources,
+    pdfFunctionFactory,
+    localColorSpaceCache
+  ) {
     this.matrix = matrix;
     this.coordsArr = dict.getArray("Coords");
     this.shadingType = dict.get("ShadingType");
     this.type = "Pattern";
     const cs = ColorSpace.parse({
-      cs: dict.get("ColorSpace", "CS"),
+      cs: dict.getRaw("ColorSpace") || dict.getRaw("CS"),
       xref,
       resources,
       pdfFunctionFactory,
+      localColorSpaceCache,
     });
     this.cs = cs;
     const bbox = dict.getArray("BBox");
@@ -834,7 +845,14 @@ Shadings.Mesh = (function MeshClosure() {
     }
   }
 
-  function Mesh(stream, matrix, xref, resources, pdfFunctionFactory) {
+  function Mesh(
+    stream,
+    matrix,
+    xref,
+    resources,
+    pdfFunctionFactory,
+    localColorSpaceCache
+  ) {
     if (!isStream(stream)) {
       throw new FormatError("Mesh data is not a stream");
     }
@@ -849,10 +867,11 @@ Shadings.Mesh = (function MeshClosure() {
       this.bbox = null;
     }
     const cs = ColorSpace.parse({
-      cs: dict.get("ColorSpace", "CS"),
+      cs: dict.getRaw("ColorSpace") || dict.getRaw("CS"),
       xref,
       resources,
       pdfFunctionFactory,
+      localColorSpaceCache,
     });
     this.cs = cs;
     this.background = dict.has("Background")

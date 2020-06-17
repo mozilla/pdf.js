@@ -22,7 +22,8 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { isDict, isName, isStream } from "./primitives.js";
+import { isDict, isName, isStream, Name, Ref } from "./primitives.js";
+import { MissingDataException } from "./core_utils.js";
 
 /**
  * Resizes an RGB image with 3 components.
@@ -259,9 +260,109 @@ class ColorSpace {
     return shadow(this, "usesZeroToOneRange", true);
   }
 
-  static parse({ cs, xref, resources = null, pdfFunctionFactory }) {
+  /**
+   * @private
+   */
+  static _cache(cacheKey, xref, localColorSpaceCache, parsedColorSpace) {
+    if (!localColorSpaceCache) {
+      throw new Error(
+        'ColorSpace._cache - expected "localColorSpaceCache" argument.'
+      );
+    }
+    if (!parsedColorSpace) {
+      throw new Error(
+        'ColorSpace._cache - expected "parsedColorSpace" argument.'
+      );
+    }
+    let csName, csRef;
+    if (cacheKey instanceof Ref) {
+      csRef = cacheKey;
+
+      // If parsing succeeded, we know that this call cannot throw.
+      cacheKey = xref.fetch(cacheKey);
+    }
+    if (cacheKey instanceof Name) {
+      csName = cacheKey.name;
+    }
+    if (csName || csRef) {
+      localColorSpaceCache.set(csName, csRef, parsedColorSpace);
+    }
+  }
+
+  static getCached(cacheKey, xref, localColorSpaceCache) {
+    if (!localColorSpaceCache) {
+      throw new Error(
+        'ColorSpace.getCached - expected "localColorSpaceCache" argument.'
+      );
+    }
+    if (cacheKey instanceof Ref) {
+      const localColorSpace = localColorSpaceCache.getByRef(cacheKey);
+      if (localColorSpace) {
+        return localColorSpace;
+      }
+
+      try {
+        cacheKey = xref.fetch(cacheKey);
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        // Any errors should be handled during parsing, rather than here.
+      }
+    }
+    if (cacheKey instanceof Name) {
+      const localColorSpace = localColorSpaceCache.getByName(cacheKey.name);
+      if (localColorSpace) {
+        return localColorSpace;
+      }
+    }
+    return null;
+  }
+
+  static async parseAsync({
+    cs,
+    xref,
+    resources = null,
+    pdfFunctionFactory,
+    localColorSpaceCache,
+  }) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        !this.getCached(cs, xref, localColorSpaceCache),
+        "Expected `ColorSpace.getCached` to have been manually checked " +
+          "before calling `ColorSpace.parseAsync`."
+      );
+    }
     const IR = this.parseToIR(cs, xref, resources, pdfFunctionFactory);
-    return this.fromIR(IR);
+    const parsedColorSpace = this.fromIR(IR);
+
+    // Attempt to cache the parsed ColorSpace, by name and/or reference.
+    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
+
+    return parsedColorSpace;
+  }
+
+  static parse({
+    cs,
+    xref,
+    resources = null,
+    pdfFunctionFactory,
+    localColorSpaceCache,
+  }) {
+    const cachedColorSpace = this.getCached(cs, xref, localColorSpaceCache);
+    if (cachedColorSpace) {
+      return cachedColorSpace;
+    }
+    const IR = this.parseToIR(cs, xref, resources, pdfFunctionFactory);
+    const parsedColorSpace = this.fromIR(IR);
+
+    // Attempt to cache the parsed ColorSpace, by name and/or reference.
+    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
+
+    return parsedColorSpace;
   }
 
   static fromIR(IR) {

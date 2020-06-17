@@ -411,12 +411,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           groupOptions.isolated = group.get("I") || false;
           groupOptions.knockout = group.get("K") || false;
           if (group.has("CS")) {
-            const cs = group.get("CS");
+            const cs = group.getRaw("CS");
 
-            const localColorSpace =
-              cs instanceof Name && localColorSpaceCache.getByName(cs.name);
-            if (localColorSpace) {
-              colorSpace = localColorSpace;
+            const cachedColorSpace = ColorSpace.getCached(
+              cs,
+              this.xref,
+              localColorSpaceCache
+            );
+            if (cachedColorSpace) {
+              colorSpace = cachedColorSpace;
             } else {
               colorSpace = await this.parseColorSpace({
                 cs,
@@ -483,6 +486,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList,
       cacheKey,
       localImageCache,
+      localColorSpaceCache,
     }) {
       var dict = image.dict;
       const imageRef = dict.objId;
@@ -549,6 +553,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           image,
           isInline,
           pdfFunctionFactory: this.pdfFunctionFactory,
+          localColorSpaceCache,
         });
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
@@ -585,6 +590,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         image,
         isInline,
         pdfFunctionFactory: this.pdfFunctionFactory,
+        localColorSpaceCache,
       })
         .then(imageObj => {
           imgData = imageObj.createImageData(/* forceRGBA = */ false);
@@ -1135,19 +1141,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     parseColorSpace({ cs, resources, localColorSpaceCache }) {
-      return new Promise(resolve => {
-        const parsedColorSpace = ColorSpace.parse({
-          cs,
-          xref: this.xref,
-          resources,
-          pdfFunctionFactory: this.pdfFunctionFactory,
-        });
-
-        const csName = cs instanceof Name ? cs.name : null;
-        if (csName) {
-          localColorSpaceCache.set(csName, /* ref = */ null, parsedColorSpace);
-        }
-        resolve(parsedColorSpace);
+      return ColorSpace.parseAsync({
+        cs,
+        xref: this.xref,
+        resources,
+        pdfFunctionFactory: this.pdfFunctionFactory,
+        localColorSpaceCache,
       }).catch(reason => {
         if (reason instanceof AbortException) {
           return null;
@@ -1165,7 +1164,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    async handleColorN(operatorList, fn, args, cs, patterns, resources, task) {
+    async handleColorN(
+      operatorList,
+      fn,
+      args,
+      cs,
+      patterns,
+      resources,
+      task,
+      localColorSpaceCache
+    ) {
       // compile tiling patterns
       var patternName = args[args.length - 1];
       // SCN/scn applies patterns along with normal colors
@@ -1194,7 +1202,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             this.xref,
             resources,
             this.handler,
-            this.pdfFunctionFactory
+            this.pdfFunctionFactory,
+            localColorSpaceCache
           );
           operatorList.addOp(fn, pattern.getIR());
           return undefined;
@@ -1352,6 +1361,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         operatorList,
                         cacheKey: name,
                         localImageCache,
+                        localColorSpaceCache,
                       })
                       .then(resolveXObject, rejectXObject);
                     return;
@@ -1425,6 +1435,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   operatorList,
                   cacheKey,
                   localImageCache,
+                  localColorSpaceCache,
                 })
               );
               return;
@@ -1483,11 +1494,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
 
             case OPS.setFillColorSpace: {
-              const localColorSpace =
-                args[0] instanceof Name &&
-                localColorSpaceCache.getByName(args[0].name);
-              if (localColorSpace) {
-                stateManager.state.fillColorSpace = localColorSpace;
+              const cachedColorSpace = ColorSpace.getCached(
+                args[0],
+                xref,
+                localColorSpaceCache
+              );
+              if (cachedColorSpace) {
+                stateManager.state.fillColorSpace = cachedColorSpace;
                 continue;
               }
 
@@ -1507,11 +1520,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               return;
             }
             case OPS.setStrokeColorSpace: {
-              const localColorSpace =
-                args[0] instanceof Name &&
-                localColorSpaceCache.getByName(args[0].name);
-              if (localColorSpace) {
-                stateManager.state.strokeColorSpace = localColorSpace;
+              const cachedColorSpace = ColorSpace.getCached(
+                args[0],
+                xref,
+                localColorSpaceCache
+              );
+              if (cachedColorSpace) {
+                stateManager.state.strokeColorSpace = cachedColorSpace;
                 continue;
               }
 
@@ -1579,7 +1594,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     cs,
                     patterns,
                     resources,
-                    task
+                    task,
+                    localColorSpaceCache
                   )
                 );
                 return;
@@ -1598,7 +1614,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     cs,
                     patterns,
                     resources,
-                    task
+                    task,
+                    localColorSpaceCache
                   )
                 );
                 return;
@@ -1624,7 +1641,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 xref,
                 resources,
                 self.handler,
-                self.pdfFunctionFactory
+                self.pdfFunctionFactory,
+                localColorSpaceCache
               );
               var patternIR = shadingFill.getIR();
               args = [patternIR];
