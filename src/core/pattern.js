@@ -111,13 +111,17 @@ Shadings.SMALL_NUMBER = 1e-6;
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes
 Shadings.RadialAxial = (function RadialAxialClosure() {
-  function RadialAxial(dict, matrix, xref, res, pdfFunctionFactory) {
+  function RadialAxial(dict, matrix, xref, resources, pdfFunctionFactory) {
     this.matrix = matrix;
     this.coordsArr = dict.getArray("Coords");
     this.shadingType = dict.get("ShadingType");
     this.type = "Pattern";
-    var cs = dict.get("ColorSpace", "CS");
-    cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+    const cs = ColorSpace.parse({
+      cs: dict.get("ColorSpace", "CS"),
+      xref,
+      resources,
+      pdfFunctionFactory,
+    });
     this.cs = cs;
     const bbox = dict.getArray("BBox");
     if (Array.isArray(bbox) && bbox.length === 4) {
@@ -830,7 +834,7 @@ Shadings.Mesh = (function MeshClosure() {
     }
   }
 
-  function Mesh(stream, matrix, xref, res, pdfFunctionFactory) {
+  function Mesh(stream, matrix, xref, resources, pdfFunctionFactory) {
     if (!isStream(stream)) {
       throw new FormatError("Mesh data is not a stream");
     }
@@ -844,8 +848,12 @@ Shadings.Mesh = (function MeshClosure() {
     } else {
       this.bbox = null;
     }
-    var cs = dict.get("ColorSpace", "CS");
-    cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+    const cs = ColorSpace.parse({
+      cs: dict.get("ColorSpace", "CS"),
+      xref,
+      resources,
+      pdfFunctionFactory,
+    });
     this.cs = cs;
     this.background = dict.has("Background")
       ? cs.getRgb(dict.get("Background"), 0)

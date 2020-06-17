@@ -179,13 +179,12 @@ var PDFImage = (function PDFImageClosure() {
             );
         }
       }
-      const resources = isInline ? res : null;
-      this.colorSpace = ColorSpace.parse(
-        colorSpace,
+      this.colorSpace = ColorSpace.parse({
+        cs: colorSpace,
         xref,
-        resources,
-        pdfFunctionFactory
-      );
+        resources: isInline ? res : null,
+        pdfFunctionFactory,
+      });
       this.numComps = this.colorSpace.numComps;
     }
 
