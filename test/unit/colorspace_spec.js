@@ -55,12 +55,17 @@ describe("colorspace", function () {
           data: new Dict(),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       const testSrc = new Uint8Array([27, 125, 250, 131]);
       const testDest = new Uint8ClampedArray(4 * 4 * 3);
@@ -100,12 +105,17 @@ describe("colorspace", function () {
           data: Name.get("DeviceGray"),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       const testSrc = new Uint8Array([27, 125, 250, 131]);
       const testDest = new Uint8ClampedArray(3 * 3 * 3);
@@ -141,12 +151,17 @@ describe("colorspace", function () {
           data: new Dict(),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       // prettier-ignore
       const testSrc = new Uint8Array([
@@ -192,12 +207,17 @@ describe("colorspace", function () {
           data: Name.get("DeviceRGB"),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       // prettier-ignore
       const testSrc = new Uint8Array([
@@ -239,12 +259,17 @@ describe("colorspace", function () {
           data: new Dict(),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       // prettier-ignore
       const testSrc = new Uint8Array([
@@ -290,12 +315,17 @@ describe("colorspace", function () {
           data: Name.get("DeviceCMYK"),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       // prettier-ignore
       const testSrc = new Uint8Array([
@@ -342,12 +372,17 @@ describe("colorspace", function () {
           data: new Dict(),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       const testSrc = new Uint8Array([27, 125, 250, 131]);
       const testDest = new Uint8ClampedArray(4 * 4 * 3);
@@ -396,12 +431,17 @@ describe("colorspace", function () {
           data: new Dict(),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       // prettier-ignore
       const testSrc = new Uint8Array([
@@ -448,12 +488,17 @@ describe("colorspace", function () {
           data: new Dict(),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       // prettier-ignore
       const testSrc = new Uint8Array([
@@ -502,12 +547,17 @@ describe("colorspace", function () {
           data: new Dict(),
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       const testSrc = new Uint8Array([2, 2, 0, 1]);
       const testDest = new Uint8ClampedArray(3 * 3 * 3);
@@ -564,12 +614,17 @@ describe("colorspace", function () {
           data: fn,
         },
       ]);
-      const res = new Dict();
+      const resources = new Dict();
 
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      const colorSpace = ColorSpace.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+      });
 
       const testSrc = new Uint8Array([27, 25, 50, 31]);
       const testDest = new Uint8ClampedArray(3 * 3 * 3);

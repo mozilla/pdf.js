@@ -259,8 +259,8 @@ class ColorSpace {
     return shadow(this, "usesZeroToOneRange", true);
   }
 
-  static parse(cs, xref, res, pdfFunctionFactory) {
-    const IR = this.parseToIR(cs, xref, res, pdfFunctionFactory);
+  static parse({ cs, xref, resources = null, pdfFunctionFactory }) {
+    const IR = this.parseToIR(cs, xref, resources, pdfFunctionFactory);
     return this.fromIR(IR);
   }
 
@@ -312,7 +312,7 @@ class ColorSpace {
     }
   }
 
-  static parseToIR(cs, xref, res = null, pdfFunctionFactory) {
+  static parseToIR(cs, xref, resources = null, pdfFunctionFactory) {
     cs = xref.fetchIfRef(cs);
     if (isName(cs)) {
       switch (cs.name) {
@@ -328,15 +328,20 @@ class ColorSpace {
         case "Pattern":
           return ["PatternCS", null];
         default:
-          if (isDict(res)) {
-            const colorSpaces = res.get("ColorSpace");
+          if (isDict(resources)) {
+            const colorSpaces = resources.get("ColorSpace");
             if (isDict(colorSpaces)) {
-              const resCS = colorSpaces.get(cs.name);
-              if (resCS) {
-                if (isName(resCS)) {
-                  return this.parseToIR(resCS, xref, res, pdfFunctionFactory);
+              const resourcesCS = colorSpaces.get(cs.name);
+              if (resourcesCS) {
+                if (isName(resourcesCS)) {
+                  return this.parseToIR(
+                    resourcesCS,
+                    xref,
+                    resources,
+                    pdfFunctionFactory
+                  );
                 }
-                cs = resCS;
+                cs = resourcesCS;
                 break;
               }
             }
@@ -377,7 +382,12 @@ class ColorSpace {
           numComps = dict.get("N");
           alt = dict.get("Alternate");
           if (alt) {
-            const altIR = this.parseToIR(alt, xref, res, pdfFunctionFactory);
+            const altIR = this.parseToIR(
+              alt,
+              xref,
+              resources,
+              pdfFunctionFactory
+            );
             // Parse the /Alternate CS to ensure that the number of components
             // are correct, and also (indirectly) that it is not a PatternCS.
             const altCS = this.fromIR(altIR, pdfFunctionFactory);
@@ -400,7 +410,7 @@ class ColorSpace {
             basePatternCS = this.parseToIR(
               basePatternCS,
               xref,
-              res,
+              resources,
               pdfFunctionFactory
             );
           }
@@ -410,7 +420,7 @@ class ColorSpace {
           const baseIndexedCS = this.parseToIR(
             cs[1],
             xref,
-            res,
+            resources,
             pdfFunctionFactory
           );
           const hiVal = xref.fetchIfRef(cs[2]) + 1;
@@ -423,7 +433,7 @@ class ColorSpace {
         case "DeviceN":
           const name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          alt = this.parseToIR(cs[2], xref, res, pdfFunctionFactory);
+          alt = this.parseToIR(cs[2], xref, resources, pdfFunctionFactory);
           const tintFn = pdfFunctionFactory.create(xref.fetchIfRef(cs[3]));
           return ["AlternateCS", numComps, alt, tintFn];
         case "Lab":

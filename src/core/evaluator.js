@@ -1136,12 +1136,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     parseColorSpace({ cs, resources, localColorSpaceCache }) {
       return new Promise(resolve => {
-        const parsedColorSpace = ColorSpace.parse(
+        const parsedColorSpace = ColorSpace.parse({
           cs,
-          this.xref,
+          xref: this.xref,
           resources,
-          this.pdfFunctionFactory
-        );
+          pdfFunctionFactory: this.pdfFunctionFactory,
+        });
 
         const csName = cs instanceof Name ? cs.name : null;
         if (csName) {
