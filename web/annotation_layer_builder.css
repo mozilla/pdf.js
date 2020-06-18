@@ -30,8 +30,8 @@
 .annotationLayer .linkAnnotation > a:hover,
 .annotationLayer .buttonWidgetAnnotation.pushButton > a:hover {
   opacity: 0.2;
-  background: #ff0;
-  box-shadow: 0px 2px 10px #ff0;
+  background: rgba(255, 255, 0, 1);
+  box-shadow: 0px 2px 10px rgba(255, 255, 0, 1);
 }
 
 .annotationLayer .textAnnotation img {
@@ -84,7 +84,7 @@
 .annotationLayer .choiceWidgetAnnotation select:hover,
 .annotationLayer .buttonWidgetAnnotation.checkBox input:hover,
 .annotationLayer .buttonWidgetAnnotation.radioButton input:hover {
-  border: 1px solid #000;
+  border: 1px solid rgba(0, 0, 0, 1);
 }
 
 .annotationLayer .textWidgetAnnotation input:focus,
@@ -97,7 +97,7 @@
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after,
 .annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {
-  background-color: #000;
+  background-color: rgba(0, 0, 0, 1);
   content: '';
   display: block;
   position: absolute;
@@ -157,8 +157,8 @@
   position: absolute;
   z-index: 200;
   max-width: 20em;
-  background-color: #FFFF99;
-  box-shadow: 0px 2px 5px #888;
+  background-color: rgba(255, 255, 153, 1);
+  box-shadow: 0px 2px 5px rgba(136, 136, 136, 1);
   border-radius: 2px;
   padding: 6px;
   margin-left: 5px;
@@ -182,7 +182,7 @@
 }
 
 .annotationLayer .popup p {
-  border-top: 1px solid #333;
+  border-top: 1px solid rgba(51, 51, 51, 1);
   margin-top: 2px;
   padding-top: 2px;
 }

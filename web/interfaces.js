@@ -12,18 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable getter-return */
 
 /**
  * @interface
  */
 class IPDFLinkService {
   /**
-   * @returns {number}
+   * @type {number}
    */
   get pagesCount() {}
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get page() {}
 
@@ -33,7 +34,7 @@ class IPDFLinkService {
   set page(value) {}
 
   /**
-   * @returns {number}
+   * @type {number}
    */
   get rotation() {}
 
@@ -43,7 +44,7 @@ class IPDFLinkService {
   set rotation(value) {}
 
   /**
-   * @returns {boolean}
+   * @type {boolean}
    */
   get externalLinkEnabled() {}
 
@@ -98,12 +99,14 @@ class IPDFHistory {
   /**
    * @param {Object} params
    */
-  initialize({ fingerprint, resetHistory = false, updateUrl = false, }) {}
+  initialize({ fingerprint, resetHistory = false, updateUrl = false }) {}
+
+  reset() {}
 
   /**
    * @param {Object} params
    */
-  push({ namedDest = null, explicitDest, pageNumber, }) {}
+  push({ namedDest = null, explicitDest, pageNumber }) {}
 
   pushCurrentPosition() {}
 
@@ -117,12 +120,12 @@ class IPDFHistory {
  */
 class IRenderableView {
   /**
-   * @returns {string} - Unique ID for rendering queue.
+   * @type {string} - Unique ID for rendering queue.
    */
   get renderingId() {}
 
   /**
-   * @returns {RenderingStates}
+   * @type {RenderingStates}
    */
   get renderingState() {}
 
@@ -143,10 +146,16 @@ class IPDFTextLayerFactory {
    * @param {number} pageIndex
    * @param {PageViewport} viewport
    * @param {boolean} enhanceTextSelection
+   * @param {EventBus} eventBus
    * @returns {TextLayerBuilder}
    */
-  createTextLayerBuilder(textLayerDiv, pageIndex, viewport,
-                         enhanceTextSelection = false) {}
+  createTextLayerBuilder(
+    textLayerDiv,
+    pageIndex,
+    viewport,
+    enhanceTextSelection = false,
+    eventBus
+  ) {}
 }
 
 /**
@@ -156,15 +165,19 @@ class IPDFAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
-   * @param {string} imageResourcesPath - (optional) Path for image resources,
-   *   mainly for annotation icons. Include trailing slash.
+   * @param {string} [imageResourcesPath] - Path for image resources, mainly
+   *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = '',
-                               renderInteractiveForms = false,
-                               l10n = undefined) {}
+  createAnnotationLayerBuilder(
+    pageDiv,
+    pdfPage,
+    imageResourcesPath = "",
+    renderInteractiveForms = false,
+    l10n = undefined
+  ) {}
 }
 
 /**
@@ -190,14 +203,14 @@ class IL10n {
    * @param {string} fallback
    * @returns {Promise<string>}
    */
-  async get(key, args, fallback) { }
+  async get(key, args, fallback) {}
 
   /**
    * Translates HTML element.
    * @param {HTMLElement} element
    * @returns {Promise<void>}
    */
-  async translate(element) { }
+  async translate(element) {}
 }
 
 export {
