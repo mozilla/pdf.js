@@ -14,72 +14,140 @@
  */
 /* eslint no-var: error */
 
-import { ColorSpace } from './colorspace';
-import { JpegStream } from './jpeg_stream';
-import { Stream } from './stream';
+import { assert, info, shadow } from "../shared/util.js";
+import { RefSetCache } from "./primitives.js";
 
-class NativeImageDecoder {
-  constructor({ xref, resources, handler, forceDataSchema = false,
-                pdfFunctionFactory, }) {
-    this.xref = xref;
-    this.resources = resources;
-    this.handler = handler;
-    this.forceDataSchema = forceDataSchema;
-    this.pdfFunctionFactory = pdfFunctionFactory;
+class LocalImageCache {
+  constructor() {
+    this._nameRefMap = new Map();
+    this._imageMap = new Map();
+    this._imageCache = new RefSetCache();
   }
 
-  canDecode(image) {
-    return image instanceof JpegStream &&
-           NativeImageDecoder.isDecodable(image, this.xref, this.resources,
-                                          this.pdfFunctionFactory);
-  }
-
-  decode(image) {
-    // For natively supported JPEGs send them to the main thread for decoding.
-    const dict = image.dict;
-    let colorSpace = dict.get('ColorSpace', 'CS');
-    colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources,
-                                  this.pdfFunctionFactory);
-
-    return this.handler.sendWithPromise('JpegDecode', [
-      image.getIR(this.forceDataSchema), colorSpace.numComps
-    ]).then(function({ data, width, height, }) {
-      return new Stream(data, 0, data.length, dict);
-    });
-  }
-
-  /**
-   * Checks if the image can be decoded and displayed by the browser without any
-   * further processing such as color space conversions.
-   */
-  static isSupported(image, xref, res, pdfFunctionFactory) {
-    const dict = image.dict;
-    if (dict.has('DecodeParms') || dict.has('DP')) {
-      return false;
+  getByName(name) {
+    const ref = this._nameRefMap.get(name);
+    if (ref) {
+      return this.getByRef(ref);
     }
-    const cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
-                                pdfFunctionFactory);
-    // isDefaultDecode() of DeviceGray and DeviceRGB needs no `bpc` argument.
-    return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
-           cs.isDefaultDecode(dict.getArray('Decode', 'D'));
+    return this._imageMap.get(name) || null;
   }
 
-  /**
-   * Checks if the image can be decoded by the browser.
-   */
-  static isDecodable(image, xref, res, pdfFunctionFactory) {
-    const dict = image.dict;
-    if (dict.has('DecodeParms') || dict.has('DP')) {
-      return false;
+  getByRef(ref) {
+    return this._imageCache.get(ref) || null;
+  }
+
+  set(name, ref = null, data) {
+    if (!name) {
+      throw new Error('LocalImageCache.set - expected "name" argument.');
     }
-    const cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
-                                pdfFunctionFactory);
-    const bpc = dict.get('BitsPerComponent', 'BPC') || 1;
-    return (cs.numComps === 1 || cs.numComps === 3) &&
-           cs.isDefaultDecode(dict.getArray('Decode', 'D'), bpc);
+    if (ref) {
+      if (this._imageCache.has(ref)) {
+        return;
+      }
+      this._nameRefMap.set(name, ref);
+      this._imageCache.put(ref, data);
+      return;
+    }
+    // name
+    if (this._imageMap.has(name)) {
+      return;
+    }
+    this._imageMap.set(name, data);
   }
 }
 
-export {
-  NativeImageDecoder,
-};
+class GlobalImageCache {
+  static get NUM_PAGES_THRESHOLD() {
+    return shadow(this, "NUM_PAGES_THRESHOLD", 2);
+  }
+
+  static get MAX_IMAGES_TO_CACHE() {
+    return shadow(this, "MAX_IMAGES_TO_CACHE", 10);
+  }
+
+  constructor() {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        GlobalImageCache.NUM_PAGES_THRESHOLD > 1,
+        "GlobalImageCache - invalid NUM_PAGES_THRESHOLD constant."
+      );
+    }
+    this._refCache = new RefSetCache();
+    this._imageCache = new RefSetCache();
+  }
+
+  shouldCache(ref, pageIndex) {
+    const pageIndexSet = this._refCache.get(ref);
+    const numPages = pageIndexSet
+      ? pageIndexSet.size + (pageIndexSet.has(pageIndex) ? 0 : 1)
+      : 1;
+
+    if (numPages < GlobalImageCache.NUM_PAGES_THRESHOLD) {
+      return false;
+    }
+    if (
+      !this._imageCache.has(ref) &&
+      this._imageCache.size >= GlobalImageCache.MAX_IMAGES_TO_CACHE
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  addPageIndex(ref, pageIndex) {
+    let pageIndexSet = this._refCache.get(ref);
+    if (!pageIndexSet) {
+      pageIndexSet = new Set();
+      this._refCache.put(ref, pageIndexSet);
+    }
+    pageIndexSet.add(pageIndex);
+  }
+
+  getData(ref, pageIndex) {
+    if (!this._refCache.has(ref)) {
+      return null;
+    }
+    const pageIndexSet = this._refCache.get(ref);
+
+    if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
+      return null;
+    }
+    if (!this._imageCache.has(ref)) {
+      return null;
+    }
+    // Ensure that we keep track of all pages containing the image reference.
+    pageIndexSet.add(pageIndex);
+
+    return this._imageCache.get(ref);
+  }
+
+  setData(ref, data) {
+    if (!this._refCache.has(ref)) {
+      throw new Error(
+        'GlobalImageCache.setData - expected "addPageIndex" to have been called.'
+      );
+    }
+    if (this._imageCache.has(ref)) {
+      return;
+    }
+    if (this._imageCache.size >= GlobalImageCache.MAX_IMAGES_TO_CACHE) {
+      info(
+        "GlobalImageCache.setData - ignoring image above MAX_IMAGES_TO_CACHE."
+      );
+      return;
+    }
+    this._imageCache.put(ref, data);
+  }
+
+  clear(onlyData = false) {
+    if (!onlyData) {
+      this._refCache.clear();
+    }
+    this._imageCache.clear();
+  }
+}
+
+export { LocalImageCache, GlobalImageCache };

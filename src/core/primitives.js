@@ -14,13 +14,14 @@
  */
 /* uses XRef */
 
-import { assert } from '../shared/util';
+import { assert, unreachable } from "../shared/util.js";
 
 var EOF = {};
 
 var Name = (function NameClosure() {
   let nameCache = Object.create(null);
 
+  // eslint-disable-next-line no-shadow
   function Name(name) {
     this.name = name;
   }
@@ -29,10 +30,11 @@ var Name = (function NameClosure() {
 
   Name.get = function Name_get(name) {
     var nameValue = nameCache[name];
-    return (nameValue ? nameValue : (nameCache[name] = new Name(name)));
+    // eslint-disable-next-line no-restricted-syntax
+    return nameValue ? nameValue : (nameCache[name] = new Name(name));
   };
 
-  Name._clearCache = function() {
+  Name._clearCache = function () {
     nameCache = Object.create(null);
   };
 
@@ -42,6 +44,7 @@ var Name = (function NameClosure() {
 var Cmd = (function CmdClosure() {
   let cmdCache = Object.create(null);
 
+  // eslint-disable-next-line no-shadow
   function Cmd(cmd) {
     this.cmd = cmd;
   }
@@ -50,10 +53,11 @@ var Cmd = (function CmdClosure() {
 
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
-    return (cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd)));
+    // eslint-disable-next-line no-restricted-syntax
+    return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
   };
 
-  Cmd._clearCache = function() {
+  Cmd._clearCache = function () {
     cmdCache = Object.create(null);
   };
 
@@ -66,6 +70,7 @@ var Dict = (function DictClosure() {
   };
 
   // xref is optional
+  // eslint-disable-next-line no-shadow
   function Dict(xref) {
     // Map should only be used internally, use functions below to access.
     this._map = Object.create(null);
@@ -83,9 +88,9 @@ var Dict = (function DictClosure() {
     // automatically dereferences Ref objects
     get(key1, key2, key3) {
       let value = this._map[key1];
-      if (value === undefined && !(key1 in this._map) && key2 !== undefined) {
+      if (value === undefined && key2 !== undefined) {
         value = this._map[key2];
-        if (value === undefined && !(key2 in this._map) && key3 !== undefined) {
+        if (value === undefined && key3 !== undefined) {
           value = this._map[key3];
         }
       }
@@ -98,9 +103,9 @@ var Dict = (function DictClosure() {
     // Same as get(), but returns a promise and uses fetchIfRefAsync().
     async getAsync(key1, key2, key3) {
       let value = this._map[key1];
-      if (value === undefined && !(key1 in this._map) && key2 !== undefined) {
+      if (value === undefined && key2 !== undefined) {
         value = this._map[key2];
-        if (value === undefined && !(key2 in this._map) && key3 !== undefined) {
+        if (value === undefined && key3 !== undefined) {
           value = this._map[key3];
         }
       }
@@ -136,11 +141,18 @@ var Dict = (function DictClosure() {
     },
 
     set: function Dict_set(key, value) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        value === undefined
+      ) {
+        unreachable('Dict.set: The "value" cannot be undefined.');
+      }
       this._map[key] = value;
     },
 
     has: function Dict_has(key) {
-      return key in this._map;
+      return this._map[key] !== undefined;
     },
 
     forEach: function Dict_forEach(callback) {
@@ -152,15 +164,15 @@ var Dict = (function DictClosure() {
 
   Dict.empty = new Dict(null);
 
-  Dict.merge = function(xref, dictArray) {
-    let mergedDict = new Dict(xref);
+  Dict.merge = function (xref, dictArray) {
+    const mergedDict = new Dict(xref);
 
     for (let i = 0, ii = dictArray.length; i < ii; i++) {
-      let dict = dictArray[i];
+      const dict = dictArray[i];
       if (!isDict(dict)) {
         continue;
       }
-      for (let keyName in dict._map) {
+      for (const keyName in dict._map) {
         if (mergedDict._map[keyName] !== undefined) {
           continue;
         }
@@ -176,6 +188,7 @@ var Dict = (function DictClosure() {
 var Ref = (function RefClosure() {
   let refCache = Object.create(null);
 
+  // eslint-disable-next-line no-shadow
   function Ref(num, gen) {
     this.num = num;
     this.gen = gen;
@@ -192,13 +205,14 @@ var Ref = (function RefClosure() {
     },
   };
 
-  Ref.get = function(num, gen) {
-    const key = (gen === 0 ? `${num}R` : `${num}R${gen}`);
+  Ref.get = function (num, gen) {
+    const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
     const refValue = refCache[key];
-    return (refValue ? refValue : (refCache[key] = new Ref(num, gen)));
+    // eslint-disable-next-line no-restricted-syntax
+    return refValue ? refValue : (refCache[key] = new Ref(num, gen));
   };
 
-  Ref._clearCache = function() {
+  Ref._clearCache = function () {
     refCache = Object.create(null);
   };
 
@@ -208,6 +222,7 @@ var Ref = (function RefClosure() {
 // The reference is identified by number and generation.
 // This structure stores only one instance of the reference.
 var RefSet = (function RefSetClosure() {
+  // eslint-disable-next-line no-shadow
   function RefSet() {
     this.dict = Object.create(null);
   }
@@ -230,11 +245,16 @@ var RefSet = (function RefSetClosure() {
 })();
 
 var RefSetCache = (function RefSetCacheClosure() {
+  // eslint-disable-next-line no-shadow
   function RefSetCache() {
     this.dict = Object.create(null);
   }
 
   RefSetCache.prototype = {
+    get size() {
+      return Object.keys(this.dict).length;
+    },
+
     get: function RefSetCache_get(ref) {
       return this.dict[ref.toString()];
     },
@@ -251,9 +271,9 @@ var RefSetCache = (function RefSetCacheClosure() {
       this.dict[ref.toString()] = this.get(aliasRef);
     },
 
-    forEach: function RefSetCache_forEach(fn, thisArg) {
-      for (var i in this.dict) {
-        fn.call(thisArg, this.dict[i]);
+    forEach: function RefSetCache_forEach(callback) {
+      for (const i in this.dict) {
+        callback(this.dict[i]);
       }
     },
 
@@ -266,7 +286,7 @@ var RefSetCache = (function RefSetCacheClosure() {
 })();
 
 function isEOF(v) {
-  return (v === EOF);
+  return v === EOF;
 }
 
 function isName(v, name) {
@@ -278,8 +298,9 @@ function isCmd(v, cmd) {
 }
 
 function isDict(v, type) {
-  return v instanceof Dict &&
-         (type === undefined || isName(v.get('Type'), type));
+  return (
+    v instanceof Dict && (type === undefined || isName(v.get("Type"), type))
+  );
 }
 
 function isRef(v) {
@@ -287,16 +308,20 @@ function isRef(v) {
 }
 
 function isRefsEqual(v1, v2) {
-  if (typeof PDFJSDev === 'undefined' ||
-      PDFJSDev.test('!PRODUCTION || TESTING')) {
-    assert(v1 instanceof Ref && v2 instanceof Ref,
-           'isRefsEqual: Both parameters should be `Ref`s.');
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      v1 instanceof Ref && v2 instanceof Ref,
+      "isRefsEqual: Both parameters should be `Ref`s."
+    );
   }
   return v1.num === v2.num && v1.gen === v2.gen;
 }
 
 function isStream(v) {
-  return typeof v === 'object' && v !== null && v.getBytes !== undefined;
+  return typeof v === "object" && v !== null && v.getBytes !== undefined;
 }
 
 function clearPrimitiveCaches() {

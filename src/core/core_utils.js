@@ -14,11 +14,11 @@
  */
 /* eslint no-var: error */
 
-import { assert, warn } from '../shared/util';
+import { assert, BaseException, warn } from "../shared/util.js";
 
 function getLookupTableFactory(initializer) {
   let lookup;
-  return function() {
+  return function () {
     if (initializer) {
       lookup = Object.create(null);
       initializer(lookup);
@@ -28,43 +28,17 @@ function getLookupTableFactory(initializer) {
   };
 }
 
-const MissingDataException = (function MissingDataExceptionClosure() {
-  function MissingDataException(begin, end) {
+class MissingDataException extends BaseException {
+  constructor(begin, end) {
+    super(`Missing data [${begin}, ${end})`);
     this.begin = begin;
     this.end = end;
-    this.message = `Missing data [${begin}, ${end})`;
   }
+}
 
-  MissingDataException.prototype = new Error();
-  MissingDataException.prototype.name = 'MissingDataException';
-  MissingDataException.constructor = MissingDataException;
+class XRefEntryException extends BaseException {}
 
-  return MissingDataException;
-})();
-
-const XRefEntryException = (function XRefEntryExceptionClosure() {
-  function XRefEntryException(msg) {
-    this.message = msg;
-  }
-
-  XRefEntryException.prototype = new Error();
-  XRefEntryException.prototype.name = 'XRefEntryException';
-  XRefEntryException.constructor = XRefEntryException;
-
-  return XRefEntryException;
-})();
-
-const XRefParseException = (function XRefParseExceptionClosure() {
-  function XRefParseException(msg) {
-    this.message = msg;
-  }
-
-  XRefParseException.prototype = new Error();
-  XRefParseException.prototype.name = 'XRefParseException';
-  XRefParseException.constructor = XRefParseException;
-
-  return XRefParseException;
-})();
+class XRefParseException extends BaseException {}
 
 /**
  * Get the value of an inheritable property.
@@ -87,8 +61,12 @@ const XRefParseException = (function XRefParseExceptionClosure() {
  *   chain, for example to be able to find `\Resources` placed on multiple
  *   levels of the tree. The default value is `true`.
  */
-function getInheritableProperty({ dict, key, getArray = false,
-                                  stopWhenFound = true, }) {
+function getInheritableProperty({
+  dict,
+  key,
+  getArray = false,
+  stopWhenFound = true,
+}) {
   const LOOP_LIMIT = 100;
   let loopCount = 0;
   let values;
@@ -108,32 +86,36 @@ function getInheritableProperty({ dict, key, getArray = false,
       warn(`getInheritableProperty: maximum loop count exceeded for "${key}"`);
       break;
     }
-    dict = dict.get('Parent');
+    dict = dict.get("Parent");
   }
   return values;
 }
 
+// prettier-ignore
 const ROMAN_NUMBER_MAP = [
-  '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
-  '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
-  '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'
+  "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM",
+  "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC",
+  "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"
 ];
 
 /**
  * Converts positive integers to (upper case) Roman numerals.
- * @param {integer} number - The number that should be converted.
+ * @param {number} number - The number that should be converted.
  * @param {boolean} lowerCase - Indicates if the result should be converted
  *   to lower case letters. The default value is `false`.
- * @return {string} The resulting Roman number.
+ * @returns {string} The resulting Roman number.
  */
 function toRomanNumerals(number, lowerCase = false) {
-  assert(Number.isInteger(number) && number > 0,
-         'The number should be a positive integer.');
-  let pos, romanBuf = [];
+  assert(
+    Number.isInteger(number) && number > 0,
+    "The number should be a positive integer."
+  );
+  const romanBuf = [];
+  let pos;
   // Thousands
   while (number >= 1000) {
     number -= 1000;
-    romanBuf.push('M');
+    romanBuf.push("M");
   }
   // Hundreds
   pos = (number / 100) | 0;
@@ -146,8 +128,41 @@ function toRomanNumerals(number, lowerCase = false) {
   // Ones
   romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
 
-  const romanStr = romanBuf.join('');
-  return (lowerCase ? romanStr.toLowerCase() : romanStr);
+  const romanStr = romanBuf.join("");
+  return lowerCase ? romanStr.toLowerCase() : romanStr;
+}
+
+// Calculate the base 2 logarithm of the number `x`. This differs from the
+// native function in the sense that it returns the ceiling value and that it
+// returns 0 instead of `Infinity`/`NaN` for `x` values smaller than/equal to 0.
+function log2(x) {
+  if (x <= 0) {
+    return 0;
+  }
+  return Math.ceil(Math.log2(x));
+}
+
+function readInt8(data, offset) {
+  return (data[offset] << 24) >> 24;
+}
+
+function readUint16(data, offset) {
+  return (data[offset] << 8) | data[offset + 1];
+}
+
+function readUint32(data, offset) {
+  return (
+    ((data[offset] << 24) |
+      (data[offset + 1] << 16) |
+      (data[offset + 2] << 8) |
+      data[offset + 3]) >>>
+    0
+  );
+}
+
+// Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
+function isWhiteSpace(ch) {
+  return ch === 0x20 || ch === 0x09 || ch === 0x0d || ch === 0x0a;
 }
 
 export {
@@ -157,4 +172,9 @@ export {
   XRefParseException,
   getInheritableProperty,
   toRomanNumerals,
+  log2,
+  readInt8,
+  readUint16,
+  readUint32,
+  isWhiteSpace,
 };

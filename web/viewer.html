@@ -32,7 +32,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
     <title>PDF.js viewer</title>
 
-<!--#if FIREFOX || MOZCENTRAL-->
+<!--#if MOZCENTRAL-->
 <!--#include viewer-snippet-firefox-extension.html-->
 <!--#endif-->
 <!--#if CHROME-->
@@ -45,8 +45,18 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if !PRODUCTION-->
-    <script src="../node_modules/systemjs/dist/system.js"></script>
-    <script src="../systemjs.config.js"></script>
+    <script defer src="../node_modules/es-module-shims/dist/es-module-shims.js"></script>
+    <script type="importmap-shim">
+      {
+        "imports": {
+          "pdfjs/": "../src/",
+          "pdfjs-lib": "../src/pdf.js",
+          "pdfjs-web/": "./"
+        }
+      }
+    </script>
+
+    <script src="viewer.js" type="module-shim"></script>
 <!--#endif-->
 
 <!--#if (GENERIC && !MINIFIED) -->
@@ -54,7 +64,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if !MINIFIED -->
-    <script src="viewer.js"></script>
+<!--<script src="viewer.js"></script>-->
 <!--#else-->
 <!--#include viewer-snippet-minified.html-->
 <!--#endif-->
@@ -222,7 +232,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <span data-l10n-id="next_label">Next</span>
                   </button>
                 </div>
-                <input type="number" id="pageNumber" class="toolbarField pageNumber" title="Page" value="1" size="4" min="1" tabindex="15" data-l10n-id="page">
+                <input type="number" id="pageNumber" class="toolbarField pageNumber" title="Page" value="1" size="4" min="1" tabindex="15" data-l10n-id="page" autocomplete="off">
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
               <div id="toolbarViewerRight">
@@ -391,7 +401,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             </div>
           </div>
         </div>
-<!--#if !(FIREFOX || MOZCENTRAL)-->
+<!--#if !MOZCENTRAL-->
         <div id="printServiceOverlay" class="container hidden">
           <div class="dialog">
             <div class="row">

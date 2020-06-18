@@ -20,12 +20,12 @@ limitations under the License.
  * - extension-router.js retrieves the saved state and opens restoretab.html
  * - restoretab.html (this script) restores the URL and history state.
  */
-'use strict';
+"use strict";
 
 var url = decodeURIComponent(location.search.slice(1));
 var historyState = decodeURIComponent(location.hash.slice(1));
 
-historyState = historyState === 'undefined' ? null : JSON.parse(historyState);
+historyState = historyState === "undefined" ? null : JSON.parse(historyState);
 
 history.replaceState(historyState, null, url);
 location.reload();

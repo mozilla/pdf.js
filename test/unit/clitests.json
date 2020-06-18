@@ -1,5 +1,5 @@
 {
-  "spec_dir": "build/lib/test/unit",
+  "spec_dir": "build/lib-es5/test/unit",
 
   "helpers": [
     "clitests_helper.js"

@@ -14,17 +14,10 @@
  */
 /* eslint no-var: error */
 
-import './compatibility';
-import { ReadableStream } from './streams_polyfill';
+import "./compatibility.js";
 
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
-
-const NativeImageDecoding = {
-  NONE: 'none',
-  DECODE: 'decode',
-  DISPLAY: 'display',
-};
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
 const PermissionFlag = {
@@ -87,26 +80,26 @@ const AnnotationType = {
 };
 
 const AnnotationStateModelType = {
-  MARKED: 'Marked',
-  REVIEW: 'Review',
+  MARKED: "Marked",
+  REVIEW: "Review",
 };
 
 const AnnotationMarkedState = {
-  MARKED: 'Marked',
-  UNMARKED: 'Unmarked',
+  MARKED: "Marked",
+  UNMARKED: "Unmarked",
 };
 
 const AnnotationReviewState = {
-  ACCEPTED: 'Accepted',
-  REJECTED: 'Rejected',
-  CANCELLED: 'Cancelled',
-  COMPLETED: 'Completed',
-  NONE: 'None',
+  ACCEPTED: "Accepted",
+  REJECTED: "Rejected",
+  CANCELLED: "Cancelled",
+  COMPLETED: "Completed",
+  NONE: "None",
 };
 
 const AnnotationReplyType = {
-  GROUP: 'Group',
-  REPLY: 'R',
+  GROUP: "Group",
+  REPLY: "R",
 };
 
 const AnnotationFlag = {
@@ -153,30 +146,30 @@ const AnnotationBorderStyleType = {
 };
 
 const StreamType = {
-  UNKNOWN: 'UNKNOWN',
-  FLATE: 'FLATE',
-  LZW: 'LZW',
-  DCT: 'DCT',
-  JPX: 'JPX',
-  JBIG: 'JBIG',
-  A85: 'A85',
-  AHX: 'AHX',
-  CCF: 'CCF',
-  RLX: 'RLX', // PDF short name is 'RL', but telemetry requires three chars.
+  UNKNOWN: "UNKNOWN",
+  FLATE: "FLATE",
+  LZW: "LZW",
+  DCT: "DCT",
+  JPX: "JPX",
+  JBIG: "JBIG",
+  A85: "A85",
+  AHX: "AHX",
+  CCF: "CCF",
+  RLX: "RLX", // PDF short name is 'RL', but telemetry requires three chars.
 };
 
 const FontType = {
-  UNKNOWN: 'UNKNOWN',
-  TYPE1: 'TYPE1',
-  TYPE1C: 'TYPE1C',
-  CIDFONTTYPE0: 'CIDFONTTYPE0',
-  CIDFONTTYPE0C: 'CIDFONTTYPE0C',
-  TRUETYPE: 'TRUETYPE',
-  CIDFONTTYPE2: 'CIDFONTTYPE2',
-  TYPE3: 'TYPE3',
-  OPENTYPE: 'OPENTYPE',
-  TYPE0: 'TYPE0',
-  MMTYPE1: 'MMTYPE1',
+  UNKNOWN: "UNKNOWN",
+  TYPE1: "TYPE1",
+  TYPE1C: "TYPE1C",
+  CIDFONTTYPE0: "CIDFONTTYPE0",
+  CIDFONTTYPE0C: "CIDFONTTYPE0C",
+  TRUETYPE: "TRUETYPE",
+  CIDFONTTYPE2: "CIDFONTTYPE2",
+  TYPE3: "TYPE3",
+  OPENTYPE: "OPENTYPE",
+  TYPE0: "TYPE0",
+  MMTYPE1: "MMTYPE1",
 };
 
 const VerbosityLevel = {
@@ -289,12 +282,26 @@ const OPS = {
 };
 
 const UNSUPPORTED_FEATURES = {
-  unknown: 'unknown',
-  forms: 'forms',
-  javaScript: 'javaScript',
-  smask: 'smask',
-  shadingPattern: 'shadingPattern',
-  font: 'font',
+  /** @deprecated unused */
+  unknown: "unknown",
+  forms: "forms",
+  javaScript: "javaScript",
+  smask: "smask",
+  shadingPattern: "shadingPattern",
+  /** @deprecated unused */
+  font: "font",
+  errorTilingPattern: "errorTilingPattern",
+  errorExtGState: "errorExtGState",
+  errorXObject: "errorXObject",
+  errorFontLoadType3: "errorFontLoadType3",
+  errorFontState: "errorFontState",
+  errorFontMissing: "errorFontMissing",
+  errorFontTranslate: "errorFontTranslate",
+  errorColorSpace: "errorColorSpace",
+  errorOperatorList: "errorOperatorList",
+  errorFontToUnicode: "errorFontToUnicode",
+  errorFontLoadNative: "errorFontLoadNative",
+  errorFontGetPath: "errorFontGetPath",
 };
 
 const PasswordResponses = {
@@ -345,7 +352,7 @@ function isSameOrigin(baseUrl, otherUrl) {
   let base;
   try {
     base = new URL(baseUrl);
-    if (!base.origin || base.origin === 'null') {
+    if (!base.origin || base.origin === "null") {
       return false; // non-HTTP url
     }
   } catch (e) {
@@ -362,11 +369,11 @@ function _isValidProtocol(url) {
     return false;
   }
   switch (url.protocol) {
-    case 'http:':
-    case 'https:':
-    case 'ftp:':
-    case 'mailto:':
-    case 'tel:':
+    case "http:":
+    case "https:":
+    case "ftp:":
+    case "mailto:":
+    case "tel:":
       return true;
     default:
       return false;
@@ -389,125 +396,87 @@ function createValidAbsoluteUrl(url, baseUrl) {
     if (_isValidProtocol(absoluteUrl)) {
       return absoluteUrl;
     }
-  } catch (ex) { /* `new URL()` will throw on incorrect data. */ }
+  } catch (ex) {
+    /* `new URL()` will throw on incorrect data. */
+  }
   return null;
 }
 
 function shadow(obj, prop, value) {
-  Object.defineProperty(obj, prop, { value,
-                                     enumerable: true,
-                                     configurable: true,
-                                     writable: false, });
+  Object.defineProperty(obj, prop, {
+    value,
+    enumerable: true,
+    configurable: true,
+    writable: false,
+  });
   return value;
 }
 
-const PasswordException = (function PasswordExceptionClosure() {
-  function PasswordException(msg, code) {
-    this.name = 'PasswordException';
-    this.message = msg;
+const BaseException = (function BaseExceptionClosure() {
+  // eslint-disable-next-line no-shadow
+  function BaseException(message) {
+    if (this.constructor === BaseException) {
+      unreachable("Cannot initialize BaseException.");
+    }
+    this.message = message;
+    this.name = this.constructor.name;
+  }
+  BaseException.prototype = new Error();
+  BaseException.constructor = BaseException;
+
+  return BaseException;
+})();
+
+class PasswordException extends BaseException {
+  constructor(msg, code) {
+    super(msg);
     this.code = code;
   }
+}
 
-  PasswordException.prototype = new Error();
-  PasswordException.constructor = PasswordException;
-
-  return PasswordException;
-})();
-
-const UnknownErrorException = (function UnknownErrorExceptionClosure() {
-  function UnknownErrorException(msg, details) {
-    this.name = 'UnknownErrorException';
-    this.message = msg;
+class UnknownErrorException extends BaseException {
+  constructor(msg, details) {
+    super(msg);
     this.details = details;
   }
+}
 
-  UnknownErrorException.prototype = new Error();
-  UnknownErrorException.constructor = UnknownErrorException;
+class InvalidPDFException extends BaseException {}
 
-  return UnknownErrorException;
-})();
+class MissingPDFException extends BaseException {}
 
-const InvalidPDFException = (function InvalidPDFExceptionClosure() {
-  function InvalidPDFException(msg) {
-    this.name = 'InvalidPDFException';
-    this.message = msg;
-  }
-
-  InvalidPDFException.prototype = new Error();
-  InvalidPDFException.constructor = InvalidPDFException;
-
-  return InvalidPDFException;
-})();
-
-const MissingPDFException = (function MissingPDFExceptionClosure() {
-  function MissingPDFException(msg) {
-    this.name = 'MissingPDFException';
-    this.message = msg;
-  }
-
-  MissingPDFException.prototype = new Error();
-  MissingPDFException.constructor = MissingPDFException;
-
-  return MissingPDFException;
-})();
-
-const UnexpectedResponseException =
-    (function UnexpectedResponseExceptionClosure() {
-  function UnexpectedResponseException(msg, status) {
-    this.name = 'UnexpectedResponseException';
-    this.message = msg;
+class UnexpectedResponseException extends BaseException {
+  constructor(msg, status) {
+    super(msg);
     this.status = status;
   }
-
-  UnexpectedResponseException.prototype = new Error();
-  UnexpectedResponseException.constructor = UnexpectedResponseException;
-
-  return UnexpectedResponseException;
-})();
+}
 
 /**
  * Error caused during parsing PDF data.
  */
-const FormatError = (function FormatErrorClosure() {
-  function FormatError(msg) {
-    this.message = msg;
-  }
-
-  FormatError.prototype = new Error();
-  FormatError.prototype.name = 'FormatError';
-  FormatError.constructor = FormatError;
-
-  return FormatError;
-})();
+class FormatError extends BaseException {}
 
 /**
  * Error used to indicate task cancellation.
  */
-const AbortException = (function AbortExceptionClosure() {
-  function AbortException(msg) {
-    this.name = 'AbortException';
-    this.message = msg;
-  }
-
-  AbortException.prototype = new Error();
-  AbortException.constructor = AbortException;
-
-  return AbortException;
-})();
+class AbortException extends BaseException {}
 
 const NullCharactersRegExp = /\x00/g;
 
 function removeNullCharacters(str) {
-  if (typeof str !== 'string') {
-    warn('The argument for removeNullCharacters must be a string.');
+  if (typeof str !== "string") {
+    warn("The argument for removeNullCharacters must be a string.");
     return str;
   }
-  return str.replace(NullCharactersRegExp, '');
+  return str.replace(NullCharactersRegExp, "");
 }
 
 function bytesToString(bytes) {
-  assert(bytes !== null && typeof bytes === 'object' &&
-         bytes.length !== undefined, 'Invalid argument for bytesToString');
+  assert(
+    bytes !== null && typeof bytes === "object" && bytes.length !== undefined,
+    "Invalid argument for bytesToString"
+  );
   const length = bytes.length;
   const MAX_ARGUMENT_COUNT = 8192;
   if (length < MAX_ARGUMENT_COUNT) {
@@ -519,15 +488,15 @@ function bytesToString(bytes) {
     const chunk = bytes.subarray(i, chunkEnd);
     strBuf.push(String.fromCharCode.apply(null, chunk));
   }
-  return strBuf.join('');
+  return strBuf.join("");
 }
 
 function stringToBytes(str) {
-  assert(typeof str === 'string', 'Invalid argument for stringToBytes');
+  assert(typeof str === "string", "Invalid argument for stringToBytes");
   const length = str.length;
   const bytes = new Uint8Array(length);
   for (let i = 0; i < length; ++i) {
-    bytes[i] = str.charCodeAt(i) & 0xFF;
+    bytes[i] = str.charCodeAt(i) & 0xff;
   }
   return bytes;
 }
@@ -541,7 +510,7 @@ function arrayByteLength(arr) {
   if (arr.length !== undefined) {
     return arr.length;
   }
-  assert(arr.byteLength !== undefined);
+  assert(arr.byteLength !== undefined, "arrayByteLength - invalid argument.");
   return arr.byteLength;
 }
 
@@ -553,7 +522,7 @@ function arrayByteLength(arr) {
 function arraysToBytes(arr) {
   const length = arr.length;
   // Shortcut: if first and only item is Uint8Array, return it.
-  if (length === 1 && (arr[0] instanceof Uint8Array)) {
+  if (length === 1 && arr[0] instanceof Uint8Array) {
     return arr[0];
   }
   let resultLength = 0;
@@ -565,7 +534,7 @@ function arraysToBytes(arr) {
   for (let i = 0; i < length; i++) {
     let item = arr[i];
     if (!(item instanceof Uint8Array)) {
-      if (typeof item === 'string') {
+      if (typeof item === "string") {
         item = stringToBytes(item);
       } else {
         item = new Uint8Array(item);
@@ -579,53 +548,43 @@ function arraysToBytes(arr) {
 }
 
 function string32(value) {
-  return String.fromCharCode((value >> 24) & 0xff, (value >> 16) & 0xff,
-                             (value >> 8) & 0xff, value & 0xff);
+  return String.fromCharCode(
+    (value >> 24) & 0xff,
+    (value >> 16) & 0xff,
+    (value >> 8) & 0xff,
+    value & 0xff
+  );
 }
 
-// Calculate the base 2 logarithm of the number `x`. This differs from the
-// native function in the sense that it returns the ceiling value and that it
-// returns 0 instead of `Infinity`/`NaN` for `x` values smaller than/equal to 0.
-function log2(x) {
-  if (x <= 0) {
-    return 0;
-  }
-  return Math.ceil(Math.log2(x));
-}
-
-function readInt8(data, start) {
-  return (data[start] << 24) >> 24;
-}
-
-function readUint16(data, offset) {
-  return (data[offset] << 8) | data[offset + 1];
-}
-
-function readUint32(data, offset) {
-  return ((data[offset] << 24) | (data[offset + 1] << 16) |
-         (data[offset + 2] << 8) | data[offset + 3]) >>> 0;
-}
-
-// Lazy test the endianness of the platform
-// NOTE: This will be 'true' for simulated TypedArrays
+// Checks the endianness of the platform.
 function isLittleEndian() {
   const buffer8 = new Uint8Array(4);
   buffer8[0] = 1;
   const view32 = new Uint32Array(buffer8.buffer, 0, 1);
-  return (view32[0] === 1);
+  return view32[0] === 1;
 }
+const IsLittleEndianCached = {
+  get value() {
+    return shadow(this, "value", isLittleEndian());
+  },
+};
 
 // Checks if it's possible to eval JS expressions.
 function isEvalSupported() {
   try {
-    new Function(''); // eslint-disable-line no-new, no-new-func
+    new Function(""); // eslint-disable-line no-new, no-new-func
     return true;
   } catch (e) {
     return false;
   }
 }
+const IsEvalSupportedCached = {
+  get value() {
+    return shadow(this, "value", isEvalSupported());
+  },
+};
 
-const rgbBuf = ['rgb(', 0, ',', 0, ',', 0, ')'];
+const rgbBuf = ["rgb(", 0, ",", 0, ",", 0, ")"];
 
 class Util {
   // makeCssRgb() can be called thousands of times. Using ´rgbBuf` avoids
@@ -634,7 +593,7 @@ class Util {
     rgbBuf[1] = r;
     rgbBuf[3] = g;
     rgbBuf[5] = b;
-    return rgbBuf.join('');
+    return rgbBuf.join("");
   }
 
   // Concatenates two transformation matrices together and returns the result.
@@ -645,7 +604,7 @@ class Util {
       m1[0] * m2[2] + m1[2] * m2[3],
       m1[1] * m2[2] + m1[3] * m2[3],
       m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
-      m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
+      m1[1] * m2[4] + m1[3] * m2[5] + m1[5],
     ];
   }
 
@@ -674,14 +633,20 @@ class Util {
       Math.min(p1[0], p2[0], p3[0], p4[0]),
       Math.min(p1[1], p2[1], p3[1], p4[1]),
       Math.max(p1[0], p2[0], p3[0], p4[0]),
-      Math.max(p1[1], p2[1], p3[1], p4[1])
+      Math.max(p1[1], p2[1], p3[1], p4[1]),
     ];
   }
 
   static inverseTransform(m) {
     const d = m[0] * m[3] - m[1] * m[2];
-    return [m[3] / d, -m[1] / d, -m[2] / d, m[0] / d,
-      (m[2] * m[5] - m[4] * m[3]) / d, (m[4] * m[1] - m[5] * m[0]) / d];
+    return [
+      m[3] / d,
+      -m[1] / d,
+      -m[2] / d,
+      m[0] / d,
+      (m[2] * m[5] - m[4] * m[3]) / d,
+      (m[4] * m[1] - m[5] * m[0]) / d,
+    ];
   }
 
   // Apply a generic 3d matrix M on a 3-vector v:
@@ -694,7 +659,7 @@ class Util {
     return [
       m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
       m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
-      m[6] * v[0] + m[7] * v[1] + m[8] * v[2]
+      m[6] * v[0] + m[7] * v[1] + m[8] * v[2],
     ];
   }
 
@@ -754,8 +719,10 @@ class Util {
     rect2 = Util.normalizeRect(rect2);
 
     // X: first and second points belong to different rectangles?
-    if ((orderedX[0] === rect1[0] && orderedX[1] === rect2[0]) ||
-        (orderedX[0] === rect2[0] && orderedX[1] === rect1[0])) {
+    if (
+      (orderedX[0] === rect1[0] && orderedX[1] === rect2[0]) ||
+      (orderedX[0] === rect2[0] && orderedX[1] === rect1[0])
+    ) {
       // Intersection must be between second and third points
       result[0] = orderedX[1];
       result[2] = orderedX[2];
@@ -764,8 +731,10 @@ class Util {
     }
 
     // Y: first and second points belong to different rectangles?
-    if ((orderedY[0] === rect1[1] && orderedY[1] === rect2[1]) ||
-        (orderedY[0] === rect2[1] && orderedY[1] === rect1[1])) {
+    if (
+      (orderedY[0] === rect1[1] && orderedY[1] === rect2[1]) ||
+      (orderedY[0] === rect2[1] && orderedY[1] === rect1[1])
+    ) {
       // Intersection must be between second and third points
       result[1] = orderedY[1];
       result[3] = orderedY[2];
@@ -777,6 +746,7 @@ class Util {
   }
 }
 
+// prettier-ignore
 const PDFStringTranslateTable = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0x2D8, 0x2C7, 0x2C6, 0x2D9, 0x2DD, 0x2DB, 0x2DA, 0x2DC, 0, 0, 0, 0, 0, 0, 0,
@@ -790,12 +760,21 @@ const PDFStringTranslateTable = [
 ];
 
 function stringToPDFString(str) {
-  const length = str.length, strBuf = [];
-  if (str[0] === '\xFE' && str[1] === '\xFF') {
+  const length = str.length,
+    strBuf = [];
+  if (str[0] === "\xFE" && str[1] === "\xFF") {
     // UTF16BE BOM
     for (let i = 2; i < length; i += 2) {
-      strBuf.push(String.fromCharCode(
-        (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1)));
+      strBuf.push(
+        String.fromCharCode((str.charCodeAt(i) << 8) | str.charCodeAt(i + 1))
+      );
+    }
+  } else if (str[0] === "\xFF" && str[1] === "\xFE") {
+    // UTF16LE BOM
+    for (let i = 2; i < length; i += 2) {
+      strBuf.push(
+        String.fromCharCode((str.charCodeAt(i + 1) << 8) | str.charCodeAt(i))
+      );
     }
   } else {
     for (let i = 0; i < length; ++i) {
@@ -803,7 +782,7 @@ function stringToPDFString(str) {
       strBuf.push(code ? String.fromCharCode(code) : str.charAt(i));
     }
   }
-  return strBuf.join('');
+  return strBuf.join("");
 }
 
 function stringToUTF8String(str) {
@@ -815,40 +794,35 @@ function utf8StringToString(str) {
 }
 
 function isEmptyObj(obj) {
-  for (let key in obj) {
+  for (const key in obj) {
     return false;
   }
   return true;
 }
 
 function isBool(v) {
-  return typeof v === 'boolean';
+  return typeof v === "boolean";
 }
 
 function isNum(v) {
-  return typeof v === 'number';
+  return typeof v === "number";
 }
 
 function isString(v) {
-  return typeof v === 'string';
+  return typeof v === "string";
 }
 
 function isArrayBuffer(v) {
-  return typeof v === 'object' && v !== null && v.byteLength !== undefined;
+  return typeof v === "object" && v !== null && v.byteLength !== undefined;
 }
 
 function isArrayEqual(arr1, arr2) {
   if (arr1.length !== arr2.length) {
     return false;
   }
-  return arr1.every(function(element, index) {
+  return arr1.every(function (element, index) {
     return element === arr2[index];
   });
-}
-
-// Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
-function isSpace(ch) {
-  return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
 }
 
 /**
@@ -865,23 +839,23 @@ function isSpace(ch) {
  * Creates a promise capability object.
  * @alias createPromiseCapability
  *
- * @return {PromiseCapability}
+ * @returns {PromiseCapability}
  */
 function createPromiseCapability() {
   const capability = Object.create(null);
   let isSettled = false;
 
-  Object.defineProperty(capability, 'settled', {
+  Object.defineProperty(capability, "settled", {
     get() {
       return isSettled;
     },
   });
-  capability.promise = new Promise(function(resolve, reject) {
-    capability.resolve = function(data) {
+  capability.promise = new Promise(function (resolve, reject) {
+    capability.resolve = function (data) {
       isSettled = true;
       resolve(data);
     };
-    capability.reject = function(reason) {
+    capability.reject = function (reason) {
       isSettled = true;
       reject(reason);
     };
@@ -892,22 +866,24 @@ function createPromiseCapability() {
 const createObjectURL = (function createObjectURLClosure() {
   // Blob/createObjectURL is not available, falling back to data schema.
   const digits =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
+  // eslint-disable-next-line no-shadow
   return function createObjectURL(data, contentType, forceDataSchema = false) {
     if (!forceDataSchema && URL.createObjectURL) {
-      const blob = new Blob([data], { type: contentType, });
+      const blob = new Blob([data], { type: contentType });
       return URL.createObjectURL(blob);
     }
 
     let buffer = `data:${contentType};base64,`;
     for (let i = 0, ii = data.length; i < ii; i += 3) {
-      const b1 = data[i] & 0xFF;
-      const b2 = data[i + 1] & 0xFF;
-      const b3 = data[i + 2] & 0xFF;
-      const d1 = b1 >> 2, d2 = ((b1 & 3) << 4) | (b2 >> 4);
-      const d3 = i + 1 < ii ? ((b2 & 0xF) << 2) | (b3 >> 6) : 64;
-      const d4 = i + 2 < ii ? (b3 & 0x3F) : 64;
+      const b1 = data[i] & 0xff;
+      const b2 = data[i + 1] & 0xff;
+      const b3 = data[i + 2] & 0xff;
+      const d1 = b1 >> 2,
+        d2 = ((b1 & 3) << 4) | (b2 >> 4);
+      const d3 = i + 1 < ii ? ((b2 & 0xf) << 2) | (b3 >> 6) : 64;
+      const d4 = i + 2 < ii ? b3 & 0x3f : 64;
       buffer += digits[d1] + digits[d2] + digits[d3] + digits[d4];
     }
     return buffer;
@@ -915,6 +891,7 @@ const createObjectURL = (function createObjectURLClosure() {
 })();
 
 export {
+  BaseException,
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   OPS,
@@ -934,7 +911,6 @@ export {
   AbortException,
   InvalidPDFException,
   MissingPDFException,
-  NativeImageDecoding,
   PasswordException,
   PasswordResponses,
   PermissionFlag,
@@ -958,17 +934,11 @@ export {
   isEmptyObj,
   isNum,
   isString,
-  isSpace,
   isSameOrigin,
   createValidAbsoluteUrl,
-  isLittleEndian,
-  isEvalSupported,
-  log2,
-  readInt8,
-  readUint16,
-  readUint32,
+  IsLittleEndianCached,
+  IsEvalSupportedCached,
   removeNullCharacters,
-  ReadableStream,
   setVerbosityLevel,
   shadow,
   string32,
