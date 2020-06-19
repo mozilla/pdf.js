@@ -1,6 +1,17 @@
 // npm module fast-levenshtein 2.0.6, converted to ES2015
 
-const levenshtein_collator = Intl.Collator("generic", { sensitivity: "base" });
+let levenshtein_collator;
+
+try {
+  levenshtein_collator = Intl.Collator("und", { sensitivity: "base" });
+} catch (missingBrowserSupport) {
+  try {
+    levenshtein_collator = Intl.Collator("generic", { sensitivity: "base" });
+  } catch (noBrowserSupport) {
+    // run the algorithm without the help of the collation tables
+    levenshtein_collator = undefined;
+  }
+}
 
 // arrays to re-use
 const levenshtein_prevRow = [];
