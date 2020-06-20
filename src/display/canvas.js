@@ -2157,9 +2157,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.paintInlineImageXObject(maskCanvas.canvas);
     },
 
-    paintImageMaskXObjectRepeat: function CanvasGraphics_paintImageMaskXObjectRepeat(
+    paintImageMaskXObjectRepeat(
       imgData,
       scaleX,
+      skewX = 0,
+      skewY = 0,
       scaleY,
       positions
     ) {
@@ -2190,7 +2192,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
       for (var i = 0, ii = positions.length; i < ii; i += 2) {
         ctx.save();
-        ctx.transform(scaleX, 0, 0, scaleY, positions[i], positions[i + 1]);
+        ctx.transform(
+          scaleX,
+          skewX,
+          skewY,
+          scaleY,
+          positions[i],
+          positions[i + 1]
+        );
         ctx.scale(1, -1);
         ctx.drawImage(maskCanvas.canvas, 0, 0, width, height, 0, -1, 1, 1);
         ctx.restore();

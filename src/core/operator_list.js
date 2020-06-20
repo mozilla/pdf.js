@@ -229,13 +229,13 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var isSameImage = false;
       var iTransform, transformArgs;
       var firstPIMXOArg0 = argsArray[iFirstPIMXO][0];
-      if (
-        argsArray[iFirstTransform][1] === 0 &&
-        argsArray[iFirstTransform][2] === 0
-      ) {
+      const firstTransformArg0 = argsArray[iFirstTransform][0],
+        firstTransformArg1 = argsArray[iFirstTransform][1],
+        firstTransformArg2 = argsArray[iFirstTransform][2],
+        firstTransformArg3 = argsArray[iFirstTransform][3];
+
+      if (firstTransformArg1 === firstTransformArg2) {
         isSameImage = true;
-        var firstTransformArg0 = argsArray[iFirstTransform][0];
-        var firstTransformArg3 = argsArray[iFirstTransform][3];
         iTransform = iFirstTransform + 4;
         var iPIMXO = iFirstPIMXO + 4;
         for (q = 1; q < count; q++, iTransform += 4, iPIMXO += 4) {
@@ -243,8 +243,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
           if (
             argsArray[iPIMXO][0] !== firstPIMXOArg0 ||
             transformArgs[0] !== firstTransformArg0 ||
-            transformArgs[1] !== 0 ||
-            transformArgs[2] !== 0 ||
+            transformArgs[1] !== firstTransformArg1 ||
+            transformArgs[2] !== firstTransformArg2 ||
             transformArgs[3] !== firstTransformArg3
           ) {
             if (q < MIN_IMAGES_IN_MASKS_BLOCK) {
@@ -272,6 +272,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         argsArray.splice(iFirstSave, count * 4, [
           firstPIMXOArg0,
           firstTransformArg0,
+          firstTransformArg1,
+          firstTransformArg2,
           firstTransformArg3,
           positions,
         ]);
