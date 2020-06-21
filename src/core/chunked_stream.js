@@ -591,7 +591,7 @@ class ChunkedStreamManager {
     if (this.pdfNetworkStream) {
       this.pdfNetworkStream.cancelAllRequests(reason);
     }
-    for (const [, capability] of this._promisesByRequest) {
+    for (const capability of this._promisesByRequest.values()) {
       capability.reject(reason);
     }
   }
