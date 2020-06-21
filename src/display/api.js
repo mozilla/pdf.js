@@ -1234,13 +1234,10 @@ class PDFPageProxy {
         // Avoid errors below, since the renderTasks are just stubs.
         return;
       }
-      intentState.renderTasks.forEach(function (renderTask) {
-        const renderCompleted = renderTask.capability.promise.catch(
-          function () {}
-        ); // ignoring failures
-        waitOn.push(renderCompleted);
-        renderTask.cancel();
-      });
+      for (const internalRenderTask of intentState.renderTasks) {
+        waitOn.push(internalRenderTask.completed);
+        internalRenderTask.cancel();
+      }
     });
     this.objs.clear();
     this.annotationsPromise = null;
@@ -2648,6 +2645,13 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       this._scheduleNextBound = this._scheduleNext.bind(this);
       this._nextBound = this._next.bind(this);
       this._canvas = params.canvasContext.canvas;
+    }
+
+    get completed() {
+      return this.capability.promise.catch(function () {
+        // Ignoring errors, since we only want to know when rendering is
+        // no longer pending.
+      });
     }
 
     initializeGraphics(transparency = false) {
