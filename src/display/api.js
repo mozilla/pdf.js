@@ -898,7 +898,7 @@ class PDFPageProxy {
 
     this.cleanupAfterRender = false;
     this.pendingCleanup = false;
-    this.intentStates = Object.create(null);
+    this._intentStates = new Map();
     this.destroyed = false;
   }
 
@@ -1003,10 +1003,11 @@ class PDFPageProxy {
     // this call to render.
     this.pendingCleanup = false;
 
-    if (!this.intentStates[renderingIntent]) {
-      this.intentStates[renderingIntent] = Object.create(null);
+    let intentState = this._intentStates.get(renderingIntent);
+    if (!intentState) {
+      intentState = Object.create(null);
+      this._intentStates.set(renderingIntent, intentState);
     }
-    const intentState = this.intentStates[renderingIntent];
 
     // Ensure that a pending `streamReader` cancel timeout is always aborted.
     if (intentState.streamReaderCancelTimeout) {
@@ -1128,14 +1129,15 @@ class PDFPageProxy {
     }
 
     const renderingIntent = "oplist";
-    if (!this.intentStates[renderingIntent]) {
-      this.intentStates[renderingIntent] = Object.create(null);
+    let intentState = this._intentStates.get(renderingIntent);
+    if (!intentState) {
+      intentState = Object.create(null);
+      this._intentStates.set(renderingIntent, intentState);
     }
-    const intentState = this.intentStates[renderingIntent];
     let opListTask;
 
     if (!intentState.opListReadCapability) {
-      opListTask = {};
+      opListTask = Object.create(null);
       opListTask.operatorListChanged = operatorListChanged;
       intentState.opListReadCapability = createPromiseCapability();
       intentState.renderTasks = [];
@@ -1222,8 +1224,7 @@ class PDFPageProxy {
     this._transport.pageCache[this._pageIndex] = null;
 
     const waitOn = [];
-    Object.keys(this.intentStates).forEach(intent => {
-      const intentState = this.intentStates[intent];
+    for (const [intent, intentState] of this._intentStates) {
       this._abortOperatorList({
         intentState,
         reason: new Error("Page was destroyed."),
@@ -1232,16 +1233,13 @@ class PDFPageProxy {
 
       if (intent === "oplist") {
         // Avoid errors below, since the renderTasks are just stubs.
-        return;
+        continue;
       }
-      intentState.renderTasks.forEach(function (renderTask) {
-        const renderCompleted = renderTask.capability.promise.catch(
-          function () {}
-        ); // ignoring failures
-        waitOn.push(renderCompleted);
-        renderTask.cancel();
-      });
-    });
+      for (const internalRenderTask of intentState.renderTasks) {
+        waitOn.push(internalRenderTask.completed);
+        internalRenderTask.cancel();
+      }
+    }
     this.objs.clear();
     this.annotationsPromise = null;
     this.pendingCleanup = false;
@@ -1264,22 +1262,16 @@ class PDFPageProxy {
    * @private
    */
   _tryCleanup(resetStats = false) {
-    if (
-      !this.pendingCleanup ||
-      Object.keys(this.intentStates).some(intent => {
-        const intentState = this.intentStates[intent];
-        return (
-          intentState.renderTasks.length !== 0 ||
-          !intentState.operatorList.lastChunk
-        );
-      })
-    ) {
+    if (!this.pendingCleanup) {
       return false;
     }
+    for (const { renderTasks, operatorList } of this._intentStates.values()) {
+      if (renderTasks.length !== 0 || !operatorList.lastChunk) {
+        return false;
+      }
+    }
 
-    Object.keys(this.intentStates).forEach(intent => {
-      delete this.intentStates[intent];
-    });
+    this._intentStates.clear();
     this.objs.clear();
     this.annotationsPromise = null;
     if (resetStats && this._stats) {
@@ -1293,7 +1285,7 @@ class PDFPageProxy {
    * @private
    */
   _startRenderPage(transparency, intent) {
-    const intentState = this.intentStates[intent];
+    const intentState = this._intentStates.get(intent);
     if (!intentState) {
       return; // Rendering was cancelled.
     }
@@ -1343,7 +1335,7 @@ class PDFPageProxy {
     );
     const reader = readableStream.getReader();
 
-    const intentState = this.intentStates[args.intent];
+    const intentState = this._intentStates.get(args.intent);
     intentState.streamReader = reader;
 
     const pump = () => {
@@ -1428,13 +1420,12 @@ class PDFPageProxy {
     }
     // Remove the current `intentState`, since a cancelled `getOperatorList`
     // call on the worker-thread cannot be re-started...
-    Object.keys(this.intentStates).some(intent => {
-      if (this.intentStates[intent] === intentState) {
-        delete this.intentStates[intent];
-        return true;
+    for (const [intent, curIntentState] of this._intentStates) {
+      if (curIntentState === intentState) {
+        this._intentStates.delete(intent);
+        break;
       }
-      return false;
-    });
+    }
     // ... and force clean-up to ensure that any old state is always removed.
     this.cleanup();
   }
@@ -2648,6 +2639,13 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       this._scheduleNextBound = this._scheduleNext.bind(this);
       this._nextBound = this._next.bind(this);
       this._canvas = params.canvasContext.canvas;
+    }
+
+    get completed() {
+      return this.capability.promise.catch(function () {
+        // Ignoring errors, since we only want to know when rendering is
+        // no longer pending.
+      });
     }
 
     initializeGraphics(transparency = false) {
