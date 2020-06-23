@@ -56,6 +56,10 @@ Next, install Node.js via the [official package](https://nodejs.org) or via
 globally (see also [gulp's getting started](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md#getting-started)):
 
     $ npm install -g gulp-cli
+    
+On MacOS, you might need to first install some things with brew:
+
+    $ brew install pango cairo pixman
 
 If everything worked out, install all dependencies for PDF.js:
 
