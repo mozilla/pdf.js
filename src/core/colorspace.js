@@ -491,7 +491,7 @@ class ColorSpace {
             );
             // Parse the /Alternate CS to ensure that the number of components
             // are correct, and also (indirectly) that it is not a PatternCS.
-            const altCS = this.fromIR(altIR, pdfFunctionFactory);
+            const altCS = this.fromIR(altIR);
             if (altCS.numComps === numComps) {
               return altIR;
             }
