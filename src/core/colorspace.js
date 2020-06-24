@@ -22,7 +22,8 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { isDict, isName, isStream } from "./primitives.js";
+import { isDict, isName, isStream, Name, Ref } from "./primitives.js";
+import { MissingDataException } from "./core_utils.js";
 
 /**
  * Resizes an RGB image with 3 components.
@@ -259,9 +260,109 @@ class ColorSpace {
     return shadow(this, "usesZeroToOneRange", true);
   }
 
-  static parse(cs, xref, res, pdfFunctionFactory) {
-    const IR = this.parseToIR(cs, xref, res, pdfFunctionFactory);
-    return this.fromIR(IR);
+  /**
+   * @private
+   */
+  static _cache(cacheKey, xref, localColorSpaceCache, parsedColorSpace) {
+    if (!localColorSpaceCache) {
+      throw new Error(
+        'ColorSpace._cache - expected "localColorSpaceCache" argument.'
+      );
+    }
+    if (!parsedColorSpace) {
+      throw new Error(
+        'ColorSpace._cache - expected "parsedColorSpace" argument.'
+      );
+    }
+    let csName, csRef;
+    if (cacheKey instanceof Ref) {
+      csRef = cacheKey;
+
+      // If parsing succeeded, we know that this call cannot throw.
+      cacheKey = xref.fetch(cacheKey);
+    }
+    if (cacheKey instanceof Name) {
+      csName = cacheKey.name;
+    }
+    if (csName || csRef) {
+      localColorSpaceCache.set(csName, csRef, parsedColorSpace);
+    }
+  }
+
+  static getCached(cacheKey, xref, localColorSpaceCache) {
+    if (!localColorSpaceCache) {
+      throw new Error(
+        'ColorSpace.getCached - expected "localColorSpaceCache" argument.'
+      );
+    }
+    if (cacheKey instanceof Ref) {
+      const localColorSpace = localColorSpaceCache.getByRef(cacheKey);
+      if (localColorSpace) {
+        return localColorSpace;
+      }
+
+      try {
+        cacheKey = xref.fetch(cacheKey);
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        // Any errors should be handled during parsing, rather than here.
+      }
+    }
+    if (cacheKey instanceof Name) {
+      const localColorSpace = localColorSpaceCache.getByName(cacheKey.name);
+      if (localColorSpace) {
+        return localColorSpace;
+      }
+    }
+    return null;
+  }
+
+  static async parseAsync({
+    cs,
+    xref,
+    resources = null,
+    pdfFunctionFactory,
+    localColorSpaceCache,
+  }) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        !this.getCached(cs, xref, localColorSpaceCache),
+        "Expected `ColorSpace.getCached` to have been manually checked " +
+          "before calling `ColorSpace.parseAsync`."
+      );
+    }
+    const IR = this.parseToIR(cs, xref, resources, pdfFunctionFactory);
+    const parsedColorSpace = this.fromIR(IR);
+
+    // Attempt to cache the parsed ColorSpace, by name and/or reference.
+    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
+
+    return parsedColorSpace;
+  }
+
+  static parse({
+    cs,
+    xref,
+    resources = null,
+    pdfFunctionFactory,
+    localColorSpaceCache,
+  }) {
+    const cachedColorSpace = this.getCached(cs, xref, localColorSpaceCache);
+    if (cachedColorSpace) {
+      return cachedColorSpace;
+    }
+    const IR = this.parseToIR(cs, xref, resources, pdfFunctionFactory);
+    const parsedColorSpace = this.fromIR(IR);
+
+    // Attempt to cache the parsed ColorSpace, by name and/or reference.
+    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
+
+    return parsedColorSpace;
   }
 
   static fromIR(IR) {
@@ -312,7 +413,7 @@ class ColorSpace {
     }
   }
 
-  static parseToIR(cs, xref, res = null, pdfFunctionFactory) {
+  static parseToIR(cs, xref, resources = null, pdfFunctionFactory) {
     cs = xref.fetchIfRef(cs);
     if (isName(cs)) {
       switch (cs.name) {
@@ -328,15 +429,20 @@ class ColorSpace {
         case "Pattern":
           return ["PatternCS", null];
         default:
-          if (isDict(res)) {
-            const colorSpaces = res.get("ColorSpace");
+          if (isDict(resources)) {
+            const colorSpaces = resources.get("ColorSpace");
             if (isDict(colorSpaces)) {
-              const resCS = colorSpaces.get(cs.name);
-              if (resCS) {
-                if (isName(resCS)) {
-                  return this.parseToIR(resCS, xref, res, pdfFunctionFactory);
+              const resourcesCS = colorSpaces.get(cs.name);
+              if (resourcesCS) {
+                if (isName(resourcesCS)) {
+                  return this.parseToIR(
+                    resourcesCS,
+                    xref,
+                    resources,
+                    pdfFunctionFactory
+                  );
                 }
-                cs = resCS;
+                cs = resourcesCS;
                 break;
               }
             }
@@ -377,10 +483,15 @@ class ColorSpace {
           numComps = dict.get("N");
           alt = dict.get("Alternate");
           if (alt) {
-            const altIR = this.parseToIR(alt, xref, res, pdfFunctionFactory);
+            const altIR = this.parseToIR(
+              alt,
+              xref,
+              resources,
+              pdfFunctionFactory
+            );
             // Parse the /Alternate CS to ensure that the number of components
             // are correct, and also (indirectly) that it is not a PatternCS.
-            const altCS = this.fromIR(altIR, pdfFunctionFactory);
+            const altCS = this.fromIR(altIR);
             if (altCS.numComps === numComps) {
               return altIR;
             }
@@ -400,7 +511,7 @@ class ColorSpace {
             basePatternCS = this.parseToIR(
               basePatternCS,
               xref,
-              res,
+              resources,
               pdfFunctionFactory
             );
           }
@@ -410,7 +521,7 @@ class ColorSpace {
           const baseIndexedCS = this.parseToIR(
             cs[1],
             xref,
-            res,
+            resources,
             pdfFunctionFactory
           );
           const hiVal = xref.fetchIfRef(cs[2]) + 1;
@@ -423,7 +534,7 @@ class ColorSpace {
         case "DeviceN":
           const name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          alt = this.parseToIR(cs[2], xref, res, pdfFunctionFactory);
+          alt = this.parseToIR(cs[2], xref, resources, pdfFunctionFactory);
           const tintFn = pdfFunctionFactory.create(xref.fetchIfRef(cs[3]));
           return ["AlternateCS", numComps, alt, tintFn];
         case "Lab":

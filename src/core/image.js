@@ -89,6 +89,7 @@ var PDFImage = (function PDFImageClosure() {
     mask = null,
     isMask = false,
     pdfFunctionFactory,
+    localColorSpaceCache,
   }) {
     this.image = image;
     var dict = image.dict;
@@ -159,7 +160,7 @@ var PDFImage = (function PDFImageClosure() {
     this.bpc = bitsPerComponent;
 
     if (!this.imageMask) {
-      var colorSpace = dict.get("ColorSpace", "CS");
+      let colorSpace = dict.getRaw("ColorSpace") || dict.getRaw("CS");
       if (!colorSpace) {
         info("JPX images (which do not require color spaces)");
         switch (image.numComps) {
@@ -179,13 +180,13 @@ var PDFImage = (function PDFImageClosure() {
             );
         }
       }
-      const resources = isInline ? res : null;
-      this.colorSpace = ColorSpace.parse(
-        colorSpace,
+      this.colorSpace = ColorSpace.parse({
+        cs: colorSpace,
         xref,
-        resources,
-        pdfFunctionFactory
-      );
+        resources: isInline ? res : null,
+        pdfFunctionFactory,
+        localColorSpaceCache,
+      });
       this.numComps = this.colorSpace.numComps;
     }
 
@@ -221,6 +222,7 @@ var PDFImage = (function PDFImageClosure() {
         image: smask,
         isInline,
         pdfFunctionFactory,
+        localColorSpaceCache,
       });
     } else if (mask) {
       if (isStream(mask)) {
@@ -236,6 +238,7 @@ var PDFImage = (function PDFImageClosure() {
             isInline,
             isMask: true,
             pdfFunctionFactory,
+            localColorSpaceCache,
           });
         }
       } else {
@@ -254,6 +257,7 @@ var PDFImage = (function PDFImageClosure() {
     image,
     isInline = false,
     pdfFunctionFactory,
+    localColorSpaceCache,
   }) {
     const imageData = image;
     let smaskData = null;
@@ -280,6 +284,7 @@ var PDFImage = (function PDFImageClosure() {
       smask: smaskData,
       mask: maskData,
       pdfFunctionFactory,
+      localColorSpaceCache,
     });
   };
 
