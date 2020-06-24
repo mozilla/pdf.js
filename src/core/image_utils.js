@@ -14,11 +14,14 @@
  */
 /* eslint no-var: error */
 
-import { assert, info, shadow } from "../shared/util.js";
+import { assert, info, shadow, unreachable } from "../shared/util.js";
 import { RefSetCache } from "./primitives.js";
 
-class LocalImageCache {
+class BaseLocalCache {
   constructor() {
+    if (this.constructor === BaseLocalCache) {
+      unreachable("Cannot initialize BaseLocalCache.");
+    }
     this._nameRefMap = new Map();
     this._imageMap = new Map();
     this._imageCache = new RefSetCache();
@@ -36,6 +39,12 @@ class LocalImageCache {
     return this._imageCache.get(ref) || null;
   }
 
+  set(name, ref, data) {
+    unreachable("Abstract method `set` called.");
+  }
+}
+
+class LocalImageCache extends BaseLocalCache {
   set(name, ref = null, data) {
     if (!name) {
       throw new Error('LocalImageCache.set - expected "name" argument.');
@@ -45,6 +54,32 @@ class LocalImageCache {
         return;
       }
       this._nameRefMap.set(name, ref);
+      this._imageCache.put(ref, data);
+      return;
+    }
+    // name
+    if (this._imageMap.has(name)) {
+      return;
+    }
+    this._imageMap.set(name, data);
+  }
+}
+
+class LocalColorSpaceCache extends BaseLocalCache {
+  set(name = null, ref = null, data) {
+    if (!name && !ref) {
+      throw new Error(
+        'LocalColorSpaceCache.set - expected "name" and/or "ref" argument.'
+      );
+    }
+    if (ref) {
+      if (this._imageCache.has(ref)) {
+        return;
+      }
+      if (name) {
+        // Optional when `ref` is defined.
+        this._nameRefMap.set(name, ref);
+      }
       this._imageCache.put(ref, data);
       return;
     }
@@ -149,4 +184,4 @@ class GlobalImageCache {
   }
 }
 
-export { LocalImageCache, GlobalImageCache };
+export { LocalImageCache, LocalColorSpaceCache, GlobalImageCache };
