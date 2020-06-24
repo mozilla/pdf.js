@@ -116,34 +116,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.pdfFunctionFactory = pdfFunctionFactory;
     this.parsingType3Font = false;
 
-    this.fetchBuiltInCMap = async name => {
-      if (this.builtInCMapCache.has(name)) {
-        return this.builtInCMapCache.get(name);
-      }
-      const readableStream = this.handler.sendWithStream("FetchBuiltInCMap", {
-        name,
-      });
-      const reader = readableStream.getReader();
-
-      const data = await new Promise(function (resolve, reject) {
-        function pump() {
-          reader.read().then(function ({ value, done }) {
-            if (done) {
-              return;
-            }
-            resolve(value);
-            pump();
-          }, reject);
-        }
-        pump();
-      });
-
-      if (data.compressionType !== CMapCompressionType.NONE) {
-        // Given the size of uncompressed CMaps, only cache compressed ones.
-        this.builtInCMapCache.set(name, data);
-      }
-      return data;
-    };
+    this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
   }
 
   // Trying to minimize Date.now() usage and check every 100 time
@@ -373,6 +346,36 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
       return false;
+    },
+
+    async fetchBuiltInCMap(name) {
+      const cachedData = this.builtInCMapCache.get(name);
+      if (cachedData) {
+        return cachedData;
+      }
+      const readableStream = this.handler.sendWithStream("FetchBuiltInCMap", {
+        name,
+      });
+      const reader = readableStream.getReader();
+
+      const data = await new Promise(function (resolve, reject) {
+        function pump() {
+          reader.read().then(function ({ value, done }) {
+            if (done) {
+              return;
+            }
+            resolve(value);
+            pump();
+          }, reject);
+        }
+        pump();
+      });
+
+      if (data.compressionType !== CMapCompressionType.NONE) {
+        // Given the size of uncompressed CMaps, only cache compressed ones.
+        this.builtInCMapCache.set(name, data);
+      }
+      return data;
     },
 
     async buildFormXObject(
@@ -2691,7 +2694,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // from the ASN Web site; see the Bibliography).
         return CMapFactory.create({
           encoding: ucs2CMapName,
-          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
           useCMap: null,
         }).then(function (ucs2CMap) {
           const cMap = properties.cMap;
@@ -2724,7 +2727,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (isName(cmapObj)) {
         return CMapFactory.create({
           encoding: cmapObj,
-          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
           useCMap: null,
         }).then(function (cmap) {
           if (cmap instanceof IdentityCMap) {
@@ -2735,7 +2738,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       } else if (isStream(cmapObj)) {
         return CMapFactory.create({
           encoding: cmapObj,
-          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
           useCMap: null,
         }).then(
           function (cmap) {
@@ -3230,7 +3233,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         cMapPromise = CMapFactory.create({
           encoding: cidEncoding,
-          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
           useCMap: null,
         }).then(function (cMap) {
           properties.cMap = cMap;
