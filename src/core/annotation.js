@@ -966,7 +966,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
 class ButtonWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
-
     this.data.checkBox =
       !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
       !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
@@ -994,6 +993,21 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     const customAppearance = params.dict.get("AP");
     if (!isDict(customAppearance)) {
       return;
+    }
+
+    const NValuesDict = customAppearance.get('N');
+    if (isDict(NValuesDict)) {
+      
+      const keys = NValuesDict.getKeys();
+      if (keys && keys.length) {
+        for (let i = 0; i < keys.length; i++) {
+          const key = keys[i];
+          if (key !== 'Off') {
+            this.data.widgetAP = key;
+            break;
+          }
+        }
+      }
     }
 
     const exportValueOptionsDict = customAppearance.get("D");
@@ -1033,6 +1047,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (!isDict(normalAppearanceState)) {
       return;
     }
+
     for (const key of normalAppearanceState.getKeys()) {
       if (key !== "Off") {
         this.data.buttonValue = key;
