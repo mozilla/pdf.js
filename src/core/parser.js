@@ -203,10 +203,11 @@ class Parser {
       I = 0x49,
       SPACE = 0x20,
       LF = 0xa,
-      CR = 0xd;
-    const n = 10,
+      CR = 0xd,
       NUL = 0x0;
-    const startPos = stream.pos;
+    const lexer = this.lexer,
+      startPos = stream.pos,
+      n = 10;
     let state = 0,
       ch,
       maybeEIPos;
@@ -243,6 +244,25 @@ class Parser {
               break;
             }
           }
+
+          if (state !== 2) {
+            continue;
+          }
+          // Check that the "EI" sequence isn't part of the image data, since
+          // that would cause the image to be truncated (fixes issue11124.pdf).
+          if (lexer.knownCommands) {
+            const nextObj = lexer.peekObj();
+            if (nextObj instanceof Cmd && !lexer.knownCommands[nextObj.cmd]) {
+              // Not a valid command, i.e. the inline image data *itself*
+              // contains an "EI" sequence. Resetting the state.
+              state = 0;
+            }
+          } else {
+            warn(
+              "findDefaultInlineStreamEnd - `lexer.knownCommands` is undefined."
+            );
+          }
+
           if (state === 2) {
             break; // Finished!
           }
@@ -1274,6 +1294,28 @@ class Lexer {
     }
 
     return Cmd.get(str);
+  }
+
+  peekObj() {
+    const streamPos = this.stream.pos,
+      currentChar = this.currentChar,
+      beginInlineImagePos = this.beginInlineImagePos;
+
+    let nextObj;
+    try {
+      nextObj = this.getObj();
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      warn(`peekObj: ${ex}`);
+    }
+    // Ensure that we reset *all* relevant `Lexer`-instance state.
+    this.stream.pos = streamPos;
+    this.currentChar = currentChar;
+    this.beginInlineImagePos = beginInlineImagePos;
+
+    return nextObj;
   }
 
   skipToNextLine() {

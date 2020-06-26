@@ -3147,6 +3147,12 @@
        "type": "text",
        "about": "Invisible (and broken) TrueType font used for text-selection."
     },
+    {  "id": "issue11124",
+       "file": "pdfs/issue11124.pdf",
+       "md5": "9bde831515dc6b8bb2c7c00c8189aca9",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue11768",
        "file": "pdfs/issue11768_reduced.pdf",
        "md5": "0cafde97d78bb6883531a325a996a5ef",
