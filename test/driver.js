@@ -22,6 +22,7 @@ const CMAP_URL = "../external/bcmaps/";
 const CMAP_PACKED = true;
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const WORKER_SRC = "../build/generic/build/pdf.worker.js";
+const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 
 /**
  * @class
@@ -626,7 +627,15 @@ var Driver = (function DriverClosure() {
               };
               initPromise
                 .then(function () {
-                  return page.render(renderContext).promise.then(function () {
+                  const renderTask = page.render(renderContext);
+
+                  if (task.renderTaskOnContinue) {
+                    renderTask.onContinue = function (cont) {
+                      // Slightly delay the continued rendering.
+                      setTimeout(cont, RENDER_TASK_ON_CONTINUE_DELAY);
+                    };
+                  }
+                  return renderTask.promise.then(function () {
                     completeRender(false);
                   });
                 })
