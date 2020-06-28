@@ -53,7 +53,6 @@ import { calculateMD5 } from "./crypto.js";
 import { Linearization } from "./parser.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
-import { PDFFunctionFactory } from "./function.js";
 
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
@@ -75,7 +74,6 @@ class Page {
     fontCache,
     builtInCMapCache,
     globalImageCache,
-    pdfFunctionFactory,
   }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -85,7 +83,6 @@ class Page {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.globalImageCache = globalImageCache;
-    this.pdfFunctionFactory = pdfFunctionFactory;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
@@ -265,7 +262,6 @@ class Page {
       builtInCMapCache: this.builtInCMapCache,
       globalImageCache: this.globalImageCache,
       options: this.evaluatorOptions,
-      pdfFunctionFactory: this.pdfFunctionFactory,
     });
 
     const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
@@ -359,7 +355,6 @@ class Page {
         builtInCMapCache: this.builtInCMapCache,
         globalImageCache: this.globalImageCache,
         options: this.evaluatorOptions,
-        pdfFunctionFactory: this.pdfFunctionFactory,
       });
 
       return partialEvaluator.getTextContent({
@@ -508,11 +503,6 @@ class PDFDocument {
     this.pdfManager = pdfManager;
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
-
-    this.pdfFunctionFactory = new PDFFunctionFactory({
-      xref: this.xref,
-      isEvalSupported: pdfManager.evaluatorOptions.isEvalSupported,
-    });
     this._pagePromises = [];
   }
 
@@ -821,7 +811,6 @@ class PDFDocument {
         fontCache: catalog.fontCache,
         builtInCMapCache: catalog.builtInCMapCache,
         globalImageCache: catalog.globalImageCache,
-        pdfFunctionFactory: this.pdfFunctionFactory,
       });
     }));
   }
