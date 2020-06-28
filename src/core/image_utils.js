@@ -91,6 +91,22 @@ class LocalColorSpaceCache extends BaseLocalCache {
   }
 }
 
+class LocalFunctionCache extends BaseLocalCache {
+  getByName(name) {
+    unreachable("Should not call `getByName` method.");
+  }
+
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('LocalFunctionCache.set - expected "ref" argument.');
+    }
+    if (this._imageCache.has(ref)) {
+      return;
+    }
+    this._imageCache.put(ref, data);
+  }
+}
+
 class GlobalImageCache {
   static get NUM_PAGES_THRESHOLD() {
     return shadow(this, "NUM_PAGES_THRESHOLD", 2);
@@ -184,4 +200,9 @@ class GlobalImageCache {
   }
 }
 
-export { LocalImageCache, LocalColorSpaceCache, GlobalImageCache };
+export {
+  LocalImageCache,
+  LocalColorSpaceCache,
+  LocalFunctionCache,
+  GlobalImageCache,
+};

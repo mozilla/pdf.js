@@ -535,7 +535,7 @@ class ColorSpace {
           const name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
           alt = this.parseToIR(cs[2], xref, resources, pdfFunctionFactory);
-          const tintFn = pdfFunctionFactory.create(xref.fetchIfRef(cs[3]));
+          const tintFn = pdfFunctionFactory.create(cs[3]);
           return ["AlternateCS", numComps, alt, tintFn];
         case "Lab":
           params = xref.fetchIfRef(cs[1]);
