@@ -21,6 +21,7 @@ import {
   isString,
   removeNullCharacters,
   stringToBytes,
+  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
@@ -28,19 +29,15 @@ import {
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-class DOMCanvasFactory {
-  create(width, height) {
-    if (width <= 0 || height <= 0) {
-      throw new Error("Invalid canvas size");
+class BaseCanvasFactory {
+  constructor() {
+    if (this.constructor === BaseCanvasFactory) {
+      unreachable("Cannot initialize BaseCanvasFactory.");
     }
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = height;
-    return {
-      canvas,
-      context,
-    };
+  }
+
+  create(width, height) {
+    unreachable("Abstract method `create` called.");
   }
 
   reset(canvasAndContext, width, height) {
@@ -67,8 +64,27 @@ class DOMCanvasFactory {
   }
 }
 
-class DOMCMapReaderFactory {
+class DOMCanvasFactory extends BaseCanvasFactory {
+  create(width, height) {
+    if (width <= 0 || height <= 0) {
+      throw new Error("Invalid canvas size");
+    }
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    canvas.width = width;
+    canvas.height = height;
+    return {
+      canvas,
+      context,
+    };
+  }
+}
+
+class BaseCMapReaderFactory {
   constructor({ baseUrl = null, isCompressed = false }) {
+    if (this.constructor === BaseCMapReaderFactory) {
+      unreachable("Cannot initialize BaseCMapReaderFactory.");
+    }
     this.baseUrl = baseUrl;
     this.isCompressed = isCompressed;
   }
@@ -88,29 +104,39 @@ class DOMCMapReaderFactory {
       ? CMapCompressionType.BINARY
       : CMapCompressionType.NONE;
 
+    return this._fetchData(url, compressionType).catch(reason => {
+      throw new Error(
+        `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
+      );
+    });
+  }
+
+  /**
+   * @private
+   */
+  _fetchData(url, compressionType) {
+    unreachable("Abstract method `_fetchData` called.");
+  }
+}
+
+class DOMCMapReaderFactory extends BaseCMapReaderFactory {
+  _fetchData(url, compressionType) {
     if (
       (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
       (isFetchSupported() && isValidFetchUrl(url, document.baseURI))
     ) {
-      return fetch(url)
-        .then(async response => {
-          if (!response.ok) {
-            throw new Error(response.statusText);
-          }
-          let cMapData;
-          if (this.isCompressed) {
-            cMapData = new Uint8Array(await response.arrayBuffer());
-          } else {
-            cMapData = stringToBytes(await response.text());
-          }
-          return { cMapData, compressionType };
-        })
-        .catch(reason => {
-          throw new Error(
-            `Unable to load ${this.isCompressed ? "binary " : ""}` +
-              `CMap at: ${url}`
-          );
-        });
+      return fetch(url).then(async response => {
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+        let cMapData;
+        if (this.isCompressed) {
+          cMapData = new Uint8Array(await response.arrayBuffer());
+        } else {
+          cMapData = stringToBytes(await response.text());
+        }
+        return { cMapData, compressionType };
+      });
     }
 
     // The Fetch API is not supported.
@@ -141,11 +167,6 @@ class DOMCMapReaderFactory {
       };
 
       request.send(null);
-    }).catch(reason => {
-      throw new Error(
-        `Unable to load ${this.isCompressed ? "binary " : ""}` +
-          `CMap at: ${url}`
-      );
     });
   }
 }
@@ -609,7 +630,9 @@ export {
   getFilenameFromUrl,
   LinkTarget,
   DEFAULT_LINK_REL,
+  BaseCanvasFactory,
   DOMCanvasFactory,
+  BaseCMapReaderFactory,
   DOMCMapReaderFactory,
   DOMSVGFactory,
   StatTimer,

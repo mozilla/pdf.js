@@ -47,6 +47,7 @@ import {
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
+import { NodeCanvasFactory, NodeCMapReaderFactory } from "./node_utils.js";
 import { apiCompatibilityParams } from "./api_compatibility.js";
 import { CanvasGraphics } from "./canvas.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
@@ -58,6 +59,15 @@ import { WebGLContext } from "./webgl.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
+
+const DefaultCanvasFactory =
+  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
+    ? NodeCanvasFactory
+    : DOMCanvasFactory;
+const DefaultCMapReaderFactory =
+  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
+    ? NodeCMapReaderFactory
+    : DOMCMapReaderFactory;
 
 /**
  * @typedef {function} IPDFStreamFactory
@@ -242,7 +252,8 @@ function getDocument(src) {
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
-  params.CMapReaderFactory = params.CMapReaderFactory || DOMCMapReaderFactory;
+  params.CMapReaderFactory =
+    params.CMapReaderFactory || DefaultCMapReaderFactory;
   params.ignoreErrors = params.stopAtErrors !== true;
   params.fontExtraProperties = params.fontExtraProperties === true;
   params.pdfBug = params.pdfBug === true;
@@ -863,9 +874,9 @@ class PDFDocumentProxy {
  *                    just before viewport transform.
  * @property {Object} [imageLayer] - An object that has beginLayout,
  *                    endLayout and appendImage functions.
- * @property {Object} [canvasFactory] - The factory that will be used
+ * @property {Object} [canvasFactory] - The factory instance that will be used
  *                    when creating canvases. The default value is
- *                    {DOMCanvasFactory}.
+ *                    {new DOMCanvasFactory()}.
  * @property {Object} [background] - Background to use for the canvas.
  *                    Can use any valid canvas.fillStyle: A DOMString parsed as
  *                    CSS <color> value, a CanvasGradient object (a linear or
@@ -1015,7 +1026,7 @@ class PDFPageProxy {
       intentState.streamReaderCancelTimeout = null;
     }
 
-    const canvasFactoryInstance = canvasFactory || new DOMCanvasFactory();
+    const canvasFactoryInstance = canvasFactory || new DefaultCanvasFactory();
     const webGLContext = new WebGLContext({
       enable: enableWebGL,
     });
