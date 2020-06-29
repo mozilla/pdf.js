@@ -239,11 +239,11 @@ describe("util", function () {
       expect(createValidAbsoluteUrl("/foo", "/bar")).toEqual(null);
     });
 
-    it("handles URLs that do not use a whitelisted protocol", function () {
+    it("handles URLs that do not use an allowed protocol", function () {
       expect(createValidAbsoluteUrl("magnet:?foo", null)).toEqual(null);
     });
 
-    it("correctly creates a valid URL for whitelisted protocols", function () {
+    it("correctly creates a valid URL for allowed protocols", function () {
       // `http` protocol
       expect(
         createValidAbsoluteUrl("http://www.mozilla.org/foo", null)
