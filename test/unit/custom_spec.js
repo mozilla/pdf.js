@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
-import { buildGetDocumentParams, NodeCanvasFactory } from "./test_utils.js";
+import { buildGetDocumentParams } from "./test_utils.js";
 import { DOMCanvasFactory } from "../../src/display/display_utils.js";
 import { getDocument } from "../../src/display/api.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
+import { NodeCanvasFactory } from "../../src/display/node_utils.js";
 
 function getTopLeftPixel(canvasContext) {
   const imgData = canvasContext.getImageData(0, 0, 1, 1);
