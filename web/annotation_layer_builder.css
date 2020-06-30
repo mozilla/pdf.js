@@ -106,8 +106,9 @@
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after {
   height: 80%;
-  left: 45%;
-  width: 1px;
+  left: 35%;
+  width: 0;
+  outline: 1px solid;
 }
 
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before {
