@@ -20,10 +20,9 @@ pipeline {
           }
           
       }
-      stage("Git Checkout")
-      steps {
-          
-        git([
+      stage("Git Checkout"){
+          steps {
+            git([
             url: "https://github.com/Hermesss/pdf.js.git",
             branch: 'denys.lapenkov_jenkins',
         ])
