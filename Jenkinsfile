@@ -1,13 +1,12 @@
 pipeline {
     agent {
         node {
-            label "ubuntu"
+            label "linux"
         }
     }
     triggers {
         pollSCM('* * * * *')
     }
-stages
   stages {
       stage("Install tools"){
           steps{
