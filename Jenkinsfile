@@ -27,5 +27,6 @@ pipeline {
             branch: 'denys.lapenkov_jenkins',
         ])
       }
-  }
+    }
+}
 }
