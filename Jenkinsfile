@@ -20,12 +20,13 @@ pipeline {
           }
           
       }
-      stage("Git Checkout"){
+      stage("Build"){
           steps {
-            git([
-            url: "https://github.com/Hermesss/pdf.js.git",
-            branch: 'denys.lapenkov_jenkins',
-        ])
+            sh '''
+               cd pdf.js
+               gulp generic
+               '''
+        
       }
     }
 }
