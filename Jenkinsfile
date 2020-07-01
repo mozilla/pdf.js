@@ -7,7 +7,7 @@ pipeline {
     triggers {
         pollSCM('* * * * *')
     }
-  stages {
+    stages {
       stage("Install tools"){
           steps{
               sh '''
