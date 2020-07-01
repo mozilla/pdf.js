@@ -1,6 +1,6 @@
 node ('linux') { 
           stage('Source') { 
-              git poll: true branch: 'denys.lapenkov_jenkins', url: 'https://github.com/Hermesss/pdf.js.git'
+              git poll: 'true' branch: 'denys.lapenkov_jenkins', url: 'https://github.com/Hermesss/pdf.js.git'
           }
           stage('Install tools') { 
               sh '''
