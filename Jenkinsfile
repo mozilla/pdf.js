@@ -30,7 +30,7 @@ pipeline {
     
       post{
           always{
-              archiveArtifacts artifacts: '/build/generic/build/*.js*', followSymlinks: false, onlyIfSuccessful: true
+              archiveArtifacts artifacts: 'build/generic/build/*.js*', followSymlinks: false, onlyIfSuccessful: true
           }
           
       }
