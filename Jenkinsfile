@@ -17,17 +17,23 @@ pipeline {
                 sudo npm install -g gulp-cli
                 sudo npm install
                '''
-          }
+              }
           
       }
       stage("Build"){
           steps {
             sh '''
-               cd pdf.js
                gulp generic
                '''
         
       }
-    }
+    
+      post{
+          always{
+              archiveArtifacts artifacts: '/build/generic/build/*.js*', followSymlinks: false, onlyIfSuccessful: true
+          }
+          
+      }
+      }
 }
 }
