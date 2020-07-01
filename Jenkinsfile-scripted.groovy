@@ -1,7 +1,7 @@
 node ('linux') { 
           stage('Source') { 
               git 
-              poll: 'true',
+              poll: true,
               branch: 'denys.lapenkov_jenkins', 
               url: 'https://github.com/Hermesss/pdf.js.git'
           }
