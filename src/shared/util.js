@@ -363,7 +363,7 @@ function isSameOrigin(baseUrl, otherUrl) {
   return base.origin === other.origin;
 }
 
-// Checks if URLs use one of the whitelisted protocols, e.g. to avoid XSS.
+// Checks if URLs use one of the allowed protocols, e.g. to avoid XSS.
 function _isValidProtocol(url) {
   if (!url) {
     return false;
