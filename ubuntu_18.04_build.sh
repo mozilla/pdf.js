@@ -4,9 +4,8 @@ sudo apt install -y build-essential
 sudo npm install -g gulp-cli
 sudo npm install
 
-git clone https://github.com/mozilla/pdf.js.git
+git clone https://github.com/Hermesss/pdf.js.git
 cd pdf.js
 
 gulp generic
 
-gulp server
