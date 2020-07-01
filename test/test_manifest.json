@@ -2292,6 +2292,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue4260",
+       "file": "pdfs/issue4260_reduced.pdf",
+       "md5": "6b39ebc8c4dddc41f1b031c070c212ad",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "ZapfDingbats",
        "file": "pdfs/ZapfDingbats.pdf",
        "md5": "980df9b1c86715a3d8aa2d3c807a2b2c",
