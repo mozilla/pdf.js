@@ -2727,6 +2727,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue12010",
+       "file": "pdfs/issue12010_reduced.pdf",
+       "md5": "8894ec63069dcf92c9f56baec05c0425",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue7598",
        "file": "pdfs/issue7598.pdf",
        "md5": "c5bc5a779bfcb4b234f853231b56cf60",
