@@ -1133,7 +1133,7 @@ class FreeTextAnnotation extends Annotation {
 
     const opList = new OperatorList();
     const appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
-    const resourcesFonts = this.pdfManager.pdfDocument.catalog.fontCache;
+    const resourcesFonts = this.pdfManager.pdfDocument.catalog.fontCache.dict;
 
     return evaluator
       .getOperatorList({
