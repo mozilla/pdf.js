@@ -17,7 +17,7 @@ import { CMap, CMapFactory, IdentityCMap } from "../../src/core/cmap.js";
 import { DOMCMapReaderFactory } from "../../src/display/display_utils.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 import { Name } from "../../src/core/primitives.js";
-import { NodeCMapReaderFactory } from "./test_utils.js";
+import { NodeCMapReaderFactory } from "../../src/display/node_utils.js";
 import { StringStream } from "../../src/core/stream.js";
 
 var cMapUrl = {

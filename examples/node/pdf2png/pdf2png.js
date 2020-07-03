@@ -50,14 +50,21 @@ NodeCanvasFactory.prototype = {
 
 var pdfjsLib = require("pdfjs-dist/es5/build/pdf.js");
 
-// Relative path of the PDF file.
-var pdfURL = "../../../web/compressed.tracemonkey-pldi-09.pdf";
+// Some PDFs need external cmaps.
+var CMAP_URL = "../../../node_modules/pdfjs-dist/cmaps/";
+var CMAP_PACKED = true;
 
-// Read the PDF file into a typed array so PDF.js can load it.
-var rawData = new Uint8Array(fs.readFileSync(pdfURL));
+// Loading file from file system into typed array.
+var pdfPath =
+  process.argv[2] || "../../../web/compressed.tracemonkey-pldi-09.pdf";
+var data = new Uint8Array(fs.readFileSync(pdfPath));
 
 // Load the PDF file.
-var loadingTask = pdfjsLib.getDocument(rawData);
+var loadingTask = pdfjsLib.getDocument({
+  data: data,
+  cMapUrl: CMAP_URL,
+  cMapPacked: CMAP_PACKED,
+});
 loadingTask.promise
   .then(function (pdfDocument) {
     console.log("# PDF document loaded.");

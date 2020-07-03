@@ -16,7 +16,6 @@
 import {
   buildGetDocumentParams,
   DOMFileReaderFactory,
-  NodeCanvasFactory,
   NodeFileReaderFactory,
   TEST_PDFS_PATH,
 } from "./test_utils.js";
@@ -49,6 +48,7 @@ import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 import { Metadata } from "../../src/display/metadata.js";
+import { NodeCanvasFactory } from "../../src/display/node_utils.js";
 
 describe("api", function () {
   const basicApiFileName = "basicapi.pdf";

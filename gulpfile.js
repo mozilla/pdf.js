@@ -1617,6 +1617,7 @@ gulp.task(
         bugs: DIST_BUGS_URL,
         license: DIST_LICENSE,
         browser: {
+          canvas: false,
           fs: false,
           http: false,
           https: false,
