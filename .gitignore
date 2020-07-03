@@ -1,6 +1,7 @@
 *~
 local.mk
-build/
+build/**/*.pdf
+build/**/*.map
 tags
 .DS_Store
 Makefile
