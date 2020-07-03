@@ -59,9 +59,6 @@ class AnnotationElementFactory {
       case AnnotationType.TEXT:
         return new TextAnnotationElement(parameters);
 
-      case AnnotationType.FREETEXT:
-        return new FreeTextAnnotationElement(parameters);
-
       case AnnotationType.WIDGET:
         const fieldType = parameters.data.fieldType;
 
@@ -410,37 +407,42 @@ class TextAnnotationElement extends AnnotationElement {
   }
 }
 
+
 class FreeTextAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable);
-
-    this.containerClassName = 'freeTextAnnotation';
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.title ||
+      parameters.data.contents
+    );
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
   }
 
   /**
-   * Render the freetext annotation's HTML element in the empty container.
+   * Render the free text annotation's HTML element in the empty container.
    *
    * @public
    * @memberof FreeTextAnnotationElement
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = this.containerClassName;
+    this.container.className = "freeTextAnnotation";
+    const data = this.data;
 
-    let data = this.data;
+    if (!this.data.hasPopup) {
+      this._createPopup(this.container, null, this.data);
+    }
 
-    let div = document.createElement('div');
-    let divWidth = data.rect[2] - data.rect[0];
-    let divHeight = data.rect[3] - data.rect[1];
-    let style = 'width: ' + divWidth + 'px;';
-    style += 'height: ' + divHeight + 'px;';
+    const div = document.createElement("div");
+    const divWidth = data.rect[2] - data.rect[0];
+    const divHeight = data.rect[3] - data.rect[1];
+    let style = "width: " + divWidth + "px;";
+    style += "height: " + divHeight + "px;";
 
     if (data.hasAppearance) {
       // The annotation is already rendering by stream appareance,
       // we should only create popup if necessary
-      div.setAttribute('style', style);
+      div.setAttribute("style", style);
       this.container.append(div);
 
       if (!this.data.hasPopup) {
@@ -452,29 +454,33 @@ class FreeTextAnnotationElement extends AnnotationElement {
 
     // Color define the background color of the annotation
     if (data.color) {
-      let backgroundColor = Util.makeCssRgb(data.color[0] | 0,
-                                            data.color[1] | 0,
-                                            data.color[2] | 0);
-      style += 'background-color: ' + backgroundColor + ';';
+      const backgroundColor = Util.makeCssRgb(
+        data.color[0] | 0,
+        data.color[1] | 0,
+        data.color[2] | 0
+      );
+      style += "background-color: " + backgroundColor + ";";
     }
 
     if (data.opacity) {
-      style += 'opacity: ' + data.opacity + ';';
+      style += "opacity: " + data.opacity + ";";
     }
 
     // Text style
     if (data.textColor) {
-      let textColor = Util.makeCssRgb(data.textColor[0] | 0,
-                                      data.textColor[1] | 0,
-                                      data.textColor[2] | 0);
-      style += 'color: ' + textColor + ';';
+      const textColor = Util.makeCssRgb(
+        data.textColor[0] | 0,
+        data.textColor[1] | 0,
+        data.textColor[2] | 0
+      );
+      style += "color: " + textColor + ";";
     }
 
     if (data.fontSize) {
-      style += 'font-size: ' + data.fontSize + 'pt;';
+      style += "font-size: " + data.fontSize + "pt;";
     }
 
-    div.setAttribute('style', style);
+    div.setAttribute("style", style);
     div.innerText = data.contents;
     this.container.append(div);
 
@@ -929,33 +935,6 @@ class PopupElement {
       this.hideElement.setAttribute("hidden", true);
       this.container.style.zIndex -= 1;
     }
-  }
-}
-
-class FreeTextAnnotationElement extends AnnotationElement {
-  constructor(parameters) {
-    const isRenderable = !!(
-      parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
-    );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
-  }
-
-  /**
-   * Render the free text annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof FreeTextAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
-  render() {
-    this.container.className = "freeTextAnnotation";
-
-    if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
-    }
-    return this.container;
   }
 }
 
