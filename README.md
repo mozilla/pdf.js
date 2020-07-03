@@ -139,3 +139,7 @@ File an issue:
 Follow us on twitter: @pdfjs
 
 + https://twitter.com/pdfjs
+
+
+## Note
+Here is the commit to disable the check of the PDF origin: https://github.com/datacamp-engineering/pdf.js/commit/2fa4097a7f75afdf1d157741479e58b07e94ea23
