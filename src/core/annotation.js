@@ -1122,8 +1122,6 @@ class FreeTextAnnotation extends Annotation {
     this.data.fontSize = dict.get("FontSize");
     this.data.opacity = dict.get("CA");
     this.data.defaultAppearance = dict.get("DA");
-
-    this._preparePopup(dict);
   }
 
   getOperatorList(evaluator, task, renderForms) {
