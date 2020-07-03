@@ -44,6 +44,38 @@ import {
  * @property {Object} svgFactory
  */
 
+/**
+ * Apply text styles to the text in the element.
+ *
+ * @param {Object} data
+ * @param {HTMLDivElement} element
+ * @param {Object} font
+ */
+function setTextStyle(data, element, font) {
+  // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
+  const style = element.style;
+  style.fontSize = `${data.fontSize}px`;
+  style.direction = data.fontDirection < 0 ? "rtl" : "ltr";
+
+  if (!font) {
+    return;
+  }
+
+  let bold = "normal";
+  if (font.black) {
+    bold = "900";
+  } else if (font.bold) {
+    bold = "bold";
+  }
+  style.fontWeight = bold;
+  style.fontStyle = font.italic ? "italic" : "normal";
+
+  // Use a reasonable default font if the font doesn't specify a fallback.
+  const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
+  const fallbackName = font.fallbackName || "Helvetica, sans-serif";
+  style.fontFamily = fontFamily + fallbackName;
+}
+
 class AnnotationElementFactory {
   /**
    * @param {AnnotationElementParameters} parameters
@@ -407,7 +439,6 @@ class TextAnnotationElement extends AnnotationElement {
   }
 }
 
-
 class FreeTextAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
@@ -475,12 +506,17 @@ class FreeTextAnnotationElement extends AnnotationElement {
       );
       style += "color: " + textColor + ";";
     }
-
-    if (data.fontSize) {
-      style += "font-size: " + data.fontSize + "pt;";
-    }
-
     div.setAttribute("style", style);
+
+    let font = null;
+    if (
+      this.data.fontRefName &&
+      this.page.commonObjs.has(this.data.fontRefName)
+    ) {
+      font = this.page.commonObjs.get(this.data.fontRefName);
+    }
+    setTextStyle(this.data, div, font);
+
     div.innerText = data.contents;
     this.container.append(div);
 
@@ -565,7 +601,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       ) {
         font = this.page.commonObjs.get(this.data.fontRefName);
       }
-      this._setTextStyle(element, font);
+      setTextStyle(this.data, element, font);
     }
 
     if (this.data.textAlignment !== null) {
@@ -574,39 +610,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
     this.container.appendChild(element);
     return this.container;
-  }
-
-  /**
-   * Apply text styles to the text in the element.
-   *
-   * @private
-   * @param {HTMLDivElement} element
-   * @param {Object} font
-   * @memberof TextWidgetAnnotationElement
-   */
-  _setTextStyle(element, font) {
-    // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
-    const style = element.style;
-    style.fontSize = `${this.data.fontSize}px`;
-    style.direction = this.data.fontDirection < 0 ? "rtl" : "ltr";
-
-    if (!font) {
-      return;
-    }
-
-    let bold = "normal";
-    if (font.black) {
-      bold = "900";
-    } else if (font.bold) {
-      bold = "bold";
-    }
-    style.fontWeight = bold;
-    style.fontStyle = font.italic ? "italic" : "normal";
-
-    // Use a reasonable default font if the font doesn't specify a fallback.
-    const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
-    const fallbackName = font.fallbackName || "Helvetica, sans-serif";
-    style.fontFamily = fontFamily + fallbackName;
   }
 }
 
