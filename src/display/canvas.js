@@ -1185,20 +1185,20 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             y = args[j++];
             var width = args[j++];
             var height = args[j++];
-            if (width === 0) {
+            if (width === 0 && ctx.lineWidth < this.getSinglePixelWidth()) {
               width = this.getSinglePixelWidth();
             }
-            if (height === 0) {
+            if (height === 0 && ctx.lineWidth < this.getSinglePixelWidth()) {
               height = this.getSinglePixelWidth();
             }
             var xw = x + width;
             var yh = y + height;
-            this.ctx.moveTo(x, y);
-            this.ctx.lineTo(xw, y);
-            this.ctx.lineTo(xw, yh);
-            this.ctx.lineTo(x, yh);
-            this.ctx.lineTo(x, y);
-            this.ctx.closePath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(xw, y);
+            ctx.lineTo(xw, yh);
+            ctx.lineTo(x, yh);
+            ctx.lineTo(x, y);
+            ctx.closePath();
             break;
           case OPS.moveTo:
             x = args[j++];
@@ -2157,9 +2157,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.paintInlineImageXObject(maskCanvas.canvas);
     },
 
-    paintImageMaskXObjectRepeat: function CanvasGraphics_paintImageMaskXObjectRepeat(
+    paintImageMaskXObjectRepeat(
       imgData,
       scaleX,
+      skewX = 0,
+      skewY = 0,
       scaleY,
       positions
     ) {
@@ -2190,7 +2192,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
       for (var i = 0, ii = positions.length; i < ii; i += 2) {
         ctx.save();
-        ctx.transform(scaleX, 0, 0, scaleY, positions[i], positions[i + 1]);
+        ctx.transform(
+          scaleX,
+          skewX,
+          skewY,
+          scaleY,
+          positions[i],
+          positions[i + 1]
+        );
         ctx.scale(1, -1);
         ctx.drawImage(maskCanvas.canvas, 0, 0, width, height, 0, -1, 1, 1);
         ctx.restore();

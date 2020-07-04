@@ -11,6 +11,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "tracemonkey-renderTaskOnContinue",
+       "file": "pdfs/tracemonkey.pdf",
+       "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+       "rounds": 1,
+       "type": "eq",
+       "renderTaskOnContinue": true
+    },
     {  "id": "tracemonkey-fbf",
        "file": "pdfs/tracemonkey.pdf",
        "md5": "9a192d8b1a7dc652a19835f6f08098bd",
@@ -669,6 +676,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue6707",
+       "file": "pdfs/issue6707.pdf",
+       "md5": "068ceaec23d265b1d38dfa6ab279f017",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue6721_reduced",
        "file": "pdfs/issue6721_reduced.pdf",
        "md5": "719aa66d8081a15e3ba6032ed4279237",
@@ -702,6 +717,14 @@
        "rounds": 1,
        "type": "eq",
        "about": "Type1 font with |Ref|s in the Differences array of the Encoding dictionary."
+    },
+    {  "id": "issue8078",
+       "file": "pdfs/issue8078.pdf",
+       "md5": "8b7d74bc24b4157393e4e88a511c05f1",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "eq"
     },
     {  "id": "issue8092",
        "file": "pdfs/issue8092.pdf",
@@ -2269,6 +2292,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue4260",
+       "file": "pdfs/issue4260_reduced.pdf",
+       "md5": "6b39ebc8c4dddc41f1b031c070c212ad",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "ZapfDingbats",
        "file": "pdfs/ZapfDingbats.pdf",
        "md5": "980df9b1c86715a3d8aa2d3c807a2b2c",
@@ -2696,6 +2725,12 @@
        "md5": "b423f709600daa5745cc6d8234f7c608",
        "rounds": 1,
        "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue12010",
+       "file": "pdfs/issue12010_reduced.pdf",
+       "md5": "8894ec63069dcf92c9f56baec05c0425",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue7598",
@@ -3130,6 +3165,12 @@
        "rounds": 1,
        "type": "text",
        "about": "Invisible (and broken) TrueType font used for text-selection."
+    },
+    {  "id": "issue11124",
+       "file": "pdfs/issue11124.pdf",
+       "md5": "9bde831515dc6b8bb2c7c00c8189aca9",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue11768",
        "file": "pdfs/issue11768_reduced.pdf",

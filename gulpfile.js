@@ -215,6 +215,12 @@ function createWebpackConfig(defines, output) {
           options: {
             presets: skipBabel ? undefined : ["@babel/preset-env"],
             plugins: [
+              [
+                "@babel/plugin-proposal-nullish-coalescing-operator",
+                {
+                  loose: true,
+                },
+              ],
               "@babel/plugin-transform-modules-commonjs",
               [
                 "@babel/plugin-transform-runtime",
@@ -1631,6 +1637,7 @@ gulp.task(
         bugs: DIST_BUGS_URL,
         license: DIST_LICENSE,
         browser: {
+          canvas: false,
           fs: false,
           http: false,
           https: false,

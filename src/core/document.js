@@ -270,7 +270,7 @@ class Page {
 
     const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
     const pageListPromise = dataPromises.then(([contentStream]) => {
-      const opList = new OperatorList(intent, sink, this.pageIndex);
+      const opList = new OperatorList(intent, sink);
 
       handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(this.resources),

@@ -1533,7 +1533,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
 
     paintImageXObject(objId) {
-      const imgData = this.objs.get(objId);
+      const imgData = objId.startsWith("g_")
+        ? this.commonObjs.get(objId)
+        : this.objs.get(objId);
       if (!imgData) {
         warn(`Dependent image with object ID ${objId} is not ready yet`);
         return;

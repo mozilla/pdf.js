@@ -73,13 +73,13 @@ import {
 } from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
 import { Lexer, Parser } from "./parser.js";
+import { LocalColorSpaceCache, LocalImageCache } from "./image_utils.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { isPDFFunction } from "./function.js";
-import { LocalImageCache } from "./image_utils.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -116,34 +116,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.pdfFunctionFactory = pdfFunctionFactory;
     this.parsingType3Font = false;
 
-    this.fetchBuiltInCMap = async name => {
-      if (this.builtInCMapCache.has(name)) {
-        return this.builtInCMapCache.get(name);
-      }
-      const readableStream = this.handler.sendWithStream("FetchBuiltInCMap", {
-        name,
-      });
-      const reader = readableStream.getReader();
-
-      const data = await new Promise(function (resolve, reject) {
-        function pump() {
-          reader.read().then(function ({ value, done }) {
-            if (done) {
-              return;
-            }
-            resolve(value);
-            pump();
-          }, reject);
-        }
-        pump();
-      });
-
-      if (data.compressionType !== CMapCompressionType.NONE) {
-        // Given the size of uncompressed CMaps, only cache compressed ones.
-        this.builtInCMapCache.set(name, data);
-      }
-      return data;
-    };
+    this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
   }
 
   // Trying to minimize Date.now() usage and check every 100 time
@@ -375,13 +348,44 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return false;
     },
 
+    async fetchBuiltInCMap(name) {
+      const cachedData = this.builtInCMapCache.get(name);
+      if (cachedData) {
+        return cachedData;
+      }
+      const readableStream = this.handler.sendWithStream("FetchBuiltInCMap", {
+        name,
+      });
+      const reader = readableStream.getReader();
+
+      const data = await new Promise(function (resolve, reject) {
+        function pump() {
+          reader.read().then(function ({ value, done }) {
+            if (done) {
+              return;
+            }
+            resolve(value);
+            pump();
+          }, reject);
+        }
+        pump();
+      });
+
+      if (data.compressionType !== CMapCompressionType.NONE) {
+        // Given the size of uncompressed CMaps, only cache compressed ones.
+        this.builtInCMapCache.set(name, data);
+      }
+      return data;
+    },
+
     async buildFormXObject(
       resources,
       xobj,
       smask,
       operatorList,
       task,
-      initialState
+      initialState,
+      localColorSpaceCache
     ) {
       var dict = xobj.dict;
       var matrix = dict.getArray("Matrix");
@@ -407,10 +411,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           groupOptions.isolated = group.get("I") || false;
           groupOptions.knockout = group.get("K") || false;
           if (group.has("CS")) {
-            colorSpace = await this.parseColorSpace({
-              cs: group.get("CS"),
-              resources,
-            });
+            const cs = group.getRaw("CS");
+
+            const cachedColorSpace = ColorSpace.getCached(
+              cs,
+              this.xref,
+              localColorSpaceCache
+            );
+            if (cachedColorSpace) {
+              colorSpace = cachedColorSpace;
+            } else {
+              colorSpace = await this.parseColorSpace({
+                cs,
+                resources,
+                localColorSpaceCache,
+              });
+            }
           }
         }
 
@@ -470,6 +486,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList,
       cacheKey,
       localImageCache,
+      localColorSpaceCache,
     }) {
       var dict = image.dict;
       const imageRef = dict.objId;
@@ -536,6 +553,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           image,
           isInline,
           pdfFunctionFactory: this.pdfFunctionFactory,
+          localColorSpaceCache,
         });
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
@@ -572,6 +590,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         image,
         isInline,
         pdfFunctionFactory: this.pdfFunctionFactory,
+        localColorSpaceCache,
       })
         .then(imageObj => {
           imgData = imageObj.createImageData(/* forceRGBA = */ false);
@@ -579,7 +598,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           return this._sendImgData(objId, imgData, cacheGlobally);
         })
         .catch(reason => {
-          warn("Unable to decode image: " + reason);
+          warn(`Unable to decode image "${objId}": "${reason}".`);
 
           return this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
         });
@@ -619,7 +638,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       resources,
       operatorList,
       task,
-      stateManager
+      stateManager,
+      localColorSpaceCache
     ) {
       var smaskContent = smask.get("G");
       var smaskOptions = {
@@ -648,7 +668,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         smaskOptions,
         operatorList,
         task,
-        stateManager.state.clone()
+        stateManager.state.clone(),
+        localColorSpaceCache
       );
     },
 
@@ -800,7 +821,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       gState,
       operatorList,
       task,
-      stateManager
+      stateManager,
+      localColorSpaceCache
     ) {
       // This array holds the converted/processed state data.
       var gStateObj = [];
@@ -853,7 +875,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   resources,
                   operatorList,
                   task,
-                  stateManager
+                  stateManager,
+                  localColorSpaceCache
                 );
               });
               gStateObj.push([key, true]);
@@ -1117,11 +1140,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
     },
 
-    parseColorSpace({ cs, resources }) {
-      return new Promise(resolve => {
-        resolve(
-          ColorSpace.parse(cs, this.xref, resources, this.pdfFunctionFactory)
-        );
+    parseColorSpace({ cs, resources, localColorSpaceCache }) {
+      return ColorSpace.parseAsync({
+        cs,
+        xref: this.xref,
+        resources,
+        pdfFunctionFactory: this.pdfFunctionFactory,
+        localColorSpaceCache,
       }).catch(reason => {
         if (reason instanceof AbortException) {
           return null;
@@ -1139,7 +1164,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    async handleColorN(operatorList, fn, args, cs, patterns, resources, task) {
+    async handleColorN(
+      operatorList,
+      fn,
+      args,
+      cs,
+      patterns,
+      resources,
+      task,
+      localColorSpaceCache
+    ) {
       // compile tiling patterns
       var patternName = args[args.length - 1];
       // SCN/scn applies patterns along with normal colors
@@ -1168,7 +1202,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             this.xref,
             resources,
             this.handler,
-            this.pdfFunctionFactory
+            this.pdfFunctionFactory,
+            localColorSpaceCache
           );
           operatorList.addOp(fn, pattern.getIR());
           return undefined;
@@ -1198,6 +1233,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var xref = this.xref;
       let parsingText = false;
       const localImageCache = new LocalImageCache();
+      const localColorSpaceCache = new LocalColorSpaceCache();
 
       var xobjs = resources.get("XObject") || Dict.empty;
       var patterns = resources.get("Pattern") || Dict.empty;
@@ -1309,7 +1345,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         null,
                         operatorList,
                         task,
-                        stateManager.state.clone()
+                        stateManager.state.clone(),
+                        localColorSpaceCache
                       )
                       .then(function () {
                         stateManager.restore();
@@ -1324,6 +1361,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         operatorList,
                         cacheKey: name,
                         localImageCache,
+                        localColorSpaceCache,
                       })
                       .then(resolveXObject, rejectXObject);
                     return;
@@ -1397,6 +1435,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   operatorList,
                   cacheKey,
                   localImageCache,
+                  localColorSpaceCache,
                 })
               );
               return;
@@ -1454,12 +1493,23 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               stateManager.state.textRenderingMode = args[0];
               break;
 
-            case OPS.setFillColorSpace:
+            case OPS.setFillColorSpace: {
+              const cachedColorSpace = ColorSpace.getCached(
+                args[0],
+                xref,
+                localColorSpaceCache
+              );
+              if (cachedColorSpace) {
+                stateManager.state.fillColorSpace = cachedColorSpace;
+                continue;
+              }
+
               next(
                 self
                   .parseColorSpace({
                     cs: args[0],
                     resources,
+                    localColorSpaceCache,
                   })
                   .then(function (colorSpace) {
                     if (colorSpace) {
@@ -1468,12 +1518,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   })
               );
               return;
-            case OPS.setStrokeColorSpace:
+            }
+            case OPS.setStrokeColorSpace: {
+              const cachedColorSpace = ColorSpace.getCached(
+                args[0],
+                xref,
+                localColorSpaceCache
+              );
+              if (cachedColorSpace) {
+                stateManager.state.strokeColorSpace = cachedColorSpace;
+                continue;
+              }
+
               next(
                 self
                   .parseColorSpace({
                     cs: args[0],
                     resources,
+                    localColorSpaceCache,
                   })
                   .then(function (colorSpace) {
                     if (colorSpace) {
@@ -1482,6 +1544,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   })
               );
               return;
+            }
             case OPS.setFillColor:
               cs = stateManager.state.fillColorSpace;
               args = cs.getRgb(args, 0);
@@ -1531,7 +1594,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     cs,
                     patterns,
                     resources,
-                    task
+                    task,
+                    localColorSpaceCache
                   )
                 );
                 return;
@@ -1550,7 +1614,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     cs,
                     patterns,
                     resources,
-                    task
+                    task,
+                    localColorSpaceCache
                   )
                 );
                 return;
@@ -1576,7 +1641,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 xref,
                 resources,
                 self.handler,
-                self.pdfFunctionFactory
+                self.pdfFunctionFactory,
+                localColorSpaceCache
               );
               var patternIR = shadingFill.getIR();
               args = [patternIR];
@@ -1597,7 +1663,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   gState,
                   operatorList,
                   task,
-                  stateManager
+                  stateManager,
+                  localColorSpaceCache
                 )
               );
               return;
@@ -2645,7 +2712,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // from the ASN Web site; see the Bibliography).
         return CMapFactory.create({
           encoding: ucs2CMapName,
-          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
           useCMap: null,
         }).then(function (ucs2CMap) {
           const cMap = properties.cMap;
@@ -2678,7 +2745,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (isName(cmapObj)) {
         return CMapFactory.create({
           encoding: cmapObj,
-          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
           useCMap: null,
         }).then(function (cmap) {
           if (cmap instanceof IdentityCMap) {
@@ -2689,7 +2756,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       } else if (isStream(cmapObj)) {
         return CMapFactory.create({
           encoding: cmapObj,
-          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
           useCMap: null,
         }).then(
           function (cmap) {
@@ -3184,7 +3251,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         cMapPromise = CMapFactory.create({
           encoding: cidEncoding,
-          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          fetchBuiltInCMap: this._fetchBuiltInCMapBound,
           useCMap: null,
         }).then(function (cMap) {
           properties.cMap = cMap;
