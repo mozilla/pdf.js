@@ -1589,6 +1589,9 @@ const PDFWorker = (function PDFWorkerClosure() {
 
   function getWorkerSrc() {
     if (GlobalWorkerOptions.workerSrc) {
+      if (GlobalWorkerOptions.workerSrc.constructor.name === "Function") {
+        return GlobalWorkerOptions.workerSrc();
+      }
       return GlobalWorkerOptions.workerSrc;
     }
     if (typeof fallbackWorkerSrc !== "undefined") {
