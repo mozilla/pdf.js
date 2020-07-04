@@ -178,7 +178,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     this.extendStart = extendStart;
     this.extendEnd = extendEnd;
 
-    var fnObj = dict.get("Function");
+    var fnObj = dict.getRaw("Function");
     var fn = pdfFunctionFactory.createFromArray(fnObj);
 
     // 10 samples seems good enough for now, but probably won't work
@@ -878,7 +878,7 @@ Shadings.Mesh = (function MeshClosure() {
       ? cs.getRgb(dict.get("Background"), 0)
       : null;
 
-    var fnObj = dict.get("Function");
+    var fnObj = dict.getRaw("Function");
     var fn = fnObj ? pdfFunctionFactory.createFromArray(fnObj) : null;
 
     this.coords = [];

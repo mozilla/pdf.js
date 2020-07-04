@@ -26,6 +26,7 @@ import {
   isNum,
   isString,
   OPS,
+  shadow,
   stringToPDFString,
   TextRenderingMode,
   UNSUPPORTED_FEATURES,
@@ -72,6 +73,7 @@ import {
   getSymbolsFonts,
 } from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
+import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
 import { LocalColorSpaceCache, LocalImageCache } from "./image_utils.js";
 import { bidi } from "./bidi.js";
@@ -79,7 +81,6 @@ import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
-import { isPDFFunction } from "./function.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -103,7 +104,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     builtInCMapCache,
     globalImageCache,
     options = null,
-    pdfFunctionFactory,
   }) {
     this.xref = xref;
     this.handler = handler;
@@ -113,7 +113,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.builtInCMapCache = builtInCMapCache;
     this.globalImageCache = globalImageCache;
     this.options = options || DefaultPartialEvaluatorOptions;
-    this.pdfFunctionFactory = pdfFunctionFactory;
     this.parsingType3Font = false;
 
     this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
@@ -207,6 +206,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     SHADING_PATTERN = 2;
 
   PartialEvaluator.prototype = {
+    /**
+     * Since Functions are only cached (locally) by reference, we can share one
+     * `PDFFunctionFactory` instance within this `PartialEvaluator` instance.
+     */
+    get _pdfFunctionFactory() {
+      const pdfFunctionFactory = new PDFFunctionFactory({
+        xref: this.xref,
+        isEvalSupported: this.options.isEvalSupported,
+      });
+      return shadow(this, "_pdfFunctionFactory", pdfFunctionFactory);
+    },
+
     clone(newOptions = DefaultPartialEvaluatorOptions) {
       var newEvaluator = Object.create(this);
       newEvaluator.options = newOptions;
@@ -552,7 +563,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           res: resources,
           image,
           isInline,
-          pdfFunctionFactory: this.pdfFunctionFactory,
+          pdfFunctionFactory: this._pdfFunctionFactory,
           localColorSpaceCache,
         });
         // We force the use of RGBA_32BPP images here, because we can't handle
@@ -589,7 +600,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         res: resources,
         image,
         isInline,
-        pdfFunctionFactory: this.pdfFunctionFactory,
+        pdfFunctionFactory: this._pdfFunctionFactory,
         localColorSpaceCache,
       })
         .then(imageObj => {
@@ -651,7 +662,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // we will build a map of integer values in range 0..255 to be fast.
       var transferObj = smask.get("TR");
       if (isPDFFunction(transferObj)) {
-        const transferFn = this.pdfFunctionFactory.create(transferObj);
+        const transferFn = this._pdfFunctionFactory.create(transferObj);
         var transferMap = new Uint8Array(256);
         var tmp = new Float32Array(1);
         for (var i = 0; i < 256; i++) {
@@ -1145,7 +1156,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         cs,
         xref: this.xref,
         resources,
-        pdfFunctionFactory: this.pdfFunctionFactory,
+        pdfFunctionFactory: this._pdfFunctionFactory,
         localColorSpaceCache,
       }).catch(reason => {
         if (reason instanceof AbortException) {
@@ -1202,7 +1213,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             this.xref,
             resources,
             this.handler,
-            this.pdfFunctionFactory,
+            this._pdfFunctionFactory,
             localColorSpaceCache
           );
           operatorList.addOp(fn, pattern.getIR());
@@ -1641,7 +1652,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 xref,
                 resources,
                 self.handler,
-                self.pdfFunctionFactory,
+                self._pdfFunctionFactory,
                 localColorSpaceCache
               );
               var patternIR = shadingFill.getIR();
