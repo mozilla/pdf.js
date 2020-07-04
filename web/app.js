@@ -189,8 +189,7 @@ const PDFViewerApplication = {
   externalServices: DefaultExternalServices,
   _boundEvents: {},
   contentDispositionFilename: null,
-  _hasInteracted: false,
-  _delayedFallbackFeatureIds: [],
+  triggerDelayedFallback: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -690,6 +689,7 @@ const PDFViewerApplication = {
     this.url = "";
     this.baseUrl = "";
     this.contentDispositionFilename = null;
+    this.triggerDelayedFallback = null;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -864,12 +864,29 @@ const PDFViewerApplication = {
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
 
-  _recordFallbackErrorTelemetry(featureId) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) {
+  /**
+   * For PDF documents that contain e.g. forms and javaScript, we should only
+   * trigger the fallback bar once the user has interacted with the page.
+   * @private
+   */
+  _delayedFallback(featureId) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("MOZCENTRAL || GENERIC")
+    ) {
+      // Ensure that telemetry is always reported, since it's not guaranteed
+      // that the fallback bar will be shown (depends on user interaction).
       this.externalServices.reportTelemetry({
         type: "unsupportedFeature",
         featureId,
       });
+
+      if (!this.triggerDelayedFallback) {
+        this.triggerDelayedFallback = () => {
+          this.fallback(featureId);
+          this.triggerDelayedFallback = null;
+        };
+      }
     }
   },
 
@@ -878,24 +895,16 @@ const PDFViewerApplication = {
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("MOZCENTRAL || GENERIC")
     ) {
-      if (featureId) {
-        this._recordFallbackErrorTelemetry(featureId);
-      }
-
-      // For PDFs that contain script and form errors, we should only trigger
-      // the fallback once the user has interacted with the page.
-      if (this._delayedFallbackFeatureIds.length >= 1 && this._hasInteracted) {
-        featureId = this._delayedFallbackFeatureIds[0];
-        // Reset to prevent all click events from showing fallback bar.
-        this._delayedFallbackFeatureIds = [];
-      }
+      this.externalServices.reportTelemetry({
+        type: "unsupportedFeature",
+        featureId,
+      });
 
       // Only trigger the fallback once so we don't spam the user with messages
       // for one PDF.
       if (this.fellback) {
         return;
       }
-
       this.fellback = true;
       this.externalServices.fallback(
         {
@@ -1259,8 +1268,7 @@ const PDFViewerApplication = {
           return false;
         }
         console.warn("Warning: JavaScript is not supported");
-        this._delayedFallbackFeatureIds.push(UNSUPPORTED_FEATURES.javaScript);
-        this._recordFallbackErrorTelemetry(UNSUPPORTED_FEATURES.javaScript);
+        this._delayedFallback(UNSUPPORTED_FEATURES.javaScript);
         return true;
       });
 
@@ -1342,8 +1350,7 @@ const PDFViewerApplication = {
 
     if (info.IsAcroFormPresent) {
       console.warn("Warning: AcroForm/XFA is not supported");
-      this._delayedFallbackFeatureIds.push(UNSUPPORTED_FEATURES.forms);
-      this._recordFallbackErrorTelemetry(UNSUPPORTED_FEATURES.forms);
+      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     }
 
     if (
@@ -2501,15 +2508,13 @@ function webViewerWheel(evt) {
 }
 
 function webViewerClick(evt) {
-  PDFViewerApplication._hasInteracted = true;
-
   // Avoid triggering the fallback bar when the user clicks on the
   // toolbar or sidebar.
   if (
-    PDFViewerApplication._delayedFallbackFeatureIds.length >= 1 &&
+    PDFViewerApplication.triggerDelayedFallback &&
     PDFViewerApplication.pdfViewer.containsElement(evt.target)
   ) {
-    PDFViewerApplication.fallback();
+    PDFViewerApplication.triggerDelayedFallback();
   }
 
   if (!PDFViewerApplication.secondaryToolbar.isOpen) {
@@ -2527,12 +2532,10 @@ function webViewerClick(evt) {
 
 function webViewerKeyUp(evt) {
   if (evt.keyCode === 9) {
-    // The user is tabbing into the pdf. Display the error message
-    // if it has not already been displayed.
-    PDFViewerApplication._hasInteracted = true;
-
-    if (PDFViewerApplication._delayedFallbackFeatureIds.length >= 1) {
-      PDFViewerApplication.fallback();
+    // The user is tabbing into the viewer. Trigger the fallback bar if it has
+    // not already been displayed.
+    if (PDFViewerApplication.triggerDelayedFallback) {
+      PDFViewerApplication.triggerDelayedFallback();
     }
   }
 }
