@@ -1589,9 +1589,11 @@ const PDFWorker = (function PDFWorkerClosure() {
 
   function getWorkerSrc() {
     if (GlobalWorkerOptions.workerSrc) {
+      // modified by ngx-extended-pdf-viewer #376
       if (GlobalWorkerOptions.workerSrc.constructor.name === "Function") {
         return GlobalWorkerOptions.workerSrc();
       }
+      // end of modification
       return GlobalWorkerOptions.workerSrc;
     }
     if (typeof fallbackWorkerSrc !== "undefined") {
@@ -1927,11 +1929,16 @@ class WorkerTransport {
       onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
     });
     this._params = params;
+    // modified by ngx-extended-pdf-viewer #376
+    let cMapUrl = params.cMapUrl;
+    if (cMapUrl.constructor.name === "Function") {
+      cMapUrl = cMapUrl();
+    }
     this.CMapReaderFactory = new params.CMapReaderFactory({
-      baseUrl: params.cMapUrl,
+      baseUrl: cMapUrl,
       isCompressed: params.cMapPacked,
     });
-
+    // end of modification
     this.destroyed = false;
     this.destroyCapability = null;
     this._passwordCapability = null;
