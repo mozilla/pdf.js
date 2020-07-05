@@ -85,15 +85,104 @@ import { MurmurHash3_64 } from "./murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
 
-var PartialEvaluator = (function PartialEvaluatorClosure() {
-  const DefaultPartialEvaluatorOptions = {
-    maxImageSize: -1,
-    disableFontFace: false,
-    ignoreErrors: false,
-    isEvalSupported: true,
-    fontExtraProperties: false,
-  };
+const DefaultPartialEvaluatorOptions = Object.freeze({
+  maxImageSize: -1,
+  disableFontFace: false,
+  ignoreErrors: false,
+  isEvalSupported: true,
+  fontExtraProperties: false,
+});
 
+const PatternType = {
+  TILING: 1,
+  SHADING: 2,
+};
+
+const deferred = Promise.resolve();
+
+// Convert PDF blend mode names to HTML5 blend mode names.
+function normalizeBlendMode(value, parsingArray = false) {
+  if (Array.isArray(value)) {
+    // Use the first *supported* BM value in the Array (fixes issue11279.pdf).
+    for (let i = 0, ii = value.length; i < ii; i++) {
+      const maybeBM = normalizeBlendMode(value[i], /* parsingArray = */ true);
+      if (maybeBM) {
+        return maybeBM;
+      }
+    }
+    warn(`Unsupported blend mode Array: ${value}`);
+    return "source-over";
+  }
+
+  if (!isName(value)) {
+    if (parsingArray) {
+      return null;
+    }
+    return "source-over";
+  }
+  switch (value.name) {
+    case "Normal":
+    case "Compatible":
+      return "source-over";
+    case "Multiply":
+      return "multiply";
+    case "Screen":
+      return "screen";
+    case "Overlay":
+      return "overlay";
+    case "Darken":
+      return "darken";
+    case "Lighten":
+      return "lighten";
+    case "ColorDodge":
+      return "color-dodge";
+    case "ColorBurn":
+      return "color-burn";
+    case "HardLight":
+      return "hard-light";
+    case "SoftLight":
+      return "soft-light";
+    case "Difference":
+      return "difference";
+    case "Exclusion":
+      return "exclusion";
+    case "Hue":
+      return "hue";
+    case "Saturation":
+      return "saturation";
+    case "Color":
+      return "color";
+    case "Luminosity":
+      return "luminosity";
+  }
+  if (parsingArray) {
+    return null;
+  }
+  warn(`Unsupported blend mode: ${value.name}`);
+  return "source-over";
+}
+
+// Trying to minimize Date.now() usage and check every 100 time.
+var TIME_SLOT_DURATION_MS = 20;
+var CHECK_TIME_EVERY = 100;
+function TimeSlotManager() {
+  this.reset();
+}
+TimeSlotManager.prototype = {
+  check: function TimeSlotManager_check() {
+    if (++this.checked < CHECK_TIME_EVERY) {
+      return false;
+    }
+    this.checked = 0;
+    return this.endTime <= Date.now();
+  },
+  reset: function TimeSlotManager_reset() {
+    this.endTime = Date.now() + TIME_SLOT_DURATION_MS;
+    this.checked = 0;
+  },
+};
+
+var PartialEvaluator = (function PartialEvaluatorClosure() {
   // eslint-disable-next-line no-shadow
   function PartialEvaluator({
     xref,
@@ -117,93 +206,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
   }
-
-  // Trying to minimize Date.now() usage and check every 100 time
-  var TIME_SLOT_DURATION_MS = 20;
-  var CHECK_TIME_EVERY = 100;
-  function TimeSlotManager() {
-    this.reset();
-  }
-  TimeSlotManager.prototype = {
-    check: function TimeSlotManager_check() {
-      if (++this.checked < CHECK_TIME_EVERY) {
-        return false;
-      }
-      this.checked = 0;
-      return this.endTime <= Date.now();
-    },
-    reset: function TimeSlotManager_reset() {
-      this.endTime = Date.now() + TIME_SLOT_DURATION_MS;
-      this.checked = 0;
-    },
-  };
-
-  // Convert PDF blend mode names to HTML5 blend mode names.
-  function normalizeBlendMode(value, parsingArray = false) {
-    if (Array.isArray(value)) {
-      // Use the first *supported* BM value in the Array (fixes issue11279.pdf).
-      for (let i = 0, ii = value.length; i < ii; i++) {
-        const maybeBM = normalizeBlendMode(value[i], /* parsingArray = */ true);
-        if (maybeBM) {
-          return maybeBM;
-        }
-      }
-      warn(`Unsupported blend mode Array: ${value}`);
-      return "source-over";
-    }
-
-    if (!isName(value)) {
-      if (parsingArray) {
-        return null;
-      }
-      return "source-over";
-    }
-    switch (value.name) {
-      case "Normal":
-      case "Compatible":
-        return "source-over";
-      case "Multiply":
-        return "multiply";
-      case "Screen":
-        return "screen";
-      case "Overlay":
-        return "overlay";
-      case "Darken":
-        return "darken";
-      case "Lighten":
-        return "lighten";
-      case "ColorDodge":
-        return "color-dodge";
-      case "ColorBurn":
-        return "color-burn";
-      case "HardLight":
-        return "hard-light";
-      case "SoftLight":
-        return "soft-light";
-      case "Difference":
-        return "difference";
-      case "Exclusion":
-        return "exclusion";
-      case "Hue":
-        return "hue";
-      case "Saturation":
-        return "saturation";
-      case "Color":
-        return "color";
-      case "Luminosity":
-        return "luminosity";
-    }
-    if (parsingArray) {
-      return null;
-    }
-    warn(`Unsupported blend mode: ${value.name}`);
-    return "source-over";
-  }
-
-  var deferred = Promise.resolve();
-
-  var TILING_PATTERN = 1,
-    SHADING_PATTERN = 2;
 
   PartialEvaluator.prototype = {
     /**
@@ -1193,7 +1195,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var dict = isStream(pattern) ? pattern.dict : pattern;
         var typeNum = dict.get("PatternType");
 
-        if (typeNum === TILING_PATTERN) {
+        if (typeNum === PatternType.TILING) {
           var color = cs.base ? cs.base.getRgb(args, 0) : null;
           return this.handleTilingType(
             fn,
@@ -1204,7 +1206,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             operatorList,
             task
           );
-        } else if (typeNum === SHADING_PATTERN) {
+        } else if (typeNum === PatternType.SHADING) {
           var shading = dict.get("Shading");
           var matrix = dict.getArray("Matrix");
           pattern = Pattern.parseShading(
