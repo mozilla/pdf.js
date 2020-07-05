@@ -18,12 +18,14 @@ import { assert, info, shadow, unreachable } from "../shared/util.js";
 import { RefSetCache } from "./primitives.js";
 
 class BaseLocalCache {
-  constructor() {
+  constructor(options) {
     if (this.constructor === BaseLocalCache) {
       unreachable("Cannot initialize BaseLocalCache.");
     }
-    this._nameRefMap = new Map();
-    this._imageMap = new Map();
+    if (!options || !options.onlyRefs) {
+      this._nameRefMap = new Map();
+      this._imageMap = new Map();
+    }
     this._imageCache = new RefSetCache();
   }
 
@@ -92,6 +94,10 @@ class LocalColorSpaceCache extends BaseLocalCache {
 }
 
 class LocalFunctionCache extends BaseLocalCache {
+  constructor(options) {
+    super({ onlyRefs: true });
+  }
+
   getByName(name) {
     unreachable("Should not call `getByName` method.");
   }
