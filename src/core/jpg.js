@@ -163,12 +163,16 @@ var JpegImage = (function JpegImageClosure() {
           } else if (nextByte === /* EOI = */ 0xd9) {
             if (parseDNLMarker) {
               // NOTE: only 8-bit JPEG images are supported in this decoder.
-              const maybeScanLines = blockRow * 8;
+              const maybeScanLines = blockRow * (frame.precision === 8 ? 8 : 0);
               // Heuristic to attempt to handle corrupt JPEG images with too
               // large `scanLines` parameter, by falling back to the currently
-              // parsed number of scanLines when it's at least one order of
-              // magnitude smaller than expected (fixes issue10880.pdf).
-              if (maybeScanLines > 0 && maybeScanLines < frame.scanLines / 10) {
+              // parsed number of scanLines when it's at least (approximately)
+              // one order of magnitude smaller than expected (fixes
+              // issue10880.pdf and issue10989.pdf).
+              if (
+                maybeScanLines > 0 &&
+                Math.round(frame.scanLines / maybeScanLines) >= 10
+              ) {
                 throw new DNLMarkerError(
                   "Found EOI marker (0xFFD9) while parsing scan data, " +
                     "possibly caused by incorrect `scanLines` parameter",
