@@ -28,6 +28,7 @@ import {
   shadow,
   stringToBytes,
   stringToPDFString,
+  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
@@ -71,6 +72,7 @@ class Page {
     pageIndex,
     pageDict,
     ref,
+    globalIdFactory,
     fontCache,
     builtInCMapCache,
     globalImageCache,
@@ -89,13 +91,10 @@ class Page {
     const idCounters = {
       obj: 0,
     };
-    this.idFactory = {
-      createObjId() {
+    this._localIdFactory = class extends globalIdFactory {
+      static createObjId() {
         return `p${pageIndex}_${++idCounters.obj}`;
-      },
-      getDocId() {
-        return `g_${pdfManager.docId}`;
-      },
+      }
     };
   }
 
@@ -257,7 +256,7 @@ class Page {
       xref: this.xref,
       handler,
       pageIndex: this.pageIndex,
-      idFactory: this.idFactory,
+      idFactory: this._localIdFactory,
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
       globalImageCache: this.globalImageCache,
@@ -350,7 +349,7 @@ class Page {
         xref: this.xref,
         handler,
         pageIndex: this.pageIndex,
-        idFactory: this.idFactory,
+        idFactory: this._localIdFactory,
         fontCache: this.fontCache,
         builtInCMapCache: this.builtInCMapCache,
         globalImageCache: this.globalImageCache,
@@ -399,7 +398,7 @@ class Page {
               this.xref,
               annotationRef,
               this.pdfManager,
-              this.idFactory
+              this._localIdFactory
             ).catch(function (reason) {
               warn(`_parsedAnnotations: "${reason}".`);
               return null;
@@ -504,6 +503,23 @@ class PDFDocument {
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
     this._pagePromises = [];
+
+    const idCounters = {
+      font: 0,
+    };
+    this._globalIdFactory = class {
+      static getDocId() {
+        return `g_${pdfManager.docId}`;
+      }
+
+      static createFontId() {
+        return `f${++idCounters.font}`;
+      }
+
+      static createObjId() {
+        unreachable("Abstract method `createObjId` called.");
+      }
+    };
   }
 
   parse(recoveryMode) {
@@ -808,6 +824,7 @@ class PDFDocument {
         pageIndex,
         pageDict,
         ref,
+        globalIdFactory: this._globalIdFactory,
         fontCache: catalog.fontCache,
         builtInCMapCache: catalog.builtInCMapCache,
         globalImageCache: catalog.globalImageCache,
