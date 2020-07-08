@@ -381,6 +381,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     source.initialData = pdfDataRangeTransport.initialData;
     source.progressiveDone = pdfDataRangeTransport.progressiveDone;
   }
+
   return worker.messageHandler
     .sendWithPromise("GetDocRequest", {
       docId,
@@ -1004,6 +1005,7 @@ class PDFPageProxy {
     imageLayer = null,
     canvasFactory = null,
     background = null,
+    annotationStorage = null,
   }) {
     if (this._stats) {
       this._stats.time("Overall");
@@ -1044,10 +1046,12 @@ class PDFPageProxy {
       if (this._stats) {
         this._stats.time("Page Request");
       }
+
       this._pumpOperatorList({
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
+        annotationStorage,
       });
     }
 

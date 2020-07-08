@@ -37,6 +37,11 @@ describe("annotation", function () {
   class PDFManagerMock {
     constructor(params) {
       this.docBaseUrl = params.docBaseUrl || null;
+      this.pdfDocument = {
+        acroForm: () => {
+          return { get: x => undefined };
+        },
+      };
     }
 
     ensure(obj, prop, args) {
@@ -48,6 +53,10 @@ describe("annotation", function () {
           resolve(value);
         }
       });
+    }
+
+    ensureDoc(prop, args) {
+      return this.ensure(this.pdfDocument, prop, args);
     }
   }
 

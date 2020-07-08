@@ -517,6 +517,7 @@ class WorkerMessageHandler {
       "GetOperatorList",
       function wphSetupRenderPage(data, sink) {
         var pageIndex = data.pageIndex;
+        const annotationStorage = data.annotationStorage;
         pdfManager.getPage(pageIndex).then(function (page) {
           var task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
           startWorkerTask(task);
@@ -532,6 +533,7 @@ class WorkerMessageHandler {
               task,
               intent: data.intent,
               renderInteractiveForms: data.renderInteractiveForms,
+              annotationStorage,
             })
             .then(
               function (operatorListInfo) {

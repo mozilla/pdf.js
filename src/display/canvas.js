@@ -1577,6 +1577,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     showText: function CanvasGraphics_showText(glyphs) {
       var current = this.current;
       var font = current.font;
+
       if (font.isType3Font) {
         return this.showType3Text(glyphs);
       }
@@ -1597,6 +1598,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var spacingDir = vertical ? 1 : -1;
       var defaultVMetrics = font.defaultVMetrics;
       var widthAdvanceScale = fontSize * current.fontMatrix[0];
+
+      // console.log(glyphs, fontSize, current.fontMatrix[0], fontSizeScale);
 
       var simpleFillText =
         current.textRenderingMode === TextRenderingMode.FILL &&

@@ -239,7 +239,14 @@ class Page {
     });
   }
 
-  getOperatorList({ handler, sink, task, intent, renderInteractiveForms }) {
+  getOperatorList({
+    handler,
+    sink,
+    task,
+    intent,
+    renderInteractiveForms,
+    annotationStorage,
+  }) {
     const contentStreamPromise = this.pdfManager.ensure(
       this,
       "getContentStream"
@@ -302,7 +309,12 @@ class Page {
           if (isAnnotationRenderable(annotation, intent)) {
             opListPromises.push(
               annotation
-                .getOperatorList(partialEvaluator, task, renderInteractiveForms)
+                .getOperatorList(
+                  partialEvaluator,
+                  task,
+                  renderInteractiveForms,
+                  annotationStorage
+                )
                 .catch(function (reason) {
                   warn(
                     "getOperatorList - ignoring annotation data during " +
