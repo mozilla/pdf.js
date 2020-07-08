@@ -86,6 +86,51 @@ const ViewOnLoad = {
   INITIAL: 1,
 };
 
+// Keep these in sync with mozilla-central's Histograms.json.
+const KNOWN_VERSIONS = [
+  "1.0",
+  "1.1",
+  "1.2",
+  "1.3",
+  "1.4",
+  "1.5",
+  "1.6",
+  "1.7",
+  "1.8",
+  "1.9",
+  "2.0",
+  "2.1",
+  "2.2",
+  "2.3",
+];
+// Keep these in sync with mozilla-central's Histograms.json.
+const KNOWN_GENERATORS = [
+  "acrobat distiller",
+  "acrobat pdfwriter",
+  "adobe livecycle",
+  "adobe pdf library",
+  "adobe photoshop",
+  "ghostscript",
+  "tcpdf",
+  "cairo",
+  "dvipdfm",
+  "dvips",
+  "pdftex",
+  "pdfkit",
+  "itext",
+  "prince",
+  "quarkxpress",
+  "mac os x",
+  "microsoft",
+  "openoffice",
+  "oracle",
+  "luradocument",
+  "pdf-xchange",
+  "antenna house",
+  "aspose.cells",
+  "fpdf",
+];
+
 class DefaultExternalServices {
   constructor() {
     throw new Error("Cannot initialize DefaultExternalServices.");
@@ -870,55 +915,45 @@ const PDFViewerApplication = {
    * @private
    */
   _delayedFallback(featureId) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      // Ensure that telemetry is always reported, since it's not guaranteed
-      // that the fallback bar will be shown (depends on user interaction).
-      this.externalServices.reportTelemetry({
-        type: "unsupportedFeature",
-        featureId,
-      });
+    // Ensure that telemetry is always reported, since it's not guaranteed
+    // that the fallback bar will be shown (depends on user interaction).
+    this.externalServices.reportTelemetry({
+      type: "unsupportedFeature",
+      featureId,
+    });
 
-      if (!this.triggerDelayedFallback) {
-        this.triggerDelayedFallback = () => {
-          this.fallback(featureId);
-          this.triggerDelayedFallback = null;
-        };
-      }
+    if (!this.triggerDelayedFallback) {
+      this.triggerDelayedFallback = () => {
+        this.fallback(featureId);
+        this.triggerDelayedFallback = null;
+      };
     }
   },
 
   fallback(featureId) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      this.externalServices.reportTelemetry({
-        type: "unsupportedFeature",
-        featureId,
-      });
+    this.externalServices.reportTelemetry({
+      type: "unsupportedFeature",
+      featureId,
+    });
 
-      // Only trigger the fallback once so we don't spam the user with messages
-      // for one PDF.
-      if (this.fellback) {
-        return;
-      }
-      this.fellback = true;
-      this.externalServices.fallback(
-        {
-          featureId,
-          url: this.baseUrl,
-        },
-        function response(download) {
-          if (!download) {
-            return;
-          }
-          PDFViewerApplication.download();
-        }
-      );
+    // Only trigger the fallback once so we don't spam the user with messages
+    // for one PDF.
+    if (this.fellback) {
+      return;
     }
+    this.fellback = true;
+    this.externalServices.fallback(
+      {
+        featureId,
+        url: this.baseUrl,
+      },
+      function response(download) {
+        if (!download) {
+          return;
+        }
+        PDFViewerApplication.download();
+      }
+    );
   },
 
   /**
@@ -1319,7 +1354,6 @@ const PDFViewerApplication = {
     );
 
     let pdfTitle;
-
     const infoTitle = info && info.Title;
     if (infoTitle) {
       pdfTitle = infoTitle;
@@ -1339,7 +1373,6 @@ const PDFViewerApplication = {
         pdfTitle = metadataTitle;
       }
     }
-
     if (pdfTitle) {
       this.setTitle(
         `${pdfTitle} - ${contentDispositionFilename || document.title}`
@@ -1353,83 +1386,32 @@ const PDFViewerApplication = {
       this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     }
 
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      // Telemetry labels must be C++ variable friendly.
-      let versionId = "other";
-      // Keep these in sync with mozilla central's Histograms.json.
-      const KNOWN_VERSIONS = [
-        "1.0",
-        "1.1",
-        "1.2",
-        "1.3",
-        "1.4",
-        "1.5",
-        "1.6",
-        "1.7",
-        "1.8",
-        "1.9",
-        "2.0",
-        "2.1",
-        "2.2",
-        "2.3",
-      ];
-      if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
-        versionId = `v${info.PDFFormatVersion.replace(".", "_")}`;
-      }
-
-      let generatorId = "other";
-      // Keep these in sync with mozilla central's Histograms.json.
-      const KNOWN_GENERATORS = [
-        "acrobat distiller",
-        "acrobat pdfwriter",
-        "adobe livecycle",
-        "adobe pdf library",
-        "adobe photoshop",
-        "ghostscript",
-        "tcpdf",
-        "cairo",
-        "dvipdfm",
-        "dvips",
-        "pdftex",
-        "pdfkit",
-        "itext",
-        "prince",
-        "quarkxpress",
-        "mac os x",
-        "microsoft",
-        "openoffice",
-        "oracle",
-        "luradocument",
-        "pdf-xchange",
-        "antenna house",
-        "aspose.cells",
-        "fpdf",
-      ];
-      if (info.Producer) {
-        const producer = info.Producer.toLowerCase();
-        KNOWN_GENERATORS.some(function (generator) {
-          if (!producer.includes(generator)) {
-            return false;
-          }
-          generatorId = generator.replace(/[ .\-]/g, "_");
-          return true;
-        });
-      }
-
-      let formType = null;
-      if (info.IsAcroFormPresent) {
-        formType = info.IsXFAPresent ? "xfa" : "acroform";
-      }
-      this.externalServices.reportTelemetry({
-        type: "documentInfo",
-        version: versionId,
-        generator: generatorId,
-        formType,
+    // Telemetry labels must be C++ variable friendly.
+    let versionId = "other";
+    if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
+      versionId = `v${info.PDFFormatVersion.replace(".", "_")}`;
+    }
+    let generatorId = "other";
+    if (info.Producer) {
+      const producer = info.Producer.toLowerCase();
+      KNOWN_GENERATORS.some(function (generator) {
+        if (!producer.includes(generator)) {
+          return false;
+        }
+        generatorId = generator.replace(/[ .\-]/g, "_");
+        return true;
       });
     }
+    let formType = null;
+    if (info.IsAcroFormPresent) {
+      formType = info.IsXFAPresent ? "xfa" : "acroform";
+    }
+    this.externalServices.reportTelemetry({
+      type: "documentInfo",
+      version: versionId,
+      generator: generatorId,
+      formType,
+    });
   },
 
   /**
@@ -1642,14 +1624,9 @@ const PDFViewerApplication = {
 
     printService.layout();
 
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      this.externalServices.reportTelemetry({
-        type: "print",
-      });
-    }
+    this.externalServices.reportTelemetry({
+      type: "print",
+    });
   },
 
   afterPrint() {
@@ -2091,22 +2068,17 @@ function webViewerPageRendered(evt) {
       });
   }
 
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("MOZCENTRAL || GENERIC")
-  ) {
+  PDFViewerApplication.externalServices.reportTelemetry({
+    type: "pageInfo",
+    timestamp: evt.timestamp,
+  });
+  // It is a good time to report stream and font types.
+  PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
     PDFViewerApplication.externalServices.reportTelemetry({
-      type: "pageInfo",
-      timestamp: evt.timestamp,
+      type: "documentStats",
+      stats,
     });
-    // It is a good time to report stream and font types.
-    PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
-      PDFViewerApplication.externalServices.reportTelemetry({
-        type: "documentStats",
-        stats,
-      });
-    });
-  }
+  });
 }
 
 function webViewerPageMode({ mode }) {
