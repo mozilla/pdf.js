@@ -508,12 +508,19 @@ const PDFViewerApplication = {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
+
     let newScale = this.pdfViewer.currentScale;
+    // modified by ngx-extended-pdf-viewer #367
+    const maxScale = Number(AppOptions.get("maxZoom"));
+    if (!maxScale) {
+      maxScale = MAX_SCALE
+    }
     do {
       newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
       newScale = Math.ceil(newScale * 10) / 10;
-      newScale = Math.min(MAX_SCALE, newScale);
-    } while (--ticks > 0 && newScale < MAX_SCALE);
+      newScale = Math.min(maxScale, newScale);
+    } while (--ticks > 0 && newScale < maxScale);
+    // end of modification
     this.pdfViewer.currentScaleValue = newScale;
   },
 
@@ -522,11 +529,17 @@ const PDFViewerApplication = {
       return;
     }
     let newScale = this.pdfViewer.currentScale;
+    // modified by ngx-extended-pdf-viewer #367
+    const minScale = Number(AppOptions.get("minZoom"));
+    if (!minScale) {
+      minScale = MIN_SCALE;
+    }
     do {
       newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
       newScale = Math.floor(newScale * 10) / 10;
-      newScale = Math.max(MIN_SCALE, newScale);
-    } while (--ticks > 0 && newScale > MIN_SCALE);
+      newScale = Math.max(minScale, newScale);
+    } while (--ticks > 0 && newScale > minScale);
+    // end of modification
     this.pdfViewer.currentScaleValue = newScale;
   },
 
