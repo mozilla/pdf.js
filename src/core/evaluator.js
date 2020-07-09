@@ -587,7 +587,7 @@ class PartialEvaluator {
       cacheGlobally = false;
 
     if (this.parsingType3Font) {
-      objId = `${this.idFactory.getDocId()}_type3res_${objId}`;
+      objId = `${this.idFactory.getDocId()}_type3_${objId}`;
     } else if (imageRef) {
       cacheGlobally = this.globalImageCache.shouldCache(
         imageRef,
@@ -998,7 +998,7 @@ class PartialEvaluator {
     var fontRefIsRef = isRef(fontRef),
       fontID;
     if (fontRefIsRef) {
-      fontID = fontRef.toString();
+      fontID = `f${fontRef.toString()}`;
     }
 
     if (hash && isDict(descriptor)) {
@@ -1015,7 +1015,7 @@ class PartialEvaluator {
         }
       } else {
         fontAliases[hash] = {
-          fontID: Font.getFontID(),
+          fontID: this.idFactory.createFontId(),
         };
       }
 
@@ -1046,15 +1046,18 @@ class PartialEvaluator {
       this.fontCache.put(fontRef, fontCapability.promise);
     } else {
       if (!fontID) {
-        fontID = this.idFactory.createObjId();
+        fontID = this.idFactory.createFontId();
       }
       this.fontCache.put(`id_${fontID}`, fontCapability.promise);
     }
-    assert(fontID, 'The "fontID" must be defined.');
+    assert(
+      fontID && fontID.startsWith("f"),
+      'The "fontID" must be (correctly) defined.'
+    );
 
     // Keep track of each font we translated so the caller can
     // load them asynchronously before calling display on a page.
-    font.loadedName = `${this.idFactory.getDocId()}_f${fontID}`;
+    font.loadedName = `${this.idFactory.getDocId()}_${fontID}`;
 
     font.translated = fontCapability.promise;
 
