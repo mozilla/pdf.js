@@ -30,6 +30,7 @@ import {
 import { Catalog, FileSpec, ObjectLoader } from "./obj.js";
 import { Dict, isDict, isName, isRef, isStream } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
+import { EvalState } from "./evaluator.js";
 import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
@@ -1056,7 +1057,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
 
   async getFontData(evaluator, task) {
     const operatorList = new OperatorList();
-    const initialState = {};
+    const initialState = new EvalState();
     await evaluator.getOperatorList({
       stream: new StringStream(this.data.defaultAppearance),
       task,

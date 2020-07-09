@@ -3521,6 +3521,7 @@ class EvalState {
   constructor() {
     this.ctm = new Float32Array(IDENTITY_MATRIX);
     this.font = null;
+    this.fontSize = 0;
     this.textRenderingMode = TextRenderingMode.FILL;
     this.fillColorSpace = ColorSpace.singletons.gray;
     this.strokeColorSpace = ColorSpace.singletons.gray;
@@ -3804,4 +3805,4 @@ class EvaluatorPreprocessor {
   }
 }
 
-export { PartialEvaluator };
+export { EvalState, PartialEvaluator };

@@ -127,7 +127,7 @@ const defaultOptions = {
   },
   renderInteractiveForms: {
     /** @type {boolean} */
-    value: true,
+    value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   sidebarViewOnLoad: {
