@@ -3804,4 +3804,4 @@ class EvaluatorPreprocessor {
   }
 }
 
-export { EvalState, PartialEvaluator };
+export { PartialEvaluator };
