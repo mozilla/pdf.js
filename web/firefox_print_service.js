@@ -19,7 +19,13 @@ import { PDFPrintServiceFactory } from "./app.js";
 import { shadow } from "pdfjs-lib";
 
 // Creates a placeholder with div and canvas with right size for the page.
-function composePage(pdfDocument, pageNumber, size, printContainer) {
+function composePage(
+  pdfDocument,
+  pageNumber,
+  size,
+  printContainer,
+  annotationStorage
+) {
   const canvas = document.createElement("canvas");
 
   // The size of the canvas in pixels for printing.
@@ -53,6 +59,7 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
           transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
           viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
           intent: "print",
+          annotationStorage: annotationStorage.getDict(),
         };
         return pdfPage.render(renderContext).promise;
       })
@@ -75,10 +82,16 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
   };
 }
 
-function FirefoxPrintService(pdfDocument, pagesOverview, printContainer) {
+function FirefoxPrintService(
+  pdfDocument,
+  pagesOverview,
+  printContainer,
+  annotationStorage
+) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
+  this.annotationStorage = annotationStorage;
 }
 
 FirefoxPrintService.prototype = {
@@ -89,7 +102,13 @@ FirefoxPrintService.prototype = {
     body.setAttribute("data-pdfjsprinting", true);
 
     for (let i = 0, ii = pagesOverview.length; i < ii; ++i) {
-      composePage(pdfDocument, i + 1, pagesOverview[i], printContainer);
+      composePage(
+        pdfDocument,
+        i + 1,
+        pagesOverview[i],
+        printContainer,
+        this.annotationStorage
+      );
     }
   },
 
@@ -109,8 +128,19 @@ PDFPrintServiceFactory.instance = {
     return shadow(this, "supportsPrinting", value);
   },
 
-  createPrintService(pdfDocument, pagesOverview, printContainer) {
-    return new FirefoxPrintService(pdfDocument, pagesOverview, printContainer);
+  createPrintService(
+    pdfDocument,
+    pagesOverview,
+    printContainer,
+    l10n,
+    annotationStorage
+  ) {
+    return new FirefoxPrintService(
+      pdfDocument,
+      pagesOverview,
+      printContainer,
+      annotationStorage
+    );
   },
 };
 
