@@ -86,6 +86,51 @@ const ViewOnLoad = {
   INITIAL: 1,
 };
 
+// Keep these in sync with mozilla-central's Histograms.json.
+const KNOWN_VERSIONS = [
+  "1.0",
+  "1.1",
+  "1.2",
+  "1.3",
+  "1.4",
+  "1.5",
+  "1.6",
+  "1.7",
+  "1.8",
+  "1.9",
+  "2.0",
+  "2.1",
+  "2.2",
+  "2.3",
+];
+// Keep these in sync with mozilla-central's Histograms.json.
+const KNOWN_GENERATORS = [
+  "acrobat distiller",
+  "acrobat pdfwriter",
+  "adobe livecycle",
+  "adobe pdf library",
+  "adobe photoshop",
+  "ghostscript",
+  "tcpdf",
+  "cairo",
+  "dvipdfm",
+  "dvips",
+  "pdftex",
+  "pdfkit",
+  "itext",
+  "prince",
+  "quarkxpress",
+  "mac os x",
+  "microsoft",
+  "openoffice",
+  "oracle",
+  "luradocument",
+  "pdf-xchange",
+  "antenna house",
+  "aspose.cells",
+  "fpdf",
+];
+
 class DefaultExternalServices {
   constructor() {
     throw new Error("Cannot initialize DefaultExternalServices.");
@@ -189,8 +234,7 @@ const PDFViewerApplication = {
   externalServices: DefaultExternalServices,
   _boundEvents: {},
   contentDispositionFilename: null,
-  _hasInteracted: false,
-  _delayedFallbackFeatureIds: [],
+  triggerDelayedFallback: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -711,6 +755,7 @@ const PDFViewerApplication = {
     this.url = "";
     this.baseUrl = "";
     this.contentDispositionFilename = null;
+    this.triggerDelayedFallback = null;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -886,52 +931,51 @@ const PDFViewerApplication = {
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
 
-  _recordFallbackErrorTelemetry(featureId) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) {
-      this.externalServices.reportTelemetry({
-        type: "unsupportedFeature",
-        featureId,
-      });
+  /**
+   * For PDF documents that contain e.g. forms and javaScript, we should only
+   * trigger the fallback bar once the user has interacted with the page.
+   * @private
+   */
+  _delayedFallback(featureId) {
+    // Ensure that telemetry is always reported, since it's not guaranteed
+    // that the fallback bar will be shown (depends on user interaction).
+    this.externalServices.reportTelemetry({
+      type: "unsupportedFeature",
+      featureId,
+    });
+
+    if (!this.triggerDelayedFallback) {
+      this.triggerDelayedFallback = () => {
+        this.fallback(featureId);
+        this.triggerDelayedFallback = null;
+      };
     }
   },
 
   fallback(featureId) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      if (featureId) {
-        this._recordFallbackErrorTelemetry(featureId);
-      }
+    this.externalServices.reportTelemetry({
+      type: "unsupportedFeature",
+      featureId,
+    });
 
-      // For PDFs that contain script and form errors, we should only trigger
-      // the fallback once the user has interacted with the page.
-      if (this._delayedFallbackFeatureIds.length >= 1 && this._hasInteracted) {
-        featureId = this._delayedFallbackFeatureIds[0];
-        // Reset to prevent all click events from showing fallback bar.
-        this._delayedFallbackFeatureIds = [];
-      }
-
-      // Only trigger the fallback once so we don't spam the user with messages
-      // for one PDF.
-      if (this.fellback) {
-        return;
-      }
-
-      this.fellback = true;
-      this.externalServices.fallback(
-        {
-          featureId,
-          url: this.baseUrl,
-        },
-        function response(download) {
-          if (!download) {
-            return;
-          }
-          PDFViewerApplication.download();
-        }
-      );
+    // Only trigger the fallback once so we don't spam the user with messages
+    // for one PDF.
+    if (this.fellback) {
+      return;
     }
+    this.fellback = true;
+    this.externalServices.fallback(
+      {
+        featureId,
+        url: this.baseUrl,
+      },
+      function response(download) {
+        if (!download) {
+          return;
+        }
+        PDFViewerApplication.download();
+      }
+    );
   },
 
   /**
@@ -1281,8 +1325,7 @@ const PDFViewerApplication = {
           return false;
         }
         console.warn("Warning: JavaScript is not supported");
-        this._delayedFallbackFeatureIds.push(UNSUPPORTED_FEATURES.javaScript);
-        this._recordFallbackErrorTelemetry(UNSUPPORTED_FEATURES.javaScript);
+        this._delayedFallback(UNSUPPORTED_FEATURES.javaScript);
         return true;
       });
 
@@ -1341,7 +1384,6 @@ const PDFViewerApplication = {
     );
 
     let pdfTitle;
-
     const infoTitle = info && info.Title;
     if (infoTitle) {
       pdfTitle = infoTitle;
@@ -1361,7 +1403,6 @@ const PDFViewerApplication = {
         pdfTitle = metadataTitle;
       }
     }
-
     if (pdfTitle) {
       this.setTitle(
         `${pdfTitle} - ${contentDispositionFilename || document.title}`
@@ -1372,87 +1413,35 @@ const PDFViewerApplication = {
 
     if (info.IsAcroFormPresent) {
       console.warn("Warning: AcroForm/XFA is not supported");
-      this._delayedFallbackFeatureIds.push(UNSUPPORTED_FEATURES.forms);
-      this._recordFallbackErrorTelemetry(UNSUPPORTED_FEATURES.forms);
+      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     }
 
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      // Telemetry labels must be C++ variable friendly.
-      let versionId = "other";
-      // Keep these in sync with mozilla central's Histograms.json.
-      const KNOWN_VERSIONS = [
-        "1.0",
-        "1.1",
-        "1.2",
-        "1.3",
-        "1.4",
-        "1.5",
-        "1.6",
-        "1.7",
-        "1.8",
-        "1.9",
-        "2.0",
-        "2.1",
-        "2.2",
-        "2.3",
-      ];
-      if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
-        versionId = `v${info.PDFFormatVersion.replace(".", "_")}`;
-      }
-
-      let generatorId = "other";
-      // Keep these in sync with mozilla central's Histograms.json.
-      const KNOWN_GENERATORS = [
-        "acrobat distiller",
-        "acrobat pdfwriter",
-        "adobe livecycle",
-        "adobe pdf library",
-        "adobe photoshop",
-        "ghostscript",
-        "tcpdf",
-        "cairo",
-        "dvipdfm",
-        "dvips",
-        "pdftex",
-        "pdfkit",
-        "itext",
-        "prince",
-        "quarkxpress",
-        "mac os x",
-        "microsoft",
-        "openoffice",
-        "oracle",
-        "luradocument",
-        "pdf-xchange",
-        "antenna house",
-        "aspose.cells",
-        "fpdf",
-      ];
-      if (info.Producer) {
-        const producer = info.Producer.toLowerCase();
-        KNOWN_GENERATORS.some(function (generator) {
-          if (!producer.includes(generator)) {
-            return false;
-          }
-          generatorId = generator.replace(/[ .\-]/g, "_");
-          return true;
-        });
-      }
-
-      let formType = null;
-      if (info.IsAcroFormPresent) {
-        formType = info.IsXFAPresent ? "xfa" : "acroform";
-      }
-      this.externalServices.reportTelemetry({
-        type: "documentInfo",
-        version: versionId,
-        generator: generatorId,
-        formType,
+    // Telemetry labels must be C++ variable friendly.
+    let versionId = "other";
+    if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
+      versionId = `v${info.PDFFormatVersion.replace(".", "_")}`;
+    }
+    let generatorId = "other";
+    if (info.Producer) {
+      const producer = info.Producer.toLowerCase();
+      KNOWN_GENERATORS.some(function (generator) {
+        if (!producer.includes(generator)) {
+          return false;
+        }
+        generatorId = generator.replace(/[ .\-]/g, "_");
+        return true;
       });
     }
+    let formType = null;
+    if (info.IsAcroFormPresent) {
+      formType = info.IsXFAPresent ? "xfa" : "acroform";
+    }
+    this.externalServices.reportTelemetry({
+      type: "documentInfo",
+      version: versionId,
+      generator: generatorId,
+      formType,
+    });
   },
 
   /**
@@ -1665,14 +1654,9 @@ const PDFViewerApplication = {
 
     printService.layout();
 
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      this.externalServices.reportTelemetry({
-        type: "print",
-      });
-    }
+    this.externalServices.reportTelemetry({
+      type: "print",
+    });
   },
 
   afterPrint() {
@@ -2116,22 +2100,17 @@ function webViewerPageRendered(evt) {
       });
   }
 
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("MOZCENTRAL || GENERIC")
-  ) {
+  PDFViewerApplication.externalServices.reportTelemetry({
+    type: "pageInfo",
+    timestamp: evt.timestamp,
+  });
+  // It is a good time to report stream and font types.
+  PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
     PDFViewerApplication.externalServices.reportTelemetry({
-      type: "pageInfo",
-      timestamp: evt.timestamp,
+      type: "documentStats",
+      stats,
     });
-    // It is a good time to report stream and font types.
-    PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
-      PDFViewerApplication.externalServices.reportTelemetry({
-        type: "documentStats",
-        stats,
-      });
-    });
-  }
+  });
 }
 
 function webViewerPageMode({ mode }) {
@@ -2552,30 +2531,13 @@ function webViewerWheel(evt) {
 }
 
 function webViewerClick(evt) {
-  PDFViewerApplication._hasInteracted = true;
-
   // Avoid triggering the fallback bar when the user clicks on the
   // toolbar or sidebar.
   if (
-    PDFViewerApplication._delayedFallbackFeatureIds.length >= 1 &&
+    PDFViewerApplication.triggerDelayedFallback &&
     PDFViewerApplication.pdfViewer.containsElement(evt.target)
   ) {
-    if (
-      evt.target &&
-      evt.target.parentElement === appConfig.secondaryToolbar.toggleButton
-    ) {
-      return;
-    }
-    if (
-      evt.target &&
-      evt.target.parentElement &&
-      evt.target.parentElement.parentElement ===
-        appConfig.secondaryToolbar.toggleButton
-    ) {
-      return;
-    }
-
-    PDFViewerApplication.fallback();
+    PDFViewerApplication.triggerDelayedFallback();
   }
 
   if (!PDFViewerApplication.secondaryToolbar.isOpen) {
@@ -2608,12 +2570,10 @@ function webViewerClick(evt) {
 
 function webViewerKeyUp(evt) {
   if (evt.keyCode === 9) {
-    // The user is tabbing into the pdf. Display the error message
-    // if it has not already been displayed.
-    PDFViewerApplication._hasInteracted = true;
-
-    if (PDFViewerApplication._delayedFallbackFeatureIds.length >= 1) {
-      PDFViewerApplication.fallback();
+    // The user is tabbing into the viewer. Trigger the fallback bar if it has
+    // not already been displayed.
+    if (PDFViewerApplication.triggerDelayedFallback) {
+      PDFViewerApplication.triggerDelayedFallback();
     }
   }
 }

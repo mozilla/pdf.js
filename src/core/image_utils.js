@@ -18,12 +18,14 @@ import { assert, info, shadow, unreachable } from "../shared/util.js";
 import { RefSetCache } from "./primitives.js";
 
 class BaseLocalCache {
-  constructor() {
+  constructor(options) {
     if (this.constructor === BaseLocalCache) {
       unreachable("Cannot initialize BaseLocalCache.");
     }
-    this._nameRefMap = new Map();
-    this._imageMap = new Map();
+    if (!options || !options.onlyRefs) {
+      this._nameRefMap = new Map();
+      this._imageMap = new Map();
+    }
     this._imageCache = new RefSetCache();
   }
 
@@ -88,6 +90,26 @@ class LocalColorSpaceCache extends BaseLocalCache {
       return;
     }
     this._imageMap.set(name, data);
+  }
+}
+
+class LocalFunctionCache extends BaseLocalCache {
+  constructor(options) {
+    super({ onlyRefs: true });
+  }
+
+  getByName(name) {
+    unreachable("Should not call `getByName` method.");
+  }
+
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('LocalFunctionCache.set - expected "ref" argument.');
+    }
+    if (this._imageCache.has(ref)) {
+      return;
+    }
+    this._imageCache.put(ref, data);
   }
 }
 
@@ -184,4 +206,9 @@ class GlobalImageCache {
   }
 }
 
-export { LocalImageCache, LocalColorSpaceCache, GlobalImageCache };
+export {
+  LocalImageCache,
+  LocalColorSpaceCache,
+  LocalFunctionCache,
+  GlobalImageCache,
+};

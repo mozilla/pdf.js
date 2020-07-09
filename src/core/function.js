@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { Dict, isDict, isStream, Ref } from "./primitives.js";
 import {
   FormatError,
   info,
@@ -20,29 +21,94 @@ import {
   IsEvalSupportedCached,
   unreachable,
 } from "../shared/util.js";
-import { isDict, isStream } from "./primitives.js";
 import { PostScriptLexer, PostScriptParser } from "./ps_parser.js";
+import { LocalFunctionCache } from "./image_utils.js";
 
 class PDFFunctionFactory {
   constructor({ xref, isEvalSupported = true }) {
     this.xref = xref;
     this.isEvalSupported = isEvalSupported !== false;
+    this._localFunctionCache = null; // Initialized lazily.
   }
 
   create(fn) {
-    return PDFFunction.parse({
+    const cachedFunction = this.getCached(fn);
+    if (cachedFunction) {
+      return cachedFunction;
+    }
+    const parsedFunction = PDFFunction.parse({
       xref: this.xref,
       isEvalSupported: this.isEvalSupported,
-      fn,
+      fn: fn instanceof Ref ? this.xref.fetch(fn) : fn,
     });
+
+    // Attempt to cache the parsed Function, by reference.
+    this._cache(fn, parsedFunction);
+
+    return parsedFunction;
   }
 
   createFromArray(fnObj) {
-    return PDFFunction.parseArray({
+    const cachedFunction = this.getCached(fnObj);
+    if (cachedFunction) {
+      return cachedFunction;
+    }
+    const parsedFunction = PDFFunction.parseArray({
       xref: this.xref,
       isEvalSupported: this.isEvalSupported,
-      fnObj,
+      fnObj: fnObj instanceof Ref ? this.xref.fetch(fnObj) : fnObj,
     });
+
+    // Attempt to cache the parsed Function, by reference.
+    this._cache(fnObj, parsedFunction);
+
+    return parsedFunction;
+  }
+
+  getCached(cacheKey) {
+    let fnRef;
+    if (cacheKey instanceof Ref) {
+      fnRef = cacheKey;
+    } else if (cacheKey instanceof Dict) {
+      fnRef = cacheKey.objId;
+    } else if (isStream(cacheKey)) {
+      fnRef = cacheKey.dict && cacheKey.dict.objId;
+    }
+    if (fnRef) {
+      if (!this._localFunctionCache) {
+        this._localFunctionCache = new LocalFunctionCache();
+      }
+      const localFunction = this._localFunctionCache.getByRef(fnRef);
+      if (localFunction) {
+        return localFunction;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * @private
+   */
+  _cache(cacheKey, parsedFunction) {
+    if (!parsedFunction) {
+      throw new Error(
+        'PDFFunctionFactory._cache - expected "parsedFunction" argument.'
+      );
+    }
+    let fnRef;
+    if (cacheKey instanceof Ref) {
+      fnRef = cacheKey;
+    } else if (cacheKey instanceof Dict) {
+      fnRef = cacheKey.objId;
+    } else if (isStream(cacheKey)) {
+      fnRef = cacheKey.dict && cacheKey.dict.objId;
+    }
+    if (fnRef) {
+      if (!this._localFunctionCache) {
+        this._localFunctionCache = new LocalFunctionCache();
+      }
+      this._localFunctionCache.set(/* name = */ null, fnRef, parsedFunction);
+    }
   }
 }
 
