@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
+import { Page, PDFDocument } from "../../src/core/document.js";
 import { assert } from "../../src/shared/util.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 import { isRef } from "../../src/core/primitives.js";
-import { Page } from "../../src/core/document.js";
+import { StringStream } from "../../src/core/stream.js";
 
 class DOMFileReaderFactory {
   static async fetch(params) {
@@ -93,15 +94,21 @@ class XRefMock {
 }
 
 function createIdFactory(pageIndex) {
-  const page = new Page({
-    pdfManager: {
-      get docId() {
-        return "d0";
-      },
+  const pdfManager = {
+    get docId() {
+      return "d0";
     },
+  };
+  const stream = new StringStream("Dummy_PDF_data");
+  const pdfDocument = new PDFDocument(pdfManager, stream);
+
+  const page = new Page({
+    pdfManager: pdfDocument.pdfManager,
+    xref: pdfDocument.xref,
     pageIndex,
+    globalIdFactory: pdfDocument._globalIdFactory,
   });
-  return page.idFactory;
+  return page._localIdFactory;
 }
 
 function isEmptyObj(obj) {
