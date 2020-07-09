@@ -30,6 +30,7 @@ import {
 import { Catalog, FileSpec, ObjectLoader } from "./obj.js";
 import { Dict, isDict, isName, isRef, isStream } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
+import { EvalState } from "./evaluator.js";
 import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
@@ -992,15 +993,23 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
 
+    const borderWidth = this.data.borderStyle.width;
+
     // Default horizontal padding: can we have an heuristic to guess it?
-    const hPadding = 2;
-    // Default vertical padding:
-    // it should be based on fontSize (e.g. 0.4 * fontSize)
-    const vPadding = 2;
+    const hPadding = borderWidth + 2;
+
+    // TODO: Handle the case where the font is not defined:
+    // fallback on helv maybe?
+    // TODO: Handle the case where fontSize is null
+    const [font, fontSize] = await this.getFontData(evaluator, task);
+
+    const vPadding = borderWidth + Math.ceil(Math.abs(font.descent) * fontSize);
+    const defaultAppearance = this.data.defaultAppearance;
+    const totalWidth = this.data.rect[2] - this.data.rect[0];
+
     if (this.data.comb) {
-      const width = this.data.rect[2] - this.data.rect[0];
-      const combWidth = (width / this.data.maxLen).toFixed(2);
-      let buf = `/Tx BMC q BT ${this.data.defaultAppearance} 1 0 0 1 ${hPadding} ${vPadding} Tm`;
+      const combWidth = (totalWidth / this.data.maxLen).toFixed(2);
+      let buf = `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${hPadding} ${vPadding} Tm`;
       let first = true;
       for (const character of value) {
         if (first) {
@@ -1014,48 +1023,45 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return buf;
     }
 
-    const defaultAppearance = this.data.defaultAppearance;
-    const appearance = `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${hPadding} ${vPadding} Tm (${value}) Tj ET Q EMC`;
     const alignment = this.data.textAlignment;
     if (alignment === 0 || alignment > 2) {
       // Left alignment: nothing to do
-      return appearance;
+      return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${hPadding} ${vPadding} Tm (${value}) Tj ET Q EMC`;
     }
 
     // We need to get the width of the text in order to align it correctly
+    const glyphs = font.charsToGlyphs(value);
+
+    const scale = fontSize / 1000;
+    let width = 0;
+    for (const glyph of glyphs) {
+      width += glyph.width * scale;
+    }
+
+    let shift;
+    if (alignment === 1) {
+      // Center
+      shift = (totalWidth - width) / 2;
+    } else {
+      // Right
+      shift = totalWidth - width - hPadding;
+    }
+
+    return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${shift} ${vPadding} Tm (${value}) Tj ET Q EMC`;
+  }
+
+  async getFontData(evaluator, task) {
     const operatorList = new OperatorList();
-    const stream = new StringStream(appearance);
-    const totalWidth = this.data.rect[2] - this.data.rect[0];
-    return evaluator
-      .getOperatorList({
-        stream,
-        task,
-        resources: this.fieldResources,
-        operatorList,
-      })
-      .then(function () {
-        const fns = operatorList.fnArray;
-        const args = operatorList.argsArray;
-        const fontSize = args[fns.findIndex(f => f === OPS.setFont)][1];
-        const glyphs = args[fns.findIndex(f => f === OPS.showText)][0];
+    const initialState = new EvalState();
+    await evaluator.getOperatorList({
+      stream: new StringStream(this.data.defaultAppearance),
+      task,
+      resources: this.fieldResources,
+      operatorList,
+      initialState,
+    });
 
-        const scale = fontSize / 1000;
-        let width = 0;
-        for (const glyph of glyphs) {
-          width += glyph.width * scale;
-        }
-
-        let shift;
-        if (alignment === 1) {
-          // Center
-          shift = (totalWidth - width) / 2;
-        } else {
-          // Right
-          shift = totalWidth - width - hPadding;
-        }
-
-        return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${shift} ${vPadding} Tm (${value}) Tj ET Q EMC`;
-      });
+    return [initialState.font, initialState.fontSize];
   }
 }
 
