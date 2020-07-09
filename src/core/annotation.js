@@ -23,7 +23,6 @@ import {
   assert,
   isString,
   OPS,
-  stringToBytes,
   stringToPDFString,
   Util,
   warn,
@@ -33,7 +32,7 @@ import { Dict, isDict, isName, isRef, isStream } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
 import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
-import { Stream } from "./stream.js";
+import { StringStream } from "./stream.js";
 
 class AnnotationFactory {
   /**
@@ -81,7 +80,7 @@ class AnnotationFactory {
       subtype,
       id,
       pdfManager,
-      acroForm,
+      acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
     };
 
     switch (subtype) {
@@ -219,7 +218,6 @@ function getTransformMatrix(rect, bbox, matrix) {
 
   const xRatio = (rect[2] - rect[0]) / (maxX - minX);
   const yRatio = (rect[3] - rect[1]) / (maxY - minY);
-
   return [
     xRatio,
     0,
@@ -476,7 +474,7 @@ class Annotation {
    */
   setAppearance(dict) {
     this.appearance = null;
-    this.checkAppearance = null;
+    this.checkedAppearance = null;
 
     const appearanceStates = dict.get("AP");
     if (!isDict(appearanceStates)) {
@@ -499,7 +497,6 @@ class Annotation {
     if (!isName(as) || !normalAppearanceState.has(as.name)) {
       return;
     }
-
     this.appearance = normalAppearanceState.get(as.name);
   }
 
@@ -936,10 +933,9 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   }
 
   getOperatorList(evaluator, task, renderForms, annotationStorage) {
-    const self = this;
     return this.getAppearance(evaluator, task, annotationStorage).then(
       content => {
-        if (renderForms || (self.appearance && content === "")) {
+        if (renderForms || (this.appearance && content === null)) {
           return super.getOperatorList(
             evaluator,
             task,
@@ -950,33 +946,33 @@ class TextWidgetAnnotation extends WidgetAnnotation {
 
         const operatorList = new OperatorList();
 
-        // Even if there is an appearance stream, ignore it. Self is the
+        // Even if there is an appearance stream, ignore it. This is the
         // behaviour used by Adobe Reader.
-        if (!self.data.defaultAppearance || content === "") {
-          return Promise.resolve(operatorList);
+        if (!this.data.defaultAppearance || content === null) {
+          return operatorList;
         }
 
         const matrix = [1, 0, 0, 1, 0, 0];
         const bbox = [
           0,
           0,
-          self.data.rect[2] - self.data.rect[0],
-          self.data.rect[3] - self.data.rect[1],
+          this.data.rect[2] - this.data.rect[0],
+          this.data.rect[3] - this.data.rect[1],
         ];
 
-        const transform = getTransformMatrix(self.data.rect, bbox, matrix);
+        const transform = getTransformMatrix(this.data.rect, bbox, matrix);
         operatorList.addOp(OPS.beginAnnotation, [
-          self.data.rect,
+          this.data.rect,
           transform,
           matrix,
         ]);
 
-        const stream = new Stream(stringToBytes(content));
+        const stream = new StringStream(content);
         return evaluator
           .getOperatorList({
             stream,
             task,
-            resources: self.fieldResources,
+            resources: this.fieldResources,
             operatorList,
           })
           .then(function () {
@@ -987,45 +983,48 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     );
   }
 
-  getAppearance(evaluator, task, annotationStorage) {
-    // TODO: handle password: we mustn't write it in clear
+  async getAppearance(evaluator, task, annotationStorage) {
     if (!annotationStorage) {
-      return Promise.resolve("");
+      return null;
     }
     const value = annotationStorage[this.data.id] || "";
     if (value === "") {
-      return Promise.resolve("");
+      return null;
     }
-    const x = 2;
-    const y = 2;
+
+    // Default horizontal padding: can we have an heuristic to guess it?
+    const hPadding = 2;
+    // Default vertical padding:
+    // it should be based on fontSize (e.g. 0.4 * fontSize)
+    const vPadding = 2;
     if (this.data.comb) {
       const width = this.data.rect[2] - this.data.rect[0];
       const combWidth = (width / this.data.maxLen).toFixed(2);
-      let buf = `/Tx BMC q BT ${this.data.defaultAppearance} 1 0 0 1 ${x} ${y} Tm`;
+      let buf = `/Tx BMC q BT ${this.data.defaultAppearance} 1 0 0 1 ${hPadding} ${vPadding} Tm`;
       let first = true;
-      for (const c of value) {
+      for (const character of value) {
         if (first) {
-          buf += ` (${c}) Tj`;
+          buf += ` (${character}) Tj`;
           first = false;
         } else {
-          buf += ` ${combWidth} 0 Td (${c}) Tj`;
+          buf += ` ${combWidth} 0 Td (${character}) Tj`;
         }
       }
       buf += " ET Q EMC";
-      return Promise.resolve(buf);
+      return buf;
     }
 
     const defaultAppearance = this.data.defaultAppearance;
-    const app = `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${x} ${y} Tm (${value}) Tj ET Q EMC`;
+    const appearance = `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${hPadding} ${vPadding} Tm (${value}) Tj ET Q EMC`;
     const alignment = this.data.textAlignment;
     if (alignment === 0 || alignment > 2) {
       // Left alignment: nothing to do
-      return Promise.resolve(app);
+      return appearance;
     }
 
     // We need to get the width of the text in order to align it correctly
     const operatorList = new OperatorList();
-    const stream = new Stream(stringToBytes(app));
+    const stream = new StringStream(appearance);
     const totalWidth = this.data.rect[2] - this.data.rect[0];
     return evaluator
       .getOperatorList({
@@ -1042,8 +1041,8 @@ class TextWidgetAnnotation extends WidgetAnnotation {
 
         const scale = fontSize / 1000;
         let width = 0;
-        for (const g of glyphs) {
-          width += g.width * scale;
+        for (const glyph of glyphs) {
+          width += glyph.width * scale;
         }
 
         let shift;
@@ -1052,10 +1051,10 @@ class TextWidgetAnnotation extends WidgetAnnotation {
           shift = (totalWidth - width) / 2;
         } else {
           // Right
-          shift = totalWidth - width - 2;
+          shift = totalWidth - width - hPadding;
         }
 
-        return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${shift} ${y} Tm (${value}) Tj ET Q EMC`;
+        return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${shift} ${vPadding} Tm (${value}) Tj ET Q EMC`;
       });
   }
 }
@@ -1088,14 +1087,14 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       if (value && this.checkedAppearance) {
         const savedAppearance = this.appearance;
         this.appearance = this.checkedAppearance;
-        const opL = super.getOperatorList(
+        const operatorList = super.getOperatorList(
           evaluator,
           task,
           renderForms,
           annotationStorage
         );
         this.appearance = savedAppearance;
-        return opL;
+        return operatorList;
       }
       return Promise.resolve(new OperatorList());
     }

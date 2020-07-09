@@ -160,7 +160,6 @@ class BaseViewer {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
-    this.annotationStorage = options.annotationStorage;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -1166,7 +1165,7 @@ class BaseViewer {
       renderInteractiveForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,
-      annotationStorage: this.annotationStorage,
+      annotationStorage: this.pdfDocument.annotationStorage,
       l10n,
     });
   }

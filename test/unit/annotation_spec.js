@@ -38,9 +38,7 @@ describe("annotation", function () {
     constructor(params) {
       this.docBaseUrl = params.docBaseUrl || null;
       this.pdfDocument = {
-        acroForm: () => {
-          return { get: x => undefined };
-        },
+        acroForm: new Dict(),
       };
     }
 

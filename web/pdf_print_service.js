@@ -22,13 +22,7 @@ let overlayManager = null;
 
 // Renders the page to the canvas of the given print service, and returns
 // the suggested dimensions of the output page.
-function renderPage(
-  activeServiceOnEntry,
-  pdfDocument,
-  pageNumber,
-  size,
-  annotationStorage
-) {
+function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
   const scratchCanvas = activeService.scratchCanvas;
 
   // The size of the canvas in pixels for printing.
@@ -55,7 +49,7 @@ function renderPage(
         transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
         viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
         intent: "print",
-        annotationStorage: annotationStorage.getDict(),
+        annotationStorage: pdfDocument.annotationStorage.getDict(),
       };
       return pdfPage.render(renderContext).promise;
     })
@@ -67,13 +61,7 @@ function renderPage(
     });
 }
 
-function PDFPrintService(
-  pdfDocument,
-  pagesOverview,
-  printContainer,
-  l10n,
-  annotationStorage
-) {
+function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
@@ -82,7 +70,6 @@ function PDFPrintService(
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
   this.scratchCanvas = document.createElement("canvas");
-  this.annotationStorage = annotationStorage;
 }
 
 PDFPrintService.prototype = {
@@ -167,13 +154,7 @@ PDFPrintService.prototype = {
       }
       const index = this.currentPage;
       renderProgress(index, pageCount, this.l10n);
-      renderPage(
-        this,
-        this.pdfDocument,
-        index + 1,
-        this.pagesOverview[index],
-        this.annotationStorage
-      )
+      renderPage(this, this.pdfDocument, index + 1, this.pagesOverview[index])
         .then(this.useRenderedPage.bind(this))
         .then(function () {
           renderNextPage(resolve, reject);
@@ -366,13 +347,7 @@ function ensureOverlay() {
 PDFPrintServiceFactory.instance = {
   supportsPrinting: true,
 
-  createPrintService(
-    pdfDocument,
-    pagesOverview,
-    printContainer,
-    l10n,
-    annotationStorage
-  ) {
+  createPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
     if (activeService) {
       throw new Error("The print service is created and active.");
     }
@@ -380,8 +355,7 @@ PDFPrintServiceFactory.instance = {
       pdfDocument,
       pagesOverview,
       printContainer,
-      l10n,
-      annotationStorage
+      l10n
     );
     return activeService;
   },

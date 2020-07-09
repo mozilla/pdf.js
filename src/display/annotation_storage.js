@@ -19,24 +19,12 @@ class AnnotationStorage {
   }
 
   /**
-   * Get the value for a given key
-   *
-   * @public
-   * @memberof AnnotationStorage
-   * @param {Object} key
-   * @returns {Object}
-   */
-  getValue(key) {
-    return this._storage[key];
-  }
-
-  /**
    * Get the value for a given key if it doesn't exist
    * or store and return the defaultValue
    *
    * @public
    * @memberof AnnotationStorage
-   * @param {Object} key
+   * @param {String} key
    * @param {Object} defaultValue
    * @returns {Object}
    */
@@ -54,7 +42,7 @@ class AnnotationStorage {
    *
    * @public
    * @memberof AnnotationStorage
-   * @param {Object} key
+   * @param {String} key
    * @param {Object} value
    */
   setValue(key, value) {

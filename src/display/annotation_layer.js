@@ -460,8 +460,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.setAttribute("value", textContent);
       }
 
-      element.addEventListener("change", function (e) {
-        storage.setValue(id, e.target.value);
+      element.addEventListener("change", function (event) {
+        storage.setValue(id, event.target.value);
       });
 
       element.disabled = this.data.readOnly;
@@ -567,8 +567,8 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       element.setAttribute("checked", value);
     }
 
-    element.addEventListener("change", function (e) {
-      storage.setValue(id, e.target.checked);
+    element.addEventListener("change", function (event) {
+      storage.setValue(id, event.target.checked);
     });
 
     this.container.appendChild(element);
