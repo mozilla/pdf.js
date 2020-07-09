@@ -751,10 +751,12 @@ class PartialEvaluator {
 
   handleSetFont(resources, fontArgs, fontRef, operatorList, task, state) {
     // TODO(mack): Not needed?
-    var fontName;
+    var fontName,
+      fontSize = 0;
     if (fontArgs) {
       fontArgs = fontArgs.slice();
       fontName = fontArgs[0].name;
+      fontSize = fontArgs[1];
     }
 
     return this.loadFont(fontName, fontRef, resources)
@@ -783,7 +785,7 @@ class PartialEvaluator {
       })
       .then(translated => {
         state.font = translated.font;
-        state.fontSize = fontArgs[1];
+        state.fontSize = fontSize;
         translated.send(this.handler);
         return translated.loadedName;
       });
@@ -3519,7 +3521,6 @@ class EvalState {
   constructor() {
     this.ctm = new Float32Array(IDENTITY_MATRIX);
     this.font = null;
-    this.fontSize = 0;
     this.textRenderingMode = TextRenderingMode.FILL;
     this.fillColorSpace = ColorSpace.singletons.gray;
     this.strokeColorSpace = ColorSpace.singletons.gray;

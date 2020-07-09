@@ -30,7 +30,6 @@ import {
 import { Catalog, FileSpec, ObjectLoader } from "./obj.js";
 import { Dict, isDict, isName, isRef, isStream } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
-import { EvalState } from "./evaluator.js";
 import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
@@ -1023,15 +1022,63 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return buf;
     }
 
+    if (this.data.multiLine) {
+      const renderedText = this.handleMultiline(
+        value,
+        font,
+        fontSize,
+        totalWidth,
+        alignment,
+        hPadding,
+        vPadding
+      );
+      const totalHeight = this.data.rect[3] - this.data.rect[1];
+      return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 0 ${totalHeight} Tm ${renderedText} ET Q EMC`;
+    }
+
     const alignment = this.data.textAlignment;
     if (alignment === 0 || alignment > 2) {
       // Left alignment: nothing to do
       return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${hPadding} ${vPadding} Tm (${value}) Tj ET Q EMC`;
     }
 
-    // We need to get the width of the text in order to align it correctly
-    const glyphs = font.charsToGlyphs(value);
+    const renderedText = this.renderPDFText(
+      value,
+      font,
+      fontSize,
+      totalWidth,
+      alignment,
+      hPadding,
+      vPadding
+    );
+    return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 0 0 Tm ${renderedText} ET Q EMC`;
+  }
 
+  async getFontData(evaluator, task) {
+    const operatorList = new OperatorList();
+    const initialState = {};
+    await evaluator.getOperatorList({
+      stream: new StringStream(this.data.defaultAppearance),
+      task,
+      resources: this.fieldResources,
+      operatorList,
+      initialState,
+    });
+
+    return [initialState.font, initialState.fontSize];
+  }
+
+  renderPDFText(
+    text,
+    font,
+    fontSize,
+    totalWidth,
+    alignment,
+    hPadding,
+    vPadding
+  ) {
+    // We need to get the width of the text in order to align it correctly
+    const glyphs = font.charsToGlyphs(text);
     const scale = fontSize / 1000;
     let width = 0;
     for (const glyph of glyphs) {
@@ -1042,26 +1089,101 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     if (alignment === 1) {
       // Center
       shift = (totalWidth - width) / 2;
-    } else {
+    } else if (alignment === 2) {
       // Right
       shift = totalWidth - width - hPadding;
+    } else {
+      shift = hPadding;
     }
+    shift = shift.toFixed(2);
+    vPadding = vPadding.toFixed(2);
 
-    return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 ${shift} ${vPadding} Tm (${value}) Tj ET Q EMC`;
+    return `${shift} ${vPadding} Td (${text}) Tj`;
   }
 
-  async getFontData(evaluator, task) {
-    const operatorList = new OperatorList();
-    const initialState = new EvalState();
-    await evaluator.getOperatorList({
-      stream: new StringStream(this.data.defaultAppearance),
-      task,
-      resources: this.fieldResources,
-      operatorList,
-      initialState,
-    });
+  handleMultiline(text, font, fontSize, width, alignment, hPadding, vPadding) {
+    const lines = text.replace("\r\n", "\n").split("\n");
+    let buf = "";
+    const totalWidth = alignment === 1 ? width : width - hPadding;
+    for (const line of lines) {
+      const chunks = this.splitLine(line, font, fontSize, totalWidth);
+      for (const chunk of chunks) {
+        if (buf === "") {
+          buf = this.renderPDFText(
+            chunk,
+            font,
+            fontSize,
+            width,
+            alignment,
+            hPadding,
+            -fontSize
+          );
+        } else {
+          buf +=
+            "\n" +
+            this.renderPDFText(
+              chunk,
+              font,
+              fontSize,
+              width,
+              alignment,
+              0,
+              -fontSize
+            );
+        }
+      }
+    }
 
-    return [initialState.font, initialState.fontSize];
+    return buf;
+  }
+
+  splitLine(line, font, fontSize, width) {
+    const scale = fontSize / 1000;
+    const white = font.charsToGlyphs(" ", true)[0].width * scale;
+    const chunks = [];
+
+    let lastSpacePos = -1,
+      startChunk = 0,
+      currentWidth = 0;
+
+    for (let i = 0; i < line.length; i++) {
+      const character = line.charAt(i);
+      if (character === " ") {
+        if (currentWidth + white > width) {
+          // We can break here
+          chunks.push(line.substring(startChunk, i));
+          startChunk = i;
+          currentWidth = white;
+          lastSpacePos = -1;
+        } else {
+          currentWidth += white;
+          lastSpacePos = i;
+        }
+      } else {
+        const charWidth = font.charsToGlyphs(character, false)[0].width * scale;
+        if (currentWidth + charWidth > width) {
+          // We must break to the last white position (if one)
+          if (lastSpacePos !== -1) {
+            chunks.push(line.substring(startChunk, lastSpacePos + 1));
+            startChunk = i = lastSpacePos + 1;
+            lastSpacePos = -1;
+            currentWidth = 0;
+          } else {
+            // Just break in the middle of the word
+            chunks.push(line.substring(startChunk, i));
+            currentWidth = charWidth;
+          }
+        } else {
+          currentWidth += charWidth;
+        }
+      }
+    }
+
+    if (startChunk < line.length) {
+      chunks.push(line.substring(startChunk, line.length));
+    }
+
+    return chunks;
   }
 }
 
