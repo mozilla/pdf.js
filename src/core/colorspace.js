@@ -17,7 +17,6 @@ import {
   assert,
   FormatError,
   info,
-  isString,
   shadow,
   unreachable,
   warn,
@@ -472,10 +471,7 @@ class ColorSpace {
         case "I":
           baseCS = this._parse(cs[1], xref, resources, pdfFunctionFactory);
           const hiVal = xref.fetchIfRef(cs[2]) + 1;
-          let lookup = xref.fetchIfRef(cs[3]);
-          if (isStream(lookup)) {
-            lookup = lookup.getBytes();
-          }
+          const lookup = xref.fetchIfRef(cs[3]);
           return new IndexedCS(baseCS, hiVal, lookup);
         case "Separation":
         case "DeviceN":
@@ -643,22 +639,18 @@ class IndexedCS extends ColorSpace {
     this.base = base;
     this.highVal = highVal;
 
-    const baseNumComps = base.numComps;
-    const length = baseNumComps * highVal;
+    const length = base.numComps * highVal;
+    this.lookup = new Uint8Array(length);
 
     if (isStream(lookup)) {
-      this.lookup = new Uint8Array(length);
       const bytes = lookup.getBytes(length);
       this.lookup.set(bytes);
-    } else if (isString(lookup)) {
-      this.lookup = new Uint8Array(length);
+    } else if (typeof lookup === "string") {
       for (let i = 0; i < length; ++i) {
-        this.lookup[i] = lookup.charCodeAt(i);
+        this.lookup[i] = lookup.charCodeAt(i) & 0xff;
       }
-    } else if (lookup instanceof Uint8Array) {
-      this.lookup = lookup;
     } else {
-      throw new FormatError(`Unrecognized lookup table: ${lookup}`);
+      throw new FormatError(`IndexedCS - unrecognized lookup table: ${lookup}`);
     }
   }
 
