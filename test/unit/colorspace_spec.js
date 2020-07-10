@@ -679,11 +679,13 @@ describe("colorspace", function () {
   describe("IndexedCS", function () {
     it("should handle the case when cs is an array", function () {
       // prettier-ignore
-      const lookup = new Uint8Array([
-        23, 155, 35,
-        147, 69, 93,
-        255, 109, 70
-      ]);
+      const lookup = new Stream(
+        new Uint8Array([
+          23, 155, 35,
+          147, 69, 93,
+          255, 109, 70
+        ])
+      );
       const cs = [Name.get("Indexed"), Name.get("DeviceRGB"), 2, lookup];
       const xref = new XRefMock([
         {
