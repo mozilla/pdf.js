@@ -30,6 +30,7 @@ import {
 } from "pdfjs-lib";
 import { RenderingStates } from "./pdf_rendering_queue.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
+import canvasSize from "canvas-size";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -618,6 +619,21 @@ class PDFPageView {
 
     const sfx = approximateFraction(outputScale.sx);
     const sfy = approximateFraction(outputScale.sy);
+
+    // modified by ngx-extended-pdf-viewer #387
+    const width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
+    const height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
+    if (width >= 4096 || height >= 4096) {
+      if ((!!this.maxWidth) || (!canvasSize.test({ width, height }))) {
+        const max = this.determineMaxDimensions();
+        const divisor = Math.max(width / max, height / max);
+        this.scale /= divisor;
+        PDFViewerApplication.pdfViewer.currentScaleValue = this.scale;
+        viewport.width /= divisor;
+        viewport.height /= divisor;
+      }
+    }
+    // end of modification
     canvas.width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
     canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
     canvas.style.width = roundToDivide(viewport.width, sfx[1]) + "px";
@@ -723,6 +739,29 @@ class PDFPageView {
       this.div.removeAttribute("data-page-label");
     }
   }
+
+  // modified (added) by ngx-extended-pdf-viewer #387
+  determineMaxDimensions() {
+    if (this.maxWidth) {
+      return this.maxWidth;
+    }
+    const checklist = [4096, // iOS
+      8192, // IE 9-10
+      10836, // Android
+      11180, // Firefox
+      11402, // Android,
+      14188,
+      16384
+    ];
+    for (let width of checklist) {
+      if (!canvasSize.test({width: width+1, height: width+1})) {
+        this.maxWidth = width;
+        return this.maxWidth;
+      }
+    }
+    return 16384;
+  }
+  // end of modification
 }
 
 export { PDFPageView };
