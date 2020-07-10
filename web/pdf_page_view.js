@@ -626,8 +626,14 @@ class PDFPageView {
     if (width >= 4096 || height >= 4096) {
       if ((!!this.maxWidth) || (!canvasSize.test({ width, height }))) {
         const max = this.determineMaxDimensions();
-        const divisor = Math.max(width / max, height / max);
-        this.scale /= divisor;
+        let divisor = Math.max(width / max, height / max);
+        const newScale = Math.floor(100 * this.scale / divisor) / 100; // round to integer percentages
+        divisor = this.scale / newScale;
+        this.scale = newScale;
+
+        const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
+        PDFViewerApplicationOptions.set('maxZoom', newScale);
+
         PDFViewerApplication.pdfViewer.currentScaleValue = this.scale;
         viewport.width /= divisor;
         viewport.height /= divisor;
