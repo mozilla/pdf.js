@@ -1003,7 +1003,13 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     // TODO: Handle the case where fontSize is null
     const [font, fontSize] = await this.getFontData(evaluator, task);
 
-    const vPadding = borderWidth + Math.ceil(Math.abs(font.descent) * fontSize);
+    let descent = font.descent;
+    if (isNaN(descent)) {
+      // Magic value
+      descent = 0.4;
+    }
+
+    const vPadding = borderWidth + Math.ceil(Math.abs(descent) * fontSize);
     const defaultAppearance = this.data.defaultAppearance;
     const totalWidth = this.data.rect[2] - this.data.rect[0];
 
