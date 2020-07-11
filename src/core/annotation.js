@@ -912,7 +912,8 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     // Determine the alignment of text in the field.
     let alignment = getInheritableProperty({ dict, key: "Q" });
     if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
-      alignment = null;
+      // By default text is left aligned
+      alignment = 0;
     }
     this.data.textAlignment = alignment;
 
