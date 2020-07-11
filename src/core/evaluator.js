@@ -1848,6 +1848,7 @@ class PartialEvaluator {
     // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
     var xobjs = null;
     const emptyXObjectCache = new LocalImageCache();
+    const emptyGStateCache = new LocalGStateCache();
 
     var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
@@ -2420,25 +2421,59 @@ class PartialEvaluator {
             );
             return;
           case OPS.setGState:
-            flushTextContentItem();
-            var dictName = args[0];
-            var extGState = resources.get("ExtGState");
+            name = args[0].name;
+            if (name && emptyGStateCache.getByName(name)) {
+              break;
+            }
 
-            if (!isDict(extGState) || !isName(dictName)) {
-              break;
-            }
-            var gState = extGState.get(dictName.name);
-            if (!isDict(gState)) {
-              break;
-            }
-            var gStateFont = gState.get("Font");
-            if (gStateFont) {
-              textState.fontName = null;
-              textState.fontSize = gStateFont[1];
-              next(handleSetFont(null, gStateFont[0]));
-              return;
-            }
-            break;
+            next(
+              new Promise(function (resolveGState, rejectGState) {
+                if (!name) {
+                  throw new FormatError("GState must be referred to by name.");
+                }
+
+                const extGState = resources.get("ExtGState");
+                if (!(extGState instanceof Dict)) {
+                  throw new FormatError("ExtGState should be a dictionary.");
+                }
+
+                const gState = extGState.get(name);
+                // TODO: Attempt to lookup cached GStates by reference as well,
+                //       if and only if there are PDF documents where doing so
+                //       would significantly improve performance.
+                if (!(gState instanceof Dict)) {
+                  throw new FormatError("GState should be a dictionary.");
+                }
+
+                const gStateFont = gState.get("Font");
+                if (!gStateFont) {
+                  emptyGStateCache.set(name, gState.objId, true);
+
+                  resolveGState();
+                  return;
+                }
+                flushTextContentItem();
+
+                textState.fontName = null;
+                textState.fontSize = gStateFont[1];
+                handleSetFont(null, gStateFont[0]).then(
+                  resolveGState,
+                  rejectGState
+                );
+              }).catch(function (reason) {
+                if (reason instanceof AbortException) {
+                  return;
+                }
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the ExtGState -- allow text-extraction to
+                  // continue.
+                  warn(`getTextContent - ignoring ExtGState: "${reason}".`);
+                  return;
+                }
+                throw reason;
+              })
+            );
+            return;
         } // switch
         if (textContent.items.length >= sink.desiredSize) {
           // Wait for ready, if we reach highWaterMark.
