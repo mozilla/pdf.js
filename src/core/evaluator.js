@@ -1331,11 +1331,6 @@ class PartialEvaluator {
                   xobj = xref.fetch(xobj);
                 }
 
-                if (!xobj) {
-                  operatorList.addOp(fn, args);
-                  resolveXObject();
-                  return;
-                }
                 if (!isStream(xobj)) {
                   throw new FormatError("XObject should be a stream");
                 }
@@ -2287,10 +2282,6 @@ class PartialEvaluator {
                   xobj = xref.fetch(xobj);
                 }
 
-                if (!xobj) {
-                  resolveXObject();
-                  return;
-                }
                 if (!isStream(xobj)) {
                   throw new FormatError("XObject should be a stream");
                 }

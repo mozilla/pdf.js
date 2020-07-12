@@ -2433,10 +2433,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.fillRect(0, 0, 1, 1);
     },
 
-    paintXObject: function CanvasGraphics_paintXObject() {
-      warn("Unsupported 'paintXObject' command.");
-    },
-
     // Marked content
 
     markPoint: function CanvasGraphics_markPoint(tag) {
