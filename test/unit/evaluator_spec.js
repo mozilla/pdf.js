@@ -106,16 +106,32 @@ describe("evaluator", function () {
     });
 
     it("should handle two glued operations", function (done) {
-      var resources = new ResourcesMock();
-      resources.Res1 = {};
+      const imgDict = new Dict();
+      imgDict.set("Subtype", Name.get("Image"));
+      imgDict.set("Width", 1);
+      imgDict.set("Height", 1);
+
+      const imgStream = new Stream([0]);
+      imgStream.dict = imgDict;
+
+      const xObject = new Dict();
+      xObject.set("Res1", imgStream);
+
+      const resources = new ResourcesMock();
+      resources.XObject = xObject;
+
       var stream = new StringStream("/Res1 DoQ");
       runOperatorListCheck(partialEvaluator, stream, resources, function (
         result
       ) {
-        expect(!!result.fnArray && !!result.argsArray).toEqual(true);
-        expect(result.fnArray.length).toEqual(2);
-        expect(result.fnArray[0]).toEqual(OPS.paintXObject);
-        expect(result.fnArray[1]).toEqual(OPS.restore);
+        expect(result.fnArray.length).toEqual(3);
+        expect(result.fnArray[0]).toEqual(OPS.dependency);
+        expect(result.fnArray[1]).toEqual(OPS.paintImageXObject);
+        expect(result.fnArray[2]).toEqual(OPS.restore);
+        expect(result.argsArray.length).toEqual(3);
+        expect(result.argsArray[0]).toEqual(["img_p0_1"]);
+        expect(result.argsArray[1]).toEqual(["img_p0_1", 1, 1]);
+        expect(result.argsArray[2]).toEqual(null);
         done();
       });
     });
