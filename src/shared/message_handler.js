@@ -85,7 +85,7 @@ class MessageHandler {
 
     this._onComObjOnMessage = event => {
       const data = event.data;
-      if (data.targetName !== this.sourceName) {
+      if (!data || data.targetName !== this.sourceName) {
         return;
       }
       if (data.stream) {
