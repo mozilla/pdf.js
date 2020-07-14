@@ -55,6 +55,7 @@ import { GlobalWorkerOptions } from "./worker_options.js";
 import { isNodeJS } from "../shared/is_node.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
+import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
 import { WebGLContext } from "./webgl.js";
 
@@ -789,6 +790,15 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @returns {Promise<OptionalContentConfig | null>} A promise that is resolved
+   * with an {@link OptionalContentConfig} that will have all the optional
+   * content groups (if the document has any).
+   */
+  getOptionalContentConfig() {
+    return this._transport.getOptionalContentConfig();
+  }
+
+  /**
    * @returns {Promise<Array<string | null>>} A promise that is resolved with
    *   an {Array} that contains the permission flags for the PDF document, or
    *   `null` when no permissions are present in the PDF file.
@@ -965,6 +975,11 @@ class PDFDocumentProxy {
  *                    image). The default value is 'rgb(255,255,255)'.
  * @property {Object} [annotationStorage] - Storage for annotation data in
  *                    forms.
+ * @property {Promise} [optionalContentConfigPromise] - A promise that should
+ *                     resolve with an {OptionalContentConfig} created from
+ *                     PDFDocumentProxy.getOptionalContentConfig. If null, the
+ *                     config will be automatically fetched with the default
+ *                     visibility states set.
  */
 
 /**
@@ -1088,6 +1103,7 @@ class PDFPageProxy {
     canvasFactory = null,
     background = null,
     annotationStorage = null,
+    optionalContentConfigPromise = null,
   }) {
     if (this._stats) {
       this._stats.time("Overall");
@@ -1097,6 +1113,10 @@ class PDFPageProxy {
     // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
     this.pendingCleanup = false;
+
+    if (!optionalContentConfigPromise) {
+      optionalContentConfigPromise = this._transport.getOptionalContentConfig();
+    }
 
     let intentState = this._intentStates.get(renderingIntent);
     if (!intentState) {
@@ -1191,8 +1211,11 @@ class PDFPageProxy {
     intentState.renderTasks.push(internalRenderTask);
     const renderTask = internalRenderTask.task;
 
-    intentState.displayReadyCapability.promise
-      .then(transparency => {
+    Promise.all([
+      intentState.displayReadyCapability.promise,
+      optionalContentConfigPromise,
+    ])
+      .then(([transparency, optionalContentConfig]) => {
         if (this.pendingCleanup) {
           complete();
           return;
@@ -1200,7 +1223,10 @@ class PDFPageProxy {
         if (this._stats) {
           this._stats.time("Rendering");
         }
-        internalRenderTask.initializeGraphics(transparency);
+        internalRenderTask.initializeGraphics({
+          transparency,
+          optionalContentConfig,
+        });
         internalRenderTask.operatorListChanged();
       })
       .catch(complete);
@@ -2546,6 +2572,14 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetOutline", null);
   }
 
+  getOptionalContentConfig() {
+    return this.messageHandler
+      .sendWithPromise("GetOptionalContentConfig", null)
+      .then(results => {
+        return new OptionalContentConfig(results);
+      });
+  }
+
   getPermissions() {
     return this.messageHandler.sendWithPromise("GetPermissions", null);
   }
@@ -2759,7 +2793,7 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       });
     }
 
-    initializeGraphics(transparency = false) {
+    initializeGraphics({ transparency = false, optionalContentConfig }) {
       if (this.cancelled) {
         return;
       }
@@ -2797,7 +2831,8 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
         this.objs,
         this.canvasFactory,
         this.webGLContext,
-        imageLayer
+        imageLayer,
+        optionalContentConfig
       );
       this.gfx.beginDrawing({
         transform,
