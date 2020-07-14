@@ -264,20 +264,11 @@ class PartialEvaluator {
               if (ex instanceof MissingDataException) {
                 throw ex;
               }
-              if (this.options.ignoreErrors) {
-                if (graphicState instanceof Ref) {
-                  // Avoid parsing a corrupt ExtGState more than once.
-                  processed[graphicState.toString()] = true;
-                }
-                // Error(s) in the ExtGState -- sending unsupported feature
-                // notification and allow parsing/rendering to continue.
-                this.handler.send("UnsupportedFeature", {
-                  featureId: UNSUPPORTED_FEATURES.errorExtGState,
-                });
-                warn(`hasBlendModes - ignoring ExtGState: "${ex}".`);
-                continue;
-              }
-              throw ex;
+              // Avoid parsing a corrupt ExtGState more than once.
+              processed[graphicState.toString()] = true;
+
+              info(`hasBlendModes - ignoring ExtGState: "${ex}".`);
+              continue;
             }
           }
           if (!(graphicState instanceof Dict)) {
@@ -326,20 +317,11 @@ class PartialEvaluator {
             if (ex instanceof MissingDataException) {
               throw ex;
             }
-            if (this.options.ignoreErrors) {
-              if (xObject instanceof Ref) {
-                // Avoid parsing a corrupt XObject more than once.
-                processed[xObject.toString()] = true;
-              }
-              // Error(s) in the XObject -- sending unsupported feature
-              // notification and allow parsing/rendering to continue.
-              this.handler.send("UnsupportedFeature", {
-                featureId: UNSUPPORTED_FEATURES.errorXObject,
-              });
-              warn(`hasBlendModes - ignoring XObject: "${ex}".`);
-              continue;
-            }
-            throw ex;
+            // Avoid parsing a corrupt XObject more than once.
+            processed[xObject.toString()] = true;
+
+            info(`hasBlendModes - ignoring XObject: "${ex}".`);
+            continue;
           }
         }
         if (!isStream(xObject)) {
