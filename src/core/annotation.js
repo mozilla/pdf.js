@@ -923,6 +923,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       maximumLength = null;
     }
     this.data.maxLen = maximumLength;
+    this.isPassword = this.hasFieldFlag(AnnotationFieldFlag.PASSWORD);
 
     // Process field flags for the display layer.
     this.data.multiLine = this.hasFieldFlag(AnnotationFieldFlag.MULTILINE);
@@ -986,7 +987,9 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   }
 
   async getAppearance(evaluator, task, annotationStorage) {
-    if (!annotationStorage) {
+    // If it's a password textfield then no rendering to avoid to leak it.
+    // see 12.7.4.3, table 228
+    if (!annotationStorage || this.data.isPassword) {
       return null;
     }
     const value = annotationStorage[this.data.id] || "";
