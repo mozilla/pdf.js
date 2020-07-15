@@ -786,6 +786,7 @@ class PartialEvaluator {
       .then(translated => {
         state.font = translated.font;
         state.fontSize = fontSize;
+        state.fontName = fontName;
         translated.send(this.handler);
         return translated.loadedName;
       });
@@ -3522,6 +3523,7 @@ class EvalState {
     this.ctm = new Float32Array(IDENTITY_MATRIX);
     this.font = null;
     this.fontSize = 0;
+    this.fontName = null;
     this.textRenderingMode = TextRenderingMode.FILL;
     this.fillColorSpace = ColorSpace.singletons.gray;
     this.strokeColorSpace = ColorSpace.singletons.gray;

@@ -996,13 +996,38 @@ class TextWidgetAnnotation extends WidgetAnnotation {
 
     const borderWidth = this.data.borderStyle.width;
 
-    // Default horizontal padding: can we have an heuristic to guess it?
-    const hPadding = borderWidth + 2;
+    // Magic value
+    const defaultPadding = 2;
 
-    // TODO: Handle the case where the font is not defined:
-    // fallback on helv maybe?
-    // TODO: Handle the case where fontSize is null
-    const [font, fontSize] = await this.getFontData(evaluator, task);
+    // Default horizontal padding: can we have an heuristic to guess it?
+    const hPadding = borderWidth + defaultPadding;
+    const totalHeight = this.data.rect[3] - this.data.rect[1];
+    const totalWidth = this.data.rect[2] - this.data.rect[0];
+
+    const fontInfo = await this.getFontData(evaluator, task);
+    const [font, fontName] = fontInfo;
+    let [, , fontSize] = fontInfo;
+
+    if (fontSize === null || fontSize === 0) {
+      // fontSize should be computed as a function of totalHeight
+      const spaceAround = 2 * (borderWidth + defaultPadding);
+      if (spaceAround >= totalHeight) {
+        fontSize = Math.floor(0.8 * totalHeight);
+      } else {
+        fontSize = totalHeight - spaceAround;
+      }
+      fontSize = fontSize.toFixed(2);
+
+      let re = new RegExp(`/${fontName}\\s+[0-9\.]+\\s+Tf`);
+      if (this.data.defaultAppearance.search(re) === -1) {
+        // The font size is missing
+        re = new RegExp(`/${fontName}\\s+Tf`);
+      }
+      this.data.defaultAppearance = this.data.defaultAppearance.replace(
+        re,
+        `/${fontName} ${fontSize} Tf`
+      );
+    }
 
     let descent = font.descent;
     if (isNaN(descent)) {
@@ -1010,9 +1035,9 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       descent = 0.4;
     }
 
-    const vPadding = borderWidth + Math.ceil(Math.abs(descent) * fontSize);
+    const vPadding =
+      borderWidth + defaultPadding + Math.abs(descent) * fontSize;
     const defaultAppearance = this.data.defaultAppearance;
-    const totalWidth = this.data.rect[2] - this.data.rect[0];
 
     if (this.data.comb) {
       const combWidth = (totalWidth / this.data.maxLen).toFixed(2);
@@ -1040,7 +1065,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
         hPadding,
         vPadding
       );
-      const totalHeight = this.data.rect[3] - this.data.rect[1];
       return `/Tx BMC q BT ${defaultAppearance} 1 0 0 1 0 ${totalHeight} Tm ${renderedText} ET Q EMC`;
     }
 
@@ -1073,7 +1097,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       initialState,
     });
 
-    return [initialState.font, initialState.fontSize];
+    return [initialState.font, initialState.fontName, initialState.fontSize];
   }
 
   renderPDFText(
