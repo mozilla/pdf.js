@@ -44,6 +44,7 @@ import {
   isStream,
   Name,
   Ref,
+  RefSet,
 } from "./primitives.js";
 import {
   ErrorFont,
@@ -237,9 +238,9 @@ class PartialEvaluator {
       return false;
     }
 
-    var processed = Object.create(null);
+    const processed = new RefSet();
     if (resources.objId) {
-      processed[resources.objId] = true;
+      processed.put(resources.objId);
     }
 
     var nodes = [resources],
@@ -252,7 +253,7 @@ class PartialEvaluator {
         for (const key of graphicStates.getKeys()) {
           let graphicState = graphicStates.getRaw(key);
           if (graphicState instanceof Ref) {
-            if (processed[graphicState.toString()]) {
+            if (processed.has(graphicState)) {
               continue; // The ExtGState has already been processed.
             }
             try {
@@ -262,7 +263,7 @@ class PartialEvaluator {
                 throw ex;
               }
               // Avoid parsing a corrupt ExtGState more than once.
-              processed[graphicState.toString()] = true;
+              processed.put(graphicState);
 
               info(`hasBlendModes - ignoring ExtGState: "${ex}".`);
               continue;
@@ -272,7 +273,7 @@ class PartialEvaluator {
             continue;
           }
           if (graphicState.objId) {
-            processed[graphicState.objId] = true;
+            processed.put(graphicState.objId);
           }
 
           const bm = graphicState.get("BM");
@@ -299,7 +300,7 @@ class PartialEvaluator {
       for (const key of xObjects.getKeys()) {
         var xObject = xObjects.getRaw(key);
         if (xObject instanceof Ref) {
-          if (processed[xObject.toString()]) {
+          if (processed.has(xObject)) {
             // The XObject has already been processed, and by avoiding a
             // redundant `xref.fetch` we can *significantly* reduce the load
             // time for badly generated PDF files (fixes issue6961.pdf).
@@ -312,7 +313,7 @@ class PartialEvaluator {
               throw ex;
             }
             // Avoid parsing a corrupt XObject more than once.
-            processed[xObject.toString()] = true;
+            processed.put(xObject);
 
             info(`hasBlendModes - ignoring XObject: "${ex}".`);
             continue;
@@ -322,20 +323,20 @@ class PartialEvaluator {
           continue;
         }
         if (xObject.dict.objId) {
-          processed[xObject.dict.objId] = true;
+          processed.put(xObject.dict.objId);
         }
         var xResources = xObject.dict.get("Resources");
         if (!(xResources instanceof Dict)) {
           continue;
         }
         // Checking objId to detect an infinite loop.
-        if (xResources.objId && processed[xResources.objId]) {
+        if (xResources.objId && processed.has(xResources.objId)) {
           continue;
         }
 
         nodes.push(xResources);
         if (xResources.objId) {
-          processed[xResources.objId] = true;
+          processed.put(xResources.objId);
         }
       }
     }
