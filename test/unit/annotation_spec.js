@@ -1391,7 +1391,7 @@ describe("annotation", function () {
         idFactoryMock
       ).then(({ data }) => {
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-        expect(data.textAlignment).toEqual(null);
+        expect(data.textAlignment).toEqual(0);
         expect(data.maxLen).toEqual(null);
         expect(data.readOnly).toEqual(false);
         expect(data.multiLine).toEqual(false);
@@ -1415,7 +1415,7 @@ describe("annotation", function () {
         idFactoryMock
       ).then(({ data }) => {
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-        expect(data.textAlignment).toEqual(null);
+        expect(data.textAlignment).toEqual(0);
         expect(data.maxLen).toEqual(null);
         expect(data.readOnly).toEqual(false);
         expect(data.multiLine).toEqual(false);
