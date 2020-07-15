@@ -832,7 +832,7 @@ class PartialEvaluator {
     throw reason;
   }
 
-  setGState({
+  async setGState({
     resources,
     gState,
     operatorList,
