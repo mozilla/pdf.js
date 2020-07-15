@@ -801,7 +801,10 @@ class WidgetAnnotation extends Annotation {
       getArray: true,
     });
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
-    data.defaultAppearance = getInheritableProperty({ dict, key: "DA" }) || "";
+    data.defaultAppearance =
+      getInheritableProperty({ dict, key: "DA" }) ||
+      params.acroForm.get("DA") ||
+      "";
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
     this.fieldResources =
@@ -900,41 +903,7 @@ class WidgetAnnotation extends Annotation {
   }
 }
 
-class TextWidgetAnnotation extends WidgetAnnotation {
-  constructor(params) {
-    super(params);
-
-    const dict = params.dict;
-
-    // The field value is always a string.
-    this.data.fieldValue = stringToPDFString(this.data.fieldValue || "");
-
-    // Determine the alignment of text in the field.
-    let alignment = getInheritableProperty({ dict, key: "Q" });
-    if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
-      // By default text is left aligned
-      alignment = 0;
-    }
-    this.data.textAlignment = alignment;
-
-    // Determine the maximum length of text in the field.
-    let maximumLength = getInheritableProperty({ dict, key: "MaxLen" });
-    if (!Number.isInteger(maximumLength) || maximumLength < 0) {
-      maximumLength = null;
-    }
-    this.data.maxLen = maximumLength;
-    this.isPassword = this.hasFieldFlag(AnnotationFieldFlag.PASSWORD);
-
-    // Process field flags for the display layer.
-    this.data.multiLine = this.hasFieldFlag(AnnotationFieldFlag.MULTILINE);
-    this.data.comb =
-      this.hasFieldFlag(AnnotationFieldFlag.COMB) &&
-      !this.hasFieldFlag(AnnotationFieldFlag.MULTILINE) &&
-      !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
-      !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
-      this.data.maxLen !== null;
-  }
-
+class WidgetWithTextAnnotation extends WidgetAnnotation {
   getOperatorList(evaluator, task, renderForms, annotationStorage) {
     return this.getAppearance(evaluator, task, annotationStorage).then(
       content => {
@@ -997,13 +966,11 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
 
-    const borderWidth = this.data.borderStyle.width;
-
     // Magic value
     const defaultPadding = 2;
 
     // Default horizontal padding: can we have an heuristic to guess it?
-    const hPadding = borderWidth + defaultPadding;
+    const hPadding = defaultPadding;
     const totalHeight = this.data.rect[3] - this.data.rect[1];
     const totalWidth = this.data.rect[2] - this.data.rect[0];
 
@@ -1011,35 +978,19 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     const [font, fontName] = fontInfo;
     let [, , fontSize] = fontInfo;
 
-    if (fontSize === null || fontSize === 0) {
-      // fontSize should be computed as a function of totalHeight
-      const spaceAround = 2 * (borderWidth + defaultPadding);
-      if (spaceAround >= totalHeight) {
-        fontSize = Math.floor(0.8 * totalHeight);
-      } else {
-        fontSize = totalHeight - spaceAround;
-      }
-      fontSize = fontSize.toFixed(2);
-
-      let re = new RegExp(`/${fontName}\\s+[0-9\.]+\\s+Tf`);
-      if (this.data.defaultAppearance.search(re) === -1) {
-        // The font size is missing
-        re = new RegExp(`/${fontName}\\s+Tf`);
-      }
-      this.data.defaultAppearance = this.data.defaultAppearance.replace(
-        re,
-        `/${fontName} ${fontSize} Tf`
-      );
-    }
+    fontSize = this.computeAutoSizedFont(
+      fontName,
+      fontSize,
+      totalHeight,
+      2 * defaultPadding
+    );
 
     let descent = font.descent;
     if (isNaN(descent)) {
-      // Magic value
-      descent = 0.4;
+      descent = 0;
     }
 
-    const vPadding =
-      borderWidth + defaultPadding + Math.abs(descent) * fontSize;
+    const vPadding = defaultPadding + Math.abs(descent) * fontSize;
     const defaultAppearance = this.data.defaultAppearance;
 
     if (this.data.comb) {
@@ -1101,6 +1052,29 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     });
 
     return [initialState.font, initialState.fontName, initialState.fontSize];
+  }
+
+  computeAutoSizedFont(fontName, fontSize, height, spaceAround) {
+    if (fontSize === null || fontSize === 0) {
+      // fontSize should be computed as a function of totalHeight
+      if (spaceAround >= height) {
+        fontSize = Math.floor(0.8 * height);
+      } else {
+        fontSize = 0.8 * (height - spaceAround);
+      }
+      fontSize = fontSize.toFixed(2);
+
+      let re = new RegExp(`/${fontName}\\s+[0-9\.]+\\s+Tf`);
+      if (this.data.defaultAppearance.search(re) === -1) {
+        // The font size is missing
+        re = new RegExp(`/${fontName}\\s+Tf`);
+      }
+      this.data.defaultAppearance = this.data.defaultAppearance.replace(
+        re,
+        `/${fontName} ${fontSize} Tf`
+      );
+    }
+    return fontSize;
   }
 
   renderPDFText(
@@ -1219,6 +1193,42 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     return chunks;
+  }
+}
+
+class TextWidgetAnnotation extends WidgetWithTextAnnotation {
+  constructor(params) {
+    super(params);
+
+    const dict = params.dict;
+
+    // The field value is always a string.
+    this.data.fieldValue = stringToPDFString(this.data.fieldValue || "");
+
+    // Determine the alignment of text in the field.
+    let alignment = getInheritableProperty({ dict, key: "Q" });
+    if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
+      // By default text is left aligned
+      alignment = 0;
+    }
+    this.data.textAlignment = alignment;
+
+    // Determine the maximum length of text in the field.
+    let maximumLength = getInheritableProperty({ dict, key: "MaxLen" });
+    if (!Number.isInteger(maximumLength) || maximumLength < 0) {
+      maximumLength = null;
+    }
+    this.data.maxLen = maximumLength;
+    this.isPassword = this.hasFieldFlag(AnnotationFieldFlag.PASSWORD);
+
+    // Process field flags for the display layer.
+    this.data.multiLine = this.hasFieldFlag(AnnotationFieldFlag.MULTILINE);
+    this.data.comb =
+      this.hasFieldFlag(AnnotationFieldFlag.COMB) &&
+      !this.hasFieldFlag(AnnotationFieldFlag.MULTILINE) &&
+      !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
+      !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
+      this.data.maxLen !== null;
   }
 }
 
@@ -1346,7 +1356,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 }
 
-class ChoiceWidgetAnnotation extends WidgetAnnotation {
+class ChoiceWidgetAnnotation extends WidgetWithTextAnnotation {
   constructor(params) {
     super(params);
 

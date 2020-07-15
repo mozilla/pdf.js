@@ -660,6 +660,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
     selectElement.name = this.data.fieldName;
+    const storage = this.annotationStorage;
+    const id = this.data.id;
 
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
@@ -679,6 +681,13 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       }
       selectElement.appendChild(optionElement);
     }
+
+    selectElement.addEventListener("change", function (event) {
+      const options = event.target.options;
+      const value = options[options.selectedIndex].text;
+
+      storage.setValue(id, value);
+    });
 
     this.container.appendChild(selectElement);
     return this.container;
