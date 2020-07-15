@@ -249,10 +249,7 @@ class PartialEvaluator {
       // First check the current resources for blend modes.
       var graphicStates = node.get("ExtGState");
       if (graphicStates instanceof Dict) {
-        var graphicStatesKeys = graphicStates.getKeys();
-        for (let i = 0, ii = graphicStatesKeys.length; i < ii; i++) {
-          const key = graphicStatesKeys[i];
-
+        for (const key of graphicStates.getKeys()) {
           let graphicState = graphicStates.getRaw(key);
           if (graphicState instanceof Ref) {
             if (processed[graphicState.toString()]) {
@@ -286,8 +283,8 @@ class PartialEvaluator {
             continue;
           }
           if (bm !== undefined && Array.isArray(bm)) {
-            for (let j = 0, jj = bm.length; j < jj; j++) {
-              if (bm[j] instanceof Name && bm[j].name !== "Normal") {
+            for (const element of bm) {
+              if (element instanceof Name && element.name !== "Normal") {
                 return true;
               }
             }
@@ -299,10 +296,7 @@ class PartialEvaluator {
       if (!(xObjects instanceof Dict)) {
         continue;
       }
-      var xObjectsKeys = xObjects.getKeys();
-      for (let i = 0, ii = xObjectsKeys.length; i < ii; i++) {
-        const key = xObjectsKeys[i];
-
+      for (const key of xObjects.getKeys()) {
         var xObject = xObjects.getRaw(key);
         if (xObject instanceof Ref) {
           if (processed[xObject.toString()]) {
@@ -331,15 +325,17 @@ class PartialEvaluator {
           processed[xObject.dict.objId] = true;
         }
         var xResources = xObject.dict.get("Resources");
+        if (!(xResources instanceof Dict)) {
+          continue;
+        }
         // Checking objId to detect an infinite loop.
-        if (
-          xResources instanceof Dict &&
-          (!xResources.objId || !processed[xResources.objId])
-        ) {
-          nodes.push(xResources);
-          if (xResources.objId) {
-            processed[xResources.objId] = true;
-          }
+        if (xResources.objId && processed[xResources.objId]) {
+          continue;
+        }
+
+        nodes.push(xResources);
+        if (xResources.objId) {
+          processed[xResources.objId] = true;
         }
       }
     }
