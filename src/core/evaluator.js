@@ -328,9 +328,6 @@ class PartialEvaluator {
           continue;
         }
         if (xObject.dict.objId) {
-          if (processed[xObject.dict.objId]) {
-            continue; // Stream has objId and was processed already.
-          }
           processed[xObject.dict.objId] = true;
         }
         var xResources = xObject.dict.get("Resources");
