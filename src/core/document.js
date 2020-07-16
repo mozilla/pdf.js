@@ -551,7 +551,7 @@ class PDFDocument {
     // Check if a Collection dictionary is present in the document.
     try {
       const collection = this.catalog.catDict.get("Collection");
-      if (isDict(collection) && collection.getKeys().length > 0) {
+      if (isDict(collection) && collection.size > 0) {
         this.collection = collection;
       }
     } catch (ex) {

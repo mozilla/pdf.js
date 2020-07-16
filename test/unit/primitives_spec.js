@@ -117,6 +117,17 @@ describe("primitives", function () {
       expect(dict.xref).toEqual(xref);
     });
 
+    it("should return correct size", function () {
+      const dict = new Dict(null);
+      expect(dict.size).toEqual(0);
+
+      dict.set("Type", Name.get("Page"));
+      expect(dict.size).toEqual(1);
+
+      dict.set("Contents", Ref.get(10, 0));
+      expect(dict.size).toEqual(2);
+    });
+
     it("should return invalid values for unknown keys", function () {
       checkInvalidHasValues(emptyDict);
       checkInvalidKeyValues(emptyDict);
