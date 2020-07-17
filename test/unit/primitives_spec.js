@@ -275,6 +275,35 @@ describe("primitives", function () {
       expect(keys.sort()).toEqual(expectedKeys);
     });
 
+    it("should get all raw values", function () {
+      // Test direct objects:
+      const expectedRawValues1 = [testFontFile, testFontFile2, testFontFile3];
+      const rawValues1 = dictWithManyKeys.getRawValues();
+
+      expect(rawValues1.sort()).toEqual(expectedRawValues1);
+
+      // Test indirect objects:
+      const typeName = Name.get("Page");
+      const resources = new Dict(null),
+        resourcesRef = Ref.get(5, 0);
+      const contents = new StringStream("data"),
+        contentsRef = Ref.get(10, 0);
+      const xref = new XRefMock([
+        { ref: resourcesRef, data: resources },
+        { ref: contentsRef, data: contents },
+      ]);
+
+      const dict = new Dict(xref);
+      dict.set("Type", typeName);
+      dict.set("Resources", resourcesRef);
+      dict.set("Contents", contentsRef);
+
+      const expectedRawValues2 = [contentsRef, resourcesRef, typeName];
+      const rawValues2 = dict.getRawValues();
+
+      expect(rawValues2.sort()).toEqual(expectedRawValues2);
+    });
+
     it("should create only one object for Dict.empty", function () {
       const firstDictEmpty = Dict.empty;
       const secondDictEmpty = Dict.empty;
