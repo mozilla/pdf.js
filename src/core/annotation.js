@@ -1109,61 +1109,6 @@ class TextAnnotation extends MarkupAnnotation {
   }
 }
 
-class FreeTextAnnotation extends Annotation {
-  constructor(parameters) {
-    super(parameters);
-
-    this.data.annotationType = AnnotationType.FREETEXT;
-    const dict = parameters.dict;
-    this.pdfManager = parameters.pdfManager;
-
-    this.data.textColor = createRgbColor(dict.getArray("TextColor"));
-    this.data.textStyle = dict.get("DS");
-    this.data.fontSize = dict.get("FontSize");
-    this.data.opacity = dict.get("CA");
-    this.data.defaultAppearance = dict.get("DA");
-  }
-
-  getOperatorList(evaluator, task, renderForms) {
-    if (renderForms || this.appearance) {
-      return super.getOperatorList(evaluator, task, renderForms);
-    }
-
-    const data = this.data;
-
-    const opList = new OperatorList();
-    const appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
-    const resourcesFonts = this.pdfManager.pdfDocument.catalog.fontCache.dict;
-
-    return evaluator
-      .getOperatorList({
-        stream: appearanceStream,
-        task,
-        resources: resourcesFonts,
-        operatorList: opList,
-      })
-      .then(() => {
-        const a = opList.argsArray;
-        let i;
-        for (i = 0; i < opList.fnArray.length; i++) {
-          const fn = opList.fnArray[i];
-          switch (fn | 0) {
-            case OPS.setFont:
-              data.fontRefName = a[i][0];
-              data.fontSize = a[i][1];
-              break;
-            case OPS.setFillGray:
-            case OPS.setFillRGBColor:
-              data.textColor = a[i];
-              break;
-          }
-        }
-
-        return opList;
-      });
-  }
-}
-
 class LinkAnnotation extends Annotation {
   constructor(params) {
     super(params);
@@ -1234,6 +1179,61 @@ class PopupAnnotation extends Annotation {
 
     this.data.title = stringToPDFString(parentItem.get("T") || "");
     this.data.contents = stringToPDFString(parentItem.get("Contents") || "");
+  }
+}
+
+class FreeTextAnnotation extends MarkupAnnotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.FREETEXT;
+    const dict = parameters.dict;
+    this.pdfManager = parameters.pdfManager;
+
+    this.data.textColor = createRgbColor(dict.getArray("TextColor"));
+    this.data.textStyle = dict.get("DS");
+    this.data.fontSize = dict.get("FontSize");
+    this.data.opacity = dict.get("CA");
+    this.data.defaultAppearance = dict.get("DA");
+  }
+
+  getOperatorList(evaluator, task, renderForms) {
+    if (renderForms || this.appearance) {
+      return super.getOperatorList(evaluator, task, renderForms);
+    }
+
+    const data = this.data;
+
+    const opList = new OperatorList();
+    const appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
+    const resourcesFonts = this.pdfManager.pdfDocument.catalog.fontCache.dict;
+
+    return evaluator
+      .getOperatorList({
+        stream: appearanceStream,
+        task,
+        resources: resourcesFonts,
+        operatorList: opList,
+      })
+      .then(() => {
+        const a = opList.argsArray;
+        let i;
+        for (i = 0; i < opList.fnArray.length; i++) {
+          const fn = opList.fnArray[i];
+          switch (fn | 0) {
+            case OPS.setFont:
+              data.fontRefName = a[i][0];
+              data.fontSize = a[i][1];
+              break;
+            case OPS.setFillGray:
+            case OPS.setFillRGBColor:
+              data.textColor = a[i];
+              break;
+          }
+        }
+
+        return opList;
+      });
   }
 }
 
