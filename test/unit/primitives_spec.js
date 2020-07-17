@@ -27,6 +27,7 @@ import {
   Name,
   Ref,
   RefSet,
+  RefSetCache,
 } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 import { XRefMock } from "./test_utils.js";
@@ -333,6 +334,64 @@ describe("primitives", function () {
       refset.put(ref);
       const anotherRef = Ref.get(2, 4);
       expect(refset.has(anotherRef)).toBeFalsy();
+    });
+  });
+
+  describe("RefSetCache", function () {
+    const ref1 = Ref.get(4, 2);
+    const ref2 = Ref.get(5, 2);
+    const obj1 = Name.get("foo");
+    const obj2 = Name.get("bar");
+    let cache;
+
+    beforeEach(function (done) {
+      cache = new RefSetCache();
+      done();
+    });
+
+    afterEach(function () {
+      cache = null;
+    });
+
+    it("should put, have and get a value", function () {
+      cache.put(ref1, obj1);
+      expect(cache.has(ref1)).toBeTruthy();
+      expect(cache.has(ref2)).toBeFalsy();
+      expect(cache.get(ref1)).toBe(obj1);
+    });
+
+    it("should put, have and get a value by alias", function () {
+      cache.put(ref1, obj1);
+      cache.putAlias(ref2, ref1);
+      expect(cache.has(ref1)).toBeTruthy();
+      expect(cache.has(ref2)).toBeTruthy();
+      expect(cache.get(ref1)).toBe(obj1);
+      expect(cache.get(ref2)).toBe(obj1);
+    });
+
+    it("should report the size of the cache", function () {
+      cache.put(ref1, obj1);
+      expect(cache.size).toEqual(1);
+      cache.put(ref2, obj2);
+      expect(cache.size).toEqual(2);
+    });
+
+    it("should clear the cache", function () {
+      cache.put(ref1, obj1);
+      expect(cache.size).toEqual(1);
+      cache.clear();
+      expect(cache.size).toEqual(0);
+    });
+
+    it("should support iteration", function () {
+      cache.put(ref1, obj1);
+      cache.put(ref2, obj2);
+
+      const values = [];
+      cache.forEach(function (value) {
+        values.push(value);
+      });
+      expect(values).toEqual([obj1, obj2]);
     });
   });
 
