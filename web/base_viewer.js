@@ -67,8 +67,7 @@ const DEFAULT_CACHE_SIZE = 10;
  * @property {boolean} [renderInteractiveForms] - Enables rendering of
  *   interactive form elements. The default is `false`.
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
- *   pages whose orientation differ from the first page upon printing. The
- *   default is `false`.
+ *   landscape pages upon printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
  * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering for
  *   some operations. The default value is `false`.
@@ -1203,9 +1202,8 @@ class BaseViewer {
     if (!this.enablePrintAutoRotate) {
       return pagesOverview;
     }
-    const isFirstPagePortrait = isPortraitOrientation(pagesOverview[0]);
     return pagesOverview.map(function (size) {
-      if (isFirstPagePortrait === isPortraitOrientation(size)) {
+      if (isPortraitOrientation(size)) {
         return size;
       }
       return {
