@@ -2207,16 +2207,13 @@ const ObjectLoader = (function () {
   function addChildren(node, nodesToVisit) {
     if (node instanceof Dict || isStream(node)) {
       const dict = node instanceof Dict ? node : node.dict;
-      const dictKeys = dict.getKeys();
-      for (let i = 0, ii = dictKeys.length; i < ii; i++) {
-        const rawValue = dict.getRaw(dictKeys[i]);
+      for (const rawValue of dict.getRawValues()) {
         if (mayHaveChildren(rawValue)) {
           nodesToVisit.push(rawValue);
         }
       }
     } else if (Array.isArray(node)) {
-      for (let i = 0, ii = node.length; i < ii; i++) {
-        const value = node[i];
+      for (const value of node) {
         if (mayHaveChildren(value)) {
           nodesToVisit.push(value);
         }

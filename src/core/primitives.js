@@ -144,6 +144,11 @@ var Dict = (function DictClosure() {
       return Object.keys(this._map);
     },
 
+    // no dereferencing
+    getRawValues: function Dict_getRawValues() {
+      return Object.values(this._map);
+    },
+
     set: function Dict_set(key, value) {
       if (
         (typeof PDFJSDev === "undefined" ||
