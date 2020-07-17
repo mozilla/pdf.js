@@ -439,93 +439,6 @@ class TextAnnotationElement extends AnnotationElement {
   }
 }
 
-class FreeTextAnnotationElement extends AnnotationElement {
-  constructor(parameters) {
-    const isRenderable = !!(
-      parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
-    );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
-  }
-
-  /**
-   * Render the free text annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof FreeTextAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
-  render() {
-    this.container.className = "freeTextAnnotation";
-    const data = this.data;
-
-    if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
-    }
-
-    const div = document.createElement("div");
-    const divWidth = data.rect[2] - data.rect[0];
-    const divHeight = data.rect[3] - data.rect[1];
-    let style = "width: " + divWidth + "px;";
-    style += "height: " + divHeight + "px;";
-
-    if (data.hasAppearance) {
-      // The annotation is already rendering by stream appareance,
-      // we should only create popup if necessary
-      div.setAttribute("style", style);
-      this.container.append(div);
-
-      if (!this.data.hasPopup) {
-        this._createPopup(this.container, div, data);
-      }
-
-      return this.container;
-    }
-
-    // Color define the background color of the annotation
-    if (data.color) {
-      const backgroundColor = Util.makeCssRgb(
-        data.color[0] | 0,
-        data.color[1] | 0,
-        data.color[2] | 0
-      );
-      style += "background-color: " + backgroundColor + ";";
-    }
-
-    if (data.opacity) {
-      style += "opacity: " + data.opacity + ";";
-    }
-
-    // Text style
-    if (data.textColor) {
-      const textColor = Util.makeCssRgb(
-        data.textColor[0] | 0,
-        data.textColor[1] | 0,
-        data.textColor[2] | 0
-      );
-      style += "color: " + textColor + ";";
-    }
-    div.setAttribute("style", style);
-
-    let font = null;
-    if (
-      this.data.fontRefName &&
-      this.page.commonObjs.has(this.data.fontRefName)
-    ) {
-      font = this.page.commonObjs.get(this.data.fontRefName);
-    }
-    setTextStyle(this.data, div, font);
-
-    div.innerText = data.contents;
-    this.container.append(div);
-
-    this._createPopup(this.container, div, data);
-
-    return this.container;
-  }
-}
-
 class WidgetAnnotationElement extends AnnotationElement {
   /**
    * Render the widget annotation's HTML element in the empty container.
@@ -938,6 +851,93 @@ class PopupElement {
       this.hideElement.setAttribute("hidden", true);
       this.container.style.zIndex -= 1;
     }
+  }
+}
+
+class FreeTextAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.title ||
+      parameters.data.contents
+    );
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+  }
+
+  /**
+   * Render the free text annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof FreeTextAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = "freeTextAnnotation";
+    const data = this.data;
+
+    if (!this.data.hasPopup) {
+      this._createPopup(this.container, null, this.data);
+    }
+
+    const div = document.createElement("div");
+    const divWidth = data.rect[2] - data.rect[0];
+    const divHeight = data.rect[3] - data.rect[1];
+    let style = "width: " + divWidth + "px;";
+    style += "height: " + divHeight + "px;";
+
+    if (data.hasAppearance) {
+      // The annotation is already rendering by stream appareance,
+      // we should only create popup if necessary
+      div.setAttribute("style", style);
+      this.container.append(div);
+
+      if (!this.data.hasPopup) {
+        this._createPopup(this.container, div, data);
+      }
+
+      return this.container;
+    }
+
+    // Color define the background color of the annotation
+    if (data.color) {
+      const backgroundColor = Util.makeCssRgb(
+        data.color[0] | 0,
+        data.color[1] | 0,
+        data.color[2] | 0
+      );
+      style += "background-color: " + backgroundColor + ";";
+    }
+
+    if (data.opacity) {
+      style += "opacity: " + data.opacity + ";";
+    }
+
+    // Text style
+    if (data.textColor) {
+      const textColor = Util.makeCssRgb(
+        data.textColor[0] | 0,
+        data.textColor[1] | 0,
+        data.textColor[2] | 0
+      );
+      style += "color: " + textColor + ";";
+    }
+    div.setAttribute("style", style);
+
+    let font = null;
+    if (
+      this.data.fontRefName &&
+      this.page.commonObjs.has(this.data.fontRefName)
+    ) {
+      font = this.page.commonObjs.get(this.data.fontRefName);
+    }
+    setTextStyle(this.data, div, font);
+
+    div.innerText = data.contents;
+    this.container.append(div);
+
+    this._createPopup(this.container, div, data);
+
+    return this.container;
   }
 }
 
