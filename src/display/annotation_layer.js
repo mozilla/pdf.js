@@ -882,8 +882,8 @@ class FreeTextAnnotationElement extends AnnotationElement {
     const div = document.createElement("div");
     const divWidth = data.rect[2] - data.rect[0];
     const divHeight = data.rect[3] - data.rect[1];
-    let style = "width: " + divWidth + "px;";
-    style += "height: " + divHeight + "px;";
+    let style = `width: ${divWidth}px;`;
+    style += `height: ${divHeight}px;`;
 
     if (data.hasAppearance) {
       // The annotation is already rendering by stream appareance,
@@ -905,11 +905,11 @@ class FreeTextAnnotationElement extends AnnotationElement {
         data.color[1] | 0,
         data.color[2] | 0
       );
-      style += "background-color: " + backgroundColor + ";";
+      style += `background-color: ${backgroundColor};`;
     }
 
     if (data.opacity) {
-      style += "opacity: " + data.opacity + ";";
+      style += `opacity: ${data.opacity};`;
     }
 
     // Text style
@@ -919,7 +919,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
         data.textColor[1] | 0,
         data.textColor[2] | 0
       );
-      style += "color: " + textColor + ";";
+      style += `color: ${textColor};`;
     }
     div.setAttribute("style", style);
 
