@@ -875,8 +875,8 @@ class FreeTextAnnotationElement extends AnnotationElement {
     this.container.className = "freeTextAnnotation";
     const data = this.data;
 
-    if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+    if (!data.hasPopup) {
+      this._createPopup(this.container, null, data);
     }
 
     const div = document.createElement("div");
@@ -891,7 +891,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
       div.setAttribute("style", style);
       this.container.append(div);
 
-      if (!this.data.hasPopup) {
+      if (!data.hasPopup) {
         this._createPopup(this.container, div, data);
       }
 
@@ -925,12 +925,12 @@ class FreeTextAnnotationElement extends AnnotationElement {
 
     let font = null;
     if (
-      this.data.fontRefName &&
-      this.page.commonObjs.has(this.data.fontRefName)
+      data.fontRefName &&
+      this.page.commonObjs.has(data.fontRefName)
     ) {
-      font = this.page.commonObjs.get(this.data.fontRefName);
+      font = this.page.commonObjs.get(data.fontRefName);
     }
-    setTextStyle(this.data, div, font);
+    setTextStyle(data, div, font);
 
     div.innerText = data.contents;
     this.container.append(div);
