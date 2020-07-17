@@ -85,6 +85,10 @@ var Dict = (function DictClosure() {
       this.xref = newXref;
     },
 
+    get size() {
+      return Object.keys(this._map).length;
+    },
+
     // automatically dereferences Ref objects
     get(key1, key2, key3) {
       let value = this._map[key1];
@@ -138,6 +142,11 @@ var Dict = (function DictClosure() {
 
     getKeys: function Dict_getKeys() {
       return Object.keys(this._map);
+    },
+
+    // no dereferencing
+    getRawValues: function Dict_getRawValues() {
+      return Object.values(this._map);
     },
 
     set: function Dict_set(key, value) {

@@ -254,8 +254,7 @@ class PartialEvaluator {
       // First check the current resources for blend modes.
       var graphicStates = node.get("ExtGState");
       if (graphicStates instanceof Dict) {
-        for (const key of graphicStates.getKeys()) {
-          let graphicState = graphicStates.getRaw(key);
+        for (let graphicState of graphicStates.getRawValues()) {
           if (graphicState instanceof Ref) {
             if (processed.has(graphicState)) {
               continue; // The ExtGState has already been processed.
@@ -301,8 +300,7 @@ class PartialEvaluator {
       if (!(xObjects instanceof Dict)) {
         continue;
       }
-      for (const key of xObjects.getKeys()) {
-        var xObject = xObjects.getRaw(key);
+      for (let xObject of xObjects.getRawValues()) {
         if (xObject instanceof Ref) {
           if (processed.has(xObject)) {
             // The XObject has already been processed, and by avoiding a
@@ -3078,9 +3076,7 @@ class PartialEvaluator {
       } else if (isRef(encoding)) {
         hash.update(encoding.toString());
       } else if (isDict(encoding)) {
-        var keys = encoding.getKeys();
-        for (var i = 0, ii = keys.length; i < ii; i++) {
-          var entry = encoding.getRaw(keys[i]);
+        for (const entry of encoding.getRawValues()) {
           if (isName(entry)) {
             hash.update(entry.name);
           } else if (isRef(entry)) {
