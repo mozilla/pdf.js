@@ -1216,18 +1216,17 @@ class FreeTextAnnotation extends MarkupAnnotation {
         operatorList: opList,
       })
       .then(() => {
-        const a = opList.argsArray;
-        let i;
-        for (i = 0; i < opList.fnArray.length; i++) {
+        const args = opList.argsArray;
+        for (let i = 0, ii = opList.fnArray.length; i < ii; i++) {
           const fn = opList.fnArray[i];
           switch (fn | 0) {
             case OPS.setFont:
-              data.fontRefName = a[i][0];
-              data.fontSize = a[i][1];
+              data.fontRefName = args[i][0];
+              data.fontSize = args[i][1];
               break;
             case OPS.setFillGray:
             case OPS.setFillRGBColor:
-              data.textColor = a[i];
+              data.textColor = args[i];
               break;
           }
         }
