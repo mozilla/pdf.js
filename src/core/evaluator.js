@@ -76,7 +76,11 @@ import {
 import { getTilingPatternIR, Pattern } from "./pattern.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
-import { LocalColorSpaceCache, LocalImageCache } from "./image_utils.js";
+import {
+  LocalColorSpaceCache,
+  LocalGStateCache,
+  LocalImageCache,
+} from "./image_utils.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./stream.js";
@@ -804,14 +808,18 @@ class PartialEvaluator {
     throw reason;
   }
 
-  setGState(
+  async setGState({
     resources,
     gState,
     operatorList,
+    cacheKey,
     task,
     stateManager,
-    localColorSpaceCache
-  ) {
+    localGStateCache,
+    localColorSpaceCache,
+  }) {
+    const gStateRef = gState.objId;
+    let isSimpleGState = true;
     // This array holds the converted/processed state data.
     var gStateObj = [];
     var gStateKeys = gState.getKeys();
@@ -857,6 +865,8 @@ class PartialEvaluator {
             break;
           }
           if (isDict(value)) {
+            isSimpleGState = false;
+
             promise = promise.then(() => {
               return this.handleSMask(
                 value,
@@ -900,6 +910,10 @@ class PartialEvaluator {
     return promise.then(function () {
       if (gStateObj.length > 0) {
         operatorList.addOp(OPS.setGState, [gStateObj]);
+      }
+
+      if (isSimpleGState) {
+        localGStateCache.set(cacheKey, gStateRef, gStateObj);
       }
     });
   }
@@ -1221,6 +1235,7 @@ class PartialEvaluator {
     let parsingText = false;
     const localImageCache = new LocalImageCache();
     const localColorSpaceCache = new LocalColorSpaceCache();
+    const localGStateCache = new LocalGStateCache();
 
     var xobjs = resources.get("XObject") || Dict.empty;
     var patterns = resources.get("Pattern") || Dict.empty;
@@ -1250,7 +1265,8 @@ class PartialEvaluator {
         operation = {},
         i,
         ii,
-        cs;
+        cs,
+        name;
       while (!(stop = timeSlotManager.check())) {
         // The arguments parsed by read() are used beyond this loop, so we
         // cannot reuse the same array on each iteration. Therefore we pass
@@ -1266,7 +1282,7 @@ class PartialEvaluator {
         switch (fn | 0) {
           case OPS.paintXObject:
             // eagerly compile XForm objects
-            var name = args[0].name;
+            name = args[0].name;
             if (name) {
               const localImage = localImageCache.getByName(name);
               if (localImage) {
@@ -1629,23 +1645,64 @@ class PartialEvaluator {
             fn = OPS.shadingFill;
             break;
           case OPS.setGState:
-            var dictName = args[0];
-            var extGState = resources.get("ExtGState");
-
-            if (!isDict(extGState) || !extGState.has(dictName.name)) {
-              break;
+            name = args[0].name;
+            if (name) {
+              const localGStateObj = localGStateCache.getByName(name);
+              if (localGStateObj) {
+                if (localGStateObj.length > 0) {
+                  operatorList.addOp(OPS.setGState, [localGStateObj]);
+                }
+                args = null;
+                continue;
+              }
             }
 
-            var gState = extGState.get(dictName.name);
             next(
-              self.setGState(
-                resources,
-                gState,
-                operatorList,
-                task,
-                stateManager,
-                localColorSpaceCache
-              )
+              new Promise(function (resolveGState, rejectGState) {
+                if (!name) {
+                  throw new FormatError("GState must be referred to by name.");
+                }
+
+                const extGState = resources.get("ExtGState");
+                if (!(extGState instanceof Dict)) {
+                  throw new FormatError("ExtGState should be a dictionary.");
+                }
+
+                const gState = extGState.get(name);
+                // TODO: Attempt to lookup cached GStates by reference as well,
+                //       if and only if there are PDF documents where doing so
+                //       would significantly improve performance.
+                if (!(gState instanceof Dict)) {
+                  throw new FormatError("GState should be a dictionary.");
+                }
+
+                self
+                  .setGState({
+                    resources,
+                    gState,
+                    operatorList,
+                    cacheKey: name,
+                    task,
+                    stateManager,
+                    localGStateCache,
+                    localColorSpaceCache,
+                  })
+                  .then(resolveGState, rejectGState);
+              }).catch(function (reason) {
+                if (reason instanceof AbortException) {
+                  return;
+                }
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the ExtGState -- sending unsupported feature
+                  // notification and allow parsing/rendering to continue.
+                  self.handler.send("UnsupportedFeature", {
+                    featureId: UNSUPPORTED_FEATURES.errorExtGState,
+                  });
+                  warn(`getOperatorList - ignoring ExtGState: "${reason}".`);
+                  return;
+                }
+                throw reason;
+              })
             );
             return;
           case OPS.moveTo:
@@ -1767,6 +1824,7 @@ class PartialEvaluator {
     // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
     var xobjs = null;
     const emptyXObjectCache = new LocalImageCache();
+    const emptyGStateCache = new LocalGStateCache();
 
     var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
@@ -2339,25 +2397,59 @@ class PartialEvaluator {
             );
             return;
           case OPS.setGState:
-            flushTextContentItem();
-            var dictName = args[0];
-            var extGState = resources.get("ExtGState");
+            name = args[0].name;
+            if (name && emptyGStateCache.getByName(name)) {
+              break;
+            }
 
-            if (!isDict(extGState) || !isName(dictName)) {
-              break;
-            }
-            var gState = extGState.get(dictName.name);
-            if (!isDict(gState)) {
-              break;
-            }
-            var gStateFont = gState.get("Font");
-            if (gStateFont) {
-              textState.fontName = null;
-              textState.fontSize = gStateFont[1];
-              next(handleSetFont(null, gStateFont[0]));
-              return;
-            }
-            break;
+            next(
+              new Promise(function (resolveGState, rejectGState) {
+                if (!name) {
+                  throw new FormatError("GState must be referred to by name.");
+                }
+
+                const extGState = resources.get("ExtGState");
+                if (!(extGState instanceof Dict)) {
+                  throw new FormatError("ExtGState should be a dictionary.");
+                }
+
+                const gState = extGState.get(name);
+                // TODO: Attempt to lookup cached GStates by reference as well,
+                //       if and only if there are PDF documents where doing so
+                //       would significantly improve performance.
+                if (!(gState instanceof Dict)) {
+                  throw new FormatError("GState should be a dictionary.");
+                }
+
+                const gStateFont = gState.get("Font");
+                if (!gStateFont) {
+                  emptyGStateCache.set(name, gState.objId, true);
+
+                  resolveGState();
+                  return;
+                }
+                flushTextContentItem();
+
+                textState.fontName = null;
+                textState.fontSize = gStateFont[1];
+                handleSetFont(null, gStateFont[0]).then(
+                  resolveGState,
+                  rejectGState
+                );
+              }).catch(function (reason) {
+                if (reason instanceof AbortException) {
+                  return;
+                }
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the ExtGState -- allow text-extraction to
+                  // continue.
+                  warn(`getTextContent - ignoring ExtGState: "${reason}".`);
+                  return;
+                }
+                throw reason;
+              })
+            );
+            return;
         } // switch
         if (textContent.items.length >= sink.desiredSize) {
           // Wait for ready, if we reach highWaterMark.
