@@ -2205,18 +2205,16 @@ const ObjectLoader = (function () {
   }
 
   function addChildren(node, nodesToVisit) {
-    if (node instanceof Dict || isStream(node)) {
-      const dict = node instanceof Dict ? node : node.dict;
-      for (const rawValue of dict.getRawValues()) {
-        if (mayHaveChildren(rawValue)) {
-          nodesToVisit.push(rawValue);
-        }
-      }
-    } else if (Array.isArray(node)) {
-      for (const value of node) {
-        if (mayHaveChildren(value)) {
-          nodesToVisit.push(value);
-        }
+    if (node instanceof Dict) {
+      node = node.getRawValues();
+    } else if (isStream(node)) {
+      node = node.dict.getRawValues();
+    } else if (!Array.isArray(node)) {
+      return;
+    }
+    for (const rawValue of node) {
+      if (mayHaveChildren(rawValue)) {
+        nodesToVisit.push(rawValue);
       }
     }
   }
