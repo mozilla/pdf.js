@@ -239,46 +239,41 @@ class RefSet {
   }
 }
 
-var RefSetCache = (function RefSetCacheClosure() {
-  // eslint-disable-next-line no-shadow
-  function RefSetCache() {
-    this.dict = Object.create(null);
+class RefSetCache {
+  constructor() {
+    this._map = new Map();
   }
 
-  RefSetCache.prototype = {
-    get size() {
-      return Object.keys(this.dict).length;
-    },
+  get size() {
+    return this._map.size;
+  }
 
-    get: function RefSetCache_get(ref) {
-      return this.dict[ref.toString()];
-    },
+  get(ref) {
+    return this._map.get(ref.toString());
+  }
 
-    has: function RefSetCache_has(ref) {
-      return ref.toString() in this.dict;
-    },
+  has(ref) {
+    return this._map.has(ref.toString());
+  }
 
-    put: function RefSetCache_put(ref, obj) {
-      this.dict[ref.toString()] = obj;
-    },
+  put(ref, obj) {
+    this._map.set(ref.toString(), obj);
+  }
 
-    putAlias: function RefSetCache_putAlias(ref, aliasRef) {
-      this.dict[ref.toString()] = this.get(aliasRef);
-    },
+  putAlias(ref, aliasRef) {
+    this._map.set(ref.toString(), this.get(aliasRef));
+  }
 
-    forEach: function RefSetCache_forEach(callback) {
-      for (const i in this.dict) {
-        callback(this.dict[i]);
-      }
-    },
+  forEach(callback) {
+    for (const value of this._map.values()) {
+      callback(value);
+    }
+  }
 
-    clear: function RefSetCache_clear() {
-      this.dict = Object.create(null);
-    },
-  };
-
-  return RefSetCache;
-})();
+  clear() {
+    this._map.clear();
+  }
+}
 
 function isEOF(v) {
   return v === EOF;
