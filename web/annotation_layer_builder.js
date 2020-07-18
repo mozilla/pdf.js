@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-import { AnnotationLayer } from 'pdfjs-lib';
-import { NullL10n } from './ui_utils';
-import { SimpleLinkService } from './pdf_link_service';
+import { AnnotationLayer } from "pdfjs-lib";
+import { NullL10n } from "./ui_utils.js";
+import { SimpleLinkService } from "./pdf_link_service.js";
 
 /**
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
- * @property {string} imageResourcesPath - (optional) Path for image resources,
- *   mainly for annotation icons. Include trailing slash.
+ * @property {string} [imageResourcesPath] - Path for image resources, mainly
+ *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
@@ -33,9 +33,15 @@ class AnnotationLayerBuilder {
   /**
    * @param {AnnotationLayerBuilderOptions} options
    */
-  constructor({ pageDiv, pdfPage, linkService, downloadManager,
-                imageResourcesPath = '', renderInteractiveForms = false,
-                l10n = NullL10n, }) {
+  constructor({
+    pageDiv,
+    pdfPage,
+    linkService,
+    downloadManager,
+    imageResourcesPath = "",
+    renderInteractiveForms = false,
+    l10n = NullL10n,
+  }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
     this.linkService = linkService;
@@ -52,14 +58,14 @@ class AnnotationLayerBuilder {
    * @param {PageViewport} viewport
    * @param {string} intent (default value is 'display')
    */
-  render(viewport, intent = 'display') {
-    this.pdfPage.getAnnotations({ intent, }).then((annotations) => {
+  render(viewport, intent = "display") {
+    this.pdfPage.getAnnotations({ intent }).then(annotations => {
       if (this._cancelled) {
         return;
       }
 
-      let parameters = {
-        viewport: viewport.clone({ dontFlip: true, }),
+      const parameters = {
+        viewport: viewport.clone({ dontFlip: true }),
         div: this.div,
         annotations,
         page: this.pdfPage,
@@ -79,8 +85,8 @@ class AnnotationLayerBuilder {
         if (annotations.length === 0) {
           return;
         }
-        this.div = document.createElement('div');
-        this.div.className = 'annotationLayer';
+        this.div = document.createElement("div");
+        this.div.className = "annotationLayer";
         this.pageDiv.appendChild(this.div);
         parameters.div = this.div;
 
@@ -98,7 +104,7 @@ class AnnotationLayerBuilder {
     if (!this.div) {
       return;
     }
-    this.div.setAttribute('hidden', 'true');
+    this.div.setAttribute("hidden", "true");
   }
 }
 
@@ -109,15 +115,19 @@ class DefaultAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
-   * @param {string} imageResourcesPath - (optional) Path for image resources,
-   *   mainly for annotation icons. Include trailing slash.
+   * @param {string} [imageResourcesPath] - Path for image resources, mainly
+   *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(pageDiv, pdfPage, imageResourcesPath = '',
-                               renderInteractiveForms = false,
-                               l10n = NullL10n) {
+  createAnnotationLayerBuilder(
+    pageDiv,
+    pdfPage,
+    imageResourcesPath = "",
+    renderInteractiveForms = false,
+    l10n = NullL10n
+  ) {
     return new AnnotationLayerBuilder({
       pageDiv,
       pdfPage,
@@ -129,7 +139,4 @@ class DefaultAnnotationLayerFactory {
   }
 }
 
-export {
-  AnnotationLayerBuilder,
-  DefaultAnnotationLayerFactory,
-};
+export { AnnotationLayerBuilder, DefaultAnnotationLayerFactory };

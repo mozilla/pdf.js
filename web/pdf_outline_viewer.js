@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { addLinkAttributes, LinkTarget, removeNullCharacters } from 'pdfjs-lib';
+import { addLinkAttributes, LinkTarget, removeNullCharacters } from "pdfjs-lib";
 
-const DEFAULT_TITLE = '\u2013';
+const DEFAULT_TITLE = "\u2013";
 
 /**
  * @typedef {Object} PDFOutlineViewerOptions
@@ -33,14 +33,14 @@ class PDFOutlineViewer {
   /**
    * @param {PDFOutlineViewerOptions} options
    */
-  constructor({ container, linkService, eventBus, }) {
+  constructor({ container, linkService, eventBus }) {
     this.container = container;
     this.linkService = linkService;
     this.eventBus = eventBus;
 
     this.reset();
 
-    eventBus.on('toggleoutlinetree', this.toggleOutlineTree.bind(this));
+    eventBus._on("toggleoutlinetree", this.toggleOutlineTree.bind(this));
   }
 
   reset() {
@@ -48,18 +48,18 @@ class PDFOutlineViewer {
     this.lastToggleIsShow = true;
 
     // Remove the outline from the DOM.
-    this.container.textContent = '';
+    this.container.textContent = "";
 
     // Ensure that the left (right in RTL locales) margin is always reset,
     // to prevent incorrect outline alignment if a new document is opened.
-    this.container.classList.remove('outlineWithDeepNesting');
+    this.container.classList.remove("outlineWithDeepNesting");
   }
 
   /**
    * @private
    */
   _dispatchEvent(outlineCount) {
-    this.eventBus.dispatch('outlineloaded', {
+    this.eventBus.dispatch("outlineloaded", {
       source: this,
       outlineCount,
     });
@@ -68,13 +68,13 @@ class PDFOutlineViewer {
   /**
    * @private
    */
-  _bindLink(element, { url, newWindow, dest, }) {
-    let { linkService, } = this;
+  _bindLink(element, { url, newWindow, dest }) {
+    const { linkService } = this;
 
     if (url) {
       addLinkAttributes(element, {
         url,
-        target: (newWindow ? LinkTarget.BLANK : linkService.externalLinkTarget),
+        target: newWindow ? LinkTarget.BLANK : linkService.externalLinkTarget,
         rel: linkService.externalLinkRel,
         enabled: linkService.externalLinkEnabled,
       });
@@ -93,17 +93,12 @@ class PDFOutlineViewer {
   /**
    * @private
    */
-  _setStyles(element, { bold, italic, }) {
-    let styleStr = '';
+  _setStyles(element, { bold, italic }) {
     if (bold) {
-      styleStr += 'font-weight: bold;';
+      element.style.fontWeight = "bold";
     }
     if (italic) {
-      styleStr += 'font-style: italic;';
-    }
-
-    if (styleStr) {
-      element.setAttribute('style', styleStr);
+      element.style.fontStyle = "italic";
     }
   }
 
@@ -113,18 +108,18 @@ class PDFOutlineViewer {
    *
    * @private
    */
-  _addToggleButton(div, { count, items, }) {
-    let toggler = document.createElement('div');
-    toggler.className = 'outlineItemToggler';
+  _addToggleButton(div, { count, items }) {
+    const toggler = document.createElement("div");
+    toggler.className = "outlineItemToggler";
     if (count < 0 && Math.abs(count) === items.length) {
-      toggler.classList.add('outlineItemsHidden');
+      toggler.classList.add("outlineItemsHidden");
     }
-    toggler.onclick = (evt) => {
+    toggler.onclick = evt => {
       evt.stopPropagation();
-      toggler.classList.toggle('outlineItemsHidden');
+      toggler.classList.toggle("outlineItemsHidden");
 
       if (evt.shiftKey) {
-        let shouldShowAll = !toggler.classList.contains('outlineItemsHidden');
+        const shouldShowAll = !toggler.classList.contains("outlineItemsHidden");
         this._toggleOutlineItem(div, shouldShowAll);
       }
     };
@@ -142,8 +137,8 @@ class PDFOutlineViewer {
    */
   _toggleOutlineItem(root, show = false) {
     this.lastToggleIsShow = show;
-    for (const toggler of root.querySelectorAll('.outlineItemToggler')) {
-      toggler.classList.toggle('outlineItemsHidden', !show);
+    for (const toggler of root.querySelectorAll(".outlineItemToggler")) {
+      toggler.classList.toggle("outlineItemsHidden", !show);
     }
   }
 
@@ -160,7 +155,7 @@ class PDFOutlineViewer {
   /**
    * @param {PDFOutlineViewerRenderParameters} params
    */
-  render({ outline, }) {
+  render({ outline }) {
     let outlineCount = 0;
 
     if (this.outline) {
@@ -173,20 +168,19 @@ class PDFOutlineViewer {
       return;
     }
 
-    let fragment = document.createDocumentFragment();
-    let queue = [{ parent: fragment, items: this.outline, }];
+    const fragment = document.createDocumentFragment();
+    const queue = [{ parent: fragment, items: this.outline }];
     let hasAnyNesting = false;
     while (queue.length > 0) {
       const levelData = queue.shift();
       for (const item of levelData.items) {
-        let div = document.createElement('div');
-        div.className = 'outlineItem';
+        const div = document.createElement("div");
+        div.className = "outlineItem";
 
-        let element = document.createElement('a');
+        const element = document.createElement("a");
         this._bindLink(element, item);
         this._setStyles(element, item);
-        element.textContent =
-          removeNullCharacters(item.title) || DEFAULT_TITLE;
+        element.textContent = removeNullCharacters(item.title) || DEFAULT_TITLE;
 
         div.appendChild(element);
 
@@ -194,10 +188,10 @@ class PDFOutlineViewer {
           hasAnyNesting = true;
           this._addToggleButton(div, item);
 
-          let itemsDiv = document.createElement('div');
-          itemsDiv.className = 'outlineItems';
+          const itemsDiv = document.createElement("div");
+          itemsDiv.className = "outlineItems";
           div.appendChild(itemsDiv);
-          queue.push({ parent: itemsDiv, items: item.items, });
+          queue.push({ parent: itemsDiv, items: item.items });
         }
 
         levelData.parent.appendChild(div);
@@ -205,10 +199,10 @@ class PDFOutlineViewer {
       }
     }
     if (hasAnyNesting) {
-      this.container.classList.add('outlineWithDeepNesting');
+      this.container.classList.add("outlineWithDeepNesting");
 
       this.lastToggleIsShow =
-        (fragment.querySelectorAll('.outlineItemsHidden').length === 0);
+        fragment.querySelectorAll(".outlineItemsHidden").length === 0;
     }
 
     this.container.appendChild(fragment);
@@ -217,6 +211,4 @@ class PDFOutlineViewer {
   }
 }
 
-export {
-  PDFOutlineViewer,
-};
+export { PDFOutlineViewer };

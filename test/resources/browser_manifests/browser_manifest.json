@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Firefox",
+    "path": "/Applications/Firefox.app/Contents/MacOS/firefox-bin"
+  },
+  {
+    "name": "Chrome",
+    "path": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+  }
+]
