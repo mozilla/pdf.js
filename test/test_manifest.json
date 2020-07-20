@@ -4193,6 +4193,7 @@
        "file": "pdfs/issue10122.pdf",
        "md5": "80a0a0e34433c5b3fd4a57778bb2b4b4",
        "rounds": 1,
+       "annotations": true,
        "type": "eq"
     },
     {  "id": "issue4575",
