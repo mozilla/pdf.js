@@ -898,7 +898,6 @@ class FreeTextAnnotationElement extends AnnotationElement {
       return this.container;
     }
 
-    // Color define the background color of the annotation
     if (data.color) {
       const backgroundColor = Util.makeCssRgb(
         data.color[0] | 0,
@@ -912,7 +911,6 @@ class FreeTextAnnotationElement extends AnnotationElement {
       style += `opacity: ${data.opacity};`;
     }
 
-    // Text style
     if (data.textColor) {
       const textColor = Util.makeCssRgb(
         data.textColor[0] | 0,
