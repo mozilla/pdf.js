@@ -1226,7 +1226,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
               break;
             case OPS.setFillGray:
             case OPS.setFillRGBColor:
-              data.textColor = args[i];
+              data.textColor = createRgbColor(args[i]);
               break;
           }
         }
