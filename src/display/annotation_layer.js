@@ -875,10 +875,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     this.container.className = "freeTextAnnotation";
     const data = this.data;
 
-    if (!data.hasPopup) {
-      this._createPopup(this.container, null, data);
-    }
-
+    // XXX why a new div?
     const div = document.createElement("div");
     const divWidth = data.rect[2] - data.rect[0];
     const divHeight = data.rect[3] - data.rect[1];
@@ -933,7 +930,9 @@ class FreeTextAnnotationElement extends AnnotationElement {
     div.innerText = data.contents;
     this.container.append(div);
 
-    this._createPopup(this.container, div, data);
+    if (!data.hasPopup) {
+      this._createPopup(this.container, div, data);
+    }
 
     return this.container;
   }
