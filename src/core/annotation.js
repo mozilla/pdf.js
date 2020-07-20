@@ -1204,35 +1204,43 @@ class FreeTextAnnotation extends MarkupAnnotation {
 
     const data = this.data;
 
-    const opList = new OperatorList();
+    const appearanceDict = this.appearance.dict;
     const appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
-    const resourcesFonts = this.pdfManager.pdfDocument.catalog.fontCache.dict;
+    const resourcesPromise = this.loadResources(["Font"]);
+    const bbox = appearanceDict.getArray("BBox") || [0, 0, 1, 1];
+    const matrix = appearanceDict.getArray("Matrix") || [1, 0, 0, 1, 0, 0];
+    const transform = getTransformMatrix(data.rect, bbox, matrix);
 
-    return evaluator
-      .getOperatorList({
-        stream: appearanceStream,
-        task,
-        resources: resourcesFonts,
-        operatorList: opList,
-      })
-      .then(() => {
-        const args = opList.argsArray;
-        for (let i = 0, ii = opList.fnArray.length; i < ii; i++) {
-          const fn = opList.fnArray[i];
-          switch (fn | 0) {
-            case OPS.setFont:
-              data.fontRefName = args[i][0];
-              data.fontSize = args[i][1];
-              break;
-            case OPS.setFillGray:
-            case OPS.setFillRGBColor:
-              data.textColor = createRgbColor(args[i]);
-              break;
+    return resourcesPromise.then(resources => {
+      const opList = new OperatorList();
+      opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
+      return evaluator
+        .getOperatorList({
+          stream: appearanceStream,
+          task,
+          resources,
+          operatorList: opList,
+        })
+        .then(() => {
+          const args = opList.argsArray;
+          for (let i = 0, ii = opList.fnArray.length; i < ii; i++) {
+            const fn = opList.fnArray[i];
+            switch (fn | 0) {
+              case OPS.setFont:
+                data.fontRefName = args[i][0];
+                data.fontSize = args[i][1];
+                break;
+              case OPS.setFillGray:
+              case OPS.setFillRGBColor:
+                data.textColor = createRgbColor(args[i]);
+                break;
+            }
           }
-        }
-
-        return opList;
-      });
+          opList.addOp(OPS.endAnnotation, []);
+          this.appearance.reset();
+          return opList;
+        });
+    });
   }
 }
 
