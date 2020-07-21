@@ -1227,7 +1227,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
             const fn = opList.fnArray[i];
             switch (fn | 0) {
               case OPS.setFont:
-                data.fontRefName = args[i][0];
+                data.loadedName = args[i][0];
                 data.fontSize = args[i][1];
                 break;
               case OPS.setFillGray:

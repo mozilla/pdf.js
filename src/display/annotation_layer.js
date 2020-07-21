@@ -509,10 +509,10 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
       let font = null;
       if (
-        this.data.fontRefName &&
-        this.page.commonObjs.has(this.data.fontRefName)
+        this.data.loadedName &&
+        this.page.commonObjs.has(this.data.loadedName)
       ) {
-        font = this.page.commonObjs.get(this.data.fontRefName);
+        font = this.page.commonObjs.get(this.data.loadedName);
       }
       this._setTextStyle(this.data, element, font);
     }
@@ -919,8 +919,8 @@ class FreeTextAnnotationElement extends AnnotationElement {
     div.setAttribute("style", style);
 
     let font = null;
-    if (data.fontRefName && this.page.commonObjs.has(data.fontRefName)) {
-      font = this.page.commonObjs.get(data.fontRefName);
+    if (data.loadedName && this.page.commonObjs.has(data.loadedName)) {
+      font = this.page.commonObjs.get(data.loadedName);
     }
     this._setTextStyle(data, div, font);
 
