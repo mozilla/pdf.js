@@ -44,38 +44,6 @@ import {
  * @property {Object} svgFactory
  */
 
-/**
- * Apply text styles to the text in the element.
- *
- * @param {Object} data
- * @param {HTMLDivElement} element
- * @param {Object} font
- */
-function setTextStyle(data, element, font) {
-  // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
-  const style = element.style;
-  style.fontSize = `${data.fontSize}px`;
-  style.direction = data.fontDirection < 0 ? "rtl" : "ltr";
-
-  if (!font) {
-    return;
-  }
-
-  let bold = "normal";
-  if (font.black) {
-    bold = "900";
-  } else if (font.bold) {
-    bold = "bold";
-  }
-  style.fontWeight = bold;
-  style.fontStyle = font.italic ? "italic" : "normal";
-
-  // Use a reasonable default font if the font doesn't specify a fallback.
-  const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
-  const fallbackName = font.fallbackName || "Helvetica, sans-serif";
-  style.fontFamily = fontFamily + fallbackName;
-}
-
 class AnnotationElementFactory {
   /**
    * @param {AnnotationElementParameters} parameters
@@ -307,6 +275,38 @@ class AnnotationElement {
   }
 
   /**
+   * Apply text styles to the text in the element.
+   *
+   * @param {Object} data
+   * @param {HTMLDivElement} element
+   * @param {Object} font
+   */
+  _setTextStyle(data, element, font) {
+    // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
+    const style = element.style;
+    style.fontSize = `${data.fontSize}px`;
+    style.direction = data.fontDirection < 0 ? "rtl" : "ltr";
+
+    if (!font) {
+      return;
+    }
+
+    let bold = "normal";
+    if (font.black) {
+      bold = "900";
+    } else if (font.bold) {
+      bold = "bold";
+    }
+    style.fontWeight = bold;
+    style.fontStyle = font.italic ? "italic" : "normal";
+
+    // Use a reasonable default font if the font doesn't specify a fallback.
+    const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
+    const fallbackName = font.fallbackName || "Helvetica, sans-serif";
+    style.fontFamily = fontFamily + fallbackName;
+  }
+
+  /**
    * Render the annotation's HTML element in the empty container.
    *
    * @public
@@ -514,7 +514,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       ) {
         font = this.page.commonObjs.get(this.data.fontRefName);
       }
-      setTextStyle(this.data, element, font);
+      this._setTextStyle(this.data, element, font);
     }
 
     if (this.data.textAlignment !== null) {
@@ -919,13 +919,10 @@ class FreeTextAnnotationElement extends AnnotationElement {
     div.setAttribute("style", style);
 
     let font = null;
-    if (
-      data.fontRefName &&
-      this.page.commonObjs.has(data.fontRefName)
-    ) {
+    if (data.fontRefName && this.page.commonObjs.has(data.fontRefName)) {
       font = this.page.commonObjs.get(data.fontRefName);
     }
-    setTextStyle(data, div, font);
+    this._setTextStyle(data, div, font);
 
     div.innerText = data.contents;
     this.container.append(div);
