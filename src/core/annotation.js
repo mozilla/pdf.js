@@ -33,7 +33,7 @@ import { Dict, isDict, isName, isRef, isStream } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
 import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
-import { Stream } from "./stream.js";
+import { StringStream } from "./stream.js";
 
 class AnnotationFactory {
   /**
@@ -932,7 +932,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return Promise.resolve(operatorList);
     }
 
-    const stream = new Stream(stringToBytes(this.data.defaultAppearance));
+    const stream = new StringStream(this.data.defaultAppearance);
     return evaluator
       .getOperatorList({
         stream,
@@ -1205,7 +1205,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
     const data = this.data;
 
     const appearanceDict = this.appearance.dict;
-    const appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
+    const appearanceStream = new StringStream(data.defaultAppearance);
     const resourcesPromise = this.loadResources(["Font"]);
     const bbox = appearanceDict.getArray("BBox") || [0, 0, 1, 1];
     const matrix = appearanceDict.getArray("Matrix") || [1, 0, 0, 1, 0, 0];
