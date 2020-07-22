@@ -48,6 +48,7 @@ import {
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
 import { NodeCanvasFactory, NodeCMapReaderFactory } from "./node_utils.js";
+import { AnnotationStorage } from "./annotation_storage.js";
 import { apiCompatibilityParams } from "./api_compatibility.js";
 import { CanvasGraphics } from "./canvas.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
@@ -576,6 +577,14 @@ class PDFDocumentProxy {
   constructor(pdfInfo, transport) {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
+    this._annotationStorage = new AnnotationStorage();
+  }
+
+  /**
+   * @type {AnnotationStorage} Storage for annotation data in forms.
+   */
+  get annotationStorage() {
+    return this._annotationStorage;
   }
 
   /**
@@ -1004,6 +1013,7 @@ class PDFPageProxy {
     imageLayer = null,
     canvasFactory = null,
     background = null,
+    annotationStorage = null,
   }) {
     if (this._stats) {
       this._stats.time("Overall");
@@ -1048,6 +1058,7 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
+        annotationStorage,
       });
     }
 
