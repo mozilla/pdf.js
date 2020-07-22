@@ -412,6 +412,9 @@ function shadow(obj, prop, value) {
   return value;
 }
 
+/**
+ * @type {any}
+ */
 const BaseException = (function BaseExceptionClosure() {
   // eslint-disable-next-line no-shadow
   function BaseException(message) {
@@ -503,7 +506,7 @@ function stringToBytes(str) {
 
 /**
  * Gets length of the array (Array, Uint8Array, or string) in bytes.
- * @param {Array|Uint8Array|string} arr
+ * @param {Array<any>|Uint8Array|string} arr
  * @returns {number}
  */
 function arrayByteLength(arr) {
@@ -516,7 +519,8 @@ function arrayByteLength(arr) {
 
 /**
  * Combines array items (arrays) into single Uint8Array object.
- * @param {Array} arr - the array of the arrays (Array, Uint8Array, or string).
+ * @param {Array<Array<any>|Uint8Array|string>} arr - the array of the arrays
+ *   (Array, Uint8Array, or string).
  * @returns {Uint8Array}
  */
 function arraysToBytes(arr) {
@@ -822,7 +826,7 @@ function isArrayEqual(arr1, arr2) {
  * Promise Capability object.
  *
  * @typedef {Object} PromiseCapability
- * @property {Promise} promise - A Promise object.
+ * @property {Promise<any>} promise - A Promise object.
  * @property {boolean} settled - If the Promise has been fulfilled/rejected.
  * @property {function} resolve - Fulfills the Promise.
  * @property {function} reject - Rejects the Promise.
