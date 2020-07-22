@@ -1078,16 +1078,19 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (!isDict(appearanceStates)) {
       return;
     }
-    const normalAppearanceState = appearanceStates.get("N");
-    if (!isDict(normalAppearanceState)) {
+    const normalAppearance = appearanceStates.get("N");
+    if (!isDict(normalAppearance)) {
       return;
     }
-    for (const key of normalAppearanceState.getKeys()) {
+    for (const key of normalAppearance.getKeys()) {
       if (key !== "Off") {
         this.data.buttonValue = key;
         break;
       }
     }
+
+    this.checkedAppearance = normalAppearance.get(this.data.buttonValue);
+    this.uncheckedAppearance = normalAppearance.get("Off") || null;
   }
 
   _processPushButton(params) {
