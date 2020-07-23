@@ -112,7 +112,7 @@ const defaultOptions = {
   },
   pdfBugEnabled: {
     /** @type {boolean} */
-    value: false,
+    value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   printResolution: {
