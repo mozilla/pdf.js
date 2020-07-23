@@ -30,7 +30,7 @@ import {
   stringToUTF8String,
 } from "../../src/shared/util.js";
 import { createIdFactory, XRefMock } from "./test_utils.js";
-import { Dict, Name, Ref } from "../../src/core/primitives.js";
+import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
 import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { StringStream } from "../../src/core/stream.js";
@@ -82,6 +82,7 @@ describe("annotation", function () {
       handler: new HandlerMock(),
       pageIndex: 0,
       idFactory: createIdFactory(/* pageIndex = */ 0),
+      fontCache: new RefSetCache(),
     });
     done();
   });
@@ -1385,18 +1386,36 @@ describe("annotation", function () {
   });
 
   describe("TextWidgetAnnotation", function () {
-    let textWidgetDict;
+    let textWidgetDict, fontRefObj;
 
     beforeEach(function (done) {
       textWidgetDict = new Dict();
       textWidgetDict.set("Type", Name.get("Annot"));
       textWidgetDict.set("Subtype", Name.get("Widget"));
       textWidgetDict.set("FT", Name.get("Tx"));
+
+      const helvDict = new Dict();
+      helvDict.set("BaseFont", Name.get("Helvetica"));
+      helvDict.set("Type", Name.get("Font"));
+      helvDict.set("Subtype", Name.get("Type1"));
+
+      const fontRef = Ref.get(314, 0);
+      fontRefObj = { ref: fontRef, data: helvDict };
+      const resourceDict = new Dict();
+      const fontDict = new Dict();
+      fontDict.set("Helv", fontRef);
+      resourceDict.set("Font", fontDict);
+
+      textWidgetDict.set("DA", "/Helv 5 Tf");
+      textWidgetDict.set("DR", resourceDict);
+      textWidgetDict.set("Rect", [0, 0, 32, 10]);
+
       done();
     });
 
     afterEach(function () {
       textWidgetDict = null;
+      fontRefObj = null;
     });
 
     it("should handle unknown text alignment, maximum length and flags", function (done) {
@@ -1551,6 +1570,145 @@ describe("annotation", function () {
         });
       }
       promise.then(done, done.fail);
+    });
+
+    it("should get auto-sized text from annotation storage", function (done) {
+      textWidgetDict.set("DA", "/Helv 0 Tf");
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = "test (print)";
+          return annotation.getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Helv 11 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (test \\(print\\)) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
+    });
+
+    it("should get null appearance for a password from annotation storage", function (done) {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.PASSWORD);
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = "mypassword";
+          return annotation.getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(null);
+          done();
+        }, done.fail);
+    });
+
+    it("should get splited text from annotation storage", function (done) {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.MULTILINE);
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = "a aa aaa aaaa aaaaa aaaaaa";
+          return annotation.getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 10 Tm 2.00 -5.00 Td (a aa aaa ) Tj\n0.00 -5.00 Td (aaaa aaaaa ) Tj\n0.00 -5.00 Td (aaaaaa) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
+    });
+
+    it("should get text with MaxLen from annotation storage", function (done) {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.COMB);
+      textWidgetDict.set("MaxLen", 4);
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = "aaaaaaaa";
+          return annotation.getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 2 2 Tm (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
     });
   });
 
@@ -1861,18 +2019,36 @@ describe("annotation", function () {
   });
 
   describe("ChoiceWidgetAnnotation", function () {
-    let choiceWidgetDict;
+    let choiceWidgetDict, fontRefObj;
 
     beforeEach(function (done) {
       choiceWidgetDict = new Dict();
       choiceWidgetDict.set("Type", Name.get("Annot"));
       choiceWidgetDict.set("Subtype", Name.get("Widget"));
       choiceWidgetDict.set("FT", Name.get("Ch"));
+
+      const helvDict = new Dict();
+      helvDict.set("BaseFont", Name.get("Helvetica"));
+      helvDict.set("Type", Name.get("Font"));
+      helvDict.set("Subtype", Name.get("Type1"));
+
+      const fontRef = Ref.get(314, 0);
+      fontRefObj = { ref: fontRef, data: helvDict };
+      const resourceDict = new Dict();
+      const fontDict = new Dict();
+      fontDict.set("Helv", fontRef);
+      resourceDict.set("Font", fontDict);
+
+      choiceWidgetDict.set("DA", "/Helv 5 Tf");
+      choiceWidgetDict.set("DR", resourceDict);
+      choiceWidgetDict.set("Rect", [0, 0, 32, 10]);
+
       done();
     });
 
     afterEach(function () {
       choiceWidgetDict = null;
+      fontRefObj = null;
     });
 
     it("should handle missing option arrays", function (done) {
@@ -2127,6 +2303,39 @@ describe("annotation", function () {
         expect(data.multiSelect).toEqual(true);
         done();
       }, done.fail);
+    });
+
+    it("should get choice from annotation storage", function (done) {
+      const choiceWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        choiceWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = "a value";
+          return annotation.getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (a value) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
     });
   });
 

@@ -789,6 +789,10 @@ function stringToPDFString(str) {
   return strBuf.join("");
 }
 
+function escapeString(str) {
+  return str.replace(/([\(\)\\])/g, "\\$1");
+}
+
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
@@ -944,4 +948,5 @@ export {
   utf8StringToString,
   warn,
   unreachable,
+  escapeString,
 };

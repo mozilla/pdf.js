@@ -441,6 +441,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     const TEXT_ALIGNMENT = ["left", "center", "right"];
+    const storage = this.annotationStorage;
+    const id = this.data.id;
 
     this.container.className = "textWidgetAnnotation";
 
@@ -449,14 +451,20 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
       //       from parsing the elements correctly for the reference tests.
+      const textContent = storage.getOrCreateValue(id, this.data.fieldValue);
+
       if (this.data.multiLine) {
         element = document.createElement("textarea");
-        element.textContent = this.data.fieldValue;
+        element.textContent = textContent;
       } else {
         element = document.createElement("input");
         element.type = "text";
-        element.setAttribute("value", this.data.fieldValue);
+        element.setAttribute("value", textContent);
       }
+
+      element.addEventListener("change", function (event) {
+        storage.setValue(id, event.target.value);
+      });
 
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;
@@ -654,6 +662,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     this.container.className = "choiceWidgetAnnotation";
+    const storage = this.annotationStorage;
+    const id = this.data.id;
 
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
@@ -677,6 +687,12 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       }
       selectElement.appendChild(optionElement);
     }
+
+    selectElement.addEventListener("change", function (event) {
+      const options = event.target.options;
+      const value = options[options.selectedIndex].text;
+      storage.setValue(id, value);
+    });
 
     this.container.appendChild(selectElement);
     return this.container;

@@ -66,6 +66,10 @@ function buildGetDocumentParams(filename, options) {
 class XRefMock {
   constructor(array) {
     this._map = Object.create(null);
+    this.stats = {
+      streamTypes: Object.create(null),
+      fontTypes: Object.create(null),
+    };
 
     for (const key in array) {
       const obj = array[key];
