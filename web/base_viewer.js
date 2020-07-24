@@ -1164,6 +1164,7 @@ class BaseViewer {
       renderInteractiveForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,
+      annotationStorage: this.pdfDocument.annotationStorage,
       l10n,
     });
   }

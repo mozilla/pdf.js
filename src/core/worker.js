@@ -532,6 +532,7 @@ class WorkerMessageHandler {
               task,
               intent: data.intent,
               renderInteractiveForms: data.renderInteractiveForms,
+              annotationStorage: data.annotationStorage,
             })
             .then(
               function (operatorListInfo) {
