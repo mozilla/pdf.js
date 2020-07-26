@@ -455,14 +455,7 @@ class PartialEvaluator {
   _sendImgData(objId, imgData, cacheGlobally = false) {
     const transfers = imgData ? [imgData.data.buffer] : null;
 
-    if (this.parsingType3Font) {
-      return this.handler.send(
-        "commonobj",
-        [objId, "FontType3Res", imgData],
-        transfers
-      );
-    }
-    if (cacheGlobally) {
+    if (this.parsingType3Font || cacheGlobally) {
       return this.handler.send(
         "commonobj",
         [objId, "Image", imgData],
