@@ -750,7 +750,8 @@ function unitTestPostHandler(req, res) {
     }
     var session = getSession(data.browser);
     session.numRuns++;
-    var message = data.status + " | " + data.description;
+    var message =
+      data.status + " | " + data.description + " | in " + session.name;
     if (data.status === "TEST-UNEXPECTED-FAIL") {
       session.numErrors++;
     }
