@@ -275,7 +275,7 @@ function startRefTest(masterMode, showRefImages) {
   }
   function checkRefsTmp() {
     if (masterMode && fs.existsSync(refsTmpDir)) {
-      if (options.noPrompt) {
+      if (options.noPrompts) {
         testUtils.removeDirSync(refsTmpDir);
         setup();
         return;
