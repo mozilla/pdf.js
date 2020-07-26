@@ -456,7 +456,7 @@ class PartialEvaluator {
     const transfers = imgData ? [imgData.data.buffer] : null;
 
     if (this.parsingType3Font) {
-      return this.handler.sendWithPromise(
+      return this.handler.send(
         "commonobj",
         [objId, "FontType3Res", imgData],
         transfers
@@ -581,7 +581,7 @@ class PartialEvaluator {
     operatorList.addDependency(objId);
     args = [objId, w, h];
 
-    const imgPromise = PDFImage.buildImage({
+    PDFImage.buildImage({
       xref: this.xref,
       res: resources,
       image,
@@ -599,13 +599,6 @@ class PartialEvaluator {
 
         return this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
       });
-
-    if (this.parsingType3Font) {
-      // In the very rare case where a Type3 image resource is being parsed,
-      // wait for the image to be both decoded *and* sent to simplify the
-      // rendering code on the main-thread (see issue10717.pdf).
-      await imgPromise;
-    }
 
     operatorList.addOp(OPS.paintImageXObject, args);
     if (cacheKey) {
@@ -741,8 +734,12 @@ class PartialEvaluator {
           return translated;
         }
         return translated
-          .loadType3Data(this, resources, operatorList, task)
+          .loadType3Data(this, resources, task)
           .then(function () {
+            // Add the dependencies to the parent operatorList so they are
+            // resolved before Type3 operatorLists are executed synchronously.
+            operatorList.addDependencies(translated.type3Dependencies);
+
             return translated;
           })
           .catch(reason => {
@@ -3354,6 +3351,7 @@ class TranslatedFont {
     this.dict = dict;
     this._extraProperties = extraProperties;
     this.type3Loaded = null;
+    this.type3Dependencies = font.isType3Font ? new Set() : null;
     this.sent = false;
   }
 
@@ -3386,7 +3384,7 @@ class TranslatedFont {
     PartialEvaluator.buildFontPaths(this.font, glyphs, handler);
   }
 
-  loadType3Data(evaluator, resources, parentOperatorList, task) {
+  loadType3Data(evaluator, resources, task) {
     if (!this.font.isType3Font) {
       throw new Error("Must be a Type3 font.");
     }
@@ -3397,24 +3395,19 @@ class TranslatedFont {
     // When parsing Type3 glyphs, always ignore them if there are errors.
     // Compared to the parsing of e.g. an entire page, it doesn't really
     // make sense to only be able to render a Type3 glyph partially.
-    //
-    // Also, ensure that any Type3 image resources (which should be very rare
-    // in practice) are completely decoded on the worker-thread, to simplify
-    // the rendering code on the main-thread (see issue10717.pdf).
     var type3Options = Object.create(evaluator.options);
     type3Options.ignoreErrors = false;
     var type3Evaluator = evaluator.clone(type3Options);
     type3Evaluator.parsingType3Font = true;
 
-    var translatedFont = this.font;
+    const translatedFont = this.font,
+      type3Dependencies = this.type3Dependencies;
     var loadCharProcsPromise = Promise.resolve();
     var charProcs = this.dict.get("CharProcs");
     var fontResources = this.dict.get("Resources") || resources;
-    var charProcKeys = charProcs.getKeys();
     var charProcOperatorList = Object.create(null);
 
-    for (var i = 0, n = charProcKeys.length; i < n; ++i) {
-      const key = charProcKeys[i];
+    for (const key of charProcs.getKeys()) {
       loadCharProcsPromise = loadCharProcsPromise.then(function () {
         var glyphStream = charProcs.get(key);
         var operatorList = new OperatorList();
@@ -3428,9 +3421,9 @@ class TranslatedFont {
           .then(function () {
             charProcOperatorList[key] = operatorList.getIR();
 
-            // Add the dependencies to the parent operator list so they are
-            // resolved before sub operator list is executed synchronously.
-            parentOperatorList.addDependencies(operatorList.dependencies);
+            for (const dependency of operatorList.dependencies) {
+              type3Dependencies.add(dependency);
+            }
           })
           .catch(function (reason) {
             warn(`Type3 font resource "${key}" is not available.`);
