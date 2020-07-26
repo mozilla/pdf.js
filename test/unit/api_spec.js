@@ -1906,7 +1906,11 @@ describe("api", function () {
               viewport,
             });
 
-            pdfDoc
+            renderTask.onContinue = function (cont) {
+              waitSome(cont);
+            };
+
+            return pdfDoc
               .cleanup()
               .then(
                 () => {
