@@ -152,6 +152,9 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   parsed font data from the worker-thread. This may be useful for debugging
  *   purposes (and backwards compatibility), but note that it will lead to
  *   increased memory usage. The default value is `false`.
+ * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
+ *   context to create elements with and to load resources, such as fonts,
+ *   into. Defaults to the current document.
  * @property {boolean} [disableRange] - Disable range request loading
  *   of PDF files. When enabled, and if the server supports partial content
  *   requests, then the PDF will be fetched in chunks.
@@ -267,6 +270,9 @@ function getDocument(src) {
   }
   if (typeof params.disableFontFace !== "boolean") {
     params.disableFontFace = apiCompatibilityParams.disableFontFace || false;
+  }
+  if (typeof params.ownerDocument === "undefined") {
+    params.ownerDocument = globalThis.document;
   }
 
   if (typeof params.disableRange !== "boolean") {
@@ -907,9 +913,10 @@ class PDFDocumentProxy {
  * @alias PDFPageProxy
  */
 class PDFPageProxy {
-  constructor(pageIndex, pageInfo, transport, pdfBug = false) {
+  constructor(pageIndex, pageInfo, transport, ownerDocument, pdfBug = false) {
     this._pageIndex = pageIndex;
     this._pageInfo = pageInfo;
+    this._ownerDocument = ownerDocument;
     this._transport = transport;
     this._stats = pdfBug ? new StatTimer() : null;
     this._pdfBug = pdfBug;
@@ -1036,7 +1043,9 @@ class PDFPageProxy {
       intentState.streamReaderCancelTimeout = null;
     }
 
-    const canvasFactoryInstance = canvasFactory || new DefaultCanvasFactory();
+    const canvasFactoryInstance =
+      canvasFactory ||
+      new DefaultCanvasFactory({ ownerDocument: this._ownerDocument });
     const webGLContext = new WebGLContext({
       enable: enableWebGL,
     });
@@ -1944,6 +1953,7 @@ class WorkerTransport {
     this.fontLoader = new FontLoader({
       docId: loadingTask.docId,
       onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
+      ownerDocument: params.ownerDocument,
     });
     this._params = params;
     this.CMapReaderFactory = new params.CMapReaderFactory({
@@ -2387,6 +2397,7 @@ class WorkerTransport {
           pageIndex,
           pageInfo,
           this,
+          this._params.ownerDocument,
           this._params.pdfBug
         );
         this.pageCache[pageIndex] = page;

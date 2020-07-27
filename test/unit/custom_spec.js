@@ -107,3 +107,119 @@ describe("custom canvas rendering", function () {
       .catch(done.fail);
   });
 });
+
+describe("alternate document context", function () {
+  const FontFace = global.FontFace;
+
+  let altDocument;
+  let CanvasFactory;
+  let elements;
+
+  beforeEach(() => {
+    global.FontFace = function MockFontFace(name) {
+      this.family = name;
+    };
+
+    elements = [];
+    const createElement = name => {
+      const element = {
+        tagName: name,
+        remove() {
+          this.remove.called = true;
+        },
+      };
+      if (name === "style") {
+        element.sheet = {
+          cssRules: [],
+          insertRule(rule) {
+            this.cssRules.push(rule);
+          },
+        };
+      }
+      elements.push(element);
+      return element;
+    };
+    altDocument = {
+      fonts: new Set(),
+      createElement,
+      documentElement: {
+        getElementsByTagName: () => [{ appendChild: () => {} }],
+      },
+    };
+
+    CanvasFactory = isNodeJS
+      ? new NodeCanvasFactory()
+      : new DOMCanvasFactory({ ownerDocument: altDocument });
+  });
+
+  afterEach(() => {
+    global.FontFace = FontFace;
+    CanvasFactory = null;
+    elements = null;
+  });
+
+  it("should use given document for loading fonts (with Font Loading API)", async function () {
+    const getDocumentParams = buildGetDocumentParams(
+      "TrueType_without_cmap.pdf",
+      {
+        disableFontFace: false,
+        ownerDocument: altDocument,
+      }
+    );
+
+    const loadingTask = getDocument(getDocumentParams);
+    const doc = await loadingTask.promise;
+    const page = await doc.getPage(1);
+
+    const viewport = page.getViewport({ scale: 1 });
+    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+    await page.render({
+      canvasContext: canvasAndCtx.context,
+      viewport,
+    }).promise;
+
+    expect(elements).toEqual([]);
+    expect(altDocument.fonts.size).toBe(1);
+    const [font] = Array.from(altDocument.fonts);
+    expect(font.family).toMatch(/g_d\d+_f1/);
+
+    await doc.destroy();
+    await loadingTask.destroy();
+    CanvasFactory.destroy(canvasAndCtx);
+    expect(altDocument.fonts.size).toBe(0);
+  });
+
+  it("should use given document for loading fonts (with CSS rules)", async function () {
+    altDocument.fonts = null;
+    const getDocumentParams = buildGetDocumentParams(
+      "TrueType_without_cmap.pdf",
+      {
+        disableFontFace: false,
+        ownerDocument: altDocument,
+      }
+    );
+
+    const loadingTask = getDocument(getDocumentParams);
+    const doc = await loadingTask.promise;
+    const page = await doc.getPage(1);
+
+    const viewport = page.getViewport({ scale: 1 });
+    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+    await page.render({
+      canvasContext: canvasAndCtx.context,
+      viewport,
+    }).promise;
+
+    const style = elements.find(element => element.tagName === "style");
+    expect(style.sheet.cssRules.length).toBe(1);
+    expect(style.sheet.cssRules[0]).toMatch(
+      /^@font-face {font-family:"g_d\d+_f1";src:/
+    );
+    await doc.destroy();
+    await loadingTask.destroy();
+    CanvasFactory.destroy(canvasAndCtx);
+    expect(style.remove.called).toBe(true);
+  });
+});
