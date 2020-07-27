@@ -3378,12 +3378,11 @@ class TranslatedFont {
   }
 
   loadType3Data(evaluator, resources, task) {
-    if (!this.font.isType3Font) {
-      throw new Error("Must be a Type3 font.");
-    }
-
     if (this.type3Loaded) {
       return this.type3Loaded;
+    }
+    if (!this.font.isType3Font) {
+      throw new Error("Must be a Type3 font.");
     }
     // When parsing Type3 glyphs, always ignore them if there are errors.
     // Compared to the parsing of e.g. an entire page, it doesn't really
