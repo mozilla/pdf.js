@@ -1058,12 +1058,12 @@ html[dir='rtl'] .verticalToolbarSeparator {
 
 .toolbarField:hover {
   background-color: rgba(255, 255, 255, 0.11);
-  border-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.43) rgba(0, 0, 0, 0.45);
+  border-color: rgba(9, 72, 88, 0.8) rgba(9, 72, 88, 0.85) rgba(9, 72, 88, 0.9);
 }
 
 .toolbarField:focus {
   background-color: rgba(255, 255, 255, 0.15);
-  border-color: rgba(77, 184, 255, 0.8) rgba(77, 184, 255, 0.85) rgba(77, 184, 255, 0.9);
+  border-color: rgba(34, 147, 222, 0.8) rgba(34, 147, 222, 0.85) rgba(34, 147, 222, 0.9);
 }
 
 .toolbarLabel {
