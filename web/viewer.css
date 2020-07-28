@@ -1064,6 +1064,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
 .toolbarField:focus {
   background-color: rgba(255, 255, 255, 0.15);
   border-color: rgba(34, 147, 222, 0.8) rgba(34, 147, 222, 0.85) rgba(34, 147, 222, 0.9);
+  
 }
 
 .toolbarLabel {
