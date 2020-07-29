@@ -875,7 +875,6 @@ class FreeTextAnnotationElement extends AnnotationElement {
     this.container.className = "freeTextAnnotation";
     const data = this.data;
 
-    // XXX why a new div?
     const div = document.createElement("div");
     const divWidth = data.rect[2] - data.rect[0];
     const divHeight = data.rect[3] - data.rect[1];
