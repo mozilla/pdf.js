@@ -542,15 +542,27 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
+    const storage = this.annotationStorage;
+    const data = this.data;
+    const id = data.id;
+    const value = storage.getOrCreateValue(
+      id,
+      data.fieldValue && data.fieldValue !== "Off"
+    );
+
     this.container.className = "buttonWidgetAnnotation checkBox";
 
     const element = document.createElement("input");
-    element.disabled = this.data.readOnly;
+    element.disabled = data.readOnly;
     element.type = "checkbox";
     element.name = this.data.fieldName;
-    if (this.data.fieldValue && this.data.fieldValue !== "Off") {
+    if (value) {
       element.setAttribute("checked", true);
     }
+
+    element.addEventListener("change", function (event) {
+      storage.setValue(id, event.target.checked);
+    });
 
     this.container.appendChild(element);
     return this.container;
