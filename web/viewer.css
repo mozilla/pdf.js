@@ -19,6 +19,143 @@
   --sidebar-width: 200px;
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
+
+  --toolbar-icon-opacity: 0.7;
+  --doorhanger-icon-opacity: 0.9;
+
+  --main-color: rgba(12, 12, 13, 1);
+  --body-bg-color: rgba(237, 237, 240, 1);
+  --errorWrapper-bg-color: rgba(255, 74, 74, 1);
+  --progressBar-color: rgba(10, 132, 255, 1);
+  --scrollbar-color: auto;
+  --scrollbar-bg-color: auto;
+
+  --sidebar-bg-color: rgba(245, 246, 247, 1);
+  --toolbar-bg-color: rgba(249, 249, 250, 1);
+  --toolbar-border-color: rgba(204, 204, 204, 1);
+  --button-hover-color: rgba(221, 222, 223, 1);
+  --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
+  --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
+  --separator-color: rgba(0, 0, 0, 0.3);
+  --field-color: rgba(6, 6, 6, 1);
+  --field-bg-color: rgba(255, 255, 255, 1);
+  --field-border-color: rgba(187, 187, 188, 1);
+  --findbar-nextprevious-btn-bg-color: rgba(227, 228, 230, 1);
+  --outline-color: rgba(0, 0, 0, 0.8);
+  --outline-hover-color: rgba(0, 0, 0, 0.9);
+  --outline-active-color: rgba(0, 0, 0, 0.08);
+  --outline-active-bg-color: rgba(0, 0, 0, 1);
+  --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
+  --doorhanger-bg-color: rgba(255, 255, 255, 1);
+  --doorhanger-border-color: rgba(12, 12, 13, 0.2);
+  --doorhanger-hover-color: rgba(237, 237, 237, 1);
+  --doorhanger-separator-color: rgba(222, 222, 222, 1);
+  --overlay-button-bg-color: rgba(12, 12, 13, 0.1);
+  --overlay-button-hover-color: rgba(12, 12, 13, 0.3);
+
+  --loading-icon: url(images/loading.svg);
+  --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
+  --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
+  --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
+  --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
+  --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
+  --toolbarButton-pageUp-icon: url(images/toolbarButton-pageUp.svg);
+  --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
+  --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut.svg);
+  --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
+  --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
+  --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
+  --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
+  --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
+  --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
+  --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
+  --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
+  --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
+  --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
+  --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
+  --findbarButton-next-icon: url(images/findbarButton-next.svg);
+  --secondaryToolbarButton-firstPage-icon: url(images/secondaryToolbarButton-firstPage.svg);
+  --secondaryToolbarButton-lastPage-icon: url(images/secondaryToolbarButton-lastPage.svg);
+  --secondaryToolbarButton-rotateCcw-icon: url(images/secondaryToolbarButton-rotateCcw.svg);
+  --secondaryToolbarButton-rotateCw-icon: url(images/secondaryToolbarButton-rotateCw.svg);
+  --secondaryToolbarButton-selectTool-icon: url(images/secondaryToolbarButton-selectTool.svg);
+  --secondaryToolbarButton-handTool-icon: url(images/secondaryToolbarButton-handTool.svg);
+  --secondaryToolbarButton-scrollVertical-icon: url(images/secondaryToolbarButton-scrollVertical.svg);
+  --secondaryToolbarButton-scrollHorizontal-icon: url(images/secondaryToolbarButton-scrollHorizontal.svg);
+  --secondaryToolbarButton-scrollWrapped-icon: url(images/secondaryToolbarButton-scrollWrapped.svg);
+  --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone.svg);
+  --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
+  --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
+  --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --main-color: rgba(249, 249, 250, 1);
+    --body-bg-color: rgba(42, 42, 46, 1);
+    --errorWrapper-bg-color: rgba(199, 17, 17, 1);
+    --progressBar-color: rgba(0, 96, 223, 1);
+    --scrollbar-color: rgba(121, 121, 123, 1);
+    --scrollbar-bg-color: rgba(35, 35, 39, 1);
+
+    --sidebar-bg-color: rgba(50, 50, 52, 1);
+    --toolbar-bg-color: rgba(56, 56, 61, 1);
+    --toolbar-border-color: rgba(12, 12, 13, 1);
+    --button-hover-color: rgba(102, 102, 103, 1);
+    --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
+    --dropdown-btn-bg-color: rgba(74, 74, 79, 1);
+    --separator-color: rgba(0, 0, 0, 0.3);
+    --field-color: rgba(250, 250, 250, 1);
+    --field-bg-color: rgba(64, 64, 68, 1);
+    --field-border-color: rgba(115, 115, 115, 1);
+    --findbar-nextprevious-btn-bg-color: rgba(89, 89, 89, 1);
+    --outline-color: rgba(255, 255, 255, 0.8);
+    --outline-hover-color: rgba(255, 255, 255, 0.9);
+    --outline-active-color: rgba(255, 255, 255, 0.08);
+    --outline-active-bg-color: rgba(255, 255, 255, 1);
+    --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
+    --doorhanger-bg-color: rgba(74, 74, 79, 1);
+    --doorhanger-border-color: rgba(39, 39, 43, 1);
+    --doorhanger-hover-color: rgba(93, 94, 98, 1);
+    --doorhanger-separator-color: rgba(92, 92, 97, 1);
+    --overlay-button-bg-color: rgba(92, 92, 97, 1);
+    --overlay-button-hover-color: rgba(115, 115, 115, 1);
+
+    --loading-icon: url(images/loading-dark.svg);
+    --treeitem-expanded-icon: url(images/treeitem-expanded-dark.svg);
+    --treeitem-collapsed-icon: url(images/treeitem-collapsed-dark.svg);
+    --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow-dark.svg);
+    --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle-dark.svg);
+    --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle-dark.svg);
+    --toolbarButton-pageUp-icon: url(images/toolbarButton-pageUp-dark.svg);
+    --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown-dark.svg);
+    --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut-dark.svg);
+    --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn-dark.svg);
+    --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode-dark.svg);
+    --toolbarButton-print-icon: url(images/toolbarButton-print-dark.svg);
+    --toolbarButton-openFile-icon: url(images/toolbarButton-openFile-dark.svg);
+    --toolbarButton-download-icon: url(images/toolbarButton-download-dark.svg);
+    --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark-dark.svg);
+    --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail-dark.svg);
+    --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline-dark.svg);
+    --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments-dark.svg);
+    --toolbarButton-search-icon: url(images/toolbarButton-search-dark.svg);
+    --findbarButton-previous-icon: url(images/findbarButton-previous-dark.svg);
+    --findbarButton-next-icon: url(images/findbarButton-next-dark.svg);
+    --secondaryToolbarButton-firstPage-icon: url(images/secondaryToolbarButton-firstPage-dark.svg);
+    --secondaryToolbarButton-lastPage-icon: url(images/secondaryToolbarButton-lastPage-dark.svg);
+    --secondaryToolbarButton-rotateCcw-icon: url(images/secondaryToolbarButton-rotateCcw-dark.svg);
+    --secondaryToolbarButton-rotateCw-icon: url(images/secondaryToolbarButton-rotateCw-dark.svg);
+    --secondaryToolbarButton-selectTool-icon: url(images/secondaryToolbarButton-selectTool-dark.svg);
+    --secondaryToolbarButton-handTool-icon: url(images/secondaryToolbarButton-handTool-dark.svg);
+    --secondaryToolbarButton-scrollVertical-icon: url(images/secondaryToolbarButton-scrollVertical-dark.svg);
+    --secondaryToolbarButton-scrollHorizontal-icon: url(images/secondaryToolbarButton-scrollHorizontal-dark.svg);
+    --secondaryToolbarButton-scrollWrapped-icon: url(images/secondaryToolbarButton-scrollWrapped-dark.svg);
+    --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone-dark.svg);
+    --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd-dark.svg);
+    --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven-dark.svg);
+    --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties-dark.svg);
+  }
 }
 
 * {
@@ -36,8 +173,7 @@ html {
 body {
   height: 100%;
   width: 100%;
-  background-color: rgba(64, 64, 64, 1);
-  background-image: url(images/texture.png);
+  background-color: var(--body-bg-color);
 }
 
 body,
@@ -46,6 +182,7 @@ button,
 select {
   font: message-box;
   outline: none;
+  scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
 }
 
 .hidden {
@@ -182,12 +319,6 @@ html[dir='rtl'] #sidebarContent {
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
-html[dir='ltr'] #viewerContainer {
-  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.05);
-}
-html[dir='rtl'] #viewerContainer {
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05);
-}
 
 #outerContainer.sidebarResizing #viewerContainer {
   /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
@@ -218,21 +349,24 @@ html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentatio
 #toolbarSidebar {
   width: 100%;
   height: 32px;
-  background-color: rgba(66, 66, 66, 1); /* fallback */
-  background-image: url(images/texture.png),
-                    linear-gradient(rgba(77, 77, 77, 0.99), rgba(64, 64, 64, 0.95));
+  background-color: var(--sidebar-bg-color);
 }
 html[dir='ltr'] #toolbarSidebar {
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25),
-              inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-              0 1px 0 rgba(0, 0, 0, 0.15),
-              0 0 1px rgba(0, 0, 0, 0.1);
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25), 
+    0 1px 0 rgba(0, 0, 0, 0.15),
+    0 0 1px rgba(0, 0, 0, 0.1);
 }
 html[dir='rtl'] #toolbarSidebar {
   box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25),
-              inset 0 1px 0 rgba(255, 255, 255, 0.05),
-              0 1px 0 rgba(0, 0, 0, 0.15),
-              0 0 1px rgba(0, 0, 0, 0.1);
+    0 1px 0 rgba(0, 0, 0, 0.15),
+    0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+html[dir='ltr'] #toolbarSidebar .toolbarButton {
+  margin-right: 2px !important;
+}
+html[dir='rtl'] #toolbarSidebar .toolbarButton {
+  margin-left: 2px !important;
 }
 
 #sidebarResizer {
@@ -253,21 +387,13 @@ html[dir='rtl'] #sidebarResizer {
 #toolbarContainer, .findbar, .secondaryToolbar {
   position: relative;
   height: 32px;
-  background-color: rgba(71, 71, 71, 1); /* fallback */
-  background-image: url(images/texture.png),
-                    linear-gradient(rgba(82, 82, 82, 0.99), rgba(69, 69, 69, 0.95));
+  background-color: var(--toolbar-bg-color);
 }
 html[dir='ltr'] #toolbarContainer, .findbar, .secondaryToolbar {
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15),
-              inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-              0 1px 0 rgba(0, 0, 0, 0.15),
-              0 1px 1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 0 var(--toolbar-border-color);
 }
 html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.15),
-              inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-              0 1px 0 rgba(0, 0, 0, 0.15),
-              0 1px 1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 0 var(--toolbar-border-color);
 }
 
 #toolbarViewer {
@@ -278,8 +404,8 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   position: relative;
   width: 100%;
   height: 4px;
-  background-color: rgba(51, 51, 51, 1);
-  border-bottom: 1px solid rgba(51, 51, 51, 1);
+  background-color: var(--body-bg-color);
+  border-top: 1px solid var(--toolbar-border-color);
 }
 
 #loadingBar .progress {
@@ -288,7 +414,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   left: 0;
   width: 0%;
   height: 100%;
-  background-color: rgba(221, 221, 221, 1);
+  background-color: var(--progressBar-color);
   overflow: hidden;
   transition: width 200ms;
 }
@@ -299,7 +425,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 }
 
 #loadingBar .progress.indeterminate {
-  background-color: rgba(153, 153, 153, 1);
+  background-color: var(--progressBar-color);
   transition: none;
 }
 
@@ -322,7 +448,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   z-index: 10000;
   height: auto;
   min-width: 16px;
-  padding: 0px 6px 0px 6px;
+  padding: 0px 4px 0px 4px;
   margin: 4px 2px 4px 2px;
   color: rgba(217, 217, 217, 1);
   font-size: 12px;
@@ -333,6 +459,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 
 .findbar {
   min-width: 300px;
+  background-color: var(--toolbar-bg-color);
 }
 .findbar > div {
   height: 32px;
@@ -344,14 +471,87 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   height: auto;
 }
 html[dir='ltr'] .findbar {
-  left: 68px;
+  left: 63px;
 }
 html[dir='rtl'] .findbar {
-  right: 68px;
+  right: 63px;
+}
+
+html[dir='ltr'] .findbar .splitToolbarButton {
+  margin-left: 0px;
+  margin-top: 3px;
+}
+
+html[dir='rtl'] .findbar .splitToolbarButton {
+  margin-right: 0px;
+  margin-top: 3px;
+}
+
+.findbar .splitToolbarButton .findNext {
+  width: 29px;
+}
+
+html[dir='ltr'] .findbar .splitToolbarButton .findNext {
+  border-right: 1px solid var(--field-border-color);
+}
+
+html[dir='rtl'] .findbar .splitToolbarButton .findNext {
+  border-left: 1px solid var(--field-border-color);
+}
+
+.findbar .splitToolbarButton .toolbarButton {
+  background-color: var(--findbar-nextprevious-btn-bg-color);
+  border-radius: 0px;
+  height: 26px;
+  border-top: 1px solid var(--field-border-color);
+  border-bottom: 1px solid var(--field-border-color);
+}
+
+.findbar .splitToolbarButton .toolbarButton::before {
+  top: 5px;
+}
+
+html[dir='ltr'] .findbar .splitToolbarButton > .findPrevious {
+  border-radius: 0;
+}
+html[dir='ltr'] .findbar .splitToolbarButton > .findNext {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 2px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 2px;
+}
+
+html[dir='rtl'] .findbar .splitToolbarButton > .findPrevious {
+  border-radius: 0;
+}
+html[dir='rtl'] .findbar .splitToolbarButton > .findNext {
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 0;
 }
 
 .findbar label {
   user-select: none;
+}
+
+.findbar .toolbarLabel:hover, .findbar label:hover,
+.findbar input:focus + label {
+  background-color: var(--button-hover-color);
+}
+
+html[dir='ltr'] #findInput {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+html[dir='rtl'] #findInput {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.findbar .toolbarField[type="checkbox"]:checked + .toolbarLabel {
+  background-color: var(--toggled-btn-bg-color) !important;
 }
 
 #findInput {
@@ -361,31 +561,32 @@ html[dir='rtl'] .findbar {
   color: rgba(191, 191, 191, 1);
 }
 #findInput::placeholder {
-  font-style: italic;
+  font-style: normal;
 }
 #findInput[data-status="pending"] {
-  background-image: url(images/loading-small.png);
+  background-image: var(--loading-icon);
   background-repeat: no-repeat;
-  background-position: right;
+  background-position: 98%;
 }
 html[dir='rtl'] #findInput[data-status="pending"] {
-  background-position: left;
+  background-position: 3px;
 }
 
 .secondaryToolbar {
-  padding: 6px;
+  padding: 6px 0 10px 0;
   height: auto;
   z-index: 30000;
+  background-color: var(--doorhanger-bg-color);
 }
 html[dir='ltr'] .secondaryToolbar {
-  right: 4px;
+  right: 3px;
 }
 html[dir='rtl'] .secondaryToolbar {
-  left: 4px;
+  left: 3px;
 }
 
 #secondaryToolbarButtonContainer {
-  max-width: 200px;
+  max-width: 220px;
   max-height: 400px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -399,9 +600,8 @@ html[dir='rtl'] .secondaryToolbar {
 
 .doorHanger,
 .doorHangerRight {
-  border: 1px solid rgba(0, 0, 0, 0.5);
   border-radius: 2px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 5px var(--doorhanger-border-color), 0 0 0 1px var(--doorhanger-border-color);
 }
 .doorHanger:after, .doorHanger:before,
 .doorHangerRight:after, .doorHangerRight:before {
@@ -415,36 +615,41 @@ html[dir='rtl'] .secondaryToolbar {
 }
 .doorHanger:after,
 .doorHangerRight:after {
-  border-bottom-color: rgba(82, 82, 82, 0.99);
   border-width: 8px;
+}
+.doorHanger:after {
+  border-bottom-color: var(--toolbar-bg-color);
+}
+.doorHangerRight:after {
+  border-bottom-color: var(--doorhanger-bg-color);
 }
 .doorHanger:before,
 .doorHangerRight:before {
-  border-bottom-color: rgba(0, 0, 0, 0.5);
+  border-bottom-color: var(--doorhanger-border-color);
   border-width: 9px;
 }
 
 html[dir='ltr'] .doorHanger:after,
 html[dir='rtl'] .doorHangerRight:after {
-  left: 13px;
+  left: 10px;
   margin-left: -8px;
 }
 
 html[dir='ltr'] .doorHanger:before,
 html[dir='rtl'] .doorHangerRight:before {
-  left: 13px;
+  left: 10px;
   margin-left: -9px;
 }
 
 html[dir='rtl'] .doorHanger:after,
 html[dir='ltr'] .doorHangerRight:after {
-  right: 13px;
+  right: 10px;
   margin-right: -8px;
 }
 
 html[dir='rtl'] .doorHanger:before,
 html[dir='ltr'] .doorHangerRight:before {
-  right: 13px;
+  right: 10px;
   margin-right: -9px;
 }
 
@@ -453,11 +658,11 @@ html[dir='ltr'] .doorHangerRight:before {
   color: rgba(82, 82, 82, 1);
   text-align: center;
   padding: 3px 4px;
+  margin: 5px;
 }
 
 #findMsg {
-  font-style: italic;
-  color: rgba(166, 183, 208, 1);
+  color: rgba(251, 0, 0, 1);
 }
 #findMsg:empty {
   display: none;
@@ -497,19 +702,19 @@ html[dir='rtl'] .findbar * {
 }
 
 html[dir='ltr'] .splitToolbarButton {
-  margin: 3px 2px 4px 0;
+  margin: 2px 2px 0;
   display: inline-block;
 }
 html[dir='rtl'] .splitToolbarButton {
-  margin: 3px 0 4px 2px;
+  margin: 2px 2px 0;
   display: inline-block;
 }
 html[dir='ltr'] .splitToolbarButton > .toolbarButton {
-  border-radius: 0;
+  border-radius: 2px;
   float: left;
 }
 html[dir='rtl'] .splitToolbarButton > .toolbarButton {
-  border-radius: 0;
+  border-radius: 2px;
   float: right;
 }
 
@@ -518,8 +723,16 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .overlayButton {
   border: 0 none;
   background: none;
-  width: 32px;
-  height: 25px;
+  width: 28px;
+  height: 28px;
+}
+.overlayButton {
+  background-color: var(--overlay-button-bg-color);
+}
+
+.overlayButton:hover,
+.overlayButton:focus {
+  background-color: var(--overlay-button-hover-color);
 }
 
 .toolbarButton > span {
@@ -539,34 +752,13 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   margin: 0;
 }
 
-.splitToolbarButton:hover > .toolbarButton,
-.splitToolbarButton:focus > .toolbarButton,
-.splitToolbarButton.toggled > .toolbarButton,
-.toolbarButton.textButton {
-  background-color: rgba(0, 0, 0, 0.12);
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
-  background-clip: padding-box;
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  border-color: rgba(0, 0, 0, 0.32) rgba(0, 0, 0, 0.38) rgba(0, 0, 0, 0.42);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
-              0 0 1px rgba(255, 255, 255, 0.15) inset,
-              0 1px 0 rgba(255, 255, 255, 0.05);
-}
 .splitToolbarButton > .toolbarButton:hover,
 .splitToolbarButton > .toolbarButton:focus,
 .dropdownToolbarButton:hover,
-.overlayButton:hover,
-.overlayButton:focus,
 .toolbarButton.textButton:hover,
 .toolbarButton.textButton:focus {
-  background-color: rgba(0,0,0,0.2);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
-              0 0 1px rgba(255, 255, 255, 0.15) inset,
-              0 0 1px rgba(0, 0, 0, 0.05);
+  background-color: var(--button-hover-color);
   z-index: 199;
-}
-.dropdownToolbarButton:hover {
-  background-color: rgba(0, 0, 0, 0.26);
 }
 .splitToolbarButton > .toolbarButton {
   position: relative;
@@ -575,40 +767,32 @@ html[dir='ltr'] .splitToolbarButton > .toolbarButton:first-child,
 html[dir='rtl'] .splitToolbarButton > .toolbarButton:last-child {
   position: relative;
   margin: 0;
-  margin-right: -1px;
-  border-top-left-radius: 2px;
-  border-bottom-left-radius: 2px;
-  border-right-color: rgba(0, 0, 0, 0);
 }
 html[dir='ltr'] .splitToolbarButton > .toolbarButton:last-child,
 html[dir='rtl'] .splitToolbarButton > .toolbarButton:first-child {
   position: relative;
   margin: 0;
-  margin-left: -1px;
-  border-top-right-radius: 2px;
-  border-bottom-right-radius: 2px;
-  border-left-color: rgba(0, 0, 0, 0);
 }
 .splitToolbarButtonSeparator {
-  padding: 8px 0;
+  padding: 10px 0;
   width: 1px;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--separator-color);
   z-index: 99;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
   display: inline-block;
-  margin: 5px 0;
+  margin: 4px 0;
 }
+
+.findbar .splitToolbarButtonSeparator {
+  background-color: var(--field-border-color);
+  margin: 0;
+  padding: 13px 0;
+}
+
 html[dir='ltr'] .splitToolbarButtonSeparator {
   float: left;
 }
 html[dir='rtl'] .splitToolbarButtonSeparator {
   float: right;
-}
-.splitToolbarButton:hover > .splitToolbarButtonSeparator,
-.splitToolbarButton.toggled > .splitToolbarButtonSeparator {
-  padding: 12px 0;
-  margin: 1px 0;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .toolbarButton,
@@ -617,86 +801,72 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
 .overlayButton {
   min-width: 16px;
   padding: 2px 6px 0;
-  border: 1px solid rgba(0, 0, 0, 0);
+  border: none;
   border-radius: 2px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--main-color);
   font-size: 12px;
   line-height: 14px;
   user-select: none;
   /* Opera does not support user-select, use <... unselectable="on"> instead */
   cursor: default;
+  box-sizing: border-box;
 }
 
 html[dir='ltr'] .toolbarButton,
 html[dir='ltr'] .overlayButton,
 html[dir='ltr'] .dropdownToolbarButton {
-  margin: 3px 2px 4px 0;
+  margin: 2px 1px;
 }
 html[dir='rtl'] .toolbarButton,
 html[dir='rtl'] .overlayButton,
 html[dir='rtl'] .dropdownToolbarButton {
-  margin: 3px 0 4px 2px;
+  margin: 2px 1px;
 }
 
+html[dir='ltr'] #toolbarViewerLeft > .toolbarButton:first-child,
+html[dir='rtl'] #toolbarViewerRight > .toolbarButton:last-child {
+  margin-left: 2px;
+}
+
+html[dir='ltr'] #toolbarViewerRight > .toolbarButton:last-child,
+html[dir='rtl'] #toolbarViewerLeft > .toolbarButton:first-child {
+  margin-right: 2px;
+}
 .toolbarButton:hover,
-.toolbarButton:focus,
-.dropdownToolbarButton,
-.overlayButton,
+.toolbarButton:focus {
+  background-color: var(--button-hover-color);
+}
 .secondaryToolbarButton:hover,
 .secondaryToolbarButton:focus {
-  background-color: rgba(0, 0, 0, 0.12);
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
-  background-clip: padding-box;
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  border-color: rgba(0, 0, 0, 0.32) rgba(0, 0, 0, 0.38) rgba(0, 0, 0, 0.42);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
-              0 0 1px rgba(255, 255, 255, 0.15) inset,
-              0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.toolbarButton:hover:active,
-.overlayButton:hover:active,
-.dropdownToolbarButton:hover:active,
-.secondaryToolbarButton:hover:active {
-  background-color: rgba(0, 0, 0, 0.2);
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
-  border-color: rgba(0, 0, 0, 0.35) rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.45);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset,
-              0 0 1px rgba(0, 0, 0, 0.2) inset,
-              0 1px 0 rgba(255, 255, 255, 0.05);
+  background-color: var(--doorhanger-hover-color);
 }
 
 .toolbarButton.toggled,
 .splitToolbarButton.toggled > .toolbarButton.toggled,
 .secondaryToolbarButton.toggled {
-  background-color: rgba(0, 0, 0, 0.3);
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
-  border-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.45) rgba(0, 0, 0, 0.5);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) inset,
-              0 0 1px rgba(0, 0, 0, 0.2) inset,
-              0 1px 0 rgba(255, 255, 255, 0.05);
+  background-color: var(--toggled-btn-bg-color);
 }
 
 .toolbarButton.toggled:hover:active,
 .splitToolbarButton.toggled > .toolbarButton.toggled:hover:active,
 .secondaryToolbarButton.toggled:hover:active {
   background-color: rgba(0, 0, 0, 0.4);
-  border-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0.55);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) inset,
-              0 0 1px rgba(0, 0, 0, 0.3) inset,
-              0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .dropdownToolbarButton {
   width: 140px;
   padding: 0;
   overflow: hidden;
+  background-color: var(--dropdown-btn-bg-color);
+  margin-top: 2px !important;
 }
 .dropdownToolbarButton::after {
   position: absolute;
   display: inline-block;
-  top: 4px;
-  content: url(images/toolbarButton-menuArrows.png);
+  top: 6px;
+  content: var(--toolbarButton-menuArrow-icon);
+  pointer-events: none;
+  max-width: 16px;
 }
 html[dir='ltr'] .dropdownToolbarButton::after {
   right: 8px;
@@ -707,17 +877,25 @@ html[dir='rtl'] .dropdownToolbarButton::after {
 
 .dropdownToolbarButton > select {
   width: 162px;
-  height: 23px;
+  height: 28px;
   font-size: 12px;
-  color: rgba(242, 242, 242, 1);
+  color: var(--main-color);
   margin: 0;
-  padding: 3px 2px 2px;
+  padding: 1px 5px 2px;
   border: none;
-  background: rgba(0,0,0,0); /* Opera does not support 'transparent' <select> background */
+  background-color: var(--dropdown-btn-bg-color);
+}
+
+.dropdownToolbarButton > select:hover {
+  background-color: var(--button-hover-color);
+}
+
+.dropdownToolbarButton > select:focus {
+  background-color: var(--button-hover-color);
 }
 
 .dropdownToolbarButton > select > option {
-  background: rgba(61, 61, 61, 1);
+  background: var(--doorhanger-bg-color);
 }
 
 #customScaleOption {
@@ -728,19 +906,6 @@ html[dir='rtl'] .dropdownToolbarButton::after {
   border-bottom: 1px rgba(255, 255, 255, 0.5) solid;
 }
 
-html[dir='ltr'] .splitToolbarButton:first-child,
-html[dir='ltr'] .toolbarButton:first-child,
-html[dir='rtl'] .splitToolbarButton:last-child,
-html[dir='rtl'] .toolbarButton:last-child {
-  margin-left: 4px;
-}
-html[dir='ltr'] .splitToolbarButton:last-child,
-html[dir='ltr'] .toolbarButton:last-child,
-html[dir='rtl'] .splitToolbarButton:first-child,
-html[dir='rtl'] .toolbarButton:first-child {
-  margin-right: 4px;
-}
-
 .toolbarButtonSpacer {
   width: 30px;
   display: inline-block;
@@ -748,115 +913,119 @@ html[dir='rtl'] .toolbarButton:first-child {
 }
 
 html[dir='ltr'] #findPrevious {
-  margin-left: 3px;
+  margin-left: 0;
 }
 html[dir='ltr'] #findNext {
   margin-right: 3px;
 }
 
 html[dir='rtl'] #findPrevious {
-  margin-right: 3px;
+  margin-right: 0;
 }
 html[dir='rtl'] #findNext {
   margin-left: 3px;
 }
 
+.toolbarButton::before {
+  opacity: var(--toolbar-icon-opacity);
+  top: 6px;
+}
+
+.secondaryToolbarButton::before {
+  opacity: var(--doorhanger-icon-opacity);
+  top: 5px;
+}
+
 .toolbarButton::before,
 .secondaryToolbarButton::before {
   /* All matching images have a size of 16x16
-   * All relevant containers have a size of 32x25 */
+   * All relevant containers have a size of 28x28 */
   position: absolute;
   display: inline-block;
-  top: 4px;
-  left: 7px;
+  left: 6px;
+  max-width: 16px;
 }
 
 html[dir="ltr"] .secondaryToolbarButton::before {
-  left: 4px;
+  left: 12px;
 }
 html[dir="rtl"] .secondaryToolbarButton::before {
-  right: 4px;
+  right: 12px;
 }
 
 .toolbarButton#sidebarToggle::before {
-  content: url(images/toolbarButton-sidebarToggle.png);
+  content: var(--toolbarButton-sidebarToggle-icon);
 }
 html[dir='rtl'] .toolbarButton#sidebarToggle::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton#secondaryToolbarToggle::before {
-  content: url(images/toolbarButton-secondaryToolbarToggle.png);
+  content: var(--toolbarButton-secondaryToolbarToggle-icon);
 }
 html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton.findPrevious::before {
-  content: url(images/findbarButton-previous.png);
+  content: var(--findbarButton-previous-icon);
 }
 html[dir='rtl'] .toolbarButton.findPrevious::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton.findNext::before {
-  content: url(images/findbarButton-next.png);
+  content: var(--findbarButton-next-icon);
 }
 html[dir='rtl'] .toolbarButton.findNext::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton.pageUp::before {
-  content: url(images/toolbarButton-pageUp.png);
+  content: var(--toolbarButton-pageUp-icon);
 }
 html[dir='rtl'] .toolbarButton.pageUp::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton.pageDown::before {
-  content: url(images/toolbarButton-pageDown.png);
+  content: var(--toolbarButton-pageDown-icon);
 }
 html[dir='rtl'] .toolbarButton.pageDown::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton.zoomOut::before {
-  content: url(images/toolbarButton-zoomOut.png);
+  content: var(--toolbarButton-zoomOut-icon);
 }
 
 .toolbarButton.zoomIn::before {
-  content: url(images/toolbarButton-zoomIn.png);
+  content: var(--toolbarButton-zoomIn-icon);
 }
 
 .toolbarButton.presentationMode::before,
 .secondaryToolbarButton.presentationMode::before {
-  content: url(images/toolbarButton-presentationMode.png);
+  content: var(--toolbarButton-presentationMode-icon);
 }
 
 .toolbarButton.print::before,
 .secondaryToolbarButton.print::before {
-  content: url(images/toolbarButton-print.png);
+  content: var(--toolbarButton-print-icon);
 }
 
 .toolbarButton.openFile::before,
 .secondaryToolbarButton.openFile::before {
-  content: url(images/toolbarButton-openFile.png);
+  content: var(--toolbarButton-openFile-icon);
 }
 
 .toolbarButton.download::before,
 .secondaryToolbarButton.download::before {
-  content: url(images/toolbarButton-download.png);
+  content: var(--toolbarButton-download-icon);
 }
 
-.toolbarButton.bookmark,
 .secondaryToolbarButton.bookmark {
-  box-sizing: border-box;
-  outline: none;
-  padding-top: 4px;
+  padding-top: 6px;
   text-decoration: none;
-}
-.secondaryToolbarButton.bookmark {
-  padding-top: 5px;
 }
 
 .bookmark[href='#'] {
@@ -866,26 +1035,26 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 
 .toolbarButton.bookmark::before,
 .secondaryToolbarButton.bookmark::before {
-  content: url(images/toolbarButton-bookmark.png);
+  content: var(--toolbarButton-bookmark-icon);
 }
 
 #viewThumbnail.toolbarButton::before {
-  content: url(images/toolbarButton-viewThumbnail.png);
+  content: var(--toolbarButton-viewThumbnail-icon);
 }
 
 #viewOutline.toolbarButton::before {
-  content: url(images/toolbarButton-viewOutline.png);
+  content: var(--toolbarButton-viewOutline-icon);
 }
 html[dir="rtl"] #viewOutline.toolbarButton::before {
   transform: scaleX(-1);
 }
 
 #viewAttachments.toolbarButton::before {
-  content: url(images/toolbarButton-viewAttachments.png);
+  content: var(--toolbarButton-viewAttachments-icon);
 }
 
 #viewFind.toolbarButton::before {
-  content: url(images/toolbarButton-search.png);
+  content: var(--toolbarButton-search-icon);
 }
 
 .toolbarButton.pdfSidebarNotification::after {
@@ -908,27 +1077,23 @@ html[dir='rtl'] .toolbarButton.pdfSidebarNotification::after {
 
 .secondaryToolbarButton {
   position: relative;
-  margin: 0 0 4px 0;
-  padding: 3px 0 1px 0;
+  margin: 0;
+  padding: 0 0 1px 0;
   height: auto;
-  min-height: 25px;
+  min-height: 26px;
   width: auto;
   min-width: 100%;
   white-space: normal;
+  border-radius: 0;
+  box-sizing: border-box;
 }
 html[dir="ltr"] .secondaryToolbarButton {
-  padding-left: 24px;
+  padding-left: 36px;
   text-align: left;
 }
 html[dir="rtl"] .secondaryToolbarButton {
-  padding-right: 24px;
+  padding-right: 36px;
   text-align: right;
-}
-html[dir="ltr"] .secondaryToolbarButton.bookmark {
-  padding-left: 27px;
-}
-html[dir="rtl"] .secondaryToolbarButton.bookmark {
-  padding-right: 27px;
 }
 
 html[dir="ltr"] .secondaryToolbarButton > span {
@@ -939,64 +1104,63 @@ html[dir="rtl"] .secondaryToolbarButton > span {
 }
 
 .secondaryToolbarButton.firstPage::before {
-  content: url(images/secondaryToolbarButton-firstPage.png);
+  content: var(--secondaryToolbarButton-firstPage-icon);
 }
 
 .secondaryToolbarButton.lastPage::before {
-  content: url(images/secondaryToolbarButton-lastPage.png);
+  content: var(--secondaryToolbarButton-lastPage-icon);
 }
 
 .secondaryToolbarButton.rotateCcw::before {
-  content: url(images/secondaryToolbarButton-rotateCcw.png);
+  content: var(--secondaryToolbarButton-rotateCcw-icon);
 }
 
 .secondaryToolbarButton.rotateCw::before {
-  content: url(images/secondaryToolbarButton-rotateCw.png);
+  content: var(--secondaryToolbarButton-rotateCw-icon);
 }
 
 .secondaryToolbarButton.selectTool::before {
-  content: url(images/secondaryToolbarButton-selectTool.png);
+  content: var(--secondaryToolbarButton-selectTool-icon);
 }
 
 .secondaryToolbarButton.handTool::before {
-  content: url(images/secondaryToolbarButton-handTool.png);
+  content: var(--secondaryToolbarButton-handTool-icon);
 }
 
 .secondaryToolbarButton.scrollVertical::before {
-  content: url(images/secondaryToolbarButton-scrollVertical.png);
+  content: var(--secondaryToolbarButton-scrollVertical-icon);
 }
 
 .secondaryToolbarButton.scrollHorizontal::before {
-  content: url(images/secondaryToolbarButton-scrollHorizontal.png);
+  content: var(--secondaryToolbarButton-scrollHorizontal-icon)
 }
 
 .secondaryToolbarButton.scrollWrapped::before {
-  content: url(images/secondaryToolbarButton-scrollWrapped.png);
+  content: var(--secondaryToolbarButton-scrollWrapped-icon);
 }
 
 .secondaryToolbarButton.spreadNone::before {
-  content: url(images/secondaryToolbarButton-spreadNone.png);
+  content: var(--secondaryToolbarButton-spreadNone-icon);
 }
 
 .secondaryToolbarButton.spreadOdd::before {
-  content: url(images/secondaryToolbarButton-spreadOdd.png);
+  content: var(--secondaryToolbarButton-spreadOdd-icon);
 }
 
 .secondaryToolbarButton.spreadEven::before {
-  content: url(images/secondaryToolbarButton-spreadEven.png);
+  content: var(--secondaryToolbarButton-spreadEven-icon);
 }
 
 .secondaryToolbarButton.documentProperties::before {
-  content: url(images/secondaryToolbarButton-documentProperties.png);
+  content: var(--secondaryToolbarButton-documentProperties-icon);
 }
 
 .verticalToolbarSeparator {
   display: block;
-  padding: 8px 0;
-  margin: 8px 4px;
+  padding: 11px 0;
+  margin: 5px 2px;
   width: 1px;
-  background-color: rgba(0, 0, 0, 0.5);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background-color: var(--separator-color);
 }
 html[dir='ltr'] .verticalToolbarSeparator {
   margin-left: 2px;
@@ -1007,34 +1171,40 @@ html[dir='rtl'] .verticalToolbarSeparator {
 
 .horizontalToolbarSeparator {
   display: block;
-  margin: 0 0 4px 0;
+  margin: 6px 0 5px 0;
   height: 1px;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--doorhanger-separator-color);
 }
 
 .toolbarField {
-  padding: 3px 6px;
-  margin: 4px 0 4px 0;
+  padding: 4px 7px;
+  margin: 3px 0 3px 0;
   border-radius: 2px;
-  background-color: rgba(255, 255, 255, 0.09);
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  background-color: var(--field-bg-color);
   background-clip: padding-box;
   border-width: 1px;
   border-style: solid;
-  border-color: rgba(0, 0, 0, 0.32) rgba(0, 0, 0, 0.38) rgba(0, 0, 0, 0.42);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05) inset,
-              0 1px 0 rgba(255, 255, 255, 0.05);
-  color: rgba(242, 242, 242, 1);
+  border-color: var(--field-border-color);
+  box-shadow: none;
+  color: var(--field-color);
   font-size: 12px;
-  line-height: 14px;
+  line-height: 16px;
   outline-style: none;
 }
 
 .toolbarField[type=checkbox] {
-  display: inline-block;
-  margin: 8px 0px;
+  opacity: 0;
+  position: absolute !important;
+  left: 0;
+}
+
+html[dir='ltr'] .toolbarField[type=checkbox] {
+  margin: 10px 0 3px 7px;
+}
+
+html[dir='rtl'] .toolbarField[type=checkbox] {
+  margin: 10px 7px 3px 0;
 }
 
 .toolbarField.pageNumber {
@@ -1045,34 +1215,28 @@ html[dir='rtl'] .verticalToolbarSeparator {
 }
 
 .toolbarField.pageNumber.visiblePageIsLoading {
-  background-image: url(images/loading-small.png);
+  background-image: var(--loading-icon);
   background-repeat: no-repeat;
-  background-position: 1px;
+  background-position: 3px;
 }
 
 .toolbarField.pageNumber::-webkit-inner-spin-button,
 .toolbarField.pageNumber::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.toolbarField:hover {
-  background-color: rgba(255, 255, 255, 0.11);
-  border-color: rgba(0, 0, 0, 0.4) rgba(0, 0, 0, 0.43) rgba(0, 0, 0, 0.45);
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .toolbarField:focus {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: rgba(77, 184, 255, 0.8) rgba(77, 184, 255, 0.85) rgba(77, 184, 255, 0.9);
+  border-color: #0a84ff;
 }
 
 .toolbarLabel {
   min-width: 16px;
-  padding: 3px 6px 3px 2px;
-  margin: 4px 2px 4px 0;
+  padding: 6px;
+  margin: 2px;
   border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 2px;
-  color: rgba(217, 217, 217, 1);
+  color: var(--main-color);
   font-size: 12px;
   line-height: 14px;
   text-align: left;
@@ -1114,7 +1278,7 @@ html[dir='rtl'] .thumbnail {
 }
 
 .thumbnail:not([data-loaded]) {
-  border: 1px dashed rgba(255, 255, 255, 0.5);
+  border: 1px dashed rgba(132, 132, 132, 1);
   margin: -1px 9px 4px 9px;
 }
 
@@ -1139,28 +1303,19 @@ a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
 
 a:focus > .thumbnail > .thumbnailSelectionRing,
 .thumbnail:hover > .thumbnailSelectionRing {
-  background-color: rgba(255, 255, 255, 0.15);
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  background-color: var(--sidebaritem-bg-color);
   background-clip: padding-box;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
-              0 0 1px rgba(255, 255, 255, 0.2) inset,
-              0 0 1px rgba(0, 0, 0, 0.2);
   color: rgba(255, 255, 255, 0.9);
 }
 
 .thumbnail.selected > .thumbnailSelectionRing > .thumbnailImage {
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
   opacity: 1;
 }
 
 .thumbnail.selected > .thumbnailSelectionRing {
-  background-color: rgba(255, 255, 255, 0.3);
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  background-color: var(--sidebaritem-bg-color);
   background-clip: padding-box;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
-              0 0 1px rgba(255, 255, 255, 0.1) inset,
-              0 0 1px rgba(0, 0, 0, 0.2);
-  color: rgba(255, 255, 255,1);
+  color: rgba(255, 255, 255, 1);
 }
 
 #outlineView,
@@ -1194,7 +1349,7 @@ html[dir='rtl'] .treeItem > .treeItems {
   height: auto;
   margin-bottom: 1px;
   border-radius: 2px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--outline-color);
   font-size: 13px;
   line-height: 15px;
   user-select: none;
@@ -1215,12 +1370,14 @@ html[dir='rtl'] .treeItem > a {
   color: rgba(255, 255, 255, 0.5);
 }
 .treeItemToggler::before {
-  content: url(images/treeitem-expanded.png);
+  content: var(--treeitem-expanded-icon);
   display: inline-block;
   position: absolute;
+  max-width: 16px;
 }
 .treeItemToggler.treeItemsHidden::before {
-  content: url(images/treeitem-collapsed.png);
+  content: var(--treeitem-collapsed-icon);
+  max-width: 16px;
 }
 html[dir='rtl'] .treeItemToggler.treeItemsHidden::before {
   transform: scaleX(-1);
@@ -1245,24 +1402,16 @@ html[dir='rtl'] .treeItemToggler::before {
 .treeItemToggler:hover + a,
 .treeItemToggler:hover ~ .treeItems,
 .treeItem > a:hover {
-  background-color: rgba(255, 255, 255, 0.02);
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  background-color: var(--sidebaritem-bg-color);
   background-clip: padding-box;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
-              0 0 1px rgba(255, 255, 255, 0.2) inset,
-              0 0 1px rgba(0, 0, 0, 0.2);
   border-radius: 2px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--outline-hover-color);
 }
 
 .treeItem.selected {
-  background-color: rgba(255, 255, 255, 0.08);
-  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+  background-color: var(--outline-active-bg-color);
   background-clip: padding-box;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset,
-              0 0 1px rgba(255, 255, 255, 0.1) inset,
-              0 0 1px rgba(0, 0, 0, 0.2);
-  color: rgba(255, 255, 255, 1);
+  color: var(--outline-active-color);
 }
 
 .noResults {
@@ -1280,14 +1429,13 @@ html[dir='rtl'] .treeItemToggler::before {
 }
 
 #errorWrapper {
-  background: none repeat scroll 0 0 rgba(255, 85, 85, 1);
-  color: rgba(255, 255, 255, 1);
+  background: none repeat scroll 0 0 var(--errorWrapper-bg-color);
+  color: var(--main-color);
   left: 0;
   position: absolute;
   right: 0;
   z-index: 1000;
-  padding: 3px;
-  font-size: 0.8em;
+  padding: 3px 6px;
 }
 .loadingInProgress #errorWrapper {
   top: 37px;
@@ -1302,8 +1450,9 @@ html[dir='rtl'] .treeItemToggler::before {
 }
 
 #errorMoreInfo {
-  background-color: rgba(255, 255, 255, 1);
-  color: rgba(0, 0, 0, 1);
+  background-color: var(--field-bg-color);
+  color: var(--field-color);
+  border: 1px solid var(--field-border-color);
   padding: 3px;
   margin: 3px;
   width: 98%;
@@ -1312,7 +1461,7 @@ html[dir='rtl'] .treeItemToggler::before {
 .overlayButton {
   width: auto;
   margin: 3px 4px 2px 4px !important;
-  padding: 2px 6px 3px 6px;
+  padding: 2px 11px 2px 11px;
 }
 
 #overlayContainer {
@@ -1338,12 +1487,10 @@ html[dir='rtl'] .treeItemToggler::before {
   display: inline-block;
   padding: 15px;
   border-spacing: 4px;
-  color: rgba(217, 217, 217, 1);
+  color: var(--main-color);
   font-size: 12px;
   line-height: 14px;
-  background-color: rgba(71, 71, 71, 1); /* fallback */
-  background-image: url(images/texture.png),
-                    linear-gradient(rgba(82, 82, 82,0.99), rgba(69, 69, 69, 0.95));
+  background-color: var(--doorhanger-bg-color);
   border: 1px solid rgba(0, 0, 0, 0.5);
   border-radius: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
@@ -1366,8 +1513,7 @@ html[dir='rtl'] .treeItemToggler::before {
   margin: 4px 0 4px 0;
   height: 1px;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background-color: var(--separator-color);
 }
 
 .dialog .buttonRow {
@@ -1468,7 +1614,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   white-space: pre;
 }
 #PDFBug .stats .title {
-    font-weight: bold;
+  font-weight: bold;
 }
 #PDFBug table {
   font-size: 10px;
@@ -1531,213 +1677,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
 #printContainer {
   display: none;
-}
-
-@media screen and (min-resolution: 1.1dppx) {
-  /* Rules for Retina screens */
-  .toolbarButton::before {
-    transform: scale(0.5);
-    top: -5px;
-  }
-
-  .secondaryToolbarButton::before {
-    transform: scale(0.5);
-    top: -4px;
-  }
-
-  html[dir='ltr'] .toolbarButton::before,
-  html[dir='rtl'] .toolbarButton::before {
-    left: -1px;
-  }
-
-  html[dir='ltr'] .secondaryToolbarButton::before {
-    left: -2px;
-  }
-  html[dir='rtl'] .secondaryToolbarButton::before {
-    left: 186px;
-  }
-
-  .toolbarField.pageNumber.visiblePageIsLoading,
-  #findInput[data-status="pending"] {
-    background-image: url(images/loading-small@2x.png);
-    background-size: 16px 17px;
-  }
-
-  .dropdownToolbarButton::after {
-    transform: scale(0.5);
-    top: -5px;
-    content: url(images/toolbarButton-menuArrows@2x.png);
-  }
-  html[dir='ltr'] .dropdownToolbarButton::after {
-    right: 4px;
-  }
-  html[dir='rtl'] .dropdownToolbarButton::after {
-    left: 4px;
-  }
-
-  .toolbarButton#sidebarToggle::before {
-    content: url(images/toolbarButton-sidebarToggle@2x.png);
-  }
-  html[dir='rtl'] .toolbarButton#sidebarToggle::before {
-    transform: scale(-0.5, 0.5);
-  }
-
-  .toolbarButton#secondaryToolbarToggle::before {
-    content: url(images/toolbarButton-secondaryToolbarToggle@2x.png);
-  }
-  html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
-    transform: scale(-0.5, 0.5);
-  }
-
-  .toolbarButton.findPrevious::before {
-    content: url(images/findbarButton-previous@2x.png);
-  }
-  html[dir='rtl'] .toolbarButton.findPrevious::before {
-    transform: scale(-0.5, 0.5);
-  }
-
-  .toolbarButton.findNext::before {
-    content: url(images/findbarButton-next@2x.png);
-  }
-  html[dir='rtl'] .toolbarButton.findNext::before {
-    transform: scale(-0.5, 0.5);
-  }
-
-  .toolbarButton.pageUp::before {
-    content: url(images/toolbarButton-pageUp@2x.png);
-  }
-  html[dir='rtl'] .toolbarButton.pageUp::before {
-    transform: scale(-0.5, 0.5);
-  }
-
-  .toolbarButton.pageDown::before {
-    content: url(images/toolbarButton-pageDown@2x.png);
-  }
-  html[dir='rtl'] .toolbarButton.pageDown::before {
-    transform: scale(-0.5, 0.5);
-  }
-
-  .toolbarButton.zoomIn::before {
-    content: url(images/toolbarButton-zoomIn@2x.png);
-  }
-
-  .toolbarButton.zoomOut::before {
-    content: url(images/toolbarButton-zoomOut@2x.png);
-  }
-
-  .toolbarButton.presentationMode::before,
-  .secondaryToolbarButton.presentationMode::before {
-    content: url(images/toolbarButton-presentationMode@2x.png);
-  }
-
-  .toolbarButton.print::before,
-  .secondaryToolbarButton.print::before {
-    content: url(images/toolbarButton-print@2x.png);
-  }
-
-  .toolbarButton.openFile::before,
-  .secondaryToolbarButton.openFile::before {
-    content: url(images/toolbarButton-openFile@2x.png);
-  }
-
-  .toolbarButton.download::before,
-  .secondaryToolbarButton.download::before {
-    content: url(images/toolbarButton-download@2x.png);
-  }
-
-  .toolbarButton.bookmark::before,
-  .secondaryToolbarButton.bookmark::before {
-    content: url(images/toolbarButton-bookmark@2x.png);
-  }
-
-  #viewThumbnail.toolbarButton::before {
-    content: url(images/toolbarButton-viewThumbnail@2x.png);
-  }
-
-  #viewOutline.toolbarButton::before {
-    content: url(images/toolbarButton-viewOutline@2x.png);
-  }
-  html[dir="rtl"] #viewOutline.toolbarButton::before {
-    transform: scale(-0.5, 0.5);
-  }
-
-  #viewAttachments.toolbarButton::before {
-    content: url(images/toolbarButton-viewAttachments@2x.png);
-  }
-
-  #viewFind.toolbarButton::before {
-    content: url(images/toolbarButton-search@2x.png);
-  }
-
-  .secondaryToolbarButton.firstPage::before {
-    content: url(images/secondaryToolbarButton-firstPage@2x.png);
-  }
-
-  .secondaryToolbarButton.lastPage::before {
-    content: url(images/secondaryToolbarButton-lastPage@2x.png);
-  }
-
-  .secondaryToolbarButton.rotateCcw::before {
-    content: url(images/secondaryToolbarButton-rotateCcw@2x.png);
-  }
-
-  .secondaryToolbarButton.rotateCw::before {
-    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
-  }
-
-  .secondaryToolbarButton.selectTool::before {
-    content: url(images/secondaryToolbarButton-selectTool@2x.png);
-  }
-
-  .secondaryToolbarButton.handTool::before {
-    content: url(images/secondaryToolbarButton-handTool@2x.png);
-  }
-
-  .secondaryToolbarButton.scrollVertical::before {
-    content: url(images/secondaryToolbarButton-scrollVertical@2x.png);
-  }
-
-  .secondaryToolbarButton.scrollHorizontal::before {
-    content: url(images/secondaryToolbarButton-scrollHorizontal@2x.png);
-  }
-
-  .secondaryToolbarButton.scrollWrapped::before {
-    content: url(images/secondaryToolbarButton-scrollWrapped@2x.png);
-  }
-
-  .secondaryToolbarButton.spreadNone::before {
-    content: url(images/secondaryToolbarButton-spreadNone@2x.png);
-  }
-
-  .secondaryToolbarButton.spreadOdd::before {
-    content: url(images/secondaryToolbarButton-spreadOdd@2x.png);
-  }
-
-  .secondaryToolbarButton.spreadEven::before {
-    content: url(images/secondaryToolbarButton-spreadEven@2x.png);
-  }
-
-  .secondaryToolbarButton.documentProperties::before {
-    content: url(images/secondaryToolbarButton-documentProperties@2x.png);
-  }
-
-  .treeItemToggler::before {
-    transform: scale(0.5);
-    top: -1px;
-    content: url(images/treeitem-expanded@2x.png);
-  }
-  .treeItemToggler.treeItemsHidden::before {
-    content: url(images/treeitem-collapsed@2x.png);
-  }
-  html[dir='rtl'] .treeItemToggler.treeItemsHidden::before {
-    transform: scale(-0.5, 0.5);
-  }
-  html[dir='ltr'] .treeItemToggler::before {
-    right: 0;
-  }
-  html[dir='rtl'] .treeItemToggler::before {
-    left: 0;
-  }
 }
 
 @media print {

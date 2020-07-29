@@ -769,7 +769,6 @@ function buildComponents(defines, dir) {
     "web/images/annotation-*.svg",
     "web/images/loading-icon.gif",
     "web/images/shadow.png",
-    "web/images/texture.png",
   ];
 
   return merge([
