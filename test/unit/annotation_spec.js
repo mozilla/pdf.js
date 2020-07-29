@@ -25,18 +25,24 @@ import {
   AnnotationFieldFlag,
   AnnotationFlag,
   AnnotationType,
+  OPS,
   stringToBytes,
   stringToUTF8String,
 } from "../../src/shared/util.js";
 import { createIdFactory, XRefMock } from "./test_utils.js";
 import { Dict, Name, Ref } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
+import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { StringStream } from "../../src/core/stream.js";
+import { WorkerTask } from "../../src/core/worker.js";
 
 describe("annotation", function () {
   class PDFManagerMock {
     constructor(params) {
       this.docBaseUrl = params.docBaseUrl || null;
+      this.pdfDocument = {
+        acroForm: new Dict(),
+      };
     }
 
     ensure(obj, prop, args) {
@@ -49,21 +55,41 @@ describe("annotation", function () {
         }
       });
     }
+
+    ensureDoc(prop, args) {
+      return this.ensure(this.pdfDocument, prop, args);
+    }
   }
 
-  let pdfManagerMock, idFactoryMock;
+  function HandlerMock() {
+    this.inputs = [];
+  }
+  HandlerMock.prototype = {
+    send(name, data) {
+      this.inputs.push({ name, data });
+    },
+  };
+
+  let pdfManagerMock, idFactoryMock, partialEvaluator;
 
   beforeAll(function (done) {
     pdfManagerMock = new PDFManagerMock({
       docBaseUrl: null,
     });
     idFactoryMock = createIdFactory(/* pageIndex = */ 0);
+    partialEvaluator = new PartialEvaluator({
+      xref: new XRefMock(),
+      handler: new HandlerMock(),
+      pageIndex: 0,
+      idFactory: createIdFactory(/* pageIndex = */ 0),
+    });
     done();
   });
 
   afterAll(function () {
     pdfManagerMock = null;
     idFactoryMock = null;
+    partialEvaluator = null;
   });
 
   describe("AnnotationFactory", function () {
@@ -1628,6 +1654,62 @@ describe("annotation", function () {
         expect(data.buttonValue).toEqual("2");
         done();
       }, done.fail);
+    });
+
+    it("should render checkboxes for printing", function (done) {
+      const appearanceStatesDict = new Dict();
+      const exportValueOptionsDict = new Dict();
+      const normalAppearanceDict = new Dict();
+      const checkedAppearanceDict = new Dict();
+
+      const stream = new StringStream("0.1 0.2 0.3 rg");
+      stream.dict = checkedAppearanceDict;
+
+      checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
+      checkedAppearanceDict.set("FormType", 1);
+      checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
+      normalAppearanceDict.set("Checked", stream);
+      exportValueOptionsDict.set("Off", 0);
+      exportValueOptionsDict.set("Checked", 1);
+      appearanceStatesDict.set("D", exportValueOptionsDict);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test print");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = true;
+          return annotation.getOperatorList(
+            partialEvaluator,
+            task,
+            false,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(opList => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([26, 51, 76])
+          );
+          done();
+        }, done.fail);
     });
 
     it("should handle radio buttons without a field value", function (done) {
