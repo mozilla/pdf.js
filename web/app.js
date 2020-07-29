@@ -299,11 +299,7 @@ const PDFViewerApplication = {
    * @private
    */
   async _parseHashParameters() {
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("PRODUCTION") &&
-      !AppOptions.get("pdfBugEnabled")
-    ) {
+    if (!AppOptions.get("pdfBugEnabled")) {
       return undefined;
     }
     const hash = document.location.hash.substring(1);
@@ -1931,11 +1927,7 @@ function webViewerInitialized() {
     appConfig.secondaryToolbar.openFileButton.setAttribute("hidden", "true");
   }
 
-  if (
-    (typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")) &&
-    !PDFViewerApplication.supportsDocumentFonts
-  ) {
+  if (!PDFViewerApplication.supportsDocumentFonts) {
     AppOptions.set("disableFontFace", true);
     PDFViewerApplication.l10n
       .get(

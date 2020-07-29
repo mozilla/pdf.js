@@ -49,6 +49,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
         transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
         viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
         intent: "print",
+        annotationStorage: pdfDocument.annotationStorage.getAll(),
       };
       return pdfPage.render(renderContext).promise;
     })
