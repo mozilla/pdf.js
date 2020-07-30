@@ -52,20 +52,23 @@ class AnnotationFactory {
    *   instance.
    */
   static create(xref, ref, pdfManager, idFactory, evaluator, task) {
-    return pdfManager.ensure(this, "_create", [
-      xref,
-      ref,
-      pdfManager,
-      idFactory,
-      evaluator,
-      task,
-    ]);
+    return pdfManager.ensureDoc("acroForm").then(acroForm => {
+      return pdfManager.ensure(this, "_create", [
+        xref,
+        ref,
+        pdfManager,
+        idFactory,
+        acroForm,
+        evaluator,
+        task,
+      ]);
+    });
   }
 
   /**
    * @private
    */
-  static _create(xref, ref, pdfManager, idFactory, evaluator, task) {
+  static _create(xref, ref, pdfManager, idFactory, acroForm, evaluator, task) {
     const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
@@ -83,6 +86,7 @@ class AnnotationFactory {
       subtype,
       id,
       pdfManager,
+      acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
       evaluator,
       task,
     };
@@ -574,8 +578,9 @@ class Annotation {
       return Promise.resolve(new OperatorList());
     }
 
+    const appearance = this.appearance;
     const data = this.data;
-    const appearanceDict = this.appearance.dict;
+    const appearanceDict = appearance.dict;
     const resourcesPromise = this.loadResources([
       "ExtGState",
       "ColorSpace",
@@ -593,14 +598,14 @@ class Annotation {
       opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
       return evaluator
         .getOperatorList({
-          stream: this.appearance,
+          stream: appearance,
           task,
           resources,
           operatorList: opList,
         })
         .then(() => {
           opList.addOp(OPS.endAnnotation, []);
-          this.appearance.reset();
+          appearance.reset();
           return opList;
         });
     });
@@ -855,11 +860,16 @@ class WidgetAnnotation extends Annotation {
       getArray: true,
     });
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
-    data.defaultAppearance = getInheritableProperty({ dict, key: "DA" }) || "";
+    data.defaultAppearance =
+      getInheritableProperty({ dict, key: "DA" }) ||
+      params.acroForm.get("DA") ||
+      "";
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
     this.fieldResources =
-      getInheritableProperty({ dict, key: "DR" }) || Dict.empty;
+      getInheritableProperty({ dict, key: "DR" }) ||
+      params.acroForm.get("DR") ||
+      Dict.empty;
 
     data.fieldFlags = getInheritableProperty({ dict, key: "Ff" });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
@@ -1084,6 +1094,9 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
 
+    this.checkedAppearance = null;
+    this.uncheckedAppearance = null;
+
     this.data.checkBox =
       !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
       !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
@@ -1101,6 +1114,40 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     } else {
       warn("Invalid field flags for button widget annotation");
     }
+  }
+
+  getOperatorList(evaluator, task, renderForms, annotationStorage) {
+    if (annotationStorage) {
+      const value = annotationStorage[this.data.id] || false;
+      let appearance;
+      if (value) {
+        appearance = this.checkedAppearance;
+      } else {
+        appearance = this.uncheckedAppearance;
+      }
+
+      if (appearance) {
+        const savedAppearance = this.appearance;
+        this.appearance = appearance;
+        const operatorList = super.getOperatorList(
+          evaluator,
+          task,
+          renderForms,
+          annotationStorage
+        );
+        this.appearance = savedAppearance;
+        return operatorList;
+      }
+
+      // No appearance
+      return Promise.resolve(new OperatorList());
+    }
+    return super.getOperatorList(
+      evaluator,
+      task,
+      renderForms,
+      annotationStorage
+    );
   }
 
   _processCheckBox(params) {
@@ -1134,6 +1181,14 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     this.data.exportValue =
       exportValues[0] === "Off" ? exportValues[1] : exportValues[0];
+
+    const normalAppearance = customAppearance.get("N");
+    if (!isDict(normalAppearance)) {
+      return;
+    }
+
+    this.checkedAppearance = normalAppearance.get(this.data.exportValue);
+    this.uncheckedAppearance = normalAppearance.get("Off") || null;
   }
 
   _processRadioButton(params) {

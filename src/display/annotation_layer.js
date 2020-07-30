@@ -764,33 +764,43 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = "buttonWidgetAnnotation checkBox ";
+    const storage = this.annotationStorage;
+    const data = this.data;
+    const id = data.id;
+    const value = storage.getOrCreateValue(
+      id,
+      data.fieldValue && data.fieldValue !== "Off"
+    );
 
-    if (!this.data.readOnly) {
-      this.container.title = this.data.alternativeText;
+    this.container.className = "buttonWidgetAnnotation checkBox";
+
+    if (!data.readOnly) {
+      this.container.title = data.alternativeText;
     }
 
     const element = document.createElement("input");
-    element.setAttribute(
-      "annotation-name",
-      encodeURIComponent(this.data.fieldName)
-    );
+    element.setAttribute("annotation-name", encodeURIComponent(data.fieldName));
     element.setAttribute(
       "annotation-value",
-      this.data.buttonValue ? encodeURIComponent(this.data.buttonValue) : ""
+      data.buttonValue ? encodeURIComponent(data.buttonValue) : ""
     );
-    element.disabled = this.data.readOnly;
+    element.disabled = data.readOnly;
     element.type = "checkbox";
-    element.checked = this.data.fieldValue && this.data.fieldValue !== "Off";
-    element.checkBoxType = this.data.checkBoxType;
+    element.name = data.fieldName;
 
-    if (this.data.borderStyle.style === AnnotationBorderStyleType.INSET) {
+    element.checkBoxType = data.checkBoxType;
+
+    if (data.borderStyle.style === AnnotationBorderStyleType.INSET) {
       element.className = "inset";
     }
 
-    if (this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
+    if (data.borderStyle.style === AnnotationBorderStyleType.BEVELED) {
       element.className = "beveled";
     }
+
+    element.addEventListener("change", function (event) {
+      storage.setValue(id, event.target.checked);
+    });
 
     this.container.appendChild(element);
 
@@ -837,21 +847,21 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     let fontSizeFactor = 1.0;
 
     if (
-      this.data.checkBoxType === AnnotationCheckboxType.CIRCLE ||
-      this.data.checkBoxType === AnnotationCheckboxType.DIAMOND ||
-      this.data.checkBoxType === AnnotationCheckboxType.SQUARE
+      data.checkBoxType === AnnotationCheckboxType.CIRCLE ||
+      data.checkBoxType === AnnotationCheckboxType.DIAMOND ||
+      data.checkBoxType === AnnotationCheckboxType.SQUARE
     ) {
       fontSizeFactor = 1.5;
     }
 
-    if (this.data.checkBoxType === AnnotationCheckboxType.STAR) {
+    if (data.checkBoxType === AnnotationCheckboxType.STAR) {
       fontSizeFactor = 0.5;
     }
 
     const fontSizePadding =
-      this.data.checkBoxType !== AnnotationCheckboxType.STAR &&
-      (this.data.borderStyle.style === AnnotationBorderStyleType.INSET ||
-        this.data.borderStyle.style === AnnotationBorderStyleType.BEVELED)
+      data.checkBoxType !== AnnotationCheckboxType.STAR &&
+      (data.borderStyle.style === AnnotationBorderStyleType.INSET ||
+        data.borderStyle.style === AnnotationBorderStyleType.BEVELED)
         ? 4
         : 0;
 
@@ -862,10 +872,10 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       fontSizePadding +
       "px";
 
-    span.style.color = this.data.fontColor;
-    this.container.className += this._getCheckBoxStyle(this.data.checkBoxType);
+    span.style.color = data.fontColor;
+    this.container.className += this._getCheckBoxStyle(data.checkBoxType);
 
-    this._setBackgroundColor(element, this.data.backgroundColor);
+    this._setBackgroundColor(element, data.backgroundColor);
 
     this.container.appendChild(span);
 
