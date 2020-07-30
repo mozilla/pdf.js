@@ -947,6 +947,12 @@
        "firstPage": 2,
        "type": "eq"
     },
+    {  "id": "annotation-button-widget",
+       "file": "pdfs/annotation-button-widget.pdf",
+       "md5": "af77cc07db754fd5f3e084ef524cbb77",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue10542",
        "file": "pdfs/issue10542_reduced.pdf",
        "md5": "92406cb903be6c7a63221ba61fcb8eaf",
@@ -1849,6 +1855,12 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "annotation-text-widget",
+       "file": "pdfs/annotation-text-widget.pdf",
+       "md5": "7f5b3c097ee287bc6872d653b603b377",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "ShowText-ShadingPattern",
        "file": "pdfs/ShowText-ShadingPattern.pdf",
        "md5": "fe683725db037ffe19d390969610a652",
@@ -2045,6 +2057,12 @@
        "rounds": 1,
        "firstPage": 30,
        "link": true,
+       "type": "eq"
+    },
+    {  "id": "annotation-choice-widget",
+       "file": "pdfs/annotation-choice-widget.pdf",
+       "md5": "e16eb3dfdb162426a27a857010b8ed6d",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue5874",
