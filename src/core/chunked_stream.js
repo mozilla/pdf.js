@@ -410,18 +410,24 @@ class ChunkedStreamManager {
       requestIds.push(requestId);
     }
 
-    if (!chunksToRequest.length) {
-      return capability.promise;
+    if (chunksToRequest.length > 0) {
+      const groupedChunksToRequest = this.groupChunks(chunksToRequest);
+      for (const groupedChunk of groupedChunksToRequest) {
+        const begin = groupedChunk.beginChunk * this.chunkSize;
+        const end = Math.min(
+          groupedChunk.endChunk * this.chunkSize,
+          this.length
+        );
+        this.sendRequest(begin, end);
+      }
     }
 
-    const groupedChunksToRequest = this.groupChunks(chunksToRequest);
-    for (const groupedChunk of groupedChunksToRequest) {
-      const begin = groupedChunk.beginChunk * this.chunkSize;
-      const end = Math.min(groupedChunk.endChunk * this.chunkSize, this.length);
-      this.sendRequest(begin, end);
-    }
-
-    return capability.promise;
+    return capability.promise.catch(reason => {
+      if (this.aborted) {
+        return; // Ignoring any pending requests after abort.
+      }
+      throw reason;
+    });
   }
 
   getStream() {
