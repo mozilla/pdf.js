@@ -787,6 +787,9 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     element.disabled = data.readOnly;
     element.type = "checkbox";
     element.name = data.fieldName;
+    if (value) {
+      element.setAttribute("checked", true);
+    }
 
     element.checkBoxType = data.checkBoxType;
 
