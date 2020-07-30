@@ -2349,6 +2349,10 @@ function webViewerFindFromUrlHash(evt) {
     highlightAll: true,
     findPrevious: false,
   });
+
+  if (PDFViewerApplication.findBar) {
+    PDFViewerApplication.findBar.findField.value = evt.query;
+  }
 }
 
 function webViewerUpdateFindMatchesCount({ matchesCount }) {
