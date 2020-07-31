@@ -40,6 +40,22 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
     <link rel="stylesheet" href="viewer.css">
+
+    <!-- 追加変更 -->
+    <style>
+      #message_for_print {
+        display:none;
+      }
+      @media print {
+        .pdfViewer{
+          display:none;
+        }
+        #message_for_print{
+          display:block;
+          font-size:30px;
+        }
+      }
+    </style>
 <!--#if !PRODUCTION-->
     <link rel="resource" type="application/l10n" href="locale/locale.properties">
 <!--#endif-->
@@ -57,6 +73,19 @@ See https://github.com/adobe-type-tools/cmap-resources
     </script>
 
     <script src="viewer.js" type="module-shim"></script>
+
+    <!-- 追加変更 -->
+    <script>
+      window.addEventListener('keydown', function (e) {
+        const key = e.keyCode;
+
+        // BackSpace 無効化
+        if (key === 8) {
+          return false
+        }
+      })
+    </script>
+
 <!--#endif-->
 
 <!--#if (GENERIC && !MINIFIED) -->
@@ -72,6 +101,9 @@ See https://github.com/adobe-type-tools/cmap-resources
   </head>
 
   <body tabindex="1" class="loadingInProgress">
+    <!-- 追加変更 -->
+    <div id="message_for_print"></div>
+
     <div id="outerContainer">
 
       <div id="sidebarContainer">
@@ -145,7 +177,8 @@ See https://github.com/adobe-type-tools/cmap-resources
               <span data-l10n-id="print_label">Print</span>
             </button>
 
-            <button id="secondaryDownload" class="secondaryToolbarButton download visibleMediumView" title="Download" tabindex="54" data-l10n-id="download">
+            <!--- 追加変更 display:none -->
+            <button id="secondaryDownload" class="secondaryToolbarButton download visibleMediumView" title="Download" tabindex="54" data-l10n-id="download" style="display: none">
               <span data-l10n-id="download_label">Download</span>
             </button>
 
@@ -223,7 +256,9 @@ See https://github.com/adobe-type-tools/cmap-resources
                 <button id="viewFind" class="toolbarButton" title="Find in Document" tabindex="12" data-l10n-id="findbar">
                   <span data-l10n-id="findbar_label">Find</span>
                 </button>
-                <div class="splitToolbarButton hiddenSmallView">
+
+                <!-- 追加変更 .hiddenSmallView 削除 -->
+                <div class="splitToolbarButton">
                   <button class="toolbarButton pageUp" title="Previous Page" id="previous" tabindex="13" data-l10n-id="previous">
                     <span data-l10n-id="previous_label">Previous</span>
                   </button>
@@ -240,7 +275,8 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
                 </button>
 
-                <button id="openFile" class="toolbarButton openFile hiddenLargeView" title="Open File" tabindex="32" data-l10n-id="open_file">
+                <!-- 追加変更 display: none -->
+                <button id="openFile" class="toolbarButton openFile hiddenLargeView" title="Open File" tabindex="32" data-l10n-id="open_file" style="display: none">
                   <span data-l10n-id="open_file_label">Open</span>
                 </button>
 
@@ -248,7 +284,8 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span data-l10n-id="print_label">Print</span>
                 </button>
 
-                <button id="download" class="toolbarButton download hiddenMediumView" title="Download" tabindex="34" data-l10n-id="download">
+                <!-- 追加変更 .hiddenMediumView 削除-->
+                <button id="download" class="toolbarButton download" title="Download" tabindex="34" data-l10n-id="download">
                   <span data-l10n-id="download_label">Download</span>
                 </button>
                 <a href="#" id="viewBookmark" class="toolbarButton bookmark hiddenSmallView" title="Current view (copy or open in new window)" tabindex="35" data-l10n-id="bookmark">
