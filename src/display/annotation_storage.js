@@ -15,7 +15,7 @@
 
 class AnnotationStorage {
   constructor() {
-    this._storage = {};
+    this._storage = Object.create(null);
   }
 
   /**
