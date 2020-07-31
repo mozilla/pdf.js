@@ -34,7 +34,9 @@
 /*jshint browser: true, devel: true, es5: true, globalstrict: true */
 'use strict';
 
-document.webL10n = (function(window, document, undefined) {
+// 追加変更 ローカライズ対応
+// document.webL10n = (function(window, document, undefined) {
+window.l10n = document.webL10n = (function(window, document, undefined) {
   var gL10nData = {};
   var gTextData = '';
   var gTextProp = 'textContent';
