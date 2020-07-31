@@ -21,6 +21,7 @@ import { SimpleLinkService } from "./pdf_link_service.js";
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
+ * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
@@ -38,7 +39,7 @@ class AnnotationLayerBuilder {
     pdfPage,
     linkService,
     downloadManager,
-    annotationStorage,
+    annotationStorage = null,
     imageResourcesPath = "",
     renderInteractiveForms = false,
     l10n = NullL10n,
@@ -118,6 +119,7 @@ class DefaultAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {AnnotationStorage} [annotationStorage]
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
@@ -127,7 +129,7 @@ class DefaultAnnotationLayerFactory {
   createAnnotationLayerBuilder(
     pageDiv,
     pdfPage,
-    annotationStorage,
+    annotationStorage = null,
     imageResourcesPath = "",
     renderInteractiveForms = false,
     l10n = NullL10n
