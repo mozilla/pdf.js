@@ -66,6 +66,9 @@ class AnnotationLayerBuilder {
       if (this._cancelled) {
         return;
       }
+      if (annotations.length === 0) {
+        return;
+      }
 
       const parameters = {
         viewport: viewport.clone({ dontFlip: true }),
@@ -86,9 +89,6 @@ class AnnotationLayerBuilder {
       } else {
         // Create an annotation layer div and render the annotations
         // if there is at least one annotation.
-        if (annotations.length === 0) {
-          return;
-        }
         this.div = document.createElement("div");
         this.div.className = "annotationLayer";
         this.pageDiv.appendChild(this.div);
