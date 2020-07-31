@@ -220,7 +220,6 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           linkService: new pdfjsViewer.SimpleLinkService(),
           imageResourcesPath,
           renderInteractiveForms,
-          annotationStorage: new pdfjsLib.AnnotationStorage(),
         };
         pdfjsLib.AnnotationLayer.render(parameters);
 
