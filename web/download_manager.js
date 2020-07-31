@@ -31,13 +31,37 @@ function download(blobUrl, filename) {
   if (!a.click) {
     throw new Error('DownloadManager: "a.click()" is not supported.');
   }
+
+  // 追加変更
+  // iOSのブラウザで閲覧時はダウンロードボタンを押した際に、_parentに表示するのではなく_topに表示するよう変更
   a.href = blobUrl;
-  a.target = "_parent";
+
+  // TOPに表示することでアプリに渡したり、ファイルとして保存したり、印刷できる
+  const isIOS = navigator.userAgent.match(/(iPhone|iPad|iPod)/);
+  const isIPasOS = navigator.userAgent.toLowerCase().indexOf('macintosh') > -1 && 'ontouchend' in document;
+  if (isIOS || isIPadOS) {
+    const isIOS12 = navigator.userAgent.match(/iPhone OS 12/);
+    if (isIOS12) {
+      const f = location.href.split("file=")[1];
+      location.href = '/pdf/web/download.php?file=' + f + '&filename=' + filename;
+      return;
+    }
+
+    a.target = '_top';
+  } else {
+      a.target = '_parent';
+  }
+
+  if ('download' in a) {
+    if (navigator.userAgent.toLowerCase().indexOf('crios') > -1 && 'ontouchend' in document) {
+      // Chromeの場合はa.downloadをつけない
+      } else {
+        a.download = filename;
+      }
+  }
   // Use a.download if available. This increases the likelihood that
   // the file is downloaded instead of opened by another PDF plugin.
-  if ("download" in a) {
-    a.download = filename;
-  }
+
   // <a> must be in the document for IE and recent Firefox versions,
   // otherwise .click() is ignored.
   (document.body || document.documentElement).appendChild(a);
