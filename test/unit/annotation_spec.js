@@ -1627,14 +1627,19 @@ describe("annotation", function () {
       const exportValueOptionsDict = new Dict();
       const normalAppearanceDict = new Dict();
       const checkedAppearanceDict = new Dict();
+      const uncheckedAppearanceDict = new Dict();
 
-      const stream = new StringStream("0.1 0.2 0.3 rg");
-      stream.dict = checkedAppearanceDict;
+      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
+      checkedStream.dict = checkedAppearanceDict;
+
+      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
+      uncheckedStream.dict = uncheckedAppearanceDict;
 
       checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
       checkedAppearanceDict.set("FormType", 1);
       checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
-      normalAppearanceDict.set("Checked", stream);
+      normalAppearanceDict.set("Checked", checkedStream);
+      normalAppearanceDict.set("Off", uncheckedStream);
       exportValueOptionsDict.set("Off", 0);
       exportValueOptionsDict.set("Checked", 1);
       appearanceStatesDict.set("D", exportValueOptionsDict);
@@ -1657,6 +1662,31 @@ describe("annotation", function () {
         .then(annotation => {
           const annotationStorage = {};
           annotationStorage[annotation.data.id] = true;
+          return Promise.all([
+            annotation,
+            annotation.getOperatorList(
+              partialEvaluator,
+              task,
+              false,
+              annotationStorage
+            ),
+          ]);
+        }, done.fail)
+        .then(([annotation, opList]) => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([26, 51, 76])
+          );
+          return annotation;
+        }, done.fail)
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = false;
           return annotation.getOperatorList(
             partialEvaluator,
             task,
@@ -1672,7 +1702,7 @@ describe("annotation", function () {
             OPS.endAnnotation,
           ]);
           expect(opList.argsArray[1]).toEqual(
-            new Uint8ClampedArray([26, 51, 76])
+            new Uint8ClampedArray([76, 51, 26])
           );
           done();
         }, done.fail);
