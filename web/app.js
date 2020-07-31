@@ -2608,7 +2608,9 @@ function webViewerKeyDown(evt) {
     if (cmd === 1 || cmd === 8) {
       switch (evt.keyCode) {
         case 83: // s
-          eventBus.dispatch("download", { source: window });
+
+          // 追加変更 ダウンロード可否にかかわらずショートカットでのダウンロードは禁止
+          // eventBus.dispatch("download", { source: window });
           handled = true;
           break;
 
