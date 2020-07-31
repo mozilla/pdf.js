@@ -29,6 +29,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { AnnotationStorage } from "./annotation_storage.js";
 
 /**
  * @typedef {Object} AnnotationElementParameters
@@ -38,6 +39,7 @@ import {
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
+ * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
@@ -1463,7 +1465,8 @@ class AnnotationLayer {
         imageResourcesPath: parameters.imageResourcesPath || "",
         renderInteractiveForms: parameters.renderInteractiveForms || false,
         svgFactory: new DOMSVGFactory(),
-        annotationStorage: parameters.annotationStorage,
+        annotationStorage:
+          parameters.annotationStorage || new AnnotationStorage(),
       });
       if (element.isRenderable) {
         parameters.div.appendChild(element.render());
