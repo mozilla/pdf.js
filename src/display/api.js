@@ -2048,6 +2048,13 @@ class WorkerTransport {
 
       sink.onCancel = reason => {
         this._fullReader.cancel(reason);
+
+        sink.ready.catch(readyReason => {
+          if (this.destroyed) {
+            return; // Ignore any pending requests if the worker was terminated.
+          }
+          throw readyReason;
+        });
       };
     });
 
@@ -2127,6 +2134,13 @@ class WorkerTransport {
 
       sink.onCancel = reason => {
         rangeReader.cancel(reason);
+
+        sink.ready.catch(readyReason => {
+          if (this.destroyed) {
+            return; // Ignore any pending requests if the worker was terminated.
+          }
+          throw readyReason;
+        });
       };
     });
 
