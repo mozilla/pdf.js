@@ -219,6 +219,31 @@ PDFPrintService.prototype = {
 
 const print = window.print;
 window.print = function () {
+
+  // 追加変更
+  //iOS,iPadOS,Androidで印刷した場合、別ウィンドウで開いて印刷
+  const isSPOS = navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/);
+  const isIPadOS = navigator.userAgent.toLowerCase().indexOf('macintosh') > -1 && 'ontouchend' in document;
+  if (isSPOS || isIPadOS) {
+    let confirmationMessage;
+
+    // Android と iPhoneでメッセージを切り替える
+    if (navigator.userAgent.match(/(Android)/)) {
+      confirmationMessage = window.l10n.get('message_for_print_android', null, 'Click OK and download the PDF, then print it.');
+    } else {
+      confirmationMessage = window.l10n.get('message_for_print_iphone', null, 'Click OK to open the PDF in another frame, then print it.');
+    }
+    if (confirm(confirmationMessage)) {
+      const a = document.createElement('a');
+      a.target = '_top';
+      a.href = window.location.search.split("?file=")[1];
+      (document.body || document.documentElement).appendChild(a);
+      a.click();
+      a.parentNode.removeChild(a);
+    }
+    return;
+  }
+
   if (activeService) {
     console.warn("Ignored window.print() because of a pending print job.");
     return;
