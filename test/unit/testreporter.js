@@ -48,7 +48,10 @@ var TestReporter = function (browser) {
 
   this.jasmineStarted = function (suiteInfo) {
     this.runnerStartTime = this.now();
-    sendInfo("Started tests for " + browser + ".");
+
+    const total = suiteInfo.totalSpecsDefined;
+    const seed = suiteInfo.order.seed;
+    sendInfo(`Started ${total} tests for ${browser} with seed ${seed}.`);
   };
 
   this.suiteStarted = function (result) {
