@@ -510,7 +510,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._textContent = textContent;
     this._textContentStream = textContentStream;
     this._container = container;
-    this._document = container.ownerDocument;
     this._viewport = viewport;
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
@@ -615,7 +614,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       let styleCache = Object.create(null);
 
       // The temporary canvas is used to measure text length in the DOM.
-      const canvas = this._document.createElement("canvas");
+      const canvas = document.createElement("canvas");
       if (
         typeof PDFJSDev === "undefined" ||
         PDFJSDev.test("MOZCENTRAL || GENERIC")
