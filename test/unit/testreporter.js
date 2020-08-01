@@ -59,10 +59,9 @@ var TestReporter = function (browser) {
     if (result.failedExpectations.length === 0) {
       sendResult("TEST-PASSED", result.description);
     } else {
-      var failedMessages = "";
-      var items = result.failedExpectations;
-      for (var i = 0, ii = items.length; i < ii; i++) {
-        failedMessages += items[i].message + " ";
+      let failedMessages = "";
+      for (const item of result.failedExpectations) {
+        failedMessages += `${item.message} `;
       }
       sendResult("TEST-UNEXPECTED-FAIL", result.description, failedMessages);
     }
@@ -71,7 +70,7 @@ var TestReporter = function (browser) {
   this.suiteDone = function (result) {};
 
   this.jasmineDone = function () {
-    // Give the test.py some time process any queued up requests
+    // Give the test runner some time process any queued requests.
     setTimeout(sendQuitRequest, 500);
   };
 };
