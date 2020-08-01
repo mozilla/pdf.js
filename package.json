@@ -32,7 +32,7 @@
     "gulp-rename": "^1.4.0",
     "gulp-replace": "^1.0.0",
     "gulp-zip": "^4.2.0",
-    "jasmine": "~3.5.0",
+    "jasmine": "^3.6.1",
     "jsdoc": "^3.6.5",
     "jstransformer-markdown-it": "^2.1.0",
     "merge-stream": "^1.0.1",
