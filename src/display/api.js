@@ -560,10 +560,15 @@ class PDFDataRangeTransport {
     this.initialData = initialData;
     this.progressiveDone = progressiveDone;
 
+    /** @private */
     this._rangeListeners = [];
+    /** @private */
     this._progressListeners = [];
+    /** @private */
     this._progressiveReadListeners = [];
+    /** @private */
     this._progressiveDoneListeners = [];
+    /** @private */
     this._readyCapability = createPromiseCapability();
   }
 
@@ -630,8 +635,11 @@ class PDFDataRangeTransport {
  */
 class PDFDocumentProxy {
   constructor(pdfInfo, transport) {
+    /** @private */
     this._pdfInfo = pdfInfo;
+    /** @private */
     this._transport = transport;
+    /** @private */
     this._annotationStorage = new AnnotationStorage();
   }
 
@@ -982,16 +990,22 @@ class PDFDocumentProxy {
  */
 class PDFPageProxy {
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
+    /** @private */
     this._pageIndex = pageIndex;
+    /** @private */
     this._pageInfo = pageInfo;
+    /** @private */
     this._transport = transport;
+    /** @private */
     this._stats = pdfBug ? new StatTimer() : null;
+    /** @private */
     this._pdfBug = pdfBug;
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
 
     this.cleanupAfterRender = false;
     this.pendingCleanup = false;
+    /** @private */
     this._intentStates = new Map();
     this.destroyed = false;
   }
@@ -1062,10 +1076,12 @@ class PDFPageProxy {
    */
   getAnnotations({ intent = null } = {}) {
     if (!this.annotationsPromise || this.annotationsIntent !== intent) {
+      /** @private */
       this.annotationsPromise = this._transport.getAnnotations(
         this._pageIndex,
         intent
       );
+      /** @private */
       this.annotationsIntent = intent;
     }
     return this.annotationsPromise;
@@ -2604,6 +2620,7 @@ class WorkerTransport {
  */
 class PDFObjects {
   constructor() {
+    /** @private */
     this._objs = Object.create(null);
   }
 
@@ -2675,6 +2692,7 @@ class PDFObjects {
  */
 class RenderTask {
   constructor(internalRenderTask) {
+    /** @private */
     this._internalRenderTask = internalRenderTask;
 
     /**
