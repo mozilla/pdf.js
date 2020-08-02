@@ -586,14 +586,34 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     this.container.className = "buttonWidgetAnnotation radioButton";
+    const storage = this.annotationStorage;
+    const data = this.data;
+    const id = data.id;
+    const value = storage.getOrCreateValue(
+      id,
+      data.fieldValue === data.buttonValue
+    );
 
     const element = document.createElement("input");
-    element.disabled = this.data.readOnly;
+    element.disabled = data.readOnly;
     element.type = "radio";
-    element.name = this.data.fieldName;
-    if (this.data.fieldValue === this.data.buttonValue) {
+    element.name = data.fieldName;
+    if (value) {
       element.setAttribute("checked", true);
     }
+
+    element.addEventListener("change", function (event) {
+      const name = event.target.name;
+      for (const radio of document.getElementsByName(name)) {
+        if (radio !== event.target) {
+          storage.setValue(
+            radio.parentNode.getAttribute("data-annotation-id"),
+            false
+          );
+        }
+      }
+      storage.setValue(id, event.target.checked);
+    });
 
     this.container.appendChild(element);
     return this.container;
