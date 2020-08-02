@@ -1622,6 +1622,92 @@ describe("annotation", function () {
       }, done.fail);
     });
 
+    it("should render checkboxes for printing", function (done) {
+      const appearanceStatesDict = new Dict();
+      const exportValueOptionsDict = new Dict();
+      const normalAppearanceDict = new Dict();
+      const checkedAppearanceDict = new Dict();
+      const uncheckedAppearanceDict = new Dict();
+
+      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
+      checkedStream.dict = checkedAppearanceDict;
+
+      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
+      uncheckedStream.dict = uncheckedAppearanceDict;
+
+      checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
+      checkedAppearanceDict.set("FormType", 1);
+      checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
+      normalAppearanceDict.set("Checked", checkedStream);
+      normalAppearanceDict.set("Off", uncheckedStream);
+      exportValueOptionsDict.set("Off", 0);
+      exportValueOptionsDict.set("Checked", 1);
+      appearanceStatesDict.set("D", exportValueOptionsDict);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test print");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = true;
+          return Promise.all([
+            annotation,
+            annotation.getOperatorList(
+              partialEvaluator,
+              task,
+              false,
+              annotationStorage
+            ),
+          ]);
+        }, done.fail)
+        .then(([annotation, opList]) => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([26, 51, 76])
+          );
+          return annotation;
+        }, done.fail)
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = false;
+          return annotation.getOperatorList(
+            partialEvaluator,
+            task,
+            false,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(opList => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([76, 51, 26])
+          );
+          done();
+        }, done.fail);
+    });
+
     it("should handle radio buttons with a field value", function (done) {
       const parentDict = new Dict();
       parentDict.set("V", Name.get("1"));
@@ -1656,62 +1742,6 @@ describe("annotation", function () {
       }, done.fail);
     });
 
-    it("should render checkboxes for printing", function (done) {
-      const appearanceStatesDict = new Dict();
-      const exportValueOptionsDict = new Dict();
-      const normalAppearanceDict = new Dict();
-      const checkedAppearanceDict = new Dict();
-
-      const stream = new StringStream("0.1 0.2 0.3 rg");
-      stream.dict = checkedAppearanceDict;
-
-      checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
-      checkedAppearanceDict.set("FormType", 1);
-      checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
-      normalAppearanceDict.set("Checked", stream);
-      exportValueOptionsDict.set("Off", 0);
-      exportValueOptionsDict.set("Checked", 1);
-      appearanceStatesDict.set("D", exportValueOptionsDict);
-      appearanceStatesDict.set("N", normalAppearanceDict);
-
-      buttonWidgetDict.set("AP", appearanceStatesDict);
-
-      const buttonWidgetRef = Ref.get(124, 0);
-      const xref = new XRefMock([
-        { ref: buttonWidgetRef, data: buttonWidgetDict },
-      ]);
-      const task = new WorkerTask("test print");
-
-      AnnotationFactory.create(
-        xref,
-        buttonWidgetRef,
-        pdfManagerMock,
-        idFactoryMock
-      )
-        .then(annotation => {
-          const annotationStorage = {};
-          annotationStorage[annotation.data.id] = true;
-          return annotation.getOperatorList(
-            partialEvaluator,
-            task,
-            false,
-            annotationStorage
-          );
-        }, done.fail)
-        .then(opList => {
-          expect(opList.argsArray.length).toEqual(3);
-          expect(opList.fnArray).toEqual([
-            OPS.beginAnnotation,
-            OPS.setFillRGBColor,
-            OPS.endAnnotation,
-          ]);
-          expect(opList.argsArray[1]).toEqual(
-            new Uint8ClampedArray([26, 51, 76])
-          );
-          done();
-        }, done.fail);
-    });
-
     it("should handle radio buttons without a field value", function (done) {
       const normalAppearanceStateDict = new Dict();
       normalAppearanceStateDict.set("2", null);
@@ -1740,6 +1770,93 @@ describe("annotation", function () {
         expect(data.buttonValue).toEqual("2");
         done();
       }, done.fail);
+    });
+
+    it("should render radio buttons for printing", function (done) {
+      const appearanceStatesDict = new Dict();
+      const exportValueOptionsDict = new Dict();
+      const normalAppearanceDict = new Dict();
+      const checkedAppearanceDict = new Dict();
+      const uncheckedAppearanceDict = new Dict();
+
+      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
+      checkedStream.dict = checkedAppearanceDict;
+
+      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
+      uncheckedStream.dict = uncheckedAppearanceDict;
+
+      checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
+      checkedAppearanceDict.set("FormType", 1);
+      checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
+      normalAppearanceDict.set("Checked", checkedStream);
+      normalAppearanceDict.set("Off", uncheckedStream);
+      exportValueOptionsDict.set("Off", 0);
+      exportValueOptionsDict.set("Checked", 1);
+      appearanceStatesDict.set("D", exportValueOptionsDict);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test print");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = true;
+          return Promise.all([
+            annotation,
+            annotation.getOperatorList(
+              partialEvaluator,
+              task,
+              false,
+              annotationStorage
+            ),
+          ]);
+        }, done.fail)
+        .then(([annotation, opList]) => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([26, 51, 76])
+          );
+          return annotation;
+        }, done.fail)
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = false;
+          return annotation.getOperatorList(
+            partialEvaluator,
+            task,
+            false,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(opList => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([76, 51, 26])
+          );
+          done();
+        }, done.fail);
     });
   });
 
