@@ -89,6 +89,7 @@ let createPDFNetworkStream;
 /**
  * Sets the function that instantiates an {IPDFStream} as an alternative PDF
  * data transport.
+ *
  * @param {IPDFStreamFactory} pdfNetworkStreamFactory - The factory function
  *   that takes document initialization parameters (including a "url") and
  *   returns a promise which is resolved with an instance of {IPDFStream}.
@@ -98,82 +99,84 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
   createPDFNetworkStream = pdfNetworkStreamFactory;
 }
 
-/* eslint-disable max-len */
 /**
- * @typedef {Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array} TypedArray
+ * @typedef {
+ *   Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array |
+ *   Int32Array | Uint32Array | Float32Array | Float64Array
+ * } TypedArray
  */
-/* eslint-enable max-len */
 
 /**
  * Document initialization / loading parameters object.
  *
  * @typedef {Object} DocumentInitParameters
- * @property {string}     [url] - The URL of the PDF.
+ * @property {string} [url] - The URL of the PDF.
  * @property {TypedArray|Array<number>|string} [data] - Binary PDF data. Use
  *    typed arrays (Uint8Array) to improve the memory usage. If PDF data is
- *    BASE64-encoded, use atob() to convert it to a binary string first.
- * @property {Object}     [httpHeaders] - Basic authentication headers.
- * @property {boolean}    [withCredentials] - Indicates whether or not
+ *    BASE64-encoded, use `atob()` to convert it to a binary string first.
+ * @property {Object} [httpHeaders] - Basic authentication headers.
+ * @property {boolean} [withCredentials] - Indicates whether or not
  *   cross-site Access-Control requests should be made using credentials such
- *   as cookies or authorization headers. The default is false.
- * @property {string}     [password] - For decrypting password-protected PDFs.
+ *   as cookies or authorization headers. The default is `false`.
+ * @property {string} [password] - For decrypting password-protected PDFs.
  * @property {TypedArray} [initialData] - A typed array with the first portion
  *   or all of the pdf data. Used by the extension since some data is already
  *   loaded before the switch to range requests.
- * @property {number}     [length] - The PDF file length. It's used for
- *   progress reports and range requests operations.
- * @property {PDFDataRangeTransport} [range]
- * @property {number}     [rangeChunkSize] - Specify maximum number of bytes
- *   fetched per range request. The default value is 2^16 = 65536.
- * @property {PDFWorker}  [worker] - The worker that will be used for
- *   the loading and parsing of the PDF data.
- * @property {number} [verbosity] - Controls the logging level; the
- *   constants from {VerbosityLevel} should be used.
- * @property {string} [docBaseUrl] - The base URL of the document,
- *   used when attempting to recover valid absolute URLs for annotations, and
- *   outline items, that (incorrectly) only specify relative URLs.
- * @property {string} [cMapUrl] - The URL where the predefined
- *   Adobe CMaps are located. Include trailing slash.
- * @property {boolean} [cMapPacked] - Specifies if the Adobe CMaps are
- *   binary packed.
- * @property {Object} [CMapReaderFactory] - The factory that will be
- *   used when reading built-in CMap files. Providing a custom factory is useful
- *   for environments without `XMLHttpRequest` support, such as e.g. Node.js.
- *   The default value is {DOMCMapReaderFactory}.
+ * @property {number} [length] - The PDF file length. It's used for progress
+ *   reports and range requests operations.
+ * @property {PDFDataRangeTransport} [range] - Allows for using a custom range
+ *   transport implementation.
+ * @property {number} [rangeChunkSize] - Specify maximum number of bytes fetched
+ *   per range request. The default value is {@link DEFAULT_RANGE_CHUNK_SIZE}.
+ * @property {PDFWorker} [worker] - The worker that will be used for loading and
+ *   parsing the PDF data.
+ * @property {number} [verbosity] - Controls the logging level; the constants
+ *   from {@link VerbosityLevel} should be used.
+ * @property {string} [docBaseUrl] - The base URL of the document, used when
+ *   attempting to recover valid absolute URLs for annotations, and outline
+ *   items, that (incorrectly) only specify relative URLs.
+ * @property {string} [cMapUrl] - The URL where the predefined Adobe CMaps are
+ *   located. Include the trailing slash.
+ * @property {boolean} [cMapPacked] - Specifies if the Adobe CMaps are binary
+ *   packed or not.
+ * @property {Object} [CMapReaderFactory] - The factory that will be used when
+ *   reading built-in CMap files. Providing a custom factory is useful for
+ *   environments without Fetch API or `XMLHttpRequest` support, such as
+ *   Node.js. The default value is {DOMCMapReaderFactory}.
  * @property {boolean} [stopAtErrors] - Reject certain promises, e.g.
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
  *   whatever possible of the data. The default value is `false`.
- * @property {number} [maxImageSize] - The maximum allowed image size
- *   in total pixels, i.e. width * height. Images above this value will not be
- *   rendered. Use -1 for no limit, which is also the default value.
- * @property {boolean} [isEvalSupported] - Determines if we can eval
- *   strings as JS. Primarily used to improve performance of font rendering,
- *   and when parsing PDF functions. The default value is `true`.
- * @property {boolean} [disableFontFace] - By default fonts are
- *   converted to OpenType fonts and loaded via font face rules. If disabled,
- *   fonts will be rendered using a built-in font renderer that constructs the
- *   glyphs with primitive path commands. The default value is `false`.
+ * @property {number} [maxImageSize] - The maximum allowed image size in total
+ *   pixels, i.e. width * height. Images above this value will not be rendered.
+ *   Use -1 for no limit, which is also the default value.
+ * @property {boolean} [isEvalSupported] - Determines if we can evaluate strings
+ *   as JavaScript. Primarily used to improve performance of font rendering, and
+ *   when parsing PDF functions. The default value is `true`.
+ * @property {boolean} [disableFontFace] - By default fonts are converted to
+ *   OpenType fonts and loaded via `@font-face` rules. If disabled, fonts will
+ *   be rendered using a built-in font renderer that constructs the glyphs with
+ *   primitive path commands. The default value is `false`.
  * @property {boolean} [fontExtraProperties] - Include additional properties,
  *   which are unused during rendering of PDF documents, when exporting the
  *   parsed font data from the worker-thread. This may be useful for debugging
  *   purposes (and backwards compatibility), but note that it will lead to
  *   increased memory usage. The default value is `false`.
- * @property {boolean} [disableRange] - Disable range request loading
- *   of PDF files. When enabled, and if the server supports partial content
- *   requests, then the PDF will be fetched in chunks.
- *   The default value is `false`.
- * @property {boolean} [disableStream] - Disable streaming of PDF file
- *   data. By default PDF.js attempts to load PDFs in chunks.
- *   The default value is `false`.
- * @property {boolean} [disableAutoFetch] - Disable pre-fetching of PDF
- *   file data. When range requests are enabled PDF.js will automatically keep
+ * @property {boolean} [disableRange] - Disable range request loading of PDF
+ *   files. When enabled, and if the server supports partial content requests,
+ *   then the PDF will be fetched in chunks. The default value is `false`.
+ * @property {boolean} [disableStream] - Disable streaming of PDF file data.
+ *   By default PDF.js attempts to load PDF files in chunks. The default value
+ *   is `false`.
+ * @property {boolean} [disableAutoFetch] - Disable pre-fetching of PDF file
+ *   data. When range requests are enabled PDF.js will automatically keep
  *   fetching more data even if it isn't needed to display the current page.
  *   The default value is `false`.
- *   NOTE: It is also necessary to disable streaming, see above,
- *         in order for disabling of pre-fetching to work correctly.
- * @property {boolean} [pdfBug] - Enables special hooks for debugging
- *   PDF.js (see `web/debugger.js`). The default value is `false`.
+ *
+ *   NOTE: It is also necessary to disable streaming, see above, in order for
+ *   disabling of pre-fetching to work correctly.
+ * @property {boolean} [pdfBug] - Enables special hooks for debugging PDF.js
+ *   (see `web/debugger.js`). The default value is `false`.
  */
 
 /**
@@ -188,13 +191,14 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
 
 /**
  * This is the main entry point for loading a PDF and interacting with it.
- * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
- * is used, which means it must follow the same origin rules that any XHR does
- * e.g. No cross domain requests without CORS.
  *
- * @param {string|TypedArray|DocumentInitParameters|PDFDataRangeTransport} src
- * Can be a url to where a PDF is located, a typed array (Uint8Array)
- * already populated with data or parameter object.
+ * NOTE: If a URL is used to fetch the PDF data a standard Fetch API call (or
+ * XHR as fallback) is used, which means it must follow same origin rules,
+ * e.g. no cross-domain requests without CORS.
+ *
+ * @param {string|TypedArray|DocumentInitParameters|PDFDataRangeTransport} src -
+ *   Can be a URL to where a PDF file is located, a typed array (Uint8Array)
+ *   already populated with data or parameter object.
  * @returns {PDFDocumentLoadingTask}
  */
 function getDocument(src) {
@@ -373,12 +377,13 @@ function getDocument(src) {
 
 /**
  * Starts fetching of specified PDF document/data.
+ *
  * @param {PDFWorker} worker
  * @param {Object} source
  * @param {PDFDataRangeTransport} pdfDataRangeTransport
- * @param {string} docId Unique document id, used as MessageHandler id.
- * @returns {Promise} The promise, which is resolved when worker id of
- *                    MessageHandler is known.
+ * @param {string} docId - Unique document ID, used in `MessageHandler`.
+ * @returns {Promise} A promise that is resolved when the worker ID of the
+ *   `MessageHandler` is known.
  * @private
  */
 function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
@@ -542,7 +547,7 @@ class PDFDataRangeTransport {
   /**
    * @param {number} length
    * @param {Uint8Array} initialData
-   * @param {boolean} progressiveDone
+   * @param {boolean} [progressiveDone]
    */
   constructor(length, initialData, progressiveDone = false) {
     this.length = length;
@@ -614,8 +619,7 @@ class PDFDataRangeTransport {
 }
 
 /**
- * Proxy to a PDFDocument in the worker thread. Also, contains commonly used
- * properties that can be read synchronously.
+ * Proxy to a `PDFDocument` in the worker thread.
  */
 class PDFDocumentProxy {
   constructor(pdfInfo, transport) {
@@ -632,7 +636,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @type {number} Total number of pages the PDF contains.
+   * @type {number} Total number of pages in the PDF file.
    */
   get numPages() {
     return this._pdfInfo.numPages;
@@ -648,7 +652,7 @@ class PDFDocumentProxy {
   /**
    * @param {number} pageNumber - The page number to get. The first page is 1.
    * @returns {Promise<PDFPageProxy>} A promise that is resolved with
-   *    a {@link PDFPageProxy} object.
+   *   a {@link PDFPageProxy} object.
    */
   getPage(pageNumber) {
     return this._transport.getPage(pageNumber);
@@ -736,9 +740,9 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Array<string> | null>} A promise that is
-   *   resolved with an {Array} of all the JavaScript strings in the name tree,
-   *   or `null` if no JavaScript exists.
+   * @returns {Promise<Array<string> | null>} A promise that is resolved with
+   *   an {Array} of all the JavaScript strings in the name tree, or `null`
+   *   if no JavaScript exists.
    */
   getJavaScript() {
     return this._transport.getJavaScript();
@@ -749,29 +753,19 @@ class PDFDocumentProxy {
    * @property {string} title
    * @property {boolean} bold
    * @property {boolean} italic
-   * @property {Uint8ClampedArray} color
-   * @property {any} dest
-   * @property {string} url
+   * @property {Uint8ClampedArray} color - The color in RGB format to use for
+   *   display purposes.
+   * @property {string | Array<any> | null} dest
+   * @property {string | null} url
+   * @property {string | undefined} unsafeUrl
+   * @property {boolean | undefined} newWindow
+   * @property {number | undefined} count
    * @property {Array<OutlineNode>} items
    */
 
   /**
-   * @returns {Promise<Array<OutlineNode>>} A promise that is resolved with
-   * an {Array} that is a tree outline (if it has one) of the PDF. The tree is
-   * in the format of:
-   * [
-   *   {
-   *     title: string,
-   *     bold: boolean,
-   *     italic: boolean,
-   *     color: rgb Uint8ClampedArray,
-   *     count: integer or undefined,
-   *     dest: dest obj,
-   *     url: string,
-   *     items: array of more items like this
-   *   },
-   *   ...
-   * ]
+   * @returns {Promise<Array<OutlineNode>>} A promise that is resolved with an
+   *   {Array} that is a tree outline (if it has one) of the PDF file.
    */
   getOutline() {
     return this._transport.getOutline();
@@ -779,8 +773,8 @@ class PDFDocumentProxy {
 
   /**
    * @returns {Promise<OptionalContentConfig | null>} A promise that is resolved
-   * with an {@link OptionalContentConfig} that will have all the optional
-   * content groups (if the document has any).
+   *   with an {@link OptionalContentConfig} that has all the optional content
+   *   groups, or `null` if the document does not have any.
    */
   getOptionalContentConfig() {
     return this._transport.getOptionalContentConfig();
@@ -825,19 +819,19 @@ class PDFDocumentProxy {
 
   /**
    * @returns {Promise<PDFDocumentStats>} A promise this is resolved with
-   *   current statistics about document structures
-   *   (see {@link PDFDocumentStats}).
+   *   current statistics about document structures (see
+   *   {@link PDFDocumentStats}).
    */
   getStats() {
     return this._transport.getStats();
   }
 
   /**
-   * Cleans up resources allocated by the document, on both the main- and
-   * worker-threads.
+   * Cleans up resources allocated by the document on both the main and worker
+   * threads.
    *
    * NOTE: Do not, under any circumstances, call this method when rendering is
-   *       currently ongoing since that may lead to rendering errors.
+   * currently ongoing since that may lead to rendering errors.
    *
    * @returns {Promise} A promise that is resolved when clean-up has finished.
    */
@@ -888,9 +882,9 @@ class PDFDocumentProxy {
  * Page getTextContent parameters.
  *
  * @typedef {Object} getTextContentParameters
- * @property {boolean} normalizeWhitespace - replaces all occurrences of
+ * @property {boolean} normalizeWhitespace - Replaces all occurrences of
  *   whitespace with standard spaces (0x20). The default value is `false`.
- * @property {boolean} disableCombineTextItems - do not attempt to combine
+ * @property {boolean} disableCombineTextItems - Do not attempt to combine
  *   same line {@link TextItem}'s. The default value is `false`.
  */
 
@@ -898,7 +892,7 @@ class PDFDocumentProxy {
  * Page text content.
  *
  * @typedef {Object} TextContent
- * @property {Array<TextItem>} items - array of {@link TextItem}
+ * @property {Array<TextItem>} items - Array of {@link TextItem} objects.
  * @property {Object<string, TextStyle>} styles - {@link TextStyle} objects,
  *   indexed by font name.
  */
@@ -907,22 +901,22 @@ class PDFDocumentProxy {
  * Page text content part.
  *
  * @typedef {Object} TextItem
- * @property {string} str - text content.
- * @property {string} dir - text direction: 'ttb', 'ltr' or 'rtl'.
- * @property {Array<any>} transform - transformation matrix.
- * @property {number} width - width in device space.
- * @property {number} height - height in device space.
- * @property {string} fontName - font name used by pdf.js for converted font.
+ * @property {string} str - Text content.
+ * @property {string} dir - Text direction: 'ttb', 'ltr' or 'rtl'.
+ * @property {Array<any>} transform - Transformation matrix.
+ * @property {number} width - Width in device space.
+ * @property {number} height - Height in device space.
+ * @property {string} fontName - Font name used by PDF.js for converted font.
  */
 
 /**
  * Text style.
  *
  * @typedef {Object} TextStyle
- * @property {number} ascent - font ascent.
- * @property {number} descent - font descent.
- * @property {boolean} vertical - text is in vertical mode.
- * @property {string} fontFamily - possible font family
+ * @property {number} ascent - Font ascent.
+ * @property {number} descent - Font descent.
+ * @property {boolean} vertical - Whether or not the text is in vertical mode.
+ * @property {string} fontFamily - The possible font family.
  */
 
 /**
@@ -930,9 +924,8 @@ class PDFDocumentProxy {
  *
  * @typedef {Object} GetAnnotationsParameters
  * @property {string} intent - Determines the annotations that will be fetched,
- *                    can be either 'display' (viewable annotations) or 'print'
- *                    (printable annotations).
- *                    If the parameter is omitted, all annotations are fetched.
+ *   can be either 'display' (viewable annotations) or 'print' (printable
+ *   annotations). If the parameter is omitted, all annotations are fetched.
  */
 
 /**
@@ -940,48 +933,46 @@ class PDFDocumentProxy {
  *
  * @typedef {Object} RenderParameters
  * @property {Object} canvasContext - A 2D context of a DOM Canvas object.
- * @property {PageViewport} viewport - Rendering viewport obtained by
- *                          calling the `PDFPageProxy.getViewport` method.
- * @property {string} [intent] - Rendering intent, can be 'display' or 'print'
- *                    (default value is 'display').
- * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering
- *                     for some operations. The default value is `false`.
- * @property {boolean} [renderInteractiveForms] - Whether or not
- *                     interactive form elements are rendered in the display
- *                     layer. If so, we do not render them on canvas as well.
- * @property {Array<any>} [transform] - Additional transform, applied
- *                        just before viewport transform.
- * @property {Object} [imageLayer] - An object that has beginLayout,
- *                    endLayout and appendImage functions.
+ * @property {PageViewport} viewport - Rendering viewport obtained by calling
+ *   the `PDFPageProxy.getViewport` method.
+ * @property {string} [intent] - Rendering intent, can be 'display' or 'print'.
+ *   The default value is 'display'.
+ * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering for
+ *   some operations. The default value is `false`.
+ * @property {boolean} [renderInteractiveForms] - Whether or not interactive
+ *   form elements are rendered in the display layer. If so, we do not render
+ *   them on the canvas as well.
+ * @property {Array<any>} [transform] - Additional transform, applied just
+ *   before viewport transform.
+ * @property {Object} [imageLayer] - An object that has `beginLayout`,
+ *   `endLayout` and `appendImage` functions.
  * @property {Object} [canvasFactory] - The factory instance that will be used
- *                    when creating canvases. The default value is
- *                    {new DOMCanvasFactory()}.
- * @property {Object} [background] - Background to use for the canvas.
- *                    Can use any valid canvas.fillStyle: A DOMString parsed as
- *                    CSS <color> value, a CanvasGradient object (a linear or
- *                    radial gradient) or a CanvasPattern object (a repetitive
- *                    image). The default value is 'rgb(255,255,255)'.
- * @property {Object} [annotationStorage] - Storage for annotation data in
- *                    forms.
- * @property {Promise} [optionalContentConfigPromise] - A promise that should
- *                     resolve with an {OptionalContentConfig} created from
- *                     PDFDocumentProxy.getOptionalContentConfig. If null, the
- *                     config will be automatically fetched with the default
- *                     visibility states set.
+ *   when creating canvases. The default value is {new DOMCanvasFactory()}.
+ * @property {Object | string} [background] - Background to use for the canvas.
+ *   Any valid `canvas.fillStyle` can be used: a `DOMString` parsed as CSS
+ *   <color> value, a `CanvasGradient` object (a linear or radial gradient) or
+ *   a `CanvasPattern` object (a repetitive image). The default value is
+ *   'rgb(255,255,255)'.
+ * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
+ *   data in forms.
+ * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise] -
+ *   A promise that should resolve with an {@link OptionalContentConfig}
+ *   created from `PDFDocumentProxy.getOptionalContentConfig`. If `null`,
+ *   the configuration will be fetched automatically with the default visibility
+ *   states set.
  */
 
 /**
  * PDF page operator list.
  *
  * @typedef {Object} PDFOperatorList
- * @property {Array<number>} fnArray - Array containing the operator
- *                                     functions.
+ * @property {Array<number>} fnArray - Array containing the operator functions.
  * @property {Array<any>} argsArray - Array containing the arguments of the
- *                                    functions.
+ *   functions.
  */
 
 /**
- * Proxy to a PDFPage in the worker thread.
+ * Proxy to a `PDFPage` in the worker thread.
  */
 class PDFPageProxy {
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
@@ -1076,9 +1067,10 @@ class PDFPageProxy {
 
   /**
    * Begins the process of rendering a page to the desired context.
+   *
    * @param {RenderParameters} params Page render parameters.
-   * @returns {RenderTask} An object that contains the promise, which
-   *                       is resolved when the page finishes rendering.
+   * @returns {RenderTask} An object that contains a promise that is
+   *   resolved when the page finishes rendering.
    */
   render({
     canvasContext,
@@ -1271,7 +1263,7 @@ class PDFPageProxy {
 
   /**
    * @param {getTextContentParameters} params - getTextContent parameters.
-   * @returns {ReadableStream} ReadableStream to read textContent chunks.
+   * @returns {ReadableStream} Stream for reading text content chunks.
    */
   streamTextContent({
     normalizeWhitespace = false,
@@ -1297,8 +1289,8 @@ class PDFPageProxy {
 
   /**
    * @param {getTextContentParameters} params - getTextContent parameters.
-   * @returns {Promise<TextContent>} That is resolved a {@link TextContent}
-   *   object that represent the page text content.
+   * @returns {Promise<TextContent>} A promise that is resolved with a
+   *   {@link TextContent} object that represents the page's text content.
    */
   getTextContent(params = {}) {
     const readableStream = this.streamTextContent(params);
@@ -1358,9 +1350,10 @@ class PDFPageProxy {
 
   /**
    * Cleans up resources allocated by the page.
+   *
    * @param {boolean} [resetStats] - Reset page stats, if enabled.
    *   The default value is `false`.
-   * @returns {boolean} Indicating if clean-up was successfully run.
+   * @returns {boolean} Indicates if clean-up was successfully run.
    */
   cleanup(resetStats = false) {
     this.pendingCleanup = true;
@@ -1641,9 +1634,9 @@ class LoopbackPort {
 /**
  * @typedef {Object} PDFWorkerParameters
  * @property {string} [name] - The name of the worker.
- * @property {Object} [port] - The `workerPort`.
+ * @property {Object} [port] - The `workerPort` object.
  * @property {number} [verbosity] - Controls the logging level; the
- *   constants from {VerbosityLevel} should be used.
+ *   constants from {@link VerbosityLevel} should be used.
  */
 
 /** @type {any} */
@@ -1763,7 +1756,7 @@ const PDFWorker = (function PDFWorkerClosure() {
   }
 
   /**
-   * PDF.js web worker abstraction, which controls the instantiation of PDF
+   * PDF.js web worker abstraction that controls the instantiation of PDF
    * documents. Message handlers are used to pass information from the main
    * thread to the worker thread and vice versa. If the creation of a web
    * worker is not possible, a "fake" worker will be used instead.
@@ -2002,7 +1995,7 @@ const PDFWorker = (function PDFWorkerClosure() {
 
     /**
      * @param {PDFWorkerParameters} params - The worker initialization
-     *                                       parameters.
+     *   parameters.
      */
     static fromPort(params) {
       if (!params || !params.port) {
@@ -2693,7 +2686,6 @@ class PDFObjects {
 
 /**
  * Allows controlling of the rendering tasks.
- * @alias RenderTask
  */
 class RenderTask {
   constructor(internalRenderTask) {
