@@ -429,39 +429,24 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
  * after which individual pages can be rendered.
  *
  * @typedef {Object} PDFDocumentLoadingTask
- * @property {string} docId
- * Unique document loading task id -- used in MessageHandlers.
- * @property {boolean} destroyed
- * Shows if loading task is destroyed.
- * @property {cbOnPassword} [onPassword]
- * Callback to request a password if wrong or no password was provided.
- * The callback receives two parameters: function that needs to be called
- * with new password and reason (see {PasswordResponses}).
- * @property {cbOnProgress} onProgress
- * Callback to be able to monitor the loading progress of the PDF file
- * (necessary to implement e.g. a loading bar). The callback receives
- * an {Object} with the properties: {number} loaded and {number} total.
- * @property {cbOnUnsupportedFeature} onUnsupportedFeature
- * Callback for when an unsupported feature is used in the PDF document.
- * The callback receives an {UNSUPPORTED_FEATURES} argument.
- * @property {Promise<PDFDocumentProxy>} promise
- * Promise for document loading task completion.
- * @property {cbDestroy} destroy
- * Aborts all network requests and destroys worker.
- * Returns a promise that is resolved after destruction activity is completed.
- *
- * @callback cbOnPassword
- * @param {string} password
- * @param {number} reason
- *
- * @callback cbOnProgress
- * @param {number} loaded
- * @param {number} total
- *
- * @callback cbOnUnsupportedFeature
- * @param {string} featureId
- *
- * @callback cbDestroy
+ * @property {string} docId - Unique identifier for the document loading task.
+ * @property {boolean} destroyed - Whether the loading task is destroyed or not.
+ * @property {function} [onPassword] - Callback to request a password if a wrong
+ *   or no password was provided. The callback receives two parameters: a
+ *   function that should be called with the new password, and a reason (see
+ *   {@link PasswordResponses}).
+ * @property {function} [onProgress] - Callback to be able to monitor the
+ *   loading progress of the PDF file (necessary to implement e.g. a loading
+ *   bar). The callback receives an {Object} with the properties `loaded`
+ *   ({number}) and `total` ({number}) that indicate how many bytes are loaded.
+ * @property {function} [onUnsupportedFeature] - Callback for when an
+ *   unsupported feature is used in the PDF document. The callback receives an
+ *   {@link UNSUPPORTED_FEATURES} argument.
+ * @property {Promise<PDFDocumentProxy>} promise - Promise for document loading
+ *   task completion.
+ * @property {Promise<void>} destroy - Abort all network requests and destroy
+ *   the worker. Returns a promise that is resolved when destruction is
+ *   completed.
  */
 
 /**
@@ -484,34 +469,38 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
       this._worker = null;
 
       /**
-       * Unique document loading task id -- used in MessageHandlers.
+       * Unique identifier for the document loading task.
        * @type {string}
        */
       this.docId = "d" + nextDocumentId++;
 
       /**
-       * Shows if loading task is destroyed.
+       * Whether the loading task is destroyed or not.
        * @type {boolean}
        */
       this.destroyed = false;
 
       /**
-       * Callback to request a password if wrong or no password was provided.
-       * The callback receives two parameters: function that needs to be called
-       * with new password and reason (see {PasswordResponses}).
+       * Callback to request a password if a wrong or no password was provided.
+       * The callback receives two parameters: a function that should be called
+       * with the new password, and a reason (see {@link PasswordResponses}).
+       * @type {function}
        */
       this.onPassword = null;
 
       /**
        * Callback to be able to monitor the loading progress of the PDF file
        * (necessary to implement e.g. a loading bar). The callback receives
-       * an {Object} with the properties: {number} loaded and {number} total.
+       * an {Object} with the properties `loaded` ({number}) and `total`
+       * ({number}) that indicate how many bytes are loaded.
+       * @type {function}
        */
       this.onProgress = null;
 
       /**
-       * Callback to when unsupported feature is used. The callback receives
-       * an {UNSUPPORTED_FEATURES} argument.
+       * Callback for when an unsupported feature is used in the PDF document.
+       * The callback receives an {@link UNSUPPORTED_FEATURES} argument.
+       * @type {function}
        */
       this.onUnsupportedFeature = null;
     }
@@ -525,9 +514,8 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
     }
 
     /**
-     * Aborts all network requests and destroys worker.
-     * @returns {Promise<void>} A promise that is resolved after destruction
-     *                          activity is completed.
+     * @returns {Promise<void>} A promise that is resolved when destruction is
+     *   completed.
      */
     destroy() {
       this.destroyed = true;
