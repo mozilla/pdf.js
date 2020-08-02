@@ -666,8 +666,8 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Object<string,any>>} A promise that is resolved with
-   *   a lookup table for mapping named destinations to reference numbers.
+   * @returns {Promise<Object<string, Array<any>>>} A promise that is resolved
+   *   with a mapping from named destinations to references.
    *
    * This can be slow for large documents. Use `getDestination` instead.
    */
@@ -685,10 +685,9 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Array<string> | null>} A promise that is
-   *   resolved with an {Array} containing the page labels that correspond to
-   *   the page indexes, or `null` when no page labels are present in the PDF
-   *   file.
+   * @returns {Promise<Array<string> | null>} A promise that is resolved with
+   *   an {Array} containing the page labels that correspond to the page
+   *   indexes, or `null` when no page labels are present in the PDF file.
    */
   getPageLabels() {
     return this._transport.getPageLabels();
@@ -711,8 +710,9 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Object>} A promise that is resolved with an {Object}
-   *   containing the viewer preferences.
+   * @returns {Promise<Object | null>} A promise that is resolved with an
+   *   {Object} containing the viewer preferences, or `null` when no viewer
+   *   preferences are present in the PDF file.
    */
   getViewerPreferences() {
     return this._transport.getViewerPreferences();
@@ -787,7 +787,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Array<string | null>>} A promise that is resolved with
+   * @returns {Promise<Array<number> | null>} A promise that is resolved with
    *   an {Array} that contains the permission flags for the PDF document, or
    *   `null` when no permissions are present in the PDF file.
    */
@@ -2703,8 +2703,7 @@ class RenderTask {
      * Callback for incremental rendering -- a function that will be called
      * each time the rendering is paused.  To continue rendering call the
      * function that is the first argument to the callback.
-     * @callback
-     * @param {function}
+     * @type {function}
      */
     this.onContinue = null;
   }
