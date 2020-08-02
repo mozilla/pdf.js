@@ -63,6 +63,7 @@ var GH_PAGES_DIR = BUILD_DIR + "gh-pages/";
 var SRC_DIR = "src/";
 var LIB_DIR = BUILD_DIR + "lib/";
 var DIST_DIR = BUILD_DIR + "dist/";
+var TYPES_BUILD_DIR = BUILD_DIR + "types/";
 var COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
 var MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
@@ -1141,6 +1142,21 @@ gulp.task("jsdoc", function (done) {
   });
 });
 
+gulp.task("types", function (done) {
+  console.log("### Generating typescript definitions using tsc");
+  var args = [
+    "target ES2020",
+    "allowJS",
+    "declaration",
+    `outDir ${TYPES_BUILD_DIR}`,
+    "strict",
+    "esModuleInterop",
+    "forceConsistentCasingInFileNames",
+    "emitDeclarationOnly",
+  ].join(" --");
+  exec(`node_modules/.bin/tsc --${args} src/pdf.js`, done);
+});
+
 function buildLib(defines, dir) {
   // When we create a bundle, webpack is run on the source and it will replace
   // require with __webpack_require__. When we want to use the real require,
@@ -1334,6 +1350,42 @@ gulp.task(
   gulp.series("testing-pre", "generic", "components", function (done) {
     makeRef(done, true);
   })
+);
+
+gulp.task(
+  "typestest",
+  gulp.series(
+    "testing-pre",
+    "generic",
+    "types",
+
+    function () {
+      var packageJsonSrc = packageBowerJson()[0];
+      var TYPESTEST_DIR = BUILD_DIR + "typestest/";
+
+      return merge([
+        packageJsonSrc.pipe(gulp.dest(TYPESTEST_DIR)),
+        gulp
+          .src([
+            GENERIC_DIR + "build/pdf.js",
+            GENERIC_DIR + "build/pdf.worker.js",
+            SRC_DIR + "pdf.worker.entry.js",
+          ])
+          .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
+        gulp
+          .src(TYPES_BUILD_DIR + "**/**")
+          .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
+      ]);
+    },
+    function (done) {
+      exec(`node_modules/.bin/tsc -p test/types`, function (err, stdout) {
+        if (err !== null) {
+          console.log("couldn't compile typescript test: " + stdout);
+        }
+        done(err);
+      });
+    }
+  )
 );
 
 gulp.task("baseline", function (done) {
@@ -1576,6 +1628,52 @@ gulp.task(
   )
 );
 
+function packageBowerJson() {
+  var VERSION = getVersionJSON().version;
+  var DIST_NAME = "pdfjs-dist";
+  var DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
+  var DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
+  var DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
+  var DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
+  var DIST_LICENSE = "Apache-2.0";
+  var npmManifest = {
+    name: DIST_NAME,
+    version: VERSION,
+    main: "build/pdf.js",
+    types: "build/pdf.d.ts",
+    description: DIST_DESCRIPTION,
+    keywords: DIST_KEYWORDS,
+    homepage: DIST_HOMEPAGE,
+    bugs: DIST_BUGS_URL,
+    license: DIST_LICENSE,
+    browser: {
+      canvas: false,
+      fs: false,
+      http: false,
+      https: false,
+      url: false,
+      zlib: false,
+    },
+    format: "amd", // to not allow system.js to choose 'cjs'
+    repository: {
+      type: "git",
+      url: DIST_REPO_URL,
+    },
+  };
+  var bowerManifest = {
+    name: DIST_NAME,
+    version: VERSION,
+    main: ["build/pdf.js", "build/pdf.worker.js"],
+    ignore: [],
+    keywords: DIST_KEYWORDS,
+  };
+
+  return [
+    createStringSource("package.json", JSON.stringify(npmManifest, null, 2)),
+    createStringSource("bower.json", JSON.stringify(bowerManifest, null, 2)),
+  ];
+}
+
 gulp.task(
   "dist-pre",
   gulp.series(
@@ -1586,9 +1684,8 @@ gulp.task(
     "image_decoders",
     "lib",
     "minified",
+    "types",
     function () {
-      var VERSION = getVersionJSON().version;
-
       console.log();
       console.log("### Cloning baseline distribution");
 
@@ -1601,50 +1698,7 @@ gulp.task(
       rimraf.sync(path.join(DIST_DIR, "*"));
 
       // Rebuilding manifests
-      var DIST_NAME = "pdfjs-dist";
-      var DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
-      var DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
-      var DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
-      var DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
-      var DIST_LICENSE = "Apache-2.0";
-      var npmManifest = {
-        name: DIST_NAME,
-        version: VERSION,
-        main: "build/pdf.js",
-        description: DIST_DESCRIPTION,
-        keywords: DIST_KEYWORDS,
-        homepage: DIST_HOMEPAGE,
-        bugs: DIST_BUGS_URL,
-        license: DIST_LICENSE,
-        browser: {
-          canvas: false,
-          fs: false,
-          http: false,
-          https: false,
-          url: false,
-          zlib: false,
-        },
-        format: "amd", // to not allow system.js to choose 'cjs'
-        repository: {
-          type: "git",
-          url: DIST_REPO_URL,
-        },
-      };
-      var packageJsonSrc = createStringSource(
-        "package.json",
-        JSON.stringify(npmManifest, null, 2)
-      );
-      var bowerManifest = {
-        name: DIST_NAME,
-        version: VERSION,
-        main: ["build/pdf.js", "build/pdf.worker.js"],
-        ignore: [],
-        keywords: DIST_KEYWORDS,
-      };
-      var bowerJsonSrc = createStringSource(
-        "bower.json",
-        JSON.stringify(bowerManifest, null, 2)
-      );
+      var [packageJsonSrc, bowerJsonSrc] = packageBowerJson();
 
       return merge([
         packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
@@ -1698,6 +1752,9 @@ gulp.task(
         gulp
           .src(LIB_DIR + "**/*", { base: LIB_DIR })
           .pipe(gulp.dest(DIST_DIR + "lib/")),
+        gulp
+          .src(TYPES_BUILD_DIR + "**/**")
+          .pipe(gulp.dest(DIST_DIR + "build/")),
       ]);
     }
   )
@@ -1847,7 +1904,7 @@ gulp.task("externaltest", function (done) {
 gulp.task(
   "npm-test",
   gulp.series(
-    gulp.parallel("lint", "externaltest", "unittestcli"),
+    gulp.parallel("lint", "externaltest", "unittestcli", "typestest"),
     "lint-chromium"
   )
 );
