@@ -101,28 +101,22 @@ class AnnotationFactory {
       case "Widget":
         let fieldType = getInheritableProperty({ dict, key: "FT" });
         fieldType = isName(fieldType) ? fieldType.name : null;
-        let widget;
 
         switch (fieldType) {
           case "Tx":
-            widget = new TextWidgetAnnotation(parameters);
-            break;
+            return new TextWidgetAnnotation(parameters);
           case "Btn":
-            widget = new ButtonWidgetAnnotation(parameters);
-            break;
+            return new ButtonWidgetAnnotation(parameters);
           case "Ch":
-            widget = new ChoiceWidgetAnnotation(parameters);
-            break;
-          default:
-            warn(
-              'Unimplemented widget field type "' +
-                fieldType +
-                '", ' +
-                "falling back to base field type."
-            );
-            widget = new WidgetAnnotation(parameters);
+            return new ChoiceWidgetAnnotation(parameters);
         }
-        return widget.setDefaultAppearance(parameters);
+        warn(
+          'Unimplemented widget field type "' +
+            fieldType +
+            '", ' +
+            "falling back to base field type."
+        );
+        return new WidgetAnnotation(parameters);
 
       case "Popup":
         return new PopupAnnotation(parameters);
