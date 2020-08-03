@@ -13,9 +13,12 @@
  * limitations under the License.
  */
 
+/**
+ * Key/value storage for annotation data in forms.
+ */
 class AnnotationStorage {
   constructor() {
-    this._storage = {};
+    this._storage = Object.create(null);
   }
 
   /**
