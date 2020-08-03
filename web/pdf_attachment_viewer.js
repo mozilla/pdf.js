@@ -129,23 +129,22 @@ class PDFAttachmentViewer {
    * @param {PDFAttachmentViewerRenderParameters} params
    */
   render({ attachments, keepRenderedCapability = false }) {
-    let attachmentsCount = 0;
-
     if (this.attachments) {
       this.reset(keepRenderedCapability === true);
     }
     this.attachments = attachments || null;
 
     if (!attachments) {
-      this._dispatchEvent(attachmentsCount);
+      this._dispatchEvent(/* attachmentsCount = */ 0);
       return;
     }
 
     const names = Object.keys(attachments).sort(function (a, b) {
       return a.toLowerCase().localeCompare(b.toLowerCase());
     });
-    attachmentsCount = names.length;
+    const attachmentsCount = names.length;
 
+    const fragment = document.createDocumentFragment();
     for (let i = 0; i < attachmentsCount; i++) {
       const item = attachments[names[i]];
       const filename = removeNullCharacters(getFilenameFromUrl(item.filename));
@@ -164,8 +163,9 @@ class PDFAttachmentViewer {
       }
 
       div.appendChild(button);
-      this.container.appendChild(div);
+      fragment.appendChild(div);
     }
+    this.container.appendChild(fragment);
 
     this._dispatchEvent(attachmentsCount);
   }
