@@ -467,6 +467,9 @@ class AbortException extends BaseException {}
 
 const NullCharactersRegExp = /\x00/g;
 
+/**
+ * @param {string} str
+ */
 function removeNullCharacters(str) {
   if (typeof str !== "string") {
     warn("The argument for removeNullCharacters must be a string.");
