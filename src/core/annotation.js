@@ -22,6 +22,7 @@ import {
   AnnotationType,
   assert,
   escapeString,
+  getModificationDate,
   isString,
   OPS,
   stringToPDFString,
@@ -29,11 +30,12 @@ import {
   warn,
 } from "../shared/util.js";
 import { Catalog, FileSpec, ObjectLoader } from "./obj.js";
-import { Dict, isDict, isName, isRef, isStream } from "./primitives.js";
+import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
 import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
+import { writeDict } from "./writer.js";
 
 class AnnotationFactory {
   /**
@@ -68,6 +70,7 @@ class AnnotationFactory {
     if (!isDict(dict)) {
       return undefined;
     }
+
     const id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
     // Determine the annotation's subtype.
@@ -77,6 +80,7 @@ class AnnotationFactory {
     // Return the right annotation object based on the subtype and field type.
     const parameters = {
       xref,
+      ref,
       dict,
       subtype,
       id,
@@ -550,6 +554,10 @@ class Annotation {
         });
     });
   }
+
+  async save(evaluator, task, annotationStorage) {
+    return null;
+  }
 }
 
 /**
@@ -791,6 +799,7 @@ class WidgetAnnotation extends Annotation {
 
     const dict = params.dict;
     const data = this.data;
+    this.ref = params.ref;
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
@@ -951,6 +960,78 @@ class WidgetAnnotation extends Annotation {
           });
       }
     );
+  }
+
+  async save(evaluator, task, annotationStorage) {
+    if (this.data.fieldValue === annotationStorage[this.data.id]) {
+      return null;
+    }
+
+    let appearance = await this._getAppearance(
+      evaluator,
+      task,
+      annotationStorage
+    );
+    if (appearance === null) {
+      return null;
+    }
+
+    const dict = evaluator.xref.fetchIfRef(this.ref);
+    if (!isDict(dict)) {
+      return null;
+    }
+
+    const bbox = [
+      0,
+      0,
+      this.data.rect[2] - this.data.rect[0],
+      this.data.rect[3] - this.data.rect[1],
+    ];
+
+    const newRef = evaluator.xref.getNewRef();
+    const AP = new Dict(evaluator.xref);
+    AP.set("N", newRef);
+
+    const value = annotationStorage[this.data.id];
+    const encrypt = evaluator.xref.encrypt;
+    let originalTransform = null;
+    let newTransform = null;
+    if (encrypt) {
+      originalTransform = encrypt.createCipherTransform(
+        this.ref.num,
+        this.ref.gen
+      );
+      newTransform = encrypt.createCipherTransform(newRef.num, newRef.gen);
+      appearance = newTransform.encryptString(appearance);
+    }
+
+    dict.set("V", value);
+    dict.set("AP", AP);
+    dict.set("M", `D:${getModificationDate()}`);
+
+    const appearanceDict = new Dict(evaluator.xref);
+    appearanceDict.set("Length", appearance.length);
+    appearanceDict.set("Subtype", Name.get("Form"));
+    appearanceDict.set("Resources", this.fieldResources);
+    appearanceDict.set("BBox", bbox);
+
+    const bufferOriginal = [`${this.ref.num} ${this.ref.gen} obj\n`];
+    writeDict(dict, bufferOriginal, originalTransform);
+    bufferOriginal.push("\nendobj\n");
+
+    const bufferNew = [`${newRef.num} ${newRef.gen} obj\n`];
+    writeDict(appearanceDict, bufferNew, newTransform);
+    bufferNew.push(" stream\n");
+    bufferNew.push(appearance);
+    bufferNew.push("\nendstream\nendobj\n");
+
+    return [
+      // data for the original object
+      // V field changed + reference for new AP
+      { ref: this.ref, data: bufferOriginal.join("") },
+      // data for the new AP
+      { ref: newRef, data: bufferNew.join("") },
+    ];
   }
 
   async _getAppearance(evaluator, task, annotationStorage) {
@@ -1312,6 +1393,111 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     );
   }
 
+  async save(evaluator, task, annotationStorage) {
+    if (this.data.checkBox) {
+      return this._saveCheckbox(evaluator, task, annotationStorage);
+    }
+
+    if (this.data.radioButton) {
+      return this._saveRadioButton(evaluator, task, annotationStorage);
+    }
+
+    return super.save(evaluator, task, annotationStorage);
+  }
+
+  async _saveCheckbox(evaluator, task, annotationStorage) {
+    const defaultValue = this.data.fieldValue && this.data.fieldValue !== "Off";
+    const value = annotationStorage[this.data.id];
+
+    if (defaultValue === value) {
+      return null;
+    }
+
+    const dict = evaluator.xref.fetchIfRef(this.ref);
+    if (!isDict(dict)) {
+      return null;
+    }
+
+    const name = Name.get(value ? this.data.exportValue : "Off");
+    dict.set("V", name);
+    dict.set("AS", name);
+    dict.set("M", `D:${getModificationDate()}`);
+
+    const encrypt = evaluator.xref.encrypt;
+    let originalTransform = null;
+    if (encrypt) {
+      originalTransform = encrypt.createCipherTransform(
+        this.ref.num,
+        this.ref.gen
+      );
+    }
+
+    const buffer = [`${this.ref.num} ${this.ref.gen} obj\n`];
+    writeDict(dict, buffer, originalTransform);
+    buffer.push("\nendobj\n");
+
+    return [{ ref: this.ref, data: buffer.join("") }];
+  }
+
+  async _saveRadioButton(evaluator, task, annotationStorage) {
+    const defaultValue = this.data.fieldValue === this.data.buttonValue;
+    const value = annotationStorage[this.data.id];
+
+    if (defaultValue === value) {
+      return null;
+    }
+
+    const dict = evaluator.xref.fetchIfRef(this.ref);
+    if (!isDict(dict)) {
+      return null;
+    }
+
+    const name = Name.get(value ? this.data.buttonValue : "Off");
+    let parentBuffer = null;
+    const encrypt = evaluator.xref.encrypt;
+
+    if (value) {
+      if (isRef(this.parent)) {
+        const parent = evaluator.xref.fetch(this.parent);
+        let parentTransform = null;
+        if (encrypt) {
+          parentTransform = encrypt.createCipherTransform(
+            this.parent.num,
+            this.parent.gen
+          );
+        }
+        parent.set("V", name);
+        parentBuffer = [`${this.parent.num} ${this.parent.gen} obj\n`];
+        writeDict(parent, parentBuffer, parentTransform);
+        parentBuffer.push("\nendobj\n");
+      } else if (isDict(this.parent)) {
+        this.parent.set("V", name);
+      }
+    }
+
+    dict.set("AS", name);
+    dict.set("M", `D:${getModificationDate()}`);
+
+    let originalTransform = null;
+    if (encrypt) {
+      originalTransform = encrypt.createCipherTransform(
+        this.ref.num,
+        this.ref.gen
+      );
+    }
+
+    const buffer = [`${this.ref.num} ${this.ref.gen} obj\n`];
+    writeDict(dict, buffer, originalTransform);
+    buffer.push("\nendobj\n");
+
+    const newRefs = [{ ref: this.ref, data: buffer.join("") }];
+    if (parentBuffer !== null) {
+      newRefs.push({ ref: this.parent, data: parentBuffer.join("") });
+    }
+
+    return newRefs;
+  }
+
   _processCheckBox(params) {
     if (isName(this.data.fieldValue)) {
       this.data.fieldValue = this.data.fieldValue.name;
@@ -1354,6 +1540,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (isDict(fieldParent) && fieldParent.has("V")) {
       const fieldParentValue = fieldParent.get("V");
       if (isName(fieldParentValue)) {
+        this.parent = params.dict.getRaw("Parent");
         this.data.fieldValue = fieldParentValue.name;
       }
     }
