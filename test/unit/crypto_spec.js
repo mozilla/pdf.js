@@ -599,7 +599,16 @@ describe("CipherTransformFactory", function () {
     done.fail("Password should be rejected.");
   }
 
-  var fileId1, fileId2, dict1, dict2;
+  function ensureEncryptDecryptIsIdentity(dict, fileId, password, string) {
+    const factory = new CipherTransformFactory(dict, fileId, password);
+    const cipher = factory.createCipherTransform(123, 0);
+    const encrypted = cipher.encryptString(string);
+    const decrypted = cipher.decryptString(encrypted);
+
+    expect(string).toEqual(decrypted);
+  }
+
+  var fileId1, fileId2, dict1, dict2, dict3;
   var aes256Dict, aes256IsoDict, aes256BlankDict, aes256IsoBlankDict;
 
   beforeAll(function (done) {
@@ -636,7 +645,7 @@ describe("CipherTransformFactory", function () {
       P: -1084,
       R: 4,
     });
-    aes256Dict = buildDict({
+    dict3 = {
       Filter: Name.get("Standard"),
       V: 5,
       Length: 256,
@@ -661,7 +670,8 @@ describe("CipherTransformFactory", function () {
       Perms: unescape("%D8%FC%844%E5e%0DB%5D%7Ff%FD%3COMM"),
       P: -1084,
       R: 5,
-    });
+    };
+    aes256Dict = buildDict(dict3);
     aes256IsoDict = buildDict({
       Filter: Name.get("Standard"),
       V: 5,
@@ -742,7 +752,7 @@ describe("CipherTransformFactory", function () {
   });
 
   afterAll(function () {
-    fileId1 = fileId2 = dict1 = dict2 = null;
+    fileId1 = fileId2 = dict1 = dict2 = dict3 = null;
     aes256Dict = aes256IsoDict = aes256BlankDict = aes256IsoBlankDict = null;
   });
 
@@ -797,6 +807,63 @@ describe("CipherTransformFactory", function () {
     });
     it("should accept blank password", function (done) {
       ensurePasswordCorrect(done, dict2, fileId2);
+    });
+  });
+
+  describe("Encrypt and decrypt", function () {
+    it("should encrypt and decrypt using ARCFour", function (done) {
+      dict3.CF = buildDict({
+        Identity: buildDict({
+          CFM: Name.get("V2"),
+        }),
+      });
+      const dict = buildDict(dict3);
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "hello world");
+      done();
+    });
+    it("should encrypt and decrypt using AES128", function (done) {
+      dict3.CF = buildDict({
+        Identity: buildDict({
+          CFM: Name.get("AESV2"),
+        }),
+      });
+      const dict = buildDict(dict3);
+      // 1 char
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "a");
+      // 2 chars
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "aa");
+      // 16 chars
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "aaaaaaaaaaaaaaaa");
+      // 19 chars
+      ensureEncryptDecryptIsIdentity(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaaaaa"
+      );
+      done();
+    });
+    it("should encrypt and decrypt using AES256", function (done) {
+      dict3.CF = buildDict({
+        Identity: buildDict({
+          CFM: Name.get("AESV3"),
+        }),
+      });
+      const dict = buildDict(dict3);
+      // 4 chars
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "aaaa");
+      // 5 chars
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "aaaaa");
+      // 16 chars
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "aaaaaaaaaaaaaaaa");
+      // 22 chars
+      ensureEncryptDecryptIsIdentity(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaaaaaaaa"
+      );
+      done();
     });
   });
 });

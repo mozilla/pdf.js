@@ -1821,6 +1821,46 @@ describe("annotation", function () {
           done();
         }, done.fail);
     });
+
+    it("should save text", function (done) {
+      const textWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([{ ref: textWidgetRef, data: textWidgetDict }]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = "hello world";
+          return annotation.save(partialEvaluator, task, annotationStorage);
+        }, done.fail)
+        .then(data => {
+          expect(data.length).toEqual(2);
+          const [oldData, newData] = data;
+          expect(oldData.ref).toEqual(Ref.get(123, 0));
+          expect(newData.ref).toEqual(Ref.get(1, 0));
+
+          oldData.data = oldData.data.replace(/\(D:[0-9]+\)/, "(date)");
+          expect(oldData.data).toEqual(
+            "123 0 obj\n" +
+              "<< /Type /Annot /Subtype /Widget /FT /Tx /DA (/Helv 5 Tf) /DR " +
+              "<< /Font << /Helv 314 0 R>>>> /Rect [0 0 32 10] " +
+              "/V (hello world) /AP << /N 1 0 R>> /M (date)>>\nendobj\n"
+          );
+          expect(newData.data).toEqual(
+            "1 0 obj\n<< /Length 77 /Subtype /Form /Resources " +
+              "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
+              "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (hello world) Tj " +
+              "ET Q EMC\nendstream\nendobj\n"
+          );
+          done();
+        }, done.fail);
+    });
   });
 
   describe("ButtonWidgetAnnotation", function () {
@@ -1977,6 +2017,65 @@ describe("annotation", function () {
         }, done.fail);
     });
 
+    it("should save checkboxes", function (done) {
+      const appearanceStatesDict = new Dict();
+      const exportValueOptionsDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      normalAppearanceDict.set("Checked", Ref.get(314, 0));
+      normalAppearanceDict.set("Off", Ref.get(271, 0));
+      exportValueOptionsDict.set("Off", 0);
+      exportValueOptionsDict.set("Checked", 1);
+      appearanceStatesDict.set("D", exportValueOptionsDict);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+      buttonWidgetDict.set("V", Name.get("Off"));
+
+      const buttonWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = true;
+          return Promise.all([
+            annotation,
+            annotation.save(partialEvaluator, task, annotationStorage),
+          ]);
+        }, done.fail)
+        .then(([annotation, [oldData]]) => {
+          oldData.data = oldData.data.replace(/\(D:[0-9]+\)/, "(date)");
+          expect(oldData.ref).toEqual(Ref.get(123, 0));
+          expect(oldData.data).toEqual(
+            "123 0 obj\n" +
+              "<< /Type /Annot /Subtype /Widget /FT /Btn " +
+              "/AP << /D << /Off 0 /Checked 1>> " +
+              "/N << /Checked 314 0 R /Off 271 0 R>>>> " +
+              "/V /Checked /AS /Checked /M (date)>>\nendobj\n"
+          );
+          return annotation;
+        }, done.fail)
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = false;
+          return annotation.save(partialEvaluator, task, annotationStorage);
+        }, done.fail)
+        .then(data => {
+          expect(data).toEqual(null);
+          done();
+        }, done.fail);
+    });
+
     it("should handle radio buttons with a field value", function (done) {
       const parentDict = new Dict();
       parentDict.set("V", Name.get("1"));
@@ -2124,6 +2223,83 @@ describe("annotation", function () {
           expect(opList.argsArray[1]).toEqual(
             new Uint8ClampedArray([76, 51, 26])
           );
+          done();
+        }, done.fail);
+    });
+
+    it("should save radio buttons", function (done) {
+      const appearanceStatesDict = new Dict();
+      const exportValueOptionsDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      normalAppearanceDict.set("Checked", Ref.get(314, 0));
+      normalAppearanceDict.set("Off", Ref.get(271, 0));
+      exportValueOptionsDict.set("Off", 0);
+      exportValueOptionsDict.set("Checked", 1);
+      appearanceStatesDict.set("D", exportValueOptionsDict);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(123, 0);
+      const parentRef = Ref.get(456, 0);
+
+      const parentDict = new Dict();
+      parentDict.set("V", Name.get("Off"));
+      parentDict.set("Kids", [buttonWidgetRef]);
+      buttonWidgetDict.set("Parent", parentRef);
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+        { ref: parentRef, data: parentDict },
+      ]);
+
+      parentDict.xref = xref;
+      buttonWidgetDict.xref = xref;
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = true;
+          return Promise.all([
+            annotation,
+            annotation.save(partialEvaluator, task, annotationStorage),
+          ]);
+        }, done.fail)
+        .then(([annotation, data]) => {
+          expect(data.length).toEqual(2);
+          const [radioData, parentData] = data;
+          radioData.data = radioData.data.replace(/\(D:[0-9]+\)/, "(date)");
+          expect(radioData.ref).toEqual(Ref.get(123, 0));
+          expect(radioData.data).toEqual(
+            "123 0 obj\n" +
+              "<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 32768 " +
+              "/AP << /D << /Off 0 /Checked 1>> " +
+              "/N << /Checked 314 0 R /Off 271 0 R>>>> " +
+              "/Parent 456 0 R /AS /Checked /M (date)>>\nendobj\n"
+          );
+          expect(parentData.ref).toEqual(Ref.get(456, 0));
+          expect(parentData.data).toEqual(
+            "456 0 obj\n<< /V /Checked /Kids [123 0 R]>>\nendobj\n"
+          );
+
+          return annotation;
+        }, done.fail)
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = false;
+          return annotation.save(partialEvaluator, task, annotationStorage);
+        }, done.fail)
+        .then(data => {
+          expect(data).toEqual(null);
           done();
         }, done.fail);
     });
@@ -2444,6 +2620,53 @@ describe("annotation", function () {
           expect(appearance).toEqual(
             "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
               " 2.00 2.00 Td (a value) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
+    });
+
+    it("should save choice", function (done) {
+      choiceWidgetDict.set("Opt", ["A", "B", "C"]);
+      choiceWidgetDict.set("V", "A");
+
+      const choiceWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict },
+      ]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      AnnotationFactory.create(
+        xref,
+        choiceWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = "C";
+          return annotation.save(partialEvaluator, task, annotationStorage);
+        }, done.fail)
+        .then(data => {
+          expect(data.length).toEqual(2);
+          const [oldData, newData] = data;
+          expect(oldData.ref).toEqual(Ref.get(123, 0));
+          expect(newData.ref).toEqual(Ref.get(1, 0));
+
+          oldData.data = oldData.data.replace(/\(D:[0-9]+\)/, "(date)");
+          expect(oldData.data).toEqual(
+            "123 0 obj\n" +
+              "<< /Type /Annot /Subtype /Widget /FT /Ch /DA (/Helv 5 Tf) /DR " +
+              "<< /Font << /Helv 314 0 R>>>> " +
+              "/Rect [0 0 32 10] /Opt [(A) (B) (C)] /V (C) " +
+              "/AP << /N 1 0 R>> /M (date)>>\nendobj\n"
+          );
+          expect(newData.data).toEqual(
+            "1 0 obj\n" +
+              "<< /Length 67 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+              "/BBox [0 0 32 10]>> stream\n" +
+              "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (C) Tj ET Q EMC\n" +
+              "endstream\nendobj\n"
           );
           done();
         }, done.fail);

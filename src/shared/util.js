@@ -832,6 +832,19 @@ function isArrayEqual(arr1, arr2) {
   });
 }
 
+function getModificationDate(date = new Date(Date.now())) {
+  const buffer = [
+    date.getUTCFullYear().toString(),
+    (date.getUTCMonth() + 1).toString().padStart(2, "0"),
+    (date.getUTCDate() + 1).toString().padStart(2, "0"),
+    date.getUTCHours().toString().padStart(2, "0"),
+    date.getUTCMinutes().toString().padStart(2, "0"),
+    date.getUTCSeconds().toString().padStart(2, "0"),
+  ];
+
+  return buffer.join("");
+}
+
 /**
  * Promise Capability object.
  *
@@ -934,6 +947,7 @@ export {
   createPromiseCapability,
   createObjectURL,
   escapeString,
+  getModificationDate,
   getVerbosityLevel,
   info,
   isArrayBuffer,

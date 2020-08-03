@@ -236,6 +236,7 @@ const PDFViewerApplication = {
   _boundEvents: {},
   contentDispositionFilename: null,
   triggerDelayedFallback: null,
+  _saveInProgress: false,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -730,6 +731,7 @@ const PDFViewerApplication = {
     this.baseUrl = "";
     this.contentDispositionFilename = null;
     this.triggerDelayedFallback = null;
+    this._saveInProgress = false;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -902,6 +904,43 @@ const PDFViewerApplication = {
         downloadManager.download(blob, url, filename);
       })
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
+  },
+
+  save() {
+    if (this._saveInProgress) {
+      return;
+    }
+
+    const url = this.baseUrl;
+    // Use this.url instead of this.baseUrl to perform filename detection based
+    // on the reference fragment as ultimate fallback if needed.
+    const filename =
+      this.contentDispositionFilename || getPDFFileNameFromURL(this.url);
+    const downloadManager = this.downloadManager;
+    downloadManager.onerror = err => {
+      // This error won't really be helpful because it's likely the
+      // fallback won't work either (or is already open).
+      this.error(`PDF failed to be saved: ${err}`);
+    };
+
+    // When the PDF document isn't ready, or the PDF file is still downloading,
+    // simply download using the URL.
+    if (!this.pdfDocument || !this.downloadComplete) {
+      this.download();
+      return;
+    }
+
+    this._saveInProgress = true;
+    this.pdfDocument
+      .saveDocument(this.pdfDocument.annotationStorage)
+      .then(data => {
+        const blob = new Blob([data], { type: "application/pdf" });
+        downloadManager.download(blob, url, filename);
+      })
+      .catch(() => {
+        this.download();
+      }); // Error occurred, try downloading with the URL.
+    this._saveInProgress = false;
   },
 
   /**
@@ -2265,7 +2304,14 @@ function webViewerPrint() {
   window.print();
 }
 function webViewerDownload() {
-  PDFViewerApplication.download();
+  if (
+    PDFViewerApplication.pdfDocument &&
+    PDFViewerApplication.pdfDocument.annotationStorage.size > 0
+  ) {
+    PDFViewerApplication.save();
+  } else {
+    PDFViewerApplication.download();
+  }
 }
 function webViewerFirstPage() {
   if (PDFViewerApplication.pdfDocument) {
