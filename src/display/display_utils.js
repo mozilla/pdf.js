@@ -446,7 +446,10 @@ function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
   link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
 }
 
-// Gets the file name from a given URL.
+/**
+ * Gets the file name from a given URL.
+ * @param {string} url
+ */
 function getFilenameFromUrl(url) {
   const anchor = url.indexOf("#");
   const query = url.indexOf("?");
@@ -520,6 +523,10 @@ function isValidFetchUrl(url, baseUrl) {
   }
 }
 
+/**
+ * @param {string} src
+ * @returns {Promise<void>}
+ */
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
