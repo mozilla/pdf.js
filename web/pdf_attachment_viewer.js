@@ -55,10 +55,14 @@ class PDFAttachmentViewer {
     this.container.textContent = "";
 
     if (!keepRenderedCapability) {
-      // NOTE: The *only* situation in which the `_renderedCapability` should
-      //       not be replaced is when appending file attachment annotations.
+      // The only situation in which the `_renderedCapability` should *not* be
+      // replaced is when appending FileAttachment annotations.
       this._renderedCapability = createPromiseCapability();
     }
+    if (this._pendingDispatchEvent) {
+      clearTimeout(this._pendingDispatchEvent);
+    }
+    this._pendingDispatchEvent = null;
   }
 
   /**
@@ -66,6 +70,25 @@ class PDFAttachmentViewer {
    */
   _dispatchEvent(attachmentsCount) {
     this._renderedCapability.resolve();
+
+    if (this._pendingDispatchEvent) {
+      clearTimeout(this._pendingDispatchEvent);
+      this._pendingDispatchEvent = null;
+    }
+    if (attachmentsCount === 0) {
+      // Delay the event when no "regular" attachments exist, to allow time for
+      // parsing of any FileAttachment annotations that may be present on the
+      // *initially* rendered page; this reduces the likelihood of temporarily
+      // disabling the attachmentsView when the `PDFSidebar` handles the event.
+      this._pendingDispatchEvent = setTimeout(() => {
+        this.eventBus.dispatch("attachmentsloaded", {
+          source: this,
+          attachmentsCount: 0,
+        });
+        this._pendingDispatchEvent = null;
+      });
+      return;
+    }
 
     this.eventBus.dispatch("attachmentsloaded", {
       source: this,
@@ -175,7 +198,12 @@ class PDFAttachmentViewer {
    * @private
    */
   _appendAttachment({ id, filename, content }) {
-    this._renderedCapability.promise.then(() => {
+    const renderedPromise = this._renderedCapability.promise;
+
+    renderedPromise.then(() => {
+      if (renderedPromise !== this._renderedCapability.promise) {
+        return; // The FileAttachment annotation belongs to a previous document.
+      }
       let attachments = this.attachments;
 
       if (!attachments) {
