@@ -194,7 +194,8 @@ class DOMSVGFactory {
 
 /**
  * @typedef {Object} PageViewportParameters
- * @property {Array} viewBox - The xMin, yMin, xMax and yMax coordinates.
+ * @property {Array<number>} viewBox - The xMin, yMin, xMax and
+ *   yMax coordinates.
  * @property {number} scale - The scale of the viewport.
  * @property {number} rotation - The rotation, in degrees, of the viewport.
  * @property {number} [offsetX] - The horizontal, i.e. x-axis, offset. The
