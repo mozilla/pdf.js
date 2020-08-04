@@ -302,6 +302,7 @@ const UNSUPPORTED_FEATURES = {
   errorFontToUnicode: "errorFontToUnicode",
   errorFontLoadNative: "errorFontLoadNative",
   errorFontGetPath: "errorFontGetPath",
+  errorMarkedContent: "errorMarkedContent",
 };
 
 const PasswordResponses = {
