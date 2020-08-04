@@ -25,6 +25,8 @@ var puppeteer = require("puppeteer");
 var url = require("url");
 var testUtils = require("./testutils.js");
 const yargs = require("yargs");
+var PNG = require("pngjs").PNG;
+const assert = require("assert").strict;
 
 function parseOptions() {
   yargs
@@ -381,6 +383,57 @@ function getTestManifest() {
   return manifest;
 }
 
+function compareImages(refSnapshot, testSnapshot) {
+  let maxDifference = 0;
+  let totalPixels = 0;
+  if (refSnapshot.toString("hex") !== testSnapshot.toString("hex")) {
+    const refPng = PNG.sync.read(refSnapshot);
+    const testPng = PNG.sync.read(testSnapshot);
+    // Sanity check.
+    assert.equal(refPng.width, testPng.width);
+    assert.equal(refPng.height, testPng.height);
+    const refData = new Uint32Array(refPng.data);
+    const testData = new Uint32Array(testPng.data);
+    for (let i = 0; i < refData.length; i++) {
+      const refPixel = refData[i];
+      const testPixel = testData[i];
+      if (refPixel !== testPixel) {
+        totalPixels++;
+        const difference = Math.abs(refPixel - testPixel);
+        if (difference > maxDifference) {
+          maxDifference = difference;
+        }
+      }
+    }
+  }
+  return {
+    maxDifference,
+    totalPixels,
+  };
+}
+
+function getFuzzyTolerance(task, page, browser) {
+  let maxDifference = 0;
+  let totalPixels = 0;
+  if ("fuzzy" in task) {
+    for (const fuzzy of task.fuzzy) {
+      if (
+        // eslint-disable-next-line no-new-func
+        new Function("platform", "browser", "page", `return ${fuzzy.if};`)(
+          os.platform(),
+          browser,
+          page
+        )
+      ) {
+        maxDifference = fuzzy.maxDifference;
+        totalPixels = fuzzy.totalPixels;
+        break;
+      }
+    }
+  }
+  return [maxDifference, totalPixels];
+}
+
 function checkEq(task, results, browser, masterMode) {
   var taskId = task.id;
   var refSnapshotDir = path.join(refsDir, os.platform(), browser, taskId);
@@ -416,7 +469,35 @@ function checkEq(task, results, browser, masterMode) {
       }
     } else {
       refSnapshot = fs.readFileSync(refPath);
-      eq = refSnapshot.toString("hex") === testSnapshot.toString("hex");
+      const comparison = compareImages(refSnapshot, testSnapshot);
+      const [maxDifference, totalPixels] = getFuzzyTolerance(
+        task,
+        page + 1,
+        browser
+      );
+      eq =
+        comparison.maxDifference <= maxDifference &&
+        comparison.totalPixels <= totalPixels;
+      if (eq && (comparison.maxDifference > 0 || comparison.totalPixels > 0)) {
+        console.log(
+          "TEST-WARNING | " +
+            taskType +
+            " " +
+            taskId +
+            " | in " +
+            browser +
+            " | rendering of page " +
+            (page + 1) +
+            " reference rendering passed, but had fuzzy pixel difference: maxDifference=" +
+            comparison.maxDifference +
+            "/" +
+            maxDifference +
+            " totalPixels=" +
+            comparison.totalPixels +
+            "/" +
+            totalPixels
+        );
+      }
       if (!eq) {
         console.log(
           "TEST-UNEXPECTED-FAIL | " +
@@ -427,7 +508,14 @@ function checkEq(task, results, browser, masterMode) {
             browser +
             " | rendering of page " +
             (page + 1) +
-            " != reference rendering"
+            " != reference rendering: maxDifference=" +
+            comparison.maxDifference +
+            "/" +
+            maxDifference +
+            " totalPixels=" +
+            comparison.totalPixels +
+            "/" +
+            totalPixels
         );
 
         testUtils.ensureDirSync(testSnapshotDir);
