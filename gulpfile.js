@@ -1155,7 +1155,7 @@ gulp.task("types", function (done) {
     "forceConsistentCasingInFileNames",
     "emitDeclarationOnly",
   ].join(" --");
-  exec(`node_modules/.bin/tsc --${args} src/pdf.js`, done);
+  exec(`"node_modules/.bin/tsc" --${args} src/pdf.js`, done);
 });
 
 function buildLib(defines, dir) {
@@ -1366,7 +1366,9 @@ gulp.task(
           SRC_DIR + "pdf.worker.entry.js",
         ])
         .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
-      gulp.src(TYPES_DIR + "**/**").pipe(gulp.dest(TYPESTEST_DIR + "build/")),
+      gulp
+        .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
+        .pipe(gulp.dest(TYPESTEST_DIR + "types/")),
     ]);
   })
 );
@@ -1374,7 +1376,7 @@ gulp.task(
 gulp.task(
   "typestest",
   gulp.series("typestest-pre", function (done) {
-    exec("node_modules/.bin/tsc -p test/types", function (err, stdout) {
+    exec('"node_modules/.bin/tsc" -p test/types', function (err, stdout) {
       if (err) {
         console.log(`Couldn't compile TypeScript test: ${stdout}`);
       }
@@ -1625,17 +1627,19 @@ gulp.task(
 
 function packageBowerJson() {
   var VERSION = getVersionJSON().version;
+
   var DIST_NAME = "pdfjs-dist";
   var DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
   var DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
   var DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
   var DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
   var DIST_LICENSE = "Apache-2.0";
+
   var npmManifest = {
     name: DIST_NAME,
     version: VERSION,
     main: "build/pdf.js",
-    types: "build/pdf.d.ts",
+    types: "types/pdf.d.ts",
     description: DIST_DESCRIPTION,
     keywords: DIST_KEYWORDS,
     homepage: DIST_HOMEPAGE,
@@ -1655,6 +1659,7 @@ function packageBowerJson() {
       url: DIST_REPO_URL,
     },
   };
+
   var bowerManifest = {
     name: DIST_NAME,
     version: VERSION,
@@ -1747,7 +1752,9 @@ gulp.task(
         gulp
           .src(LIB_DIR + "**/*", { base: LIB_DIR })
           .pipe(gulp.dest(DIST_DIR + "lib/")),
-        gulp.src(TYPES_DIR + "**/**").pipe(gulp.dest(DIST_DIR + "build/")),
+        gulp
+          .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
+          .pipe(gulp.dest(DIST_DIR + "types/")),
       ]);
     }
   )
