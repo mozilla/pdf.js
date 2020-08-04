@@ -1636,8 +1636,8 @@ describe("api", function () {
         const result1 = loadingTask1.promise.then(pdfDoc => {
           return pdfDoc.getPage(1).then(pdfPage => {
             return pdfPage.getOperatorList().then(opList => {
-              expect(opList.fnArray.length).toEqual(722);
-              expect(opList.argsArray.length).toEqual(722);
+              expect(opList.fnArray.length).toBeGreaterThan(100);
+              expect(opList.argsArray.length).toBeGreaterThan(100);
               expect(opList.lastChunk).toEqual(true);
 
               return loadingTask1.destroy();
