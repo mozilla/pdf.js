@@ -1169,30 +1169,23 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   width: calc(100% - 8px);
   top: 0;
   bottom: 0;
+  padding: 4px 4px 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   user-select: none;
 }
 
-#outlineView {
-  padding: 4px 4px 0;
-}
-#attachmentsView {
-  padding: 3px 4px 0;
-}
-
-html[dir='ltr'] .outlineWithDeepNesting > .outlineItem,
-html[dir='ltr'] .outlineItem > .outlineItems {
+html[dir='ltr'] .treeWithDeepNesting > .treeItem,
+html[dir='ltr'] .treeItem > .treeItems {
   margin-left: 20px;
 }
 
-html[dir='rtl'] .outlineWithDeepNesting > .outlineItem,
-html[dir='rtl'] .outlineItem > .outlineItems {
+html[dir='rtl'] .treeWithDeepNesting > .treeItem,
+html[dir='rtl'] .treeItem > .treeItems {
   margin-right: 20px;
 }
 
-.outlineItem > a,
-.attachmentsItem > button {
+.treeItem > a {
   text-decoration: none;
   display: inline-block;
   min-width: 95%;
@@ -1206,69 +1199,52 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   line-height: 15px;
   user-select: none;
   white-space: normal;
-}
-
-.attachmentsItem > button {
-  border: 0 none;
-  background: none;
   cursor: pointer;
-  width: 100%;
 }
-
-html[dir='ltr'] .outlineItem > a {
+html[dir='ltr'] .treeItem > a {
   padding: 2px 0 5px 4px;
 }
-html[dir='ltr'] .attachmentsItem > button {
-  padding: 2px 0 3px 7px;
-  text-align: left;
-}
-
-html[dir='rtl'] .outlineItem > a {
+html[dir='rtl'] .treeItem > a {
   padding: 2px 4px 5px 0;
 }
-html[dir='rtl'] .attachmentsItem > button {
-  padding: 2px 7px 3px 0;
-  text-align: right;
-}
 
-.outlineItemToggler {
+.treeItemToggler {
   position: relative;
   height: 0;
   width: 0;
   color: rgba(255, 255, 255, 0.5);
 }
-.outlineItemToggler::before {
+.treeItemToggler::before {
   content: url(images/treeitem-expanded.png);
   display: inline-block;
   position: absolute;
 }
-.outlineItemToggler.outlineItemsHidden::before {
+.treeItemToggler.treeItemsHidden::before {
   content: url(images/treeitem-collapsed.png);
 }
-html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
+html[dir='rtl'] .treeItemToggler.treeItemsHidden::before {
   transform: scaleX(-1);
 }
-.outlineItemToggler.outlineItemsHidden ~ .outlineItems {
+.treeItemToggler.treeItemsHidden ~ .treeItems {
   display: none;
 }
-html[dir='ltr'] .outlineItemToggler {
+html[dir='ltr'] .treeItemToggler {
   float: left;
 }
-html[dir='rtl'] .outlineItemToggler {
+html[dir='rtl'] .treeItemToggler {
   float: right;
 }
-html[dir='ltr'] .outlineItemToggler::before {
+html[dir='ltr'] .treeItemToggler::before {
   right: 4px;
 }
-html[dir='rtl'] .outlineItemToggler::before {
+html[dir='rtl'] .treeItemToggler::before {
   left: 4px;
 }
 
-.outlineItemToggler:hover,
-.outlineItemToggler:hover + a,
-.outlineItemToggler:hover ~ .outlineItems,
-.outlineItem > a:hover,
-.attachmentsItem > button:hover {
+.treeItemToggler:hover,
+.treeItemToggler:hover + a,
+.treeItemToggler:hover ~ .treeItems,
+.treeItem > a:hover {
   background-color: rgba(255, 255, 255, 0.02);
   background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   background-clip: padding-box;
@@ -1279,7 +1255,7 @@ html[dir='rtl'] .outlineItemToggler::before {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.outlineItem.selected {
+.treeItem.selected {
   background-color: rgba(255, 255, 255, 0.08);
   background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
   background-clip: padding-box;
@@ -1745,21 +1721,21 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     content: url(images/secondaryToolbarButton-documentProperties@2x.png);
   }
 
-  .outlineItemToggler::before {
+  .treeItemToggler::before {
     transform: scale(0.5);
     top: -1px;
     content: url(images/treeitem-expanded@2x.png);
   }
-  .outlineItemToggler.outlineItemsHidden::before {
+  .treeItemToggler.treeItemsHidden::before {
     content: url(images/treeitem-collapsed@2x.png);
   }
-  html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
+  html[dir='rtl'] .treeItemToggler.treeItemsHidden::before {
     transform: scale(-0.5, 0.5);
   }
-  html[dir='ltr'] .outlineItemToggler::before {
+  html[dir='ltr'] .treeItemToggler::before {
     right: 0;
   }
-  html[dir='rtl'] .outlineItemToggler::before {
+  html[dir='rtl'] .treeItemToggler::before {
     left: 0;
   }
 }
