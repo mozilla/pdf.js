@@ -38,6 +38,8 @@ import { viewerCompatibilityParams } from "./viewer_compatibility.js";
  * @property {number} id - The page unique ID (normally its number).
  * @property {number} scale - The page scale display.
  * @property {PageViewport} defaultViewport - The page viewport.
+ * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
+ *   data in forms. The default value is `null`.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IPDFTextLayerFactory} textLayerFactory
  * @property {number} [textLayerMode] - Controls if the text layer used for
@@ -81,6 +83,7 @@ class PDFPageView {
     this.rotation = 0;
     this.scale = options.scale || DEFAULT_SCALE;
     this.viewport = defaultViewport;
+    this._annotationStorage = options.annotationStorage || null;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
     this.textLayerMode = Number.isInteger(options.textLayerMode)
@@ -533,6 +536,7 @@ class PDFPageView {
         this.annotationLayer = this.annotationLayerFactory.createAnnotationLayerBuilder(
           div,
           pdfPage,
+          this._annotationStorage,
           this.imageResourcesPath,
           this.renderInteractiveForms,
           this.l10n
