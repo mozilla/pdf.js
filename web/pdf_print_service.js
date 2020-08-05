@@ -22,12 +22,17 @@ let overlayManager = null;
 
 // Renders the page to the canvas of the given print service, and returns
 // the suggested dimensions of the output page.
-function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
+function renderPage(
+  activeServiceOnEntry,
+  pdfDocument,
+  pageNumber,
+  size,
+  printResolution
+) {
   const scratchCanvas = activeService.scratchCanvas;
 
   // The size of the canvas in pixels for printing.
-  const PRINT_RESOLUTION = AppOptions.get("printResolution") || 150;
-  const PRINT_UNITS = PRINT_RESOLUTION / 72.0;
+  const PRINT_UNITS = printResolution / 72.0;
   scratchCanvas.width = Math.floor(size.width * PRINT_UNITS);
   scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
 
@@ -61,10 +66,17 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
     });
 }
 
-function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
+function PDFPrintService(
+  pdfDocument,
+  pagesOverview,
+  printContainer,
+  printResolution,
+  l10n
+) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
+  this._printResolution = printResolution || 150;
   this.l10n = l10n || NullL10n;
   this.disableCreateObjectURL = AppOptions.get("disableCreateObjectURL");
   this.currentPage = -1;
@@ -154,7 +166,13 @@ PDFPrintService.prototype = {
       }
       const index = this.currentPage;
       renderProgress(index, pageCount, this.l10n);
-      renderPage(this, this.pdfDocument, index + 1, this.pagesOverview[index])
+      renderPage(
+        this,
+        this.pdfDocument,
+        /* pageNumber = */ index + 1,
+        this.pagesOverview[index],
+        this._printResolution
+      )
         .then(this.useRenderedPage.bind(this))
         .then(function () {
           renderNextPage(resolve, reject);
@@ -347,7 +365,13 @@ function ensureOverlay() {
 PDFPrintServiceFactory.instance = {
   supportsPrinting: true,
 
-  createPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
+  createPrintService(
+    pdfDocument,
+    pagesOverview,
+    printContainer,
+    printResolution,
+    l10n
+  ) {
     if (activeService) {
       throw new Error("The print service is created and active.");
     }
@@ -355,6 +379,7 @@ PDFPrintServiceFactory.instance = {
       pdfDocument,
       pagesOverview,
       printContainer,
+      printResolution,
       l10n
     );
     return activeService;
