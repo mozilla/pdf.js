@@ -435,6 +435,8 @@ class BaseViewer {
     const pagesCount = pdfDocument.numPages;
     const firstPagePromise = pdfDocument.getPage(1);
 
+    const annotationStorage = pdfDocument.annotationStorage;
+
     this._pagesCapability.promise.then(() => {
       this.eventBus.dispatch("pagesloaded", {
         source: this,
@@ -481,6 +483,7 @@ class BaseViewer {
             eventBus: this.eventBus,
             id: pageNum,
             scale,
+            annotationStorage,
             defaultViewport: viewport.clone(),
             renderingQueue: this.renderingQueue,
             textLayerFactory,
@@ -1153,6 +1156,7 @@ class BaseViewer {
   createAnnotationLayerBuilder(
     pageDiv,
     pdfPage,
+    annotationStorage = null,
     imageResourcesPath = "",
     renderInteractiveForms = false,
     l10n = NullL10n
@@ -1160,11 +1164,11 @@ class BaseViewer {
     return new AnnotationLayerBuilder({
       pageDiv,
       pdfPage,
+      annotationStorage,
       imageResourcesPath,
       renderInteractiveForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,
-      annotationStorage: this.pdfDocument.annotationStorage,
       l10n,
     });
   }
