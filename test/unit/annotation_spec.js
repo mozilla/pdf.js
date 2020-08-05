@@ -1863,6 +1863,36 @@ describe("annotation", function () {
           done();
         }, done.fail);
     });
+
+    it("should expose document defaultAppearance", function (done) {
+      const defaultAppearanceData = Dict.empty;
+      defaultAppearanceData.set("fontRefName", "g_0");
+      defaultAppearanceData.set("fontName", "Courier");
+      defaultAppearanceData.set("fontSize", 7);
+      const textWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([{ ref: textWidgetRef, data: textWidgetDict }]);
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock,
+        Dict.empty,
+        defaultAppearanceData
+      ).then(annotation => {
+        expect(annotation.data.fontRefName).toEqual(
+          defaultAppearanceData.fontRefName
+        );
+        expect(annotation.data.fontName).toEqual(
+          defaultAppearanceData.fontName
+        );
+        expect(annotation.data.fontSize).toEqual(
+          defaultAppearanceData.fontSize
+        );
+        done();
+      }, done.fail);
+    });
   });
 
   describe("ButtonWidgetAnnotation", function () {

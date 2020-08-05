@@ -48,7 +48,12 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import { NullStream, Stream, StreamsSequenceStream } from "./stream.js";
+import {
+  NullStream,
+  Stream,
+  StreamsSequenceStream,
+  StringStream,
+} from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { calculateMD5 } from "./crypto.js";
 import { Linearization } from "./parser.js";
@@ -76,6 +81,8 @@ class Page {
     fontCache,
     builtInCMapCache,
     globalImageCache,
+    defaultAppearance,
+    defaultResources,
   }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -87,6 +94,9 @@ class Page {
     this.globalImageCache = globalImageCache;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
+    this.defaultAppearancePromise = null;
+    this.defaultAppearance = defaultAppearance;
+    this.defaultResources = defaultResources;
 
     const idCounters = {
       obj: 0,
@@ -125,11 +135,13 @@ class Page {
     // For robustness: The spec states that a \Resources entry has to be
     // present, but can be empty. Some documents still omit it; in this case
     // we return an empty dictionary.
-    return shadow(
-      this,
-      "resources",
-      this._getInheritableProperty("Resources") || Dict.empty
-    );
+
+    const resources = this._getInheritableProperty("Resources") || Dict.empty;
+    const acroForm = this.pdfManager.pdfDocument.catalog.acroForm;
+    if (acroForm && acroForm.get("DR")) {
+      resources.defaultResources = acroForm.get("DR");
+    }
+    return shadow(this, "resources", resources);
   }
 
   _getBoundingBox(name) {
@@ -307,7 +319,17 @@ class Page {
       options: this.evaluatorOptions,
     });
 
-    const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+    if (!this.defaultAppearancePromise) {
+      this.defaultAppearancePromise = this.handleDefaultAppearance(
+        partialEvaluator,
+        task
+      );
+    }
+    const dataPromises = Promise.all([
+      contentStreamPromise,
+      resourcesPromise,
+      this.defaultAppearancePromise,
+    ]);
     const pageListPromise = dataPromises.then(([contentStream]) => {
       const opList = new OperatorList(intent, sink);
 
@@ -375,6 +397,24 @@ class Page {
     );
   }
 
+  handleDefaultAppearance(partialEvaluator, task) {
+    if (this.defaultAppearanceData) {
+      return new Promise();
+    }
+
+    const opList = new OperatorList();
+
+    const appearanceStream = new StringStream(this.defaultAppearance);
+    this.defaultAppearanceData = Dict.empty;
+    return partialEvaluator.getAcroformDefaultAppearanceData({
+      stream: appearanceStream,
+      task,
+      resources: this.defaultResources,
+      operatorList: opList,
+      data: this.defaultAppearanceData,
+    });
+  }
+
   extractTextContent({
     handler,
     task,
@@ -391,20 +431,29 @@ class Page {
       "XObject",
       "Font",
     ]);
+    const partialEvaluator = new PartialEvaluator({
+      xref: this.xref,
+      handler,
+      pageIndex: this.pageIndex,
+      idFactory: this._localIdFactory,
+      fontCache: this.fontCache,
+      builtInCMapCache: this.builtInCMapCache,
+      globalImageCache: this.globalImageCache,
+      options: this.evaluatorOptions,
+    });
 
-    const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+    if (!this.defaultAppearancePromise) {
+      warn(
+        "extractTextContent ran before this.defaultAppearancePromise was set!"
+      );
+    }
+
+    const dataPromises = Promise.all([
+      contentStreamPromise,
+      resourcesPromise,
+      this.defaultAppearancePromise,
+    ]);
     return dataPromises.then(([contentStream]) => {
-      const partialEvaluator = new PartialEvaluator({
-        xref: this.xref,
-        handler,
-        pageIndex: this.pageIndex,
-        idFactory: this._localIdFactory,
-        fontCache: this.fontCache,
-        builtInCMapCache: this.builtInCMapCache,
-        globalImageCache: this.globalImageCache,
-        options: this.evaluatorOptions,
-      });
-
       return partialEvaluator.getTextContent({
         stream: contentStream,
         task,
@@ -447,7 +496,8 @@ class Page {
               this.xref,
               annotationRef,
               this.pdfManager,
-              this._localIdFactory
+              this._localIdFactory,
+              this.defaultAppearanceData
             ).catch(function (reason) {
               warn(`_parsedAnnotations: "${reason}".`);
               return null;
@@ -552,7 +602,7 @@ class PDFDocument {
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
     this._pagePromises = [];
-    this._version = null;
+    this._defaultAppearance = null;
 
     const idCounters = {
       font: 0,
@@ -898,6 +948,13 @@ class PDFDocument {
         ? this._getLinearizationPage(pageIndex)
         : catalog.getPageDict(pageIndex);
 
+    const defaultAppearance = this.catalog.acroForm
+      ? this.catalog.acroForm.get("DA") || ""
+      : "";
+    const defaultResources = this.catalog.acroForm
+      ? this.catalog.acroForm.get("DR") || Dict.empty
+      : Dict.empty;
+
     return (this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
       return new Page({
         pdfManager: this.pdfManager,
@@ -909,6 +966,8 @@ class PDFDocument {
         fontCache: catalog.fontCache,
         builtInCMapCache: catalog.builtInCMapCache,
         globalImageCache: catalog.globalImageCache,
+        defaultAppearance,
+        defaultResources,
       });
     }));
   }

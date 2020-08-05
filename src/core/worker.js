@@ -694,7 +694,7 @@ class WorkerMessageHandler {
               }
               sink.error(reason);
 
-              // TODO: Should `reason` be re-thrown here (currently that casues
+              // TODO: Should `reason` be re-thrown here (currently that causes
               //       "Uncaught exception: ..." messages in the console)?
             }
           );

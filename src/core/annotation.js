@@ -50,7 +50,7 @@ class AnnotationFactory {
    * @returns {Promise} A promise that is resolved with an {Annotation}
    *   instance.
    */
-  static create(xref, ref, pdfManager, idFactory) {
+  static create(xref, ref, pdfManager, idFactory, defaultAppearanceData) {
     return pdfManager.ensureCatalog("acroForm").then(acroForm => {
       return pdfManager.ensure(this, "_create", [
         xref,
@@ -58,6 +58,7 @@ class AnnotationFactory {
         pdfManager,
         idFactory,
         acroForm,
+        defaultAppearanceData,
       ]);
     });
   }
@@ -65,7 +66,14 @@ class AnnotationFactory {
   /**
    * @private
    */
-  static _create(xref, ref, pdfManager, idFactory, acroForm) {
+  static _create(
+    xref,
+    ref,
+    pdfManager,
+    idFactory,
+    acroForm,
+    defaultAppearanceData
+  ) {
     const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
@@ -86,6 +94,10 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      defaultAppearanceData:
+        defaultAppearanceData instanceof Dict
+          ? defaultAppearanceData
+          : Dict.empty,
     };
 
     switch (subtype) {
@@ -242,6 +254,7 @@ class Annotation {
   constructor(params) {
     const dict = params.dict;
 
+    this.defaultAppearanceData = params.defaultAppearanceData;
     this.setContents(dict.get("Contents"));
     this.setModificationDate(dict.get("M"));
     this.setFlags(dict.get("F"));
@@ -1285,6 +1298,14 @@ class WidgetAnnotation extends Annotation {
 class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
+    if (params.defaultAppearanceData) {
+      const keys = ["fontRefName", "fontName", "fontSize", "fontColor"];
+      for (const key of keys) {
+        if (key in params.defaultAppearanceData && !(key in this.data)) {
+          this.data[key] = params.defaultAppearanceData[key];
+        }
+      }
+    }
 
     this._hasText = true;
 

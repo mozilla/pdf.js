@@ -2631,6 +2631,131 @@ class PartialEvaluator {
     });
   }
 
+  getAcroformDefaultAppearanceData({
+    stream,
+    task,
+    resources,
+    operatorList,
+    data,
+  }) {
+    resources = resources || Dict.empty;
+    const initialState = new EvalState();
+
+    if (!operatorList) {
+      throw new Error(
+        'getAcroformDefaultAppearance: missing "operatorList" parameter'
+      );
+    }
+
+    var self = this;
+    var xref = this.xref;
+
+    var stateManager = new StateManager(initialState);
+    var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
+    var timeSlotManager = new TimeSlotManager();
+
+    function closePendingRestoreOPS(argument) {
+      for (var i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
+        operatorList.addOp(OPS.restore, []);
+      }
+    }
+
+    return new Promise(function promiseBody(resolve, reject) {
+      const next = function (promise) {
+        Promise.all([promise, operatorList.ready]).then(function () {
+          try {
+            promiseBody(resolve, reject);
+          } catch (ex) {
+            reject(ex);
+          }
+        }, reject);
+      };
+      task.ensureNotTerminated();
+      timeSlotManager.reset();
+      var stop,
+        operation = {};
+      while (!(stop = timeSlotManager.check())) {
+        // The arguments parsed by read() are used beyond this loop, so we
+        // cannot reuse the same array on each iteration. Therefore we pass
+        // in |null| as the initial value (see the comment on
+        // EvaluatorPreprocessor_read() for why).
+        operation.args = null;
+        if (!preprocessor.read(operation)) {
+          break;
+        }
+        var args = operation.args;
+        var fn = operation.fn;
+
+        switch (fn | 0) {
+          case OPS.setFont:
+            var fontSize = args[1];
+            // eagerly collect all fonts
+            next(
+              self
+                .handleSetFont(
+                  resources,
+                  args,
+                  null,
+                  operatorList,
+                  task,
+                  stateManager.state
+                )
+                .then(function (loadedName) {
+                  operatorList.addDependency(loadedName);
+                  operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
+                  data.fontRefName = loadedName;
+                })
+            );
+            data.fontSize = fontSize;
+            break;
+          case OPS.setFillGray:
+            stateManager.state.fillColorSpace = ColorSpace.singletons.gray;
+            args = ColorSpace.singletons.gray.getRgb(args, 0);
+            data.fontColor = args;
+            fn = OPS.setFillRGBColor;
+            break;
+          case OPS.setFillRGBColor:
+            stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
+            args = ColorSpace.singletons.rgb.getRgb(args, 0);
+            data.fontColor = args;
+            break;
+          case OPS.setFillCMYKColor:
+            stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
+            args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+            data.fontColor = args;
+            fn = OPS.setFillRGBColor;
+            break;
+        }
+        operatorList.addOp(fn, args);
+      }
+      if (stop) {
+        next(deferred);
+        return;
+      }
+      closePendingRestoreOPS();
+      resolve();
+    }).catch(reason => {
+      if (reason instanceof AbortException) {
+        return;
+      }
+      if (this.options.ignoreErrors) {
+        // Error(s) in the OperatorList -- sending unsupported feature
+        // notification and allow rendering to continue.
+        this.handler.send("UnsupportedFeature", {
+          featureId: UNSUPPORTED_FEATURES.errorOperatorList,
+        });
+        warn(
+          `getAcroformDefaultAppearanceData - ignoring errors during ` +
+            `"${task.name}" task: "${reason}".`
+        );
+
+        closePendingRestoreOPS();
+        return;
+      }
+      throw reason;
+    });
+  }
+
   extractDataStructures(dict, baseDict, properties) {
     const xref = this.xref;
     let cidToGidBytes;
