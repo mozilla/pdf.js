@@ -355,6 +355,67 @@ class Catalog {
       return onParsed;
     }
 
+    function parseOrder(refs, nestedLevels = 0) {
+      if (!Array.isArray(refs)) {
+        return null;
+      }
+      const order = [];
+
+      for (const value of refs) {
+        if (isRef(value) && contentGroupRefs.includes(value)) {
+          parsedOrderRefs.put(value); // Handle "hidden" groups, see below.
+
+          order.push(value.toString());
+          continue;
+        }
+        // Handle nested /Order arrays (see e.g. issue 9462 and bug 1240641).
+        const nestedOrder = parseNestedOrder(value, nestedLevels);
+        if (nestedOrder) {
+          order.push(nestedOrder);
+        }
+      }
+
+      if (nestedLevels > 0) {
+        return order;
+      }
+      const hiddenGroups = [];
+      for (const groupRef of contentGroupRefs) {
+        if (parsedOrderRefs.has(groupRef)) {
+          continue;
+        }
+        hiddenGroups.push(groupRef.toString());
+      }
+      if (hiddenGroups.length) {
+        order.push({ name: null, order: hiddenGroups });
+      }
+
+      return order;
+    }
+
+    function parseNestedOrder(ref, nestedLevels) {
+      if (++nestedLevels > MAX_NESTED_LEVELS) {
+        warn("parseNestedOrder - reached MAX_NESTED_LEVELS.");
+        return null;
+      }
+      const value = xref.fetchIfRef(ref);
+      if (!Array.isArray(value)) {
+        return null;
+      }
+      const nestedName = xref.fetchIfRef(value[0]);
+      if (typeof nestedName !== "string") {
+        return null;
+      }
+      const nestedOrder = parseOrder(value.slice(1), nestedLevels);
+      if (!nestedOrder || !nestedOrder.length) {
+        return null;
+      }
+      return { name: stringToPDFString(nestedName), order: nestedOrder };
+    }
+
+    const xref = this.xref,
+      parsedOrderRefs = new RefSet(),
+      MAX_NESTED_LEVELS = 10;
+
     return {
       name: isString(config.get("Name"))
         ? stringToPDFString(config.get("Name"))
@@ -367,6 +428,8 @@ class Catalog {
         : null,
       on: parseOnOff(config.get("ON")),
       off: parseOnOff(config.get("OFF")),
+      order: parseOrder(config.get("Order")),
+      groups: null,
     };
   }
 
