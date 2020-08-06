@@ -17,6 +17,7 @@ import {
   bytesToString,
   createPromiseCapability,
   createValidAbsoluteUrl,
+  escapeString,
   isArrayBuffer,
   isBool,
   isNum,
@@ -312,6 +313,14 @@ describe("util", function () {
         expect(reason.message).toEqual("reason");
         done();
       });
+    });
+  });
+
+  describe("escapeString", function () {
+    it("should escape (, ) and \\", function () {
+      expect(escapeString("((a\\a))(b(b\\b)b)")).toEqual(
+        "\\(\\(a\\\\a\\)\\)\\(b\\(b\\\\b\\)b\\)"
+      );
     });
   });
 });
