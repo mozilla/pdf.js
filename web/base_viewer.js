@@ -439,6 +439,7 @@ class BaseViewer {
     const firstPagePromise = pdfDocument.getPage(1);
 
     const annotationStorage = pdfDocument.annotationStorage;
+    const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
 
     this._pagesCapability.promise.then(() => {
       this.eventBus.dispatch("pagesloaded", {
@@ -474,6 +475,7 @@ class BaseViewer {
     firstPagePromise
       .then(firstPdfPage => {
         this._firstPageCapability.resolve(firstPdfPage);
+        this._optionalContentConfigPromise = optionalContentConfigPromise;
 
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({ scale: scale * CSS_UNITS });
@@ -486,8 +488,9 @@ class BaseViewer {
             eventBus: this.eventBus,
             id: pageNum,
             scale,
-            annotationStorage,
             defaultViewport: viewport.clone(),
+            annotationStorage,
+            optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
             textLayerFactory,
             textLayerMode: this.textLayerMode,
@@ -605,6 +608,7 @@ class BaseViewer {
     this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
     this._location = null;
     this._pagesRotation = 0;
+    this._optionalContentConfigPromise = null;
     this._pagesRequests = new WeakMap();
     this._firstPageCapability = createPromiseCapability();
     this._onePageRenderedCapability = createPromiseCapability();
@@ -1219,6 +1223,50 @@ class BaseViewer {
         height: size.width,
         rotation: (size.rotation + 90) % 360,
       };
+    });
+  }
+
+  /**
+   * @type {Promise<OptionalContentConfig | null>}
+   */
+  get optionalContentConfigPromise() {
+    if (!this.pdfDocument) {
+      return Promise.resolve(null);
+    }
+    if (!this._optionalContentConfigPromise) {
+      // Prevent issues if the getter is accessed *before* the `onePageRendered`
+      // promise has resolved; won't (normally) happen in the default viewer.
+      return this.pdfDocument.getOptionalContentConfig();
+    }
+    return this._optionalContentConfigPromise;
+  }
+
+  /**
+   * @param {Promise<OptionalContentConfig>} promise - A promise that is
+   *   resolved with an {@link OptionalContentConfig} instance.
+   */
+  set optionalContentConfigPromise(promise) {
+    if (!(promise instanceof Promise)) {
+      throw new Error(`Invalid optionalContentConfigPromise: ${promise}`);
+    }
+    if (!this.pdfDocument) {
+      return;
+    }
+    if (!this._optionalContentConfigPromise) {
+      // Ignore the setter *before* the `onePageRendered` promise has resolved,
+      // since it'll be overwritten anyway; won't happen in the default viewer.
+      return;
+    }
+    this._optionalContentConfigPromise = promise;
+
+    for (const pageView of this._pages) {
+      pageView.update(pageView.scale, pageView.rotation, promise);
+    }
+    this.update();
+
+    this.eventBus.dispatch("optionalcontentconfigchanged", {
+      source: this,
+      promise,
     });
   }
 

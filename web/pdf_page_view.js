@@ -40,6 +40,9 @@ import { viewerCompatibilityParams } from "./viewer_compatibility.js";
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
  *   data in forms. The default value is `null`.
+ * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise] -
+ *   A promise that is resolved with an {@link OptionalContentConfig} instance.
+ *   The default value is `null`.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IPDFTextLayerFactory} textLayerFactory
  * @property {number} [textLayerMode] - Controls if the text layer used for
@@ -83,8 +86,10 @@ class PDFPageView {
     this.rotation = 0;
     this.scale = options.scale || DEFAULT_SCALE;
     this.viewport = defaultViewport;
-    this._annotationStorage = options.annotationStorage || null;
     this.pdfPageRotate = defaultViewport.rotation;
+    this._annotationStorage = options.annotationStorage || null;
+    this._optionalContentConfigPromise =
+      options.optionalContentConfigPromise || null;
     this.hasRestrictedScaling = false;
     this.textLayerMode = Number.isInteger(options.textLayerMode)
       ? options.textLayerMode
@@ -236,11 +241,14 @@ class PDFPageView {
     div.appendChild(this.loadingIconDiv);
   }
 
-  update(scale, rotation) {
+  update(scale, rotation, optionalContentConfigPromise = null) {
     this.scale = scale || this.scale;
     // The rotation may be zero.
     if (typeof rotation !== "undefined") {
       this.rotation = rotation;
+    }
+    if (optionalContentConfigPromise instanceof Promise) {
+      this._optionalContentConfigPromise = optionalContentConfigPromise;
     }
 
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
@@ -660,6 +668,7 @@ class PDFPageView {
       viewport: this.viewport,
       enableWebGL: this.enableWebGL,
       renderInteractiveForms: this.renderInteractiveForms,
+      optionalContentConfigPromise: this._optionalContentConfigPromise,
     };
     const renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {
