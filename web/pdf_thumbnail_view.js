@@ -29,8 +29,12 @@ const THUMBNAIL_WIDTH = 98; // px
  * @property {HTMLDivElement} container - The viewer element.
  * @property {number} id - The thumbnail's unique ID (normally its number).
  * @property {PageViewport} defaultViewport - The page viewport.
+ * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise] -
+ *   A promise that is resolved with an {@link OptionalContentConfig} instance.
+ *   The default value is `null`.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @property {function} checkSetImageDisabled
  * @property {boolean} [disableCanvasToImageConversion] - Don't convert the
  *   canvas thumbnails to images. This prevents `toDataURL` calls, but
  *   increases the overall memory usage. The default value is `false`.
@@ -91,8 +95,10 @@ class PDFThumbnailView {
     container,
     id,
     defaultViewport,
+    optionalContentConfigPromise,
     linkService,
     renderingQueue,
+    checkSetImageDisabled,
     disableCanvasToImageConversion = false,
     l10n = NullL10n,
   }) {
@@ -104,6 +110,7 @@ class PDFThumbnailView {
     this.rotation = 0;
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
+    this._optionalContentConfigPromise = optionalContentConfigPromise || null;
 
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
@@ -111,6 +118,11 @@ class PDFThumbnailView {
     this.renderTask = null;
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
+    this._checkSetImageDisabled =
+      checkSetImageDisabled ||
+      function () {
+        return false;
+      };
     this.disableCanvasToImageConversion = disableCanvasToImageConversion;
 
     this.pageWidth = this.viewport.width;
@@ -345,6 +357,7 @@ class PDFThumbnailView {
     const renderContext = {
       canvasContext: ctx,
       viewport: drawViewport,
+      optionalContentConfigPromise: this._optionalContentConfigPromise,
     };
     const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;
@@ -361,6 +374,9 @@ class PDFThumbnailView {
   }
 
   setImage(pageView) {
+    if (this._checkSetImageDisabled()) {
+      return;
+    }
     if (this.renderingState !== RenderingStates.INITIAL) {
       return;
     }

@@ -27,7 +27,8 @@ function renderPage(
   pdfDocument,
   pageNumber,
   size,
-  printResolution
+  printResolution,
+  optionalContentConfigPromise
 ) {
   const scratchCanvas = activeService.scratchCanvas;
 
@@ -55,6 +56,7 @@ function renderPage(
         viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
         intent: "print",
         annotationStorage: pdfDocument.annotationStorage,
+        optionalContentConfigPromise,
       };
       return pdfPage.render(renderContext).promise;
     })
@@ -71,12 +73,15 @@ function PDFPrintService(
   pagesOverview,
   printContainer,
   printResolution,
+  optionalContentConfigPromise = null,
   l10n
 ) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
   this._printResolution = printResolution || 150;
+  this._optionalContentConfigPromise =
+    optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
   this.l10n = l10n || NullL10n;
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
@@ -170,7 +175,8 @@ PDFPrintService.prototype = {
         this.pdfDocument,
         /* pageNumber = */ index + 1,
         this.pagesOverview[index],
-        this._printResolution
+        this._printResolution,
+        this._optionalContentConfigPromise
       )
         .then(this.useRenderedPage.bind(this))
         .then(function () {
@@ -372,6 +378,7 @@ PDFPrintServiceFactory.instance = {
     pagesOverview,
     printContainer,
     printResolution,
+    optionalContentConfigPromise,
     l10n
   ) {
     if (activeService) {
@@ -382,6 +389,7 @@ PDFPrintServiceFactory.instance = {
       pagesOverview,
       printContainer,
       printResolution,
+      optionalContentConfigPromise,
       l10n
     );
     return activeService;

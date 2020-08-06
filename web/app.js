@@ -64,6 +64,7 @@ import { PDFDocumentProperties } from "./pdf_document_properties.js";
 import { PDFFindBar } from "./pdf_find_bar.js";
 import { PDFFindController } from "./pdf_find_controller.js";
 import { PDFHistory } from "./pdf_history.js";
+import { PDFLayerViewer } from "./pdf_layer_viewer.js";
 import { PDFLinkService } from "./pdf_link_service.js";
 import { PDFOutlineViewer } from "./pdf_outline_viewer.js";
 import { PDFPresentationMode } from "./pdf_presentation_mode.js";
@@ -209,6 +210,8 @@ const PDFViewerApplication = {
   pdfOutlineViewer: null,
   /** @type {PDFAttachmentViewer} */
   pdfAttachmentViewer: null,
+  /** @type {PDFLayerViewer} */
+  pdfLayerViewer: null,
   /** @type {PDFCursorTools} */
   pdfCursorTools: null,
   /** @type {ViewHistory} */
@@ -445,6 +448,7 @@ const PDFViewerApplication = {
 
     this.pdfThumbnailViewer = new PDFThumbnailViewer({
       container: appConfig.sidebar.thumbnailView,
+      eventBus,
       renderingQueue: pdfRenderingQueue,
       linkService: pdfLinkService,
       l10n: this.l10n,
@@ -507,6 +511,12 @@ const PDFViewerApplication = {
       container: appConfig.sidebar.attachmentsView,
       eventBus,
       downloadManager,
+    });
+
+    this.pdfLayerViewer = new PDFLayerViewer({
+      container: appConfig.sidebar.layersView,
+      eventBus,
+      l10n: this.l10n,
     });
 
     this.pdfSidebar = new PDFSidebar({
@@ -737,6 +747,7 @@ const PDFViewerApplication = {
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
     this.pdfAttachmentViewer.reset();
+    this.pdfLayerViewer.reset();
 
     if (this.pdfHistory) {
       this.pdfHistory.reset();
@@ -1318,6 +1329,11 @@ const PDFViewerApplication = {
       pdfDocument.getAttachments().then(attachments => {
         this.pdfAttachmentViewer.render({ attachments });
       });
+      // Ensure that the layers accurately reflects the current state in the
+      // viewer itself, rather than the default state provided by the API.
+      pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
+        this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
+      });
     });
 
     this._initializePageLabels(pdfDocument);
@@ -1667,12 +1683,15 @@ const PDFViewerApplication = {
     const pagesOverview = this.pdfViewer.getPagesOverview();
     const printContainer = this.appConfig.printContainer;
     const printResolution = AppOptions.get("printResolution");
+    const optionalContentConfigPromise = this.pdfViewer
+      .optionalContentConfigPromise;
 
     const printService = PDFPrintServiceFactory.instance.createPrintService(
       this.pdfDocument,
       pagesOverview,
       printContainer,
       printResolution,
+      optionalContentConfigPromise,
       this.l10n
     );
     this.printService = printService;
@@ -1748,6 +1767,7 @@ const PDFViewerApplication = {
     eventBus._on("scalechanged", webViewerScaleChanged);
     eventBus._on("rotatecw", webViewerRotateCw);
     eventBus._on("rotateccw", webViewerRotateCcw);
+    eventBus._on("optionalcontentconfig", webViewerOptionalContentConfig);
     eventBus._on("switchscrollmode", webViewerSwitchScrollMode);
     eventBus._on("scrollmodechanged", webViewerScrollModeChanged);
     eventBus._on("switchspreadmode", webViewerSwitchSpreadMode);
@@ -1827,6 +1847,7 @@ const PDFViewerApplication = {
     eventBus._off("scalechanged", webViewerScaleChanged);
     eventBus._off("rotatecw", webViewerRotateCw);
     eventBus._off("rotateccw", webViewerRotateCcw);
+    eventBus._off("optionalcontentconfig", webViewerOptionalContentConfig);
     eventBus._off("switchscrollmode", webViewerSwitchScrollMode);
     eventBus._off("scrollmodechanged", webViewerScrollModeChanged);
     eventBus._off("switchspreadmode", webViewerSwitchSpreadMode);
@@ -2169,11 +2190,14 @@ function webViewerPageMode({ mode }) {
       view = SidebarView.THUMBS;
       break;
     case "bookmarks":
-    case "outline":
+    case "outline": // non-standard
       view = SidebarView.OUTLINE;
       break;
-    case "attachments":
+    case "attachments": // non-standard
       view = SidebarView.ATTACHMENTS;
+      break;
+    case "layers": // non-standard
+      view = SidebarView.LAYERS;
       break;
     case "none":
       view = SidebarView.NONE;
@@ -2419,6 +2443,9 @@ function webViewerRotateCw() {
 }
 function webViewerRotateCcw() {
   PDFViewerApplication.rotatePages(-90);
+}
+function webViewerOptionalContentConfig(evt) {
+  PDFViewerApplication.pdfViewer.optionalContentConfigPromise = evt.promise;
 }
 function webViewerSwitchScrollMode(evt) {
   PDFViewerApplication.pdfViewer.scrollMode = evt.mode;
@@ -3013,7 +3040,7 @@ function apiPageModeToSidebarView(mode) {
     case "UseAttachments":
       return SidebarView.ATTACHMENTS;
     case "UseOC":
-    // Not implemented, since we don't support Optional Content Groups yet.
+      return SidebarView.LAYERS;
   }
   return SidebarView.NONE; // Default value.
 }

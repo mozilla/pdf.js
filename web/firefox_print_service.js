@@ -23,7 +23,8 @@ function composePage(
   pageNumber,
   size,
   printContainer,
-  printResolution
+  printResolution,
+  optionalContentConfigPromise
 ) {
   const canvas = document.createElement("canvas");
 
@@ -58,6 +59,7 @@ function composePage(
           viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
           intent: "print",
           annotationStorage: pdfDocument.annotationStorage,
+          optionalContentConfigPromise,
         };
         return pdfPage.render(renderContext).promise;
       })
@@ -84,12 +86,15 @@ function FirefoxPrintService(
   pdfDocument,
   pagesOverview,
   printContainer,
-  printResolution
+  printResolution,
+  optionalContentConfigPromise = null
 ) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
   this._printResolution = printResolution || 150;
+  this._optionalContentConfigPromise =
+    optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
 }
 
 FirefoxPrintService.prototype = {
@@ -99,6 +104,7 @@ FirefoxPrintService.prototype = {
       pagesOverview,
       printContainer,
       _printResolution,
+      _optionalContentConfigPromise,
     } = this;
 
     const body = document.querySelector("body");
@@ -110,7 +116,8 @@ FirefoxPrintService.prototype = {
         /* pageNumber = */ i + 1,
         pagesOverview[i],
         printContainer,
-        _printResolution
+        _printResolution,
+        _optionalContentConfigPromise
       );
     }
   },
@@ -135,13 +142,15 @@ PDFPrintServiceFactory.instance = {
     pdfDocument,
     pagesOverview,
     printContainer,
-    printResolution
+    printResolution,
+    optionalContentConfigPromise
   ) {
     return new FirefoxPrintService(
       pdfDocument,
       pagesOverview,
       printContainer,
-      printResolution
+      printResolution,
+      optionalContentConfigPromise
     );
   },
 };
