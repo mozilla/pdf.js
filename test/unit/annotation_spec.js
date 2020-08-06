@@ -1673,6 +1673,114 @@ describe("annotation", function () {
           done();
         }, done.fail);
     });
+
+    it("should render multiline text for printing", function (done) {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.MULTILINE);
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] =
+            "a aa aaa aaaa aaaaa aaaaaa " +
+            "pneumonoultramicroscopicsilicovolcanoconiosis";
+          return annotation._getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 10 Tm " +
+              "2.00 -5.00 Td (a aa aaa ) Tj\n" +
+              "0.00 -5.00 Td (aaaa aaaaa ) Tj\n" +
+              "0.00 -5.00 Td (aaaaaa ) Tj\n" +
+              "0.00 -5.00 Td (pneumonoultr) Tj\n" +
+              "0.00 -5.00 Td (amicroscopi) Tj\n" +
+              "0.00 -5.00 Td (csilicovolca) Tj\n" +
+              "0.00 -5.00 Td (noconiosis) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
+    });
+
+    it("should render multiline text with various EOL for printing", function (done) {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.MULTILINE);
+      textWidgetDict.set("Rect", [0, 0, 128, 10]);
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+      const expectedAppearance =
+        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 10 Tm " +
+        "2.00 -5.00 Td " +
+        "(Lorem ipsum dolor sit amet, consectetur adipiscing elit.) Tj\n" +
+        "0.00 -5.00 Td " +
+        "(Aliquam vitae felis ac lectus bibendum ultricies quis non) Tj\n" +
+        "0.00 -5.00 Td " +
+        "( diam.) Tj\n" +
+        "0.00 -5.00 Td " +
+        "(Morbi id porttitor quam, a iaculis dui.) Tj\n" +
+        "0.00 -5.00 Td " +
+        "(Pellentesque habitant morbi tristique senectus et netus ) Tj\n" +
+        "0.00 -5.00 Td " +
+        "(et malesuada fames ac turpis egestas.) Tj\n" +
+        "0.00 -5.00 Td () Tj\n" +
+        "0.00 -5.00 Td () Tj\n" +
+        "0.00 -5.00 Td " +
+        "(Nulla consectetur, ligula in tincidunt placerat, velit ) Tj\n" +
+        "0.00 -5.00 Td " +
+        "(augue consectetur orci, sed mattis libero nunc ut massa.) Tj\n" +
+        "0.00 -5.00 Td " +
+        "(Etiam facilisis tempus interdum.) Tj ET Q EMC";
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] =
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\r" +
+            "Aliquam vitae felis ac lectus bibendum ultricies quis non diam.\n" +
+            "Morbi id porttitor quam, a iaculis dui.\r\n" +
+            "Pellentesque habitant morbi tristique senectus et " +
+            "netus et malesuada fames ac turpis egestas.\n\r\n\r" +
+            "Nulla consectetur, ligula in tincidunt placerat, " +
+            "velit augue consectetur orci, sed mattis libero nunc ut massa.\r" +
+            "Etiam facilisis tempus interdum.";
+          return annotation._getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(expectedAppearance);
+          done();
+        }, done.fail);
+    });
   });
 
   describe("ButtonWidgetAnnotation", function () {

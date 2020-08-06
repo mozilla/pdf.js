@@ -958,11 +958,10 @@ class WidgetAnnotation extends Annotation {
     if (!annotationStorage || isPassword) {
       return null;
     }
-    let value = annotationStorage[this.data.id] || "";
+    const value = annotationStorage[this.data.id];
     if (value === "") {
-      return null;
+      return "";
     }
-    value = escapeString(value);
 
     const defaultPadding = 2;
     const hPadding = defaultPadding;
@@ -983,12 +982,27 @@ class WidgetAnnotation extends Annotation {
     const vPadding = defaultPadding + Math.abs(descent) * fontSize;
     const defaultAppearance = this.data.defaultAppearance;
     const alignment = this.data.textAlignment;
+
+    if (this.data.multiLine) {
+      return this._getMultilineAppearance(
+        defaultAppearance,
+        value,
+        font,
+        fontSize,
+        totalWidth,
+        totalHeight,
+        alignment,
+        hPadding,
+        vPadding
+      );
+    }
+
     if (alignment === 0 || alignment > 2) {
       // Left alignment: nothing to do
       return (
         "/Tx BMC q BT " +
         defaultAppearance +
-        ` 1 0 0 1 ${hPadding} ${vPadding} Tm (${value}) Tj` +
+        ` 1 0 0 1 ${hPadding} ${vPadding} Tm (${escapeString(value)}) Tj` +
         " ET Q EMC"
       );
     }
@@ -1076,7 +1090,7 @@ class WidgetAnnotation extends Annotation {
     shift = shift.toFixed(2);
     vPadding = vPadding.toFixed(2);
 
-    return `${shift} ${vPadding} Td (${text}) Tj`;
+    return `${shift} ${vPadding} Td (${escapeString(text)}) Tj`;
   }
 }
 
@@ -1113,6 +1127,102 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== null;
+  }
+
+  _getMultilineAppearance(
+    defaultAppearance,
+    text,
+    font,
+    fontSize,
+    width,
+    height,
+    alignment,
+    hPadding,
+    vPadding
+  ) {
+    const lines = text.split(/\r\n|\r|\n/);
+    const buf = [];
+    const totalWidth = width - 2 * hPadding;
+    for (const line of lines) {
+      const chunks = this._splitLine(line, font, fontSize, totalWidth);
+      for (const chunk of chunks) {
+        const padding = buf.length === 0 ? hPadding : 0;
+        buf.push(
+          this._renderText(
+            chunk,
+            font,
+            fontSize,
+            width,
+            alignment,
+            padding,
+            -fontSize // <0 because a line is below the previous one
+          )
+        );
+      }
+    }
+
+    const renderedText = buf.join("\n");
+    return (
+      "/Tx BMC q BT " +
+      defaultAppearance +
+      ` 1 0 0 1 0 ${height} Tm ${renderedText}` +
+      " ET Q EMC"
+    );
+  }
+
+  _splitLine(line, font, fontSize, width) {
+    if (line.length <= 1) {
+      // Nothing to split
+      return [line];
+    }
+
+    const scale = fontSize / 1000;
+    const whitespace = font.charsToGlyphs(" ", true)[0].width * scale;
+    const chunks = [];
+
+    let lastSpacePos = -1,
+      startChunk = 0,
+      currentWidth = 0;
+
+    for (let i = 0, ii = line.length; i < ii; i++) {
+      const character = line.charAt(i);
+      if (character === " ") {
+        if (currentWidth + whitespace > width) {
+          // We can break here
+          chunks.push(line.substring(startChunk, i));
+          startChunk = i;
+          currentWidth = whitespace;
+          lastSpacePos = -1;
+        } else {
+          currentWidth += whitespace;
+          lastSpacePos = i;
+        }
+      } else {
+        const charWidth = font.charsToGlyphs(character, false)[0].width * scale;
+        if (currentWidth + charWidth > width) {
+          // We must break to the last white position (if available)
+          if (lastSpacePos !== -1) {
+            chunks.push(line.substring(startChunk, lastSpacePos + 1));
+            startChunk = i = lastSpacePos + 1;
+            lastSpacePos = -1;
+            currentWidth = 0;
+          } else {
+            // Just break in the middle of the word
+            chunks.push(line.substring(startChunk, i));
+            startChunk = i;
+            currentWidth = charWidth;
+          }
+        } else {
+          currentWidth += charWidth;
+        }
+      }
+    }
+
+    if (startChunk < line.length) {
+      chunks.push(line.substring(startChunk, line.length));
+    }
+
+    return chunks;
   }
 }
 
