@@ -430,32 +430,28 @@ class PDFSidebar {
     });
 
     // Disable/enable views.
-    this.eventBus._on("outlineloaded", evt => {
-      const outlineCount = evt.outlineCount;
+    const onTreeLoaded = (count, button, view) => {
+      button.disabled = !count;
 
-      this.outlineButton.disabled = !outlineCount;
-
-      if (outlineCount) {
-        this._showUINotification(SidebarView.OUTLINE);
-      } else if (this.active === SidebarView.OUTLINE) {
-        // If the outline view was opened during document load, switch away
-        // from it if it turns out that the document has no outline.
+      if (count) {
+        this._showUINotification(view);
+      } else if (this.active === view) {
+        // If the `view` was opened by the user during document load,
+        // switch away from it if it turns out to be empty.
         this.switchView(SidebarView.THUMBS);
       }
+    };
+
+    this.eventBus._on("outlineloaded", evt => {
+      onTreeLoaded(evt.outlineCount, this.outlineButton, SidebarView.OUTLINE);
     });
 
     this.eventBus._on("attachmentsloaded", evt => {
-      const attachmentsCount = evt.attachmentsCount;
-
-      this.attachmentsButton.disabled = !attachmentsCount;
-
-      if (attachmentsCount) {
-        this._showUINotification(SidebarView.ATTACHMENTS);
-      } else if (this.active === SidebarView.ATTACHMENTS) {
-        // If the attachments view was opened during document load, switch away
-        // from it if it turns out that the document has no attachments.
-        this.switchView(SidebarView.THUMBS);
-      }
+      onTreeLoaded(
+        evt.attachmentsCount,
+        this.attachmentsButton,
+        SidebarView.ATTACHMENTS
+      );
     });
 
     // Update the thumbnailViewer, if visible, when exiting presentation mode.
