@@ -26,6 +26,7 @@ class OptionalContentConfig {
   constructor(data) {
     this.name = null;
     this.creator = null;
+    this._order = null;
     this.groups = new Map();
 
     if (data === null) {
@@ -33,6 +34,7 @@ class OptionalContentConfig {
     }
     this.name = data.name;
     this.creator = data.creator;
+    this._order = data.order;
     for (const group of data.groups) {
       this.groups.set(
         group.id,
