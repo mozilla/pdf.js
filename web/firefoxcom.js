@@ -88,10 +88,6 @@ const FirefoxCom = (function FirefoxComClosure() {
 })();
 
 class DownloadManager {
-  constructor(options) {
-    this.disableCreateObjectURL = false;
-  }
-
   downloadUrl(url, filename) {
     FirefoxCom.request("download", {
       originalUrl: url,

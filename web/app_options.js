@@ -42,12 +42,6 @@ const defaultOptions = {
     value: "",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  disableCreateObjectURL: {
-    /** @type {boolean} */
-    value: false,
-    compatibility: viewerCompatibilityParams.disableCreateObjectURL,
-    kind: OptionKind.VIEWER,
-  },
   disableHistory: {
     /** @type {boolean} */
     value: false,
