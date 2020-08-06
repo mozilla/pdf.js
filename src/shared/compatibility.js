@@ -197,6 +197,15 @@ if (
     require("core-js/es/object/assign.js");
   })();
 
+  // Provides support for Object.fromEntries in legacy browsers.
+  // Support: IE, Chrome<73
+  (function checkObjectFromEntries() {
+    if (Object.fromEntries) {
+      return;
+    }
+    require("core-js/es/object/from-entries.js");
+  })();
+
   // Provides support for Math.log2 in legacy browsers.
   // Support: IE, Chrome<38
   (function checkMathLog2() {
