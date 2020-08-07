@@ -199,8 +199,13 @@ function getQuadPoints(dict, rect) {
       const y = quadPoints[j + 1];
 
       // The quadpoints should be ignored if any coordinate in the array
-      // lies outside the region specified by the rectangle.
-      if (x < rect[0] || x > rect[2] || y < rect[1] || y > rect[3]) {
+      // lies outside the region specified by the rectangle. The rectangle
+      // can be `null` for markup annotations since their rectangle may be
+      // incorrect (fixes bug 1538111).
+      if (
+        rect !== null &&
+        (x < rect[0] || x > rect[2] || y < rect[1] || y > rect[3])
+      ) {
         return null;
       }
       quadPointsLists[i].push({ x, y });
@@ -790,6 +795,68 @@ class MarkupAnnotation extends Annotation {
    */
   setCreationDate(creationDate) {
     this.creationDate = isString(creationDate) ? creationDate : null;
+  }
+
+  _setDefaultAppearance({
+    xref,
+    extra,
+    strokeColor,
+    fillColor,
+    blendMode,
+    pointsCallback,
+  }) {
+    let minX = Number.MAX_VALUE;
+    let minY = Number.MAX_VALUE;
+    let maxX = Number.MIN_VALUE;
+    let maxY = Number.MIN_VALUE;
+
+    const buffer = ["q"];
+    if (extra) {
+      buffer.push(extra);
+    }
+    if (strokeColor) {
+      buffer.push(`${strokeColor[0]} ${strokeColor[1]} ${strokeColor[2]} RG`);
+    }
+    if (fillColor) {
+      buffer.push(`${fillColor[0]} ${fillColor[1]} ${fillColor[2]} rg`);
+    }
+
+    for (const points of this.data.quadPoints) {
+      const [mX, MX, mY, MY] = pointsCallback(buffer, points);
+      minX = Math.min(minX, mX);
+      maxX = Math.max(maxX, MX);
+      minY = Math.min(minY, mY);
+      maxY = Math.max(maxY, MY);
+    }
+    buffer.push("Q");
+
+    const formDict = new Dict(xref);
+    const appearanceStreamDict = new Dict(xref);
+    appearanceStreamDict.set("Subtype", Name.get("Form"));
+
+    const appearanceStream = new StringStream(buffer.join(" "));
+    appearanceStream.dict = appearanceStreamDict;
+    formDict.set("Fm0", appearanceStream);
+
+    const gsDict = new Dict(xref);
+    if (blendMode) {
+      gsDict.set("BM", Name.get(blendMode));
+    }
+
+    const stateDict = new Dict(xref);
+    stateDict.set("GS0", gsDict);
+
+    const resources = new Dict(xref);
+    resources.set("ExtGState", stateDict);
+    resources.set("XObject", formDict);
+
+    const appearanceDict = new Dict(xref);
+    appearanceDict.set("Resources", resources);
+    const bbox = (this.data.rect = [minX, minY, maxX, maxY]);
+    appearanceDict.set("BBox", bbox);
+
+    this.appearance = new StringStream("/GS0 gs /Fm0 Do");
+    this.appearance.dict = appearanceDict;
   }
 }
 
@@ -1854,9 +1921,28 @@ class HighlightAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.HIGHLIGHT;
 
-    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    const quadPoints = getQuadPoints(parameters.dict, null);
     if (quadPoints) {
       this.data.quadPoints = quadPoints;
+      if (!this.appearance) {
+        // Default color is yellow in Acrobat Reader
+        const fillColor = this.color
+          ? Array.from(this.color).map(c => c / 255)
+          : [1, 1, 0];
+        this._setDefaultAppearance({
+          xref: parameters.xref,
+          fillColor,
+          blendMode: "Multiply",
+          pointsCallback: (buffer, points) => {
+            buffer.push(`${points[0].x} ${points[0].y} m`);
+            buffer.push(`${points[1].x} ${points[1].y} l`);
+            buffer.push(`${points[3].x} ${points[3].y} l`);
+            buffer.push(`${points[2].x} ${points[2].y} l`);
+            buffer.push("f");
+            return [points[0].x, points[1].x, points[3].y, points[1].y];
+          },
+        });
+      }
     }
   }
 }
@@ -1867,9 +1953,26 @@ class UnderlineAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.UNDERLINE;
 
-    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    const quadPoints = getQuadPoints(parameters.dict, null);
     if (quadPoints) {
       this.data.quadPoints = quadPoints;
+      if (!this.appearance) {
+        // Default color is black
+        const strokeColor = this.color
+          ? Array.from(this.color).map(c => c / 255)
+          : [0, 0, 0];
+        this._setDefaultAppearance({
+          xref: parameters.xref,
+          extra: "[] 0 d 1 w",
+          strokeColor,
+          pointsCallback: (buffer, points) => {
+            buffer.push(`${points[2].x} ${points[2].y} m`);
+            buffer.push(`${points[3].x} ${points[3].y} l`);
+            buffer.push("S");
+            return [points[0].x, points[1].x, points[3].y, points[1].y];
+          },
+        });
+      }
     }
   }
 }
@@ -1880,9 +1983,35 @@ class SquigglyAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.SQUIGGLY;
 
-    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    const quadPoints = getQuadPoints(parameters.dict, null);
     if (quadPoints) {
       this.data.quadPoints = quadPoints;
+      if (!this.appearance) {
+        // Default color is black
+        const strokeColor = this.color
+          ? Array.from(this.color).map(c => c / 255)
+          : [0, 0, 0];
+        this._setDefaultAppearance({
+          xref: parameters.xref,
+          extra: "[] 0 d 1 w",
+          strokeColor,
+          pointsCallback: (buffer, points) => {
+            const dy = (points[0].y - points[2].y) / 6;
+            let shift = dy;
+            let x = points[2].x;
+            const y = points[2].y;
+            const xEnd = points[3].x;
+            buffer.push(`${x} ${y + shift} m`);
+            do {
+              x += 2;
+              shift = shift === 0 ? dy : 0;
+              buffer.push(`${x} ${y + shift} l`);
+            } while (x < xEnd);
+            buffer.push("S");
+            return [points[2].x, xEnd, y - 2 * dy, y + 2 * dy];
+          },
+        });
+      }
     }
   }
 }
@@ -1893,9 +2022,32 @@ class StrikeOutAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.STRIKEOUT;
 
-    const quadPoints = getQuadPoints(parameters.dict, this.rectangle);
+    const quadPoints = getQuadPoints(parameters.dict, null);
     if (quadPoints) {
       this.data.quadPoints = quadPoints;
+      if (!this.appearance) {
+        // Default color is black
+        const strokeColor = this.color
+          ? Array.from(this.color).map(c => c / 255)
+          : [0, 0, 0];
+        this._setDefaultAppearance({
+          xref: parameters.xref,
+          extra: "[] 0 d 1 w",
+          strokeColor,
+          pointsCallback: (buffer, points) => {
+            buffer.push(
+              `${(points[0].x + points[2].x) / 2}` +
+                ` ${(points[0].y + points[2].y) / 2} m`
+            );
+            buffer.push(
+              `${(points[1].x + points[3].x) / 2}` +
+                ` ${(points[1].y + points[3].y) / 2} l`
+            );
+            buffer.push("S");
+            return [points[0].x, points[1].x, points[3].y, points[1].y];
+          },
+        });
+      }
     }
   }
 }

@@ -764,6 +764,13 @@
        "annotations": true,
        "about": "Annotation with (unsupported) file:// URL."
     },
+    {  "id": "bug1538111",
+       "file": "pdfs/bug1538111.pdf",
+       "md5": "3f3635cfc25d132fb1054042e520e297",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
+    },
     {  "id": "bug1552113",
        "file": "pdfs/bug1552113.pdf",
        "md5": "dafb7ba1328e8deaab2e3619c94bf974",
@@ -4378,12 +4385,26 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-underline-without-appearance",
+       "file": "pdfs/annotation-underline-without-appearance.pdf",
+       "md5": "dd5be5e9a8e6bdbf67c175ca170f7cb7",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
+    },
     {  "id": "annotation-strikeout",
        "file": "pdfs/annotation-strikeout.pdf",
        "md5": "6624e6b5bedd2f2855b6ab12bbf93c57",
        "rounds": 1,
        "type": "eq",
        "annotations": true
+    },
+    {  "id": "annotation-strikeout-without-appearance",
+       "file": "pdfs/annotation-strikeout-without-appearance.pdf",
+       "md5": "1dc751ab83e8deb3094bfc580289b097",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
     },
     {  "id": "annotation-squiggly",
        "file": "pdfs/annotation-squiggly.pdf",
@@ -4392,12 +4413,26 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-squiggly-without-appearance",
+       "file": "pdfs/annotation-squiggly-without-appearance.pdf",
+       "md5": "6546f22a06a5e51d0e835c677cdbc705",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
+    },
     {  "id": "annotation-highlight",
        "file": "pdfs/annotation-highlight.pdf",
        "md5": "e13e198e3a69c32dc9ebdc704d3105e1",
        "rounds": 1,
        "type": "eq",
        "annotations": true
+    },
+    {  "id": "annotation-highlight-without-appearance",
+       "file": "pdfs/annotation-highlight-without-appearance.pdf",
+       "md5": "a1f2811324fa1ff0c9f1778697413dad",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
     },
     {  "id": "annotation-freetext",
        "file": "pdfs/annotation-freetext.pdf",
