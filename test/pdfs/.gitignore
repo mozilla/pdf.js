@@ -113,6 +113,7 @@
 !bug1245391_reduced.pdf
 !bug1252420.pdf
 !bug1513120_reduced.pdf
+!bug1538111.pdf
 !bug1552113.pdf
 !issue9949.pdf
 !bug1308536.pdf
@@ -359,10 +360,14 @@
 !issue9278.pdf
 !annotation-text-without-popup.pdf
 !annotation-underline.pdf
+!annotation-underline-without-appearance.pdf
 !issue269_2.pdf
 !annotation-strikeout.pdf
+!annotation-strikeout-without-appearance.pdf
 !annotation-squiggly.pdf
+!annotation-squiggly-without-appearance.pdf
 !annotation-highlight.pdf
+!annotation-highlight-without-appearance.pdf
 !annotation-freetext.pdf
 !annotation-line.pdf
 !annotation-square-circle.pdf
