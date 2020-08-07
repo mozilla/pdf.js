@@ -450,7 +450,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
  *   {@link UNSUPPORTED_FEATURES} argument.
  * @property {Promise<PDFDocumentProxy>} promise - Promise for document loading
  *   task completion.
- * @property {Promise<void>} destroy - Abort all network requests and destroy
+ * @property {function} destroy - Abort all network requests and destroy
  *   the worker. Returns a promise that is resolved when destruction is
  *   completed.
  */
