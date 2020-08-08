@@ -118,11 +118,7 @@ class Metadata {
   }
 
   getAll() {
-    const obj = Object.create(null);
-    for (const [key, value] of this._metadataMap) {
-      obj[key] = value;
-    }
-    return obj;
+    return Object.fromEntries(this._metadataMap);
   }
 
   has(name) {

@@ -392,6 +392,14 @@ class PartialEvaluator {
     } else {
       bbox = null;
     }
+    let optionalContent = null;
+    if (dict.has("OC")) {
+      optionalContent = await this.parseMarkedContentProps(
+        dict.get("OC"),
+        resources
+      );
+      operatorList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
+    }
     var group = dict.get("Group");
     if (group) {
       var groupOptions = {
@@ -448,6 +456,10 @@ class PartialEvaluator {
 
       if (group) {
         operatorList.addOp(OPS.endGroup, [groupOptions]);
+      }
+
+      if (optionalContent) {
+        operatorList.addOp(OPS.endMarkedContent, []);
       }
     });
   }
@@ -715,10 +727,12 @@ class PartialEvaluator {
 
   handleSetFont(resources, fontArgs, fontRef, operatorList, task, state) {
     // TODO(mack): Not needed?
-    var fontName;
+    var fontName,
+      fontSize = 0;
     if (fontArgs) {
       fontArgs = fontArgs.slice();
       fontName = fontArgs[0].name;
+      fontSize = fontArgs[1];
     }
 
     return this.loadFont(fontName, fontRef, resources)
@@ -751,6 +765,8 @@ class PartialEvaluator {
       })
       .then(translated => {
         state.font = translated.font;
+        state.fontSize = fontSize;
+        state.fontName = fontName;
         translated.send(this.handler);
         return translated.loadedName;
       });
@@ -1200,6 +1216,63 @@ class PartialEvaluator {
       throw new FormatError(`Unknown PatternType: ${typeNum}`);
     }
     throw new FormatError(`Unknown PatternName: ${patternName}`);
+  }
+
+  async parseMarkedContentProps(contentProperties, resources) {
+    let optionalContent;
+    if (isName(contentProperties)) {
+      const properties = resources.get("Properties");
+      optionalContent = properties.get(contentProperties.name);
+    } else if (isDict(contentProperties)) {
+      optionalContent = contentProperties;
+    } else {
+      throw new FormatError("Optional content properties malformed.");
+    }
+
+    const optionalContentType = optionalContent.get("Type").name;
+    if (optionalContentType === "OCG") {
+      return {
+        type: optionalContentType,
+        id: optionalContent.objId,
+      };
+    } else if (optionalContentType === "OCMD") {
+      const optionalContentGroups = optionalContent.get("OCGs");
+      if (
+        Array.isArray(optionalContentGroups) ||
+        isDict(optionalContentGroups)
+      ) {
+        const groupIds = [];
+        if (Array.isArray(optionalContentGroups)) {
+          optionalContent.get("OCGs").forEach(ocg => {
+            groupIds.push(ocg.toString());
+          });
+        } else {
+          // Dictionary, just use the obj id.
+          groupIds.push(optionalContentGroups.objId);
+        }
+
+        let expression = null;
+        if (optionalContent.get("VE")) {
+          // TODO support visibility expression.
+          expression = true;
+        }
+
+        return {
+          type: optionalContentType,
+          ids: groupIds,
+          policy: isName(optionalContent.get("P"))
+            ? optionalContent.get("P").name
+            : null,
+          expression,
+        };
+      } else if (isRef(optionalContentGroups)) {
+        return {
+          type: optionalContentType,
+          id: optionalContentGroups.toString(),
+        };
+      }
+    }
+    return null;
   }
 
   getOperatorList({
@@ -1704,9 +1777,6 @@ class PartialEvaluator {
             continue;
           case OPS.markPoint:
           case OPS.markPointProps:
-          case OPS.beginMarkedContent:
-          case OPS.beginMarkedContentProps:
-          case OPS.endMarkedContent:
           case OPS.beginCompat:
           case OPS.endCompat:
             // Ignore operators where the corresponding handlers are known to
@@ -1716,6 +1786,45 @@ class PartialEvaluator {
             // e.g. as done in https://github.com/mozilla/pdf.js/pull/6266,
             // but doing so is meaningless without knowing the semantics.
             continue;
+          case OPS.beginMarkedContentProps:
+            if (!isName(args[0])) {
+              warn(`Expected name for beginMarkedContentProps arg0=${args[0]}`);
+              continue;
+            }
+            if (args[0].name === "OC") {
+              next(
+                self
+                  .parseMarkedContentProps(args[1], resources)
+                  .then(data => {
+                    operatorList.addOp(OPS.beginMarkedContentProps, [
+                      "OC",
+                      data,
+                    ]);
+                  })
+                  .catch(reason => {
+                    if (reason instanceof AbortException) {
+                      return;
+                    }
+                    if (self.options.ignoreErrors) {
+                      self.handler.send("UnsupportedFeature", {
+                        featureId: UNSUPPORTED_FEATURES.errorMarkedContent,
+                      });
+                      warn(
+                        `getOperatorList - ignoring beginMarkedContentProps: "${reason}".`
+                      );
+                      return;
+                    }
+                    throw reason;
+                  })
+              );
+              return;
+            }
+            // Other marked content types aren't supported yet.
+            args = [args[0].name];
+
+            break;
+          case OPS.beginMarkedContent:
+          case OPS.endMarkedContent:
           default:
             // Note: Ignore the operator if it has `Dict` arguments, since
             // those are non-serializable, otherwise postMessage will throw

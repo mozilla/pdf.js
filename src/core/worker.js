@@ -481,6 +481,10 @@ class WorkerMessageHandler {
       return pdfManager.ensureCatalog("documentOutline");
     });
 
+    handler.on("GetOptionalContentConfig", function (data) {
+      return pdfManager.ensureCatalog("optionalContentConfig");
+    });
+
     handler.on("GetPermissions", function (data) {
       return pdfManager.ensureCatalog("permissions");
     });

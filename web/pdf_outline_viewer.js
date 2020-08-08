@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-import { addLinkAttributes, LinkTarget, removeNullCharacters } from "pdfjs-lib";
-
-const DEFAULT_TITLE = "\u2013";
+import { addLinkAttributes, LinkTarget } from "pdfjs-lib";
+import { BaseTreeViewer } from "./base_tree_viewer.js";
 
 /**
  * @typedef {Object} PDFOutlineViewerOptions
@@ -29,30 +28,20 @@ const DEFAULT_TITLE = "\u2013";
  * @property {Array|null} outline - An array of outline objects.
  */
 
-class PDFOutlineViewer {
+class PDFOutlineViewer extends BaseTreeViewer {
   /**
    * @param {PDFOutlineViewerOptions} options
    */
-  constructor({ container, linkService, eventBus }) {
-    this.container = container;
-    this.linkService = linkService;
-    this.eventBus = eventBus;
+  constructor(options) {
+    super(options);
+    this.linkService = options.linkService;
 
-    this.reset();
-
-    eventBus._on("toggleoutlinetree", this.toggleOutlineTree.bind(this));
+    this.eventBus._on("toggleoutlinetree", this._toggleAllTreeItems.bind(this));
   }
 
   reset() {
-    this.outline = null;
-    this.lastToggleIsShow = true;
-
-    // Remove the outline from the DOM.
-    this.container.textContent = "";
-
-    // Ensure that the left (right in RTL locales) margin is always reset,
-    // to prevent incorrect outline alignment if a new document is opened.
-    this.container.classList.remove("outlineWithDeepNesting");
+    super.reset();
+    this._outline = null;
   }
 
   /**
@@ -103,84 +92,51 @@ class PDFOutlineViewer {
   }
 
   /**
-   * Prepend a button before an outline item which allows the user to toggle
-   * the visibility of all outline items at that level.
-   *
    * @private
    */
   _addToggleButton(div, { count, items }) {
-    const toggler = document.createElement("div");
-    toggler.className = "outlineItemToggler";
-    if (count < 0 && Math.abs(count) === items.length) {
-      toggler.classList.add("outlineItemsHidden");
-    }
-    toggler.onclick = evt => {
-      evt.stopPropagation();
-      toggler.classList.toggle("outlineItemsHidden");
-
-      if (evt.shiftKey) {
-        const shouldShowAll = !toggler.classList.contains("outlineItemsHidden");
-        this._toggleOutlineItem(div, shouldShowAll);
-      }
-    };
-    div.insertBefore(toggler, div.firstChild);
+    const hidden = count < 0 && Math.abs(count) === items.length;
+    super._addToggleButton(div, hidden);
   }
 
   /**
-   * Toggle the visibility of the subtree of an outline item.
-   *
-   * @param {Element} root - the root of the outline (sub)tree.
-   * @param {boolean} show - whether to show the outline (sub)tree. If false,
-   *   the outline subtree rooted at |root| will be collapsed.
-   *
    * @private
    */
-  _toggleOutlineItem(root, show = false) {
-    this.lastToggleIsShow = show;
-    for (const toggler of root.querySelectorAll(".outlineItemToggler")) {
-      toggler.classList.toggle("outlineItemsHidden", !show);
-    }
-  }
-
-  /**
-   * Collapse or expand all subtrees of the outline.
-   */
-  toggleOutlineTree() {
-    if (!this.outline) {
+  _toggleAllTreeItems() {
+    if (!this._outline) {
       return;
     }
-    this._toggleOutlineItem(this.container, !this.lastToggleIsShow);
+    super._toggleAllTreeItems();
   }
 
   /**
    * @param {PDFOutlineViewerRenderParameters} params
    */
   render({ outline }) {
-    let outlineCount = 0;
-
-    if (this.outline) {
+    if (this._outline) {
       this.reset();
     }
-    this.outline = outline || null;
+    this._outline = outline || null;
 
     if (!outline) {
-      this._dispatchEvent(outlineCount);
+      this._dispatchEvent(/* outlineCount = */ 0);
       return;
     }
 
     const fragment = document.createDocumentFragment();
-    const queue = [{ parent: fragment, items: this.outline }];
-    let hasAnyNesting = false;
+    const queue = [{ parent: fragment, items: outline }];
+    let outlineCount = 0,
+      hasAnyNesting = false;
     while (queue.length > 0) {
       const levelData = queue.shift();
       for (const item of levelData.items) {
         const div = document.createElement("div");
-        div.className = "outlineItem";
+        div.className = "treeItem";
 
         const element = document.createElement("a");
         this._bindLink(element, item);
         this._setStyles(element, item);
-        element.textContent = removeNullCharacters(item.title) || DEFAULT_TITLE;
+        element.textContent = this._normalizeTextContent(item.title);
 
         div.appendChild(element);
 
@@ -189,8 +145,9 @@ class PDFOutlineViewer {
           this._addToggleButton(div, item);
 
           const itemsDiv = document.createElement("div");
-          itemsDiv.className = "outlineItems";
+          itemsDiv.className = "treeItems";
           div.appendChild(itemsDiv);
+
           queue.push({ parent: itemsDiv, items: item.items });
         }
 
@@ -199,10 +156,10 @@ class PDFOutlineViewer {
       }
     }
     if (hasAnyNesting) {
-      this.container.classList.add("outlineWithDeepNesting");
+      this.container.classList.add("treeWithDeepNesting");
 
-      this.lastToggleIsShow =
-        fragment.querySelectorAll(".outlineItemsHidden").length === 0;
+      this._lastToggleIsShow =
+        fragment.querySelectorAll(".treeItemsHidden").length === 0;
     }
 
     this.container.appendChild(fragment);

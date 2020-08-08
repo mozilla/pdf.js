@@ -311,6 +311,7 @@ const UNSUPPORTED_FEATURES = {
   errorFontToUnicode: "errorFontToUnicode",
   errorFontLoadNative: "errorFontLoadNative",
   errorFontGetPath: "errorFontGetPath",
+  errorMarkedContent: "errorMarkedContent",
 };
 
 const PasswordResponses = {
@@ -801,6 +802,12 @@ function stringToPDFString(str) {
   return strBuf.join("");
 }
 
+function escapeString(str) {
+  // replace "(", ")" and "\" by "\(", "\)" and "\\"
+  // in order to write it in a PDF file.
+  return str.replace(/([\(\)\\])/g, "\\$1");
+}
+
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
@@ -936,6 +943,7 @@ export {
   bytesToString,
   createPromiseCapability,
   createObjectURL,
+  escapeString,
   getVerbosityLevel,
   info,
   isArrayBuffer,

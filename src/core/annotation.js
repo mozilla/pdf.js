@@ -22,9 +22,9 @@ import {
   AnnotationReplyType,
   AnnotationType,
   assert,
+  escapeString,
   isString,
   OPS,
-  stringToBytes,
   stringToPDFString,
   Util,
   warn,
@@ -34,7 +34,7 @@ import { Dict, isDict, isName, isRef, isStream } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
 import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
-import { Stream } from "./stream.js";
+import { StringStream } from "./stream.js";
 
 class AnnotationFactory {
   /**
@@ -1016,18 +1016,198 @@ class WidgetAnnotation extends Annotation {
     if (renderForms) {
       return Promise.resolve(new OperatorList());
     }
-    return super.getOperatorList(
-      evaluator,
-      task,
-      renderForms,
-      annotationStorage
+
+    if (!this._hasText) {
+      return super.getOperatorList(
+        evaluator,
+        task,
+        renderForms,
+        annotationStorage
+      );
+    }
+
+    return this._getAppearance(evaluator, task, annotationStorage).then(
+      content => {
+        if (this.appearance && content === null) {
+          return super.getOperatorList(
+            evaluator,
+            task,
+            renderForms,
+            annotationStorage
+          );
+        }
+
+        const operatorList = new OperatorList();
+
+        // Even if there is an appearance stream, ignore it. This is the
+        // behaviour used by Adobe Reader.
+        if (!this.data.defaultAppearance || content === null) {
+          return operatorList;
+        }
+
+        const matrix = [1, 0, 0, 1, 0, 0];
+        const bbox = [
+          0,
+          0,
+          this.data.rect[2] - this.data.rect[0],
+          this.data.rect[3] - this.data.rect[1],
+        ];
+
+        const transform = getTransformMatrix(this.data.rect, bbox, matrix);
+        operatorList.addOp(OPS.beginAnnotation, [
+          this.data.rect,
+          transform,
+          matrix,
+        ]);
+
+        const stream = new StringStream(content);
+        return evaluator
+          .getOperatorList({
+            stream,
+            task,
+            resources: this.fieldResources,
+            operatorList,
+          })
+          .then(function () {
+            operatorList.addOp(OPS.endAnnotation, []);
+            return operatorList;
+          });
+      }
     );
+  }
+
+  async _getAppearance(evaluator, task, annotationStorage) {
+    const isPassword = this.hasFieldFlag(AnnotationFieldFlag.PASSWORD);
+    if (!annotationStorage || isPassword) {
+      return null;
+    }
+    let value = annotationStorage[this.data.id] || "";
+    if (value === "") {
+      return null;
+    }
+    value = escapeString(value);
+
+    const defaultPadding = 2;
+    const hPadding = defaultPadding;
+    const totalHeight = this.data.rect[3] - this.data.rect[1];
+    const totalWidth = this.data.rect[2] - this.data.rect[0];
+
+    const fontInfo = await this._getFontData(evaluator, task);
+    const [font, fontName] = fontInfo;
+    let fontSize = fontInfo[2];
+
+    fontSize = this._computeFontSize(font, fontName, fontSize, totalHeight);
+
+    let descent = font.descent;
+    if (isNaN(descent)) {
+      descent = 0;
+    }
+
+    const vPadding = defaultPadding + Math.abs(descent) * fontSize;
+    const defaultAppearance = this.data.defaultAppearance;
+    const alignment = this.data.textAlignment;
+    if (alignment === 0 || alignment > 2) {
+      // Left alignment: nothing to do
+      return (
+        "/Tx BMC q BT " +
+        defaultAppearance +
+        ` 1 0 0 1 ${hPadding} ${vPadding} Tm (${value}) Tj` +
+        " ET Q EMC"
+      );
+    }
+
+    const renderedText = this._renderText(
+      value,
+      font,
+      fontSize,
+      totalWidth,
+      alignment,
+      hPadding,
+      vPadding
+    );
+    return (
+      "/Tx BMC q BT " +
+      defaultAppearance +
+      ` 1 0 0 1 0 0 Tm ${renderedText}` +
+      " ET Q EMC"
+    );
+  }
+
+  async _getFontData(evaluator, task) {
+    const operatorList = new OperatorList();
+    const initialState = {
+      fontSize: 0,
+      font: null,
+      fontName: null,
+      clone() {
+        return this;
+      },
+    };
+
+    await evaluator.getOperatorList({
+      stream: new StringStream(this.data.defaultAppearance),
+      task,
+      resources: this.fieldResources,
+      operatorList,
+      initialState,
+    });
+
+    return [initialState.font, initialState.fontName, initialState.fontSize];
+  }
+
+  _computeFontSize(font, fontName, fontSize, height) {
+    if (fontSize === null || fontSize === 0) {
+      const em = font.charsToGlyphs("M", true)[0].width / 1000;
+      // According to https://en.wikipedia.org/wiki/Em_(typography)
+      // an average cap height should be 70% of 1em
+      const capHeight = 0.7 * em;
+      // 1.5 * capHeight * fontSize seems to be a good value for lineHeight
+      fontSize = Math.max(1, Math.floor(height / (1.5 * capHeight)));
+
+      let fontRegex = new RegExp(`/${fontName}\\s+[0-9\.]+\\s+Tf`);
+      if (this.data.defaultAppearance.search(fontRegex) === -1) {
+        // The font size is missing
+        fontRegex = new RegExp(`/${fontName}\\s+Tf`);
+      }
+      this.data.defaultAppearance = this.data.defaultAppearance.replace(
+        fontRegex,
+        `/${fontName} ${fontSize} Tf`
+      );
+    }
+    return fontSize;
+  }
+
+  _renderText(text, font, fontSize, totalWidth, alignment, hPadding, vPadding) {
+    // We need to get the width of the text in order to align it correctly
+    const glyphs = font.charsToGlyphs(text);
+    const scale = fontSize / 1000;
+    let width = 0;
+    for (const glyph of glyphs) {
+      width += glyph.width * scale;
+    }
+
+    let shift;
+    if (alignment === 1) {
+      // Center
+      shift = (totalWidth - width) / 2;
+    } else if (alignment === 2) {
+      // Right
+      shift = totalWidth - width - hPadding;
+    } else {
+      shift = hPadding;
+    }
+    shift = shift.toFixed(2);
+    vPadding = vPadding.toFixed(2);
+
+    return `${shift} ${vPadding} Td (${text}) Tj`;
   }
 }
 
 class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
+
+    this._hasText = true;
 
     const dict = params.dict;
 
@@ -1056,37 +1236,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== null;
-  }
-
-  getOperatorList(evaluator, task, renderForms, annotationStorage) {
-    if (renderForms || this.appearance) {
-      return super.getOperatorList(
-        evaluator,
-        task,
-        renderForms,
-        annotationStorage
-      );
-    }
-
-    const operatorList = new OperatorList();
-
-    // Even if there is an appearance stream, ignore it. This is the
-    // behaviour used by Adobe Reader.
-    if (!this.data.defaultAppearance) {
-      return Promise.resolve(operatorList);
-    }
-
-    const stream = new Stream(stringToBytes(this.data.defaultAppearance));
-    return evaluator
-      .getOperatorList({
-        stream,
-        task,
-        resources: this.fieldResources,
-        operatorList,
-      })
-      .then(function () {
-        return operatorList;
-      });
   }
 }
 
@@ -1318,6 +1467,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     this.data.combo = this.hasFieldFlag(AnnotationFieldFlag.COMBO);
     this.data.multiSelect = this.hasFieldFlag(AnnotationFieldFlag.MULTISELECT);
     this.data.customText = this.hasFieldFlag(AnnotationFieldFlag.EDIT);
+    this._hasText = true;
   }
 }
 

@@ -1609,10 +1609,13 @@ const PDFViewerApplication = {
 
     const pagesOverview = this.pdfViewer.getPagesOverview();
     const printContainer = this.appConfig.printContainer;
+    const printResolution = AppOptions.get("printResolution");
+
     const printService = PDFPrintServiceFactory.instance.createPrintService(
       this.pdfDocument,
       pagesOverview,
       printContainer,
+      printResolution,
       this.l10n
     );
     this.printService = printService;

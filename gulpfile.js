@@ -63,7 +63,8 @@ var GH_PAGES_DIR = BUILD_DIR + "gh-pages/";
 var SRC_DIR = "src/";
 var LIB_DIR = BUILD_DIR + "lib/";
 var DIST_DIR = BUILD_DIR + "dist/";
-var TYPES_BUILD_DIR = BUILD_DIR + "types/";
+var TYPES_DIR = BUILD_DIR + "types/";
+var TYPESTEST_DIR = BUILD_DIR + "typestest/";
 var COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
 var MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
@@ -1143,18 +1144,18 @@ gulp.task("jsdoc", function (done) {
 });
 
 gulp.task("types", function (done) {
-  console.log("### Generating typescript definitions using tsc");
-  var args = [
+  console.log("### Generating TypeScript definitions using `tsc`");
+  const args = [
     "target ES2020",
     "allowJS",
     "declaration",
-    `outDir ${TYPES_BUILD_DIR}`,
+    `outDir ${TYPES_DIR}`,
     "strict",
     "esModuleInterop",
     "forceConsistentCasingInFileNames",
     "emitDeclarationOnly",
   ].join(" --");
-  exec(`node_modules/.bin/tsc --${args} src/pdf.js`, done);
+  exec(`"node_modules/.bin/tsc" --${args} src/pdf.js`, done);
 });
 
 function buildLib(defines, dir) {
@@ -1353,39 +1354,35 @@ gulp.task(
 );
 
 gulp.task(
+  "typestest-pre",
+  gulp.series("testing-pre", "generic", "types", function () {
+    const [packageJsonSrc] = packageBowerJson();
+    return merge([
+      packageJsonSrc.pipe(gulp.dest(TYPESTEST_DIR)),
+      gulp
+        .src([
+          GENERIC_DIR + "build/pdf.js",
+          GENERIC_DIR + "build/pdf.worker.js",
+          SRC_DIR + "pdf.worker.entry.js",
+        ])
+        .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
+      gulp
+        .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
+        .pipe(gulp.dest(TYPESTEST_DIR + "types/")),
+    ]);
+  })
+);
+
+gulp.task(
   "typestest",
-  gulp.series(
-    "testing-pre",
-    "generic",
-    "types",
-
-    function () {
-      var packageJsonSrc = packageBowerJson()[0];
-      var TYPESTEST_DIR = BUILD_DIR + "typestest/";
-
-      return merge([
-        packageJsonSrc.pipe(gulp.dest(TYPESTEST_DIR)),
-        gulp
-          .src([
-            GENERIC_DIR + "build/pdf.js",
-            GENERIC_DIR + "build/pdf.worker.js",
-            SRC_DIR + "pdf.worker.entry.js",
-          ])
-          .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
-        gulp
-          .src(TYPES_BUILD_DIR + "**/**")
-          .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
-      ]);
-    },
-    function (done) {
-      exec(`node_modules/.bin/tsc -p test/types`, function (err, stdout) {
-        if (err !== null) {
-          console.log("couldn't compile typescript test: " + stdout);
-        }
-        done(err);
-      });
-    }
-  )
+  gulp.series("typestest-pre", function (done) {
+    exec('"node_modules/.bin/tsc" -p test/types', function (err, stdout) {
+      if (err) {
+        console.log(`Couldn't compile TypeScript test: ${stdout}`);
+      }
+      done(err);
+    });
+  })
 );
 
 gulp.task("baseline", function (done) {
@@ -1630,17 +1627,19 @@ gulp.task(
 
 function packageBowerJson() {
   var VERSION = getVersionJSON().version;
+
   var DIST_NAME = "pdfjs-dist";
   var DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
   var DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
   var DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
   var DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
   var DIST_LICENSE = "Apache-2.0";
+
   var npmManifest = {
     name: DIST_NAME,
     version: VERSION,
     main: "build/pdf.js",
-    types: "build/pdf.d.ts",
+    types: "types/pdf.d.ts",
     description: DIST_DESCRIPTION,
     keywords: DIST_KEYWORDS,
     homepage: DIST_HOMEPAGE,
@@ -1660,6 +1659,7 @@ function packageBowerJson() {
       url: DIST_REPO_URL,
     },
   };
+
   var bowerManifest = {
     name: DIST_NAME,
     version: VERSION,
@@ -1753,8 +1753,8 @@ gulp.task(
           .src(LIB_DIR + "**/*", { base: LIB_DIR })
           .pipe(gulp.dest(DIST_DIR + "lib/")),
         gulp
-          .src(TYPES_BUILD_DIR + "**/**")
-          .pipe(gulp.dest(DIST_DIR + "build/")),
+          .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
+          .pipe(gulp.dest(DIST_DIR + "types/")),
       ]);
     }
   )

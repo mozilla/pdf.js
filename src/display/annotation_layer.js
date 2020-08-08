@@ -594,6 +594,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     const TEXT_ALIGNMENT = ["left", "center", "right"];
+    const storage = this.annotationStorage;
+    const id = this.data.id;
 
     this.container.className = "textWidgetAnnotation";
 
@@ -607,19 +609,24 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
       //       from parsing the elements correctly for the reference tests.
+      const textContent = storage.getOrCreateValue(id, this.data.fieldValue);
+
       if (this.data.multiLine) {
         element = document.createElement("textarea");
-        element.textContent = this.data.fieldValue;
+        element.textContent = textContent;
       } else {
         element = document.createElement("input");
         element.type = "text";
-        element.setAttribute("value", this.data.fieldValue);
+        element.setAttribute("value", textContent);
       }
 
       element.setAttribute(
         "annotation-name",
         encodeURIComponent(this.data.fieldName)
       );
+      element.addEventListener("change", function (event) {
+        storage.setValue(id, event.target.value);
+      });
 
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;
@@ -966,24 +973,24 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
       ? checkMarkSymbols[element.radioButtonType]
       : "";
 
-    element.onchange = () => {
-      span.innerText = checkMarkSymbols[element.radioButtonType];
+    // element.onchange = () => {
+    //   span.innerText = checkMarkSymbols[element.radioButtonType];
 
-      const annotations = document.getElementsByName(element.name);
-      for (const index in annotations) {
-        if (
-          annotations[index] !== element &&
-          annotations[index].parentElement
-        ) {
-          const annotationSpans = annotations[
-            index
-          ].parentElement.getElementsByTagName("span");
-          if (annotationSpans.length > 0) {
-            annotationSpans[0].innerHTML = "";
-          }
-        }
-      }
-    };
+    //   const annotations = document.getElementsByName(element.name);
+    //   for (const index in annotations) {
+    //     if (
+    //       annotations[index] !== element &&
+    //       annotations[index].parentElement
+    //     ) {
+    //       const annotationSpans = annotations[
+    //         index
+    //       ].parentElement.getElementsByTagName("span");
+    //       if (annotationSpans.length > 0) {
+    //         annotationSpans[0].innerHTML = "";
+    //       }
+    //     }
+    //   }
+    // };
 
     let fontSizeFactor = 1.0;
 
@@ -1060,6 +1067,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     this.container.className = "choiceWidgetAnnotation";
+    const storage = this.annotationStorage;
+    const id = this.data.id;
 
     let i, ii, style;
     const itemName = encodeURIComponent(this.data.fieldName) + "_item";
@@ -1101,6 +1110,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         optionElement.value = option.exportValue;
         if (this.data.fieldValue.includes(option.displayValue)) {
           optionElement.setAttribute("selected", true);
+          storage.setValue(id, option.displayValue);
         }
         selectElement.appendChild(optionElement);
       }
@@ -1117,6 +1127,12 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           }
         });
       };
+
+      selectElement.addEventListener("change", function (event) {
+        const options = event.target.options;
+        const value = options[options.selectedIndex].text;
+        storage.setValue(id, value);
+      });
 
       this.container.appendChild(selectElement);
     } else {
