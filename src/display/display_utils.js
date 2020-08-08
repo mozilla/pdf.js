@@ -65,11 +65,16 @@ class BaseCanvasFactory {
 }
 
 class DOMCanvasFactory extends BaseCanvasFactory {
+  constructor({ ownerDocument = globalThis.document } = {}) {
+    super();
+    this._document = ownerDocument;
+  }
+
   create(width, height) {
     if (width <= 0 || height <= 0) {
       throw new Error("Invalid canvas size");
     }
-    const canvas = document.createElement("canvas");
+    const canvas = this._document.createElement("canvas");
     const context = canvas.getContext("2d");
     canvas.width = width;
     canvas.height = height;
