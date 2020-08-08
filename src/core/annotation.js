@@ -965,7 +965,7 @@ class WidgetAnnotation extends Annotation {
     const pdfDocument = params.pdfManager.pdfDocument;
 
     const opList = new OperatorList(null, null, null, pdfDocument.acroForm);
-    const appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
+    const appearanceStream = new StringStream(data.defaultAppearance);
     const formFonts = pdfDocument.acroForm.get("DR");
     return params.evaluator
       .getOperatorList({
