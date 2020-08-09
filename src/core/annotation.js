@@ -983,6 +983,16 @@ class WidgetAnnotation extends Annotation {
     const defaultAppearance = this.data.defaultAppearance;
     const alignment = this.data.textAlignment;
 
+    if (this.data.comb) {
+      return this._getCombAppearance(
+        defaultAppearance,
+        value,
+        totalWidth,
+        hPadding,
+        vPadding
+      );
+    }
+
     if (this.data.multiLine) {
       return this._getMultilineAppearance(
         defaultAppearance,
@@ -1127,6 +1137,22 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== null;
+  }
+
+  _getCombAppearance(defaultAppearance, text, width, hPadding, vPadding) {
+    const combWidth = (width / this.data.maxLen).toFixed(2);
+    const buf = [];
+    for (const character of text) {
+      buf.push(`(${escapeString(character)}) Tj`);
+    }
+
+    const renderedComb = buf.join(` ${combWidth} 0 Td `);
+    return (
+      "/Tx BMC q BT " +
+      defaultAppearance +
+      ` 1 0 0 1 ${hPadding} ${vPadding} Tm ${renderedComb}` +
+      " ET Q EMC"
+    );
   }
 
   _getMultilineAppearance(
