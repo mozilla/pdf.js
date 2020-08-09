@@ -1781,6 +1781,46 @@ describe("annotation", function () {
           done();
         }, done.fail);
     });
+
+    it("should render comb for printing", function (done) {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.COMB);
+      textWidgetDict.set("MaxLen", 4);
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = "aa(aa)a\\";
+          return annotation._getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 2 2 Tm" +
+              " (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (\\() Tj" +
+              " 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj" +
+              " 8.00 0 Td (\\)) Tj 8.00 0 Td (a) Tj" +
+              " 8.00 0 Td (\\\\) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
+    });
   });
 
   describe("ButtonWidgetAnnotation", function () {
