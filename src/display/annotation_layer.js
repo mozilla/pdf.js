@@ -462,7 +462,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.setAttribute("value", textContent);
       }
 
-      element.addEventListener("change", function (event) {
+      element.addEventListener("input", function (event) {
         storage.setValue(id, event.target.value);
       });
 
@@ -689,7 +689,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       selectElement.appendChild(optionElement);
     }
 
-    selectElement.addEventListener("change", function (event) {
+    selectElement.addEventListener("input", function (event) {
       const options = event.target.options;
       const value = options[options.selectedIndex].text;
       storage.setValue(id, value);
