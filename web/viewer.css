@@ -1800,6 +1800,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
   #printContainer canvas,
   #printContainer img {
+    direction: ltr;
     display: block;
   }
 }
