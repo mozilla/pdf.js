@@ -632,14 +632,13 @@ class PDFDocumentProxy {
   constructor(pdfInfo, transport) {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
-    this._annotationStorage = new AnnotationStorage();
   }
 
   /**
    * @type {AnnotationStorage} Storage for annotation data in forms.
    */
   get annotationStorage() {
-    return this._annotationStorage;
+    return shadow(this, "annotationStorage", new AnnotationStorage());
   }
 
   /**
