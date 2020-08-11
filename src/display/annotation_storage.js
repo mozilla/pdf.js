@@ -18,7 +18,7 @@
  */
 class AnnotationStorage {
   constructor() {
-    this._storage = Object.create(null);
+    this._storage = new Map();
   }
 
   /**
@@ -32,11 +32,11 @@ class AnnotationStorage {
    * @returns {Object}
    */
   getOrCreateValue(key, defaultValue) {
-    if (key in this._storage) {
-      return this._storage[key];
+    if (this._storage.has(key)) {
+      return this._storage.get(key);
     }
 
-    this._storage[key] = defaultValue;
+    this._storage.set(key, defaultValue);
     return defaultValue;
   }
 
@@ -49,11 +49,18 @@ class AnnotationStorage {
    * @param {Object} value
    */
   setValue(key, value) {
-    this._storage[key] = value;
+    this._storage.set(key, value);
   }
 
   getAll() {
-    return this._storage;
+    if (this._storage.size === 0) {
+      return null;
+    }
+    return Object.fromEntries(this._storage);
+  }
+
+  get size() {
+    return this._storage.size;
   }
 }
 
