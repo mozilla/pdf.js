@@ -2050,35 +2050,48 @@ var Font = (function FontClosure() {
         var oldGlyfData = glyf.data;
         var oldGlyfDataLength = oldGlyfData.length;
         var newGlyfData = new Uint8Array(oldGlyfDataLength);
-        var startOffset = itemDecode(locaData, 0);
-        var writeOffset = 0;
-        var missingGlyphs = Object.create(null);
-        itemEncode(locaData, 0, writeOffset);
-        var i, j;
-        for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
-          var endOffset = itemDecode(locaData, j);
-          // The spec says the offsets should be in ascending order, however
-          // some fonts use the offset of 0 to mark a glyph as missing.
-          if (endOffset === 0) {
-            endOffset = startOffset;
-          }
-          if (
-            endOffset > oldGlyfDataLength &&
-            ((oldGlyfDataLength + 3) & ~3) === endOffset
-          ) {
-            // Aspose breaks fonts by aligning the glyphs to the qword, but not
-            // the glyf table size, which makes last glyph out of range.
-            endOffset = oldGlyfDataLength;
-          }
-          if (endOffset > oldGlyfDataLength) {
-            // glyph end offset points outside glyf data, rejecting the glyph
-            startOffset = endOffset;
-          }
 
+        // The spec says the offsets should be in ascending order, however
+        // this is not true for some fonts or they use the offset of 0 to mark a
+        // glyph as missing. OTS requires the offsets to be in order and not to
+        // be zero, so we must sort and rebuild the loca table and potentially
+        // re-arrange the glyf data.
+        var i, j;
+        const locaEntries = [];
+        // There are numGlyphs + 1 loca table entries.
+        for (i = 0, j = 0; i < numGlyphs + 1; i++, j += itemSize) {
+          let offset = itemDecode(locaData, j);
+          if (offset > oldGlyfDataLength) {
+            offset = oldGlyfDataLength;
+          }
+          locaEntries.push({
+            index: i,
+            offset,
+            endOffset: 0,
+          });
+        }
+        locaEntries.sort((a, b) => {
+          return a.offset - b.offset;
+        });
+        // Now the offsets are sorted, calculate the end offset of each glyph.
+        // The last loca entry's endOffset is not calculated since it's the end
+        // of the data and will be stored on the previous entry's endOffset.
+        for (i = 0; i < numGlyphs; i++) {
+          locaEntries[i].endOffset = locaEntries[i + 1].offset;
+        }
+        // Re-sort so glyphs aren't out of order.
+        locaEntries.sort((a, b) => {
+          return a.index - b.index;
+        });
+
+        var missingGlyphs = Object.create(null);
+        var writeOffset = 0;
+        itemEncode(locaData, 0, writeOffset);
+        for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
           var glyphProfile = sanitizeGlyph(
             oldGlyfData,
-            startOffset,
-            endOffset,
+            locaEntries[i].offset,
+            locaEntries[i].endOffset,
             newGlyfData,
             writeOffset,
             hintsValid
@@ -2092,7 +2105,6 @@ var Font = (function FontClosure() {
           }
           writeOffset += newLength;
           itemEncode(locaData, j, writeOffset);
-          startOffset = endOffset;
         }
 
         if (writeOffset === 0) {
