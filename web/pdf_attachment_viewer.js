@@ -15,6 +15,7 @@
 
 import { createPromiseCapability, getFilenameFromUrl } from "pdfjs-lib";
 import { BaseTreeViewer } from "./base_tree_viewer.js";
+import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 /**
  * @typedef {Object} PDFAttachmentViewerOptions
@@ -169,7 +170,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       const element = document.createElement("a");
       if (
         /\.pdf$/i.test(filename) &&
-        !this.downloadManager.disableCreateObjectURL
+        !viewerCompatibilityParams.disableCreateObjectURL
       ) {
         this._bindPdfLink(element, { content: item.content, filename });
       } else {
