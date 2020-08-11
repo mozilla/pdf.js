@@ -72,6 +72,7 @@ import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer.js";
 import { PDFViewer } from "./pdf_viewer.js";
 import { SecondaryToolbar } from "./secondary_toolbar.js";
 import { Toolbar } from "./toolbar.js";
+import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 import { ViewHistory } from "./view_history.js";
 
 const DEFAULT_SCALE_DELTA = 1.1;
@@ -408,9 +409,7 @@ const PDFViewerApplication = {
     });
     this.pdfLinkService = pdfLinkService;
 
-    const downloadManager = this.externalServices.createDownloadManager({
-      disableCreateObjectURL: AppOptions.get("disableCreateObjectURL"),
-    });
+    const downloadManager = this.externalServices.createDownloadManager();
     this.downloadManager = downloadManager;
 
     const findController = new PDFFindController({
@@ -2225,7 +2224,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
     const file = evt.fileInput.files[0];
 
-    if (!AppOptions.get("disableCreateObjectURL")) {
+    if (!viewerCompatibilityParams.disableCreateObjectURL) {
       let url = URL.createObjectURL(file);
       if (file.name) {
         url = { url, originalUrl: file.name };
