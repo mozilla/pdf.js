@@ -3274,6 +3274,12 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue11131_reduced",
+       "file": "pdfs/issue11131_reduced.pdf",
+       "md5": "004b7e7d2b133a8dc4fe64aaf3dc9533",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue818",
       "file": "pdfs/issue818.pdf",
       "md5": "dd2f8a5bd65164ad74da2b45a6ca90cc",
@@ -3370,6 +3376,12 @@
        "rounds": 1,
        "link": false,
        "type": "load"
+    },
+    {  "id": "bug1650302_reduced",
+       "file": "pdfs/bug1650302_reduced.pdf",
+       "md5": "d918c9ec936486e8b6656e10dd909014",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "blendmode",
       "file": "pdfs/blendmode.pdf",
