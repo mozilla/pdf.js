@@ -1760,6 +1760,9 @@ const PDFViewerApplication = {
 
     window.addEventListener("visibilitychange", webViewerVisibilityChange);
     window.addEventListener("wheel", webViewerWheel, { passive: false });
+    window.addEventListener("touchstart", webViewerTouchStart, {
+      passive: false,
+    });
     window.addEventListener("click", webViewerClick);
     window.addEventListener("keydown", webViewerKeyDown);
     window.addEventListener("keyup", webViewerKeyUp);
@@ -1822,6 +1825,9 @@ const PDFViewerApplication = {
 
     window.removeEventListener("visibilitychange", webViewerVisibilityChange);
     window.removeEventListener("wheel", webViewerWheel, { passive: false });
+    window.removeEventListener("touchstart", webViewerTouchStart, {
+      passive: false,
+    });
     window.removeEventListener("click", webViewerClick);
     window.removeEventListener("keydown", webViewerKeyDown);
     window.removeEventListener("keyup", webViewerKeyUp);
@@ -2516,6 +2522,20 @@ function webViewerWheel(evt) {
     }
   } else {
     setZoomDisabledTimeout();
+  }
+}
+
+function webViewerTouchStart(evt) {
+  if (evt.touches.length > 1) {
+    // Disable touch-based zooming, because the entire UI bits gets zoomed and
+    // that doesn't look great. If we do want to have a good touch-based
+    // zooming experience, we need to implement smooth zoom capability (probably
+    // using a CSS transform for faster visual response, followed by async
+    // re-rendering at the final zoom level) and do gesture detection on the
+    // touchmove events to drive it. Or if we want to settle for a less good
+    // experience we can make the touchmove events drive the existing step-zoom
+    // behaviour that the ctrl+mousewheel path takes.
+    evt.preventDefault();
   }
 }
 
