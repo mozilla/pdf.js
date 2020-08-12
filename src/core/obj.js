@@ -1211,9 +1211,21 @@ var XRef = (function XRefClosure() {
       streamTypes: Object.create(null),
       fontTypes: Object.create(null),
     };
+    this._newRefNum = null;
   }
 
   XRef.prototype = {
+    getNewRef: function XRef_getNewRef() {
+      if (this._newRefNum === null) {
+        this._newRefNum = this.entries.length;
+      }
+      return Ref.get(this._newRefNum++, 0);
+    },
+
+    resetNewRef: function XRef_resetNewRef() {
+      this._newRefNum = null;
+    },
+
     setStartXRef: function XRef_setStartXRef(startXRef) {
       // Store the starting positions of xref tables as we process them
       // so we can recover from missing data errors

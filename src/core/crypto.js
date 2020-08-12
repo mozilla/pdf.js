@@ -73,6 +73,7 @@ var ARCFourCipher = (function ARCFourCipherClosure() {
     },
   };
   ARCFourCipher.prototype.decryptBlock = ARCFourCipher.prototype.encryptBlock;
+  ARCFourCipher.prototype.encrypt = ARCFourCipher.prototype.encryptBlock;
 
   return ARCFourCipher;
 })();
@@ -699,6 +700,9 @@ var NullCipher = (function NullCipherClosure() {
     decryptBlock: function NullCipher_decryptBlock(data) {
       return data;
     },
+    encrypt: function NullCipher_encrypt(data) {
+      return data;
+    },
   };
 
   return NullCipher;
@@ -1097,6 +1101,7 @@ class AESBaseCipher {
       if (bufferLength < 16) {
         continue;
       }
+
       for (let j = 0; j < 16; ++j) {
         buffer[j] ^= iv[j];
       }
@@ -1472,6 +1477,42 @@ var CipherTransform = (function CipherTransformClosure() {
       var cipher = new this.StringCipherConstructor();
       var data = stringToBytes(s);
       data = cipher.decryptBlock(data, true);
+      return bytesToString(data);
+    },
+    encryptString: function CipherTransform_encryptString(s) {
+      const cipher = new this.StringCipherConstructor();
+      if (cipher instanceof AESBaseCipher) {
+        // Append some chars equal to "16 - (M mod 16)"
+        // where M is the string length (see section 7.6.2 in PDF specification)
+        // to have a final string where the length is a multiple of 16.
+        const strLen = s.length;
+        const pad = 16 - (strLen % 16);
+        if (pad !== 16) {
+          s = s.padEnd(16 * Math.ceil(strLen / 16), String.fromCharCode(pad));
+        }
+
+        // Generate an initialization vector
+        const iv = new Uint8Array(16);
+        if (typeof crypto !== "undefined") {
+          crypto.getRandomValues(iv);
+        } else {
+          for (let i = 0; i < 16; i++) {
+            iv[i] = Math.floor(256 * Math.random());
+          }
+        }
+
+        let data = stringToBytes(s);
+        data = cipher.encrypt(data, iv);
+
+        const buf = new Uint8Array(16 + data.length);
+        buf.set(iv);
+        buf.set(data, 16);
+
+        return bytesToString(buf);
+      }
+
+      let data = stringToBytes(s);
+      data = cipher.encrypt(data);
       return bytesToString(data);
     },
   };

@@ -36,6 +36,7 @@
     "type1_parser_spec.js",
     "ui_utils_spec.js",
     "unicode_spec.js",
-    "util_spec.js"
+    "util_spec.js",
+    "writer_spec.js"
   ]
 }
