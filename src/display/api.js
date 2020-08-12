@@ -867,6 +867,16 @@ class PDFDocumentProxy {
   get loadingTask() {
     return this._transport.loadingTask;
   }
+
+  /**
+   * @param {AnnotationStorage} annotationStorage - Storage for annotation
+   *   data in forms.
+   * @returns {Promise<Uint8Array>} A promise that is resolved with a
+   *   {Uint8Array} containing the full data of the saved document.
+   */
+  saveDocument(annotationStorage) {
+    return this._transport.saveDocument(annotationStorage);
+  }
 }
 
 /**
@@ -2517,6 +2527,15 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetAnnotations", {
       pageIndex,
       intent,
+    });
+  }
+
+  saveDocument(annotationStorage) {
+    return this.messageHandler.sendWithPromise("SaveDocument", {
+      numPages: this._numPages,
+      annotationStorage:
+        (annotationStorage && annotationStorage.getAll()) || null,
+      filename: this._fullReader.filename,
     });
   }
 

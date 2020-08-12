@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+import { isRef, Ref } from "../../src/core/primitives.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
 import { assert } from "../../src/shared/util.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
-import { isRef } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 
 class DOMFileReaderFactory {
@@ -70,11 +70,23 @@ class XRefMock {
       streamTypes: Object.create(null),
       fontTypes: Object.create(null),
     };
+    this._newRefNum = null;
 
     for (const key in array) {
       const obj = array[key];
       this._map[obj.ref.toString()] = obj.data;
     }
+  }
+
+  getNewRef() {
+    if (this._newRefNum === null) {
+      this._newRefNum = Object.keys(this._map).length;
+    }
+    return Ref.get(this._newRefNum++, 0);
+  }
+
+  resetNewRef() {
+    this.newRef = null;
   }
 
   fetch(ref) {
