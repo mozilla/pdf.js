@@ -1415,8 +1415,14 @@ const PDFViewerApplication = {
       this.setTitle(contentDispositionFilename);
     }
 
-    if (info.IsAcroFormPresent) {
-      console.warn("Warning: AcroForm/XFA is not supported");
+    if (info.IsXFAPresent) {
+      console.warn("Warning: XFA is not supported");
+      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
+    } else if (
+      info.IsAcroFormPresent &&
+      !this.pdfViewer.renderInteractiveForms
+    ) {
+      console.warn("Warning: AcroForm support is not enabled");
       this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     }
 

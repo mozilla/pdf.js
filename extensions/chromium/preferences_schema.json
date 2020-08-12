@@ -149,7 +149,7 @@
     },
     "renderInteractiveForms": {
       "type": "boolean",
-      "default": false
+      "default": true
     },
     "enablePermissions": {
       "type": "boolean",
