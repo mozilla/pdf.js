@@ -909,18 +909,30 @@ function parseMinified(dir) {
   console.log("### Minifying js files");
 
   var Terser = require("terser");
-  // V8 chokes on very long sequences. Works around that.
-  var optsForHugeFile = { compress: { sequences: false } };
+  var options = {
+    compress: {
+      // V8 chokes on very long sequences, work around that.
+      sequences: false,
+    },
+    keep_classnames: true,
+    keep_fnames: true,
+  };
 
-  fs.writeFileSync(dir + "/web/pdf.viewer.js", Terser.minify(viewerFiles).code);
-  fs.writeFileSync(dir + "/build/pdf.min.js", Terser.minify(pdfFile).code);
+  fs.writeFileSync(
+    dir + "/web/pdf.viewer.js",
+    Terser.minify(viewerFiles, options).code
+  );
+  fs.writeFileSync(
+    dir + "/build/pdf.min.js",
+    Terser.minify(pdfFile, options).code
+  );
   fs.writeFileSync(
     dir + "/build/pdf.worker.min.js",
-    Terser.minify(pdfWorkerFile, optsForHugeFile).code
+    Terser.minify(pdfWorkerFile, options).code
   );
   fs.writeFileSync(
     dir + "image_decoders/pdf.image_decoders.min.js",
-    Terser.minify(pdfImageDecodersFile).code
+    Terser.minify(pdfImageDecodersFile, options).code
   );
 
   console.log();
