@@ -2271,11 +2271,16 @@ class WorkerTransport {
           reason = new UnknownErrorException(ex.message, ex.details);
           break;
       }
-      if (
-        typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")
-      ) {
-        assert(reason instanceof Error, "DocException: expected an Error.");
+      if (!(reason instanceof Error)) {
+        const msg = "DocException - expected a valid Error.";
+        if (
+          typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")
+        ) {
+          unreachable(msg);
+        } else {
+          warn(msg);
+        }
       }
       loadingTask._capability.reject(reason);
     });
