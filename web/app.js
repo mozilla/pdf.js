@@ -939,8 +939,10 @@ const PDFViewerApplication = {
       })
       .catch(() => {
         this.download();
-      }); // Error occurred, try downloading with the URL.
-    this._saveInProgress = false;
+      })
+      .finally(() => {
+        this._saveInProgress = false;
+      });
   },
 
   /**
