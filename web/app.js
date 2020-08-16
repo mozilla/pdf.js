@@ -26,7 +26,7 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   noContextMenuHandler,
-  normalizeWheelEventDelta,
+  normalizeWheelEventDirection,
   parseQueryString,
   PresentationModeState,
   ProgressBar,
@@ -237,6 +237,7 @@ const PDFViewerApplication = {
   contentDispositionFilename: null,
   triggerDelayedFallback: null,
   _saveInProgress: false,
+  _wheelUnusedTicks: 0,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -1849,6 +1850,22 @@ const PDFViewerApplication = {
     _boundEvents.windowBeforePrint = null;
     _boundEvents.windowAfterPrint = null;
   },
+
+  accumulateWheelTicks(ticks) {
+    // If the scroll direction changed, reset the accumulated wheel ticks.
+    if (
+      (this._wheelUnusedTicks > 0 && ticks < 0) ||
+      (this._wheelUnusedTicks < 0 && ticks > 0)
+    ) {
+      this._wheelUnusedTicks = 0;
+    }
+    this._wheelUnusedTicks += ticks;
+    const wholeTicks =
+      Math.sign(this._wheelUnusedTicks) *
+      Math.floor(Math.abs(this._wheelUnusedTicks));
+    this._wheelUnusedTicks -= wholeTicks;
+    return wholeTicks;
+  },
 };
 
 let validateFileURL;
@@ -2506,13 +2523,34 @@ function webViewerWheel(evt) {
 
     const previousScale = pdfViewer.currentScale;
 
-    const delta = normalizeWheelEventDelta(evt);
+    const delta = normalizeWheelEventDirection(evt);
+    let ticks = 0;
+    if (
+      evt.deltaMode === WheelEvent.DOM_DELTA_LINE ||
+      evt.deltaMode === WheelEvent.DOM_DELTA_PAGE
+    ) {
+      // For line-based devices, use one tick per event, because different
+      // OSs have different defaults for the number lines. But we generally
+      // want one "clicky" roll of the wheel (which produces one event) to
+      // adjust the zoom by one step.
+      if (Math.abs(delta) >= 1) {
+        ticks = Math.sign(delta);
+      } else {
+        // If we're getting fractional lines (I can't think of a scenario
+        // this might actually happen), be safe and use the accumulator.
+        ticks = PDFViewerApplication.accumulateWheelTicks(delta);
+      }
+    } else {
+      // pixel-based devices
+      const PIXELS_PER_LINE_SCALE = 30;
+      ticks = PDFViewerApplication.accumulateWheelTicks(
+        delta / PIXELS_PER_LINE_SCALE
+      );
+    }
 
-    const MOUSE_WHEEL_DELTA_PER_PAGE_SCALE = 3.0;
-    const ticks = delta * MOUSE_WHEEL_DELTA_PER_PAGE_SCALE;
     if (ticks < 0) {
       PDFViewerApplication.zoomOut(-ticks);
-    } else {
+    } else if (ticks > 0) {
       PDFViewerApplication.zoomIn(ticks);
     }
 
