@@ -846,6 +846,8 @@ class PartialEvaluator {
           gStateObj.push([key, value]);
           break;
         case "Font":
+          isSimpleGState = false;
+
           promise = promise.then(() => {
             return this.handleSetFont(
               resources,
