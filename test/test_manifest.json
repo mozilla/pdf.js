@@ -4448,6 +4448,22 @@
        "type": "eq",
        "forms": true
     },
+    {  "id": "annotation-text-widget-print",
+       "file": "pdfs/annotation-text-widget.pdf",
+       "md5": "b7b8923a12998fca8603fae53f73f19b",
+       "rounds": 1,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "61R": "Single line, unlimited length",
+         "62R": "Single lin",
+         "63R": "Single line, center aligned",
+         "64R": "Single line, right aligned",
+         "65R": "",
+         "66R": "zyxwvutsrqponmlkjihgfedcba",
+         "67R": "Multiline\nstring"
+       }
+    },
     {  "id": "annotation-choice-widget-annotations",
        "file": "pdfs/annotation-choice-widget.pdf",
        "md5": "7dfb0d743a0da0f4a71b209ab43b0be5",
@@ -4461,6 +4477,20 @@
        "rounds": 1,
        "type": "eq",
        "forms": true
+    },
+    {  "id": "annotation-choice-widget-print",
+       "file": "pdfs/annotation-choice-widget.pdf",
+       "md5": "7dfb0d743a0da0f4a71b209ab43b0be5",
+       "rounds": 1,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "57R": "Ipsum",
+         "58R": "Lorem",
+         "59R": "Dolor",
+         "62R": "Sit",
+         "63R": ""
+       }
     },
     {  "id": "issue11931",
        "file": "pdfs/issue11931.pdf",
@@ -4487,6 +4517,24 @@
        "rounds": 1,
        "type": "eq",
        "forms": true
+    },
+    {  "id": "annotation-button-widget-print",
+       "file": "pdfs/annotation-button-widget.pdf",
+       "md5": "5cf23adfff84256d9cfe261bea96dade",
+       "rounds": 1,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "105R": true,
+         "106R": false,
+         "107R": false,
+         "108R": true,
+         "109R": false,
+         "110R": false,
+         "111R": true,
+         "112R": false,
+         "113R": false
+       }
     },
     {  "id": "annotation-polyline-polygon",
        "file": "pdfs/annotation-polyline-polygon.pdf",
