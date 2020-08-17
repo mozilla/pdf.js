@@ -54,7 +54,8 @@ var GENERIC_DIR = BUILD_DIR + "generic/";
 var GENERIC_ES5_DIR = BUILD_DIR + "generic-es5/";
 var COMPONENTS_DIR = BUILD_DIR + "components/";
 var COMPONENTS_ES5_DIR = BUILD_DIR + "components-es5/";
-var IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders";
+var IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders/";
+var IMAGE_DECODERS_ES5_DIR = BUILD_DIR + "image_decoders-es5/";
 var DEFAULT_PREFERENCES_DIR = BUILD_DIR + "default_preferences/";
 var MINIFIED_DIR = BUILD_DIR + "minified/";
 var MINIFIED_ES5_DIR = BUILD_DIR + "minified-es5/";
@@ -825,6 +826,23 @@ gulp.task(
 
     return createImageDecodersBundle(defines).pipe(
       gulp.dest(IMAGE_DECODERS_DIR)
+    );
+  })
+);
+
+gulp.task(
+  "image_decoders-es5",
+  gulp.series("buildnumber", function () {
+    console.log();
+    console.log("### Creating (ES5) image decoders");
+    var defines = builder.merge(DEFINES, {
+      GENERIC: true,
+      IMAGE_DECODERS: true,
+      SKIP_BABEL: false,
+    });
+
+    return createImageDecodersBundle(defines).pipe(
+      gulp.dest(IMAGE_DECODERS_ES5_DIR)
     );
   })
 );
@@ -1694,6 +1712,7 @@ gulp.task(
     "components",
     "components-es5",
     "image_decoders",
+    "image_decoders-es5",
     "lib",
     "minified",
     "types",
@@ -1760,7 +1779,12 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR + "es5/web/")),
         gulp
           .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
-          .pipe(gulp.dest(DIST_DIR + "image_decoders")),
+          .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
+        gulp
+          .src(IMAGE_DECODERS_ES5_DIR + "**/*", {
+            base: IMAGE_DECODERS_ES5_DIR,
+          })
+          .pipe(gulp.dest(DIST_DIR + "es5/image_decoders/")),
         gulp
           .src(LIB_DIR + "**/*", { base: LIB_DIR })
           .pipe(gulp.dest(DIST_DIR + "lib/")),
