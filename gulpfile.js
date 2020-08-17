@@ -1715,6 +1715,7 @@ gulp.task(
     "image_decoders-es5",
     "lib",
     "minified",
+    "minified-es5",
     "types",
     function () {
       console.log();
@@ -1771,6 +1772,18 @@ gulp.task(
           .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.js")
           .pipe(rename("pdf.image_decoders.min.js"))
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
+        gulp
+          .src(MINIFIED_ES5_DIR + "build/pdf.js")
+          .pipe(rename("pdf.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+        gulp
+          .src(MINIFIED_ES5_DIR + "build/pdf.worker.js")
+          .pipe(rename("pdf.worker.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+        gulp
+          .src(MINIFIED_ES5_DIR + "image_decoders/pdf.image_decoders.js")
+          .pipe(rename("pdf.image_decoders.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "es5/image_decoders/")),
         gulp
           .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
           .pipe(gulp.dest(DIST_DIR + "web/")),
