@@ -4468,6 +4468,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue6931",
+       "file": "pdfs/issue6931_reduced.pdf",
+       "md5": "e61388913821a5e044bf85a5846d6d9a",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "annotation-button-widget-annotations",
        "file": "pdfs/annotation-button-widget.pdf",
        "md5": "5cf23adfff84256d9cfe261bea96dade",
