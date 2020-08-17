@@ -668,6 +668,51 @@ class PartialEvaluator {
     );
   }
 
+  handleTransferFunction(tr) {
+    let transferArray;
+    if (Array.isArray(tr)) {
+      transferArray = tr;
+    } else if (isPDFFunction(tr)) {
+      transferArray = [tr];
+    } else {
+      return null; // Not a valid transfer function entry.
+    }
+
+    const transferMaps = [];
+    let numFns = 0,
+      numEffectfulFns = 0;
+    for (const entry of transferArray) {
+      const transferObj = this.xref.fetchIfRef(entry);
+      numFns++;
+
+      if (isName(transferObj, "Identity")) {
+        transferMaps.push(null);
+        continue;
+      } else if (!isPDFFunction(transferObj)) {
+        return null; // Not a valid transfer function object.
+      }
+
+      const transferFn = this._pdfFunctionFactory.create(transferObj);
+      const transferMap = new Uint8Array(256),
+        tmp = new Float32Array(1);
+      for (let j = 0; j < 256; j++) {
+        tmp[0] = j / 255;
+        transferFn(tmp, 0, tmp, 0);
+        transferMap[j] = (tmp[0] * 255) | 0;
+      }
+      transferMaps.push(transferMap);
+      numEffectfulFns++;
+    }
+
+    if (!(numFns === 1 || numFns === 4)) {
+      return null; // Only 1 or 4 functions are supported, by the specification.
+    }
+    if (numEffectfulFns === 0) {
+      return null; // Only /Identity transfer functions found, which are no-ops.
+    }
+    return transferMaps;
+  }
+
   handleTilingType(
     fn,
     args,
@@ -887,7 +932,10 @@ class PartialEvaluator {
           } else {
             warn("Unsupported SMask type");
           }
-
+          break;
+        case "TR":
+          const transferMaps = this.handleTransferFunction(value);
+          gStateObj.push([key, transferMaps]);
           break;
         // Only generate info log messages for the following since
         // they are unlikely to have a big impact on the rendering.
@@ -898,7 +946,6 @@ class PartialEvaluator {
         case "BG2":
         case "UCR":
         case "UCR2":
-        case "TR":
         case "TR2":
         case "HT":
         case "SM":
