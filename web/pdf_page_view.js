@@ -145,6 +145,24 @@ class PDFPageView {
   /**
    * @private
    */
+  async _renderAnnotationLayer() {
+    let error = null;
+    try {
+      await this.annotationLayer.render(this.viewport, "display");
+    } catch (ex) {
+      error = ex;
+    } finally {
+      this.eventBus.dispatch("annotationlayerrendered", {
+        source: this,
+        pageNumber: this.id,
+        error,
+      });
+    }
+  }
+
+  /**
+   * @private
+   */
   _resetZoomLayer(removeFromDOM = false) {
     if (!this.zoomLayer) {
       return;
@@ -384,7 +402,7 @@ class PDFPageView {
     }
 
     if (redrawAnnotations && this.annotationLayer) {
-      this.annotationLayer.render(this.viewport, "display");
+      this._renderAnnotationLayer();
     }
   }
 
@@ -542,7 +560,7 @@ class PDFPageView {
           this.l10n
         );
       }
-      this.annotationLayer.render(this.viewport, "display");
+      this._renderAnnotationLayer();
     }
     div.setAttribute("data-loaded", true);
 
