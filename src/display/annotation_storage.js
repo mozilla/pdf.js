@@ -19,6 +19,14 @@
 class AnnotationStorage {
   constructor() {
     this._storage = new Map();
+    this._modified = false;
+
+    // Callbacks to signal when the modification state is set or reset.
+    // This is used by the viewer to only bind on `beforeunload` if forms
+    // are actually edited to prevent doing so unconditionally since that
+    // can have undesirable efffects.
+    this.onSetModified = null;
+    this.onResetModified = null;
   }
 
   /**
@@ -49,6 +57,9 @@ class AnnotationStorage {
    * @param {Object} value
    */
   setValue(key, value) {
+    if (this._storage.get(key) !== value) {
+      this.setModified();
+    }
     this._storage.set(key, value);
   }
 
@@ -61,6 +72,24 @@ class AnnotationStorage {
 
   get size() {
     return this._storage.size;
+  }
+
+  setModified() {
+    if (!this._modified) {
+      this._modified = true;
+      if (typeof this.onSetModified === "function") {
+        this.onSetModified();
+      }
+    }
+  }
+
+  resetModified() {
+    if (this._modified) {
+      this._modified = false;
+      if (typeof this.onResetModified === "function") {
+        this.onResetModified();
+      }
+    }
   }
 }
 
