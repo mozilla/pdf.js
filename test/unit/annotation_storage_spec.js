@@ -38,5 +38,48 @@ describe("AnnotationStorage", function () {
       expect(value).toEqual("an other string");
       done();
     });
+
+    it("should call onSetModified() if value is changed", function (done) {
+      const annotationStorage = new AnnotationStorage();
+      let called = false;
+      const callback = function () {
+        called = true;
+      };
+      annotationStorage.onSetModified = callback;
+      annotationStorage.getOrCreateValue("asdf", "original");
+      expect(called).toBe(false);
+
+      // not changing value
+      annotationStorage.setValue("asdf", "original");
+      expect(called).toBe(false);
+
+      // changing value
+      annotationStorage.setValue("asdf", "modified");
+      expect(called).toBe(true);
+      done();
+    });
+  });
+
+  describe("ResetModified", function () {
+    it("should call onResetModified() if set", function (done) {
+      const annotationStorage = new AnnotationStorage();
+      let called = false;
+      const callback = function () {
+        called = true;
+      };
+      annotationStorage.onResetModified = callback;
+      annotationStorage.getOrCreateValue("asdf", "original");
+
+      // not changing value
+      annotationStorage.setValue("asdf", "original");
+      annotationStorage.resetModified();
+      expect(called).toBe(false);
+
+      // changing value
+      annotationStorage.setValue("asdf", "modified");
+      annotationStorage.resetModified();
+      expect(called).toBe(true);
+      done();
+    });
   });
 });
