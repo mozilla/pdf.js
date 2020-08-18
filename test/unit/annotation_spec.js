@@ -2479,8 +2479,8 @@ describe("annotation", function () {
     });
 
     it("should convert the field value to an array", function (done) {
-      const inputs = ["Foo", ["Foo", "Bar"]];
-      const outputs = [["Foo"], ["Foo", "Bar"]];
+      const inputs = [null, "Foo", ["Foo", "Bar"]];
+      const outputs = [[], ["Foo"], ["Foo", "Bar"]];
 
       let promise = Promise.resolve();
       for (let i = 0, ii = inputs.length; i < ii; i++) {
