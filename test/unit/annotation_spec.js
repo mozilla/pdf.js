@@ -2478,48 +2478,32 @@ describe("annotation", function () {
       }, done.fail);
     });
 
-    it("should handle array field values", function (done) {
-      const fieldValue = ["Foo", "Bar"];
+    it("should convert the field value to an array", function (done) {
+      const inputs = ["Foo", ["Foo", "Bar"]];
+      const outputs = [["Foo"], ["Foo", "Bar"]];
 
-      choiceWidgetDict.set("V", fieldValue);
+      let promise = Promise.resolve();
+      for (let i = 0, ii = inputs.length; i < ii; i++) {
+        promise = promise.then(() => {
+          choiceWidgetDict.set("V", inputs[i]);
 
-      const choiceWidgetRef = Ref.get(968, 0);
-      const xref = new XRefMock([
-        { ref: choiceWidgetRef, data: choiceWidgetDict },
-      ]);
+          const choiceWidgetRef = Ref.get(968, 0);
+          const xref = new XRefMock([
+            { ref: choiceWidgetRef, data: choiceWidgetDict },
+          ]);
 
-      AnnotationFactory.create(
-        xref,
-        choiceWidgetRef,
-        pdfManagerMock,
-        idFactoryMock
-      ).then(({ data }) => {
-        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-        expect(data.fieldValue).toEqual(fieldValue);
-        done();
-      }, done.fail);
-    });
-
-    it("should handle string field values", function (done) {
-      const fieldValue = "Foo";
-
-      choiceWidgetDict.set("V", fieldValue);
-
-      const choiceWidgetRef = Ref.get(978, 0);
-      const xref = new XRefMock([
-        { ref: choiceWidgetRef, data: choiceWidgetDict },
-      ]);
-
-      AnnotationFactory.create(
-        xref,
-        choiceWidgetRef,
-        pdfManagerMock,
-        idFactoryMock
-      ).then(({ data }) => {
-        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-        expect(data.fieldValue).toEqual([fieldValue]);
-        done();
-      }, done.fail);
+          return AnnotationFactory.create(
+            xref,
+            choiceWidgetRef,
+            pdfManagerMock,
+            idFactoryMock
+          ).then(({ data }) => {
+            expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+            expect(data.fieldValue).toEqual(outputs[i]);
+          });
+        });
+      }
+      promise.then(done, done.fail);
     });
 
     it("should handle unknown flags", function (done) {
