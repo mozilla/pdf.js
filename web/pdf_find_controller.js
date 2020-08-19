@@ -720,7 +720,11 @@ class PDFFindController {
     if (current < 1 || current > total) {
       current = total = 0;
     }
-    return { current, total };
+    return {
+      current,
+      total,
+      searchString: this._query,
+    };
   }
 
   _updateUIResultsCount() {
