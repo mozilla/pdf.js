@@ -874,7 +874,7 @@ const PDFViewerApplication = {
     );
   },
 
-  download() {
+  download({ sourceEventType = "download" }) {
     function downloadByUrl() {
       downloadManager.downloadUrl(url, filename);
     }
@@ -902,12 +902,12 @@ const PDFViewerApplication = {
       .getData()
       .then(function (data) {
         const blob = new Blob([data], { type: "application/pdf" });
-        downloadManager.download(blob, url, filename);
+        downloadManager.download(blob, url, filename, sourceEventType);
       })
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
 
-  save() {
+  save({ sourceEventType = "download" }) {
     if (this._saveInProgress) {
       return;
     }
@@ -927,7 +927,7 @@ const PDFViewerApplication = {
     // When the PDF document isn't ready, or the PDF file is still downloading,
     // simply download using the URL.
     if (!this.pdfDocument || !this.downloadComplete) {
-      this.download();
+      this.download({ sourceEventType });
       return;
     }
 
@@ -936,10 +936,10 @@ const PDFViewerApplication = {
       .saveDocument(this.pdfDocument.annotationStorage)
       .then(data => {
         const blob = new Blob([data], { type: "application/pdf" });
-        downloadManager.download(blob, url, filename);
+        downloadManager.download(blob, url, filename, sourceEventType);
       })
       .catch(() => {
-        this.download();
+        this.download({ sourceEventType });
       })
       .finally(() => {
         this._saveInProgress = false;
@@ -1722,6 +1722,7 @@ const PDFViewerApplication = {
     eventBus._on("presentationmode", webViewerPresentationMode);
     eventBus._on("print", webViewerPrint);
     eventBus._on("download", webViewerDownload);
+    eventBus._on("save", webViewerSave);
     eventBus._on("firstpage", webViewerFirstPage);
     eventBus._on("lastpage", webViewerLastPage);
     eventBus._on("nextpage", webViewerNextPage);
@@ -1800,6 +1801,7 @@ const PDFViewerApplication = {
     eventBus._off("presentationmode", webViewerPresentationMode);
     eventBus._off("print", webViewerPrint);
     eventBus._off("download", webViewerDownload);
+    eventBus._off("save", webViewerSave);
     eventBus._off("firstpage", webViewerFirstPage);
     eventBus._off("lastpage", webViewerLastPage);
     eventBus._off("nextpage", webViewerNextPage);
@@ -2334,15 +2336,21 @@ function webViewerPresentationMode() {
 function webViewerPrint() {
   window.print();
 }
-function webViewerDownload() {
+function webViewerDownloadOrSave(sourceEventType) {
   if (
     PDFViewerApplication.pdfDocument &&
     PDFViewerApplication.pdfDocument.annotationStorage.size > 0
   ) {
-    PDFViewerApplication.save();
+    PDFViewerApplication.save({ sourceEventType });
   } else {
-    PDFViewerApplication.download();
+    PDFViewerApplication.download({ sourceEventType });
   }
+}
+function webViewerDownload() {
+  webViewerDownloadOrSave("download");
+}
+function webViewerSave() {
+  webViewerDownloadOrSave("save");
 }
 function webViewerFirstPage() {
   if (PDFViewerApplication.pdfDocument) {
