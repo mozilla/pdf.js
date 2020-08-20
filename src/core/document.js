@@ -584,9 +584,14 @@ class PDFDocument {
       this.acroForm = this.catalog.catDict.get("AcroForm");
       if (this.acroForm) {
         this.xfa = this.acroForm.get("XFA");
+        this.dynamicXFA = false;
         const fields = this.acroForm.get("Fields");
-        if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
-          this.acroForm = null; // No fields and no XFA, so it's not a form.
+        if (!Array.isArray(fields) || fields.length === 0) {
+          if (this.xfa) {
+            this.dynamicXFA = true;
+          } else {
+            this.acroForm = null; // No fields and no XFA, so it's not a form.
+          }
         }
       }
     } catch (ex) {
@@ -741,6 +746,7 @@ class PDFDocument {
       IsLinearized: !!this.linearization,
       IsAcroFormPresent: !!this.acroForm,
       IsXFAPresent: !!this.xfa,
+      IsDynamicXFAPresent: !!this.dynamicXFA,
       IsCollectionPresent: !!this.collection,
     };
 

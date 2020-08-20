@@ -1418,8 +1418,8 @@ const PDFViewerApplication = {
       this.setTitle(contentDispositionFilename);
     }
 
-    if (info.IsXFAPresent) {
-      console.warn("Warning: XFA is not supported");
+    if (info.IsDynamicXFAPresent) {
+      console.warn("Warning: Dynamic XFA is not supported");
       this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       info.IsAcroFormPresent &&
