@@ -1610,11 +1610,14 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       }
     }
 
-    // Determine the field value. In this case, it may be a string or an
-    // array of strings. For convenience in the display layer, convert the
-    // string to an array of one string as well.
-    if (!Array.isArray(this.data.fieldValue)) {
+    // The field value can be `null` if no item is selected, a string if one
+    // item is selected or an array of strings if multiple items are selected.
+    // For consistency in the API and convenience in the display layer, we
+    // always make the field value an array with zero, one or multiple items.
+    if (isString(this.data.fieldValue)) {
       this.data.fieldValue = [this.data.fieldValue];
+    } else if (!this.data.fieldValue) {
+      this.data.fieldValue = [];
     }
 
     // Process field flags for the display layer.
