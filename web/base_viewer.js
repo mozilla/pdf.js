@@ -127,12 +127,6 @@ function isSameScale(oldScale, newScale) {
   return false;
 }
 
-function beforeUnload(evt) {
-  evt.preventDefault();
-  evt.returnValue = "";
-  return false;
-}
-
 /**
  * Simple viewer control to display PDF content/pages.
  * @implements {IRenderableView}
@@ -442,12 +436,6 @@ class BaseViewer {
     const firstPagePromise = pdfDocument.getPage(1);
 
     const annotationStorage = pdfDocument.annotationStorage;
-    annotationStorage.onSetModified = function () {
-      window.addEventListener("beforeunload", beforeUnload);
-    };
-    annotationStorage.onResetModified = function () {
-      window.removeEventListener("beforeunload", beforeUnload);
-    };
 
     this._pagesCapability.promise.then(() => {
       this.eventBus.dispatch("pagesloaded", {
