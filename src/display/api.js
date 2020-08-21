@@ -2541,7 +2541,7 @@ class WorkerTransport {
         numPages: this._numPages,
         annotationStorage:
           (annotationStorage && annotationStorage.getAll()) || null,
-        filename: this._fullReader.filename,
+        filename: this._fullReader ? this._fullReader.filename : null,
       })
       .finally(() => {
         annotationStorage.resetModified();
