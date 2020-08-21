@@ -2536,12 +2536,16 @@ class WorkerTransport {
   }
 
   saveDocument(annotationStorage) {
-    return this.messageHandler.sendWithPromise("SaveDocument", {
-      numPages: this._numPages,
-      annotationStorage:
-        (annotationStorage && annotationStorage.getAll()) || null,
-      filename: this._fullReader.filename,
-    });
+    return this.messageHandler
+      .sendWithPromise("SaveDocument", {
+        numPages: this._numPages,
+        annotationStorage:
+          (annotationStorage && annotationStorage.getAll()) || null,
+        filename: this._fullReader.filename,
+      })
+      .finally(() => {
+        annotationStorage.resetModified();
+      });
   }
 
   getDestinations() {
