@@ -1610,7 +1610,12 @@ var Font = (function FontClosure() {
             continue;
           }
 
-          if (platformId === 0 && encodingId === 0) {
+          if (
+            platformId === 0 &&
+            (encodingId === /* Unicode Default */ 0 ||
+              encodingId === /* Unicode 1.1 */ 1 ||
+              encodingId === /* Unicode BMP */ 3)
+          ) {
             useTable = true;
             // Continue the loop since there still may be a higher priority
             // table.
@@ -2792,32 +2797,24 @@ var Font = (function FontClosure() {
         var cmapEncodingId = cmapTable.encodingId;
         var cmapMappings = cmapTable.mappings;
         var cmapMappingsLength = cmapMappings.length;
-
-        // The spec seems to imply that if the font is symbolic the encoding
-        // should be ignored, this doesn't appear to work for 'preistabelle.pdf'
-        // where the the font is symbolic and it has an encoding.
+        let baseEncoding = [];
         if (
-          (properties.hasEncoding &&
-            ((cmapPlatformId === 3 && cmapEncodingId === 1) ||
-              (cmapPlatformId === 1 && cmapEncodingId === 0))) ||
-          (cmapPlatformId === -1 &&
-          cmapEncodingId === -1 && // Temporary hack
-            !!getEncoding(properties.baseEncodingName))
+          properties.hasEncoding &&
+          (properties.baseEncodingName === "MacRomanEncoding" ||
+            properties.baseEncodingName === "WinAnsiEncoding")
         ) {
-          // Temporary hack
-          // When no preferred cmap table was found and |baseEncodingName| is
-          // one of the predefined encodings, we seem to obtain a better
-          // |charCodeToGlyphId| map from the code below (fixes bug 1057544).
-          // TODO: Note that this is a hack which should be removed as soon as
-          //       we have proper support for more exotic cmap tables.
+          baseEncoding = getEncoding(properties.baseEncodingName);
+        }
 
-          var baseEncoding = [];
-          if (
-            properties.baseEncodingName === "MacRomanEncoding" ||
-            properties.baseEncodingName === "WinAnsiEncoding"
-          ) {
-            baseEncoding = getEncoding(properties.baseEncodingName);
-          }
+        // If the font has an encoding and is not symbolic then follow the
+        // rules in section 9.6.6.4 of the spec on how to map 3,1 and 1,0
+        // cmaps.
+        if (
+          properties.hasEncoding &&
+          !this.isSymbolicFont &&
+          ((cmapPlatformId === 3 && cmapEncodingId === 1) ||
+            (cmapPlatformId === 1 && cmapEncodingId === 0))
+        ) {
           var glyphsUnicodeMap = getGlyphsUnicode();
           for (let charCode = 0; charCode < 256; charCode++) {
             var glyphName, standardGlyphName;
@@ -2845,29 +2842,15 @@ var Font = (function FontClosure() {
               unicodeOrCharCode = MacRomanEncoding.indexOf(standardGlyphName);
             }
 
-            var found = false;
             for (let i = 0; i < cmapMappingsLength; ++i) {
               if (cmapMappings[i].charCode !== unicodeOrCharCode) {
                 continue;
               }
               charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
-              found = true;
               break;
             }
-            if (!found && properties.glyphNames) {
-              // Try to map using the post table.
-              var glyphId = properties.glyphNames.indexOf(glyphName);
-              // The post table ought to use the same kind of glyph names as the
-              // `differences` array, but check the standard ones as a fallback.
-              if (glyphId === -1 && standardGlyphName !== glyphName) {
-                glyphId = properties.glyphNames.indexOf(standardGlyphName);
-              }
-              if (glyphId > 0 && hasGlyph(glyphId)) {
-                charCodeToGlyphId[charCode] = glyphId;
-              }
-            }
           }
-        } else if (cmapPlatformId === 0 && cmapEncodingId === 0) {
+        } else if (cmapPlatformId === 0) {
           // Default Unicode semantics, use the charcodes as is.
           for (let i = 0; i < cmapMappingsLength; ++i) {
             charCodeToGlyphId[cmapMappings[i].charCode] =
@@ -2895,6 +2878,19 @@ var Font = (function FontClosure() {
               charCode &= 0xff;
             }
             charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
+          }
+        }
+
+        // Last, try to map any missing charcodes using the post table.
+        if (properties.glyphNames && baseEncoding.length) {
+          for (let i = 0; i < 256; ++i) {
+            if (charCodeToGlyphId[i] === undefined && baseEncoding[i]) {
+              glyphName = baseEncoding[i];
+              const glyphId = properties.glyphNames.indexOf(glyphName);
+              if (glyphId > 0 && hasGlyph(glyphId)) {
+                charCodeToGlyphId[i] = glyphId;
+              }
+            }
           }
         }
       }
