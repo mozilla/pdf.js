@@ -51,7 +51,7 @@ class AnnotationFactory {
    *   instance.
    */
   static create(xref, ref, pdfManager, idFactory) {
-    return pdfManager.ensureDoc("acroForm").then(acroForm => {
+    return pdfManager.ensureCatalog("acroForm").then(acroForm => {
       return pdfManager.ensure(this, "_create", [
         xref,
         ref,

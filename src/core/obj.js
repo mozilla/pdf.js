@@ -100,6 +100,22 @@ class Catalog {
     return shadow(this, "collection", collection);
   }
 
+  get acroForm() {
+    let acroForm = null;
+    try {
+      const obj = this.catDict.get("AcroForm");
+      if (isDict(obj) && obj.size > 0) {
+        acroForm = obj;
+      }
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      info("Cannot fetch AcroForm entry; assuming no forms are present.");
+    }
+    return shadow(this, "acroForm", acroForm);
+  }
+
   get metadata() {
     const streamRef = this.catDict.getRaw("Metadata");
     if (!isRef(streamRef)) {
