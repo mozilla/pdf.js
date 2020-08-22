@@ -1531,24 +1531,22 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return;
     }
 
-    const exportValueOptionsDict = customAppearance.get("D");
-    if (!isDict(exportValueOptionsDict)) {
+    const normalAppearance = customAppearance.get("N");
+    if (!isDict(normalAppearance)) {
       return;
     }
 
-    const exportValues = exportValueOptionsDict.getKeys();
-    const hasCorrectOptionCount = exportValues.length === 2;
-    if (!hasCorrectOptionCount) {
+    const exportValues = normalAppearance.getKeys();
+    if (!exportValues.includes("Off")) {
+      // The /Off appearance is optional.
+      exportValues.push("Off");
+    }
+    if (exportValues.length !== 2) {
       return;
     }
 
     this.data.exportValue =
       exportValues[0] === "Off" ? exportValues[1] : exportValues[0];
-
-    const normalAppearance = customAppearance.get("N");
-    if (!isDict(normalAppearance)) {
-      return;
-    }
 
     this.checkedAppearance = normalAppearance.get(this.data.exportValue);
     this.uncheckedAppearance = normalAppearance.get("Off") || null;
