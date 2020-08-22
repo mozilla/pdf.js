@@ -584,21 +584,13 @@ class PDFDocument {
     }
 
     // Check if AcroForms are present in the document.
-    try {
-      this.acroForm = this.catalog.catDict.get("AcroForm");
-      if (this.acroForm) {
-        this.xfa = this.acroForm.get("XFA");
-        const fields = this.acroForm.get("Fields");
-        if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
-          this.acroForm = null; // No fields and no XFA, so it's not a form.
-        }
+    this._hasAcroForm = !!this.catalog.acroForm;
+    if (this._hasAcroForm) {
+      this.xfa = this.catalog.acroForm.get("XFA");
+      const fields = this.catalog.acroForm.get("Fields");
+      if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
+        this._hasAcroForm = false; // No fields and no XFA, so it's not a form.
       }
-    } catch (ex) {
-      if (ex instanceof MissingDataException) {
-        throw ex;
-      }
-      info("Cannot fetch AcroForm entry; assuming no AcroForms are present");
-      this.acroForm = null;
     }
   }
 
@@ -730,7 +722,7 @@ class PDFDocument {
     const docInfo = {
       PDFFormatVersion: version,
       IsLinearized: !!this.linearization,
-      IsAcroFormPresent: !!this.acroForm,
+      IsAcroFormPresent: this._hasAcroForm,
       IsXFAPresent: !!this.xfa,
       IsCollectionPresent: !!this.catalog.collection,
     };

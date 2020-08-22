@@ -41,7 +41,9 @@ describe("annotation", function () {
     constructor(params) {
       this.docBaseUrl = params.docBaseUrl || null;
       this.pdfDocument = {
-        acroForm: new Dict(),
+        catalog: {
+          acroForm: new Dict(),
+        },
       };
     }
 
@@ -56,8 +58,8 @@ describe("annotation", function () {
       });
     }
 
-    ensureDoc(prop, args) {
-      return this.ensure(this.pdfDocument, prop, args);
+    ensureCatalog(prop, args) {
+      return this.ensure(this.pdfDocument.catalog, prop, args);
     }
   }
 
