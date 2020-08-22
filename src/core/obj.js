@@ -84,6 +84,22 @@ class Catalog {
     return shadow(this, "version", version.name);
   }
 
+  get collection() {
+    let collection = null;
+    try {
+      const obj = this.catDict.get("Collection");
+      if (isDict(obj) && obj.size > 0) {
+        collection = obj;
+      }
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      info("Cannot fetch Collection entry; assuming no collection is present.");
+    }
+    return shadow(this, "collection", collection);
+  }
+
   get metadata() {
     const streamRef = this.catDict.getRaw("Metadata");
     if (!isRef(streamRef)) {
