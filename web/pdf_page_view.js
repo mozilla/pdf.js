@@ -50,7 +50,7 @@ import { viewerCompatibilityParams } from "./viewer_compatibility.js";
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms - Turns on rendering of
- *   interactive form elements. The default is `false`.
+ *   interactive form elements. The default value is `true`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
  * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering for
  *   some operations. The default value is `false`.
@@ -90,7 +90,10 @@ class PDFPageView {
       ? options.textLayerMode
       : TextLayerMode.ENABLE;
     this.imageResourcesPath = options.imageResourcesPath || "";
-    this.renderInteractiveForms = options.renderInteractiveForms || false;
+    this.renderInteractiveForms =
+      typeof options.renderInteractiveForms === "boolean"
+        ? options.renderInteractiveForms
+        : true;
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels || MAX_CANVAS_PIXELS;
 

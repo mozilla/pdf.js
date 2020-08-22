@@ -178,7 +178,7 @@ class IPDFAnnotationLayerFactory {
     pdfPage,
     annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = false,
+    renderInteractiveForms = true,
     l10n = undefined
   ) {}
 }
