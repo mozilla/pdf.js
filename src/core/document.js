@@ -600,19 +600,6 @@ class PDFDocument {
       info("Cannot fetch AcroForm entry; assuming no AcroForms are present");
       this.acroForm = null;
     }
-
-    // Check if a Collection dictionary is present in the document.
-    try {
-      const collection = this.catalog.catDict.get("Collection");
-      if (isDict(collection) && collection.size > 0) {
-        this.collection = collection;
-      }
-    } catch (ex) {
-      if (ex instanceof MissingDataException) {
-        throw ex;
-      }
-      info("Cannot fetch Collection dictionary.");
-    }
   }
 
   get linearization() {
@@ -745,7 +732,7 @@ class PDFDocument {
       IsLinearized: !!this.linearization,
       IsAcroFormPresent: !!this.acroForm,
       IsXFAPresent: !!this.xfa,
-      IsCollectionPresent: !!this.collection,
+      IsCollectionPresent: !!this.catalog.collection,
     };
 
     let infoDict;
