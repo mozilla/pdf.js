@@ -58,7 +58,7 @@ class AnnotationStorage {
    */
   setValue(key, value) {
     if (this._storage.get(key) !== value) {
-      this.setModified();
+      this._setModified();
     }
     this._storage.set(key, value);
   }
@@ -74,7 +74,10 @@ class AnnotationStorage {
     return this._storage.size;
   }
 
-  setModified() {
+  /**
+   * @private
+   */
+  _setModified() {
     if (!this._modified) {
       this._modified = true;
       if (typeof this.onSetModified === "function") {
