@@ -682,16 +682,16 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       const optionElement = document.createElement("option");
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
-      if (this.data.fieldValue.includes(option.displayValue)) {
+      if (this.data.fieldValue.includes(option.exportValue)) {
         optionElement.setAttribute("selected", true);
-        storage.setValue(id, option.displayValue);
+        storage.setValue(id, option.exportValue);
       }
       selectElement.appendChild(optionElement);
     }
 
     selectElement.addEventListener("input", function (event) {
       const options = event.target.options;
-      const value = options[options.selectedIndex].text;
+      const value = options[options.selectedIndex].value;
       storage.setValue(id, value);
     });
 
