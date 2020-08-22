@@ -2544,7 +2544,9 @@ class WorkerTransport {
         filename: this._fullReader ? this._fullReader.filename : null,
       })
       .finally(() => {
-        annotationStorage.resetModified();
+        if (annotationStorage) {
+          annotationStorage.resetModified();
+        }
       });
   }
 

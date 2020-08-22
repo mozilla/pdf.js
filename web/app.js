@@ -1687,6 +1687,10 @@ const PDFViewerApplication = {
     if (this.printService) {
       this.printService.destroy();
       this.printService = null;
+
+      if (this.pdfDocument) {
+        this.pdfDocument.annotationStorage.resetModified();
+      }
     }
     this.forceRendering();
   },
