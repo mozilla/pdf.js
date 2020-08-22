@@ -552,6 +552,7 @@ class PDFDocument {
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
     this._pagePromises = [];
+    this._version = null;
 
     const idCounters = {
       font: 0,
@@ -574,9 +575,12 @@ class PDFDocument {
   parse(recoveryMode) {
     this.setup(recoveryMode);
 
-    const version = this.catalog.catDict.get("Version");
-    if (isName(version)) {
-      this.pdfFormatVersion = version.name;
+    // The `checkHeader` method is called before this method and parses the
+    // version from the header. The specification states in section 7.5.2
+    // that the version from the catalog, if present, should overwrite the
+    // version from the header.
+    if (this.catalog.version) {
+      this._version = this.catalog.version;
     }
 
     // Check if AcroForms are present in the document.
@@ -693,9 +697,9 @@ class PDFDocument {
       }
       version += String.fromCharCode(ch);
     }
-    if (!this.pdfFormatVersion) {
+    if (!this._version) {
       // Remove the "%PDF-" prefix.
-      this.pdfFormatVersion = version.substring(5);
+      this._version = version.substring(5);
     }
   }
 
@@ -727,7 +731,7 @@ class PDFDocument {
       Trapped: isName,
     };
 
-    let version = this.pdfFormatVersion;
+    let version = this._version;
     if (
       typeof version !== "string" ||
       !PDF_HEADER_VERSION_REGEXP.test(version)
