@@ -76,6 +76,14 @@ class Catalog {
     this.pageKidsCountCache = new RefSetCache();
   }
 
+  get version() {
+    const version = this.catDict.get("Version");
+    if (!isName(version)) {
+      return shadow(this, "version", null);
+    }
+    return shadow(this, "version", version.name);
+  }
+
   get metadata() {
     const streamRef = this.catDict.getRaw("Metadata");
     if (!isRef(streamRef)) {
