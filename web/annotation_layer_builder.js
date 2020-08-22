@@ -41,7 +41,7 @@ class AnnotationLayerBuilder {
     downloadManager,
     annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = false,
+    renderInteractiveForms = true,
     l10n = NullL10n,
   }) {
     this.pageDiv = pageDiv;
@@ -133,7 +133,7 @@ class DefaultAnnotationLayerFactory {
     pdfPage,
     annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = false,
+    renderInteractiveForms = true,
     l10n = NullL10n
   ) {
     return new AnnotationLayerBuilder({
