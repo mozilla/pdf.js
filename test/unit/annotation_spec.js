@@ -2450,16 +2450,12 @@ describe("annotation", function () {
       }, done.fail);
     });
 
-    it("should sanitize display values in option arrays (issue 8947)", function (done) {
-      // The option value is a UTF-16BE string. The display value should be
-      // sanitized, but the export value should remain the same since that
-      // may be used as a unique identifier when exporting form values.
-      const options = ["\xFE\xFF\x00F\x00o\x00o"];
-      const expected = [
-        { exportValue: "\xFE\xFF\x00F\x00o\x00o", displayValue: "Foo" },
-      ];
+    it("should decode form values", function (done) {
+      const encodedString = "\xFE\xFF\x00F\x00o\x00o";
+      const decodedString = "Foo";
 
-      choiceWidgetDict.set("Opt", options);
+      choiceWidgetDict.set("Opt", [encodedString]);
+      choiceWidgetDict.set("V", encodedString);
 
       const choiceWidgetRef = Ref.get(984, 0);
       const xref = new XRefMock([
@@ -2473,7 +2469,10 @@ describe("annotation", function () {
         idFactoryMock
       ).then(({ data }) => {
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-        expect(data.options).toEqual(expected);
+        expect(data.fieldValue).toEqual([decodedString]);
+        expect(data.options).toEqual([
+          { exportValue: decodedString, displayValue: decodedString },
+        ]);
         done();
       }, done.fail);
     });
