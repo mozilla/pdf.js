@@ -582,16 +582,6 @@ class PDFDocument {
     if (this.catalog.version) {
       this._version = this.catalog.version;
     }
-
-    // Check if AcroForms are present in the document.
-    this._hasAcroForm = !!this.catalog.acroForm;
-    if (this._hasAcroForm) {
-      this.xfa = this.catalog.acroForm.get("XFA");
-      const fields = this.catalog.acroForm.get("Fields");
-      if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
-        this._hasAcroForm = false; // No fields and no XFA, so it's not a form.
-      }
-    }
   }
 
   get linearization() {
@@ -697,6 +687,69 @@ class PDFDocument {
     return shadow(this, "numPages", num);
   }
 
+  /**
+   * @private
+   */
+  _hasOnlyDocumentSignatures(fields, recursionDepth = 0) {
+    const RECURSION_LIMIT = 10;
+    return fields.every(field => {
+      field = this.xref.fetchIfRef(field);
+      if (field.has("Kids")) {
+        if (++recursionDepth > RECURSION_LIMIT) {
+          warn("_hasOnlyDocumentSignatures: maximum recursion depth reached");
+          return false;
+        }
+        return this._hasOnlyDocumentSignatures(
+          field.get("Kids"),
+          recursionDepth
+        );
+      }
+      const isSignature = isName(field.get("FT"), "Sig");
+      const rectangle = field.get("Rect");
+      const isInvisible =
+        Array.isArray(rectangle) && rectangle.every(value => value === 0);
+      return isSignature && isInvisible;
+    });
+  }
+
+  get formInfo() {
+    const formInfo = { hasAcroForm: false, hasXfa: false };
+    const acroForm = this.catalog.acroForm;
+    if (!acroForm) {
+      return shadow(this, "formInfo", formInfo);
+    }
+
+    try {
+      // The document contains XFA data if the `XFA` entry is a non-empty
+      // array or stream.
+      const xfa = acroForm.get("XFA");
+      const hasXfa =
+        (Array.isArray(xfa) && xfa.length > 0) ||
+        (isStream(xfa) && !xfa.isEmpty);
+      formInfo.hasXfa = hasXfa;
+
+      // The document contains AcroForm data if the `Fields` entry is a
+      // non-empty array and it doesn't consist of only document signatures.
+      // This second check is required for files that don't actually contain
+      // AcroForm data (only XFA data), but that use the `Fields` entry to
+      // store (invisible) document signatures. This can be detected using
+      // the first bit of the `SigFlags` integer (see Table 219 in the
+      // specification).
+      const fields = acroForm.get("Fields");
+      const hasFields = Array.isArray(fields) && fields.length > 0;
+      const sigFlags = acroForm.get("SigFlags");
+      const hasOnlyDocumentSignatures =
+        !!(sigFlags & 0x1) && this._hasOnlyDocumentSignatures(fields);
+      formInfo.hasAcroForm = hasFields && !hasOnlyDocumentSignatures;
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      info("Cannot fetch form information.");
+    }
+    return shadow(this, "formInfo", formInfo);
+  }
+
   get documentInfo() {
     const DocumentInfoValidators = {
       Title: isString,
@@ -722,8 +775,8 @@ class PDFDocument {
     const docInfo = {
       PDFFormatVersion: version,
       IsLinearized: !!this.linearization,
-      IsAcroFormPresent: this._hasAcroForm,
-      IsXFAPresent: !!this.xfa,
+      IsAcroFormPresent: this.formInfo.hasAcroForm,
+      IsXFAPresent: this.formInfo.hasXfa,
       IsCollectionPresent: !!this.catalog.collection,
     };
 
