@@ -232,7 +232,9 @@ var Type1CharString = (function Type1CharStringClosure() {
               // seac is like type 2's special endchar but it doesn't use the
               // first argument asb, so remove it.
               if (seacAnalysisEnabled) {
+                const asb = this.stack[this.stack.length - 5];
                 this.seac = this.stack.splice(-4, 4);
+                this.seac[0] += this.lsb - asb;
                 error = this.executeCommand(0, COMMAND_MAP.endchar);
               } else {
                 error = this.executeCommand(4, COMMAND_MAP.endchar);
