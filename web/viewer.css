@@ -1249,6 +1249,13 @@ html[dir='rtl'] .toolbarField[type=checkbox] {
   cursor: default;
 }
 
+html[dir='ltr'] #numPages.toolbarLabel {
+  padding-left: 2px;
+}
+html[dir='rtl'] #numPages.toolbarLabel {
+  padding-right: 2px;
+}
+
 #thumbnailView {
   position: absolute;
   width: calc(100% - 60px);
