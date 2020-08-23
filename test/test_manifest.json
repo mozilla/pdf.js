@@ -4492,6 +4492,25 @@
          "63R": ""
        }
     },
+    {  "id": "issue12233-forms",
+       "file": "pdfs/issue12233.pdf",
+       "md5": "6099fc695fe018ce444752929d86f9c8",
+       "link": true,
+       "rounds": 1,
+       "type": "eq",
+       "forms": true
+    },
+    {  "id": "issue12233-print",
+       "file": "pdfs/issue12233.pdf",
+       "md5": "6099fc695fe018ce444752929d86f9c8",
+       "link": true,
+       "rounds": 1,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "20R": true
+       }
+    },
     {  "id": "issue11931",
        "file": "pdfs/issue11931.pdf",
        "md5": "9ea233037992e1f10280420a49e72845",

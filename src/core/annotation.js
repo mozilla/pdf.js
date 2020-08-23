@@ -803,11 +803,14 @@ class WidgetAnnotation extends Annotation {
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
-    data.fieldValue = getInheritableProperty({
+
+    const fieldValue = getInheritableProperty({
       dict,
       key: "V",
       getArray: true,
     });
+    data.fieldValue = this._decodeFormValue(fieldValue);
+
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
     data.defaultAppearance =
       getInheritableProperty({ dict, key: "DA" }) ||
@@ -880,6 +883,28 @@ class WidgetAnnotation extends Annotation {
       }
     }
     return fieldName.join(".");
+  }
+
+  /**
+   * Decode the given form value.
+   *
+   * @private
+   * @memberof WidgetAnnotation
+   * @param {Array<string>|Name|string} formValue - The (possibly encoded)
+   *   form value.
+   * @returns {Array<string>|string|null}
+   */
+  _decodeFormValue(formValue) {
+    if (Array.isArray(formValue)) {
+      return formValue
+        .filter(item => isString(item))
+        .map(item => stringToPDFString(item));
+    } else if (isName(formValue)) {
+      return stringToPDFString(formValue.name);
+    } else if (isString(formValue)) {
+      return stringToPDFString(formValue);
+    }
+    return null;
   }
 
   /**
@@ -1194,7 +1219,9 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     const dict = params.dict;
 
     // The field value is always a string.
-    this.data.fieldValue = stringToPDFString(this.data.fieldValue || "");
+    if (!isString(this.data.fieldValue)) {
+      this.data.fieldValue = "";
+    }
 
     // Determine the alignment of text in the field.
     let alignment = getInheritableProperty({ dict, key: "Q" });
@@ -1499,33 +1526,27 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   _processCheckBox(params) {
-    if (isName(this.data.fieldValue)) {
-      this.data.fieldValue = this.data.fieldValue.name;
-    }
-
     const customAppearance = params.dict.get("AP");
     if (!isDict(customAppearance)) {
       return;
     }
 
-    const exportValueOptionsDict = customAppearance.get("D");
-    if (!isDict(exportValueOptionsDict)) {
+    const normalAppearance = customAppearance.get("N");
+    if (!isDict(normalAppearance)) {
       return;
     }
 
-    const exportValues = exportValueOptionsDict.getKeys();
-    const hasCorrectOptionCount = exportValues.length === 2;
-    if (!hasCorrectOptionCount) {
+    const exportValues = normalAppearance.getKeys();
+    if (!exportValues.includes("Off")) {
+      // The /Off appearance is optional.
+      exportValues.push("Off");
+    }
+    if (exportValues.length !== 2) {
       return;
     }
 
     this.data.exportValue =
       exportValues[0] === "Off" ? exportValues[1] : exportValues[0];
-
-    const normalAppearance = customAppearance.get("N");
-    if (!isDict(normalAppearance)) {
-      return;
-    }
 
     this.checkedAppearance = normalAppearance.get(this.data.exportValue);
     this.uncheckedAppearance = normalAppearance.get("Off") || null;
@@ -1541,7 +1562,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       const fieldParentValue = fieldParent.get("V");
       if (isName(fieldParentValue)) {
         this.parent = params.dict.getRaw("Parent");
-        this.data.fieldValue = fieldParentValue.name;
+        this.data.fieldValue = this._decodeFormValue(fieldParentValue);
       }
     }
 
@@ -1602,8 +1623,10 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
         const isOptionArray = Array.isArray(option);
 
         this.data.options[i] = {
-          exportValue: isOptionArray ? xref.fetchIfRef(option[0]) : option,
-          displayValue: stringToPDFString(
+          exportValue: this._decodeFormValue(
+            isOptionArray ? xref.fetchIfRef(option[0]) : option
+          ),
+          displayValue: this._decodeFormValue(
             isOptionArray ? xref.fetchIfRef(option[1]) : option
           ),
         };

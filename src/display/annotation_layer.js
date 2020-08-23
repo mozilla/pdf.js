@@ -665,6 +665,18 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const id = this.data.id;
 
+    // For printing/saving we currently only support choice widgets with one
+    // option selection. Therefore, listboxes (#12189) and comboboxes (#12224)
+    // are not properly printed/saved yet, so we only store the first item in
+    // the field value array instead of the entire array. Once support for those
+    // two field types is implemented, we should use the same pattern as the
+    // other interactive widgets where the return value of `getOrCreateValue` is
+    // used and the full array of field values is stored.
+    storage.getOrCreateValue(
+      id,
+      this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : null
+    );
+
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
     selectElement.name = this.data.fieldName;
@@ -682,16 +694,15 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       const optionElement = document.createElement("option");
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
-      if (this.data.fieldValue.includes(option.displayValue)) {
+      if (this.data.fieldValue.includes(option.exportValue)) {
         optionElement.setAttribute("selected", true);
-        storage.setValue(id, option.displayValue);
       }
       selectElement.appendChild(optionElement);
     }
 
     selectElement.addEventListener("input", function (event) {
       const options = event.target.options;
-      const value = options[options.selectedIndex].text;
+      const value = options[options.selectedIndex].value;
       storage.setValue(id, value);
     });
 

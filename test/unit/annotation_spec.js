@@ -1882,11 +1882,11 @@ describe("annotation", function () {
       buttonWidgetDict.set("V", Name.get("1"));
 
       const appearanceStatesDict = new Dict();
-      const exportValueOptionsDict = new Dict();
+      const normalAppearanceDict = new Dict();
 
-      exportValueOptionsDict.set("Off", 0);
-      exportValueOptionsDict.set("Checked", 1);
-      appearanceStatesDict.set("D", exportValueOptionsDict);
+      normalAppearanceDict.set("Off", 0);
+      normalAppearanceDict.set("Checked", 1);
+      appearanceStatesDict.set("N", normalAppearanceDict);
       buttonWidgetDict.set("AP", appearanceStatesDict);
 
       const buttonWidgetRef = Ref.get(124, 0);
@@ -1931,9 +1931,38 @@ describe("annotation", function () {
       }, done.fail);
     });
 
+    it("should handle checkboxes without /Off appearance", function (done) {
+      buttonWidgetDict.set("V", Name.get("1"));
+
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      normalAppearanceDict.set("Checked", 1);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      ).then(({ data }) => {
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.checkBox).toEqual(true);
+        expect(data.fieldValue).toEqual("1");
+        expect(data.radioButton).toEqual(false);
+        expect(data.exportValue).toEqual("Checked");
+        done();
+      }, done.fail);
+    });
+
     it("should render checkboxes for printing", function (done) {
       const appearanceStatesDict = new Dict();
-      const exportValueOptionsDict = new Dict();
       const normalAppearanceDict = new Dict();
       const checkedAppearanceDict = new Dict();
       const uncheckedAppearanceDict = new Dict();
@@ -1949,9 +1978,6 @@ describe("annotation", function () {
       checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
       normalAppearanceDict.set("Checked", checkedStream);
       normalAppearanceDict.set("Off", uncheckedStream);
-      exportValueOptionsDict.set("Off", 0);
-      exportValueOptionsDict.set("Checked", 1);
-      appearanceStatesDict.set("D", exportValueOptionsDict);
       appearanceStatesDict.set("N", normalAppearanceDict);
 
       buttonWidgetDict.set("AP", appearanceStatesDict);
@@ -2019,14 +2045,10 @@ describe("annotation", function () {
 
     it("should save checkboxes", function (done) {
       const appearanceStatesDict = new Dict();
-      const exportValueOptionsDict = new Dict();
       const normalAppearanceDict = new Dict();
 
       normalAppearanceDict.set("Checked", Ref.get(314, 0));
       normalAppearanceDict.set("Off", Ref.get(271, 0));
-      exportValueOptionsDict.set("Off", 0);
-      exportValueOptionsDict.set("Checked", 1);
-      appearanceStatesDict.set("D", exportValueOptionsDict);
       appearanceStatesDict.set("N", normalAppearanceDict);
 
       buttonWidgetDict.set("AP", appearanceStatesDict);
@@ -2059,8 +2081,7 @@ describe("annotation", function () {
           expect(oldData.data).toEqual(
             "123 0 obj\n" +
               "<< /Type /Annot /Subtype /Widget /FT /Btn " +
-              "/AP << /D << /Off 0 /Checked 1>> " +
-              "/N << /Checked 314 0 R /Off 271 0 R>>>> " +
+              "/AP << /N << /Checked 314 0 R /Off 271 0 R>>>> " +
               "/V /Checked /AS /Checked /M (date)>>\nendobj\n"
           );
           return annotation;
@@ -2142,7 +2163,6 @@ describe("annotation", function () {
 
     it("should render radio buttons for printing", function (done) {
       const appearanceStatesDict = new Dict();
-      const exportValueOptionsDict = new Dict();
       const normalAppearanceDict = new Dict();
       const checkedAppearanceDict = new Dict();
       const uncheckedAppearanceDict = new Dict();
@@ -2158,9 +2178,6 @@ describe("annotation", function () {
       checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
       normalAppearanceDict.set("Checked", checkedStream);
       normalAppearanceDict.set("Off", uncheckedStream);
-      exportValueOptionsDict.set("Off", 0);
-      exportValueOptionsDict.set("Checked", 1);
-      appearanceStatesDict.set("D", exportValueOptionsDict);
       appearanceStatesDict.set("N", normalAppearanceDict);
 
       buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
@@ -2229,14 +2246,10 @@ describe("annotation", function () {
 
     it("should save radio buttons", function (done) {
       const appearanceStatesDict = new Dict();
-      const exportValueOptionsDict = new Dict();
       const normalAppearanceDict = new Dict();
 
       normalAppearanceDict.set("Checked", Ref.get(314, 0));
       normalAppearanceDict.set("Off", Ref.get(271, 0));
-      exportValueOptionsDict.set("Off", 0);
-      exportValueOptionsDict.set("Checked", 1);
-      appearanceStatesDict.set("D", exportValueOptionsDict);
       appearanceStatesDict.set("N", normalAppearanceDict);
 
       buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
@@ -2282,8 +2295,7 @@ describe("annotation", function () {
           expect(radioData.data).toEqual(
             "123 0 obj\n" +
               "<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 32768 " +
-              "/AP << /D << /Off 0 /Checked 1>> " +
-              "/N << /Checked 314 0 R /Off 271 0 R>>>> " +
+              "/AP << /N << /Checked 314 0 R /Off 271 0 R>>>> " +
               "/Parent 456 0 R /AS /Checked /M (date)>>\nendobj\n"
           );
           expect(parentData.ref).toEqual(Ref.get(456, 0));
@@ -2450,16 +2462,12 @@ describe("annotation", function () {
       }, done.fail);
     });
 
-    it("should sanitize display values in option arrays (issue 8947)", function (done) {
-      // The option value is a UTF-16BE string. The display value should be
-      // sanitized, but the export value should remain the same since that
-      // may be used as a unique identifier when exporting form values.
-      const options = ["\xFE\xFF\x00F\x00o\x00o"];
-      const expected = [
-        { exportValue: "\xFE\xFF\x00F\x00o\x00o", displayValue: "Foo" },
-      ];
+    it("should decode form values", function (done) {
+      const encodedString = "\xFE\xFF\x00F\x00o\x00o";
+      const decodedString = "Foo";
 
-      choiceWidgetDict.set("Opt", options);
+      choiceWidgetDict.set("Opt", [encodedString]);
+      choiceWidgetDict.set("V", encodedString);
 
       const choiceWidgetRef = Ref.get(984, 0);
       const xref = new XRefMock([
@@ -2473,7 +2481,10 @@ describe("annotation", function () {
         idFactoryMock
       ).then(({ data }) => {
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-        expect(data.options).toEqual(expected);
+        expect(data.fieldValue).toEqual([decodedString]);
+        expect(data.options).toEqual([
+          { exportValue: decodedString, displayValue: decodedString },
+        ]);
         done();
       }, done.fail);
     });
