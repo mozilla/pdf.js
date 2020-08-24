@@ -1798,8 +1798,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           } else {
             this.paintChar(character, scaledX, scaledY, patternTransform);
             if (accent) {
-              scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
-              scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
+              scaledAccentX =
+                scaledX + (fontSize * accent.offset.x) / fontSizeScale;
+              scaledAccentY =
+                scaledY - (fontSize * accent.offset.y) / fontSizeScale;
               this.paintChar(
                 accent.fontChar,
                 scaledAccentX,
