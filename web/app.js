@@ -1426,14 +1426,14 @@ const PDFViewerApplication = {
       this.setTitle(contentDispositionFilename);
     }
 
-    if (info.IsXFAPresent) {
+    if (info.IsXFAPresent && !info.IsAcroFormPresent) {
       console.warn("Warning: XFA is not supported");
       this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     } else if (
-      info.IsAcroFormPresent &&
+      (info.IsAcroFormPresent || info.IsXFAPresent) &&
       !this.pdfViewer.renderInteractiveForms
     ) {
-      console.warn("Warning: AcroForm support is not enabled");
+      console.warn("Warning: Interactive form support is not enabled");
       this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     }
 
@@ -1454,8 +1454,10 @@ const PDFViewerApplication = {
       });
     }
     let formType = null;
-    if (info.IsAcroFormPresent) {
-      formType = info.IsXFAPresent ? "xfa" : "acroform";
+    if (info.IsXFAPresent) {
+      formType = "xfa";
+    } else if (info.IsAcroFormPresent) {
+      formType = "acroform";
     }
     this.externalServices.reportTelemetry({
       type: "documentInfo",
