@@ -438,10 +438,9 @@ class WorkerMessageHandler {
       });
     });
 
-    handler.on("GetPageIndex", function wphSetupGetPageIndex(data) {
-      var ref = Ref.get(data.ref.num, data.ref.gen);
-      var catalog = pdfManager.pdfDocument.catalog;
-      return catalog.getPageIndex(ref);
+    handler.on("GetPageIndex", function wphSetupGetPageIndex({ ref }) {
+      const pageRef = Ref.get(ref.num, ref.gen);
+      return pdfManager.ensureCatalog("getPageIndex", [pageRef]);
     });
 
     handler.on("GetDestinations", function wphSetupGetDestinations(data) {
