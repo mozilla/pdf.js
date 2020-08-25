@@ -507,7 +507,7 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetStats", function wphSetupGetStats(data) {
-      return pdfManager.pdfDocument.xref.stats;
+      return pdfManager.ensureXRef("stats");
     });
 
     handler.on("GetAnnotations", function ({ pageIndex, intent }) {
