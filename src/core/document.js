@@ -552,6 +552,7 @@ class PDFDocument {
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
     this._pagePromises = [];
+    this._version = null;
 
     const idCounters = {
       font: 0,
@@ -572,42 +573,15 @@ class PDFDocument {
   }
 
   parse(recoveryMode) {
-    this.setup(recoveryMode);
+    this.xref.parse(recoveryMode);
+    this.catalog = new Catalog(this.pdfManager, this.xref);
 
-    const version = this.catalog.catDict.get("Version");
-    if (isName(version)) {
-      this.pdfFormatVersion = version.name;
-    }
-
-    // Check if AcroForms are present in the document.
-    try {
-      this.acroForm = this.catalog.catDict.get("AcroForm");
-      if (this.acroForm) {
-        this.xfa = this.acroForm.get("XFA");
-        const fields = this.acroForm.get("Fields");
-        if ((!Array.isArray(fields) || fields.length === 0) && !this.xfa) {
-          this.acroForm = null; // No fields and no XFA, so it's not a form.
-        }
-      }
-    } catch (ex) {
-      if (ex instanceof MissingDataException) {
-        throw ex;
-      }
-      info("Cannot fetch AcroForm entry; assuming no AcroForms are present");
-      this.acroForm = null;
-    }
-
-    // Check if a Collection dictionary is present in the document.
-    try {
-      const collection = this.catalog.catDict.get("Collection");
-      if (isDict(collection) && collection.size > 0) {
-        this.collection = collection;
-      }
-    } catch (ex) {
-      if (ex instanceof MissingDataException) {
-        throw ex;
-      }
-      info("Cannot fetch Collection dictionary.");
+    // The `checkHeader` method is called before this method and parses the
+    // version from the header. The specification states in section 7.5.2
+    // that the version from the catalog, if present, should overwrite the
+    // version from the header.
+    if (this.catalog.version) {
+      this._version = this.catalog.version;
     }
   }
 
@@ -693,9 +667,9 @@ class PDFDocument {
       }
       version += String.fromCharCode(ch);
     }
-    if (!this.pdfFormatVersion) {
+    if (!this._version) {
       // Remove the "%PDF-" prefix.
-      this.pdfFormatVersion = version.substring(5);
+      this._version = version.substring(5);
     }
   }
 
@@ -703,15 +677,73 @@ class PDFDocument {
     this.xref.setStartXRef(this.startXRef);
   }
 
-  setup(recoveryMode) {
-    this.xref.parse(recoveryMode);
-    this.catalog = new Catalog(this.pdfManager, this.xref);
-  }
-
   get numPages() {
     const linearization = this.linearization;
     const num = linearization ? linearization.numPages : this.catalog.numPages;
     return shadow(this, "numPages", num);
+  }
+
+  /**
+   * @private
+   */
+  _hasOnlyDocumentSignatures(fields, recursionDepth = 0) {
+    const RECURSION_LIMIT = 10;
+    return fields.every(field => {
+      field = this.xref.fetchIfRef(field);
+      if (field.has("Kids")) {
+        if (++recursionDepth > RECURSION_LIMIT) {
+          warn("_hasOnlyDocumentSignatures: maximum recursion depth reached");
+          return false;
+        }
+        return this._hasOnlyDocumentSignatures(
+          field.get("Kids"),
+          recursionDepth
+        );
+      }
+      const isSignature = isName(field.get("FT"), "Sig");
+      const rectangle = field.get("Rect");
+      const isInvisible =
+        Array.isArray(rectangle) && rectangle.every(value => value === 0);
+      return isSignature && isInvisible;
+    });
+  }
+
+  get formInfo() {
+    const formInfo = { hasAcroForm: false, hasXfa: false };
+    const acroForm = this.catalog.acroForm;
+    if (!acroForm) {
+      return shadow(this, "formInfo", formInfo);
+    }
+
+    try {
+      // The document contains XFA data if the `XFA` entry is a non-empty
+      // array or stream.
+      const xfa = acroForm.get("XFA");
+      const hasXfa =
+        (Array.isArray(xfa) && xfa.length > 0) ||
+        (isStream(xfa) && !xfa.isEmpty);
+      formInfo.hasXfa = hasXfa;
+
+      // The document contains AcroForm data if the `Fields` entry is a
+      // non-empty array and it doesn't consist of only document signatures.
+      // This second check is required for files that don't actually contain
+      // AcroForm data (only XFA data), but that use the `Fields` entry to
+      // store (invisible) document signatures. This can be detected using
+      // the first bit of the `SigFlags` integer (see Table 219 in the
+      // specification).
+      const fields = acroForm.get("Fields");
+      const hasFields = Array.isArray(fields) && fields.length > 0;
+      const sigFlags = acroForm.get("SigFlags");
+      const hasOnlyDocumentSignatures =
+        !!(sigFlags & 0x1) && this._hasOnlyDocumentSignatures(fields);
+      formInfo.hasAcroForm = hasFields && !hasOnlyDocumentSignatures;
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      info("Cannot fetch form information.");
+    }
+    return shadow(this, "formInfo", formInfo);
   }
 
   get documentInfo() {
@@ -727,7 +759,7 @@ class PDFDocument {
       Trapped: isName,
     };
 
-    let version = this.pdfFormatVersion;
+    let version = this._version;
     if (
       typeof version !== "string" ||
       !PDF_HEADER_VERSION_REGEXP.test(version)
@@ -739,9 +771,9 @@ class PDFDocument {
     const docInfo = {
       PDFFormatVersion: version,
       IsLinearized: !!this.linearization,
-      IsAcroFormPresent: !!this.acroForm,
-      IsXFAPresent: !!this.xfa,
-      IsCollectionPresent: !!this.collection,
+      IsAcroFormPresent: this.formInfo.hasAcroForm,
+      IsXFAPresent: this.formInfo.hasXfa,
+      IsCollectionPresent: !!this.catalog.collection,
     };
 
     let infoDict;

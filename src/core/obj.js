@@ -65,8 +65,8 @@ class Catalog {
     this.pdfManager = pdfManager;
     this.xref = xref;
 
-    this.catDict = xref.getCatalogObj();
-    if (!isDict(this.catDict)) {
+    this._catDict = xref.getCatalogObj();
+    if (!isDict(this._catDict)) {
       throw new FormatError("Catalog object is not a dictionary.");
     }
 
@@ -76,8 +76,48 @@ class Catalog {
     this.pageKidsCountCache = new RefSetCache();
   }
 
+  get version() {
+    const version = this._catDict.get("Version");
+    if (!isName(version)) {
+      return shadow(this, "version", null);
+    }
+    return shadow(this, "version", version.name);
+  }
+
+  get collection() {
+    let collection = null;
+    try {
+      const obj = this._catDict.get("Collection");
+      if (isDict(obj) && obj.size > 0) {
+        collection = obj;
+      }
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      info("Cannot fetch Collection entry; assuming no collection is present.");
+    }
+    return shadow(this, "collection", collection);
+  }
+
+  get acroForm() {
+    let acroForm = null;
+    try {
+      const obj = this._catDict.get("AcroForm");
+      if (isDict(obj) && obj.size > 0) {
+        acroForm = obj;
+      }
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      info("Cannot fetch AcroForm entry; assuming no forms are present.");
+    }
+    return shadow(this, "acroForm", acroForm);
+  }
+
   get metadata() {
-    const streamRef = this.catDict.getRaw("Metadata");
+    const streamRef = this._catDict.getRaw("Metadata");
     if (!isRef(streamRef)) {
       return shadow(this, "metadata", null);
     }
@@ -112,7 +152,7 @@ class Catalog {
   }
 
   get toplevelPagesDict() {
-    const pagesObj = this.catDict.get("Pages");
+    const pagesObj = this._catDict.get("Pages");
     if (!isDict(pagesObj)) {
       throw new FormatError("Invalid top-level pages dictionary.");
     }
@@ -136,7 +176,7 @@ class Catalog {
    * @private
    */
   _readDocumentOutline() {
-    let obj = this.catDict.get("Outlines");
+    let obj = this._catDict.get("Outlines");
     if (!isDict(obj)) {
       return null;
     }
@@ -257,7 +297,7 @@ class Catalog {
   get optionalContentConfig() {
     let config = null;
     try {
-      const properties = this.catDict.get("OCProperties");
+      const properties = this._catDict.get("OCProperties");
       if (!properties) {
         return shadow(this, "optionalContentConfig", null);
       }
@@ -370,12 +410,12 @@ class Catalog {
    * @private
    */
   _readDests() {
-    const obj = this.catDict.get("Names");
+    const obj = this._catDict.get("Names");
     if (obj && obj.has("Dests")) {
       return new NameTree(obj.getRaw("Dests"), this.xref);
-    } else if (this.catDict.has("Dests")) {
+    } else if (this._catDict.has("Dests")) {
       // Simple destination dictionary.
-      return this.catDict.get("Dests");
+      return this._catDict.get("Dests");
     }
     return undefined;
   }
@@ -397,7 +437,7 @@ class Catalog {
    * @private
    */
   _readPageLabels() {
-    const obj = this.catDict.getRaw("PageLabels");
+    const obj = this._catDict.getRaw("PageLabels");
     if (!obj) {
       return null;
     }
@@ -497,7 +537,7 @@ class Catalog {
   }
 
   get pageLayout() {
-    const obj = this.catDict.get("PageLayout");
+    const obj = this._catDict.get("PageLayout");
     // Purposely use a non-standard default value, rather than 'SinglePage', to
     // allow differentiating between `undefined` and /SinglePage since that does
     // affect the Scroll mode (continuous/non-continuous) used in Adobe Reader.
@@ -518,7 +558,7 @@ class Catalog {
   }
 
   get pageMode() {
-    const obj = this.catDict.get("PageMode");
+    const obj = this._catDict.get("PageMode");
     let pageMode = "UseNone"; // Default value.
 
     if (isName(obj)) {
@@ -556,7 +596,7 @@ class Catalog {
       NumCopies: Number.isInteger,
     };
 
-    const obj = this.catDict.get("ViewerPreferences");
+    const obj = this._catDict.get("ViewerPreferences");
     let prefs = null;
 
     if (isDict(obj)) {
@@ -681,7 +721,7 @@ class Catalog {
    * NOTE: "JavaScript" actions are, for now, handled by `get javaScript` below.
    */
   get openAction() {
-    const obj = this.catDict.get("OpenAction");
+    const obj = this._catDict.get("OpenAction");
     let openAction = null;
 
     if (isDict(obj)) {
@@ -714,7 +754,7 @@ class Catalog {
   }
 
   get attachments() {
-    const obj = this.catDict.get("Names");
+    const obj = this._catDict.get("Names");
     let attachments = null;
 
     if (obj && obj.has("EmbeddedFiles")) {
@@ -732,7 +772,7 @@ class Catalog {
   }
 
   get javaScript() {
-    const obj = this.catDict.get("Names");
+    const obj = this._catDict.get("Names");
 
     let javaScript = null;
     function appendIfJavaScriptDict(jsDict) {
@@ -768,7 +808,7 @@ class Catalog {
     }
 
     // Append OpenAction "JavaScript" actions to the JavaScript array.
-    const openAction = this.catDict.get("OpenAction");
+    const openAction = this._catDict.get("OpenAction");
     if (isDict(openAction) && isName(openAction.get("S"), "JavaScript")) {
       appendIfJavaScriptDict(openAction);
     }
@@ -813,7 +853,7 @@ class Catalog {
 
   getPageDict(pageIndex) {
     const capability = createPromiseCapability();
-    const nodesToVisit = [this.catDict.getRaw("Pages")];
+    const nodesToVisit = [this._catDict.getRaw("Pages")];
     const visitedNodes = new RefSet();
     const xref = this.xref,
       pageKidsCountCache = this.pageKidsCountCache;
