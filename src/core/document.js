@@ -573,7 +573,8 @@ class PDFDocument {
   }
 
   parse(recoveryMode) {
-    this.setup(recoveryMode);
+    this.xref.parse(recoveryMode);
+    this.catalog = new Catalog(this.pdfManager, this.xref);
 
     // The `checkHeader` method is called before this method and parses the
     // version from the header. The specification states in section 7.5.2
@@ -674,11 +675,6 @@ class PDFDocument {
 
   parseStartXRef() {
     this.xref.setStartXRef(this.startXRef);
-  }
-
-  setup(recoveryMode) {
-    this.xref.parse(recoveryMode);
-    this.catalog = new Catalog(this.pdfManager, this.xref);
   }
 
   get numPages() {
