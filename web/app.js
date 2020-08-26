@@ -874,7 +874,7 @@ const PDFViewerApplication = {
     );
   },
 
-  download({ sourceEventType = "download" }) {
+  download({ sourceEventType = "download" } = {}) {
     function downloadByUrl() {
       downloadManager.downloadUrl(url, filename);
     }
@@ -907,7 +907,7 @@ const PDFViewerApplication = {
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
 
-  save({ sourceEventType = "download" }) {
+  save({ sourceEventType = "download" } = {}) {
     if (this._saveInProgress) {
       return;
     }
@@ -988,7 +988,7 @@ const PDFViewerApplication = {
         if (!download) {
           return;
         }
-        PDFViewerApplication.download();
+        PDFViewerApplication.download({ sourceEventType: "download" });
       }
     );
   },
