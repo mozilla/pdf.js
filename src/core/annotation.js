@@ -1387,6 +1387,15 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   getOperatorList(evaluator, task, renderForms, annotationStorage) {
+    if (this.data.pushButton) {
+      return super.getOperatorList(
+        evaluator,
+        task,
+        false, // we use normalAppearance to render the button
+        annotationStorage
+      );
+    }
+
     if (annotationStorage) {
       const value = annotationStorage[this.data.id] || false;
       let appearance;
