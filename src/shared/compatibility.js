@@ -390,4 +390,13 @@ if (
     }
     Object.values = require("core-js/es/object/values.js");
   })();
+
+  // Provides support for Object.entries in legacy browsers.
+  // Support: IE, Chrome<54
+  (function checkObjectEntries() {
+    if (Object.entries) {
+      return;
+    }
+    Object.entries = require("core-js/es/object/entries.js");
+  })();
 }

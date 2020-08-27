@@ -726,8 +726,10 @@ class PartialEvaluator {
     const tilingOpList = new OperatorList();
     // Merge the available resources, to prevent issues when the patternDict
     // is missing some /Resources entries (fixes issue6541.pdf).
-    const resourcesArray = [patternDict.get("Resources"), resources];
-    const patternResources = Dict.merge(this.xref, resourcesArray);
+    const patternResources = Dict.merge({
+      xref: this.xref,
+      dictArray: [patternDict.get("Resources"), resources],
+    });
 
     return this.getOperatorList({
       stream: pattern,
