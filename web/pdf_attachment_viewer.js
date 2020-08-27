@@ -17,6 +17,8 @@ import { createPromiseCapability, getFilenameFromUrl } from "pdfjs-lib";
 import { BaseTreeViewer } from "./base_tree_viewer.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
+const PdfFileRegExp = /\.pdf$/i;
+
 /**
  * @typedef {Object} PDFAttachmentViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
@@ -118,22 +120,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
           encodeURIComponent(blobUrl + "#" + filename);
       }
       try {
-        if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-          window.open(viewerUrl);
-        } else {
-          // Since we have a full URL in the MOZCENTRAL-build, use a link rather
-          // than `window.open` since e.g. ad blockers may otherwise force-close
-          // the newly opened window and thus break viewing of PDF attachments
-          // (fixes bug 1661259).
-          const a = document.createElement("a");
-          a.hidden = true;
-          a.href = viewerUrl;
-          a.target = "_blank";
-          // <a> must be in the document, otherwise `a.click()` is ignored.
-          (document.body || document.documentElement).appendChild(a);
-          a.click();
-          a.remove();
-        }
+        window.open(viewerUrl);
       } catch (ex) {
         console.error(`_bindPdfLink: ${ex}`);
         // Release the `blobUrl`, since opening it failed...
@@ -151,7 +138,8 @@ class PDFAttachmentViewer extends BaseTreeViewer {
    */
   _bindLink(element, { content, filename }) {
     element.onclick = () => {
-      this.downloadManager.downloadData(content, filename, "");
+      const contentType = PdfFileRegExp.test(filename) ? "application/pdf" : "";
+      this.downloadManager.downloadData(content, filename, contentType);
       return false;
     };
   }
@@ -184,7 +172,8 @@ class PDFAttachmentViewer extends BaseTreeViewer {
 
       const element = document.createElement("a");
       if (
-        /\.pdf$/i.test(filename) &&
+        (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+        PdfFileRegExp.test(filename) &&
         !viewerCompatibilityParams.disableCreateObjectURL
       ) {
         this._bindPdfLink(element, { content: item.content, filename });
