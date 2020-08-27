@@ -118,22 +118,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
           encodeURIComponent(blobUrl + "#" + filename);
       }
       try {
-        if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-          window.open(viewerUrl);
-        } else {
-          // Since we have a full URL in the MOZCENTRAL-build, use a link rather
-          // than `window.open` since e.g. ad blockers may otherwise force-close
-          // the newly opened window and thus break viewing of PDF attachments
-          // (fixes bug 1661259).
-          const a = document.createElement("a");
-          a.hidden = true;
-          a.href = viewerUrl;
-          a.target = "_blank";
-          // <a> must be in the document, otherwise `a.click()` is ignored.
-          (document.body || document.documentElement).appendChild(a);
-          a.click();
-          a.remove();
-        }
+        window.open(viewerUrl);
       } catch (ex) {
         console.error(`_bindPdfLink: ${ex}`);
         // Release the `blobUrl`, since opening it failed...
