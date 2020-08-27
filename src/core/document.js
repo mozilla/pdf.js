@@ -114,7 +114,7 @@ class Page {
     if (value.length === 1 || !isDict(value[0])) {
       return value[0];
     }
-    return Dict.merge(this.xref, value);
+    return Dict.merge({ xref: this.xref, dictArray: value });
   }
 
   get content() {
