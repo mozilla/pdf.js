@@ -23,10 +23,12 @@ import {
   assert,
   escapeString,
   getModificationDate,
+  isAscii,
   isString,
   OPS,
   shadow,
   stringToPDFString,
+  stringToUTF16BEString,
   unreachable,
   Util,
   warn,
@@ -1222,7 +1224,7 @@ class WidgetAnnotation extends Annotation {
       appearance = newTransform.encryptString(appearance);
     }
 
-    dict.set("V", value);
+    dict.set("V", isAscii(value) ? value : stringToUTF16BEString(value));
     dict.set("AP", AP);
     dict.set("M", `D:${getModificationDate()}`);
 
@@ -1298,16 +1300,6 @@ class WidgetAnnotation extends Annotation {
     const defaultAppearance = this.data.defaultAppearance;
     const alignment = this.data.textAlignment;
 
-    if (this.data.comb) {
-      return this._getCombAppearance(
-        defaultAppearance,
-        value,
-        totalWidth,
-        hPadding,
-        vPadding
-      );
-    }
-
     if (this.data.multiLine) {
       return this._getMultilineAppearance(
         defaultAppearance,
@@ -1322,18 +1314,34 @@ class WidgetAnnotation extends Annotation {
       );
     }
 
+    // TODO: need to handle chars which are not in the font.
+    const encodedString = font.encodeString(value).join("");
+
+    if (this.data.comb) {
+      return this._getCombAppearance(
+        defaultAppearance,
+        font,
+        encodedString,
+        totalWidth,
+        hPadding,
+        vPadding
+      );
+    }
+
     if (alignment === 0 || alignment > 2) {
       // Left alignment: nothing to do
       return (
         "/Tx BMC q BT " +
         defaultAppearance +
-        ` 1 0 0 1 ${hPadding} ${vPadding} Tm (${escapeString(value)}) Tj` +
+        ` 1 0 0 1 ${hPadding} ${vPadding} Tm (${escapeString(
+          encodedString
+        )}) Tj` +
         " ET Q EMC"
       );
     }
 
     const renderedText = this._renderText(
-      value,
+      encodedString,
       font,
       fontSize,
       totalWidth,
@@ -1373,10 +1381,21 @@ class WidgetAnnotation extends Annotation {
 
   _computeFontSize(font, fontName, fontSize, height) {
     if (fontSize === null || fontSize === 0) {
-      const em = font.charsToGlyphs("M")[0].width / 1000;
-      // According to https://en.wikipedia.org/wiki/Em_(typography)
-      // an average cap height should be 70% of 1em
-      const capHeight = 0.7 * em;
+      let capHeight;
+      if (font.capHeight) {
+        capHeight = font.capHeight;
+      } else {
+        const glyphs = font.charsToGlyphs(font.encodeString("M").join(""));
+        if (glyphs.length === 1 && glyphs[0].width) {
+          const em = glyphs[0].width / 1000;
+          // According to https://en.wikipedia.org/wiki/Em_(typography)
+          // an average cap height should be 70% of 1em
+          capHeight = 0.7 * em;
+        } else {
+          capHeight = 0.7;
+        }
+      }
+
       // 1.5 * capHeight * fontSize seems to be a good value for lineHeight
       fontSize = Math.max(1, Math.floor(height / (1.5 * capHeight)));
 
@@ -1510,11 +1529,12 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       this.data.maxLen !== null;
   }
 
-  _getCombAppearance(defaultAppearance, text, width, hPadding, vPadding) {
+  _getCombAppearance(defaultAppearance, font, text, width, hPadding, vPadding) {
     const combWidth = (width / this.data.maxLen).toFixed(2);
     const buf = [];
-    for (const character of text) {
-      buf.push(`(${escapeString(character)}) Tj`);
+    const positions = font.getCharPositions(text);
+    for (const [start, end] of positions) {
+      buf.push(`(${escapeString(text.substring(start, end))}) Tj`);
     }
 
     const renderedComb = buf.join(` ${combWidth} 0 Td `);
@@ -1568,49 +1588,61 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   }
 
   _splitLine(line, font, fontSize, width) {
-    if (line.length <= 1) {
+    // TODO: need to handle chars which are not in the font.
+    line = font.encodeString(line).join("");
+
+    const glyphs = font.charsToGlyphs(line);
+
+    if (glyphs.length <= 1) {
       // Nothing to split
       return [line];
     }
 
+    const positions = font.getCharPositions(line);
     const scale = fontSize / 1000;
-    const whitespace = font.charsToGlyphs(" ")[0].width * scale;
     const chunks = [];
 
-    let lastSpacePos = -1,
+    let lastSpacePosInStringStart = -1,
+      lastSpacePosInStringEnd = -1,
+      lastSpacePos = -1,
       startChunk = 0,
       currentWidth = 0;
 
-    for (let i = 0, ii = line.length; i < ii; i++) {
-      const character = line.charAt(i);
-      if (character === " ") {
-        if (currentWidth + whitespace > width) {
+    for (let i = 0, ii = glyphs.length; i < ii; i++) {
+      const [start, end] = positions[i];
+      const glyph = glyphs[i];
+      const glyphWidth = glyph.width * scale;
+      if (glyph.unicode === " ") {
+        if (currentWidth + glyphWidth > width) {
           // We can break here
-          chunks.push(line.substring(startChunk, i));
-          startChunk = i;
-          currentWidth = whitespace;
+          chunks.push(line.substring(startChunk, start));
+          startChunk = start;
+          currentWidth = glyphWidth;
+          lastSpacePosInStringStart = -1;
           lastSpacePos = -1;
         } else {
-          currentWidth += whitespace;
+          currentWidth += glyphWidth;
+          lastSpacePosInStringStart = start;
+          lastSpacePosInStringEnd = end;
           lastSpacePos = i;
         }
       } else {
-        const charWidth = font.charsToGlyphs(character)[0].width * scale;
-        if (currentWidth + charWidth > width) {
+        if (currentWidth + glyphWidth > width) {
           // We must break to the last white position (if available)
-          if (lastSpacePos !== -1) {
-            chunks.push(line.substring(startChunk, lastSpacePos + 1));
-            startChunk = i = lastSpacePos + 1;
-            lastSpacePos = -1;
+          if (lastSpacePosInStringStart !== -1) {
+            chunks.push(line.substring(startChunk, lastSpacePosInStringEnd));
+            startChunk = lastSpacePosInStringEnd;
+            i = lastSpacePos + 1;
+            lastSpacePosInStringStart = -1;
             currentWidth = 0;
           } else {
             // Just break in the middle of the word
-            chunks.push(line.substring(startChunk, i));
-            startChunk = i;
-            currentWidth = charWidth;
+            chunks.push(line.substring(startChunk, start));
+            startChunk = start;
+            currentWidth = glyphWidth;
           }
         } else {
-          currentWidth += charWidth;
+          currentWidth += glyphWidth;
         }
       }
     }
