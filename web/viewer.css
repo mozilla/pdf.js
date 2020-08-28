@@ -27,6 +27,8 @@
   --body-bg-color: rgba(237, 237, 240, 1);
   --errorWrapper-bg-color: rgba(255, 74, 74, 1);
   --progressBar-color: rgba(10, 132, 255, 1);
+  --progressBar-indeterminate-bg-color: rgba(221, 221, 222, 1);
+  --progressBar-indeterminate-blend-color: rgba(116, 177, 239, 1);
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
 
@@ -95,6 +97,8 @@
     --body-bg-color: rgba(42, 42, 46, 1);
     --errorWrapper-bg-color: rgba(199, 17, 17, 1);
     --progressBar-color: rgba(0, 96, 223, 1);
+    --progressBar-indeterminate-bg-color: rgba(40, 40, 43, 1);
+    --progressBar-indeterminate-blend-color: rgba(20, 68, 133, 1);
     --scrollbar-color: rgba(121, 121, 123, 1);
     --scrollbar-bg-color: rgba(35, 35, 39, 1);
 
@@ -405,7 +409,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   width: 100%;
   height: 4px;
   background-color: var(--body-bg-color);
-  border-top: 1px solid var(--toolbar-border-color);
+  border-bottom: 1px solid var(--toolbar-border-color);
 }
 
 #loadingBar .progress {
@@ -425,7 +429,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 }
 
 #loadingBar .progress.indeterminate {
-  background-color: var(--progressBar-color);
+  background-color: var(--progressBar-indeterminate-bg-color);
   transition: none;
 }
 
@@ -436,10 +440,10 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   height: 100%;
   width: calc(100% + 150px);
   background: repeating-linear-gradient(135deg,
-                                        rgba(187, 187, 187, 1) 0, rgba(153, 153, 153, 1) 5px,
-                                        rgba(153, 153, 153, 1) 45px, rgba(221, 221, 221, 1) 55px,
-                                        rgba(221, 221, 221, 1) 95px, rgba(187, 187, 187, 1) 100px);
-  animation: progressIndeterminate 950ms linear infinite;
+                                        var(--progressBar-indeterminate-blend-color) 0, var(--progressBar-indeterminate-bg-color) 5px,
+                                        var(--progressBar-indeterminate-bg-color) 45px, var(--progressBar-color) 55px,
+                                        var(--progressBar-color) 95px, var(--progressBar-indeterminate-blend-color) 100px);
+  animation: progressIndeterminate 1s linear infinite;
 }
 
 .findbar, .secondaryToolbar {
