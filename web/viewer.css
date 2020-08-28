@@ -471,10 +471,10 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   height: auto;
 }
 html[dir='ltr'] .findbar {
-  left: 63px;
+  left: 64px;
 }
 html[dir='rtl'] .findbar {
-  right: 63px;
+  right: 64px;
 }
 
 html[dir='ltr'] .findbar .splitToolbarButton {
@@ -579,10 +579,10 @@ html[dir='rtl'] #findInput[data-status="pending"] {
   background-color: var(--doorhanger-bg-color);
 }
 html[dir='ltr'] .secondaryToolbar {
-  right: 3px;
+  right: 4px;
 }
 html[dir='rtl'] .secondaryToolbar {
-  left: 3px;
+  left: 4px;
 }
 
 #secondaryToolbarButtonContainer {
@@ -1823,10 +1823,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     width: 0;
   }
   html[dir='ltr'] .findbar {
-    left: 38px;
+    left: 34px;
   }
   html[dir='rtl'] .findbar {
-    right: 38px;
+    right: 34px;
   }
 }
 
