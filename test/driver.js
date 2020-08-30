@@ -397,6 +397,8 @@ var Driver = (function DriverClosure() {
           loadingTask.promise.then(
             doc => {
               task.pdfDoc = doc;
+              task.optionalContentConfigPromise = doc.getOptionalContentConfig();
+
               this._nextPage(task, failure);
             },
             err => {
@@ -605,6 +607,7 @@ var Driver = (function DriverClosure() {
                 canvasContext: ctx,
                 viewport,
                 renderInteractiveForms: renderForms,
+                optionalContentConfigPromise: task.optionalContentConfigPromise,
               };
               if (renderPrint) {
                 const annotationStorage = task.annotationStorage;
