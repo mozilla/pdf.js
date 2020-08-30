@@ -1991,6 +1991,12 @@
        "type": "eq",
        "about": "MediaBox and CropBox with indirect objects."
     },
+    {  "id": "bug1057544",
+       "file": "pdfs/bug1057544.pdf",
+       "md5": "49ad71b82ead1ee0fe4ddb41aa9e30b4",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue2642",
       "file": "pdfs/issue2642.pdf",
       "md5": "b6679861fdce3bbab0c1fa51bb7f5077",
@@ -4202,6 +4208,12 @@
        "link": true,
        "firstPage": 1,
        "lastPage": 2,
+       "type": "eq"
+    },
+    {  "id": "issue12120_reduced",
+       "file": "pdfs/issue12120_reduced.pdf",
+       "md5": "b4570dcee26ac3121ad3322e19ed1a6a",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue4883",
