@@ -73,6 +73,7 @@
   --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
   --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
   --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
+  --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
   --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
   --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
   --findbarButton-next-icon: url(images/findbarButton-next.svg);
@@ -143,6 +144,7 @@
     --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail-dark.svg);
     --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline-dark.svg);
     --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments-dark.svg);
+    --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers-dark.svg);
     --toolbarButton-search-icon: url(images/toolbarButton-search-dark.svg);
     --findbarButton-previous-icon: url(images/findbarButton-previous-dark.svg);
     --findbarButton-next-icon: url(images/findbarButton-next-dark.svg);
@@ -1066,6 +1068,10 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
   content: var(--toolbarButton-viewAttachments-icon);
 }
 
+#viewLayers.toolbarButton::before {
+  content: var(--toolbarButton-viewLayers-icon);
+}
+
 #viewFind.toolbarButton::before {
   content: var(--toolbarButton-search-icon);
 }
@@ -1339,7 +1345,8 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 }
 
 #outlineView,
-#attachmentsView {
+#attachmentsView,
+#layersView {
   position: absolute;
   width: calc(100% - 8px);
   top: 0;
@@ -1381,6 +1388,16 @@ html[dir='ltr'] .treeItem > a {
 }
 html[dir='rtl'] .treeItem > a {
   padding: 2px 4px 5px 0;
+}
+
+#layersView .treeItem > a > * {
+  cursor: pointer;
+}
+html[dir='ltr'] #layersView .treeItem > a > label {
+  padding-left: 4px;
+}
+html[dir='rtl'] #layersView .treesItem > a > label {
+  padding-right: 4px;
 }
 
 .treeItemToggler {
