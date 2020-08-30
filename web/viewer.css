@@ -531,11 +531,15 @@ html[dir='rtl'] .findbar .splitToolbarButton > .findNext {
   border-top-right-radius: 0;
 }
 
+.findbar input[type="checkbox"] {
+  pointer-events: none;
+}
+
 .findbar label {
   user-select: none;
 }
 
-.findbar .toolbarLabel:hover, .findbar label:hover,
+.findbar label:hover,
 .findbar input:focus + label {
   background-color: var(--button-hover-color);
 }
