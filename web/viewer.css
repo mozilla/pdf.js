@@ -253,11 +253,11 @@ select {
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
-html[dir='ltr'] #sidebarContainer {
+html[dir="ltr"] #sidebarContainer {
   transition-property: left;
   left: calc(0px - var(--sidebar-width));
 }
-html[dir='rtl'] #sidebarContainer {
+html[dir="rtl"] #sidebarContainer {
   transition-property: right;
   right: calc(0px - var(--sidebar-width));
 }
@@ -277,10 +277,10 @@ html[dir='rtl'] #sidebarContainer {
 #outerContainer.sidebarOpen #sidebarContainer {
   visibility: visible;
 }
-html[dir='ltr'] #outerContainer.sidebarOpen #sidebarContainer {
+html[dir="ltr"] #outerContainer.sidebarOpen #sidebarContainer {
   left: 0px;
 }
-html[dir='rtl'] #outerContainer.sidebarOpen #sidebarContainer {
+html[dir="rtl"] #outerContainer.sidebarOpen #sidebarContainer {
   right: 0px;
 }
 
@@ -302,11 +302,11 @@ html[dir='rtl'] #outerContainer.sidebarOpen #sidebarContainer {
   width: 100%;
   background-color: rgba(0, 0, 0, 0.1);
 }
-html[dir='ltr'] #sidebarContent {
+html[dir="ltr"] #sidebarContent {
   left: 0;
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
 }
-html[dir='rtl'] #sidebarContent {
+html[dir="rtl"] #sidebarContent {
   right: 0;
   box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25);
 }
@@ -331,11 +331,15 @@ html[dir='rtl'] #sidebarContent {
   transition-duration: 0s;
 }
 
-html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
+html[dir="ltr"]
+  #outerContainer.sidebarOpen
+  #viewerContainer:not(.pdfPresentationMode) {
   transition-property: left;
   left: var(--sidebar-width);
 }
-html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
+html[dir="rtl"]
+  #outerContainer.sidebarOpen
+  #viewerContainer:not(.pdfPresentationMode) {
   transition-property: right;
   right: var(--sidebar-width);
 }
@@ -357,21 +361,19 @@ html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentatio
   height: 32px;
   background-color: var(--sidebar-bg-color);
 }
-html[dir='ltr'] #toolbarSidebar {
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25),
-    0 1px 0 rgba(0, 0, 0, 0.15),
+html[dir="ltr"] #toolbarSidebar {
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(0, 0, 0, 0.15),
     0 0 1px rgba(0, 0, 0, 0.1);
 }
-html[dir='rtl'] #toolbarSidebar {
-  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25),
-    0 1px 0 rgba(0, 0, 0, 0.15),
+html[dir="rtl"] #toolbarSidebar {
+  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(0, 0, 0, 0.15),
     0 0 1px rgba(0, 0, 0, 0.1);
 }
 
-html[dir='ltr'] #toolbarSidebar .toolbarButton {
+html[dir="ltr"] #toolbarSidebar .toolbarButton {
   margin-right: 2px !important;
 }
-html[dir='rtl'] #toolbarSidebar .toolbarButton {
+html[dir="rtl"] #toolbarSidebar .toolbarButton {
   margin-left: 2px !important;
 }
 
@@ -383,22 +385,28 @@ html[dir='rtl'] #toolbarSidebar .toolbarButton {
   z-index: 200;
   cursor: ew-resize;
 }
-html[dir='ltr'] #sidebarResizer {
+html[dir="ltr"] #sidebarResizer {
   right: -6px;
 }
-html[dir='rtl'] #sidebarResizer {
+html[dir="rtl"] #sidebarResizer {
   left: -6px;
 }
 
-#toolbarContainer, .findbar, .secondaryToolbar {
+#toolbarContainer,
+.findbar,
+.secondaryToolbar {
   position: relative;
   height: 32px;
   background-color: var(--toolbar-bg-color);
 }
-html[dir='ltr'] #toolbarContainer, .findbar, .secondaryToolbar {
+html[dir="ltr"] #toolbarContainer,
+.findbar,
+.secondaryToolbar {
   box-shadow: 0 1px 0 var(--toolbar-border-color);
 }
-html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
+html[dir="rtl"] #toolbarContainer,
+.findbar,
+.secondaryToolbar {
   box-shadow: 0 1px 0 var(--toolbar-border-color);
 }
 
@@ -426,8 +434,12 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 }
 
 @keyframes progressIndeterminate {
-  0% { left: -142px; }
-  100% { left: 0; }
+  0% {
+    left: -142px;
+  }
+  100% {
+    left: 0;
+  }
 }
 
 #loadingBar .progress.indeterminate {
@@ -441,14 +453,20 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   left: 0;
   height: 100%;
   width: calc(100% + 150px);
-  background: repeating-linear-gradient(135deg,
-                                        var(--progressBar-indeterminate-blend-color) 0, var(--progressBar-indeterminate-bg-color) 5px,
-                                        var(--progressBar-indeterminate-bg-color) 45px, var(--progressBar-color) 55px,
-                                        var(--progressBar-color) 95px, var(--progressBar-indeterminate-blend-color) 100px);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--progressBar-indeterminate-blend-color) 0,
+    var(--progressBar-indeterminate-bg-color) 5px,
+    var(--progressBar-indeterminate-bg-color) 45px,
+    var(--progressBar-color) 55px,
+    var(--progressBar-color) 95px,
+    var(--progressBar-indeterminate-blend-color) 100px
+  );
   animation: progressIndeterminate 1s linear infinite;
 }
 
-.findbar, .secondaryToolbar {
+.findbar,
+.secondaryToolbar {
   top: 32px;
   position: absolute;
   z-index: 10000;
@@ -476,19 +494,19 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 .findbar.wrapContainers > div#findbarMessageContainer {
   height: auto;
 }
-html[dir='ltr'] .findbar {
+html[dir="ltr"] .findbar {
   left: 64px;
 }
-html[dir='rtl'] .findbar {
+html[dir="rtl"] .findbar {
   right: 64px;
 }
 
-html[dir='ltr'] .findbar .splitToolbarButton {
+html[dir="ltr"] .findbar .splitToolbarButton {
   margin-left: 0px;
   margin-top: 3px;
 }
 
-html[dir='rtl'] .findbar .splitToolbarButton {
+html[dir="rtl"] .findbar .splitToolbarButton {
   margin-right: 0px;
   margin-top: 3px;
 }
@@ -497,11 +515,11 @@ html[dir='rtl'] .findbar .splitToolbarButton {
   width: 29px;
 }
 
-html[dir='ltr'] .findbar .splitToolbarButton .findNext {
+html[dir="ltr"] .findbar .splitToolbarButton .findNext {
   border-right: 1px solid var(--field-border-color);
 }
 
-html[dir='rtl'] .findbar .splitToolbarButton .findNext {
+html[dir="rtl"] .findbar .splitToolbarButton .findNext {
   border-left: 1px solid var(--field-border-color);
 }
 
@@ -517,20 +535,20 @@ html[dir='rtl'] .findbar .splitToolbarButton .findNext {
   top: 5px;
 }
 
-html[dir='ltr'] .findbar .splitToolbarButton > .findPrevious {
+html[dir="ltr"] .findbar .splitToolbarButton > .findPrevious {
   border-radius: 0;
 }
-html[dir='ltr'] .findbar .splitToolbarButton > .findNext {
+html[dir="ltr"] .findbar .splitToolbarButton > .findNext {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 2px;
   border-top-left-radius: 0;
   border-top-right-radius: 2px;
 }
 
-html[dir='rtl'] .findbar .splitToolbarButton > .findPrevious {
+html[dir="rtl"] .findbar .splitToolbarButton > .findPrevious {
   border-radius: 0;
 }
-html[dir='rtl'] .findbar .splitToolbarButton > .findNext {
+html[dir="rtl"] .findbar .splitToolbarButton > .findNext {
   border-bottom-left-radius: 2px;
   border-bottom-right-radius: 0;
   border-top-left-radius: 2px;
@@ -550,12 +568,12 @@ html[dir='rtl'] .findbar .splitToolbarButton > .findNext {
   background-color: var(--button-hover-color);
 }
 
-html[dir='ltr'] #findInput {
+html[dir="ltr"] #findInput {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
 
-html[dir='rtl'] #findInput {
+html[dir="rtl"] #findInput {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
@@ -578,7 +596,7 @@ html[dir='rtl'] #findInput {
   background-repeat: no-repeat;
   background-position: 98%;
 }
-html[dir='rtl'] #findInput[data-status="pending"] {
+html[dir="rtl"] #findInput[data-status="pending"] {
   background-position: 3px;
 }
 
@@ -588,10 +606,10 @@ html[dir='rtl'] #findInput[data-status="pending"] {
   z-index: 30000;
   background-color: var(--doorhanger-bg-color);
 }
-html[dir='ltr'] .secondaryToolbar {
+html[dir="ltr"] .secondaryToolbar {
   right: 4px;
 }
-html[dir='rtl'] .secondaryToolbar {
+html[dir="rtl"] .secondaryToolbar {
   left: 4px;
 }
 
@@ -611,10 +629,13 @@ html[dir='rtl'] .secondaryToolbar {
 .doorHanger,
 .doorHangerRight {
   border-radius: 2px;
-  box-shadow: 0 1px 5px var(--doorhanger-border-color), 0 0 0 1px var(--doorhanger-border-color);
+  box-shadow: 0 1px 5px var(--doorhanger-border-color),
+    0 0 0 1px var(--doorhanger-border-color);
 }
-.doorHanger:after, .doorHanger:before,
-.doorHangerRight:after, .doorHangerRight:before {
+.doorHanger:after,
+.doorHanger:before,
+.doorHangerRight:after,
+.doorHangerRight:before {
   bottom: 100%;
   border: solid rgba(0, 0, 0, 0);
   content: " ";
@@ -639,26 +660,26 @@ html[dir='rtl'] .secondaryToolbar {
   border-width: 9px;
 }
 
-html[dir='ltr'] .doorHanger:after,
-html[dir='rtl'] .doorHangerRight:after {
+html[dir="ltr"] .doorHanger:after,
+html[dir="rtl"] .doorHangerRight:after {
   left: 10px;
   margin-left: -8px;
 }
 
-html[dir='ltr'] .doorHanger:before,
-html[dir='rtl'] .doorHangerRight:before {
+html[dir="ltr"] .doorHanger:before,
+html[dir="rtl"] .doorHangerRight:before {
   left: 10px;
   margin-left: -9px;
 }
 
-html[dir='rtl'] .doorHanger:after,
-html[dir='ltr'] .doorHangerRight:after {
+html[dir="rtl"] .doorHanger:after,
+html[dir="ltr"] .doorHangerRight:after {
   right: 10px;
   margin-right: -8px;
 }
 
-html[dir='rtl'] .doorHanger:before,
-html[dir='ltr'] .doorHangerRight:before {
+html[dir="rtl"] .doorHanger:before,
+html[dir="ltr"] .doorHangerRight:before {
   right: 10px;
   margin-right: -9px;
 }
@@ -688,42 +709,42 @@ html[dir='ltr'] .doorHangerRight:before {
   transform: translateX(-50%);
 }
 
-html[dir='ltr'] #toolbarViewerLeft,
-html[dir='rtl'] #toolbarViewerRight {
+html[dir="ltr"] #toolbarViewerLeft,
+html[dir="rtl"] #toolbarViewerRight {
   float: left;
 }
-html[dir='ltr'] #toolbarViewerRight,
-html[dir='rtl'] #toolbarViewerLeft {
+html[dir="ltr"] #toolbarViewerRight,
+html[dir="rtl"] #toolbarViewerLeft {
   float: right;
 }
-html[dir='ltr'] #toolbarViewerLeft > *,
-html[dir='ltr'] #toolbarViewerMiddle > *,
-html[dir='ltr'] #toolbarViewerRight > *,
-html[dir='ltr'] .findbar * {
+html[dir="ltr"] #toolbarViewerLeft > *,
+html[dir="ltr"] #toolbarViewerMiddle > *,
+html[dir="ltr"] #toolbarViewerRight > *,
+html[dir="ltr"] .findbar * {
   position: relative;
   float: left;
 }
-html[dir='rtl'] #toolbarViewerLeft > *,
-html[dir='rtl'] #toolbarViewerMiddle > *,
-html[dir='rtl'] #toolbarViewerRight > *,
-html[dir='rtl'] .findbar * {
+html[dir="rtl"] #toolbarViewerLeft > *,
+html[dir="rtl"] #toolbarViewerMiddle > *,
+html[dir="rtl"] #toolbarViewerRight > *,
+html[dir="rtl"] .findbar * {
   position: relative;
   float: right;
 }
 
-html[dir='ltr'] .splitToolbarButton {
+html[dir="ltr"] .splitToolbarButton {
   margin: 2px 2px 0;
   display: inline-block;
 }
-html[dir='rtl'] .splitToolbarButton {
+html[dir="rtl"] .splitToolbarButton {
   margin: 2px 2px 0;
   display: inline-block;
 }
-html[dir='ltr'] .splitToolbarButton > .toolbarButton {
+html[dir="ltr"] .splitToolbarButton > .toolbarButton {
   border-radius: 2px;
   float: left;
 }
-html[dir='rtl'] .splitToolbarButton > .toolbarButton {
+html[dir="rtl"] .splitToolbarButton > .toolbarButton {
   border-radius: 2px;
   float: right;
 }
@@ -755,7 +776,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .toolbarButton[disabled],
 .secondaryToolbarButton[disabled],
 .overlayButton[disabled] {
-  opacity: .5;
+  opacity: 0.5;
 }
 
 .splitToolbarButton.toggled .toolbarButton {
@@ -773,13 +794,13 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .splitToolbarButton > .toolbarButton {
   position: relative;
 }
-html[dir='ltr'] .splitToolbarButton > .toolbarButton:first-child,
-html[dir='rtl'] .splitToolbarButton > .toolbarButton:last-child {
+html[dir="ltr"] .splitToolbarButton > .toolbarButton:first-child,
+html[dir="rtl"] .splitToolbarButton > .toolbarButton:last-child {
   position: relative;
   margin: 0;
 }
-html[dir='ltr'] .splitToolbarButton > .toolbarButton:last-child,
-html[dir='rtl'] .splitToolbarButton > .toolbarButton:first-child {
+html[dir="ltr"] .splitToolbarButton > .toolbarButton:last-child,
+html[dir="rtl"] .splitToolbarButton > .toolbarButton:first-child {
   position: relative;
   margin: 0;
 }
@@ -798,10 +819,10 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton:first-child {
   padding: 13px 0;
 }
 
-html[dir='ltr'] .splitToolbarButtonSeparator {
+html[dir="ltr"] .splitToolbarButtonSeparator {
   float: left;
 }
-html[dir='rtl'] .splitToolbarButtonSeparator {
+html[dir="rtl"] .splitToolbarButtonSeparator {
   float: right;
 }
 
@@ -822,24 +843,24 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   box-sizing: border-box;
 }
 
-html[dir='ltr'] .toolbarButton,
-html[dir='ltr'] .overlayButton,
-html[dir='ltr'] .dropdownToolbarButton {
+html[dir="ltr"] .toolbarButton,
+html[dir="ltr"] .overlayButton,
+html[dir="ltr"] .dropdownToolbarButton {
   margin: 2px 1px;
 }
-html[dir='rtl'] .toolbarButton,
-html[dir='rtl'] .overlayButton,
-html[dir='rtl'] .dropdownToolbarButton {
+html[dir="rtl"] .toolbarButton,
+html[dir="rtl"] .overlayButton,
+html[dir="rtl"] .dropdownToolbarButton {
   margin: 2px 1px;
 }
 
-html[dir='ltr'] #toolbarViewerLeft > .toolbarButton:first-child,
-html[dir='rtl'] #toolbarViewerRight > .toolbarButton:last-child {
+html[dir="ltr"] #toolbarViewerLeft > .toolbarButton:first-child,
+html[dir="rtl"] #toolbarViewerRight > .toolbarButton:last-child {
   margin-left: 2px;
 }
 
-html[dir='ltr'] #toolbarViewerRight > .toolbarButton:last-child,
-html[dir='rtl'] #toolbarViewerLeft > .toolbarButton:first-child {
+html[dir="ltr"] #toolbarViewerRight > .toolbarButton:last-child,
+html[dir="rtl"] #toolbarViewerLeft > .toolbarButton:first-child {
   margin-right: 2px;
 }
 .toolbarButton:hover,
@@ -878,10 +899,10 @@ html[dir='rtl'] #toolbarViewerLeft > .toolbarButton:first-child {
   pointer-events: none;
   max-width: 16px;
 }
-html[dir='ltr'] .dropdownToolbarButton::after {
+html[dir="ltr"] .dropdownToolbarButton::after {
   right: 7px;
 }
-html[dir='rtl'] .dropdownToolbarButton::after {
+html[dir="rtl"] .dropdownToolbarButton::after {
   left: 7px;
 }
 
@@ -895,10 +916,10 @@ html[dir='rtl'] .dropdownToolbarButton::after {
   border: none;
   background-color: var(--dropdown-btn-bg-color);
 }
-html[dir='ltr'] .dropdownToolbarButton > select {
+html[dir="ltr"] .dropdownToolbarButton > select {
   padding-left: 4px;
 }
-html[dir='rtl'] .dropdownToolbarButton > select {
+html[dir="rtl"] .dropdownToolbarButton > select {
   padding-right: 4px;
 }
 .dropdownToolbarButton > select:hover {
@@ -927,17 +948,17 @@ html[dir='rtl'] .dropdownToolbarButton > select {
   height: 1px;
 }
 
-html[dir='ltr'] #findPrevious {
+html[dir="ltr"] #findPrevious {
   margin-left: 0;
 }
-html[dir='ltr'] #findNext {
+html[dir="ltr"] #findNext {
   margin-right: 3px;
 }
 
-html[dir='rtl'] #findPrevious {
+html[dir="rtl"] #findPrevious {
   margin-right: 0;
 }
-html[dir='rtl'] #findNext {
+html[dir="rtl"] #findNext {
   margin-left: 3px;
 }
 
@@ -971,42 +992,42 @@ html[dir="rtl"] .secondaryToolbarButton::before {
 .toolbarButton#sidebarToggle::before {
   content: var(--toolbarButton-sidebarToggle-icon);
 }
-html[dir='rtl'] .toolbarButton#sidebarToggle::before {
+html[dir="rtl"] .toolbarButton#sidebarToggle::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton#secondaryToolbarToggle::before {
   content: var(--toolbarButton-secondaryToolbarToggle-icon);
 }
-html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
+html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton.findPrevious::before {
   content: var(--findbarButton-previous-icon);
 }
-html[dir='rtl'] .toolbarButton.findPrevious::before {
+html[dir="rtl"] .toolbarButton.findPrevious::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton.findNext::before {
   content: var(--findbarButton-next-icon);
 }
-html[dir='rtl'] .toolbarButton.findNext::before {
+html[dir="rtl"] .toolbarButton.findNext::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton.pageUp::before {
   content: var(--toolbarButton-pageUp-icon);
 }
-html[dir='rtl'] .toolbarButton.pageUp::before {
+html[dir="rtl"] .toolbarButton.pageUp::before {
   transform: scaleX(-1);
 }
 
 .toolbarButton.pageDown::before {
   content: var(--toolbarButton-pageDown-icon);
 }
-html[dir='rtl'] .toolbarButton.pageDown::before {
+html[dir="rtl"] .toolbarButton.pageDown::before {
   transform: scaleX(-1);
 }
 
@@ -1043,8 +1064,8 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   text-decoration: none;
 }
 
-.bookmark[href='#'] {
-  opacity: .5;
+.bookmark[href="#"] {
+  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -1081,16 +1102,16 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
   display: inline-block;
   top: 1px;
   /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
-  content: '';
+  content: "";
   background-color: rgba(112, 219, 85, 1);
   height: 9px;
   width: 9px;
   border-radius: 50%;
 }
-html[dir='ltr'] .toolbarButton.pdfSidebarNotification::after {
+html[dir="ltr"] .toolbarButton.pdfSidebarNotification::after {
   left: 17px;
 }
-html[dir='rtl'] .toolbarButton.pdfSidebarNotification::after {
+html[dir="rtl"] .toolbarButton.pdfSidebarNotification::after {
   right: 17px;
 }
 
@@ -1151,7 +1172,7 @@ html[dir="rtl"] .secondaryToolbarButton > span {
 }
 
 .secondaryToolbarButton.scrollHorizontal::before {
-  content: var(--secondaryToolbarButton-scrollHorizontal-icon)
+  content: var(--secondaryToolbarButton-scrollHorizontal-icon);
 }
 
 .secondaryToolbarButton.scrollWrapped::before {
@@ -1181,10 +1202,10 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   width: 1px;
   background-color: var(--separator-color);
 }
-html[dir='ltr'] .verticalToolbarSeparator {
+html[dir="ltr"] .verticalToolbarSeparator {
   margin-left: 2px;
 }
-html[dir='rtl'] .verticalToolbarSeparator {
+html[dir="rtl"] .verticalToolbarSeparator {
   margin-right: 2px;
 }
 
@@ -1212,17 +1233,17 @@ html[dir='rtl'] .verticalToolbarSeparator {
   outline-style: none;
 }
 
-.toolbarField[type=checkbox] {
+.toolbarField[type="checkbox"] {
   opacity: 0;
   position: absolute !important;
   left: 0;
 }
 
-html[dir='ltr'] .toolbarField[type=checkbox] {
+html[dir="ltr"] .toolbarField[type="checkbox"] {
   margin: 10px 0 3px 7px;
 }
 
-html[dir='rtl'] .toolbarField[type=checkbox] {
+html[dir="rtl"] .toolbarField[type="checkbox"] {
   margin: 10px 7px 3px 0;
 }
 
@@ -1263,10 +1284,10 @@ html[dir='rtl'] .toolbarField[type=checkbox] {
   cursor: default;
 }
 
-html[dir='ltr'] #numPages.toolbarLabel {
+html[dir="ltr"] #numPages.toolbarLabel {
   padding-left: 2px;
 }
-html[dir='rtl'] #numPages.toolbarLabel {
+html[dir="rtl"] #numPages.toolbarLabel {
   padding-right: 2px;
 }
 
@@ -1288,10 +1309,10 @@ html[dir='rtl'] #numPages.toolbarLabel {
 .thumbnail {
   margin: 0 10px 5px 10px;
 }
-html[dir='ltr'] .thumbnail {
+html[dir="ltr"] .thumbnail {
   float: left;
 }
-html[dir='rtl'] .thumbnail {
+html[dir="rtl"] .thumbnail {
   float: right;
 }
 
@@ -1324,7 +1345,7 @@ html[dir='rtl'] .thumbnail {
 
 a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
 .thumbnail:hover > .thumbnailSelectionRing > .thumbnailImage {
-  opacity: .9;
+  opacity: 0.9;
 }
 
 a:focus > .thumbnail > .thumbnailSelectionRing,
@@ -1357,13 +1378,13 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   user-select: none;
 }
 
-html[dir='ltr'] .treeWithDeepNesting > .treeItem,
-html[dir='ltr'] .treeItem > .treeItems {
+html[dir="ltr"] .treeWithDeepNesting > .treeItem,
+html[dir="ltr"] .treeItem > .treeItems {
   margin-left: 20px;
 }
 
-html[dir='rtl'] .treeWithDeepNesting > .treeItem,
-html[dir='rtl'] .treeItem > .treeItems {
+html[dir="rtl"] .treeWithDeepNesting > .treeItem,
+html[dir="rtl"] .treeItem > .treeItems {
   margin-right: 20px;
 }
 
@@ -1383,20 +1404,20 @@ html[dir='rtl'] .treeItem > .treeItems {
   white-space: normal;
   cursor: pointer;
 }
-html[dir='ltr'] .treeItem > a {
+html[dir="ltr"] .treeItem > a {
   padding: 2px 0 5px 4px;
 }
-html[dir='rtl'] .treeItem > a {
+html[dir="rtl"] .treeItem > a {
   padding: 2px 4px 5px 0;
 }
 
 #layersView .treeItem > a > * {
   cursor: pointer;
 }
-html[dir='ltr'] #layersView .treeItem > a > label {
+html[dir="ltr"] #layersView .treeItem > a > label {
   padding-left: 4px;
 }
-html[dir='rtl'] #layersView .treesItem > a > label {
+html[dir="rtl"] #layersView .treesItem > a > label {
   padding-right: 4px;
 }
 
@@ -1416,22 +1437,22 @@ html[dir='rtl'] #layersView .treesItem > a > label {
   content: var(--treeitem-collapsed-icon);
   max-width: 16px;
 }
-html[dir='rtl'] .treeItemToggler.treeItemsHidden::before {
+html[dir="rtl"] .treeItemToggler.treeItemsHidden::before {
   transform: scaleX(-1);
 }
 .treeItemToggler.treeItemsHidden ~ .treeItems {
   display: none;
 }
-html[dir='ltr'] .treeItemToggler {
+html[dir="ltr"] .treeItemToggler {
   float: left;
 }
-html[dir='rtl'] .treeItemToggler {
+html[dir="rtl"] .treeItemToggler {
   float: right;
 }
-html[dir='ltr'] .treeItemToggler::before {
+html[dir="ltr"] .treeItemToggler::before {
   right: 4px;
 }
-html[dir='rtl'] .treeItemToggler::before {
+html[dir="rtl"] .treeItemToggler::before {
   left: 4px;
 }
 
@@ -1575,10 +1596,10 @@ html[dir='rtl'] .treeItemToggler::before {
 #documentPropertiesOverlay .row > * {
   min-width: 100px;
 }
-html[dir='ltr'] #documentPropertiesOverlay .row > * {
+html[dir="ltr"] #documentPropertiesOverlay .row > * {
   text-align: left;
 }
-html[dir='rtl'] #documentPropertiesOverlay .row > * {
+html[dir="rtl"] #documentPropertiesOverlay .row > * {
   text-align: right;
 }
 #documentPropertiesOverlay .row > span {
@@ -1658,7 +1679,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 #viewer.textLayer-visible .textLayer {
-  opacity: 1.0;
+  opacity: 1;
 }
 
 #viewer.textLayer-visible .canvasWrapper {
@@ -1690,7 +1711,8 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   cursor: url("images/grab.cur"), move !important;
   cursor: grab !important;
 }
-.grab-to-pan-grab *:not(input):not(textarea):not(button):not(select):not(:link) {
+.grab-to-pan-grab
+  *:not(input):not(textarea):not(button):not(select):not(:link) {
   cursor: inherit !important;
 }
 .grab-to-pan-grab:active,
@@ -1723,14 +1745,22 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 
   /* Rules for browsers that don't support mozPrintCallback. */
-  #sidebarContainer, #secondaryToolbar, .toolbar, #loadingBox, #errorWrapper, .textLayer {
+  #sidebarContainer,
+  #secondaryToolbar,
+  .toolbar,
+  #loadingBox,
+  #errorWrapper,
+  .textLayer {
     display: none;
   }
   #viewerContainer {
     overflow: visible;
   }
 
-  #mainContainer, #viewerContainer, .page, .page canvas {
+  #mainContainer,
+  #viewerContainer,
+  .page,
+  .page canvas {
     position: static;
     padding: 0;
     margin: 0;
@@ -1802,10 +1832,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     background-color: rgba(0, 0, 0, 0.7);
   }
 
-  html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer {
+  html[dir="ltr"] #outerContainer.sidebarOpen #viewerContainer {
     left: 0px !important;
   }
-  html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer {
+  html[dir="rtl"] #outerContainer.sidebarOpen #viewerContainer {
     right: 0px !important;
   }
 
@@ -1838,7 +1868,8 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 @media all and (max-width: 640px) {
-  .hiddenSmallView, .hiddenSmallView * {
+  .hiddenSmallView,
+  .hiddenSmallView * {
     display: none;
   }
   .visibleSmallView {
@@ -1847,10 +1878,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   .toolbarButtonSpacer {
     width: 0;
   }
-  html[dir='ltr'] .findbar {
+  html[dir="ltr"] .findbar {
     left: 34px;
   }
-  html[dir='rtl'] .findbar {
+  html[dir="rtl"] .findbar {
     right: 34px;
   }
 }
