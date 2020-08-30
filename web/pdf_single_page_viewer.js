@@ -49,7 +49,9 @@ class PDFSinglePageViewer extends BaseViewer {
     const viewerNodes = this.viewer.childNodes;
     switch (viewerNodes.length) {
       case 0: // Should *only* occur on initial loading.
-        this.viewer.appendChild(pageView.div);
+        if (pageView !== undefined) {
+          this.viewer.appendChild(pageView.div);
+        }
         break;
       case 1: // The normal page-switching case.
         if (viewerNodes[0] !== previousPageView.div) {
