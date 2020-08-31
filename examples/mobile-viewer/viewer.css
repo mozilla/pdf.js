@@ -113,7 +113,8 @@ footer {
   background-color: rgba(0, 0, 0, 0);
   font-size: 1.2rem;
   color: rgba(255, 255, 255, 1);
-  background-image: url(images/div_line_left.png), url(images/div_line_right.png);
+  background-image: url(images/div_line_left.png),
+    url(images/div_line_right.png);
   background-repeat: no-repeat;
   background-position: left, right;
   background-size: 0.2rem, 0.2rem;
@@ -138,7 +139,7 @@ footer {
 }
 
 .toolbarButton[disabled] {
-  opacity: .3;
+  opacity: 0.3;
 }
 
 .hidden {
@@ -166,7 +167,7 @@ canvas {
 .pdfViewer .page .loadingIcon {
   width: 2.9rem;
   height: 2.9rem;
-  background: url("images/spinner.png") no-repeat left top / 38rem ;
+  background: url("images/spinner.png") no-repeat left top / 38rem;
   border: medium none;
   animation: 1s steps(10, end) 0s normal none infinite moveDefault;
   display: block;
@@ -187,7 +188,7 @@ canvas {
 
 #loadingBar {
   position: relative;
-  height: .6rem;
+  height: 0.6rem;
   background-color: rgba(51, 51, 51, 1);
   border-bottom: 1px solid rgba(51, 51, 51, 1);
   margin-top: 5rem;
@@ -204,9 +205,15 @@ canvas {
 }
 
 @keyframes progressIndeterminate {
-  0% { left: 0; }
-  50% { left: 100%; }
-  100% { left: 100%; }
+  0% {
+    left: 0;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 #loadingBar .progress.indeterminate {
@@ -220,10 +227,12 @@ canvas {
   left: 0;
   height: 100%;
   width: 5rem;
-  background-image: linear-gradient(to right,
-                                    rgba(153, 153, 153, 1) 0%,
-                                    rgba(255, 255, 255, 1) 50%,
-                                    rgba(153, 153, 153, 1) 100%);
+  background-image: linear-gradient(
+    to right,
+    rgba(153, 153, 153, 1) 0%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(153, 153, 153, 1) 100%
+  );
   background-size: 100% 100%;
   background-repeat: no-repeat;
   animation: progressIndeterminate 2s linear infinite;
