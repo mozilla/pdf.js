@@ -317,15 +317,62 @@ describe("primitives", function () {
 
       const fontFileDict = new Dict();
       fontFileDict.set("FontFile", "Type1 font file");
-      const mergedDict = Dict.merge(null, [
-        dictWithManyKeys,
-        dictWithSizeKey,
-        fontFileDict,
-      ]);
+      const mergedDict = Dict.merge({
+        xref: null,
+        dictArray: [dictWithManyKeys, dictWithSizeKey, fontFileDict],
+      });
       const mergedKeys = mergedDict.getKeys();
 
       expect(mergedKeys.sort()).toEqual(expectedKeys);
       expect(mergedDict.get("FontFile")).toEqual(testFontFile);
+    });
+
+    it("should correctly merge sub-dictionaries", function () {
+      const localFontDict = new Dict();
+      localFontDict.set("F1", "Local font one");
+
+      const globalFontDict = new Dict();
+      globalFontDict.set("F1", "Global font one");
+      globalFontDict.set("F2", "Global font two");
+      globalFontDict.set("F3", "Global font three");
+
+      const localDict = new Dict();
+      localDict.set("Font", localFontDict);
+
+      const globalDict = new Dict();
+      globalDict.set("Font", globalFontDict);
+
+      const mergedDict = Dict.merge({
+        xref: null,
+        dictArray: [localDict, globalDict],
+      });
+      const mergedSubDict = Dict.merge({
+        xref: null,
+        dictArray: [localDict, globalDict],
+        mergeSubDicts: true,
+      });
+
+      const mergedFontDict = mergedDict.get("Font");
+      const mergedSubFontDict = mergedSubDict.get("Font");
+
+      expect(mergedFontDict instanceof Dict).toEqual(true);
+      expect(mergedSubFontDict instanceof Dict).toEqual(true);
+
+      const mergedFontDictKeys = mergedFontDict.getKeys();
+      const mergedSubFontDictKeys = mergedSubFontDict.getKeys();
+
+      expect(mergedFontDictKeys).toEqual(["F1"]);
+      expect(mergedSubFontDictKeys).toEqual(["F1", "F2", "F3"]);
+
+      const mergedFontDictValues = mergedFontDict.getRawValues();
+      const mergedSubFontDictValues = mergedSubFontDict.getRawValues();
+
+      expect(mergedFontDictValues).toEqual(["Local font one"]);
+      expect(mergedSubFontDictValues).toEqual([
+        "Local font one",
+        "Global font two",
+        "Global font three",
+      ]);
     });
   });
 
