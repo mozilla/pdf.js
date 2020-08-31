@@ -1471,10 +1471,10 @@ gulp.task(
 
 gulp.task("lint", function (done) {
   console.log();
-  console.log("### Linting JS files");
+  console.log("### Linting JS/CSS files");
 
   // Ensure that we lint the Firefox specific *.jsm files too.
-  var options = [
+  const esLintOptions = [
     "node_modules/eslint/bin/eslint",
     "--ext",
     ".js,.jsm",
@@ -1482,16 +1482,34 @@ gulp.task("lint", function (done) {
     "--report-unused-disable-directives",
   ];
   if (process.argv.includes("--fix")) {
-    options.push("--fix");
+    esLintOptions.push("--fix");
   }
-  var esLintProcess = startNode(options, { stdio: "inherit" });
-  esLintProcess.on("close", function (code) {
-    if (code !== 0) {
+
+  const styleLintOptions = [
+    "node_modules/stylelint/bin/stylelint",
+    "**/*.css",
+    "--report-needless-disables",
+  ];
+  if (process.argv.includes("--fix")) {
+    styleLintOptions.push("--fix");
+  }
+
+  const esLintProcess = startNode(esLintOptions, { stdio: "inherit" });
+  esLintProcess.on("close", function (esLintCode) {
+    if (esLintCode !== 0) {
       done(new Error("ESLint failed."));
       return;
     }
-    console.log("files checked, no errors found");
-    done();
+
+    const styleLintProcess = startNode(styleLintOptions, { stdio: "inherit" });
+    styleLintProcess.on("close", function (styleLintCode) {
+      if (styleLintCode !== 0) {
+        done(new Error("Stylelint failed."));
+        return;
+      }
+      console.log("files checked, no errors found");
+      done();
+    });
   });
 });
 
