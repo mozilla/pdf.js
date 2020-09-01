@@ -15,6 +15,7 @@
 /* eslint no-var: error */
 
 import { assert, BaseException, warn } from "../shared/util.js";
+import { isDict } from "./primitives.js";
 
 function getLookupTableFactory(initializer) {
   let lookup;
@@ -165,12 +166,28 @@ function isWhiteSpace(ch) {
   return ch === 0x20 || ch === 0x09 || ch === 0x0d || ch === 0x0a;
 }
 
+function getLazyMergeDict(dict, fallback) {
+  assert(isDict(dict), "The two arguments must be a Dict");
+  dict.getRaw = function (key) {
+    let value = dict._map[key];
+    if (value === undefined) {
+      assert(isDict(fallback), "The two arguments must be a Dict");
+      assert(dict !== fallback, "The two arguments must be different");
+
+      dict._map[key] = value = fallback.getRaw(key);
+    }
+    return value;
+  };
+  return dict;
+}
+
 export {
   getLookupTableFactory,
   MissingDataException,
   XRefEntryException,
   XRefParseException,
   getInheritableProperty,
+  getLazyMergeDict,
   toRomanNumerals,
   log2,
   readInt8,

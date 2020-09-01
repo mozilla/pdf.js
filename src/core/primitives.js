@@ -91,11 +91,11 @@ var Dict = (function DictClosure() {
 
     // automatically dereferences Ref objects
     get(key1, key2, key3) {
-      let value = this._map[key1];
+      let value = this.getRaw(key1);
       if (value === undefined && key2 !== undefined) {
-        value = this._map[key2];
+        value = this.getRaw(key2);
         if (value === undefined && key3 !== undefined) {
-          value = this._map[key3];
+          value = this.getRaw(key3);
         }
       }
       if (value instanceof Ref && this.xref) {
@@ -106,11 +106,11 @@ var Dict = (function DictClosure() {
 
     // Same as get(), but returns a promise and uses fetchIfRefAsync().
     async getAsync(key1, key2, key3) {
-      let value = this._map[key1];
+      let value = this.getRaw(key1);
       if (value === undefined && key2 !== undefined) {
-        value = this._map[key2];
+        value = this.getRaw(key2);
         if (value === undefined && key3 !== undefined) {
-          value = this._map[key3];
+          value = this.getRaw(key3);
         }
       }
       if (value instanceof Ref && this.xref) {
@@ -161,7 +161,7 @@ var Dict = (function DictClosure() {
     },
 
     has: function Dict_has(key) {
-      return this._map[key] !== undefined;
+      return this.getRaw(key) !== undefined;
     },
 
     forEach: function Dict_forEach(callback) {

@@ -16,6 +16,7 @@
 import { Dict, Ref } from "../../src/core/primitives.js";
 import {
   getInheritableProperty,
+  getLazyMergeDict,
   isWhiteSpace,
   log2,
   toRomanNumerals,
@@ -209,6 +210,23 @@ describe("core_utils", function () {
       expect(isWhiteSpace(0x0b)).toEqual(false);
       expect(isWhiteSpace(null)).toEqual(false);
       expect(isWhiteSpace(undefined)).toEqual(false);
+    });
+  });
+
+  describe("getLazyMergeDict", function () {
+    it("gets values in a dict and lazily merge dictionaries", function () {
+      const base = new Dict(null);
+      base.set("a", 1);
+      const fallback = new Dict(null);
+      fallback.set("b", 2);
+
+      const dict = getLazyMergeDict(base, fallback);
+
+      expect(dict.getRaw("a")).toEqual(1);
+      expect(dict.getRaw("b")).toEqual(2);
+
+      fallback.set("b", 3);
+      expect(dict.getRaw("b")).toEqual(2);
     });
   });
 });

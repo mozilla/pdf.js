@@ -31,8 +31,8 @@ import {
 } from "../shared/util.js";
 import { Catalog, FileSpec, ObjectLoader } from "./obj.js";
 import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
+import { getInheritableProperty, getLazyMergeDict } from "./core_utils.js";
 import { ColorSpace } from "./colorspace.js";
-import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
 import { writeDict } from "./writer.js";
@@ -818,10 +818,29 @@ class WidgetAnnotation extends Annotation {
       "";
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
-    this.fieldResources =
-      getInheritableProperty({ dict, key: "DR" }) ||
-      params.acroForm.get("DR") ||
-      Dict.empty;
+
+    const fallbackResources = params.acroForm.get("DR");
+    const defaultResources = getInheritableProperty({ dict, key: "DR" });
+
+    if (defaultResources && fallbackResources) {
+      const fontRes = defaultResources.get("Font");
+      const fallbackFontRes = fallbackResources.get("Font");
+      if (fontRes && fallbackFontRes) {
+        // A textfield can set a font which isn't in DR
+        // but in AcroForm::DR (#12294).
+        // So in this case we get the font in the fallback
+        // and we "fix" DR.
+        // We could merge DR with Acroform::DR but it'd lead
+        // to increase file size when saving.
+        defaultResources.set(
+          "Font",
+          getLazyMergeDict(fontRes, fallbackFontRes)
+        );
+      }
+      this.fieldResources = defaultResources;
+    } else {
+      this.fieldResources = defaultResources || fallbackResources || Dict.empty;
+    }
 
     data.fieldFlags = getInheritableProperty({ dict, key: "Ff" });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
