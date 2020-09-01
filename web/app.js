@@ -2210,10 +2210,9 @@ function webViewerPageMode({ mode }) {
 }
 
 function webViewerNamedAction(evt) {
-  // Processing couple of named actions that might be useful.
-  // See also PDFLinkService.executeNamedAction
-  const action = evt.action;
-  switch (action) {
+  // Processing a couple of named actions that might be useful, see also
+  // `PDFLinkService.executeNamedAction`.
+  switch (evt.action) {
     case "GoToPage":
       PDFViewerApplication.appConfig.toolbar.pageNumber.select();
       break;
@@ -2222,6 +2221,16 @@ function webViewerNamedAction(evt) {
       if (!PDFViewerApplication.supportsIntegratedFind) {
         PDFViewerApplication.findBar.toggle();
       }
+      break;
+
+    case "Print":
+      if (PDFViewerApplication.supportsPrinting) {
+        webViewerPrint();
+      }
+      break;
+
+    case "SaveAs":
+      webViewerSave();
       break;
   }
 }
