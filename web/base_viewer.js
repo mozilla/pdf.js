@@ -143,6 +143,17 @@ class BaseViewer {
 
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
+
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      !(
+        this.container instanceof HTMLDivElement &&
+        this.viewer instanceof HTMLDivElement
+      )
+    ) {
+      throw new Error("Invalid `container` and/or `viewer` option.");
+    }
     this.eventBus = options.eventBus;
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
