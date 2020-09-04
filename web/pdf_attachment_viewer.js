@@ -172,7 +172,6 @@ class PDFAttachmentViewer extends BaseTreeViewer {
 
       const element = document.createElement("a");
       if (
-        (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
         PdfFileRegExp.test(filename) &&
         !viewerCompatibilityParams.disableCreateObjectURL
       ) {
