@@ -397,7 +397,6 @@ var Type2Parser = function type2Parser(aFilePath) {
  *  var file = new Uint8Array(cffFileArray, 0, cffFileSize);
  *  var parser = new Type2Parser();
  *  parser.parse(new Stream(file));
- *
  */
 
 /*

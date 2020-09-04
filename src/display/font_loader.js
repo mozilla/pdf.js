@@ -25,12 +25,17 @@ import {
 } from "../shared/util.js";
 
 class BaseFontLoader {
-  constructor({ docId, onUnsupportedFeature }) {
+  constructor({
+    docId,
+    onUnsupportedFeature,
+    ownerDocument = globalThis.document,
+  }) {
     if (this.constructor === BaseFontLoader) {
       unreachable("Cannot initialize BaseFontLoader.");
     }
     this.docId = docId;
     this._onUnsupportedFeature = onUnsupportedFeature;
+    this._document = ownerDocument;
 
     this.nativeFontFaces = [];
     this.styleElement = null;
@@ -38,15 +43,15 @@ class BaseFontLoader {
 
   addNativeFontFace(nativeFontFace) {
     this.nativeFontFaces.push(nativeFontFace);
-    document.fonts.add(nativeFontFace);
+    this._document.fonts.add(nativeFontFace);
   }
 
   insertRule(rule) {
     let styleElement = this.styleElement;
     if (!styleElement) {
-      styleElement = this.styleElement = document.createElement("style");
+      styleElement = this.styleElement = this._document.createElement("style");
       styleElement.id = `PDFJS_FONT_STYLE_TAG_${this.docId}`;
-      document.documentElement
+      this._document.documentElement
         .getElementsByTagName("head")[0]
         .appendChild(styleElement);
     }
@@ -56,8 +61,8 @@ class BaseFontLoader {
   }
 
   clear() {
-    this.nativeFontFaces.forEach(function (nativeFontFace) {
-      document.fonts.delete(nativeFontFace);
+    this.nativeFontFaces.forEach(nativeFontFace => {
+      this._document.fonts.delete(nativeFontFace);
     });
     this.nativeFontFaces.length = 0;
 
@@ -116,7 +121,8 @@ class BaseFontLoader {
   }
 
   get isFontLoadingAPISupported() {
-    const supported = typeof document !== "undefined" && !!document.fonts;
+    const supported =
+      typeof this._document !== "undefined" && !!this._document.fonts;
     return shadow(this, "isFontLoadingAPISupported", supported);
   }
 
@@ -146,8 +152,8 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   // PDFJSDev.test('CHROME || GENERIC')
 
   FontLoader = class GenericFontLoader extends BaseFontLoader {
-    constructor(docId) {
-      super(docId);
+    constructor(params) {
+      super(params);
       this.loadingContext = {
         requests: [],
         nextRequestId: 0,
@@ -254,7 +260,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       let i, ii;
 
       // The temporary canvas is used to determine if fonts are loaded.
-      const canvas = document.createElement("canvas");
+      const canvas = this._document.createElement("canvas");
       canvas.width = 1;
       canvas.height = 1;
       const ctx = canvas.getContext("2d");
@@ -316,22 +322,22 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       }
       names.push(loadTestFontId);
 
-      const div = document.createElement("div");
+      const div = this._document.createElement("div");
       div.style.visibility = "hidden";
       div.style.width = div.style.height = "10px";
       div.style.position = "absolute";
       div.style.top = div.style.left = "0px";
 
       for (i = 0, ii = names.length; i < ii; ++i) {
-        const span = document.createElement("span");
+        const span = this._document.createElement("span");
         span.textContent = "Hi";
         span.style.fontFamily = names[i];
         div.appendChild(span);
       }
-      document.body.appendChild(div);
+      this._document.body.appendChild(div);
 
-      isFontReady(loadTestFontId, function () {
-        document.body.removeChild(div);
+      isFontReady(loadTestFontId, () => {
+        this._document.body.removeChild(div);
         request.complete();
       });
       /** Hack end */

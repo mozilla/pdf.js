@@ -31,6 +31,7 @@ import { DOMSVGFactory } from "./display_utils.js";
 // import { isNodeJS } from "../shared/is_node.js";
 // end of modification
 
+/** @type {any} */
 let SVGGraphics = function () {
   throw new Error("Not implemented: SVGGraphics");
 };

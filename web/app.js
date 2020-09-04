@@ -26,7 +26,7 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   noContextMenuHandler,
-  normalizeWheelEventDelta,
+  normalizeWheelEventDirection,
   parseQueryString,
   PresentationModeState,
   ProgressBar,
@@ -64,6 +64,7 @@ import { PDFDocumentProperties } from "./pdf_document_properties.js";
 import { PDFFindBar } from "./pdf_find_bar.js";
 import { PDFFindController } from "./pdf_find_controller.js";
 import { PDFHistory } from "./pdf_history.js";
+import { PDFLayerViewer } from "./pdf_layer_viewer.js";
 import { PDFLinkService } from "./pdf_link_service.js";
 import { PDFOutlineViewer } from "./pdf_outline_viewer.js";
 import { PDFPresentationMode } from "./pdf_presentation_mode.js";
@@ -72,6 +73,7 @@ import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer.js";
 import { PDFViewer } from "./pdf_viewer.js";
 import { SecondaryToolbar } from "./secondary_toolbar.js";
 import { Toolbar } from "./toolbar.js";
+import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 import { ViewHistory } from "./view_history.js";
 
 const DEFAULT_SCALE_DELTA = 1.1;
@@ -208,6 +210,8 @@ const PDFViewerApplication = {
   pdfOutlineViewer: null,
   /** @type {PDFAttachmentViewer} */
   pdfAttachmentViewer: null,
+  /** @type {PDFLayerViewer} */
+  pdfLayerViewer: null,
   /** @type {PDFCursorTools} */
   pdfCursorTools: null,
   /** @type {ViewHistory} */
@@ -235,6 +239,8 @@ const PDFViewerApplication = {
   _boundEvents: {},
   contentDispositionFilename: null,
   triggerDelayedFallback: null,
+  _saveInProgress: false,
+  _wheelUnusedTicks: 0,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -299,11 +305,7 @@ const PDFViewerApplication = {
    * @private
    */
   async _parseHashParameters() {
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("PRODUCTION") &&
-      !AppOptions.get("pdfBugEnabled")
-    ) {
+    if (!AppOptions.get("pdfBugEnabled")) {
       return undefined;
     }
     const hash = document.location.hash.substring(1);
@@ -419,9 +421,7 @@ const PDFViewerApplication = {
     });
     this.pdfLinkService = pdfLinkService;
 
-    const downloadManager = this.externalServices.createDownloadManager({
-      disableCreateObjectURL: AppOptions.get("disableCreateObjectURL"),
-    });
+    const downloadManager = this.externalServices.createDownloadManager();
     this.downloadManager = downloadManager;
 
     const findController = new PDFFindController({
@@ -456,6 +456,7 @@ const PDFViewerApplication = {
 
     this.pdfThumbnailViewer = new PDFThumbnailViewer({
       container: appConfig.sidebar.thumbnailView,
+      eventBus,
       renderingQueue: pdfRenderingQueue,
       linkService: pdfLinkService,
       l10n: this.l10n,
@@ -518,6 +519,12 @@ const PDFViewerApplication = {
       container: appConfig.sidebar.attachmentsView,
       eventBus,
       downloadManager,
+    });
+
+    this.pdfLayerViewer = new PDFLayerViewer({
+      container: appConfig.sidebar.layersView,
+      eventBus,
+      l10n: this.l10n,
     });
 
     this.pdfSidebar = new PDFSidebar({
@@ -756,10 +763,12 @@ const PDFViewerApplication = {
     this.baseUrl = "";
     this.contentDispositionFilename = null;
     this.triggerDelayedFallback = null;
+    this._saveInProgress = false;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
     this.pdfAttachmentViewer.reset();
+    this.pdfLayerViewer.reset();
 
     if (this.pdfHistory) {
       this.pdfHistory.reset();
@@ -898,7 +907,7 @@ const PDFViewerApplication = {
     );
   },
 
-  download() {
+  download({ sourceEventType = "download" } = {}) {
     function downloadByUrl() {
       downloadManager.downloadUrl(url, filename);
     }
@@ -926,9 +935,48 @@ const PDFViewerApplication = {
       .getData()
       .then(function (data) {
         const blob = new Blob([data], { type: "application/pdf" });
-        downloadManager.download(blob, url, filename);
+        downloadManager.download(blob, url, filename, sourceEventType);
       })
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
+  },
+
+  save({ sourceEventType = "download" } = {}) {
+    if (this._saveInProgress) {
+      return;
+    }
+
+    const url = this.baseUrl;
+    // Use this.url instead of this.baseUrl to perform filename detection based
+    // on the reference fragment as ultimate fallback if needed.
+    const filename =
+      this.contentDispositionFilename || getPDFFileNameFromURL(this.url);
+    const downloadManager = this.downloadManager;
+    downloadManager.onerror = err => {
+      // This error won't really be helpful because it's likely the
+      // fallback won't work either (or is already open).
+      this.error(`PDF failed to be saved: ${err}`);
+    };
+
+    // When the PDF document isn't ready, or the PDF file is still downloading,
+    // simply download using the URL.
+    if (!this.pdfDocument || !this.downloadComplete) {
+      this.download({ sourceEventType });
+      return;
+    }
+
+    this._saveInProgress = true;
+    this.pdfDocument
+      .saveDocument(this.pdfDocument.annotationStorage)
+      .then(data => {
+        const blob = new Blob([data], { type: "application/pdf" });
+        downloadManager.download(blob, url, filename, sourceEventType);
+      })
+      .catch(() => {
+        this.download({ sourceEventType });
+      })
+      .finally(() => {
+        this._saveInProgress = false;
+      });
   },
 
   /**
@@ -973,7 +1021,7 @@ const PDFViewerApplication = {
         if (!download) {
           return;
         }
-        PDFViewerApplication.download();
+        PDFViewerApplication.download({ sourceEventType: "download" });
       }
     );
   },
@@ -1150,6 +1198,14 @@ const PDFViewerApplication = {
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
     this.pdfDocumentProperties.setDocument(pdfDocument, this.url);
 
+    const annotationStorage = pdfDocument.annotationStorage;
+    annotationStorage.onSetModified = function () {
+      window.addEventListener("beforeunload", beforeUnload);
+    };
+    annotationStorage.onResetModified = function () {
+      window.removeEventListener("beforeunload", beforeUnload);
+    };
+
     const pdfViewer = this.pdfViewer;
     pdfViewer.setDocument(pdfDocument);
     const { firstPagePromise, onePageRendered, pagesPromise } = pdfViewer;
@@ -1295,6 +1351,11 @@ const PDFViewerApplication = {
       pdfDocument.getAttachments().then(attachments => {
         this.pdfAttachmentViewer.render({ attachments });
       });
+      // Ensure that the layers accurately reflects the current state in the
+      // viewer itself, rather than the default state provided by the API.
+      pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
+        this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
+      });
     });
 
     this._initializePageLabels(pdfDocument);
@@ -1411,8 +1472,14 @@ const PDFViewerApplication = {
       this.setTitle(contentDispositionFilename);
     }
 
-    if (info.IsAcroFormPresent) {
-      console.warn("Warning: AcroForm/XFA is not supported");
+    if (info.IsXFAPresent && !info.IsAcroFormPresent) {
+      console.warn("Warning: XFA is not supported");
+      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
+    } else if (
+      (info.IsAcroFormPresent || info.IsXFAPresent) &&
+      !this.pdfViewer.renderInteractiveForms
+    ) {
+      console.warn("Warning: Interactive form support is not enabled");
       this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     }
 
@@ -1433,8 +1500,10 @@ const PDFViewerApplication = {
       });
     }
     let formType = null;
-    if (info.IsAcroFormPresent) {
-      formType = info.IsXFAPresent ? "xfa" : "acroform";
+    if (info.IsXFAPresent) {
+      formType = "xfa";
+    } else if (info.IsAcroFormPresent) {
+      formType = "acroform";
     }
     this.externalServices.reportTelemetry({
       type: "documentInfo",
@@ -1643,10 +1712,16 @@ const PDFViewerApplication = {
 
     const pagesOverview = this.pdfViewer.getPagesOverview();
     const printContainer = this.appConfig.printContainer;
+    const printResolution = AppOptions.get("printResolution");
+    const optionalContentConfigPromise = this.pdfViewer
+      .optionalContentConfigPromise;
+
     const printService = PDFPrintServiceFactory.instance.createPrintService(
       this.pdfDocument,
       pagesOverview,
       printContainer,
+      printResolution,
+      optionalContentConfigPromise,
       this.l10n
     );
     this.printService = printService;
@@ -1664,6 +1739,10 @@ const PDFViewerApplication = {
       document.body.removeAttribute("data-pdfjsprinting");
       this.printService.destroy();
       this.printService = null;
+
+      if (this.pdfDocument) {
+        this.pdfDocument.annotationStorage.resetModified();
+      }
     }
     this.forceRendering();
   },
@@ -1707,6 +1786,7 @@ const PDFViewerApplication = {
     eventBus._on("presentationmode", webViewerPresentationMode);
     eventBus._on("print", webViewerPrint);
     eventBus._on("download", webViewerDownload);
+    eventBus._on("save", webViewerSave);
     eventBus._on("firstpage", webViewerFirstPage);
     eventBus._on("lastpage", webViewerLastPage);
     eventBus._on("nextpage", webViewerNextPage);
@@ -1718,6 +1798,7 @@ const PDFViewerApplication = {
     eventBus._on("scalechanged", webViewerScaleChanged);
     eventBus._on("rotatecw", webViewerRotateCw);
     eventBus._on("rotateccw", webViewerRotateCcw);
+    eventBus._on("optionalcontentconfig", webViewerOptionalContentConfig);
     eventBus._on("switchscrollmode", webViewerSwitchScrollMode);
     eventBus._on("scrollmodechanged", webViewerScrollModeChanged);
     eventBus._on("switchspreadmode", webViewerSwitchSpreadMode);
@@ -1754,6 +1835,9 @@ const PDFViewerApplication = {
 
     window.addEventListener("visibilitychange", webViewerVisibilityChange);
     window.addEventListener("wheel", webViewerWheel, { passive: false });
+    window.addEventListener("touchstart", webViewerTouchStart, {
+      passive: false,
+    });
     window.addEventListener("click", webViewerClick);
     window.addEventListener("keydown", webViewerKeyDown);
     window.addEventListener("keyup", webViewerKeyUp);
@@ -1782,6 +1866,7 @@ const PDFViewerApplication = {
     eventBus._off("presentationmode", webViewerPresentationMode);
     eventBus._off("print", webViewerPrint);
     eventBus._off("download", webViewerDownload);
+    eventBus._off("save", webViewerSave);
     eventBus._off("firstpage", webViewerFirstPage);
     eventBus._off("lastpage", webViewerLastPage);
     eventBus._off("nextpage", webViewerNextPage);
@@ -1793,6 +1878,7 @@ const PDFViewerApplication = {
     eventBus._off("scalechanged", webViewerScaleChanged);
     eventBus._off("rotatecw", webViewerRotateCw);
     eventBus._off("rotateccw", webViewerRotateCcw);
+    eventBus._off("optionalcontentconfig", webViewerOptionalContentConfig);
     eventBus._off("switchscrollmode", webViewerSwitchScrollMode);
     eventBus._off("scrollmodechanged", webViewerScrollModeChanged);
     eventBus._off("switchspreadmode", webViewerSwitchSpreadMode);
@@ -1816,6 +1902,9 @@ const PDFViewerApplication = {
 
     window.removeEventListener("visibilitychange", webViewerVisibilityChange);
     window.removeEventListener("wheel", webViewerWheel, { passive: false });
+    window.removeEventListener("touchstart", webViewerTouchStart, {
+      passive: false,
+    });
     window.removeEventListener("click", webViewerClick);
     window.removeEventListener("keydown", webViewerKeyDown);
     window.removeEventListener("keyup", webViewerKeyUp);
@@ -1828,6 +1917,22 @@ const PDFViewerApplication = {
     _boundEvents.windowHashChange = null;
     _boundEvents.windowBeforePrint = null;
     _boundEvents.windowAfterPrint = null;
+  },
+
+  accumulateWheelTicks(ticks) {
+    // If the scroll direction changed, reset the accumulated wheel ticks.
+    if (
+      (this._wheelUnusedTicks > 0 && ticks < 0) ||
+      (this._wheelUnusedTicks < 0 && ticks > 0)
+    ) {
+      this._wheelUnusedTicks = 0;
+    }
+    this._wheelUnusedTicks += ticks;
+    const wholeTicks =
+      Math.sign(this._wheelUnusedTicks) *
+      Math.floor(Math.abs(this._wheelUnusedTicks));
+    this._wheelUnusedTicks -= wholeTicks;
+    return wholeTicks;
   },
 };
 
@@ -1963,11 +2068,7 @@ function webViewerInitialized() {
     appConfig.secondaryToolbar.openFileButton.setAttribute("hidden", "true");
   }
 
-  if (
-    (typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")) &&
-    !PDFViewerApplication.supportsDocumentFonts
-  ) {
+  if (!PDFViewerApplication.supportsDocumentFonts) {
     AppOptions.set("disableFontFace", true);
     PDFViewerApplication.l10n
       .get(
@@ -2121,11 +2222,14 @@ function webViewerPageMode({ mode }) {
       view = SidebarView.THUMBS;
       break;
     case "bookmarks":
-    case "outline":
+    case "outline": // non-standard
       view = SidebarView.OUTLINE;
       break;
-    case "attachments":
+    case "attachments": // non-standard
       view = SidebarView.ATTACHMENTS;
+      break;
+    case "layers": // non-standard
+      view = SidebarView.LAYERS;
       break;
     case "none":
       view = SidebarView.NONE;
@@ -2138,10 +2242,9 @@ function webViewerPageMode({ mode }) {
 }
 
 function webViewerNamedAction(evt) {
-  // Processing couple of named actions that might be useful.
-  // See also PDFLinkService.executeNamedAction
-  const action = evt.action;
-  switch (action) {
+  // Processing a couple of named actions that might be useful, see also
+  // `PDFLinkService.executeNamedAction`.
+  switch (evt.action) {
     case "GoToPage":
       PDFViewerApplication.appConfig.toolbar.pageNumber.select();
       break;
@@ -2150,6 +2253,16 @@ function webViewerNamedAction(evt) {
       if (!PDFViewerApplication.supportsIntegratedFind) {
         PDFViewerApplication.findBar.toggle();
       }
+      break;
+
+    case "Print":
+      if (PDFViewerApplication.supportsPrinting) {
+        webViewerPrint();
+      }
+      break;
+
+    case "SaveAs":
+      webViewerSave();
       break;
   }
 }
@@ -2262,7 +2375,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
     const file = evt.fileInput.files[0];
 
-    if (!AppOptions.get("disableCreateObjectURL")) {
+    if (!viewerCompatibilityParams.disableCreateObjectURL) {
       let url = URL.createObjectURL(file);
       if (file.name) {
         url = { url, originalUrl: file.name };
@@ -2302,8 +2415,21 @@ function webViewerPresentationMode() {
 function webViewerPrint() {
   window.printPDF();
 }
+function webViewerDownloadOrSave(sourceEventType) {
+  if (
+    PDFViewerApplication.pdfDocument &&
+    PDFViewerApplication.pdfDocument.annotationStorage.size > 0
+  ) {
+    PDFViewerApplication.save({ sourceEventType });
+  } else {
+    PDFViewerApplication.download({ sourceEventType });
+  }
+}
 function webViewerDownload() {
-  PDFViewerApplication.download();
+  webViewerDownloadOrSave("download");
+}
+function webViewerSave() {
+  webViewerDownloadOrSave("save");
 }
 function webViewerFirstPage() {
   if (PDFViewerApplication.pdfDocument) {
@@ -2359,6 +2485,9 @@ function webViewerRotateCw() {
 function webViewerRotateCcw() {
   PDFViewerApplication.rotatePages(-90);
 }
+function webViewerOptionalContentConfig(evt) {
+  PDFViewerApplication.pdfViewer.optionalContentConfigPromise = evt.promise;
+}
 function webViewerSwitchScrollMode(evt) {
   PDFViewerApplication.pdfViewer.scrollMode = evt.mode;
 }
@@ -2403,12 +2532,18 @@ function webViewerUpdateFindMatchesCount({ matchesCount }) {
   }
 }
 
-function webViewerUpdateFindControlState({ state, previous, matchesCount }) {
+function webViewerUpdateFindControlState({
+  state,
+  previous,
+  matchesCount,
+  rawQuery,
+}) {
   if (PDFViewerApplication.supportsIntegratedFind) {
     PDFViewerApplication.externalServices.updateFindControlState({
       result: state,
       findPrevious: previous,
       matchesCount,
+      rawQuery,
     });
   } else {
     PDFViewerApplication.findBar.updateUIState(state, previous, matchesCount);
@@ -2503,13 +2638,34 @@ function webViewerWheel(evt) {
 
     const previousScale = pdfViewer.currentScale;
 
-    const delta = normalizeWheelEventDelta(evt);
+    const delta = normalizeWheelEventDirection(evt);
+    let ticks = 0;
+    if (
+      evt.deltaMode === WheelEvent.DOM_DELTA_LINE ||
+      evt.deltaMode === WheelEvent.DOM_DELTA_PAGE
+    ) {
+      // For line-based devices, use one tick per event, because different
+      // OSs have different defaults for the number lines. But we generally
+      // want one "clicky" roll of the wheel (which produces one event) to
+      // adjust the zoom by one step.
+      if (Math.abs(delta) >= 1) {
+        ticks = Math.sign(delta);
+      } else {
+        // If we're getting fractional lines (I can't think of a scenario
+        // this might actually happen), be safe and use the accumulator.
+        ticks = PDFViewerApplication.accumulateWheelTicks(delta);
+      }
+    } else {
+      // pixel-based devices
+      const PIXELS_PER_LINE_SCALE = 30;
+      ticks = PDFViewerApplication.accumulateWheelTicks(
+        delta / PIXELS_PER_LINE_SCALE
+      );
+    }
 
-    const MOUSE_WHEEL_DELTA_PER_PAGE_SCALE = 3.0;
-    const ticks = delta * MOUSE_WHEEL_DELTA_PER_PAGE_SCALE;
     if (ticks < 0) {
       PDFViewerApplication.zoomOut(-ticks);
-    } else {
+    } else if (ticks > 0) {
       PDFViewerApplication.zoomIn(ticks);
     }
 
@@ -2527,6 +2683,20 @@ function webViewerWheel(evt) {
     }
   } else {
     setZoomDisabledTimeout();
+  }
+}
+
+function webViewerTouchStart(evt) {
+  if (evt.touches.length > 1) {
+    // Disable touch-based zooming, because the entire UI bits gets zoomed and
+    // that doesn't look great. If we do want to have a good touch-based
+    // zooming experience, we need to implement smooth zoom capability (probably
+    // using a CSS transform for faster visual response, followed by async
+    // re-rendering at the final zoom level) and do gesture detection on the
+    // touchmove events to drive it. Or if we want to settle for a less good
+    // experience we can make the touchmove events drive the existing step-zoom
+    // behaviour that the ctrl+mousewheel path takes.
+    evt.preventDefault();
   }
 }
 
@@ -2892,6 +3062,12 @@ function webViewerKeyDown(evt) {
   }
 }
 
+function beforeUnload(evt) {
+  evt.preventDefault();
+  evt.returnValue = "";
+  return false;
+}
+
 /**
  * Converts API PageLayout values to the format used by `PDFViewer`.
  * NOTE: This is supported to the extent that the viewer implements the
@@ -2934,7 +3110,7 @@ function apiPageModeToSidebarView(mode) {
     case "UseAttachments":
       return SidebarView.ATTACHMENTS;
     case "UseOC":
-    // Not implemented, since we don't support Optional Content Groups yet.
+      return SidebarView.LAYERS;
   }
   return SidebarView.NONE; // Default value.
 }

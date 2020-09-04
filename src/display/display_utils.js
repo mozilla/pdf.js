@@ -65,11 +65,16 @@ class BaseCanvasFactory {
 }
 
 class DOMCanvasFactory extends BaseCanvasFactory {
+  constructor({ ownerDocument = globalThis.document } = {}) {
+    super();
+    this._document = ownerDocument;
+  }
+
   create(width, height) {
     if (width <= 0 || height <= 0) {
       throw new Error("Invalid canvas size");
     }
-    const canvas = document.createElement("canvas");
+    const canvas = this._document.createElement("canvas");
     const context = canvas.getContext("2d");
     canvas.width = width;
     canvas.height = height;
@@ -194,7 +199,8 @@ class DOMSVGFactory {
 
 /**
  * @typedef {Object} PageViewportParameters
- * @property {Array} viewBox - The xMin, yMin, xMax and yMax coordinates.
+ * @property {Array<number>} viewBox - The xMin, yMin, xMax and
+ *   yMax coordinates.
  * @property {number} scale - The scale of the viewport.
  * @property {number} rotation - The rotation, in degrees, of the viewport.
  * @property {number} [offsetX] - The horizontal, i.e. x-axis, offset. The
@@ -446,7 +452,10 @@ function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
   link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
 }
 
-// Gets the file name from a given URL.
+/**
+ * Gets the file name from a given URL.
+ * @param {string} url
+ */
 function getFilenameFromUrl(url) {
   const anchor = url.indexOf("#");
   const query = url.indexOf("?");
@@ -520,6 +529,10 @@ function isValidFetchUrl(url, baseUrl) {
   }
 }
 
+/**
+ * @param {string} src
+ * @returns {Promise<void>}
+ */
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");

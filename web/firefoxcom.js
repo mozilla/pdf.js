@@ -88,10 +88,6 @@ const FirefoxCom = (function FirefoxComClosure() {
 })();
 
 class DownloadManager {
-  constructor(options) {
-    this.disableCreateObjectURL = false;
-  }
-
   downloadUrl(url, filename) {
     FirefoxCom.request("download", {
       originalUrl: url,
@@ -119,7 +115,7 @@ class DownloadManager {
     );
   }
 
-  download(blob, url, filename) {
+  download(blob, url, filename, sourceEventType = "download") {
     const blobUrl = URL.createObjectURL(blob);
     const onResponse = err => {
       if (err && this.onerror) {
@@ -134,6 +130,7 @@ class DownloadManager {
         blobUrl,
         originalUrl: url,
         filename,
+        sourceEventType,
       },
       onResponse
     );
@@ -233,6 +230,17 @@ class MozL10n {
   for (const event of events) {
     window.addEventListener(event, handleEvent);
   }
+})();
+
+(function listenSaveEvent() {
+  const handleEvent = function ({ type, detail }) {
+    if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch(type, { source: window });
+  };
+
+  window.addEventListener("save", handleEvent);
 })();
 
 class FirefoxComDataRangeTransport extends PDFDataRangeTransport {

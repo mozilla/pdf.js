@@ -17,6 +17,8 @@ import {
   bytesToString,
   createPromiseCapability,
   createValidAbsoluteUrl,
+  escapeString,
+  getModificationDate,
   isArrayBuffer,
   isBool,
   isNum,
@@ -312,6 +314,21 @@ describe("util", function () {
         expect(reason.message).toEqual("reason");
         done();
       });
+    });
+  });
+
+  describe("escapeString", function () {
+    it("should escape (, ) and \\", function () {
+      expect(escapeString("((a\\a))(b(b\\b)b)")).toEqual(
+        "\\(\\(a\\\\a\\)\\)\\(b\\(b\\\\b\\)b\\)"
+      );
+    });
+  });
+
+  describe("getModificationDate", function () {
+    it("should get a correctly formatted date", function () {
+      const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
+      expect(getModificationDate(date)).toEqual("31410610020653");
     });
   });
 });

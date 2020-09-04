@@ -275,7 +275,7 @@ function startRefTest(masterMode, showRefImages) {
   }
   function checkRefsTmp() {
     if (masterMode && fs.existsSync(refsTmpDir)) {
-      if (options.noPrompt) {
+      if (options.noPrompts) {
         testUtils.removeDirSync(refsTmpDir);
         setup();
         return;
@@ -750,7 +750,8 @@ function unitTestPostHandler(req, res) {
     }
     var session = getSession(data.browser);
     session.numRuns++;
-    var message = data.status + " | " + data.description;
+    var message =
+      data.status + " | " + data.description + " | in " + session.name;
     if (data.status === "TEST-UNEXPECTED-FAIL") {
       session.numErrors++;
     }

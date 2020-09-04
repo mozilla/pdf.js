@@ -113,6 +113,27 @@ class LocalFunctionCache extends BaseLocalCache {
   }
 }
 
+class LocalGStateCache extends BaseLocalCache {
+  set(name, ref = null, data) {
+    if (!name) {
+      throw new Error('LocalGStateCache.set - expected "name" argument.');
+    }
+    if (ref) {
+      if (this._imageCache.has(ref)) {
+        return;
+      }
+      this._nameRefMap.set(name, ref);
+      this._imageCache.put(ref, data);
+      return;
+    }
+    // name
+    if (this._imageMap.has(name)) {
+      return;
+    }
+    this._imageMap.set(name, data);
+  }
+}
+
 class GlobalImageCache {
   static get NUM_PAGES_THRESHOLD() {
     return shadow(this, "NUM_PAGES_THRESHOLD", 2);
@@ -210,5 +231,6 @@ export {
   LocalImageCache,
   LocalColorSpaceCache,
   LocalFunctionCache,
+  LocalGStateCache,
   GlobalImageCache,
 };

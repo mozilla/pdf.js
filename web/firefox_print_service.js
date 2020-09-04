@@ -13,18 +13,23 @@
  * limitations under the License.
  */
 
-import { AppOptions } from "./app_options.js";
 import { CSS_UNITS } from "./ui_utils.js";
 import { PDFPrintServiceFactory } from "./app.js";
 import { shadow } from "pdfjs-lib";
 
 // Creates a placeholder with div and canvas with right size for the page.
-function composePage(pdfDocument, pageNumber, size, printContainer) {
+function composePage(
+  pdfDocument,
+  pageNumber,
+  size,
+  printContainer,
+  printResolution,
+  optionalContentConfigPromise
+) {
   const canvas = document.createElement("canvas");
 
   // The size of the canvas in pixels for printing.
-  const PRINT_RESOLUTION = AppOptions.get("printResolution") || 150;
-  const PRINT_UNITS = PRINT_RESOLUTION / 72.0;
+  const PRINT_UNITS = printResolution / 72.0;
   canvas.width = Math.floor(size.width * PRINT_UNITS);
   canvas.height = Math.floor(size.height * PRINT_UNITS);
 
@@ -36,6 +41,14 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
   canvasWrapper.appendChild(canvas);
   printContainer.appendChild(canvasWrapper);
 
+  // A callback for a given page may be executed multiple times for different
+  // print operations (think of changing the print settings in the browser).
+  //
+  // Since we don't support queueing multiple render tasks for the same page
+  // (and it'd be racy anyways if painting the page is not done in one go) we
+  // keep track of the last scheduled task in order to properly cancel it before
+  // starting the next one.
+  let currentRenderTask = null;
   canvas.mozPrintCallback = function (obj) {
     // Printing/rendering the page.
     const ctx = obj.context;
@@ -45,24 +58,41 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
 
+    let thisRenderTask = null;
     pdfDocument
       .getPage(pageNumber)
       .then(function (pdfPage) {
+        if (currentRenderTask) {
+          currentRenderTask.cancel();
+          currentRenderTask = null;
+        }
         const renderContext = {
           canvasContext: ctx,
           transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
           viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
           intent: "print",
+          annotationStorage: pdfDocument.annotationStorage,
+          optionalContentConfigPromise,
         };
-        return pdfPage.render(renderContext).promise;
+        currentRenderTask = thisRenderTask = pdfPage.render(renderContext);
+        return thisRenderTask.promise;
       })
       .then(
         function () {
           // Tell the printEngine that rendering this canvas/page has finished.
+          if (currentRenderTask === thisRenderTask) {
+            currentRenderTask = null;
+          }
           obj.done();
         },
         function (error) {
           console.error(error);
+
+          if (currentRenderTask === thisRenderTask) {
+            currentRenderTask.cancel();
+            currentRenderTask = null;
+          }
+
           // Tell the printEngine that rendering this canvas/page has failed.
           // This will make the print process stop.
           if ("abort" in obj) {
@@ -75,21 +105,43 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
   };
 }
 
-function FirefoxPrintService(pdfDocument, pagesOverview, printContainer) {
+function FirefoxPrintService(
+  pdfDocument,
+  pagesOverview,
+  printContainer,
+  printResolution,
+  optionalContentConfigPromise = null
+) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
+  this._printResolution = printResolution || 150;
+  this._optionalContentConfigPromise =
+    optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
 }
 
 FirefoxPrintService.prototype = {
   layout() {
-    const { pdfDocument, pagesOverview, printContainer } = this;
+    const {
+      pdfDocument,
+      pagesOverview,
+      printContainer,
+      _printResolution,
+      _optionalContentConfigPromise,
+    } = this;
 
     const body = document.querySelector("body");
     body.setAttribute("data-pdfjsprinting", true);
 
     for (let i = 0, ii = pagesOverview.length; i < ii; ++i) {
-      composePage(pdfDocument, i + 1, pagesOverview[i], printContainer);
+      composePage(
+        pdfDocument,
+        /* pageNumber = */ i + 1,
+        pagesOverview[i],
+        printContainer,
+        _printResolution,
+        _optionalContentConfigPromise
+      );
     }
   },
 
@@ -109,8 +161,20 @@ PDFPrintServiceFactory.instance = {
     return shadow(this, "supportsPrinting", value);
   },
 
-  createPrintService(pdfDocument, pagesOverview, printContainer) {
-    return new FirefoxPrintService(pdfDocument, pagesOverview, printContainer);
+  createPrintService(
+    pdfDocument,
+    pagesOverview,
+    printContainer,
+    printResolution,
+    optionalContentConfigPromise
+  ) {
+    return new FirefoxPrintService(
+      pdfDocument,
+      pagesOverview,
+      printContainer,
+      printResolution,
+      optionalContentConfigPromise
+    );
   },
 };
 
