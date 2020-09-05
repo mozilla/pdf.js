@@ -119,6 +119,11 @@ class PDFSidebar {
     this.outlineButton.disabled = false;
     this.attachmentsButton.disabled = false;
     this.layersButton.disabled = false;
+    // modified by ngx-extended-pdf-viewer
+    this.outlineButton.hidden = false;
+    this.attachmentsButton.hidden = false;
+    this.layersButton.hidden = false;
+    // end of modification
   }
 
   /**
@@ -463,6 +468,9 @@ class PDFSidebar {
     // Disable/enable views.
     const onTreeLoaded = (count, button, view) => {
       button.disabled = !count;
+      // modified by ngx-extended-pdf-viewer
+      button.hidden = !count;
+      // end of modification
 
       if (count) {
         this._showUINotification(view);

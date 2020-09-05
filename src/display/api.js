@@ -47,14 +47,12 @@ import {
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
-// ngx-extended-pdf-viewer doesn't need the apiCompatibilityParams
-// import { apiCompatibilityParams } from "./api_compatibility.js";
-// end of modification
+import { NodeCanvasFactory, NodeCMapReaderFactory } from "./node_utils.js";
+import { AnnotationStorage } from "./annotation_storage.js";
+import { apiCompatibilityParams } from "./api_compatibility.js";
 import { CanvasGraphics } from "./canvas.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
-// ngx-extended-pdf-viewer doesn't need the node.js support
-// import { isNodeJS } from "../shared/is_node.js";
-//  end of modification
+import { isNodeJS } from "../shared/is_node.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
@@ -71,6 +69,15 @@ const ServiceWorkerOptions = {
 
 window.ServiceWorkerOptions = ServiceWorkerOptions;
 // #171 end
+
+const DefaultCanvasFactory =
+  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
+    ? NodeCanvasFactory
+    : DOMCanvasFactory;
+const DefaultCMapReaderFactory =
+  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
+    ? NodeCMapReaderFactory
+    : DOMCMapReaderFactory;
 
 /**
  * @typedef {function} IPDFStreamFactory
@@ -271,7 +278,8 @@ function getDocument(src) {
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
-  params.CMapReaderFactory = params.CMapReaderFactory || DOMCMapReaderFactory;
+  params.CMapReaderFactory =
+    params.CMapReaderFactory || DefaultCMapReaderFactory;
   params.ignoreErrors = params.stopAtErrors !== true;
   params.fontExtraProperties = params.fontExtraProperties === true;
   params.pdfBug = params.pdfBug === true;
@@ -283,9 +291,7 @@ function getDocument(src) {
     params.isEvalSupported = true;
   }
   if (typeof params.disableFontFace !== "boolean") {
-    // modified by ngx-extended-pdf-viewer - we don't need the api compatibility
-    params.disableFontFace = false;
-    // end of modification
+    params.disableFontFace = apiCompatibilityParams.disableFontFace || false;
   }
   if (typeof params.ownerDocument === "undefined") {
     params.ownerDocument = globalThis.document;
@@ -1676,9 +1682,17 @@ const PDFWorker = (function PDFWorkerClosure() {
   let fakeWorkerCapability;
 
   if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
-    // modified by ngx-extended-pdf-viewer - we don't need node.js support,
-    // so we've removed the if branch
-    if (typeof document === "object" && "currentScript" in document) {
+    // eslint-disable-next-line no-undef
+    if (isNodeJS && typeof __non_webpack_require__ === "function") {
+      // Workers aren't supported in Node.js, force-disabling them there.
+      isWorkerDisabled = true;
+
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB")) {
+        fallbackWorkerSrc = "../pdf.worker.js";
+      } else {
+        fallbackWorkerSrc = "./pdf.worker.js";
+      }
+    } else if (typeof document === "object" && "currentScript" in document) {
       const pdfjsFilePath =
         document.currentScript && document.currentScript.src;
       if (pdfjsFilePath) {
@@ -1700,8 +1714,9 @@ const PDFWorker = (function PDFWorkerClosure() {
       return GlobalWorkerOptions.workerSrc;
     }
     if (typeof fallbackWorkerSrc !== "undefined") {
-      // modified by ngx-extended-pdf-viewer - we don't need node.js support,
-      deprecated('No "GlobalWorkerOptions.workerSrc" specified.');
+      if (!isNodeJS) {
+        deprecated('No "GlobalWorkerOptions.workerSrc" specified.');
+      }
       return fallbackWorkerSrc;
     }
     throw new Error('No "GlobalWorkerOptions.workerSrc" specified.');
@@ -1741,8 +1756,28 @@ const PDFWorker = (function PDFWorkerClosure() {
         const worker = await SystemJS.import("pdfjs/core/worker.js");
         return worker.WorkerMessageHandler;
       }
-      // modified by ngx-extended-pdf-viewer - we don't need node.js support,
-      // so we can drop the if statement
+      if (
+        PDFJSDev.test("GENERIC") &&
+        isNodeJS &&
+        // eslint-disable-next-line no-undef
+        typeof __non_webpack_require__ === "function"
+      ) {
+        // Since bundlers, such as Webpack, cannot be told to leave `require`
+        // statements alone we are thus forced to jump through hoops in order
+        // to prevent `Critical dependency: ...` warnings in third-party
+        // deployments of the built `pdf.js`/`pdf.worker.js` files; see
+        // https://github.com/webpack/webpack/issues/8826
+        //
+        // The following hack is based on the assumption that code running in
+        // Node.js won't ever be affected by e.g. Content Security Policies that
+        // prevent the use of `eval`. If that ever occurs, we should revert this
+        // to a normal `__non_webpack_require__` statement and simply document
+        // the Webpack warnings instead (telling users to ignore them).
+        //
+        // eslint-disable-next-line no-eval
+        const worker = eval("require")(getWorkerSrc());
+        return worker.WorkerMessageHandler;
+      }
       await loadScript(getWorkerSrc());
       return window.pdfjsWorker.WorkerMessageHandler;
     };

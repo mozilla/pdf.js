@@ -60,7 +60,8 @@
     "webpack": "^4.44.1",
     "webpack-stream": "~5.0.0",
     "wintersmith": "^2.5.0",
-    "yargs": "^11.1.1"
+    "yargs": "^11.1.1",
+    "canvas-size": "^1.2.0"
   },
   "scripts": {
     "postinstall": "node -e \"require('child_process').execSync('cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js');\"",
@@ -70,8 +71,5 @@
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
-  "license": "Apache-2.0",
-  "dependencies": {
-    "canvas-size": "^1.2.0"
-  }
+  "license": "Apache-2.0"
 }

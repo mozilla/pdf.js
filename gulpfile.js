@@ -306,9 +306,27 @@ function replaceJSRootName(amdName, jsName) {
   );
 }
 
+// ngx-extended-pdf-viewer start
+function addSuffix(filename, defines) {
+  let suffix = ".js";
+  if (!defines.MINIFIED) {
+    suffix = ".min.js";
+  }
+  if (!defines.SKIP_BABEL) {
+    if (!defines.MINIFIED) {
+      suffix = "-es5.min.js";
+    } else {
+      suffix = "-es5.js";
+    }
+  }
+  return filename.replace(".js", suffix);
+}
+// ngx-extended-pdf-viewer end
+
 function createMainBundle(defines) {
   var mainAMDName = "pdfjs-dist/build/pdf";
   var mainOutputName = "pdf.js";
+  mainOutputName = addSuffix(mainOutputName, defines); // modified by ngx-extended-pdf-viewer
 
   var mainFileConfig = createWebpackConfig(defines, {
     filename: mainOutputName,
@@ -326,6 +344,7 @@ function createMainBundle(defines) {
 function createWorkerBundle(defines) {
   var workerAMDName = "pdfjs-dist/build/pdf.worker";
   var workerOutputName = "pdf.worker.js";
+  workerOutputName = addSuffix(workerOutputName, defines); // modified by ngx-extended-pdf-viewer
 
   var workerFileConfig = createWebpackConfig(defines, {
     filename: workerOutputName,
@@ -341,7 +360,7 @@ function createWorkerBundle(defines) {
 }
 
 function createWebBundle(defines) {
-  var viewerOutputName = "viewer.js";
+  var viewerOutputName = addSuffix("viewer.js", defines); // modifed by ngx-extended-pdf-viewer
 
   var viewerFileConfig = createWebpackConfig(defines, {
     filename: viewerOutputName,
@@ -352,6 +371,7 @@ function createWebBundle(defines) {
 function createComponentsBundle(defines) {
   var componentsAMDName = "pdfjs-dist/web/pdf_viewer";
   var componentsOutputName = "pdf_viewer.js";
+  componentsOutputName = addSuffix('viewer.js', defines); // modified by ngx-extended-pdf-viewer
 
   var componentsFileConfig = createWebpackConfig(defines, {
     filename: componentsOutputName,
@@ -368,7 +388,7 @@ function createComponentsBundle(defines) {
 
 function createImageDecodersBundle(defines) {
   var imageDecodersAMDName = "pdfjs-dist/image_decoders/pdf.image_decoders";
-  var imageDecodersOutputName = "pdf.image_decoders.js";
+  var imageDecodersOutputName = addSuffix("pdf.image_decoders.js", defines); // modified by ngx-extended-pdf-viewer
 
   var componentsFileConfig = createWebpackConfig(defines, {
     filename: imageDecodersOutputName,
@@ -906,20 +926,21 @@ gulp.task(
       GENERIC: true,
       SKIP_BABEL: false,
     });
+    console.log(defines);
 
     return buildMinified(defines, MINIFIED_ES5_DIR);
   })
 );
 
-function parseMinified(dir) {
-  var pdfFile = fs.readFileSync(dir + "/build/pdf.js").toString();
-  var pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker.js").toString();
+function parseMinified(dir, suffix) {
+  var pdfFile = fs.readFileSync(dir + "/build/pdf" + suffix + ".js").toString();
+  var pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker" + suffix + ".js").toString();
   var pdfImageDecodersFile = fs
-    .readFileSync(dir + "/image_decoders/pdf.image_decoders.js")
+    .readFileSync(dir + "/image_decoders/pdf.image_decoders" + suffix + ".js")
     .toString();
   var viewerFiles = {
     "pdf.js": pdfFile,
-    "viewer.js": fs.readFileSync(dir + "/web/viewer.js").toString(),
+    "viewer.js": fs.readFileSync(dir + "/web/viewer" + suffix + ".js").toString(),
   };
 
   console.log();
@@ -936,42 +957,42 @@ function parseMinified(dir) {
   };
 
   fs.writeFileSync(
-    dir + "/web/pdf.viewer.js",
+    dir + "/web/viewer" + suffix + ".min.js",
     Terser.minify(viewerFiles, options).code
   );
   fs.writeFileSync(
-    dir + "/build/pdf.min.js",
+    dir + "/build/pdf" + suffix + ".min.js",
     Terser.minify(pdfFile, options).code
   );
   fs.writeFileSync(
-    dir + "/build/pdf.worker.min.js",
+    dir + "/build/pdf.worker" + suffix + ".min.js",
     Terser.minify(pdfWorkerFile, options).code
   );
   fs.writeFileSync(
-    dir + "image_decoders/pdf.image_decoders.min.js",
+    dir + "image_decoders/pdf.image_decoders" + suffix + ".min.js",
     Terser.minify(pdfImageDecodersFile, options).code
   );
 
   console.log();
   console.log("### Cleaning js files");
 
-  fs.unlinkSync(dir + "/web/viewer.js");
+  // fs.unlinkSync(dir + "/web/viewer.js"); // modified by ngx-extended-pdf-viewer
   fs.unlinkSync(dir + "/web/debugger.js");
-  fs.unlinkSync(dir + "/build/pdf.js");
-  fs.unlinkSync(dir + "/build/pdf.worker.js");
+  // fs.unlinkSync(dir + "/build/pdf.js"); // modified by ngx-extended-pdf-viewer
+  // fs.unlinkSync(dir + "/build/pdf.worker.js"); // modified by ngx-extended-pdf-viewer
 
-  fs.renameSync(dir + "/build/pdf.min.js", dir + "/build/pdf.js");
-  fs.renameSync(dir + "/build/pdf.worker.min.js", dir + "/build/pdf.worker.js");
-  fs.renameSync(
-    dir + "/image_decoders/pdf.image_decoders.min.js",
-    dir + "/image_decoders/pdf.image_decoders.js"
-  );
+  // fs.renameSync(dir + "/build/pdf.min.js", dir + "/build/pdf.js"); // modified by ngx-extended-pdf-viewer
+  // fs.renameSync(dir + "/build/pdf.worker.min.js", dir + "/build/pdf.worker.js"); // modified by ngx-extended-pdf-viewer
+  // fs.renameSync( // modified by ngx-extended-pdf-viewer
+  //  dir + "/image_decoders/pdf.image_decoders.min.js", // modified by ngx-extended-pdf-viewer
+  //  dir + "/image_decoders/pdf.image_decoders.js" // modified by ngx-extended-pdf-viewer
+  // ); // modified by ngx-extended-pdf-viewer
 }
 
 gulp.task(
   "minified",
   gulp.series("minified-pre", function (done) {
-    parseMinified(MINIFIED_DIR);
+    parseMinified(MINIFIED_DIR, '');
     done();
   })
 );
@@ -979,7 +1000,7 @@ gulp.task(
 gulp.task(
   "minified-es5",
   gulp.series("minified-es5-pre", function (done) {
-    parseMinified(MINIFIED_ES5_DIR);
+    parseMinified(MINIFIED_ES5_DIR, '-es5');
     done();
   })
 );
