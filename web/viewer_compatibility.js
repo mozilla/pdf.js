@@ -23,7 +23,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     (typeof navigator !== "undefined" && navigator.maxTouchPoints) || 1;
 
   const isAndroid = /Android/.test(userAgent);
-  const isIE = /Trident/.test(userAgent);
   const isIOS =
     /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent) ||
     (platform === "MacIntel" && maxTouchPoints > 1);
@@ -32,9 +31,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   // Checks if possible to use URL.createObjectURL()
   // Support: IE, Chrome on iOS
   (function checkOnBlobSupport() {
-    // Sometimes IE and Chrome on iOS losing the data created with
-    // createObjectURL(), see issues #3977 and #8081.
-    if (isIE || isIOSChrome) {
+    // Sometimes Chrome on iOS loses data created with createObjectURL(),
+    // see issue #8081.
+    if (isIOSChrome) {
       compatibilityParams.disableCreateObjectURL = true;
     }
   })();
