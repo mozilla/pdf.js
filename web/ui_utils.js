@@ -99,7 +99,6 @@ function getOutputScale(ctx) {
   const backingStoreRatio =
     ctx.webkitBackingStorePixelRatio ||
     ctx.mozBackingStorePixelRatio ||
-    ctx.msBackingStorePixelRatio ||
     ctx.oBackingStorePixelRatio ||
     ctx.backingStorePixelRatio ||
     1;
