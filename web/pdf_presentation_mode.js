@@ -92,8 +92,6 @@ class PDFPresentationMode {
       this.container.mozRequestFullScreen();
     } else if (this.container.webkitRequestFullscreen) {
       this.container.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-    } else if (this.container.msRequestFullscreen) {
-      this.container.msRequestFullscreen();
     } else {
       return false;
     }
@@ -151,8 +149,7 @@ class PDFPresentationMode {
     return !!(
       document.fullscreenElement ||
       document.mozFullScreen ||
-      document.webkitIsFullScreen ||
-      document.msFullscreenElement
+      document.webkitIsFullScreen
     );
   }
 
@@ -478,7 +475,6 @@ class PDFPresentationMode {
         "webkitfullscreenchange",
         this.fullscreenChangeBind
       );
-      window.addEventListener("MSFullscreenChange", this.fullscreenChangeBind);
     }
   }
 
@@ -494,10 +490,6 @@ class PDFPresentationMode {
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       window.removeEventListener(
         "webkitfullscreenchange",
-        this.fullscreenChangeBind
-      );
-      window.removeEventListener(
-        "MSFullscreenChange",
         this.fullscreenChangeBind
       );
     }

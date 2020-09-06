@@ -611,15 +611,13 @@ const PDFViewerApplication = {
       support = !!(
         doc.requestFullscreen ||
         doc.mozRequestFullScreen ||
-        doc.webkitRequestFullScreen ||
-        doc.msRequestFullscreen
+        doc.webkitRequestFullScreen
       );
 
       if (
         document.fullscreenEnabled === false ||
         document.mozFullScreenEnabled === false ||
-        document.webkitFullscreenEnabled === false ||
-        document.msFullscreenEnabled === false
+        document.webkitFullscreenEnabled === false
       ) {
         support = false;
       }

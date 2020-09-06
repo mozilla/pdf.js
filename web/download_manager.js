@@ -35,7 +35,7 @@ function download(blobUrl, filename) {
   if ("download" in a) {
     a.download = filename;
   }
-  // <a> must be in the document for IE and recent Firefox versions,
+  // <a> must be in the document for recent Firefox versions,
   // otherwise .click() is ignored.
   (document.body || document.documentElement).appendChild(a);
   a.click();
@@ -51,11 +51,6 @@ class DownloadManager {
   }
 
   downloadData(data, filename, contentType) {
-    if (navigator.msSaveBlob) {
-      // IE10 and above
-      navigator.msSaveBlob(new Blob([data], { type: contentType }), filename);
-      return;
-    }
     const blobUrl = createObjectURL(
       data,
       contentType,
@@ -71,14 +66,6 @@ class DownloadManager {
    *   the "open with" dialog.
    */
   download(blob, url, filename, sourceEventType = "download") {
-    if (navigator.msSaveBlob) {
-      // IE10 / IE11
-      if (!navigator.msSaveBlob(blob, filename)) {
-        this.downloadUrl(url, filename);
-      }
-      return;
-    }
-
     if (viewerCompatibilityParams.disableCreateObjectURL) {
       // URL.createObjectURL is not supported
       this.downloadUrl(url, filename);
