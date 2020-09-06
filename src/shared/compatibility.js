@@ -242,14 +242,16 @@ if (
     require("core-js/es/typed-array/slice");
   })();
 
-  // Support: IE, Safari<11, Chrome<63
+  // Provides support for *recent* additions to the Promise specification,
+  // however basic Promise support is assumed to be available natively.
+  // Support: Firefox<71, Safari<13, Chrome<76
   (function checkPromise() {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
       // The current image decoders are synchronous, hence `Promise` shouldn't
       // need to be polyfilled for the IMAGE_DECODERS build target.
       return;
     }
-    if (globalThis.Promise && globalThis.Promise.allSettled) {
+    if (globalThis.Promise.allSettled) {
       return;
     }
     globalThis.Promise = require("core-js/es/promise/index.js");
