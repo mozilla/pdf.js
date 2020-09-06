@@ -21,8 +21,8 @@ describe("pdf_find_utils", function () {
       const characters = {
         A: CharacterType.ALPHA_LETTER,
         a: CharacterType.ALPHA_LETTER,
-        "0": CharacterType.ALPHA_LETTER,
-        "5": CharacterType.ALPHA_LETTER,
+        0: CharacterType.ALPHA_LETTER,
+        5: CharacterType.ALPHA_LETTER,
         "\xC4": CharacterType.ALPHA_LETTER, // "Ä"
         "\xE4": CharacterType.ALPHA_LETTER, // "ä"
         _: CharacterType.ALPHA_LETTER,
