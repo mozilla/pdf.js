@@ -43,10 +43,10 @@
   --field-bg-color: rgba(255, 255, 255, 1);
   --field-border-color: rgba(187, 187, 188, 1);
   --findbar-nextprevious-btn-bg-color: rgba(227, 228, 230, 1);
-  --outline-color: rgba(0, 0, 0, 0.8);
-  --outline-hover-color: rgba(0, 0, 0, 0.9);
-  --outline-active-color: rgba(0, 0, 0, 0.08);
-  --outline-active-bg-color: rgba(0, 0, 0, 1);
+  --treeitem-color: rgba(0, 0, 0, 0.8);
+  --treeitem-hover-color: rgba(0, 0, 0, 0.9);
+  --treeitem-active-color: rgba(0, 0, 0, 0.08);
+  --treeitem-active-bg-color: rgba(0, 0, 0, 1);
   --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
   --doorhanger-bg-color: rgba(255, 255, 255, 1);
   --doorhanger-border-color: rgba(12, 12, 13, 0.2);
@@ -114,10 +114,10 @@
     --field-bg-color: rgba(64, 64, 68, 1);
     --field-border-color: rgba(115, 115, 115, 1);
     --findbar-nextprevious-btn-bg-color: rgba(89, 89, 89, 1);
-    --outline-color: rgba(255, 255, 255, 0.8);
-    --outline-hover-color: rgba(255, 255, 255, 0.9);
-    --outline-active-color: rgba(255, 255, 255, 0.08);
-    --outline-active-bg-color: rgba(255, 255, 255, 1);
+    --treeitem-color: rgba(255, 255, 255, 0.8);
+    --treeitem-hover-color: rgba(255, 255, 255, 0.9);
+    --treeitem-active-color: rgba(255, 255, 255, 0.08);
+    --treeitem-active-bg-color: rgba(255, 255, 255, 1);
     --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
     --doorhanger-bg-color: rgba(74, 74, 79, 1);
     --doorhanger-border-color: rgba(39, 39, 43, 1);
@@ -1397,7 +1397,7 @@ html[dir="rtl"] .treeItem > .treeItems {
   height: auto;
   margin-bottom: 1px;
   border-radius: 2px;
-  color: var(--outline-color);
+  color: var(--treeitem-color);
   font-size: 13px;
   line-height: 15px;
   user-select: none;
@@ -1463,13 +1463,13 @@ html[dir="rtl"] .treeItemToggler::before {
   background-color: var(--sidebaritem-bg-color);
   background-clip: padding-box;
   border-radius: 2px;
-  color: var(--outline-hover-color);
+  color: var(--treeitem-hover-color);
 }
 
 .treeItem.selected {
-  background-color: var(--outline-active-bg-color);
+  background-color: var(--treeitem-active-bg-color);
   background-clip: padding-box;
-  color: var(--outline-active-color);
+  color: var(--treeitem-active-color);
 }
 
 .noResults {
