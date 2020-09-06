@@ -2436,6 +2436,49 @@ describe("annotation", function () {
         })
         .catch(done.fail);
     });
+
+    it("should handle push buttons", function (done) {
+      const buttonWidgetRef = Ref.get(124, 0);
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.PUSHBUTTON);
+      buttonWidgetDict.set("A", "whatever");
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      ).then(({ data }) => {
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.pushButton).toEqual(true);
+        done();
+      }, done.fail);
+    });
+
+    it("should handle push buttons that act as a tooltip only", function (done) {
+      const buttonWidgetRef = Ref.get(124, 0);
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.PUSHBUTTON);
+      buttonWidgetDict.set("TU", "An alternative text");
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      ).then(({ data }) => {
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.pushButton).toEqual(true);
+        expect(data.alternativeText).toEqual("An alternative text");
+        done();
+      }, done.fail);
+    });
   });
 
   describe("ChoiceWidgetAnnotation", function () {
