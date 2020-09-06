@@ -29,11 +29,6 @@ if (
   }
   globalThis._pdfjsCompatibilityChecked = true;
 
-  const hasDOM = typeof window === "object" && typeof document === "object";
-  const userAgent =
-    (typeof navigator !== "undefined" && navigator.userAgent) || "";
-  const isIE = /Trident/.test(userAgent);
-
   // Support: Node.js
   (function checkNodeBtoa() {
     if (globalThis.btoa || !isNodeJS) {
@@ -53,93 +48,6 @@ if (
     globalThis.atob = function (input) {
       // eslint-disable-next-line no-undef
       return Buffer.from(input, "base64").toString("binary");
-    };
-  })();
-
-  // Provides support for ChildNode.remove in legacy browsers.
-  // Support: IE.
-  (function checkChildNodeRemove() {
-    if (!hasDOM) {
-      return;
-    }
-    if (typeof Element.prototype.remove !== "undefined") {
-      return;
-    }
-    Element.prototype.remove = function () {
-      if (this.parentNode) {
-        // eslint-disable-next-line mozilla/avoid-removeChild
-        this.parentNode.removeChild(this);
-      }
-    };
-  })();
-
-  // Provides support for DOMTokenList.prototype.{add, remove}, with more than
-  // one parameter, in legacy browsers.
-  // Support: IE
-  (function checkDOMTokenListAddRemove() {
-    if (!hasDOM || isNodeJS) {
-      return;
-    }
-    const div = document.createElement("div");
-    div.classList.add("testOne", "testTwo");
-
-    if (
-      div.classList.contains("testOne") === true &&
-      div.classList.contains("testTwo") === true
-    ) {
-      return;
-    }
-    const OriginalDOMTokenListAdd = DOMTokenList.prototype.add;
-    const OriginalDOMTokenListRemove = DOMTokenList.prototype.remove;
-
-    DOMTokenList.prototype.add = function (...tokens) {
-      for (const token of tokens) {
-        OriginalDOMTokenListAdd.call(this, token);
-      }
-    };
-    DOMTokenList.prototype.remove = function (...tokens) {
-      for (const token of tokens) {
-        OriginalDOMTokenListRemove.call(this, token);
-      }
-    };
-  })();
-
-  // Provides support for DOMTokenList.prototype.toggle, with the optional
-  // "force" parameter, in legacy browsers.
-  // Support: IE
-  (function checkDOMTokenListToggle() {
-    if (!hasDOM || isNodeJS) {
-      return;
-    }
-    const div = document.createElement("div");
-    if (div.classList.toggle("test", 0) === false) {
-      return;
-    }
-
-    DOMTokenList.prototype.toggle = function (token) {
-      const force =
-        arguments.length > 1 ? !!arguments[1] : !this.contains(token);
-      return this[force ? "add" : "remove"](token), force;
-    };
-  })();
-
-  // Provides support for window.history.{pushState, replaceState}, with the
-  // `url` parameter set to `undefined`, without breaking the document URL.
-  // Support: IE
-  (function checkWindowHistoryPushStateReplaceState() {
-    if (!hasDOM || !isIE) {
-      return;
-    }
-    const OriginalPushState = window.history.pushState;
-    const OriginalReplaceState = window.history.replaceState;
-
-    window.history.pushState = function (state, title, url) {
-      const args = url === undefined ? [state, title] : [state, title, url];
-      OriginalPushState.apply(this, args);
-    };
-    window.history.replaceState = function (state, title, url) {
-      const args = url === undefined ? [state, title] : [state, title, url];
-      OriginalReplaceState.apply(this, args);
     };
   })();
 
