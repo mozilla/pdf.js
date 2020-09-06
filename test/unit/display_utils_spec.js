@@ -224,7 +224,7 @@ describe("display_utils", function () {
           undefined: null,
           null: null,
           42: null,
-          "2019": null,
+          2019: null,
           D2019: null,
           "D:": null,
           "D:201": null,
