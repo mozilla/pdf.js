@@ -852,6 +852,10 @@ class BaseViewer {
         if (y === null && this._location) {
           x = this._location.left;
           y = this._location.top;
+        } else if (typeof y !== "number") {
+          // The "top" value isn't optional, according to the spec, however some
+          // bad PDF generators will pretend that it is (fixes bug 1663390).
+          y = pageHeight;
         }
         break;
       case "FitV":
