@@ -829,7 +829,6 @@ html[dir="rtl"] .splitToolbarButtonSeparator {
   font-size: 12px;
   line-height: 14px;
   user-select: none;
-  /* Opera does not support user-select, use <... unselectable="on"> instead */
   cursor: default;
   box-sizing: border-box;
 }
