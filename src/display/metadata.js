@@ -14,7 +14,7 @@
  */
 
 import { assert } from "../shared/util.js";
-import { SimpleXMLParser } from "./xml_parser.js";
+import { SimpleXMLParser } from "../shared/xml_parser.js";
 
 class Metadata {
   constructor(data) {
