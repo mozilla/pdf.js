@@ -17,6 +17,7 @@ import {
   bytesToString,
   createPromiseCapability,
   createValidAbsoluteUrl,
+  encodeToXmlString,
   escapeString,
   getModificationDate,
   isArrayBuffer,
@@ -24,6 +25,7 @@ import {
   isNum,
   isSameOrigin,
   isString,
+  parseXFAPath,
   removeNullCharacters,
   string32,
   stringToBytes,
@@ -329,6 +331,34 @@ describe("util", function () {
     it("should get a correctly formatted date", function () {
       const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
       expect(getModificationDate(date)).toEqual("31410610020653");
+    });
+  });
+
+  describe("parseXFAPath", function () {
+    it("should get a correctly parsed path", function () {
+      const path = "foo.bar[12].oof[3].rab.FOO[123].BAR[456]";
+      expect(parseXFAPath(path)).toEqual([
+        { name: "foo", pos: 0 },
+        { name: "bar", pos: 12 },
+        { name: "oof", pos: 3 },
+        { name: "rab", pos: 0 },
+        { name: "FOO", pos: 123 },
+        { name: "BAR", pos: 456 },
+      ]);
+    });
+  });
+
+  describe("encodeToXmlString", function () {
+    it("should get a correctly encoded string with some entities", function () {
+      const str = "\"\u0397ell😂' & <W😂rld>";
+      expect(encodeToXmlString(str)).toEqual(
+        "&quot;&#x397;ell&#x1F602;&apos; &amp; &lt;W&#x1F602;rld&gt;"
+      );
+    });
+
+    it("should get a correctly encoded basic ascii string", function () {
+      const str = "hello world";
+      expect(encodeToXmlString(str)).toEqual(str);
     });
   });
 });

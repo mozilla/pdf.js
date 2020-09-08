@@ -37,7 +37,7 @@ describe("Writer", function () {
         info: {},
       };
 
-      let data = incrementalUpdate(originalData, xrefInfo, newRefs);
+      let data = incrementalUpdate(originalData, xrefInfo, newRefs, null, null);
       data = bytesToString(data);
 
       const expected =

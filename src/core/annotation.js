@@ -1073,6 +1073,7 @@ class WidgetAnnotation extends Annotation {
       return null;
     }
 
+    const value = annotationStorage[this.data.id];
     const bbox = [
       0,
       0,
@@ -1080,11 +1081,15 @@ class WidgetAnnotation extends Annotation {
       this.data.rect[3] - this.data.rect[1],
     ];
 
+    const xfa = {
+      path: stringToPDFString(dict.get("T") || ""),
+      value,
+    };
+
     const newRef = evaluator.xref.getNewRef();
     const AP = new Dict(evaluator.xref);
     AP.set("N", newRef);
 
-    const value = annotationStorage[this.data.id];
     const encrypt = evaluator.xref.encrypt;
     let originalTransform = null;
     let newTransform = null;
@@ -1120,9 +1125,9 @@ class WidgetAnnotation extends Annotation {
     return [
       // data for the original object
       // V field changed + reference for new AP
-      { ref: this.ref, data: bufferOriginal.join("") },
+      { ref: this.ref, data: bufferOriginal.join(""), xfa },
       // data for the new AP
-      { ref: newRef, data: bufferNew.join("") },
+      { ref: newRef, data: bufferNew.join(""), xfa: null },
     ];
   }
 
@@ -1521,6 +1526,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
 
+    const xfa = {
+      path: stringToPDFString(dict.get("T") || ""),
+      value: value ? this.data.exportValue : "",
+    };
+
     const name = Name.get(value ? this.data.exportValue : "Off");
     dict.set("V", name);
     dict.set("AS", name);
@@ -1539,7 +1549,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     writeDict(dict, buffer, originalTransform);
     buffer.push("\nendobj\n");
 
-    return [{ ref: this.ref, data: buffer.join("") }];
+    return [{ ref: this.ref, data: buffer.join(""), xfa }];
   }
 
   async _saveRadioButton(evaluator, task, annotationStorage) {
@@ -1554,6 +1564,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (!isDict(dict)) {
       return null;
     }
+
+    const xfa = {
+      path: stringToPDFString(dict.get("T") || ""),
+      value: value ? this.data.buttonValue : "",
+    };
 
     const name = Name.get(value ? this.data.buttonValue : "Off");
     let parentBuffer = null;
@@ -1593,9 +1608,13 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     writeDict(dict, buffer, originalTransform);
     buffer.push("\nendobj\n");
 
-    const newRefs = [{ ref: this.ref, data: buffer.join("") }];
+    const newRefs = [{ ref: this.ref, data: buffer.join(""), xfa }];
     if (parentBuffer !== null) {
-      newRefs.push({ ref: this.parent, data: parentBuffer.join("") });
+      newRefs.push({
+        ref: this.parent,
+        data: parentBuffer.join(""),
+        xfa: null,
+      });
     }
 
     return newRefs;
