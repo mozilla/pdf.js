@@ -19,6 +19,7 @@
   --sidebar-width: 200px;
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
+  --loadingBar-end-offset: 0;
 
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
@@ -253,10 +254,6 @@ html[dir="rtl"] #sidebarContainer {
   right: calc(0px - var(--sidebar-width));
 }
 
-.loadingInProgress #sidebarContainer {
-  top: 36px;
-}
-
 #outerContainer.sidebarResizing #sidebarContainer {
   /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
   transition-duration: 0s;
@@ -406,11 +403,35 @@ html[dir="rtl"] #toolbarContainer,
 }
 
 #loadingBar {
-  position: relative;
-  width: 100%;
+  position: absolute;
   height: 4px;
   background-color: var(--body-bg-color);
   border-bottom: 1px solid var(--toolbar-border-color);
+
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
+}
+html[dir="ltr"] #loadingBar {
+  transition-property: left;
+  left: 0;
+  right: var(--loadingBar-end-offset);
+}
+html[dir="rtl"] #loadingBar {
+  transition-property: right;
+  left: var(--loadingBar-end-offset);
+  right: 0;
+}
+
+html[dir="ltr"] #outerContainer.sidebarOpen #loadingBar {
+  left: var(--sidebar-width);
+}
+html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
+  right: var(--sidebar-width);
+}
+
+#outerContainer.sidebarResizing #loadingBar {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  transition-duration: 0s;
 }
 
 #loadingBar .progress {
@@ -1484,9 +1505,6 @@ html[dir="rtl"] .treeItemToggler::before {
   right: 0;
   z-index: 1000;
   padding: 3px 6px;
-}
-.loadingInProgress #errorWrapper {
-  top: 37px;
 }
 
 #errorMessageLeft {
