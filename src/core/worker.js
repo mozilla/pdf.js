@@ -549,11 +549,11 @@ class WorkerMessageHandler {
         }
 
         acroForm = isDict(acroForm) ? acroForm : Dict.empty;
-        const XFA = acroForm.get("XFA") || [];
+        const xfa = acroForm.get("XFA") || [];
         let xfaDatasets = null;
-        for (let i = 0, ii = XFA.length; i < ii; i += 2) {
-          if (XFA[i] === "datasets") {
-            xfaDatasets = XFA[i + 1];
+        for (let i = 0, ii = xfa.length; i < ii; i += 2) {
+          if (xfa[i] === "datasets") {
+            xfaDatasets = xfa[i + 1];
           }
         }
 
