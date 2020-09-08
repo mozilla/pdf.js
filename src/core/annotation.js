@@ -1510,7 +1510,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return this._saveRadioButton(evaluator, task, annotationStorage);
     }
 
-    return super.save(evaluator, task, annotationStorage);
+    // Nothing to save
+    return null;
   }
 
   async _saveCheckbox(evaluator, task, annotationStorage) {
