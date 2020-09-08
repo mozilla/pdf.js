@@ -2317,6 +2317,29 @@ describe("annotation", function () {
           done();
         }, done.fail);
     });
+
+    it("should save nothing", function (done) {
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test save");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          return annotation.save(partialEvaluator, task, {});
+        })
+        .then(data => {
+          expect(data).toEqual(null);
+          done();
+        })
+        .catch(done.fail);
+    });
   });
 
   describe("ChoiceWidgetAnnotation", function () {
