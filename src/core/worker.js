@@ -32,7 +32,7 @@ import {
   VerbosityLevel,
   warn,
 } from "../shared/util.js";
-import { clearPrimitiveCaches, Ref } from "./primitives.js";
+import { clearPrimitiveCaches, Dict, isDict, Ref } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { incrementalUpdate } from "./writer.js";
 import { isNodeJS } from "../shared/is_node.js";
@@ -521,7 +521,10 @@ class WorkerMessageHandler {
       filename,
     }) {
       pdfManager.requestLoadedStream();
-      const promises = [pdfManager.onLoadedStream()];
+      const promises = [
+        pdfManager.onLoadedStream(),
+        pdfManager.ensureCatalog("acroForm"),
+      ];
       const document = pdfManager.pdfDocument;
       for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
         promises.push(
@@ -532,7 +535,7 @@ class WorkerMessageHandler {
         );
       }
 
-      return Promise.all(promises).then(([stream, ...refs]) => {
+      return Promise.all(promises).then(([stream, acroForm, ...refs]) => {
         let newRefs = [];
         for (const ref of refs) {
           newRefs = ref
@@ -543,6 +546,20 @@ class WorkerMessageHandler {
         if (newRefs.length === 0) {
           // No new refs so just return the initial bytes
           return stream.bytes;
+        }
+
+        acroForm = isDict(acroForm) ? acroForm : Dict.empty;
+        const xfa = acroForm.get("XFA") || [];
+        let xfaDatasets = null;
+        if (Array.isArray(xfa)) {
+          for (let i = 0, ii = xfa.length; i < ii; i += 2) {
+            if (xfa[i] === "datasets") {
+              xfaDatasets = xfa[i + 1];
+            }
+          }
+        } else {
+          // TODO: Support XFA streams.
+          warn("Unsupported XFA type.");
         }
 
         const xref = document.xref;
@@ -572,7 +589,13 @@ class WorkerMessageHandler {
         }
         xref.resetNewRef();
 
-        return incrementalUpdate(stream.bytes, newXrefInfo, newRefs);
+        return incrementalUpdate(
+          stream.bytes,
+          newXrefInfo,
+          newRefs,
+          xref,
+          xfaDatasets
+        );
       });
     });
 
