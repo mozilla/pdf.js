@@ -165,6 +165,26 @@ function isWhiteSpace(ch) {
   return ch === 0x20 || ch === 0x09 || ch === 0x0d || ch === 0x0a;
 }
 
+/**
+ * AcroForm field names use an array like notation to refer to
+ * repeated XFA elements e.g. foo.bar[nnn].
+ * see: XFA Spec Chapter 3 - Repeated Elements
+ *
+ * @param {string} path - XFA path name.
+ * @returns {Array} - Array of Objects with the name and pos of
+ * each part of the path.
+ */
+function parseXFAPath(path) {
+  const positionPattern = /(.+)\[([0-9]+)\]$/;
+  return path.split(".").map(component => {
+    const m = component.match(positionPattern);
+    if (m) {
+      return { name: m[1], pos: parseInt(m[2], 10) };
+    }
+    return { name: component, pos: 0 };
+  });
+}
+
 export {
   getLookupTableFactory,
   MissingDataException,
@@ -173,6 +193,7 @@ export {
   getInheritableProperty,
   toRomanNumerals,
   log2,
+  parseXFAPath,
   readInt8,
   readUint16,
   readUint32,
