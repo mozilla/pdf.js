@@ -589,13 +589,13 @@ class WorkerMessageHandler {
         }
         xref.resetNewRef();
 
-        return incrementalUpdate(
-          stream.bytes,
-          newXrefInfo,
+        return incrementalUpdate({
+          originalData: stream.bytes,
+          xrefInfo: newXrefInfo,
           newRefs,
           xref,
-          xfaDatasets
-        );
+          datasetsRef: xfaDatasets,
+        });
       });
     });
 

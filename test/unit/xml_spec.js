@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { parseXFAPath } from "../../src/shared/util.js";
+import { parseXFAPath } from "../../src/core/core_utils.js";
 import { SimpleXMLParser } from "../../src/shared/xml_parser.js";
 
 describe("XML", function () {
@@ -69,7 +69,7 @@ describe("XML", function () {
     });
 
     it("should dump a xml tree", function () {
-      let xml = `
+      const xml = `
       <a>
           <b>
               <c a="123"/>
@@ -87,9 +87,7 @@ describe("XML", function () {
           <h>
               <i/>
               <j/>
-              <k>
-                  W&#x1F602;rld
-                  <g a="654"/>
+              <k>&#xA;W&#x1F602;rld&#xA;<g a="654"/>
               </k>
           </h>
           <b>
@@ -98,13 +96,14 @@ describe("XML", function () {
               <g a="121110"/>
           </b>
       </a>`;
-      xml = xml.replace(/\s+/g, "");
       const root = new SimpleXMLParser(true).parseFromString(xml)
         .documentElement;
       const buffer = [];
       root.dump(buffer);
 
-      expect(buffer.join("").replace(/\s+/g, "")).toEqual(xml);
+      expect(buffer.join("").replace(/\s+/g, "")).toEqual(
+        xml.replace(/\s+/g, "")
+      );
     });
   });
 });

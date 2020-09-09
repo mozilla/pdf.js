@@ -14,15 +14,11 @@
  */
 /* eslint no-var: error */
 
-import {
-  bytesToString,
-  escapeString,
-  parseXFAPath,
-  warn,
-} from "../shared/util.js";
+import { bytesToString, escapeString, warn } from "../shared/util.js";
 import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
 import { SimpleDOMNode, SimpleXMLParser } from "../shared/xml_parser.js";
 import { calculateMD5 } from "./crypto.js";
+import { parseXFAPath } from "./core_utils.js";
 
 function writeDict(dict, buffer, transform) {
   buffer.push("<<");
@@ -175,7 +171,13 @@ function updateXFA(datasetsRef, newRefs, xref) {
   newRefs.push({ ref: datasetsRef, data });
 }
 
-function incrementalUpdate(originalData, xrefInfo, newRefs, xref, datasetsRef) {
+function incrementalUpdate({
+  originalData,
+  xrefInfo,
+  newRefs,
+  xref = null,
+  datasetsRef = null,
+}) {
   updateXFA(datasetsRef, newRefs, xref);
 
   const newXref = new Dict(null);
