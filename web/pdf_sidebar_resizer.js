@@ -34,7 +34,6 @@ class PDFSidebarResizer {
    * @param {IL10n} l10n - Localization service.
    */
   constructor(options, eventBus, l10n = NullL10n) {
-    this.enabled = false;
     this.isRTL = false;
     this.sidebarOpen = false;
     this.doc = document.documentElement;
@@ -45,24 +44,8 @@ class PDFSidebarResizer {
     this.outerContainer = options.outerContainer;
     this.resizer = options.resizer;
     this.eventBus = eventBus;
-    this.l10n = l10n;
 
-    if (
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
-      (typeof CSS === "undefined" ||
-        typeof CSS.supports !== "function" ||
-        !CSS.supports(SIDEBAR_WIDTH_VAR, `calc(-1 * ${SIDEBAR_MIN_WIDTH}px)`))
-    ) {
-      console.warn(
-        "PDFSidebarResizer: " +
-          "The browser does not support resizing of the sidebar."
-      );
-      return;
-    }
-    this.enabled = true;
-    this.resizer.classList.remove("hidden"); // Show the resizer DOM element.
-
-    this.l10n.getDirection().then(dir => {
+    l10n.getDirection().then(dir => {
       this.isRTL = dir === "rtl";
     });
     this._addEventListeners();
@@ -83,9 +66,6 @@ class PDFSidebarResizer {
    * returns {boolean} Indicating if the sidebar width was updated.
    */
   _updateWidth(width = 0) {
-    if (!this.enabled) {
-      return false;
-    }
     // Prevent the sidebar from becoming too narrow, or from occupying more
     // than half of the available viewer width.
     const maxWidth = Math.floor(this.outerContainerWidth / 2);
@@ -134,9 +114,6 @@ class PDFSidebarResizer {
    * @private
    */
   _addEventListeners() {
-    if (!this.enabled) {
-      return;
-    }
     const _boundEvents = this._boundEvents;
     _boundEvents.mouseMove = this._mouseMove.bind(this);
     _boundEvents.mouseUp = this._mouseUp.bind(this);
