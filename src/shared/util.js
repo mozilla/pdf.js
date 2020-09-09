@@ -910,26 +910,6 @@ const createObjectURL = (function createObjectURLClosure() {
   };
 })();
 
-/**
- * AcroForm field names use an array like notation to refer to
- * repeated XFA elements e.g. foo.bar[nnn].
- * see: XFA Spec Chapter 3 - Repeated Elements
- *
- * @param {string} path - XFA path name.
- * @returns {Array} - Array of Objects with the name and pos of
- * each part of the path.
- */
-function parseXFAPath(path) {
-  const positionPattern = /(.+)\[([0-9]+)\]$/;
-  return path.split(".").map(component => {
-    const m = component.match(positionPattern);
-    if (m) {
-      return { name: m[1], pos: parseInt(m[2], 10) };
-    }
-    return { name: component, pos: 0 };
-  });
-}
-
 const XMLEntities = {
   /* < */ 0x3c: "&lt;",
   /* > */ 0x3e: "&gt;",
@@ -1027,7 +1007,6 @@ export {
   createValidAbsoluteUrl,
   IsLittleEndianCached,
   IsEvalSupportedCached,
-  parseXFAPath,
   removeNullCharacters,
   setVerbosityLevel,
   shadow,
