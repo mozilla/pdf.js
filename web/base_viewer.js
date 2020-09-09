@@ -145,14 +145,21 @@ class BaseViewer {
     this.viewer = options.viewer || options.container.firstElementChild;
 
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
-      !(
-        this.container instanceof HTMLDivElement &&
-        this.viewer instanceof HTMLDivElement
-      )
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
     ) {
-      throw new Error("Invalid `container` and/or `viewer` option.");
+      if (
+        !(
+          this.container instanceof HTMLDivElement &&
+          this.viewer instanceof HTMLDivElement
+        )
+      ) {
+        throw new Error("Invalid `container` and/or `viewer` option.");
+      }
+
+      if (getComputedStyle(this.container).position !== "absolute") {
+        throw new Error("The `container` must be absolutely positioned.");
+      }
     }
     this.eventBus = options.eventBus;
     this.linkService = options.linkService || new SimpleLinkService();
