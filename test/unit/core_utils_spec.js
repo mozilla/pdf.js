@@ -15,6 +15,7 @@
 
 import { Dict, Ref } from "../../src/core/primitives.js";
 import {
+  escapePDFName,
   getInheritableProperty,
   isWhiteSpace,
   log2,
@@ -224,6 +225,18 @@ describe("core_utils", function () {
         { name: "FOO", pos: 123 },
         { name: "BAR", pos: 456 },
       ]);
+    });
+  });
+
+  describe("escapePDFName", function () {
+    it("should escape PDF name", function () {
+      expect(escapePDFName("hello")).toEqual("hello");
+      expect(escapePDFName("\xfehello")).toEqual("#fehello");
+      expect(escapePDFName("he\xfell\xffo")).toEqual("he#fell#ffo");
+      expect(escapePDFName("\xfehe\xfell\xffo\xff")).toEqual(
+        "#fehe#fell#ffo#ff"
+      );
+      expect(escapePDFName("#h#e#l#l#o")).toEqual("#23h#23e#23l#23l#23o");
     });
   });
 });
