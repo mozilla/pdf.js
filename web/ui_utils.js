@@ -1006,7 +1006,6 @@ export {
   SpreadMode,
   NullL10n,
   EventBus,
-  clamp,
   ProgressBar,
   getPDFFileNameFromURL,
   noContextMenuHandler,
