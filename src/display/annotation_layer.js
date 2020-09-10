@@ -466,6 +466,10 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         storage.setValue(id, event.target.value);
       });
 
+      element.addEventListener("blur", function (event) {
+        event.target.setSelectionRange(0, 0);
+      });
+
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;
 
