@@ -185,7 +185,33 @@ function parseXFAPath(path) {
   });
 }
 
+function escapePDFName(str) {
+  const buffer = [];
+  let start = 0;
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.charCodeAt(i);
+    if (char < 0x21 || char > 0x7e || char === 0x23) {
+      if (start < i) {
+        buffer.push(str.substring(start, i));
+      }
+      buffer.push(`#${char.toString(16)}`);
+      start = i + 1;
+    }
+  }
+
+  if (buffer.length === 0) {
+    return str;
+  }
+
+  if (start < str.length) {
+    buffer.push(str.substring(start, str.length));
+  }
+
+  return buffer.join("");
+}
+
 export {
+  escapePDFName,
   getLookupTableFactory,
   MissingDataException,
   XRefEntryException,

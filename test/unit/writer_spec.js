@@ -95,5 +95,20 @@ describe("Writer", function () {
       expect(buffer.join("")).toEqual(expected);
       done();
     });
+
+    it("should write a Dict in escaping PDF names", function (done) {
+      const dict = new Dict(null);
+      dict.set("A", Name.get("hello"));
+      dict.set("B", Name.get("#hello"));
+      dict.set("C", Name.get("he\xfello\xff"));
+
+      const buffer = [];
+      writeDict(dict, buffer, null);
+
+      const expected = "<< /A /hello /B /#23hello /C /he#fello#ff>>";
+
+      expect(buffer.join("")).toEqual(expected);
+      done();
+    });
   });
 });

@@ -16,9 +16,9 @@
 
 import { bytesToString, escapeString, warn } from "../shared/util.js";
 import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
+import { escapePDFName, parseXFAPath } from "./core_utils.js";
 import { SimpleDOMNode, SimpleXMLParser } from "../shared/xml_parser.js";
 import { calculateMD5 } from "./crypto.js";
-import { parseXFAPath } from "./core_utils.js";
 
 function writeDict(dict, buffer, transform) {
   buffer.push("<<");
@@ -73,7 +73,7 @@ function numberToString(value) {
 
 function writeValue(value, buffer, transform) {
   if (isName(value)) {
-    buffer.push(`/${value.name}`);
+    buffer.push(`/${escapePDFName(value.name)}`);
   } else if (isRef(value)) {
     buffer.push(`${value.num} ${value.gen} R`);
   } else if (Array.isArray(value)) {
