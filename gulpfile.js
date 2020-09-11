@@ -1205,7 +1205,22 @@ gulp.task("types", function (done) {
     "forceConsistentCasingInFileNames",
     "emitDeclarationOnly",
   ].join(" --");
-  exec(`"node_modules/.bin/tsc" --${args} src/pdf.js`, done);
+  exec(`"node_modules/.bin/tsc" --${args} src/pdf.js web/viewer.js`, done);
+});
+
+gulp.task("typesweb", function (done) {
+  console.log("### Generating TypeScript definitions using `tsc`");
+  const args = [
+    "target ES2020",
+    "allowJS",
+    "declaration",
+    `outDir typesweb`,
+    "strict",
+    "esModuleInterop",
+    "forceConsistentCasingInFileNames",
+    "emitDeclarationOnly",
+  ].join(" --");
+  exec(`"node_modules/.bin/tsc" --${args} web/viewer.js`, done);
 });
 
 function buildLib(defines, dir) {
@@ -1405,7 +1420,7 @@ gulp.task(
 
 gulp.task(
   "typestest-pre",
-  gulp.series("testing-pre", "generic", "types", function () {
+  gulp.series("testing-pre", "generic", "types", "typesweb", function () {
     const [packageJsonSrc] = packageBowerJson();
     return merge([
       packageJsonSrc.pipe(gulp.dest(TYPESTEST_DIR)),
@@ -1755,6 +1770,7 @@ gulp.task(
     "minified",
     "minified-es5",
     "types",
+    "typesweb",
     function () {
       console.log();
       console.log("### Cloning baseline distribution");
