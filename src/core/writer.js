@@ -23,7 +23,7 @@ import { calculateMD5 } from "./crypto.js";
 function writeDict(dict, buffer, transform) {
   buffer.push("<<");
   for (const key of dict.getKeys()) {
-    buffer.push(` /${key} `);
+    buffer.push(` /${escapePDFName(key)} `);
     writeValue(dict.getRaw(key), buffer, transform);
   }
   buffer.push(">>");
