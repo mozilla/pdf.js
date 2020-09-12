@@ -4702,5 +4702,12 @@
       "md5": "f84ce8b7414f6a18e75a6ce69c902501",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "issue12337",
+       "file": "pdfs/issue12337.pdf",
+       "md5": "9165772d5b860bcbcc2478f32e311eb0",
+       "rounds": 2,
+       "lastPage": 1,
+       "type": "fbf"
     }
 ]
