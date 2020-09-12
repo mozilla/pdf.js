@@ -112,6 +112,14 @@ class PDFSidebar {
 
     this.outlineButton.disabled = false;
     this.attachmentsButton.disabled = false;
+        // modified by ngx-extended-pdf-viewer
+        this.outlineButton.hidden = false;
+        this.attachmentsButton.hidden = false;
+        const layersButton = document.getElementById("viewLayers");
+        if (layersButton) {
+          layersButton.hidden = true;
+        }
+        // end of modification
   }
 
   /**
@@ -435,6 +443,10 @@ class PDFSidebar {
 
       this.outlineButton.disabled = !outlineCount;
 
+      // modified by ngx-extended-pdf-viewer
+      this.outlineButton.hidden = !outlineCount;
+      // end of modification
+
       if (outlineCount) {
         this._showUINotification(SidebarView.OUTLINE);
       } else if (this.active === SidebarView.OUTLINE) {
@@ -445,6 +457,10 @@ class PDFSidebar {
     });
 
     this.eventBus._on("attachmentsloaded", evt => {
+      // modified by ngx-extended-pdf-viewer
+      this.attachmentsButton.hidden = !evt.attachmentsCount;
+      // end of modification
+
       if (evt.attachmentsCount) {
         this.attachmentsButton.disabled = false;
 
