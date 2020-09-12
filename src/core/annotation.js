@@ -26,6 +26,7 @@ import {
   isString,
   OPS,
   stringToPDFString,
+  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
@@ -249,6 +250,11 @@ class Annotation {
     this.setColor(dict.getArray("C"));
     this.setBorderStyle(dict);
     this.setAppearance(dict);
+
+    this._streams = [];
+    if (this.appearance) {
+      this._streams.push(this.appearance);
+    }
 
     // Expose public properties using a data object.
     this.data = {
@@ -554,7 +560,7 @@ class Annotation {
         })
         .then(() => {
           opList.addOp(OPS.endAnnotation, []);
-          appearance.reset();
+          this.reset();
           return opList;
         });
     });
@@ -562,6 +568,30 @@ class Annotation {
 
   async save(evaluator, task, annotationStorage) {
     return null;
+  }
+
+  /**
+   * Reset the annotation.
+   *
+   * This involves resetting the various streams that are either cached on the
+   * annotation instance or created during its construction.
+   *
+   * @public
+   * @memberof Annotation
+   */
+  reset() {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) &&
+      this.appearance &&
+      !this._streams.includes(this.appearance)
+    ) {
+      unreachable("The appearance stream should always be reset.");
+    }
+
+    for (const stream of this._streams) {
+      stream.reset();
+    }
   }
 }
 
@@ -857,6 +887,10 @@ class MarkupAnnotation extends Annotation {
 
     this.appearance = new StringStream("/GS0 gs /Fm0 Do");
     this.appearance.dict = appearanceDict;
+
+    // This method is only called if there is no appearance for the annotation,
+    // so `this.appearance` is not pushed yet in the `Annotation` constructor.
+    this._streams.push(this.appearance, appearanceStream);
   }
 }
 
