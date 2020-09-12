@@ -1009,8 +1009,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     endDrawing: function CanvasGraphics_endDrawing() {
       // Finishing all opened operations such as SMask group painting.
-      while (this.stateStack.length || this.current.activeSMask !== null) {
-        this.restore();
+      if (this.current.activeSMask !== null) {
+        this.endSMaskGroup();
       }
 
       this.ctx.restore();
