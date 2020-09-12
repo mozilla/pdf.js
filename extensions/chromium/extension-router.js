@@ -40,7 +40,7 @@ limitations under the License.
    */
   function parseExtensionURL(url) {
     url = url.substring(CRX_BASE_URL.length);
-    // Find the (url-encoded) colon and verify that the scheme is whitelisted.
+    // Find the (url-encoded) colon and verify that the scheme is allowed.
     var schemeIndex = url.search(/:|%3A/i);
     if (schemeIndex === -1) {
       return undefined;

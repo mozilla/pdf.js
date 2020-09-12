@@ -22,6 +22,7 @@ const CMAP_URL = "../external/bcmaps/";
 const CMAP_PACKED = true;
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const WORKER_SRC = "../build/generic/build/pdf.worker.js";
+const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 
 /**
  * @class
@@ -396,6 +397,8 @@ var Driver = (function DriverClosure() {
           loadingTask.promise.then(
             doc => {
               task.pdfDoc = doc;
+              task.optionalContentConfigPromise = doc.getOptionalContentConfig();
+
               this._nextPage(task, failure);
             },
             err => {
@@ -518,7 +521,8 @@ var Driver = (function DriverClosure() {
 
               // Initialize various `eq` test subtypes, see comment below.
               var renderAnnotations = false,
-                renderForms = false;
+                renderForms = false,
+                renderPrint = false;
 
               var textLayerCanvas, annotationLayerCanvas;
               var initPromise;
@@ -558,6 +562,7 @@ var Driver = (function DriverClosure() {
                 // accidentally changing the behaviour for other types of tests.
                 renderAnnotations = !!task.annotations;
                 renderForms = !!task.forms;
+                renderPrint = !!task.print;
 
                 // Render the annotation layer if necessary.
                 if (renderAnnotations || renderForms) {
@@ -602,7 +607,21 @@ var Driver = (function DriverClosure() {
                 canvasContext: ctx,
                 viewport,
                 renderInteractiveForms: renderForms,
+                optionalContentConfigPromise: task.optionalContentConfigPromise,
               };
+              if (renderPrint) {
+                const annotationStorage = task.annotationStorage;
+                if (annotationStorage) {
+                  const docAnnotationStorage = task.pdfDoc.annotationStorage;
+                  const entries = Object.entries(annotationStorage);
+                  for (const [key, value] of entries) {
+                    docAnnotationStorage.setValue(key, value);
+                  }
+                  renderContext.annotationStorage = docAnnotationStorage;
+                }
+                renderContext.intent = "print";
+              }
+
               var completeRender = function (error) {
                 // if text layer is present, compose it on top of the page
                 if (textLayerCanvas) {
@@ -626,7 +645,15 @@ var Driver = (function DriverClosure() {
               };
               initPromise
                 .then(function () {
-                  return page.render(renderContext).promise.then(function () {
+                  const renderTask = page.render(renderContext);
+
+                  if (task.renderTaskOnContinue) {
+                    renderTask.onContinue = function (cont) {
+                      // Slightly delay the continued rendering.
+                      setTimeout(cont, RENDER_TASK_ON_CONTINUE_DELAY);
+                    };
+                  }
+                  return renderTask.promise.then(function () {
                     completeRender(false);
                   });
                 })

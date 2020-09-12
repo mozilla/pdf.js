@@ -54,7 +54,8 @@ var GENERIC_DIR = BUILD_DIR + "generic/";
 var GENERIC_ES5_DIR = BUILD_DIR + "generic-es5/";
 var COMPONENTS_DIR = BUILD_DIR + "components/";
 var COMPONENTS_ES5_DIR = BUILD_DIR + "components-es5/";
-var IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders";
+var IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders/";
+var IMAGE_DECODERS_ES5_DIR = BUILD_DIR + "image_decoders-es5/";
 var DEFAULT_PREFERENCES_DIR = BUILD_DIR + "default_preferences/";
 var MINIFIED_DIR = BUILD_DIR + "minified/";
 var MINIFIED_ES5_DIR = BUILD_DIR + "minified-es5/";
@@ -63,6 +64,8 @@ var GH_PAGES_DIR = BUILD_DIR + "gh-pages/";
 var SRC_DIR = "src/";
 var LIB_DIR = BUILD_DIR + "lib/";
 var DIST_DIR = BUILD_DIR + "dist/";
+var TYPES_DIR = BUILD_DIR + "types/";
+var TYPESTEST_DIR = BUILD_DIR + "typestest/";
 var COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
 var MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
@@ -99,7 +102,7 @@ const DEFINES = Object.freeze({
   GENERIC: false,
   MOZCENTRAL: false,
   CHROME: false,
-  MINIFIED: true,
+  MINIFIED: false,
   COMPONENTS: false,
   LIB: false,
   IMAGE_DECODERS: false,
@@ -215,6 +218,12 @@ function createWebpackConfig(defines, output) {
           options: {
             presets: skipBabel ? undefined : ["@babel/preset-env"],
             plugins: [
+              [
+                "@babel/plugin-proposal-nullish-coalescing-operator",
+                {
+                  loose: true,
+                },
+              ],
               "@babel/plugin-transform-modules-commonjs",
               [
                 "@babel/plugin-transform-runtime",
@@ -297,10 +306,27 @@ function replaceJSRootName(amdName, jsName) {
   );
 }
 
+// ngx-extended-pdf-viewer start
+function addSuffix(filename, defines) {
+  let suffix = ".js";
+  if (!defines.MINIFIED) {
+    suffix = ".min.js";
+  }
+  if (!defines.SKIP_BABEL) {
+    if (!defines.MINIFIED) {
+      suffix = "-es5.min.js";
+    } else {
+      suffix = "-es5.js";
+    }
+  }
+  return filename.replace(".js", suffix);
+}
+// ngx-extended-pdf-viewer end
+
 function createMainBundle(defines) {
-  var skipBabel = defines.SKIP_BABEL;
   var mainAMDName = "pdfjs-dist/build/pdf";
-  var mainOutputName = skipBabel ? "pdf.js" : "pdf-es5.js";
+  var mainOutputName = "pdf.js";
+  mainOutputName = addSuffix(mainOutputName, defines); // modified by ngx-extended-pdf-viewer
 
   var mainFileConfig = createWebpackConfig(defines, {
     filename: mainOutputName,
@@ -316,9 +342,9 @@ function createMainBundle(defines) {
 }
 
 function createWorkerBundle(defines) {
-  var skipBabel = defines.SKIP_BABEL;
   var workerAMDName = "pdfjs-dist/build/pdf.worker";
-  var workerOutputName = skipBabel ? "pdf.worker.js" : "pdf.worker-es5.js";
+  var workerOutputName = "pdf.worker.js";
+  workerOutputName = addSuffix(workerOutputName, defines); // modified by ngx-extended-pdf-viewer
 
   var workerFileConfig = createWebpackConfig(defines, {
     filename: workerOutputName,
@@ -334,8 +360,7 @@ function createWorkerBundle(defines) {
 }
 
 function createWebBundle(defines) {
-  var skipBabel = defines.SKIP_BABEL;
-  var viewerOutputName = skipBabel ? "viewer.js" : "viewer-es5.js";
+  var viewerOutputName = addSuffix("viewer.js", defines); // modifed by ngx-extended-pdf-viewer
 
   var viewerFileConfig = createWebpackConfig(defines, {
     filename: viewerOutputName,
@@ -346,6 +371,7 @@ function createWebBundle(defines) {
 function createComponentsBundle(defines) {
   var componentsAMDName = "pdfjs-dist/web/pdf_viewer";
   var componentsOutputName = "pdf_viewer.js";
+  componentsOutputName = addSuffix('viewer.js', defines); // modified by ngx-extended-pdf-viewer
 
   var componentsFileConfig = createWebpackConfig(defines, {
     filename: componentsOutputName,
@@ -362,7 +388,7 @@ function createComponentsBundle(defines) {
 
 function createImageDecodersBundle(defines) {
   var imageDecodersAMDName = "pdfjs-dist/image_decoders/pdf.image_decoders";
-  var imageDecodersOutputName = "pdf.image_decoders.js";
+  var imageDecodersOutputName = addSuffix("pdf.image_decoders.js", defines); // modified by ngx-extended-pdf-viewer
 
   var componentsFileConfig = createWebpackConfig(defines, {
     filename: imageDecodersOutputName,
@@ -764,7 +790,6 @@ function buildComponents(defines, dir) {
     "web/images/annotation-*.svg",
     "web/images/loading-icon.gif",
     "web/images/shadow.png",
-    "web/images/texture.png",
   ];
 
   return merge([
@@ -824,6 +849,23 @@ gulp.task(
   })
 );
 
+gulp.task(
+  "image_decoders-es5",
+  gulp.series("buildnumber", function () {
+    console.log();
+    console.log("### Creating (ES5) image decoders");
+    var defines = builder.merge(DEFINES, {
+      GENERIC: true,
+      IMAGE_DECODERS: true,
+      SKIP_BABEL: false,
+    });
+
+    return createImageDecodersBundle(defines).pipe(
+      gulp.dest(IMAGE_DECODERS_ES5_DIR)
+    );
+  })
+);
+
 function buildMinified(defines, dir) {
   rimraf.sync(dir);
 
@@ -831,6 +873,9 @@ function buildMinified(defines, dir) {
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createWebBundle(defines).pipe(gulp.dest(dir + "web")),
+    createImageDecodersBundle(
+      builder.merge(defines, { IMAGE_DECODERS: true })
+    ).pipe(gulp.dest(dir + "image_decoders")),
     gulp.src(COMMON_WEB_FILES, { base: "web/" }).pipe(gulp.dest(dir + "web")),
     gulp
       .src(["web/locale/*/viewer.properties", "web/locale/locale.properties"], {
@@ -844,7 +889,7 @@ function buildMinified(defines, dir) {
       .pipe(gulp.dest(dir + "web/cmaps")),
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
-    preprocessCSS("web/viewer.css", "generic", defines, true)
+    preprocessCSS("web/viewer.css", "minified", defines, true)
       .pipe(
         postcss([
           cssvariables(CSS_VARIABLES_CONFIG),
@@ -864,7 +909,7 @@ gulp.task(
   "minified-pre",
   gulp.series("buildnumber", "default_preferences", "locale", function () {
     console.log();
-    console.log("### Creating minified generic viewer");
+    console.log("### Creating minified viewer");
     var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
 
     return buildMinified(defines, MINIFIED_DIR);
@@ -875,12 +920,13 @@ gulp.task(
   "minified-es5-pre",
   gulp.series("buildnumber", "default_preferences", "locale", function () {
     console.log();
-    console.log("### Creating minified generic (ES5) viewer");
+    console.log("### Creating minified (ES5) viewer");
     var defines = builder.merge(DEFINES, {
       MINIFIED: true,
       GENERIC: true,
       SKIP_BABEL: false,
     });
+    console.log(defines);
 
     return buildMinified(defines, MINIFIED_ES5_DIR);
   })
@@ -888,73 +934,65 @@ gulp.task(
 
 function parseMinified(dir, suffix) {
   var pdfFile = fs.readFileSync(dir + "/build/pdf" + suffix + ".js").toString();
-  var pdfWorkerFile = fs
-    .readFileSync(dir + "/build/pdf.worker" + suffix + ".js")
+  var pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker" + suffix + ".js").toString();
+  var pdfImageDecodersFile = fs
+    .readFileSync(dir + "/image_decoders/pdf.image_decoders" + suffix + ".js")
     .toString();
-  var viewerFile = fs
-    .readFileSync(dir + "/web/viewer" + suffix + ".js")
-    .toString();
+  var viewerFiles = {
+    "pdf.js": pdfFile,
+    "viewer.js": fs.readFileSync(dir + "/web/viewer" + suffix + ".js").toString(),
+  };
 
   console.log();
   console.log("### Minifying js files");
 
   var Terser = require("terser");
-
-  const viewerSource = fs
-    .readFileSync(dir + "/web/viewer" + suffix + ".js.map")
-    .toString();
-  const sourcemapOptsViewer = {
-    sourceMap: {
-      content: viewerSource,
-      url: "viewer" + suffix + ".min.js.map",
+  var options = {
+    compress: {
+      // V8 chokes on very long sequences, work around that.
+      sequences: false,
     },
+    keep_classnames: true,
+    keep_fnames: true,
   };
 
-  const miniViewer = Terser.minify(viewerFile, sourcemapOptsViewer);
-  fs.writeFileSync(dir + "/web/viewer" + suffix + ".min.js", miniViewer.code);
   fs.writeFileSync(
-    dir + "/web/viewer" + suffix + ".min.js.map",
-    miniViewer.map
+    dir + "/web/viewer" + suffix + ".min.js",
+    Terser.minify(viewerFiles, options).code
   );
-
-  const pdfSource = fs
-    .readFileSync(dir + "/build/pdf" + suffix + ".js.map")
-    .toString();
-  const sourcemapOptsPDF = {
-    sourceMap: { content: pdfSource, url: "pdf" + suffix + ".min.js.map" },
-  };
-
-  const miniPDF = Terser.minify(pdfFile, sourcemapOptsPDF);
-
-  fs.writeFileSync(dir + "/build/pdf" + suffix + ".min.js", miniPDF.code);
-  fs.writeFileSync(dir + "/build/pdf" + suffix + ".min.js.map", miniPDF.map);
-
-  const pdfWorkerSource = fs
-    .readFileSync(dir + "/build/pdf.worker" + suffix + ".js.map")
-    .toString();
-  // V8 chokes on very long sequences. Works around that.
-  var optsForHugeFile = {
-    compress: { sequences: false },
-    sourceMap: {
-      content: pdfWorkerSource,
-      url: "pdf.worker" + suffix + ".min.js.map",
-    },
-  };
-  const miniWorker = Terser.minify(pdfWorkerFile, optsForHugeFile);
+  fs.writeFileSync(
+    dir + "/build/pdf" + suffix + ".min.js",
+    Terser.minify(pdfFile, options).code
+  );
   fs.writeFileSync(
     dir + "/build/pdf.worker" + suffix + ".min.js",
-    miniWorker.code
+    Terser.minify(pdfWorkerFile, options).code
   );
   fs.writeFileSync(
-    dir + "/build/pdf.worker" + suffix + ".min.js.map",
-    miniWorker.map
+    dir + "image_decoders/pdf.image_decoders" + suffix + ".min.js",
+    Terser.minify(pdfImageDecodersFile, options).code
   );
+
+  console.log();
+  console.log("### Cleaning js files");
+
+  // fs.unlinkSync(dir + "/web/viewer.js"); // modified by ngx-extended-pdf-viewer
+  fs.unlinkSync(dir + "/web/debugger.js");
+  // fs.unlinkSync(dir + "/build/pdf.js"); // modified by ngx-extended-pdf-viewer
+  // fs.unlinkSync(dir + "/build/pdf.worker.js"); // modified by ngx-extended-pdf-viewer
+
+  // fs.renameSync(dir + "/build/pdf.min.js", dir + "/build/pdf.js"); // modified by ngx-extended-pdf-viewer
+  // fs.renameSync(dir + "/build/pdf.worker.min.js", dir + "/build/pdf.worker.js"); // modified by ngx-extended-pdf-viewer
+  // fs.renameSync( // modified by ngx-extended-pdf-viewer
+  //  dir + "/image_decoders/pdf.image_decoders.min.js", // modified by ngx-extended-pdf-viewer
+  //  dir + "/image_decoders/pdf.image_decoders.js" // modified by ngx-extended-pdf-viewer
+  // ); // modified by ngx-extended-pdf-viewer
 }
 
 gulp.task(
   "minified",
   gulp.series("minified-pre", function (done) {
-    parseMinified(MINIFIED_DIR, "");
+    parseMinified(MINIFIED_DIR, '');
     done();
   })
 );
@@ -962,7 +1000,7 @@ gulp.task(
 gulp.task(
   "minified-es5",
   gulp.series("minified-es5-pre", function (done) {
-    parseMinified(MINIFIED_ES5_DIR, "-es5");
+    parseMinified(MINIFIED_ES5_DIR, '-es5');
     done();
   })
 );
@@ -1153,6 +1191,36 @@ gulp.task("jsdoc", function (done) {
       exec(command, done);
     });
   });
+});
+
+gulp.task("types", function (done) {
+  console.log("### Generating TypeScript definitions using `tsc`");
+  const args = [
+    "target ES2020",
+    "allowJS",
+    "declaration",
+    `outDir ${TYPES_DIR}`,
+    "strict",
+    "esModuleInterop",
+    "forceConsistentCasingInFileNames",
+    "emitDeclarationOnly",
+  ].join(" --");
+  exec(`"node_modules/.bin/tsc" --${args} src/pdf.js web/viewer.js`, done);
+});
+
+gulp.task("typesweb", function (done) {
+  console.log("### Generating TypeScript definitions using `tsc`");
+  const args = [
+    "target ES2020",
+    "allowJS",
+    "declaration",
+    `outDir typesweb`,
+    "strict",
+    "esModuleInterop",
+    "forceConsistentCasingInFileNames",
+    "emitDeclarationOnly",
+  ].join(" --");
+  exec(`"node_modules/.bin/tsc" --${args} web/viewer.js`, done);
 });
 
 function buildLib(defines, dir) {
@@ -1350,6 +1418,38 @@ gulp.task(
   })
 );
 
+gulp.task(
+  "typestest-pre",
+  gulp.series("testing-pre", "generic", "types", "typesweb", function () {
+    const [packageJsonSrc] = packageBowerJson();
+    return merge([
+      packageJsonSrc.pipe(gulp.dest(TYPESTEST_DIR)),
+      gulp
+        .src([
+          GENERIC_DIR + "build/pdf.js",
+          GENERIC_DIR + "build/pdf.worker.js",
+          SRC_DIR + "pdf.worker.entry.js",
+        ])
+        .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
+      gulp
+        .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
+        .pipe(gulp.dest(TYPESTEST_DIR + "types/")),
+    ]);
+  })
+);
+
+gulp.task(
+  "typestest",
+  gulp.series("typestest-pre", function (done) {
+    exec('"node_modules/.bin/tsc" -p test/types', function (err, stdout) {
+      if (err) {
+        console.log(`Couldn't compile TypeScript test: ${stdout}`);
+      }
+      done(err);
+    });
+  })
+);
+
 gulp.task("baseline", function (done) {
   console.log();
   console.log("### Creating baseline environment");
@@ -1407,10 +1507,10 @@ gulp.task(
 
 gulp.task("lint", function (done) {
   console.log();
-  console.log("### Linting JS files");
+  console.log("### Linting JS/CSS files");
 
   // Ensure that we lint the Firefox specific *.jsm files too.
-  var options = [
+  const esLintOptions = [
     "node_modules/eslint/bin/eslint",
     "--ext",
     ".js,.jsm",
@@ -1418,16 +1518,34 @@ gulp.task("lint", function (done) {
     "--report-unused-disable-directives",
   ];
   if (process.argv.includes("--fix")) {
-    options.push("--fix");
+    esLintOptions.push("--fix");
   }
-  var esLintProcess = startNode(options, { stdio: "inherit" });
-  esLintProcess.on("close", function (code) {
-    if (code !== 0) {
+
+  const styleLintOptions = [
+    "node_modules/stylelint/bin/stylelint",
+    "**/*.css",
+    "--report-needless-disables",
+  ];
+  if (process.argv.includes("--fix")) {
+    styleLintOptions.push("--fix");
+  }
+
+  const esLintProcess = startNode(esLintOptions, { stdio: "inherit" });
+  esLintProcess.on("close", function (esLintCode) {
+    if (esLintCode !== 0) {
       done(new Error("ESLint failed."));
       return;
     }
-    console.log("files checked, no errors found");
-    done();
+
+    const styleLintProcess = startNode(styleLintOptions, { stdio: "inherit" });
+    styleLintProcess.on("close", function (styleLintCode) {
+      if (styleLintCode !== 0) {
+        done(new Error("Stylelint failed."));
+        return;
+      }
+      console.log("files checked, no errors found");
+      done();
+    });
   });
 });
 
@@ -1590,6 +1708,55 @@ gulp.task(
   )
 );
 
+function packageBowerJson() {
+  var VERSION = getVersionJSON().version;
+
+  var DIST_NAME = "pdfjs-dist";
+  var DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
+  var DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
+  var DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
+  var DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
+  var DIST_LICENSE = "Apache-2.0";
+
+  var npmManifest = {
+    name: DIST_NAME,
+    version: VERSION,
+    main: "build/pdf.js",
+    types: "types/pdf.d.ts",
+    description: DIST_DESCRIPTION,
+    keywords: DIST_KEYWORDS,
+    homepage: DIST_HOMEPAGE,
+    bugs: DIST_BUGS_URL,
+    license: DIST_LICENSE,
+    browser: {
+      canvas: false,
+      fs: false,
+      http: false,
+      https: false,
+      url: false,
+      zlib: false,
+    },
+    format: "amd", // to not allow system.js to choose 'cjs'
+    repository: {
+      type: "git",
+      url: DIST_REPO_URL,
+    },
+  };
+
+  var bowerManifest = {
+    name: DIST_NAME,
+    version: VERSION,
+    main: ["build/pdf.js", "build/pdf.worker.js"],
+    ignore: [],
+    keywords: DIST_KEYWORDS,
+  };
+
+  return [
+    createStringSource("package.json", JSON.stringify(npmManifest, null, 2)),
+    createStringSource("bower.json", JSON.stringify(bowerManifest, null, 2)),
+  ];
+}
+
 gulp.task(
   "dist-pre",
   gulp.series(
@@ -1598,11 +1765,13 @@ gulp.task(
     "components",
     "components-es5",
     "image_decoders",
+    "image_decoders-es5",
     "lib",
     "minified",
+    "minified-es5",
+    "types",
+    "typesweb",
     function () {
-      var VERSION = getVersionJSON().version;
-
       console.log();
       console.log("### Cloning baseline distribution");
 
@@ -1615,49 +1784,7 @@ gulp.task(
       rimraf.sync(path.join(DIST_DIR, "*"));
 
       // Rebuilding manifests
-      var DIST_NAME = "pdfjs-dist";
-      var DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
-      var DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
-      var DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
-      var DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
-      var DIST_LICENSE = "Apache-2.0";
-      var npmManifest = {
-        name: DIST_NAME,
-        version: VERSION,
-        main: "build/pdf.js",
-        description: DIST_DESCRIPTION,
-        keywords: DIST_KEYWORDS,
-        homepage: DIST_HOMEPAGE,
-        bugs: DIST_BUGS_URL,
-        license: DIST_LICENSE,
-        browser: {
-          fs: false,
-          http: false,
-          https: false,
-          url: false,
-          zlib: false,
-        },
-        format: "amd", // to not allow system.js to choose 'cjs'
-        repository: {
-          type: "git",
-          url: DIST_REPO_URL,
-        },
-      };
-      var packageJsonSrc = createStringSource(
-        "package.json",
-        JSON.stringify(npmManifest, null, 2)
-      );
-      var bowerManifest = {
-        name: DIST_NAME,
-        version: VERSION,
-        main: ["build/pdf.js", "build/pdf.worker.js"],
-        ignore: [],
-        keywords: DIST_KEYWORDS,
-      };
-      var bowerJsonSrc = createStringSource(
-        "bower.json",
-        JSON.stringify(bowerManifest, null, 2)
-      );
+      var [packageJsonSrc, bowerJsonSrc] = packageBowerJson();
 
       return merge([
         packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
@@ -1700,6 +1827,18 @@ gulp.task(
           .pipe(rename("pdf.image_decoders.min.js"))
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
+          .src(MINIFIED_ES5_DIR + "build/pdf.js")
+          .pipe(rename("pdf.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+        gulp
+          .src(MINIFIED_ES5_DIR + "build/pdf.worker.js")
+          .pipe(rename("pdf.worker.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+        gulp
+          .src(MINIFIED_ES5_DIR + "image_decoders/pdf.image_decoders.js")
+          .pipe(rename("pdf.image_decoders.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "es5/image_decoders/")),
+        gulp
           .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
           .pipe(gulp.dest(DIST_DIR + "web/")),
         gulp
@@ -1707,10 +1846,18 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR + "es5/web/")),
         gulp
           .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
-          .pipe(gulp.dest(DIST_DIR + "image_decoders")),
+          .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
+        gulp
+          .src(IMAGE_DECODERS_ES5_DIR + "**/*", {
+            base: IMAGE_DECODERS_ES5_DIR,
+          })
+          .pipe(gulp.dest(DIST_DIR + "es5/image_decoders/")),
         gulp
           .src(LIB_DIR + "**/*", { base: LIB_DIR })
           .pipe(gulp.dest(DIST_DIR + "lib/")),
+        gulp
+          .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
+          .pipe(gulp.dest(DIST_DIR + "types/")),
       ]);
     }
   )
@@ -1860,7 +2007,7 @@ gulp.task("externaltest", function (done) {
 gulp.task(
   "npm-test",
   gulp.series(
-    gulp.parallel("lint", "externaltest", "unittestcli"),
+    gulp.parallel("lint", "externaltest", "unittestcli", "typestest"),
     "lint-chromium"
   )
 );

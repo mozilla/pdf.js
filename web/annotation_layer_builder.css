@@ -98,7 +98,7 @@
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after,
 .annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {
   background-color: rgba(0, 0, 0, 1);
-  content: '';
+  content: "";
   display: block;
   position: absolute;
 }

@@ -65,10 +65,9 @@ const DEFAULT_CACHE_SIZE = 10;
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} [renderInteractiveForms] - Enables rendering of
- *   interactive form elements. The default is `false`.
+ *   interactive form elements. The default value is `true`.
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
- *   pages whose orientation differ from the first page upon printing. The
- *   default is `false`.
+ *   landscape pages upon printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
  * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering for
  *   some operations. The default value is `false`.
@@ -144,6 +143,17 @@ class BaseViewer {
 
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
+
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      !(
+        this.container instanceof HTMLDivElement &&
+        this.viewer instanceof HTMLDivElement
+      )
+    ) {
+      throw new Error("Invalid `container` and/or `viewer` option.");
+    }
     this.eventBus = options.eventBus;
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
@@ -153,7 +163,10 @@ class BaseViewer {
       ? options.textLayerMode
       : TextLayerMode.ENABLE;
     this.imageResourcesPath = options.imageResourcesPath || "";
-    this.renderInteractiveForms = options.renderInteractiveForms || false;
+    this.renderInteractiveForms =
+      typeof options.renderInteractiveForms === "boolean"
+        ? options.renderInteractiveForms
+        : true;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
     this.enableWebGL = options.enableWebGL || false;
@@ -436,6 +449,9 @@ class BaseViewer {
     const pagesCount = pdfDocument.numPages;
     const firstPagePromise = pdfDocument.getPage(1);
 
+    const annotationStorage = pdfDocument.annotationStorage;
+    const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
+
     this._pagesCapability.promise.then(() => {
       this.eventBus.dispatch("pagesloaded", {
         source: this,
@@ -470,6 +486,7 @@ class BaseViewer {
     firstPagePromise
       .then(firstPdfPage => {
         this._firstPageCapability.resolve(firstPdfPage);
+        this._optionalContentConfigPromise = optionalContentConfigPromise;
 
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({ scale: scale * CSS_UNITS });
@@ -483,6 +500,8 @@ class BaseViewer {
             id: pageNum,
             scale,
             defaultViewport: viewport.clone(),
+            annotationStorage,
+            optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
             textLayerFactory,
             textLayerMode: this.textLayerMode,
@@ -601,6 +620,7 @@ class BaseViewer {
     this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
     this._location = null;
     this._pagesRotation = 0;
+    this._optionalContentConfigPromise = null;
     this._pagesRequests = new WeakMap();
     this._firstPageCapability = createPromiseCapability();
     this._onePageRenderedCapability = createPromiseCapability();
@@ -1155,6 +1175,7 @@ class BaseViewer {
   createAnnotationLayerBuilder(
     pageDiv,
     pdfPage,
+    annotationStorage = null,
     imageResourcesPath = "",
     renderInteractiveForms = false,
     l10n = NullL10n
@@ -1162,6 +1183,7 @@ class BaseViewer {
     return new AnnotationLayerBuilder({
       pageDiv,
       pdfPage,
+      annotationStorage,
       imageResourcesPath,
       renderInteractiveForms,
       linkService: this.linkService,
@@ -1204,9 +1226,8 @@ class BaseViewer {
     if (!this.enablePrintAutoRotate) {
       return pagesOverview;
     }
-    const isFirstPagePortrait = isPortraitOrientation(pagesOverview[0]);
     return pagesOverview.map(function (size) {
-      if (isFirstPagePortrait === isPortraitOrientation(size)) {
+      if (isPortraitOrientation(size)) {
         return size;
       }
       return {
@@ -1214,6 +1235,50 @@ class BaseViewer {
         height: size.width,
         rotation: (size.rotation + 90) % 360,
       };
+    });
+  }
+
+  /**
+   * @type {Promise<OptionalContentConfig | null>}
+   */
+  get optionalContentConfigPromise() {
+    if (!this.pdfDocument) {
+      return Promise.resolve(null);
+    }
+    if (!this._optionalContentConfigPromise) {
+      // Prevent issues if the getter is accessed *before* the `onePageRendered`
+      // promise has resolved; won't (normally) happen in the default viewer.
+      return this.pdfDocument.getOptionalContentConfig();
+    }
+    return this._optionalContentConfigPromise;
+  }
+
+  /**
+   * @param {Promise<OptionalContentConfig>} promise - A promise that is
+   *   resolved with an {@link OptionalContentConfig} instance.
+   */
+  set optionalContentConfigPromise(promise) {
+    if (!(promise instanceof Promise)) {
+      throw new Error(`Invalid optionalContentConfigPromise: ${promise}`);
+    }
+    if (!this.pdfDocument) {
+      return;
+    }
+    if (!this._optionalContentConfigPromise) {
+      // Ignore the setter *before* the `onePageRendered` promise has resolved,
+      // since it'll be overwritten anyway; won't happen in the default viewer.
+      return;
+    }
+    this._optionalContentConfigPromise = promise;
+
+    for (const pageView of this._pages) {
+      pageView.update(pageView.scale, pageView.rotation, promise);
+    }
+    this.update();
+
+    this.eventBus.dispatch("optionalcontentconfigchanged", {
+      source: this,
+      promise,
     });
   }
 

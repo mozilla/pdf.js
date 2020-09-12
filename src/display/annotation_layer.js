@@ -29,6 +29,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { AnnotationStorage } from "./annotation_storage.js";
 
 /**
  * @typedef {Object} AnnotationElementParameters
@@ -38,6 +39,7 @@ import {
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
+ * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
@@ -140,6 +142,7 @@ class AnnotationElement {
     this.imageResourcesPath = parameters.imageResourcesPath;
     this.renderInteractiveForms = parameters.renderInteractiveForms;
     this.svgFactory = parameters.svgFactory;
+    this.annotationStorage = parameters.annotationStorage;
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
@@ -438,6 +441,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     const TEXT_ALIGNMENT = ["left", "center", "right"];
+    const storage = this.annotationStorage;
+    const id = this.data.id;
 
     this.container.className = "textWidgetAnnotation";
 
@@ -446,14 +451,20 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
       //       from parsing the elements correctly for the reference tests.
+      const textContent = storage.getOrCreateValue(id, this.data.fieldValue);
+
       if (this.data.multiLine) {
         element = document.createElement("textarea");
-        element.textContent = this.data.fieldValue;
+        element.textContent = textContent;
       } else {
         element = document.createElement("input");
         element.type = "text";
-        element.setAttribute("value", this.data.fieldValue);
+        element.setAttribute("value", textContent);
       }
+
+      element.addEventListener("input", function (event) {
+        storage.setValue(id, event.target.value);
+      });
 
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;
@@ -541,15 +552,27 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
+    const storage = this.annotationStorage;
+    const data = this.data;
+    const id = data.id;
+    const value = storage.getOrCreateValue(
+      id,
+      data.fieldValue && data.fieldValue !== "Off"
+    );
+
     this.container.className = "buttonWidgetAnnotation checkBox";
 
     const element = document.createElement("input");
-    element.disabled = this.data.readOnly;
+    element.disabled = data.readOnly;
     element.type = "checkbox";
     element.name = this.data.fieldName;
-    if (this.data.fieldValue && this.data.fieldValue !== "Off") {
+    if (value) {
       element.setAttribute("checked", true);
     }
+
+    element.addEventListener("change", function (event) {
+      storage.setValue(id, event.target.checked);
+    });
 
     this.container.appendChild(element);
     return this.container;
@@ -571,14 +594,34 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     this.container.className = "buttonWidgetAnnotation radioButton";
+    const storage = this.annotationStorage;
+    const data = this.data;
+    const id = data.id;
+    const value = storage.getOrCreateValue(
+      id,
+      data.fieldValue === data.buttonValue
+    );
 
     const element = document.createElement("input");
-    element.disabled = this.data.readOnly;
+    element.disabled = data.readOnly;
     element.type = "radio";
-    element.name = this.data.fieldName;
-    if (this.data.fieldValue === this.data.buttonValue) {
+    element.name = data.fieldName;
+    if (value) {
       element.setAttribute("checked", true);
     }
+
+    element.addEventListener("change", function (event) {
+      const name = event.target.name;
+      for (const radio of document.getElementsByName(name)) {
+        if (radio !== event.target) {
+          storage.setValue(
+            radio.parentNode.getAttribute("data-annotation-id"),
+            false
+          );
+        }
+      }
+      storage.setValue(id, event.target.checked);
+    });
 
     this.container.appendChild(element);
     return this.container;
@@ -619,6 +662,20 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   render() {
     this.container.className = "choiceWidgetAnnotation";
+    const storage = this.annotationStorage;
+    const id = this.data.id;
+
+    // For printing/saving we currently only support choice widgets with one
+    // option selection. Therefore, listboxes (#12189) and comboboxes (#12224)
+    // are not properly printed/saved yet, so we only store the first item in
+    // the field value array instead of the entire array. Once support for those
+    // two field types is implemented, we should use the same pattern as the
+    // other interactive widgets where the return value of `getOrCreateValue` is
+    // used and the full array of field values is stored.
+    storage.getOrCreateValue(
+      id,
+      this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : null
+    );
 
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
@@ -637,11 +694,17 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       const optionElement = document.createElement("option");
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
-      if (this.data.fieldValue.includes(option.displayValue)) {
+      if (this.data.fieldValue.includes(option.exportValue)) {
         optionElement.setAttribute("selected", true);
       }
       selectElement.appendChild(optionElement);
     }
+
+    selectElement.addEventListener("input", function (event) {
+      const options = event.target.options;
+      const value = options[options.selectedIndex].value;
+      storage.setValue(id, value);
+    });
 
     this.container.appendChild(selectElement);
     return this.container;
@@ -1448,8 +1511,13 @@ class AnnotationLayer {
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
         imageResourcesPath: parameters.imageResourcesPath || "",
-        renderInteractiveForms: parameters.renderInteractiveForms || false,
+        renderInteractiveForms:
+          typeof parameters.renderInteractiveForms === "boolean"
+            ? parameters.renderInteractiveForms
+            : true,
         svgFactory: new DOMSVGFactory(),
+        annotationStorage:
+          parameters.annotationStorage || new AnnotationStorage(),
       });
       if (element.isRenderable) {
         parameters.div.appendChild(element.render());

@@ -49,6 +49,7 @@ function initializePDFJS(callback) {
       "pdfjs/display/fetch_stream.js",
       "pdfjs/shared/is_node.js",
       "pdfjs-test/unit/annotation_spec.js",
+      "pdfjs-test/unit/annotation_storage_spec.js",
       "pdfjs-test/unit/api_spec.js",
       "pdfjs-test/unit/bidi_spec.js",
       "pdfjs-test/unit/cff_parser_spec.js",
@@ -79,6 +80,7 @@ function initializePDFJS(callback) {
       "pdfjs-test/unit/ui_utils_spec.js",
       "pdfjs-test/unit/unicode_spec.js",
       "pdfjs-test/unit/util_spec.js",
+      "pdfjs-test/unit/writer_spec.js",
     ].map(function (moduleName) {
       // eslint-disable-next-line no-unsanitized/method
       return SystemJS.import(moduleName);

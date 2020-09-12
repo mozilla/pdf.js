@@ -57,6 +57,7 @@
     "no-invalid-regexp": "error",
     "no-irregular-whitespace": "error",
     "no-obj-calls": "error",
+    "no-promise-executor-return": "error",
     "no-regex-spaces": "error",
     "no-setter-return": "error",
     "no-sparse-arrays": "error",

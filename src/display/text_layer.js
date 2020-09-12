@@ -23,23 +23,34 @@ import {
  * Text layer render parameters.
  *
  * @typedef {Object} TextLayerRenderParameters
- * @property {TextContent} [textContent] - Text content to render (the object
- *   is returned by the page's `getTextContent` method).
+ * @property {import("./api").TextContent} [textContent] - Text content to
+ *   render (the object is returned by the page's `getTextContent` method).
  * @property {ReadableStream} [textContentStream] - Text content stream to
  *   render (the stream is returned by the page's `streamTextContent` method).
  * @property {HTMLElement} container - HTML element that will contain text runs.
- * @property {PageViewport} viewport - The target viewport to properly
- *   layout the text runs.
- * @property {Array} [textDivs] - HTML elements that are correspond to the
- *   text items of the textContent input. This is output and shall be
+ * @property {import("./display_utils").PageViewport} viewport - The target
+ *   viewport to properly layout the text runs.
+ * @property {Array<HTMLElement>} [textDivs] - HTML elements that are correspond
+ *   to the text items of the textContent input. This is output and shall be
  *   initially be set to empty array.
- * @property {Array} [textContentItemsStr] - Strings that correspond to the
- *   `str` property of the text items of textContent input. This is output
+ * @property {Array<string>} [textContentItemsStr] - Strings that correspond to
+ *    the `str` property of the text items of textContent input. This is output
  *   and shall be initially be set to empty array.
  * @property {number} [timeout] - Delay in milliseconds before rendering of the
  *   text runs occurs.
  * @property {boolean} [enhanceTextSelection] - Whether to turn on the text
  *   selection enhancement.
+ */
+
+/**
+ * @typedef {Object} TextLayerRenderTask
+ * @property {Promise<void>} promise
+ * @property {() => void} cancel
+ * @property {(expandDivs: boolean) => void} expandTextDivs
+ */
+
+/**
+ * @type {(renderParameters: TextLayerRenderParameters) => TextLayerRenderTask}
  */
 var renderTextLayer = (function renderTextLayerClosure() {
   var MAX_TEXT_DIVS_TO_RENDER = 100000;
@@ -510,6 +521,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._textContent = textContent;
     this._textContentStream = textContentStream;
     this._container = container;
+    this._document = container.ownerDocument;
     this._viewport = viewport;
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
@@ -614,7 +626,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       let styleCache = Object.create(null);
 
       // The temporary canvas is used to measure text length in the DOM.
-      const canvas = document.createElement("canvas");
+      const canvas = this._document.createElement("canvas");
       if (
         typeof PDFJSDev === "undefined" ||
         PDFJSDev.test("MOZCENTRAL || GENERIC")
@@ -728,12 +740,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
   };
 
-  /**
-   * Starts rendering of the text layer.
-   *
-   * @param {TextLayerRenderParameters} renderParameters
-   * @returns {TextLayerRenderTask}
-   */
   // eslint-disable-next-line no-shadow
   function renderTextLayer(renderParameters) {
     var task = new TextLayerRenderTask({

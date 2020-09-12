@@ -14,13 +14,18 @@
  */
 /* eslint no-var: error */
 
-import { assert, info, shadow } from "../shared/util.js";
+import { assert, info, shadow, unreachable } from "../shared/util.js";
 import { RefSetCache } from "./primitives.js";
 
-class LocalImageCache {
-  constructor() {
-    this._nameRefMap = new Map();
-    this._imageMap = new Map();
+class BaseLocalCache {
+  constructor(options) {
+    if (this.constructor === BaseLocalCache) {
+      unreachable("Cannot initialize BaseLocalCache.");
+    }
+    if (!options || !options.onlyRefs) {
+      this._nameRefMap = new Map();
+      this._imageMap = new Map();
+    }
     this._imageCache = new RefSetCache();
   }
 
@@ -36,9 +41,82 @@ class LocalImageCache {
     return this._imageCache.get(ref) || null;
   }
 
+  set(name, ref, data) {
+    unreachable("Abstract method `set` called.");
+  }
+}
+
+class LocalImageCache extends BaseLocalCache {
   set(name, ref = null, data) {
     if (!name) {
       throw new Error('LocalImageCache.set - expected "name" argument.');
+    }
+    if (ref) {
+      if (this._imageCache.has(ref)) {
+        return;
+      }
+      this._nameRefMap.set(name, ref);
+      this._imageCache.put(ref, data);
+      return;
+    }
+    // name
+    if (this._imageMap.has(name)) {
+      return;
+    }
+    this._imageMap.set(name, data);
+  }
+}
+
+class LocalColorSpaceCache extends BaseLocalCache {
+  set(name = null, ref = null, data) {
+    if (!name && !ref) {
+      throw new Error(
+        'LocalColorSpaceCache.set - expected "name" and/or "ref" argument.'
+      );
+    }
+    if (ref) {
+      if (this._imageCache.has(ref)) {
+        return;
+      }
+      if (name) {
+        // Optional when `ref` is defined.
+        this._nameRefMap.set(name, ref);
+      }
+      this._imageCache.put(ref, data);
+      return;
+    }
+    // name
+    if (this._imageMap.has(name)) {
+      return;
+    }
+    this._imageMap.set(name, data);
+  }
+}
+
+class LocalFunctionCache extends BaseLocalCache {
+  constructor(options) {
+    super({ onlyRefs: true });
+  }
+
+  getByName(name) {
+    unreachable("Should not call `getByName` method.");
+  }
+
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('LocalFunctionCache.set - expected "ref" argument.');
+    }
+    if (this._imageCache.has(ref)) {
+      return;
+    }
+    this._imageCache.put(ref, data);
+  }
+}
+
+class LocalGStateCache extends BaseLocalCache {
+  set(name, ref = null, data) {
+    if (!name) {
+      throw new Error('LocalGStateCache.set - expected "name" argument.');
     }
     if (ref) {
       if (this._imageCache.has(ref)) {
@@ -149,4 +227,10 @@ class GlobalImageCache {
   }
 }
 
-export { LocalImageCache, GlobalImageCache };
+export {
+  LocalImageCache,
+  LocalColorSpaceCache,
+  LocalFunctionCache,
+  LocalGStateCache,
+  GlobalImageCache,
+};
