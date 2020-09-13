@@ -467,9 +467,14 @@ function checkFBF(task, results, browser, masterMode) {
       continue;
     }
     if (r0Page.snapshot !== r1Page.snapshot) {
-      // The FBF tests fail intermittently in Google Chrome when run on the
-      // bots, ignoring `makeref` failures for now; see https://github.com/mozilla/pdf.js/pull/11491
-      if (masterMode && /chrom(e|ium)/i.test(browser)) {
+      // The FBF tests fail intermittently in Firefox and Google Chrome when run
+      // on the bots, ignoring `makeref` failures for now; see
+      //  - https://github.com/mozilla/pdf.js/pull/12368
+      //  - https://github.com/mozilla/pdf.js/pull/11491
+      //
+      // TODO: Figure out why this happens, so that we can remove the hack; see
+      //       https://github.com/mozilla/pdf.js/issues/12371
+      if (masterMode) {
         console.log(
           "TEST-SKIPPED | forward-back-forward test " +
             task.id +
