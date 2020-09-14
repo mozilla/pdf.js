@@ -2780,6 +2780,18 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue12294-print",
+       "file": "pdfs/issue12294.pdf",
+       "md5": "a0ac5e03be38b5fb7a7a615e30024b28",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "2795R": "氏 名 又 は 名 称 Full name"
+       }
+    },
     {  "id": "issue7598",
        "file": "pdfs/issue7598.pdf",
        "md5": "c5bc5a779bfcb4b234f853231b56cf60",

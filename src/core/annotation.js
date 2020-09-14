@@ -919,10 +919,18 @@ class WidgetAnnotation extends Annotation {
       "";
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
-    this.fieldResources =
-      getInheritableProperty({ dict, key: "DR" }) ||
-      params.acroForm.get("DR") ||
-      Dict.empty;
+
+    const localResources = getInheritableProperty({ dict, key: "DR" });
+    const acroFormResources = params.acroForm.get("DR");
+    this._fieldResources = {
+      localResources,
+      acroFormResources,
+      mergedResources: Dict.merge({
+        xref: params.xref,
+        dictArray: [localResources, acroFormResources],
+        mergeSubDicts: true,
+      }),
+    };
 
     data.fieldFlags = getInheritableProperty({ dict, key: "Ff" });
     if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
@@ -1077,7 +1085,7 @@ class WidgetAnnotation extends Annotation {
           .getOperatorList({
             stream,
             task,
-            resources: this.fieldResources,
+            resources: this._fieldResources.mergedResources,
             operatorList,
           })
           .then(function () {
@@ -1101,8 +1109,9 @@ class WidgetAnnotation extends Annotation {
     if (appearance === null) {
       return null;
     }
+    const { xref } = evaluator;
 
-    const dict = evaluator.xref.fetchIfRef(this.ref);
+    const dict = xref.fetchIfRef(this.ref);
     if (!isDict(dict)) {
       return null;
     }
@@ -1120,11 +1129,11 @@ class WidgetAnnotation extends Annotation {
       value,
     };
 
-    const newRef = evaluator.xref.getNewRef();
-    const AP = new Dict(evaluator.xref);
+    const newRef = xref.getNewRef();
+    const AP = new Dict(xref);
     AP.set("N", newRef);
 
-    const encrypt = evaluator.xref.encrypt;
+    const encrypt = xref.encrypt;
     let originalTransform = null;
     let newTransform = null;
     if (encrypt) {
@@ -1140,10 +1149,10 @@ class WidgetAnnotation extends Annotation {
     dict.set("AP", AP);
     dict.set("M", `D:${getModificationDate()}`);
 
-    const appearanceDict = new Dict(evaluator.xref);
+    const appearanceDict = new Dict(xref);
     appearanceDict.set("Length", appearance.length);
     appearanceDict.set("Subtype", Name.get("Form"));
-    appearanceDict.set("Resources", this.fieldResources);
+    appearanceDict.set("Resources", this._getSaveFieldResources(xref));
     appearanceDict.set("BBox", bbox);
 
     const bufferOriginal = [`${this.ref.num} ${this.ref.gen} obj\n`];
@@ -1166,6 +1175,8 @@ class WidgetAnnotation extends Annotation {
   }
 
   async _getAppearance(evaluator, task, annotationStorage) {
+    this._fontName = null;
+
     const isPassword = this.hasFieldFlag(AnnotationFieldFlag.PASSWORD);
     if (!annotationStorage || isPassword) {
       return null;
@@ -1182,9 +1193,8 @@ class WidgetAnnotation extends Annotation {
 
     const fontInfo = await this._getFontData(evaluator, task);
     const [font, fontName] = fontInfo;
-    let fontSize = fontInfo[2];
-
-    fontSize = this._computeFontSize(font, fontName, fontSize, totalHeight);
+    const fontSize = this._computeFontSize(...fontInfo, totalHeight);
+    this._fontName = fontName;
 
     let descent = font.descent;
     if (isNaN(descent)) {
@@ -1260,7 +1270,7 @@ class WidgetAnnotation extends Annotation {
     await evaluator.getOperatorList({
       stream: new StringStream(this.data.defaultAppearance),
       task,
-      resources: this.fieldResources,
+      resources: this._fieldResources.mergedResources,
       operatorList,
       initialState,
     });
@@ -1313,6 +1323,49 @@ class WidgetAnnotation extends Annotation {
     vPadding = vPadding.toFixed(2);
 
     return `${shift} ${vPadding} Td (${escapeString(text)}) Tj`;
+  }
+
+  /**
+   * @private
+   */
+  _getSaveFieldResources(xref) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        this._fontName !== undefined,
+        "Expected `_getAppearance()` to have been called."
+      );
+    }
+    const { localResources, acroFormResources } = this._fieldResources;
+
+    if (!this._fontName) {
+      return localResources || Dict.empty;
+    }
+    if (localResources instanceof Dict) {
+      const localFont = localResources.get("Font");
+      if (localFont instanceof Dict && localFont.has(this._fontName)) {
+        return localResources;
+      }
+    }
+    if (acroFormResources instanceof Dict) {
+      const acroFormFont = acroFormResources.get("Font");
+      if (acroFormFont instanceof Dict && acroFormFont.has(this._fontName)) {
+        const subFontDict = new Dict(xref);
+        subFontDict.set(this._fontName, acroFormFont.getRaw(this._fontName));
+
+        const subResourcesDict = new Dict(xref);
+        subResourcesDict.set("Font", subFontDict);
+
+        return Dict.merge({
+          xref,
+          dictArray: [subResourcesDict, localResources],
+          mergeSubDicts: true,
+        });
+      }
+    }
+    return localResources || Dict.empty;
   }
 }
 
