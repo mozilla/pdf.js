@@ -794,9 +794,17 @@ function stringToPDFString(str) {
 }
 
 function escapeString(str) {
-  // replace "(", ")" and "\" by "\(", "\)" and "\\"
+  // replace "(", ")", "\n", "\r" and "\"
+  // by "\(", "\)", "\\n", "\\r" and "\\"
   // in order to write it in a PDF file.
-  return str.replace(/([\(\)\\])/g, "\\$1");
+  return str.replace(/([\(\)\\\n\r])/g, match => {
+    if (match === "\n") {
+      return "\\n";
+    } else if (match === "\r") {
+      return "\\r";
+    }
+    return `\\${match}`;
+  });
 }
 
 function stringToUTF8String(str) {
