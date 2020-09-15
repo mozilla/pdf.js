@@ -1741,10 +1741,10 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     // The parent field's `V` entry holds a `Name` object with the appearance
     // state of whichever child field is currently in the "on" state.
     const fieldParent = params.dict.get("Parent");
-    if (isDict(fieldParent) && fieldParent.has("V")) {
+    if (isDict(fieldParent)) {
+      this.parent = params.dict.getRaw("Parent");
       const fieldParentValue = fieldParent.get("V");
       if (isName(fieldParentValue)) {
-        this.parent = params.dict.getRaw("Parent");
         this.data.fieldValue = this._decodeFormValue(fieldParentValue);
       }
     }
