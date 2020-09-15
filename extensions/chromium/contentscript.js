@@ -70,7 +70,7 @@ function watchObjectOrEmbed(elem) {
     // Starting from Chrome 76, internal embeds do not have the original URL,
     // but "about:blank" instead.
     // See https://github.com/mozilla/pdf.js/issues/11137
-    return;
+    elem.src = elem.baseURI;
   }
 
   if (elem.__I_saw_this_element) {
