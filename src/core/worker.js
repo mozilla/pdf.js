@@ -32,7 +32,7 @@ import {
   VerbosityLevel,
   warn,
 } from "../shared/util.js";
-import { clearPrimitiveCaches, Dict, isDict, Ref } from "./primitives.js";
+import { clearPrimitiveCaches, Dict, Ref } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { incrementalUpdate } from "./writer.js";
 import { isNodeJS } from "../shared/is_node.js";
@@ -548,8 +548,7 @@ class WorkerMessageHandler {
           return stream.bytes;
         }
 
-        acroForm = isDict(acroForm) ? acroForm : Dict.empty;
-        const xfa = acroForm.get("XFA") || [];
+        const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || [];
         let xfaDatasets = null;
         if (Array.isArray(xfa)) {
           for (let i = 0, ii = xfa.length; i < ii; i += 2) {
@@ -568,7 +567,7 @@ class WorkerMessageHandler {
           // Get string info from Info in order to compute fileId
           const _info = Object.create(null);
           const xrefInfo = xref.trailer.get("Info") || null;
-          if (xrefInfo) {
+          if (xrefInfo instanceof Dict) {
             xrefInfo.forEach((key, value) => {
               if (isString(key) && isString(value)) {
                 _info[key] = stringToPDFString(value);
