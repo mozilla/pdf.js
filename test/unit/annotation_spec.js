@@ -2318,6 +2318,68 @@ describe("annotation", function () {
         }, done.fail);
     });
 
+    it("should save radio buttons without a field value", function (done) {
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      normalAppearanceDict.set("Checked", Ref.get(314, 0));
+      normalAppearanceDict.set("Off", Ref.get(271, 0));
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(123, 0);
+      const parentRef = Ref.get(456, 0);
+
+      const parentDict = new Dict();
+      parentDict.set("Kids", [buttonWidgetRef]);
+      buttonWidgetDict.set("Parent", parentRef);
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+        { ref: parentRef, data: parentDict },
+      ]);
+
+      parentDict.xref = xref;
+      buttonWidgetDict.xref = xref;
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = true;
+          return Promise.all([
+            annotation,
+            annotation.save(partialEvaluator, task, annotationStorage),
+          ]);
+        })
+        .then(([annotation, data]) => {
+          expect(data.length).toEqual(2);
+          const [radioData, parentData] = data;
+          radioData.data = radioData.data.replace(/\(D:[0-9]+\)/, "(date)");
+          expect(radioData.ref).toEqual(Ref.get(123, 0));
+          expect(radioData.data).toEqual(
+            "123 0 obj\n" +
+              "<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 32768 " +
+              "/AP << /N << /Checked 314 0 R /Off 271 0 R>>>> " +
+              "/Parent 456 0 R /AS /Checked /M (date)>>\nendobj\n"
+          );
+          expect(parentData.ref).toEqual(Ref.get(456, 0));
+          expect(parentData.data).toEqual(
+            "456 0 obj\n<< /Kids [123 0 R] /V /Checked>>\nendobj\n"
+          );
+          done();
+        })
+        .catch(done.fail);
+    });
+
     it("should save nothing", function (done) {
       const buttonWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([
