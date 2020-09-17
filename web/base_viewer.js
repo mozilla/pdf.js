@@ -150,8 +150,10 @@ class BaseViewer {
     ) {
       if (
         !(
-          this.container instanceof HTMLDivElement &&
-          this.viewer instanceof HTMLDivElement
+          this.container &&
+          this.container.tagName.toUpperCase() === "DIV" &&
+          this.viewer &&
+          this.viewer.tagName.toUpperCase() === "DIV"
         )
       ) {
         throw new Error("Invalid `container` and/or `viewer` option.");
