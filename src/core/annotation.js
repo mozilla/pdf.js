@@ -1760,7 +1760,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
     for (const key of normalAppearance.getKeys()) {
       if (key !== "Off") {
-        this.data.buttonValue = key;
+        this.data.buttonValue = this._decodeFormValue(key);
         break;
       }
     }

@@ -2133,6 +2133,40 @@ describe("annotation", function () {
       }, done.fail);
     });
 
+    it("should handle radio buttons with a field value not an ascii string", function (done) {
+      const parentDict = new Dict();
+      parentDict.set("V", Name.get("\x91I=\x91\xf0\x93\xe0\x97e3"));
+
+      const normalAppearanceStateDict = new Dict();
+      normalAppearanceStateDict.set("\x91I=\x91\xf0\x93\xe0\x97e3", null);
+
+      const appearanceStatesDict = new Dict();
+      appearanceStatesDict.set("N", normalAppearanceStateDict);
+
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set("Parent", parentDict);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      ).then(({ data }) => {
+        expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+        expect(data.checkBox).toEqual(false);
+        expect(data.radioButton).toEqual(true);
+        expect(data.fieldValue).toEqual("‚I=‚ðﬁàŠe3");
+        expect(data.buttonValue).toEqual("‚I=‚ðﬁàŠe3");
+        done();
+      }, done.fail);
+    });
+
     it("should handle radio buttons without a field value", function (done) {
       const normalAppearanceStateDict = new Dict();
       normalAppearanceStateDict.set("2", null);
