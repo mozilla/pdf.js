@@ -1512,6 +1512,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var accent = glyph.accent;
         var scaledX, scaledY, scaledAccentX, scaledAccentY;
         var width = glyph.width;
+
+        // fix character mismatch
+        if (glyph.fontChar === 'ǫ' && glyph.unicode === 'fi') {
+          glyph.fontChar = 'fi';
+          character = 'fi';
+        }
+
         if (vertical) {
           var vmetric, vx, vy;
           vmetric = glyph.vmetric || defaultVMetrics;
