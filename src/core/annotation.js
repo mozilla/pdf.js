@@ -1974,12 +1974,15 @@ class PolylineAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.POLYLINE;
+    this.data.vertices = [];
 
     // The vertices array is an array of numbers representing the alternating
     // horizontal and vertical coordinates, respectively, of each vertex.
     // Convert this to an array of objects with x and y coordinates.
     const rawVertices = parameters.dict.getArray("Vertices");
-    this.data.vertices = [];
+    if (!Array.isArray(rawVertices)) {
+      return;
+    }
     for (let i = 0, ii = rawVertices.length; i < ii; i += 2) {
       this.data.vertices.push({
         x: rawVertices[i],
@@ -2011,20 +2014,23 @@ class InkAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.INK;
-
-    const xref = parameters.xref;
-    const originalInkLists = parameters.dict.getArray("InkList");
     this.data.inkLists = [];
-    for (let i = 0, ii = originalInkLists.length; i < ii; ++i) {
+
+    const rawInkLists = parameters.dict.getArray("InkList");
+    if (!Array.isArray(rawInkLists)) {
+      return;
+    }
+    const xref = parameters.xref;
+    for (let i = 0, ii = rawInkLists.length; i < ii; ++i) {
       // The raw ink lists array contains arrays of numbers representing
       // the alternating horizontal and vertical coordinates, respectively,
       // of each vertex. Convert this to an array of objects with x and y
       // coordinates.
       this.data.inkLists.push([]);
-      for (let j = 0, jj = originalInkLists[i].length; j < jj; j += 2) {
+      for (let j = 0, jj = rawInkLists[i].length; j < jj; j += 2) {
         this.data.inkLists[i].push({
-          x: xref.fetchIfRef(originalInkLists[i][j]),
-          y: xref.fetchIfRef(originalInkLists[i][j + 1]),
+          x: xref.fetchIfRef(rawInkLists[i][j]),
+          y: xref.fetchIfRef(rawInkLists[i][j + 1]),
         });
       }
     }
