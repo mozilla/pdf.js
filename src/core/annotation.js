@@ -1137,7 +1137,8 @@ class WidgetAnnotation extends Annotation {
   }
 
   async save(evaluator, task, annotationStorage) {
-    if (this.data.fieldValue === annotationStorage[this.data.id]) {
+    const value = annotationStorage[this.data.id];
+    if (value === this.data.fieldValue || value === undefined) {
       return null;
     }
 
@@ -1156,7 +1157,6 @@ class WidgetAnnotation extends Annotation {
       return null;
     }
 
-    const value = annotationStorage[this.data.id];
     const bbox = [
       0,
       0,
@@ -1222,7 +1222,13 @@ class WidgetAnnotation extends Annotation {
       return null;
     }
     const value = annotationStorage[this.data.id];
+    if (value === undefined) {
+      // The annotation hasn't been rendered so use the appearance
+      return null;
+    }
+
     if (value === "") {
+      // the field is empty: nothing to render
       return "";
     }
 
@@ -1695,7 +1701,16 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     if (annotationStorage) {
-      const value = annotationStorage[this.data.id] || false;
+      const value = annotationStorage[this.data.id];
+      if (value === undefined) {
+        return super.getOperatorList(
+          evaluator,
+          task,
+          renderForms,
+          annotationStorage
+        );
+      }
+
       let appearance;
       if (value) {
         appearance = this.checkedAppearance;
@@ -1741,9 +1756,12 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveCheckbox(evaluator, task, annotationStorage) {
-    const defaultValue = this.data.fieldValue && this.data.fieldValue !== "Off";
     const value = annotationStorage[this.data.id];
+    if (value === undefined) {
+      return null;
+    }
 
+    const defaultValue = this.data.fieldValue && this.data.fieldValue !== "Off";
     if (defaultValue === value) {
       return null;
     }
@@ -1780,9 +1798,12 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveRadioButton(evaluator, task, annotationStorage) {
-    const defaultValue = this.data.fieldValue === this.data.buttonValue;
     const value = annotationStorage[this.data.id];
+    if (value === undefined) {
+      return null;
+    }
 
+    const defaultValue = this.data.fieldValue === this.data.buttonValue;
     if (defaultValue === value) {
       return null;
     }
