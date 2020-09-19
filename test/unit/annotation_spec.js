@@ -1611,6 +1611,55 @@ describe("annotation", function () {
         }, done.fail);
     });
 
+    it("should render regular text for printing using normal appearance", function (done) {
+      const textWidgetRef = Ref.get(271, 0);
+
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      const normalAppearanceStream = new StringStream("0.1 0.2 0.3 rg");
+      normalAppearanceStream.dict = normalAppearanceDict;
+
+      appearanceStatesDict.set("N", normalAppearanceStream);
+      textWidgetDict.set("AP", appearanceStatesDict);
+
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          return annotation.getOperatorList(
+            partialEvaluator,
+            task,
+            false,
+            annotationStorage
+          );
+        })
+        .then(opList => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([26, 51, 76])
+          );
+          done();
+        })
+        .catch(done.fail);
+    });
+
     it("should render auto-sized text for printing", function (done) {
       textWidgetDict.set("DA", "/Helv 0 Tf");
 
@@ -2278,6 +2327,64 @@ describe("annotation", function () {
         .catch(done.fail);
     });
 
+    it("should render checkboxes for printing using normal appearance", function (done) {
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+      const checkedAppearanceDict = new Dict();
+      const uncheckedAppearanceDict = new Dict();
+
+      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
+      checkedStream.dict = checkedAppearanceDict;
+
+      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
+      uncheckedStream.dict = uncheckedAppearanceDict;
+
+      checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
+      checkedAppearanceDict.set("FormType", 1);
+      checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
+      normalAppearanceDict.set("Checked", checkedStream);
+      normalAppearanceDict.set("Off", uncheckedStream);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+      buttonWidgetDict.set("AS", Name.get("Checked"));
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test print");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          return annotation.getOperatorList(
+            partialEvaluator,
+            task,
+            false,
+            annotationStorage
+          );
+        })
+        .then(opList => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([26, 51, 76])
+          );
+          done();
+        })
+        .catch(done.fail);
+    });
+
     it("should save checkboxes", function (done) {
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
@@ -2511,6 +2618,65 @@ describe("annotation", function () {
           );
           done();
         }, done.fail);
+    });
+
+    it("should render radio buttons for printing using normal appearance", function (done) {
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+      const checkedAppearanceDict = new Dict();
+      const uncheckedAppearanceDict = new Dict();
+
+      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
+      checkedStream.dict = checkedAppearanceDict;
+
+      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
+      uncheckedStream.dict = uncheckedAppearanceDict;
+
+      checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
+      checkedAppearanceDict.set("FormType", 1);
+      checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
+      normalAppearanceDict.set("Checked", checkedStream);
+      normalAppearanceDict.set("Off", uncheckedStream);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+      buttonWidgetDict.set("AS", Name.get("Off"));
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test print");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          return annotation.getOperatorList(
+            partialEvaluator,
+            task,
+            false,
+            annotationStorage
+          );
+        })
+        .then(opList => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([76, 51, 26])
+          );
+          done();
+        })
+        .catch(done.fail);
     });
 
     it("should save radio buttons", function (done) {
