@@ -427,7 +427,7 @@ gulp.task('buildnumber', function (done) {
 
     console.log('Extension build number: ' + buildNumber);
 
-    var version = '@showpad/pdfjs-dist@2.0.227';// config.versionPrefix + buildNumber;
+    var version = '2.0.227';// config.versionPrefix + buildNumber;
 
     exec('git log --format="%h" -n 1', function (err, stdout, stderr) {
       var buildCommit = '';
@@ -1285,7 +1285,7 @@ gulp.task('dist-pre',
   rimraf.sync(path.join(DIST_DIR, '*'));
 
   // Rebuilding manifests
-  var DIST_NAME = 'pdfjs-dist';
+  var DIST_NAME = '@showpad/pdfjs-dist';
   var DIST_DESCRIPTION = 'Generic build of Mozilla\'s PDF.js library.';
   var DIST_KEYWORDS = ['Mozilla', 'pdf', 'pdf.js'];
   var DIST_HOMEPAGE = 'http://mozilla.github.io/pdf.js/';
@@ -1318,6 +1318,9 @@ gulp.task('dist-pre',
       type: 'git',
       url: DIST_REPO_URL,
     },
+    publishConfig: {
+      '@showpad:registry': 'https://gitlab.showpad.io/api/v4/projects/227/packages/npm/'
+    }
   };
   var packageJsonSrc =
     createStringSource('package.json', JSON.stringify(npmManifest, null, 2));
