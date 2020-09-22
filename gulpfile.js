@@ -1369,6 +1369,8 @@ gulp.task('dist-pre',
         .pipe(gulp.dest(DIST_DIR + 'web/')),
     gulp.src(LIB_DIR + '**/*', { base: LIB_DIR, })
         .pipe(gulp.dest(DIST_DIR + 'lib/')),
+    gulp.src('.npmrc')
+        .pipe(gulp.dest(DIST_DIR))
   ]);
 });
 
