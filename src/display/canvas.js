@@ -1513,8 +1513,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var scaledX, scaledY, scaledAccentX, scaledAccentY;
         var width = glyph.width;
 
-        // fix character mismatch
-        if (glyph.fontChar === 'ǫ' && glyph.unicode === 'fi') {
+        // SP-32958 fix character mismatch
+        if (font.name === 'SOFUFM+HoneywellSansTT-Book' && glyph.fontChar === 'ǫ' && glyph.unicode === 'fi') {
           glyph.fontChar = 'fi';
           character = 'fi';
         }
