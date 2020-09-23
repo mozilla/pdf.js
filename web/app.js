@@ -1775,6 +1775,13 @@ const PDFViewerApplication = {
     eventBus._on("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._on("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._on("updatefindcontrolstate", webViewerUpdateFindControlState);
+
+    if (AppOptions.get("pdfBug")) {
+      _boundEvents.reportPageStatsPDFBug = reportPageStatsPDFBug;
+
+      eventBus._on("pagerendered", _boundEvents.reportPageStatsPDFBug);
+      eventBus._on("pagechanging", _boundEvents.reportPageStatsPDFBug);
+    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._on("fileinputchange", webViewerFileInputChange);
       eventBus._on("openfile", webViewerOpenFile);
@@ -1855,6 +1862,13 @@ const PDFViewerApplication = {
     eventBus._off("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._off("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._off("updatefindcontrolstate", webViewerUpdateFindControlState);
+
+    if (_boundEvents.reportPageStatsPDFBug) {
+      eventBus._off("pagerendered", _boundEvents.reportPageStatsPDFBug);
+      eventBus._off("pagechanging", _boundEvents.reportPageStatsPDFBug);
+
+      _boundEvents.reportPageStatsPDFBug = null;
+    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._off("fileinputchange", webViewerFileInputChange);
       eventBus._off("openfile", webViewerOpenFile);
@@ -1964,6 +1978,20 @@ function loadAndEnablePDFBug(enabledTabs) {
     PDFBug.enable(enabledTabs);
     PDFBug.init({ OPS }, appConfig.mainContainer);
   });
+}
+
+function reportPageStatsPDFBug({ pageNumber }) {
+  if (typeof Stats === "undefined" || !Stats.enabled) {
+    return;
+  }
+  const pageView = PDFViewerApplication.pdfViewer.getPageView(
+    /* index = */ pageNumber - 1
+  );
+  const pageStats = pageView && pageView.pdfPage && pageView.pdfPage.stats;
+  if (!pageStats) {
+    return;
+  }
+  Stats.add(pageNumber, pageStats);
 }
 
 function webViewerInitialized() {
@@ -2148,10 +2176,6 @@ function webViewerPageRendered({ pageNumber, timestamp, error }) {
       pageIndex
     );
     thumbnailView.setImage(pageView);
-  }
-
-  if (typeof Stats !== "undefined" && Stats.enabled && pageView.stats) {
-    Stats.add(pageNumber, pageView.stats);
   }
 
   if (error) {
@@ -2533,14 +2557,6 @@ function webViewerPageChanging(evt) {
 
   if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
-  }
-
-  // We need to update stats.
-  if (typeof Stats !== "undefined" && Stats.enabled) {
-    const pageView = PDFViewerApplication.pdfViewer.getPageView(page - 1);
-    if (pageView && pageView.stats) {
-      Stats.add(page, pageView.stats);
-    }
   }
 }
 

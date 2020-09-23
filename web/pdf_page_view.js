@@ -139,7 +139,6 @@ class PDFPageView {
       scale: this.scale * CSS_UNITS,
       rotation: totalRotation,
     });
-    this.stats = pdfPage.stats;
     this.reset();
   }
 
@@ -523,8 +522,6 @@ class PDFPageView {
         delete this.loadingIconDiv;
       }
       this._resetZoomLayer(/* removeFromDOM = */ true);
-
-      this.stats = pdfPage.stats;
 
       this.eventBus.dispatch("pagerendered", {
         source: this,
