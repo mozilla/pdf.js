@@ -317,7 +317,7 @@ class PDFThumbnailView {
     this.renderingState = RenderingStates.RUNNING;
 
     const renderCapability = createPromiseCapability();
-    const finishRenderTask = error => {
+    const finishRenderTask = (error = null) => {
       // The renderTask may have been replaced by a new one, so only remove
       // the reference to the renderTask if it matches the one that is
       // triggering this callback.

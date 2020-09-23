@@ -2126,8 +2126,7 @@ function webViewerResetPermissions() {
   appConfig.viewerContainer.classList.remove(ENABLE_PERMISSIONS_CLASS);
 }
 
-function webViewerPageRendered(evt) {
-  const pageNumber = evt.pageNumber;
+function webViewerPageRendered({ pageNumber, timestamp, error }) {
   const pageIndex = pageNumber - 1;
   const pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
 
@@ -2155,7 +2154,7 @@ function webViewerPageRendered(evt) {
     Stats.add(pageNumber, pageView.stats);
   }
 
-  if (pageView.error) {
+  if (error) {
     PDFViewerApplication.l10n
       .get(
         "rendering_error",
@@ -2163,13 +2162,13 @@ function webViewerPageRendered(evt) {
         "An error occurred while rendering the page."
       )
       .then(msg => {
-        PDFViewerApplication.error(msg, pageView.error);
+        PDFViewerApplication.error(msg, error);
       });
   }
 
   PDFViewerApplication.externalServices.reportTelemetry({
     type: "pageInfo",
-    timestamp: evt.timestamp,
+    timestamp,
   });
   // It is a good time to report stream and font types.
   PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
