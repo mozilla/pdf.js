@@ -19,6 +19,7 @@ import {
   AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
   EventBus,
+  getActiveOrFocusedElement,
   getPDFFileNameFromURL,
   isValidRotation,
   isValidScrollMode,
@@ -2819,7 +2820,7 @@ function webViewerKeyDown(evt) {
 
   // Some shortcuts should not get handled if a control/input element
   // is selected.
-  const curElement = document.activeElement || document.querySelector(":focus");
+  const curElement = getActiveOrFocusedElement();
   const curElementTagName = curElement && curElement.tagName.toUpperCase();
   if (
     curElementTagName === "INPUT" ||
