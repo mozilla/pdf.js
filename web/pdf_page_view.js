@@ -349,16 +349,7 @@ class PDFPageView {
       scaleX = height / width;
       scaleY = width / height;
     }
-    const cssTransform =
-      "rotate(" +
-      relativeRotation +
-      "deg) " +
-      "scale(" +
-      scaleX +
-      "," +
-      scaleY +
-      ")";
-    target.style.transform = cssTransform;
+    target.style.transform = `rotate(${relativeRotation}deg) scale(${scaleX}, ${scaleY})`;
 
     if (this.textLayer) {
       // Rotating the text layer is more complicated since the divs inside the
@@ -397,19 +388,9 @@ class PDFPageView {
       }
 
       textLayerDiv.style.transform =
-        "rotate(" +
-        textAbsRotation +
-        "deg) " +
-        "scale(" +
-        scale +
-        ", " +
-        scale +
-        ") " +
-        "translate(" +
-        transX +
-        ", " +
-        transY +
-        ")";
+        `rotate(${textAbsRotation}deg) ` +
+        `scale(${scale}) ` +
+        `translate(${transX}, ${transY})`;
       textLayerDiv.style.transformOrigin = "0% 0%";
     }
 
