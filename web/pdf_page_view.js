@@ -114,7 +114,7 @@ class PDFPageView {
     this.paintedViewportMap = new WeakMap();
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
-    this.error = null;
+    this._renderError = null;
 
     this.annotationLayer = null;
     this.textLayer = null;
@@ -265,6 +265,7 @@ class PDFPageView {
         pageNumber: this.id,
         cssTransform: true,
         timestamp: performance.now(),
+        error: this._renderError,
       });
       return;
     }
@@ -293,6 +294,7 @@ class PDFPageView {
           pageNumber: this.id,
           cssTransform: true,
           timestamp: performance.now(),
+          error: this._renderError,
         });
         return;
       }
@@ -500,7 +502,7 @@ class PDFPageView {
       };
     }
 
-    const finishPaintTask = async error => {
+    const finishPaintTask = async (error = null) => {
       // The paintTask may have been replaced by a new one, so only remove
       // the reference to the paintTask if it matches the one that is
       // triggering this callback.
@@ -509,9 +511,10 @@ class PDFPageView {
       }
 
       if (error instanceof RenderingCancelledException) {
-        this.error = null;
+        this._renderError = null;
         return;
       }
+      this._renderError = error;
 
       this.renderingState = RenderingStates.FINISHED;
 
@@ -521,7 +524,6 @@ class PDFPageView {
       }
       this._resetZoomLayer(/* removeFromDOM = */ true);
 
-      this.error = error;
       this.stats = pdfPage.stats;
 
       this.eventBus.dispatch("pagerendered", {
@@ -529,6 +531,7 @@ class PDFPageView {
         pageNumber: this.id,
         cssTransform: false,
         timestamp: performance.now(),
+        error: this._renderError,
       });
 
       if (error) {
