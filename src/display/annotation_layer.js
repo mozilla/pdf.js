@@ -177,7 +177,7 @@ class AnnotationElement {
     ]);
 
     container.style.transform = `matrix(${viewport.transform.join(",")})`;
-    container.style.transformOrigin = `-${rect[0]}px -${rect[1]}px`;
+    container.style.transformOrigin = `${-rect[0]}px ${-rect[1]}px`;
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
       container.style.borderWidth = `${data.borderStyle.width}px`;
@@ -763,12 +763,13 @@ class PopupAnnotationElement extends AnnotationElement {
 
     // Position the popup next to the parent annotation's container.
     // PDF viewers ignore a popup annotation's rectangle.
-    const parentLeft = parseFloat(parentElement.style.left);
-    const parentWidth = parseFloat(parentElement.style.width);
-    this.container.style.transformOrigin = `-${parentLeft + parentWidth}px -${
-      parentElement.style.top
-    }`;
-    this.container.style.left = `${parentLeft + parentWidth}px`;
+    const parentTop = parseFloat(parentElement.style.top),
+      parentLeft = parseFloat(parentElement.style.left),
+      parentWidth = parseFloat(parentElement.style.width);
+    const popupLeft = parentLeft + parentWidth;
+
+    this.container.style.transformOrigin = `${-popupLeft}px ${-parentTop}px`;
+    this.container.style.left = `${popupLeft}px`;
 
     this.container.appendChild(popup.render());
     return this.container;
