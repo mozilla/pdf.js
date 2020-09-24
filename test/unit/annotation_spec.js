@@ -2045,6 +2045,90 @@ describe("annotation", function () {
         }, done.fail);
     });
 
+    it("should render checkboxes for printing two times", function (done) {
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+      const checkedAppearanceDict = new Dict();
+      const uncheckedAppearanceDict = new Dict();
+
+      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
+      checkedStream.dict = checkedAppearanceDict;
+
+      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
+      uncheckedStream.dict = uncheckedAppearanceDict;
+
+      checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
+      checkedAppearanceDict.set("FormType", 1);
+      checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
+      normalAppearanceDict.set("Checked", checkedStream);
+      normalAppearanceDict.set("Off", uncheckedStream);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+      buttonWidgetDict.set("AS", Name.get("Off"));
+
+      const buttonWidgetRef = Ref.get(1249, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test print");
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = true;
+          return Promise.all([
+            annotation,
+            annotation.getOperatorList(
+              partialEvaluator,
+              task,
+              false,
+              annotationStorage
+            ),
+          ]);
+        })
+        .then(([annotation, opList]) => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([26, 51, 76])
+          );
+          return annotation;
+        })
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = true;
+          return annotation.getOperatorList(
+            partialEvaluator,
+            task,
+            false,
+            annotationStorage
+          );
+        })
+        .then(opList => {
+          expect(opList.argsArray.length).toEqual(3);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.setFillRGBColor,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[1]).toEqual(
+            new Uint8ClampedArray([26, 51, 76])
+          );
+          done();
+        })
+        .catch(done.fail);
+    });
+
     it("should save checkboxes", function (done) {
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
