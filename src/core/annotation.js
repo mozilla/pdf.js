@@ -1733,6 +1733,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     this.checkedAppearance = normalAppearance.get(this.data.exportValue);
     this.uncheckedAppearance = normalAppearance.get("Off") || null;
+
+    this._streams.push(this.checkedAppearance);
+    if (this.uncheckedAppearance) {
+      this._streams.push(this.uncheckedAppearance);
+    }
   }
 
   _processRadioButton(params) {
@@ -1767,6 +1772,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     this.checkedAppearance = normalAppearance.get(this.data.buttonValue);
     this.uncheckedAppearance = normalAppearance.get("Off") || null;
+
+    this._streams.push(this.checkedAppearance);
+    if (this.uncheckedAppearance) {
+      this._streams.push(this.uncheckedAppearance);
+    }
   }
 
   _processPushButton(params) {
