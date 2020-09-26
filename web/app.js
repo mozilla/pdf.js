@@ -1775,6 +1775,13 @@ const PDFViewerApplication = {
     eventBus._on("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._on("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._on("updatefindcontrolstate", webViewerUpdateFindControlState);
+
+    if (AppOptions.get("pdfBug")) {
+      _boundEvents.reportPageStatsPDFBug = reportPageStatsPDFBug;
+
+      eventBus._on("pagerendered", _boundEvents.reportPageStatsPDFBug);
+      eventBus._on("pagechanging", _boundEvents.reportPageStatsPDFBug);
+    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._on("fileinputchange", webViewerFileInputChange);
       eventBus._on("openfile", webViewerOpenFile);
@@ -1855,6 +1862,13 @@ const PDFViewerApplication = {
     eventBus._off("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._off("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._off("updatefindcontrolstate", webViewerUpdateFindControlState);
+
+    if (_boundEvents.reportPageStatsPDFBug) {
+      eventBus._off("pagerendered", _boundEvents.reportPageStatsPDFBug);
+      eventBus._off("pagechanging", _boundEvents.reportPageStatsPDFBug);
+
+      _boundEvents.reportPageStatsPDFBug = null;
+    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._off("fileinputchange", webViewerFileInputChange);
       eventBus._off("openfile", webViewerOpenFile);
@@ -1964,6 +1978,20 @@ function loadAndEnablePDFBug(enabledTabs) {
     PDFBug.enable(enabledTabs);
     PDFBug.init({ OPS }, appConfig.mainContainer);
   });
+}
+
+function reportPageStatsPDFBug({ pageNumber }) {
+  if (typeof Stats === "undefined" || !Stats.enabled) {
+    return;
+  }
+  const pageView = PDFViewerApplication.pdfViewer.getPageView(
+    /* index = */ pageNumber - 1
+  );
+  const pageStats = pageView && pageView.pdfPage && pageView.pdfPage.stats;
+  if (!pageStats) {
+    return;
+  }
+  Stats.add(pageNumber, pageStats);
 }
 
 function webViewerInitialized() {
@@ -2126,36 +2154,27 @@ function webViewerResetPermissions() {
   appConfig.viewerContainer.classList.remove(ENABLE_PERMISSIONS_CLASS);
 }
 
-function webViewerPageRendered(evt) {
-  const pageNumber = evt.pageNumber;
-  const pageIndex = pageNumber - 1;
-  const pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
-
+function webViewerPageRendered({ pageNumber, timestamp, error }) {
   // If the page is still visible when it has finished rendering,
   // ensure that the page number input loading indicator is hidden.
   if (pageNumber === PDFViewerApplication.page) {
     PDFViewerApplication.toolbar.updateLoadingIndicatorState(false);
   }
 
-  // Prevent errors in the edge-case where the PDF document is removed *before*
-  // the 'pagerendered' event handler is invoked.
-  if (!pageView) {
-    return;
-  }
-
   // Use the rendered page to set the corresponding thumbnail image.
   if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
-    const thumbnailView = PDFViewerApplication.pdfThumbnailViewer.getThumbnail(
-      pageIndex
+    const pageView = PDFViewerApplication.pdfViewer.getPageView(
+      /* index = */ pageNumber - 1
     );
-    thumbnailView.setImage(pageView);
+    const thumbnailView = PDFViewerApplication.pdfThumbnailViewer.getThumbnail(
+      /* index = */ pageNumber - 1
+    );
+    if (pageView && thumbnailView) {
+      thumbnailView.setImage(pageView);
+    }
   }
 
-  if (typeof Stats !== "undefined" && Stats.enabled && pageView.stats) {
-    Stats.add(pageNumber, pageView.stats);
-  }
-
-  if (pageView.error) {
+  if (error) {
     PDFViewerApplication.l10n
       .get(
         "rendering_error",
@@ -2163,13 +2182,13 @@ function webViewerPageRendered(evt) {
         "An error occurred while rendering the page."
       )
       .then(msg => {
-        PDFViewerApplication.error(msg, pageView.error);
+        PDFViewerApplication.error(msg, error);
       });
   }
 
   PDFViewerApplication.externalServices.reportTelemetry({
     type: "pageInfo",
-    timestamp: evt.timestamp,
+    timestamp,
   });
   // It is a good time to report stream and font types.
   PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
@@ -2279,9 +2298,10 @@ function webViewerUpdateViewarea(evt) {
 
   // Show/hide the loading indicator in the page number input element.
   const currentPage = PDFViewerApplication.pdfViewer.getPageView(
-    PDFViewerApplication.page - 1
+    /* index = */ PDFViewerApplication.page - 1
   );
-  const loading = currentPage.renderingState !== RenderingStates.FINISHED;
+  const loading =
+    (currentPage && currentPage.renderingState) !== RenderingStates.FINISHED;
   PDFViewerApplication.toolbar.updateLoadingIndicatorState(loading);
 }
 
@@ -2526,22 +2546,12 @@ function webViewerRotationChanging(evt) {
   PDFViewerApplication.pdfViewer.currentPageNumber = evt.pageNumber;
 }
 
-function webViewerPageChanging(evt) {
-  const page = evt.pageNumber;
-
-  PDFViewerApplication.toolbar.setPageNumber(page, evt.pageLabel || null);
-  PDFViewerApplication.secondaryToolbar.setPageNumber(page);
+function webViewerPageChanging({ pageNumber, pageLabel }) {
+  PDFViewerApplication.toolbar.setPageNumber(pageNumber, pageLabel);
+  PDFViewerApplication.secondaryToolbar.setPageNumber(pageNumber);
 
   if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
-    PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
-  }
-
-  // We need to update stats.
-  if (typeof Stats !== "undefined" && Stats.enabled) {
-    const pageView = PDFViewerApplication.pdfViewer.getPageView(page - 1);
-    if (pageView && pageView.stats) {
-      Stats.add(page, pageView.stats);
-    }
+    PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(pageNumber);
   }
 }
 

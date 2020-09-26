@@ -13,11 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  createPromiseCapability,
-  RenderingCancelledException,
-} from "pdfjs-lib";
 import { getOutputScale, NullL10n } from "./ui_utils.js";
+import { RenderingCancelledException } from "pdfjs-lib";
 import { RenderingStates } from "./pdf_rendering_queue.js";
 
 const MAX_NUM_SCALING_STEPS = 3;
@@ -316,8 +313,7 @@ class PDFThumbnailView {
 
     this.renderingState = RenderingStates.RUNNING;
 
-    const renderCapability = createPromiseCapability();
-    const finishRenderTask = error => {
+    const finishRenderTask = async (error = null) => {
       // The renderTask may have been replaced by a new one, so only remove
       // the reference to the renderTask if it matches the one that is
       // triggering this callback.
@@ -326,17 +322,14 @@ class PDFThumbnailView {
       }
 
       if (error instanceof RenderingCancelledException) {
-        renderCapability.resolve(undefined);
         return;
       }
 
       this.renderingState = RenderingStates.FINISHED;
       this._convertCanvasToImage();
 
-      if (!error) {
-        renderCapability.resolve(undefined);
-      } else {
-        renderCapability.reject(error);
+      if (error) {
+        throw error;
       }
     };
 
@@ -362,7 +355,7 @@ class PDFThumbnailView {
     const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;
 
-    renderTask.promise.then(
+    const resultPromise = renderTask.promise.then(
       function () {
         finishRenderTask(null);
       },
@@ -370,7 +363,7 @@ class PDFThumbnailView {
         finishRenderTask(error);
       }
     );
-    return renderCapability.promise;
+    return resultPromise;
   }
 
   setImage(pageView) {
