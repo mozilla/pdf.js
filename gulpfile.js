@@ -947,26 +947,84 @@ function parseMinified(dir, suffix) {
   console.log("### Minifying js files");
 
   var Terser = require("terser");
-  var options = {
+
+  const viewerSource = fs
+    .readFileSync(dir + "/web/viewer" + suffix + ".js.map")
+    .toString();
+  let options = {
     compress: {
       // V8 chokes on very long sequences, work around that.
       sequences: false,
     },
     keep_classnames: true,
     keep_fnames: true,
+    sourceMap: {
+      content: viewerSource,
+      url: "viewer" + suffix + ".min.js.map",
+    },
   };
 
+  const miniViewer = Terser.minify(viewerFiles, options);
   fs.writeFileSync(
     dir + "/web/viewer" + suffix + ".min.js",
-    Terser.minify(viewerFiles, options).code
+    miniViewer.code
   );
+
+  fs.writeFileSync(
+    dir + "/web/viewer" + suffix + ".min.js.map",
+    miniViewer.map
+  );
+
+
+  const pdfSource = fs
+    .readFileSync(dir + "/build/pdf" + suffix + ".js.map")
+    .toString();
+  options = {
+    compress: {
+      // V8 chokes on very long sequences, work around that.
+      sequences: false,
+    },
+    keep_classnames: true,
+    keep_fnames: true,
+    sourceMap: {
+      content: pdfSource,
+      url: "pdf" + suffix + ".min.js.map",
+    },
+  };
+  const miniPdf = Terser.minify(pdfFile, options);
   fs.writeFileSync(
     dir + "/build/pdf" + suffix + ".min.js",
-    Terser.minify(pdfFile, options).code
+    miniPdf.code
   );
   fs.writeFileSync(
+    dir + "/build/pdf" + suffix + ".min.js.map",
+    miniPdf.map
+  );
+
+  const pdfWorkerSource = fs
+    .readFileSync(dir + "/build/pdf.worker" + suffix + ".js.map")
+    .toString();
+  options = {
+    compress: {
+      // V8 chokes on very long sequences, work around that.
+      sequences: false,
+    },
+    keep_classnames: true,
+    keep_fnames: true,
+    sourceMap: {
+      content: pdfWorkerSource,
+      url: "pdf.worker" + suffix + ".min.js.map",
+    },
+  };
+
+  const miniPdfWorker = Terser.minify(pdfWorkerFile, options);
+  fs.writeFileSync(
     dir + "/build/pdf.worker" + suffix + ".min.js",
-    Terser.minify(pdfWorkerFile, options).code
+    miniPdfWorker.code
+  );
+  fs.writeFileSync(
+    dir + "/build/pdf.worker" + suffix + ".min.js.map",
+    miniPdfWorker.map
   );
   fs.writeFileSync(
     dir + "image_decoders/pdf.image_decoders" + suffix + ".min.js",
