@@ -1,3 +1,10 @@
+
+# SHOWPAD RELEASE
+
+Update version https://github.com/showpad/mozilla-pdf.js/blob/a5f8e1d0e7642b074bdc302807201a1a135b918c/gulpfile.js#L430
+Run gulp dist-pre ( node version 6 )
+cd to build/dist and npm publish
+
 # PDF.js
 
 PDF.js is a Portable Document Format (PDF) viewer that is built with HTML5.
@@ -140,3 +147,4 @@ File an issue:
 Follow us on twitter: @pdfjs
 
 + http://twitter.com/#!/pdfjs
++ 
