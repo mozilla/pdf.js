@@ -918,6 +918,7 @@ html[dir="rtl"] .dropdownToolbarButton::after {
 }
 
 .dropdownToolbarButton > select {
+  -webkit-appearance: none;
   width: 162px;
   height: 28px;
   font-size: 12px;
@@ -1259,6 +1260,7 @@ html[dir="rtl"] .toolbarField[type="checkbox"] {
 }
 
 .toolbarField.pageNumber {
+  -webkit-appearance: none;
   -moz-appearance: textfield; /* hides the spinner in moz */
   min-width: 16px;
   text-align: right;
