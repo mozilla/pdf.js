@@ -14,14 +14,16 @@
  */
 /* eslint no-var: error */
 
-import { bytesToString, escapeString } from "../shared/util.js";
+import { bytesToString, escapeString, warn } from "../shared/util.js";
 import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
+import { escapePDFName, parseXFAPath } from "./core_utils.js";
+import { SimpleDOMNode, SimpleXMLParser } from "../shared/xml_parser.js";
 import { calculateMD5 } from "./crypto.js";
 
 function writeDict(dict, buffer, transform) {
   buffer.push("<<");
   for (const key of dict.getKeys()) {
-    buffer.push(` /${key} `);
+    buffer.push(` /${escapePDFName(key)} `);
     writeValue(dict.getRaw(key), buffer, transform);
   }
   buffer.push(">>");
@@ -71,7 +73,7 @@ function numberToString(value) {
 
 function writeValue(value, buffer, transform) {
   if (isName(value)) {
-    buffer.push(`/${value.name}`);
+    buffer.push(`/${escapePDFName(value.name)}`);
   } else if (isRef(value)) {
     buffer.push(`${value.num} ${value.gen} R`);
   } else if (Array.isArray(value)) {
@@ -123,7 +125,61 @@ function computeMD5(filesize, xrefInfo) {
   return bytesToString(calculateMD5(array));
 }
 
-function incrementalUpdate(originalData, xrefInfo, newRefs) {
+function updateXFA(datasetsRef, newRefs, xref) {
+  if (datasetsRef === null || xref === null) {
+    return;
+  }
+  const datasets = xref.fetchIfRef(datasetsRef);
+  const str = bytesToString(datasets.getBytes());
+  const xml = new SimpleXMLParser(/* hasAttributes */ true).parseFromString(
+    str
+  );
+
+  for (const { xfa } of newRefs) {
+    if (!xfa) {
+      continue;
+    }
+    const { path, value } = xfa;
+    if (!path) {
+      continue;
+    }
+    const node = xml.documentElement.searchNode(parseXFAPath(path), 0);
+    if (node) {
+      node.childNodes = [new SimpleDOMNode("#text", value)];
+    } else {
+      warn(`Node not found for path: ${path}`);
+    }
+  }
+  const buffer = [];
+  xml.documentElement.dump(buffer);
+  let updatedXml = buffer.join("");
+
+  const encrypt = xref.encrypt;
+  if (encrypt) {
+    const transform = encrypt.createCipherTransform(
+      datasetsRef.num,
+      datasetsRef.gen
+    );
+    updatedXml = transform.encryptString(updatedXml);
+  }
+  const data =
+    `${datasetsRef.num} ${datasetsRef.gen} obj\n` +
+    `<< /Type /EmbeddedFile /Length ${updatedXml.length}>>\nstream\n` +
+    updatedXml +
+    "\nendstream\nendobj\n";
+
+  newRefs.push({ ref: datasetsRef, data });
+}
+
+function incrementalUpdate({
+  originalData,
+  xrefInfo,
+  newRefs,
+  xref = null,
+  datasetsRef = null,
+}) {
+  updateXFA(datasetsRef, newRefs, xref);
+
   const newXref = new Dict(null);
   const refForXrefTable = xrefInfo.newRef;
 

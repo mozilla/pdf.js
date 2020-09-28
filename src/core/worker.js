@@ -32,7 +32,7 @@ import {
   VerbosityLevel,
   warn,
 } from "../shared/util.js";
-import { clearPrimitiveCaches, Ref } from "./primitives.js";
+import { clearPrimitiveCaches, Dict, Ref } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 // ngx-extended-pdf-viewer doesn't need node.js support
 // import { isNodeJS } from "../shared/is_node.js";
@@ -522,7 +522,10 @@ class WorkerMessageHandler {
       filename,
     }) {
       pdfManager.requestLoadedStream();
-      const promises = [pdfManager.onLoadedStream()];
+      const promises = [
+        pdfManager.onLoadedStream(),
+        pdfManager.ensureCatalog("acroForm"),
+      ];
       const document = pdfManager.pdfDocument;
       for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
         promises.push(
@@ -533,7 +536,7 @@ class WorkerMessageHandler {
         );
       }
 
-      return Promise.all(promises).then(([stream, ...refs]) => {
+      return Promise.all(promises).then(([stream, acroForm, ...refs]) => {
         let newRefs = [];
         for (const ref of refs) {
           newRefs = ref
@@ -546,13 +549,26 @@ class WorkerMessageHandler {
           return stream.bytes;
         }
 
+        const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || [];
+        let xfaDatasets = null;
+        if (Array.isArray(xfa)) {
+          for (let i = 0, ii = xfa.length; i < ii; i += 2) {
+            if (xfa[i] === "datasets") {
+              xfaDatasets = xfa[i + 1];
+            }
+          }
+        } else {
+          // TODO: Support XFA streams.
+          warn("Unsupported XFA type.");
+        }
+
         const xref = document.xref;
         let newXrefInfo = Object.create(null);
         if (xref.trailer) {
           // Get string info from Info in order to compute fileId
           const _info = Object.create(null);
           const xrefInfo = xref.trailer.get("Info") || null;
-          if (xrefInfo) {
+          if (xrefInfo instanceof Dict) {
             xrefInfo.forEach((key, value) => {
               if (isString(key) && isString(value)) {
                 _info[key] = stringToPDFString(value);
@@ -573,7 +589,13 @@ class WorkerMessageHandler {
         }
         xref.resetNewRef();
 
-        return incrementalUpdate(stream.bytes, newXrefInfo, newRefs);
+        return incrementalUpdate({
+          originalData: stream.bytes,
+          xrefInfo: newXrefInfo,
+          newRefs,
+          xref,
+          datasetsRef: xfaDatasets,
+        });
       });
     });
 

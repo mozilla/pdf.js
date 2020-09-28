@@ -145,14 +145,23 @@ class BaseViewer {
     this.viewer = options.viewer || options.container.firstElementChild;
 
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
-      !(
-        this.container instanceof HTMLDivElement &&
-        this.viewer instanceof HTMLDivElement
-      )
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
     ) {
-      throw new Error("Invalid `container` and/or `viewer` option.");
+      if (
+        !(
+          this.container &&
+          this.container.tagName.toUpperCase() === "DIV" &&
+          this.viewer &&
+          this.viewer.tagName.toUpperCase() === "DIV"
+        )
+      ) {
+        throw new Error("Invalid `container` and/or `viewer` option.");
+      }
+
+      if (getComputedStyle(this.container).position !== "absolute") {
+        throw new Error("The `container` must be absolutely positioned.");
+      }
     }
     this.eventBus = options.eventBus;
     this.linkService = options.linkService || new SimpleLinkService();
@@ -853,6 +862,10 @@ class BaseViewer {
         if (y === null && this._location) {
           x = this._location.left;
           y = this._location.top;
+        } else if (typeof y !== "number") {
+          // The "top" value isn't optional, according to the spec, however some
+          // bad PDF generators will pretend that it is (fixes bug 1663390).
+          y = pageHeight;
         }
         break;
       case "FitV":

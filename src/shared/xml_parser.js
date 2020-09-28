@@ -16,6 +16,8 @@
 // The code for XMLParserBase copied from
 // https://github.com/mozilla/shumway/blob/16451d8836fa85f4b16eeda8b4bda2fa9e2b22b0/src/avm2/natives/xml.ts
 
+import { encodeToXmlString } from "./util.js";
+
 const XMLParserErrorCode = {
   NoError: 0,
   EndOfDocument: -1,
@@ -48,9 +50,9 @@ class XMLParserBase {
   _resolveEntities(s) {
     return s.replace(/&([^;]+);/g, (all, entity) => {
       if (entity.substring(0, 2) === "#x") {
-        return String.fromCharCode(parseInt(entity.substring(2), 16));
+        return String.fromCodePoint(parseInt(entity.substring(2), 16));
       } else if (entity.substring(0, 1) === "#") {
-        return String.fromCharCode(parseInt(entity.substring(1), 10));
+        return String.fromCodePoint(parseInt(entity.substring(1), 10));
       }
       switch (entity) {
         case "lt":
@@ -326,14 +328,111 @@ class SimpleDOMNode {
   hasChildNodes() {
     return this.childNodes && this.childNodes.length > 0;
   }
+
+  /**
+   * Search a node in the tree with the given path
+   * foo.bar[nnn], i.e. find the nnn-th node named
+   * bar under a node named foo.
+   *
+   * @param {Array} paths - an array of objects as
+   * returned by {parseXFAPath}.
+   * @param {number} pos - the current position in
+   * the paths array.
+   * @returns {SimpleDOMNode} The node corresponding
+   * to the path or null if not found.
+   */
+  searchNode(paths, pos) {
+    if (pos >= paths.length) {
+      return this;
+    }
+
+    const component = paths[pos];
+    const stack = [];
+    let node = this;
+
+    while (true) {
+      if (component.name === node.nodeName) {
+        if (component.pos === 0) {
+          const res = node.searchNode(paths, pos + 1);
+          if (res !== null) {
+            return res;
+          }
+        } else if (stack.length === 0) {
+          return null;
+        } else {
+          const [parent] = stack.pop();
+          let siblingPos = 0;
+          for (const child of parent.childNodes) {
+            if (component.name === child.nodeName) {
+              if (siblingPos === component.pos) {
+                return child.searchNode(paths, pos + 1);
+              }
+              siblingPos++;
+            }
+          }
+          // We didn't find the correct sibling
+          // so just return the first found node
+          return node.searchNode(paths, pos + 1);
+        }
+      }
+
+      if (node.childNodes && node.childNodes.length !== 0) {
+        stack.push([node, 0]);
+        node = node.childNodes[0];
+      } else if (stack.length === 0) {
+        return null;
+      } else {
+        while (stack.length !== 0) {
+          const [parent, currentPos] = stack.pop();
+          const newPos = currentPos + 1;
+          if (newPos < parent.childNodes.length) {
+            stack.push([parent, newPos]);
+            node = parent.childNodes[newPos];
+            break;
+          }
+        }
+        if (stack.length === 0) {
+          return null;
+        }
+      }
+    }
+  }
+
+  dump(buffer) {
+    if (this.nodeName === "#text") {
+      buffer.push(encodeToXmlString(this.nodeValue));
+      return;
+    }
+
+    buffer.push(`<${this.nodeName}`);
+    if (this.attributes) {
+      for (const attribute of this.attributes) {
+        buffer.push(
+          ` ${attribute.name}=\"${encodeToXmlString(attribute.value)}\"`
+        );
+      }
+    }
+    if (this.hasChildNodes()) {
+      buffer.push(">");
+      for (const child of this.childNodes) {
+        child.dump(buffer);
+      }
+      buffer.push(`</${this.nodeName}>`);
+    } else if (this.nodeValue) {
+      buffer.push(`>${encodeToXmlString(this.nodeValue)}</${this.nodeName}>`);
+    } else {
+      buffer.push("/>");
+    }
+  }
 }
 
 class SimpleXMLParser extends XMLParserBase {
-  constructor() {
+  constructor(hasAttributes = false) {
     super();
     this._currentFragment = null;
     this._stack = null;
     this._errorCode = XMLParserErrorCode.NoError;
+    this._hasAttributes = hasAttributes;
   }
 
   parseFromString(data) {
@@ -379,6 +478,9 @@ class SimpleXMLParser extends XMLParserBase {
   onBeginElement(name, attributes, isEmpty) {
     const node = new SimpleDOMNode(name);
     node.childNodes = [];
+    if (this._hasAttributes) {
+      node.attributes = attributes;
+    }
     this._currentFragment.push(node);
     if (isEmpty) {
       return;
@@ -403,4 +505,4 @@ class SimpleXMLParser extends XMLParserBase {
   }
 }
 
-export { SimpleXMLParser };
+export { SimpleDOMNode, SimpleXMLParser };

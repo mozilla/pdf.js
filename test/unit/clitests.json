@@ -37,6 +37,7 @@
     "ui_utils_spec.js",
     "unicode_spec.js",
     "util_spec.js",
-    "writer_spec.js"
+    "writer_spec.js",
+    "xml_spec.js"
   ]
 }

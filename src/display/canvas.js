@@ -1009,8 +1009,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     endDrawing: function CanvasGraphics_endDrawing() {
       // Finishing all opened operations such as SMask group painting.
-      if (this.current.activeSMask !== null) {
-        this.endSMaskGroup();
+      while (this.stateStack.length || this.current.activeSMask !== null) {
+        this.restore();
       }
 
       this.ctx.restore();
@@ -1192,7 +1192,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       groupCtx.clearRect(0, 0, groupCtx.canvas.width, groupCtx.canvas.height);
       groupCtx.restore();
     },
-    resumeSMaskGroup: function CanvasGraphics_endSMaskGroup() {
+    resumeSMaskGroup: function CanvasGraphics_resumeSMaskGroup() {
       // Resuming state saved by suspendSMaskGroup. We don't need to restore
       // any groupCtx state since restore() command (the only caller) will do
       // that for us. See also beginSMaskGroup.
@@ -1254,6 +1254,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         this.pendingClip = null;
 
         this._cachedGetSinglePixelWidth = null;
+      } else {
+        // We've finished all the SMask groups, reflect that in our state.
+        this.current.activeSMask = null;
       }
     },
     transform: function CanvasGraphics_transform(a, b, c, d, e, f) {

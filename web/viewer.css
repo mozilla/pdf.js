@@ -19,6 +19,7 @@
   --sidebar-width: 200px;
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
+  --loadingBar-end-offset: 0;
 
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
@@ -43,10 +44,10 @@
   --field-bg-color: rgba(255, 255, 255, 1);
   --field-border-color: rgba(187, 187, 188, 1);
   --findbar-nextprevious-btn-bg-color: rgba(227, 228, 230, 1);
-  --outline-color: rgba(0, 0, 0, 0.8);
-  --outline-hover-color: rgba(0, 0, 0, 0.9);
-  --outline-active-color: rgba(0, 0, 0, 0.08);
-  --outline-active-bg-color: rgba(0, 0, 0, 1);
+  --treeitem-color: rgba(0, 0, 0, 0.8);
+  --treeitem-hover-color: rgba(0, 0, 0, 0.9);
+  --treeitem-active-color: rgba(0, 0, 0, 0.08);
+  --treeitem-active-bg-color: rgba(0, 0, 0, 1);
   --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
   --doorhanger-bg-color: rgba(255, 255, 255, 1);
   --doorhanger-border-color: rgba(12, 12, 13, 0.2);
@@ -114,10 +115,10 @@
     --field-bg-color: rgba(64, 64, 68, 1);
     --field-border-color: rgba(115, 115, 115, 1);
     --findbar-nextprevious-btn-bg-color: rgba(89, 89, 89, 1);
-    --outline-color: rgba(255, 255, 255, 0.8);
-    --outline-hover-color: rgba(255, 255, 255, 0.9);
-    --outline-active-color: rgba(255, 255, 255, 0.08);
-    --outline-active-bg-color: rgba(255, 255, 255, 1);
+    --treeitem-color: rgba(255, 255, 255, 0.8);
+    --treeitem-hover-color: rgba(255, 255, 255, 0.9);
+    --treeitem-active-color: rgba(255, 255, 255, 0.08);
+    --treeitem-active-bg-color: rgba(255, 255, 255, 1);
     --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
     --doorhanger-bg-color: rgba(74, 74, 79, 1);
     --doorhanger-border-color: rgba(39, 39, 43, 1);
@@ -203,15 +204,6 @@ select {
   cursor: not-allowed;
 }
 
-#viewerContainer.pdfPresentationMode:-ms-fullscreen {
-  top: 0px !important;
-  overflow: hidden !important;
-}
-
-#viewerContainer.pdfPresentationMode:-ms-fullscreen::-ms-backdrop {
-  background-color: rgba(0, 0, 0, 1);
-}
-
 #viewerContainer.pdfPresentationMode:fullscreen {
   top: 0px;
   border-top: 2px solid rgba(0, 0, 0, 0);
@@ -260,10 +252,6 @@ html[dir="ltr"] #sidebarContainer {
 html[dir="rtl"] #sidebarContainer {
   transition-property: right;
   right: calc(0px - var(--sidebar-width));
-}
-
-.loadingInProgress #sidebarContainer {
-  top: 36px;
 }
 
 #outerContainer.sidebarResizing #sidebarContainer {
@@ -415,11 +403,35 @@ html[dir="rtl"] #toolbarContainer,
 }
 
 #loadingBar {
-  position: relative;
-  width: 100%;
+  position: absolute;
   height: 4px;
   background-color: var(--body-bg-color);
   border-bottom: 1px solid var(--toolbar-border-color);
+
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
+}
+html[dir="ltr"] #loadingBar {
+  transition-property: left;
+  left: 0;
+  right: var(--loadingBar-end-offset);
+}
+html[dir="rtl"] #loadingBar {
+  transition-property: right;
+  left: var(--loadingBar-end-offset);
+  right: 0;
+}
+
+html[dir="ltr"] #outerContainer.sidebarOpen #loadingBar {
+  left: var(--sidebar-width);
+}
+html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
+  right: var(--sidebar-width);
+}
+
+#outerContainer.sidebarResizing #loadingBar {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  transition-duration: 0s;
 }
 
 #loadingBar .progress {
@@ -838,7 +850,6 @@ html[dir="rtl"] .splitToolbarButtonSeparator {
   font-size: 12px;
   line-height: 14px;
   user-select: none;
-  /* Opera does not support user-select, use <... unselectable="on"> instead */
   cursor: default;
   box-sizing: border-box;
 }
@@ -1397,7 +1408,7 @@ html[dir="rtl"] .treeItem > .treeItems {
   height: auto;
   margin-bottom: 1px;
   border-radius: 2px;
-  color: var(--outline-color);
+  color: var(--treeitem-color);
   font-size: 13px;
   line-height: 15px;
   user-select: none;
@@ -1463,13 +1474,13 @@ html[dir="rtl"] .treeItemToggler::before {
   background-color: var(--sidebaritem-bg-color);
   background-clip: padding-box;
   border-radius: 2px;
-  color: var(--outline-hover-color);
+  color: var(--treeitem-hover-color);
 }
 
 .treeItem.selected {
-  background-color: var(--outline-active-bg-color);
+  background-color: var(--treeitem-active-bg-color);
   background-clip: padding-box;
-  color: var(--outline-active-color);
+  color: var(--treeitem-active-color);
 }
 
 .noResults {
@@ -1494,9 +1505,6 @@ html[dir="rtl"] .treeItemToggler::before {
   right: 0;
   z-index: 1000;
   padding: 3px 6px;
-}
-.loadingInProgress #errorWrapper {
-  top: 37px;
 }
 
 #errorMessageLeft {

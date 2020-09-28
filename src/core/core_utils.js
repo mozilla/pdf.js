@@ -165,7 +165,53 @@ function isWhiteSpace(ch) {
   return ch === 0x20 || ch === 0x09 || ch === 0x0d || ch === 0x0a;
 }
 
+/**
+ * AcroForm field names use an array like notation to refer to
+ * repeated XFA elements e.g. foo.bar[nnn].
+ * see: XFA Spec Chapter 3 - Repeated Elements
+ *
+ * @param {string} path - XFA path name.
+ * @returns {Array} - Array of Objects with the name and pos of
+ * each part of the path.
+ */
+function parseXFAPath(path) {
+  const positionPattern = /(.+)\[([0-9]+)\]$/;
+  return path.split(".").map(component => {
+    const m = component.match(positionPattern);
+    if (m) {
+      return { name: m[1], pos: parseInt(m[2], 10) };
+    }
+    return { name: component, pos: 0 };
+  });
+}
+
+function escapePDFName(str) {
+  const buffer = [];
+  let start = 0;
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.charCodeAt(i);
+    if (char < 0x21 || char > 0x7e || char === 0x23) {
+      if (start < i) {
+        buffer.push(str.substring(start, i));
+      }
+      buffer.push(`#${char.toString(16)}`);
+      start = i + 1;
+    }
+  }
+
+  if (buffer.length === 0) {
+    return str;
+  }
+
+  if (start < str.length) {
+    buffer.push(str.substring(start, str.length));
+  }
+
+  return buffer.join("");
+}
+
 export {
+  escapePDFName,
   getLookupTableFactory,
   MissingDataException,
   XRefEntryException,
@@ -173,6 +219,7 @@ export {
   getInheritableProperty,
   toRomanNumerals,
   log2,
+  parseXFAPath,
   readInt8,
   readUint16,
   readUint32,

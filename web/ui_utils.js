@@ -23,6 +23,8 @@ const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
 const VERTICAL_PADDING = 5;
 
+const LOADINGBAR_END_OFFSET_VAR = "--loadingBar-end-offset";
+
 const PresentationModeState = {
   UNKNOWN: 0,
   NORMAL: 1,
@@ -99,8 +101,6 @@ function getOutputScale(ctx) {
   const backingStoreRatio =
     ctx.webkitBackingStorePixelRatio ||
     ctx.mozBackingStorePixelRatio ||
-    ctx.msBackingStorePixelRatio ||
-    ctx.oBackingStorePixelRatio ||
     ctx.backingStorePixelRatio ||
     1;
   const pixelRatio = devicePixelRatio / backingStoreRatio;
@@ -955,11 +955,15 @@ class ProgressBar {
     const container = viewer.parentNode;
     const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
-      this.bar.style.width = `calc(100% - ${scrollbarWidth}px)`;
+      const doc = document.documentElement;
+      doc.style.setProperty(LOADINGBAR_END_OFFSET_VAR, `${scrollbarWidth}px`);
     }
   }
 
   hide() {
+    if (!this.visible) {
+      return;
+    }
     this.visible = false;
     this.div = document.querySelector(".body #mainContainer .progress"); // always set this new instead of trying to cache this value
     if (this.div) {
@@ -975,7 +979,6 @@ class ProgressBar {
       return;
     }
     this.visible = true;
-    document.body.classList.add("loadingInProgress");
     this.bar.classList.remove("hidden");
   }
 }
@@ -1001,6 +1004,28 @@ function moveToEndOfArray(arr, condition) {
   }
 }
 
+/**
+ * Get the active or focused element in current DOM.
+ *
+ * Recursively search for the truly active or focused element in case there are
+ * shadow DOMs.
+ *
+ * @returns {Element} the truly active or focused element.
+ */
+function getActiveOrFocusedElement() {
+  let curRoot = document;
+  let curActiveOrFocused =
+    curRoot.activeElement || curRoot.querySelector(":focus");
+
+  while (curActiveOrFocused && curActiveOrFocused.shadowRoot) {
+    curRoot = curActiveOrFocused.shadowRoot;
+    curActiveOrFocused =
+      curRoot.activeElement || curRoot.querySelector(":focus");
+  }
+
+  return curActiveOrFocused;
+}
+
 export {
   AutoPrintRegExp,
   CSS_UNITS,
@@ -1023,7 +1048,6 @@ export {
   SpreadMode,
   NullL10n,
   EventBus,
-  clamp,
   ProgressBar,
   getPDFFileNameFromURL,
   noContextMenuHandler,
@@ -1043,4 +1067,5 @@ export {
   WaitOnType,
   waitOnEventOrTimeout,
   moveToEndOfArray,
+  getActiveOrFocusedElement,
 };
