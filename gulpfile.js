@@ -224,6 +224,12 @@ function createWebpackConfig(defines, output) {
                   loose: true,
                 },
               ],
+              [
+                "@babel/plugin-proposal-optional-chaining",
+                {
+                  loose: true,
+                },
+              ],
               "@babel/plugin-transform-modules-commonjs",
               [
                 "@babel/plugin-transform-runtime",

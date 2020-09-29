@@ -846,7 +846,7 @@ const PDFViewerApplication = {
           return undefined; // Ignore errors for previously opened PDF files.
         }
 
-        const message = exception && exception.message;
+        const message = exception?.message;
         let loadingErrorMessage;
         if (exception instanceof InvalidPDFException) {
           // change error message also for other builds
