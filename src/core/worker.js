@@ -34,6 +34,7 @@ import {
 } from "../shared/util.js";
 import { clearPrimitiveCaches, Dict, Ref } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
+import { incrementalUpdate } from "./writer.js";
 // ngx-extended-pdf-viewer doesn't need node.js support
 // import { isNodeJS } from "../shared/is_node.js";
 // end of modification
