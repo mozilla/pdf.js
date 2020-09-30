@@ -593,10 +593,6 @@ const PDFViewerApplication = {
     this.pdfViewer.currentPageNumber = val;
   },
 
-  get printing() {
-    return !!this.printService;
-  },
-
   get supportsPrinting() {
     return PDFPrintServiceFactory.instance.supportsPrinting;
   },
@@ -1378,12 +1374,9 @@ const PDFViewerApplication = {
       }
     }
 
-    if (!this.supportsPrinting) {
-      return;
-    }
     if (triggerAutoPrint) {
-      setTimeout(function () {
-        window.print();
+      setTimeout(() => {
+        this.triggerPrinting();
       });
     }
   },
@@ -1638,7 +1631,7 @@ const PDFViewerApplication = {
   },
 
   forceRendering() {
-    this.pdfRenderingQueue.printing = this.printing;
+    this.pdfRenderingQueue.printing = !!this.printService;
     this.pdfRenderingQueue.isThumbnailViewEnabled = this.pdfSidebar.isThumbnailViewVisible;
     this.pdfRenderingQueue.renderHighestPriority();
   },
@@ -1730,6 +1723,13 @@ const PDFViewerApplication = {
       return;
     }
     this.pdfPresentationMode.request();
+  },
+
+  triggerPrinting() {
+    if (!this.supportsPrinting) {
+      return;
+    }
+    window.print();
   },
 
   bindEvents() {
@@ -2242,9 +2242,7 @@ function webViewerNamedAction(evt) {
       break;
 
     case "Print":
-      if (PDFViewerApplication.supportsPrinting) {
-        webViewerPrint();
-      }
+      PDFViewerApplication.triggerPrinting();
       break;
 
     case "SaveAs":
@@ -2400,7 +2398,7 @@ function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
 }
 function webViewerPrint() {
-  window.print();
+  PDFViewerApplication.triggerPrinting();
 }
 function webViewerDownloadOrSave(sourceEventType) {
   if (
