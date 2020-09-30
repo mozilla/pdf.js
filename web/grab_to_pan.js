@@ -241,12 +241,10 @@ function isOverPerfectScrollbar(x, y, divName) {
     var {top, right, bottom, left} = perfectScrollbar[0].getBoundingClientRect();
     if (y >= top && y <= bottom) {
       if (x <= right && x >= left) {
-        console.log("over scrollbar");
         return true;
       }
     }
   }
-  console.log("out of scrollbar");
   return false;
 }
 
