@@ -151,6 +151,10 @@
       "type": "boolean",
       "default": true
     },
+    "enableScripting": {
+      "type": "boolean",
+      "default": false
+    },
     "enablePermissions": {
       "type": "boolean",
       "default": false
