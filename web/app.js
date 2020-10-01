@@ -19,6 +19,7 @@ import {
   AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
   EventBus,
+  generateRandomStringForSandbox,
   getActiveOrFocusedElement,
   getPDFFileNameFromURL,
   isValidRotation,
@@ -178,6 +179,10 @@ class DefaultExternalServices {
 
   static get isInAutomation() {
     return shadow(this, "isInAutomation", false);
+  }
+
+  static get scripting() {
+    throw new Error("Not implemented: scripting");
   }
 }
 
@@ -1333,6 +1338,60 @@ const PDFViewerApplication = {
 
     this._initializePageLabels(pdfDocument);
     this._initializeMetadata(pdfDocument);
+    this._initializeJavaScript(pdfDocument);
+  },
+
+  /**
+   * @private
+   */
+  async _initializeJavaScript(pdfDocument) {
+    if (!AppOptions.get("enableScripting")) {
+      return;
+    }
+    const objects = await pdfDocument.getFieldObjects();
+    const scripting = this.externalServices.scripting;
+
+    window.addEventListener("updateFromSandbox", function (event) {
+      const detail = event.detail;
+      const id = detail.id;
+      if (!id) {
+        switch (detail.command) {
+          case "println":
+            console.log(detail.value);
+            break;
+          case "clear":
+            console.clear();
+            break;
+          case "alert":
+            // eslint-disable-next-line no-alert
+            window.alert(detail.value);
+            break;
+          case "error":
+            console.error(detail.value);
+            break;
+        }
+        return;
+      }
+
+      const element = document.getElementById(id);
+      if (element) {
+        element.dispatchEvent(new CustomEvent("updateFromSandbox", { detail }));
+      } else {
+        const value = detail.value;
+        if (value !== undefined && value !== null) {
+          // the element hasn't been rendered yet so use annotation storage
+          pdfDocument.annotationStorage.setValue(id, detail.value);
+        }
+      }
+    });
+
+    window.addEventListener("dispatchEventInSandbox", function (event) {
+      scripting.dispatchEventInSandbox(event.detail);
+    });
+
+    const dispatchEventName = generateRandomStringForSandbox(objects);
+    const calculationOrder = [];
+    scripting.createSandbox({ objects, dispatchEventName, calculationOrder });
   },
 
   /**

@@ -65,6 +65,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableScripting: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enableWebGL: {
     /** @type {boolean} */
     value: false,
