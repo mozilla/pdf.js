@@ -48,7 +48,7 @@ class WebGLContext {
   }
 }
 
-var WebGLUtils = (function WebGLUtilsClosure() {
+const WebGLUtils = (function WebGLUtilsClosure() {
   function loadShader(gl, code, shaderType) {
     const shader = gl.createShader(shaderType);
     gl.shaderSource(shader, code);
@@ -157,12 +157,10 @@ var WebGLUtils = (function WebGLUtilsClosure() {
   let smaskCache = null;
 
   function initSmaskGL() {
-    let canvas, gl;
-
     generateGL();
-    canvas = currentCanvas;
+    const canvas = currentCanvas;
     currentCanvas = null;
-    gl = currentGL;
+    const gl = currentGL;
     currentGL = null;
 
     // setup a GLSL program
@@ -302,12 +300,10 @@ var WebGLUtils = (function WebGLUtilsClosure() {
   let figuresCache = null;
 
   function initFiguresGL() {
-    let canvas, gl;
-
     generateGL();
-    canvas = currentCanvas;
+    const canvas = currentCanvas;
     currentCanvas = null;
-    gl = currentGL;
+    const gl = currentGL;
     currentGL = null;
 
     // setup a GLSL program
@@ -343,11 +339,11 @@ var WebGLUtils = (function WebGLUtilsClosure() {
 
     // count triangle points
     let count = 0;
-    let i, ii, rows;
-    for (i = 0, ii = figures.length; i < ii; i++) {
+    for (let i = 0, ii = figures.length; i < ii; i++) {
       switch (figures[i].type) {
         case "lattice":
-          rows = (figures[i].coords.length / figures[i].verticesPerRow) | 0;
+          const rows =
+            (figures[i].coords.length / figures[i].verticesPerRow) | 0;
           count += (rows - 1) * (figures[i].verticesPerRow - 1) * 6;
           break;
         case "triangles":
@@ -362,14 +358,14 @@ var WebGLUtils = (function WebGLUtilsClosure() {
       colorsMap = context.colors;
     let pIndex = 0,
       cIndex = 0;
-    for (i = 0, ii = figures.length; i < ii; i++) {
+    for (let i = 0, ii = figures.length; i < ii; i++) {
       const figure = figures[i],
         ps = figure.coords,
         cs = figure.colors;
       switch (figure.type) {
         case "lattice":
-          var cols = figure.verticesPerRow;
-          rows = (ps.length / cols) | 0;
+          const cols = figure.verticesPerRow;
+          const rows = (ps.length / cols) | 0;
           for (let row = 1; row < rows; row++) {
             let offset = row * cols + 1;
             for (let col = 1; col < cols; col++, offset++) {

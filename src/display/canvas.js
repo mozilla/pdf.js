@@ -210,11 +210,9 @@ function compileType3Glyph(imgData) {
   const POINT_TO_PROCESS_LIMIT = 1000;
 
   const width = imgData.width,
-    height = imgData.height;
-  let i,
-    j,
-    j0,
+    height = imgData.height,
     width1 = width + 1;
+  let i, ii, j, j0;
   const points = new Uint8Array(width1 * (height + 1));
   // prettier-ignore
   const POINT_TYPES =
@@ -223,12 +221,11 @@ function compileType3Glyph(imgData) {
   // decodes bit-packed mask data
   const lineSize = (width + 7) & ~7,
     data0 = imgData.data;
-  let data = new Uint8Array(lineSize * height),
-    pos = 0,
-    ii;
+  const data = new Uint8Array(lineSize * height);
+  let pos = 0;
   for (i = 0, ii = data0.length; i < ii; i++) {
-    let mask = 128,
-      elem = data0[i];
+    const elem = data0[i];
+    let mask = 128;
     while (mask > 0) {
       data[pos++] = elem & mask ? 0 : 255;
       mask >>= 1;
@@ -328,16 +325,15 @@ function compileType3Glyph(imgData) {
     }
     const coords = [p % width1, i];
 
-    var type = points[p],
-      p0 = p,
-      pp;
+    const p0 = p;
+    let type = points[p];
     do {
       const step = steps[type];
       do {
         p += step;
       } while (!points[p]);
 
-      pp = points[p];
+      const pp = points[p];
       if (pp !== 5 && pp !== 10) {
         // set new direction
         type = pp;
@@ -705,10 +701,11 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       // inversion has already been handled.
       let destPos = 3; // alpha component offset
       for (let j = 0; j < thisChunkHeight; j++) {
-        let mask = 0;
+        let elem,
+          mask = 0;
         for (let k = 0; k < width; k++) {
           if (!mask) {
-            var elem = src[srcPos++];
+            elem = src[srcPos++];
             mask = 128;
           }
           dest[destPos] = elem & mask ? 0 : 255;
@@ -1276,16 +1273,16 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           case OPS.rectangle:
             x = args[j++];
             y = args[j++];
-            var width = args[j++];
-            var height = args[j++];
+            let width = args[j++];
+            let height = args[j++];
             if (width === 0 && ctx.lineWidth < this.getSinglePixelWidth()) {
               width = this.getSinglePixelWidth();
             }
             if (height === 0 && ctx.lineWidth < this.getSinglePixelWidth()) {
               height = this.getSinglePixelWidth();
             }
-            var xw = x + width;
-            var yh = y + height;
+            const xw = x + width;
+            const yh = y + height;
             ctx.moveTo(x, y);
             ctx.lineTo(xw, y);
             ctx.lineTo(xw, yh);
@@ -1756,14 +1753,13 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
         const character = glyph.fontChar;
         const accent = glyph.accent;
-        var scaledX, scaledY, scaledAccentX, scaledAccentY;
+        let scaledX, scaledY;
         let width = glyph.width;
         if (vertical) {
-          var vmetric, vx, vy;
-          vmetric = glyph.vmetric || defaultVMetrics;
-          vx = glyph.vmetric ? vmetric[1] : width * 0.5;
-          vx = -vx * widthAdvanceScale;
-          vy = vmetric[2] * widthAdvanceScale;
+          const vmetric = glyph.vmetric || defaultVMetrics;
+          const vx =
+            -(glyph.vmetric ? vmetric[1] : width * 0.5) * widthAdvanceScale;
+          const vy = vmetric[2] * widthAdvanceScale;
 
           width = vmetric ? -vmetric[0] : width;
           scaledX = vx / fontSizeScale;
@@ -1801,9 +1797,9 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           } else {
             this.paintChar(character, scaledX, scaledY, patternTransform);
             if (accent) {
-              scaledAccentX =
+              const scaledAccentX =
                 scaledX + (fontSize * accent.offset.x) / fontSizeScale;
-              scaledAccentY =
+              const scaledAccentY =
                 scaledY - (fontSize * accent.offset.y) / fontSizeScale;
               this.paintChar(
                 accent.fontChar,
@@ -1815,7 +1811,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
 
-        var charWidth;
+        let charWidth;
         if (vertical) {
           charWidth = width * widthAdvanceScale - spacing * fontDirection;
         } else {
@@ -2440,7 +2436,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         d = currentTransform[3];
       let heightScale = Math.max(Math.sqrt(c * c + d * d), 1);
 
-      let imgToPaint, tmpCanvas;
+      let imgToPaint, tmpCanvas, tmpCtx;
       // typeof check is needed due to node.js support, see issue #8489
       if (
         (typeof HTMLElement === "function" && imgData instanceof HTMLElement) ||
@@ -2449,7 +2445,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         imgToPaint = imgData;
       } else {
         tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", width, height);
-        var tmpCtx = tmpCanvas.context;
+        tmpCtx = tmpCanvas.context;
         putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
         imgToPaint = tmpCanvas.canvas;
       }

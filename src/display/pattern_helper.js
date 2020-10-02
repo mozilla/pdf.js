@@ -178,9 +178,9 @@ const createMeshCanvas = (function createMeshCanvasClosure() {
     let i, ii;
     switch (figure.type) {
       case "lattice":
-        var verticesPerRow = figure.verticesPerRow;
-        var rows = Math.floor(ps.length / verticesPerRow) - 1;
-        var cols = verticesPerRow - 1;
+        const verticesPerRow = figure.verticesPerRow;
+        const rows = Math.floor(ps.length / verticesPerRow) - 1;
+        const cols = verticesPerRow - 1;
         for (i = 0; i < rows; i++) {
           let q = i * verticesPerRow;
           for (let j = 0; j < cols; j++, q++) {
@@ -564,14 +564,14 @@ const TilingPattern = (function TilingPatternClosure() {
         current = graphics.current;
       switch (paintType) {
         case PaintType.COLORED:
-          var ctx = this.ctx;
+          const ctx = this.ctx;
           context.fillStyle = ctx.fillStyle;
           context.strokeStyle = ctx.strokeStyle;
           current.fillColor = ctx.fillStyle;
           current.strokeColor = ctx.strokeStyle;
           break;
         case PaintType.UNCOLORED:
-          var cssColor = Util.makeCssRgb(color[0], color[1], color[2]);
+          const cssColor = Util.makeCssRgb(color[0], color[1], color[2]);
           context.fillStyle = cssColor;
           context.strokeStyle = cssColor;
           // Set color needed by image masks (fixes issues 3226 and 8741).
