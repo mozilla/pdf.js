@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 /* globals __non_webpack_require__ */
-/* eslint no-var: error */
 
 import { BaseCanvasFactory, BaseCMapReaderFactory } from "./display_utils.js";
 import { isNodeJS } from "../shared/is_node.js";
