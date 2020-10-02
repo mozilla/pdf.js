@@ -237,14 +237,14 @@ const renderTextLayer = (function renderTextLayerClosure() {
       }
       // Box is rotated -- trying to find padding so rotated div will not
       // exceed its expanded bounds.
-      var e = expanded[i],
+      const e = expanded[i],
         b = bounds[i];
-      var m = b.m,
+      const m = b.m,
         c = m[0],
         s = m[1];
       // Finding intersections with expanded box.
       const points = [[0, 0], [0, b.size[1]], [b.size[0], 0], b.size];
-      var ts = new Float64Array(64);
+      const ts = new Float64Array(64);
       points.forEach(function (p, j) {
         const t = Util.applyTransform(p, m);
         ts[j + 0] = c && (e.left - t[0]) / c;
@@ -368,7 +368,7 @@ const renderTextLayer = (function renderTextLayerClosure() {
       for (q = i; q <= j; q++) {
         horizonPart = horizon[q];
         affectedBoundary = horizonPart.boundary;
-        var xNew;
+        let xNew;
         if (affectedBoundary.x2 > boundary.x1) {
           // In the middle of the previous element, new x shall be at the
           // boundary start. Extending if further if the affected boundary
@@ -415,8 +415,8 @@ const renderTextLayer = (function renderTextLayerClosure() {
       }
 
       // Fixing the horizon.
-      let changedHorizon = [],
-        lastBoundary = null;
+      const changedHorizon = [];
+      let lastBoundary = null;
       for (q = i; q <= j; q++) {
         horizonPart = horizon[q];
         affectedBoundary = horizonPart.boundary;
