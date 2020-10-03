@@ -647,7 +647,7 @@ class PDFHistory {
       this.linkService.rotation = destination.rotation;
     }
     if (destination.dest) {
-      this.linkService.navigateTo(destination.dest);
+      this.linkService.goToDestination(destination.dest);
     } else if (destination.hash) {
       this.linkService.setHash(destination.hash);
     } else if (destination.page) {
@@ -655,7 +655,7 @@ class PDFHistory {
       this.linkService.page = destination.page;
     }
 
-    // Since `PDFLinkService.navigateTo` is asynchronous, we thus defer the
+    // Since `PDFLinkService.goToDestination` is asynchronous, we thus defer the
     // resetting of `this._popStateInProgress` slightly.
     Promise.resolve().then(() => {
       this._popStateInProgress = false;
