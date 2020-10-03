@@ -293,7 +293,8 @@ class LinkAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.url ||
       parameters.data.dest ||
-      parameters.data.action
+      parameters.data.action ||
+      parameters.data.isTooltipOnly
     );
     super(parameters, isRenderable);
   }
@@ -322,8 +323,10 @@ class LinkAnnotationElement extends AnnotationElement {
       });
     } else if (data.action) {
       this._bindNamedAction(link, data.action);
-    } else {
+    } else if (data.dest) {
       this._bindLink(link, data.dest);
+    } else {
+      this._bindLink(link, "");
     }
 
     this.container.appendChild(link);
@@ -420,6 +423,10 @@ class WidgetAnnotationElement extends AnnotationElement {
    */
   render() {
     // Show only the container for unsupported field types.
+    if (this.data.alternativeText) {
+      this.container.title = this.data.alternativeText;
+    }
+
     return this.container;
   }
 }
@@ -647,6 +654,11 @@ class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
     // as performing actions on form fields (resetting, submitting, et cetera).
     const container = super.render();
     container.className = "buttonWidgetAnnotation pushButton";
+
+    if (this.data.alternativeText) {
+      container.title = this.data.alternativeText;
+    }
+
     return container;
   }
 }
