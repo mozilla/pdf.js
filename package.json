@@ -42,7 +42,7 @@
     "postcss-calc": "^7.0.4",
     "postcss-css-variables": "^0.14.0",
     "prettier": "^2.1.2",
-    "puppeteer": "~3.3.0",
+    "puppeteer": "^5.3.1",
     "rimraf": "^2.7.1",
     "streamqueue": "^1.1.2",
     "stylelint": "^13.7.1",
@@ -64,7 +64,7 @@
     "yargs": "^11.1.1"
   },
   "scripts": {
-    "postinstall": "node -e \"require('child_process').execSync('cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js');\"",
+    "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js",
     "test": "gulp npm-test"
   },
   "repository": {
