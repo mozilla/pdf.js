@@ -1533,6 +1533,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
       !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
     this.data.pushButton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    this.data.isTooltipOnly = false;
 
     if (this.data.checkBox) {
       this._processCheckBox(params);
@@ -1780,10 +1781,12 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   _processPushButton(params) {
-    if (!params.dict.has("A")) {
+    if (!params.dict.has("A") && !this.data.alternativeText) {
       warn("Push buttons without action dictionaries are not supported");
       return;
     }
+
+    this.data.isTooltipOnly = !params.dict.has("A");
 
     Catalog.parseDestDictionary({
       destDict: params.dict,
