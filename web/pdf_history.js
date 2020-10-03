@@ -272,6 +272,55 @@ class PDFHistory {
   }
 
   /**
+   * Push a page to the browser history; generally the `push` method should be
+   * used instead.
+   * @param {number} pageNumber
+   */
+  pushPage(pageNumber) {
+    if (!this._initialized) {
+      return;
+    }
+    if (
+      !(
+        Number.isInteger(pageNumber) &&
+        pageNumber > 0 &&
+        pageNumber <= this.linkService.pagesCount
+      )
+    ) {
+      console.error(
+        `PDFHistory.pushPage: "${pageNumber}" is not a valid page number.`
+      );
+      return;
+    }
+
+    if (this._destination && this._destination.page === pageNumber) {
+      // When the new page is identical to the one in `this._destination`, we
+      // don't want to add a potential duplicate entry in the browser history.
+      return;
+    }
+    if (this._popStateInProgress) {
+      return;
+    }
+
+    this._pushOrReplaceState({
+      hash: `page=${pageNumber}`,
+      page: pageNumber,
+      rotation: this.linkService.rotation,
+    });
+
+    if (!this._popStateInProgress) {
+      // Prevent the browser history from updating while the new page is
+      // being scrolled into view, to avoid potentially inconsistent state.
+      this._popStateInProgress = true;
+      // We defer the resetting of `this._popStateInProgress`, to account for
+      // e.g. zooming occuring when the new page is being navigated to.
+      Promise.resolve().then(() => {
+        this._popStateInProgress = false;
+      });
+    }
+  }
+
+  /**
    * Push the current position to the browser history.
    */
   pushCurrentPosition() {

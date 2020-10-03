@@ -201,6 +201,35 @@ class PDFLinkService {
   }
 
   /**
+   * This method will, when available, also update the browser history.
+   *
+   * @param {number} pageNumber - The page number.
+   */
+  goToPage(pageNumber) {
+    if (
+      !(
+        Number.isInteger(pageNumber) &&
+        pageNumber > 0 &&
+        pageNumber <= this.pagesCount
+      )
+    ) {
+      console.error(
+        `PDFLinkService.goToPage: "${pageNumber}" is not a valid page number.`
+      );
+      return;
+    }
+
+    if (this.pdfHistory) {
+      // Update the browser history before scrolling the new page into view,
+      // to be able to accurately capture the current document position.
+      this.pdfHistory.pushCurrentPosition();
+      this.pdfHistory.pushPage(pageNumber);
+    }
+
+    this.pdfViewer.scrollPageIntoView({ pageNumber });
+  }
+
+  /**
    * @param {string|Array} dest - The PDF destination object.
    * @returns {string} The hyperlink to the PDF object.
    */
@@ -523,6 +552,11 @@ class SimpleLinkService {
    * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
   async goToDestination(dest) {}
+
+  /**
+   * @param {number} pageNumber - The page number.
+   */
+  goToPage(pageNumber) {}
 
   /**
    * @param dest - The PDF destination object.
