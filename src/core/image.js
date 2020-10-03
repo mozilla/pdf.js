@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 
 import { assert, FormatError, ImageKind, info, warn } from "../shared/util.js";
 import { isName, isStream, Name } from "./primitives.js";
