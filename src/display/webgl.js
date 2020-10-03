@@ -48,14 +48,14 @@ class WebGLContext {
   }
 }
 
-var WebGLUtils = (function WebGLUtilsClosure() {
+const WebGLUtils = (function WebGLUtilsClosure() {
   function loadShader(gl, code, shaderType) {
-    var shader = gl.createShader(shaderType);
+    const shader = gl.createShader(shaderType);
     gl.shaderSource(shader, code);
     gl.compileShader(shader);
-    var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    const compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
     if (!compiled) {
-      var errorMsg = gl.getShaderInfoLog(shader);
+      const errorMsg = gl.getShaderInfoLog(shader);
       throw new Error("Error during shader compilation: " + errorMsg);
     }
     return shader;
@@ -67,21 +67,21 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     return loadShader(gl, code, gl.FRAGMENT_SHADER);
   }
   function createProgram(gl, shaders) {
-    var program = gl.createProgram();
-    for (var i = 0, ii = shaders.length; i < ii; ++i) {
+    const program = gl.createProgram();
+    for (let i = 0, ii = shaders.length; i < ii; ++i) {
       gl.attachShader(program, shaders[i]);
     }
     gl.linkProgram(program);
-    var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
+    const linked = gl.getProgramParameter(program, gl.LINK_STATUS);
     if (!linked) {
-      var errorMsg = gl.getProgramInfoLog(program);
+      const errorMsg = gl.getProgramInfoLog(program);
       throw new Error("Error during program linking: " + errorMsg);
     }
     return program;
   }
   function createTexture(gl, image, textureId) {
     gl.activeTexture(textureId);
-    var texture = gl.createTexture();
+    const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     // Set the parameters so we can render any size image.
@@ -95,7 +95,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     return texture;
   }
 
-  var currentGL, currentCanvas;
+  let currentGL, currentCanvas;
   function generateGL() {
     if (currentGL) {
       return;
@@ -108,7 +108,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     });
   }
 
-  var smaskVertexShaderCode =
+  const smaskVertexShaderCode =
     "\
   attribute vec2 a_position;                                    \
   attribute vec2 a_texCoord;                                    \
@@ -124,7 +124,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     v_texCoord = a_texCoord;                                    \
   }                                                             ";
 
-  var smaskFragmentShaderCode =
+  const smaskFragmentShaderCode =
     "\
   precision mediump float;                                      \
                                                                 \
@@ -154,24 +154,22 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl_FragColor = imageColor;                                  \
   }                                                             ";
 
-  var smaskCache = null;
+  let smaskCache = null;
 
   function initSmaskGL() {
-    var canvas, gl;
-
     generateGL();
-    canvas = currentCanvas;
+    const canvas = currentCanvas;
     currentCanvas = null;
-    gl = currentGL;
+    const gl = currentGL;
     currentGL = null;
 
     // setup a GLSL program
-    var vertexShader = createVertexShader(gl, smaskVertexShaderCode);
-    var fragmentShader = createFragmentShader(gl, smaskFragmentShaderCode);
-    var program = createProgram(gl, [vertexShader, fragmentShader]);
+    const vertexShader = createVertexShader(gl, smaskVertexShaderCode);
+    const fragmentShader = createFragmentShader(gl, smaskFragmentShaderCode);
+    const program = createProgram(gl, [vertexShader, fragmentShader]);
     gl.useProgram(program);
 
-    var cache = {};
+    const cache = {};
     cache.gl = gl;
     cache.canvas = canvas;
     cache.resolutionLocation = gl.getUniformLocation(program, "u_resolution");
@@ -179,12 +177,12 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     cache.backdropLocation = gl.getUniformLocation(program, "u_backdrop");
     cache.subtypeLocation = gl.getUniformLocation(program, "u_subtype");
 
-    var texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
-    var texLayerLocation = gl.getUniformLocation(program, "u_image");
-    var texMaskLocation = gl.getUniformLocation(program, "u_mask");
+    const texCoordLocation = gl.getAttribLocation(program, "a_texCoord");
+    const texLayerLocation = gl.getUniformLocation(program, "u_image");
+    const texMaskLocation = gl.getUniformLocation(program, "u_mask");
 
     // provide texture coordinates for the rectangle.
-    var texCoordBuffer = gl.createBuffer();
+    const texCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
     // prettier-ignore
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -204,13 +202,13 @@ var WebGLUtils = (function WebGLUtilsClosure() {
   }
 
   function composeSMask(layer, mask, properties) {
-    var width = layer.width,
+    const width = layer.width,
       height = layer.height;
 
     if (!smaskCache) {
       initSmaskGL();
     }
-    var cache = smaskCache,
+    const cache = smaskCache,
       canvas = cache.canvas,
       gl = cache.gl;
     canvas.width = width;
@@ -235,12 +233,12 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     );
 
     // Create a textures
-    var texture = createTexture(gl, layer, gl.TEXTURE0);
-    var maskTexture = createTexture(gl, mask, gl.TEXTURE1);
+    const texture = createTexture(gl, layer, gl.TEXTURE0);
+    const maskTexture = createTexture(gl, mask, gl.TEXTURE1);
 
     // Create a buffer and put a single clipspace rectangle in
     // it (2 triangles)
-    var buffer = gl.createBuffer();
+    const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     // prettier-ignore
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -270,7 +268,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     return canvas;
   }
 
-  var figuresVertexShaderCode =
+  const figuresVertexShaderCode =
     "\
   attribute vec2 a_position;                                    \
   attribute vec3 a_color;                                       \
@@ -289,7 +287,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     v_color = vec4(a_color / 255.0, 1.0);                       \
   }                                                             ";
 
-  var figuresFragmentShaderCode =
+  const figuresFragmentShaderCode =
     "\
   precision mediump float;                                      \
                                                                 \
@@ -299,24 +297,22 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl_FragColor = v_color;                                     \
   }                                                             ";
 
-  var figuresCache = null;
+  let figuresCache = null;
 
   function initFiguresGL() {
-    var canvas, gl;
-
     generateGL();
-    canvas = currentCanvas;
+    const canvas = currentCanvas;
     currentCanvas = null;
-    gl = currentGL;
+    const gl = currentGL;
     currentGL = null;
 
     // setup a GLSL program
-    var vertexShader = createVertexShader(gl, figuresVertexShaderCode);
-    var fragmentShader = createFragmentShader(gl, figuresFragmentShaderCode);
-    var program = createProgram(gl, [vertexShader, fragmentShader]);
+    const vertexShader = createVertexShader(gl, figuresVertexShaderCode);
+    const fragmentShader = createFragmentShader(gl, figuresFragmentShaderCode);
+    const program = createProgram(gl, [vertexShader, fragmentShader]);
     gl.useProgram(program);
 
-    var cache = {};
+    const cache = {};
     cache.gl = gl;
     cache.canvas = canvas;
     cache.resolutionLocation = gl.getUniformLocation(program, "u_resolution");
@@ -332,7 +328,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     if (!figuresCache) {
       initFiguresGL();
     }
-    var cache = figuresCache,
+    const cache = figuresCache,
       canvas = cache.canvas,
       gl = cache.gl;
 
@@ -342,12 +338,12 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     gl.uniform2f(cache.resolutionLocation, width, height);
 
     // count triangle points
-    var count = 0;
-    var i, ii, rows;
-    for (i = 0, ii = figures.length; i < ii; i++) {
+    let count = 0;
+    for (let i = 0, ii = figures.length; i < ii; i++) {
       switch (figures[i].type) {
         case "lattice":
-          rows = (figures[i].coords.length / figures[i].verticesPerRow) | 0;
+          const rows =
+            (figures[i].coords.length / figures[i].verticesPerRow) | 0;
           count += (rows - 1) * (figures[i].verticesPerRow - 1) * 6;
           break;
         case "triangles":
@@ -356,23 +352,23 @@ var WebGLUtils = (function WebGLUtilsClosure() {
       }
     }
     // transfer data
-    var coords = new Float32Array(count * 2);
-    var colors = new Uint8Array(count * 3);
-    var coordsMap = context.coords,
+    const coords = new Float32Array(count * 2);
+    const colors = new Uint8Array(count * 3);
+    const coordsMap = context.coords,
       colorsMap = context.colors;
-    var pIndex = 0,
+    let pIndex = 0,
       cIndex = 0;
-    for (i = 0, ii = figures.length; i < ii; i++) {
-      var figure = figures[i],
+    for (let i = 0, ii = figures.length; i < ii; i++) {
+      const figure = figures[i],
         ps = figure.coords,
         cs = figure.colors;
       switch (figure.type) {
         case "lattice":
-          var cols = figure.verticesPerRow;
-          rows = (ps.length / cols) | 0;
-          for (var row = 1; row < rows; row++) {
-            var offset = row * cols + 1;
-            for (var col = 1; col < cols; col++, offset++) {
+          const cols = figure.verticesPerRow;
+          const rows = (ps.length / cols) | 0;
+          for (let row = 1; row < rows; row++) {
+            let offset = row * cols + 1;
+            for (let col = 1; col < cols; col++, offset++) {
               coords[pIndex] = coordsMap[ps[offset - cols - 1]];
               coords[pIndex + 1] = coordsMap[ps[offset - cols - 1] + 1];
               coords[pIndex + 2] = coordsMap[ps[offset - cols]];
@@ -410,7 +406,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
           }
           break;
         case "triangles":
-          for (var j = 0, jj = ps.length; j < jj; j++) {
+          for (let j = 0, jj = ps.length; j < jj; j++) {
             coords[pIndex] = coordsMap[ps[j]];
             coords[pIndex + 1] = coordsMap[ps[j] + 1];
             colors[cIndex] = colorsMap[cs[j]];
@@ -436,13 +432,13 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     }
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    var coordsBuffer = gl.createBuffer();
+    const coordsBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, coordsBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, coords, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(cache.positionLocation);
     gl.vertexAttribPointer(cache.positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    var colorsBuffer = gl.createBuffer();
+    const colorsBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, colorsBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(cache.colorLocation);

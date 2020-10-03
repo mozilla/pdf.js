@@ -52,10 +52,10 @@ import {
 /**
  * @type {(renderParameters: TextLayerRenderParameters) => TextLayerRenderTask}
  */
-var renderTextLayer = (function renderTextLayerClosure() {
-  var MAX_TEXT_DIVS_TO_RENDER = 100000;
+const renderTextLayer = (function renderTextLayerClosure() {
+  const MAX_TEXT_DIVS_TO_RENDER = 100000;
 
-  var NonWhitespaceRegexp = /\S/;
+  const NonWhitespaceRegexp = /\S/;
 
   function isAllWhitespace(str) {
     return !NonWhitespaceRegexp.test(str);
@@ -63,8 +63,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
   function appendText(task, geom, styles) {
     // Initialize all used properties to keep the caches monomorphic.
-    var textDiv = document.createElement("span");
-    var textDivProperties = {
+    const textDiv = document.createElement("span");
+    const textDivProperties = {
       angle: 0,
       canvasWidth: 0,
       isWhitespace: false,
@@ -83,14 +83,14 @@ var renderTextLayer = (function renderTextLayerClosure() {
       return;
     }
 
-    var tx = Util.transform(task._viewport.transform, geom.transform);
-    var angle = Math.atan2(tx[1], tx[0]);
-    var style = styles[geom.fontName];
+    const tx = Util.transform(task._viewport.transform, geom.transform);
+    let angle = Math.atan2(tx[1], tx[0]);
+    const style = styles[geom.fontName];
     if (style.vertical) {
       angle += Math.PI / 2;
     }
-    var fontHeight = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
-    var fontAscent = fontHeight;
+    const fontHeight = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
+    let fontAscent = fontHeight;
     if (style.ascent) {
       fontAscent = style.ascent * fontAscent;
     } else if (style.descent) {
@@ -152,17 +152,17 @@ var renderTextLayer = (function renderTextLayerClosure() {
     }
 
     if (task._enhanceTextSelection) {
-      var angleCos = 1,
+      let angleCos = 1,
         angleSin = 0;
       if (angle !== 0) {
         angleCos = Math.cos(angle);
         angleSin = Math.sin(angle);
       }
-      var divWidth =
+      const divWidth =
         (style.vertical ? geom.height : geom.width) * task._viewport.scale;
-      var divHeight = fontHeight;
+      const divHeight = fontHeight;
 
-      var m, b;
+      let m, b;
       if (angle !== 0) {
         m = [angleCos, angleSin, -angleSin, angleCos, left, top];
         b = Util.getAxialAlignedBoundingBox([0, 0, divWidth, divHeight], m);
@@ -186,9 +186,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
     if (task._canceled) {
       return;
     }
-    var textDivs = task._textDivs;
-    var capability = task._capability;
-    var textDivsLength = textDivs.length;
+    const textDivs = task._textDivs;
+    const capability = task._capability;
+    const textDivsLength = textDivs.length;
 
     // No point in rendering many divs as it would make the browser
     // unusable even after the divs are rendered.
@@ -199,7 +199,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     }
 
     if (!task._textContentStream) {
-      for (var i = 0; i < textDivsLength; i++) {
+      for (let i = 0; i < textDivsLength; i++) {
         task._layoutText(textDivs[i]);
       }
     }
@@ -220,13 +220,13 @@ var renderTextLayer = (function renderTextLayerClosure() {
   }
 
   function expand(task) {
-    var bounds = task._bounds;
-    var viewport = task._viewport;
+    const bounds = task._bounds;
+    const viewport = task._viewport;
 
-    var expanded = expandBounds(viewport.width, viewport.height, bounds);
-    for (var i = 0; i < expanded.length; i++) {
-      var div = bounds[i].div;
-      var divProperties = task._textDivProperties.get(div);
+    const expanded = expandBounds(viewport.width, viewport.height, bounds);
+    for (let i = 0; i < expanded.length; i++) {
+      const div = bounds[i].div;
+      const divProperties = task._textDivProperties.get(div);
       if (divProperties.angle === 0) {
         divProperties.paddingLeft = bounds[i].left - expanded[i].left;
         divProperties.paddingTop = bounds[i].top - expanded[i].top;
@@ -237,16 +237,16 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
       // Box is rotated -- trying to find padding so rotated div will not
       // exceed its expanded bounds.
-      var e = expanded[i],
+      const e = expanded[i],
         b = bounds[i];
-      var m = b.m,
+      const m = b.m,
         c = m[0],
         s = m[1];
       // Finding intersections with expanded box.
-      var points = [[0, 0], [0, b.size[1]], [b.size[0], 0], b.size];
-      var ts = new Float64Array(64);
+      const points = [[0, 0], [0, b.size[1]], [b.size[0], 0], b.size];
+      const ts = new Float64Array(64);
       points.forEach(function (p, j) {
-        var t = Util.applyTransform(p, m);
+        const t = Util.applyTransform(p, m);
         ts[j + 0] = c && (e.left - t[0]) / c;
         ts[j + 4] = s && (e.top - t[1]) / s;
         ts[j + 8] = c && (e.right - t[0]) / c;
@@ -269,7 +269,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       });
       // Not based on math, but to simplify calculations, using cos and sin
       // absolute values to not exceed the box (it can but insignificantly).
-      var boxScale = 1 + Math.min(Math.abs(c), Math.abs(s));
+      const boxScale = 1 + Math.min(Math.abs(c), Math.abs(s));
       divProperties.paddingLeft = findPositiveMin(ts, 32, 16) / boxScale;
       divProperties.paddingTop = findPositiveMin(ts, 48, 16) / boxScale;
       divProperties.paddingRight = findPositiveMin(ts, 0, 16) / boxScale;
@@ -279,7 +279,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
   }
 
   function expandBounds(width, height, boxes) {
-    var bounds = boxes.map(function (box, i) {
+    const bounds = boxes.map(function (box, i) {
       return {
         x1: box.left,
         y1: box.top,
@@ -291,9 +291,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
       };
     });
     expandBoundsLTR(width, bounds);
-    var expanded = new Array(boxes.length);
+    const expanded = new Array(boxes.length);
     bounds.forEach(function (b) {
-      var i = b.index;
+      const i = b.index;
       expanded[i] = {
         left: b.x1New,
         top: 0,
@@ -305,7 +305,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     // Rotating on 90 degrees and extending extended boxes. Reusing the bounds
     // array and objects.
     boxes.map(function (box, i) {
-      var e = expanded[i],
+      const e = expanded[i],
         b = bounds[i];
       b.x1 = box.top;
       b.y1 = width - e.right;
@@ -318,7 +318,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     expandBoundsLTR(height, bounds);
 
     bounds.forEach(function (b) {
-      var i = b.index;
+      const i = b.index;
       expanded[i].top = b.x1New;
       expanded[i].bottom = b.x2New;
     });
@@ -332,7 +332,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     });
 
     // First we see on the horizon is a fake boundary.
-    var fakeBoundary = {
+    const fakeBoundary = {
       x1: -Infinity,
       y1: -Infinity,
       x2: 0,
@@ -341,7 +341,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       x1New: 0,
       x2New: 0,
     };
-    var horizon = [
+    const horizon = [
       {
         start: -Infinity,
         end: Infinity,
@@ -352,23 +352,23 @@ var renderTextLayer = (function renderTextLayerClosure() {
     bounds.forEach(function (boundary) {
       // Searching for the affected part of horizon.
       // TODO red-black tree or simple binary search
-      var i = 0;
+      let i = 0;
       while (i < horizon.length && horizon[i].end <= boundary.y1) {
         i++;
       }
-      var j = horizon.length - 1;
+      let j = horizon.length - 1;
       while (j >= 0 && horizon[j].start >= boundary.y2) {
         j--;
       }
 
-      var horizonPart, affectedBoundary;
-      var q,
+      let horizonPart, affectedBoundary;
+      let q,
         k,
         maxXNew = -Infinity;
       for (q = i; q <= j; q++) {
         horizonPart = horizon[q];
         affectedBoundary = horizonPart.boundary;
-        var xNew;
+        let xNew;
         if (affectedBoundary.x2 > boundary.x1) {
           // In the middle of the previous element, new x shall be at the
           // boundary start. Extending if further if the affected boundary
@@ -415,13 +415,13 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
 
       // Fixing the horizon.
-      var changedHorizon = [],
-        lastBoundary = null;
+      const changedHorizon = [];
+      let lastBoundary = null;
       for (q = i; q <= j; q++) {
         horizonPart = horizon[q];
         affectedBoundary = horizonPart.boundary;
         // Checking which boundary will be visible.
-        var useBoundary =
+        const useBoundary =
           affectedBoundary.x2 > boundary.x2 ? affectedBoundary : boundary;
         if (lastBoundary === useBoundary) {
           // Merging with previous.
@@ -461,7 +461,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         if (affectedBoundary.x2New !== undefined) {
           continue;
         }
-        var used = false;
+        let used = false;
         for (
           k = i - 1;
           !used && k >= 0 && horizon[k].start >= affectedBoundary.y1;
@@ -492,7 +492,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
     // Set new x2 for all unset boundaries.
     horizon.forEach(function (horizonPart) {
-      var affectedBoundary = horizonPart.boundary;
+      const affectedBoundary = horizonPart.boundary;
       if (affectedBoundary.x2New === undefined) {
         affectedBoundary.x2New = Math.max(width, affectedBoundary.x2);
       }
@@ -689,7 +689,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       const transformBuf = [],
         paddingBuf = [];
 
-      for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
+      for (let i = 0, ii = this._textDivs.length; i < ii; i++) {
         const div = this._textDivs[i];
         const divProps = this._textDivProperties.get(div);
 
@@ -742,7 +742,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
   // eslint-disable-next-line no-shadow
   function renderTextLayer(renderParameters) {
-    var task = new TextLayerRenderTask({
+    const task = new TextLayerRenderTask({
       textContent: renderParameters.textContent,
       textContentStream: renderParameters.textContentStream,
       container: renderParameters.container,
