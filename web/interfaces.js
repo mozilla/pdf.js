@@ -54,9 +54,9 @@ class IPDFLinkService {
   set externalLinkEnabled(value) {}
 
   /**
-   * @param dest - The PDF destination object.
+   * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
-  navigateTo(dest) {}
+  async goToDestination(dest) {}
 
   /**
    * @param dest - The PDF destination object.

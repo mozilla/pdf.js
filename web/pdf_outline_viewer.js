@@ -73,7 +73,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
     element.href = linkService.getDestinationHash(dest);
     element.onclick = () => {
       if (dest) {
-        linkService.navigateTo(dest);
+        linkService.goToDestination(dest);
       }
       return false;
     };
