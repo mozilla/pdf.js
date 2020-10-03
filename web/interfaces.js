@@ -59,6 +59,11 @@ class IPDFLinkService {
   async goToDestination(dest) {}
 
   /**
+   * @param {number} pageNumber - The page number.
+   */
+  goToPage(pageNumber) {}
+
+  /**
    * @param dest - The PDF destination object.
    * @returns {string} The hyperlink to the PDF object.
    */
@@ -107,6 +112,11 @@ class IPDFHistory {
    * @param {Object} params
    */
   push({ namedDest = null, explicitDest, pageNumber }) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  pushPage(pageNumber) {}
 
   pushCurrentPosition() {}
 
