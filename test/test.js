@@ -769,11 +769,10 @@ function unitTestPostHandler(req, res) {
 }
 
 async function startBrowser(browserName, startUrl) {
-  const revisions = require("puppeteer/package.json").puppeteer;
+  const revisions = require("puppeteer/lib/cjs/puppeteer/revisions.js")
+    .PUPPETEER_REVISIONS;
   const wantedRevision =
-    browserName === "chrome"
-      ? revisions.chrome_revision
-      : revisions.firefox_revision;
+    browserName === "chrome" ? revisions.chromium : revisions.firefox;
 
   // Remove other revisions than the one we want to use. Updating Puppeteer can
   // cause a new revision to be used, and not removing older revisions causes
@@ -795,10 +794,6 @@ async function startBrowser(browserName, startUrl) {
     product: browserName,
     headless: false,
     defaultViewport: null,
-    // Firefox must complete its execution before starting, mainly on Windows.
-    // Refer to https://github.com/puppeteer/puppeteer/issues/5376 and
-    // https://phabricator.services.mozilla.com/D6702.
-    args: browserName === "firefox" ? ["--wait-for-browser"] : [],
   });
   const pages = await browser.pages();
   const page = pages[0];
