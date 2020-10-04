@@ -21,7 +21,6 @@
 var autoprefixer = require("autoprefixer");
 var calc = require("postcss-calc");
 var cssvariables = require("postcss-css-variables");
-var fancylog = require("fancy-log");
 var fs = require("fs");
 var gulp = require("gulp");
 var postcss = require("gulp-postcss");
@@ -1962,11 +1961,14 @@ gulp.task(
 );
 
 gulp.task("externaltest", function (done) {
-  fancylog("Running test-fixtures.js");
+  console.log();
+  console.log("### Running test-fixtures.js");
   safeSpawnSync("node", ["external/builder/test-fixtures.js"], {
     stdio: "inherit",
   });
-  fancylog("Running test-fixtures_esprima.js");
+
+  console.log();
+  console.log("### Running test-fixtures_esprima.js");
   safeSpawnSync("node", ["external/builder/test-fixtures_esprima.js"], {
     stdio: "inherit",
   });
