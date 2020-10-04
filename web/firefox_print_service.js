@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { RenderingCancelledException, shadow } from "pdfjs-lib";
 import { CSS_UNITS } from "./ui_utils.js";
 import { PDFPrintServiceFactory } from "./app.js";
-import { shadow } from "pdfjs-lib";
 
 // Creates a placeholder with div and canvas with right size for the page.
 function composePage(
@@ -85,8 +85,10 @@ function composePage(
           }
           obj.done();
         },
-        function (error) {
-          console.error(error);
+        function (reason) {
+          if (!(reason instanceof RenderingCancelledException)) {
+            console.error(reason);
+          }
 
           if (currentRenderTask === thisRenderTask) {
             currentRenderTask.cancel();
