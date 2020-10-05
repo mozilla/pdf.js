@@ -1914,6 +1914,12 @@
        "type": "eq",
        "about": "Please note that this file currently renders incorrectly."
     },
+    {  "id": "issue12399",
+       "file": "pdfs/issue12399_reduced.pdf",
+       "md5": "01bdd258be93e10f8399708eecedbfd6",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue5808-text",
        "file": "pdfs/issue5808.pdf",
        "md5": "e0584dd540d7859d6c191aa53379692e",
