@@ -219,6 +219,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
             "\nSelected: " +
             file.name +
             "\nDo you want to open the selected file?";
+          // eslint-disable-next-line no-alert
           if (!confirm(msg)) {
             this.value = "";
             return;
