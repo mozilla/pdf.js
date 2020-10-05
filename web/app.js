@@ -1667,6 +1667,7 @@ const PDFViewerApplication = {
           "Warning: The PDF is not fully loaded for printing."
         )
         .then(notReadyMessage => {
+          // eslint-disable-next-line no-alert
           window.alert(notReadyMessage);
         });
       return;
