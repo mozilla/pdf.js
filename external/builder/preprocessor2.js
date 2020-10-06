@@ -8,6 +8,7 @@ var path = require("path");
 
 var PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
 var ROOT_PREFIX = "$ROOT/";
+const ACORN_ECMA_VERSION = 2020;
 
 function isLiteral(obj, value) {
   return obj.type === "Literal" && obj.value === value;
@@ -49,7 +50,9 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
           return { type: "Literal", value: result, loc: loc };
         }
         if (typeof result === "object") {
-          var parsedObj = acorn.parse("(" + JSON.stringify(result) + ")");
+          const parsedObj = acorn.parse("(" + JSON.stringify(result) + ")", {
+            ecmaVersion: ACORN_ECMA_VERSION,
+          });
           parsedObj.body[0].expression.loc = loc;
           return parsedObj.body[0].expression;
         }
@@ -67,7 +70,9 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
           );
         }
         var jsonContent = fs.readFileSync(jsonPath).toString();
-        var parsedJSON = acorn.parse("(" + jsonContent + ")");
+        const parsedJSON = acorn.parse("(" + jsonContent + ")", {
+          ecmaVersion: ACORN_ECMA_VERSION,
+        });
         parsedJSON.body[0].expression.loc = loc;
         return parsedJSON.body[0].expression;
     }
@@ -322,14 +327,16 @@ function preprocessPDFJSCode(ctx, code) {
     },
   };
   var parseOptions = {
-    ecmaVersion: 2020,
+    ecmaVersion: ACORN_ECMA_VERSION,
     locations: true,
     sourceFile: ctx.sourceFile,
     sourceType: "module",
   };
   var codegenOptions = {
     format: format,
-    parse: acorn.parse,
+    parse: function (input) {
+      return acorn.parse(input, { ecmaVersion: ACORN_ECMA_VERSION });
+    },
     sourceMap: ctx.sourceMap,
     sourceMapWithCode: ctx.sourceMap,
   };
