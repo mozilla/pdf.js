@@ -916,7 +916,7 @@ gulp.task(
   })
 );
 
-function parseMinified(dir) {
+async function parseMinified(dir) {
   var pdfFile = fs.readFileSync(dir + "/build/pdf.js").toString();
   var pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker.js").toString();
   var pdfImageDecodersFile = fs
@@ -942,19 +942,19 @@ function parseMinified(dir) {
 
   fs.writeFileSync(
     dir + "/web/pdf.viewer.js",
-    Terser.minify(viewerFiles, options).code
+    (await Terser.minify(viewerFiles, options)).code
   );
   fs.writeFileSync(
     dir + "/build/pdf.min.js",
-    Terser.minify(pdfFile, options).code
+    (await Terser.minify(pdfFile, options)).code
   );
   fs.writeFileSync(
     dir + "/build/pdf.worker.min.js",
-    Terser.minify(pdfWorkerFile, options).code
+    (await Terser.minify(pdfWorkerFile, options)).code
   );
   fs.writeFileSync(
     dir + "image_decoders/pdf.image_decoders.min.js",
-    Terser.minify(pdfImageDecodersFile, options).code
+    (await Terser.minify(pdfImageDecodersFile, options)).code
   );
 
   console.log();
@@ -975,16 +975,16 @@ function parseMinified(dir) {
 
 gulp.task(
   "minified",
-  gulp.series("minified-pre", function (done) {
-    parseMinified(MINIFIED_DIR);
+  gulp.series("minified-pre", async function (done) {
+    await parseMinified(MINIFIED_DIR);
     done();
   })
 );
 
 gulp.task(
   "minified-es5",
-  gulp.series("minified-es5-pre", function (done) {
-    parseMinified(MINIFIED_ES5_DIR);
+  gulp.series("minified-es5-pre", async function (done) {
+    await parseMinified(MINIFIED_ES5_DIR);
     done();
   })
 );
