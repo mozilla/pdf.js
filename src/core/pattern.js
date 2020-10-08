@@ -967,7 +967,7 @@ Shadings.Dummy = (function DummyClosure() {
   return Dummy;
 })();
 
-function getTilingPatternIR(operatorList, dict, args) {
+function getTilingPatternIR(operatorList, dict, color) {
   const matrix = dict.getArray("Matrix");
   const bbox = Util.normalizeRect(dict.getArray("BBox"));
   const xstep = dict.get("XStep");
@@ -983,7 +983,7 @@ function getTilingPatternIR(operatorList, dict, args) {
 
   return [
     "TilingPattern",
-    args,
+    color,
     operatorList,
     matrix,
     bbox,
