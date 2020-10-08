@@ -81,6 +81,7 @@ import {
   LocalColorSpaceCache,
   LocalGStateCache,
   LocalImageCache,
+  LocalTilingPatternCache,
 } from "./image_utils.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
@@ -716,12 +717,14 @@ class PartialEvaluator {
 
   handleTilingType(
     fn,
-    args,
+    color,
     resources,
     pattern,
     patternDict,
     operatorList,
-    task
+    task,
+    cacheKey,
+    localTilingPatternCache
   ) {
     // Create an IR of the pattern code.
     const tilingOpList = new OperatorList();
@@ -739,38 +742,39 @@ class PartialEvaluator {
       operatorList: tilingOpList,
     })
       .then(function () {
-        return getTilingPatternIR(
-          {
-            fnArray: tilingOpList.fnArray,
-            argsArray: tilingOpList.argsArray,
-          },
+        const operatorListIR = tilingOpList.getIR();
+        const tilingPatternIR = getTilingPatternIR(
+          operatorListIR,
           patternDict,
-          args
+          color
         );
-      })
-      .then(
-        function (tilingPatternIR) {
-          // Add the dependencies to the parent operator list so they are
-          // resolved before the sub operator list is executed synchronously.
-          operatorList.addDependencies(tilingOpList.dependencies);
-          operatorList.addOp(fn, tilingPatternIR);
-        },
-        reason => {
-          if (reason instanceof AbortException) {
-            return;
-          }
-          if (this.options.ignoreErrors) {
-            // Error(s) in the TilingPattern -- sending unsupported feature
-            // notification and allow rendering to continue.
-            this.handler.send("UnsupportedFeature", {
-              featureId: UNSUPPORTED_FEATURES.errorTilingPattern,
-            });
-            warn(`handleTilingType - ignoring pattern: "${reason}".`);
-            return;
-          }
-          throw reason;
+        // Add the dependencies to the parent operator list so they are
+        // resolved before the sub operator list is executed synchronously.
+        operatorList.addDependencies(tilingOpList.dependencies);
+        operatorList.addOp(fn, tilingPatternIR);
+
+        if (cacheKey) {
+          localTilingPatternCache.set(cacheKey, patternDict.objId, {
+            operatorListIR,
+            dict: patternDict,
+          });
         }
-      );
+      })
+      .catch(reason => {
+        if (reason instanceof AbortException) {
+          return;
+        }
+        if (this.options.ignoreErrors) {
+          // Error(s) in the TilingPattern -- sending unsupported feature
+          // notification and allow rendering to continue.
+          this.handler.send("UnsupportedFeature", {
+            featureId: UNSUPPORTED_FEATURES.errorTilingPattern,
+          });
+          warn(`handleTilingType - ignoring pattern: "${reason}".`);
+          return;
+        }
+        throw reason;
+      });
   }
 
   handleSetFont(resources, fontArgs, fontRef, operatorList, task, state) {
@@ -1221,7 +1225,7 @@ class PartialEvaluator {
     });
   }
 
-  async handleColorN(
+  handleColorN(
     operatorList,
     fn,
     args,
@@ -1229,43 +1233,70 @@ class PartialEvaluator {
     patterns,
     resources,
     task,
-    localColorSpaceCache
+    localColorSpaceCache,
+    localTilingPatternCache
   ) {
     // compile tiling patterns
-    var patternName = args[args.length - 1];
+    const patternName = args[args.length - 1];
     // SCN/scn applies patterns along with normal colors
-    var pattern;
-    if (isName(patternName) && (pattern = patterns.get(patternName.name))) {
-      var dict = isStream(pattern) ? pattern.dict : pattern;
-      var typeNum = dict.get("PatternType");
-
-      if (typeNum === PatternType.TILING) {
-        var color = cs.base ? cs.base.getRgb(args, 0) : null;
-        return this.handleTilingType(
-          fn,
-          color,
-          resources,
-          pattern,
-          dict,
-          operatorList,
-          task
-        );
-      } else if (typeNum === PatternType.SHADING) {
-        var shading = dict.get("Shading");
-        var matrix = dict.getArray("Matrix");
-        pattern = Pattern.parseShading(
-          shading,
-          matrix,
-          this.xref,
-          resources,
-          this.handler,
-          this._pdfFunctionFactory,
-          localColorSpaceCache
-        );
-        operatorList.addOp(fn, pattern.getIR());
-        return undefined;
+    if (patternName instanceof Name) {
+      const localTilingPattern = localTilingPatternCache.getByName(patternName);
+      if (localTilingPattern) {
+        try {
+          const color = cs.base ? cs.base.getRgb(args, 0) : null;
+          const tilingPatternIR = getTilingPatternIR(
+            localTilingPattern.operatorListIR,
+            localTilingPattern.dict,
+            color
+          );
+          operatorList.addOp(fn, tilingPatternIR);
+          return undefined;
+        } catch (ex) {
+          if (ex instanceof MissingDataException) {
+            throw ex;
+          }
+          // Handle any errors during normal TilingPattern parsing.
+        }
       }
-      throw new FormatError(`Unknown PatternType: ${typeNum}`);
+      // TODO: Attempt to lookup cached TilingPatterns by reference as well,
+      //       if and only if there are PDF documents where doing so would
+      //       significantly improve performance.
+
+      let pattern = patterns.get(patternName.name);
+      if (pattern) {
+        var dict = isStream(pattern) ? pattern.dict : pattern;
+        var typeNum = dict.get("PatternType");
+
+        if (typeNum === PatternType.TILING) {
+          const color = cs.base ? cs.base.getRgb(args, 0) : null;
+          return this.handleTilingType(
+            fn,
+            color,
+            resources,
+            pattern,
+            dict,
+            operatorList,
+            task,
+            patternName,
+            localTilingPatternCache
+          );
+        } else if (typeNum === PatternType.SHADING) {
+          var shading = dict.get("Shading");
+          var matrix = dict.getArray("Matrix");
+          pattern = Pattern.parseShading(
+            shading,
+            matrix,
+            this.xref,
+            resources,
+            this.handler,
+            this._pdfFunctionFactory,
+            localColorSpaceCache
+          );
+          operatorList.addOp(fn, pattern.getIR());
+          return undefined;
+        }
+        throw new FormatError(`Unknown PatternType: ${typeNum}`);
+      }
     }
     throw new FormatError(`Unknown PatternName: ${patternName}`);
   }
@@ -1349,6 +1380,7 @@ class PartialEvaluator {
     const localImageCache = new LocalImageCache();
     const localColorSpaceCache = new LocalColorSpaceCache();
     const localGStateCache = new LocalGStateCache();
+    const localTilingPatternCache = new LocalTilingPatternCache();
 
     var xobjs = resources.get("XObject") || Dict.empty;
     var patterns = resources.get("Pattern") || Dict.empty;
@@ -1704,7 +1736,8 @@ class PartialEvaluator {
                   patterns,
                   resources,
                   task,
-                  localColorSpaceCache
+                  localColorSpaceCache,
+                  localTilingPatternCache
                 )
               );
               return;
@@ -1724,7 +1757,8 @@ class PartialEvaluator {
                   patterns,
                   resources,
                   task,
-                  localColorSpaceCache
+                  localColorSpaceCache,
+                  localTilingPatternCache
                 )
               );
               return;
