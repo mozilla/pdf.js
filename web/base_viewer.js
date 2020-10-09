@@ -1006,6 +1006,10 @@ class BaseViewer {
       : this._scrollMode === ScrollMode.HORIZONTAL;
   }
 
+  get _isContainerRtl() {
+    return getComputedStyle(this.container).direction === "rtl";
+  }
+
   get isInPresentationMode() {
     return this.presentationModeState === PresentationModeState.FULLSCREEN;
   }
@@ -1055,7 +1059,8 @@ class BaseViewer {
       this.container,
       this._pages,
       true,
-      this._isScrollModeHorizontal
+      this._isScrollModeHorizontal,
+      this._isScrollModeHorizontal && this._isContainerRtl
     );
   }
 
