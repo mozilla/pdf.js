@@ -143,9 +143,6 @@ class PDFHistory {
       state.uid,
       /* removeTemporary = */ true
     );
-    if (this._uid > this._maxUid) {
-      this._maxUid = this._uid;
-    }
 
     if (destination.rotation !== undefined) {
       this._initialRotation = destination.rotation;
@@ -410,7 +407,6 @@ class PDFHistory {
     if (shouldReplace) {
       window.history.replaceState(newState, "", newUrl);
     } else {
-      this._maxUid = this._uid;
       window.history.pushState(newState, "", newUrl);
     }
 
@@ -534,6 +530,7 @@ class PDFHistory {
     }
     this._destination = destination;
     this._uid = uid;
+    this._maxUid = Math.max(this._maxUid, uid);
     // This should always be reset when `this._destination` is updated.
     this._numPositionUpdates = 0;
   }
@@ -688,9 +685,6 @@ class PDFHistory {
       state.uid,
       /* removeTemporary = */ true
     );
-    if (this._uid > this._maxUid) {
-      this._maxUid = this._uid;
-    }
 
     if (isValidRotation(destination.rotation)) {
       this.linkService.rotation = destination.rotation;
