@@ -599,61 +599,56 @@ class WorkerMessageHandler {
       });
     });
 
-    handler.on(
-      "GetOperatorList",
-      function wphSetupRenderPage(data, sink) {
-        var pageIndex = data.pageIndex;
-        pdfManager.getPage(pageIndex).then(function (page) {
-          var task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
-          startWorkerTask(task);
+    handler.on("GetOperatorList", function wphSetupRenderPage(data, sink) {
+      var pageIndex = data.pageIndex;
+      pdfManager.getPage(pageIndex).then(function (page) {
+        var task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
+        startWorkerTask(task);
 
-          // NOTE: Keep this condition in sync with the `info` helper function.
-          const start = verbosity >= VerbosityLevel.INFOS ? Date.now() : 0;
+        // NOTE: Keep this condition in sync with the `info` helper function.
+        const start = verbosity >= VerbosityLevel.INFOS ? Date.now() : 0;
 
-          // Pre compile the pdf page and fetch the fonts/images.
-          page
-            .getOperatorList({
-              handler,
-              sink,
-              task,
-              intent: data.intent,
-              renderInteractiveForms: data.renderInteractiveForms,
-              annotationStorage: data.annotationStorage,
-            })
-            .then(
-              function (operatorListInfo) {
-                finishWorkerTask(task);
+        // Pre compile the pdf page and fetch the fonts/images.
+        page
+          .getOperatorList({
+            handler,
+            sink,
+            task,
+            intent: data.intent,
+            renderInteractiveForms: data.renderInteractiveForms,
+            annotationStorage: data.annotationStorage,
+          })
+          .then(
+            function (operatorListInfo) {
+              finishWorkerTask(task);
 
-                if (start) {
-                  info(
-                    `page=${pageIndex + 1} - getOperatorList: time=` +
-                      `${Date.now() - start}ms, len=${operatorListInfo.length}`
-                  );
-                }
-                sink.close();
-              },
-              function (reason) {
-                finishWorkerTask(task);
-                if (task.terminated) {
-                  return; // ignoring errors from the terminated thread
-                }
-                // For compatibility with older behavior, generating unknown
-                // unsupported feature notification on errors.
-                handler.send("UnsupportedFeature", {
-                  featureId: UNSUPPORTED_FEATURES.errorOperatorList,
-                });
-
-                sink.error(reason);
-
-                // TODO: Should `reason` be re-thrown here (currently that
-                //       casues "Uncaught exception: ..." messages in the
-                //       console)?
+              if (start) {
+                info(
+                  `page=${pageIndex + 1} - getOperatorList: time=` +
+                    `${Date.now() - start}ms, len=${operatorListInfo.length}`
+                );
               }
-            );
-        });
-      },
-      this
-    );
+              sink.close();
+            },
+            function (reason) {
+              finishWorkerTask(task);
+              if (task.terminated) {
+                return; // ignoring errors from the terminated thread
+              }
+              // For compatibility with older behavior, generating unknown
+              // unsupported feature notification on errors.
+              handler.send("UnsupportedFeature", {
+                featureId: UNSUPPORTED_FEATURES.errorOperatorList,
+              });
+
+              sink.error(reason);
+
+              // TODO: Should `reason` be re-thrown here (currently that casues
+              //       "Uncaught exception: ..." messages in the console)?
+            }
+          );
+      });
+    });
 
     handler.on("GetTextContent", function wphExtractText(data, sink) {
       var pageIndex = data.pageIndex;
