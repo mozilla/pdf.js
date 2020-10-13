@@ -525,18 +525,32 @@ class WorkerMessageHandler {
       const promises = [
         pdfManager.onLoadedStream(),
         pdfManager.ensureCatalog("acroForm"),
+        pdfManager.ensureDoc("xref"),
+        pdfManager.ensureDoc("startXRef"),
       ];
-      const document = pdfManager.pdfDocument;
+
       for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
         promises.push(
           pdfManager.getPage(pageIndex).then(function (page) {
             const task = new WorkerTask(`Save: page ${pageIndex}`);
-            return page.save(handler, task, annotationStorage);
+            startWorkerTask(task);
+
+            return page
+              .save(handler, task, annotationStorage)
+              .finally(function () {
+                finishWorkerTask(task);
+              });
           })
         );
       }
 
-      return Promise.all(promises).then(([stream, acroForm, ...refs]) => {
+      return Promise.all(promises).then(function ([
+        stream,
+        acroForm,
+        xref,
+        startXRef,
+        ...refs
+      ]) {
         let newRefs = [];
         for (const ref of refs) {
           newRefs = ref
@@ -562,16 +576,15 @@ class WorkerMessageHandler {
           warn("Unsupported XFA type.");
         }
 
-        const xref = document.xref;
         let newXrefInfo = Object.create(null);
         if (xref.trailer) {
-          // Get string info from Info in order to compute fileId
-          const _info = Object.create(null);
+          // Get string info from Info in order to compute fileId.
+          const infoObj = Object.create(null);
           const xrefInfo = xref.trailer.get("Info") || null;
           if (xrefInfo instanceof Dict) {
             xrefInfo.forEach((key, value) => {
               if (isString(key) && isString(value)) {
-                _info[key] = stringToPDFString(value);
+                infoObj[key] = stringToPDFString(value);
               }
             });
           }
@@ -581,9 +594,9 @@ class WorkerMessageHandler {
             encrypt: xref.trailer.getRaw("Encrypt") || null,
             newRef: xref.getNewRef(),
             infoRef: xref.trailer.getRaw("Info") || null,
-            info: _info,
+            info: infoObj,
             fileIds: xref.trailer.getRaw("ID") || null,
-            startXRef: document.startXRef,
+            startXRef,
             filename,
           };
         }
