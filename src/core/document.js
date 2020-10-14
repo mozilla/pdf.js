@@ -708,7 +708,7 @@ class PDFDocument {
   }
 
   get formInfo() {
-    const formInfo = { hasAcroForm: false, hasXfa: false };
+    const formInfo = { hasAcroForm: false, hasXfa: false, fields: null };
     const acroForm = this.catalog.acroForm;
     if (!acroForm) {
       return shadow(this, "formInfo", formInfo);
@@ -736,6 +736,9 @@ class PDFDocument {
       const hasOnlyDocumentSignatures =
         !!(sigFlags & 0x1) && this._hasOnlyDocumentSignatures(fields);
       formInfo.hasAcroForm = hasFields && !hasOnlyDocumentSignatures;
+      if (hasFields) {
+        formInfo.fields = fields;
+      }
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
@@ -934,6 +937,73 @@ class PDFDocument {
     return this.catalog
       ? this.catalog.cleanup(manuallyTriggered)
       : clearPrimitiveCaches();
+  }
+
+  _collectFieldObjects(name, fieldRef, promises) {
+    const field = this.xref.fetchIfRef(fieldRef);
+    if (field.has("T")) {
+      const partName = stringToPDFString(field.get("T"));
+      if (name === "") {
+        name = partName;
+      } else {
+        name = `${name}.${partName}`;
+      }
+    }
+
+    if (!(name in promises)) {
+      promises.set(name, []);
+    }
+    promises.get(name).push(
+      AnnotationFactory.create(
+        this.xref,
+        fieldRef,
+        this.pdfManager,
+        this._localIdFactory
+      )
+        .then(annotation => annotation.getFieldObject())
+        .catch(function (reason) {
+          warn(`_collectFieldObjects: "${reason}".`);
+          return null;
+        })
+    );
+
+    if (field.has("Kids")) {
+      const kids = field.get("Kids");
+      for (const kid of kids) {
+        this._collectFieldObjects(name, kid, promises);
+      }
+    }
+  }
+
+  get fieldObjects() {
+    const formInfo = this.formInfo;
+    if (!formInfo.fields) {
+      return shadow(this, "fieldObjects", Promise.resolve(null));
+    }
+
+    const allFields = Object.create(null);
+    const fieldPromises = new Map();
+    for (const fieldRef of formInfo.fields) {
+      this._collectFieldObjects("", fieldRef, fieldPromises);
+    }
+
+    const allPromises = [];
+    for (const [name, promises] of fieldPromises.entries()) {
+      allPromises.push(
+        Promise.all(promises).then(fields => {
+          fields = fields.filter(field => field !== null);
+          if (fields.length > 0) {
+            allFields[name] = fields;
+          }
+        })
+      );
+    }
+
+    return shadow(
+      this,
+      "fieldObjects",
+      Promise.all(allPromises).then(() => allFields)
+    );
   }
 }
 
