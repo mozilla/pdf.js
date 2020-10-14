@@ -144,6 +144,28 @@ const AnnotationBorderStyleType = {
   UNDERLINE: 5,
 };
 
+const AnnotationActionEventType = {
+  E: "MouseEnter",
+  X: "MouseExit",
+  D: "MouseDown",
+  U: "MouseUp",
+  Fo: "Focus",
+  Bl: "Blur",
+  PO: "PageOpen",
+  PC: "PageClose",
+  PV: "PageVisible",
+  PI: "PageInvisible",
+  K: "Keystroke",
+  F: "Format",
+  V: "Validate",
+  C: "Calculate",
+  WC: "WillClose",
+  WS: "WillSave",
+  DS: "DidSave",
+  WP: "WillPrint",
+  DP: "DidPrint",
+};
+
 const StreamType = {
   UNKNOWN: "UNKNOWN",
   FLATE: "FLATE",
@@ -971,6 +993,7 @@ export {
   OPS,
   VerbosityLevel,
   UNSUPPORTED_FEATURES,
+  AnnotationActionEventType,
   AnnotationBorderStyleType,
   AnnotationFieldFlag,
   AnnotationFlag,

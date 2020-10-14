@@ -516,6 +516,10 @@ class WorkerMessageHandler {
       });
     });
 
+    handler.on("GetFieldObjects", function (data) {
+      return pdfManager.ensureDoc("fieldObjects");
+    });
+
     handler.on("SaveDocument", function ({
       numPages,
       annotationStorage,

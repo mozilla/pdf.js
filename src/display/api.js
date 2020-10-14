@@ -876,6 +876,14 @@ class PDFDocumentProxy {
   saveDocument(annotationStorage) {
     return this._transport.saveDocument(annotationStorage);
   }
+
+  /**
+   * @returns {Promise<Array<Object>>} A promise that is resolved with an
+   *   {Array<Object>} containing field data for the JS sandbox.
+   */
+  getFieldObjects() {
+    return this._transport.getFieldObjects();
+  }
 }
 
 /**
@@ -2547,6 +2555,10 @@ class WorkerTransport {
           annotationStorage.resetModified();
         }
       });
+  }
+
+  getFieldObjects() {
+    return this.messageHandler.sendWithPromise("GetFieldObjects", null);
   }
 
   getDestinations() {

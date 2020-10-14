@@ -63,6 +63,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        fields: null,
       });
     });
 
@@ -75,6 +76,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        fields: null,
       });
 
       acroForm.set("XFA", ["foo", "bar"]);
@@ -82,6 +84,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: true,
+        fields: null,
       });
 
       acroForm.set("XFA", new StringStream(""));
@@ -89,6 +92,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        fields: null,
       });
 
       acroForm.set("XFA", new StringStream("non-empty"));
@@ -96,6 +100,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: true,
+        fields: null,
       });
     });
 
@@ -108,6 +113,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        fields: null,
       });
 
       acroForm.set("Fields", ["foo", "bar"]);
@@ -115,6 +121,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
         hasXfa: false,
+        fields: ["foo", "bar"],
       });
 
       // If the first bit of the `SigFlags` entry is set and the `Fields` array
@@ -125,6 +132,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
         hasXfa: false,
+        fields: ["foo", "bar"],
       });
 
       const annotationDict = new Dict();
@@ -147,6 +155,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        fields: null,
       });
     });
   });
