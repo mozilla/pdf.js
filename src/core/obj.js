@@ -1165,10 +1165,23 @@ class Catalog {
     let action = destDict.get("A"),
       url,
       dest;
-    if (!isDict(action) && destDict.has("Dest")) {
-      // A /Dest entry should *only* contain a Name or an Array, but some bad
-      // PDF generators ignore that and treat it as an /A entry.
-      action = destDict.get("Dest");
+    if (!isDict(action)) {
+      if (destDict.has("Dest")) {
+        // A /Dest entry should *only* contain a Name or an Array, but some bad
+        // PDF generators ignore that and treat it as an /A entry.
+        action = destDict.get("Dest");
+      } else {
+        action = destDict.get("AA");
+        if (isDict(action)) {
+          if (action.has("D")) {
+            // MouseDown
+            action = action.get("D");
+          } else if (action.has("U")) {
+            // MouseUp
+            action = action.get("U");
+          }
+        }
+      }
     }
 
     if (isDict(action)) {

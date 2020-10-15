@@ -2658,6 +2658,63 @@ describe("annotation", function () {
         done();
       }, done.fail);
     });
+
+    it("should handle URL in A dict in push buttons", function (done) {
+      const buttonWidgetRef = Ref.get(124, 0);
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.PUSHBUTTON);
+
+      const actionDict = new Dict();
+      actionDict.set("S", Name.get("JavaScript"));
+      actionDict.set(
+        "JS",
+        "app.launchURL('https://developer.mozilla.org/en-US/', true)"
+      );
+      buttonWidgetDict.set("A", actionDict);
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      ).then(({ data }) => {
+        expect(data.url).toEqual("https://developer.mozilla.org/en-US/");
+        done();
+      }, done.fail);
+    });
+
+    it("should handle URL in AA dict in push buttons", function (done) {
+      const buttonWidgetRef = Ref.get(124, 0);
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.PUSHBUTTON);
+
+      // D stands for MouseDown
+      const dDict = new Dict();
+      dDict.set("S", Name.get("JavaScript"));
+      dDict.set(
+        "JS",
+        "app.launchURL('https://developer.mozilla.org/en-US/', true)"
+      );
+      const actionDict = new Dict();
+      actionDict.set("D", dDict);
+      buttonWidgetDict.set("AA", actionDict);
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      ).then(({ data }) => {
+        expect(data.url).toEqual("https://developer.mozilla.org/en-US/");
+        done();
+      }, done.fail);
+    });
   });
 
   describe("ChoiceWidgetAnnotation", function () {
