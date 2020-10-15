@@ -52,8 +52,9 @@ describe("document", function () {
     };
     const stream = new StringStream("Dummy_PDF_data");
 
-    function getDocument(acroForm) {
+    function getDocument(acroForm, xref = new XRefMock()) {
       const pdfDocument = new PDFDocument(pdfManager, stream);
+      pdfDocument.xref = xref;
       pdfDocument.catalog = { acroForm };
       return pdfDocument;
     }
@@ -144,18 +145,18 @@ describe("document", function () {
       kidsDict.set("Kids", [annotationRef]);
       const kidsRef = Ref.get(10, 0);
 
-      pdfDocument.xref = new XRefMock([
+      const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict },
         { ref: kidsRef, data: kidsDict },
       ]);
 
       acroForm.set("Fields", [kidsRef]);
       acroForm.set("SigFlags", 3);
-      pdfDocument = getDocument(acroForm);
+      pdfDocument = getDocument(acroForm, xref);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
-        fields: null,
+        fields: [kidsRef],
       });
     });
   });
