@@ -1111,15 +1111,7 @@ class PartialEvaluator {
 
     font.translated = fontCapability.promise;
 
-    // TODO move promises into translate font
-    var translatedPromise;
-    try {
-      translatedPromise = this.translateFont(preEvaluatedFont);
-    } catch (e) {
-      translatedPromise = Promise.reject(e);
-    }
-
-    translatedPromise
+    this.translateFont(preEvaluatedFont)
       .then(translatedFont => {
         if (translatedFont.fontType !== undefined) {
           var xrefFontStats = xref.stats.fontTypes;
@@ -3320,7 +3312,7 @@ class PartialEvaluator {
     };
   }
 
-  translateFont(preEvaluatedFont) {
+  async translateFont(preEvaluatedFont) {
     var baseDict = preEvaluatedFont.baseDict;
     var dict = preEvaluatedFont.dict;
     var composite = preEvaluatedFont.composite;
@@ -3465,36 +3457,30 @@ class PartialEvaluator {
       isType3Font: false,
     };
 
-    var cMapPromise;
     if (composite) {
-      var cidEncoding = baseDict.get("Encoding");
+      const cidEncoding = baseDict.get("Encoding");
       if (isName(cidEncoding)) {
         properties.cidEncoding = cidEncoding.name;
       }
-      cMapPromise = CMapFactory.create({
+      const cMap = await CMapFactory.create({
         encoding: cidEncoding,
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
         useCMap: null,
-      }).then(function (cMap) {
-        properties.cMap = cMap;
-        properties.vertical = properties.cMap.vertical;
       });
-    } else {
-      cMapPromise = Promise.resolve(undefined);
+      properties.cMap = cMap;
+      properties.vertical = properties.cMap.vertical;
     }
 
-    return cMapPromise
-      .then(() => {
-        return this.extractDataStructures(dict, baseDict, properties);
-      })
-      .then(newProperties => {
+    return this.extractDataStructures(dict, baseDict, properties).then(
+      newProperties => {
         this.extractWidths(dict, descriptor, newProperties);
 
         if (type === "Type3") {
           newProperties.isType3Font = true;
         }
         return new Font(fontName.name, fontFile, newProperties);
-      });
+      }
+    );
   }
 
   static buildFontPaths(font, glyphs, handler) {
