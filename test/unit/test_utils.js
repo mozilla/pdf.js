@@ -93,8 +93,8 @@ class XRefMock {
     return this._map[ref.toString()];
   }
 
-  fetchAsync(ref) {
-    return Promise.resolve(this.fetch(ref));
+  async fetchAsync(ref) {
+    return this.fetch(ref);
   }
 
   fetchIfRef(obj) {
@@ -104,8 +104,8 @@ class XRefMock {
     return this.fetch(obj);
   }
 
-  fetchIfRefAsync(obj) {
-    return Promise.resolve(this.fetchIfRef(obj));
+  async fetchIfRefAsync(obj) {
+    return this.fetchIfRef(obj);
   }
 }
 
