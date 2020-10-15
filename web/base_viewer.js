@@ -144,6 +144,10 @@ class BaseViewer {
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
 
+    /** #495 modified by ngx-extended-pdf-viewer */
+    this.pageMode = "single";
+    /** end of modification */
+
     if (
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("!PRODUCTION || GENERIC")
@@ -252,7 +256,27 @@ class BaseViewer {
         `${this._name}.currentPageNumber: "${val}" is not a valid page.`
       );
     }
+
+    /** #495 modified by ngx-extended-pdf-viewer */
+    this.hidePagesDependingOnPageMode();
+    if (this.pageMode === "single") {
+      const pageView = this._pages[this.currentPageNumber-1];
+      this._ensurePdfPageLoaded(pageView).then(() => {
+        this.renderingQueue.renderView(pageView);
+      });
+    }
+    /** end of modification */
   }
+
+  /** #495 modified by ngx-extended-pdf-viewer */
+  hidePagesDependingOnPageMode() {
+    if (this.pageMode === "single") {
+      this._pages.forEach((page) => {
+        page.div.style.display = (page.id === this.currentPageNumber) ? "block" : "none";
+      });
+    }
+  }
+  /** end of modification */
 
   /**
    * @returns {boolean} Whether the pageNumber is valid (within bounds).
@@ -584,6 +608,10 @@ class BaseViewer {
           }
         });
 
+        /** #495 modified by ngx-extended-pdf-viewer */
+        this.hidePagesDependingOnPageMode();
+        /** end of modification */
+
         this.eventBus.dispatch("pagesinit", { source: this });
 
         if (this.defaultRenderingQueue) {
@@ -659,6 +687,14 @@ class BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null }) {
+    /** #495 modified by ngx-extended-pdf-viewer */
+    if (this.pageMode === "single") {
+      this._pages.forEach(() => {
+        pageDiv.style.display = "block";
+      });
+    }
+    /** end of modification */
+
     scrollIntoView(pageDiv, pageSpot);
   }
 
@@ -1052,6 +1088,11 @@ class BaseViewer {
   }
 
   _getVisiblePages() {
+    /** #495 modified by ngx-extended-pdf-viewer */
+    if (this.pageMode === 'single') {
+      return this._getCurrentVisiblePage();
+    }
+    /** end of modification */
     return getVisibleElements(
       this.container,
       this._pages,
