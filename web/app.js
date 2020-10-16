@@ -451,6 +451,9 @@ const PDFViewerApplication = {
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
+      /** #495 modified by ngx-extended-pdf-viewer */
+      pageViewMode: AppOptions.get("pageViewMode"),
+      /** end of modification */
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
