@@ -687,8 +687,15 @@ class PDFDocument {
    */
   _hasOnlyDocumentSignatures(fields, recursionDepth = 0) {
     const RECURSION_LIMIT = 10;
+
+    if (!Array.isArray(fields)) {
+      return false;
+    }
     return fields.every(field => {
       field = this.xref.fetchIfRef(field);
+      if (!(field instanceof Dict)) {
+        return false;
+      }
       if (field.has("Kids")) {
         if (++recursionDepth > RECURSION_LIMIT) {
           warn("_hasOnlyDocumentSignatures: maximum recursion depth reached");
@@ -937,6 +944,9 @@ class PDFDocument {
       : clearPrimitiveCaches();
   }
 
+  /**
+   * @private
+   */
   _collectFieldObjects(name, fieldRef, promises) {
     const field = this.xref.fetchIfRef(fieldRef);
     if (field.has("T")) {
