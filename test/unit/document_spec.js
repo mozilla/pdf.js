@@ -64,7 +64,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
-        fields: null,
+        hasFields: false,
       });
     });
 
@@ -77,7 +77,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
-        fields: null,
+        hasFields: false,
       });
 
       acroForm.set("XFA", ["foo", "bar"]);
@@ -85,7 +85,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: true,
-        fields: null,
+        hasFields: false,
       });
 
       acroForm.set("XFA", new StringStream(""));
@@ -93,7 +93,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
-        fields: null,
+        hasFields: false,
       });
 
       acroForm.set("XFA", new StringStream("non-empty"));
@@ -101,7 +101,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: true,
-        fields: null,
+        hasFields: false,
       });
     });
 
@@ -114,7 +114,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
-        fields: null,
+        hasFields: false,
       });
 
       acroForm.set("Fields", ["foo", "bar"]);
@@ -122,7 +122,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
         hasXfa: false,
-        fields: ["foo", "bar"],
+        hasFields: true,
       });
 
       // If the first bit of the `SigFlags` entry is set and the `Fields` array
@@ -133,7 +133,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
         hasXfa: false,
-        fields: ["foo", "bar"],
+        hasFields: true,
       });
 
       const annotationDict = new Dict();
@@ -156,7 +156,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
-        fields: [kidsRef],
+        hasFields: true,
       });
     });
   });
