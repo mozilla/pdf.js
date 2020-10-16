@@ -1905,12 +1905,16 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   _processPushButton(params) {
-    if (!params.dict.has("A") && !this.data.alternativeText) {
+    if (
+      !params.dict.has("A") &&
+      !params.dict.has("AA") &&
+      !this.data.alternativeText
+    ) {
       warn("Push buttons without action dictionaries are not supported");
       return;
     }
 
-    this.data.isTooltipOnly = !params.dict.has("A");
+    this.data.isTooltipOnly = !params.dict.has("A") && !params.dict.has("AA");
 
     Catalog.parseDestDictionary({
       destDict: params.dict,
