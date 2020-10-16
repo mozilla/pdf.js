@@ -979,15 +979,13 @@ class PartialEvaluator {
   }
 
   loadFont(fontName, font, resources) {
-    const errorFont = () => {
-      return Promise.resolve(
-        new TranslatedFont({
-          loadedName: "g_font_error",
-          font: new ErrorFont(`Font "${fontName}" is not available.`),
-          dict: font,
-          extraProperties: this.options.fontExtraProperties,
-        })
-      );
+    const errorFont = async () => {
+      return new TranslatedFont({
+        loadedName: "g_font_error",
+        font: new ErrorFont(`Font "${fontName}" is not available.`),
+        dict: font,
+        extraProperties: this.options.fontExtraProperties,
+      });
     };
 
     var fontRef,
@@ -1034,10 +1032,10 @@ class PartialEvaluator {
       return errorFont();
     }
 
-    // We are holding `font.translated` references just for `fontRef`s that
+    // We are holding `font.cacheKey` references only for `fontRef`s that
     // are not actually `Ref`s, but rather `Dict`s. See explanation below.
-    if (font.translated) {
-      return font.translated;
+    if (font.cacheKey && this.fontCache.has(font.cacheKey)) {
+      return this.fontCache.get(font.cacheKey);
     }
 
     var fontCapability = createPromiseCapability();
@@ -1077,18 +1075,16 @@ class PartialEvaluator {
 
     // Workaround for bad PDF generators that reference fonts incorrectly,
     // where `fontRef` is a `Dict` rather than a `Ref` (fixes bug946506.pdf).
-    // In this case we should not put the font into `this.fontCache` (which is
-    // a `RefSetCache`), since it's not meaningful to use a `Dict` as a key.
+    // In this case we cannot put the font into `this.fontCache` (which is
+    // a `RefSetCache`), since it's not possible to use a `Dict` as a key.
     //
     // However, if we don't cache the font it's not possible to remove it
     // when `cleanup` is triggered from the API, which causes issues on
-    // subsequent rendering operations (see issue7403.pdf).
-    // A simple workaround would be to just not hold `font.translated`
-    // references in this case, but this would force us to unnecessarily load
-    // the same fonts over and over.
+    // subsequent rendering operations (see issue7403.pdf) and would force us
+    // to unnecessarily load the same fonts over and over.
     //
-    // Instead, we cheat a bit by attempting to use a modified `fontID` as a
-    // key in `this.fontCache`, to allow the font to be cached.
+    // Instead, we cheat a bit by using a modified `fontID` as a key in
+    // `this.fontCache`, to allow the font to be cached.
     // NOTE: This works because `RefSetCache` calls `toString()` on provided
     //       keys. Also, since `fontRef` is used when getting cached fonts,
     //       we'll not accidentally match fonts cached with the `fontID`.
@@ -1098,7 +1094,8 @@ class PartialEvaluator {
       if (!fontID) {
         fontID = this.idFactory.createFontId();
       }
-      this.fontCache.put(`id_${fontID}`, fontCapability.promise);
+      font.cacheKey = `cacheKey_${fontID}`;
+      this.fontCache.put(font.cacheKey, fontCapability.promise);
     }
     assert(
       fontID && fontID.startsWith("f"),
@@ -1108,8 +1105,6 @@ class PartialEvaluator {
     // Keep track of each font we translated so the caller can
     // load them asynchronously before calling display on a page.
     font.loadedName = `${this.idFactory.getDocId()}_${fontID}`;
-
-    font.translated = fontCapability.promise;
 
     this.translateFont(preEvaluatedFont)
       .then(translatedFont => {
