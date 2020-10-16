@@ -37,6 +37,7 @@ import {
   Dict,
   isDict,
   isName,
+  isRef,
   isStream,
   Ref,
 } from "./primitives.js";
@@ -1011,6 +1012,21 @@ class PDFDocument {
       "fieldObjects",
       Promise.all(allPromises).then(() => allFields)
     );
+  }
+
+  get calculationOrderIds() {
+    const acroForm = this.catalog.acroForm;
+    if (!acroForm || !acroForm.has("CO")) {
+      return shadow(this, "calculationOrderIds", null);
+    }
+
+    const calculationOrder = acroForm.get("CO");
+    if (!Array.isArray(calculationOrder) || calculationOrder.length === 0) {
+      return shadow(this, "calculationOrderIds", null);
+    }
+
+    const ids = calculationOrder.filter(isRef).map(ref => ref.toString());
+    return shadow(this, "calculationOrderIds", ids);
   }
 }
 
