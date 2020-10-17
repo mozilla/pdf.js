@@ -885,6 +885,15 @@ class PDFDocumentProxy {
   getFieldObjects() {
     return this._transport.getFieldObjects();
   }
+
+  /**
+   * @returns {Promise<Array<string> | null>} A promise that is resolved with an
+   *   {Array<string>} containing IDs of annotations that have a calculation
+   *   action, or `null` when no such annotations are present in the PDF file.
+   */
+  getCalculationOrderIds() {
+    return this._transport.getCalculationOrderIds();
+  }
 }
 
 /**
@@ -2560,6 +2569,10 @@ class WorkerTransport {
 
   getFieldObjects() {
     return this.messageHandler.sendWithPromise("GetFieldObjects", null);
+  }
+
+  getCalculationOrderIds() {
+    return this.messageHandler.sendWithPromise("GetCalculationOrderIds", null);
   }
 
   getDestinations() {
