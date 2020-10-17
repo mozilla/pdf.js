@@ -944,6 +944,7 @@ class BaseViewer {
     /** #495 modified by ngx-extended-pdf-viewer */
     this._ensurePdfPageLoaded(pageView).then(() => {
       this.renderingQueue.renderView(pageView);
+      this.currentPageNumber = pageNumber;
     });
     /** end of modification */
 
