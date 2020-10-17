@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 
 import {
   bytesToString,
@@ -1404,6 +1405,12 @@ class CFFCompiler {
           subDict.setByName("FontMatrix", matrix);
         }
       }
+    }
+
+    const xuid = cff.topDict.getByName("XUID");
+    if (xuid && xuid.length > 16) {
+      // Length of XUID array must not be greater than 16 (issue #12399).
+      cff.topDict.removeByName("XUID");
     }
 
     cff.topDict.setByName("charset", 0);

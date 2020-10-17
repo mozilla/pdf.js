@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error */
 
 import { assert, info, shadow, unreachable } from "../shared/util.js";
 import { RefSetCache } from "./primitives.js";
@@ -134,6 +133,29 @@ class LocalGStateCache extends BaseLocalCache {
   }
 }
 
+class LocalTilingPatternCache extends BaseLocalCache {
+  set(name, ref = null, data) {
+    if (!name) {
+      throw new Error(
+        'LocalTilingPatternCache.set - expected "name" argument.'
+      );
+    }
+    if (ref) {
+      if (this._imageCache.has(ref)) {
+        return;
+      }
+      this._nameRefMap.set(name, ref);
+      this._imageCache.put(ref, data);
+      return;
+    }
+    // name
+    if (this._imageMap.has(name)) {
+      return;
+    }
+    this._imageMap.set(name, data);
+  }
+}
+
 class GlobalImageCache {
   static get NUM_PAGES_THRESHOLD() {
     return shadow(this, "NUM_PAGES_THRESHOLD", 2);
@@ -232,5 +254,6 @@ export {
   LocalColorSpaceCache,
   LocalFunctionCache,
   LocalGStateCache,
+  LocalTilingPatternCache,
   GlobalImageCache,
 };

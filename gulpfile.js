@@ -2051,11 +2051,14 @@ gulp.task(
 );
 
 gulp.task("externaltest", function (done) {
-  fancylog("Running test-fixtures.js");
+  console.log();
+  console.log("### Running test-fixtures.js");
   safeSpawnSync("node", ["external/builder/test-fixtures.js"], {
     stdio: "inherit",
   });
-  fancylog("Running test-fixtures_esprima.js");
+
+  console.log();
+  console.log("### Running test-fixtures_esprima.js");
   safeSpawnSync("node", ["external/builder/test-fixtures_esprima.js"], {
     stdio: "inherit",
   });

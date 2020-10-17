@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error */
 
 // modified by ngx-extended-pdf-viewer - removed node.js support
 // import { isNodeJS } from "./is_node.js";

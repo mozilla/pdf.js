@@ -15,7 +15,7 @@
 
 import { FormatError, info, Util } from "../shared/util.js";
 
-var ShadingIRs = {};
+const ShadingIRs = {};
 
 function applyBoundingBox(ctx, bbox) {
   if (!bbox || typeof Path2D === "undefined") {
@@ -30,26 +30,26 @@ function applyBoundingBox(ctx, bbox) {
 
 ShadingIRs.RadialAxial = {
   fromIR: function RadialAxial_fromIR(raw) {
-    var type = raw[1];
-    var bbox = raw[2];
-    var colorStops = raw[3];
-    var p0 = raw[4];
-    var p1 = raw[5];
-    var r0 = raw[6];
-    var r1 = raw[7];
+    const type = raw[1];
+    const bbox = raw[2];
+    const colorStops = raw[3];
+    const p0 = raw[4];
+    const p1 = raw[5];
+    const r0 = raw[6];
+    const r1 = raw[7];
     return {
       type: "Pattern",
       getPattern: function RadialAxial_getPattern(ctx) {
         applyBoundingBox(ctx, bbox);
-        var grad;
+        let grad;
         if (type === "axial") {
           grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
         } else if (type === "radial") {
           grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
         }
 
-        for (var i = 0, ii = colorStops.length; i < ii; ++i) {
-          var c = colorStops[i];
+        for (let i = 0, ii = colorStops.length; i < ii; ++i) {
+          const c = colorStops[i];
           grad.addColorStop(c[0], c[1]);
         }
         return grad;
@@ -58,14 +58,14 @@ ShadingIRs.RadialAxial = {
   },
 };
 
-var createMeshCanvas = (function createMeshCanvasClosure() {
+const createMeshCanvas = (function createMeshCanvasClosure() {
   function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
     // Very basic Gouraud-shaded triangle rasterization algorithm.
-    var coords = context.coords,
+    const coords = context.coords,
       colors = context.colors;
-    var bytes = data.data,
+    const bytes = data.data,
       rowSize = data.width * 4;
-    var tmp;
+    let tmp;
     if (coords[p1 + 1] > coords[p2 + 1]) {
       tmp = p1;
       p1 = p2;
@@ -90,30 +90,30 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       c1 = c2;
       c2 = tmp;
     }
-    var x1 = (coords[p1] + context.offsetX) * context.scaleX;
-    var y1 = (coords[p1 + 1] + context.offsetY) * context.scaleY;
-    var x2 = (coords[p2] + context.offsetX) * context.scaleX;
-    var y2 = (coords[p2 + 1] + context.offsetY) * context.scaleY;
-    var x3 = (coords[p3] + context.offsetX) * context.scaleX;
-    var y3 = (coords[p3 + 1] + context.offsetY) * context.scaleY;
+    const x1 = (coords[p1] + context.offsetX) * context.scaleX;
+    const y1 = (coords[p1 + 1] + context.offsetY) * context.scaleY;
+    const x2 = (coords[p2] + context.offsetX) * context.scaleX;
+    const y2 = (coords[p2 + 1] + context.offsetY) * context.scaleY;
+    const x3 = (coords[p3] + context.offsetX) * context.scaleX;
+    const y3 = (coords[p3 + 1] + context.offsetY) * context.scaleY;
     if (y1 >= y3) {
       return;
     }
-    var c1r = colors[c1],
+    const c1r = colors[c1],
       c1g = colors[c1 + 1],
       c1b = colors[c1 + 2];
-    var c2r = colors[c2],
+    const c2r = colors[c2],
       c2g = colors[c2 + 1],
       c2b = colors[c2 + 2];
-    var c3r = colors[c3],
+    const c3r = colors[c3],
       c3g = colors[c3 + 1],
       c3b = colors[c3 + 2];
 
-    var minY = Math.round(y1),
+    const minY = Math.round(y1),
       maxY = Math.round(y3);
-    var xa, car, cag, cab;
-    var xb, cbr, cbg, cbb;
-    for (var y = minY; y <= maxY; y++) {
+    let xa, car, cag, cab;
+    let xb, cbr, cbg, cbb;
+    for (let y = minY; y <= maxY; y++) {
       if (y < y2) {
         let k;
         if (y < y1) {
@@ -154,10 +154,10 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       cbr = c1r - (c1r - c3r) * k;
       cbg = c1g - (c1g - c3g) * k;
       cbb = c1b - (c1b - c3b) * k;
-      var x1_ = Math.round(Math.min(xa, xb));
-      var x2_ = Math.round(Math.max(xa, xb));
-      var j = rowSize * y + x1_ * 4;
-      for (var x = x1_; x <= x2_; x++) {
+      const x1_ = Math.round(Math.min(xa, xb));
+      const x2_ = Math.round(Math.max(xa, xb));
+      let j = rowSize * y + x1_ * 4;
+      for (let x = x1_; x <= x2_; x++) {
         k = (xa - x) / (xa - xb);
         if (k < 0) {
           k = 0;
@@ -173,17 +173,17 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
   }
 
   function drawFigure(data, figure, context) {
-    var ps = figure.coords;
-    var cs = figure.colors;
-    var i, ii;
+    const ps = figure.coords;
+    const cs = figure.colors;
+    let i, ii;
     switch (figure.type) {
       case "lattice":
-        var verticesPerRow = figure.verticesPerRow;
-        var rows = Math.floor(ps.length / verticesPerRow) - 1;
-        var cols = verticesPerRow - 1;
+        const verticesPerRow = figure.verticesPerRow;
+        const rows = Math.floor(ps.length / verticesPerRow) - 1;
+        const cols = verticesPerRow - 1;
         for (i = 0; i < rows; i++) {
-          var q = i * verticesPerRow;
-          for (var j = 0; j < cols; j++, q++) {
+          let q = i * verticesPerRow;
+          for (let j = 0; j < cols; j++, q++) {
             drawTriangle(
               data,
               context,
@@ -239,30 +239,30 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
   ) {
     // we will increase scale on some weird factor to let antialiasing take
     // care of "rough" edges
-    var EXPECTED_SCALE = 1.1;
+    const EXPECTED_SCALE = 1.1;
     // MAX_PATTERN_SIZE is used to avoid OOM situation.
-    var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
+    const MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
     // We need to keep transparent border around our pattern for fill():
     // createPattern with 'no-repeat' will bleed edges across entire area.
-    var BORDER_SIZE = 2;
+    const BORDER_SIZE = 2;
 
-    var offsetX = Math.floor(bounds[0]);
-    var offsetY = Math.floor(bounds[1]);
-    var boundsWidth = Math.ceil(bounds[2]) - offsetX;
-    var boundsHeight = Math.ceil(bounds[3]) - offsetY;
+    const offsetX = Math.floor(bounds[0]);
+    const offsetY = Math.floor(bounds[1]);
+    const boundsWidth = Math.ceil(bounds[2]) - offsetX;
+    const boundsHeight = Math.ceil(bounds[3]) - offsetY;
 
-    var width = Math.min(
+    const width = Math.min(
       Math.ceil(Math.abs(boundsWidth * combinesScale[0] * EXPECTED_SCALE)),
       MAX_PATTERN_SIZE
     );
-    var height = Math.min(
+    const height = Math.min(
       Math.ceil(Math.abs(boundsHeight * combinesScale[1] * EXPECTED_SCALE)),
       MAX_PATTERN_SIZE
     );
-    var scaleX = boundsWidth / width;
-    var scaleY = boundsHeight / height;
+    const scaleX = boundsWidth / width;
+    const scaleY = boundsHeight / height;
 
-    var context = {
+    const context = {
       coords,
       colors,
       offsetX: -offsetX,
@@ -271,10 +271,10 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       scaleY: 1 / scaleY,
     };
 
-    var paddedWidth = width + BORDER_SIZE * 2;
-    var paddedHeight = height + BORDER_SIZE * 2;
+    const paddedWidth = width + BORDER_SIZE * 2;
+    const paddedHeight = height + BORDER_SIZE * 2;
 
-    var canvas, tmpCanvas, i, ii;
+    let canvas, tmpCanvas, i, ii;
     if (webGLContext.isEnabled) {
       canvas = webGLContext.drawFigures({
         width,
@@ -299,11 +299,11 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
         paddedHeight,
         false
       );
-      var tmpCtx = tmpCanvas.context;
+      const tmpCtx = tmpCanvas.context;
 
-      var data = tmpCtx.createImageData(width, height);
+      const data = tmpCtx.createImageData(width, height);
       if (backgroundColor) {
-        var bytes = data.data;
+        const bytes = data.data;
         for (i = 0, ii = bytes.length; i < ii; i += 4) {
           bytes[i] = backgroundColor[0];
           bytes[i + 1] = backgroundColor[1];
@@ -332,32 +332,32 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
 ShadingIRs.Mesh = {
   fromIR: function Mesh_fromIR(raw) {
     // var type = raw[1];
-    var coords = raw[2];
-    var colors = raw[3];
-    var figures = raw[4];
-    var bounds = raw[5];
-    var matrix = raw[6];
-    var bbox = raw[7];
-    var background = raw[8];
+    const coords = raw[2];
+    const colors = raw[3];
+    const figures = raw[4];
+    const bounds = raw[5];
+    const matrix = raw[6];
+    const bbox = raw[7];
+    const background = raw[8];
     return {
       type: "Pattern",
       getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
         applyBoundingBox(ctx, bbox);
-        var scale;
+        let scale;
         if (shadingFill) {
           scale = Util.singularValueDecompose2dScale(ctx.mozCurrentTransform);
         } else {
           // Obtain scale from matrix and current transformation matrix.
           scale = Util.singularValueDecompose2dScale(owner.baseTransform);
           if (matrix) {
-            var matrixScale = Util.singularValueDecompose2dScale(matrix);
+            const matrixScale = Util.singularValueDecompose2dScale(matrix);
             scale = [scale[0] * matrixScale[0], scale[1] * matrixScale[1]];
           }
         }
 
         // Rasterizing on the main thread since sending/queue large canvases
         // might cause OOM.
-        var temporaryPatternCanvas = createMeshCanvas(
+        const temporaryPatternCanvas = createMeshCanvas(
           bounds,
           scale,
           coords,
@@ -399,7 +399,7 @@ ShadingIRs.Dummy = {
 };
 
 function getShadingPatternFromIR(raw) {
-  var shadingIR = ShadingIRs[raw[0]];
+  const shadingIR = ShadingIRs[raw[0]];
   if (!shadingIR) {
     throw new Error(`Unknown IR type: ${raw[0]}`);
   }
@@ -409,13 +409,13 @@ function getShadingPatternFromIR(raw) {
 /**
  * @type {any}
  */
-var TilingPattern = (function TilingPatternClosure() {
-  var PaintType = {
+const TilingPattern = (function TilingPatternClosure() {
+  const PaintType = {
     COLORED: 1,
     UNCOLORED: 2,
   };
 
-  var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
+  const MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
 
   // eslint-disable-next-line no-shadow
   function TilingPattern(IR, color, ctx, canvasGraphicsFactory, baseTransform) {
@@ -435,14 +435,14 @@ var TilingPattern = (function TilingPatternClosure() {
 
   TilingPattern.prototype = {
     createPatternCanvas: function TilinPattern_createPatternCanvas(owner) {
-      var operatorList = this.operatorList;
-      var bbox = this.bbox;
-      var xstep = this.xstep;
-      var ystep = this.ystep;
-      var paintType = this.paintType;
-      var tilingType = this.tilingType;
-      var color = this.color;
-      var canvasGraphicsFactory = this.canvasGraphicsFactory;
+      const operatorList = this.operatorList;
+      const bbox = this.bbox;
+      const xstep = this.xstep;
+      const ystep = this.ystep;
+      const paintType = this.paintType;
+      const tilingType = this.tilingType;
+      const color = this.color;
+      const canvasGraphicsFactory = this.canvasGraphicsFactory;
 
       info("TilingType: " + tilingType);
 
@@ -466,17 +466,17 @@ var TilingPattern = (function TilingPatternClosure() {
       //   TODO: Fix the implementation, to allow this scenario to be painted
       //   correctly.
 
-      var x0 = bbox[0],
+      const x0 = bbox[0],
         y0 = bbox[1],
         x1 = bbox[2],
         y1 = bbox[3];
 
       // Obtain scale from matrix and current transformation matrix.
-      var matrixScale = Util.singularValueDecompose2dScale(this.matrix);
-      var curMatrixScale = Util.singularValueDecompose2dScale(
+      const matrixScale = Util.singularValueDecompose2dScale(this.matrix);
+      const curMatrixScale = Util.singularValueDecompose2dScale(
         this.baseTransform
       );
-      var combinedScale = [
+      const combinedScale = [
         matrixScale[0] * curMatrixScale[0],
         matrixScale[1] * curMatrixScale[1],
       ];
@@ -484,25 +484,25 @@ var TilingPattern = (function TilingPatternClosure() {
       // Use width and height values that are as close as possible to the end
       // result when the pattern is used. Too low value makes the pattern look
       // blurry. Too large value makes it look too crispy.
-      var dimx = this.getSizeAndScale(
+      const dimx = this.getSizeAndScale(
         xstep,
         this.ctx.canvas.width,
         combinedScale[0]
       );
-      var dimy = this.getSizeAndScale(
+      const dimy = this.getSizeAndScale(
         ystep,
         this.ctx.canvas.height,
         combinedScale[1]
       );
 
-      var tmpCanvas = owner.cachedCanvases.getCanvas(
+      const tmpCanvas = owner.cachedCanvases.getCanvas(
         "pattern",
         dimx.size,
         dimy.size,
         true
       );
-      var tmpCtx = tmpCanvas.context;
-      var graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
+      const tmpCtx = tmpCanvas.context;
+      const graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
       graphics.groupLevel = owner.groupLevel;
 
       this.setFillAndStrokeStyleToContext(graphics, paintType, color);
@@ -535,8 +535,8 @@ var TilingPattern = (function TilingPatternClosure() {
       // Use the destination canvas's size if it is bigger than the hard-coded
       // limit of MAX_PATTERN_SIZE to avoid clipping patterns that cover the
       // whole canvas.
-      var maxSize = Math.max(MAX_PATTERN_SIZE, realOutputSize);
-      var size = Math.ceil(step * scale);
+      const maxSize = Math.max(MAX_PATTERN_SIZE, realOutputSize);
+      let size = Math.ceil(step * scale);
       if (size >= maxSize) {
         size = maxSize;
       } else {
@@ -547,8 +547,8 @@ var TilingPattern = (function TilingPatternClosure() {
 
     clipBbox: function clipBbox(graphics, bbox, x0, y0, x1, y1) {
       if (Array.isArray(bbox) && bbox.length === 4) {
-        var bboxWidth = x1 - x0;
-        var bboxHeight = y1 - y0;
+        const bboxWidth = x1 - x0;
+        const bboxHeight = y1 - y0;
         graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
         graphics.clip();
         graphics.endPath();
@@ -564,14 +564,14 @@ var TilingPattern = (function TilingPatternClosure() {
         current = graphics.current;
       switch (paintType) {
         case PaintType.COLORED:
-          var ctx = this.ctx;
+          const ctx = this.ctx;
           context.fillStyle = ctx.fillStyle;
           context.strokeStyle = ctx.strokeStyle;
           current.fillColor = ctx.fillStyle;
           current.strokeColor = ctx.strokeStyle;
           break;
         case PaintType.UNCOLORED:
-          var cssColor = Util.makeCssRgb(color[0], color[1], color[2]);
+          const cssColor = Util.makeCssRgb(color[0], color[1], color[2]);
           context.fillStyle = cssColor;
           context.strokeStyle = cssColor;
           // Set color needed by image masks (fixes issues 3226 and 8741).
@@ -589,7 +589,7 @@ var TilingPattern = (function TilingPatternClosure() {
       ctx.setTransform.apply(ctx, this.baseTransform);
       ctx.transform.apply(ctx, this.matrix);
 
-      var temporaryPatternCanvas = this.createPatternCanvas(owner);
+      const temporaryPatternCanvas = this.createPatternCanvas(owner);
 
       return ctx.createPattern(temporaryPatternCanvas, "repeat");
     },

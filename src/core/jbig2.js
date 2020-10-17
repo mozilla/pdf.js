@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 
 import { BaseException, shadow } from "../shared/util.js";
 import { log2, readInt8, readUint16, readUint32 } from "./core_utils.js";

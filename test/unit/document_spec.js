@@ -52,8 +52,9 @@ describe("document", function () {
     };
     const stream = new StringStream("Dummy_PDF_data");
 
-    function getDocument(acroForm) {
+    function getDocument(acroForm, xref = new XRefMock()) {
       const pdfDocument = new PDFDocument(pdfManager, stream);
+      pdfDocument.xref = xref;
       pdfDocument.catalog = { acroForm };
       return pdfDocument;
     }
@@ -63,6 +64,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        hasFields: false,
       });
     });
 
@@ -75,6 +77,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        hasFields: false,
       });
 
       acroForm.set("XFA", ["foo", "bar"]);
@@ -82,6 +85,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: true,
+        hasFields: false,
       });
 
       acroForm.set("XFA", new StringStream(""));
@@ -89,6 +93,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        hasFields: false,
       });
 
       acroForm.set("XFA", new StringStream("non-empty"));
@@ -96,6 +101,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: true,
+        hasFields: false,
       });
     });
 
@@ -108,6 +114,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        hasFields: false,
       });
 
       acroForm.set("Fields", ["foo", "bar"]);
@@ -115,6 +122,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
         hasXfa: false,
+        hasFields: true,
       });
 
       // If the first bit of the `SigFlags` entry is set and the `Fields` array
@@ -125,6 +133,7 @@ describe("document", function () {
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
         hasXfa: false,
+        hasFields: true,
       });
 
       const annotationDict = new Dict();
@@ -136,17 +145,18 @@ describe("document", function () {
       kidsDict.set("Kids", [annotationRef]);
       const kidsRef = Ref.get(10, 0);
 
-      pdfDocument.xref = new XRefMock([
+      const xref = new XRefMock([
         { ref: annotationRef, data: annotationDict },
         { ref: kidsRef, data: kidsDict },
       ]);
 
       acroForm.set("Fields", [kidsRef]);
       acroForm.set("SigFlags", 3);
-      pdfDocument = getDocument(acroForm);
+      pdfDocument = getDocument(acroForm, xref);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
         hasXfa: false,
+        hasFields: true,
       });
     });
   });

@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error */
 
 /**
  * @module pdfjsLib
@@ -890,6 +889,15 @@ class PDFDocumentProxy {
    */
   saveDocument(annotationStorage) {
     return this._transport.saveDocument(annotationStorage);
+  }
+
+  /**
+   * @returns {Promise<Array<Object> | null>} A promise that is resolved with an
+   *   {Array<Object>} containing /AcroForm field data for the JS sandbox,
+   *   or `null` when no field data is present in the PDF file.
+   */
+  getFieldObjects() {
+    return this._transport.getFieldObjects();
   }
 }
 
@@ -2572,6 +2580,10 @@ class WorkerTransport {
           annotationStorage.resetModified();
         }
       });
+  }
+
+  getFieldObjects() {
+    return this.messageHandler.sendWithPromise("GetFieldObjects", null);
   }
 
   getDestinations() {

@@ -18,6 +18,7 @@
  * of XPDF's implementation, made available under the Apache 2.0 open source
  * license.
  */
+/* eslint-disable no-var */
 
 import { FormatError, stringToBytes, unreachable } from "../shared/util.js";
 import { isDict } from "./primitives.js";

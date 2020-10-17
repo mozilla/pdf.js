@@ -617,10 +617,6 @@ const PDFViewerApplication = {
     this.pdfViewer.currentPageNumber = val;
   },
 
-  get printing() {
-    return !!this.printService;
-  },
-
   get supportsPrinting() {
     return PDFPrintServiceFactory.instance.supportsPrinting;
   },
@@ -870,7 +866,7 @@ const PDFViewerApplication = {
           return undefined; // Ignore errors for previously opened PDF files.
         }
 
-        const message = exception && exception.message;
+        const message = exception?.message;
         let loadingErrorMessage;
         if (exception instanceof InvalidPDFException) {
           // change error message also for other builds
@@ -1403,12 +1399,9 @@ const PDFViewerApplication = {
       }
     }
 
-    if (!this.supportsPrinting) {
-      return;
-    }
     if (triggerAutoPrint) {
-      setTimeout(function () {
-        window.printPDF();
+      setTimeout(() => {
+        this.triggerPrinting();
       });
     }
   },
@@ -1671,7 +1664,7 @@ const PDFViewerApplication = {
   },
 
   forceRendering() {
-    this.pdfRenderingQueue.printing = this.printing;
+    this.pdfRenderingQueue.printing = !!this.printService;
     this.pdfRenderingQueue.isThumbnailViewEnabled = this.pdfSidebar.isThumbnailViewVisible;
     this.pdfRenderingQueue.renderHighestPriority();
   },
@@ -1707,6 +1700,7 @@ const PDFViewerApplication = {
           "Warning: The PDF is not fully loaded for printing."
         )
         .then(notReadyMessage => {
+          // eslint-disable-next-line no-alert
           window.alert(notReadyMessage);
         });
       return;
@@ -1764,6 +1758,13 @@ const PDFViewerApplication = {
       return;
     }
     this.pdfPresentationMode.request();
+  },
+
+  triggerPrinting() {
+    if (!this.supportsPrinting) {
+      return;
+    }
+    window.print();
   },
 
   bindEvents() {
@@ -2277,9 +2278,7 @@ function webViewerNamedAction(evt) {
       break;
 
     case "Print":
-      if (PDFViewerApplication.supportsPrinting) {
-        webViewerPrint();
-      }
+      PDFViewerApplication.triggerPrinting();
       break;
 
     case "SaveAs":
@@ -2435,7 +2434,7 @@ function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
 }
 function webViewerPrint() {
-  window.printPDF();
+  PDFViewerApplication.triggerPrinting();
 }
 function webViewerDownloadOrSave(sourceEventType) {
   if (
@@ -2786,7 +2785,7 @@ function webViewerKeyDown(evt) {
     // either CTRL or META key with optional SHIFT.
     switch (evt.keyCode) {
       case 70: // f
-        if (!PDFViewerApplication.supportsIntegratedFind) {
+        if (!PDFViewerApplication.supportsIntegratedFind && !evt.shiftKey) {
           PDFViewerApplication.findBar.open();
           handled = true;
         }

@@ -16,7 +16,6 @@
  * Based on https://code.google.com/p/smhasher/wiki/MurmurHash3.
  * Hashes roughly 100 KB per millisecond on i7 3.4 GHz.
  */
-/* eslint no-var: error */
 
 import { isArrayBuffer, isString } from "../shared/util.js";
 
