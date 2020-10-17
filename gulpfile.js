@@ -21,7 +21,6 @@
 var autoprefixer = require("autoprefixer");
 var calc = require("postcss-calc");
 var cssvariables = require("postcss-css-variables");
-var fancylog = require("fancy-log");
 var fs = require("fs");
 var gulp = require("gulp");
 var postcss = require("gulp-postcss");
