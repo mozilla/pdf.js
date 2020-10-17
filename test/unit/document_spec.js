@@ -159,5 +159,20 @@ describe("document", function () {
         hasFields: true,
       });
     });
+
+    it("should get calculation order array or null", function () {
+      const acroForm = new Dict();
+
+      let pdfDocument = getDocument(acroForm);
+      expect(pdfDocument.calculationOrderIds).toEqual(null);
+
+      acroForm.set("CO", [Ref.get(1, 0), Ref.get(2, 0), Ref.get(3, 0)]);
+      pdfDocument = getDocument(acroForm);
+      expect(pdfDocument.calculationOrderIds).toEqual(["1R", "2R", "3R"]);
+
+      acroForm.set("CO", []);
+      pdfDocument = getDocument(acroForm);
+      expect(pdfDocument.calculationOrderIds).toEqual(null);
+    });
   });
 });
