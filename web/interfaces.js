@@ -54,9 +54,14 @@ class IPDFLinkService {
   set externalLinkEnabled(value) {}
 
   /**
-   * @param dest - The PDF destination object.
+   * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
-  navigateTo(dest) {}
+  async goToDestination(dest) {}
+
+  /**
+   * @param {number} pageNumber - The page number.
+   */
+  goToPage(pageNumber) {}
 
   /**
    * @param dest - The PDF destination object.
@@ -107,6 +112,11 @@ class IPDFHistory {
    * @param {Object} params
    */
   push({ namedDest = null, explicitDest, pageNumber }) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  pushPage(pageNumber) {}
 
   pushCurrentPosition() {}
 
