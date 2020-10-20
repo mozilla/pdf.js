@@ -138,7 +138,7 @@ class PDFThumbnailView {
       anchor.title = msg;
     });
     anchor.onclick = function () {
-      linkService.page = id;
+      linkService.goToPage(id);
       return false;
     };
     this.anchor = anchor;
