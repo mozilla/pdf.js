@@ -194,7 +194,11 @@ function getQuadPoints(dict, rect) {
   // The region is described as a number of quadrilaterals.
   // Each quadrilateral must consist of eight coordinates.
   const quadPoints = dict.getArray("QuadPoints");
-  if (!Array.isArray(quadPoints) || quadPoints.length % 8 > 0) {
+  if (
+    !Array.isArray(quadPoints) ||
+    quadPoints.length === 0 ||
+    quadPoints.length % 8 > 0
+  ) {
     return null;
   }
 
@@ -312,6 +316,9 @@ class Annotation {
    * @type {boolean}
    */
   get viewable() {
+    if (this.data.quadPoints === null) {
+      return false;
+    }
     if (this.flags === 0) {
       return true;
     }
@@ -322,6 +329,9 @@ class Annotation {
    * @type {boolean}
    */
   get printable() {
+    if (this.data.quadPoints === null) {
+      return false;
+    }
     if (this.flags === 0) {
       return false;
     }
@@ -2222,10 +2232,11 @@ class HighlightAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.HIGHLIGHT;
-
-    const quadPoints = getQuadPoints(parameters.dict, null);
+    const quadPoints = (this.data.quadPoints = getQuadPoints(
+      parameters.dict,
+      null
+    ));
     if (quadPoints) {
-      this.data.quadPoints = quadPoints;
       if (!this.appearance) {
         // Default color is yellow in Acrobat Reader
         const fillColor = this.color
@@ -2245,6 +2256,8 @@ class HighlightAnnotation extends MarkupAnnotation {
           },
         });
       }
+    } else {
+      this.data.hasPopup = false;
     }
   }
 }
@@ -2254,10 +2267,11 @@ class UnderlineAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.UNDERLINE;
-
-    const quadPoints = getQuadPoints(parameters.dict, null);
+    const quadPoints = (this.data.quadPoints = getQuadPoints(
+      parameters.dict,
+      null
+    ));
     if (quadPoints) {
-      this.data.quadPoints = quadPoints;
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
@@ -2275,6 +2289,8 @@ class UnderlineAnnotation extends MarkupAnnotation {
           },
         });
       }
+    } else {
+      this.data.hasPopup = false;
     }
   }
 }
@@ -2285,9 +2301,11 @@ class SquigglyAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.SQUIGGLY;
 
-    const quadPoints = getQuadPoints(parameters.dict, null);
+    const quadPoints = (this.data.quadPoints = getQuadPoints(
+      parameters.dict,
+      null
+    ));
     if (quadPoints) {
-      this.data.quadPoints = quadPoints;
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
@@ -2314,6 +2332,8 @@ class SquigglyAnnotation extends MarkupAnnotation {
           },
         });
       }
+    } else {
+      this.data.hasPopup = false;
     }
   }
 }
@@ -2324,9 +2344,11 @@ class StrikeOutAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.STRIKEOUT;
 
-    const quadPoints = getQuadPoints(parameters.dict, null);
+    const quadPoints = (this.data.quadPoints = getQuadPoints(
+      parameters.dict,
+      null
+    ));
     if (quadPoints) {
-      this.data.quadPoints = quadPoints;
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
@@ -2350,6 +2372,8 @@ class StrikeOutAnnotation extends MarkupAnnotation {
           },
         });
       }
+    } else {
+      this.data.hasPopup = false;
     }
   }
 }
