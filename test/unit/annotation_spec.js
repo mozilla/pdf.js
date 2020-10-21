@@ -2053,6 +2053,65 @@ describe("annotation", function () {
       }, done.fail);
     });
 
+    it("should render checkbox with fallback font for printing", function (done) {
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+      const checkedAppearanceDict = new Dict();
+      const uncheckedAppearanceDict = new Dict();
+
+      const checkedStream = new StringStream("/ 12 Tf (4) Tj");
+      checkedStream.dict = checkedAppearanceDict;
+
+      const uncheckedStream = new StringStream("");
+      uncheckedStream.dict = uncheckedAppearanceDict;
+
+      checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
+      checkedAppearanceDict.set("FormType", 1);
+      checkedAppearanceDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
+      normalAppearanceDict.set("Checked", checkedStream);
+      normalAppearanceDict.set("Off", uncheckedStream);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.options = { ignoreErrors: true };
+
+      AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = true;
+          return annotation.getOperatorList(
+            partialEvaluator,
+            task,
+            false,
+            annotationStorage
+          );
+        })
+        .then(opList => {
+          expect(opList.argsArray.length).toEqual(5);
+          expect(opList.fnArray).toEqual([
+            OPS.beginAnnotation,
+            OPS.dependency,
+            OPS.setFont,
+            OPS.showText,
+            OPS.endAnnotation,
+          ]);
+          expect(opList.argsArray[3][0][0].fontChar).toEqual("✔");
+          done();
+        })
+        .catch(done.fail);
+    });
+
     it("should render checkboxes for printing", function (done) {
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
