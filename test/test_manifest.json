@@ -4153,6 +4153,20 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "bug1669099",
+       "file": "pdfs/bug1669099.pdf",
+       "md5": "34421549d58e2b6eeddc674759381f7d",
+       "rounds": 1,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "29R": true,
+         "33R": true,
+         "37R": true,
+         "65R": true,
+         "69R": true
+       }
+    },
     {  "id": "issue1171.pdf",
        "file": "pdfs/issue1171.pdf",
        "md5": "2a6188a42a5874c7874b88eebd4acaf0",
