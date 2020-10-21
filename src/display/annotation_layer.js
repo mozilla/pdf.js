@@ -240,6 +240,35 @@ class AnnotationElement {
   }
 
   /**
+   * Create quadrilaterals for the quadPoints.
+   *
+   * @private
+   * @param {boolean} ignoreBorder
+   * @memberof AnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  _createQuadrilaterals(ignoreBorder = false) {
+    if (!this.data.quadPoints) {
+      return null;
+    }
+
+    const quadrilaterals = [];
+    const savedRect = this.data.rect;
+    for (const quadPoint of this.data.quadPoints) {
+      const rect = [
+        quadPoint[2].x,
+        quadPoint[2].y,
+        quadPoint[1].x,
+        quadPoint[1].y,
+      ];
+      this.data.rect = rect;
+      quadrilaterals.push(this._createContainer(ignoreBorder));
+    }
+    this.data.rect = savedRect;
+    return quadrilaterals;
+  }
+
+  /**
    * Create a popup for the annotation's HTML element. This is used for
    * annotations that do not have a Popup entry in the dictionary, but
    * are of a type that works with popups (such as Highlight annotations).
@@ -789,14 +818,14 @@ class PopupAnnotationElement extends AnnotationElement {
     }
 
     const selector = `[data-annotation-id="${this.data.parentId}"]`;
-    const parentElement = this.layer.querySelector(selector);
-    if (!parentElement) {
+    const parentElements = this.layer.querySelectorAll(selector);
+    if (parentElements.length === 0) {
       return this.container;
     }
 
     const popup = new PopupElement({
       container: this.container,
-      trigger: parentElement,
+      trigger: Array.from(parentElements),
       color: this.data.color,
       title: this.data.title,
       modificationDate: this.data.modificationDate,
@@ -805,12 +834,18 @@ class PopupAnnotationElement extends AnnotationElement {
 
     // Position the popup next to the parent annotation's container.
     // PDF viewers ignore a popup annotation's rectangle.
-    const parentTop = parseFloat(parentElement.style.top),
-      parentLeft = parseFloat(parentElement.style.left),
-      parentWidth = parseFloat(parentElement.style.width);
-    const popupLeft = parentLeft + parentWidth;
+    const page = this.page;
+    const rect = Util.normalizeRect([
+      this.data.parentRect[0],
+      page.view[3] - this.data.parentRect[1] + page.view[1],
+      this.data.parentRect[2],
+      page.view[3] - this.data.parentRect[3] + page.view[1],
+    ]);
+    const popupLeft =
+      rect[0] + this.data.parentRect[2] - this.data.parentRect[0];
+    const popupTop = rect[1];
 
-    this.container.style.transformOrigin = `${-popupLeft}px ${-parentTop}px`;
+    this.container.style.transformOrigin = `${-popupLeft}px ${-popupTop}px`;
     this.container.style.left = `${popupLeft}px`;
 
     this.container.appendChild(popup.render());
@@ -885,10 +920,16 @@ class PopupElement {
     const contents = this._formatContents(this.contents);
     popup.appendChild(contents);
 
+    if (!Array.isArray(this.trigger)) {
+      this.trigger = [this.trigger];
+    }
+
     // Attach the event listeners to the trigger element.
-    this.trigger.addEventListener("click", this._toggle.bind(this));
-    this.trigger.addEventListener("mouseover", this._show.bind(this, false));
-    this.trigger.addEventListener("mouseout", this._hide.bind(this, false));
+    this.trigger.forEach(element => {
+      element.addEventListener("click", this._toggle.bind(this));
+      element.addEventListener("mouseover", this._show.bind(this, false));
+      element.addEventListener("mouseout", this._hide.bind(this, false));
+    });
     popup.addEventListener("click", this._hide.bind(this, true));
 
     wrapper.appendChild(popup);
@@ -1324,6 +1365,7 @@ class HighlightAnnotationElement extends AnnotationElement {
       parameters.data.contents
     );
     super(parameters, isRenderable, /* ignoreBorder = */ true);
+    this.quadrilaterals = this._createQuadrilaterals(/* ignoreBorder = */ true);
   }
 
   /**
@@ -1339,7 +1381,7 @@ class HighlightAnnotationElement extends AnnotationElement {
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
     }
-    return this.container;
+    return this.quadrilaterals || this.container;
   }
 }
 
@@ -1567,7 +1609,14 @@ class AnnotationLayer {
           parameters.annotationStorage || new AnnotationStorage(),
       });
       if (element.isRenderable) {
-        parameters.div.appendChild(element.render());
+        const rendered = element.render();
+        if (Array.isArray(rendered)) {
+          for (const renderedElement of rendered) {
+            parameters.div.appendChild(renderedElement);
+          }
+        } else {
+          parameters.div.appendChild(rendered);
+        }
       }
     }
   }
@@ -1580,14 +1629,15 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static update(parameters) {
+    const transform = `matrix(${parameters.viewport.transform.join(",")})`;
     for (const data of parameters.annotations) {
-      const element = parameters.div.querySelector(
+      const elements = parameters.div.querySelectorAll(
         `[data-annotation-id="${data.id}"]`
       );
-      if (element) {
-        element.style.transform = `matrix(${parameters.viewport.transform.join(
-          ","
-        )})`;
+      if (elements) {
+        elements.forEach(element => {
+          element.style.transform = transform;
+        });
       }
     }
     parameters.div.removeAttribute("hidden");
