@@ -3367,7 +3367,7 @@ describe("annotation", function () {
   });
 
   describe("HightlightAnnotation", function () {
-    it("should not set quadpoints if not defined", function (done) {
+    it("should set quadpoints to null if not defined", function (done) {
       const highlightDict = new Dict();
       highlightDict.set("Type", Name.get("Annot"));
       highlightDict.set("Subtype", Name.get("Highlight"));
@@ -3382,7 +3382,7 @@ describe("annotation", function () {
         idFactoryMock
       ).then(({ data }) => {
         expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
-        expect(data.quadPoints).toBeUndefined();
+        expect(data.quadPoints).toEqual(null);
         done();
       }, done.fail);
     });
@@ -3415,10 +3415,32 @@ describe("annotation", function () {
         done();
       }, done.fail);
     });
+
+    it("should set quadpoints to null when empty", function (done) {
+      const highlightDict = new Dict();
+      highlightDict.set("Type", Name.get("Annot"));
+      highlightDict.set("Subtype", Name.get("Highlight"));
+      highlightDict.set("Rect", [10, 10, 20, 20]);
+      highlightDict.set("QuadPoints", []);
+
+      const highlightRef = Ref.get(121, 0);
+      const xref = new XRefMock([{ ref: highlightRef, data: highlightDict }]);
+
+      AnnotationFactory.create(
+        xref,
+        highlightRef,
+        pdfManagerMock,
+        idFactoryMock
+      ).then(({ data }) => {
+        expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
+        expect(data.quadPoints).toEqual(null);
+        done();
+      }, done.fail);
+    });
   });
 
   describe("UnderlineAnnotation", function () {
-    it("should not set quadpoints if not defined", function (done) {
+    it("should set quadpoints to null if not defined", function (done) {
       const underlineDict = new Dict();
       underlineDict.set("Type", Name.get("Annot"));
       underlineDict.set("Subtype", Name.get("Underline"));
@@ -3433,7 +3455,7 @@ describe("annotation", function () {
         idFactoryMock
       ).then(({ data }) => {
         expect(data.annotationType).toEqual(AnnotationType.UNDERLINE);
-        expect(data.quadPoints).toBeUndefined();
+        expect(data.quadPoints).toEqual(null);
         done();
       }, done.fail);
     });
@@ -3469,7 +3491,7 @@ describe("annotation", function () {
   });
 
   describe("SquigglyAnnotation", function () {
-    it("should not set quadpoints if not defined", function (done) {
+    it("should set quadpoints to null if not defined", function (done) {
       const squigglyDict = new Dict();
       squigglyDict.set("Type", Name.get("Annot"));
       squigglyDict.set("Subtype", Name.get("Squiggly"));
@@ -3484,7 +3506,7 @@ describe("annotation", function () {
         idFactoryMock
       ).then(({ data }) => {
         expect(data.annotationType).toEqual(AnnotationType.SQUIGGLY);
-        expect(data.quadPoints).toBeUndefined();
+        expect(data.quadPoints).toEqual(null);
         done();
       }, done.fail);
     });
@@ -3520,7 +3542,7 @@ describe("annotation", function () {
   });
 
   describe("StrikeOutAnnotation", function () {
-    it("should not set quadpoints if not defined", function (done) {
+    it("should set quadpoints to null if not defined", function (done) {
       const strikeOutDict = new Dict();
       strikeOutDict.set("Type", Name.get("Annot"));
       strikeOutDict.set("Subtype", Name.get("StrikeOut"));
@@ -3535,7 +3557,7 @@ describe("annotation", function () {
         idFactoryMock
       ).then(({ data }) => {
         expect(data.annotationType).toEqual(AnnotationType.STRIKEOUT);
-        expect(data.quadPoints).toBeUndefined();
+        expect(data.quadPoints).toEqual(null);
         done();
       }, done.fail);
     });
