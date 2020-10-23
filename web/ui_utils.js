@@ -1010,8 +1010,8 @@ function getActiveOrFocusedElement() {
 /**
  * Generate a random string which is not define somewhere in actions.
  *
- * @param {WaitOnEventOrTimeoutParameters}
- * @returns {Promise} A promise that is resolved with a {WaitOnType} value.
+ * @param {Object} objects - The value returned by `getFieldObjects` in the API.
+ * @returns {string} A unique string.
  */
 function generateRandomStringForSandbox(objects) {
   const allObjects = Object.values(objects).flat(2);
