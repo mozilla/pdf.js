@@ -254,17 +254,19 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
   }
 }
 
-const FirefoxScripting = {
-  createSandbox(data) {
+class FirefoxScripting {
+  static createSandbox(data) {
     FirefoxCom.requestSync("createSandbox", data);
-  },
-  dispatchEventInSandbox(event, sandboxID) {
+  }
+
+  static dispatchEventInSandbox(event, sandboxID) {
     FirefoxCom.requestSync("dispatchEventInSandbox", event);
-  },
-  destroySandbox() {
+  }
+
+  static destroySandbox() {
     FirefoxCom.requestSync("destroySandbox", null);
-  },
-};
+  }
+}
 
 class FirefoxExternalServices extends DefaultExternalServices {
   static updateFindControlState(data) {
