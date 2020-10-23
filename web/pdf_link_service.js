@@ -235,11 +235,14 @@ class PDFLinkService {
    */
   getDestinationHash(dest) {
     if (typeof dest === "string") {
-      return this.getAnchorUrl("#" + escape(dest));
-    }
-    if (Array.isArray(dest)) {
+      if (dest.length > 0) {
+        return this.getAnchorUrl("#" + escape(dest));
+      }
+    } else if (Array.isArray(dest)) {
       const str = JSON.stringify(dest);
-      return this.getAnchorUrl("#" + escape(str));
+      if (str.length > 0) {
+        return this.getAnchorUrl("#" + escape(str));
+      }
     }
     return this.getAnchorUrl("");
   }
@@ -247,7 +250,7 @@ class PDFLinkService {
   /**
    * Prefix the full url on anchor links to make sure that links are resolved
    * relative to the current URL instead of the one defined in <base href>.
-   * @param {string} anchor The anchor hash, including the #.
+   * @param {string} anchor - The anchor hash, including the #.
    * @returns {string} The hyperlink to the PDF object.
    */
   getAnchorUrl(anchor) {
