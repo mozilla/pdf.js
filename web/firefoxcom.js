@@ -254,6 +254,18 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
   }
 }
 
+const FirefoxScripting = {
+  createSandbox(data) {
+    FirefoxCom.requestSync("createSandbox", data);
+  },
+  dispatchEventInSandbox(event, sandboxID) {
+    FirefoxCom.requestSync("dispatchEventInSandbox", event);
+  },
+  destroySandbox() {
+    FirefoxCom.requestSync("destroySandbox", null);
+  },
+};
+
 class FirefoxExternalServices extends DefaultExternalServices {
   static updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
@@ -344,6 +356,10 @@ class FirefoxExternalServices extends DefaultExternalServices {
     const mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
     return new MozL10n(mozL10n);
+  }
+
+  static get scripting() {
+    return FirefoxScripting;
   }
 
   static get supportsIntegratedFind() {
