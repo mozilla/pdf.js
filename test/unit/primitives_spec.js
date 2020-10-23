@@ -16,30 +16,35 @@
 import {
   Cmd,
   Dict,
+  EOF,
   isCmd,
   isDict,
+  isEOF,
   isName,
   isRef,
   isRefsEqual,
+  isStream,
   Name,
   Ref,
   RefSet,
+  RefSetCache,
 } from "../../src/core/primitives.js";
+import { StringStream } from "../../src/core/stream.js";
 import { XRefMock } from "./test_utils.js";
 
 describe("primitives", function () {
   describe("Name", function () {
     it("should retain the given name", function () {
-      var givenName = "Font";
-      var name = Name.get(givenName);
+      const givenName = "Font";
+      const name = Name.get(givenName);
       expect(name.name).toEqual(givenName);
     });
 
     it("should create only one object for a name and cache it", function () {
-      var firstFont = Name.get("Font");
-      var secondFont = Name.get("Font");
-      var firstSubtype = Name.get("Subtype");
-      var secondSubtype = Name.get("Subtype");
+      const firstFont = Name.get("Font");
+      const secondFont = Name.get("Font");
+      const firstSubtype = Name.get("Subtype");
+      const secondSubtype = Name.get("Subtype");
 
       expect(firstFont).toBe(secondFont);
       expect(firstSubtype).toBe(secondSubtype);
@@ -49,16 +54,16 @@ describe("primitives", function () {
 
   describe("Cmd", function () {
     it("should retain the given cmd name", function () {
-      var givenCmd = "BT";
-      var cmd = Cmd.get(givenCmd);
+      const givenCmd = "BT";
+      const cmd = Cmd.get(givenCmd);
       expect(cmd.cmd).toEqual(givenCmd);
     });
 
     it("should create only one object for a command and cache it", function () {
-      var firstBT = Cmd.get("BT");
-      var secondBT = Cmd.get("BT");
-      var firstET = Cmd.get("ET");
-      var secondET = Cmd.get("ET");
+      const firstBT = Cmd.get("BT");
+      const secondBT = Cmd.get("BT");
+      const firstET = Cmd.get("ET");
+      const secondET = Cmd.get("ET");
 
       expect(firstBT).toBe(secondBT);
       expect(firstET).toBe(secondET);
@@ -67,23 +72,23 @@ describe("primitives", function () {
   });
 
   describe("Dict", function () {
-    var checkInvalidHasValues = function (dict) {
+    const checkInvalidHasValues = function (dict) {
       expect(dict.has()).toBeFalsy();
       expect(dict.has("Prev")).toBeFalsy();
     };
 
-    var checkInvalidKeyValues = function (dict) {
+    const checkInvalidKeyValues = function (dict) {
       expect(dict.get()).toBeUndefined();
       expect(dict.get("Prev")).toBeUndefined();
       expect(dict.get("Decode", "D")).toBeUndefined();
       expect(dict.get("FontFile", "FontFile2", "FontFile3")).toBeUndefined();
     };
 
-    var emptyDict, dictWithSizeKey, dictWithManyKeys;
-    var storedSize = 42;
-    var testFontFile = "file1";
-    var testFontFile2 = "file2";
-    var testFontFile3 = "file3";
+    let emptyDict, dictWithSizeKey, dictWithManyKeys;
+    const storedSize = 42;
+    const testFontFile = "file1";
+    const testFontFile2 = "file2";
+    const testFontFile3 = "file3";
 
     beforeAll(function (done) {
       emptyDict = new Dict();
@@ -101,6 +106,26 @@ describe("primitives", function () {
 
     afterAll(function () {
       emptyDict = dictWithSizeKey = dictWithManyKeys = null;
+    });
+
+    it("should allow assigning an XRef table after creation", function () {
+      const dict = new Dict(null);
+      expect(dict.xref).toEqual(null);
+
+      const xref = new XRefMock([]);
+      dict.assignXref(xref);
+      expect(dict.xref).toEqual(xref);
+    });
+
+    it("should return correct size", function () {
+      const dict = new Dict(null);
+      expect(dict.size).toEqual(0);
+
+      dict.set("Type", Name.get("Page"));
+      expect(dict.size).toEqual(1);
+
+      dict.set("Contents", Ref.get(10, 0));
+      expect(dict.size).toEqual(2);
     });
 
     it("should return invalid values for unknown keys", function () {
@@ -147,7 +172,7 @@ describe("primitives", function () {
     });
 
     it("should asynchronously fetch unknown keys", function (done) {
-      var keyPromises = [
+      const keyPromises = [
         dictWithManyKeys.getAsync("Size"),
         dictWithSizeKey.getAsync("FontFile", "FontFile2", "FontFile3"),
       ];
@@ -164,7 +189,7 @@ describe("primitives", function () {
     });
 
     it("should asynchronously fetch correct values for multiple stored keys", function (done) {
-      var keyPromises = [
+      const keyPromises = [
         dictWithManyKeys.getAsync("FontFile3"),
         dictWithManyKeys.getAsync("FontFile2", "FontFile3"),
         dictWithManyKeys.getAsync("FontFile", "FontFile2", "FontFile3"),
@@ -183,12 +208,12 @@ describe("primitives", function () {
     });
 
     it("should callback for each stored key", function () {
-      var callbackSpy = jasmine.createSpy("spy on callback in dictionary");
+      const callbackSpy = jasmine.createSpy("spy on callback in dictionary");
 
       dictWithManyKeys.forEach(callbackSpy);
 
       expect(callbackSpy).toHaveBeenCalled();
-      var callbackSpyCalls = callbackSpy.calls;
+      const callbackSpyCalls = callbackSpy.calls;
       expect(callbackSpyCalls.argsFor(0)).toEqual(["FontFile", testFontFile]);
       expect(callbackSpyCalls.argsFor(1)).toEqual(["FontFile2", testFontFile2]);
       expect(callbackSpyCalls.argsFor(2)).toEqual(["FontFile3", testFontFile3]);
@@ -196,9 +221,9 @@ describe("primitives", function () {
     });
 
     it("should handle keys pointing to indirect objects, both sync and async", function (done) {
-      var fontRef = Ref.get(1, 0);
-      var xref = new XRefMock([{ ref: fontRef, data: testFontFile }]);
-      var fontDict = new Dict(xref);
+      const fontRef = Ref.get(1, 0);
+      const xref = new XRefMock([{ ref: fontRef, data: testFontFile }]);
+      const fontDict = new Dict(xref);
       fontDict.set("FontFile", fontRef);
 
       expect(fontDict.getRaw("FontFile")).toEqual(fontRef);
@@ -218,15 +243,15 @@ describe("primitives", function () {
     });
 
     it("should handle arrays containing indirect objects", function () {
-      var minCoordRef = Ref.get(1, 0),
-        maxCoordRef = Ref.get(2, 0);
-      var minCoord = 0,
-        maxCoord = 1;
-      var xref = new XRefMock([
+      const minCoordRef = Ref.get(1, 0);
+      const maxCoordRef = Ref.get(2, 0);
+      const minCoord = 0;
+      const maxCoord = 1;
+      const xref = new XRefMock([
         { ref: minCoordRef, data: minCoord },
         { ref: maxCoordRef, data: maxCoord },
       ]);
-      var xObjectDict = new Dict(xref);
+      const xObjectDict = new Dict(xref);
       xObjectDict.set("BBox", [minCoord, maxCoord, minCoordRef, maxCoordRef]);
 
       expect(xObjectDict.get("BBox")).toEqual([
@@ -244,78 +269,243 @@ describe("primitives", function () {
     });
 
     it("should get all key names", function () {
-      var expectedKeys = ["FontFile", "FontFile2", "FontFile3"];
-      var keys = dictWithManyKeys.getKeys();
+      const expectedKeys = ["FontFile", "FontFile2", "FontFile3"];
+      const keys = dictWithManyKeys.getKeys();
 
       expect(keys.sort()).toEqual(expectedKeys);
     });
 
+    it("should get all raw values", function () {
+      // Test direct objects:
+      const expectedRawValues1 = [testFontFile, testFontFile2, testFontFile3];
+      const rawValues1 = dictWithManyKeys.getRawValues();
+
+      expect(rawValues1.sort()).toEqual(expectedRawValues1);
+
+      // Test indirect objects:
+      const typeName = Name.get("Page");
+      const resources = new Dict(null),
+        resourcesRef = Ref.get(5, 0);
+      const contents = new StringStream("data"),
+        contentsRef = Ref.get(10, 0);
+      const xref = new XRefMock([
+        { ref: resourcesRef, data: resources },
+        { ref: contentsRef, data: contents },
+      ]);
+
+      const dict = new Dict(xref);
+      dict.set("Type", typeName);
+      dict.set("Resources", resourcesRef);
+      dict.set("Contents", contentsRef);
+
+      const expectedRawValues2 = [contentsRef, resourcesRef, typeName];
+      const rawValues2 = dict.getRawValues();
+
+      expect(rawValues2.sort()).toEqual(expectedRawValues2);
+    });
+
     it("should create only one object for Dict.empty", function () {
-      var firstDictEmpty = Dict.empty;
-      var secondDictEmpty = Dict.empty;
+      const firstDictEmpty = Dict.empty;
+      const secondDictEmpty = Dict.empty;
 
       expect(firstDictEmpty).toBe(secondDictEmpty);
       expect(firstDictEmpty).not.toBe(emptyDict);
     });
 
     it("should correctly merge dictionaries", function () {
-      var expectedKeys = ["FontFile", "FontFile2", "FontFile3", "Size"];
+      const expectedKeys = ["FontFile", "FontFile2", "FontFile3", "Size"];
 
-      var fontFileDict = new Dict();
+      const fontFileDict = new Dict();
       fontFileDict.set("FontFile", "Type1 font file");
-      var mergedDict = Dict.merge(null, [
-        dictWithManyKeys,
-        dictWithSizeKey,
-        fontFileDict,
-      ]);
-      var mergedKeys = mergedDict.getKeys();
+      const mergedDict = Dict.merge({
+        xref: null,
+        dictArray: [dictWithManyKeys, dictWithSizeKey, fontFileDict],
+      });
+      const mergedKeys = mergedDict.getKeys();
 
       expect(mergedKeys.sort()).toEqual(expectedKeys);
       expect(mergedDict.get("FontFile")).toEqual(testFontFile);
     });
+
+    it("should correctly merge sub-dictionaries", function () {
+      const localFontDict = new Dict();
+      localFontDict.set("F1", "Local font one");
+
+      const globalFontDict = new Dict();
+      globalFontDict.set("F1", "Global font one");
+      globalFontDict.set("F2", "Global font two");
+      globalFontDict.set("F3", "Global font three");
+
+      const localDict = new Dict();
+      localDict.set("Font", localFontDict);
+
+      const globalDict = new Dict();
+      globalDict.set("Font", globalFontDict);
+
+      const mergedDict = Dict.merge({
+        xref: null,
+        dictArray: [localDict, globalDict],
+      });
+      const mergedSubDict = Dict.merge({
+        xref: null,
+        dictArray: [localDict, globalDict],
+        mergeSubDicts: true,
+      });
+
+      const mergedFontDict = mergedDict.get("Font");
+      const mergedSubFontDict = mergedSubDict.get("Font");
+
+      expect(mergedFontDict instanceof Dict).toEqual(true);
+      expect(mergedSubFontDict instanceof Dict).toEqual(true);
+
+      const mergedFontDictKeys = mergedFontDict.getKeys();
+      const mergedSubFontDictKeys = mergedSubFontDict.getKeys();
+
+      expect(mergedFontDictKeys).toEqual(["F1"]);
+      expect(mergedSubFontDictKeys).toEqual(["F1", "F2", "F3"]);
+
+      const mergedFontDictValues = mergedFontDict.getRawValues();
+      const mergedSubFontDictValues = mergedSubFontDict.getRawValues();
+
+      expect(mergedFontDictValues).toEqual(["Local font one"]);
+      expect(mergedSubFontDictValues).toEqual([
+        "Local font one",
+        "Global font two",
+        "Global font three",
+      ]);
+    });
   });
 
   describe("Ref", function () {
+    it("should get a string representation", function () {
+      const nonZeroRef = Ref.get(4, 2);
+      expect(nonZeroRef.toString()).toEqual("4R2");
+
+      // If the generation number is 0, a shorter representation is used.
+      const zeroRef = Ref.get(4, 0);
+      expect(zeroRef.toString()).toEqual("4R");
+    });
+
     it("should retain the stored values", function () {
-      var storedNum = 4;
-      var storedGen = 2;
-      var ref = Ref.get(storedNum, storedGen);
+      const storedNum = 4;
+      const storedGen = 2;
+      const ref = Ref.get(storedNum, storedGen);
       expect(ref.num).toEqual(storedNum);
       expect(ref.gen).toEqual(storedGen);
+    });
+
+    it("should create only one object for a reference and cache it", function () {
+      const firstRef = Ref.get(4, 2);
+      const secondRef = Ref.get(4, 2);
+      const firstOtherRef = Ref.get(5, 2);
+      const secondOtherRef = Ref.get(5, 2);
+
+      expect(firstRef).toBe(secondRef);
+      expect(firstOtherRef).toBe(secondOtherRef);
+      expect(firstRef).not.toBe(firstOtherRef);
     });
   });
 
   describe("RefSet", function () {
     it("should have a stored value", function () {
-      var ref = Ref.get(4, 2);
-      var refset = new RefSet();
+      const ref = Ref.get(4, 2);
+      const refset = new RefSet();
       refset.put(ref);
       expect(refset.has(ref)).toBeTruthy();
     });
     it("should not have an unknown value", function () {
-      var ref = Ref.get(4, 2);
-      var refset = new RefSet();
+      const ref = Ref.get(4, 2);
+      const refset = new RefSet();
       expect(refset.has(ref)).toBeFalsy();
 
       refset.put(ref);
-      var anotherRef = Ref.get(2, 4);
+      const anotherRef = Ref.get(2, 4);
       expect(refset.has(anotherRef)).toBeFalsy();
+    });
+  });
+
+  describe("RefSetCache", function () {
+    const ref1 = Ref.get(4, 2);
+    const ref2 = Ref.get(5, 2);
+    const obj1 = Name.get("foo");
+    const obj2 = Name.get("bar");
+    let cache;
+
+    beforeEach(function (done) {
+      cache = new RefSetCache();
+      done();
+    });
+
+    afterEach(function () {
+      cache = null;
+    });
+
+    it("should put, have and get a value", function () {
+      cache.put(ref1, obj1);
+      expect(cache.has(ref1)).toBeTruthy();
+      expect(cache.has(ref2)).toBeFalsy();
+      expect(cache.get(ref1)).toBe(obj1);
+    });
+
+    it("should put, have and get a value by alias", function () {
+      cache.put(ref1, obj1);
+      cache.putAlias(ref2, ref1);
+      expect(cache.has(ref1)).toBeTruthy();
+      expect(cache.has(ref2)).toBeTruthy();
+      expect(cache.get(ref1)).toBe(obj1);
+      expect(cache.get(ref2)).toBe(obj1);
+    });
+
+    it("should report the size of the cache", function () {
+      cache.put(ref1, obj1);
+      expect(cache.size).toEqual(1);
+      cache.put(ref2, obj2);
+      expect(cache.size).toEqual(2);
+    });
+
+    it("should clear the cache", function () {
+      cache.put(ref1, obj1);
+      expect(cache.size).toEqual(1);
+      cache.clear();
+      expect(cache.size).toEqual(0);
+    });
+
+    it("should support iteration", function () {
+      cache.put(ref1, obj1);
+      cache.put(ref2, obj2);
+
+      const values = [];
+      cache.forEach(function (value) {
+        values.push(value);
+      });
+      expect(values).toEqual([obj1, obj2]);
+    });
+  });
+
+  describe("isEOF", function () {
+    it("handles non-EOF", function () {
+      const nonEOF = "foo";
+      expect(isEOF(nonEOF)).toEqual(false);
+    });
+
+    it("handles EOF", function () {
+      expect(isEOF(EOF)).toEqual(true);
     });
   });
 
   describe("isName", function () {
     it("handles non-names", function () {
-      var nonName = {};
+      const nonName = {};
       expect(isName(nonName)).toEqual(false);
     });
 
     it("handles names", function () {
-      var name = Name.get("Font");
+      const name = Name.get("Font");
       expect(isName(name)).toEqual(true);
     });
 
     it("handles names with name check", function () {
-      var name = Name.get("Font");
+      const name = Name.get("Font");
       expect(isName(name, "Font")).toEqual(true);
       expect(isName(name, "Subtype")).toEqual(false);
     });
@@ -323,17 +513,17 @@ describe("primitives", function () {
 
   describe("isCmd", function () {
     it("handles non-commands", function () {
-      var nonCmd = {};
+      const nonCmd = {};
       expect(isCmd(nonCmd)).toEqual(false);
     });
 
     it("handles commands", function () {
-      var cmd = Cmd.get("BT");
+      const cmd = Cmd.get("BT");
       expect(isCmd(cmd)).toEqual(true);
     });
 
     it("handles commands with cmd check", function () {
-      var cmd = Cmd.get("BT");
+      const cmd = Cmd.get("BT");
       expect(isCmd(cmd, "BT")).toEqual(true);
       expect(isCmd(cmd, "ET")).toEqual(false);
     });
@@ -341,18 +531,18 @@ describe("primitives", function () {
 
   describe("isDict", function () {
     it("handles non-dictionaries", function () {
-      var nonDict = {};
+      const nonDict = {};
       expect(isDict(nonDict)).toEqual(false);
     });
 
     it("handles empty dictionaries with type check", function () {
-      var dict = Dict.empty;
+      const dict = Dict.empty;
       expect(isDict(dict)).toEqual(true);
       expect(isDict(dict, "Page")).toEqual(false);
     });
 
     it("handles dictionaries with type check", function () {
-      var dict = new Dict();
+      const dict = new Dict();
       dict.set("Type", Name.get("Page"));
       expect(isDict(dict, "Page")).toEqual(true);
       expect(isDict(dict, "Contents")).toEqual(false);
@@ -361,27 +551,39 @@ describe("primitives", function () {
 
   describe("isRef", function () {
     it("handles non-refs", function () {
-      var nonRef = {};
+      const nonRef = {};
       expect(isRef(nonRef)).toEqual(false);
     });
 
     it("handles refs", function () {
-      var ref = Ref.get(1, 0);
+      const ref = Ref.get(1, 0);
       expect(isRef(ref)).toEqual(true);
     });
   });
 
   describe("isRefsEqual", function () {
     it("should handle Refs pointing to the same object", function () {
-      var ref1 = Ref.get(1, 0);
-      var ref2 = Ref.get(1, 0);
+      const ref1 = Ref.get(1, 0);
+      const ref2 = Ref.get(1, 0);
       expect(isRefsEqual(ref1, ref2)).toEqual(true);
     });
 
     it("should handle Refs pointing to different objects", function () {
-      var ref1 = Ref.get(1, 0);
-      var ref2 = Ref.get(2, 0);
+      const ref1 = Ref.get(1, 0);
+      const ref2 = Ref.get(2, 0);
       expect(isRefsEqual(ref1, ref2)).toEqual(false);
+    });
+  });
+
+  describe("isStream", function () {
+    it("handles non-streams", function () {
+      const nonStream = {};
+      expect(isStream(nonStream)).toEqual(false);
+    });
+
+    it("handles streams", function () {
+      const stream = new StringStream("foo");
+      expect(isStream(stream)).toEqual(true);
     });
   });
 });

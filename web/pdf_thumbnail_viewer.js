@@ -29,6 +29,7 @@ const THUMBNAIL_SELECTED_CLASS = "selected";
  * @typedef {Object} PDFThumbnailViewerOptions
  * @property {HTMLDivElement} container - The container for the thumbnail
  *   elements.
+ * @property {EventBus} eventBus - The application event bus.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IL10n} l10n - Localization service.
@@ -43,7 +44,13 @@ class PDFThumbnailViewer {
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
-  constructor({ container, linkService, renderingQueue, l10n = NullL10n }) {
+  constructor({
+    container,
+    eventBus,
+    linkService,
+    renderingQueue,
+    l10n = NullL10n,
+  }) {
     this.container = container;
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
@@ -51,6 +58,12 @@ class PDFThumbnailViewer {
 
     this.scroll = watchScroll(this.container, this._scrollUpdated.bind(this));
     this._resetView();
+
+    eventBus._on("optionalcontentconfigchanged", () => {
+      // Ensure that the thumbnails always render with the *default* optional
+      // content configuration.
+      this._setImageDisabled = true;
+    });
   }
 
   /**
@@ -151,7 +164,9 @@ class PDFThumbnailViewer {
     this._currentPageNumber = 1;
     this._pageLabels = null;
     this._pagesRotation = 0;
+    this._optionalContentConfigPromise = null;
     this._pagesRequests = new WeakMap();
+    this._setImageDisabled = false;
 
     // Remove the thumbnails from the DOM.
     this.container.textContent = "";
@@ -167,19 +182,28 @@ class PDFThumbnailViewer {
     if (!pdfDocument) {
       return;
     }
+    const firstPagePromise = pdfDocument.getPage(1);
+    const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
 
-    pdfDocument
-      .getPage(1)
+    firstPagePromise
       .then(firstPdfPage => {
+        this._optionalContentConfigPromise = optionalContentConfigPromise;
+
         const pagesCount = pdfDocument.numPages;
         const viewport = firstPdfPage.getViewport({ scale: 1 });
+        const checkSetImageDisabled = () => {
+          return this._setImageDisabled;
+        };
+
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const thumbnail = new PDFThumbnailView({
             container: this.container,
             id: pageNum,
             defaultViewport: viewport.clone(),
+            optionalContentConfigPromise,
             linkService: this.linkService,
             renderingQueue: this.renderingQueue,
+            checkSetImageDisabled,
             disableCanvasToImageConversion: false,
             l10n: this.l10n,
           });

@@ -46,13 +46,16 @@
   border: none;
 }
 
-.pdfViewer.scrollHorizontal, .pdfViewer.scrollWrapped, .spread {
+.pdfViewer.scrollHorizontal,
+.pdfViewer.scrollWrapped,
+.spread {
   margin-left: 3.5px;
   margin-right: 3.5px;
   text-align: center;
 }
 
-.pdfViewer.scrollHorizontal, .spread {
+.pdfViewer.scrollHorizontal,
+.spread {
   white-space: nowrap;
 }
 
@@ -102,7 +105,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  background: url('images/loading-icon.gif') center no-repeat;
+  background: url("images/loading-icon.gif") center no-repeat;
 }
 
 .pdfPresentationMode .pdfViewer {
@@ -119,10 +122,6 @@
 .pdfPresentationMode .pdfViewer.removePageBorders .page {
   margin-left: auto;
   margin-right: auto;
-}
-
-.pdfPresentationMode:-ms-fullscreen .pdfViewer .page {
-  margin-bottom: 100% !important;
 }
 
 .pdfPresentationMode:fullscreen .pdfViewer .page {

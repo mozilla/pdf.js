@@ -736,6 +736,7 @@ class PDFFindController {
       state,
       previous,
       matchesCount: this._requestMatchesCount(),
+      rawQuery: this._state ? this._state.query : null,
     });
   }
 }

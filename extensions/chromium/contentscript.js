@@ -150,7 +150,7 @@ function updateObjectElement(elem) {
   //   attribute reloads the content (provided that the type was correctly set).
   // - When <object type=text/html data="chrome-extension://..."> is used
   //   (tested with a data-URL, data:text/html,<object...>, the extension's
-  //   origin whitelist is not set up, so the viewer can't load the PDF file.
+  //   origin allowlist is not set up, so the viewer can't load the PDF file.
   // - The content of the <object> tag may be affected by <param> tags.
   //
   // To make sure that our solution works for all cases, we will insert a frame

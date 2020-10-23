@@ -143,9 +143,6 @@ class PDFHistory {
       state.uid,
       /* removeTemporary = */ true
     );
-    if (this._uid > this._maxUid) {
-      this._maxUid = this._uid;
-    }
 
     if (destination.rotation !== undefined) {
       this._initialRotation = destination.rotation;
@@ -272,6 +269,55 @@ class PDFHistory {
   }
 
   /**
+   * Push a page to the browser history; generally the `push` method should be
+   * used instead.
+   * @param {number} pageNumber
+   */
+  pushPage(pageNumber) {
+    if (!this._initialized) {
+      return;
+    }
+    if (
+      !(
+        Number.isInteger(pageNumber) &&
+        pageNumber > 0 &&
+        pageNumber <= this.linkService.pagesCount
+      )
+    ) {
+      console.error(
+        `PDFHistory.pushPage: "${pageNumber}" is not a valid page number.`
+      );
+      return;
+    }
+
+    if (this._destination && this._destination.page === pageNumber) {
+      // When the new page is identical to the one in `this._destination`, we
+      // don't want to add a potential duplicate entry in the browser history.
+      return;
+    }
+    if (this._popStateInProgress) {
+      return;
+    }
+
+    this._pushOrReplaceState({
+      hash: `page=${pageNumber}`,
+      page: pageNumber,
+      rotation: this.linkService.rotation,
+    });
+
+    if (!this._popStateInProgress) {
+      // Prevent the browser history from updating while the new page is
+      // being scrolled into view, to avoid potentially inconsistent state.
+      this._popStateInProgress = true;
+      // We defer the resetting of `this._popStateInProgress`, to account for
+      // e.g. zooming occuring when the new page is being navigated to.
+      Promise.resolve().then(() => {
+        this._popStateInProgress = false;
+      });
+    }
+  }
+
+  /**
    * Push the current position to the browser history.
    */
   pushCurrentPosition() {
@@ -361,7 +407,6 @@ class PDFHistory {
     if (shouldReplace) {
       window.history.replaceState(newState, "", newUrl);
     } else {
-      this._maxUid = this._uid;
       window.history.pushState(newState, "", newUrl);
     }
 
@@ -485,6 +530,7 @@ class PDFHistory {
     }
     this._destination = destination;
     this._uid = uid;
+    this._maxUid = Math.max(this._maxUid, uid);
     // This should always be reset when `this._destination` is updated.
     this._numPositionUpdates = 0;
   }
@@ -639,15 +685,12 @@ class PDFHistory {
       state.uid,
       /* removeTemporary = */ true
     );
-    if (this._uid > this._maxUid) {
-      this._maxUid = this._uid;
-    }
 
     if (isValidRotation(destination.rotation)) {
       this.linkService.rotation = destination.rotation;
     }
     if (destination.dest) {
-      this.linkService.navigateTo(destination.dest);
+      this.linkService.goToDestination(destination.dest);
     } else if (destination.hash) {
       this.linkService.setHash(destination.hash);
     } else if (destination.page) {
@@ -655,7 +698,7 @@ class PDFHistory {
       this.linkService.page = destination.page;
     }
 
-    // Since `PDFLinkService.navigateTo` is asynchronous, we thus defer the
+    // Since `PDFLinkService.goToDestination` is asynchronous, we thus defer the
     // resetting of `this._popStateInProgress` slightly.
     Promise.resolve().then(() => {
       this._popStateInProgress = false;

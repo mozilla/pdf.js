@@ -42,12 +42,6 @@ const defaultOptions = {
     value: "",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  disableCreateObjectURL: {
-    /** @type {boolean} */
-    value: false,
-    compatibility: viewerCompatibilityParams.disableCreateObjectURL,
-    kind: OptionKind.VIEWER,
-  },
   disableHistory: {
     /** @type {boolean} */
     value: false,
@@ -112,7 +106,7 @@ const defaultOptions = {
   },
   pdfBugEnabled: {
     /** @type {boolean} */
-    value: false,
+    value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   printResolution: {
@@ -127,7 +121,7 @@ const defaultOptions = {
   },
   renderInteractiveForms: {
     /** @type {boolean} */
-    value: false,
+    value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   sidebarViewOnLoad: {

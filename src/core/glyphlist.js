@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 /* no-babel-preset */
+/* eslint-disable no-var */
 
 var getLookupTableFactory = require("./core_utils.js").getLookupTableFactory;
 

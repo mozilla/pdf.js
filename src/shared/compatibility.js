@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error */
 
 import { isNodeJS } from "./is_node.js";
 
@@ -28,11 +27,6 @@ if (
     globalThis = require("core-js/es/global-this");
   }
   globalThis._pdfjsCompatibilityChecked = true;
-
-  const hasDOM = typeof window === "object" && typeof document === "object";
-  const userAgent =
-    (typeof navigator !== "undefined" && navigator.userAgent) || "";
-  const isIE = /Trident/.test(userAgent);
 
   // Support: Node.js
   (function checkNodeBtoa() {
@@ -53,93 +47,6 @@ if (
     globalThis.atob = function (input) {
       // eslint-disable-next-line no-undef
       return Buffer.from(input, "base64").toString("binary");
-    };
-  })();
-
-  // Provides support for ChildNode.remove in legacy browsers.
-  // Support: IE.
-  (function checkChildNodeRemove() {
-    if (!hasDOM) {
-      return;
-    }
-    if (typeof Element.prototype.remove !== "undefined") {
-      return;
-    }
-    Element.prototype.remove = function () {
-      if (this.parentNode) {
-        // eslint-disable-next-line mozilla/avoid-removeChild
-        this.parentNode.removeChild(this);
-      }
-    };
-  })();
-
-  // Provides support for DOMTokenList.prototype.{add, remove}, with more than
-  // one parameter, in legacy browsers.
-  // Support: IE
-  (function checkDOMTokenListAddRemove() {
-    if (!hasDOM || isNodeJS) {
-      return;
-    }
-    const div = document.createElement("div");
-    div.classList.add("testOne", "testTwo");
-
-    if (
-      div.classList.contains("testOne") === true &&
-      div.classList.contains("testTwo") === true
-    ) {
-      return;
-    }
-    const OriginalDOMTokenListAdd = DOMTokenList.prototype.add;
-    const OriginalDOMTokenListRemove = DOMTokenList.prototype.remove;
-
-    DOMTokenList.prototype.add = function (...tokens) {
-      for (const token of tokens) {
-        OriginalDOMTokenListAdd.call(this, token);
-      }
-    };
-    DOMTokenList.prototype.remove = function (...tokens) {
-      for (const token of tokens) {
-        OriginalDOMTokenListRemove.call(this, token);
-      }
-    };
-  })();
-
-  // Provides support for DOMTokenList.prototype.toggle, with the optional
-  // "force" parameter, in legacy browsers.
-  // Support: IE
-  (function checkDOMTokenListToggle() {
-    if (!hasDOM || isNodeJS) {
-      return;
-    }
-    const div = document.createElement("div");
-    if (div.classList.toggle("test", 0) === false) {
-      return;
-    }
-
-    DOMTokenList.prototype.toggle = function (token) {
-      const force =
-        arguments.length > 1 ? !!arguments[1] : !this.contains(token);
-      return this[force ? "add" : "remove"](token), force;
-    };
-  })();
-
-  // Provides support for window.history.{pushState, replaceState}, with the
-  // `url` parameter set to `undefined`, without breaking the document URL.
-  // Support: IE
-  (function checkWindowHistoryPushStateReplaceState() {
-    if (!hasDOM || !isIE) {
-      return;
-    }
-    const OriginalPushState = window.history.pushState;
-    const OriginalReplaceState = window.history.replaceState;
-
-    window.history.pushState = function (state, title, url) {
-      const args = url === undefined ? [state, title] : [state, title, url];
-      OriginalPushState.apply(this, args);
-    };
-    window.history.replaceState = function (state, title, url) {
-      const args = url === undefined ? [state, title] : [state, title, url];
-      OriginalReplaceState.apply(this, args);
     };
   })();
 
@@ -197,6 +104,15 @@ if (
     require("core-js/es/object/assign.js");
   })();
 
+  // Provides support for Object.fromEntries in legacy browsers.
+  // Support: IE, Chrome<73
+  (function checkObjectFromEntries() {
+    if (Object.fromEntries) {
+      return;
+    }
+    require("core-js/es/object/from-entries.js");
+  })();
+
   // Provides support for Math.log2 in legacy browsers.
   // Support: IE, Chrome<38
   (function checkMathLog2() {
@@ -233,14 +149,16 @@ if (
     require("core-js/es/typed-array/slice");
   })();
 
-  // Support: IE, Safari<11, Chrome<63
+  // Provides support for *recent* additions to the Promise specification,
+  // however basic Promise support is assumed to be available natively.
+  // Support: Firefox<71, Safari<13, Chrome<76
   (function checkPromise() {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
       // The current image decoders are synchronous, hence `Promise` shouldn't
       // need to be polyfilled for the IMAGE_DECODERS build target.
       return;
     }
-    if (globalThis.Promise && globalThis.Promise.allSettled) {
+    if (globalThis.Promise.allSettled) {
       return;
     }
     globalThis.Promise = require("core-js/es/promise/index.js");
@@ -380,5 +298,14 @@ if (
       return;
     }
     Object.values = require("core-js/es/object/values.js");
+  })();
+
+  // Provides support for Object.entries in legacy browsers.
+  // Support: IE, Chrome<54
+  (function checkObjectEntries() {
+    if (Object.entries) {
+      return;
+    }
+    Object.entries = require("core-js/es/object/entries.js");
   })();
 }

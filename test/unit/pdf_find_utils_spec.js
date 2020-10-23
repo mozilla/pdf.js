@@ -21,28 +21,28 @@ describe("pdf_find_utils", function () {
       const characters = {
         A: CharacterType.ALPHA_LETTER,
         a: CharacterType.ALPHA_LETTER,
-        "0": CharacterType.ALPHA_LETTER,
-        "5": CharacterType.ALPHA_LETTER,
-        Ä: CharacterType.ALPHA_LETTER, // 'Ä'
-        ä: CharacterType.ALPHA_LETTER, // 'ä'
+        0: CharacterType.ALPHA_LETTER,
+        5: CharacterType.ALPHA_LETTER,
+        "\xC4": CharacterType.ALPHA_LETTER, // "Ä"
+        "\xE4": CharacterType.ALPHA_LETTER, // "ä"
         _: CharacterType.ALPHA_LETTER,
         " ": CharacterType.SPACE,
         "\t": CharacterType.SPACE,
         "\r": CharacterType.SPACE,
         "\n": CharacterType.SPACE,
-        "\xA0": CharacterType.SPACE,
+        "\xA0": CharacterType.SPACE, // nbsp
         "-": CharacterType.PUNCT,
         ",": CharacterType.PUNCT,
         ".": CharacterType.PUNCT,
         ";": CharacterType.PUNCT,
         ":": CharacterType.PUNCT,
         "\u2122": CharacterType.ALPHA_LETTER, // trademark
-        ล: CharacterType.THAI_LETTER,
-        䀀: CharacterType.HAN_LETTER,
-        縷: CharacterType.HAN_LETTER,
-        ダ: CharacterType.KATAKANA_LETTER,
-        ぐ: CharacterType.HIRAGANA_LETTER,
-        ﾀ: CharacterType.HALFWIDTH_KATAKANA_LETTER,
+        "\u0E25": CharacterType.THAI_LETTER,
+        "\u4000": CharacterType.HAN_LETTER,
+        "\uF950": CharacterType.HAN_LETTER,
+        "\u30C0": CharacterType.KATAKANA_LETTER,
+        "\u3050": CharacterType.HIRAGANA_LETTER,
+        "\uFF80": CharacterType.HALFWIDTH_KATAKANA_LETTER,
       };
 
       for (const character in characters) {

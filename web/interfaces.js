@@ -54,9 +54,14 @@ class IPDFLinkService {
   set externalLinkEnabled(value) {}
 
   /**
-   * @param dest - The PDF destination object.
+   * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
-  navigateTo(dest) {}
+  async goToDestination(dest) {}
+
+  /**
+   * @param {number} pageNumber - The page number.
+   */
+  goToPage(pageNumber) {}
 
   /**
    * @param dest - The PDF destination object.
@@ -107,6 +112,11 @@ class IPDFHistory {
    * @param {Object} params
    */
   push({ namedDest = null, explicitDest, pageNumber }) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  pushPage(pageNumber) {}
 
   pushCurrentPosition() {}
 
@@ -165,6 +175,8 @@ class IPDFAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   *   data in forms.
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
@@ -174,8 +186,9 @@ class IPDFAnnotationLayerFactory {
   createAnnotationLayerBuilder(
     pageDiv,
     pdfPage,
+    annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = false,
+    renderInteractiveForms = true,
     l10n = undefined
   ) {}
 }

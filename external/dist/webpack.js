@@ -15,16 +15,8 @@
 
 "use strict";
 
-try {
-  require.resolve("worker-loader");
-} catch (ex) {
-  throw new Error(
-    "Cannot find the `worker-loader` package, please make sure that it's correctly installed."
-  );
-}
-
 var pdfjs = require("./build/pdf.js");
-var PdfjsWorker = require("worker-loader!./build/pdf.worker.js");
+var PdfjsWorker = require("worker-loader?esModule=false!./build/pdf.worker.js");
 
 if (typeof window !== "undefined" && "Worker" in window) {
   pdfjs.GlobalWorkerOptions.workerPort = new PdfjsWorker();

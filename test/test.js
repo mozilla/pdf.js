@@ -275,7 +275,7 @@ function startRefTest(masterMode, showRefImages) {
   }
   function checkRefsTmp() {
     if (masterMode && fs.existsSync(refsTmpDir)) {
-      if (options.noPrompt) {
+      if (options.noPrompts) {
         testUtils.removeDirSync(refsTmpDir);
         setup();
         return;
@@ -467,9 +467,14 @@ function checkFBF(task, results, browser, masterMode) {
       continue;
     }
     if (r0Page.snapshot !== r1Page.snapshot) {
-      // The FBF tests fail intermittently in Google Chrome when run on the
-      // bots, ignoring `makeref` failures for now; see https://github.com/mozilla/pdf.js/pull/11491
-      if (masterMode && /chrom(e|ium)/i.test(browser)) {
+      // The FBF tests fail intermittently in Firefox and Google Chrome when run
+      // on the bots, ignoring `makeref` failures for now; see
+      //  - https://github.com/mozilla/pdf.js/pull/12368
+      //  - https://github.com/mozilla/pdf.js/pull/11491
+      //
+      // TODO: Figure out why this happens, so that we can remove the hack; see
+      //       https://github.com/mozilla/pdf.js/issues/12371
+      if (masterMode) {
         console.log(
           "TEST-SKIPPED | forward-back-forward test " +
             task.id +
@@ -750,7 +755,8 @@ function unitTestPostHandler(req, res) {
     }
     var session = getSession(data.browser);
     session.numRuns++;
-    var message = data.status + " | " + data.description;
+    var message =
+      data.status + " | " + data.description + " | in " + session.name;
     if (data.status === "TEST-UNEXPECTED-FAIL") {
       session.numErrors++;
     }
@@ -763,11 +769,10 @@ function unitTestPostHandler(req, res) {
 }
 
 async function startBrowser(browserName, startUrl) {
-  const revisions = require("puppeteer/package.json").puppeteer;
+  const revisions = require("puppeteer/lib/cjs/puppeteer/revisions.js")
+    .PUPPETEER_REVISIONS;
   const wantedRevision =
-    browserName === "chrome"
-      ? revisions.chrome_revision
-      : revisions.firefox_revision;
+    browserName === "chrome" ? revisions.chromium : revisions.firefox;
 
   // Remove other revisions than the one we want to use. Updating Puppeteer can
   // cause a new revision to be used, and not removing older revisions causes
@@ -789,10 +794,6 @@ async function startBrowser(browserName, startUrl) {
     product: browserName,
     headless: false,
     defaultViewport: null,
-    // Firefox must complete its execution before starting, mainly on Windows.
-    // Refer to https://github.com/puppeteer/puppeteer/issues/5376 and
-    // https://phabricator.services.mozilla.com/D6702.
-    args: browserName === "firefox" ? ["--wait-for-browser"] : [],
   });
   const pages = await browser.pages();
   const page = pages[0];

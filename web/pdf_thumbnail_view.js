@@ -13,11 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  createPromiseCapability,
-  RenderingCancelledException,
-} from "pdfjs-lib";
 import { getOutputScale, NullL10n } from "./ui_utils.js";
+import { RenderingCancelledException } from "pdfjs-lib";
 import { RenderingStates } from "./pdf_rendering_queue.js";
 
 const MAX_NUM_SCALING_STEPS = 3;
@@ -29,8 +26,12 @@ const THUMBNAIL_WIDTH = 98; // px
  * @property {HTMLDivElement} container - The viewer element.
  * @property {number} id - The thumbnail's unique ID (normally its number).
  * @property {PageViewport} defaultViewport - The page viewport.
+ * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise] -
+ *   A promise that is resolved with an {@link OptionalContentConfig} instance.
+ *   The default value is `null`.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @property {function} checkSetImageDisabled
  * @property {boolean} [disableCanvasToImageConversion] - Don't convert the
  *   canvas thumbnails to images. This prevents `toDataURL` calls, but
  *   increases the overall memory usage. The default value is `false`.
@@ -91,8 +92,10 @@ class PDFThumbnailView {
     container,
     id,
     defaultViewport,
+    optionalContentConfigPromise,
     linkService,
     renderingQueue,
+    checkSetImageDisabled,
     disableCanvasToImageConversion = false,
     l10n = NullL10n,
   }) {
@@ -104,6 +107,7 @@ class PDFThumbnailView {
     this.rotation = 0;
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
+    this._optionalContentConfigPromise = optionalContentConfigPromise || null;
 
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
@@ -111,6 +115,11 @@ class PDFThumbnailView {
     this.renderTask = null;
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
+    this._checkSetImageDisabled =
+      checkSetImageDisabled ||
+      function () {
+        return false;
+      };
     this.disableCanvasToImageConversion = disableCanvasToImageConversion;
 
     this.pageWidth = this.viewport.width;
@@ -129,7 +138,7 @@ class PDFThumbnailView {
       anchor.title = msg;
     });
     anchor.onclick = function () {
-      linkService.page = id;
+      linkService.goToPage(id);
       return false;
     };
     this.anchor = anchor;
@@ -304,8 +313,7 @@ class PDFThumbnailView {
 
     this.renderingState = RenderingStates.RUNNING;
 
-    const renderCapability = createPromiseCapability();
-    const finishRenderTask = error => {
+    const finishRenderTask = async (error = null) => {
       // The renderTask may have been replaced by a new one, so only remove
       // the reference to the renderTask if it matches the one that is
       // triggering this callback.
@@ -314,17 +322,14 @@ class PDFThumbnailView {
       }
 
       if (error instanceof RenderingCancelledException) {
-        renderCapability.resolve(undefined);
         return;
       }
 
       this.renderingState = RenderingStates.FINISHED;
       this._convertCanvasToImage();
 
-      if (!error) {
-        renderCapability.resolve(undefined);
-      } else {
-        renderCapability.reject(error);
+      if (error) {
+        throw error;
       }
     };
 
@@ -345,11 +350,12 @@ class PDFThumbnailView {
     const renderContext = {
       canvasContext: ctx,
       viewport: drawViewport,
+      optionalContentConfigPromise: this._optionalContentConfigPromise,
     };
     const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;
 
-    renderTask.promise.then(
+    const resultPromise = renderTask.promise.then(
       function () {
         finishRenderTask(null);
       },
@@ -357,10 +363,13 @@ class PDFThumbnailView {
         finishRenderTask(error);
       }
     );
-    return renderCapability.promise;
+    return resultPromise;
   }
 
   setImage(pageView) {
+    if (this._checkSetImageDisabled()) {
+      return;
+    }
     if (this.renderingState !== RenderingStates.INITIAL) {
       return;
     }
@@ -448,7 +457,7 @@ class PDFThumbnailView {
   get _thumbPageTitle() {
     return this.l10n.get(
       "thumb_page_title",
-      { page: this.pageLabel !== null ? this.pageLabel : this.id },
+      { page: this.pageLabel ?? this.id },
       "Page {{page}}"
     );
   }
@@ -456,7 +465,7 @@ class PDFThumbnailView {
   get _thumbPageCanvas() {
     return this.l10n.get(
       "thumb_page_canvas",
-      { page: this.pageLabel !== null ? this.pageLabel : this.id },
+      { page: this.pageLabel ?? this.id },
       "Thumbnail of Page {{page}}"
     );
   }

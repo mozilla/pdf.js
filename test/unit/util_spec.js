@@ -17,9 +17,11 @@ import {
   bytesToString,
   createPromiseCapability,
   createValidAbsoluteUrl,
+  encodeToXmlString,
+  escapeString,
+  getModificationDate,
   isArrayBuffer,
   isBool,
-  isEmptyObj,
   isNum,
   isSameOrigin,
   isString,
@@ -86,16 +88,6 @@ describe("util", function () {
       expect(isBool(0)).toEqual(false);
       expect(isBool(null)).toEqual(false);
       expect(isBool(undefined)).toEqual(false);
-    });
-  });
-
-  describe("isEmptyObj", function () {
-    it("handles empty objects", function () {
-      expect(isEmptyObj({})).toEqual(true);
-    });
-
-    it("handles non-empty objects", function () {
-      expect(isEmptyObj({ foo: "bar" })).toEqual(false);
     });
   });
 
@@ -250,11 +242,11 @@ describe("util", function () {
       expect(createValidAbsoluteUrl("/foo", "/bar")).toEqual(null);
     });
 
-    it("handles URLs that do not use a whitelisted protocol", function () {
+    it("handles URLs that do not use an allowed protocol", function () {
       expect(createValidAbsoluteUrl("magnet:?foo", null)).toEqual(null);
     });
 
-    it("correctly creates a valid URL for whitelisted protocols", function () {
+    it("correctly creates a valid URL for allowed protocols", function () {
       // `http` protocol
       expect(
         createValidAbsoluteUrl("http://www.mozilla.org/foo", null)
@@ -323,6 +315,35 @@ describe("util", function () {
         expect(reason.message).toEqual("reason");
         done();
       });
+    });
+  });
+
+  describe("escapeString", function () {
+    it("should escape (, ), \n, \r and \\", function () {
+      expect(escapeString("((a\\a))\n(b(b\\b)\rb)")).toEqual(
+        "\\(\\(a\\\\a\\)\\)\\n\\(b\\(b\\\\b\\)\\rb\\)"
+      );
+    });
+  });
+
+  describe("getModificationDate", function () {
+    it("should get a correctly formatted date", function () {
+      const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
+      expect(getModificationDate(date)).toEqual("31410609020653");
+    });
+  });
+
+  describe("encodeToXmlString", function () {
+    it("should get a correctly encoded string with some entities", function () {
+      const str = "\"\u0397ell😂' & <W😂rld>";
+      expect(encodeToXmlString(str)).toEqual(
+        "&quot;&#x397;ell&#x1F602;&apos; &amp; &lt;W&#x1F602;rld&gt;"
+      );
+    });
+
+    it("should get a correctly encoded basic ascii string", function () {
+      const str = "hello world";
+      expect(encodeToXmlString(str)).toEqual(str);
     });
   });
 });

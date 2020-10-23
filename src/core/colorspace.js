@@ -17,12 +17,12 @@ import {
   assert,
   FormatError,
   info,
-  isString,
   shadow,
   unreachable,
   warn,
 } from "../shared/util.js";
-import { isDict, isName, isStream } from "./primitives.js";
+import { isDict, isName, isStream, Name, Ref } from "./primitives.js";
+import { MissingDataException } from "./core_utils.js";
 
 /**
  * Resizes an RGB image with 3 components.
@@ -259,184 +259,238 @@ class ColorSpace {
     return shadow(this, "usesZeroToOneRange", true);
   }
 
-  static parse(cs, xref, res, pdfFunctionFactory) {
-    const IR = this.parseToIR(cs, xref, res, pdfFunctionFactory);
-    return this.fromIR(IR);
-  }
+  /**
+   * @private
+   */
+  static _cache(cacheKey, xref, localColorSpaceCache, parsedColorSpace) {
+    if (!localColorSpaceCache) {
+      throw new Error(
+        'ColorSpace._cache - expected "localColorSpaceCache" argument.'
+      );
+    }
+    if (!parsedColorSpace) {
+      throw new Error(
+        'ColorSpace._cache - expected "parsedColorSpace" argument.'
+      );
+    }
+    let csName, csRef;
+    if (cacheKey instanceof Ref) {
+      csRef = cacheKey;
 
-  static fromIR(IR) {
-    const name = Array.isArray(IR) ? IR[0] : IR;
-    let whitePoint, blackPoint, gamma;
-
-    switch (name) {
-      case "DeviceGrayCS":
-        return this.singletons.gray;
-      case "DeviceRgbCS":
-        return this.singletons.rgb;
-      case "DeviceCmykCS":
-        return this.singletons.cmyk;
-      case "CalGrayCS":
-        whitePoint = IR[1];
-        blackPoint = IR[2];
-        gamma = IR[3];
-        return new CalGrayCS(whitePoint, blackPoint, gamma);
-      case "CalRGBCS":
-        whitePoint = IR[1];
-        blackPoint = IR[2];
-        gamma = IR[3];
-        const matrix = IR[4];
-        return new CalRGBCS(whitePoint, blackPoint, gamma, matrix);
-      case "PatternCS":
-        let basePatternCS = IR[1];
-        if (basePatternCS) {
-          basePatternCS = this.fromIR(basePatternCS);
-        }
-        return new PatternCS(basePatternCS);
-      case "IndexedCS":
-        const baseIndexedCS = IR[1];
-        const hiVal = IR[2];
-        const lookup = IR[3];
-        return new IndexedCS(this.fromIR(baseIndexedCS), hiVal, lookup);
-      case "AlternateCS":
-        const numComps = IR[1];
-        const alt = IR[2];
-        const tintFn = IR[3];
-        return new AlternateCS(numComps, this.fromIR(alt), tintFn);
-      case "LabCS":
-        whitePoint = IR[1];
-        blackPoint = IR[2];
-        const range = IR[3];
-        return new LabCS(whitePoint, blackPoint, range);
-      default:
-        throw new FormatError(`Unknown colorspace name: ${name}`);
+      // If parsing succeeded, we know that this call cannot throw.
+      cacheKey = xref.fetch(cacheKey);
+    }
+    if (cacheKey instanceof Name) {
+      csName = cacheKey.name;
+    }
+    if (csName || csRef) {
+      localColorSpaceCache.set(csName, csRef, parsedColorSpace);
     }
   }
 
-  static parseToIR(cs, xref, res = null, pdfFunctionFactory) {
+  static getCached(cacheKey, xref, localColorSpaceCache) {
+    if (!localColorSpaceCache) {
+      throw new Error(
+        'ColorSpace.getCached - expected "localColorSpaceCache" argument.'
+      );
+    }
+    if (cacheKey instanceof Ref) {
+      const localColorSpace = localColorSpaceCache.getByRef(cacheKey);
+      if (localColorSpace) {
+        return localColorSpace;
+      }
+
+      try {
+        cacheKey = xref.fetch(cacheKey);
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        // Any errors should be handled during parsing, rather than here.
+      }
+    }
+    if (cacheKey instanceof Name) {
+      const localColorSpace = localColorSpaceCache.getByName(cacheKey.name);
+      if (localColorSpace) {
+        return localColorSpace;
+      }
+    }
+    return null;
+  }
+
+  static async parseAsync({
+    cs,
+    xref,
+    resources = null,
+    pdfFunctionFactory,
+    localColorSpaceCache,
+  }) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        !this.getCached(cs, xref, localColorSpaceCache),
+        "Expected `ColorSpace.getCached` to have been manually checked " +
+          "before calling `ColorSpace.parseAsync`."
+      );
+    }
+    const parsedColorSpace = this._parse(
+      cs,
+      xref,
+      resources,
+      pdfFunctionFactory
+    );
+
+    // Attempt to cache the parsed ColorSpace, by name and/or reference.
+    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
+
+    return parsedColorSpace;
+  }
+
+  static parse({
+    cs,
+    xref,
+    resources = null,
+    pdfFunctionFactory,
+    localColorSpaceCache,
+  }) {
+    const cachedColorSpace = this.getCached(cs, xref, localColorSpaceCache);
+    if (cachedColorSpace) {
+      return cachedColorSpace;
+    }
+    const parsedColorSpace = this._parse(
+      cs,
+      xref,
+      resources,
+      pdfFunctionFactory
+    );
+
+    // Attempt to cache the parsed ColorSpace, by name and/or reference.
+    this._cache(cs, xref, localColorSpaceCache, parsedColorSpace);
+
+    return parsedColorSpace;
+  }
+
+  /**
+   * @private
+   */
+  static _parse(cs, xref, resources = null, pdfFunctionFactory) {
     cs = xref.fetchIfRef(cs);
     if (isName(cs)) {
       switch (cs.name) {
         case "DeviceGray":
         case "G":
-          return "DeviceGrayCS";
+          return this.singletons.gray;
         case "DeviceRGB":
         case "RGB":
-          return "DeviceRgbCS";
+          return this.singletons.rgb;
         case "DeviceCMYK":
         case "CMYK":
-          return "DeviceCmykCS";
+          return this.singletons.cmyk;
         case "Pattern":
-          return ["PatternCS", null];
+          return new PatternCS(/* baseCS = */ null);
         default:
-          if (isDict(res)) {
-            const colorSpaces = res.get("ColorSpace");
+          if (isDict(resources)) {
+            const colorSpaces = resources.get("ColorSpace");
             if (isDict(colorSpaces)) {
-              const resCS = colorSpaces.get(cs.name);
-              if (resCS) {
-                if (isName(resCS)) {
-                  return this.parseToIR(resCS, xref, res, pdfFunctionFactory);
+              const resourcesCS = colorSpaces.get(cs.name);
+              if (resourcesCS) {
+                if (isName(resourcesCS)) {
+                  return this._parse(
+                    resourcesCS,
+                    xref,
+                    resources,
+                    pdfFunctionFactory
+                  );
                 }
-                cs = resCS;
+                cs = resourcesCS;
                 break;
               }
             }
           }
-          throw new FormatError(`unrecognized colorspace ${cs.name}`);
+          throw new FormatError(`Unrecognized ColorSpace: ${cs.name}`);
       }
     }
     if (Array.isArray(cs)) {
       const mode = xref.fetchIfRef(cs[0]).name;
-      let numComps, params, alt, whitePoint, blackPoint, gamma;
+      let params, numComps, baseCS, whitePoint, blackPoint, gamma;
 
       switch (mode) {
         case "DeviceGray":
         case "G":
-          return "DeviceGrayCS";
+          return this.singletons.gray;
         case "DeviceRGB":
         case "RGB":
-          return "DeviceRgbCS";
+          return this.singletons.rgb;
         case "DeviceCMYK":
         case "CMYK":
-          return "DeviceCmykCS";
+          return this.singletons.cmyk;
         case "CalGray":
           params = xref.fetchIfRef(cs[1]);
           whitePoint = params.getArray("WhitePoint");
           blackPoint = params.getArray("BlackPoint");
           gamma = params.get("Gamma");
-          return ["CalGrayCS", whitePoint, blackPoint, gamma];
+          return new CalGrayCS(whitePoint, blackPoint, gamma);
         case "CalRGB":
           params = xref.fetchIfRef(cs[1]);
           whitePoint = params.getArray("WhitePoint");
           blackPoint = params.getArray("BlackPoint");
           gamma = params.getArray("Gamma");
           const matrix = params.getArray("Matrix");
-          return ["CalRGBCS", whitePoint, blackPoint, gamma, matrix];
+          return new CalRGBCS(whitePoint, blackPoint, gamma, matrix);
         case "ICCBased":
           const stream = xref.fetchIfRef(cs[1]);
           const dict = stream.dict;
           numComps = dict.get("N");
-          alt = dict.get("Alternate");
+          const alt = dict.get("Alternate");
           if (alt) {
-            const altIR = this.parseToIR(alt, xref, res, pdfFunctionFactory);
-            // Parse the /Alternate CS to ensure that the number of components
-            // are correct, and also (indirectly) that it is not a PatternCS.
-            const altCS = this.fromIR(altIR, pdfFunctionFactory);
+            const altCS = this._parse(alt, xref, resources, pdfFunctionFactory);
+            // Ensure that the number of components are correct,
+            // and also (indirectly) that it is not a PatternCS.
             if (altCS.numComps === numComps) {
-              return altIR;
+              return altCS;
             }
             warn("ICCBased color space: Ignoring incorrect /Alternate entry.");
           }
           if (numComps === 1) {
-            return "DeviceGrayCS";
+            return this.singletons.gray;
           } else if (numComps === 3) {
-            return "DeviceRgbCS";
+            return this.singletons.rgb;
           } else if (numComps === 4) {
-            return "DeviceCmykCS";
+            return this.singletons.cmyk;
           }
           break;
         case "Pattern":
-          let basePatternCS = cs[1] || null;
-          if (basePatternCS) {
-            basePatternCS = this.parseToIR(
-              basePatternCS,
-              xref,
-              res,
-              pdfFunctionFactory
-            );
+          baseCS = cs[1] || null;
+          if (baseCS) {
+            baseCS = this._parse(baseCS, xref, resources, pdfFunctionFactory);
           }
-          return ["PatternCS", basePatternCS];
+          return new PatternCS(baseCS);
         case "Indexed":
         case "I":
-          const baseIndexedCS = this.parseToIR(
-            cs[1],
-            xref,
-            res,
-            pdfFunctionFactory
-          );
+          baseCS = this._parse(cs[1], xref, resources, pdfFunctionFactory);
           const hiVal = xref.fetchIfRef(cs[2]) + 1;
-          let lookup = xref.fetchIfRef(cs[3]);
-          if (isStream(lookup)) {
-            lookup = lookup.getBytes();
-          }
-          return ["IndexedCS", baseIndexedCS, hiVal, lookup];
+          const lookup = xref.fetchIfRef(cs[3]);
+          return new IndexedCS(baseCS, hiVal, lookup);
         case "Separation":
         case "DeviceN":
           const name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          alt = this.parseToIR(cs[2], xref, res, pdfFunctionFactory);
-          const tintFn = pdfFunctionFactory.create(xref.fetchIfRef(cs[3]));
-          return ["AlternateCS", numComps, alt, tintFn];
+          baseCS = this._parse(cs[2], xref, resources, pdfFunctionFactory);
+          const tintFn = pdfFunctionFactory.create(cs[3]);
+          return new AlternateCS(numComps, baseCS, tintFn);
         case "Lab":
           params = xref.fetchIfRef(cs[1]);
           whitePoint = params.getArray("WhitePoint");
           blackPoint = params.getArray("BlackPoint");
           const range = params.getArray("Range");
-          return ["LabCS", whitePoint, blackPoint, range];
+          return new LabCS(whitePoint, blackPoint, range);
         default:
-          throw new FormatError(`unimplemented color space object "${mode}"`);
+          throw new FormatError(`Unimplemented ColorSpace object: ${mode}`);
       }
     }
-    throw new FormatError(`unrecognized color space object: "${cs}"`);
+    throw new FormatError(`Unrecognized ColorSpace object: ${cs}`);
   }
 
   /**
@@ -585,22 +639,18 @@ class IndexedCS extends ColorSpace {
     this.base = base;
     this.highVal = highVal;
 
-    const baseNumComps = base.numComps;
-    const length = baseNumComps * highVal;
+    const length = base.numComps * highVal;
+    this.lookup = new Uint8Array(length);
 
     if (isStream(lookup)) {
-      this.lookup = new Uint8Array(length);
       const bytes = lookup.getBytes(length);
       this.lookup.set(bytes);
-    } else if (isString(lookup)) {
-      this.lookup = new Uint8Array(length);
+    } else if (typeof lookup === "string") {
       for (let i = 0; i < length; ++i) {
-        this.lookup[i] = lookup.charCodeAt(i);
+        this.lookup[i] = lookup.charCodeAt(i) & 0xff;
       }
-    } else if (lookup instanceof Uint8Array) {
-      this.lookup = lookup;
     } else {
-      throw new FormatError(`Unrecognized lookup table: ${lookup}`);
+      throw new FormatError(`IndexedCS - unrecognized lookup table: ${lookup}`);
     }
   }
 
@@ -1057,6 +1107,15 @@ const CalRGBCS = (function CalRGBCSClosure() {
     if (color <= 0.0031308) {
       return adjustToRange(0, 1, 12.92 * color);
     }
+    // Optimization:
+    // If color is close enough to 1, skip calling the following transform
+    // since calling Math.pow is expensive. If color is larger than
+    // the threshold, the final result is larger than 254.5 since
+    // ((1 + 0.055) * 0.99554525 ** (1 / 2.4) - 0.055) * 255 ===
+    // 254.50000003134699
+    if (color >= 0.99554525) {
+      return 1;
+    }
     return adjustToRange(0, 1, (1 + 0.055) * color ** (1 / 2.4) - 0.055);
   }
 
@@ -1156,9 +1215,9 @@ const CalRGBCS = (function CalRGBCSClosure() {
     // A <---> AGR in the spec
     // B <---> BGG in the spec
     // C <---> CGB in the spec
-    const AGR = A ** cs.GR;
-    const BGG = B ** cs.GG;
-    const CGB = C ** cs.GB;
+    const AGR = A === 1 ? 1 : A ** cs.GR;
+    const BGG = B === 1 ? 1 : B ** cs.GG;
+    const CGB = C === 1 ? 1 : C ** cs.GB;
 
     // Computes intermediate variables L, M, N as per spec.
     // To decode X, Y, Z values map L, M, N directly to them.

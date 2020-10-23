@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error */
 
 import {
   assert,
@@ -21,6 +20,7 @@ import {
   isString,
   removeNullCharacters,
   stringToBytes,
+  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
@@ -28,19 +28,15 @@ import {
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-class DOMCanvasFactory {
-  create(width, height) {
-    if (width <= 0 || height <= 0) {
-      throw new Error("Invalid canvas size");
+class BaseCanvasFactory {
+  constructor() {
+    if (this.constructor === BaseCanvasFactory) {
+      unreachable("Cannot initialize BaseCanvasFactory.");
     }
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = height;
-    return {
-      canvas,
-      context,
-    };
+  }
+
+  create(width, height) {
+    unreachable("Abstract method `create` called.");
   }
 
   reset(canvasAndContext, width, height) {
@@ -67,8 +63,32 @@ class DOMCanvasFactory {
   }
 }
 
-class DOMCMapReaderFactory {
+class DOMCanvasFactory extends BaseCanvasFactory {
+  constructor({ ownerDocument = globalThis.document } = {}) {
+    super();
+    this._document = ownerDocument;
+  }
+
+  create(width, height) {
+    if (width <= 0 || height <= 0) {
+      throw new Error("Invalid canvas size");
+    }
+    const canvas = this._document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    canvas.width = width;
+    canvas.height = height;
+    return {
+      canvas,
+      context,
+    };
+  }
+}
+
+class BaseCMapReaderFactory {
   constructor({ baseUrl = null, isCompressed = false }) {
+    if (this.constructor === BaseCMapReaderFactory) {
+      unreachable("Cannot initialize BaseCMapReaderFactory.");
+    }
     this.baseUrl = baseUrl;
     this.isCompressed = isCompressed;
   }
@@ -88,29 +108,39 @@ class DOMCMapReaderFactory {
       ? CMapCompressionType.BINARY
       : CMapCompressionType.NONE;
 
+    return this._fetchData(url, compressionType).catch(reason => {
+      throw new Error(
+        `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
+      );
+    });
+  }
+
+  /**
+   * @private
+   */
+  _fetchData(url, compressionType) {
+    unreachable("Abstract method `_fetchData` called.");
+  }
+}
+
+class DOMCMapReaderFactory extends BaseCMapReaderFactory {
+  _fetchData(url, compressionType) {
     if (
       (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
       (isFetchSupported() && isValidFetchUrl(url, document.baseURI))
     ) {
-      return fetch(url)
-        .then(async response => {
-          if (!response.ok) {
-            throw new Error(response.statusText);
-          }
-          let cMapData;
-          if (this.isCompressed) {
-            cMapData = new Uint8Array(await response.arrayBuffer());
-          } else {
-            cMapData = stringToBytes(await response.text());
-          }
-          return { cMapData, compressionType };
-        })
-        .catch(reason => {
-          throw new Error(
-            `Unable to load ${this.isCompressed ? "binary " : ""}` +
-              `CMap at: ${url}`
-          );
-        });
+      return fetch(url).then(async response => {
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+        let cMapData;
+        if (this.isCompressed) {
+          cMapData = new Uint8Array(await response.arrayBuffer());
+        } else {
+          cMapData = stringToBytes(await response.text());
+        }
+        return { cMapData, compressionType };
+      });
     }
 
     // The Fetch API is not supported.
@@ -141,11 +171,6 @@ class DOMCMapReaderFactory {
       };
 
       request.send(null);
-    }).catch(reason => {
-      throw new Error(
-        `Unable to load ${this.isCompressed ? "binary " : ""}` +
-          `CMap at: ${url}`
-      );
     });
   }
 }
@@ -173,7 +198,8 @@ class DOMSVGFactory {
 
 /**
  * @typedef {Object} PageViewportParameters
- * @property {Array} viewBox - The xMin, yMin, xMax and yMax coordinates.
+ * @property {Array<number>} viewBox - The xMin, yMin, xMax and
+ *   yMax coordinates.
  * @property {number} scale - The scale of the viewport.
  * @property {number} rotation - The rotation, in degrees, of the viewport.
  * @property {number} [offsetX] - The horizontal, i.e. x-axis, offset. The
@@ -425,7 +451,10 @@ function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
   link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
 }
 
-// Gets the file name from a given URL.
+/**
+ * Gets the file name from a given URL.
+ * @param {string} url
+ */
 function getFilenameFromUrl(url) {
   const anchor = url.indexOf("#");
   const query = url.indexOf("?");
@@ -499,6 +528,10 @@ function isValidFetchUrl(url, baseUrl) {
   }
 }
 
+/**
+ * @param {string} src
+ * @returns {Promise<void>}
+ */
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
@@ -545,16 +578,16 @@ class PDFDateString {
     if (!pdfDateStringRegex) {
       pdfDateStringRegex = new RegExp(
         "^D:" + // Prefix (required)
-        "(\\d{4})" + // Year (required)
-        "(\\d{2})?" + // Month (optional)
-        "(\\d{2})?" + // Day (optional)
-        "(\\d{2})?" + // Hour (optional)
-        "(\\d{2})?" + // Minute (optional)
-        "(\\d{2})?" + // Second (optional)
-        "([Z|+|-])?" + // Universal time relation (optional)
-        "(\\d{2})?" + // Offset hour (optional)
-        "'?" + // Splitting apostrophe (optional)
-        "(\\d{2})?" + // Offset minute (optional)
+          "(\\d{4})" + // Year (required)
+          "(\\d{2})?" + // Month (optional)
+          "(\\d{2})?" + // Day (optional)
+          "(\\d{2})?" + // Hour (optional)
+          "(\\d{2})?" + // Minute (optional)
+          "(\\d{2})?" + // Second (optional)
+          "([Z|+|-])?" + // Universal time relation (optional)
+          "(\\d{2})?" + // Offset hour (optional)
+          "'?" + // Splitting apostrophe (optional)
+          "(\\d{2})?" + // Offset minute (optional)
           "'?" // Trailing apostrophe (optional)
       );
     }
@@ -609,7 +642,9 @@ export {
   getFilenameFromUrl,
   LinkTarget,
   DEFAULT_LINK_REL,
+  BaseCanvasFactory,
   DOMCanvasFactory,
+  BaseCMapReaderFactory,
   DOMCMapReaderFactory,
   DOMSVGFactory,
   StatTimer,

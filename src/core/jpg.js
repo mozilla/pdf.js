@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 
 import { assert, BaseException, warn } from "../shared/util.js";
 import { readUint16 } from "./core_utils.js";
@@ -163,12 +164,16 @@ var JpegImage = (function JpegImageClosure() {
           } else if (nextByte === /* EOI = */ 0xd9) {
             if (parseDNLMarker) {
               // NOTE: only 8-bit JPEG images are supported in this decoder.
-              const maybeScanLines = blockRow * 8;
+              const maybeScanLines = blockRow * (frame.precision === 8 ? 8 : 0);
               // Heuristic to attempt to handle corrupt JPEG images with too
               // large `scanLines` parameter, by falling back to the currently
-              // parsed number of scanLines when it's at least one order of
-              // magnitude smaller than expected (fixes issue10880.pdf).
-              if (maybeScanLines > 0 && maybeScanLines < frame.scanLines / 10) {
+              // parsed number of scanLines when it's at least (approximately)
+              // one order of magnitude smaller than expected (fixes
+              // issue10880.pdf and issue10989.pdf).
+              if (
+                maybeScanLines > 0 &&
+                Math.round(frame.scanLines / maybeScanLines) >= 10
+              ) {
                 throw new DNLMarkerError(
                   "Found EOI marker (0xFFD9) while parsing scan data, " +
                     "possibly caused by incorrect `scanLines` parameter",
@@ -805,6 +810,7 @@ var JpegImage = (function JpegImageClosure() {
       if (fileMarker !== /* SOI (Start of Image) = */ 0xffd8) {
         throw new JpegError("SOI not found");
       }
+
       //Set of dummy jpeg markers
       let dummyMarkersSet = new Set(['0','1','2','100','101','102','203','277','301','304','404','506','521','705','708','814','1104','90a','b11'
         ,'3106','1241','5107','6171','1322','3281','4291','a1b1','c109','2333','52f0','1562','72d1','a16','2434','e125','f117'
@@ -998,8 +1004,10 @@ var JpegImage = (function JpegImageClosure() {
             var components = [],
               component;
             for (i = 0; i < selectorsCount; i++) {
-              var componentIndex = frame.componentIds[data[offset++]];
+              const index = data[offset++];
+              var componentIndex = frame.componentIds[index];
               component = frame.components[componentIndex];
+              component.index = index;
               var tableSpec = data[offset++];
               component.huffmanTableDC = huffmanTablesDC[tableSpec >> 4];
               component.huffmanTableAC = huffmanTablesAC[tableSpec & 15];
@@ -1095,6 +1103,7 @@ var JpegImage = (function JpegImageClosure() {
         }
 
         this.components.push({
+          index: component.index,
           output: buildComponentData(frame, component),
           scaleX: component.h / frame.maxH,
           scaleY: component.v / frame.maxV,
@@ -1188,6 +1197,14 @@ var JpegImage = (function JpegImageClosure() {
         if (this._colorTransform === 0) {
           // If the Adobe transform marker is not present and the image
           // dictionary has a 'ColorTransform' entry, explicitly set to `0`,
+          // then the colours should *not* be transformed.
+          return false;
+        } else if (
+          this.components[0].index === /* "R" = */ 0x52 &&
+          this.components[1].index === /* "G" = */ 0x47 &&
+          this.components[2].index === /* "B" = */ 0x42
+        ) {
+          // If the three components are indexed as RGB in ASCII
           // then the colours should *not* be transformed.
           return false;
         }

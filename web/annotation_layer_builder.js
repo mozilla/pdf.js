@@ -21,6 +21,7 @@ import { SimpleLinkService } from "./pdf_link_service.js";
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
+ * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
@@ -38,8 +39,9 @@ class AnnotationLayerBuilder {
     pdfPage,
     linkService,
     downloadManager,
+    annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = false,
+    renderInteractiveForms = true,
     l10n = NullL10n,
   }) {
     this.pageDiv = pageDiv;
@@ -49,6 +51,7 @@ class AnnotationLayerBuilder {
     this.imageResourcesPath = imageResourcesPath;
     this.renderInteractiveForms = renderInteractiveForms;
     this.l10n = l10n;
+    this.annotationStorage = annotationStorage;
 
     this.div = null;
     this._cancelled = false;
@@ -57,10 +60,15 @@ class AnnotationLayerBuilder {
   /**
    * @param {PageViewport} viewport
    * @param {string} intent (default value is 'display')
+   * @returns {Promise<void>} A promise that is resolved when rendering of the
+   *   annotations is complete.
    */
   render(viewport, intent = "display") {
-    this.pdfPage.getAnnotations({ intent }).then(annotations => {
+    return this.pdfPage.getAnnotations({ intent }).then(annotations => {
       if (this._cancelled) {
+        return;
+      }
+      if (annotations.length === 0) {
         return;
       }
 
@@ -73,6 +81,7 @@ class AnnotationLayerBuilder {
         renderInteractiveForms: this.renderInteractiveForms,
         linkService: this.linkService,
         downloadManager: this.downloadManager,
+        annotationStorage: this.annotationStorage,
       };
 
       if (this.div) {
@@ -82,9 +91,6 @@ class AnnotationLayerBuilder {
       } else {
         // Create an annotation layer div and render the annotations
         // if there is at least one annotation.
-        if (annotations.length === 0) {
-          return;
-        }
         this.div = document.createElement("div");
         this.div.className = "annotationLayer";
         this.pageDiv.appendChild(this.div);
@@ -115,6 +121,7 @@ class DefaultAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {AnnotationStorage} [annotationStorage]
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
@@ -124,8 +131,9 @@ class DefaultAnnotationLayerFactory {
   createAnnotationLayerBuilder(
     pageDiv,
     pdfPage,
+    annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = false,
+    renderInteractiveForms = true,
     l10n = NullL10n
   ) {
     return new AnnotationLayerBuilder({
@@ -135,6 +143,7 @@ class DefaultAnnotationLayerFactory {
       renderInteractiveForms,
       linkService: new SimpleLinkService(),
       l10n,
+      annotationStorage,
     });
   }
 }

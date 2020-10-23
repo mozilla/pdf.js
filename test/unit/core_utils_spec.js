@@ -15,9 +15,11 @@
 
 import { Dict, Ref } from "../../src/core/primitives.js";
 import {
+  escapePDFName,
   getInheritableProperty,
   isWhiteSpace,
   log2,
+  parseXFAPath,
   toRomanNumerals,
 } from "../../src/core/core_utils.js";
 import { XRefMock } from "./test_utils.js";
@@ -209,6 +211,32 @@ describe("core_utils", function () {
       expect(isWhiteSpace(0x0b)).toEqual(false);
       expect(isWhiteSpace(null)).toEqual(false);
       expect(isWhiteSpace(undefined)).toEqual(false);
+    });
+  });
+
+  describe("parseXFAPath", function () {
+    it("should get a correctly parsed path", function () {
+      const path = "foo.bar[12].oof[3].rab.FOO[123].BAR[456]";
+      expect(parseXFAPath(path)).toEqual([
+        { name: "foo", pos: 0 },
+        { name: "bar", pos: 12 },
+        { name: "oof", pos: 3 },
+        { name: "rab", pos: 0 },
+        { name: "FOO", pos: 123 },
+        { name: "BAR", pos: 456 },
+      ]);
+    });
+  });
+
+  describe("escapePDFName", function () {
+    it("should escape PDF name", function () {
+      expect(escapePDFName("hello")).toEqual("hello");
+      expect(escapePDFName("\xfehello")).toEqual("#fehello");
+      expect(escapePDFName("he\xfell\xffo")).toEqual("he#fell#ffo");
+      expect(escapePDFName("\xfehe\xfell\xffo\xff")).toEqual(
+        "#fehe#fell#ffo#ff"
+      );
+      expect(escapePDFName("#h#e#l#l#o")).toEqual("#23h#23e#23l#23l#23o");
     });
   });
 });

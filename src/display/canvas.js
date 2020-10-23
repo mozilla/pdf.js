@@ -33,18 +33,18 @@ import { getShadingPatternFromIR, TilingPattern } from "./pattern_helper.js";
 // However, PDF needs a bit more state, which we store here.
 
 // Minimal font size that would be used during canvas fillText operations.
-var MIN_FONT_SIZE = 16;
+const MIN_FONT_SIZE = 16;
 // Maximum font size that would be used during canvas fillText operations.
-var MAX_FONT_SIZE = 100;
-var MAX_GROUP_SIZE = 4096;
+const MAX_FONT_SIZE = 100;
+const MAX_GROUP_SIZE = 4096;
 
 // Heuristic value used when enforcing minimum line widths.
-var MIN_WIDTH_FACTOR = 0.65;
+const MIN_WIDTH_FACTOR = 0.65;
 
-var COMPILE_TYPE3_GLYPHS = true;
-var MAX_SIZE_TO_COMPILE = 1000;
+const COMPILE_TYPE3_GLYPHS = true;
+const MAX_SIZE_TO_COMPILE = 1000;
 
-var FULL_CHUNK_HEIGHT = 16;
+const FULL_CHUNK_HEIGHT = 16;
 
 function addContextCurrentTransform(ctx) {
   // If the context doesn't expose a `mozCurrentTransform`, add a JS based one.
@@ -72,16 +72,16 @@ function addContextCurrentTransform(ctx) {
         // http://www.wolframalpha.com/input/?
         //   i=Inverse+{{a%2C+c%2C+e}%2C+{b%2C+d%2C+f}%2C+{0%2C+0%2C+1}}
 
-        var m = this._transformMatrix;
-        var a = m[0],
+        const m = this._transformMatrix;
+        const a = m[0],
           b = m[1],
           c = m[2],
           d = m[3],
           e = m[4],
           f = m[5];
 
-        var ad_bc = a * d - b * c;
-        var bc_ad = b * c - a * d;
+        const ad_bc = a * d - b * c;
+        const bc_ad = b * c - a * d;
 
         return [
           d / ad_bc,
@@ -95,7 +95,7 @@ function addContextCurrentTransform(ctx) {
     });
 
     ctx.save = function ctxSave() {
-      var old = this._transformMatrix;
+      const old = this._transformMatrix;
       this._transformStack.push(old);
       this._transformMatrix = old.slice(0, 6);
 
@@ -103,7 +103,7 @@ function addContextCurrentTransform(ctx) {
     };
 
     ctx.restore = function ctxRestore() {
-      var prev = this._transformStack.pop();
+      const prev = this._transformStack.pop();
       if (prev) {
         this._transformMatrix = prev;
         this._originalRestore();
@@ -111,7 +111,7 @@ function addContextCurrentTransform(ctx) {
     };
 
     ctx.translate = function ctxTranslate(x, y) {
-      var m = this._transformMatrix;
+      const m = this._transformMatrix;
       m[4] = m[0] * x + m[2] * y + m[4];
       m[5] = m[1] * x + m[3] * y + m[5];
 
@@ -119,7 +119,7 @@ function addContextCurrentTransform(ctx) {
     };
 
     ctx.scale = function ctxScale(x, y) {
-      var m = this._transformMatrix;
+      const m = this._transformMatrix;
       m[0] = m[0] * x;
       m[1] = m[1] * x;
       m[2] = m[2] * y;
@@ -129,7 +129,7 @@ function addContextCurrentTransform(ctx) {
     };
 
     ctx.transform = function ctxTransform(a, b, c, d, e, f) {
-      var m = this._transformMatrix;
+      const m = this._transformMatrix;
       this._transformMatrix = [
         m[0] * a + m[2] * b,
         m[1] * a + m[3] * b,
@@ -149,10 +149,10 @@ function addContextCurrentTransform(ctx) {
     };
 
     ctx.rotate = function ctxRotate(angle) {
-      var cosValue = Math.cos(angle);
-      var sinValue = Math.sin(angle);
+      const cosValue = Math.cos(angle);
+      const sinValue = Math.sin(angle);
 
-      var m = this._transformMatrix;
+      const m = this._transformMatrix;
       this._transformMatrix = [
         m[0] * cosValue + m[2] * sinValue,
         m[1] * cosValue + m[3] * sinValue,
@@ -167,7 +167,7 @@ function addContextCurrentTransform(ctx) {
   }
 }
 
-var CachedCanvases = (function CachedCanvasesClosure() {
+const CachedCanvases = (function CachedCanvasesClosure() {
   // eslint-disable-next-line no-shadow
   function CachedCanvases(canvasFactory) {
     this.canvasFactory = canvasFactory;
@@ -180,7 +180,7 @@ var CachedCanvases = (function CachedCanvasesClosure() {
       height,
       trackTransform
     ) {
-      var canvasEntry;
+      let canvasEntry;
       if (this.cache[id] !== undefined) {
         canvasEntry = this.cache[id];
         this.canvasFactory.reset(canvasEntry, width, height);
@@ -196,8 +196,8 @@ var CachedCanvases = (function CachedCanvasesClosure() {
       return canvasEntry;
     },
     clear() {
-      for (var id in this.cache) {
-        var canvasEntry = this.cache[id];
+      for (const id in this.cache) {
+        const canvasEntry = this.cache[id];
         this.canvasFactory.destroy(canvasEntry);
         delete this.cache[id];
       }
@@ -207,28 +207,25 @@ var CachedCanvases = (function CachedCanvasesClosure() {
 })();
 
 function compileType3Glyph(imgData) {
-  var POINT_TO_PROCESS_LIMIT = 1000;
+  const POINT_TO_PROCESS_LIMIT = 1000;
 
-  var width = imgData.width,
-    height = imgData.height;
-  var i,
-    j,
-    j0,
+  const width = imgData.width,
+    height = imgData.height,
     width1 = width + 1;
-  var points = new Uint8Array(width1 * (height + 1));
+  let i, ii, j, j0;
+  const points = new Uint8Array(width1 * (height + 1));
   // prettier-ignore
-  var POINT_TYPES =
+  const POINT_TYPES =
       new Uint8Array([0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0]);
 
   // decodes bit-packed mask data
-  var lineSize = (width + 7) & ~7,
+  const lineSize = (width + 7) & ~7,
     data0 = imgData.data;
-  var data = new Uint8Array(lineSize * height),
-    pos = 0,
-    ii;
+  const data = new Uint8Array(lineSize * height);
+  let pos = 0;
   for (i = 0, ii = data0.length; i < ii; i++) {
-    var mask = 128,
-      elem = data0[i];
+    const elem = data0[i];
+    let mask = 128;
     while (mask > 0) {
       data[pos++] = elem & mask ? 0 : 255;
       mask >>= 1;
@@ -245,7 +242,7 @@ function compileType3Glyph(imgData) {
   //   - outside corners: 1, 2, 4, 8;
   //   - inside corners: 7, 11, 13, 14;
   //   - and, intersections: 5, 10.
-  var count = 0;
+  let count = 0;
   pos = 0;
   if (data[pos] !== 0) {
     points[0] = 1;
@@ -271,7 +268,7 @@ function compileType3Glyph(imgData) {
     }
     // 'sum' is the position of the current pixel configuration in the 'TYPES'
     // array (in order 8-1-2-4, so we can use '>>2' to shift the column).
-    var sum = (data[pos] ? 4 : 0) + (data[pos - lineSize] ? 8 : 0);
+    let sum = (data[pos] ? 4 : 0) + (data[pos - lineSize] ? 8 : 0);
     for (j = 1; j < width; j++) {
       sum =
         (sum >> 2) +
@@ -315,29 +312,28 @@ function compileType3Glyph(imgData) {
   }
 
   // building outlines
-  var steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
-  var outlines = [];
+  const steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
+  const outlines = [];
   for (i = 0; count && i <= height; i++) {
-    var p = i * width1;
-    var end = p + width;
+    let p = i * width1;
+    const end = p + width;
     while (p < end && !points[p]) {
       p++;
     }
     if (p === end) {
       continue;
     }
-    var coords = [p % width1, i];
+    const coords = [p % width1, i];
 
-    var type = points[p],
-      p0 = p,
-      pp;
+    const p0 = p;
+    let type = points[p];
     do {
-      var step = steps[type];
+      const step = steps[type];
       do {
         p += step;
       } while (!points[p]);
 
-      pp = points[p];
+      const pp = points[p];
       if (pp !== 5 && pp !== 10) {
         // set new direction
         type = pp;
@@ -362,14 +358,14 @@ function compileType3Glyph(imgData) {
     --i;
   }
 
-  var drawOutline = function (c) {
+  const drawOutline = function (c) {
     c.save();
     // the path shall be painted in [0..1]x[0..1] space
     c.scale(1 / width, -1 / height);
     c.translate(0, -height);
     c.beginPath();
     for (let k = 0, kk = outlines.length; k < kk; k++) {
-      var o = outlines[k];
+      const o = outlines[k];
       c.moveTo(o[0], o[1]);
       for (let l = 2, ll = o.length; l < ll; l += 2) {
         c.lineTo(o[l], o[l + 1]);
@@ -383,7 +379,7 @@ function compileType3Glyph(imgData) {
   return drawOutline;
 }
 
-var CanvasExtraState = (function CanvasExtraStateClosure() {
+const CanvasExtraState = (function CanvasExtraStateClosure() {
   // eslint-disable-next-line no-shadow
   function CanvasExtraState() {
     // Are soft masks and alpha values shapes or opacities?
@@ -416,6 +412,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     this.lineWidth = 1;
     this.activeSMask = null;
     this.resumeSMaskCtx = null; // nonclonable field (see the save method below)
+    this.transferMaps = null;
   }
 
   CanvasExtraState.prototype = {
@@ -430,12 +427,15 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
   return CanvasExtraState;
 })();
 
-var CanvasGraphics = (function CanvasGraphicsClosure() {
+/**
+ * @type {any}
+ */
+const CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the time the executeOperatorList is going to be executing
   // before it stops and shedules a continue of execution.
-  var EXECUTION_TIME = 15;
+  const EXECUTION_TIME = 15;
   // Defines the number of steps before checking the execution time
-  var EXECUTION_STEPS = 10;
+  const EXECUTION_STEPS = 10;
 
   // eslint-disable-next-line no-shadow
   function CanvasGraphics(
@@ -444,7 +444,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     objs,
     canvasFactory,
     webGLContext,
-    imageLayer
+    imageLayer,
+    optionalContentConfig
   ) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
@@ -468,6 +469,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.smaskStack = [];
     this.smaskCounter = 0;
     this.tempSMask = null;
+    this.contentVisible = true;
+    this.markedContentStack = [];
+    this.optionalContentConfig = optionalContentConfig;
     this.cachedCanvases = new CachedCanvases(this.canvasFactory);
     if (canvasCtx) {
       // NOTE: if mozCurrentTransform is polyfilled, then the current state of
@@ -477,7 +481,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this._cachedGetSinglePixelWidth = null;
   }
 
-  function putBinaryImageData(ctx, imgData) {
+  function putBinaryImageData(ctx, imgData, transferMaps = null) {
     if (typeof ImageData !== "undefined" && imgData instanceof ImageData) {
       ctx.putImageData(imgData, 0, 0);
       return;
@@ -494,40 +498,65 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // will (conceptually) put pixels past the bounds of the canvas.  But
     // that's ok; any such pixels are ignored.
 
-    var height = imgData.height,
+    const height = imgData.height,
       width = imgData.width;
-    var partialChunkHeight = height % FULL_CHUNK_HEIGHT;
-    var fullChunks = (height - partialChunkHeight) / FULL_CHUNK_HEIGHT;
-    var totalChunks = partialChunkHeight === 0 ? fullChunks : fullChunks + 1;
+    const partialChunkHeight = height % FULL_CHUNK_HEIGHT;
+    const fullChunks = (height - partialChunkHeight) / FULL_CHUNK_HEIGHT;
+    const totalChunks = partialChunkHeight === 0 ? fullChunks : fullChunks + 1;
 
-    var chunkImgData = ctx.createImageData(width, FULL_CHUNK_HEIGHT);
-    var srcPos = 0,
+    const chunkImgData = ctx.createImageData(width, FULL_CHUNK_HEIGHT);
+    let srcPos = 0,
       destPos;
-    var src = imgData.data;
-    var dest = chunkImgData.data;
-    var i, j, thisChunkHeight, elemsInThisChunk;
+    const src = imgData.data;
+    const dest = chunkImgData.data;
+    let i, j, thisChunkHeight, elemsInThisChunk;
+
+    let transferMapRed, transferMapGreen, transferMapBlue, transferMapGray;
+    if (transferMaps) {
+      switch (transferMaps.length) {
+        case 1:
+          transferMapRed = transferMaps[0];
+          transferMapGreen = transferMaps[0];
+          transferMapBlue = transferMaps[0];
+          transferMapGray = transferMaps[0];
+          break;
+        case 4:
+          transferMapRed = transferMaps[0];
+          transferMapGreen = transferMaps[1];
+          transferMapBlue = transferMaps[2];
+          transferMapGray = transferMaps[3];
+          break;
+      }
+    }
 
     // There are multiple forms in which the pixel data can be passed, and
     // imgData.kind tells us which one this is.
     if (imgData.kind === ImageKind.GRAYSCALE_1BPP) {
       // Grayscale, 1 bit per pixel (i.e. black-and-white).
-      var srcLength = src.byteLength;
-      var dest32 = new Uint32Array(dest.buffer, 0, dest.byteLength >> 2);
-      var dest32DataLength = dest32.length;
-      var fullSrcDiff = (width + 7) >> 3;
-      var white = 0xffffffff;
-      var black = IsLittleEndianCached.value ? 0xff000000 : 0x000000ff;
+      const srcLength = src.byteLength;
+      const dest32 = new Uint32Array(dest.buffer, 0, dest.byteLength >> 2);
+      const dest32DataLength = dest32.length;
+      const fullSrcDiff = (width + 7) >> 3;
+      let white = 0xffffffff;
+      let black = IsLittleEndianCached.value ? 0xff000000 : 0x000000ff;
+
+      if (transferMapGray) {
+        if (transferMapGray[0] === 0xff && transferMapGray[0xff] === 0) {
+          [white, black] = [black, white];
+        }
+      }
+
       for (i = 0; i < totalChunks; i++) {
         thisChunkHeight =
           i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight;
         destPos = 0;
         for (j = 0; j < thisChunkHeight; j++) {
-          var srcDiff = srcLength - srcPos;
-          var k = 0;
-          var kEnd = srcDiff > fullSrcDiff ? width : srcDiff * 8 - 7;
-          var kEndUnrolled = kEnd & ~7;
-          var mask = 0;
-          var srcByte = 0;
+          const srcDiff = srcLength - srcPos;
+          let k = 0;
+          const kEnd = srcDiff > fullSrcDiff ? width : srcDiff * 8 - 7;
+          const kEndUnrolled = kEnd & ~7;
+          let mask = 0;
+          let srcByte = 0;
           for (; k < kEndUnrolled; k += 8) {
             srcByte = src[srcPos++];
             dest32[destPos++] = srcByte & 128 ? white : black;
@@ -558,6 +587,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     } else if (imgData.kind === ImageKind.RGBA_32BPP) {
       // RGBA, 32-bits per pixel.
+      const hasTransferMaps = !!(
+        transferMapRed ||
+        transferMapGreen ||
+        transferMapBlue
+      );
 
       j = 0;
       elemsInThisChunk = width * FULL_CHUNK_HEIGHT * 4;
@@ -565,16 +599,51 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
         srcPos += elemsInThisChunk;
 
+        if (hasTransferMaps) {
+          for (let k = 0; k < elemsInThisChunk; k += 4) {
+            if (transferMapRed) {
+              dest[k + 0] = transferMapRed[dest[k + 0]];
+            }
+            if (transferMapGreen) {
+              dest[k + 1] = transferMapGreen[dest[k + 1]];
+            }
+            if (transferMapBlue) {
+              dest[k + 2] = transferMapBlue[dest[k + 2]];
+            }
+          }
+        }
+
         ctx.putImageData(chunkImgData, 0, j);
         j += FULL_CHUNK_HEIGHT;
       }
       if (i < totalChunks) {
         elemsInThisChunk = width * partialChunkHeight * 4;
         dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
+
+        if (hasTransferMaps) {
+          for (let k = 0; k < elemsInThisChunk; k += 4) {
+            if (transferMapRed) {
+              dest[k + 0] = transferMapRed[dest[k + 0]];
+            }
+            if (transferMapGreen) {
+              dest[k + 1] = transferMapGreen[dest[k + 1]];
+            }
+            if (transferMapBlue) {
+              dest[k + 2] = transferMapBlue[dest[k + 2]];
+            }
+          }
+        }
+
         ctx.putImageData(chunkImgData, 0, j);
       }
     } else if (imgData.kind === ImageKind.RGB_24BPP) {
       // RGB, 24-bits per pixel.
+      const hasTransferMaps = !!(
+        transferMapRed ||
+        transferMapGreen ||
+        transferMapBlue
+      );
+
       thisChunkHeight = FULL_CHUNK_HEIGHT;
       elemsInThisChunk = width * thisChunkHeight;
       for (i = 0; i < totalChunks; i++) {
@@ -590,6 +659,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           dest[destPos++] = src[srcPos++];
           dest[destPos++] = 255;
         }
+
+        if (hasTransferMaps) {
+          for (let k = 0; k < destPos; k += 4) {
+            if (transferMapRed) {
+              dest[k + 0] = transferMapRed[dest[k + 0]];
+            }
+            if (transferMapGreen) {
+              dest[k + 1] = transferMapGreen[dest[k + 1]];
+            }
+            if (transferMapBlue) {
+              dest[k + 2] = transferMapBlue[dest[k + 2]];
+            }
+          }
+        }
+
         ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
       }
     } else {
@@ -598,29 +682,30 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   }
 
   function putBinaryImageMask(ctx, imgData) {
-    var height = imgData.height,
+    const height = imgData.height,
       width = imgData.width;
-    var partialChunkHeight = height % FULL_CHUNK_HEIGHT;
-    var fullChunks = (height - partialChunkHeight) / FULL_CHUNK_HEIGHT;
-    var totalChunks = partialChunkHeight === 0 ? fullChunks : fullChunks + 1;
+    const partialChunkHeight = height % FULL_CHUNK_HEIGHT;
+    const fullChunks = (height - partialChunkHeight) / FULL_CHUNK_HEIGHT;
+    const totalChunks = partialChunkHeight === 0 ? fullChunks : fullChunks + 1;
 
-    var chunkImgData = ctx.createImageData(width, FULL_CHUNK_HEIGHT);
-    var srcPos = 0;
-    var src = imgData.data;
-    var dest = chunkImgData.data;
+    const chunkImgData = ctx.createImageData(width, FULL_CHUNK_HEIGHT);
+    let srcPos = 0;
+    const src = imgData.data;
+    const dest = chunkImgData.data;
 
-    for (var i = 0; i < totalChunks; i++) {
-      var thisChunkHeight =
+    for (let i = 0; i < totalChunks; i++) {
+      const thisChunkHeight =
         i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight;
 
       // Expand the mask so it can be used by the canvas.  Any required
       // inversion has already been handled.
-      var destPos = 3; // alpha component offset
-      for (var j = 0; j < thisChunkHeight; j++) {
-        var mask = 0;
-        for (var k = 0; k < width; k++) {
+      let destPos = 3; // alpha component offset
+      for (let j = 0; j < thisChunkHeight; j++) {
+        let elem,
+          mask = 0;
+        for (let k = 0; k < width; k++) {
           if (!mask) {
-            var elem = src[srcPos++];
+            elem = src[srcPos++];
             mask = 128;
           }
           dest[destPos] = elem & mask ? 0 : 255;
@@ -633,7 +718,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   }
 
   function copyCtxState(sourceCtx, destCtx) {
-    var properties = [
+    const properties = [
       "strokeStyle",
       "fillStyle",
       "fillRule",
@@ -645,8 +730,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       "globalCompositeOperation",
       "font",
     ];
-    for (var i = 0, ii = properties.length; i < ii; i++) {
-      var property = properties[i];
+    for (let i = 0, ii = properties.length; i < ii; i++) {
+      const property = properties[i];
       if (sourceCtx[property] !== undefined) {
         destCtx[property] = sourceCtx[property];
       }
@@ -675,15 +760,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   }
 
   function composeSMaskBackdrop(bytes, r0, g0, b0) {
-    var length = bytes.length;
-    for (var i = 3; i < length; i += 4) {
-      var alpha = bytes[i];
+    const length = bytes.length;
+    for (let i = 3; i < length; i += 4) {
+      const alpha = bytes[i];
       if (alpha === 0) {
         bytes[i - 3] = r0;
         bytes[i - 2] = g0;
         bytes[i - 1] = b0;
       } else if (alpha < 255) {
-        var alpha_ = 255 - alpha;
+        const alpha_ = 255 - alpha;
         bytes[i - 3] = (bytes[i - 3] * alpha + r0 * alpha_) >> 8;
         bytes[i - 2] = (bytes[i - 2] * alpha + g0 * alpha_) >> 8;
         bytes[i - 1] = (bytes[i - 1] * alpha + b0 * alpha_) >> 8;
@@ -692,18 +777,18 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   }
 
   function composeSMaskAlpha(maskData, layerData, transferMap) {
-    var length = maskData.length;
-    var scale = 1 / 255;
-    for (var i = 3; i < length; i += 4) {
-      var alpha = transferMap ? transferMap[maskData[i]] : maskData[i];
+    const length = maskData.length;
+    const scale = 1 / 255;
+    for (let i = 3; i < length; i += 4) {
+      const alpha = transferMap ? transferMap[maskData[i]] : maskData[i];
       layerData[i] = (layerData[i] * alpha * scale) | 0;
     }
   }
 
   function composeSMaskLuminosity(maskData, layerData, transferMap) {
-    var length = maskData.length;
-    for (var i = 3; i < length; i += 4) {
-      var y =
+    const length = maskData.length;
+    for (let i = 3; i < length; i += 4) {
+      const y =
         maskData[i - 3] * 77 + // * 0.3 / 255 * 0x10000
         maskData[i - 2] * 152 + // * 0.59 ....
         maskData[i - 1] * 28; // * 0.11 ....
@@ -722,12 +807,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     backdrop,
     transferMap
   ) {
-    var hasBackdrop = !!backdrop;
-    var r0 = hasBackdrop ? backdrop[0] : 0;
-    var g0 = hasBackdrop ? backdrop[1] : 0;
-    var b0 = hasBackdrop ? backdrop[2] : 0;
+    const hasBackdrop = !!backdrop;
+    const r0 = hasBackdrop ? backdrop[0] : 0;
+    const g0 = hasBackdrop ? backdrop[1] : 0;
+    const b0 = hasBackdrop ? backdrop[2] : 0;
 
-    var composeFn;
+    let composeFn;
     if (subtype === "Luminosity") {
       composeFn = composeSMaskLuminosity;
     } else {
@@ -735,12 +820,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
 
     // processing image in chunks to save memory
-    var PIXELS_TO_PROCESS = 1048576;
-    var chunkSize = Math.min(height, Math.ceil(PIXELS_TO_PROCESS / width));
-    for (var row = 0; row < height; row += chunkSize) {
-      var chunkHeight = Math.min(chunkSize, height - row);
-      var maskData = maskCtx.getImageData(0, row, width, chunkHeight);
-      var layerData = layerCtx.getImageData(0, row, width, chunkHeight);
+    const PIXELS_TO_PROCESS = 1048576;
+    const chunkSize = Math.min(height, Math.ceil(PIXELS_TO_PROCESS / width));
+    for (let row = 0; row < height; row += chunkSize) {
+      const chunkHeight = Math.min(chunkSize, height - row);
+      const maskData = maskCtx.getImageData(0, row, width, chunkHeight);
+      const layerData = layerCtx.getImageData(0, row, width, chunkHeight);
 
       if (hasBackdrop) {
         composeSMaskBackdrop(maskData.data, r0, g0, b0);
@@ -752,8 +837,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   }
 
   function composeSMask(ctx, smask, layerCtx, webGLContext) {
-    var mask = smask.canvas;
-    var maskCtx = smask.context;
+    const mask = smask.canvas;
+    const maskCtx = smask.context;
 
     ctx.setTransform(
       smask.scaleX,
@@ -764,7 +849,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       smask.offsetY
     );
 
-    var backdrop = smask.backdrop || null;
+    const backdrop = smask.backdrop || null;
     if (!smask.transferMap && webGLContext.isEnabled) {
       const composed = webGLContext.composeSMask({
         layer: layerCtx.canvas,
@@ -790,10 +875,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     ctx.drawImage(mask, 0, 0);
   }
 
-  var LINE_CAP_STYLES = ["butt", "round", "square"];
-  var LINE_JOIN_STYLES = ["miter", "round", "bevel"];
-  var NORMAL_CLIP = {};
-  var EO_CLIP = {};
+  const LINE_CAP_STYLES = ["butt", "round", "square"];
+  const LINE_JOIN_STYLES = ["miter", "round", "bevel"];
+  const NORMAL_CLIP = {};
+  const EO_CLIP = {};
 
   CanvasGraphics.prototype = {
     beginDrawing({
@@ -807,8 +892,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // backdrop. The problem with a transparent backdrop though is we then
       // don't get sub pixel anti aliasing on text, creating temporary
       // transparent canvas when we have blend modes.
-      var width = this.ctx.canvas.width;
-      var height = this.ctx.canvas.height;
+      const width = this.ctx.canvas.width;
+      const height = this.ctx.canvas.height;
 
       this.ctx.save();
       this.ctx.fillStyle = background || "rgb(255, 255, 255)";
@@ -816,7 +901,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.restore();
 
       if (transparency) {
-        var transparentCanvas = this.cachedCanvases.getCanvas(
+        const transparentCanvas = this.cachedCanvases.getCanvas(
           "transparent",
           width,
           height,
@@ -854,25 +939,25 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       continueCallback,
       stepper
     ) {
-      var argsArray = operatorList.argsArray;
-      var fnArray = operatorList.fnArray;
-      var i = executionStartIdx || 0;
-      var argsArrayLen = argsArray.length;
+      const argsArray = operatorList.argsArray;
+      const fnArray = operatorList.fnArray;
+      let i = executionStartIdx || 0;
+      const argsArrayLen = argsArray.length;
 
       // Sometimes the OperatorList to execute is empty.
       if (argsArrayLen === i) {
         return i;
       }
 
-      var chunkOperations =
+      const chunkOperations =
         argsArrayLen - i > EXECUTION_STEPS &&
         typeof continueCallback === "function";
-      var endTime = chunkOperations ? Date.now() + EXECUTION_TIME : 0;
-      var steps = 0;
+      const endTime = chunkOperations ? Date.now() + EXECUTION_TIME : 0;
+      let steps = 0;
 
-      var commonObjs = this.commonObjs;
-      var objs = this.objs;
-      var fnId;
+      const commonObjs = this.commonObjs;
+      const objs = this.objs;
+      let fnId;
 
       while (true) {
         if (stepper !== undefined && i === stepper.nextBreakPoint) {
@@ -921,8 +1006,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     endDrawing: function CanvasGraphics_endDrawing() {
       // Finishing all opened operations such as SMask group painting.
-      if (this.current.activeSMask !== null) {
-        this.endSMaskGroup();
+      while (this.stateStack.length || this.current.activeSMask !== null) {
+        this.restore();
       }
 
       this.ctx.restore();
@@ -959,7 +1044,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.miterLimit = limit;
     },
     setDash: function CanvasGraphics_setDash(dashArray, dashPhase) {
-      var ctx = this.ctx;
+      const ctx = this.ctx;
       if (ctx.setLineDash !== undefined) {
         ctx.setLineDash(dashArray);
         ctx.lineDashOffset = dashPhase;
@@ -972,10 +1057,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // This operation is ignored since we haven't found a use case for it yet.
     },
     setGState: function CanvasGraphics_setGState(states) {
-      for (var i = 0, ii = states.length; i < ii; i++) {
-        var state = states[i];
-        var key = state[0];
-        var value = state[1];
+      for (let i = 0, ii = states.length; i < ii; i++) {
+        const state = states[i];
+        const key = state[0];
+        const value = state[1];
 
         switch (key) {
           case "LW":
@@ -1033,26 +1118,28 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             }
             this.tempSMask = null;
             break;
+          case "TR":
+            this.current.transferMaps = value;
         }
       }
     },
     beginSMaskGroup: function CanvasGraphics_beginSMaskGroup() {
-      var activeSMask = this.current.activeSMask;
-      var drawnWidth = activeSMask.canvas.width;
-      var drawnHeight = activeSMask.canvas.height;
-      var cacheId = "smaskGroupAt" + this.groupLevel;
-      var scratchCanvas = this.cachedCanvases.getCanvas(
+      const activeSMask = this.current.activeSMask;
+      const drawnWidth = activeSMask.canvas.width;
+      const drawnHeight = activeSMask.canvas.height;
+      const cacheId = "smaskGroupAt" + this.groupLevel;
+      const scratchCanvas = this.cachedCanvases.getCanvas(
         cacheId,
         drawnWidth,
         drawnHeight,
         true
       );
 
-      var currentCtx = this.ctx;
-      var currentTransform = currentCtx.mozCurrentTransform;
+      const currentCtx = this.ctx;
+      const currentTransform = currentCtx.mozCurrentTransform;
       this.ctx.save();
 
-      var groupCtx = scratchCanvas.context;
+      const groupCtx = scratchCanvas.context;
       groupCtx.scale(1 / activeSMask.scaleX, 1 / activeSMask.scaleY);
       groupCtx.translate(-activeSMask.offsetX, -activeSMask.offsetY);
       groupCtx.transform.apply(groupCtx, currentTransform);
@@ -1072,7 +1159,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     suspendSMaskGroup: function CanvasGraphics_endSMaskGroup() {
       // Similar to endSMaskGroup, the intermediate canvas has to be composed
       // and future ctx state restored.
-      var groupCtx = this.ctx;
+      const groupCtx = this.ctx;
       this.groupLevel--;
       this.ctx = this.groupStack.pop();
 
@@ -1090,7 +1177,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.resumeSMaskCtx = groupCtx;
       // Transform was changed in the SMask canvas, reflecting this change on
       // this.ctx.
-      var deltaTransform = Util.transform(
+      const deltaTransform = Util.transform(
         this.current.activeSMask.startTransformInverse,
         groupCtx.mozCurrentTransform
       );
@@ -1102,18 +1189,18 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       groupCtx.clearRect(0, 0, groupCtx.canvas.width, groupCtx.canvas.height);
       groupCtx.restore();
     },
-    resumeSMaskGroup: function CanvasGraphics_endSMaskGroup() {
+    resumeSMaskGroup: function CanvasGraphics_resumeSMaskGroup() {
       // Resuming state saved by suspendSMaskGroup. We don't need to restore
       // any groupCtx state since restore() command (the only caller) will do
       // that for us. See also beginSMaskGroup.
-      var groupCtx = this.current.resumeSMaskCtx;
-      var currentCtx = this.ctx;
+      const groupCtx = this.current.resumeSMaskCtx;
+      const currentCtx = this.ctx;
       this.ctx = groupCtx;
       this.groupStack.push(currentCtx);
       this.groupLevel++;
     },
     endSMaskGroup: function CanvasGraphics_endSMaskGroup() {
-      var groupCtx = this.ctx;
+      const groupCtx = this.ctx;
       this.groupLevel--;
       this.ctx = this.groupStack.pop();
 
@@ -1127,7 +1214,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       copyCtxState(groupCtx, this.ctx);
       // Transform was changed in the SMask canvas, reflecting this change on
       // this.ctx.
-      var deltaTransform = Util.transform(
+      const deltaTransform = Util.transform(
         this.current.activeSMask.startTransformInverse,
         groupCtx.mozCurrentTransform
       );
@@ -1135,7 +1222,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     save: function CanvasGraphics_save() {
       this.ctx.save();
-      var old = this.current;
+      const old = this.current;
       this.stateStack.push(old);
       this.current = old.clone();
       this.current.resumeSMaskCtx = null;
@@ -1164,6 +1251,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         this.pendingClip = null;
 
         this._cachedGetSinglePixelWidth = null;
+      } else {
+        // We've finished all the SMask groups, reflect that in our state.
+        this.current.activeSMask = null;
       }
     },
     transform: function CanvasGraphics_transform(a, b, c, d, e, f) {
@@ -1174,31 +1264,31 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     // Path
     constructPath: function CanvasGraphics_constructPath(ops, args) {
-      var ctx = this.ctx;
-      var current = this.current;
-      var x = current.x,
+      const ctx = this.ctx;
+      const current = this.current;
+      let x = current.x,
         y = current.y;
-      for (var i = 0, j = 0, ii = ops.length; i < ii; i++) {
+      for (let i = 0, j = 0, ii = ops.length; i < ii; i++) {
         switch (ops[i] | 0) {
           case OPS.rectangle:
             x = args[j++];
             y = args[j++];
-            var width = args[j++];
-            var height = args[j++];
-            if (width === 0) {
+            let width = args[j++];
+            let height = args[j++];
+            if (width === 0 && ctx.lineWidth < this.getSinglePixelWidth()) {
               width = this.getSinglePixelWidth();
             }
-            if (height === 0) {
+            if (height === 0 && ctx.lineWidth < this.getSinglePixelWidth()) {
               height = this.getSinglePixelWidth();
             }
-            var xw = x + width;
-            var yh = y + height;
-            this.ctx.moveTo(x, y);
-            this.ctx.lineTo(xw, y);
-            this.ctx.lineTo(xw, yh);
-            this.ctx.lineTo(x, yh);
-            this.ctx.lineTo(x, y);
-            this.ctx.closePath();
+            const xw = x + width;
+            const yh = y + height;
+            ctx.moveTo(x, y);
+            ctx.lineTo(xw, y);
+            ctx.lineTo(xw, yh);
+            ctx.lineTo(x, yh);
+            ctx.lineTo(x, y);
+            ctx.closePath();
             break;
           case OPS.moveTo:
             x = args[j++];
@@ -1254,39 +1344,41 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     stroke: function CanvasGraphics_stroke(consumePath) {
       consumePath = typeof consumePath !== "undefined" ? consumePath : true;
-      var ctx = this.ctx;
-      var strokeColor = this.current.strokeColor;
+      const ctx = this.ctx;
+      const strokeColor = this.current.strokeColor;
       // For stroke we want to temporarily change the global alpha to the
       // stroking alpha.
       ctx.globalAlpha = this.current.strokeAlpha;
-      if (
-        strokeColor &&
-        strokeColor.hasOwnProperty("type") &&
-        strokeColor.type === "Pattern"
-      ) {
-        // for patterns, we transform to pattern space, calculate
-        // the pattern, call stroke, and restore to user space
-        ctx.save();
-        // The current transform will be replaced while building the pattern,
-        // but the line width needs to be adjusted by the current transform, so
-        // we must scale it. To properly fix this we should be using a pattern
-        // transform instead (see #10955).
-        const transform = ctx.mozCurrentTransform;
-        const scale = Util.singularValueDecompose2dScale(transform)[0];
-        ctx.strokeStyle = strokeColor.getPattern(ctx, this);
-        ctx.lineWidth = Math.max(
-          this.getSinglePixelWidth() * MIN_WIDTH_FACTOR,
-          this.current.lineWidth * scale
-        );
-        ctx.stroke();
-        ctx.restore();
-      } else {
-        // Prevent drawing too thin lines by enforcing a minimum line width.
-        ctx.lineWidth = Math.max(
-          this.getSinglePixelWidth() * MIN_WIDTH_FACTOR,
-          this.current.lineWidth
-        );
-        ctx.stroke();
+      if (this.contentVisible) {
+        if (
+          strokeColor &&
+          strokeColor.hasOwnProperty("type") &&
+          strokeColor.type === "Pattern"
+        ) {
+          // for patterns, we transform to pattern space, calculate
+          // the pattern, call stroke, and restore to user space
+          ctx.save();
+          // The current transform will be replaced while building the pattern,
+          // but the line width needs to be adjusted by the current transform,
+          // so we must scale it. To properly fix this we should be using a
+          // pattern transform instead (see #10955).
+          const transform = ctx.mozCurrentTransform;
+          const scale = Util.singularValueDecompose2dScale(transform)[0];
+          ctx.strokeStyle = strokeColor.getPattern(ctx, this);
+          ctx.lineWidth = Math.max(
+            this.getSinglePixelWidth() * MIN_WIDTH_FACTOR,
+            this.current.lineWidth * scale
+          );
+          ctx.stroke();
+          ctx.restore();
+        } else {
+          // Prevent drawing too thin lines by enforcing a minimum line width.
+          ctx.lineWidth = Math.max(
+            this.getSinglePixelWidth() * MIN_WIDTH_FACTOR,
+            this.current.lineWidth
+          );
+          ctx.stroke();
+        }
       }
       if (consumePath) {
         this.consumePath();
@@ -1300,10 +1392,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     fill: function CanvasGraphics_fill(consumePath) {
       consumePath = typeof consumePath !== "undefined" ? consumePath : true;
-      var ctx = this.ctx;
-      var fillColor = this.current.fillColor;
-      var isPatternFill = this.current.patternFill;
-      var needRestore = false;
+      const ctx = this.ctx;
+      const fillColor = this.current.fillColor;
+      const isPatternFill = this.current.patternFill;
+      let needRestore = false;
 
       if (isPatternFill) {
         ctx.save();
@@ -1314,11 +1406,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         needRestore = true;
       }
 
-      if (this.pendingEOFill) {
-        ctx.fill("evenodd");
-        this.pendingEOFill = false;
-      } else {
-        ctx.fill();
+      if (this.contentVisible) {
+        if (this.pendingEOFill) {
+          ctx.fill("evenodd");
+          this.pendingEOFill = false;
+        } else {
+          ctx.fill();
+        }
       }
 
       if (needRestore) {
@@ -1371,8 +1465,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.y = this.current.lineY = 0;
     },
     endText: function CanvasGraphics_endText() {
-      var paths = this.pendingTextPaths;
-      var ctx = this.ctx;
+      const paths = this.pendingTextPaths;
+      const ctx = this.ctx;
       if (paths === undefined) {
         ctx.beginPath();
         return;
@@ -1380,8 +1474,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       ctx.save();
       ctx.beginPath();
-      for (var i = 0; i < paths.length; i++) {
-        var path = paths[i];
+      for (let i = 0; i < paths.length; i++) {
+        const path = paths[i];
         ctx.setTransform.apply(ctx, path.transform);
         ctx.translate(path.x, path.y);
         path.addToPath(ctx, path.fontSize);
@@ -1404,8 +1498,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.leading = -leading;
     },
     setFont: function CanvasGraphics_setFont(fontRefName, size) {
-      var fontObj = this.commonObjs.get(fontRefName);
-      var current = this.current;
+      const fontObj = this.commonObjs.get(fontRefName);
+      const current = this.current;
 
       if (!fontObj) {
         throw new Error(`Can't find font for ${fontRefName}`);
@@ -1437,7 +1531,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         return; // we don't need ctx.font for Type3 fonts
       }
 
-      var name = fontObj.loadedName || "sans-serif";
+      const name = fontObj.loadedName || "sans-serif";
 
       let bold = "normal";
       if (fontObj.black) {
@@ -1445,8 +1539,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else if (fontObj.bold) {
         bold = "bold";
       }
-      var italic = fontObj.italic ? "italic" : "normal";
-      var typeface = `"${name}", ${fontObj.fallbackName}`;
+      const italic = fontObj.italic ? "italic" : "normal";
+      const typeface = `"${name}", ${fontObj.fallbackName}`;
 
       // Some font backends cannot handle fonts below certain size.
       // Keeping the font at minimal size and using the fontSizeScale to change
@@ -1488,19 +1582,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintChar(character, x, y, patternTransform) {
-      var ctx = this.ctx;
-      var current = this.current;
-      var font = current.font;
-      var textRenderingMode = current.textRenderingMode;
-      var fontSize = current.fontSize / current.fontSizeScale;
-      var fillStrokeMode =
+      const ctx = this.ctx;
+      const current = this.current;
+      const font = current.font;
+      const textRenderingMode = current.textRenderingMode;
+      const fontSize = current.fontSize / current.fontSizeScale;
+      const fillStrokeMode =
         textRenderingMode & TextRenderingMode.FILL_STROKE_MASK;
-      var isAddToPathSet = !!(
+      const isAddToPathSet = !!(
         textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG
       );
       const patternFill = current.patternFill && !font.missingFile;
 
-      var addToPath;
+      let addToPath;
       if (font.disableFontFace || isAddToPathSet || patternFill) {
         addToPath = font.getPathGenerator(this.commonObjs, character);
       }
@@ -1542,7 +1636,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       if (isAddToPathSet) {
-        var paths = this.pendingTextPaths || (this.pendingTextPaths = []);
+        const paths = this.pendingTextPaths || (this.pendingTextPaths = []);
         paths.push({
           transform: ctx.mozCurrentTransform,
           x,
@@ -1563,9 +1657,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       );
       ctx.scale(1.5, 1);
       ctx.fillText("I", 0, 10);
-      var data = ctx.getImageData(0, 0, 10, 10).data;
-      var enabled = false;
-      for (var i = 3; i < data.length; i += 4) {
+      const data = ctx.getImageData(0, 0, 10, 10).data;
+      let enabled = false;
+      for (let i = 3; i < data.length; i += 4) {
         if (data[i] > 0 && data[i] < 255) {
           enabled = true;
           break;
@@ -1575,30 +1669,30 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     showText: function CanvasGraphics_showText(glyphs) {
-      var current = this.current;
-      var font = current.font;
+      const current = this.current;
+      const font = current.font;
       if (font.isType3Font) {
         return this.showType3Text(glyphs);
       }
 
-      var fontSize = current.fontSize;
+      const fontSize = current.fontSize;
       if (fontSize === 0) {
         return undefined;
       }
 
-      var ctx = this.ctx;
-      var fontSizeScale = current.fontSizeScale;
-      var charSpacing = current.charSpacing;
-      var wordSpacing = current.wordSpacing;
-      var fontDirection = current.fontDirection;
-      var textHScale = current.textHScale * fontDirection;
-      var glyphsLength = glyphs.length;
-      var vertical = font.vertical;
-      var spacingDir = vertical ? 1 : -1;
-      var defaultVMetrics = font.defaultVMetrics;
-      var widthAdvanceScale = fontSize * current.fontMatrix[0];
+      const ctx = this.ctx;
+      const fontSizeScale = current.fontSizeScale;
+      const charSpacing = current.charSpacing;
+      const wordSpacing = current.wordSpacing;
+      const fontDirection = current.fontDirection;
+      const textHScale = current.textHScale * fontDirection;
+      const glyphsLength = glyphs.length;
+      const vertical = font.vertical;
+      const spacingDir = vertical ? 1 : -1;
+      const defaultVMetrics = font.defaultVMetrics;
+      const widthAdvanceScale = fontSize * current.fontMatrix[0];
 
-      var simpleFillText =
+      const simpleFillText =
         current.textRenderingMode === TextRenderingMode.FILL &&
         !font.disableFontFace &&
         !current.patternFill;
@@ -1623,10 +1717,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.scale(textHScale, 1);
       }
 
-      var lineWidth = current.lineWidth;
-      var scale = current.textMatrixScale;
+      let lineWidth = current.lineWidth;
+      const scale = current.textMatrixScale;
       if (scale === 0 || lineWidth === 0) {
-        var fillStrokeMode =
+        const fillStrokeMode =
           current.textRenderingMode & TextRenderingMode.FILL_STROKE_MASK;
         if (
           fillStrokeMode === TextRenderingMode.STROKE ||
@@ -1646,27 +1740,26 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       ctx.lineWidth = lineWidth;
 
-      var x = 0,
+      let x = 0,
         i;
       for (i = 0; i < glyphsLength; ++i) {
-        var glyph = glyphs[i];
+        const glyph = glyphs[i];
         if (isNum(glyph)) {
           x += (spacingDir * glyph * fontSize) / 1000;
           continue;
         }
 
-        var restoreNeeded = false;
-        var spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
-        var character = glyph.fontChar;
-        var accent = glyph.accent;
-        var scaledX, scaledY, scaledAccentX, scaledAccentY;
-        var width = glyph.width;
+        let restoreNeeded = false;
+        const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
+        const character = glyph.fontChar;
+        const accent = glyph.accent;
+        let scaledX, scaledY;
+        let width = glyph.width;
         if (vertical) {
-          var vmetric, vx, vy;
-          vmetric = glyph.vmetric || defaultVMetrics;
-          vx = glyph.vmetric ? vmetric[1] : width * 0.5;
-          vx = -vx * widthAdvanceScale;
-          vy = vmetric[2] * widthAdvanceScale;
+          const vmetric = glyph.vmetric || defaultVMetrics;
+          const vx =
+            -(glyph.vmetric ? vmetric[1] : width * 0.5) * widthAdvanceScale;
+          const vy = vmetric[2] * widthAdvanceScale;
 
           width = vmetric ? -vmetric[0] : width;
           scaledX = vx / fontSizeScale;
@@ -1680,11 +1773,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           // Some standard fonts may not have the exact width: rescale per
           // character if measured width is greater than expected glyph width
           // and subpixel-aa is enabled, otherwise just center the glyph.
-          var measuredWidth =
+          const measuredWidth =
             ((ctx.measureText(character).width * 1000) / fontSize) *
             fontSizeScale;
           if (width < measuredWidth && this.isFontSubpixelAAEnabled) {
-            var characterScaleX = width / measuredWidth;
+            const characterScaleX = width / measuredWidth;
             restoreNeeded = true;
             ctx.save();
             ctx.scale(characterScaleX, 1);
@@ -1697,15 +1790,17 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         // Only attempt to draw the glyph if it is actually in the embedded font
         // file or if there isn't a font file so the fallback font is shown.
-        if (glyph.isInFont || font.missingFile) {
+        if (this.contentVisible && (glyph.isInFont || font.missingFile)) {
           if (simpleFillText && !accent) {
             // common case
             ctx.fillText(character, scaledX, scaledY);
           } else {
             this.paintChar(character, scaledX, scaledY, patternTransform);
             if (accent) {
-              scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
-              scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
+              const scaledAccentX =
+                scaledX + (fontSize * accent.offset.x) / fontSizeScale;
+              const scaledAccentY =
+                scaledY - (fontSize * accent.offset.y) / fontSizeScale;
               this.paintChar(
                 accent.fontChar,
                 scaledAccentX,
@@ -1716,7 +1811,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
 
-        var charWidth;
+        let charWidth;
         if (vertical) {
           charWidth = width * widthAdvanceScale - spacing * fontDirection;
         } else {
@@ -1738,20 +1833,20 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     showType3Text: function CanvasGraphics_showType3Text(glyphs) {
       // Type3 fonts - each glyph is a "mini-PDF"
-      var ctx = this.ctx;
-      var current = this.current;
-      var font = current.font;
-      var fontSize = current.fontSize;
-      var fontDirection = current.fontDirection;
-      var spacingDir = font.vertical ? 1 : -1;
-      var charSpacing = current.charSpacing;
-      var wordSpacing = current.wordSpacing;
-      var textHScale = current.textHScale * fontDirection;
-      var fontMatrix = current.fontMatrix || FONT_IDENTITY_MATRIX;
-      var glyphsLength = glyphs.length;
-      var isTextInvisible =
+      const ctx = this.ctx;
+      const current = this.current;
+      const font = current.font;
+      const fontSize = current.fontSize;
+      const fontDirection = current.fontDirection;
+      const spacingDir = font.vertical ? 1 : -1;
+      const charSpacing = current.charSpacing;
+      const wordSpacing = current.wordSpacing;
+      const textHScale = current.textHScale * fontDirection;
+      const fontMatrix = current.fontMatrix || FONT_IDENTITY_MATRIX;
+      const glyphsLength = glyphs.length;
+      const isTextInvisible =
         current.textRenderingMode === TextRenderingMode.INVISIBLE;
-      var i, glyph, width, spacingLength;
+      let i, glyph, width, spacingLength;
 
       if (isTextInvisible || fontSize === 0) {
         return;
@@ -1773,20 +1868,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           continue;
         }
 
-        var spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
-        var operatorList = font.charProcOperatorList[glyph.operatorListId];
+        const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
+        const operatorList = font.charProcOperatorList[glyph.operatorListId];
         if (!operatorList) {
           warn(`Type3 character "${glyph.operatorListId}" is not available.`);
           continue;
         }
-        this.processingType3 = glyph;
-        this.save();
-        ctx.scale(fontSize, fontSize);
-        ctx.transform.apply(ctx, fontMatrix);
-        this.executeOperatorList(operatorList);
-        this.restore();
+        if (this.contentVisible) {
+          this.processingType3 = glyph;
+          this.save();
+          ctx.scale(fontSize, fontSize);
+          ctx.transform.apply(ctx, fontMatrix);
+          this.executeOperatorList(operatorList);
+          this.restore();
+        }
 
-        var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
+        const transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
         width = transformed[0] * fontSize + spacing;
 
         ctx.translate(width, 0);
@@ -1818,12 +1915,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     // Color
     getColorN_Pattern: function CanvasGraphics_getColorN_Pattern(IR) {
-      var pattern;
+      let pattern;
       if (IR[0] === "TilingPattern") {
-        var color = IR[1];
-        var baseTransform =
+        const color = IR[1];
+        const baseTransform =
           this.baseTransform || this.ctx.mozCurrentTransform.slice();
-        var canvasGraphicsFactory = {
+        const canvasGraphicsFactory = {
           createCanvasGraphics: ctx => {
             return new CanvasGraphics(
               ctx,
@@ -1854,39 +1951,42 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.patternFill = true;
     },
     setStrokeRGBColor: function CanvasGraphics_setStrokeRGBColor(r, g, b) {
-      var color = Util.makeCssRgb(r, g, b);
+      const color = Util.makeCssRgb(r, g, b);
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
     setFillRGBColor: function CanvasGraphics_setFillRGBColor(r, g, b) {
-      var color = Util.makeCssRgb(r, g, b);
+      const color = Util.makeCssRgb(r, g, b);
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
       this.current.patternFill = false;
     },
 
     shadingFill: function CanvasGraphics_shadingFill(patternIR) {
-      var ctx = this.ctx;
+      if (!this.contentVisible) {
+        return;
+      }
+      const ctx = this.ctx;
 
       this.save();
-      var pattern = getShadingPatternFromIR(patternIR);
+      const pattern = getShadingPatternFromIR(patternIR);
       ctx.fillStyle = pattern.getPattern(ctx, this, true);
 
-      var inv = ctx.mozCurrentTransformInverse;
+      const inv = ctx.mozCurrentTransformInverse;
       if (inv) {
-        var canvas = ctx.canvas;
-        var width = canvas.width;
-        var height = canvas.height;
+        const canvas = ctx.canvas;
+        const width = canvas.width;
+        const height = canvas.height;
 
-        var bl = Util.applyTransform([0, 0], inv);
-        var br = Util.applyTransform([0, height], inv);
-        var ul = Util.applyTransform([width, 0], inv);
-        var ur = Util.applyTransform([width, height], inv);
+        const bl = Util.applyTransform([0, 0], inv);
+        const br = Util.applyTransform([0, height], inv);
+        const ul = Util.applyTransform([width, 0], inv);
+        const ur = Util.applyTransform([width, height], inv);
 
-        var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
-        var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
-        var x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
-        var y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
+        const x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
+        const y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
+        const x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
+        const y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
 
         this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
       } else {
@@ -1914,6 +2014,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       matrix,
       bbox
     ) {
+      if (!this.contentVisible) {
+        return;
+      }
       this.save();
       this.baseTransformStack.push(this.baseTransform);
 
@@ -1924,8 +2027,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.baseTransform = this.ctx.mozCurrentTransform;
 
       if (bbox) {
-        var width = bbox[2] - bbox[0];
-        var height = bbox[3] - bbox[1];
+        const width = bbox[2] - bbox[0];
+        const height = bbox[3] - bbox[1];
         this.ctx.rect(bbox[0], bbox[1], width, height);
         this.clip();
         this.endPath();
@@ -1933,13 +2036,20 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintFormXObjectEnd: function CanvasGraphics_paintFormXObjectEnd() {
+      if (!this.contentVisible) {
+        return;
+      }
       this.restore();
       this.baseTransform = this.baseTransformStack.pop();
     },
 
     beginGroup: function CanvasGraphics_beginGroup(group) {
+      if (!this.contentVisible) {
+        return;
+      }
+
       this.save();
-      var currentCtx = this.ctx;
+      const currentCtx = this.ctx;
       // TODO non-isolated groups - according to Rik at adobe non-isolated
       // group results aren't usually that different and they even have tools
       // that ignore this setting. Notes from Rik on implementing:
@@ -1963,7 +2073,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         warn("Knockout groups not supported.");
       }
 
-      var currentTransform = currentCtx.mozCurrentTransform;
+      const currentTransform = currentCtx.mozCurrentTransform;
       if (group.matrix) {
         currentCtx.transform.apply(currentCtx, group.matrix);
       }
@@ -1973,12 +2083,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       // Based on the current transform figure out how big the bounding box
       // will actually be.
-      var bounds = Util.getAxialAlignedBoundingBox(
+      let bounds = Util.getAxialAlignedBoundingBox(
         group.bbox,
         currentCtx.mozCurrentTransform
       );
       // Clip the bounding box to the current canvas.
-      var canvasBounds = [
+      const canvasBounds = [
         0,
         0,
         currentCtx.canvas.width,
@@ -1987,11 +2097,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       bounds = Util.intersect(bounds, canvasBounds) || [0, 0, 0, 0];
       // Use ceil in case we're between sizes so we don't create canvas that is
       // too small and make the canvas at least 1x1 pixels.
-      var offsetX = Math.floor(bounds[0]);
-      var offsetY = Math.floor(bounds[1]);
-      var drawnWidth = Math.max(Math.ceil(bounds[2]) - offsetX, 1);
-      var drawnHeight = Math.max(Math.ceil(bounds[3]) - offsetY, 1);
-      var scaleX = 1,
+      const offsetX = Math.floor(bounds[0]);
+      const offsetY = Math.floor(bounds[1]);
+      let drawnWidth = Math.max(Math.ceil(bounds[2]) - offsetX, 1);
+      let drawnHeight = Math.max(Math.ceil(bounds[3]) - offsetY, 1);
+      let scaleX = 1,
         scaleY = 1;
       if (drawnWidth > MAX_GROUP_SIZE) {
         scaleX = drawnWidth / MAX_GROUP_SIZE;
@@ -2002,18 +2112,18 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         drawnHeight = MAX_GROUP_SIZE;
       }
 
-      var cacheId = "groupAt" + this.groupLevel;
+      let cacheId = "groupAt" + this.groupLevel;
       if (group.smask) {
         // Using two cache entries is case if masks are used one after another.
         cacheId += "_smask_" + (this.smaskCounter++ % 2);
       }
-      var scratchCanvas = this.cachedCanvases.getCanvas(
+      const scratchCanvas = this.cachedCanvases.getCanvas(
         cacheId,
         drawnWidth,
         drawnHeight,
         true
       );
-      var groupCtx = scratchCanvas.context;
+      const groupCtx = scratchCanvas.context;
 
       // Since we created a new canvas that is just the size of the bounding box
       // we have to translate the group ctx.
@@ -2059,8 +2169,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     endGroup: function CanvasGraphics_endGroup(group) {
+      if (!this.contentVisible) {
+        return;
+      }
       this.groupLevel--;
-      var groupCtx = this.ctx;
+      const groupCtx = this.ctx;
       this.ctx = this.groupStack.pop();
       // Turn off image smoothing to avoid sub pixel interpolation which can
       // look kind of blurry for some pdfs.
@@ -2098,8 +2211,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current = new CanvasExtraState();
 
       if (Array.isArray(rect) && rect.length === 4) {
-        var width = rect[2] - rect[0];
-        var height = rect[3] - rect[1];
+        const width = rect[2] - rect[0];
+        const height = rect[3] - rect[1];
         this.ctx.rect(rect[0], rect[1], width, height);
         this.clip();
         this.endPath();
@@ -2114,13 +2227,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintImageMaskXObject: function CanvasGraphics_paintImageMaskXObject(img) {
-      var ctx = this.ctx;
-      var width = img.width,
+      if (!this.contentVisible) {
+        return;
+      }
+      const ctx = this.ctx;
+      const width = img.width,
         height = img.height;
-      var fillColor = this.current.fillColor;
-      var isPatternFill = this.current.patternFill;
+      const fillColor = this.current.fillColor;
+      const isPatternFill = this.current.patternFill;
 
-      var glyph = this.processingType3;
+      const glyph = this.processingType3;
 
       if (COMPILE_TYPE3_GLYPHS && glyph && glyph.compiled === undefined) {
         if (width <= MAX_SIZE_TO_COMPILE && height <= MAX_SIZE_TO_COMPILE) {
@@ -2135,12 +2251,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         return;
       }
 
-      var maskCanvas = this.cachedCanvases.getCanvas(
+      const maskCanvas = this.cachedCanvases.getCanvas(
         "maskCanvas",
         width,
         height
       );
-      var maskCtx = maskCanvas.context;
+      const maskCtx = maskCanvas.context;
       maskCtx.save();
 
       putBinaryImageMask(maskCtx, img);
@@ -2157,23 +2273,28 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.paintInlineImageXObject(maskCanvas.canvas);
     },
 
-    paintImageMaskXObjectRepeat: function CanvasGraphics_paintImageMaskXObjectRepeat(
+    paintImageMaskXObjectRepeat(
       imgData,
       scaleX,
+      skewX = 0,
+      skewY = 0,
       scaleY,
       positions
     ) {
-      var width = imgData.width;
-      var height = imgData.height;
-      var fillColor = this.current.fillColor;
-      var isPatternFill = this.current.patternFill;
+      if (!this.contentVisible) {
+        return;
+      }
+      const width = imgData.width;
+      const height = imgData.height;
+      const fillColor = this.current.fillColor;
+      const isPatternFill = this.current.patternFill;
 
-      var maskCanvas = this.cachedCanvases.getCanvas(
+      const maskCanvas = this.cachedCanvases.getCanvas(
         "maskCanvas",
         width,
         height
       );
-      var maskCtx = maskCanvas.context;
+      const maskCtx = maskCanvas.context;
       maskCtx.save();
 
       putBinaryImageMask(maskCtx, imgData);
@@ -2187,10 +2308,17 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       maskCtx.restore();
 
-      var ctx = this.ctx;
-      for (var i = 0, ii = positions.length; i < ii; i += 2) {
+      const ctx = this.ctx;
+      for (let i = 0, ii = positions.length; i < ii; i += 2) {
         ctx.save();
-        ctx.transform(scaleX, 0, 0, scaleY, positions[i], positions[i + 1]);
+        ctx.transform(
+          scaleX,
+          skewX,
+          skewY,
+          scaleY,
+          positions[i],
+          positions[i + 1]
+        );
         ctx.scale(1, -1);
         ctx.drawImage(maskCanvas.canvas, 0, 0, width, height, 0, -1, 1, 1);
         ctx.restore();
@@ -2200,21 +2328,24 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     paintImageMaskXObjectGroup: function CanvasGraphics_paintImageMaskXObjectGroup(
       images
     ) {
-      var ctx = this.ctx;
+      if (!this.contentVisible) {
+        return;
+      }
+      const ctx = this.ctx;
 
-      var fillColor = this.current.fillColor;
-      var isPatternFill = this.current.patternFill;
-      for (var i = 0, ii = images.length; i < ii; i++) {
-        var image = images[i];
-        var width = image.width,
+      const fillColor = this.current.fillColor;
+      const isPatternFill = this.current.patternFill;
+      for (let i = 0, ii = images.length; i < ii; i++) {
+        const image = images[i];
+        const width = image.width,
           height = image.height;
 
-        var maskCanvas = this.cachedCanvases.getCanvas(
+        const maskCanvas = this.cachedCanvases.getCanvas(
           "maskCanvas",
           width,
           height
         );
-        var maskCtx = maskCanvas.context;
+        const maskCtx = maskCanvas.context;
         maskCtx.save();
 
         putBinaryImageMask(maskCtx, image);
@@ -2237,6 +2368,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintImageXObject: function CanvasGraphics_paintImageXObject(objId) {
+      if (!this.contentVisible) {
+        return;
+      }
       const imgData = objId.startsWith("g_")
         ? this.commonObjs.get(objId)
         : this.objs.get(objId);
@@ -2254,6 +2388,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       scaleY,
       positions
     ) {
+      if (!this.contentVisible) {
+        return;
+      }
       const imgData = objId.startsWith("g_")
         ? this.commonObjs.get(objId)
         : this.objs.get(objId);
@@ -2262,10 +2399,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         return;
       }
 
-      var width = imgData.width;
-      var height = imgData.height;
-      var map = [];
-      for (var i = 0, ii = positions.length; i < ii; i += 2) {
+      const width = imgData.width;
+      const height = imgData.height;
+      const map = [];
+      for (let i = 0, ii = positions.length; i < ii; i += 2) {
         map.push({
           transform: [scaleX, 0, 0, scaleY, positions[i], positions[i + 1]],
           x: 0,
@@ -2280,23 +2417,26 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     paintInlineImageXObject: function CanvasGraphics_paintInlineImageXObject(
       imgData
     ) {
-      var width = imgData.width;
-      var height = imgData.height;
-      var ctx = this.ctx;
+      if (!this.contentVisible) {
+        return;
+      }
+      const width = imgData.width;
+      const height = imgData.height;
+      const ctx = this.ctx;
 
       this.save();
       // scale the image to the unit square
       ctx.scale(1 / width, -1 / height);
 
-      var currentTransform = ctx.mozCurrentTransformInverse;
-      var a = currentTransform[0],
+      const currentTransform = ctx.mozCurrentTransformInverse;
+      const a = currentTransform[0],
         b = currentTransform[1];
-      var widthScale = Math.max(Math.sqrt(a * a + b * b), 1);
-      var c = currentTransform[2],
+      let widthScale = Math.max(Math.sqrt(a * a + b * b), 1);
+      const c = currentTransform[2],
         d = currentTransform[3];
-      var heightScale = Math.max(Math.sqrt(c * c + d * d), 1);
+      let heightScale = Math.max(Math.sqrt(c * c + d * d), 1);
 
-      var imgToPaint, tmpCanvas;
+      let imgToPaint, tmpCanvas, tmpCtx;
       // typeof check is needed due to node.js support, see issue #8489
       if (
         (typeof HTMLElement === "function" && imgData instanceof HTMLElement) ||
@@ -2305,14 +2445,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         imgToPaint = imgData;
       } else {
         tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", width, height);
-        var tmpCtx = tmpCanvas.context;
-        putBinaryImageData(tmpCtx, imgData);
+        tmpCtx = tmpCanvas.context;
+        putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
         imgToPaint = tmpCanvas.canvas;
       }
 
-      var paintWidth = width,
+      let paintWidth = width,
         paintHeight = height;
-      var tmpCanvasId = "prescale1";
+      let tmpCanvasId = "prescale1";
       // Vertical or horizontal scaling shall not be more than 2 to not lose the
       // pixels during drawImage operation, painting on the temporary canvas(es)
       // that are twice smaller in size.
@@ -2320,7 +2460,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         (widthScale > 2 && paintWidth > 1) ||
         (heightScale > 2 && paintHeight > 1)
       ) {
-        var newWidth = paintWidth,
+        let newWidth = paintWidth,
           newHeight = paintHeight;
         if (widthScale > 2 && paintWidth > 1) {
           newWidth = Math.ceil(paintWidth / 2);
@@ -2366,7 +2506,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       );
 
       if (this.imageLayer) {
-        var position = this.getCanvasPosition(0, -height);
+        const position = this.getCanvasPosition(0, -height);
         this.imageLayer.appendImage({
           imgData,
           left: position[0],
@@ -2382,16 +2522,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       imgData,
       map
     ) {
-      var ctx = this.ctx;
-      var w = imgData.width;
-      var h = imgData.height;
+      if (!this.contentVisible) {
+        return;
+      }
+      const ctx = this.ctx;
+      const w = imgData.width;
+      const h = imgData.height;
 
-      var tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w, h);
-      var tmpCtx = tmpCanvas.context;
-      putBinaryImageData(tmpCtx, imgData);
+      const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w, h);
+      const tmpCtx = tmpCanvas.context;
+      putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
 
-      for (var i = 0, ii = map.length; i < ii; i++) {
-        var entry = map[i];
+      for (let i = 0, ii = map.length; i < ii; i++) {
+        const entry = map[i];
         ctx.save();
         ctx.transform.apply(ctx, entry.transform);
         ctx.scale(1, -1);
@@ -2407,7 +2550,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           1
         );
         if (this.imageLayer) {
-          var position = this.getCanvasPosition(entry.x, entry.y);
+          const position = this.getCanvasPosition(entry.x, entry.y);
           this.imageLayer.appendImage({
             imgData,
             left: position[0],
@@ -2421,11 +2564,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintSolidColorImageMask: function CanvasGraphics_paintSolidColorImageMask() {
+      if (!this.contentVisible) {
+        return;
+      }
       this.ctx.fillRect(0, 0, 1, 1);
-    },
-
-    paintXObject: function CanvasGraphics_paintXObject() {
-      warn("Unsupported 'paintXObject' command.");
     },
 
     // Marked content
@@ -2437,16 +2579,28 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // TODO Marked content.
     },
     beginMarkedContent: function CanvasGraphics_beginMarkedContent(tag) {
-      // TODO Marked content.
+      this.markedContentStack.push({
+        visible: true,
+      });
     },
     beginMarkedContentProps: function CanvasGraphics_beginMarkedContentProps(
       tag,
       properties
     ) {
-      // TODO Marked content.
+      if (tag === "OC") {
+        this.markedContentStack.push({
+          visible: this.optionalContentConfig.isVisible(properties),
+        });
+      } else {
+        this.markedContentStack.push({
+          visible: true,
+        });
+      }
+      this.contentVisible = this.isContentVisible();
     },
     endMarkedContent: function CanvasGraphics_endMarkedContent() {
-      // TODO Marked content.
+      this.markedContentStack.pop();
+      this.contentVisible = this.isContentVisible();
     },
 
     // Compatibility
@@ -2461,7 +2615,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // Helper functions
 
     consumePath: function CanvasGraphics_consumePath() {
-      var ctx = this.ctx;
+      const ctx = this.ctx;
       if (this.pendingClip) {
         if (this.pendingClip === EO_CLIP) {
           ctx.clip("evenodd");
@@ -2486,15 +2640,24 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       return this._cachedGetSinglePixelWidth;
     },
     getCanvasPosition: function CanvasGraphics_getCanvasPosition(x, y) {
-      var transform = this.ctx.mozCurrentTransform;
+      const transform = this.ctx.mozCurrentTransform;
       return [
         transform[0] * x + transform[2] * y + transform[4],
         transform[1] * x + transform[3] * y + transform[5],
       ];
     },
+
+    isContentVisible: function CanvasGraphics_isContentVisible() {
+      for (let i = this.markedContentStack.length - 1; i >= 0; i--) {
+        if (!this.markedContentStack[i].visible) {
+          return false;
+        }
+      }
+      return true;
+    },
   };
 
-  for (var op in OPS) {
+  for (const op in OPS) {
     CanvasGraphics.prototype[OPS[op]] = CanvasGraphics.prototype[op];
   }
 

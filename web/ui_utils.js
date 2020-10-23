@@ -23,6 +23,8 @@ const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
 const VERTICAL_PADDING = 5;
 
+const LOADINGBAR_END_OFFSET_VAR = "--loadingBar-end-offset";
+
 const PresentationModeState = {
   UNKNOWN: 0,
   NORMAL: 1,
@@ -99,8 +101,6 @@ function getOutputScale(ctx) {
   const backingStoreRatio =
     ctx.webkitBackingStorePixelRatio ||
     ctx.mozBackingStorePixelRatio ||
-    ctx.msBackingStorePixelRatio ||
-    ctx.oBackingStorePixelRatio ||
     ctx.backingStorePixelRatio ||
     1;
   const pixelRatio = devicePixelRatio / backingStoreRatio;
@@ -636,13 +636,18 @@ function getPDFFileNameFromURL(url, defaultFilename = "document.pdf") {
   return suggestedFilename || defaultFilename;
 }
 
-function normalizeWheelEventDelta(evt) {
+function normalizeWheelEventDirection(evt) {
   let delta = Math.sqrt(evt.deltaX * evt.deltaX + evt.deltaY * evt.deltaY);
   const angle = Math.atan2(evt.deltaY, evt.deltaX);
   if (-0.25 * Math.PI < angle && angle < 0.75 * Math.PI) {
     // All that is left-up oriented has to change the sign.
     delta = -delta;
   }
+  return delta;
+}
+
+function normalizeWheelEventDelta(evt) {
+  let delta = normalizeWheelEventDirection(evt);
 
   const MOUSE_DOM_DELTA_PIXEL_MODE = 0;
   const MOUSE_DOM_DELTA_LINE_MODE = 1;
@@ -937,7 +942,8 @@ class ProgressBar {
     const container = viewer.parentNode;
     const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
-      this.bar.style.width = `calc(100% - ${scrollbarWidth}px)`;
+      const doc = document.documentElement;
+      doc.style.setProperty(LOADINGBAR_END_OFFSET_VAR, `${scrollbarWidth}px`);
     }
   }
 
@@ -947,7 +953,6 @@ class ProgressBar {
     }
     this.visible = false;
     this.bar.classList.add("hidden");
-    document.body.classList.remove("loadingInProgress");
   }
 
   show() {
@@ -955,7 +960,6 @@ class ProgressBar {
       return;
     }
     this.visible = true;
-    document.body.classList.add("loadingInProgress");
     this.bar.classList.remove("hidden");
   }
 }
@@ -981,6 +985,28 @@ function moveToEndOfArray(arr, condition) {
   }
 }
 
+/**
+ * Get the active or focused element in current DOM.
+ *
+ * Recursively search for the truly active or focused element in case there are
+ * shadow DOMs.
+ *
+ * @returns {Element} the truly active or focused element.
+ */
+function getActiveOrFocusedElement() {
+  let curRoot = document;
+  let curActiveOrFocused =
+    curRoot.activeElement || curRoot.querySelector(":focus");
+
+  while (curActiveOrFocused && curActiveOrFocused.shadowRoot) {
+    curRoot = curActiveOrFocused.shadowRoot;
+    curActiveOrFocused =
+      curRoot.activeElement || curRoot.querySelector(":focus");
+  }
+
+  return curActiveOrFocused;
+}
+
 export {
   AutoPrintRegExp,
   CSS_UNITS,
@@ -1003,7 +1029,6 @@ export {
   SpreadMode,
   NullL10n,
   EventBus,
-  clamp,
   ProgressBar,
   getPDFFileNameFromURL,
   noContextMenuHandler,
@@ -1017,9 +1042,11 @@ export {
   scrollIntoView,
   watchScroll,
   binarySearchFirstItem,
+  normalizeWheelEventDirection,
   normalizeWheelEventDelta,
   animationStarted,
   WaitOnType,
   waitOnEventOrTimeout,
   moveToEndOfArray,
+  getActiveOrFocusedElement,
 };

@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error */
 
 import "./compatibility.js";
 
@@ -143,6 +142,28 @@ const AnnotationBorderStyleType = {
   BEVELED: 3,
   INSET: 4,
   UNDERLINE: 5,
+};
+
+const AnnotationActionEventType = {
+  E: "MouseEnter",
+  X: "MouseExit",
+  D: "MouseDown",
+  U: "MouseUp",
+  Fo: "Focus",
+  Bl: "Blur",
+  PO: "PageOpen",
+  PC: "PageClose",
+  PV: "PageVisible",
+  PI: "PageInvisible",
+  K: "Keystroke",
+  F: "Format",
+  V: "Validate",
+  C: "Calculate",
+  WC: "WillClose",
+  WS: "WillSave",
+  DS: "DidSave",
+  WP: "WillPrint",
+  DP: "DidPrint",
 };
 
 const StreamType = {
@@ -302,6 +323,7 @@ const UNSUPPORTED_FEATURES = {
   errorFontToUnicode: "errorFontToUnicode",
   errorFontLoadNative: "errorFontLoadNative",
   errorFontGetPath: "errorFontGetPath",
+  errorMarkedContent: "errorMarkedContent",
 };
 
 const PasswordResponses = {
@@ -363,7 +385,7 @@ function isSameOrigin(baseUrl, otherUrl) {
   return base.origin === other.origin;
 }
 
-// Checks if URLs use one of the whitelisted protocols, e.g. to avoid XSS.
+// Checks if URLs use one of the allowed protocols, e.g. to avoid XSS.
 function _isValidProtocol(url) {
   if (!url) {
     return false;
@@ -412,6 +434,9 @@ function shadow(obj, prop, value) {
   return value;
 }
 
+/**
+ * @type {any}
+ */
 const BaseException = (function BaseExceptionClosure() {
   // eslint-disable-next-line no-shadow
   function BaseException(message) {
@@ -464,6 +489,9 @@ class AbortException extends BaseException {}
 
 const NullCharactersRegExp = /\x00/g;
 
+/**
+ * @param {string} str
+ */
 function removeNullCharacters(str) {
   if (typeof str !== "string") {
     warn("The argument for removeNullCharacters must be a string.");
@@ -503,7 +531,7 @@ function stringToBytes(str) {
 
 /**
  * Gets length of the array (Array, Uint8Array, or string) in bytes.
- * @param {Array|Uint8Array|string} arr
+ * @param {Array<any>|Uint8Array|string} arr
  * @returns {number}
  */
 function arrayByteLength(arr) {
@@ -516,7 +544,8 @@ function arrayByteLength(arr) {
 
 /**
  * Combines array items (arrays) into single Uint8Array object.
- * @param {Array} arr - the array of the arrays (Array, Uint8Array, or string).
+ * @param {Array<Array<any>|Uint8Array|string>} arr - the array of the arrays
+ *   (Array, Uint8Array, or string).
  * @returns {Uint8Array}
  */
 function arraysToBytes(arr) {
@@ -785,19 +814,26 @@ function stringToPDFString(str) {
   return strBuf.join("");
 }
 
+function escapeString(str) {
+  // replace "(", ")", "\n", "\r" and "\"
+  // by "\(", "\)", "\\n", "\\r" and "\\"
+  // in order to write it in a PDF file.
+  return str.replace(/([\(\)\\\n\r])/g, match => {
+    if (match === "\n") {
+      return "\\n";
+    } else if (match === "\r") {
+      return "\\r";
+    }
+    return `\\${match}`;
+  });
+}
+
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
 
 function utf8StringToString(str) {
   return unescape(encodeURIComponent(str));
-}
-
-function isEmptyObj(obj) {
-  for (const key in obj) {
-    return false;
-  }
-  return true;
 }
 
 function isBool(v) {
@@ -825,11 +861,24 @@ function isArrayEqual(arr1, arr2) {
   });
 }
 
+function getModificationDate(date = new Date()) {
+  const buffer = [
+    date.getUTCFullYear().toString(),
+    (date.getUTCMonth() + 1).toString().padStart(2, "0"),
+    date.getUTCDate().toString().padStart(2, "0"),
+    date.getUTCHours().toString().padStart(2, "0"),
+    date.getUTCMinutes().toString().padStart(2, "0"),
+    date.getUTCSeconds().toString().padStart(2, "0"),
+  ];
+
+  return buffer.join("");
+}
+
 /**
  * Promise Capability object.
  *
  * @typedef {Object} PromiseCapability
- * @property {Promise} promise - A Promise object.
+ * @property {Promise<any>} promise - A Promise object.
  * @property {boolean} settled - If the Promise has been fulfilled/rejected.
  * @property {function} resolve - Fulfills the Promise.
  * @property {function} reject - Rejects the Promise.
@@ -890,6 +939,53 @@ const createObjectURL = (function createObjectURLClosure() {
   };
 })();
 
+const XMLEntities = {
+  /* < */ 0x3c: "&lt;",
+  /* > */ 0x3e: "&gt;",
+  /* & */ 0x26: "&amp;",
+  /* " */ 0x22: "&quot;",
+  /* ' */ 0x27: "&apos;",
+};
+
+function encodeToXmlString(str) {
+  const buffer = [];
+  let start = 0;
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.codePointAt(i);
+    if (0x20 <= char && char <= 0x7e) {
+      // ascii
+      const entity = XMLEntities[char];
+      if (entity) {
+        if (start < i) {
+          buffer.push(str.substring(start, i));
+        }
+        buffer.push(entity);
+        start = i + 1;
+      }
+    } else {
+      if (start < i) {
+        buffer.push(str.substring(start, i));
+      }
+      buffer.push(`&#x${char.toString(16).toUpperCase()};`);
+      if (char > 0xd7ff && (char < 0xe000 || char > 0xfffd)) {
+        // char is represented by two u16
+        i++;
+      }
+      start = i + 1;
+    }
+  }
+
+  if (buffer.length === 0) {
+    return str;
+  }
+
+  if (start < str.length) {
+    buffer.push(str.substring(start, str.length));
+  }
+
+  return buffer.join("");
+}
+
 export {
   BaseException,
   FONT_IDENTITY_MATRIX,
@@ -897,6 +993,7 @@ export {
   OPS,
   VerbosityLevel,
   UNSUPPORTED_FEATURES,
+  AnnotationActionEventType,
   AnnotationBorderStyleType,
   AnnotationFieldFlag,
   AnnotationFlag,
@@ -926,12 +1023,14 @@ export {
   bytesToString,
   createPromiseCapability,
   createObjectURL,
+  escapeString,
+  encodeToXmlString,
+  getModificationDate,
   getVerbosityLevel,
   info,
   isArrayBuffer,
   isArrayEqual,
   isBool,
-  isEmptyObj,
   isNum,
   isString,
   isSameOrigin,

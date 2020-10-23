@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "outDir": "../../build/tmp",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es5",
+    "module": "es2015",
+    "baseUrl": "./",
+    "strict": true,
+    "types": [],
+    "lib": [
+      "es2017",
+      "dom"
+    ],
+    "paths": {
+      "pdfjs-dist": ["../../build/typestest"],
+      "pdfjs-dist/*": ["../../build/typestest/build/*"]
+    }
+  },
+  "files": [
+    "main.ts"
+  ],
+}

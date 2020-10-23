@@ -106,16 +106,32 @@ describe("evaluator", function () {
     });
 
     it("should handle two glued operations", function (done) {
-      var resources = new ResourcesMock();
-      resources.Res1 = {};
+      const imgDict = new Dict();
+      imgDict.set("Subtype", Name.get("Image"));
+      imgDict.set("Width", 1);
+      imgDict.set("Height", 1);
+
+      const imgStream = new Stream([0]);
+      imgStream.dict = imgDict;
+
+      const xObject = new Dict();
+      xObject.set("Res1", imgStream);
+
+      const resources = new ResourcesMock();
+      resources.XObject = xObject;
+
       var stream = new StringStream("/Res1 DoQ");
       runOperatorListCheck(partialEvaluator, stream, resources, function (
         result
       ) {
-        expect(!!result.fnArray && !!result.argsArray).toEqual(true);
-        expect(result.fnArray.length).toEqual(2);
-        expect(result.fnArray[0]).toEqual(OPS.paintXObject);
-        expect(result.fnArray[1]).toEqual(OPS.restore);
+        expect(result.fnArray.length).toEqual(3);
+        expect(result.fnArray[0]).toEqual(OPS.dependency);
+        expect(result.fnArray[1]).toEqual(OPS.paintImageXObject);
+        expect(result.fnArray[2]).toEqual(OPS.restore);
+        expect(result.argsArray.length).toEqual(3);
+        expect(result.argsArray[0]).toEqual(["img_p0_1"]);
+        expect(result.argsArray[1]).toEqual(["img_p0_1", 1, 1]);
+        expect(result.argsArray[2]).toEqual(null);
         done();
       });
     });
@@ -226,23 +242,35 @@ describe("evaluator", function () {
       );
     });
     it("should execute if nested commands", function (done) {
+      const gState = new Dict();
+      gState.set("LW", 2);
+      gState.set("CA", 0.5);
+
+      const extGState = new Dict();
+      extGState.set("GS2", gState);
+
+      const resources = new ResourcesMock();
+      resources.ExtGState = extGState;
+
       var stream = new StringStream("/F2 /GS2 gs 5.711 Tf");
-      runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock(),
-        function (result) {
-          expect(result.fnArray.length).toEqual(3);
-          expect(result.fnArray[0]).toEqual(OPS.setGState);
-          expect(result.fnArray[1]).toEqual(OPS.dependency);
-          expect(result.fnArray[2]).toEqual(OPS.setFont);
-          expect(result.argsArray.length).toEqual(3);
-          expect(result.argsArray[0].length).toEqual(1);
-          expect(result.argsArray[1].length).toEqual(1);
-          expect(result.argsArray[2].length).toEqual(2);
-          done();
-        }
-      );
+      runOperatorListCheck(partialEvaluator, stream, resources, function (
+        result
+      ) {
+        expect(result.fnArray.length).toEqual(3);
+        expect(result.fnArray[0]).toEqual(OPS.setGState);
+        expect(result.fnArray[1]).toEqual(OPS.dependency);
+        expect(result.fnArray[2]).toEqual(OPS.setFont);
+        expect(result.argsArray.length).toEqual(3);
+        expect(result.argsArray[0]).toEqual([
+          [
+            ["LW", 2],
+            ["CA", 0.5],
+          ],
+        ]);
+        expect(result.argsArray[1]).toEqual(["g_font_error"]);
+        expect(result.argsArray[2]).toEqual(["g_font_error", 5.711]);
+        done();
+      });
     });
     it("should skip if too few arguments", function (done) {
       var stream = new StringStream("5 d0");
