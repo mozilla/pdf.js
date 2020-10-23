@@ -468,6 +468,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.setAttribute("value", textContent);
       }
 
+      element.setAttribute("id", id);
+
       element.addEventListener("input", function (event) {
         storage.setValue(id, event.target.value);
       });
@@ -475,6 +477,35 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.addEventListener("blur", function (event) {
         event.target.setSelectionRange(0, 0);
       });
+
+      if (this.data.actions) {
+        element.addEventListener("updateFromSandbox", function (event) {
+          const data = event.detail;
+          if ("value" in data) {
+            event.target.value = event.detail.value;
+          } else if ("focus" in data) {
+            event.target.focus({ preventScroll: false });
+          }
+        });
+
+        for (const eventType of Object.keys(this.data.actions)) {
+          switch (eventType) {
+            case "Format":
+              element.addEventListener("blur", function (event) {
+                window.dispatchEvent(
+                  new CustomEvent("dispatchEventInSandbox", {
+                    detail: {
+                      id,
+                      name: "Format",
+                      value: event.target.value,
+                    },
+                  })
+                );
+              });
+              break;
+          }
+        }
+      }
 
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;

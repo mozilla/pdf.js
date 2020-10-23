@@ -1007,6 +1007,39 @@ function getActiveOrFocusedElement() {
   return curActiveOrFocused;
 }
 
+/**
+ * Generate a random string which is not define somewhere in actions.
+ *
+ * @param {WaitOnEventOrTimeoutParameters}
+ * @returns {Promise} A promise that is resolved with a {WaitOnType} value.
+ */
+function generateRandomStringForSandbox(objects) {
+  const allObjects = Object.values(objects).flat(2);
+  const actions = allObjects.map(obj => Object.values(obj.actions)).flat(2);
+
+  while (true) {
+    const name = new Uint8Array(64);
+    if (typeof crypto !== "undefined") {
+      crypto.getRandomValues(name);
+    } else {
+      for (let i = 0, ii = name.length; i < ii; i++) {
+        name[i] = Math.floor(256 * Math.random());
+      }
+    }
+
+    const nameString =
+      "_" +
+      btoa(
+        Array.from(name)
+          .map(x => String.fromCharCode(x))
+          .join("")
+      );
+    if (actions.every(action => !action.includes(nameString))) {
+      return nameString;
+    }
+  }
+}
+
 export {
   AutoPrintRegExp,
   CSS_UNITS,
@@ -1030,6 +1063,7 @@ export {
   NullL10n,
   EventBus,
   ProgressBar,
+  generateRandomStringForSandbox,
   getPDFFileNameFromURL,
   noContextMenuHandler,
   parseQueryString,

@@ -316,6 +316,23 @@ function createMainBundle(defines) {
     .pipe(replaceJSRootName(mainAMDName, "pdfjsLib"));
 }
 
+function createScriptingBundle(defines) {
+  var mainAMDName = "pdfjs-dist/build/pdf.scripting";
+  var mainOutputName = "pdf.scripting.js";
+
+  var mainFileConfig = createWebpackConfig(defines, {
+    filename: mainOutputName,
+    library: mainAMDName,
+    libraryTarget: "umd",
+    umdNamedDefine: true,
+  });
+  return gulp
+    .src("./src/scripting_api/initialization.js")
+    .pipe(webpack2Stream(mainFileConfig))
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(mainAMDName, "pdfjsScripting"));
+}
+
 function createWorkerBundle(defines) {
   var workerAMDName = "pdfjs-dist/build/pdf.worker";
   var workerOutputName = "pdf.worker.js";
@@ -1034,6 +1051,9 @@ gulp.task(
 
     return merge([
       createMainBundle(defines).pipe(
+        gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+      ),
+      createScriptingBundle(defines).pipe(
         gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
       ),
       createWorkerBundle(defines).pipe(
