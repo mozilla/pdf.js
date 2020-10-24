@@ -639,12 +639,12 @@ describe("ui_utils", function () {
     // This function takes a fixed layout of pages and compares the system under
     // test to the slower implementation above, for a range of scroll viewport
     // sizes and positions.
-    function scrollOverDocument(pages, horizontally = false) {
+    function scrollOverDocument(pages, horizontally = false, rtl = false) {
       const size = pages.reduce(function (max, { div }) {
         return Math.max(
           max,
           horizontally
-            ? div.offsetLeft + div.clientLeft + div.clientWidth
+            ? Math.abs(div.offsetLeft + div.clientLeft + div.clientWidth)
             : div.offsetTop + div.clientTop + div.clientHeight
         );
       }, 0);
@@ -652,7 +652,7 @@ describe("ui_utils", function () {
       // make scrollOverDocument tests faster, decrease them to make the tests
       // more scrupulous, and keep them coprime to reduce the chance of missing
       // weird edge case bugs.
-      for (let i = 0; i < size; i += 7) {
+      for (let i = -size; i < size; i += 7) {
         // The screen height (or width) here (j - i) doubles on each inner loop
         // iteration; again, this is just to test an interesting range of cases
         // without slowing the tests down to check every possible case.
@@ -671,7 +671,7 @@ describe("ui_utils", function () {
                 clientWidth: 10000,
               };
           expect(
-            getVisibleElements(scroll, pages, false, horizontally)
+            getVisibleElements(scroll, pages, false, horizontally, rtl)
           ).toEqual(slowGetVisibleElements(scroll, pages));
         }
       }
@@ -735,6 +735,17 @@ describe("ui_utils", function () {
         ],
       ]);
       scrollOverDocument(pages, true);
+    });
+
+    it("works with horizontal scrolling with RTL-documents", function () {
+      const pages = makePages([
+        [
+          [-10, 50],
+          [-20, 20],
+          [-30, 10],
+        ],
+      ]);
+      scrollOverDocument(pages, true, true);
     });
 
     it("handles `sortByVisibility` correctly", function () {
