@@ -26,6 +26,7 @@ import {
   getModificationDate,
   isString,
   OPS,
+  shadow,
   stringToPDFString,
   unreachable,
   Util,
@@ -281,6 +282,8 @@ class Annotation {
       rect: this.rectangle,
       subtype: params.subtype,
     };
+
+    this._fallbackFontDict = null;
   }
 
   /**
@@ -576,6 +579,7 @@ class Annotation {
           task,
           resources,
           operatorList: opList,
+          fallbackFontDict: this._fallbackFontDict,
         })
         .then(() => {
           opList.addOp(OPS.endAnnotation, []);
@@ -1873,6 +1877,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (this.uncheckedAppearance) {
       this._streams.push(this.uncheckedAppearance);
     }
+    this._fallbackFontDict = this.fallbackFontDict;
   }
 
   _processRadioButton(params) {
@@ -1912,6 +1917,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (this.uncheckedAppearance) {
       this._streams.push(this.uncheckedAppearance);
     }
+    this._fallbackFontDict = this.fallbackFontDict;
   }
 
   _processPushButton(params) {
@@ -1953,6 +1959,16 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       actions: this.data.actions,
       type,
     };
+  }
+
+  get fallbackFontDict() {
+    const dict = new Dict();
+    dict.set("BaseFont", Name.get("ZapfDingbats"));
+    dict.set("Type", Name.get("FallbackType"));
+    dict.set("Subtype", Name.get("FallbackType"));
+    dict.set("Encoding", Name.get("ZapfDingbatsEncoding"));
+
+    return shadow(this, "fallbackFontDict", dict);
   }
 }
 
