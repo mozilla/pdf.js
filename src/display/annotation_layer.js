@@ -348,7 +348,7 @@ class LinkAnnotationElement extends AnnotationElement {
       }
       return false;
     };
-    if (destination) {
+    if (destination || destination === /* isTooltipOnly = */ "") {
       link.className = "internalLink";
     }
   }
