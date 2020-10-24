@@ -1224,10 +1224,12 @@ class PartialEvaluator {
     localTilingPatternCache
   ) {
     // compile tiling patterns
-    const patternName = args[args.length - 1];
+    const patternName = args.pop();
     // SCN/scn applies patterns along with normal colors
     if (patternName instanceof Name) {
-      const localTilingPattern = localTilingPatternCache.getByName(patternName);
+      const name = patternName.name;
+
+      const localTilingPattern = localTilingPatternCache.getByName(name);
       if (localTilingPattern) {
         try {
           const color = cs.base ? cs.base.getRgb(args, 0) : null;
@@ -1249,7 +1251,7 @@ class PartialEvaluator {
       //       if and only if there are PDF documents where doing so would
       //       significantly improve performance.
 
-      let pattern = patterns.get(patternName.name);
+      let pattern = patterns.get(name);
       if (pattern) {
         var dict = isStream(pattern) ? pattern.dict : pattern;
         var typeNum = dict.get("PatternType");
@@ -1264,7 +1266,7 @@ class PartialEvaluator {
             dict,
             operatorList,
             task,
-            patternName,
+            /* cacheKey = */ name,
             localTilingPatternCache
           );
         } else if (typeNum === PatternType.SHADING) {
