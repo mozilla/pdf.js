@@ -1345,10 +1345,14 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeJavaScript(pdfDocument) {
-    if (!AppOptions.get("enableScripting")) {
+    const objects = await pdfDocument.getFieldObjects();
+
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the JavaScript data resolved.
+    }
+    if (!objects || !AppOptions.get("enableScripting")) {
       return;
     }
-    const objects = await pdfDocument.getFieldObjects();
     const scripting = this.externalServices.scripting;
 
     window.addEventListener("updateFromSandbox", function (event) {
