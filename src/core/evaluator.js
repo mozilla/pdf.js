@@ -777,7 +777,15 @@ class PartialEvaluator {
       });
   }
 
-  handleSetFont(resources, fontArgs, fontRef, operatorList, task, state) {
+  handleSetFont(
+    resources,
+    fontArgs,
+    fontRef,
+    operatorList,
+    task,
+    state,
+    fallbackFontDict = null
+  ) {
     // TODO(mack): Not needed?
     var fontName,
       fontSize = 0;
@@ -787,7 +795,7 @@ class PartialEvaluator {
       fontSize = fontArgs[1];
     }
 
-    return this.loadFont(fontName, fontRef, resources)
+    return this.loadFont(fontName, fontRef, resources, fallbackFontDict)
       .then(translated => {
         if (!translated.font.isType3Font) {
           return translated;
@@ -978,7 +986,7 @@ class PartialEvaluator {
     });
   }
 
-  loadFont(fontName, font, resources) {
+  loadFont(fontName, font, resources, fallbackFontDict = null) {
     const errorFont = async () => {
       return new TranslatedFont({
         loadedName: "g_font_error",
@@ -1020,7 +1028,11 @@ class PartialEvaluator {
 
       // Falling back to a default font to avoid completely broken rendering,
       // but note that there're no guarantees that things will look "correct".
-      fontRef = PartialEvaluator.fallbackFontDict;
+      if (fallbackFontDict) {
+        fontRef = fallbackFontDict;
+      } else {
+        fontRef = PartialEvaluator.fallbackFontDict;
+      }
     }
 
     if (this.fontCache.has(fontRef)) {
@@ -1353,6 +1365,7 @@ class PartialEvaluator {
     resources,
     operatorList,
     initialState = null,
+    fallbackFontDict = null,
   }) {
     // Ensure that `resources`/`initialState` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
@@ -1533,7 +1546,8 @@ class PartialEvaluator {
                   null,
                   operatorList,
                   task,
-                  stateManager.state
+                  stateManager.state,
+                  fallbackFontDict
                 )
                 .then(function (loadedName) {
                   operatorList.addDependency(loadedName);
