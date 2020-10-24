@@ -969,7 +969,7 @@ class PDFDocument {
         this.pdfManager,
         this._localIdFactory
       )
-        .then(annotation => annotation.getFieldObject())
+        .then(annotation => annotation && annotation.getFieldObject())
         .catch(function (reason) {
           warn(`_collectFieldObjects: "${reason}".`);
           return null;
@@ -999,7 +999,7 @@ class PDFDocument {
     for (const [name, promises] of fieldPromises) {
       allPromises.push(
         Promise.all(promises).then(fields => {
-          fields = fields.filter(field => field !== null);
+          fields = fields.filter(field => !!field);
           if (fields.length > 0) {
             allFields[name] = fields;
           }
