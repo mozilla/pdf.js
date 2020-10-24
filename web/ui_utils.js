@@ -442,7 +442,8 @@ function getVisibleElements(
   scrollEl,
   views,
   sortByVisibility = false,
-  horizontal = false
+  horizontal = false,
+  rtl = false
 ) {
   const top = scrollEl.scrollTop,
     bottom = top + scrollEl.clientHeight;
@@ -465,11 +466,11 @@ function getVisibleElements(
       element.offsetTop + element.clientTop + element.clientHeight;
     return elementBottom > top;
   }
-  function isElementRightAfterViewLeft(view) {
+  function isElementNextAfterViewHorizontally(view) {
     const element = view.div;
-    const elementRight =
-      element.offsetLeft + element.clientLeft + element.clientWidth;
-    return elementRight > left;
+    const elementLeft = element.offsetLeft + element.clientLeft;
+    const elementRight = elementLeft + element.clientWidth;
+    return rtl ? elementLeft < right : elementRight > left;
   }
 
   const visible = [],
@@ -479,7 +480,9 @@ function getVisibleElements(
       ? 0
       : binarySearchFirstItem(
           views,
-          horizontal ? isElementRightAfterViewLeft : isElementBottomAfterViewTop
+          horizontal
+            ? isElementNextAfterViewHorizontally
+            : isElementBottomAfterViewTop
         );
 
   // Please note the return value of the `binarySearchFirstItem` function when
