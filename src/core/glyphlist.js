@@ -15,7 +15,7 @@
 /* no-babel-preset */
 /* eslint-disable no-var */
 
-var getLookupTableFactory = require("./core_utils.js").getLookupTableFactory;
+import { getLookupTableFactory } from "./core_utils.js";
 
 var getGlyphsUnicode = getLookupTableFactory(function (t) {
   t.A = 0x0041;
@@ -4550,5 +4550,4 @@ var getDingbatsGlyphsUnicode = getLookupTableFactory(function (t) {
   t[".notdef"] = 0x0000;
 });
 
-exports.getGlyphsUnicode = getGlyphsUnicode;
-exports.getDingbatsGlyphsUnicode = getDingbatsGlyphsUnicode;
+export { getGlyphsUnicode, getDingbatsGlyphsUnicode };
