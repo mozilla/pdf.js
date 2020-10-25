@@ -38,7 +38,7 @@ describe("network", function () {
 
     let len = 0,
       count = 0;
-    var read = function () {
+    const read = function () {
       return fullReader.read().then(function (result) {
         if (result.done) {
           return undefined;
@@ -101,7 +101,7 @@ describe("network", function () {
 
     const result1 = { value: 0 },
       result2 = { value: 0 };
-    var read = function (reader, lenResult) {
+    const read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {
           return undefined;

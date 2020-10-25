@@ -301,7 +301,7 @@ describe("ui_utils", function () {
         eventBus.off("test", listener2);
         count++;
       };
-      var listener2 = function () {
+      const listener2 = function () {
         eventBus.off("test", listener1);
         count++;
       };
