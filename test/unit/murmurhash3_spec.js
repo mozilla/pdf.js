@@ -46,20 +46,18 @@ describe("MurmurHash3_64", function () {
 
   it("changes the hash after update without seed", function () {
     const hash = new MurmurHash3_64();
-    let hexdigest1, hexdigest2;
     hash.update(sourceText);
-    hexdigest1 = hash.hexdigest();
+    const hexdigest1 = hash.hexdigest();
     hash.update(sourceText);
-    hexdigest2 = hash.hexdigest();
+    const hexdigest2 = hash.hexdigest();
     expect(hexdigest1).not.toEqual(hexdigest2);
   });
   it("changes the hash after update with seed", function () {
     const hash = new MurmurHash3_64(1);
-    let hexdigest1, hexdigest2;
     hash.update(sourceText);
-    hexdigest1 = hash.hexdigest();
+    const hexdigest1 = hash.hexdigest();
     hash.update(sourceText);
-    hexdigest2 = hash.hexdigest();
+    const hexdigest2 = hash.hexdigest();
     expect(hexdigest1).not.toEqual(hexdigest2);
   });
 });
