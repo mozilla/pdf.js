@@ -18,18 +18,18 @@ import { bidi } from "../../src/core/bidi.js";
 describe("bidi", function () {
   it("should mark text as RTL if more than 30% of text is RTL", function () {
     // 33% of test text are RTL characters
-    var test = "\u0645\u0635\u0631 Egypt";
-    var result = "Egypt \u0631\u0635\u0645";
-    var bidiText = bidi(test, -1, false);
+    const test = "\u0645\u0635\u0631 Egypt";
+    const result = "Egypt \u0631\u0635\u0645";
+    const bidiText = bidi(test, -1, false);
 
     expect(bidiText.str).toEqual(result);
     expect(bidiText.dir).toEqual("rtl");
   });
 
   it("should mark text as LTR if less than 30% of text is RTL", function () {
-    var test = "Egypt is known as \u0645\u0635\u0631 in Arabic.";
-    var result = "Egypt is known as \u0631\u0635\u0645 in Arabic.";
-    var bidiText = bidi(test, -1, false);
+    const test = "Egypt is known as \u0645\u0635\u0631 in Arabic.";
+    const result = "Egypt is known as \u0631\u0635\u0645 in Arabic.";
+    const bidiText = bidi(test, -1, false);
 
     expect(bidiText.str).toEqual(result);
     expect(bidiText.dir).toEqual("ltr");
