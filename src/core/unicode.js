@@ -15,7 +15,7 @@
 /* no-babel-preset */
 /* eslint-disable no-var */
 
-var getLookupTableFactory = require("./core_utils.js").getLookupTableFactory;
+import { getLookupTableFactory } from "./core_utils.js";
 
 // Some characters, e.g. copyrightserif, are mapped to the private use area
 // and might not be displayed using standard fonts. Mapping/hacking well-known
@@ -1635,8 +1635,10 @@ function reverseIfRtl(chars) {
   return s;
 }
 
-exports.mapSpecialUnicodeValues = mapSpecialUnicodeValues;
-exports.reverseIfRtl = reverseIfRtl;
-exports.getUnicodeRangeFor = getUnicodeRangeFor;
-exports.getNormalizedUnicodes = getNormalizedUnicodes;
-exports.getUnicodeForGlyph = getUnicodeForGlyph;
+export {
+  mapSpecialUnicodeValues,
+  reverseIfRtl,
+  getUnicodeRangeFor,
+  getNormalizedUnicodes,
+  getUnicodeForGlyph,
+};
