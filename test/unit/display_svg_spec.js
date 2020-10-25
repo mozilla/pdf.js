@@ -14,7 +14,6 @@
  */
 /* globals __non_webpack_require__ */
 
-import { setStubs, unsetStubs } from "../../examples/node/domstubs.js";
 import { buildGetDocumentParams } from "./test_utils.js";
 import { getDocument } from "../../src/display/api.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
@@ -95,6 +94,9 @@ describe("SVGGraphics", function () {
           // This points to the XObject image in xobject-image.pdf.
           const xobjectObjId = "img_p0_1";
           if (isNodeJS) {
+            const { setStubs } = __non_webpack_require__(
+              "../../examples/node/domstubs.js"
+            );
             setStubs(global);
           }
           try {
@@ -102,6 +104,9 @@ describe("SVGGraphics", function () {
             svgGfx.paintInlineImageXObject(imgData, elementContainer);
           } finally {
             if (isNodeJS) {
+              const { unsetStubs } = __non_webpack_require__(
+                "../../examples/node/domstubs.js"
+              );
               unsetStubs(global);
             }
           }
@@ -113,10 +118,10 @@ describe("SVGGraphics", function () {
       function testFunc() {
         __non_webpack_require__("zlib");
       }
-      // Verifies that the script loader replaces __non_webpack_require__ with
-      // require.
-      expect(testFunc.toString()).toMatch(/\srequire\(["']zlib["']\)/);
       if (isNodeJS) {
+        // Verifies that the script loader replaces __non_webpack_require__ with
+        // require.
+        expect(testFunc.toString()).toMatch(/\srequire\(["']zlib["']\)/);
         expect(testFunc).not.toThrow();
       } else {
         // require not defined, require('zlib') not a module, etc.

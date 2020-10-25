@@ -40,8 +40,8 @@
 
 "use strict";
 
-function initializePDFJS(callback) {
-  Promise.all(
+async function initializePDFJS(callback) {
+  const modules = await Promise.all(
     [
       "pdfjs/display/api.js",
       "pdfjs/display/worker_options.js",
@@ -83,40 +83,42 @@ function initializePDFJS(callback) {
       "pdfjs-test/unit/writer_spec.js",
       "pdfjs-test/unit/xml_spec.js",
     ].map(function (moduleName) {
-      return SystemJS.import(moduleName);
+      // eslint-disable-next-line no-unsanitized/method
+      return import(moduleName);
     })
-  ).then(function (modules) {
-    const displayApi = modules[0];
-    const { GlobalWorkerOptions } = modules[1];
-    const { PDFNetworkStream } = modules[2];
-    const { PDFFetchStream } = modules[3];
-    const { isNodeJS } = modules[4];
+  );
+  const [
+    { setPDFNetworkStreamFactory },
+    { GlobalWorkerOptions },
+    { PDFNetworkStream },
+    { PDFFetchStream },
+    { isNodeJS },
+  ] = modules;
 
-    if (isNodeJS) {
-      throw new Error(
-        "The `gulp unittest` command cannot be used in Node.js environments."
-      );
-    }
-    // Set the network stream factory for unit-tests.
-    if (
-      typeof Response !== "undefined" &&
-      "body" in Response.prototype &&
-      typeof ReadableStream !== "undefined"
-    ) {
-      displayApi.setPDFNetworkStreamFactory(function (params) {
-        return new PDFFetchStream(params);
-      });
-    } else {
-      displayApi.setPDFNetworkStreamFactory(function (params) {
-        return new PDFNetworkStream(params);
-      });
-    }
+  if (isNodeJS) {
+    throw new Error(
+      "The `gulp unittest` command cannot be used in Node.js environments."
+    );
+  }
+  // Set the network stream factory for unit-tests.
+  if (
+    typeof Response !== "undefined" &&
+    "body" in Response.prototype &&
+    typeof ReadableStream !== "undefined"
+  ) {
+    setPDFNetworkStreamFactory(function (params) {
+      return new PDFFetchStream(params);
+    });
+  } else {
+    setPDFNetworkStreamFactory(function (params) {
+      return new PDFNetworkStream(params);
+    });
+  }
 
-    // Configure the worker.
-    GlobalWorkerOptions.workerSrc = "../../build/generic/build/pdf.worker.js";
+  // Configure the worker.
+  GlobalWorkerOptions.workerSrc = "../../build/generic/build/pdf.worker.js";
 
-    callback();
-  });
+  callback();
 }
 
 (function () {
@@ -197,26 +199,26 @@ function initializePDFJS(callback) {
   // Sets longer timeout.
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
 
-  // Replace the browser window's `onload`, ensure it's called, and then run
-  // all of the loaded specs. This includes initializing the `HtmlReporter`
-  // instance and then executing the loaded Jasmine environment.
-  const currentWindowOnload = window.onload;
-
-  window.onload = function () {
-    if (currentWindowOnload) {
-      currentWindowOnload();
-    }
-
-    initializePDFJS(function () {
-      htmlReporter.initialize();
-      env.execute();
-    });
-  };
-
   function extend(destination, source) {
     for (const property in source) {
       destination[property] = source[property];
     }
     return destination;
+  }
+
+  function unitTestInit() {
+    initializePDFJS(function () {
+      htmlReporter.initialize();
+      env.execute();
+    });
+  }
+
+  if (
+    document.readyState === "interactive" ||
+    document.readyState === "complete"
+  ) {
+    unitTestInit();
+  } else {
+    document.addEventListener("DOMContentLoaded", unitTestInit, true);
   }
 })();
