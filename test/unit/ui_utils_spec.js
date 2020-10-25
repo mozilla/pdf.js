@@ -145,12 +145,12 @@ describe("ui_utils", function () {
     });
 
     it("gets PDF filename from URI-encoded data", function () {
-      var encodedUrl = encodeURIComponent(
+      const encodedUrl = encodeURIComponent(
         "http://www.example.com/pdfs/file1.pdf"
       );
       expect(getPDFFileNameFromURL(encodedUrl)).toEqual("file1.pdf");
 
-      var encodedUrlWithQuery = encodeURIComponent(
+      const encodedUrlWithQuery = encodeURIComponent(
         "http://www.example.com/pdfs/file.txt?file2.pdf"
       );
       expect(getPDFFileNameFromURL(encodedUrlWithQuery)).toEqual("file2.pdf");
@@ -185,8 +185,8 @@ describe("ui_utils", function () {
       if (isNodeJS) {
         pending("Blob in not supported in Node.js.");
       }
-      var typedArray = new Uint8Array([1, 2, 3, 4, 5]);
-      var blobUrl = createObjectURL(typedArray, "application/pdf");
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
+      const blobUrl = createObjectURL(typedArray, "application/pdf");
       // Sanity check to ensure that a "blob:" URL was returned.
       expect(blobUrl.startsWith("blob:")).toEqual(true);
 
@@ -194,8 +194,8 @@ describe("ui_utils", function () {
     });
 
     it('gets fallback filename from query string appended to "data:" URL', function () {
-      var typedArray = new Uint8Array([1, 2, 3, 4, 5]);
-      var dataUrl = createObjectURL(
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
+      const dataUrl = createObjectURL(
         typedArray,
         "application/pdf",
         /* forceDataSchema = */ true
@@ -216,8 +216,8 @@ describe("ui_utils", function () {
 
   describe("EventBus", function () {
     it("dispatch event", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.on("test", function (evt) {
         expect(evt).toEqual(undefined);
         count++;
@@ -238,8 +238,8 @@ describe("ui_utils", function () {
       expect(count).toEqual(1);
     });
     it("dispatch different event", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.on("test", function () {
         count++;
       });
@@ -247,8 +247,8 @@ describe("ui_utils", function () {
       expect(count).toEqual(0);
     });
     it("dispatch event multiple times", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.dispatch("test");
       eventBus.on("test", function () {
         count++;
@@ -258,8 +258,8 @@ describe("ui_utils", function () {
       expect(count).toEqual(2);
     });
     it("dispatch event to multiple handlers", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.on("test", function () {
         count++;
       });
@@ -270,9 +270,9 @@ describe("ui_utils", function () {
       expect(count).toEqual(2);
     });
     it("dispatch to detached", function () {
-      var eventBus = new EventBus();
-      var count = 0;
-      var listener = function () {
+      const eventBus = new EventBus();
+      let count = 0;
+      const listener = function () {
         count++;
       };
       eventBus.on("test", listener);
@@ -282,8 +282,8 @@ describe("ui_utils", function () {
       expect(count).toEqual(1);
     });
     it("dispatch to wrong detached", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.on("test", function () {
         count++;
       });
@@ -295,9 +295,9 @@ describe("ui_utils", function () {
       expect(count).toEqual(2);
     });
     it("dispatch to detached during handling", function () {
-      var eventBus = new EventBus();
-      var count = 0;
-      var listener1 = function () {
+      const eventBus = new EventBus();
+      let count = 0;
+      const listener1 = function () {
         eventBus.off("test", listener2);
         count++;
       };

@@ -43,7 +43,7 @@ describe("unicode", function () {
   });
 
   describe("getUnicodeForGlyph", function () {
-    var standardMap, dingbatsMap;
+    let standardMap, dingbatsMap;
 
     beforeAll(function (done) {
       standardMap = getGlyphsUnicode();
@@ -88,7 +88,7 @@ describe("unicode", function () {
   });
 
   describe("getNormalizedUnicodes", function () {
-    var NormalizedUnicodes;
+    let NormalizedUnicodes;
 
     beforeAll(function (done) {
       NormalizedUnicodes = getNormalizedUnicodes();
@@ -112,7 +112,7 @@ describe("unicode", function () {
   });
 
   describe("reverseIfRtl", function () {
-    var NormalizedUnicodes;
+    let NormalizedUnicodes;
 
     function getGlyphUnicode(char) {
       if (NormalizedUnicodes[char] !== undefined) {
@@ -131,19 +131,19 @@ describe("unicode", function () {
     });
 
     it("should not reverse LTR characters", function () {
-      var A = getGlyphUnicode("A");
+      const A = getGlyphUnicode("A");
       expect(reverseIfRtl(A)).toEqual("A");
 
-      var fi = getGlyphUnicode("\uFB01");
+      const fi = getGlyphUnicode("\uFB01");
       expect(reverseIfRtl(fi)).toEqual("fi");
     });
 
     it("should reverse RTL characters", function () {
       // Hebrew (no-op, since it's not a combined character)
-      var heAlef = getGlyphUnicode("\u05D0");
+      const heAlef = getGlyphUnicode("\u05D0");
       expect(reverseIfRtl(heAlef)).toEqual("\u05D0");
       // Arabic
-      var arAlef = getGlyphUnicode("\u0675");
+      const arAlef = getGlyphUnicode("\u0675");
       expect(reverseIfRtl(arAlef)).toEqual("\u0674\u0627");
     });
   });

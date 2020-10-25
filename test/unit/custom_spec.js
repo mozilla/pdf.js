@@ -63,8 +63,8 @@ describe("custom canvas rendering", function () {
   });
 
   it("renders to canvas with a default white background", function (done) {
-    var viewport = page.getViewport({ scale: 1 });
-    var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+    const viewport = page.getViewport({ scale: 1 });
+    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
@@ -85,8 +85,8 @@ describe("custom canvas rendering", function () {
   });
 
   it("renders to canvas with a custom background", function (done) {
-    var viewport = page.getViewport({ scale: 1 });
-    var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+    const viewport = page.getViewport({ scale: 1 });
+    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
