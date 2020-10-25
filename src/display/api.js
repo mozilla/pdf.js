@@ -1746,12 +1746,7 @@ const PDFWorker = (function PDFWorkerClosure() {
         return mainWorkerMessageHandler;
       }
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-        if (typeof SystemJS !== "object") {
-          // Manually load SystemJS, since it's only necessary for fake workers.
-          await loadScript("../node_modules/systemjs/dist/system.js");
-          await loadScript("../systemjs.config.js");
-        }
-        const worker = await SystemJS.import("pdfjs/core/worker.js");
+        const worker = await import("pdfjs/core/worker.js");
         return worker.WorkerMessageHandler;
       }
       if (
