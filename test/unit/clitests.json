@@ -32,6 +32,7 @@
     "pdf_find_utils_spec.js",
     "pdf_history_spec.js",
     "primitives_spec.js",
+    "scripting_spec.js",
     "stream_spec.js",
     "type1_parser_spec.js",
     "ui_utils_spec.js",
