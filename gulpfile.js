@@ -185,6 +185,19 @@ function createWebpackConfig(defines, output) {
     !bundleDefines.TESTING;
   var skipBabel = bundleDefines.SKIP_BABEL;
 
+  // `core-js` (see https://github.com/zloirock/core-js/issues/514),
+  // `web-streams-polyfill` (already using a transpiled file), and
+  // `src/core/{glyphlist,unicode}.js` (Babel is too slow for those when
+  // source-maps are enabled) should be excluded from processing.
+  const babelExcludes = [
+    "node_modules[\\\\\\/]core-js",
+    "node_modules[\\\\\\/]web-streams-polyfill",
+  ];
+  if (enableSourceMaps) {
+    babelExcludes.push("src[\\\\\\/]core[\\\\\\/](glyphlist|unicode)");
+  }
+  const babelExcludeRegExp = new RegExp(`(${babelExcludes.join("|")})`);
+
   // Required to expose e.g., the `window` object.
   output.globalObject = "this";
 
@@ -209,11 +222,7 @@ function createWebpackConfig(defines, output) {
       rules: [
         {
           loader: "babel-loader",
-          // `core-js` (see https://github.com/zloirock/core-js/issues/514),
-          // `web-streams-polyfill` (already using a transpiled file), and
-          // `src/core/{glyphlist,unicode}.js` (Babel is too slow for those)
-          // should be excluded from processing.
-          exclude: /(node_modules[\\\/]core-js|node_modules[\\\/]web-streams-polyfill|src[\\\/]core[\\\/](glyphlist|unicode))/,
+          exclude: babelExcludeRegExp,
           options: {
             presets: skipBabel ? undefined : ["@babel/preset-env"],
             plugins: [

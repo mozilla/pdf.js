@@ -2026,12 +2026,7 @@ async function loadFakeWorker() {
     GlobalWorkerOptions.workerSrc = AppOptions.get("workerSrc");
   }
   if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-    if (typeof SystemJS !== "object") {
-      // Manually load SystemJS, since it's only necessary for fake workers.
-      await loadScript("../node_modules/systemjs/dist/system.js");
-      await loadScript("../systemjs.config.js");
-    }
-    window.pdfjsWorker = await SystemJS.import("pdfjs/core/worker.js");
+    window.pdfjsWorker = await import("pdfjs/core/worker.js");
     return undefined;
   }
   return loadScript(PDFWorker.getWorkerSrc());
