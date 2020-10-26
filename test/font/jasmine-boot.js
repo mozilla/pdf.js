@@ -40,26 +40,19 @@
 
 "use strict";
 
-function initializePDFJS(callback) {
-  Promise.all([
-    SystemJS.import("pdfjs/core/fonts.js"),
-    SystemJS.import("pdfjs/core/stream.js"),
-    SystemJS.import("pdfjs/core/primitives.js"),
-    SystemJS.import("pdfjs/core/cmap.js"),
-  ]).then(function (modules) {
-    var fonts = modules[0],
-      stream = modules[1],
-      primitives = modules[2],
-      cmap = modules[3];
-    // Expose some of the PDFJS members to global scope for tests.
-    window.Font = fonts.Font;
-    window.ToUnicodeMap = fonts.ToUnicodeMap;
-    window.Stream = stream.Stream;
-    window.Name = primitives.Name;
-    window.CMapFactory = cmap.CMapFactory;
+async function initializePDFJS(callback) {
+  await Promise.all(
+    [
+      "pdfjs-test/font/font_core_spec.js",
+      "pdfjs-test/font/font_os2_spec.js",
+      "pdfjs-test/font/font_post_spec.js",
+      "pdfjs-test/font/font_fpgm_spec.js",
+    ].map(function (moduleName) {
+      return SystemJS.import(moduleName);
+    })
+  );
 
-    callback();
-  });
+  callback();
 }
 
 (function () {
