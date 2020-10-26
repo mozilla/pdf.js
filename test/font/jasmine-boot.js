@@ -48,7 +48,8 @@ async function initializePDFJS(callback) {
       "pdfjs-test/font/font_post_spec.js",
       "pdfjs-test/font/font_fpgm_spec.js",
     ].map(function (moduleName) {
-      return SystemJS.import(moduleName);
+      // eslint-disable-next-line no-unsanitized/method
+      return import(moduleName);
     })
   );
 
@@ -133,26 +134,26 @@ async function initializePDFJS(callback) {
   // Sets longer timeout.
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
 
-  // Replace the browser window's `onload`, ensure it's called, and then run
-  // all of the loaded specs. This includes initializing the `HtmlReporter`
-  // instance and then executing the loaded Jasmine environment.
-  const currentWindowOnload = window.onload;
-
-  window.onload = function () {
-    if (currentWindowOnload) {
-      currentWindowOnload();
-    }
-
-    initializePDFJS(function () {
-      htmlReporter.initialize();
-      env.execute();
-    });
-  };
-
   function extend(destination, source) {
     for (const property in source) {
       destination[property] = source[property];
     }
     return destination;
+  }
+
+  function fontTestInit() {
+    initializePDFJS(function () {
+      htmlReporter.initialize();
+      env.execute();
+    });
+  }
+
+  if (
+    document.readyState === "interactive" ||
+    document.readyState === "complete"
+  ) {
+    fontTestInit();
+  } else {
+    document.addEventListener("DOMContentLoaded", fontTestInit, true);
   }
 })();
