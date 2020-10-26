@@ -1168,8 +1168,7 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
-        annotationStorage:
-          (annotationStorage && annotationStorage.getAll()) || null,
+        annotationStorage: annotationStorage?.getAll() || null,
       });
     }
 
@@ -1746,12 +1745,7 @@ const PDFWorker = (function PDFWorkerClosure() {
         return mainWorkerMessageHandler;
       }
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-        if (typeof SystemJS !== "object") {
-          // Manually load SystemJS, since it's only necessary for fake workers.
-          await loadScript("../node_modules/systemjs/dist/system.js");
-          await loadScript("../systemjs.config.js");
-        }
-        const worker = await SystemJS.import("pdfjs/core/worker.js");
+        const worker = await import("pdfjs/core/worker.js");
         return worker.WorkerMessageHandler;
       }
       if (
@@ -2556,8 +2550,7 @@ class WorkerTransport {
     return this.messageHandler
       .sendWithPromise("SaveDocument", {
         numPages: this._numPages,
-        annotationStorage:
-          (annotationStorage && annotationStorage.getAll()) || null,
+        annotationStorage: annotationStorage?.getAll() || null,
         filename: this._fullReader ? this._fullReader.filename : null,
       })
       .finally(() => {
