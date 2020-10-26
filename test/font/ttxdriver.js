@@ -16,34 +16,34 @@
 
 "use strict";
 
-var fs = require("fs");
-var path = require("path");
-var spawn = require("child_process").spawn;
+const fs = require("fs");
+const path = require("path");
+const spawn = require("child_process").spawn;
 
-var ttxResourcesHome = path.join(__dirname, "..", "ttx");
+const ttxResourcesHome = path.join(__dirname, "..", "ttx");
 
-var nextTTXTaskId = Date.now();
+let nextTTXTaskId = Date.now();
 
 function runTtx(ttxResourcesHomePath, fontPath, registerOnCancel, callback) {
   fs.realpath(ttxResourcesHomePath, function (error, realTtxResourcesHomePath) {
-    var fontToolsHome = path.join(realTtxResourcesHomePath, "fonttools-code");
+    const fontToolsHome = path.join(realTtxResourcesHomePath, "fonttools-code");
     fs.realpath(fontPath, function (errorFontPath, realFontPath) {
-      var ttxPath = path.join("Tools", "ttx");
+      const ttxPath = path.join("Tools", "ttx");
       if (!fs.existsSync(path.join(fontToolsHome, ttxPath))) {
         callback("TTX was not found, please checkout PDF.js submodules");
         return;
       }
-      var ttxEnv = {
+      const ttxEnv = {
         PYTHONPATH: path.join(fontToolsHome, "Lib"),
         PYTHONDONTWRITEBYTECODE: true,
       };
-      var ttxStdioMode = "ignore";
-      var ttx = spawn("python", [ttxPath, realFontPath], {
+      const ttxStdioMode = "ignore";
+      const ttx = spawn("python", [ttxPath, realFontPath], {
         cwd: fontToolsHome,
         stdio: ttxStdioMode,
         env: ttxEnv,
       });
-      var ttxRunError;
+      let ttxRunError;
       registerOnCancel(function (reason) {
         ttxRunError = reason;
         callback(reason);
@@ -68,10 +68,10 @@ exports.translateFont = function translateFont(
   registerOnCancel,
   callback
 ) {
-  var buffer = Buffer.from(content, "base64");
-  var taskId = (nextTTXTaskId++).toString();
-  var fontPath = path.join(ttxResourcesHome, taskId + ".otf");
-  var resultPath = path.join(ttxResourcesHome, taskId + ".ttx");
+  const buffer = Buffer.from(content, "base64");
+  const taskId = (nextTTXTaskId++).toString();
+  const fontPath = path.join(ttxResourcesHome, taskId + ".otf");
+  const resultPath = path.join(ttxResourcesHome, taskId + ".ttx");
 
   fs.writeFileSync(fontPath, buffer);
   runTtx(ttxResourcesHome, fontPath, registerOnCancel, function (err) {

@@ -13,5 +13,4 @@ test/tmp/
 test/features/
 test/pdfs/
 test/resources/
-test/font/*_spec.js
 *~/
