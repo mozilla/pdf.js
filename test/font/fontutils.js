@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-"use strict";
-
 var base64alphabet =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-// eslint-disable-next-line no-unused-vars
 function decodeFontData(base64) {
   var result = [];
 
@@ -68,7 +65,6 @@ function encodeFontData(data) {
   return buffer;
 }
 
-// eslint-disable-next-line no-unused-vars
 function ttx(data, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open("POST", "/ttx");
@@ -89,10 +85,11 @@ function ttx(data, callback) {
   xhr.send(encodedData);
 }
 
-// eslint-disable-next-line no-unused-vars
 function verifyTtxOutput(output) {
   var m = /^<error>(.*?)<\/error>/.exec(output);
   if (m) {
     throw m[1];
   }
 }
+
+export { decodeFontData, encodeFontData, ttx, verifyTtxOutput };
