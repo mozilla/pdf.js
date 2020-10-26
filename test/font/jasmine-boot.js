@@ -60,36 +60,36 @@ async function initializePDFJS(callback) {
 
   jasmineRequire.html(jasmine);
 
-  var env = jasmine.getEnv();
+  const env = jasmine.getEnv();
 
-  var jasmineInterface = jasmineRequire.interface(jasmine, env);
+  const jasmineInterface = jasmineRequire.interface(jasmine, env);
   extend(window, jasmineInterface);
 
   // Runner Parameters
-  var queryString = new jasmine.QueryString({
+  const queryString = new jasmine.QueryString({
     getWindowLocation() {
       return window.location;
     },
   });
 
-  var config = {
+  const config = {
     failFast: queryString.getParam("failFast"),
     oneFailurePerSpec: queryString.getParam("oneFailurePerSpec"),
     hideDisabled: queryString.getParam("hideDisabled"),
   };
 
-  var random = queryString.getParam("random");
+  const random = queryString.getParam("random");
   if (random !== undefined && random !== "") {
     config.random = random;
   }
 
-  var seed = queryString.getParam("seed");
+  const seed = queryString.getParam("seed");
   if (seed) {
     config.seed = seed;
   }
 
   // Reporters
-  var htmlReporter = new jasmine.HtmlReporter({
+  const htmlReporter = new jasmine.HtmlReporter({
     env,
     navigateWithNewParam(key, value) {
       return queryString.navigateWithNewParam(key, value);
@@ -112,13 +112,13 @@ async function initializePDFJS(callback) {
   env.addReporter(htmlReporter);
 
   if (queryString.getParam("browser")) {
-    var testReporter = new TestReporter(queryString.getParam("browser"));
+    const testReporter = new TestReporter(queryString.getParam("browser"));
     env.addReporter(testReporter);
   }
 
   // Filter which specs will be run by matching the start of the full name
   // against the `spec` query param.
-  var specFilter = new jasmine.HtmlSpecFilter({
+  const specFilter = new jasmine.HtmlSpecFilter({
     filterString() {
       return queryString.getParam("spec");
     },
@@ -136,7 +136,7 @@ async function initializePDFJS(callback) {
   // Replace the browser window's `onload`, ensure it's called, and then run
   // all of the loaded specs. This includes initializing the `HtmlReporter`
   // instance and then executing the loaded Jasmine environment.
-  var currentWindowOnload = window.onload;
+  const currentWindowOnload = window.onload;
 
   window.onload = function () {
     if (currentWindowOnload) {
@@ -150,7 +150,7 @@ async function initializePDFJS(callback) {
   };
 
   function extend(destination, source) {
-    for (var property in source) {
+    for (const property in source) {
       destination[property] = source[property];
     }
     return destination;
