@@ -34,20 +34,22 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* globals jasmineRequire, TestReporter */
+/* globals jasmineRequire */
 
 // Modified jasmine's boot.js file to load PDF.js libraries async.
 
 "use strict";
 
+import { GlobalWorkerOptions } from "pdfjs/display/worker_options.js";
+import { isNodeJS } from "pdfjs/shared/is_node.js";
+import { PDFFetchStream } from "pdfjs/display/fetch_stream.js";
+import { PDFNetworkStream } from "pdfjs/display/network.js";
+import { setPDFNetworkStreamFactory } from "pdfjs/display/api.js";
+import { TestReporter } from "./testreporter.js";
+
 async function initializePDFJS(callback) {
-  const modules = await Promise.all(
+  await Promise.all(
     [
-      "pdfjs/display/api.js",
-      "pdfjs/display/worker_options.js",
-      "pdfjs/display/network.js",
-      "pdfjs/display/fetch_stream.js",
-      "pdfjs/shared/is_node.js",
       "pdfjs-test/unit/annotation_spec.js",
       "pdfjs-test/unit/annotation_storage_spec.js",
       "pdfjs-test/unit/api_spec.js",
@@ -87,13 +89,6 @@ async function initializePDFJS(callback) {
       return import(moduleName);
     })
   );
-  const [
-    { setPDFNetworkStreamFactory },
-    { GlobalWorkerOptions },
-    { PDFNetworkStream },
-    { PDFFetchStream },
-    { isNodeJS },
-  ] = modules;
 
   if (isNodeJS) {
     throw new Error(

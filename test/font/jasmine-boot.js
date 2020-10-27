@@ -34,11 +34,13 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* globals jasmineRequire, TestReporter */
+/* globals jasmineRequire */
 
 // Modified jasmine's boot.js file to load PDF.js libraries async.
 
 "use strict";
+
+import { TestReporter } from "../unit/testreporter.js";
 
 async function initializePDFJS(callback) {
   await Promise.all(

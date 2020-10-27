@@ -1,6 +1,3 @@
-"use strict";
-
-// eslint-disable-next-line no-unused-vars
 const TestReporter = function (browser) {
   function send(action, json, cb) {
     const r = new XMLHttpRequest();
@@ -91,3 +88,5 @@ const TestReporter = function (browser) {
     setTimeout(sendQuitRequest, 500);
   };
 };
+
+export { TestReporter };
