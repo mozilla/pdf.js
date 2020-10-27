@@ -720,7 +720,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     // used and the full array of field values is stored.
     storage.getOrCreateValue(
       id,
-      this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : null
+      this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : undefined
     );
 
     const selectElement = document.createElement("select");
