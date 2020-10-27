@@ -319,7 +319,7 @@ describe("util", function () {
   });
 
   describe("escapeString", function () {
-    it("should escape (, ), \n, \r and \\", function () {
+    it("should escape (, ), \\n, \\r, and \\", function () {
       expect(escapeString("((a\\a))\n(b(b\\b)\rb)")).toEqual(
         "\\(\\(a\\\\a\\)\\)\\n\\(b\\(b\\\\b\\)\\rb\\)"
       );
