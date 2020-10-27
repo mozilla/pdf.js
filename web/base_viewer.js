@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { createPromiseCapability, version } from "pdfjs-lib";
 import {
   CSS_UNITS,
   DEFAULT_SCALE,
@@ -38,7 +39,6 @@ import {
 } from "./ui_utils.js";
 import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
-import { createPromiseCapability } from "pdfjs-lib";
 import { PDFPageView } from "./pdf_page_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
@@ -139,6 +139,13 @@ class BaseViewer {
     if (this.constructor === BaseViewer) {
       throw new Error("Cannot initialize BaseViewer.");
     }
+    const viewerVersion =
+      typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : null;
+    if (version !== viewerVersion) {
+      throw new Error(
+        `The API version "${version}" does not match the Viewer version "${viewerVersion}".`
+      );
+    }
     this._name = this.constructor.name;
 
     this.container = options.container;
@@ -150,10 +157,8 @@ class BaseViewer {
     ) {
       if (
         !(
-          this.container &&
-          this.container.tagName.toUpperCase() === "DIV" &&
-          this.viewer &&
-          this.viewer.tagName.toUpperCase() === "DIV"
+          this.container?.tagName.toUpperCase() === "DIV" &&
+          this.viewer?.tagName.toUpperCase() === "DIV"
         )
       ) {
         throw new Error("Invalid `container` and/or `viewer` option.");
