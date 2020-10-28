@@ -77,6 +77,8 @@ const DEFAULT_CACHE_SIZE = 10;
  *   total pixels, i.e. width * height. Use -1 for no limit. The default value
  *   is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
+ * @property {boolean} [enableScripting] - Enable embedded script execution.
+ *   The default value is `false`.
  */
 
 function PDFPageViewBuffer(size) {
@@ -187,6 +189,7 @@ class BaseViewer {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
+    this.enableScripting = options.enableScripting || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -527,6 +530,7 @@ class BaseViewer {
             useOnlyCssZoom: this.useOnlyCssZoom,
             maxCanvasPixels: this.maxCanvasPixels,
             l10n: this.l10n,
+            enableScripting: this.enableScripting,
           });
           this._pages.push(pageView);
         }
@@ -1208,6 +1212,7 @@ class BaseViewer {
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
+   * @param {boolean} [enableScripting]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -1216,7 +1221,8 @@ class BaseViewer {
     annotationStorage = null,
     imageResourcesPath = "",
     renderInteractiveForms = false,
-    l10n = NullL10n
+    l10n = NullL10n,
+    enableScripting = false
   ) {
     return new AnnotationLayerBuilder({
       pageDiv,
@@ -1227,6 +1233,10 @@ class BaseViewer {
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       l10n,
+      enableScripting,
+      hasJSActionsPromise: enableScripting
+        ? this.pdfDocument.hasJSActions()
+        : Promise.resolve(false),
     });
   }
 

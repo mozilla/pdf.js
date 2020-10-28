@@ -43,6 +43,8 @@ import { AnnotationStorage } from "./annotation_storage.js";
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
  * @property {Object} svgFactory
+ * @property {boolean} [enableScripting]
+ * @property {boolean} [hasJSActions]
  */
 
 class AnnotationElementFactory {
@@ -142,6 +144,8 @@ class AnnotationElement {
     this.renderInteractiveForms = parameters.renderInteractiveForms;
     this.svgFactory = parameters.svgFactory;
     this.annotationStorage = parameters.annotationStorage;
+    this.enableScripting = parameters.enableScripting;
+    this.hasJSActions = parameters.hasJSActions;
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
@@ -507,7 +511,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         event.target.setSelectionRange(0, 0);
       });
 
-      if (this.data.actions) {
+      if (this.enableScripting && this.hasJSActions) {
         element.addEventListener("updateFromSandbox", function (event) {
           const data = event.detail;
           if ("value" in data) {
@@ -517,21 +521,23 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           }
         });
 
-        for (const eventType of Object.keys(this.data.actions)) {
-          switch (eventType) {
-            case "Format":
-              element.addEventListener("blur", function (event) {
-                window.dispatchEvent(
-                  new CustomEvent("dispatchEventInSandbox", {
-                    detail: {
-                      id,
-                      name: "Format",
-                      value: event.target.value,
-                    },
-                  })
-                );
-              });
-              break;
+        if (this.data.actions !== null) {
+          for (const eventType of Object.keys(this.data.actions)) {
+            switch (eventType) {
+              case "Format":
+                element.addEventListener("blur", function (event) {
+                  window.dispatchEvent(
+                    new CustomEvent("dispatchEventInSandbox", {
+                      detail: {
+                        id,
+                        name: "Format",
+                        value: event.target.value,
+                      },
+                    })
+                  );
+                });
+                break;
+            }
           }
         }
       }
@@ -1562,6 +1568,9 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms
+ * @property {boolean} [enableScripting] - Enable embedded script execution.
+ * @property {boolean} [hasJSActions] - Some fields have JS actions.
+ *   The default value is `false`.
  */
 
 class AnnotationLayer {
@@ -1608,6 +1617,8 @@ class AnnotationLayer {
         svgFactory: new DOMSVGFactory(),
         annotationStorage:
           parameters.annotationStorage || new AnnotationStorage(),
+        enableScripting: parameters.enableScripting,
+        hasJSActions: parameters.hasJSActions,
       });
       if (element.isRenderable) {
         const rendered = element.render();

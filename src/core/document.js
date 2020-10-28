@@ -1020,6 +1020,21 @@ class PDFDocument {
     );
   }
 
+  get hasJSActions() {
+    return shadow(
+      this,
+      "hasJSActions",
+      this.fieldObjects.then(fieldObjects => {
+        return (
+          fieldObjects !== null &&
+          Object.values(fieldObjects).some(fieldObject =>
+            fieldObject.some(object => object.actions !== null)
+          )
+        );
+      })
+    );
+  }
+
   get calculationOrderIds() {
     const acroForm = this.catalog.acroForm;
     if (!acroForm || !acroForm.has("CO")) {

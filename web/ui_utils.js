@@ -1023,7 +1023,10 @@ function getActiveOrFocusedElement() {
  */
 function generateRandomStringForSandbox(objects) {
   const allObjects = Object.values(objects).flat(2);
-  const actions = allObjects.map(obj => Object.values(obj.actions)).flat(2);
+  const actions = allObjects
+    .filter(obj => !!obj.actions)
+    .map(obj => Object.values(obj.actions))
+    .flat(2);
 
   while (true) {
     const name = new Uint8Array(64);
