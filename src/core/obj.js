@@ -25,6 +25,7 @@ import {
   isBool,
   isNum,
   isString,
+  objectFromEntries,
   PermissionFlag,
   shadow,
   stringToPDFString,
@@ -786,7 +787,7 @@ class Catalog {
    */
   get openAction() {
     const obj = this._catDict.get("OpenAction");
-    let openAction = null;
+    const openActionMap = new Map();
 
     if (isDict(obj)) {
       // Convert the OpenAction dictionary into a format that works with
@@ -798,23 +799,18 @@ class Catalog {
       Catalog.parseDestDictionary({ destDict, resultObj });
 
       if (Array.isArray(resultObj.dest)) {
-        if (!openAction) {
-          openAction = Object.create(null);
-        }
-        openAction.dest = resultObj.dest;
+        openActionMap.set("dest", resultObj.dest);
       } else if (resultObj.action) {
-        if (!openAction) {
-          openAction = Object.create(null);
-        }
-        openAction.action = resultObj.action;
+        openActionMap.set("action", resultObj.action);
       }
     } else if (Array.isArray(obj)) {
-      if (!openAction) {
-        openAction = Object.create(null);
-      }
-      openAction.dest = obj;
+      openActionMap.set("dest", obj);
     }
-    return shadow(this, "openAction", openAction);
+    return shadow(
+      this,
+      "openAction",
+      openActionMap.size > 0 ? objectFromEntries(openActionMap) : null
+    );
   }
 
   get attachments() {
