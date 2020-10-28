@@ -181,6 +181,8 @@ class IPDFAnnotationLayerFactory {
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
+   * @param {boolean} [enableScripting]
+   * @param {Promise<boolean>} [hasJSActionsPromise]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -189,7 +191,9 @@ class IPDFAnnotationLayerFactory {
     annotationStorage = null,
     imageResourcesPath = "",
     renderInteractiveForms = true,
-    l10n = undefined
+    l10n = undefined,
+    enableScripting = false,
+    hasJSActionsPromise = null
   ) {}
 }
 

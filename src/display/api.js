@@ -904,6 +904,14 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @returns {Promise<boolean>} A promise that is resolved with `true`
+   * if some /AcroForm fields have JavaScript actions.
+   */
+  hasJSActions() {
+    return this._transport.hasJSActions();
+  }
+
+  /**
    * @returns {Promise<Array<string> | null>} A promise that is resolved with an
    *   {Array<string>} containing IDs of annotations that have a calculation
    *   action, or `null` when no such annotations are present in the PDF file.
@@ -2566,6 +2574,10 @@ class WorkerTransport {
 
   getFieldObjects() {
     return this.messageHandler.sendWithPromise("GetFieldObjects", null);
+  }
+
+  hasJSActions() {
+    return this.messageHandler.sendWithPromise("HasJSActions", null);
   }
 
   getCalculationOrderIds() {
