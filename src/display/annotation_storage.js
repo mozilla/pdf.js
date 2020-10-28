@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { objectFromEntries } from "../shared/util.js";
+
 /**
  * Key/value storage for annotation data in forms.
  */
@@ -67,7 +69,7 @@ class AnnotationStorage {
     if (this._storage.size === 0) {
       return null;
     }
-    return Object.fromEntries(this._storage);
+    return objectFromEntries(this._storage);
   }
 
   get size() {

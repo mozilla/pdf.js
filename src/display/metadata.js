@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert } from "../shared/util.js";
+import { assert, objectFromEntries } from "../shared/util.js";
 import { SimpleXMLParser } from "../shared/xml_parser.js";
 
 class Metadata {
@@ -118,7 +118,7 @@ class Metadata {
   }
 
   getAll() {
-    return Object.fromEntries(this._metadataMap);
+    return objectFromEntries(this._metadataMap);
   }
 
   has(name) {
