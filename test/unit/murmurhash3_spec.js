@@ -60,4 +60,34 @@ describe("MurmurHash3_64", function () {
     const hexdigest2 = hash.hexdigest();
     expect(hexdigest1).not.toEqual(hexdigest2);
   });
+
+  it(
+    "generates correct hashes for TypedArrays which share the same " +
+      "underlying ArrayBuffer (issue 12533)",
+    function () {
+      // prettier-ignore
+      const typedArray = new Uint8Array([
+        0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+      ]);
+      const startArray = new Uint8Array(typedArray.buffer, 0, 10);
+      const endArray = new Uint8Array(typedArray.buffer, 10, 10);
+
+      expect(startArray).not.toEqual(endArray);
+
+      const startHash = new MurmurHash3_64();
+      startHash.update(startArray);
+      const startHexdigest = startHash.hexdigest();
+
+      const endHash = new MurmurHash3_64();
+      endHash.update(endArray);
+      const endHexdigest = endHash.hexdigest();
+
+      // The two hashes *must* be different.
+      expect(startHexdigest).not.toEqual(endHexdigest);
+
+      expect(startHexdigest).toEqual("a49de339cc5b0819");
+      expect(endHexdigest).toEqual("f81a92d9e214ab35");
+    }
+  );
 });
