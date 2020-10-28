@@ -585,6 +585,11 @@ function string32(value) {
   );
 }
 
+// Ensures that the returned Object has a `null` prototype.
+function objectFromEntries(iterable) {
+  return Object.assign(Object.create(null), Object.fromEntries(iterable));
+}
+
 // Checks the endianness of the platform.
 function isLittleEndian() {
   const buffer8 = new Uint8Array(4);
@@ -1035,6 +1040,7 @@ export {
   isString,
   isSameOrigin,
   createValidAbsoluteUrl,
+  objectFromEntries,
   IsLittleEndianCached,
   IsEvalSupportedCached,
   removeNullCharacters,
