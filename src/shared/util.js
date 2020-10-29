@@ -585,6 +585,10 @@ function string32(value) {
   );
 }
 
+function objectSize(obj) {
+  return Object.keys(obj).length;
+}
+
 // Ensures that the returned Object has a `null` prototype.
 function objectFromEntries(iterable) {
   return Object.assign(Object.create(null), Object.fromEntries(iterable));
@@ -1040,6 +1044,7 @@ export {
   isString,
   isSameOrigin,
   createValidAbsoluteUrl,
+  objectSize,
   objectFromEntries,
   IsLittleEndianCached,
   IsEvalSupportedCached,

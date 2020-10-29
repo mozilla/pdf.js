@@ -25,6 +25,7 @@ import {
   escapeString,
   getModificationDate,
   isString,
+  objectSize,
   OPS,
   shadow,
   stringToPDFString,
@@ -1460,18 +1461,20 @@ class WidgetAnnotation extends Annotation {
     if (dict.has("AA")) {
       const additionalActions = dict.get("AA");
       for (const key of additionalActions.getKeys()) {
-        if (key in AnnotationActionEventType) {
-          const actionDict = additionalActions.getRaw(key);
-          const parents = new RefSet();
-          const list = [];
-          this._collectJS(actionDict, xref, list, parents);
-          if (list.length > 0) {
-            actions[AnnotationActionEventType[key]] = list;
-          }
+        const action = AnnotationActionEventType[key];
+        if (!action) {
+          continue;
+        }
+        const actionDict = additionalActions.getRaw(key);
+        const parents = new RefSet();
+        const list = [];
+        this._collectJS(actionDict, xref, list, parents);
+        if (list.length > 0) {
+          actions[action] = list;
         }
       }
     }
-    // Collect the Action if any (we may have one on pushbutton)
+    // Collect the Action if any (we may have one on pushbutton).
     if (dict.has("A")) {
       const actionDict = dict.get("A");
       const parents = new RefSet();
@@ -1481,7 +1484,7 @@ class WidgetAnnotation extends Annotation {
         actions.Action = list;
       }
     }
-    return actions;
+    return objectSize(actions) > 0 ? actions : null;
   }
 
   getFieldObject() {
