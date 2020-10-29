@@ -408,7 +408,7 @@ class SimpleDOMNode {
     if (this.attributes) {
       for (const attribute of this.attributes) {
         buffer.push(
-          ` ${attribute.name}=\"${encodeToXmlString(attribute.value)}\"`
+          ` ${attribute.name}="${encodeToXmlString(attribute.value)}"`
         );
       }
     }
