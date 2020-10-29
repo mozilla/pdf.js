@@ -3415,8 +3415,8 @@ class PartialEvaluator {
       var baseFontStr = baseFont && baseFont.name;
       if (fontNameStr !== baseFontStr) {
         info(
-          `The FontDescriptor\'s FontName is "${fontNameStr}" but ` +
-            `should be the same as the Font\'s BaseFont "${baseFontStr}".`
+          `The FontDescriptor's FontName is "${fontNameStr}" but ` +
+            `should be the same as the Font's BaseFont "${baseFontStr}".`
         );
         // Workaround for cases where e.g. fontNameStr = 'Arial' and
         // baseFontStr = 'Arial,Bold' (needed when no font file is embedded).

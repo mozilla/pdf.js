@@ -1333,7 +1333,7 @@ class WidgetAnnotation extends Annotation {
       // 1.5 * capHeight * fontSize seems to be a good value for lineHeight
       fontSize = Math.max(1, Math.floor(height / (1.5 * capHeight)));
 
-      let fontRegex = new RegExp(`/${fontName}\\s+[0-9\.]+\\s+Tf`);
+      let fontRegex = new RegExp(`/${fontName}\\s+[0-9.]+\\s+Tf`);
       if (this.data.defaultAppearance.search(fontRegex) === -1) {
         // The font size is missing
         fontRegex = new RegExp(`/${fontName}\\s+Tf`);
