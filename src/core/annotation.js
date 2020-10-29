@@ -1326,7 +1326,7 @@ class WidgetAnnotation extends Annotation {
 
   _computeFontSize(font, fontName, fontSize, height) {
     if (fontSize === null || fontSize === 0) {
-      const em = font.charsToGlyphs("M", true)[0].width / 1000;
+      const em = font.charsToGlyphs("M")[0].width / 1000;
       // According to https://en.wikipedia.org/wiki/Em_(typography)
       // an average cap height should be 70% of 1em
       const capHeight = 0.7 * em;
@@ -1597,7 +1597,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     const scale = fontSize / 1000;
-    const whitespace = font.charsToGlyphs(" ", true)[0].width * scale;
+    const whitespace = font.charsToGlyphs(" ")[0].width * scale;
     const chunks = [];
 
     let lastSpacePos = -1,
@@ -1618,7 +1618,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
           lastSpacePos = i;
         }
       } else {
-        const charWidth = font.charsToGlyphs(character, false)[0].width * scale;
+        const charWidth = font.charsToGlyphs(character)[0].width * scale;
         if (currentWidth + charWidth > width) {
           // We must break to the last white position (if available)
           if (lastSpacePos !== -1) {
