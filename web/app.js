@@ -247,6 +247,7 @@ const PDFViewerApplication = {
   triggerDelayedFallback: null,
   _saveInProgress: false,
   _wheelUnusedTicks: 0,
+  _idleCallbacks: new Set(),
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -743,6 +744,10 @@ const PDFViewerApplication = {
     this.contentDispositionFilename = null;
     this.triggerDelayedFallback = null;
     this._saveInProgress = false;
+    for (const callback of this._idleCallbacks) {
+      window.cancelIdleCallback(callback);
+    }
+    this._idleCallbacks.clear();
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -1334,6 +1339,16 @@ const PDFViewerApplication = {
       pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
         this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
       });
+      if ("requestIdleCallback" in window) {
+        const callback = window.requestIdleCallback(
+          () => {
+            this._collectTelemetry(pdfDocument);
+            this._idleCallbacks.delete(callback);
+          },
+          { timeout: 1000 }
+        );
+        this._idleCallbacks.add(callback);
+      }
     });
 
     this._initializePageLabels(pdfDocument);
@@ -1396,6 +1411,23 @@ const PDFViewerApplication = {
     const dispatchEventName = generateRandomStringForSandbox(objects);
     const calculationOrder = [];
     scripting.createSandbox({ objects, dispatchEventName, calculationOrder });
+  },
+
+  /**
+   * A place to fetch data for telemetry after one page is rendered and the
+   * viewer is idle.
+   * @private
+   */
+  async _collectTelemetry(pdfDocument) {
+    const markInfo = await this.pdfDocument.getMarkInfo();
+    if (pdfDocument !== this.pdfDocument) {
+      return; // Document was closed while waiting for mark info.
+    }
+    const tagged = markInfo?.Marked || false;
+    this.externalServices.reportTelemetry({
+      type: "tagged",
+      tagged,
+    });
   },
 
   /**
