@@ -618,16 +618,13 @@ const IsEvalSupportedCached = {
   },
 };
 
-const rgbBuf = ["rgb(", 0, ",", 0, ",", 0, ")"];
+const hexNumbers = [...Array(256).keys()].map(n =>
+  n.toString(16).padStart(2, "0")
+);
 
 class Util {
-  // makeCssRgb() can be called thousands of times. Using ´rgbBuf` avoids
-  // creating many intermediate strings.
-  static makeCssRgb(r, g, b) {
-    rgbBuf[1] = r;
-    rgbBuf[3] = g;
-    rgbBuf[5] = b;
-    return rgbBuf.join("");
+  static makeHexColor(r, g, b) {
+    return `#${hexNumbers[r]}${hexNumbers[g]}${hexNumbers[b]}`;
   }
 
   // Concatenates two transformation matrices together and returns the result.
