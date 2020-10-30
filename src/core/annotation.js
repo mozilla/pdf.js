@@ -25,6 +25,7 @@ import {
   escapeString,
   getModificationDate,
   isString,
+  objectSize,
   OPS,
   shadow,
   stringToPDFString,
@@ -1326,7 +1327,7 @@ class WidgetAnnotation extends Annotation {
 
   _computeFontSize(font, fontName, fontSize, height) {
     if (fontSize === null || fontSize === 0) {
-      const em = font.charsToGlyphs("M", true)[0].width / 1000;
+      const em = font.charsToGlyphs("M")[0].width / 1000;
       // According to https://en.wikipedia.org/wiki/Em_(typography)
       // an average cap height should be 70% of 1em
       const capHeight = 0.7 * em;
@@ -1460,18 +1461,20 @@ class WidgetAnnotation extends Annotation {
     if (dict.has("AA")) {
       const additionalActions = dict.get("AA");
       for (const key of additionalActions.getKeys()) {
-        if (key in AnnotationActionEventType) {
-          const actionDict = additionalActions.getRaw(key);
-          const parents = new RefSet();
-          const list = [];
-          this._collectJS(actionDict, xref, list, parents);
-          if (list.length > 0) {
-            actions[AnnotationActionEventType[key]] = list;
-          }
+        const action = AnnotationActionEventType[key];
+        if (!action) {
+          continue;
+        }
+        const actionDict = additionalActions.getRaw(key);
+        const parents = new RefSet();
+        const list = [];
+        this._collectJS(actionDict, xref, list, parents);
+        if (list.length > 0) {
+          actions[action] = list;
         }
       }
     }
-    // Collect the Action if any (we may have one on pushbutton)
+    // Collect the Action if any (we may have one on pushbutton).
     if (dict.has("A")) {
       const actionDict = dict.get("A");
       const parents = new RefSet();
@@ -1481,7 +1484,7 @@ class WidgetAnnotation extends Annotation {
         actions.Action = list;
       }
     }
-    return actions;
+    return objectSize(actions) > 0 ? actions : null;
   }
 
   getFieldObject() {
@@ -1597,7 +1600,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     const scale = fontSize / 1000;
-    const whitespace = font.charsToGlyphs(" ", true)[0].width * scale;
+    const whitespace = font.charsToGlyphs(" ")[0].width * scale;
     const chunks = [];
 
     let lastSpacePos = -1,
@@ -1618,7 +1621,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
           lastSpacePos = i;
         }
       } else {
-        const charWidth = font.charsToGlyphs(character, false)[0].width * scale;
+        const charWidth = font.charsToGlyphs(character)[0].width * scale;
         if (currentWidth + charWidth > width) {
           // We must break to the last white position (if available)
           if (lastSpacePos !== -1) {
