@@ -3208,7 +3208,10 @@ var Font = (function FontClosure() {
       return shadow(this, "spaceWidth", width);
     },
 
-    charToGlyph: function Font_charToGlyph(charcode, isSpace) {
+    /**
+     * @private
+     */
+    _charToGlyph(charcode, isSpace = false) {
       var fontCharCode, width, operatorListId;
 
       var widthCode = charcode;
@@ -3332,13 +3335,13 @@ var Font = (function FontClosure() {
           i += length;
           // Space is char with code 0x20 and length 1 in multiple-byte codes.
           var isSpace = length === 1 && chars.charCodeAt(i - 1) === 0x20;
-          glyph = this.charToGlyph(charcode, isSpace);
+          glyph = this._charToGlyph(charcode, isSpace);
           glyphs.push(glyph);
         }
       } else {
         for (i = 0, ii = chars.length; i < ii; ++i) {
           charcode = chars.charCodeAt(i);
-          glyph = this.charToGlyph(charcode, charcode === 0x20);
+          glyph = this._charToGlyph(charcode, charcode === 0x20);
           glyphs.push(glyph);
         }
       }
