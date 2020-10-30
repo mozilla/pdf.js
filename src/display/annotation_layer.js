@@ -221,7 +221,7 @@ class AnnotationElement {
       }
 
       if (data.color) {
-        container.style.borderColor = Util.makeCssRgb(
+        container.style.borderColor = Util.makeHexColor(
           data.color[0] | 0,
           data.color[1] | 0,
           data.color[2] | 0
@@ -860,7 +860,7 @@ class PopupElement {
       const r = BACKGROUND_ENLIGHT * (255 - color[0]) + color[0];
       const g = BACKGROUND_ENLIGHT * (255 - color[1]) + color[1];
       const b = BACKGROUND_ENLIGHT * (255 - color[2]) + color[2];
-      popup.style.backgroundColor = Util.makeCssRgb(r | 0, g | 0, b | 0);
+      popup.style.backgroundColor = Util.makeHexColor(r | 0, g | 0, b | 0);
     }
 
     const title = document.createElement("h1");

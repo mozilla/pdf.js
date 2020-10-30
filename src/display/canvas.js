@@ -1951,12 +1951,12 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.patternFill = true;
     },
     setStrokeRGBColor: function CanvasGraphics_setStrokeRGBColor(r, g, b) {
-      const color = Util.makeCssRgb(r, g, b);
+      const color = Util.makeHexColor(r, g, b);
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
     setFillRGBColor: function CanvasGraphics_setFillRGBColor(r, g, b) {
-      const color = Util.makeCssRgb(r, g, b);
+      const color = Util.makeHexColor(r, g, b);
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
       this.current.patternFill = false;
