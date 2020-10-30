@@ -153,6 +153,47 @@ class Catalog {
     return shadow(this, "metadata", metadata);
   }
 
+  get markInfo() {
+    let markInfo = null;
+    try {
+      markInfo = this._readMarkInfo();
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      warn("Unable to read mark info.");
+    }
+    return shadow(this, "markInfo", markInfo);
+  }
+
+  /**
+   * @private
+   */
+  _readMarkInfo() {
+    const obj = this._catDict.get("MarkInfo");
+    if (!isDict(obj)) {
+      return null;
+    }
+
+    const markInfo = Object.assign(Object.create(null), {
+      Marked: false,
+      UserProperties: false,
+      Suspects: false,
+    });
+    for (const key in markInfo) {
+      if (!obj.has(key)) {
+        continue;
+      }
+      const value = obj.get(key);
+      if (!isBool(value)) {
+        continue;
+      }
+      markInfo[key] = value;
+    }
+
+    return markInfo;
+  }
+
   get toplevelPagesDict() {
     const pagesObj = this._catDict.get("Pages");
     if (!isDict(pagesObj)) {

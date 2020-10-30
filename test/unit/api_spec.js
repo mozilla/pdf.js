@@ -1209,6 +1209,24 @@ describe("api", function () {
         .catch(done.fail);
     });
 
+    it("gets markInfo", function (done) {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("annotation-line.pdf")
+      );
+
+      loadingTask.promise
+        .then(function (pdfDoc) {
+          return pdfDoc.getMarkInfo();
+        })
+        .then(function (info) {
+          expect(info.Marked).toEqual(true);
+          expect(info.UserProperties).toEqual(false);
+          expect(info.Suspects).toEqual(false);
+          done();
+        })
+        .catch(done.fail);
+    });
+
     it("gets data", function (done) {
       const promise = pdfDocument.getData();
       promise

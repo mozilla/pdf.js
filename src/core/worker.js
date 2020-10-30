@@ -499,6 +499,10 @@ class WorkerMessageHandler {
       ]);
     });
 
+    handler.on("GetMarkInfo", function wphSetupGetMarkInfo(data) {
+      return pdfManager.ensureCatalog("markInfo");
+    });
+
     handler.on("GetData", function wphSetupGetData(data) {
       pdfManager.requestLoadedStream();
       return pdfManager.onLoadedStream().then(function (stream) {

@@ -806,6 +806,23 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @typedef {Object} MarkInfo
+   * Properties correspond to Table 321 of the PDF 32000-1:2008 spec.
+   * @property {boolean} Marked
+   * @property {boolean} UserProperties
+   * @property {boolean} Suspects
+   */
+
+  /**
+   * @returns {Promise<MarkInfo | null>} A promise that is resolved with
+   *   a {MarkInfo} object that contains the MarkInfo flags for the PDF
+   *   document, or `null` when no MarkInfo values are present in the PDF file.
+   */
+  getMarkInfo() {
+    return this._transport.getMarkInfo();
+  }
+
+  /**
    * @returns {Promise<TypedArray>} A promise that is resolved with a
    *   {TypedArray} that has the raw data from the PDF.
    */
@@ -2637,6 +2654,10 @@ class WorkerTransport {
             : null,
         };
       });
+  }
+
+  getMarkInfo() {
+    return this.messageHandler.sendWithPromise("GetMarkInfo", null);
   }
 
   getStats() {
