@@ -206,12 +206,15 @@ class PDFLinkService {
   /**
    * This method will, when available, also update the browser history.
    *
-   * @param {number} pageNumber - The page number.
+   * @param {number|string} val - The page number, or page label.
    */
-  goToPage(pageNumber) {
+  goToPage(val) {
     if (!this.pdfDocument) {
       return;
     }
+    const pageNumber =
+      (typeof val === "string" && this.pdfViewer.pageLabelToPageNumber(val)) ||
+      val | 0;
     if (
       !(
         Number.isInteger(pageNumber) &&
@@ -219,9 +222,7 @@ class PDFLinkService {
         pageNumber <= this.pagesCount
       )
     ) {
-      console.error(
-        `PDFLinkService.goToPage: "${pageNumber}" is not a valid page number.`
-      );
+      console.error(`PDFLinkService.goToPage: "${val}" is not a valid page.`);
       return;
     }
 
@@ -566,9 +567,9 @@ class SimpleLinkService {
   async goToDestination(dest) {}
 
   /**
-   * @param {number} pageNumber - The page number.
+   * @param {number|string} val - The page number, or page label.
    */
-  goToPage(pageNumber) {}
+  goToPage(val) {}
 
   /**
    * @param dest - The PDF destination object.
