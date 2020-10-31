@@ -59,9 +59,9 @@ class IPDFLinkService {
   async goToDestination(dest) {}
 
   /**
-   * @param {number} pageNumber - The page number.
+   * @param {number|string} val - The page number, or page label.
    */
-  goToPage(pageNumber) {}
+  goToPage(val) {}
 
   /**
    * @param dest - The PDF destination object.
