@@ -182,6 +182,9 @@ class PDFLinkService {
    * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
   async goToDestination(dest) {
+    if (!this.pdfDocument) {
+      return;
+    }
     let namedDest, explicitDest;
     if (typeof dest === "string") {
       namedDest = dest;
@@ -206,6 +209,9 @@ class PDFLinkService {
    * @param {number} pageNumber - The page number.
    */
   goToPage(pageNumber) {
+    if (!this.pdfDocument) {
+      return;
+    }
     if (
       !(
         Number.isInteger(pageNumber) &&
@@ -261,6 +267,9 @@ class PDFLinkService {
    * @param {string} hash
    */
   setHash(hash) {
+    if (!this.pdfDocument) {
+      return;
+    }
     let pageNumber, dest;
     if (hash.includes("=")) {
       const params = parseQueryString(hash);
